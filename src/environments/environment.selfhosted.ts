@@ -1,6 +1,9 @@
+import packageJson from '../../package.json';
+
 export const environment = {
   production: true,
   mode: 'selfhosted', // 'firebase' or 'selfhosted'
+  appVersion: packageJson.version,
   
   // Firebase configuration (not used in selfhosted mode)
   firebase: {

@@ -22,6 +22,10 @@
                 <div class="mode-indicator" [ngClass]="appMode">
                     {{ (appMode === 'selfhosted' ? 'Settings.mode.selfhosted' : 'Settings.mode.firebase') | translate }}
                 </div>
+                <div class="version-info">
+                    <span class="profile-label">Version</span>
+                    <span class="profile-value">v{{appVersion}}</span>
+                </div>
             </div>
             <!-- Language -->
             <div *ngIf="classReference.isLanguages">

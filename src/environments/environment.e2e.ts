@@ -1,6 +1,9 @@
+import packageJson from '../../package.json';
+
 export const environment = {
   production: false,
   mode: 'selfhosted',
+  appVersion: packageJson.version,
 
   firebase: {
     apiKey: "AIzaSyABlsfWQyAp9v4IpQYS51LKdoG_3r_vC3I",

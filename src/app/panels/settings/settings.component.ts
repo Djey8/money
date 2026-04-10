@@ -55,6 +55,7 @@ export class SettingsComponent {
   static set currency(v: string) { AppStateService.instance.currency = v; }
 
   appMode: 'firebase' | 'selfhosted' = environment.mode as 'firebase' | 'selfhosted';
+  appVersion = environment.appVersion;
 
   static isSettings = true;
   static isLanguages = false;
