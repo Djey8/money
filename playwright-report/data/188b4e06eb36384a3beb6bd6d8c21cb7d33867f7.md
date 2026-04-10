@@ -1,0 +1,136 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - main
+  - generic [ref=e4]:
+    - banner [ref=e5]:
+      - button "Open profile" [ref=e6] [cursor=pointer]
+      - button "Fire Emergencies" [ref=e7]
+      - button "AI Assistant" [ref=e8] [cursor=pointer]
+      - button "Add" [ref=e9] [cursor=pointer]: +
+    - generic [ref=e10]:
+      - textbox "Search" [ref=e11]:
+        - /placeholder: Search..
+      - button "filter" [ref=e12] [cursor=pointer]: filter
+    - generic [ref=e13]:
+      - button "All Phases" [ref=e14] [cursor=pointer]
+      - button "Planning(0)" [ref=e15] [cursor=pointer]
+      - button "Saving(0)" [ref=e16] [cursor=pointer]
+      - button "Ready(0)" [ref=e17] [cursor=pointer]
+      - button "Completed(0)" [ref=e18] [cursor=pointer]
+    - heading "0,00 €" [level=4] [ref=e20]
+    - generic [ref=e21]:
+      - 'button "Fire.phase.idea #3 QuarterFund 0/1 buckets complete 25% target +4.000,00 € amount +1.000,00 € add" [ref=e22] [cursor=pointer]':
+        - generic [ref=e23]:
+          - generic [ref=e24]: Fire.phase.idea
+          - generic [ref=e25]: "#3"
+        - heading "QuarterFund" [level=3] [ref=e26]
+        - generic [ref=e28]: 0/1 buckets complete
+        - generic [ref=e31]: 25%
+        - generic [ref=e32]:
+          - generic [ref=e33]:
+            - generic [ref=e34]: target
+            - generic [ref=e35]: +4.000,00 €
+          - generic [ref=e36]:
+            - generic [ref=e37]: amount
+            - generic [ref=e38]: +1.000,00 €
+        - button "add" [ref=e39]
+      - 'button "Fire.phase.idea #2 FireFund1775503526608 0/1 buckets complete 20% target +5.000,00 € amount +1.000,00 € add" [ref=e40] [cursor=pointer]':
+        - generic [ref=e41]:
+          - generic [ref=e42]: Fire.phase.idea
+          - generic [ref=e43]: "#2"
+        - heading "FireFund1775503526608" [level=3] [ref=e44]
+        - generic [ref=e46]: 0/1 buckets complete
+        - generic [ref=e49]: 20%
+        - generic [ref=e50]:
+          - generic [ref=e51]:
+            - generic [ref=e52]: target
+            - generic [ref=e53]: +5.000,00 €
+          - generic [ref=e54]:
+            - generic [ref=e55]: amount
+            - generic [ref=e56]: +1.000,00 €
+        - button "add" [ref=e57]
+      - 'button "Fire.phase.idea #1 Car Repair Fund 0/1 buckets complete 15% target +2.000,00 € amount +300,00 € add" [ref=e58] [cursor=pointer]':
+        - generic [ref=e59]:
+          - generic [ref=e60]: Fire.phase.idea
+          - generic [ref=e61]: "#1"
+        - heading "Car Repair Fund" [level=3] [ref=e62]
+        - generic [ref=e64]: 0/1 buckets complete
+        - generic [ref=e67]: 15%
+        - generic [ref=e68]:
+          - generic [ref=e69]:
+            - generic [ref=e70]: target
+            - generic [ref=e71]: +2.000,00 €
+          - generic [ref=e72]:
+            - generic [ref=e73]: amount
+            - generic [ref=e74]: +300,00 €
+        - button "add" [ref=e75]
+  - dialog [ref=e76]:
+    - heading "Add Fire" [level=4] [ref=e77]
+    - button "Close" [ref=e78]: x
+    - separator [ref=e79]
+    - generic [ref=e80]:
+      - heading "Basics" [level=5] [ref=e81]
+      - generic [ref=e82]:
+        - generic [ref=e83]: Name *
+        - textbox "Name *" [ref=e84]: Home Repairs
+        - generic [ref=e85]: Subtitle
+        - textbox "Subtitle" [ref=e86]: Major home maintenance
+        - generic [ref=e87]: Phase
+        - combobox "Phase" [ref=e88]:
+          - option "Fire.phase.idea" [selected]
+          - option "Planning"
+          - option "Saving"
+          - option "Ready"
+          - option "Completed"
+        - generic [ref=e89]: Description
+        - textbox "Description" [ref=e90]
+        - generic [ref=e91]: Target Amount *
+        - spinbutton "Target Amount *" [ref=e92]
+        - generic [ref=e93]: Current Amount
+        - spinbutton "Current Amount" [ref=e94]
+        - generic [ref=e95]: Target Date
+        - textbox "Target Date" [ref=e96]
+    - generic [ref=e97]:
+      - button "Buckets ▸" [ref=e98] [cursor=pointer]:
+        - heading "Buckets" [level=5] [ref=e99]
+        - generic [ref=e100]: ▸
+      - generic [ref=e101]:
+        - paragraph [ref=e102]: No buckets yet. Add one below to organize emergency funds by category.
+        - generic [ref=e103]:
+          - textbox "Bucket Name" [ref=e104]
+          - spinbutton [ref=e105]
+          - textbox "Add optional notes or description..." [ref=e106]
+          - generic [ref=e107]:
+            - button "Add Bucket" [disabled] [ref=e108] [cursor=pointer]
+            - button "Cancel" [ref=e109] [cursor=pointer]: ×
+    - button "Links & Actions ▸" [ref=e111] [cursor=pointer]:
+      - heading "Links & Actions" [level=5] [ref=e112]
+      - generic [ref=e113]: ▸
+    - button "Fire.paymentPlans ▸" [ref=e115] [cursor=pointer]:
+      - heading "Fire.paymentPlans" [level=5] [ref=e116]
+      - generic [ref=e117]: ▸
+    - button "add" [ref=e119] [cursor=pointer]
+  - navigation "Quick navigation" [ref=e120]:
+    - button "Home" [ref=e121] [cursor=pointer]:
+      - img [ref=e122]
+      - generic [ref=e125]: Home
+    - button "Transactions" [ref=e127] [cursor=pointer]
+    - button "Daily" [ref=e128] [cursor=pointer]
+    - button "Splurge" [ref=e129] [cursor=pointer]
+    - button "Smile" [ref=e130] [cursor=pointer]
+    - button "Fire" [ref=e131] [cursor=pointer]
+    - button "CASHFLOW" [ref=e133] [cursor=pointer]
+    - button "Subscriptions" [ref=e134] [cursor=pointer]
+    - button "Budget" [ref=e135] [cursor=pointer]
+    - button "GROW Projects" [ref=e136] [cursor=pointer]
+    - button "Statistics" [ref=e138] [cursor=pointer]:
+      - img [ref=e139]
+      - generic [ref=e140]: Statistics
+    - button "Add" [ref=e141] [cursor=pointer]:
+      - img [ref=e142]
+    - button "Full menu" [ref=e144] [cursor=pointer]:
+      - img [ref=e145]
+      - generic [ref=e146]: Menu
+```

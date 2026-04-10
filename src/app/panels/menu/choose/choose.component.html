@@ -1,0 +1,10 @@
+<div id="menuNavBar-Container" role="dialog" aria-modal="true" appTrapFocus *ngIf="classReference.isChoose" [style.z-index]="classReference.zIndex + 1001"
+    (click)="highlight()">
+    <h4 id="menuNavBarTitle">{{'Choose' | translate}}</h4>
+    <button id="closebtn" aria-label="Close" (click)="closeWindow()">x</button>
+    <hr class="separator-white">
+    <button class="menubtn" (click)="clickedAsset()">{{'Choose.Asset' | translate}}</button>
+    <button class="menubtn" (click)="clickedShare()">{{'Choose.Share' | translate}}</button>
+    <button class="menubtn" (click)="clickedInvestment()">{{'Choose.Investment' | translate}}</button>
+    <button class="menubtn" (click)="clickedLiabilitie()">{{'Choose.Liability' | translate}}</button>
+</div>

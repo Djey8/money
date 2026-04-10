@@ -1,0 +1,154 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: couchdb-backup
+  namespace: money-app
+spec:
+  schedule: "0 2 * * *"
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      ttlSecondsAfterFinished: 86400
+      template:
+        spec:
+          securityContext:
+            runAsUser: 0
+          containers:
+          - name: backup
+            image: curlimages/curl:latest
+            imagePullPolicy: IfNotPresent
+            command:
+            - /bin/sh
+            - -c
+            - |
+              #!/bin/sh
+              set -e
+
+              # ── Configuration ──────────────────────────────────
+              COUCHDB_HOST="couchdb.money-app.svc.cluster.local"
+              COUCHDB_PORT="5984"
+              COUCHDB_USER="${COUCHDB_USER:-admin}"
+              COUCHDB_PASSWORD="${COUCHDB_PASSWORD}"
+              BACKUP_ROOT="/backups"
+              DATE=$(date +%Y-%m-%d)
+              DAY_OF_WEEK=$(date +%u)   # 1=Mon … 7=Sun
+              DAY_OF_MONTH=$(date +%d)
+
+              DAILY_DIR="${BACKUP_ROOT}/daily"
+              WEEKLY_DIR="${BACKUP_ROOT}/weekly"
+              MONTHLY_DIR="${BACKUP_ROOT}/monthly"
+              BACKUP_FILE="${DAILY_DIR}/couchdb-backup-${DATE}.tar.gz"
+
+              echo "==================================="
+              echo "CouchDB Backup - $(date)"
+              echo "==================================="
+
+              mkdir -p "${DAILY_DIR}" "${WEEKLY_DIR}" "${MONTHLY_DIR}" "${BACKUP_ROOT}/temp"
+
+              # ── Fetch database list ────────────────────────────
+              echo "Fetching database list..."
+              RAW=$(curl -sf -u "${COUCHDB_USER}:${COUCHDB_PASSWORD}" \
+                "http://${COUCHDB_HOST}:${COUCHDB_PORT}/_all_dbs")
+
+              DATABASES=$(echo "$RAW" | tr -d '[]"' | tr ',' '\n' | grep -v '^_')
+
+              if [ -z "$DATABASES" ]; then
+                echo "ERROR: No user databases found — aborting."
+                exit 1
+              fi
+
+              echo "Databases to backup:"
+              echo "$DATABASES" | sed 's/^/  /'
+
+              # ── Backup each database ───────────────────────────
+              cd "${BACKUP_ROOT}/temp"
+              for db in $DATABASES; do
+                echo "Backing up: ${db}"
+                curl -sf -u "${COUCHDB_USER}:${COUCHDB_PASSWORD}" \
+                  "http://${COUCHDB_HOST}:${COUCHDB_PORT}/${db}/_all_docs?include_docs=true" \
+                  -o "${db}.json"
+                echo "  OK ($(wc -c < "${db}.json") bytes)"
+              done
+
+              # Metadata
+              cat > backup-metadata.json <<METAEOF
+              {
+                "date": "${DATE}",
+                "timestamp": "$(date -Iseconds)",
+                "databases": "$(echo $DATABASES | tr '\n' ' ')"
+              }
+              METAEOF
+
+              # ── Create archive ─────────────────────────────────
+              echo "Creating archive..."
+              tar -czf "${BACKUP_FILE}" -C "${BACKUP_ROOT}/temp" .
+              rm -rf "${BACKUP_ROOT}/temp"
+              SIZE=$(wc -c < "${BACKUP_FILE}")
+              echo "Daily backup: ${BACKUP_FILE} (${SIZE} bytes)"
+
+              # ── Tier promotion ─────────────────────────────────
+              # Sunday → promote to weekly
+              if [ "$DAY_OF_WEEK" = "7" ]; then
+                cp "${BACKUP_FILE}" "${WEEKLY_DIR}/couchdb-backup-${DATE}.tar.gz"
+                echo "Promoted to weekly (Sunday)"
+              fi
+
+              # 1st of month → promote to monthly (kept forever)
+              if [ "$DAY_OF_MONTH" = "01" ]; then
+                cp "${BACKUP_FILE}" "${MONTHLY_DIR}/couchdb-backup-${DATE}.tar.gz"
+                echo "Promoted to monthly (1st of month)"
+              fi
+
+              # ── Retention cleanup ──────────────────────────────
+              echo ""
+              echo "Applying retention policy..."
+
+              # Daily: keep last 7
+              COUNT=$(ls -1 "${DAILY_DIR}"/couchdb-backup-*.tar.gz 2>/dev/null | wc -l)
+              if [ "$COUNT" -gt 7 ]; then
+                ls -1t "${DAILY_DIR}"/couchdb-backup-*.tar.gz | tail -n +8 | while read f; do
+                  echo "  Removing old daily: $(basename "$f")"
+                  rm -f "$f"
+                done
+              fi
+
+              # Weekly: keep last 13 (~3 months)
+              COUNT=$(ls -1 "${WEEKLY_DIR}"/couchdb-backup-*.tar.gz 2>/dev/null | wc -l)
+              if [ "$COUNT" -gt 13 ]; then
+                ls -1t "${WEEKLY_DIR}"/couchdb-backup-*.tar.gz | tail -n +14 | while read f; do
+                  echo "  Removing old weekly: $(basename "$f")"
+                  rm -f "$f"
+                done
+              fi
+
+              # Monthly: never deleted
+
+              # ── Summary ────────────────────────────────────────
+              echo ""
+              echo "=== Current backups ==="
+              echo "Daily  (7 max):    $(ls -1 "${DAILY_DIR}"/couchdb-backup-*.tar.gz 2>/dev/null | wc -l)"
+              echo "Weekly (13 max):   $(ls -1 "${WEEKLY_DIR}"/couchdb-backup-*.tar.gz 2>/dev/null | wc -l)"
+              echo "Monthly (forever): $(ls -1 "${MONTHLY_DIR}"/couchdb-backup-*.tar.gz 2>/dev/null | wc -l)"
+              echo ""
+              echo "Backup completed successfully!"
+            env:
+            - name: COUCHDB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: couchdb-secret
+                  key: username
+            - name: COUCHDB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: couchdb-secret
+                  key: password
+            volumeMounts:
+            - name: backup-storage
+              mountPath: /backups
+          restartPolicy: OnFailure
+          volumes:
+          - name: backup-storage
+            hostPath:
+              path: /opt/money-app-backups
+              type: DirectoryOrCreate

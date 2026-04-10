@@ -1,0 +1,71 @@
+<!-- Toolbar -->
+<div class="toolbar" role="banner">
+    <img id="profile-pic" width="40" alt="Profile Logo" src="../assets/profile-blank.jpg"
+        role="button" tabindex="0" aria-label="Open profile" (keydown.enter)="appReference.clickProfile()" (click)="appReference.clickProfile()" />
+    <div id="heading" role="button" tabindex="0" (click)="appReference.openNavBar()" (keydown.enter)="appReference.openNavBar()">{{'Cashflow.title' | translate}}</div>
+    <div class="spacer"></div>
+    <img id="statsbtn" width="40" text="Stats" alt="stats" src="../../../assets/icons/graph.jpg"
+        role="button" tabindex="0" aria-label="View statistics" (keydown.enter)="goToStats()" (click)="goToStats()"/>
+    <img id="balancebtn" width="40" text="balance" alt="balance" src="../../../assets/icons/balance.jpg"
+        role="button" tabindex="0" aria-label="View balance" (keydown.enter)="goToBalance()" (click)="goToBalance()" />
+    <img id="incomebtn" width="40" text="income" alt="income" src="../../../assets/icons/statement.jpg"
+        role="button" tabindex="0" aria-label="View income" (keydown.enter)="goToIncome()" (click)="goToIncome()" />
+</div>
+
+<div id="cashflow" *ngIf="!incomeReference.isFiltered">
+    <div class="cashflowBox">
+        <h3 class="TextLable">{{'Cashflow.Salary' | translate}}</h3>
+        <h3 id="sallery" class="amountLable">{{incomeReference.getSalary() | appNumber}} {{settingsReference.currency}}</h3>
+        <h4 class="operation">+</h4>
+        <h3 class="TextLable">{{'Cashflow.Passive' | translate}}</h3>
+        <h3 id="passive" class="amountLable">{{incomeReference.getPassive() | appNumber}} {{settingsReference.currency}}</h3>
+        <h3 class="TextLable">{{'Cashflow.Income' | translate}}</h3>
+        <h4 id="income" class="amountLable">{{incomeReference.getCreditAmount() | appNumber}} {{settingsReference.currency}}</h4>
+        <h4 class="operation">-</h4>
+        <h3 class="TextLable">{{'Cashflow.Expenses' | translate}}</h3>
+        <h4 id="expenses" class="amountLable">{{incomeReference.getDebitAmount() | appNumber}} {{settingsReference.currency}}</h4>
+        <h3 class="TextLable mt-xl">{{'Cashflow.title' | translate}}</h3>
+        <h4 id="total" class="amountLable">{{incomeReference.getTotalAmount() | appNumber}} {{settingsReference.currency}}</h4>
+    </div>
+</div>
+<div id="cashflowF" *ngIf="incomeReference.isFiltered">
+    <div class="cashflowBox">
+        <img src="../../../../assets/symbols/filter.png" alt="filter" width="40" class="filterAbtn">
+        <h4 class="searchDate" *ngIf="incomeReference.currentFilter.startDate && incomeReference.currentFilter.endDate">
+          {{incomeReference.currentFilter.startDate | appDate}} - {{incomeReference.currentFilter.endDate | appDate}}
+        </h4>
+        <h4 class="searchDate" *ngIf="incomeReference.currentFilter.startDate && !incomeReference.currentFilter.endDate">
+          {{incomeReference.currentFilter.startDate | appDate}}
+        </h4>
+        <h4 class="searchDate" *ngIf="!incomeReference.currentFilter.startDate && incomeReference.currentFilter.endDate">
+          {{incomeReference.currentFilter.endDate | appDate}}
+        </h4>
+        <h4 class="searchDate" *ngIf="incomeReference.currentFilter.searchText">
+          Search: {{incomeReference.currentFilter.searchText}}
+        </h4>
+        <hr class="separator-white">
+
+        <h3 class="TextLable">{{'Cashflow.Salary' | translate}}</h3>
+        <h3 id="sallery" class="amountLable">{{incomeReference.getSalaryF() | appNumber}} {{settingsReference.currency}}</h3>
+        <h4 class="operation">+</h4>
+        <h3 class="TextLable">{{'Cashflow.Passive' | translate}}</h3>
+        <h3 id="passive" class="amountLable">{{incomeReference.getPassiveF() | appNumber}} {{settingsReference.currency}}</h3>
+        <h3 class="TextLable">{{'Cashflow.Income' | translate}}</h3>
+        <h4 id="income" class="amountLable">{{incomeReference.getCreditAmountF() | appNumber}} {{settingsReference.currency}}</h4>
+        <h4 class="operation">-</h4>
+        <h3 class="TextLable">{{'Cashflow.Expenses' | translate}}</h3>
+        <h4 id="expenses" class="amountLable">{{incomeReference.getDebitAmountF() | appNumber}} {{settingsReference.currency}}</h4>
+        <h3 class="TextLable mt-xl">{{'Cashflow.title' | translate}}</h3>
+        <h4 id="total" class="amountLable">{{incomeReference.getTotalAmountF() | appNumber}} {{settingsReference.currency}}</h4>
+    </div>
+</div>
+
+<!-- New Unified Filter Box -->
+<app-shared-filter
+  style="margin-bottom: 80px; display: block;"
+  [filter]="incomeReference.currentFilter"
+  [availableAccounts]="incomeReference.availableAccounts"
+  [availableTags]="incomeReference.availableTags"
+  (apply)="applyDateFilter()"
+  (clear)="clearAllFilters()">
+</app-shared-filter>

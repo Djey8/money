@@ -1,0 +1,83 @@
+<div id="infoTransaction-Container" role="dialog" aria-modal="true" appTrapFocus *ngIf="classReference.isInfo" (click)="highlight()"
+    [style.z-index]="classReference.zIndex + 1001">
+    <h4 id="infoTransactionTitle">#{{classReference.index+1}}</h4>
+    <button id="closebtn" aria-label="Close" (click)="closeWindow()">x</button>
+    <hr class="separator-white">
+    <div *ngIf="!isEdit">
+        <div id="info-box">
+            <h4 class="infoLable">{{classReference.title}}</h4>
+            <h4 class="infoLable">{{getFrequencyLabel(classReference.frequencyField)}}</h4>
+            <h4 class="infoLableB">{{classReference.account}}</h4>
+            <img id="account-pic" alt="Account Pic" src="../../assets/icons/{{classReference.img}}.jpg"
+                role="button" tabindex="0" aria-label="View receipt" (click)="clickImage()" (keydown.enter)="clickImage()" />
+            <h4 class="{{classReference.amount>=0 ? 'amount-positive infoLableB' : 'amount-negative infoLableB'}}">
+                {{classReference.amount | appNumber}} {{currency}}</h4>
+            <h4 class="infoLable">{{classReference.startDate | appDate}}</h4>
+            <h4 class="infoLable">{{classReference.endDate | appDate}}</h4>
+            <h4 class="infoLable">{{classReference.category}}</h4>
+            <h4 class="commentLable">{{classReference.comment}}</h4>
+            <div class="button-container">
+                <span class="action-button" role="button" tabindex="0" aria-label="Previous subscription" (click)="goLeft()" (keydown.enter)="goLeft()">&#x276E;</span>
+                <span class="action-button" role="button" tabindex="0" aria-label="Next subscription" (click)="goRight()" (keydown.enter)="goRight()">&#x276F;</span>
+            </div>
+        </div>
+        <button id="editbtn" (click)="editSubscription()">{{'Info.edit' | translate}}</button>
+        <button id="copybtn" (click)="copySubscription()">{{'Info.copy' | translate}}</button>
+    </div>
+    <div *ngIf="isEdit">
+        <form id="input-container">
+            <label for="account">{{'Balance.Name' | translate}}</label>
+            <input type=text step=any id="title" name="title" [class.form-error-border]="classReference.isError"
+                [(ngModel)]="titleTextField">
+            <label for="account">{{'Transactions.Account' | translate}}</label>
+            <select [(ngModel)]="selectedOption" id="account" name="account">
+                <option value="Daily">{{'Menu.daily' | translate}}</option>
+                <option value="Splurge">{{'Menu.splurge' | translate}}</option>
+                <option value="Smile">{{'Menu.smile' | translate}}</option>
+                <option value="Fire">{{'Menu.fire' | translate}}</option>
+                <option value="Income">{{'AddTransaction.Income' | translate}}</option>
+                <option value="Mojo">{{'Income.Mojo' | translate}}</option>
+            </select>
+            <label for="amount" [class.form-error-text]="classReference.isError">{{'AddAsset.amount' | translate}}</label>
+            <input type=number step=any id="amount" name="amount" [class.form-error-border]="classReference.isError"
+                [(ngModel)]="amountTextField">
+            <label for="frequency-edit">
+                {{'Subscription.frequency.label' | translate}}
+                <span class="help-icon" [title]="'Subscription.frequency.help' | translate">ⓘ</span>
+            </label>
+            <select id="frequency-edit" name="frequency" [(ngModel)]="frequencyField">
+                <option value="weekly">{{'Subscription.frequency.weekly' | translate}}</option>
+                <option value="biweekly">{{'Subscription.frequency.biweekly' | translate}}</option>
+                <option value="monthly">{{'Subscription.frequency.monthly' | translate}}</option>
+                <option value="quarterly">{{'Subscription.frequency.quarterly' | translate}}</option>
+                <option value="yearly">{{'Subscription.frequency.yearly' | translate}}</option>
+            </select>
+            <label for="date">{{'Subscription.startDate' | translate}}</label>
+            <input type=date step=any id="startDate" name="startDate" [(ngModel)]="startDateTextField">
+            <label for="date">{{'Subscription.endDate' | translate}}</label>
+            <input type=date step=any id="endDate" name="endDate" [(ngModel)]="endDateTextField">
+            <label for="category" [class.form-error-text]="classReference.isError">{{'AddTransaction.Category' | translate}}</label>
+            <div class="flex-row-center">
+                <input type="text" id="category" name="category" [class.form-error-border]="classReference.isError"
+                [(ngModel)]="categoryTextField" *ngIf="!showCategoryOptions" class="flex-1">
+                <select *ngIf="showCategoryOptions" id="categoryOptions" name="categoryOptions" 
+                [(ngModel)]="categoryTextField" (change)="showCategoryOptions = false" [class.form-error-border]="classReference.isError" class="mr-xs">
+                <option *ngFor="let option of categoryOptions" [value]="option.value">{{option.label | translate}}</option>
+                </select>
+                <button type="button" (click)="toggleCategoryOptions()" class="category-toggle-btn" aria-label="Toggle input mode">
+                <span class="swap-icon">⇄</span>
+                </button>
+            </div>
+            <label for="comment">{{'AddTransaction.Comment' | translate}}</label>
+            <textarea id="comment" name="comment" rows="4" cols="50" [(ngModel)]="commentTextField"></textarea>
+            <label for="isRefresh" class="checkLable">
+                <input type="checkbox" name="isRefresh" [(ngModel)]="classReference.isRefresh" class="mr-xs">
+                {{'InfoSubscription.deleteTransactions' | translate}}
+            </label>
+        </form>
+        <p id="errorLable" *ngIf="classReference.isError">{{errorTextLable}}</p>
+        <button id="addbtn" (click)="updateSubscription()">{{'Info.update' | translate}}</button>
+        <button id="deletebtn" (click)="deleteSubscription(classReference.index)">{{'Info.delete' | translate}}</button>
+        <button id="canclebtn" (click)="cancel()">{{'Info.cancel' | translate}}</button>
+    </div>
+</div>

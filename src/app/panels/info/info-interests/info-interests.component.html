@@ -1,0 +1,28 @@
+<div id="infoTransaction-Container" role="dialog" aria-modal="true" appTrapFocus *ngIf="classReference.isInfo" (click)="highlight()"
+    [style.z-index]="classReference.zIndex + 1001">
+    <h4 id="infoTransactionTitle">#{{classReference.index+1}}</h4>
+    <button id="closebtn" aria-label="Close" (click)="closeWindow()">x</button>
+    <hr class="separator-white">
+    <div *ngIf="!isEdit">
+        <div id="info-box">
+            <h4 class="infoLableB">{{classReference.title}}</h4>
+            <hr class="divider-black">
+            <h4 class="infoLable mt-xs">{{'Fire.amount' | translate}}: {{classReference.amount |
+                appNumber}} {{currency}}</h4>
+        </div>
+        <button id="editbtn" (click)="editInterests()">{{'Info.edit' | translate}}</button>
+    </div>
+    <div *ngIf="isEdit">
+        <form id="input-container">
+            <label for="title" [class.form-error-text]="classReference.isError">{{'AddAsset.name' | translate}}</label>
+            <input type="text" id="title" name="title" [class.form-error-border]="classReference.isError" [(ngModel)]="titleTextField">
+            <label for="amount">{{'Balance.Value' | translate}}</label>
+            <input type=number step=any id="amount" name="amount" [(ngModel)]="amountTextField"
+                class="mb-xs">
+        </form>
+        <p id="errorLable" *ngIf="classReference.isError">{{errorTextLable}}</p>
+        <button id="addbtn" (click)="updateInterests()">{{'Info.update' | translate}}</button>
+        <button id="deletebtn" (click)="deleteInterests(classReference.index)">{{'Info.delete' | translate}}</button>
+        <button id="canclebtn" (click)="cancel()">{{'Info.cancel' | translate}}</button>
+    </div>
+</div>

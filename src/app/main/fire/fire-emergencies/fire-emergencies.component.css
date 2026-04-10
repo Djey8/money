@@ -1,0 +1,343 @@
+/* ── Search bar ── */
+.search-bar-container {
+    display: flex;
+    gap: 8px;
+    max-width: 900px;
+    margin: 12px auto 0;
+    padding: 0 16px;
+}
+
+.search-input {
+    flex: 1;
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--color-border, #ccc);
+    background: var(--color-surface);
+    color: var(--color-text);
+    font-size: 14px;
+}
+
+.search-button, .clear-button {
+    padding: 8px 14px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--color-border, #ccc);
+    background: var(--color-surface);
+    color: var(--color-text);
+    cursor: pointer;
+    font-size: 13px;
+}
+
+.search-button:hover, .clear-button:hover {
+    background: #ff8c00; /* Fire theme: dark orange */
+    color: #fff;
+}
+
+/* ── Phase Tabs ── */
+.phase-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    max-width: 900px;
+    margin: 14px auto 6px;
+    padding: 0 16px;
+}
+
+.phase-tab {
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--color-border, #ccc);
+    background: var(--color-surface);
+    color: var(--color-text);
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+}
+
+.phase-tab:hover {
+    background: #ff8c00; /* Fire theme: dark orange */
+    color: #fff;
+}
+
+.phase-tab.active {
+    background: #ff8c00; /* Fire theme: dark orange */
+    color: #fff;
+    font-weight: 600;
+}
+
+.phase-count {
+    opacity: 0.7;
+    margin-left: 4px;
+    font-size: 12px;
+}
+
+/* ── Skeleton ── */
+.skeleton-row {
+    display: flex;
+    gap: 16px;
+    max-width: 900px;
+    margin: 16px auto;
+    padding: 0 16px;
+}
+
+.skeleton-cell {
+    flex: 1;
+    height: 180px;
+    border-radius: var(--radius-md);
+    background: linear-gradient(90deg, var(--color-surface) 25%, rgba(255,255,255,0.08) 50%, var(--color-surface) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s infinite;
+}
+
+@keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* ── Amount Container ── */
+#amount-container {
+    margin: 20px auto 10px;
+    width: fit-content;
+    min-width: 250px;
+    max-width: 400px;
+    border: 3px solid #ff8c00; /* Fire theme: dark orange */
+    background-color: var(--color-surface);
+    border-radius: var(--radius-lg);
+    padding: 12px 24px;
+}
+
+#amountLable {
+    text-align: center;
+    font-size: 1.8em;
+    color: var(--color-text);
+    margin: 0;
+}
+
+/* ── Card Grid ── */
+.fire-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
+    max-width: 920px;
+    margin: 16px auto 80px;
+    padding: 0 16px;
+}
+
+.fire-card {
+    background: var(--color-surface);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    cursor: pointer;
+    transition: box-shadow 0.2s, transform 0.15s;
+    border: 1px solid var(--color-border, rgba(255,255,255,0.1));
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    position: relative;
+}
+
+.fire-card:hover {
+    box-shadow: 0 4px 20px rgba(255, 140, 0, 0.3); /* Fire theme: orange glow */
+    transform: translateY(-2px);
+}
+
+.fire-card.goal-complete {
+    border-color: #00b894;
+    border-width: 2px;
+}
+
+/* ── Card Header ── */
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.phase-badge {
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Fire theme phases */
+.phase-idea       { background: #636e72; color: #fff; }
+.phase-planning   { background: #2d2d66; color: #88f; border: 1px solid #4040aa; }
+.phase-saving     { background: #3d3018; color: #ffa500; border: 1px solid #665020; }
+.phase-ready      { background: #0d3d22; color: #0c8; border: 1px solid #1a6638; }
+.phase-completed  { background: #1a3d4d; color: #6cf; border: 1px solid #2d6680; }
+
+.emergency-number {
+    font-size: 13px;
+    opacity: 0.6;
+    font-weight: 600;
+}
+
+/* ── Card Title ── */
+.card-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--color-text);
+    margin: 0;
+    line-height: 1.3;
+}
+
+.card-sub {
+    font-size: 13px;
+    opacity: 0.7;
+    margin: -4px 0 0;
+}
+
+.card-desc {
+    font-size: 13px;
+    opacity: 0.8;
+    margin: 0;
+    line-height: 1.4;
+}
+
+/* ── Bucket Info ── */
+.card-buckets {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    opacity: 0.8;
+}
+
+.bucket-info {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.bucket-info i {
+    font-size: 14px;
+}
+
+/* ── Progress Bar ── */
+.progress-container {
+    width: 100%;
+    height: 8px;
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 4px;
+}
+
+[data-theme="dark"] .progress-container {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #ffa500, #ff8c00); /* Fire theme: orange gradient */
+    transition: width 0.3s ease;
+    border-radius: 4px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="dark"] .progress-bar {
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.progress-bar.complete {
+    background: #00b894;
+}
+
+.progress-label {
+    text-align: right;
+    font-size: 12px;
+    font-weight: 600;
+    opacity: 0.7;
+    margin-top: 2px;
+}
+
+/* ── Metrics ── */
+.card-metrics {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin-top: 4px;
+}
+
+.metric {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.metric-label {
+    font-size: 11px;
+    opacity: 0.6;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.metric-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+}
+
+/* ── Dates ── */
+.card-dates {
+    font-size: 12px;
+    margin-top: 4px;
+}
+
+.date-info {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    opacity: 0.8;
+}
+
+.date-info.completed {
+    color: #00b894;
+    opacity: 1;
+}
+
+.date-info i {
+    font-size: 13px;
+}
+
+.date-label {
+    font-weight: 500;
+}
+
+.date-value {
+    opacity: 0.9;
+}
+
+/* ── Action Button ── */
+.card-action-btn {
+    width: 100%;
+    padding: 8px 12px;
+    margin-top: 6px;
+    background-color: transparent;
+    border-radius: var(--radius-sm);
+    border: 2px solid #ff8c00; /* Fire theme: dark orange */
+    color: #ff8c00; /* Fire theme: dark orange */
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.card-action-btn:hover {
+    background-color: #ff8c00; /* Fire theme: dark orange */
+    color: #fff;
+}
+
+/* ── Empty State ── */
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    font-size: 16px;
+    opacity: 0.6;
+}
+
+.empty-state p {
+    margin: 0;
+}

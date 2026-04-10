@@ -1,0 +1,204 @@
+<div id="paymentPlannerDialog-Container" 
+     role="dialog" 
+     aria-modal="true" 
+     *ngIf="isOpen"
+     class="payment-planner-dialog">
+    
+    <div class="dialog-content">
+        <h4 id="dialogTitle">
+            {{ (existingPlan ? 'PaymentPlannerDialog.title.edit' : 'PaymentPlannerDialog.title.create') | translate }}
+        </h4>
+        <button id="closebtn" aria-label="Close" (click)="cancel()">×</button>
+        <hr class="separator-white">
+        
+        <!-- Error Message -->
+        <div class="error-message" *ngIf="showErrorMessage" role="alert">
+            {{errorMessage}}
+        </div>
+
+        <form class="payment-planner-form">
+            <!-- Plan Name -->
+            <div class="form-group">
+                <label for="planTitle">{{'PaymentPlannerDialog.planName' | translate}} <span class="required">*</span></label>
+                <input type="text" 
+                       id="planTitle" 
+                       name="planTitle" 
+                       [(ngModel)]="planTitle"
+                       [placeholder]="'PaymentPlannerDialog.planNamePlaceholder' | translate"
+                       required>
+            </div>
+
+            <!-- Bucket Selection Mode -->
+            <div class="form-group bucket-selection-section">
+                <h5>{{'PaymentPlannerDialog.selectBuckets' | translate}}</h5>
+                
+                <div class="radio-group">
+                    <label class="radio-option">
+                        <input type="radio" 
+                               name="bucketMode" 
+                               value="all" 
+                               [(ngModel)]="bucketSelectionMode"
+                               (change)="onModeChange()">
+                        <span>{{'PaymentPlannerDialog.allBuckets' | translate}}</span>
+                        <small class="help-text">
+                            ({{ totalMissing | appNumber }} {{'PaymentPlannerDialog.missingTotal' | translate}})
+                        </small>
+                    </label>
+
+                    <label class="radio-option">
+                        <input type="radio" 
+                               name="bucketMode" 
+                               value="single" 
+                               [(ngModel)]="bucketSelectionMode"
+                               (change)="onModeChange()">
+                        <span>{{'PaymentPlannerDialog.singleBucket' | translate}}</span>
+                    </label>
+                    
+                    <div class="single-bucket-selector" *ngIf="bucketSelectionMode === 'single'">
+                        <select [(ngModel)]="selectedSingleBucketId" 
+                                name="singleBucket"
+                                (change)="recalculate()">
+                            <option *ngFor="let bucket of buckets" [value]="bucket.id">
+                                {{ bucket.title }} ({{ getBucketMissingAmount(bucket) | appNumber }} {{'PaymentPlannerDialog.missing' | translate}})
+                            </option>
+                        </select>
+                    </div>
+
+                    <label class="radio-option">
+                        <input type="radio" 
+                               name="bucketMode" 
+                               value="subset" 
+                               [(ngModel)]="bucketSelectionMode"
+                               (change)="onModeChange()">
+                        <span>{{'PaymentPlannerDialog.selectedBuckets' | translate}}</span>
+                    </label>
+                    
+                    <div class="subset-bucket-selector" *ngIf="bucketSelectionMode === 'subset'">
+                        <div *ngFor="let bucket of buckets" class="bucket-checkbox">
+                            <label>
+                                <input type="checkbox" 
+                                       [checked]="isBucketSelected(bucket.id)"
+                                       (change)="toggleBucketSelection(bucket.id)">
+                                {{ bucket.title }} 
+                                <small>({{ getBucketMissingAmount(bucket) | appNumber }} {{'PaymentPlannerDialog.missing' | translate}})</small>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Schedule -->
+            <div class="form-group schedule-section">
+                <h5>{{'PaymentPlannerDialog.schedule' | translate}}</h5>
+                
+                <div class="form-row">
+                    <div class="form-col">
+                        <label for="startDate">{{'PaymentPlannerDialog.startDate' | translate}} <span class="required">*</span></label>
+                        <input type="date" 
+                               id="startDate" 
+                               name="startDate" 
+                               [(ngModel)]="startDate"
+                               (change)="recalculate()"
+                               required>
+                    </div>
+                    
+                    <div class="form-col">
+                        <label for="targetDate">{{'PaymentPlannerDialog.targetDate' | translate}} <span class="required">*</span></label>
+                        <input type="date" 
+                               id="targetDate" 
+                               name="targetDate" 
+                               [(ngModel)]="targetDate"
+                               (change)="recalculate()"
+                               required>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Frequency -->
+            <div class="form-group">
+                <h5>{{'PaymentPlannerDialog.frequency' | translate}}</h5>
+                <div class="frequency-options">
+                    <label *ngFor="let freq of frequencies" class="frequency-option">
+                        <input type="radio" 
+                               name="frequency" 
+                               [value]="freq" 
+                               [(ngModel)]="frequency"
+                               (change)="recalculate()">
+                        <span>{{ freq | titlecase }}</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Calculation Summary -->
+            <div class="calculation-summary">
+                <h5>{{'PaymentPlannerDialog.calculation' | translate}}</h5>
+                <table class="calc-table">
+                    <tr>
+                        <td>{{'PaymentPlannerDialog.totalMissing' | translate}}</td>
+                        <td class="amount">{{ totalMissing | appNumber }}</td>
+                    </tr>
+                    <tr>
+                        <td>{{'PaymentPlannerDialog.numberOfPayments' | translate}}</td>
+                        <td class="amount">{{ numberOfPeriods }}</td>
+                    </tr>
+                    <tr>
+                        <td>{{'PaymentPlannerDialog.suggestedAmount' | translate}}</td>
+                        <td class="amount suggested">{{ calculatedAmount | appNumber }} / {{ frequency }}</td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- Payment Amount -->
+            <div class="form-group payment-amount-section">
+                <h5>{{'PaymentPlannerDialog.paymentAmount' | translate}}</h5>
+                <div class="amount-input-group">
+                    <input type="number" 
+                           step="0.01" 
+                           id="paymentAmount" 
+                           name="paymentAmount" 
+                           [(ngModel)]="manualAmount"
+                           (ngModelChange)="onManualAmountChange()"
+                           [placeholder]="calculatedAmount.toFixed(2)">
+                    <button type="button" 
+                            class="btn-reset" 
+                            (click)="useCalculatedAmount()"
+                            *ngIf="manualAmount !== null">
+                        {{'PaymentPlannerDialog.reset' | translate}}
+                    </button>
+                </div>
+                <small class="help-text">{{'PaymentPlannerDialog.adjustHelp' | translate}}</small>
+            </div>
+
+            <!-- Account -->
+            <div class="form-group">
+                <label for="account">{{'PaymentPlannerDialog.account' | translate}} <span class="required">*</span></label>
+                <select id="account" name="account" [(ngModel)]="account" required>
+                    <option *ngFor="let acc of accounts" [value]="acc">{{ acc }}</option>
+                </select>
+            </div>
+
+            <!-- Allocation Preview -->
+            <div class="allocation-preview">
+                <h5>{{'PaymentPlannerDialog.previewPayment' | translate}}</h5>
+                <div class="allocation-list">
+                    <div *ngFor="let allocation of allocations" class="allocation-item">
+                        <span class="bucket-tag">#bucket:{{ allocation.bucketTitle }}:{{ allocation.amount | appNumber }}</span>
+                    </div>
+                </div>
+                <div *ngIf="allocations.length === 0" class="no-allocations">
+                    <small>{{'PaymentPlannerDialog.noBucketsSelected' | translate}}</small>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="dialog-actions">
+                <button type="button" class="btn-cancel" (click)="cancel()">
+                    {{'PaymentPlannerDialog.cancel' | translate}}
+                </button>
+                <button type="button" class="btn-primary" (click)="savePlan()">
+                    {{ (existingPlan ? 'PaymentPlannerDialog.updatePlan' : 'PaymentPlannerDialog.createPlan') | translate }}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

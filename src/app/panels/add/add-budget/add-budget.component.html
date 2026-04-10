@@ -1,0 +1,32 @@
+<div id="addTransaction-Container" role="dialog" aria-modal="true" appTrapFocus *ngIf="classReference.isAdd" (click)="highlight()"
+    [style.z-index]="classReference.zIndex + 1001">
+    <h4 id="addTransactionTitle">{{'AddBudget.title' | translate}}</h4>
+    <button id="closebtn" aria-label="Close" (click)="closeWindow()">x</button>
+    <hr class="separator-white">
+    <form id="input-container">
+        <label for="month">{{'Budget.Month' | translate}}</label>
+        <input type="month" id="month" name="month" [(ngModel)]="classReference.dateTextField">
+        <label for="category" class="required" [class.form-error-text]="classReference.isError && fieldErrors['category']">{{'AddTransaction.Category' | translate}}</label>
+        <div class="flex-row-center">
+            <input type="text" id="category" name="category" aria-required="true" [class.form-error-border]="classReference.isError && fieldErrors['category']"
+            [(ngModel)]="classReference.categoryTextField" *ngIf="!showCategoryOptions" class="flex-1"
+            [attr.aria-describedby]="fieldErrors['category'] ? 'category-error' : null" [attr.aria-invalid]="fieldErrors['category'] ? true : null">
+            <select *ngIf="showCategoryOptions" id="categoryOptions" name="categoryOptions" 
+            [(ngModel)]="classReference.categoryTextField" (change)="showCategoryOptions = false; selectedCategory()" [class.form-error-border]="classReference.isError && fieldErrors['category']" class="mr-xs"
+            [attr.aria-describedby]="fieldErrors['category'] ? 'category-error' : null" [attr.aria-invalid]="fieldErrors['category'] ? true : null">
+            <option *ngFor="let option of classReference.categoryOptions" [value]="option.value">{{option.label | translate}}</option>
+            </select>
+            <button type="button" (click)="toggleCategoryOptions()" class="category-toggle-btn" aria-label="Toggle input mode">
+            <span class="swap-icon">⇄</span>
+            </button>
+        </div>
+        <span class="field-error" id="category-error" role="alert" *ngIf="fieldErrors['category']">{{fieldErrors['category']}}</span>
+        <label for="amount" class="required" [class.form-error-text]="classReference.isError && fieldErrors['amount']">{{'Transactions.Amount' | translate}}</label>
+        <input type=number step=any id="amount" name="amount" aria-required="true" [class.form-error-border]="classReference.isError && fieldErrors['amount']"
+            [(ngModel)]="classReference.amountTextField"
+            [attr.aria-describedby]="fieldErrors['amount'] ? 'amount-error' : null" [attr.aria-invalid]="fieldErrors['amount'] ? true : null">
+        <span class="field-error" id="amount-error" role="alert" *ngIf="fieldErrors['amount']">{{fieldErrors['amount']}}</span>
+    </form>
+    <p id="errorLable" *ngIf="classReference.isError">{{errorTextLable}}</p>
+    <button id="addbtn" class="btn btn--action" (click)="addBudget()">{{'AddAsset.add' | translate}}</button>
+</div>

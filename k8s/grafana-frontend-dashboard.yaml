@@ -1,0 +1,612 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-frontend-dashboard
+  namespace: money-app
+  labels:
+    grafana-dashboard: "true"
+data:
+  frontend-activity-dashboard.json: |
+    {
+      "title": "Frontend User Activity",
+      "tags": ["frontend", "user-activity"],
+      "timezone": "browser",
+      "schemaVersion": 38,
+      "version": 1,
+      "refresh": "30s",
+      "time": {
+        "from": "now-15m",
+        "to": "now"
+      },
+      "timepicker": {
+        "refresh_intervals": ["10s", "30s", "1m", "5m", "15m"]
+      },
+      "panels": [
+          {
+            "id": 1,
+            "title": "Total Frontend Actions",
+            "type": "stat",
+            "gridPos": {"x": 0, "y": 0, "w": 6, "h": 4},
+            "targets": [{
+              "expr": "sum(count_over_time({source=\"frontend\"} [1h]))",
+              "refId": "A",
+              "legendFormat": ""
+            }],
+            "options": {
+              "reduceOptions": {
+                "values": false,
+                "calcs": ["lastNotNull"]
+              },
+              "orientation": "auto",
+              "textMode": "auto",
+              "graphMode": "none",
+              "colorMode": "value"
+            },
+            "fieldConfig": {
+              "defaults": {
+                "unit": "short",
+                "decimals": 0,
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {"value": null, "color": "green"},
+                    {"value": 100, "color": "yellow"},
+                    {"value": 500, "color": "red"}
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "id": 2,
+            "title": "Active Users",
+            "type": "stat",
+            "gridPos": {"x": 6, "y": 0, "w": 6, "h": 4},
+            "targets": [{
+              "expr": "count(count by (userId) (count_over_time({source=\"frontend\"} [1h])))",
+              "refId": "A",
+              "legendFormat": ""
+            }],
+            "options": {
+              "reduceOptions": {
+                "values": false,
+                "calcs": ["lastNotNull"]
+              },
+              "orientation": "auto",
+              "textMode": "auto",
+              "graphMode": "none",
+              "colorMode": "value"
+            },
+            "fieldConfig": {
+              "defaults": {
+                "unit": "short",
+                "decimals": 0,
+                "color": {"mode": "thresholds"},
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {"value": null, "color": "blue"}
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "id": 3,
+            "title": "Login Events",
+            "type": "stat",
+            "gridPos": {"x": 12, "y": 0, "w": 6, "h": 4},
+            "targets": [{
+              "expr": "sum(count_over_time({source=\"frontend\", action=~\"auth_login|auth_register\"} [1h]))",
+              "refId": "A",
+              "legendFormat": ""
+            }],
+            "options": {
+              "reduceOptions": {
+                "values": false,
+                "calcs": ["lastNotNull"]
+              },
+              "orientation": "auto",
+              "textMode": "auto",
+              "graphMode": "none",
+              "colorMode": "value"
+            },
+            "fieldConfig": {
+              "defaults": {
+                "unit": "short",
+                "decimals": 0,
+                "color": {"mode": "thresholds"},
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {"value": null, "color": "green"}
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "id": 4,
+            "title": "Frontend Errors",
+            "type": "stat",
+            "gridPos": {"x": 18, "y": 0, "w": 6, "h": 4},
+            "targets": [{
+              "expr": "sum(count_over_time({source=\"frontend\", level=\"error\"} [1h]))",
+              "refId": "A",
+              "legendFormat": ""
+            }],
+            "options": {
+              "reduceOptions": {
+                "values": false,
+                "calcs": ["lastNotNull"]
+              },
+              "orientation": "auto",
+              "textMode": "auto",
+              "graphMode": "none",
+              "colorMode": "value"
+            },
+            "fieldConfig": {
+              "defaults": {
+                "unit": "short",
+                "decimals": 0,
+                "color": {"mode": "thresholds"},
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {"value": null, "color": "green"},
+                    {"value": 1, "color": "yellow"},
+                    {"value": 5, "color": "red"}
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "id": 5,
+            "title": "User Activity Timeline",
+            "type": "timeseries",
+            "gridPos": {"x": 0, "y": 4, "w": 24, "h": 8},
+            "targets": [{
+              "expr": "sum by (action) (count_over_time({source=\"frontend\"} [5m]))",
+              "refId": "A",
+              "legendFormat": "{{action}}"
+            }],
+            "options": {
+              "legend": {
+                "displayMode": "table",
+                "placement": "right",
+                "calcs": ["sum", "last"]
+              }
+            },
+            "fieldConfig": {
+              "defaults": {
+                "custom": {
+                  "drawStyle": "line",
+                  "lineInterpolation": "smooth",
+                  "fillOpacity": 10,
+                  "pointSize": 5,
+                  "axisPlacement": "auto"
+                },
+                "unit": "short"
+              }
+            }
+          },
+          {
+            "id": 6,
+            "title": "Add Operations",
+            "type": "piechart",
+            "gridPos": {"x": 0, "y": 12, "w": 8, "h": 8},
+            "targets": [{
+              "expr": "sum by (action) (count_over_time({source=\"frontend\", action=~\"add_.*\"} [1h]))",
+              "refId": "A",
+              "legendFormat": "{{action}}"
+            }],
+            "options": {
+              "legend": {
+                "displayMode": "table",
+                "placement": "right",
+                "values": ["value", "percent"]
+              },
+              "pieType": "pie",
+              "displayLabels": ["name", "percent"]
+            }
+          },
+          {
+            "id": 7,
+            "title": "Update Operations",
+            "type": "piechart",
+            "gridPos": {"x": 8, "y": 12, "w": 8, "h": 8},
+            "targets": [{
+              "expr": "sum by (action) (count_over_time({source=\"frontend\", action=~\"update_.*\"} [1h]))",
+              "refId": "A",
+              "legendFormat": "{{action}}"
+            }],
+            "options": {
+              "legend": {
+                "displayMode": "table",
+                "placement": "right",
+                "values": ["value", "percent"]
+              },
+              "pieType": "pie",
+              "displayLabels": ["name", "percent"]
+            }
+          },
+          {
+            "id": 8,
+            "title": "Delete Operations",
+            "type": "piechart",
+            "gridPos": {"x": 16, "y": 12, "w": 8, "h": 8},
+            "targets": [{
+              "expr": "sum by (action) (count_over_time({source=\"frontend\", action=~\"delete_.*\"} [1h]))",
+              "refId": "A",
+              "legendFormat": "{{action}}"
+            }],
+            "options": {
+              "legend": {
+                "displayMode": "table",
+                "placement": "right",
+                "values": ["value", "percent"]
+              },
+              "pieType": "pie",
+              "displayLabels": ["name", "percent"]
+            }
+          },
+          {
+            "id": 19,
+            "title": "Settings Operations",
+            "type": "piechart",
+            "gridPos": {"x": 0, "y": 20, "w": 8, "h": 8},
+            "targets": [{
+              "expr": "sum by (action) (count_over_time({source=\"frontend\", action=~\"change_encryption|recalculate_from_transactions|update_profile\"} [1h]))",
+              "refId": "A",
+              "legendFormat": "{{action}}"
+            }],
+            "options": {
+              "legend": {
+                "displayMode": "table",
+                "placement": "right",
+                "values": ["value", "percent"]
+              },
+              "pieType": "pie",
+              "displayLabels": ["name", "percent"]
+            }
+          },
+          {
+            "id": 21,
+            "title": "Subscription Generated Transactions",
+            "type": "piechart",
+            "gridPos": {"x": 0, "y": 28, "w": 8, "h": 8},
+            "targets": [{
+              "expr": "sum by (account) (count_over_time({source=\"frontend\", action=\"subscription_generated_transaction\"} [1h]))",
+              "refId": "A",
+              "legendFormat": "{{account}}"
+            }],
+            "options": {
+              "legend": {
+                "displayMode": "list",
+                "placement": "bottom"
+              },
+              "pieType": "pie",
+              "tooltip": {
+                "mode": "single"
+              }
+            },
+            "fieldConfig": {
+              "defaults": {
+                "unit": "short"
+              }
+            }
+          },
+          {
+            "id": 22,
+            "title": "Income Statement Updates by Type",
+            "type": "piechart",
+            "gridPos": {"x": 8, "y": 28, "w": 8, "h": 8},
+            "targets": [{
+              "expr": "sum by (itemType) (count_over_time({source=\"frontend\", action=\"update_income_statement_item\"} [1h]))",
+              "refId": "A",
+              "legendFormat": "{{itemType}}"
+            }],
+            "options": {
+              "legend": {
+                "displayMode": "list",
+                "placement": "bottom"
+              },
+              "pieType": "pie",
+              "tooltip": {
+                "mode": "single"
+              }
+            },
+            "fieldConfig": {
+              "defaults": {
+                "unit": "short"
+              }
+            }
+          },
+          {
+            "id": 23,
+            "title": "Project Updates (Smile/Fire/Mojo)",
+            "type": "piechart",
+            "gridPos": {"x": 16, "y": 28, "w": 8, "h": 8},
+            "targets": [{
+              "expr": "sum by (projectType) (count_over_time({source=\"frontend\", action=~\"update_smile_project_from_transaction|update_fire_project_from_transaction|update_mojo_from_transaction\"} [1h]))",
+              "refId": "A",
+              "legendFormat": "{{projectType}}"
+            }],
+            "options": {
+              "legend": {
+                "displayMode": "list",
+                "placement": "bottom"
+              },
+              "pieType": "pie",
+              "tooltip": {
+                "mode": "single"
+              }
+            },
+            "fieldConfig": {
+              "defaults": {
+                "unit": "short"
+              }
+            }
+          },
+          {
+            "id": 9,
+            "title": "Authentication Events",
+            "type": "logs",
+            "gridPos": {"x": 8, "y": 20, "w": 16, "h": 8},
+            "targets": [{
+              "expr": "{source=\"frontend\", action=~\"auth_.*\"}",
+              "refId": "A",
+              "maxLines": 100
+            }],
+            "options": {
+              "showTime": true,
+              "showLabels": true,
+              "wrapLogMessage": true,
+              "sortOrder": "Descending",
+              "dedupStrategy": "none"
+            }
+          },
+          {
+            "id": 10,
+            "title": "Recent Add Operations (Transactions + Subscriptions)",
+            "type": "logs",
+            "gridPos": {"x": 0, "y": 28, "w": 24, "h": 8},
+            "targets": [{
+              "expr": "{source=\"frontend\", action=~\"add_.*\"}",
+              "refId": "A",
+              "maxLines": 100
+            }],
+            "options": {
+              "showTime": true,
+              "showLabels": true,
+              "wrapLogMessage": true,
+              "sortOrder": "Descending",
+              "dedupStrategy": "none"
+            }
+          },
+          {
+            "id": 11,
+            "title": "Recent Update Operations",
+            "type": "logs",
+            "gridPos": {"x": 0, "y": 36, "w": 24, "h": 8},
+            "targets": [{
+              "expr": "{source=\"frontend\", action=~\"update_.*\"}",
+              "refId": "A",
+              "maxLines": 100
+            }],
+            "options": {
+              "showTime": true,
+              "showLabels": true,
+              "wrapLogMessage": true,
+              "sortOrder": "Descending",
+              "dedupStrategy": "none"
+            }
+          },
+          {
+            "id": 12,
+            "title": "Recent Delete Operations",
+            "type": "logs",
+            "gridPos": {"x": 0, "y": 44, "w": 24, "h": 8},
+            "targets": [{
+              "expr": "{source=\"frontend\", action=~\"delete_.*\"}",
+              "refId": "A",
+              "maxLines": 100
+            }],
+            "options": {
+              "showTime": true,
+              "showLabels": true,
+              "wrapLogMessage": true,
+              "sortOrder": "Descending",
+              "dedupStrategy": "none"
+            }
+          },
+          {
+            "id": 20,
+            "title": "Recent Settings Operations",
+            "type": "logs",
+            "gridPos": {"x": 0, "y": 52, "w": 24, "h": 8},
+            "targets": [{
+              "expr": "{source=\"frontend\", action=~\"change_encryption|recalculate_from_transactions|update_profile\"}",
+              "refId": "A",
+              "maxLines": 100
+            }],
+            "options": {
+              "showTime": true,
+              "showLabels": true,
+              "wrapLogMessage": true,
+              "sortOrder": "Descending",
+              "dedupStrategy": "none"
+            }
+          },
+          {
+            "id": 13,
+            "title": "Top 10 Most Active Users",
+            "type": "bargauge",
+            "gridPos": {"x": 0, "y": 60, "w": 12, "h": 6},
+            "targets": [{
+              "expr": "topk(10, sum by (username) (count_over_time({source=\"frontend\"} [1h])))",
+              "refId": "A",
+              "legendFormat": "{{username}}"
+            }],
+            "options": {
+              "orientation": "horizontal",
+              "displayMode": "gradient"
+            },
+            "fieldConfig": {
+              "defaults": {
+                "color": {"mode": "palette-classic"},
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {"value": null, "color": "green"}
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "id": 14,
+            "title": "Top 10 Actions",
+            "type": "bargauge",
+            "gridPos": {"x": 12, "y": 60, "w": 12, "h": 6},
+            "targets": [{
+              "expr": "topk(10, sum by (action) (count_over_time({source=\"frontend\"} [1h])))",
+              "refId": "A",
+              "legendFormat": "{{action}}"
+            }],
+            "options": {
+              "orientation": "horizontal",
+              "displayMode": "gradient"
+            },
+            "fieldConfig": {
+              "defaults": {
+                "color": {"mode": "palette-classic"}
+              }
+            }
+          },
+          {
+            "id": 15,
+            "title": "Actions by User (Heatmap)",
+            "type": "heatmap",
+            "gridPos": {"x": 0, "y": 66, "w": 24, "h": 8},
+            "targets": [{
+              "expr": "sum by (username, action) (count_over_time({source=\"frontend\"} [5m]))",
+              "refId": "A",
+              "format": "time_series"
+            }],
+            "options": {
+              "calculate": true,
+              "cellGap": 2,
+              "color": {
+                "mode": "scheme",
+                "scheme": "Spectral"
+              },
+              "yAxis": {
+                "axisLabel": "Action",
+                "axisPlacement": "left"
+              }
+            }
+          },
+          {
+            "id": 16,
+            "title": "Error Log Details",
+            "type": "logs",
+            "gridPos": {"x": 0, "y": 74, "w": 24, "h": 8},
+            "targets": [{
+              "expr": "{source=\"frontend\", level=\"error\"}",
+              "refId": "A",
+              "maxLines": 100
+            }],
+            "options": {
+              "showTime": true,
+              "showLabels": true,
+              "wrapLogMessage": true,
+              "sortOrder": "Descending",
+              "dedupStrategy": "none"
+            }
+          },
+          {
+            "id": 24,
+            "title": "Recent Batch Operations",
+            "type": "logs",
+            "gridPos": {"x": 0, "y": 94, "w": 24, "h": 10},
+            "targets": [{
+              "expr": "{source=\"frontend\", action=~\"subscription_generated_transaction|update_income_statement_item|update_smile_project_from_transaction|update_fire_project_from_transaction|update_mojo_from_transaction\"}",
+              "refId": "A",
+              "maxLines": 150
+            }],
+            "options": {
+              "showTime": true,
+              "showLabels": true,
+              "showCommonLabels": false,
+              "wrapLogMessage": true,
+              "sortOrder": "Descending",
+              "dedupStrategy": "none",
+              "enableLogDetails": true
+            }
+          },
+          {
+            "id": 25,
+            "title": "Mass Deletion Events",
+            "type": "logs",
+            "gridPos": {"x": 0, "y": 104, "w": 24, "h": 10},
+            "targets": [{
+              "expr": "{source=\"frontend\", action=\"mass_delete_transactions\"}",
+              "refId": "A",
+              "maxLines": 100
+            }],
+            "options": {
+              "showTime": true,
+              "showLabels": true,
+              "showCommonLabels": false,
+              "wrapLogMessage": true,
+              "sortOrder": "Descending",
+              "dedupStrategy": "none",
+              "enableLogDetails": true
+            },
+            "alert": {
+              "name": "Mass Deletion Alert",
+              "message": "Multiple transactions deleted",
+              "conditions": [{
+                "evaluator": {
+                  "params": [5],
+                  "type": "gt"
+                },
+                "operator": {
+                  "type": "and"
+                },
+                "query": {
+                  "params": ["A", "5m", "now"]
+                },
+                "reducer": {
+                  "params": [],
+                  "type": "count"
+                },
+                "type": "query"
+              }]
+            }
+          },
+          {
+            "id": 17,
+            "title": "All Frontend Activity Log",
+            "type": "logs",
+            "gridPos": {"x": 0, "y": 114, "w": 24, "h": 12},
+            "targets": [{
+              "expr": "{source=\"frontend\"}",
+              "refId": "A",
+              "maxLines": 200
+            }],
+            "options": {
+              "showTime": true,
+              "showLabels": true,
+              "showCommonLabels": false,
+              "wrapLogMessage": true,
+              "sortOrder": "Descending",
+              "dedupStrategy": "none",
+              "enableLogDetails": true
+            }
+          }
+        ]
+      }
+    }

@@ -1,0 +1,809 @@
+<div id="infoTransaction-Container" role="dialog" aria-modal="true" appTrapFocus *ngIf="classReference.isInfo" (click)="highlight()"
+    [style.z-index]="classReference.zIndex + 1001">
+    <button id="closebtn" aria-label="Close" (click)="closeWindow()">x</button>
+
+    <!-- ── VIEW MODE ── -->
+    <div *ngIf="!classReference.isEdit">
+
+        <!-- Header -->
+        <div class="detail-header">
+            <div class="badge-row">
+                <span class="phase-badge phase-{{classReference.phase}}">
+                    {{'Fire.phase.' + classReference.phase | translate}}
+                </span>
+            </div>
+            <h3 class="detail-title">{{classReference.title}} <span class="id-badge">#{{classReference.index+1}}</span></h3>
+            <p class="detail-sub" *ngIf="classReference.sub">{{classReference.sub}}</p>
+            <p class="detail-dates" *ngIf="classReference.createdAt">
+                {{'Grow.created' | translate}}: {{classReference.createdAt | date:'mediumDate'}}
+                <span *ngIf="classReference.updatedAt"> · {{'Grow.updated' | translate}}: {{classReference.updatedAt | date:'mediumDate'}}</span>
+            </p>
+        </div>
+
+        <!-- Phase Advance -->
+        <div class="phase-advance" *ngIf="classReference.phase !== 'completed'">
+            <button class="btn btn--sm btn--primary" (click)="advancePhase()">
+                {{'Fire.advancePhase' | translate}} → {{'Fire.phase.' + getNextPhase() | translate}}
+            </button>
+        </div>
+
+        <!-- Tabs -->
+        <div class="detail-tabs">
+            <button class="detail-tab" [class.active]="classReference.activeTab === 'overview'" (click)="setTab('overview')">{{'Grow.tab.overview' | translate}}</button>
+            <button class="detail-tab" [class.active]="classReference.activeTab === 'buckets'" (click)="setTab('buckets')">
+                {{'Fire.tab.buckets' | translate}}
+                <span class="tab-badge" *ngIf="classReference.buckets?.length">({{classReference.buckets.length}})</span>
+            </button>
+            <button class="detail-tab" [class.active]="classReference.activeTab === 'paymentPlans'" (click)="setTab('paymentPlans')">
+                <span class="tab-text-full">{{'Fire.tab.paymentPlans' | translate}}</span>
+                <span class="tab-text-short">{{'Fire.tab.plans' | translate: {default: 'Plans'} }}</span>
+                <span class="tab-badge" *ngIf="classReference.plannedSubscriptions?.length"> ({{classReference.plannedSubscriptions.length}})</span>
+            </button>
+            <button class="detail-tab" [class.active]="classReference.activeTab === 'actions'" (click)="setTab('actions')">
+                {{'Grow.tab.actions' | translate}}
+                <span class="tab-badge" *ngIf="classReference.actionItems?.length">({{classReference.actionItems.length}})</span>
+            </button>
+            <button class="detail-tab" [class.active]="classReference.activeTab === 'notes'" (click)="setTab('notes')">{{'Grow.tab.notes' | translate}}</button>
+        </div>
+
+        <!-- TAB: Overview -->
+        <div class="tab-content" *ngIf="classReference.activeTab === 'overview'">
+            <!-- Description -->
+            <div class="info-section" *ngIf="classReference.description">
+                <h5 class="section-label">{{'AddGrow.description' | translate}}</h5>
+                <pre class="section-text">{{classReference.description}}</pre>
+            </div>
+
+            <!-- Overall Progress -->
+            <div class="info-section">
+                <h5 class="section-label">{{'Fire.overallProgress' | translate}}</h5>
+                <div class="progress-summary">
+                    <h4 class="fin-line">{{'Fire.target' | translate}}: {{getTotalTarget() | appNumber}} {{currency}}</h4>
+                    <h4 class="fin-line">{{'Fire.amount' | translate}}: {{getTotalAmount() | appNumber}} {{currency}}</h4>
+                    <h4 class="fin-line">{{'Fire.remaining' | translate}}: {{getTotalTarget() - getTotalAmount() | appNumber}} {{currency}}</h4>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar progress-bar-fire" [style.width.%]="getProgress()"></div>
+                    </div>
+                    <div class="progress-percentage">{{getProgress() | number:'1.0-1'}}%</div>
+                </div>
+                <p *ngIf="classReference.targetDate">{{'Fire.targetDate' | translate}}: {{classReference.targetDate | date:'mediumDate'}}</p>
+                <p *ngIf="classReference.completionDate">{{'Fire.completionDate' | translate}}: {{classReference.completionDate | date:'mediumDate'}}</p>
+            </div>
+            
+            <!-- Links -->
+            <div class="info-section">
+                <h5 class="section-label">{{'Grow.links' | translate}}</h5>
+                <div class="link-list" *ngIf="classReference.links?.length">
+                    <div class="link-item" *ngFor="let link of classReference.links; let li = index">
+                        <!-- Display Mode -->
+                        <div *ngIf="editingLinkIndex !== li" class="link-display">
+                            <a [href]="link.url" target="_blank" rel="noopener noreferrer">{{link.label}}</a>
+                            <div class="link-actions">
+                                <button class="btn-icon" (click)="startEditLinkViewMode(li)" aria-label="Edit link">✐</button>
+                                <button class="btn-icon btn-icon--danger" (click)="removeLinkViewMode(li)" aria-label="Remove link">×</button>
+                            </div>
+                        </div>
+                        <!-- Edit Mode -->
+                        <div *ngIf="editingLinkIndex === li" class="link-edit">
+                            <input type="text" [(ngModel)]="editingLinkLabel" [placeholder]="'Grow.linkTitlePlaceholder' | translate" class="input-sm flex-1">
+                            <input type="url" [(ngModel)]="editingLinkUrl" [placeholder]="'Grow.linkUrlPlaceholder' | translate" class="input-sm flex-1">
+                            <button class="btn btn--sm" (click)="saveEditLinkViewMode(li)">✓</button>
+                            <button class="btn-icon" (click)="cancelEditLinkViewMode()" aria-label="Cancel">×</button>
+                        </div>
+                    </div>
+                </div>
+                <!-- Add Link -->
+                <button class="btn btn--sm btn-inline-toggle" *ngIf="!showAddLink" (click)="showAddLink = true">+ {{'Grow.addLink' | translate}}</button>
+                <div class="inline-add" *ngIf="showAddLink">
+                    <input type="text" [(ngModel)]="newLinkLabel" [placeholder]="'Grow.linkTitlePlaceholder' | translate" class="input-sm">
+                    <input type="url" [(ngModel)]="newLinkUrl" [placeholder]="'Grow.linkUrlPlaceholder' | translate" class="input-sm">
+                    <button class="btn btn--sm" (click)="submitLink()">{{'Grow.addLink' | translate}}</button>
+                    <button class="btn-icon" (click)="showAddLink = false" aria-label="Cancel">×</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB: Buckets -->
+        <div class="tab-content" *ngIf="classReference.activeTab === 'buckets'">
+            <div class="bucket-list" *ngIf="classReference.buckets?.length; else noBuckets">
+                <div class="bucket-card bucket-card-fire" *ngFor="let bucket of classReference.buckets">
+                    <h5 class="bucket-title">{{bucket.title}}</h5>
+                    <div class="bucket-progress">
+                        <span class="bucket-amount">{{bucket.amount | appNumber}} / {{bucket.target | appNumber}} {{currency}}</span>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar progress-bar-fire" [style.width.%]="getBucketProgress(bucket)"></div>
+                        </div>
+                        <span class="bucket-percentage">{{getBucketProgress(bucket) | number:'1.0-1'}}%</span>
+                    </div>
+                    <p class="bucket-notes" *ngIf="bucket.notes">{{bucket.notes}}</p>
+                    <p class="bucket-dates" *ngIf="bucket.targetDate">{{'Fire.targetDate' | translate}}: {{bucket.targetDate | date:'mediumDate'}}</p>
+                    <p class="bucket-dates" *ngIf="bucket.completionDate">{{'Fire.completionDate' | translate}}: {{bucket.completionDate | date:'mediumDate'}}</p>
+                    <div class="bucket-links" *ngIf="bucket.links?.length">
+                        <strong>{{'Grow.links' | translate}}:</strong>
+                        <a *ngFor="let link of bucket.links" [href]="link.url" target="_blank" rel="noopener noreferrer">{{link.label}}</a>
+                    </div>
+                    
+                    <!-- Add to This Bucket Button -->
+                    <button class="btn btn--sm btn--fire bucket-add-btn" 
+                            *ngIf="bucket.amount < bucket.target"
+                            (click)="addBucketToTransaction(bucket.id, bucket.title, bucket.target - bucket.amount)">
+                        + {{'Fire.addToBucket' | translate}}
+                    </button>
+                    
+                    <!-- Related Transactions for this bucket -->
+                    <div class="bucket-transactions" *ngIf="getTransactionsForBucket(bucket.id).length">
+                        <h6 class="bucket-transactions-title">{{'Grow.relatedTransactions' | translate}} ({{getTransactionsForBucket(bucket.id).length}})</h6>
+                        <table class="related-tx-table">
+                            <thead>
+                                <tr>
+                                    <th class="sortable" (click)="toggleSort('id')">
+                                        ID <span class="sort-icon">{{getSortIcon('id')}}</span>
+                                    </th>
+                                    <th class="sortable" (click)="toggleSort('account')">
+                                        {{'Transactions.Account' | translate}} <span class="sort-icon">{{getSortIcon('account')}}</span>
+                                    </th>
+                                    <th class="sortable" (click)="toggleSort('amount')">
+                                        {{'Transactions.Amount' | translate}} <span class="sort-icon">{{getSortIcon('amount')}}</span>
+                                    </th>
+                                    <th class="sortable" (click)="toggleSort('date')">
+                                        {{'Transactions.Date' | translate}} <span class="sort-icon">{{getSortIcon('date')}}</span>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr *ngFor="let tx of getTransactionsForBucket(bucket.id)" (click)="openTransactionInfo(tx)" class="clickable-row">
+                                    <td>{{getTransactionId(tx)}}</td>
+                                    <td>{{tx.account}}</td>
+                                    <td class="{{getAllocatedAmountForBucket(tx, bucket.id) >= 0 ? 'amount-positive' : 'amount-negative'}}">{{getAllocatedAmountForBucket(tx, bucket.id) | appNumber}} {{currency}}</td>
+                                    <td>{{tx.date | appDate}}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Distributed Transactions (allocated to multiple buckets) -->
+            <div class="distributed-transactions" *ngIf="getDistributedTransactions().length">
+                <h5 class="section-label">{{'Smile.distributedTransactions' | translate}} ({{getDistributedTransactions().length}})</h5>
+                <p class="section-help">{{'Smile.distributedTransactionsHelp' | translate}}</p>
+                <table class="related-tx-table">
+                    <thead>
+                        <tr>
+                            <th class="sortable" (click)="toggleSort('id')">
+                                ID <span class="sort-icon">{{getSortIcon('id')}}</span>
+                            </th>
+                            <th class="sortable" (click)="toggleSort('account')">
+                                {{'Transactions.Account' | translate}} <span class="sort-icon">{{getSortIcon('account')}}</span>
+                            </th>
+                            <th class="sortable" (click)="toggleSort('amount')">
+                                {{'Transactions.Amount' | translate}} <span class="sort-icon">{{getSortIcon('amount')}}</span>
+                            </th>
+                            <th class="sortable" (click)="toggleSort('date')">
+                                {{'Transactions.Date' | translate}} <span class="sort-icon">{{getSortIcon('date')}}</span>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let tx of getDistributedTransactions()" (click)="openTransactionInfo(tx)" class="clickable-row">
+                            <td>{{getTransactionId(tx)}}</td>
+                            <td>{{tx.account}}</td>
+                            <td class="{{tx.amount >= 0 ? 'amount-positive' : 'amount-negative'}}">{{tx.amount | appNumber}} {{currency}}</td>
+                            <td>{{tx.date | appDate}}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <ng-template #noBuckets>
+                <p class="empty-tab">{{'Fire.noBuckets' | translate}}</p>
+                <!-- Show general related transactions when no buckets -->
+                <div class="info-section" *ngIf="relatedTransactions.length">
+                    <h5 class="section-label">{{'Grow.relatedTransactions' | translate}} ({{relatedTransactions.length}})</h5>
+                    <table class="related-tx-table">
+                        <thead>
+                            <tr>
+                                <th class="sortable" (click)="toggleSort('id')">
+                                    ID <span class="sort-icon">{{getSortIcon('id')}}</span>
+                                </th>
+                                <th class="sortable" (click)="toggleSort('account')">
+                                    {{'Transactions.Account' | translate}} <span class="sort-icon">{{getSortIcon('account')}}</span>
+                                </th>
+                                <th class="sortable" (click)="toggleSort('amount')">
+                                    {{'Transactions.Amount' | translate}} <span class="sort-icon">{{getSortIcon('amount')}}</span>
+                                </th>
+                                <th class="sortable" (click)="toggleSort('date')">
+                                    {{'Transactions.Date' | translate}} <span class="sort-icon">{{getSortIcon('date')}}</span>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr *ngFor="let tx of relatedTransactions" (click)="openTransactionInfo(tx)" class="clickable-row">
+                                <td>{{getTransactionId(tx)}}</td>
+                                <td>{{tx.account}}</td>
+                                <td class="{{tx.amount >= 0 ? 'amount-positive' : 'amount-negative'}}">{{tx.amount | appNumber}} {{currency}}</td>
+                                <td>{{tx.date | appDate}}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </ng-template>
+        </div>
+
+        <!-- TAB: Payment Plans -->
+        <div class="tab-content" *ngIf="classReference.activeTab === 'paymentPlans'">
+            <!-- Payment Plans Summary -->
+            <div class="payment-summary-card">
+                <div class="summary-item">
+                    <span class="summary-label">{{'Fire.paymentPlans.totalPlans' | translate}}:</span>
+                    <span class="summary-value">{{classReference.plannedSubscriptions?.length || 0}}</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">{{'Fire.paymentPlans.active' | translate}}:</span>
+                    <span class="summary-value">{{getActiveSubscriptions().length}}</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">{{'Fire.paymentPlans.monthlyCommitment' | translate}}:</span>
+                    <span class="summary-value">{{calculateTotalMonthlyCommitment() | appNumber}}</span>
+                </div>
+            </div>
+
+            <!-- Planned Subscriptions Section -->
+            <div class="payment-plan-section" *ngIf="getPlannedSubscriptions().length > 0">
+                <h3>{{'Fire.paymentPlans.planned' | translate}}</h3>
+                <div class="payment-plan-grid">
+                    <div class="payment-plan-card" *ngFor="let plan of getPlannedSubscriptions(); let i = index; trackBy: trackByPlanId">
+                        <div class="plan-header">
+                            <h4>{{plan.title}}</h4>
+                            <span class="status-badge status-planned">{{'Fire.paymentPlans.statusPlanned' | translate}}</span>
+                        </div>
+                        <div class="plan-details">
+                            <div class="plan-row">
+                                <span class="plan-label">{{'Fire.paymentPlans.amount' | translate}}:</span>
+                                <span class="plan-value">{{plan.amount | appNumber}} / {{plan.frequency}}</span>
+                            </div>
+                            <div class="plan-row" *ngIf="plan.targetBucketIds && plan.targetBucketIds.length > 0">
+                                <span class="plan-label">{{'Fire.paymentPlans.buckets' | translate}}:</span>
+                                <span class="plan-value">
+                                    <span *ngFor="let bucketId of plan.targetBucketIds; let last = last">
+                                        {{getBucketNameById(bucketId)}}<span *ngIf="!last">, </span>
+                                    </span>
+                                </span>
+                            </div>
+                            <div class="plan-row" *ngIf="!plan.targetBucketIds || plan.targetBucketIds.length === 0">
+                                <span class="plan-label">{{'Fire.paymentPlans.buckets' | translate}}:</span>
+                                <span class="plan-value">{{'Fire.paymentPlans.allBuckets' | translate}}</span>
+                            </div>
+                            <div class="plan-row">
+                                <span class="plan-label">{{'Fire.paymentPlans.account' | translate}}:</span>
+                                <span class="plan-value">{{plan.account}}</span>
+                            </div>
+                            <div class="plan-row">
+                                <span class="plan-label">{{'Fire.paymentPlans.period' | translate}}:</span>
+                                <span class="plan-value">{{plan.startDate | appDate}} - {{plan.endDate | appDate}}</span>
+                            </div>
+                            <div class="plan-row" *ngIf="plan.comment">
+                                <span class="plan-label">{{'Fire.paymentPlans.comment' | translate}}:</span>
+                                <span class="plan-value">{{plan.comment}}</span>
+                            </div>
+                        </div>
+                        <div class="plan-actions">
+                            <button class="btn btn--sm btn--success" (click)="activatePaymentPlan(plan)">{{'Fire.paymentPlans.activate' | translate}}</button>
+                            <button class="btn btn--sm" (click)="editPaymentPlan(i)">{{'Fire.paymentPlans.edit' | translate}}</button>
+                            <button class="btn btn--sm" (click)="duplicatePaymentPlan(plan)">{{'Fire.paymentPlans.duplicate' | translate}}</button>
+                            <button class="btn btn--sm btn--danger" (click)="deletePaymentPlan(plan)">{{'Fire.paymentPlans.delete' | translate}}</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Add More Plans Button (below Planned section) -->
+            <div class="add-plan-footer" *ngIf="getPlannedSubscriptions().length > 0">
+                <button type="button" class="btn btn-inline-toggle" (click)="openPaymentPlanner()" [disabled]="!classReference.buckets?.length">
+                    + {{'Fire.paymentPlans.createPlan' | translate}}
+                </button>
+            </div>
+            <!-- Active Subscriptions Section -->
+            <div class="payment-plan-section" *ngIf="getActiveSubscriptions().length > 0">
+                <h3>{{'Fire.paymentPlans.activePlans' | translate}}</h3>
+                <div class="payment-plan-grid">
+                    <div class="payment-plan-card payment-plan-card--active" *ngFor="let plan of getActiveSubscriptions(); trackBy: trackByPlanId">
+                        <div class="plan-header">
+                            <h4>{{plan.title}}</h4>
+                            <span class="status-badge status-active">{{'Fire.paymentPlans.statusActive' | translate}}</span>
+                        </div>
+                        <div class="plan-details">
+                            <div class="plan-row">
+                                <span class="plan-label">Amount:</span>
+                                <span class="plan-value">{{plan.amount | appNumber}} / {{plan.frequency}}</span>
+                            </div>
+                            <div class="plan-row" *ngIf="plan.targetBucketIds && plan.targetBucketIds.length > 0">
+                                <span class="plan-label">{{'Fire.paymentPlans.buckets' | translate}}:</span>
+                                <span class="plan-value">
+                                    <span *ngFor="let bucketId of plan.targetBucketIds; let last = last">
+                                        {{getBucketNameById(bucketId)}}<span *ngIf="!last">, </span>
+                                    </span>
+                                </span>
+                            </div>
+                            <div class="plan-row" *ngIf="!plan.targetBucketIds || plan.targetBucketIds.length === 0">
+                                <span class="plan-label">{{'Fire.paymentPlans.buckets' | translate}}:</span>
+                                <span class="plan-value">{{'Fire.paymentPlans.allBuckets' | translate}}</span>
+                            </div>
+                            <div class="plan-row">
+                                <span class="plan-label">{{'Fire.paymentPlans.account' | translate}}:</span>
+                                <span class="plan-value">{{plan.account}}</span>
+                            </div>
+                            <div class="plan-row">
+                                <span class="plan-label">{{'Fire.paymentPlans.period' | translate}}:</span>
+                                <span class="plan-value">{{plan.startDate | appDate}} - {{plan.endDate | appDate}}</span>
+                            </div>
+                            <div class="plan-row" *ngIf="plan.activatedAt">
+                                <span class="plan-label">{{'Fire.paymentPlans.activated' | translate}}:</span>
+                                <span class="plan-value">{{plan.activatedAt | appDate}}</span>
+                            </div>
+                            <div class="plan-row" *ngIf="plan.comment">
+                                <span class="plan-label">{{'Fire.paymentPlans.comment' | translate}}:</span>
+                                <span class="plan-value">{{plan.comment}}</span>
+                            </div>
+                        </div>
+                        <div class="plan-actions">
+                            <button class="btn btn--sm btn--warning" (click)="deactivatePaymentPlan(plan)">{{'Fire.paymentPlans.deactivate' | translate}}</button>
+                            <button class="btn btn--sm" (click)="duplicatePaymentPlan(plan)">{{'Fire.paymentPlans.duplicate' | translate}}</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Inactive Subscriptions Section -->
+            <div class="payment-plan-section" *ngIf="getInactiveSubscriptions().length > 0">
+                <h3>{{'Fire.paymentPlans.inactive' | translate}}</h3>
+                <div class="payment-plan-grid">
+                    <div class="payment-plan-card payment-plan-card--inactive" *ngFor="let plan of getInactiveSubscriptions(); trackBy: trackByPlanId">
+                        <div class="plan-header">
+                            <h4>{{plan.title}}</h4>
+                            <span class="status-badge status-inactive">{{'Fire.paymentPlans.statusInactive' | translate}}</span>
+                        </div>
+                        <div class="plan-details">
+                            <div class="plan-row">
+                                <span class="plan-label">Amount:</span>
+                                <span class="plan-value">{{plan.amount | appNumber}} / {{plan.frequency}}</span>
+                            </div>
+                            <div class="plan-row" *ngIf="plan.targetBucketIds && plan.targetBucketIds.length > 0">
+                                <span class="plan-label">{{'Fire.paymentPlans.buckets' | translate}}:</span>
+                                <span class="plan-value">
+                                    <span *ngFor="let bucketId of plan.targetBucketIds; let last = last">
+                                        {{getBucketNameById(bucketId)}}<span *ngIf="!last">, </span>
+                                    </span>
+                                </span>
+                            </div>
+                            <div class="plan-row" *ngIf="!plan.targetBucketIds || plan.targetBucketIds.length === 0">
+                                <span class="plan-label">{{'Fire.paymentPlans.buckets' | translate}}:</span>
+                                <span class="plan-value">{{'Fire.paymentPlans.allBuckets' | translate}}</span>
+                            </div>
+                            <div class="plan-row">
+                                <span class="plan-label">{{'Fire.paymentPlans.account' | translate}}:</span>
+                                <span class="plan-value">{{plan.account}}</span>
+                            </div>
+                            <div class="plan-row">
+                                <span class="plan-label">{{'Fire.paymentPlans.period' | translate}}:</span>
+                                <span class="plan-value">{{plan.startDate | appDate}} - {{plan.endDate | appDate}}</span>
+                            </div>
+                            <div class="plan-row" *ngIf="plan.deactivatedAt">
+                                <span class="plan-label">{{'Fire.paymentPlans.deactivated' | translate}}:</span>
+                                <span class="plan-value">{{plan.deactivatedAt | appDate}}</span>
+                            </div>
+                            <div class="plan-row" *ngIf="plan.comment">
+                                <span class="plan-label">{{'Fire.paymentPlans.comment' | translate}}:</span>
+                                <span class="plan-value">{{plan.comment}}</span>
+                            </div>
+                        </div>
+                        <div class="plan-actions">
+                            <button class="btn btn--sm btn--success" (click)="reactivatePaymentPlan(plan)">{{'Fire.paymentPlans.reactivate' | translate}}</button>
+                            <button class="btn btn--sm btn--danger" (click)="deletePaymentPlan(plan)">{{'Fire.paymentPlans.delete' | translate}}</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Empty State -->
+            <div class="empty-state" *ngIf="!classReference.plannedSubscriptions || classReference.plannedSubscriptions.length === 0">
+                <p>{{'Fire.paymentPlans.noPlanYet' | translate}}</p>
+                <button type="button" class="btn btn-inline-toggle" (click)="openPaymentPlanner()" [disabled]="!classReference.buckets?.length">
+                    + {{'Fire.paymentPlans.createPlan' | translate}}
+                </button>
+                <p class="help-text" *ngIf="!classReference.buckets?.length" style="margin-top: 10px; opacity: 0.6; font-size: 12px;">
+                    {{'Fire.needBucketsForPlans' | translate: {default: 'Add at least one bucket to create payment plans.'} }}
+                </p>
+            </div>
+        </div>
+
+        <!-- TAB: Actions -->
+        <div class="tab-content" *ngIf="classReference.activeTab === 'actions'">
+            <div class="action-list" *ngIf="classReference.actionItems?.length; else noActions">
+                <div class="action-item" *ngFor="let item of classReference.actionItems; let ai = index"
+                     [class.action-done]="item.done">
+                    <!-- Display Mode -->
+                    <div *ngIf="editingActionIndex !== ai" class="action-display">
+                        <input type="checkbox" [checked]="item.done" (change)="toggleActionItemViewMode(ai)">
+                        <span class="action-text">{{item.text}}</span>
+                        <div class="action-actions">
+                            <span class="action-priority priority-{{item.priority}}">{{item.priority}}</span>
+                            <span class="action-due" *ngIf="item.dueDate">{{item.dueDate}}</span>
+                            <button class="btn-icon" (click)="startEditActionViewMode(ai)" aria-label="Edit action">✎</button>
+                            <button class="btn-icon btn-icon--danger" (click)="removeActionItemViewMode(ai)" aria-label="Remove">×</button>
+                        </div>
+                    </div>
+                    <!-- Edit Mode -->
+                    <div *ngIf="editingActionIndex === ai" class="action-edit">
+                        <input type="text" [(ngModel)]="editingActionText" [placeholder]="'Fire.actionItemPlaceholder' | translate" class="input-sm flex-1">
+                        <select [(ngModel)]="editingActionPriority" class="input-sm">
+                            <option value="low">{{'Grow.priority.low' | translate}}</option>
+                            <option value="medium">{{'Grow.priority.medium' | translate}}</option>
+                            <option value="high">{{'Grow.priority.high' | translate}}</option>
+                        </select>
+                        <input type="date" [(ngModel)]="editingActionDueDate" class="input-sm">
+                        <button class="btn btn--sm" (click)="saveEditActionViewMode(ai)">✓</button>
+                        <button class="btn-icon" (click)="cancelEditActionViewMode()" aria-label="Cancel">×</button>
+                    </div>
+                </div>
+            </div>
+            <ng-template #noActions>
+                <p class="empty-tab">{{'Grow.noActions' | translate}}</p>
+            </ng-template>
+            <!-- Add Action -->
+            <button class="btn btn--sm btn-inline-toggle" *ngIf="!showAddAction" (click)="showAddAction = true">+ {{'Grow.addAction' | translate}}</button>
+            <div class="add-action-form" *ngIf="showAddAction">
+                <input type="text" [(ngModel)]="newActionText" [placeholder]="'Fire.actionItemPlaceholder' | translate" class="input-sm flex-1"
+                       (keydown.enter)="submitActionItem()">
+                <select [(ngModel)]="newActionPriority" class="input-sm">
+                    <option value="low">{{'Grow.priority.low' | translate}}</option>
+                    <option value="medium">{{'Grow.priority.medium' | translate}}</option>
+                    <option value="high">{{'Grow.priority.high' | translate}}</option>
+                </select>
+                <input type="date" [(ngModel)]="newActionDueDate" class="input-sm">
+                <button class="btn btn--sm" (click)="submitActionItem()">{{'Grow.addAction' | translate}}</button>
+                <button class="btn-icon" (click)="showAddAction = false" aria-label="Cancel">×</button>
+            </div>
+        </div>
+
+        <!-- TAB: Notes -->
+        <div class="tab-content" *ngIf="classReference.activeTab === 'notes'">
+            <!-- Add new note form -->
+            <div class="add-note-form">
+                <textarea class="input-sm" [(ngModel)]="newNoteText" [placeholder]="'Grow.notesPlaceholder' | translate" rows="3"></textarea>
+                <button class="btn btn--sm" (click)="addNote()">{{'Grow.addNote' | translate}}</button>
+            </div>
+            
+            <!-- Note list -->
+            <div class="note-list" *ngIf="notesList.length; else noNotes">
+                <div class="note-card" *ngFor="let note of notesList; let ni = index">
+                    <div class="note-header">
+                        <span class="note-date">{{note.createdAt | date:'medium'}}</span>
+                        <div class="note-actions">
+                            <button class="btn-icon" (click)="startEditNote(ni)" *ngIf="editingNoteIndex !== ni" aria-label="Edit">✎</button>
+                            <button class="btn-icon btn-icon--danger" (click)="removeNote(ni)" aria-label="Delete">×</button>
+                        </div>
+                    </div>
+                    <pre class="note-text" *ngIf="editingNoteIndex !== ni">{{note.text}}</pre>
+                    <div *ngIf="editingNoteIndex === ni" class="note-edit-row">
+                        <textarea class="input-sm flex-1" [(ngModel)]="editingNoteText" rows="3"></textarea>
+                        <button class="btn btn--sm" (click)="saveEditNote(ni)">✓</button>
+                        <button class="btn-icon" (click)="cancelEditNote()" aria-label="Cancel">×</button>
+                    </div>
+                </div>
+            </div>
+            <ng-template #noNotes>
+                <p class="empty-tab">{{'Grow.noNotes' | translate}}</p>
+            </ng-template>
+        </div>
+
+        <button id="addbtn" (click)="add()">{{'AddAsset.add' | translate}}</button>
+        <button id="editbtn" class="btn btn--action" (click)="editFireEmergencie()">{{'Info.edit' | translate}}</button>
+    </div>
+
+    <!-- ── EDIT MODE ── -->
+    <div *ngIf="classReference.isEdit">
+        <h4 id="infoTransactionTitle">{{'Info.edit' | translate}} Fire #{{classReference.index+1}}</h4>
+        <hr class="separator-white">
+        
+        <!-- Section: Basics -->
+        <div class="form-section">
+            <h5 class="form-section-title">{{'AddGrow.sectionBasics' | translate}}</h5>
+            <form id="input-container">
+                <label for="title" class="required" [class.form-error-text]="classReference.isError">{{'AddAsset.name' | translate}}</label>
+                <input type="text" id="title" name="title" aria-required="true" [class.form-error-border]="classReference.isError" [(ngModel)]="titleTextField">
+
+                <label for="sub">{{'Grow.subtitle' | translate}}</label>
+                <input type="text" id="sub" name="sub" [(ngModel)]="subTextField">
+
+                <label for="phase">{{'Grow.phaseLabel' | translate}}</label>
+                <select id="phase" name="phase" [(ngModel)]="phaseField">
+                    <option value="idea">{{'Fire.phase.idea' | translate}}</option>
+                    <option value="planning">{{'Fire.phase.planning' | translate}}</option>
+                    <option value="saving">{{'Fire.phase.saving' | translate}}</option>
+                    <option value="ready">{{'Fire.phase.ready' | translate}}</option>
+                    <option value="completed">{{'Fire.phase.completed' | translate}}</option>
+                </select>
+
+                <label for="description">{{'AddGrow.description' | translate}}</label>
+                <textarea id="description" name="description" [(ngModel)]="descriptionTextField"></textarea>
+
+                <label for="targetDate">{{'Fire.targetDate' | translate}}</label>
+                <input type="date" id="targetDate" name="targetDate" [(ngModel)]="targetDateTextField">
+            </form>
+        </div>
+
+        <!-- Section: Buckets (collapsible) -->
+        <div class="form-section">
+            <button class="section-toggle" (click)="showBucketsSection = !showBucketsSection" type="button">
+                <h5 class="form-section-title">{{'Fire.buckets' | translate}}</h5>
+                <span class="toggle-chevron" [class.open]="showBucketsSection">▸</span>
+            </button>
+            <div *ngIf="showBucketsSection" class="subsection">
+                <!-- Existing Buckets -->
+                <div *ngIf="buckets.length > 0">
+                    <div class="bucket-item-detailed bucket-item-fire" *ngFor="let bucket of buckets; let i = index">
+                        <!-- Display Mode -->
+                        <div *ngIf="editingBucketIndex !== i" class="bucket-display-mode">
+                            <div class="bucket-header">
+                                <div class="bucket-content">
+                                    <div class="bucket-title-row">
+                                        <strong>{{bucket.title}}</strong>
+                                        <span class="bucket-amount-sm">{{bucket.target | appNumber}} {{currency}}</span>
+                                    </div>
+                                    <div class="bucket-meta" *ngIf="bucket.amount">
+                                        {{'Fire.amount' | translate}}: {{bucket.amount | appNumber}} {{currency}}
+                                    </div>
+                                </div>
+                                <div class="bucket-actions">
+                                    <button type="button" class="btn-icon" (click)="startEditBucket(i)" aria-label="Edit bucket">✐</button>
+                                    <button type="button" class="btn-icon btn-icon--danger" (click)="removeBucket(i)" aria-label="Remove bucket">×</button>
+                                </div>
+                            </div>
+                            
+                            <!-- Bucket Notes -->
+                            <div class="bucket-notes" *ngIf="bucket.notes">
+                                <small>{{bucket.notes}}</small>
+                            </div>
+                            
+                            <!-- Bucket Target Date -->
+                            <div class="bucket-target-date" *ngIf="bucket.targetDate">
+                                <small>{{'Fire.targetDate' | translate}}: {{bucket.targetDate | date:'mediumDate'}}</small>
+                            </div>
+                            
+                            <!-- Bucket Links -->
+                            <div class="bucket-links" *ngIf="bucket.links && bucket.links.length > 0">
+                                <div class="bucket-link" *ngFor="let link of bucket.links; let j = index">
+                                    <!-- Display Mode -->
+                                    <div *ngIf="editingBucketLinkBucketIndex !== i || editingBucketLinkLinkIndex !== j" class="bucket-link-display">
+                                        <a [href]="link.url" target="_blank" rel="noopener noreferrer">{{link.label}}</a>
+                                        <div class="bucket-link-actions">
+                                            <button type="button" class="btn-icon btn-icon--xs" (click)="startEditBucketLink(i, j)" aria-label="Edit link">✐</button>
+                                            <button type="button" class="btn-icon btn-icon--danger btn-icon--xs" (click)="removeBucketLink(i, j)" aria-label="Remove link">×</button>
+                                        </div>
+                                    </div>
+                                    <!-- Edit Mode -->
+                                    <div *ngIf="editingBucketLinkBucketIndex === i && editingBucketLinkLinkIndex === j" class="bucket-link-edit">
+                                        <input type="text" [(ngModel)]="editBucketLinkLabel" [placeholder]="'Grow.linkTitlePlaceholder' | translate" class="input-xs" [name]="'editLinkLabel_' + i + '_' + j">
+                                        <input type="url" [(ngModel)]="editBucketLinkUrl" [placeholder]="'Grow.linkUrlPlaceholder' | translate" class="input-xs" [name]="'editLinkUrl_' + i + '_' + j">
+                                        <button type="button" class="btn btn--xs" (click)="saveEditBucketLink()" [disabled]="!editBucketLinkLabel.trim() || !editBucketLinkUrl.trim()">{{'Common.save' | translate}}</button>
+                                        <button type="button" class="btn-icon btn-icon--xs" (click)="cancelEditBucketLink()" aria-label="Cancel">×</button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Add Link to Bucket -->
+                            <button type="button" class="btn btn--xs btn-inline-toggle" *ngIf="showAddBucketLink !== i" (click)="showAddBucketLink = i">+ {{'Grow.addLink' | translate}}</button>
+                            <div class="inline-add-xs" *ngIf="showAddBucketLink === i">
+                                <input type="text" [(ngModel)]="newBucketLinkLabel" [placeholder]="'Grow.linkTitlePlaceholder' | translate" class="input-xs" [name]="'bucketLinkLabel' + i">
+                                <input type="url" [(ngModel)]="newBucketLinkUrl" [placeholder]="'Grow.linkUrlPlaceholder' | translate" class="input-xs" [name]="'bucketLinkUrl' + i">
+                                <button type="button" class="btn btn--xs" (click)="addBucketLink(i)">{{'Common.add' | translate: {default: 'Add'} }}</button>
+                                <button type="button" class="btn-icon btn-icon--xs" (click)="showAddBucketLink = null; newBucketLinkLabel = ''; newBucketLinkUrl = ''" aria-label="Cancel">×</button>
+                            </div>
+                        </div>
+                        
+                        <!-- Edit Mode -->
+                        <div *ngIf="editingBucketIndex === i" class="bucket-edit-mode">
+                            <input type="text" [(ngModel)]="editingBucketTitle" [placeholder]="'Fire.bucketName' | translate" class="input-sm" [name]="'editBucketTitle' + i">
+                            <input type="number" step="any" [(ngModel)]="editingBucketTarget" [placeholder]="'Fire.bucketTarget' | translate" class="input-sm" [name]="'editBucketTarget' + i">
+                            <input type="number" step="any" [(ngModel)]="editingBucketAmount" [placeholder]="'Fire.amount' | translate" class="input-sm" [name]="'editBucketAmount' + i">
+                            <textarea [(ngModel)]="editBucketNotes" [placeholder]="'Fire.bucketNotesPlaceholder' | translate" class="input-sm" rows="2" [name]="'editBucketNotes' + i"></textarea>
+                            <input type="date" [(ngModel)]="editBucketTargetDate" [placeholder]="'Fire.targetDate' | translate" class="input-sm" [name]="'editBucketTargetDate' + i">
+                            <div class="bucket-edit-actions">
+                                <button type="button" class="btn btn--sm btn--fire" (click)="saveBucketEdit()" [disabled]="!editingBucketTitle.trim() || !editingBucketTarget">{{'Common.save' | translate: {default: 'Save'} }}</button>
+                                <button type="button" class="btn-icon" (click)="cancelBucketEdit()" aria-label="Cancel">×</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="empty-state-sm" *ngIf="buckets.length === 0">
+                    {{'Fire.noBucketsYet' | translate}}
+                </div>
+
+                <!-- Add New Bucket (inline toggle) -->
+                <button type="button" class="btn btn--sm btn--fire" *ngIf="!showAddBucket" (click)="showAddBucket = true">
+                    + {{'Fire.addBucket' | translate}}
+                </button>
+                <div class="inline-add" *ngIf="showAddBucket">
+                    <input type="text" [(ngModel)]="newBucketTitle" 
+                           [placeholder]="'Fire.bucketNamePlaceholder' | translate" class="input-sm flex-1">
+                    <input type="number" step="any" [(ngModel)]="newBucketTarget" 
+                           [placeholder]="'Fire.bucketTarget' | translate" class="input-sm input-number-md">
+                    <textarea [(ngModel)]="newBucketNotes" [placeholder]="'Fire.bucketNotesPlaceholder' | translate" class="input-sm flex-1" rows="2"></textarea>
+                    <input type="date" [(ngModel)]="newBucketTargetDate" class="input-sm">
+                    <button type="button" class="btn btn--sm btn--fire" (click)="addBucket()" 
+                            [disabled]="!newBucketTitle.trim() || !newBucketTarget">
+                        {{'Fire.addBucket' | translate}}
+                    </button>
+                    <button type="button" class="btn-icon" (click)="showAddBucket = false; newBucketTitle = ''; newBucketTarget = 0; newBucketNotes = ''; newBucketTargetDate = '';" aria-label="Cancel">×</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section: Links & Actions (collapsible) -->
+        <div class="form-section">
+            <button class="section-toggle" (click)="showLinksActionsSection = !showLinksActionsSection" type="button">
+                <h5 class="form-section-title">{{'Grow.linksAndActions' | translate}}</h5>
+                <span class="toggle-chevron" [class.open]="showLinksActionsSection">▸</span>
+            </button>
+            <div *ngIf="showLinksActionsSection" class="subsection">
+                <!-- Links Subsection -->
+                <div class="subsection-label">{{'Fire.links' | translate}}</div>
+                
+                <!-- Existing Links -->
+                <div *ngIf="links.length > 0">
+                    <div class="link-item" *ngFor="let link of links; let i = index">
+                        <!-- Display Mode -->
+                        <div *ngIf="editingLinkIndex !== i" class="link-display">
+                            <a [href]="link.url" target="_blank" rel="noopener noreferrer">{{link.label}}</a>
+                            <div class="link-actions">
+                                <button type="button" class="btn-icon" (click)="startEditLink(i)" aria-label="Edit link">✐</button>
+                                <button type="button" class="btn-icon btn-icon--danger" (click)="removeLink(i)" aria-label="Remove link">×</button>
+                            </div>
+                        </div>
+                        <!-- Edit Mode -->
+                        <div *ngIf="editingLinkIndex === i" class="link-edit">
+                            <input type="text" [(ngModel)]="editingLinkLabel" [placeholder]="'Grow.linkTitlePlaceholder' | translate" class="input-sm flex-1" name="editLinkLabel">
+                            <input type="url" [(ngModel)]="editingLinkUrl" [placeholder]="'Grow.linkUrlPlaceholder' | translate" class="input-sm flex-1" name="editLinkUrl">
+                            <button type="button" class="btn btn--sm" (click)="saveEditLink(i)">✓</button>
+                            <button type="button" class="btn-icon" (click)="cancelEditLink()" aria-label="Cancel">×</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="empty-state-sm" *ngIf="links.length === 0">
+                    {{'Fire.noLinksYet' | translate}}
+                </div>
+
+                <!-- Add New Link (inline toggle) -->
+                <button type="button" class="btn btn--sm btn--fire btn-inline-toggle" *ngIf="!showAddLink" (click)="showAddLink = true">
+                    + {{'Fire.addLink' | translate}}
+                </button>
+                <div class="inline-add" *ngIf="showAddLink">
+                    <input type="text" [(ngModel)]="newLinkLabel" 
+                           [placeholder]="'Grow.linkTitlePlaceholder' | translate" class="input-sm flex-1">
+                    <input type="url" [(ngModel)]="newLinkUrl" 
+                           placeholder="https://..." class="input-sm flex-1">
+                    <button type="button" class="btn btn--sm btn--fire" (click)="addLink()" 
+                            [disabled]="!newLinkLabel.trim() || !newLinkUrl.trim()">
+                        {{'Fire.addLink' | translate}}
+                    </button>
+                    <button type="button" class="btn-icon" (click)="showAddLink = false; newLinkLabel = ''; newLinkUrl = '';" aria-label="Cancel">×</button>
+                </div>
+
+                <!-- Actions Subsection -->
+                <div class="subsection-label subsection-label-spaced">{{'Fire.actionItems' | translate}}</div>
+                
+                <!-- Existing Action Items -->
+                <div *ngIf="actionItems.length > 0">
+                    <div class="action-item" *ngFor="let item of actionItems; let i = index">
+                        <!-- Display Mode -->
+                        <div *ngIf="editingActionIndex !== i" class="action-display">
+                            <input type="checkbox" [(ngModel)]="item.done" [id]="'action-edit-' + i">
+                            <span [class.completed]="item.done">{{item.text}}</span>
+                            <div class="action-actions">
+                                <span class="priority-tag priority-{{item.priority}}">{{item.priority}}</span>
+                                <span class="action-due-sm" *ngIf="item.dueDate">{{item.dueDate}}</span>
+                                <button type="button" class="btn-icon" (click)="startEditAction(i)" aria-label="Edit action">✎</button>
+                                <button type="button" class="btn-icon btn-icon--danger" (click)="removeActionItem(i)" aria-label="Remove action item">×</button>
+                            </div>
+                        </div>
+                        <!-- Edit Mode -->
+                        <div *ngIf="editingActionIndex === i" class="action-edit">
+                            <input type="text" [(ngModel)]="editingActionText" [placeholder]="'Fire.actionItemPlaceholder' | translate" class="input-sm flex-1">
+                            <select [(ngModel)]="editingActionPriority" class="input-sm">
+                                <option value="low">{{'Fire.priorityLow' | translate}}</option>
+                                <option value="medium">{{'Fire.priorityMedium' | translate}}</option>
+                                <option value="high">{{'Fire.priorityHigh' | translate}}</option>
+                            </select>
+                            <input type="date" [(ngModel)]="editingActionDueDate" class="input-sm">
+                            <button type="button" class="btn btn--sm" (click)="saveEditAction(i)">✓</button>
+                            <button type="button" class="btn-icon" (click)="cancelEditAction()" aria-label="Cancel">×</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="empty-state-sm" *ngIf="actionItems.length === 0">
+                    {{'Fire.noActionItemsYet' | translate}}
+                </div>
+
+                <!-- Add New Action (inline toggle) -->
+                <button type="button" class="btn btn--sm btn--fire btn-inline-toggle" *ngIf="!showAddAction" (click)="showAddAction = true">
+                    + {{'Fire.addActionItem' | translate}}
+                </button>
+                <div class="add-action-form" *ngIf="showAddAction">
+                    <input type="text" [(ngModel)]="newActionText" 
+                           [placeholder]="'Fire.actionItemPlaceholder' | translate" 
+                           class="input-sm flex-1" (keydown.enter)="addActionItem()">
+                    <select [(ngModel)]="newActionPriority" class="input-sm priority-select">
+                        <option value="low">{{'Fire.priorityLow' | translate}}</option>
+                        <option value="medium">{{'Fire.priorityMedium' | translate}}</option>
+                        <option value="high">{{'Fire.priorityHigh' | translate}}</option>
+                    </select>
+                    <input type="date" [(ngModel)]="newActionDueDate" class="input-sm">
+                    <button type="button" class="btn btn--sm btn--fire" (click)="addActionItem()" 
+                            [disabled]="!newActionText.trim()">
+                        {{'Fire.addActionItem' | translate}}
+                    </button>
+                    <button type="button" class="btn-icon" (click)="showAddAction = false; newActionText = ''; newActionPriority = 'medium'; newActionDueDate = '';" aria-label="Cancel">×</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section: Notes (collapsible) -->
+        <div class="form-section">
+            <button class="section-toggle" (click)="showNotesSection = !showNotesSection" type="button">
+                <h5 class="form-section-title">{{'Grow.tab.notes' | translate}}</h5>
+                <span class="toggle-chevron" [class.open]="showNotesSection">▸</span>
+            </button>
+            <div *ngIf="showNotesSection" class="subsection">
+                <!-- Existing Notes -->
+                <div *ngIf="notesList.length > 0">
+                    <div class="note-item" *ngFor="let note of notesList; let i = index">
+                        <p>{{note.text}}</p>
+                        <span class="note-date-sm">{{note.createdAt | date:'short'}}</span>
+                        <button type="button" class="btn-icon btn-icon--danger" (click)="removeNote(i)" aria-label="Remove note">×</button>
+                    </div>
+                </div>
+                <div class="empty-state-sm" *ngIf="notesList.length === 0">
+                    {{'Grow.noNotes' | translate}}
+                </div>
+
+                <!-- Add New Note -->
+                <div class="inline-add inline-add-column">
+                    <textarea [(ngModel)]="newNoteText" 
+                              [placeholder]="'Grow.notesPlaceholder' | translate" 
+                              class="input-sm" rows="3"></textarea>
+                    <div>
+                        <button type="button" class="btn btn--sm btn--fire" (click)="addNote()" 
+                                [disabled]="!newNoteText.trim()">
+                            {{'Grow.addNote' | translate}}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Delete Options -->
+        <div class="form-section">
+            <label for="deleteTransactions" class="checkLable">
+                <input type="checkbox" name="deleteTransactions" [(ngModel)]="deleteTransactionsChecked" class="mr-xs">
+                {{'InfoSubscription.deleteTransactions' | translate}}
+            </label>
+        </div>
+
+        <p id="errorLable" *ngIf="classReference.isError">{{errorTextLable}}</p>
+        <button id="addbtn" (click)="updateFireEmergencie()">{{'Info.update' | translate}}</button>
+        <button id="deletebtn" (click)="deleteFire(classReference.index)">{{'Info.delete' | translate}}</button>
+        <button id="canclebtn" (click)="closeWindow()">{{'Info.cancel' | translate}}</button>
+    </div>
+    
+    <!-- Payment Planner Dialog -->
+    <app-payment-planner-dialog
+        [isOpen]="isPaymentPlannerOpen"
+        [projectType]="'fire'"
+        [projectTitle]="classReference.title"
+        [projectTargetDate]="classReference.targetDate"
+        [buckets]="classReference.buckets"
+        [existingPlan]="editingPlanIndex !== null ? classReference.plannedSubscriptions[editingPlanIndex] : undefined"
+        (planCreated)="onPlanCreated($event)"
+        (planUpdated)="onPlanUpdated($event)"
+        (cancelled)="onPlanCancelled()">
+    </app-payment-planner-dialog>
+</div>

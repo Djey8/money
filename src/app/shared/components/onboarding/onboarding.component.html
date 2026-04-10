@@ -1,0 +1,55 @@
+<div *ngIf="visible" class="onboarding-backdrop" [class.onboarding-leaving]="leaving">
+    <div class="onboarding-card" role="dialog" aria-modal="true" [class.onboarding-leaving]="leaving">
+        <!-- Progress bar -->
+        <div class="onboarding-progress-track">
+            <div class="onboarding-progress-fill" [style.width.%]="progress" [style.background]="step.accent"></div>
+        </div>
+
+        <!-- Skip button -->
+        <button class="onboarding-skip" (click)="skip()" aria-label="Skip tour">
+            {{'Onboarding.skip' | translate}}
+        </button>
+
+        <!-- Step content -->
+        <div class="onboarding-content">
+            <div class="onboarding-icon" [style.background]="step.accent + '18'" aria-hidden="true">
+                {{ step.icon }}
+            </div>
+            <h2 class="onboarding-title">{{ step.titleKey | translate }}</h2>
+            <p class="onboarding-body">{{ step.bodyKey | translate }}</p>
+        </div>
+
+        <!-- Dot indicators -->
+        <div class="onboarding-dots" role="tablist">
+            <button *ngFor="let s of steps; let i = index"
+                    class="onboarding-dot"
+                    [class.onboarding-dot--active]="i === currentStep"
+                    [style.background]="i === currentStep ? step.accent : ''"
+                    (click)="goToStep(i)"
+                    [attr.aria-label]="'Step ' + (i + 1)"
+                    role="tab"
+                    [attr.aria-selected]="i === currentStep">
+            </button>
+        </div>
+
+        <!-- Navigation -->
+        <div class="onboarding-nav">
+            <button class="onboarding-btn onboarding-btn--back"
+                    *ngIf="!isFirst"
+                    (click)="prev()">
+                ‹ {{'Onboarding.back' | translate}}
+            </button>
+            <div *ngIf="isFirst" class="onboarding-spacer"></div>
+            <button class="onboarding-btn onboarding-btn--next"
+                    [style.background]="step.accent"
+                    (click)="next()">
+                {{ (isLast ? 'Onboarding.finish' : 'Onboarding.next') | translate }} ›
+            </button>
+        </div>
+
+        <!-- Keyboard hint -->
+        <p class="onboarding-keyboard-hint">
+            {{'Onboarding.keyboardHint' | translate}}
+        </p>
+    </div>
+</div>

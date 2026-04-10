@@ -1,0 +1,14 @@
+#infoTransaction-Container {
+  top: 10%;
+  left: 50%;
+  transform: translate(-50%, 0%);
+  width: min(90vw, 400px);
+  border: 3px solid white;
+  background-color: var(--color-primary);
+  border-radius: var(--radius-lg);
+  padding: 2%;
+  border-color: white;
+  border-width: 2%;
+  position: absolute;
+  box-shadow: var(--shadow-lg);
+}

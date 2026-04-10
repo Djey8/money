@@ -1,0 +1,125 @@
+#firebtn, #statsbtn {
+    border-radius: var(--radius-full);
+    margin-right: 0px;
+}
+
+#mojoBox {
+    width: 70%;
+    margin-left: auto;
+    margin-right: auto;
+    border: 3px solid white;
+    background-color: var(--color-primary);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    border-color: white;
+    border-width: 2%;
+    min-width: 275px;
+    margin-bottom: 20px;
+}
+
+
+#mojoTitle {
+    text-align: center;
+    font-size: 2em;
+    color: white;
+    margin-top: 0px;
+    margin-bottom: 1%;
+    transform: translate(-40px, 0);
+}
+
+#progressLable {
+    float: left;
+    margin-top: 0;
+    margin-left: 1%;
+    font-size: 1.5em;
+    color: white;
+}
+
+#progressBar {
+    width: 80%;
+    margin-left: 10%;
+}
+
+#info-box {
+    background-color: var(--color-surface);
+    margin-left: 5%;
+    margin-right: 5%;
+    border-radius: var(--radius-md);
+    margin-bottom: 10px;
+    padding: 10px;
+}
+
+.infoLableA {
+    text-align: center;
+    color: var(--color-text);
+    font-size: x-large;
+}
+
+
+#editbtn,
+#addtosmilebtn,
+#addToFirebtn {
+    margin-left: 20%;
+    width: 60%;
+    margin-top: 1%;
+    background-color: transparent;
+    border-radius: var(--radius-sm);
+    border: 2px solid white;
+    color: white;
+    padding: 5px;
+    font-size: 20px;
+    margin-bottom: 1%;
+}
+
+
+/* Filter styles now imported from shared/filter-styles.css */
+
+/* Compact paginator for all paginators */
+.paginator-compact {
+  font-size: 12px;
+}
+
+.paginator-compact ::ng-deep .mat-mdc-paginator-container {
+  padding: 0 8px;
+  min-height: 48px;
+}
+
+.paginator-compact ::ng-deep .mat-mdc-paginator-page-size {
+  margin-right: 4px;
+}
+
+.paginator-compact ::ng-deep .mat-mdc-paginator-page-size-label {
+  margin-right: 4px;
+  font-size: 12px;
+}
+
+.paginator-compact ::ng-deep .mat-mdc-form-field {
+  font-size: 12px;
+}
+
+.paginator-compact ::ng-deep .mat-mdc-paginator-range-label {
+  margin: 0 8px;
+  font-size: 12px;
+}
+
+@media (max-width: 768px) {
+  .paginator-compact ::ng-deep .mat-mdc-paginator-container {
+    flex-wrap: nowrap;
+    padding: 0 4px;
+    min-height: 40px;
+  }
+  
+  .paginator-compact ::ng-deep .mat-mdc-paginator-page-size-label {
+    display: none;
+  }
+  
+  .paginator-compact ::ng-deep .mat-mdc-paginator-range-label {
+    margin: 0 4px;
+    font-size: 11px;
+  }
+  
+  .paginator-compact ::ng-deep .mdc-button {
+    padding: 0;
+    min-width: 36px;
+  }
+}

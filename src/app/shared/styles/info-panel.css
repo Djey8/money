@@ -1,0 +1,269 @@
+/* ========================================
+   Shared Info Panel Styles
+   Used by all info-* components
+   ======================================== */
+
+#account-pic {
+  width: 30%;
+  margin-left: 35%;
+  border-radius: var(--radius-full);
+}
+
+#infoTransactionTitle {
+  text-align: center;
+  font-size: 2em;
+  color: white;
+  margin-top: 0;
+  margin-bottom: 1%;
+}
+
+#info-box {
+  background-color: var(--color-surface);
+  margin-left: 5%;
+  margin-right: 5%;
+  border-radius: var(--radius-md);
+  margin-bottom: 10px;
+  padding: 10px;
+  box-shadow: var(--shadow-sm);
+}
+
+.amount-positive {
+  color: var(--color-text);
+}
+
+.amount-negative {
+  color: var(--color-danger);
+}
+
+#closebtn {
+  position: absolute;
+  top: 0;
+  right: 0;
+  margin-right: 10px;
+  color: white;
+  width: 40px;
+  height: 40px;
+  font-size: 25px;
+  background-color: transparent;
+  border-color: transparent;
+}
+
+.infoLable {
+  text-align: center;
+  color: var(--color-text);
+  font-size: larger;
+}
+
+.commentLable {
+  text-align: center;
+  color: var(--color-text);
+  font-size: small;
+  border: 1px solid var(--color-border);
+  word-wrap: break-word;
+}
+
+.infoLableB {
+  margin-top: 0;
+  margin-bottom: 0;
+  text-align: center;
+  font-size: x-large;
+}
+
+.infoLableC {
+  text-align: center;
+  color: var(--color-text);
+  font-size: larger;
+}
+
+#editbtn, #addbtn, #canclebtn, #copybtn {
+  margin-left: 10%;
+  width: 80%;
+  margin-top: 4%;
+  background-color: transparent;
+  border-radius: var(--radius-sm);
+  border: 2px solid white;
+  color: white;
+  padding: 2%;
+  font-size: 17px;
+  margin-bottom: 1%;
+}
+
+#deletebtn {
+  margin-left: 10%;
+  width: 80%;
+  margin-top: 4%;
+  border-radius: var(--radius-sm);
+  border: 2px solid var(--color-danger);
+  color: var(--color-danger);
+  background-color: var(--color-surface);
+  padding: 2%;
+  font-size: 17px;
+  margin-bottom: 1%;
+}
+
+#input-container {
+  background-color: var(--color-surface);
+  margin-left: 5%;
+  width: 90%;
+  border-radius: var(--radius-md);
+  margin-bottom: 10px;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  margin: 0 auto;
+}
+
+label {
+  margin-bottom: 1%;
+  margin-left: 10px;
+  margin-top: 10px;
+}
+
+input[type="text"],
+input[type="number"],
+input[type="month"],
+textarea,
+select {
+  background-color: var(--color-surface);
+  padding: 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  margin-bottom: 1%;
+  margin-left: 2%;
+  margin-right: 2%;
+  color: var(--color-text);
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"] {
+  background-color: var(--color-surface);
+  padding: 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  margin-bottom: 1%;
+  margin-left: 2%;
+  margin-right: 2%;
+  width: 96%;
+  max-width: 96%;
+  box-sizing: border-box;
+  color: var(--color-text);
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  filter: var(--date-icon-filter, none);
+}
+
+textarea, select {
+  padding: 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  margin-bottom: 2%;
+  background-color: var(--color-surface);
+  color: var(--color-text);
+}
+
+select {
+  margin-left: 2%;
+  width: 96%;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23888"><path d="M7 10l5 5 5-5z"/></svg>');
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 24px;
+}
+
+textarea {
+  resize: vertical;
+  margin-left: 2%;
+  margin-right: 2%;
+}
+
+input[type="checkbox"] {
+  vertical-align: middle;
+  margin-right: 10px;
+}
+
+.checkLable {
+  text-align: center;
+  margin-bottom: 10px;
+  vertical-align: middle;
+}
+
+#errorLable {
+  background-color: var(--color-surface);
+  border-radius: var(--radius-md);
+  padding-top: 10px;
+  padding-bottom: 10px;
+  margin-left: 5%;
+  margin-right: 5%;
+  margin-bottom: 10px;
+  color: var(--color-danger);
+  text-align: center;
+}
+
+/* ========================================
+   Frequency Selector Help Icon
+   ======================================== */
+
+.help-icon {
+  display: inline-block;
+  margin-left: 4px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 14px;
+  cursor: help;
+  vertical-align: middle;
+  font-weight: normal;
+}
+
+.help-icon:hover {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.button-container {
+  display: flex;
+  justify-content: center;
+  gap: 15%;
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+.action-button {
+  cursor: pointer;
+  font-size: 28px;
+  color: var(--color-text);
+  line-height: 1;
+  user-select: none;
+  padding: 0 4px;
+}
+
+/* Buy/Sell buttons for balance sheet items */
+#buyButton {
+  background-color: rgba(0, 128, 0, 0.7);
+  border: 3px solid darkgreen;
+  color: white;
+  padding: 8px 20px;
+  border-radius: var(--radius-sm);
+  font-size: 16px;
+  cursor: pointer;
+}
+
+#sellButton {
+  background-color: rgba(255, 0, 0, 0.7);
+  border: 3px solid darkred;
+  color: white;
+  padding: 8px 20px;
+  border-radius: var(--radius-sm);
+  font-size: 16px;
+  cursor: pointer;
+}

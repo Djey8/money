@@ -1,0 +1,16 @@
+<div id="addFire-Container" role="dialog" aria-modal="true" appTrapFocus *ngIf="classReference.isAddAsset" (click)="highlight()"
+    [style.z-index]="classReference.zIndex + 1001">
+    <h4 id="addFireTitle">{{'AddAsset.title' | translate}}</h4>
+    <button id="closebtn" aria-label="Close" (click)="closeWindow()">x</button>
+    <hr class="separator-white">
+    <form id="input-container">
+        <label for="title" class="required" [class.form-error-text]="classReference.isError">{{'AddAsset.name' | translate}}</label>
+        <input type="text" id="title" name="title" aria-required="true" [class.form-error-border]="classReference.isError" [(ngModel)]="titleTextField"
+            [attr.aria-invalid]="classReference.isError ? true : null" [attr.aria-describedby]="classReference.isError ? 'title-error' : null">
+        <span class="field-error" id="title-error" role="alert" *ngIf="classReference.isError && !titleTextField">{{'AddAsset.name' | translate}}</span>
+        <label for="amount">{{'AddAsset.amount' | translate}}</label>
+        <input type=number step=any id="amount" name="amount" [(ngModel)]="amountTextField" class="mb-xs">
+    </form>
+    <p id="errorLable" *ngIf="classReference.isError">{{errorTextLable}}</p>
+    <button id="addbtn" class="btn btn--action" (click)="addAsset()">{{'AddAsset.add' | translate}}</button>
+</div>

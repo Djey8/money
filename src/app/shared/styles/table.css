@@ -1,0 +1,141 @@
+.mat-column-id {
+    border-right: 1px solid currentColor;
+    text-align: center;
+}
+
+.mat-column-title {
+    text-align: center;
+}
+
+.mat-column-account {
+    text-align: center;
+}
+
+.mat-column-amount {
+    text-align: center;
+}
+
+.mat-column-date {
+    text-align: center;
+}
+
+.mdc-data-table__cell, .mdc-data-table__header-cell {
+    padding: 0 2px 0 2px;
+}
+
+.mat-elevation-z8 {
+    margin-bottom: 30px;
+    box-shadow: var(--shadow-sm);
+}
+
+th[mat-header-cell] {
+    font-weight: bold;
+    font-size: 1.2em;
+    text-align: center;
+    background-color: rgba(122, 122, 122, 0.2);
+    color: var(--color-text);
+
+    border-bottom: 3px solid var(--color-border);
+}
+
+.paginator{
+    background-color: transparent;
+}
+
+th.mat-sort-header-sorted {
+    color: var(--color-text);
+    text-align: center;
+}
+
+.mat-mdc-form-field {
+    font-size: 14px;
+    width: 100%;
+}
+
+:host ::ng-deep .mat-sort-header-container {
+    display: flex;
+    justify-content: center;
+}
+
+td {
+    padding: 8px;
+    text-align: center;
+    border-width: 0px;
+}
+
+@media (max-width: 480px) {
+    td {
+        padding: 1%;
+    }
+    .mdc-data-table__row {
+        height: 30px;
+    }
+    #table-container {
+        width: 100%;
+    }
+}
+
+@media (min-width: 481px) {
+    table {
+        max-width: 90%;
+    }
+
+    #table-container {
+        width: 90%;
+        margin-left: 5%;
+    }
+}
+
+.amount-positive {
+    color: var(--color-text);
+}
+
+
+.amount-negative {
+    color: var(--color-danger);
+}
+
+.amount-mojo {
+    color: darkgreen;
+}
+
+th {
+    border: 0px solid var(--color-border);
+    background-color: rgba(122, 122, 122, 0.5);
+}
+
+table {
+    border-radius: 4%;
+    width: 100%;
+    border-radius: 7px;
+    padding: 1%;
+    background-color: var(--color-surface);
+    margin: 0 auto; /* Center the table */
+}
+
+table.account {
+    border: 1px solid var(--color-border);    
+}
+
+#amount-container, #other-box {
+    margin-top: 20px;
+    margin-bottom: 20px;
+    margin-left: auto;
+    margin-right: auto;
+    width: 30%;
+    min-width: 250px;
+    border: 3px solid white;
+    background-color: var(--color-primary);
+    border-radius: var(--radius-lg);
+    padding: 2%;
+}
+
+
+
+.amountLable, #amountLable{
+    text-align: center;
+    font-size: 2em;
+    color: white;
+    
+}
+

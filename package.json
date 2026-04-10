@@ -1,0 +1,84 @@
+{
+  "name": "money",
+  "version": "0.0.0",
+  "scripts": {
+    "ng": "ng",
+    "start": "ng serve",
+    "build": "ng build --configuration firebase",
+    "build:selfhosted": "ng build --configuration selfhosted",
+    "build:firebase": "ng build --configuration firebase",
+    "watch": "ng build --watch --configuration development",
+    "test": "npx jest --config jest.config.js",
+    "test:watch": "npx jest --config jest.config.js --watch",
+    "test:coverage": "npx jest --config jest.config.js --coverage",
+    "test:backend": "cd backend && npx jest --forceExit --detectOpenHandles",
+    "test:backend:unit": "cd backend && npx jest --forceExit -- tests/unit",
+    "test:backend:watch": "cd backend && npx jest --watch -- tests/unit",
+    "test:all": "npm run test && npm run test:backend:unit",
+    "test:pipeline": "powershell -ExecutionPolicy Bypass -File ./scripts/test-all.ps1",
+    "test:e2e": "npx playwright test",
+    "test:e2e:headed": "npx playwright test --headed",
+    "test:e2e:ui": "npx playwright test --ui",
+    "test:e2e:full": "powershell -ExecutionPolicy Bypass -File ./scripts/run-e2e.ps1",
+    "clean:e2e": "node scripts/clean-e2e.js",
+    "prepare": "husky",
+    "postinstall": "node -e \"try{require('fs').rmSync('node_modules/d3-sankey/node_modules/d3-shape',{recursive:true,force:true})}catch(e){}\""
+  },
+  "private": true,
+  "dependencies": {
+    "@angular/animations": "^19.2.20",
+    "@angular/cdk": "^19.2.19",
+    "@angular/common": "^19.2.20",
+    "@angular/compiler": "^19.2.20",
+    "@angular/core": "^19.2.20",
+    "@angular/fire": "^19.2.0",
+    "@angular/forms": "^19.2.20",
+    "@angular/material": "^19.2.19",
+    "@angular/platform-browser": "^19.2.20",
+    "@angular/platform-browser-dynamic": "^19.2.20",
+    "@angular/router": "^19.2.20",
+    "@angular/service-worker": "^19.2.20",
+    "@capacitor/camera": "^6.0.2",
+    "@capacitor/core": "^6.0.0",
+    "@ionic/pwa-elements": "^3.3.0",
+    "@ngx-translate/core": "^16.0.4",
+    "@ngx-translate/http-loader": "^16.0.1",
+    "crypto-js": "^4.1.1",
+    "cryptojs": "^2.5.3",
+    "d3": "^7.8.5",
+    "d3-sankey": "^0.12.3",
+    "rxjs": "~7.8.0",
+    "tesseract.js": "^7.0.0",
+    "timers": "^0.1.1",
+    "tslib": "^2.3.0",
+    "zone.js": "^0.15.1"
+  },
+  "devDependencies": {
+    "@angular-builders/jest": "^19.0.1",
+    "@angular-devkit/build-angular": "^19.2.24",
+    "@angular/cli": "^19.2.24",
+    "@angular/compiler-cli": "^19.2.20",
+    "@playwright/test": "^1.58.2",
+    "@types/jest": "^29.5.14",
+    "@types/node": "^20.6.4",
+    "husky": "^9.1.7",
+    "jest": "^29.7.0",
+    "jest-preset-angular": "^13.1.6",
+    "lint-staged": "^15.5.2",
+    "ts-jest": "^29.4.6",
+    "typescript": "~5.7.0"
+  },
+  "overrides": {
+    "d3-sankey": {
+      "d3-shape": "^3.2.0"
+    }
+  },
+  "lint-staged": {
+    "src/**/*.ts": [
+      "npx jest --config jest.config.js --bail --passWithNoTests --findRelatedTests"
+    ],
+    "backend/**/*.js": [
+      "npx jest --forceExit --bail --passWithNoTests -- tests/unit"
+    ]
+  }
+}

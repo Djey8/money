@@ -1,0 +1,138 @@
+<!-- Toolbar -->
+<div class="toolbar" role="banner">
+  <img id="profile-pic" width="40" alt="Profile Logo" src="../assets/profile-blank.jpg"
+    role="button" tabindex="0" aria-label="Open profile" (keydown.enter)="appReference.clickProfile()" (click)="appReference.clickProfile()" />
+  <div id="heading" role="button" tabindex="0" (click)="appReference.openNavBar()" (keydown.enter)="appReference.openNavBar()">{{'FireEmergencies.title' | translate}}</div>
+  <div class="spacer"></div>
+  <img id="ai-btn" width="40" alt="AI Assistant" src="assets/icons/ai.png"
+    role="button" tabindex="0" aria-label="AI Assistant" (click)="openAiAssistant()" (keydown.enter)="openAiAssistant()" />
+  <button id="addbtn" class="add-circle-btn" aria-label="Add" (click)="addFireEmergencie()">+</button>
+</div>
+
+<!-- Search -->
+<div class="search-bar-container" *ngIf="classReference.allFireEmergencies.length > 0">
+  <input type="text" class="search-input" aria-label="Search" [placeholder]="'Search.placeholder' | translate" [(ngModel)]="searchTextField" (keyup.enter)="search()">
+  <button type="submit" class="search-button" (click)="search()"><i class="fa fa-search"></i>{{'Cashflow.filter' | translate}}</button>
+  <button type="clear" class="clear-button" (click)="clearSearch()" *ngIf="classReference.isSearched">{{'Cashflow.clear' | translate}}</button>
+</div>
+
+<!-- Phase Filter Tabs -->
+<div class="phase-tabs" *ngIf="classReference.allFireEmergencies.length > 0">
+    <button *ngFor="let ph of phases"
+        class="phase-tab"
+        [class.active]="classReference.phaseFilter === ph"
+        (click)="setPhaseFilter(ph)">
+        <span *ngIf="ph === 'all'">{{'Fire.allPhases' | translate}}</span>
+        <span *ngIf="ph !== 'all'">{{'Fire.phase.' + ph | translate}}</span>
+        <span class="phase-count" *ngIf="ph !== 'all'">({{getPhaseCount(ph)}})</span>
+    </button>
+</div>
+
+<!-- Skeleton Loading -->
+<div class="skeleton-row" *ngIf="appState.isLoading" aria-hidden="true">
+  <div class="skeleton-cell"></div><div class="skeleton-cell"></div><div class="skeleton-cell"></div><div class="skeleton-cell"></div><div class="skeleton-cell"></div>
+</div>
+<div class="skeleton-row" *ngIf="appState.isLoading" aria-hidden="true">
+  <div class="skeleton-cell"></div><div class="skeleton-cell"></div><div class="skeleton-cell"></div><div class="skeleton-cell"></div><div class="skeleton-cell"></div>
+</div>
+<div class="skeleton-row" *ngIf="appState.isLoading" aria-hidden="true">
+  <div class="skeleton-cell"></div><div class="skeleton-cell"></div><div class="skeleton-cell"></div><div class="skeleton-cell"></div><div class="skeleton-cell"></div>
+</div>
+
+<!-- Amount Display -->
+<div id="amount-container" *ngIf="!appState.isLoading">
+  <h4 id="amountLable">{{fireAmount | appNumber}} {{settingsReference.currency}}</h4>
+</div>
+
+<!-- Fire Cards -->
+<div class="fire-grid" *ngIf="!appState.isLoading && classReference.allFireEmergencies.length > 0">
+    <div *ngFor="let emergency of getFilteredEmergencies(); let i = index"
+         class="fire-card"
+         role="button" tabindex="0"
+         (click)="clickRow(getOriginalIndex(emergency))"
+         (keydown.enter)="clickRow(getOriginalIndex(emergency))"
+         [class.goal-complete]="emergency.phase === 'completed'">
+
+        <!-- Card Header -->
+        <div class="card-header">
+            <span class="phase-badge phase-{{emergency.phase}}">
+                {{'Fire.phase.' + emergency.phase | translate}}
+            </span>
+            <span class="emergency-number">#{{getOriginalIndex(emergency) + 1}}</span>
+        </div>
+
+        <!-- Card Title -->
+        <h3 class="card-title">{{emergency.title}}</h3>
+        <p class="card-sub" *ngIf="emergency.sub">{{emergency.sub}}</p>
+
+        <!-- Description preview -->
+        <p class="card-desc" *ngIf="emergency.description">
+            {{emergency.description.length > 100 ? emergency.description.substring(0, 100) + '...' : emergency.description}}
+        </p>
+
+        <!-- Bucket Info -->
+        <div class="card-buckets" *ngIf="emergency.buckets && emergency.buckets.length > 0">
+            <span class="bucket-info">
+                <i class="fa fa-tasks"></i>
+                {{getCompletedBucketCount(emergency)}}/{{getTotalBucketCount(emergency)}} {{'Fire.bucketsComplete' | translate}}
+            </span>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="progress-container">
+            <div class="progress-bar" 
+                 [style.width.%]="getProgress(emergency)"
+                 [class.complete]="emergency.phase === 'completed'">
+            </div>
+        </div>
+        <div class="progress-label">
+            {{getProgress(emergency) | number:'1.0-1'}}%
+        </div>
+
+        <!-- Financial Metrics -->
+        <div class="card-metrics">
+            <div class="metric">
+                <span class="metric-label">{{'Fire.target' | translate}}</span>
+                <span class="metric-value">{{getTotalTarget(emergency) | appNumber}} {{settingsReference.currency}}</span>
+            </div>
+            <div class="metric">
+                <span class="metric-label">{{'Fire.amount' | translate}}</span>
+                <span class="metric-value">{{getTotalAmount(emergency) | appNumber}} {{settingsReference.currency}}</span>
+            </div>
+        </div>
+
+        <!-- Target Date -->
+        <div class="card-dates" *ngIf="emergency.targetDate">
+            <div class="date-info">
+                <i class="fa fa-calendar"></i>
+                <span class="date-label">{{'Fire.targetDate' | translate}}:</span>
+                <span class="date-value">{{emergency.targetDate | appDate}}</span>
+            </div>
+        </div>
+
+        <!-- Completed Date -->
+        <div class="card-dates" *ngIf="emergency.completionDate">
+            <div class="date-info completed">
+                <i class="fa fa-check-circle"></i>
+                <span class="date-label">{{'Fire.completedDate' | translate}}:</span>
+                <span class="date-value">{{emergency.completionDate | appDate}}</span>
+            </div>
+        </div>
+
+        <!-- Action Button -->
+        <button class="card-action-btn" 
+                *ngIf="!areAllBucketsFull(emergency)"
+                (click)="addToFire(getOriginalIndex(emergency)); $event.stopPropagation()">
+            {{'AddAsset.add' | translate}}
+        </button>
+    </div>
+</div>
+
+<!-- Empty State -->
+<div class="empty-state" *ngIf="!appState.isLoading && classReference.allFireEmergencies.length === 0">
+  <p>{{'Empty.fireEmergencies' | translate}}</p>
+</div>
+
+<app-info-fire></app-info-fire>
+<router-outlet></router-outlet>
+<app-ai-assistant></app-ai-assistant>

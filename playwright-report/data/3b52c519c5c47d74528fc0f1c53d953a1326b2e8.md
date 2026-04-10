@@ -1,0 +1,75 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - main
+  - generic [ref=e4]:
+    - banner [ref=e5]:
+      - button "Open profile" [ref=e6] [cursor=pointer]
+      - button "GROW Projects" [ref=e7]
+      - button "AI Assistant" [ref=e8] [cursor=pointer]
+      - button "Add" [ref=e9] [cursor=pointer]: +
+    - generic [ref=e10]:
+      - paragraph [ref=e11]: No projects yet. Tap + to add your first one.
+      - button "Start with AI" [ref=e12] [cursor=pointer]
+  - dialog [ref=e13]:
+    - heading "Add Grow" [level=4] [ref=e14]
+    - button "Close" [ref=e15]: x
+    - separator [ref=e16]
+    - generic [ref=e17]:
+      - heading "Basics" [level=5] [ref=e18]
+      - generic [ref=e19]:
+        - generic [ref=e20]: Key *
+        - textbox "Key *" [ref=e21]: GRW1775503611947
+        - generic [ref=e22]: Name
+        - textbox "Name" [active] [ref=e23]: Test Project
+        - generic [ref=e24]: Type
+        - combobox "Type" [ref=e25]:
+          - option "Income Growth" [selected]
+          - option "Budget"
+          - option "Subscriptions"
+          - option "Expenses"
+        - generic [ref=e26]: Phase
+        - combobox "Phase" [ref=e27]:
+          - option "Idea" [selected]
+          - option "Research"
+          - option "Plan"
+          - option "Execute"
+          - option "Monitor"
+          - option "Completed"
+        - generic [ref=e28]: Description
+        - textbox "Description" [ref=e29]
+    - button "Strategy & Risks ▸" [ref=e31] [cursor=pointer]:
+      - heading "Strategy & Risks" [level=5] [ref=e32]
+      - generic [ref=e33]: ▸
+    - button "Financials ▸" [ref=e35] [cursor=pointer]:
+      - heading "Financials" [level=5] [ref=e36]
+      - generic [ref=e37]: ▸
+    - button "Links & Actions ▸" [ref=e39] [cursor=pointer]:
+      - heading "Links & Actions" [level=5] [ref=e40]
+      - generic [ref=e41]: ▸
+    - generic [ref=e42]:
+      - button "Import from AI" [ref=e43] [cursor=pointer]
+      - button "add" [ref=e44] [cursor=pointer]
+  - navigation "Quick navigation" [ref=e45]:
+    - button "Home" [ref=e46] [cursor=pointer]:
+      - img [ref=e47]
+      - generic [ref=e50]: Home
+    - button "Transactions" [ref=e52] [cursor=pointer]
+    - button "Daily" [ref=e53] [cursor=pointer]
+    - button "Splurge" [ref=e54] [cursor=pointer]
+    - button "Smile" [ref=e55] [cursor=pointer]
+    - button "Fire" [ref=e56] [cursor=pointer]
+    - button "CASHFLOW" [ref=e58] [cursor=pointer]
+    - button "Subscriptions" [ref=e59] [cursor=pointer]
+    - button "Budget" [ref=e60] [cursor=pointer]
+    - button "GROW Projects" [ref=e61] [cursor=pointer]
+    - button "Statistics" [ref=e63] [cursor=pointer]:
+      - img [ref=e64]
+      - generic [ref=e65]: Statistics
+    - button "Add" [ref=e66] [cursor=pointer]:
+      - img [ref=e67]
+    - button "Full menu" [ref=e69] [cursor=pointer]:
+      - img [ref=e70]
+      - generic [ref=e71]: Menu
+```

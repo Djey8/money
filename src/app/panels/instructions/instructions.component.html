@@ -1,0 +1,281 @@
+<div id="infoTransaction-Container" role="dialog" aria-modal="true" appTrapFocus *ngIf="classReference.isInfo" (click)="highlight()"
+    [style.z-index]="classReference.zIndex + 1001">
+    <h4 id="infoTransactionTitle">{{'Instruction.title' | translate}}</h4>
+    <button id="closebtn" aria-label="Close" (click)="closeWindow()">x</button>
+    <hr class="separator-white">
+
+    <!-- ===== Category Menu ===== -->
+    <div *ngIf="!classReference.activeCategory" class="help-menu">
+        <div id="info-box">
+            <h4 class="section-title">{{'Instruction.h1' | translate}}</h4>
+            <p>{{'Instruction.body1a' | translate}} <b>{{'Menu.daily' | translate}}, {{'Menu.splurge' | translate}},
+                    {{'Menu.smile' | translate}},</b> {{'Instruction.body1b' | translate}} <b>{{'Menu.fire' |
+                    translate}}</b>.</p>
+            <p class="book-link">The Barefoot Investor: <a
+                    href="https://www.barefootinvestor.com/">[https://www.barefootinvestor.com/]</a></p>
+        </div>
+
+        <div class="help-categories">
+            <button class="help-menu-item" (click)="openCategory('accounts')">
+                <span>{{'Instruction.cat.accounts' | translate}}</span>
+                <span class="menu-chevron">›</span>
+            </button>
+            <button class="help-menu-item" (click)="openCategory('transactions')">
+                <span>{{'Instruction.cat.transactions' | translate}}</span>
+                <span class="menu-chevron">›</span>
+            </button>
+            <button class="help-menu-item" (click)="openCategory('projects')">
+                <span>{{'Instruction.cat.projects' | translate}}</span>
+                <span class="menu-chevron">›</span>
+            </button>
+            <button class="help-menu-item" (click)="openCategory('reports')">
+                <span>{{'Instruction.cat.reports' | translate}}</span>
+                <span class="menu-chevron">›</span>
+            </button>
+            <button class="help-menu-item" (click)="openCategory('settings')">
+                <span>{{'Instruction.cat.settings' | translate}}</span>
+                <span class="menu-chevron">›</span>
+            </button>
+        </div>
+
+        <!-- Start Tour -->
+        <div class="tour-banner">
+            <button class="btn btn--primary tour-btn" (click)="launchTour()">
+                {{'Onboarding.startTour' | translate}}
+            </button>
+        </div>
+    </div>
+
+    <!-- ===== Accounts & Allocation ===== -->
+    <div *ngIf="classReference.activeCategory === 'accounts'">
+        <div id="info-box">
+            <!-- Accounts -->
+            <details class="help-section" open>
+                <summary class="help-summary">{{'Instruction.h2' | translate}}</summary>
+                <ul class="account-list">
+                    <li><b>{{'Menu.daily' | translate}} {{'Instruction.body2' | translate}}:</b> {{'Instruction.body2a' | translate}}</li>
+                    <li><b>{{'Menu.splurge' | translate}} {{'Instruction.body2' | translate}}:</b> {{'Instruction.body2b' | translate}}</li>
+                    <li><b>{{'Menu.smile' | translate}} {{'Instruction.body2' | translate}}:</b> {{'Instruction.body2c' | translate}}</li>
+                    <li><b>{{'Menu.fire' | translate}} {{'Instruction.body2' | translate}}:</b> {{'Instruction.body2d1' | translate}} <b>{{'Instruction.body2d2' | translate}}</b>{{'Instruction.body2d3' | translate}}</li>
+                    <li><b>{{'Instruction.incomeAccount' | translate}}:</b> {{'Instruction.incomeAccountDesc' | translate}}</li>
+                    <li><b>{{'Instruction.mojoAccount' | translate}}:</b> {{'Instruction.mojoAccountDesc' | translate}}</li>
+                </ul>
+            </details>
+
+            <!-- Automatic Allocation -->
+            <details class="help-section">
+                <summary class="help-summary">{{'Instruction.h3' | translate}}</summary>
+                <p>{{'Instruction.body3a' | translate}}</p>
+                <ol class="allocation-list">
+                    <li><b>{{'Menu.daily' | translate}}:</b> 60%</li>
+                    <li><b>{{'Menu.splurge' | translate}}:</b> 10%</li>
+                    <li><b>{{'Menu.smile' | translate}}:</b> 10%</li>
+                    <li><b>{{'Menu.fire' | translate}}:</b> 20%</li>
+                </ol>
+                <p>{{'Instruction.body3b' | translate}}</p>
+                <p class="help-tip">{{'Instruction.allocationTip' | translate}}</p>
+            </details>
+        </div>
+        <button id="editbtn" (click)="backToCategories()">‹ {{'Settings.backbtn' | translate}}</button>
+    </div>
+
+    <!-- ===== Transactions ===== -->
+    <div *ngIf="classReference.activeCategory === 'transactions'">
+        <div id="info-box">
+            <!-- Transactions -->
+            <details class="help-section" open>
+                <summary class="help-summary">{{'Instruction.transactionsTitle' | translate}}</summary>
+                <p>{{'Instruction.transactionsDesc' | translate}}</p>
+                <ul>
+                    <li>{{'Instruction.transactionsAdd' | translate}}</li>
+                    <li>{{'Instruction.transactionsEdit' | translate}}</li>
+                    <li>{{'Instruction.transactionsCopy' | translate}}</li>
+                    <li>{{'Instruction.transactionsDelete' | translate}}</li>
+                </ul>
+                <p><b>{{'Instruction.transactionsSearchTitle' | translate}}</b></p>
+                <p>{{'Instruction.transactionsSearchDesc' | translate}}</p>
+                <ul class="search-examples">
+                    <li><code>food && daily</code> — {{'Instruction.searchAnd' | translate}}</li>
+                    <li><code>rent || mortgage</code> — {{'Instruction.searchOr' | translate}}</li>
+                    <li><code>!amazon</code> — {{'Instruction.searchNot' | translate}}</li>
+                    <li><code>>100</code> — {{'Instruction.searchGreater' | translate}}</li>
+                    <li><code>>01.01.2025 && <31.12.2025</code> — {{'Instruction.searchDateRange' | translate}}</li>
+                </ul>
+                <p class="help-tip">{{'Instruction.transactionsTip' | translate}}</p>
+            </details>
+
+            <!-- Receipt Scanner -->
+            <details class="help-section">
+                <summary class="help-summary">{{'Instruction.receiptTitle' | translate}}</summary>
+                <p>{{'Instruction.receiptDesc' | translate}}</p>
+            </details>
+
+            <!-- Subscriptions -->
+            <details class="help-section">
+                <summary class="help-summary">{{'Instruction.subscriptionsTitle' | translate}}</summary>
+                <p>{{'Instruction.subscriptionsDesc' | translate}}</p>
+                <ul>
+                    <li>{{'Instruction.subscriptionsActive' | translate}}</li>
+                    <li>{{'Instruction.subscriptionsInactive' | translate}}</li>
+                    <li>{{'Instruction.subscriptionsDue' | translate}}</li>
+                    <li>{{'Instruction.subscriptionsDelete' | translate}}</li>
+                </ul>
+            </details>
+        </div>
+        <button id="editbtn" (click)="backToCategories()">‹ {{'Settings.backbtn' | translate}}</button>
+    </div>
+
+    <!-- ===== Projects & Investments ===== -->
+    <div *ngIf="classReference.activeCategory === 'projects'">
+        <div id="info-box">
+            <!-- Smile Projects -->
+            <details class="help-section" open>
+                <summary class="help-summary">{{'Instruction.smileProjectsTitle' | translate}}</summary>
+                <p>{{'Instruction.smileProjectsDesc' | translate}}</p>
+                <ul>
+                    <li>{{'Instruction.smileProjectsCreate' | translate}}</li>
+                    <li>{{'Instruction.smileProjectsTrack' | translate}}</li>
+                    <li>{{'Instruction.smileProjectsCategory' | translate}}</li>
+                </ul>
+            </details>
+
+            <!-- Fire Emergencies & Mojo -->
+            <details class="help-section">
+                <summary class="help-summary">{{'Instruction.fireEmergenciesTitle' | translate}}</summary>
+                <p>{{'Instruction.fireEmergenciesDesc' | translate}}</p>
+                <p><b>{{'Instruction.mojoTitle' | translate}}</b></p>
+                <p>{{'Instruction.mojoDesc' | translate}}</p>
+                <p class="help-tip">{{'Instruction.mojoTip' | translate}}</p>
+            </details>
+
+            <!-- GROW Projects -->
+            <details class="help-section">
+                <summary class="help-summary">{{'Instruction.growTitle' | translate}}</summary>
+                <p>{{'Instruction.growDesc' | translate}}</p>
+                <ul>
+                    <li>{{'Instruction.growBuySell' | translate}}</li>
+                    <li>{{'Instruction.growDividend' | translate}}</li>
+                    <li>{{'Instruction.growPayback' | translate}}</li>
+                    <li>{{'Instruction.growCashflow' | translate}}</li>
+                    <li>{{'Instruction.growPnL' | translate}}</li>
+                </ul>
+                <p class="book-link">Rich Dad Poor Dad: <a
+                    href="https://www.richdad.com/about/rich-dad">[https://www.richdad.com/about/rich-dad]</a></p>
+            </details>
+        </div>
+        <button id="editbtn" (click)="backToCategories()">‹ {{'Settings.backbtn' | translate}}</button>
+    </div>
+
+    <!-- ===== Reports & Analytics ===== -->
+    <div *ngIf="classReference.activeCategory === 'reports'">
+        <div id="info-box">
+            <!-- Cashflow & Financial Statements -->
+            <details class="help-section" open>
+                <summary class="help-summary">{{'Instruction.h4' | translate}}</summary>
+                <p>{{'Instruction.body4' | translate}}</p>
+                <p><b>{{'Instruction.incomeStatementTitle' | translate}}</b></p>
+                <p>{{'Instruction.incomeStatementDesc' | translate}}</p>
+                <p><b>{{'Instruction.balanceSheetTitle' | translate}}</b></p>
+                <p>{{'Instruction.balanceSheetDesc' | translate}}</p>
+            </details>
+
+            <!-- Budget & Plan -->
+            <details class="help-section">
+                <summary class="help-summary">{{'Instruction.budgetTitle' | translate}}</summary>
+                <p>{{'Instruction.budgetDesc' | translate}}</p>
+                <ul>
+                    <li>{{'Instruction.budgetCategories' | translate}}</li>
+                    <li>{{'Instruction.budgetPlanVsActual' | translate}}</li>
+                    <li>{{'Instruction.budgetNavigation' | translate}}</li>
+                </ul>
+            </details>
+
+            <!-- Statistics & Analytics -->
+            <details class="help-section">
+                <summary class="help-summary">{{'Instruction.statsTitle' | translate}}</summary>
+                <p>{{'Instruction.statsDesc' | translate}}</p>
+                <ul>
+                    <li>{{'Instruction.statsPie' | translate}}</li>
+                    <li>{{'Instruction.statsHistogram' | translate}}</li>
+                    <li>{{'Instruction.statsKPI' | translate}}</li>
+                    <li>{{'Instruction.statsBI' | translate}}</li>
+                    <li>{{'Instruction.statsCategory' | translate}}</li>
+                    <li>{{'Instruction.statsFinancial' | translate}}</li>
+                </ul>
+                <p class="help-tip">{{'Instruction.statsTip' | translate}}</p>
+            </details>
+        </div>
+        <button id="editbtn" (click)="backToCategories()">‹ {{'Settings.backbtn' | translate}}</button>
+    </div>
+
+    <!-- ===== Settings & Data ===== -->
+    <div *ngIf="classReference.activeCategory === 'settings'">
+        <div id="info-box">
+            <!-- Settings & Security -->
+            <details class="help-section" open>
+                <summary class="help-summary">{{'Instruction.settingsTitle' | translate}}</summary>
+                <p>{{'Instruction.settingsDesc' | translate}}</p>
+                <ul>
+                    <li>{{'Instruction.settingsLanguage' | translate}}</li>
+                    <li>{{'Instruction.settingsCurrency' | translate}}</li>
+                    <li>{{'Instruction.settingsNumberFormat' | translate}}</li>
+                    <li>{{'Instruction.settingsDateFormat' | translate}}</li>
+                    <li>{{'Instruction.settingsAllocation' | translate}}</li>
+                    <li>{{'Instruction.settingsEncryption' | translate}}</li>
+                    <li>{{'Instruction.settingsPassword' | translate}}</li>
+                    <li>{{'Instruction.settingsFixAccounting' | translate}}</li>
+                    <li>{{'Instruction.settingsExport' | translate}}</li>
+                    <li>{{'Instruction.settingsRestore' | translate}}</li>
+                </ul>
+                <p class="help-tip">{{'Instruction.encryptionTip' | translate}}</p>
+            </details>
+
+            <!-- Backup & Restore -->
+            <details class="help-section">
+                <summary class="help-summary">{{'Instruction.backupTitle' | translate}}</summary>
+                <p>{{'Instruction.backupDesc' | translate}}</p>
+                <p><b>{{'Instruction.backupExportTitle' | translate}}</b></p>
+                <p>{{'Instruction.backupExportDesc' | translate}}</p>
+                <ul>
+                    <li>{{'Instruction.backupExportCSV' | translate}}</li>
+                    <li>{{'Instruction.backupExportJSON' | translate}}</li>
+                </ul>
+                <p><b>{{'Instruction.backupRestoreTitle' | translate}}</b></p>
+                <p>{{'Instruction.backupRestoreDesc' | translate}}</p>
+                <p><b>{{'Instruction.backupUseCases' | translate}}</b></p>
+                <ul>
+                    <li>{{'Instruction.backupUseCase1' | translate}}</li>
+                    <li>{{'Instruction.backupUseCase2' | translate}}</li>
+                    <li>{{'Instruction.backupUseCase3' | translate}}</li>
+                </ul>
+                <p class="help-tip">{{'Instruction.backupTip' | translate}}</p>
+            </details>
+
+            <!-- Self-Hosted Mode -->
+            <details class="help-section">
+                <summary class="help-summary">{{'Instruction.selfhostedTitle' | translate}}</summary>
+                <p>{{'Instruction.selfhostedDesc' | translate}}</p>
+                <p><b>{{'Instruction.selfhostedHowTitle' | translate}}</b></p>
+                <p>{{'Instruction.selfhostedHowDesc' | translate}}</p>
+                <p><b>{{'Instruction.selfhostedStackTitle' | translate}}</b></p>
+                <ul>
+                    <li>{{'Instruction.selfhostedStack1' | translate}}</li>
+                    <li>{{'Instruction.selfhostedStack2' | translate}}</li>
+                    <li>{{'Instruction.selfhostedStack3' | translate}}</li>
+                    <li>{{'Instruction.selfhostedStack4' | translate}}</li>
+                </ul>
+                <p><b>{{'Instruction.selfhostedBenefitsTitle' | translate}}</b></p>
+                <ul>
+                    <li>{{'Instruction.selfhostedBenefit1' | translate}}</li>
+                    <li>{{'Instruction.selfhostedBenefit2' | translate}}</li>
+                    <li>{{'Instruction.selfhostedBenefit3' | translate}}</li>
+                    <li>{{'Instruction.selfhostedBenefit4' | translate}}</li>
+                </ul>
+                <p><b>{{'Instruction.selfhostedMigrateTitle' | translate}}</b></p>
+                <p>{{'Instruction.selfhostedMigrateDesc' | translate}}</p>
+                <p class="help-tip">{{'Instruction.selfhostedTip' | translate}}</p>
+            </details>
+        </div>
+        <button id="editbtn" (click)="backToCategories()">‹ {{'Settings.backbtn' | translate}}</button>
+    </div>
+</div>

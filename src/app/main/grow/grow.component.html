@@ -1,0 +1,222 @@
+<!-- Toolbar -->
+<div class="toolbar" role="banner">
+    <img id="profile-pic" width="40" alt="Profile Logo" src="../assets/profile-blank.jpg"
+      role="button" tabindex="0" aria-label="Open profile" (keydown.enter)="appReference.clickProfile()" (click)="appReference.clickProfile()" />
+    <div id="heading" role="button" tabindex="0" (click)="appReference.openNavBar()" (keydown.enter)="appReference.openNavBar()">{{'Menu.grow' | translate}}</div>
+    <div class="spacer"></div>
+    <img id="ai-btn" width="40" alt="AI Assistant" src="assets/icons/ai.png"
+      role="button" tabindex="0" aria-label="AI Assistant" (click)="openAiAssistant()" (keydown.enter)="openAiAssistant()" />
+    <button id="addbtn" class="add-circle-btn" aria-label="Add" (click)="addGrowProject()">+</button>
+</div>
+
+<!-- Search -->
+<div class="search-bar-container" *ngIf="classReference.allGrowProjects.length > 0">
+    <input type="text" class="search-input" aria-label="Search" [placeholder]="'Search.placeholder' | translate" [(ngModel)]="searchTextField" (keyup.enter)="search()">
+    <button type="submit" class="search-button" (click)="search()"><i class="fa fa-search"></i>{{'Cashflow.filter' | translate}}</button>
+    <button type="clear" class="clear-button" (click)="clearSearch()" *ngIf="classReference.isSearched">{{'Cashflow.clear' | translate}}</button>
+</div>
+
+<!-- Phase Filter Tabs -->
+<div class="phase-tabs" *ngIf="classReference.allGrowProjects.length > 0">
+    <button *ngFor="let ph of phases"
+        class="phase-tab"
+        [class.active]="classReference.phaseFilter === ph"
+        (click)="setPhaseFilter(ph)">
+        <span *ngIf="ph === 'all'">{{'Grow.allPhases' | translate}}</span>
+        <span *ngIf="ph !== 'all'">{{'Grow.phase.' + ph | translate}}</span>
+        <span class="phase-count" *ngIf="ph !== 'all'">({{getPhaseCount(ph)}})</span>
+    </button>
+</div>
+
+<!-- Type Filter Tabs -->
+<div class="type-tabs" *ngIf="classReference.allGrowProjects.length > 0">
+    <button *ngFor="let tp of types"
+        class="type-tab"
+        [class.active]="classReference.typeFilter === tp"
+        (click)="setTypeFilter(tp)">
+        <span *ngIf="tp === 'all'">{{'Grow.allTypes' | translate}}</span>
+        <span *ngIf="tp !== 'all'">{{'Grow.type.' + tp | translate}}</span>
+        <span class="type-count" *ngIf="tp !== 'all'">({{getTypeCount(tp)}})</span>
+    </button>
+</div>
+
+<!-- Skeleton Loading -->
+<div class="skeleton-row" *ngIf="appState.isLoading" aria-hidden="true">
+  <div class="skeleton-cell"></div><div class="skeleton-cell"></div><div class="skeleton-cell"></div>
+</div>
+<div class="skeleton-row" *ngIf="appState.isLoading" aria-hidden="true">
+  <div class="skeleton-cell"></div><div class="skeleton-cell"></div><div class="skeleton-cell"></div>
+</div>
+
+<!-- Project Cards -->
+<div class="grow-grid" *ngIf="!appState.isLoading">
+    <div *ngFor="let project of filteredProjects; let i = index"
+         class="grow-card"
+         role="button" tabindex="0"
+         (click)="clickRow(getOriginalIndex(project))"
+         (keydown.enter)="clickRow(getOriginalIndex(project))">
+
+        <!-- Card Header -->
+        <div class="card-header">
+            <span class="phase-badge phase-{{project.phase}}">
+                {{'Grow.phase.' + project.phase | translate}}
+            </span>
+            <span class="card-type" *ngIf="getProjectType(project)">{{getProjectType(project)}}</span>
+            <span class="type-badge" *ngIf="project.type && project.type !== 'income-growth'">
+                {{'Grow.type.' + project.type | translate}}
+            </span>
+        </div>
+
+        <!-- Card Title -->
+        <h3 class="card-title">{{project.title}}</h3>
+        <p class="card-sub" *ngIf="project.sub">{{project.sub}}</p>
+
+        <!-- Category (expense types only) -->
+        <div class="card-category" *ngIf="project.category">
+            <strong>{{'Grow.category' | translate}}:</strong>
+            <ng-container *ngIf="isCategoryArray(project.category); else singleCategory">
+                <span class="category-tag" *ngFor="let cat of getCategoryArray(project.category)">
+                    {{cat}}
+                </span>
+            </ng-container>
+            <ng-template #singleCategory>
+                <span class="category-tag">{{project.category}}</span>
+            </ng-template>
+        </div>
+
+        <!-- Description preview -->
+        <p class="card-desc" *ngIf="project.description">
+            {{project.description.length > 120 ? project.description.substring(0, 120) + '...' : project.description}}
+        </p>
+
+        <!-- Metrics Row: Income-growth type -->
+        <div class="card-metrics" *ngIf="!project.type || project.type === 'income-growth'">
+            <!-- Asset metrics -->
+            <ng-container *ngIf="project.isAsset && !project.share && !project.investment">
+                <div class="metric" *ngIf="getAssetAmount(getOriginalIndex(project)) > 0">
+                    <span class="metric-label">{{'Balance.Value' | translate}}</span>
+                    <span class="metric-value">{{getAssetAmount(getOriginalIndex(project)) | appNumber}} {{settingsReference.currency}}</span>
+                </div>
+                <div class="metric" *ngIf="getDepositAmount(project) > 0">
+                    <span class="metric-label">{{'Balance.Deposit' | translate}}</span>
+                    <span class="metric-value">{{getDepositAmount(project) | appNumber}} {{settingsReference.currency}}</span>
+                </div>
+            </ng-container>
+
+            <!-- Share metrics -->
+            <ng-container *ngIf="project.share">
+                <div class="metric" *ngIf="getShareQuantity(project) > 0">
+                    <span class="metric-label">{{'Balance.Quantity' | translate}}</span>
+                    <span class="metric-value">{{getShareQuantity(project) | appNumber}}</span>
+                </div>
+                <div class="metric" *ngIf="getSharePrice(project) > 0">
+                    <span class="metric-label">{{'Balance.Price' | translate}}</span>
+                    <span class="metric-value">{{getSharePrice(project) | appNumber}} {{settingsReference.currency}}</span>
+                </div>
+                <div class="metric" *ngIf="getAssetAmount(getOriginalIndex(project)) > 0">
+                    <span class="metric-label">{{'Balance.Value' | translate}}</span>
+                    <span class="metric-value">{{getAssetAmount(getOriginalIndex(project)) | appNumber}} {{settingsReference.currency}}</span>
+                </div>
+                <div class="metric" *ngIf="getDepositAmount(project) > 0">
+                    <span class="metric-label">{{'Balance.Deposit' | translate}}</span>
+                    <span class="metric-value">{{getDepositAmount(project) | appNumber}} {{settingsReference.currency}}</span>
+                </div>
+            </ng-container>
+
+            <!-- Investment metrics -->
+            <ng-container *ngIf="project.investment">
+                <div class="metric" *ngIf="getAssetAmount(getOriginalIndex(project)) > 0">
+                    <span class="metric-label">{{'Balance.Value' | translate}}</span>
+                    <span class="metric-value">{{getAssetAmount(getOriginalIndex(project)) | appNumber}} {{settingsReference.currency}}</span>
+                </div>
+                <div class="metric" *ngIf="getDepositAmount(project) > 0">
+                    <span class="metric-label">{{'Balance.Deposit' | translate}}</span>
+                    <span class="metric-value">{{getDepositAmount(project) | appNumber}} {{settingsReference.currency}}</span>
+                </div>
+                <div class="metric" *ngIf="getMortgageAmount(project) > 0">
+                    <span class="metric-label">{{'AddGrow.Mortage' | translate}}</span>
+                    <span class="metric-value">{{getMortgageAmount(project) | appNumber}} {{settingsReference.currency}}</span>
+                </div>
+            </ng-container>
+
+            <!-- Loan metrics (separate from mortgage) -->
+            <div class="metric" *ngIf="getLoanAmount(project) > 0">
+                <span class="metric-label">{{'AddGrow.Loan' | translate}}</span>
+                <span class="metric-value">{{getLoanAmount(project) | appNumber}} {{settingsReference.currency}}</span>
+            </div>
+            <div class="metric" *ngIf="getCreditAmount(project) > 0">
+                <span class="metric-label">{{'Balance.Credit' | translate}}</span>
+                <span class="metric-value">{{getCreditAmount(project) | appNumber}} {{settingsReference.currency}}</span>
+            </div>
+        </div>
+
+        <!-- Financial Performance Section (separate for all income-growth) -->
+        <div class="card-metrics" *ngIf="!project.type || project.type === 'income-growth'">
+            <div class="metric" *ngIf="project.cashflow > 0">
+                <span class="metric-label">{{'Menu.cashflow' | translate}}</span>
+                <span class="metric-value">{{project.cashflow | appNumber}} {{settingsReference.currency}}</span>
+            </div>
+            <div class="metric">
+                <span class="metric-label">{{'Grow.pl' | translate}}</span>
+                <span class="metric-value" [class.amount-positive]="getGrowProjectsGV(getOriginalIndex(project)) >= 0"
+                      [class.amount-negative]="getGrowProjectsGV(getOriginalIndex(project)) < 0">
+                    {{getGrowProjectsGV(getOriginalIndex(project)) | appNumber}} {{settingsReference.currency}}
+                </span>
+            </div>
+        </div>
+
+        <!-- Metrics Row: Expense types -->
+        <div class="card-metrics" *ngIf="project.type && project.type !== 'income-growth'">
+            <div class="metric" *ngIf="project.currentCost !== undefined">
+                <span class="metric-label">{{'Grow.currentCost' | translate}}</span>
+                <span class="metric-value">{{project.currentCost | appNumber}} {{settingsReference.currency}}</span>
+            </div>
+            <div class="metric" *ngIf="project.targetCost !== undefined">
+                <span class="metric-label">{{'Grow.targetCost' | translate}}</span>
+                <span class="metric-value">{{project.targetCost | appNumber}} {{settingsReference.currency}}</span>
+            </div>
+            <div class="metric metric-savings" *ngIf="project.monthlySavings !== undefined">
+                <span class="metric-label">{{'Grow.monthlySavings' | translate}}</span>
+                <span class="metric-value amount-positive">{{project.monthlySavings | appNumber}} {{settingsReference.currency}}</span>
+            </div>
+            <div class="metric metric-savings" *ngIf="project.annualSavings !== undefined">
+                <span class="metric-label">{{'Grow.annualSavings' | translate}}</span>
+                <span class="metric-value amount-positive">{{project.annualSavings | appNumber}} {{settingsReference.currency}}</span>
+            </div>
+        </div>
+
+        <!-- Alternative (subscription-action type) -->
+        <div class="card-alternative" *ngIf="project.type === 'subscription-action' && project.alternative">
+            <strong>{{'Grow.alternative' | translate}}:</strong> {{project.alternative}}
+            <span *ngIf="project.alternativeCost !== undefined"> ({{project.alternativeCost | appNumber}} {{settingsReference.currency}})</span>
+        </div>
+
+        <!-- Action Items Progress -->
+        <div class="card-actions-progress" *ngIf="project.actionItems && project.actionItems.length > 0">
+            <div class="progress-bar-track">
+                <div class="progress-bar-fill" [style.width.%]="getActionPercent(project)"></div>
+            </div>
+            <span class="progress-text">{{'Grow.actions' | translate}}: {{getActionProgress(project)}}</span>
+        </div>
+
+        <!-- Card Footer: Quick Actions (income-growth only) -->
+        <div class="card-footer" *ngIf="!project.type || project.type === 'income-growth'">
+            <button class="card-btn card-btn-buy" (click)="buyProject(getOriginalIndex(project)); $event.stopPropagation()">{{'Grow.buy' | translate}}</button>
+            <button class="card-btn card-btn-sell" (click)="sellProject(getOriginalIndex(project)); $event.stopPropagation()">{{'Grow.sell' | translate}}</button>
+        </div>
+    </div>
+</div>
+
+<!-- Empty state -->
+<div class="empty-state" *ngIf="!appState.isLoading && filteredProjects.length === 0">
+    <p>{{'Empty.growProjects' | translate}}</p>
+    <button class="btn btn--primary" (click)="openAiAssistant()">{{'Grow.startWithAi' | translate}}</button>
+</div>
+
+<!-- Sub-components (panels) -->
+<app-info-grow></app-info-grow>
+<app-info-asset></app-info-asset>
+<app-info-share></app-info-share>
+<app-info-liabilitie></app-info-liabilitie>
+<app-info-investment></app-info-investment>
+<app-ai-assistant></app-ai-assistant>

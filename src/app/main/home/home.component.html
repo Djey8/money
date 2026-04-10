@@ -1,0 +1,71 @@
+<!-- Toolbar -->
+<div class="toolbar" role="banner">
+    <img id="profile-pic" width="40" alt="Profile Logo" src="../assets/profile-blank.jpg"
+        role="button" tabindex="0" aria-label="Open profile" (click)="appReference.clickProfile()" (keydown.enter)="appReference.clickProfile()" />
+    <div id="heading" role="button" tabindex="0" (click)="appReference.openNavBar()" (keydown.enter)="appReference.openNavBar()">{{'Home.title' | translate}}</div>
+    <div class="spacer"></div>
+    <img id="statsbtn" width="40" alt="Stats" src="../../../assets/icons/graph.jpg"
+        role="button" tabindex="0" aria-label="View statistics" (click)="goToStats()" (keydown.enter)="goToStats()" />
+    <img id="bistats" width="40" alt="Business Intelligence" src="../../../assets/icons/bi.jpg"
+        role="button" tabindex="0" aria-label="View business intelligence" (click)="goToBIDashboard()" (keydown.enter)="goToBIDashboard()" />
+    <img id="budgetbtn" width="40" alt="Budget" src="../../../assets/icons/budget.jpg"
+        role="button" tabindex="0" aria-label="View budget" (click)="goToBudget()" (keydown.enter)="goToBudget()" />
+    <img id="cashflowbtn" width="40" alt="Cashflow" src="../../../assets/icons/cashflow.jpg"
+        role="button" tabindex="0" aria-label="View cashflow" (click)="goToCashflow()" (keydown.enter)="goToCashflow()" />
+</div>
+<div class="container">
+    <!-- Loading skeleton -->
+    <div class="grid-container" *ngIf="appState.isLoading">
+        <div class="grid-item" *ngFor="let i of [1,2,3,4]">
+            <div class="skeleton skeleton-text-lg" style="width: 60%; margin: 16px auto 12px;"></div>
+            <div class="skeleton skeleton-circle" style="width: 55%; aspect-ratio: 1; margin: 0 auto 12px;"></div>
+            <div class="skeleton skeleton-text-lg" style="width: 50%; margin: 8px auto;"></div>
+        </div>
+        <div class="total-amount">
+            <div class="skeleton skeleton-text-lg" style="width: 40%; margin: 20px auto 12px;"></div>
+            <div class="skeleton skeleton-text-lg" style="width: 35%; margin: 8px auto 20px;"></div>
+        </div>
+    </div>
+
+    <!-- Real content -->
+    <div class="grid-container" *ngIf="!appState.isLoading">
+        <div class="grid-item" role="button" tabindex="0" aria-label="Daily" (click)="clickDaily()" (keydown.enter)="clickDaily()">
+            <h3 class="grid-header">{{'Menu.daily' | translate}}</h3>
+            <img class="grid-pic" src="../assets/icons/daily.jpg" alt="pic">
+            <div
+                class="{{classReference.dailyValue==0 ? 'grid-value-zero' : classReference.dailyValue>0 ? 'grid-value-positive' : 'grid-value-negative'}}">
+                <span [appCountUp]="classReference.dailyValue"></span> {{settingsReference.currency}}</div>
+        </div>
+    
+        <div class="grid-item" role="button" tabindex="0" aria-label="Splurge" (click)="clickSplurge()" (keydown.enter)="clickSplurge()">
+            <h3 class="grid-header">{{'Menu.splurge' | translate}}</h3>
+            <img class="grid-pic" src="../assets/icons/splurge.jpg" alt="pic">
+            <div
+                class="{{classReference.splurgeValue==0 ? 'grid-value-zero' : classReference.splurgeValue>0 ? 'grid-value-positive' : 'grid-value-negative'}}">
+                <span [appCountUp]="classReference.splurgeValue"></span> {{settingsReference.currency}}</div>
+        </div>
+    
+        <div class="grid-item" role="button" tabindex="0" aria-label="Smile" (click)="clickSmile()" (keydown.enter)="clickSmile()">
+            <h3 class="grid-header">{{'Menu.smile' | translate}}</h3>
+            <img class="grid-pic" src="../assets/icons/smile.jpg" alt="pic">
+            <div
+                class="{{classReference.smileValue==0 ? 'grid-value-zero' : classReference.smileValue>0 ? 'grid-value-positive' : 'grid-value-negative'}}">
+                <span [appCountUp]="classReference.smileValue"></span> {{settingsReference.currency}}</div>
+        </div>
+    
+        <div class="grid-item" role="button" tabindex="0" aria-label="Fire" (click)="clickFire()" (keydown.enter)="clickFire()">
+            <h3 class="grid-header">{{'Menu.fire' | translate}}</h3>
+            <img class="grid-pic" src="../assets/icons/fire.jpg" alt="pic">
+            <div class="{{classReference.fireValue==0 ? 'grid-value-zero' : classReference.fireValue>0 ? 'grid-value-positive' : 'grid-value-negative'}}">
+                <span [appCountUp]="classReference.fireValue"></span> {{settingsReference.currency}}</div>
+        </div>
+    
+        <div class="total-amount" role="button" tabindex="0" aria-label="Balance" (click)="clickBalance()" (keydown.enter)="clickBalance()">
+            <h3 class="total-header">{{'Home.balance' | translate}}</h3>
+            <div
+                class="{{classReference.totalAmount==0 ? 'grid-value-zero' : classReference.totalAmount>0 ? 'grid-value-positive' : 'grid-value-negative'}}">
+                <span [appCountUp]="classReference.totalAmount"></span> {{settingsReference.currency}}</div>
+        </div>
+    </div>
+
+</div>

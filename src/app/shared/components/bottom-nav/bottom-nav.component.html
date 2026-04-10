@@ -1,0 +1,226 @@
+<!-- Mobile bottom nav: compact 5-item bar -->
+<nav class="bottom-nav bottom-nav--mobile" *ngIf="!isAuthPage && !statsMode" role="navigation" aria-label="Main navigation">
+  <button class="bottom-nav-item" [class.active]="isActive('/home')"
+    (click)="goHome()" aria-label="Home">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+      <polyline points="9 22 9 12 15 12 15 22"/>
+    </svg>
+    <span class="nav-label">{{'Menu.home' | translate}}</span>
+  </button>
+
+  <button class="bottom-nav-item" [class.active]="isActive('/transactions')"
+    (click)="goTransactions()" aria-label="Transactions">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="8" y1="6" x2="21" y2="6"/>
+      <line x1="8" y1="12" x2="21" y2="12"/>
+      <line x1="8" y1="18" x2="21" y2="18"/>
+      <line x1="3" y1="6" x2="3.01" y2="6"/>
+      <line x1="3" y1="12" x2="3.01" y2="12"/>
+      <line x1="3" y1="18" x2="3.01" y2="18"/>
+    </svg>
+    <span class="nav-label">{{'Menu.transactions' | translate}}</span>
+  </button>
+
+  <button class="bottom-nav-item bottom-nav-add" (click)="smartAdd()" aria-label="Add">
+    <div class="add-btn">
+      <svg class="nav-icon-add" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="12" y1="5" x2="12" y2="19"/>
+        <line x1="5" y1="12" x2="19" y2="12"/>
+      </svg>
+    </div>
+  </button>
+
+  <button class="bottom-nav-item" [class.active]="isActive('/stats')"
+    (click)="smartStats()" aria-label="Statistics">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="18" y1="20" x2="18" y2="10"/>
+      <line x1="12" y1="20" x2="12" y2="4"/>
+      <line x1="6" y1="20" x2="6" y2="14"/>
+    </svg>
+    <span class="nav-label">{{'Menu.stats' | translate}}</span>
+  </button>
+
+  <button class="bottom-nav-item" (click)="openMenu()" aria-label="Menu">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="3" y1="12" x2="21" y2="12"/>
+      <line x1="3" y1="6" x2="21" y2="6"/>
+      <line x1="3" y1="18" x2="21" y2="18"/>
+    </svg>
+    <span class="nav-label">{{'Menu.title' | translate}}</span>
+  </button>
+</nav>
+
+<!-- Mobile stats nav: chart shortcuts -->
+<nav class="bottom-nav bottom-nav--mobile bottom-nav--stats" *ngIf="!isAuthPage && statsMode" role="navigation" aria-label="Chart navigation">
+  <button class="stats-nav-item" [class.active]="isChartActive('home')" (click)="goChart('home')">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21.21 15.89A10 10 0 1 1 8 2.83"/>
+      <path d="M22 12A10 10 0 0 0 12 2v10z"/>
+    </svg>
+    <span class="nav-label">{{'Menu.overview' | translate}}</span>
+  </button>
+
+  <button class="stats-nav-item" [class.active]="isChartActive('cashflow')" (click)="goChart('cashflow')">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+      <line x1="8" y1="15" x2="8" y2="9"/>
+      <line x1="12" y1="15" x2="12" y2="7"/>
+      <line x1="16" y1="15" x2="16" y2="11"/>
+    </svg>
+    <span class="nav-label">{{'Menu.cashflow' | translate}}</span>
+  </button>
+
+  <button class="stats-nav-item" [class.active]="isChartActive('kpi')" (click)="goChart('kpi')">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+    </svg>
+    <span class="nav-label">{{'Menu.kpi' | translate}}</span>
+  </button>
+
+  <button class="stats-nav-item" [class.active]="isChartActive('daily')" (click)="goChart('daily')">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+      <polyline points="17 6 23 6 23 12"/>
+    </svg>
+    <span class="nav-label">{{'Menu.daily' | translate}}</span>
+  </button>
+
+  <button class="stats-nav-item" (click)="toggleStatsMode()" aria-label="Back to navigation">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="18" y1="6" x2="6" y2="18"/>
+      <line x1="6" y1="6" x2="18" y2="18"/>
+    </svg>
+    <span class="nav-label">{{'Menu.stats' | translate}}</span>
+  </button>
+
+  <button class="stats-nav-item" (click)="openMenu()" aria-label="Menu">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="3" y1="12" x2="21" y2="12"/>
+      <line x1="3" y1="6" x2="21" y2="6"/>
+      <line x1="3" y1="18" x2="21" y2="18"/>
+    </svg>
+    <span class="nav-label">{{'Menu.title' | translate}}</span>
+  </button>
+</nav>
+
+<!-- Desktop bottom nav: shortcuts bar -->
+<nav class="bottom-nav bottom-nav--desktop" *ngIf="!isAuthPage && !statsMode" role="navigation" aria-label="Quick navigation">
+  <button class="desktop-nav-item" [class.active]="isActive('/home')" (click)="goHome()">
+    <svg class="nav-icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+      <polyline points="9 22 9 12 15 12 15 22"/>
+    </svg>
+    <span>{{'Menu.home' | translate}}</span>
+  </button>
+
+  <span class="nav-sep"></span>
+
+  <button class="desktop-nav-item" [class.active]="isActive('/transactions')" (click)="goTransactions()">
+    {{'Menu.transactions' | translate}}
+  </button>
+  <button class="desktop-nav-item" [class.active]="isActive('/daily')" (click)="goTo('/daily')">
+    {{'Menu.daily' | translate}}
+  </button>
+  <button class="desktop-nav-item" [class.active]="isActive('/splurge')" (click)="goTo('/splurge')">
+    {{'Menu.splurge' | translate}}
+  </button>
+  <button class="desktop-nav-item" [class.active]="isActive('/smile')" (click)="goTo('/smile')">
+    {{'Menu.smile' | translate}}
+  </button>
+  <button class="desktop-nav-item" [class.active]="isActive('/fire')" (click)="goTo('/fire')">
+    {{'Menu.fire' | translate}}
+  </button>
+
+  <span class="nav-sep hide-medium"></span>
+
+  <button class="desktop-nav-item hide-medium" [class.active]="isActive('/cashflow')" (click)="goTo('/cashflow')">
+    {{'Menu.cashflow' | translate}}
+  </button>
+  <button class="desktop-nav-item hide-medium" [class.active]="isActive('/subscription')" (click)="goTo('/subscription')">
+    {{'Menu.sub' | translate}}
+  </button>
+  <button class="desktop-nav-item hide-medium" [class.active]="isActive('/budget')" (click)="goTo('/budget')">
+    {{'Menu.budget' | translate}}
+  </button>
+  <button class="desktop-nav-item hide-medium" [class.active]="isActive('/grow')" (click)="goTo('/grow')">
+    {{'Menu.grow' | translate}}
+  </button>
+
+  <span class="nav-sep"></span>
+
+  <button class="desktop-nav-item" [class.active]="isActive('/stats')" (click)="smartStats()">
+    <svg class="nav-icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="18" y1="20" x2="18" y2="10"/>
+      <line x1="12" y1="20" x2="12" y2="4"/>
+      <line x1="6" y1="20" x2="6" y2="14"/>
+    </svg>
+    <span>{{'Menu.stats' | translate}}</span>
+  </button>
+  <button class="desktop-nav-item desktop-nav-add" (click)="smartAdd()" aria-label="Add">
+    <svg class="nav-icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="12" y1="5" x2="12" y2="19"/>
+      <line x1="5" y1="12" x2="19" y2="12"/>
+    </svg>
+  </button>
+
+  <span class="nav-sep"></span>
+
+  <button class="desktop-nav-item desktop-nav-menu" (click)="openMenu()" aria-label="Full menu">
+    <svg class="nav-icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="3" y1="12" x2="21" y2="12"/>
+      <line x1="3" y1="6" x2="21" y2="6"/>
+      <line x1="3" y1="18" x2="21" y2="18"/>
+    </svg>
+    <span>{{'Menu.title' | translate}}</span>
+  </button>
+</nav>
+
+<!-- Desktop stats nav: chart shortcuts -->
+<nav class="bottom-nav bottom-nav--desktop bottom-nav--stats-desktop" *ngIf="!isAuthPage && statsMode" role="navigation" aria-label="Chart navigation">
+  <button class="desktop-nav-item" [class.active]="isChartActive('home')" (click)="goChart('home')">
+    Overview
+  </button>
+  <button class="desktop-nav-item" [class.active]="isChartActive('cashflow')" (click)="goChart('cashflow')">
+    {{'Menu.cashflow' | translate}}
+  </button>
+  <button class="desktop-nav-item" [class.active]="isChartActive('kpi')" (click)="goChart('kpi')">
+    KPI
+  </button>
+
+  <span class="nav-sep"></span>
+
+  <button class="desktop-nav-item" [class.active]="isChartActive('daily')" (click)="goChart('daily')">
+    {{'Menu.daily' | translate}}
+  </button>
+  <button class="desktop-nav-item" [class.active]="isChartActive('splurge')" (click)="goChart('splurge')">
+    {{'Menu.splurge' | translate}}
+  </button>
+  <button class="desktop-nav-item" [class.active]="isChartActive('smile')" (click)="goChart('smile')">
+    {{'Menu.smile' | translate}}
+  </button>
+  <button class="desktop-nav-item" [class.active]="isChartActive('fire')" (click)="goChart('fire')">
+    {{'Menu.fire' | translate}}
+  </button>
+
+  <span class="nav-sep"></span>
+
+  <button class="desktop-nav-item" (click)="toggleStatsMode()" aria-label="Back to navigation">
+    <svg class="nav-icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="18" y1="6" x2="6" y2="18"/>
+      <line x1="6" y1="6" x2="18" y2="18"/>
+    </svg>
+    <span>{{'Menu.stats' | translate}}</span>
+  </button>
+
+  <span class="nav-sep"></span>
+
+  <button class="desktop-nav-item desktop-nav-menu" (click)="openMenu()" aria-label="Full menu">
+    <svg class="nav-icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="3" y1="12" x2="21" y2="12"/>
+      <line x1="3" y1="6" x2="21" y2="6"/>
+      <line x1="3" y1="18" x2="21" y2="18"/>
+    </svg>
+    <span>{{'Menu.title' | translate}}</span>
+  </button>
+</nav>

@@ -1,0 +1,225 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboards
+  namespace: money-app
+  labels:
+    app: grafana
+data:
+  backend-troubleshooting.json: |
+    {
+      "title": "Backend Troubleshooting",
+      "tags": ["backend", "troubleshooting", "support"],
+      "timezone": "browser",
+      "uid": "backend-troubleshooting",
+      "refresh": "2m",
+      "time": {"from": "now-15m", "to": "now"},
+      "editable": true,
+      "schemaVersion": 38,
+      "version": 16,
+      "panels": [
+        {
+          "id": 1,
+          "title": "GET Requests Over Time by Endpoint",
+          "type": "timeseries",
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+          "targets": [{
+            "expr": "sum by (path) (count_over_time({service=\"money-backend\", requestType=\"api_call\", method=\"GET\", path!=\"/health\"} | __error__=\"\" [15m]))",
+            "refId": "A",
+            "legendFormat": "{{path}}",
+            "resolution": 1,
+            "maxLines": 50
+          }],
+          "datasource": "Loki",
+          "maxDataPoints": 40,
+          "interval": "5m",
+          "options": {
+            "tooltip": {"mode": "multi", "sort": "desc"},
+            "legend": {"showLegend": true, "displayMode": "list", "placement": "bottom", "calcs": ["last"]}
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {"mode": "palette-classic"},
+              "custom": {"lineWidth": 2, "fillOpacity": 10, "drawStyle": "line", "showPoints": "never", "lineInterpolation": "smooth", "axisPlacement": "auto", "scaleDistribution": {"type": "linear"}},
+              "min": 0
+            }
+          }
+        },
+        {
+          "id": 9,
+          "title": "POST Requests Over Time by Endpoint",
+          "type": "timeseries",
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+          "targets": [{
+            "expr": "sum by (path) (count_over_time({service=\"money-backend\", requestType=\"api_call\", method=\"POST\", path!=\"/health\"} | __error__=\"\" [15m]))",
+            "refId": "A",
+            "legendFormat": "{{path}}",
+            "resolution": 1,
+            "maxLines": 50
+          }],
+          "datasource": "Loki",
+          "maxDataPoints": 40,
+          "interval": "5m",
+          "options": {
+            "tooltip": {"mode": "multi", "sort": "desc"},
+            "legend": {"showLegend": true, "displayMode": "list", "placement": "bottom", "calcs": ["last"]}
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {"mode": "palette-classic"},
+              "custom": {"lineWidth": 2, "fillOpacity": 10, "drawStyle": "line", "showPoints": "never", "lineInterpolation": "smooth", "axisPlacement": "auto", "scaleDistribution": {"type": "linear"}},
+              "min": 0
+            }
+          }
+        },
+        {
+          "id": 2,
+          "title": "Active Users (Unique) - Last 15m",
+          "type": "stat",
+          "gridPos": {"h": 4, "w": 6, "x": 0, "y": 8},
+          "targets": [{
+            "expr": "count(count by (userId) (rate({service=\"money-backend\", requestType=\"api_call\", userId!=\"\", userId!=\"anonymous\", path!=\"/health\"}[15m])))",
+            "refId": "A",
+            "instant": true,
+            "maxLines": 1000
+          }],
+          "datasource": "Loki",
+          "options": {
+            "reduceOptions": {"values": false, "calcs": ["lastNotNull"]},
+            "graphMode": "none",
+            "colorMode": "value",
+            "textMode": "value"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {"mode": "thresholds"},
+              "thresholds": {"mode": "absolute", "steps": [{"color": "blue", "value": null}, {"color": "green", "value": 5}]}
+            }
+          }
+        },
+        {
+          "id": 3,
+          "title": "Total Requests - Last 15m",
+          "type": "stat",
+          "gridPos": {"h": 4, "w": 6, "x": 6, "y": 8},
+          "targets": [{
+            "expr": "sum(count_over_time({service=\"money-backend\", requestType=\"api_call\", path!=\"/health\"} | __error__=\"\" [15m]))",
+            "refId": "A",
+            "instant": true,
+            "maxLines": 1000
+          }],
+          "datasource": "Loki",
+          "options": {"graphMode": "none", "colorMode": "value", "textMode": "value"},
+          "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}}}
+        },
+        {
+          "id": 4,
+          "title": "Errors - Last 15m",
+          "type": "stat",
+          "gridPos": {"h": 4, "w": 6, "x": 12, "y": 8},
+          "targets": [{
+            "expr": "sum(count_over_time({service=\"money-backend\", level=\"error\"} | __error__=\"\" [15m]))",
+            "refId": "A",
+            "instant": true,
+            "maxLines": 1000
+          }],
+          "datasource": "Loki",
+          "options": {"graphMode": "none", "colorMode": "background", "textMode": "value"},
+          "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": 0}, {"color": "yellow", "value": 1}, {"color": "red", "value": 10}]}, "noValue": "0"}}
+        },
+        {
+          "id": 5,
+          "title": "Median Response Time - Last 15m",
+          "type": "stat",
+          "gridPos": {"h": 4, "w": 6, "x": 18, "y": 8},
+          "targets": [{
+            "expr": "quantile_over_time(0.5, {service=\"money-backend\", requestType=\"api_call\", path!=\"/health\"} | __error__=\"\" | unwrap responseTimeMs [15m])",
+            "refId": "A",
+            "instant": true,
+            "maxLines": 1000
+          }],
+          "datasource": "Loki",
+          "options": {"graphMode": "none", "colorMode": "value", "textMode": "value"},
+          "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 100}, {"color": "orange", "value": 500}, {"color": "red", "value": 1000}]}, "unit": "ms", "decimals": 0, "noValue": "0"}}
+        },
+        {
+          "id": 6,
+          "title": "Error Rate Over Time",
+          "type": "timeseries",
+          "gridPos": {"h": 8, "w": 24, "x": 0, "y": 12},
+          "targets": [
+            {"expr": "sum(count_over_time({service=\"money-backend\", level=\"error\"} | __error__=\"\" [30m]))", "refId": "A", "legendFormat": "Errors", "resolution": 1, "maxLines": 50},
+            {"expr": "sum(count_over_time({service=\"money-backend\", level=\"warn\"} | __error__=\"\" [30m]))", "refId": "B", "legendFormat": "Warnings", "resolution": 1, "maxLines": 50}
+          ],
+          "datasource": "Loki",
+          "maxDataPoints": 30,
+          "interval": "10m",
+          "options": {
+            "tooltip": {"mode": "multi", "sort": "desc"},
+            "legend": {"showLegend": true, "displayMode": "list", "placement": "bottom", "calcs": ["last"]}
+          },
+          "fieldConfig": {
+            "defaults": {"color": {"mode": "palette-classic"}, "custom": {"lineWidth": 2, "fillOpacity": 15, "lineInterpolation": "smooth", "axisPlacement": "auto", "scaleDistribution": {"type": "linear"}}, "min": 0},
+            "overrides": [
+              {"matcher": {"id": "byName", "options": "Errors"}, "properties": [{"id": "color", "value": {"fixedColor": "red", "mode": "fixed"}}]},
+              {"matcher": {"id": "byName", "options": "Warnings"}, "properties": [{"id": "color", "value": {"fixedColor": "orange", "mode": "fixed"}}]}
+            ]
+          }
+        },
+        {
+          "id": 10,
+          "title": "All API Requests (GET, POST, DELETE, UPDATE)",
+          "type": "table",
+          "gridPos": {"h": 12, "w": 24, "x": 0, "y": 20},
+          "targets": [{
+            "expr": "{service=\"money-backend\", requestType=\"api_call\", path!=\"/health\"} | __error__=\"\" | line_format \"{{.userId}}\t{{.method}}\t{{.path}}\t{{.statusCode}}\t{{.responseTime}}\"",
+            "refId": "A",
+            "maxLines": 1000
+          }],
+          "datasource": "Loki",
+          "options": {
+            "showTime": true,
+            "sortBy": [{"displayName": "Time", "desc": true}],
+            "footer": {"show": false, "reducer": ["sum"], "fields": ""}
+          },
+          "fieldConfig": {
+            "defaults": {
+              "custom": {"align": "auto", "displayMode": "auto"}
+            },
+            "overrides": []
+          },
+          "transformations": []
+        },
+        {
+          "id": 7,
+          "title": "Warning Details (Table)",
+          "type": "table",
+          "gridPos": {"h": 10, "w": 24, "x": 0, "y": 32},
+          "targets": [{
+            "expr": "{service=\"money-backend\", level=\"warn\"} | __error__=\"\" | line_format \"{{.userId}}\t{{.method}}\t{{.path}}\t{{.statusCode}}\t{{.message}}\"",
+            "refId": "A",
+            "maxLines": 200
+          }],
+          "datasource": "Loki",
+          "options": {"showTime": true, "sortBy": [{"displayName": "Time", "desc": true}]},
+          "fieldConfig": {
+            "defaults": {},
+            "overrides": []
+          },
+          "transformations": []
+        },
+        {
+          "id": 8,
+          "title": "Error Details",
+          "type": "logs",
+          "gridPos": {"h": 10, "w": 24, "x": 0, "y": 42},
+          "targets": [{
+            "expr": "{service=\"money-backend\", level=\"error\"} | __error__=\"\" | line_format \" {{.userId}} | {{.method}} {{.path}} |  {{.message}}\"",
+            "refId": "A",
+            "maxLines": 200
+          }],
+          "datasource": "Loki",
+          "options": {"showTime": true, "wrapLogMessage": true, "enableLogDetails": true, "sortOrder": "Descending", "dedupStrategy": "none"}
+        }
+      ]
+    }

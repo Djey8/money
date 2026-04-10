@@ -1,0 +1,67 @@
+<!-- Toolbar -->
+<div class="toolbar" role="banner">
+    <img id="profile-pic" width="40" alt="Profile Logo" src="../assets/profile-blank.jpg"
+        role="button" tabindex="0" aria-label="Open profile" (keydown.enter)="appReference.clickProfile()" (click)="appReference.clickProfile()" />
+    <div id="heading" role="button" tabindex="0" (click)="appReference.openNavBar()" (keydown.enter)="appReference.openNavBar()">{{'Menu.budget' | translate}}</div>
+    <div class="spacer"></div>
+    <img id="statsbtn" width="40" text="Stats" alt="stats" src="../../../assets/icons/graph.jpg"
+        role="button" tabindex="0" aria-label="View statistics" (keydown.enter)="goToStats()" (click)="goToStats()"/>
+    <img id="planbtn" width="40" text="plan" alt="plan" src="../../../assets/icons/plan.jpg"
+        role="button" tabindex="0" aria-label="View plan" (keydown.enter)="goToPlan()" (click)="goToPlan()" />
+</div>
+
+<div>
+  <!-- Chart Filter Toggle -->
+  <div class="chart-filter-toggle" *ngIf="!chartFilterVisible">
+    <button class="chart-filter-toggle-btn" (click)="toggleChartFilter()" title="{{ 'ChartFilter.toggle' | translate }}">
+      <i class="fa fa-filter"></i> {{ 'ChartFilter.toggle' | translate }}
+    </button>
+  </div>
+
+  <!-- Date range badge -->
+  <div class="chart-filter-date-badge" *ngIf="!chartFilterVisible && chartFilter.filterType !== 'all'">
+    <span class="date-badge-label">{{ getChartFilterDateLabel() }}</span>
+  </div>
+
+  <!-- Chart Filter Panel -->
+  <div class="chart-filter-panel" *ngIf="chartFilterVisible">
+    <div class="chart-filter-header">
+      <span class="chart-filter-title">{{ 'ChartFilter.title' | translate }}</span>
+      <button class="chart-filter-close-btn" (click)="closeChartFilter()">&times;</button>
+    </div>
+    <hr class="filter-divider">
+
+    <div class="quick-filter-controls">
+      <div class="chart-filter-periods">
+        <button class="chart-filter-period-btn" [class.active]="chartFilter.filterType === 'month'" (click)="selectChartPeriod('month')">{{ 'Period.month' | translate }}</button>
+        <button class="chart-filter-period-btn" [class.active]="chartFilter.filterType === 'quarter'" (click)="selectChartPeriod('quarter')">{{ 'Period.quarter' | translate }}</button>
+        <button class="chart-filter-period-btn" [class.active]="chartFilter.filterType === 'year'" (click)="selectChartPeriod('year')">{{ 'Period.year' | translate }}</button>
+        <button class="chart-filter-period-btn" [class.active]="chartFilter.filterType === 'all'" (click)="selectChartPeriod('all')">{{ 'Period.all' | translate }}</button>
+        <button class="chart-filter-period-btn" [class.active]="chartFilter.filterType === 'custom'" (click)="selectChartCustom()">{{ 'BI.custom' | translate }}</button>
+      </div>
+      <div class="chart-filter-nav" *ngIf="chartFilter.filterType !== 'all' && chartFilter.filterType !== 'custom'">
+        <button class="chart-filter-nav-btn" (click)="chartFilterPrev()">&lt;</button>
+        <span class="chart-filter-date-label">{{ getChartFilterDateLabel() }}</span>
+        <button class="chart-filter-nav-btn" (click)="chartFilterNext()">&gt;</button>
+      </div>
+      <div class="chart-filter-custom-dates" *ngIf="chartFilter.filterType === 'custom'">
+        <label>{{ 'Cashflow.start' | translate }}</label>
+        <input type="date" [(ngModel)]="chartFilter.customDateStart" (change)="applyChartFilter()" />
+        <label>{{ 'Cashflow.end' | translate }}</label>
+        <input type="date" [(ngModel)]="chartFilter.customDateEnd" (change)="applyChartFilter()" />
+      </div>
+      <div class="quick-filter-buttons">
+        <button class="filter-btn filter-btn-primary" (click)="applyChartFilter(); closeChartFilter()">
+          <i class="fa fa-filter"></i> {{ 'Cashflow.filter' | translate }}
+        </button>
+        <button class="filter-btn filter-btn-clear" (click)="resetChartFilter(); closeChartFilter()">
+          <i class="fa fa-times"></i> {{ 'Cashflow.clear' | translate }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="chart-container"></div>
+  <!-- Include the D3.js library -->
+  <script src="https://d3js.org/d3.v5.min.js"></script>
+</div>

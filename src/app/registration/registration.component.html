@@ -1,0 +1,67 @@
+<!-- Toolbar -->
+<div class="toolbar" role="banner">
+  <img id="profile-pic" width="40" alt="Profile Logo" src="../assets/profile-blank.jpg"
+    role="button" tabindex="0" aria-label="Open profile" (click)="appReference.clickProfile()" (keydown.enter)="appReference.clickProfile()" />
+  <div id="heading" role="button" tabindex="0" (click)="appReference.openNavBar()" (keydown.enter)="appReference.openNavBar()">{{'Registration.title' | translate}}</div>
+  <div class="spacer"></div>
+</div>
+
+<div *ngIf="isRegister" class="register-container">
+  <form>
+    <h2>{{'Registration.Register' | translate}}</h2>
+    <img id="profile-pic" width="20%" alt="Profile Logo" src="../../assets/profile-blank.jpg" style="margin: auto;"/>
+    <label for="username" class="required">{{'Settings.username' | translate}}</label>
+    <input type="text" id="username" name="username" aria-required="true" [(ngModel)]="usernameTextField"
+        [attr.aria-invalid]="isError ? true : null" [attr.aria-describedby]="isError ? 'reg-error' : null">
+
+    <label for="Email" class="required"> {{'Settings.email' | translate}} </label>
+    <input type="email" id="Email" name="Email" aria-required="true" [(ngModel)]="emailTextField"
+        [attr.aria-invalid]="isError ? true : null" [attr.aria-describedby]="isError ? 'reg-error' : null">
+
+    <label for="password" class="required"> {{'Registration.Password' | translate}} </label>
+    <div class="password-wrapper">
+      <input type="password" id="password" name="Password" aria-required="true" [(ngModel)]="passwordTextField"
+          [attr.aria-invalid]="isError ? true : null" [attr.aria-describedby]="isError ? 'reg-error' : 'password-hint'">
+      <button type="button" (click)="toggleEye()" class="password-toggle-btn" aria-label="Toggle password visibility">
+      <img src={{eyePic}} alt="Toggle Password Visibility" width="20" height="20" class="password-toggle-img"/>
+      </button>
+    </div>
+    <small id="password-hint" class="password-hint">{{'Registration.PasswordHint' | translate}}</small>
+    <p *ngIf="isError" id="reg-error" role="alert">{{errorMessageLable}}</p>
+    <button id="registerbtn" class="btn btn--primary" (click)="register()">{{'Registration.Register' | translate}}</button>
+    <button id="goToLoginbtn" class="btn btn--outline" (click)="goToLogin()">{{'Registration.SignIn' | translate}}</button>
+  </form>
+</div>
+
+<div *ngIf="!isRegister" class="login-container">
+  <form>
+    <h2>{{'Registration.SignIn' | translate}}</h2>
+    <label for="Email" class="required"> {{'Settings.email' | translate}} </label>
+    <input type="email" id="EmailL" name="Email" aria-required="true" [(ngModel)]="emailTextField"
+        [attr.aria-invalid]="isError ? true : null" [attr.aria-describedby]="isError ? 'login-error' : null">
+
+    <label for="password" class="required"> {{'Registration.Password' | translate}}</label>
+    <div class="password-wrapper">
+      <input type="password" id="passwordL" name="Password" aria-required="true" [(ngModel)]="passwordTextField"
+          [attr.aria-invalid]="isError ? true : null" [attr.aria-describedby]="isError ? 'login-error' : null">
+      <button type="button" (click)="toggleEye()" class="password-toggle-btn" aria-label="Toggle password visibility">
+      <img src={{eyePic}} alt="Toggle Password Visibility" width="20" height="20" class="password-toggle-img"/>
+      </button>
+    </div>
+    <p *ngIf="isError" id="login-error" role="alert">{{errorMessageLable}}</p>
+    <button id="loginbtn" class="btn btn--primary" (click)="login()">{{'Registration.SignIn' | translate}}</button>
+    <button id="backbtn" class="btn btn--outline" (click)="goToRegister()">{{'Registration.Register' | translate}}</button>
+    <h3 id="encryptionLable">{{'Settings.encryptionLable' | translate}}</h3>
+                <hr
+                    class="separator-black">
+    <button *ngIf="!isUploaded" type="button" (click)="upload()" class="settingsbtn">
+      {{'Registration.uploadFile' | translate}}
+    </button>
+    <button *ngIf="isUploaded" type="button" (click)="upload()" style="background-color: transparent; border: none;">
+      {{filename}}
+    </button>
+    <button type="button" (click)="default()" class="settingsbtn">
+      {{'Registration.default' | translate}}
+    </button>
+  </form>
+</div>

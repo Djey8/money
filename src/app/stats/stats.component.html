@@ -1,0 +1,525 @@
+<div class="toolbar" role="banner">
+  <img id="profile-pic" width="40" alt="Profile Logo" src="../assets/profile-blank.jpg"
+    role="button" tabindex="0" aria-label="Open profile" (keydown.enter)="appReference.clickProfile()" (click)="appReference.clickProfile()" />
+  <div id="heading" role="button" tabindex="0" (click)="appReference.openNavBar()" (keydown.enter)="appReference.openNavBar()">{{classReference.pageTitle | translate}}</div>
+  <div class="spacer"></div>
+  <div *ngIf="classReference.isSwitch">
+    <label class="switch mr-xs">
+      <input type="checkbox" [(ngModel)]="isChecked" (click)="showInsights()">
+      <span class="slider round"></span>
+    </label>
+  </div>
+  <img id="accountbtn" width="40" alt="Profile Logo" 
+       src="../../../assets/icons/{{classReference.modus === 'category' ? 'statement' : classReference.modus}}.jpg" 
+       *ngIf="classReference.modus !== 'home' && classReference.modus !== 'histogram' && classReference.modus !== 'kpi'" />
+  <img id="backbtn" width="40" alt="Profile Logo" src="../../../assets/icons/back.jpg" role="button" tabindex="0" aria-label="Go back" (keydown.enter)="goBack()" (click)="goBack()" />
+</div>
+
+<!-- Fixed Chart Filter Toggle Button -->
+<button class="chart-filter-toggle-btn" (click)="toggleChartFilter()" *ngIf="showChartFilter && !chartFilterVisible">
+  <i class="fa fa-filter"></i> {{'ChartFilter.toggle' | translate}}
+</button>
+
+<!-- Filter badges (visible when filter panel is closed) -->
+<div class="chart-filter-badges" *ngIf="showChartFilter && !chartFilterVisible">
+  <div class="chart-filter-date-badge" *ngIf="chartFilter.filterType !== 'all'">
+    <span class="date-badge-label">{{getChartFilterDateLabel()}}</span>
+  </div>
+  <div class="chart-filter-search-badge" *ngIf="chartFilter.searchText.trim()">
+    <i class="fa fa-search"></i>
+    <span class="search-badge-label">{{chartFilter.searchText}}</span>
+  </div>
+</div>
+
+<div *ngIf="!classReference.isStatment">
+  <!-- Explorative Filter Panel -->
+  <div id="explorative-filter-panel" class="filter-container" *ngIf="classReference.activeAnalyticsLevel === 'explorative' && classReference.modus !== 'cashflow'">
+    <div class="filter-title">{{'Cashflow.Filter' | translate}}</div>
+    <hr class="filter-divider">
+    
+    <div class="quick-filter-controls">
+      <!-- Date Range -->
+      <div class="date-range-quick">
+        <label for="explorative-start-date">{{'Cashflow.start' | translate}}</label>
+        <input type="date" id="explorative-start-date" [(ngModel)]="customDateStart">
+        <label for="explorative-end-date">{{'Cashflow.end' | translate}}</label>
+        <input type="date" id="explorative-end-date" [(ngModel)]="customDateEnd">
+      </div>
+
+      <!-- Amount Range -->
+      <div class="date-range-quick">
+        <label for="explorative-amount-min">{{'Cashflow.amountMin' | translate}}</label>
+        <input type="number" id="explorative-amount-min" [(ngModel)]="explorativeAmountMin" placeholder="-9999">
+        <label for="explorative-amount-max">{{'Cashflow.amountMax' | translate}}</label>
+        <input type="number" id="explorative-amount-max" [(ngModel)]="explorativeAmountMax" placeholder="0">
+      </div>
+
+      <!-- Basic Buttons (Hidden when Advanced is expanded) -->
+      <div *ngIf="!isExplorativeAdvancedFilterExpanded">
+        <div class="quick-filter-buttons">
+          <button class="filter-btn filter-btn-primary" (click)="updateExplorativeView()">
+            <i class="fa fa-filter"></i> {{'Cashflow.filter' | translate}}
+          </button>
+          <button class="filter-btn filter-btn-secondary" (click)="isExplorativeAdvancedFilterExpanded = true">
+            <i class="fa fa-sliders"></i> {{'Cashflow.showAdvanced' | translate}}
+          </button>
+          <button class="filter-btn filter-btn-clear" (click)="resetExplorativeFilter()">
+            <i class="fa fa-times"></i> {{'Cashflow.clear' | translate}}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <hr class="filter-divider" *ngIf="isExplorativeAdvancedFilterExpanded">
+
+    <!-- Advanced Filter Section -->
+    <div class="advanced-filter-section" *ngIf="isExplorativeAdvancedFilterExpanded">
+      <!-- Search Text -->
+      <div class="filter-group">
+        <div class="filter-group-title">
+          {{'Cashflow.searchText' | translate}}
+          <button class="help-button" (click)="showSearchHelp()" title="{{'Cashflow.searchHelp' | translate}}">
+            ?
+          </button>
+        </div>
+        <input type="text" class="search-text-input" [(ngModel)]="explorativeSearchText" placeholder="{{'Cashflow.searchPlaceholder' | translate}}" (keyup.enter)="updateExplorativeView()">
+        
+        <!-- Search Help Box -->
+        <div class="search-help" *ngIf="explorativeSearchHelpVisible">
+          <div class="search-help-content">
+            <h4>{{'Cashflow.searchHelpTitle' | translate}}</h4>
+
+            <!-- Amount Section -->
+            <details class="help-section">
+              <summary>{{'Cashflow.searchHelpSectionAmount' | translate}}</summary>
+              <p class="help-section-desc">{{'Cashflow.searchHelpAmountDesc' | translate}}</p>
+              <ul>
+                <li><strong>{{'Cashflow.searchHelpAmountLess' | translate}}</strong> <code role="button" tabindex="0" (click)="appendToExplorativeSearch('<-5')" (keydown.enter)="appendToExplorativeSearch('<-5')">&lt;-5</code>, <code role="button" tabindex="0" (click)="appendToExplorativeSearch('<=-20')" (keydown.enter)="appendToExplorativeSearch('<=-20')">&lt;=-20</code>, <code role="button" tabindex="0" (click)="appendToExplorativeSearch('<-100')" (keydown.enter)="appendToExplorativeSearch('<-100')">&lt;-100</code></li>
+                <li><strong>{{'Cashflow.searchHelpAmountGreater' | translate}}</strong> <code role="button" tabindex="0" (click)="appendToExplorativeSearch('>-10')" (keydown.enter)="appendToExplorativeSearch('>-10')">>-10</code>, <code role="button" tabindex="0" (click)="appendToExplorativeSearch('>0')" (keydown.enter)="appendToExplorativeSearch('>0')">>=0</code>, <code role="button" tabindex="0" (click)="appendToExplorativeSearch('>500')" (keydown.enter)="appendToExplorativeSearch('>500')">>500</code></li>
+                <li><strong>{{'Cashflow.searchHelpAmountRange' | translate}}</strong> <code role="button" tabindex="0" (click)="appendToExplorativeSearch('<=-1 && >=-50')" (keydown.enter)="appendToExplorativeSearch('<=-1 && >=-50')">&lt;=-1 && >=-50</code>, <code role="button" tabindex="0" (click)="appendToExplorativeSearch('>=10 && <=100')" (keydown.enter)="appendToExplorativeSearch('>=10 && <=100')">>=10 && &lt;=100</code></li>
+              </ul>
+            </details>
+
+            <!-- Date Section -->
+            <details class="help-section">
+              <summary>{{'Cashflow.searchHelpSectionDate' | translate}}</summary>
+              <p class="help-section-desc">{{'Cashflow.searchHelpDateDesc' | translate}}</p>
+              <ul>
+                <li><strong>{{'Cashflow.searchHelpDateAfter' | translate}}</strong> <code role="button" tabindex="0" (click)="appendToExplorativeSearch('>01.01.2026')" (keydown.enter)="appendToExplorativeSearch('>01.01.2026')">>01.01.2026</code>, <code role="button" tabindex="0" (click)="appendToExplorativeSearch('>2026-01-01')" (keydown.enter)="appendToExplorativeSearch('>2026-01-01')">>2026-01-01</code></li>
+                <li><strong>{{'Cashflow.searchHelpDateBefore' | translate}}</strong> <code role="button" tabindex="0" (click)="appendToExplorativeSearch('<20.03.2026')" (keydown.enter)="appendToExplorativeSearch('<20.03.2026')">&lt;20.03.2026</code>, <code role="button" tabindex="0" (click)="appendToExplorativeSearch('<2026-03-20')" (keydown.enter)="appendToExplorativeSearch('<2026-03-20')">&lt;2026-03-20</code></li>
+                <li><strong>{{'Cashflow.searchHelpDateRange' | translate}}</strong> <code role="button" tabindex="0" (click)="appendToExplorativeSearch('>01.02.2026 && <20.03.2026')" (keydown.enter)="appendToExplorativeSearch('>01.02.2026 && <20.03.2026')">>01.02.2026 && &lt;20.03.2026</code></li>
+              </ul>
+            </details>
+
+            <!-- Time Section -->
+            <details class="help-section">
+              <summary>{{'Cashflow.searchHelpSectionTime' | translate}}</summary>
+              <p class="help-section-desc">{{'Cashflow.searchHelpTimeDesc' | translate}}</p>
+              <ul>
+                <li><strong>{{'Cashflow.searchHelpTimeAfter' | translate}}</strong> <code role="button" tabindex="0" (click)="appendToExplorativeSearch('>10:30')" (keydown.enter)="appendToExplorativeSearch('>10:30')">>10:30</code>, <code role="button" tabindex="0" (click)="appendToExplorativeSearch('>14:00')" (keydown.enter)="appendToExplorativeSearch('>14:00')">>=14:00</code></li>
+                <li><strong>{{'Cashflow.searchHelpTimeBefore' | translate}}</strong> <code role="button" tabindex="0" (click)="appendToExplorativeSearch('<12:00')" (keydown.enter)="appendToExplorativeSearch('<12:00')">&lt;12:00</code>, <code role="button" tabindex="0" (click)="appendToExplorativeSearch('<18:30')" (keydown.enter)="appendToExplorativeSearch('<18:30')">&lt;18:30</code></li>
+                <li><strong>{{'Cashflow.searchHelpTimeRange' | translate}}</strong> <code role="button" tabindex="0" (click)="appendToExplorativeSearch('>9:00 && <17:00')" (keydown.enter)="appendToExplorativeSearch('>9:00 && <17:00')">>9:00 && &lt;17:00</code></li>
+              </ul>
+            </details>
+
+            <!-- Text & Logic Section -->
+            <details class="help-section">
+              <summary>{{'Cashflow.searchHelpSectionLogic' | translate}}</summary>
+              <p class="help-section-desc">{{'Cashflow.searchHelpLogicDesc' | translate}}</p>
+              <ul>
+                <li><strong>{{'Cashflow.searchHelpText' | translate}}</strong> <code role="button" tabindex="0" (click)="appendToExplorativeSearch('EDEKA')" (keydown.enter)="appendToExplorativeSearch('EDEKA')">EDEKA</code>, <code role="button" tabindex="0" (click)="appendToExplorativeSearch('Groceries')" (keydown.enter)="appendToExplorativeSearch('Groceries')">Groceries</code></li>
+                <li><strong>{{'Cashflow.searchHelpAnd' | translate}}</strong> <code role="button" tabindex="0" (click)="appendToExplorativeSearch('EDEKA && Groceries')" (keydown.enter)="appendToExplorativeSearch('EDEKA && Groceries')">EDEKA && Groceries</code></li>
+                <li><strong>{{'Cashflow.searchHelpOr' | translate}}</strong> <code role="button" tabindex="0" (click)="appendToExplorativeSearch('EDEKA || REWE')" (keydown.enter)="appendToExplorativeSearch('EDEKA || REWE')">EDEKA || REWE</code></li>
+                <li><strong>{{'Cashflow.searchHelpNot' | translate}}</strong> <code role="button" tabindex="0" (click)="appendToExplorativeSearch('!EDEKA')" (keydown.enter)="appendToExplorativeSearch('!EDEKA')">!EDEKA</code>, <code role="button" tabindex="0" (click)="appendToExplorativeSearch('not EDEKA')" (keydown.enter)="appendToExplorativeSearch('not EDEKA')">not EDEKA</code></li>
+              </ul>
+            </details>
+
+            <!-- Combined Section -->
+            <details class="help-section">
+              <summary>{{'Cashflow.searchHelpSectionCombined' | translate}}</summary>
+              <p class="help-section-desc">{{'Cashflow.searchHelpCombinedDesc' | translate}}</p>
+              <ul>
+                <li><strong>{{'Cashflow.searchHelpCombinedDateAmount' | translate}}</strong> <code role="button" tabindex="0" (click)="appendToExplorativeSearch('>01.03.2026 && <-20')" (keydown.enter)="appendToExplorativeSearch('>01.03.2026 && <-20')">>01.03.2026 && &lt;-20</code></li>
+                <li><strong>{{'Cashflow.searchHelpCombinedTextAmount' | translate}}</strong> <code role="button" tabindex="0" (click)="appendToExplorativeSearch('EDEKA && <-5')" (keydown.enter)="appendToExplorativeSearch('EDEKA && <-5')">EDEKA && &lt;-5</code></li>
+                <li><strong>{{'Cashflow.searchHelpCombinedExclude' | translate}}</strong> <code role="button" tabindex="0" (click)="appendToExplorativeSearch('>01.01.2026 && <-10 && !REWE')" (keydown.enter)="appendToExplorativeSearch('>01.01.2026 && <-10 && !REWE')">>01.01.2026 && &lt;-10 && !REWE</code></li>
+              </ul>
+            </details>
+
+            <p class="search-help-note">{{'Cashflow.searchHelpNote' | translate}}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Search Fields -->
+      <div class="filter-group">
+        <div class="filter-group-title">{{'Cashflow.searchFields' | translate}}</div>
+        <div class="search-fields-checkboxes">
+          <label class="checkbox-label">
+            <input type="checkbox" [(ngModel)]="explorativeSearchInDate"> {{'Cashflow.date' | translate}}
+          </label>
+          <label class="checkbox-label">
+            <input type="checkbox" [(ngModel)]="explorativeSearchInAmount"> {{'Cashflow.amount' | translate}}
+          </label>
+          <label class="checkbox-label">
+            <input type="checkbox" [(ngModel)]="explorativeSearchInDescription"> {{'Cashflow.comment' | translate}}
+          </label>
+          <label class="checkbox-label">
+            <input type="checkbox" [(ngModel)]="explorativeSearchInAccount"> {{'Cashflow.account' | translate}}
+          </label>
+          <label class="checkbox-label">
+            <input type="checkbox" [(ngModel)]="explorativeSearchInCategory"> {{'Cashflow.category' | translate}}
+          </label>
+        </div>
+      </div>
+
+      <!-- Account Tags -->
+      <div class="filter-group">
+        <div class="filter-group-title">{{'Cashflow.selectAccounts' | translate}}</div>
+        <div class="tags-container">
+          <button class="tag-button" 
+                  *ngFor="let account of getAvailableAccounts()" 
+                  [class.active]="isAccountSelected(account)"
+                  (click)="toggleAccountFilter(account)">
+            {{account}}
+          </button>
+        </div>
+      </div>
+
+      <!-- Category Tags -->
+      <div class="filter-group">
+        <div class="filter-group-title">{{'Cashflow.selectTags' | translate}}</div>
+        <div class="tags-container">
+          <button class="tag-button" 
+                  *ngFor="let category of getAvailableCategories()" 
+                  [class.active]="isCategorySelected(category)"
+                  [class.tag-fixed]="isFixedCost(category)"
+                  [title]="isFixedCost(category) ? 'Fixed Cost (Subscription)' : ''"
+                  (click)="toggleCategoryFilter(category)">
+            {{category}}
+          </button>
+        </div>
+      </div>
+
+      <!-- Advanced Filter Actions -->
+      <div class="advanced-filter-actions">
+        <button class="filter-btn filter-btn-primary" (click)="updateExplorativeView()">
+          <i class="fa fa-filter"></i> {{'Cashflow.applyFilters' | translate}}
+        </button>
+        <button class="filter-btn filter-btn-secondary" (click)="isExplorativeAdvancedFilterExpanded = false">
+          <i class="fa fa-chevron-up"></i> {{'Cashflow.hideAdvanced' | translate}}
+        </button>
+        <button class="filter-btn filter-btn-clear" (click)="resetExplorativeFilter()">
+          <i class="fa fa-times"></i> {{'Cashflow.clear' | translate}}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chart Filter Panel -->
+  <div class="chart-filter-panel" *ngIf="showChartFilter && chartFilterVisible">
+    <div class="chart-filter-header">
+      <span class="chart-filter-title">{{'ChartFilter.title' | translate}}</span>
+      <button class="chart-filter-close" (click)="closeChartFilter()">&times;</button>
+    </div>
+    <hr class="filter-divider">
+
+    <div class="quick-filter-controls">
+      <!-- Period quick-select buttons -->
+      <div class="chart-filter-periods">
+        <button class="chart-filter-period-btn" [class.active]="chartFilter.filterType === 'week'" (click)="selectChartPeriod('week')">{{'Period.week' | translate}}</button>
+        <button class="chart-filter-period-btn" [class.active]="chartFilter.filterType === 'month'" (click)="selectChartPeriod('month')">{{'Period.month' | translate}}</button>
+        <button class="chart-filter-period-btn" [class.active]="chartFilter.filterType === 'quarter'" (click)="selectChartPeriod('quarter')">{{'Period.quarter' | translate}}</button>
+        <button class="chart-filter-period-btn" [class.active]="chartFilter.filterType === 'year'" (click)="selectChartPeriod('year')">{{'Period.year' | translate}}</button>
+        <button class="chart-filter-period-btn" [class.active]="chartFilter.filterType === 'all'" (click)="selectChartPeriod('all')">{{'Period.all' | translate}}</button>
+        <button class="chart-filter-period-btn" [class.active]="chartFilter.filterType === 'custom'" (click)="selectChartCustom()">{{'BI.custom' | translate}}</button>
+      </div>
+
+      <!-- Navigation arrows + date label -->
+      <div class="chart-filter-nav" *ngIf="chartFilter.filterType !== 'all' && chartFilter.filterType !== 'custom'">
+        <button class="chart-filter-nav-btn" (click)="chartFilterPrev()">&lt;</button>
+        <span class="chart-filter-date-label">{{getChartFilterDateLabel()}}</span>
+        <button class="chart-filter-nav-btn" (click)="chartFilterNext()">&gt;</button>
+      </div>
+
+      <!-- Custom date range -->
+      <div class="chart-filter-custom-dates" *ngIf="chartFilter.filterType === 'custom'">
+        <label>{{'Cashflow.start' | translate}}</label>
+        <input type="date" [(ngModel)]="chartFilter.customDateStart" (change)="applyChartFilter()">
+        <label>{{'Cashflow.end' | translate}}</label>
+        <input type="date" [(ngModel)]="chartFilter.customDateEnd" (change)="applyChartFilter()">
+      </div>
+
+      <!-- Cashflow Bar Grouping (only shown in cashflow mode) -->
+      <div class="chart-filter-bar-grouping" *ngIf="isCashflowMode">
+        <label class="chart-filter-bar-grouping-label">{{'ChartFilter.barGrouping' | translate}}</label>
+        <div class="chart-filter-periods">
+          <button class="chart-filter-period-btn" [class.active]="chartFilter.barGrouping === 'auto'" (click)="chartFilter.barGrouping = 'auto'; applyChartFilter()">Auto</button>
+          <button class="chart-filter-period-btn" [class.active]="chartFilter.barGrouping === 'week'" (click)="chartFilter.barGrouping = 'week'; applyChartFilter()">{{'Period.week' | translate}}</button>
+          <button class="chart-filter-period-btn" [class.active]="chartFilter.barGrouping === 'month'" (click)="chartFilter.barGrouping = 'month'; applyChartFilter()">{{'Period.month' | translate}}</button>
+          <button class="chart-filter-period-btn" [class.active]="chartFilter.barGrouping === 'quarter'" (click)="chartFilter.barGrouping = 'quarter'; applyChartFilter()">{{'Period.quarter' | translate}}</button>
+          <button class="chart-filter-period-btn" [class.active]="chartFilter.barGrouping === 'year'" (click)="chartFilter.barGrouping = 'year'; applyChartFilter()">{{'Period.year' | translate}}</button>
+        </div>
+      </div>
+
+      <!-- Show Advanced / Filter / Clear buttons (Hidden when Advanced is expanded) -->
+      <div *ngIf="!chartFilterAdvanced">
+        <div class="quick-filter-buttons">
+          <button class="filter-btn filter-btn-primary" (click)="applyChartFilter(); closeChartFilter()">
+            <i class="fa fa-filter"></i> {{'Cashflow.filter' | translate}}
+          </button>
+          <button class="filter-btn filter-btn-secondary" (click)="toggleChartFilterAdvanced()">
+            <i class="fa fa-sliders"></i> {{'Cashflow.showAdvanced' | translate}}
+          </button>
+          <button class="filter-btn filter-btn-clear" (click)="resetChartFilter(); closeChartFilter()">
+            <i class="fa fa-times"></i> {{'Cashflow.clear' | translate}}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <hr class="filter-divider" *ngIf="chartFilterAdvanced">
+
+    <!-- Advanced Filter Section -->
+    <div class="advanced-filter-section" *ngIf="chartFilterAdvanced">
+      <!-- Search Text -->
+      <div class="filter-group">
+        <div class="filter-group-title">
+          {{'Cashflow.searchText' | translate}}
+          <button class="help-button" (click)="showChartSearchHelp()" title="{{'Cashflow.searchHelp' | translate}}">
+            ?
+          </button>
+        </div>
+        <input type="text" class="search-text-input" [(ngModel)]="chartFilter.searchText"
+               placeholder="{{'Cashflow.searchPlaceholder' | translate}}" (keyup.enter)="applyChartFilter()">
+        
+        <!-- Search Help Box -->
+        <div class="search-help" *ngIf="chartSearchHelpVisible">
+          <div class="search-help-content">
+            <h4>{{'Cashflow.searchHelpTitle' | translate}}</h4>
+
+            <!-- Amount Section -->
+            <details class="help-section">
+              <summary>{{'Cashflow.searchHelpSectionAmount' | translate}}</summary>
+              <p class="help-section-desc">{{'Cashflow.searchHelpAmountDesc' | translate}}</p>
+              <ul>
+                <li><strong>{{'Cashflow.searchHelpAmountLess' | translate}}</strong> <code role="button" tabindex="0" (click)="appendToChartSearch('<-5')" (keydown.enter)="appendToChartSearch('<-5')">&lt;-5</code>, <code role="button" tabindex="0" (click)="appendToChartSearch('<=-20')" (keydown.enter)="appendToChartSearch('<=-20')">&lt;=-20</code>, <code role="button" tabindex="0" (click)="appendToChartSearch('<-100')" (keydown.enter)="appendToChartSearch('<-100')">&lt;-100</code></li>
+                <li><strong>{{'Cashflow.searchHelpAmountGreater' | translate}}</strong> <code role="button" tabindex="0" (click)="appendToChartSearch('>-10')" (keydown.enter)="appendToChartSearch('>-10')">>-10</code>, <code role="button" tabindex="0" (click)="appendToChartSearch('>0')" (keydown.enter)="appendToChartSearch('>0')">>=0</code>, <code role="button" tabindex="0" (click)="appendToChartSearch('>500')" (keydown.enter)="appendToChartSearch('>500')">>500</code></li>
+                <li><strong>{{'Cashflow.searchHelpAmountRange' | translate}}</strong> <code role="button" tabindex="0" (click)="appendToChartSearch('<=-1 && >=-50')" (keydown.enter)="appendToChartSearch('<=-1 && >=-50')">&lt;=-1 && >=-50</code>, <code role="button" tabindex="0" (click)="appendToChartSearch('>=10 && <=100')" (keydown.enter)="appendToChartSearch('>=10 && <=100')">>=10 && &lt;=100</code></li>
+              </ul>
+            </details>
+
+            <!-- Date Section -->
+            <details class="help-section">
+              <summary>{{'Cashflow.searchHelpSectionDate' | translate}}</summary>
+              <p class="help-section-desc">{{'Cashflow.searchHelpDateDesc' | translate}}</p>
+              <ul>
+                <li><strong>{{'Cashflow.searchHelpDateAfter' | translate}}</strong> <code role="button" tabindex="0" (click)="appendToChartSearch('>01.01.2026')" (keydown.enter)="appendToChartSearch('>01.01.2026')">>01.01.2026</code>, <code role="button" tabindex="0" (click)="appendToChartSearch('>2026-01-01')" (keydown.enter)="appendToChartSearch('>2026-01-01')">>2026-01-01</code></li>
+                <li><strong>{{'Cashflow.searchHelpDateBefore' | translate}}</strong> <code role="button" tabindex="0" (click)="appendToChartSearch('<20.03.2026')" (keydown.enter)="appendToChartSearch('<20.03.2026')">&lt;20.03.2026</code>, <code role="button" tabindex="0" (click)="appendToChartSearch('<2026-03-20')" (keydown.enter)="appendToChartSearch('<2026-03-20')">&lt;2026-03-20</code></li>
+                <li><strong>{{'Cashflow.searchHelpDateRange' | translate}}</strong> <code role="button" tabindex="0" (click)="appendToChartSearch('>01.02.2026 && <20.03.2026')" (keydown.enter)="appendToChartSearch('>01.02.2026 && <20.03.2026')">>01.02.2026 && &lt;20.03.2026</code></li>
+              </ul>
+            </details>
+
+            <!-- Time Section -->
+            <details class="help-section">
+              <summary>{{'Cashflow.searchHelpSectionTime' | translate}}</summary>
+              <p class="help-section-desc">{{'Cashflow.searchHelpTimeDesc' | translate}}</p>
+              <ul>
+                <li><strong>{{'Cashflow.searchHelpTimeAfter' | translate}}</strong> <code role="button" tabindex="0" (click)="appendToChartSearch('>10:30')" (keydown.enter)="appendToChartSearch('>10:30')">>10:30</code>, <code role="button" tabindex="0" (click)="appendToChartSearch('>14:00')" (keydown.enter)="appendToChartSearch('>14:00')">>=14:00</code></li>
+                <li><strong>{{'Cashflow.searchHelpTimeBefore' | translate}}</strong> <code role="button" tabindex="0" (click)="appendToChartSearch('<12:00')" (keydown.enter)="appendToChartSearch('<12:00')">&lt;12:00</code>, <code role="button" tabindex="0" (click)="appendToChartSearch('<18:30')" (keydown.enter)="appendToChartSearch('<18:30')">&lt;18:30</code></li>
+                <li><strong>{{'Cashflow.searchHelpTimeRange' | translate}}</strong> <code role="button" tabindex="0" (click)="appendToChartSearch('>9:00 && <17:00')" (keydown.enter)="appendToChartSearch('>9:00 && <17:00')">>9:00 && &lt;17:00</code></li>
+              </ul>
+            </details>
+
+            <!-- Text & Logic Section -->
+            <details class="help-section">
+              <summary>{{'Cashflow.searchHelpSectionLogic' | translate}}</summary>
+              <p class="help-section-desc">{{'Cashflow.searchHelpLogicDesc' | translate}}</p>
+              <ul>
+                <li><strong>{{'Cashflow.searchHelpText' | translate}}</strong> <code role="button" tabindex="0" (click)="appendToChartSearch('EDEKA')" (keydown.enter)="appendToChartSearch('EDEKA')">EDEKA</code>, <code role="button" tabindex="0" (click)="appendToChartSearch('Groceries')" (keydown.enter)="appendToChartSearch('Groceries')">Groceries</code></li>
+                <li><strong>{{'Cashflow.searchHelpAnd' | translate}}</strong> <code role="button" tabindex="0" (click)="appendToChartSearch('EDEKA && Groceries')" (keydown.enter)="appendToChartSearch('EDEKA && Groceries')">EDEKA && Groceries</code></li>
+                <li><strong>{{'Cashflow.searchHelpOr' | translate}}</strong> <code role="button" tabindex="0" (click)="appendToChartSearch('EDEKA || REWE')" (keydown.enter)="appendToChartSearch('EDEKA || REWE')">EDEKA || REWE</code></li>
+                <li><strong>{{'Cashflow.searchHelpNot' | translate}}</strong> <code role="button" tabindex="0" (click)="appendToChartSearch('!EDEKA')" (keydown.enter)="appendToChartSearch('!EDEKA')">!EDEKA</code>, <code role="button" tabindex="0" (click)="appendToChartSearch('not EDEKA')" (keydown.enter)="appendToChartSearch('not EDEKA')">not EDEKA</code></li>
+              </ul>
+            </details>
+
+            <!-- Combined Section -->
+            <details class="help-section">
+              <summary>{{'Cashflow.searchHelpSectionCombined' | translate}}</summary>
+              <p class="help-section-desc">{{'Cashflow.searchHelpCombinedDesc' | translate}}</p>
+              <ul>
+                <li><strong>{{'Cashflow.searchHelpCombinedDateAmount' | translate}}</strong> <code role="button" tabindex="0" (click)="appendToChartSearch('>01.03.2026 && <-20')" (keydown.enter)="appendToChartSearch('>01.03.2026 && <-20')">>01.03.2026 && &lt;-20</code></li>
+                <li><strong>{{'Cashflow.searchHelpCombinedTextAmount' | translate}}</strong> <code role="button" tabindex="0" (click)="appendToChartSearch('EDEKA && <-5')" (keydown.enter)="appendToChartSearch('EDEKA && <-5')">EDEKA && &lt;-5</code></li>
+                <li><strong>{{'Cashflow.searchHelpCombinedExclude' | translate}}</strong> <code role="button" tabindex="0" (click)="appendToChartSearch('>01.01.2026 && <-10 && !REWE')" (keydown.enter)="appendToChartSearch('>01.01.2026 && <-10 && !REWE')">>01.01.2026 && &lt;-10 && !REWE</code></li>
+              </ul>
+            </details>
+
+            <p class="search-help-note">{{'Cashflow.searchHelpNote' | translate}}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Search Fields -->
+      <div class="filter-group">
+        <div class="filter-group-title">{{'Cashflow.searchFields' | translate}}</div>
+        <div class="search-fields-checkboxes">
+          <label class="checkbox-label">
+            <input type="checkbox" [(ngModel)]="chartFilter.searchFields.date"> {{'Cashflow.date' | translate}}
+          </label>
+          <label class="checkbox-label">
+            <input type="checkbox" [(ngModel)]="chartFilter.searchFields.amount"> {{'Cashflow.amount' | translate}}
+          </label>
+          <label class="checkbox-label">
+            <input type="checkbox" [(ngModel)]="chartFilter.searchFields.comment"> {{'Cashflow.comment' | translate}}
+          </label>
+          <label class="checkbox-label">
+            <input type="checkbox" [(ngModel)]="chartFilter.searchFields.account"> {{'Cashflow.account' | translate}}
+          </label>
+          <label class="checkbox-label">
+            <input type="checkbox" [(ngModel)]="chartFilter.searchFields.category"> {{'Cashflow.category' | translate}}
+          </label>
+        </div>
+      </div>
+
+      <!-- Account Tags -->
+      <div class="filter-group">
+        <div class="filter-group-title">{{'Cashflow.selectAccounts' | translate}}</div>
+        <div class="tags-container">
+          <button class="tag-button"
+                  *ngFor="let account of getAvailableAccounts()"
+                  [class.active]="isChartFilterAccountSelected(account)"
+                  (click)="toggleChartFilterAccount(account)">
+            {{account}}
+          </button>
+        </div>
+      </div>
+
+      <!-- Category Tags -->
+      <div class="filter-group">
+        <div class="filter-group-title">{{'Cashflow.selectTags' | translate}}</div>
+        <div class="tags-container">
+          <button class="tag-button"
+                  *ngFor="let category of getAvailableCategories()"
+                  [class.active]="isChartFilterCategorySelected(category)"
+                  [class.tag-fixed]="isFixedCost(category)"
+                  (click)="toggleChartFilterCategory(category)">
+            {{category}}
+          </button>
+        </div>
+      </div>
+
+      <!-- Apply / Hide Advanced / Clear actions -->
+      <div class="advanced-filter-actions">
+        <button class="filter-btn filter-btn-primary" (click)="applyChartFilter(); closeChartFilter()">
+          <i class="fa fa-filter"></i> {{'Cashflow.filter' | translate}}
+        </button>
+        <button class="filter-btn filter-btn-secondary" (click)="toggleChartFilterAdvanced()">
+          <i class="fa fa-chevron-up"></i> {{'Cashflow.hideAdvanced' | translate}}
+        </button>
+        <button class="filter-btn filter-btn-clear" (click)="resetChartFilter(); closeChartFilter()">
+          <i class="fa fa-times"></i> {{'Cashflow.clear' | translate}}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="chart-container"></div>
+  <!-- Include the D3.js library -->
+  <script src="https://d3js.org/d3.v5.min.js"></script>
+</div>
+<div *ngIf="classReference.isStatment" id="statment">
+  <div id="statmentBox">
+    <h4 id="progressLable">
+      {{classReference.getCountBox1()}}/3</h4>
+    <h4 id="statusLable"></h4>
+    <h4 id="ProjectTitle">
+      #1</h4>
+    <hr class="separator-white">
+    <div id="info-box" style="background-color: var(--color-surface);">
+      <h4 class="infoLableA">{{'Stats.rentability' | translate}}</h4>
+      <hr class="divider-black">
+      <pre class="infoLableB">{{'Stats.rentability1' | translate}}</pre>
+      
+      <h4 class="infoLable mt-lg">{{'Stats.revenueGrowth' | translate}}</h4>
+      <hr class="divider-black">
+      <pre class="infoLableB mb-0"><b>{{'Stats.definition' | translate}}:</b> {{'Stats.revenueGrowth2' | translate}}</pre>
+      <h4 class="infoLableA mt-md" [class.text-red]="incomeReference.getCreditAmount() < 0">
+        {{incomeReference.getCreditAmount() | appNumber}} {{settingsReference.currency}}
+      </h4>
+      <pre class="infoLableB" *ngIf="incomeReference.getCreditAmount() >= 0">{{'Stats.goodRevenueGrowth' | translate}}</pre>
+      <pre class="infoLableB" *ngIf="incomeReference.getCreditAmount() < 0" class="text-red">{{'Stats.badRevenueGrowth' | translate}}</pre>
+
+      <h4 class="infoLable mt-lg">{{'Stats.equityReturn' | translate}}</h4>
+      <hr class="divider-black">
+      <pre class="infoLableB mb-0"><b>{{'Stats.formula' | translate}}:</b> {{'Stats.equityReturn1' | translate}}</pre>
+      <h4 class="infoLableA mt-md">
+        <span [class.text-red]="incomeReference.getEigenkaptitalRen() < 0">{{incomeReference.getTotalAmount() | appNumber}} {{settingsReference.currency}}</span> / <span [class.text-red]="balanceReference.getAssetsAmount() < 0">{{balanceReference.getAssetsAmount() | appNumber}} {{settingsReference.currency}}</span> = <span [class.text-red]="incomeReference.getEigenkaptitalRen() < 0">{{incomeReference.getEigenkaptitalRen() | appNumber}} %</span></h4>
+        <pre class="infoLableB" *ngIf="incomeReference.getEigenkaptitalRen() >= 10">{{'Stats.goodEquityReturn' | translate}}</pre>
+        <pre class="infoLableB" *ngIf="incomeReference.getEigenkaptitalRen() >= 15">{{'Stats.veryGoodEquityReturn' | translate}}</pre>
+        <pre class="infoLableB" *ngIf="incomeReference.getEigenkaptitalRen() < 10" class="text-red">{{'Stats.badEquityReturn' | translate}}</pre>
+        <pre class="infoLableB" *ngIf="incomeReference.getEigenkaptitalRen() < 0" class="text-red">{{'Stats.veryBadEquityReturn' | translate}}</pre>
+      <h4 class="infoLable mt-md">{{'Stats.netProfitability' | translate}}</h4>
+      <hr class="divider-black">
+      <pre class="infoLableB"><b>{{'Stats.formula' | translate}}:</b> {{'Stats.netProfitability1' | translate}}</pre>
+      <h4 class="infoLableA mt-sm">
+        <span [class.text-red]="incomeReference.getNettogewinnmarge() < 0">{{incomeReference.getTotalAmount() | appNumber}} {{settingsReference.currency}}</span> / <span [class.text-red]="incomeReference.getCreditAmount() < 0">{{incomeReference.getCreditAmount() | appNumber}} {{settingsReference.currency}}</span> = <span [class.text-red]="incomeReference.getNettogewinnmarge() < 0">{{incomeReference.getNettogewinnmarge() | appNumber}} %</span></h4>
+      <pre class="infoLableB" *ngIf="incomeReference.getNettogewinnmarge() >= 0">{{'Stats.goodNetProfitability' | translate}}</pre>
+      <pre class="infoLableB" *ngIf="incomeReference.getNettogewinnmarge() < 0" class="text-red">{{'Stats.badNetProfitability' | translate}}</pre>
+
+    </div> 
+  </div>
+</div>
+
+<div *ngIf="classReference.isStatment" id="statment">
+  <div id="statmentBox">
+    <h4 id="progressLable">
+      {{classReference.getCountBox2()}}/3</h4>
+    <h4 id="statusLable"></h4>
+    <h4 id="ProjectTitle">
+      #2</h4>
+    <hr class="separator-white">
+    <div id="info-box" style="background-color: var(--color-surface);">
+      <h4 class="infoLableA">{{'Stats.financialStability' | translate}}</h4>
+      <hr class="divider-black">
+      <pre class="infoLableB">{{'Stats.financialStability1' | translate}}</pre>
+      
+      <h4 class="infoLable mt-lg">{{'Stats.debtRatio' | translate}}</h4>
+      <hr class="divider-black">
+      <pre class="infoLableB mb-0"><b>{{'Stats.formula' | translate}}:</b> {{'Stats.debtRatio1' | translate}}</pre>
+      <h4 class="infoLableA mt-md">
+        <span [class.text-red]="balanceReference.getLiabilities() < 0">{{balanceReference.getLiabilities() | appNumber}} {{settingsReference.currency}}</span> / <span [class.text-red]="balanceReference.getAssetsAmount() < 0">{{balanceReference.getAssetsAmount() | appNumber}} {{settingsReference.currency}}</span> = <span [class.text-red]="incomeReference.getVerschuldungsgrad() > 1">{{incomeReference.getVerschuldungsgrad()}}</span>
+      </h4>
+      <pre class="infoLableB" *ngIf="incomeReference.getVerschuldungsgrad() <= 1">{{'Stats.goodDebtRatio' | translate}}</pre>
+      <pre class="infoLableB" *ngIf="incomeReference.getVerschuldungsgrad() > 1" class="text-red">{{'Stats.badDebtRatio' | translate}}</pre>
+    
+      <h4 class="infoLable mt-lg">{{'Stats.interestCoverage' | translate}}</h4>
+      <hr class="divider-black">
+      <pre class="infoLableB"><b>{{'Stats.formula' | translate}}:</b> {{'Stats.interestCoverage1' | translate}}</pre>
+      <h4 class="infoLableA mt-sm">
+        <span [class.text-red]="incomeReference.getTotalAmount() < 0">{{incomeReference.getTotalAmount() | appNumber}} {{settingsReference.currency}}</span> / <span>{{incomeReference.getZinsaufwendungen()}} {{settingsReference.currency}}</span> = <span [class.text-red]="incomeReference.getZinsdeckungsgrad() <= 1">{{incomeReference.getZinsdeckungsgrad()}}</span></h4>
+      <pre class="infoLableB" *ngIf="incomeReference.getZinsdeckungsgrad() > 1">{{'Stats.goodInterestCoverage' | translate}}</pre>
+      <pre class="infoLableB" *ngIf="incomeReference.getNettogewinnmarge() <= 1" class="text-red">{{'Stats.badInterestCoverage' | translate}}</pre>
+      
+      <h4 class="infoLable mt-lg">{{'Stats.equityRatio' | translate}}</h4>
+      <hr class="divider-black">
+      <pre class="infoLableB"><b>{{'Stats.formula' | translate}}:</b> {{'Stats.equityRatio1' | translate}}</pre>
+      <h4 class="infoLableA" style="margin-top: 0px;">
+        <span [class.text-red]="balanceReference.getAssetsAmount() < 0">{{balanceReference.getAssetsAmount() | appNumber}} {{settingsReference.currency}}</span> / <span [class.text-red]="incomeReference.getGesamtkapital() < 0">{{incomeReference.getGesamtkapital() | appNumber}} {{settingsReference.currency}}</span> = <span [class.text-red]="incomeReference.getEigenkapitalquote() < 30">{{incomeReference.getEigenkapitalquote() | appNumber}} %</span></h4>
+      <pre class="infoLableB" *ngIf="incomeReference.getEigenkapitalquote() >= 30">{{'Stats.goodEquityRatio' | translate}}</pre>
+      <pre class="infoLableB" *ngIf="incomeReference.getEigenkapitalquote() < 30" class="text-red">{{'Stats.badEquityRatio' | translate}}</pre>
+    
+    </div> 
+  </div>
+</div>
+
+<div class="kpi-selector-container" *ngIf="classReference.isKPI">
+  <select id="kpi-selector" class="kpi-select" (change)="onKPIChange($event)" [ngModel]="classReference.activeKPI">
+    <option value="net-worth-trend">{{'KPI.netWorthTrend' | translate}}</option>
+    <option value="expense-income-ratio">{{'KPI.expenseIncomeRatio' | translate}}</option>
+    <option value="icome-streams-breakdown">{{'KPI.incomeStreamsBreakdown' | translate}}</option>
+    <option value="savings-rate">{{'KPI.savingsRate' | translate}}</option>
+    <option value="burn-rate">{{'KPI.burnRate' | translate}}</option>
+    <option value="top-spending">{{'KPI.topSpending' | translate}}</option>
+    <option value="recurring-vs-one-time">{{'KPI.recurringVsOneTime' | translate}}</option>
+    <option value="heatmap-calendar">{{'KPI.heatmapCalendar' | translate}}</option>
+  </select>
+</div>

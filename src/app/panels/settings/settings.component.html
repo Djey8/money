@@ -1,0 +1,431 @@
+<div id="infoTransaction-Container" role="dialog" aria-modal="true" appTrapFocus *ngIf="classReference.isInfo" (click)="highlight()"
+    [style.z-index]="classReference.zIndex + 1001">
+    <h4 id="infoTransactionTitle">{{'Settings.infoTransactionTitle' | translate}}</h4>
+    <button id="closebtn" aria-label="Close" (click)="closeWindow()">x</button>
+    <hr class="separator-white">
+    <div *ngIf="!isEdit">
+        <div id="info-box">
+            <!-- Profile View -->
+            <div *ngIf="classReference.isSettings" class="profile-card">
+                <img id="profile-pic" alt="Profile Logo" src="../assets/profile-blank.jpg" />
+                <h4 id="profileName">{{profileReference.username}}</h4>
+                <div class="profile-details">
+                    <div class="profile-detail-row">
+                        <span class="profile-label">{{'Settings.email' | translate}}</span>
+                        <span class="profile-value">{{profileReference.mail}}</span>
+                    </div>
+                    <div class="profile-detail-row">
+                        <span class="profile-label">{{'Settings.Currency' | translate}}</span>
+                        <span class="profile-value">{{classReference.currency}}</span>
+                    </div>
+                </div>
+                <div class="mode-indicator" [ngClass]="appMode">
+                    {{ (appMode === 'selfhosted' ? 'Settings.mode.selfhosted' : 'Settings.mode.firebase') | translate }}
+                </div>
+            </div>
+            <!-- Language -->
+            <div *ngIf="classReference.isLanguages">
+                <h3 class="sub-title">{{'Settings.languageLable' | translate}}</h3>
+                <div class="language-grid">
+                    <button (click)="chooseEng()" class="language-option" [ngClass]="classReference.isEng ? 'selected' : 'notSelected'">
+                        <img src="../../assets/flags/eng.png" alt="English" class="flag-img">
+                        <span class="lang-name">English</span>
+                    </button>
+                    <button (click)="chooseDe()" class="language-option" [ngClass]="classReference.isDe ? 'selected' : 'notSelected'">
+                        <img src="../../assets/flags/de.png" alt="Deutsch" class="flag-img">
+                        <span class="lang-name">Deutsch</span>
+                    </button>
+                    <button (click)="chooseEs()" class="language-option" [ngClass]="classReference.isEs ? 'selected' : 'notSelected'">
+                        <img src="../../assets/flags/es.png" alt="Español" class="flag-img">
+                        <span class="lang-name">Español</span>
+                    </button>
+                    <button (click)="chooseFr()" class="language-option" [ngClass]="classReference.isFr ? 'selected' : 'notSelected'">
+                        <img src="../../assets/flags/fr.png" alt="Français" class="flag-img">
+                        <span class="lang-name">Français</span>
+                    </button>
+                    <button (click)="chooseCn()" class="language-option" [ngClass]="classReference.isCn ? 'selected' : 'notSelected'">
+                        <img src="../../assets/flags/cn.png" alt="中文" class="flag-img">
+                        <span class="lang-name">中文</span>
+                    </button>
+                    <button (click)="chooseAr()" class="language-option" [ngClass]="classReference.isAr ? 'selected' : 'notSelected'">
+                        <img src="../../assets/flags/tu.png" alt="العربية" class="flag-img">
+                        <span class="lang-name">العربية</span>
+                    </button>
+                </div>
+            </div>
+            <!-- Currency -->
+            <div *ngIf="classReference.isCurrency">
+                <h3 class="sub-title">{{'Settings.currencyLable' | translate}}</h3>
+                <div class="format-grid">
+                    <button (click)="chooseCurrency('€')" class="format-option"
+                        [ngClass]="classReference.currency === '€' ? 'selected' : 'notSelected'">
+                        <b>€</b><br>
+                        <span class="format-example">{{'Settings.euro' | translate}}</span>
+                    </button>
+                    <button (click)="chooseCurrency('$')" class="format-option"
+                        [ngClass]="classReference.currency === '$' ? 'selected' : 'notSelected'">
+                        <b>$</b><br>
+                        <span class="format-example">{{'Settings.dollar' | translate}}</span>
+                    </button>
+                    <button (click)="chooseCurrency('£')" class="format-option"
+                        [ngClass]="classReference.currency === '£' ? 'selected' : 'notSelected'">
+                        <b>£</b><br>
+                        <span class="format-example">{{'Settings.pound' | translate}}</span>
+                    </button>
+                    <button (click)="chooseCurrency('¥')" class="format-option"
+                        [ngClass]="classReference.currency === '¥' ? 'selected' : 'notSelected'">
+                        <b>¥</b><br>
+                        <span class="format-example">{{'Settings.yenYuan' | translate}}</span>
+                    </button>
+                    <button (click)="chooseCurrency('CHF')" class="format-option"
+                        [ngClass]="classReference.currency === 'CHF' ? 'selected' : 'notSelected'">
+                        <b>CHF</b><br>
+                        <span class="format-example">{{'Settings.franc' | translate}}</span>
+                    </button>
+                    <button (click)="chooseCurrency('₹')" class="format-option"
+                        [ngClass]="classReference.currency === '₹' ? 'selected' : 'notSelected'">
+                        <b>₹</b><br>
+                        <span class="format-example">{{'Settings.rupee' | translate}}</span>
+                    </button>
+                    <button (click)="chooseCurrency('kr')" class="format-option"
+                        [ngClass]="classReference.currency === 'kr' ? 'selected' : 'notSelected'">
+                        <b>kr</b><br>
+                        <span class="format-example">{{'Settings.krone' | translate}}</span>
+                    </button>
+                    <button (click)="chooseCurrency('₩')" class="format-option"
+                        [ngClass]="classReference.currency === '₩' ? 'selected' : 'notSelected'">
+                        <b>₩</b><br>
+                        <span class="format-example">{{'Settings.won' | translate}}</span>
+                    </button>
+                </div>
+                <div class="currency-custom">
+                    <label class="currency-custom-label">{{'Settings.currencyCustom' | translate}}</label>
+                    <div class="currency-custom-row">
+                        <input type="text" class="currency-custom-input" [(ngModel)]="currencyTextField" name="customCurrency" maxlength="5">
+                        <button class="currency-custom-btn" (click)="chooseCurrency(currencyTextField)">✓</button>
+                    </div>
+                </div>
+            </div>
+            <!-- Number Format -->
+            <div *ngIf="classReference.isNumberFormat">
+                <h3 class="sub-title">{{'Settings.numberFormatLable' | translate}}</h3>
+                <div class="format-options">
+                    <button (click)="chooseEuropeanFormat()"
+                            class="format-option"
+                            [ngClass]="classReference.isEuropeanFormat ? 'selected' : 'notSelected'">
+                        <b>{{'Settings.europeanFormat' | translate}}</b><br>
+                        <span class="format-example">2.000,00</span>
+                    </button>
+                    <button (click)="chooseUSFormat()"
+                            class="format-option"
+                            [ngClass]="!classReference.isEuropeanFormat ? 'selected' : 'notSelected'">
+                        <b>{{'Settings.usFormat' | translate}}</b><br>
+                        <span class="format-example">2,000.00</span>
+                    </button>
+                </div>
+            </div>
+            <!-- Date Format -->
+            <div *ngIf="classReference.isDateFormat">
+                <h3 class="sub-title">{{'Settings.dateFormatLable' | translate}}</h3>
+                <div class="format-grid">
+                    <button *ngFor="let fmt of dateFormats"
+                            (click)="chooseDateFormat(fmt.value)"
+                            class="format-option"
+                            [ngClass]="classReference.dateFormat === fmt.value ? 'selected' : 'notSelected'">
+                        <b>{{fmt.label}}</b><br>
+                        <span class="format-example">{{fmt.example}}</span>
+                    </button>
+                </div>
+            </div>
+            <!-- Theme -->
+            <div *ngIf="classReference.isTheme">
+                <h3 class="sub-title">{{'Settings.themeLable' | translate}}</h3>
+                <div class="format-options">
+                    <button (click)="chooseLight()"
+                            class="format-option"
+                            [ngClass]="getCurrentTheme() === 'light' ? 'selected' : 'notSelected'">
+                        <span class="theme-icon">☀️</span>
+                        <b>{{'Settings.themeLight' | translate}}</b>
+                    </button>
+                    <button (click)="chooseDark()"
+                            class="format-option"
+                            [ngClass]="getCurrentTheme() === 'dark' ? 'selected' : 'notSelected'">
+                        <span class="theme-icon">🌙</span>
+                        <b>{{'Settings.themeDark' | translate}}</b>
+                    </button>
+                </div>
+            </div>
+            <!-- Allocation -->
+            <div *ngIf="classReference.isAllocation">
+                <h3 class="sub-title">{{'Settings.allocationLable' | translate}}</h3>
+                <div class="allocation-bars">
+                    <div class="allocation-row">
+                        <span class="alloc-label">{{'Menu.daily' | translate}}</span>
+                        <div class="alloc-bar-track">
+                            <div class="alloc-bar-fill daily" [style.width.%]="classReference.daily"></div>
+                        </div>
+                        <span class="alloc-percent">{{classReference.daily}}%</span>
+                    </div>
+                    <div class="allocation-row">
+                        <span class="alloc-label">{{'Menu.splurge' | translate}}</span>
+                        <div class="alloc-bar-track">
+                            <div class="alloc-bar-fill splurge" [style.width.%]="classReference.splurge"></div>
+                        </div>
+                        <span class="alloc-percent">{{classReference.splurge}}%</span>
+                    </div>
+                    <div class="allocation-row">
+                        <span class="alloc-label">{{'Menu.smile' | translate}}</span>
+                        <div class="alloc-bar-track">
+                            <div class="alloc-bar-fill smile" [style.width.%]="classReference.smile"></div>
+                        </div>
+                        <span class="alloc-percent">{{classReference.smile}}%</span>
+                    </div>
+                    <div class="allocation-row">
+                        <span class="alloc-label">{{'Menu.fire' | translate}}</span>
+                        <div class="alloc-bar-track">
+                            <div class="alloc-bar-fill fire" [style.width.%]="classReference.fire"></div>
+                        </div>
+                        <span class="alloc-percent">{{classReference.fire}}%</span>
+                    </div>
+                </div>
+            </div>
+            <!-- Encryption -->
+            <div *ngIf="classReference.isEncryption">
+                <h3 class="sub-title">{{'Settings.encryptionLable' | translate}}</h3>
+                <div class="info-card">
+                    <div class="info-row">
+                        <span class="info-label">{{'Settings.key' | translate}}</span>
+                        <span class="info-value key-value">{{classReference.key}}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">{{'Settings.local' | translate}}</span>
+                        <span class="info-value" [ngClass]="classReference.isLocal ? 'status-on' : 'status-off'">{{classReference.isLocal ? ('Settings.on' | translate) : ('Settings.off' | translate)}}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">{{'Settings.database' | translate}}</span>
+                        <span class="info-value" [ngClass]="classReference.isDatabase ? 'status-on' : 'status-off'">{{classReference.isDatabase ? ('Settings.on' | translate) : ('Settings.off' | translate)}}</span>
+                    </div>
+                </div>
+            </div>
+            <!-- Export -->
+            <div *ngIf="classReference.isBackup">
+                <h3 class="sub-title">{{'Settings.exportTitle' | translate}}</h3>
+                <div class="backup-options">
+                    <button class="backup-option" (click)="clickedStatisticsExport()">
+                        <span class="backup-option-title">{{'Settings.statisticsExport' | translate}}</span>
+                        <span class="backup-option-desc">{{'Settings.statisticsExportDesc' | translate}}</span>
+                    </button>
+                    <button class="backup-option" (click)="clickedMigrationExport()">
+                        <span class="backup-option-title">{{'Settings.migrationExport' | translate}}</span>
+                        <span class="backup-option-desc">{{'Settings.migrationExportDesc' | translate}}</span>
+                    </button>
+                </div>
+            </div>
+            <!-- Restore -->
+            <div *ngIf="classReference.isRestore">
+                <h3 class="sub-title">{{'Settings.restoreTitle' | translate}}</h3>
+                <div class="backup-restore">
+                    <label class="backup-label">{{'Settings.migrationFile' | translate}}</label>
+                    <input #migrationFileInput type="file" accept=".json" class="backup-file-input" />
+                    <p class="backup-status" *ngIf="importStatus">{{importStatus}}</p>
+                    <button class="backup-restore-btn" (click)="onImportMigration()" [disabled]="isImporting">{{'Settings.startRestore' | translate}}</button>
+                </div>
+            </div>
+        </div>
+        <p id="errorLable" *ngIf="classReference.isError" [style.color]="color" [style.border-color]="borderColor">
+            {{errorTextLable}}</p>
+        <!-- Categorized Settings Menu -->
+        <div *ngIf="classReference.isSettings" class="settings-menu">
+            <div class="settings-category">
+                <h5 class="category-title">{{'Settings.category.account' | translate}}</h5>
+                <button class="settings-menu-item" (click)="editPersonalSettings()">
+                    <span>{{'Settings.editProfile' | translate}}</span>
+                    <span class="menu-chevron">›</span>
+                </button>
+                <button class="settings-menu-item" (click)="changePassword()">
+                    <span>{{'Settings.changePassword' | translate}}</span>
+                </button>
+            </div>
+            <div class="settings-category">
+                <h5 class="category-title">{{'Settings.category.display' | translate}}</h5>
+                <button class="settings-menu-item" (click)="changeLanguage()">
+                    <span>{{'Settings.languagesbtn' | translate}}</span>
+                    <span class="menu-chevron">›</span>
+                </button>
+                <button class="settings-menu-item" (click)="changeCurrency()">
+                    <span>{{'Settings.currencybtn' | translate}}</span>
+                    <span class="menu-chevron">›</span>
+                </button>
+                <button class="settings-menu-item" (click)="changeNumberFormat()">
+                    <span>{{'Settings.numberFormatbtn' | translate}}</span>
+                    <span class="menu-chevron">›</span>
+                </button>
+                <button class="settings-menu-item" (click)="changeDateFormat()">
+                    <span>{{'Settings.dateFormatbtn' | translate}}</span>
+                    <span class="menu-chevron">›</span>
+                </button>
+                <button class="settings-menu-item" (click)="changeTheme()">
+                    <span>{{'Settings.themebtn' | translate}}</span>
+                    <span class="menu-chevron">›</span>
+                </button>
+            </div>
+            <div class="settings-category">
+                <h5 class="category-title">{{'Settings.category.finance' | translate}}</h5>
+                <button class="settings-menu-item" (click)="changeAllocation()">
+                    <span>{{'Settings.allocationbtn' | translate}}</span>
+                    <span class="menu-chevron">›</span>
+                </button>
+            </div>
+            <div class="settings-category">
+                <h5 class="category-title">{{'Settings.category.security' | translate}}</h5>
+                <button class="settings-menu-item" (click)="changeEncryption()">
+                    <span>{{'Settings.encryptionbtn' | translate}}</span>
+                    <span class="menu-chevron">›</span>
+                </button>
+            </div>
+            <!-- Auth form for encryption -->
+            <div *ngIf="isAuth" class="login-container">
+                <form>
+                    <label for="password"> {{'Registration.Password' | translate}}</label>
+                    <div class="password-wrapper mb-md">
+                    <input type="password" id="password" name="Password" [(ngModel)]="passwordTextField" class="mb-0">
+                    <button id="eyebtn" type="button" (click)="toggleEye()" class="password-toggle-btn">
+                        <img src={{eyePic}} alt="Toggle Password Visibility" width="20" height="20" class="password-toggle-img"/>
+                    </button>
+                    </div>
+                    <p *ngIf="isError" id="errorMessage">{{errorMessageLable}}</p>
+                    <button id="loginbtn" (click)="authenticate()">{{'Registration.submit' | translate}}</button>
+                </form>
+            </div>
+            <div class="settings-category">
+                <h5 class="category-title">{{'Settings.category.backup' | translate}}</h5>
+                <button class="settings-menu-item" (click)="changeBackup()">
+                    <span>{{'Settings.exportbtn' | translate}}</span>
+                    <span class="menu-chevron">›</span>
+                </button>
+                <button class="settings-menu-item" (click)="changeRestore()">
+                    <span>{{'Settings.restorebtn' | translate}}</span>
+                    <span class="menu-chevron">›</span>
+                </button>
+            </div>
+            <div class="settings-category">
+                <h5 class="category-title">{{'Settings.category.advanced' | translate}}</h5>
+                <button class="settings-menu-item" (click)="changeFix()">
+                    <span>{{'Settings.fixaccounting' | translate}}</span>
+                </button>
+                <button class="settings-menu-item delete-item" (click)="toggleDeleteAuth()">
+                    <span>{{'Settings.deletebtn' | translate}}</span>
+                </button>
+                <!-- Auth form for account deletion -->
+                <div *ngIf="isDeleteAuth" class="login-container">
+                    <form>
+                        <label for="deletePassword">{{'Registration.Password' | translate}}</label>
+                        <div class="password-wrapper mb-md">
+                            <input type="password" id="deletePassword" name="deletePassword" [(ngModel)]="deletePasswordTextField" class="mb-0">
+                            <button id="deleteEyebtn" type="button" (click)="toggleDeleteEye()" class="password-toggle-btn">
+                                <img src={{deleteEyePic}} alt="Toggle Password Visibility" width="20" height="20" class="password-toggle-img"/>
+                            </button>
+                        </div>
+                        <p *ngIf="isDeleteError" id="deleteErrorMessage">{{deleteErrorLabel}}</p>
+                        <button id="loginbtn" class="delete-auth-btn" type="button" (click)="authenticateForDelete()">{{'Settings.deleteConfirmBtn' | translate}}</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <!-- Sub-view buttons -->
+        <button id="editbtn" (click)="editPersonalSettings()"
+            *ngIf="classReference.isAllocation || classReference.isEncryption">{{'Settings.editbtn' | translate}}</button>
+        <button id="languagebtn" (click)="back()"
+            *ngIf="!classReference.isSettings">{{'Settings.backbtn' | translate}}</button>
+    </div>
+    <div *ngIf="isEdit">
+        <div *ngIf="classReference.isSettings">
+            <form class="edit-card">
+                <h3 class="sub-title">{{'Settings.editProfile' | translate}}</h3>
+                <div class="edit-field">
+                    <label [ngClass]="{'edit-label': true, 'edit-label-error': classReference.isError}">{{'Settings.username' | translate}}</label>
+                    <input type="text" class="edit-input" [ngClass]="{'edit-input-error': classReference.isError}"
+                        [(ngModel)]="usernameTextField" name="title">
+                </div>
+                <div class="edit-field">
+                    <label [ngClass]="{'edit-label': true, 'edit-label-error': classReference.isError}">{{'Settings.email' | translate}}</label>
+                    <input type="text" class="edit-input" [ngClass]="{'edit-input-error': classReference.isError}"
+                        [(ngModel)]="emailTextField" name="amount">
+                </div>
+            </form>
+        </div>
+        <div *ngIf="classReference.isAllocation">
+            <form class="edit-card">
+                <h3 class="sub-title">{{'Settings.allocationLable' | translate}}</h3>
+                <div class="edit-field alloc-field daily">
+                    <label [ngClass]="{'edit-label': true, 'edit-label-error': classReference.isError}">{{'Menu.daily' | translate}}</label>
+                    <div class="input-suffix">
+                        <input type="text" class="edit-input" [ngClass]="{'edit-input-error': classReference.isError}"
+                            [(ngModel)]="dailyTextField" name="daily">
+                        <span class="suffix">%</span>
+                    </div>
+                </div>
+                <div class="edit-field alloc-field splurge">
+                    <label [ngClass]="{'edit-label': true, 'edit-label-error': classReference.isError}">{{'Menu.splurge' | translate}}</label>
+                    <div class="input-suffix">
+                        <input type="text" class="edit-input" [ngClass]="{'edit-input-error': classReference.isError}"
+                            [(ngModel)]="splurgeTextField" name="splurge">
+                        <span class="suffix">%</span>
+                    </div>
+                </div>
+                <div class="edit-field alloc-field smile">
+                    <label [ngClass]="{'edit-label': true, 'edit-label-error': classReference.isError}">{{'Menu.smile' | translate}}</label>
+                    <div class="input-suffix">
+                        <input type="text" class="edit-input" [ngClass]="{'edit-input-error': classReference.isError}"
+                            [(ngModel)]="smileTextField" name="smile">
+                        <span class="suffix">%</span>
+                    </div>
+                </div>
+                <div class="edit-field alloc-field fire">
+                    <label [ngClass]="{'edit-label': true, 'edit-label-error': classReference.isError}">{{'Menu.fire' | translate}}</label>
+                    <div class="input-suffix">
+                        <input type="text" class="edit-input" [ngClass]="{'edit-input-error': classReference.isError}"
+                            [(ngModel)]="fireTextField" name="fire">
+                        <span class="suffix">%</span>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div *ngIf="classReference.isEncryption">
+            <form class="edit-card">
+                <h3 class="sub-title">{{'Settings.encryptionLable' | translate}}</h3>
+                <div class="edit-field">
+                    <label [ngClass]="{'edit-label': true, 'edit-label-error': classReference.isError}">{{'Settings.key' | translate}}</label>
+                    <textarea class="edit-input edit-textarea" [ngClass]="{'edit-input-error': classReference.isError}"
+                        [(ngModel)]="keyTextField" name="key"></textarea>
+                </div>
+                <div class="toggle-row" role="switch" tabindex="0" [attr.aria-checked]="classReference.isLocal" (click)="toggleIsLocal()" (keydown.enter)="toggleIsLocal()" (keydown.space)="toggleIsLocal(); $event.preventDefault()">
+                    <span class="toggle-label">{{'Settings.local' | translate}}</span>
+                    <div class="toggle-switch" [ngClass]="{'toggle-on': classReference.isLocal}">
+                        <div class="toggle-knob"></div>
+                    </div>
+                </div>
+                <div class="toggle-row" role="switch" tabindex="0" [attr.aria-checked]="classReference.isDatabase" (click)="toggleIsDatabase()" (keydown.enter)="toggleIsDatabase()" (keydown.space)="toggleIsDatabase(); $event.preventDefault()">
+                    <span class="toggle-label">{{'Settings.database' | translate}}</span>
+                    <div class="toggle-switch" [ngClass]="{'toggle-on': classReference.isDatabase}">
+                        <div class="toggle-knob"></div>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <p id="errorLable" *ngIf="classReference.isError">{{errorTextLable}}</p>
+        <button *ngIf="classReference.isEncryption" id="defaultbtn" (click)="setDefault()">{{'Settings.default' | translate}}</button>
+        <button *ngIf="classReference.isEncryption" id="loadbtn" (click)="load()">{{'Settings.load' | translate}}</button>
+        <button *ngIf="classReference.isEncryption" id="savebtn" (click)="save()">{{'Settings.save' | translate}}</button>
+        <button *ngIf="!classReference.isEncryption" id="addbtn" (click)="updatePersonalSettings()">{{'Settings.update' | translate}}</button>
+        <button id="canclebtn" (click)="cancel()">{{'Settings.cancel' | translate}}</button>
+    </div>
+</div>
+
+<div class="confirmation-backdrop" *ngIf="showConfirmation" (click)="closeConfirmation(false)"></div>
+<div class="confirmation-dialog" *ngIf="showConfirmation">
+    <h2>{{'Settings.confirmation' | translate}}</h2>
+    <p>{{'Confirm.deleteAccount' | translate}}</p>
+    <button (click)="closeConfirmation(false)" class="cancel-btn">{{'Settings.Cancel' | translate}}</button>
+    <button (click)="closeConfirmation(true)" class="delete-btn">{{'Settings.Delete' | translate}}</button>
+</div>

@@ -1,0 +1,442 @@
+.cashflowBox {
+    margin-left: auto;
+    margin-right: auto;
+    width: 70%;
+    border: 3px solid white;
+    background-color: var(--color-primary);
+    border-radius: var(--radius-lg);
+    border-color: white;
+    border-width: 2%;
+    padding-top: 20px;
+    padding-bottom: 20px;
+    padding-left: 40px;
+    padding-right: 40px;
+    max-width: 500px;
+  }
+  
+  .amountLable-positive {
+    margin-left: auto;
+    margin-right: auto;
+    background-color: var(--color-surface);
+    padding: 2%;
+    text-align: center;
+    border-radius: var(--radius-lg);
+    margin-bottom: 20px;
+    font-size: large;
+  }
+
+  .amountLable-negative {
+    margin-left: auto;
+    margin-right: auto;
+    background-color: var(--color-surface);
+    color: var(--color-danger);
+    padding: 2%;
+    text-align: center;
+    border-radius: var(--radius-lg);
+    margin-bottom: 20px;
+    font-size: large;
+  }
+  
+  .operation {
+    text-align: center;
+    font-size: x-large;
+    margin-bottom: 10px;
+    color: white;
+  }
+  
+  .TextLable {
+    text-align: center;
+    color: white;
+    font-size: x-large;
+  }
+
+  .tableH{
+    text-align: center;
+  }
+
+  #endedSubscriptions {
+    margin-top: 20px;
+    margin-bottom: 10px;
+    font-size: x-large;
+    text-align: center;
+    font-weight: bold;
+  }
+
+
+  .date{
+    color: var(--color-text);
+  } 
+  .date-payed {
+    color: green;
+    font-weight: bold;
+  }
+
+  .switch {
+    position: relative;
+    display: inline-block;
+    width: 60px; /* Fixed width */
+    height: 34px; /* Fixed height */
+    margin-right: 20px;
+  }
+
+  .switch input { 
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+
+  .slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    background-color: var(--color-border);
+    width: 60px; /* Fixed width */
+    height: 34px; /* Fixed height */
+  }
+
+  .slider:before {
+    position: absolute;
+    content: "";
+    height: 26px;
+    width: 26px;
+    left: 4px;
+    bottom: 4px;
+    background-color: var(--color-surface);
+  }
+
+  input:checked + .slider {
+    background-color: var(--color-warning-light); /* Light orange */
+  }
+
+  input:focus + .slider {
+    box-shadow: 0 0 1px var(--color-warning-light); /* Light orange */
+  }
+
+  input:checked + .slider:before {
+    -webkit-transform: translateX(22px);
+    -ms-transform: translateX(22px);
+    transform: translateX(22px);
+  }
+
+  /* Rounded sliders */
+  .slider.round {
+    border-radius: 34px;
+  }
+
+  .slider.round:before {
+    border-radius: 50%;
+  }
+
+  /* ========================================
+     Refresh Button
+     ======================================== */
+
+  .refresh-btn {
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    font-size: 31px;
+    font-weight: bold;
+    padding: 8px;
+    margin-left: 8px;
+    margin-right: 8px;
+    transition: transform 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+    min-height: 40px;
+  }
+
+  .refresh-btn:hover:not(:disabled) {
+    transform: rotate(180deg);
+  }
+
+  .refresh-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .refresh-btn .spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  /* Responsive adjustments for refresh button */
+  @media (max-width: 768px) {
+    .refresh-btn {
+      font-size: 27px;
+      padding: 6px;
+      margin-left: 7px;
+      margin-right: 6px;
+      min-width: 36px;
+      min-height: 36px;
+    }
+
+    .refresh-btn .spinner {
+      width: 18px;
+      height: 18px;
+      border-width: 2px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .refresh-btn {
+      font-size: 25px;
+      padding: 4px;
+      margin-left: 21px;
+      margin-right: 5px;
+      min-width: 32px;
+      min-height: 32px;
+    }
+
+    .refresh-btn .spinner {
+      width: 16px;
+      height: 16px;
+    }
+  }
+
+  /* ========================================
+     Frequency Filter & Legend Controls
+     ======================================== */
+
+  .frequency-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px 12px;
+    border-top: 1px solid var(--color-border);
+    margin-top: 16px;
+    margin-left: auto;
+    margin-right: auto;
+    max-width: 90%;
+  }
+
+  .frequency-filter-section {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .filter-label {
+    font-size: 12px;
+    color: var(--color-text-muted);
+    font-weight: 500;
+  }
+
+  .frequency-filter-dropdown {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    color: var(--color-text);
+    padding: 4px 10px;
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    cursor: pointer;
+    transition: border-color 0.2s ease;
+  }
+
+  .frequency-filter-dropdown:hover {
+    border-color: var(--color-primary);
+  }
+
+  .frequency-filter-dropdown:focus {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+
+  /* Colored options in dropdown */
+  .filter-option-all {
+    padding-left: 20px;
+  }
+
+  .filter-option-weekly {
+    padding-left: 20px;
+    background: linear-gradient(90deg, #10B981 0%, #10B981 8px, transparent 8px);
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+  }
+
+  .filter-option-biweekly {
+    padding-left: 20px;
+    background: linear-gradient(90deg, #3B82F6 0%, #3B82F6 8px, transparent 8px);
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+  }
+
+  .filter-option-monthly {
+    padding-left: 20px;
+    background: linear-gradient(90deg, #6B7280 0%, #6B7280 8px, transparent 8px);
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+  }
+
+  .filter-option-quarterly {
+    padding-left: 20px;
+    background: linear-gradient(90deg, #F59E0B 0%, #F59E0B 8px, transparent 8px);
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+  }
+
+  .filter-option-yearly {
+    padding-left: 20px;
+    background: linear-gradient(90deg, #8B5CF6 0%, #8B5CF6 8px, transparent 8px);
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+  }
+
+  /* ========================================
+     Frequency Indicators (Color-Coded Dots)
+     ======================================== */
+
+  .frequency-indicator {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 8px;
+    vertical-align: middle;
+  }
+
+  .frequency-weekly {
+    background-color: #10B981; /* Green */
+  }
+
+  .frequency-biweekly {
+    background-color: #3B82F6; /* Blue */
+  }
+
+  .frequency-monthly {
+    background-color: #6B7280; /* Gray */
+  }
+
+  .frequency-quarterly {
+    background-color: #F59E0B; /* Orange */
+  }
+
+  .frequency-yearly {
+    background-color: #8B5CF6; /* Purple */
+  }
+
+  .frequency-legend {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    flex-wrap: wrap;
+    font-size: 12px;
+    color: var(--color-text-muted);
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  /* ========================================
+     Column Width Adjustments
+     ======================================== */
+
+  ::ng-deep .mat-column-id {
+    flex: 0 0 75px;
+    max-width: 75px;
+    min-width: 75px;
+    white-space: nowrap;
+  }
+
+  ::ng-deep .mat-column-title {
+    flex: 0 0 185px;
+    max-width: 185px;
+    padding-right: 24px !important;
+  }
+
+  ::ng-deep .mat-column-account {
+    flex: 0 0 150px;
+    max-width: 150px;
+    padding-left: 16px !important;
+  }
+
+  ::ng-deep .mat-column-amount {
+    flex: 1 1 auto;
+  }
+
+  ::ng-deep .mat-column-startDate {
+    flex: 0 0 120px;
+    max-width: 120px;
+  }
+
+  /* Responsive adjustments */
+  @media (max-width: 768px) {
+    .frequency-filter-dropdown {
+      font-size: 11px;
+      padding: 3px 8px;
+    }
+
+    .filter-label {
+      font-size: 11px;
+    }
+
+    .frequency-legend {
+      font-size: 11px;
+      gap: 12px;
+    }
+
+    .legend-item {
+      gap: 4px;
+    }
+
+    ::ng-deep .mat-column-id {
+      flex: 0 0 70px;
+      max-width: 70px;
+      min-width: 70px;
+    }
+
+    ::ng-deep .mat-column-title {
+      flex: 0 0 150px;
+      max-width: 150px;
+      padding-right: 12px !important;
+    }
+
+    ::ng-deep .mat-column-account {
+      flex: 0 0 100px;
+      max-width: 100px;
+      padding-left: 8px !important;
+    }
+  }
+
+  /* Extra small screens */
+  @media (max-width: 480px) {
+    .frequency-indicator {
+      margin-right: 6px;
+      width: 7px;
+      height: 7px;
+    }
+
+    ::ng-deep .mat-column-id {
+      flex: 0 0 60px;
+      max-width: 60px;
+      min-width: 60px;
+      font-size: 13px;
+    }
+
+    ::ng-deep .mat-column-title {
+      flex: 0 0 120px;
+      max-width: 120px;
+    }
+
+    ::ng-deep .mat-column-account {
+      flex: 0 0 80px;
+      max-width: 80px;
+    }
+  }

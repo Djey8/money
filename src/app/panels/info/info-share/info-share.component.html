@@ -1,0 +1,40 @@
+<div id="infoTransaction-Container" role="dialog" aria-modal="true" appTrapFocus *ngIf="classReference.isInfo" (click)="highlight()"
+    [style.z-index]="classReference.zIndex + 1001">
+    <h4 id="infoTransactionTitle">#{{classReference.index+1}}</h4>
+    <button id="closebtn" aria-label="Close" (click)="closeWindow()">x</button>
+    <hr class="separator-white">
+    <div *ngIf="!isEdit">
+        <div id="info-box">
+            <h4 class="infoLableB">{{classReference.title}}</h4>
+            <hr class="divider-black">
+            <h4 class="infoLable mt-xs">{{'InfoShare.quantity' | translate}}:
+                {{classReference.quantity}}</h4>
+            <h4 class="infoLable mt-xs">{{'InfoShare.price' | translate}}: {{classReference.price }} {{currency}}</h4>
+            <hr class="divider-black">
+            <h4 class="infoLable mt-xs">{{'InfoShare.value' | translate}}:
+                {{classReference.price*classReference.quantity | appNumber}} {{currency}}</h4>
+            <div class="button-container">
+                <button id="buyButton" (click)="buyShare()">{{'Grow.buy' | translate}}</button>
+                <button id="sellButton" (click)="sellShare()">{{'Grow.sell' | translate}}</button>
+            </div>
+        </div>
+        <button id="editbtn" (click)="dividende()">{{'InfoShare.dividende' | translate}}</button>
+        <button id="editbtn" (click)="editShare()">{{'Info.edit' | translate}}</button>
+    </div>
+    <div *ngIf="isEdit">
+        <form id="input-container">
+            <label for="title" [class.form-error-text]="classReference.isError">{{'AddAsset.name' | translate}}</label>
+            <input type="text" id="title" name="title" [class.form-error-border]="classReference.isError" [(ngModel)]="titleTextField">
+            <label for="quantity">{{'Balance.Quantity' | translate}}:</label>
+            <input type=number step=any id="quantity" name="quantity" [(ngModel)]="quantityTextField"
+                class="mb-xs">
+            <label for="amount">{{'Balance.Price' | translate}}</label>
+            <input type=number step=any id="amount" name="amount" [(ngModel)]="priceTextField"
+                class="mb-xs">
+        </form>
+        <p id="errorLable" *ngIf="classReference.isError">{{errorTextLable}}</p>
+        <button id="addbtn" (click)="updateShare()">{{'Info.update' | translate}}</button>
+        <button id="deletebtn" (click)="deleteShare(classReference.index)">{{'Info.delete' | translate}}</button>
+        <button id="canclebtn" (click)="cancel()">{{'Info.cancel' | translate}}</button>
+    </div>
+</div>

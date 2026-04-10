@@ -1,0 +1,212 @@
+/* ========================================
+   Shared Add Form Styles
+   Used by all add-* components
+   ======================================== */
+
+#input-container {
+  background-color: var(--color-surface);
+  margin-left: 5%;
+  width: 90%;
+  border-radius: var(--radius-md);
+  margin-bottom: 10px;
+}
+
+#closebtn {
+  position: absolute;
+  top: 0;
+  right: 0;
+  margin-right: 10px;
+  color: white;
+  width: 40px;
+  height: 40px;
+  font-size: 25px;
+  background-color: transparent;
+  border-color: transparent;
+}
+
+#addbtn, #subscriptionbtn {
+  margin-left: 10%;
+  width: 80%;
+  margin-top: 4%;
+  background-color: transparent;
+  border-radius: var(--radius-sm);
+  border: 2px solid white;
+  color: white;
+  padding: 2%;
+  font-size: 17px;
+}
+
+.checkLable {
+  text-align: center;
+  margin-bottom: 10px;
+  vertical-align: middle;
+}
+
+/* Toggle switch style (matching encryption settings) */
+.toggle-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 8px;
+  margin-left: 2%;
+  margin-right: 2%;
+  border-bottom: 1px solid var(--color-muted-light);
+  cursor: pointer;
+}
+
+.toggle-row:last-of-type {
+  border-bottom: none;
+}
+
+.toggle-label {
+  font-size: 15px;
+  color: var(--color-text);
+  font-weight: 500;
+}
+
+.toggle-switch {
+  width: 44px;
+  min-width: 44px;
+  height: 24px;
+  border-radius: var(--radius-md);
+  background-color: var(--color-toggle-track);
+  position: relative;
+  transition: background-color 0.2s;
+}
+
+.toggle-switch.toggle-on {
+  background-color: var(--color-success);
+}
+
+.toggle-knob {
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-full);
+  background-color: var(--color-surface);
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  transition: transform 0.2s;
+  box-shadow: var(--shadow-sm);
+}
+
+.toggle-switch.toggle-on .toggle-knob {
+  transform: translateX(20px);
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  margin: 0 auto;
+}
+
+label {
+  margin-bottom: 1%;
+  margin-left: 10px;
+  margin-top: 10px;
+}
+
+input[type="text"],
+input[type="number"],
+input[type="month"],
+textarea,
+select {
+  background-color: var(--color-surface);
+  padding: 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  margin-bottom: 1%;
+  margin-left: 2%;
+  margin-right: 2%;
+  width: 96%;
+  box-sizing: border-box;
+  color: var(--color-text);
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"] {
+  background-color: var(--color-surface);
+  padding: 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  margin-bottom: 1%;
+  margin-left: 2%;
+  margin-right: 2%;
+  width: 96%;
+  max-width: 96%;
+  box-sizing: border-box;
+  color: var(--color-text);
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  filter: var(--date-icon-filter, none);
+}
+
+textarea, select {
+  padding: 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  margin-bottom: 2%;
+  background-color: var(--color-surface);
+  color: var(--color-text);
+}
+
+select {
+  margin-left: 2%;
+  width: 96%;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23888"><path d="M7 10l5 5 5-5z"/></svg>');
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 24px;
+}
+
+textarea {
+  resize: vertical;
+  margin-left: 2%;
+  margin-right: 2%;
+}
+
+input[type="checkbox"] {
+  vertical-align: middle;
+  margin-right: 10px;
+}
+
+#errorLable {
+  background-color: var(--color-surface);
+  border-radius: var(--radius-md);
+  padding-top: 10px;
+  padding-bottom: 10px;
+  margin-left: 5%;
+  margin-right: 5%;
+  margin-bottom: 10px;
+  color: var(--color-danger);
+  text-align: center;
+}
+
+/* ========================================
+   Frequency Selector Help Icon
+   ======================================== */
+
+.help-icon {
+  display: inline-block;
+  margin-left: 4px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 14px;
+  cursor: help;
+  vertical-align: middle;
+  font-weight: normal;
+}
+
+.help-icon:hover {
+  color: rgba(255, 255, 255, 0.9);
+}

@@ -1,0 +1,32 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "npx ng": true,
+        "ForEach-Object": true,
+        "Set-Content": true,
+        "Out-Null": true,
+        "Resolve-Path": true,
+        "Move-Item": true,
+        "Copy-Item": true,
+        "Test-Path": true,
+        "Group-Object": true,
+        "Out-File": true,
+        "/^node -e \"const l=require\\('fs'\\)\\.readFileSync\\('src/app/stats/stats\\.component\\.ts','utf8'\\)\\.split\\(String\\.fromCharCode\\(10\\)\\)\\.length; console\\.log\\(l\\)\"$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "npm install": true,
+        "npm uninstall": true,
+        "/^node -e \"console\\.log\\(JSON\\.stringify\\(Object\\.keys\\(require\\('jest-preset-angular/presets'\\)\\), null, 2\\)\\)\" 2>&1$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "npx jest": true,
+        "/^node -e \"\nconst fs = require\\('fs'\\);\nconst glob = require\\('path'\\);\nconst path = require\\('path'\\);\n\nfunction findSpecFiles\\(dir\\) \\{\n  let results = \\[\\];\n  const items = fs\\.readdirSync\\(dir\\);\n  for \\(const item of items\\) \\{\n    const fullPath = path\\.join\\(dir, item\\);\n    const stat = fs\\.statSync\\(fullPath\\);\n    if \\(stat\\.isDirectory\\(\\) && item !== 'node_modules' && item !== 'dist'\\) \\{\n      results = results\\.concat\\(findSpecFiles\\(fullPath\\)\\);\n    \\} else if \\(item\\.endsWith\\('\\.spec\\.ts'\\)\\) \\{\n      results\\.push\\(fullPath\\);\n    \\}\n  \\}\n  return results;\n\\}\n\nconst specFiles = findSpecFiles\\('src/app'\\);\nlet changed = 0;\nfor \\(const file of specFiles\\) \\{\n  let content = fs\\.readFileSync\\(file, 'utf8'\\);\n  if \\(content\\.includes\\('declarations:'\\)\\) \\{\n    // Replace declarations arrays with imports for standalone components\n    const newContent = content\\.replace\\(/declarations:\\\\s\\*\\\\\\[/g, 'imports: \\['\\);\n    if \\(newContent !== content\\) \\{\n      fs\\.writeFileSync\\(file, newContent, 'utf8'\\);\n      changed\\+\\+;\n      console\\.log\\('Fixed: ' \\+ path\\.relative\\('src/app', file\\)\\);\n    \\}\n  \\}\n\\}\nconsole\\.log\\('\\\\nTotal files fixed: ' \\+ changed\\);\n\"$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "shared": true,
+        "stats": true,
+        "wsl": true
+    }
+}

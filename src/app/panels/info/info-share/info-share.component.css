@@ -1,0 +1,42 @@
+#infoTransaction-Container {
+  top: 10%;
+  left: 50%;
+  transform: translate(-50%, 0%);
+  width: min(90vw, 400px);
+  border: 3px solid white;
+  background-color: var(--color-primary);
+  border-radius: var(--radius-lg);
+  padding: 2%;
+  border-color: white;
+  border-width: 2%;
+  position: absolute;
+  box-shadow: var(--shadow-lg);
+}
+
+.button-container {
+  display: flex;
+  justify-content: center;
+  margin: 3%;
+}
+
+#buyButton, #sellButton {
+  width: 49%;
+  max-width: 400px;
+  padding: 10px;
+  border-radius: var(--radius-sm);
+  text-align: center;
+  font-size: 1.5em;
+  color: white;
+}
+
+#buyButton {
+  background-color: rgba(0, 128, 0, 0.7);
+  border: 3px solid darkgreen;
+  margin-right: 2%;
+}
+
+#sellButton {
+  background-color: rgba(255, 0, 0, 0.7);
+  border: 3px solid darkred;
+  margin-left: 2%;
+}

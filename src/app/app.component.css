@@ -1,0 +1,244 @@
+:host {
+    font-size: var(--font-base);
+    color: var(--color-text);
+    box-sizing: border-box;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    margin: 8px 0;
+}
+
+p {
+    margin: 0;
+}
+
+.spacer {
+    flex: 1;
+}
+
+.mode-badge {
+    font-size: 11px;
+    padding: 4px 8px;
+    border-radius: var(--radius-sm);
+    font-weight: 500;
+    margin-right: 12px;
+    cursor: help;
+    opacity: 0.85;
+    transition: opacity 0.2s;
+}
+
+.mode-badge:hover {
+    opacity: 1;
+}
+
+.mode-badge.selfhosted {
+    background-color: var(--color-success);
+    color: white;
+}
+
+.mode-badge.firebase {
+    background-color: var(--color-warning);
+    color: white;
+}
+
+.toolbar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    background-color: var(--color-primary);
+    color: white;
+    box-shadow: var(--shadow-md);
+    padding-right: 10px;
+}
+
+.toolbar #heading {
+    font-size: x-large;
+    text-align: left;
+    width: 100%;
+}
+
+.toolbar #profile-pic {
+    border-radius: var(--radius-full);
+    border-color: white;
+    border-style: solid;
+}
+
+.toolbar img[role="button"] {
+    cursor: pointer;
+    border-radius: var(--radius-full);
+    transition: transform 0.15s ease, opacity 0.15s ease;
+}
+.toolbar img[role="button"]:hover {
+    opacity: 0.75;
+    transform: scale(1.1);
+}
+.toolbar img[role="button"]:active {
+    transform: scale(0.95);
+}
+
+@media screen and (max-width: 480px) {
+    .toolbar img,
+    .toolbar .add-circle-btn {
+        margin: 0 6px;
+    }
+}
+
+/* On mobile, toolbar shortcuts stay visible — bottom nav provides additional navigation */
+
+@media screen and (min-width: 481px) {
+    .toolbar img,
+    .toolbar .add-circle-btn {
+        margin: 0 15px;
+    }
+}
+
+.content {
+    margin: 70px auto 20px;
+    padding: 0 20px;
+    max-width: 100%;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Bottom margin for bottom nav clearance */
+@media (max-width: 649px) {
+    .content {
+        margin-bottom: 56px;
+    }
+}
+
+@media (min-width: 650px) {
+    .content {
+        margin-bottom: 52px;
+    }
+}
+
+.search-bar-container {
+  display: flex;
+  align-items: center;
+  width: 90%;
+  margin: 20px 0;
+  gap: 5px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.search-input {
+  flex-grow: 1;
+  padding: 10px;
+  font-size: 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.button-container {
+  display: flex;
+  gap: 5px;
+}
+
+.search-button, .clear-button {
+  padding: 10px 20px;
+  font-size: 16px;
+  border: 1px solid var(--color-border);
+  background-color: var(--color-primary);
+  color: white;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+}
+
+.clear-button {
+  background-color: var(--color-danger);
+}
+
+.search-button i {
+  font-size: 16px;
+}
+
+.search-button:hover {
+  background-color: var(--color-primary-hover);
+}
+
+.clear-button:hover {
+  background-color: var(--color-danger);
+}
+
+@media (max-width: 500px) {
+  .search-bar-container {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .button-container {
+    flex-direction: row;
+    justify-content: space-between;
+  }
+
+  .search-button, .clear-button {
+    flex: 1;
+    padding: 6px;
+    font-size: 14px;
+  }
+}
+
+#statsbtn {
+  margin-right: 0;
+  border-radius: var(--radius-full);
+}
+
+/* Welcome empty state */
+.welcome-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 48px 24px;
+  margin: 40px auto 0;
+  max-width: 380px;
+  background: linear-gradient(135deg, var(--color-info-surface) 0%, var(--color-surface) 100%);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  animation: welcomeFadeIn 0.5s ease-out;
+}
+
+.welcome-icon {
+  font-size: 56px;
+  margin-bottom: 12px;
+}
+
+.welcome-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--color-primary);
+  margin: 0 0 8px;
+}
+
+.welcome-subtitle {
+  font-size: 15px;
+  color: var(--color-text-secondary, var(--color-text-muted));
+  margin: 0 0 24px;
+  line-height: 1.5;
+}
+
+.welcome-cta {
+  width: auto;
+  padding: 12px 32px;
+  margin: 0;
+  font-size: 15px;
+}
+
+@keyframes welcomeFadeIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}

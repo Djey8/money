@@ -1,0 +1,45 @@
+<div id="infoTransaction-Container" role="dialog" aria-modal="true" appTrapFocus *ngIf="classReference.isInfo" (click)="highlight()"
+    [style.z-index]="classReference.zIndex + 1001">
+    <h4 id="infoTransactionTitle">#{{classReference.index+1}}</h4>
+    <button id="closebtn" aria-label="Close" (click)="closeWindow()">x</button>
+    <hr class="separator-white">
+    <div *ngIf="!isEdit">
+        <div id="info-box">
+            <h4 class="infoLable">{{getDate()}}</h4>
+            <h4 class="infoLable">{{classReference.tag.replace("@", "")}}</h4>
+            <h4 class="{{classReference.amount>=0 ? 'amount-positive infoLableB' : 'amount-negative infoLableB'}}" >
+                {{classReference.amount | appNumber}} {{settingsReference.currency}}</h4>
+            <div class="button-container">
+                <span class="action-button" role="button" tabindex="0" aria-label="Previous budget" (click)="goLeft()" (keydown.enter)="goLeft()">&#x276E;</span>
+                <span class="action-button" role="button" tabindex="0" aria-label="Next budget" (click)="goRight()" (keydown.enter)="goRight()">&#x276F;</span>
+            </div>
+        </div>
+        <button id="editbtn" class="btn btn--action" (click)="editBudget()">{{'Info.edit' | translate}}</button>
+        <button id="copybtn" class="btn btn--action" (click)="copyBudget()">{{'Info.copy' | translate}}</button>
+    </div>
+    <div *ngIf="isEdit">
+        <form id="input-container">
+            <label for="month">{{'Budget.Month' | translate}}</label>
+        <input type="month" id="month" name="month" [(ngModel)]="dateTextField">
+        <label for="category" [class.form-error-text]="classReference.isError">{{'AddTransaction.Category' | translate}}</label>
+        <div class="flex-row-center">
+            <input type="text" id="category" name="category" [class.form-error-border]="classReference.isError"
+            [(ngModel)]="categoryTextField" *ngIf="!showCategoryOptions" class="flex-1">
+            <select *ngIf="showCategoryOptions" id="categoryOptions" name="categoryOptions" 
+            [(ngModel)]="categoryTextField" (change)="showCategoryOptions = false; selectedCategory()" [class.form-error-border]="classReference.isError" class="mr-xs">
+            <option *ngFor="let option of categoryOptions" [value]="option.value">{{option.label | translate}}</option>
+            </select>
+            <button type="button" (click)="toggleCategoryOptions()" class="category-toggle-btn" aria-label="Toggle input mode">
+            <span class="swap-icon">⇄</span>
+            </button>
+        </div>
+        <label for="amount" [class.form-error-text]="classReference.isError">{{'Transactions.Amount' | translate}}</label>
+        <input type=number step=any id="amount" name="amount" [class.form-error-border]="classReference.isError"
+            [(ngModel)]="amountTextField">
+        </form>
+        <p id="errorLable" *ngIf="classReference.isError">{{errorTextLable}}</p>
+        <button id="addbtn" class="btn btn--action" (click)="updateBudget()">{{'Info.update' | translate}}</button>
+        <button id="deletebtn" class="btn btn--danger" (click)="deleteBudget(classReference.index)">{{'Info.delete' | translate}}</button>
+        <button id="canclebtn" class="btn btn--action" (click)="cancel()">{{'Info.cancel' | translate}}</button>
+    </div>
+</div>

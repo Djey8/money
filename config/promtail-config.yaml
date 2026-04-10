@@ -1,0 +1,67 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  # Scrape Docker container logs
+  - job_name: docker
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 5s
+    relabel_configs:
+      # Set container name as a label
+      - source_labels: ['__meta_docker_container_name']
+        regex: '/(.*)'
+        target_label: 'container'
+      # Set container ID as a label
+      - source_labels: ['__meta_docker_container_id']
+        target_label: 'container_id'
+      # Set image name as a label
+      - source_labels: ['__meta_docker_container_label_com_docker_compose_service']
+        target_label: 'service'
+      # Only scrape money-app containers
+      - source_labels: ['__meta_docker_container_name']
+        regex: '.*(money|backend|frontend|couchdb).*'
+        action: keep
+    pipeline_stages:
+      # Extract log content from Docker log format (timestamp stream JSON)
+      - regex:
+          expression: '^[^ ]+ [^ ]+ (?P<log>.*)$'
+      # Parse JSON logs ONLY from backend service
+      - match:
+          selector: '{service="backend"}'
+          stages:
+            - json:
+                expressions:
+                  timestamp: timestamp
+                  level: level
+                  message: message
+                  # Extract from nested metadata structure
+                  backend_service: metadata.metadata.service
+                  requestType: metadata.metadata.requestType
+                  path: metadata.metadata.path
+                  statusCode: metadata.metadata.statusCode
+                  responseTime: metadata.metadata.responseTime
+                  userId: metadata.metadata.userId
+                  action: metadata.metadata.action
+                  activityType: metadata.metadata.activityType
+                  securityType: metadata.metadata.securityType
+                  errorType: metadata.metadata.errorType
+                  context_source: metadata.metadata.context_source
+                source: log
+            - labels:
+                level:
+                backend_service:
+                requestType:
+                activityType:
+                securityType:
+                errorType:
+            - timestamp:
+                source: timestamp
+                format: "2006-01-02 15:04:05"

@@ -1,0 +1,22 @@
+#addFire-Container {
+  position: absolute;
+  top: 70px;
+  left: 50%;
+  transform: translate(-50%, 0%);
+  width: min(90vw, 400px);
+  border: 3px solid white;
+  background-color: var(--color-primary);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  border-color: white;
+  border-width: 2%;
+  box-shadow: var(--shadow-lg);
+}
+
+#addFireTitle {
+  text-align: center;
+  font-size: 2em;
+  color: white;
+  margin-top: 10px;
+  margin-bottom: 1%;
+}

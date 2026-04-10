@@ -1,0 +1,1004 @@
+<div id="ai-assistant-container" role="dialog" aria-modal="true" appTrapFocus *ngIf="classReference.isOpen" (click)="highlight()"
+    [style.z-index]="classReference.zIndex + 1001">
+    <h4 id="ai-assistant-title">{{'AiAssistant.title' | translate}}</h4>
+    <button id="closebtn" aria-label="Close" (click)="closeWindow()">x</button>
+    <hr class="separator-white">
+
+    <!-- Step indicator -->
+    <div class="step-indicator">
+        <span class="step" [class.active]="currentStep === 'options'">1. {{'AiAssistant.configure' | translate}}</span>
+        <span class="step-arrow">→</span>
+        <span class="step" [class.active]="currentStep === 'prompt'">2. {{'AiAssistant.prompt' | translate}}</span>
+        <span class="step-arrow">→</span>
+        <span class="step" [class.active]="currentStep === 'import'">3. {{'AiAssistant.import' | translate}}</span>
+    </div>
+
+    <!-- STEP 1: Configure Options -->
+    <div *ngIf="currentStep === 'options'" id="input-container">
+
+        <!-- ===== PROMPT TYPE SELECTOR ===== -->
+        <h4 class="section-label">{{'AiAssistant.promptType' | translate}}</h4>
+
+        <label for="promptType">{{'AiAssistant.selectPromptType' | translate}}</label>
+        <select id="promptType" [(ngModel)]="promptType" class="prompt-type-selector">
+            <option value="grow-strategy" *ngIf="isPromptTypeVisible('grow-strategy')">{{'AiAssistant.growStrategy' | translate}}</option>
+            <option value="budget-optimizer" *ngIf="isPromptTypeVisible('budget-optimizer')">{{'AiAssistant.budgetOptimizer' | translate}}</option>
+            <option value="subscription-audit" *ngIf="isPromptTypeVisible('subscription-audit')">{{'AiAssistant.subscriptionAudit' | translate}}</option>
+            <option value="expense-pattern" *ngIf="isPromptTypeVisible('expense-pattern')">{{'AiAssistant.expensePattern' | translate}}</option>
+            <option value="smile-create" *ngIf="isPromptTypeVisible('smile-create')">{{'AiAssistant.smileCreate' | translate}}</option>
+            <option value="smile-improve" *ngIf="isPromptTypeVisible('smile-improve')">{{'AiAssistant.smileImprove' | translate}}</option>
+            <option value="fire-create" *ngIf="isPromptTypeVisible('fire-create')">{{'AiAssistant.fireCreate' | translate}}</option>
+            <option value="fire-improve" *ngIf="isPromptTypeVisible('fire-improve')">{{'AiAssistant.fireImprove' | translate}}</option>
+        </select>
+        <p class="prompt-type-description">{{ 'AiAssistant.' + promptType + 'Desc' | translate }}</p>
+
+        <!-- ===== BUDGET OPTIMIZER SETTINGS ===== -->
+        <div *ngIf="promptType === 'budget-optimizer'">
+            <h4 class="section-label">{{'AiAssistant.settings' | translate}}</h4>
+
+            <label for="budgetSuggestionCount">{{'AiAssistant.numberOfSuggestions' | translate}}</label>
+            <select id="budgetSuggestionCount" [(ngModel)]="options.numberOfSuggestions">
+                <option [ngValue]="undefined">{{'AiAssistant.notSpecified' | translate}}</option>
+                <option [ngValue]="3">3</option>
+                <option [ngValue]="5">5</option>
+                <option [ngValue]="7">7</option>
+                <option [ngValue]="10">10</option>
+                <option [ngValue]="15">15</option>
+                <option [ngValue]="20">20</option>
+                <option [ngValue]="-1">{{'AiAssistant.other' | translate}}</option>
+            </select>
+            <input *ngIf="options.numberOfSuggestions === -1" type="number" [(ngModel)]="customNumberOfSuggestions" 
+                   min="1" max="50" [placeholder]="'AiAssistant.enterCustomNumber' | translate">
+            <p class="field-hint">{{'AiAssistant.suggestionCountHint' | translate}}</p>
+
+            <label for="budgetAnalysisPeriod">{{'AiAssistant.analysisPeriod' | translate}}</label>
+            <select id="budgetAnalysisPeriod" [(ngModel)]="options.analysisPeriod">
+                <option value="3">{{'AiAssistant.last3Months' | translate}}</option>
+                <option value="6">{{'AiAssistant.last6Months' | translate}}</option>
+                <option value="12">{{'AiAssistant.last12Months' | translate}}</option>
+                <option value="all">{{'AiAssistant.allAvailable' | translate}}</option>
+            </select>
+
+            <label for="budgetDetailLevel">{{'AiAssistant.detailLevel' | translate}}</label>
+            <select id="budgetDetailLevel" [(ngModel)]="options.detailLevel">
+                <option value="quick">{{'AiAssistant.quick' | translate}}</option>
+                <option value="detailed">{{'AiAssistant.detailed' | translate}}</option>
+            </select>
+
+            <!-- Budget Category Selection -->
+            <h4 class="section-label">{{'AiAssistant.selectBudgetCategories' | translate}}</h4>
+            <p class="field-hint">{{'AiAssistant.budgetCategoryHint' | translate}}</p>
+
+            <div style="display: flex; gap: 8px; margin: 0 10px 16px 10px;">
+                <button type="button" (click)="selectAllBudgetCategories()" class="btn-secondary" style="flex: 1;">
+                    {{'AiAssistant.selectAll' | translate}}
+                </button>
+                <button type="button" (click)="deselectAllBudgetCategories()" class="btn-secondary" style="flex: 1;">
+                    {{'AiAssistant.deselectAll' | translate}}
+                </button>
+            </div>
+
+            <div *ngIf="getAvailableBudgetCategories().length === 0 && getOtherCategories().length === 0" 
+                 class="field-hint" style="color: orange; margin-bottom: 16px;">
+                {{'AiAssistant.noBudgetsLastMonth' | translate}}
+            </div>
+
+            <!-- Categories WITH budgets -->
+            <div *ngIf="getAvailableBudgetCategories().length > 0" style="margin-bottom: 20px;">
+                <div style="font-weight: 600; margin-bottom: 8px; margin-left: 4px; font-size: 13px; color: var(--color-text-secondary);">
+                    {{'AiAssistant.categoriesWithBudgets' | translate}}
+                </div>
+                <div class="tags-container">
+                    <button type="button" class="tag-button"
+                            *ngFor="let category of getAvailableBudgetCategories()"
+                            [class.active]="isBudgetCategorySelected(category)"
+                            [class.tag-fixed]="isCategorySubscription(category)"
+                            [title]="isCategorySubscription(category) ? 'Subscription Category' : ''"
+                            (click)="toggleBudgetCategory(category)">
+                        {{category}}
+                    </button>
+                </div>
+            </div>
+
+            <!-- Categories WITHOUT budgets -->
+            <div *ngIf="getOtherCategories().length > 0">
+                <div style="font-weight: 600; margin-bottom: 8px; margin-left: 4px; font-size: 13px; color: var(--color-text-secondary);">
+                    {{'AiAssistant.categoriesWithoutBudgets' | translate}}
+                </div>
+                <div class="tags-container">
+                    <button type="button" class="tag-button"
+                            *ngFor="let category of getOtherCategories()"
+                            [class.active]="isBudgetCategorySelected(category)"
+                            [class.tag-fixed]="isCategorySubscription(category)"
+                            [title]="isCategorySubscription(category) ? 'Subscription Category' : ''"
+                            (click)="toggleBudgetCategory(category)">
+                        {{category}}
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== SUBSCRIPTION AUDIT SETTINGS ===== -->
+        <div *ngIf="promptType === 'subscription-audit'">
+            <h4 class="section-label">{{'AiAssistant.settings' | translate}}</h4>
+
+            <label for="subscriptionSuggestionCount">{{'AiAssistant.numberOfSuggestions' | translate}}</label>
+            <select id="subscriptionSuggestionCount" [(ngModel)]="options.numberOfSuggestions">
+                <option [ngValue]="undefined">{{'AiAssistant.notSpecified' | translate}}</option>
+                <option [ngValue]="3">3</option>
+                <option [ngValue]="5">5</option>
+                <option [ngValue]="7">7</option>
+                <option [ngValue]="10">10</option>
+                <option [ngValue]="-1">{{'AiAssistant.other' | translate}}</option>
+            </select>
+            <input *ngIf="options.numberOfSuggestions === -1" type="number" [(ngModel)]="customNumberOfSuggestions" 
+                   min="1" max="50" [placeholder]="'AiAssistant.enterCustomNumber' | translate">
+
+            <label>{{'AiAssistant.selectSubscriptions' | translate}}</label>
+            <div class="tag-button-container" style="margin: 0 10px 10px 10px;">
+                <button type="button"
+                    *ngFor="let sub of getAvailableSubscriptions()"
+                    class="tag-button tag-fixed"
+                    [class.active]="isSubscriptionSelected(sub)"
+                    [class.income-sub]="sub.account === 'Income'"
+                    (click)="toggleSubscription(sub)"
+                    [title]="sub.account === 'Income' ? 'Income subscription' : 'Expense subscription'">
+                    {{ sub.title || 'Unnamed' }}{{ sub.account === 'Income' ? ' +' : ' -' }}
+                </button>
+            </div>
+            <div style="display: flex; gap: 8px; margin: 0 10px 16px 10px;">
+                <button type="button" (click)="selectAllSubscriptions()" class="btn-secondary">
+                    {{'AiAssistant.selectAll' | translate}}
+                </button>
+                <button type="button" (click)="deselectAllSubscriptions()" class="btn-secondary">
+                    {{'AiAssistant.deselectAll' | translate}}
+                </button>
+            </div>
+        </div>
+
+        <!-- ===== EXPENSE PATTERN SETTINGS ===== -->
+        <div *ngIf="promptType === 'expense-pattern'">
+            <h4 class="section-label">{{'AiAssistant.settings' | translate}}</h4>
+
+            <label for="expenseAnalysisPeriod">{{'AiAssistant.analysisPeriod' | translate}}</label>
+            <select id="expenseAnalysisPeriod" [(ngModel)]="options.analysisPeriod">
+                <option value="3">{{'AiAssistant.last3Months' | translate}}</option>
+                <option value="6">{{'AiAssistant.last6Months' | translate}}</option>
+                <option value="12">{{'AiAssistant.last12Months' | translate}}</option>
+                <option value="all">{{'AiAssistant.allAvailable' | translate}}</option>
+            </select>
+
+            <label for="expenseDetailLevel">{{'AiAssistant.detailLevel' | translate}}</label>
+            <select id="expenseDetailLevel" [(ngModel)]="options.detailLevel">
+                <option value="quick">{{'AiAssistant.quickOverview' | translate}}</option>
+                <option value="detailed">{{'AiAssistant.deepAnalysis' | translate}}</option>
+            </select>
+
+            <div class="toggle-row" role="switch" tabindex="0"
+                [attr.aria-checked]="options.includeSeasonalAnalysis"
+                (click)="options.includeSeasonalAnalysis = !options.includeSeasonalAnalysis"
+                (keydown.enter)="options.includeSeasonalAnalysis = !options.includeSeasonalAnalysis"
+                (keydown.space)="options.includeSeasonalAnalysis = !options.includeSeasonalAnalysis; $event.preventDefault()">
+                <span class="toggle-label">{{'AiAssistant.seasonalAnalysis' | translate}}</span>
+                <div class="toggle-switch" [ngClass]="{'toggle-on': options.includeSeasonalAnalysis}">
+                    <div class="toggle-knob"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== GROW STRATEGY OPTIONS (only for grow-strategy type) ===== -->
+        <div *ngIf="promptType === 'grow-strategy'">
+            <h4 class="section-label">{{'AiAssistant.tracks' | translate}}</h4>
+
+        <div class="toggle-row" role="switch" tabindex="0"
+            [attr.aria-checked]="options.includeAssets"
+            (click)="options.includeAssets = !options.includeAssets"
+            (keydown.enter)="options.includeAssets = !options.includeAssets"
+            (keydown.space)="options.includeAssets = !options.includeAssets; $event.preventDefault()">
+            <span class="toggle-label">{{'Choose.Asset' | translate}}</span>
+            <div class="toggle-switch" [ngClass]="{'toggle-on': options.includeAssets}">
+                <div class="toggle-knob"></div>
+            </div>
+        </div>
+
+        <div class="toggle-row" role="switch" tabindex="0"
+            [attr.aria-checked]="options.includeShares"
+            (click)="options.includeShares = !options.includeShares"
+            (keydown.enter)="options.includeShares = !options.includeShares"
+            (keydown.space)="options.includeShares = !options.includeShares; $event.preventDefault()">
+            <span class="toggle-label">{{'Choose.Share' | translate}}</span>
+            <div class="toggle-switch" [ngClass]="{'toggle-on': options.includeShares}">
+                <div class="toggle-knob"></div>
+            </div>
+        </div>
+
+        <div class="toggle-row" role="switch" tabindex="0"
+            [attr.aria-checked]="options.includeInvestments"
+            (click)="options.includeInvestments = !options.includeInvestments"
+            (keydown.enter)="options.includeInvestments = !options.includeInvestments"
+            (keydown.space)="options.includeInvestments = !options.includeInvestments; $event.preventDefault()">
+            <span class="toggle-label">{{'Choose.Investment' | translate}}</span>
+            <div class="toggle-switch" [ngClass]="{'toggle-on': options.includeInvestments}">
+                <div class="toggle-knob"></div>
+            </div>
+        </div>
+
+        <h4 class="section-label">{{'AiAssistant.preferences' | translate}}</h4>
+
+        <label for="riskTolerance">{{'AiAssistant.risk' | translate}}</label>
+        <select id="riskTolerance" [(ngModel)]="options.riskTolerance">
+            <option value="conservative">{{'AiAssistant.conservative' | translate}}</option>
+            <option value="moderate">{{'AiAssistant.moderate' | translate}}</option>
+            <option value="aggressive">{{'AiAssistant.aggressive' | translate}}</option>
+        </select>
+
+        <label for="investmentHorizon">{{'AiAssistant.horizon' | translate}}</label>
+        <select id="investmentHorizon" [(ngModel)]="options.investmentHorizon">
+            <option value="0-1">0–1 {{'AiAssistant.years' | translate}}</option>
+            <option value="1-3">1–3 {{'AiAssistant.years' | translate}}</option>
+            <option value="3-5">3–5 {{'AiAssistant.years' | translate}}</option>
+            <option value="5+">5+ {{'AiAssistant.years' | translate}}</option>
+        </select>
+
+        <label for="broker">{{'AiAssistant.broker' | translate}}</label>
+        <select id="broker" [(ngModel)]="options.broker">
+            <option value="">{{'AiAssistant.brokerNone' | translate}}</option>
+            <option *ngFor="let b of brokerOptions" [value]="b">{{b}}</option>
+        </select>
+        <input *ngIf="options.broker === 'Other'" type="text" id="customBroker"
+            [(ngModel)]="customBroker" [placeholder]="'AiAssistant.customBrokerPlaceholder' | translate">
+
+        <label for="country">{{'AiAssistant.country' | translate}}</label>
+        <select id="country" [(ngModel)]="options.country">
+            <option value="">{{'AiAssistant.countryNone' | translate}}</option>
+            <option *ngFor="let c of countryOptions" [value]="c">{{c}}</option>
+        </select>
+        <input *ngIf="options.country === 'Other' || options.country === 'Other EU'" type="text" id="customCountry"
+            [(ngModel)]="customCountry" [placeholder]="'AiAssistant.customCountryPlaceholder' | translate">
+
+        <label for="numberOfSuggestions">{{'AiAssistant.numberOfSuggestions' | translate}}</label>
+        <select id="numberOfSuggestions" [(ngModel)]="options.numberOfSuggestions">
+            <option [ngValue]="undefined">{{'AiAssistant.notSpecified' | translate}}</option>
+            <option [ngValue]="3">3</option>
+            <option [ngValue]="5">5</option>
+            <option [ngValue]="7">7</option>
+            <option [ngValue]="10">10</option>
+            <option [ngValue]="-1">{{'AiAssistant.other' | translate}}</option>
+        </select>
+        <input *ngIf="options.numberOfSuggestions === -1" type="number" [(ngModel)]="customNumberOfSuggestions" 
+               min="1" max="50" [placeholder]="'AiAssistant.enterCustomNumber' | translate">
+
+        <!-- ===== ADVANCED TOGGLE (only for grow-strategy) ===== -->
+        <button *ngIf="promptType === 'grow-strategy'" class="advanced-toggle" (click)="showAdvanced = !showAdvanced" type="button">
+            <span *ngIf="!showAdvanced">▸ {{'AiAssistant.showAdvanced' | translate}}</span>
+            <span *ngIf="showAdvanced">▾ {{'AiAssistant.hideAdvanced' | translate}}</span>
+        </button>
+
+        <!-- ===== ADVANCED SECTION (collapsible, only for grow-strategy) ===== -->
+        <div *ngIf="showAdvanced && promptType === 'grow-strategy'" class="advanced-section">
+
+            <h4 class="section-label">{{'AiAssistant.preferences' | translate}}</h4>
+
+            <label for="maxDrawdown">{{'AiAssistant.maxDrawdown' | translate}}</label>
+            <select id="maxDrawdown" [(ngModel)]="options.maxDrawdown">
+                <option value="">{{'AiAssistant.notSpecified' | translate}}</option>
+                <option value="10">10%</option>
+                <option value="20">20%</option>
+                <option value="30">30%</option>
+                <option value="50">50%</option>
+            </select>
+
+            <label for="riskPreference">{{'AiAssistant.riskPreference' | translate}}</label>
+            <select id="riskPreference" [(ngModel)]="options.riskPreference">
+                <option value="">{{'AiAssistant.notSpecified' | translate}}</option>
+                <option value="growth">{{'AiAssistant.prefGrowth' | translate}}</option>
+                <option value="cashflow">{{'AiAssistant.prefCashflow' | translate}}</option>
+                <option value="balanced">{{'AiAssistant.prefBalanced' | translate}}</option>
+            </select>
+
+            <h4 class="section-label">{{'AiAssistant.goals' | translate}}</h4>
+
+            <label for="primaryGoal">{{'AiAssistant.primaryGoal' | translate}}</label>
+            <select id="primaryGoal" [(ngModel)]="options.primaryGoal">
+                <option value="">{{'AiAssistant.notSpecified' | translate}}</option>
+                <option value="build-capital">{{'AiAssistant.goalCapital' | translate}}</option>
+                <option value="monthly-income">{{'AiAssistant.goalIncome' | translate}}</option>
+                <option value="financial-independence">{{'AiAssistant.goalFire' | translate}}</option>
+                <option value="large-purchase">{{'AiAssistant.goalPurchase' | translate}}</option>
+            </select>
+
+            <label for="targetAmount">{{'AiAssistant.targetAmount' | translate}}</label>
+            <input type="number" id="targetAmount" [(ngModel)]="options.targetAmount" min="0" placeholder="0">
+
+            <label for="availableCapital">{{'AiAssistant.availableCapital' | translate}}</label>
+            <input type="number" id="availableCapital" [(ngModel)]="options.availableCapital" min="0" placeholder="0">
+
+            <label for="cashBuffer">{{'AiAssistant.cashBuffer' | translate}}</label>
+            <input type="number" id="cashBuffer" [(ngModel)]="options.cashBuffer" min="0" placeholder="0">
+
+            <label for="exitStrategy">{{'AiAssistant.exitStrategy' | translate}}</label>
+            <select id="exitStrategy" [(ngModel)]="options.exitStrategy">
+                <option value="">{{'AiAssistant.notSpecified' | translate}}</option>
+                <option value="sell">{{'AiAssistant.exitSell' | translate}}</option>
+                <option value="hold">{{'AiAssistant.exitHold' | translate}}</option>
+            </select>
+
+            <h4 class="section-label">{{'AiAssistant.situation' | translate}}</h4>
+
+            <label for="taxSituation">{{'AiAssistant.taxSituation' | translate}}</label>
+            <select id="taxSituation" [(ngModel)]="options.taxSituation">
+                <option value="">{{'AiAssistant.notSpecified' | translate}}</option>
+                <option value="employed">{{'AiAssistant.employed' | translate}}</option>
+                <option value="freelance">{{'AiAssistant.freelance' | translate}}</option>
+                <option value="self-employed">{{'AiAssistant.selfEmployed' | translate}}</option>
+                <option value="retired">{{'AiAssistant.retired' | translate}}</option>
+            </select>
+
+            <div *ngIf="options.taxSituation" class="toggle-row" role="switch" tabindex="0"
+                [attr.aria-checked]="options.churchTax"
+                (click)="options.churchTax = !options.churchTax"
+                (keydown.enter)="options.churchTax = !options.churchTax"
+                (keydown.space)="options.churchTax = !options.churchTax; $event.preventDefault()">
+                <span class="toggle-label">{{'AiAssistant.churchTax' | translate}}</span>
+                <div class="toggle-switch" [ngClass]="{'toggle-on': options.churchTax}">
+                    <div class="toggle-knob"></div>
+                </div>
+            </div>
+
+            <label for="monthlyBudget">{{'AiAssistant.monthlyBudget' | translate}}</label>
+            <input type="number" id="monthlyBudget" [(ngModel)]="options.monthlyBudget" min="0" placeholder="0">
+            <p class="field-hint">{{'AiAssistant.monthlyBudgetHint' | translate}}</p>
+
+            <div class="toggle-row" role="switch" tabindex="0"
+                [attr.aria-checked]="options.willingToCutExpenses"
+                (click)="options.willingToCutExpenses = !options.willingToCutExpenses"
+                (keydown.enter)="options.willingToCutExpenses = !options.willingToCutExpenses"
+                (keydown.space)="options.willingToCutExpenses = !options.willingToCutExpenses; $event.preventDefault()">
+                <span class="toggle-label">{{'AiAssistant.willingToCut' | translate}}</span>
+                <div class="toggle-switch" [ngClass]="{'toggle-on': options.willingToCutExpenses}">
+                    <div class="toggle-knob"></div>
+                </div>
+            </div>
+
+            <label for="weeklyHours">{{'AiAssistant.weeklyHours' | translate}}</label>
+            <input type="number" id="weeklyHours" [(ngModel)]="options.weeklyHours" min="0" max="60" placeholder="0">
+
+            <label for="skills">{{'AiAssistant.skills' | translate}}</label>
+            <input type="text" id="skills" [(ngModel)]="options.skills" [placeholder]="'AiAssistant.skillsPlaceholder' | translate">
+
+            <h4 class="section-label">{{'AiAssistant.constraints' | translate}}</h4>
+
+            <label for="complexityTolerance">{{'AiAssistant.complexity' | translate}}</label>
+            <select id="complexityTolerance" [(ngModel)]="options.complexityTolerance">
+                <option value="">{{'AiAssistant.notSpecified' | translate}}</option>
+                <option value="low">{{'AiAssistant.complexLow' | translate}}</option>
+                <option value="medium">{{'AiAssistant.complexMedium' | translate}}</option>
+                <option value="high">{{'AiAssistant.complexHigh' | translate}}</option>
+            </select>
+
+            <label for="geoFocus">{{'AiAssistant.geoFocus' | translate}}</label>
+            <select id="geoFocus" [(ngModel)]="options.geoFocus">
+                <option value="">{{'AiAssistant.notSpecified' | translate}}</option>
+                <option value="local">{{'AiAssistant.geoLocal' | translate}}</option>
+                <option value="eu">{{'AiAssistant.geoEu' | translate}}</option>
+                <option value="global">{{'AiAssistant.geoGlobal' | translate}}</option>
+            </select>
+
+            <h4 class="section-label">{{'AiAssistant.creditLoans' | translate}}</h4>
+
+            <div class="toggle-row" role="switch" tabindex="0"
+                [attr.aria-checked]="options.considerLoans"
+                (click)="options.considerLoans = !options.considerLoans"
+                (keydown.enter)="options.considerLoans = !options.considerLoans"
+                (keydown.space)="options.considerLoans = !options.considerLoans; $event.preventDefault()">
+                <span class="toggle-label">{{'AiAssistant.loans' | translate}}</span>
+                <div class="toggle-switch" [ngClass]="{'toggle-on': options.considerLoans}">
+                    <div class="toggle-knob"></div>
+                </div>
+            </div>
+
+            <div *ngIf="options.considerLoans">
+                <label for="leveragePreference">{{'AiAssistant.leveragePref' | translate}}</label>
+                <select id="leveragePreference" [(ngModel)]="options.leveragePreference">
+                    <option value="">{{'AiAssistant.notSpecified' | translate}}</option>
+                    <option value="avoid">{{'AiAssistant.levAvoid' | translate}}</option>
+                    <option value="small">{{'AiAssistant.levSmall' | translate}}</option>
+                    <option value="active">{{'AiAssistant.levActive' | translate}}</option>
+                </select>
+
+                <label for="creditScore">{{'AiAssistant.creditScore' | translate}}</label>
+                <select id="creditScore" [(ngModel)]="options.creditScore">
+                    <option value="">{{'AiAssistant.notSpecified' | translate}}</option>
+                    <option value="good">{{'AiAssistant.creditGood' | translate}}</option>
+                    <option value="average">{{'AiAssistant.creditAverage' | translate}}</option>
+                    <option value="unknown">{{'AiAssistant.creditUnknown' | translate}}</option>
+                </select>
+
+                <label for="maxLoanPayment">{{'AiAssistant.maxLoanPayment' | translate}}</label>
+                <input type="number" id="maxLoanPayment" [(ngModel)]="options.maxLoanPayment" min="0" placeholder="0">
+            </div>
+
+        </div>
+        <!-- End of grow-strategy advanced section -->
+
+        </div>
+        <!-- End of grow-strategy specific options -->
+
+        <!-- ===== SMILE CREATE SETTINGS ===== -->
+        <div *ngIf="promptType === 'smile-create'">
+            <h4 class="section-label">{{'AiAssistant.settings' | translate}}</h4>
+
+            <label for="smileGoal">{{'AiAssistant.goal' | translate}}</label>
+            <textarea id="smileGoal" [(ngModel)]="options.smileGoal" rows="3" 
+                      [placeholder]="'AiAssistant.goalPlaceholder' | translate"></textarea>
+
+            <label for="smileUrgency">{{'AiAssistant.urgency' | translate}}</label>
+            <select id="smileUrgency" [(ngModel)]="options.smileUrgency">
+                <option value="flexible">{{'AiAssistant.flexible' | translate}}</option>
+                <option value="6-months">{{'AiAssistant.6months' | translate}}</option>
+                <option value="1-year">{{'AiAssistant.1year' | translate}}</option>
+                <option value="2-years">{{'AiAssistant.2years' | translate}}</option>
+            </select>
+
+            <label for="smileResearchDepth">{{'AiAssistant.researchDepth' | translate}}</label>
+            <select id="smileResearchDepth" [(ngModel)]="options.smileResearchDepth">
+                <option value="quick">{{'AiAssistant.quickOverview' | translate}}</option>
+                <option value="moderate">{{'AiAssistant.moderateResearch' | translate}}</option>
+                <option value="deep">{{'AiAssistant.deepResearch' | translate}}</option>
+            </select>
+
+            <label for="smileBudgetFlexibility">{{'AiAssistant.budgetFlexibility' | translate}}</label>
+            <select id="smileBudgetFlexibility" [(ngModel)]="options.smileBudgetFlexibility">
+                <option value="strict">{{'AiAssistant.strictLimit' | translate}}</option>
+                <option value="some">{{'AiAssistant.someFlexibility' | translate}}</option>
+                <option value="open">{{'AiAssistant.openToSuggestions' | translate}}</option>
+            </select>
+
+            <label>{{'AiAssistant.informationFocus' | translate}}</label>
+            <div class="checkbox-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" [checked]="options.smileInformationFocus.includes('shopping')" 
+                           (change)="toggleArrayValue(options.smileInformationFocus, 'shopping')">
+                    {{'AiAssistant.shoppingSites' | translate}}
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" [checked]="options.smileInformationFocus.includes('reviews')"
+                           (change)="toggleArrayValue(options.smileInformationFocus, 'reviews')">
+                    {{'AiAssistant.userReviews' | translate}}
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" [checked]="options.smileInformationFocus.includes('comparisons')"
+                           (change)="toggleArrayValue(options.smileInformationFocus, 'comparisons')">
+                    {{'AiAssistant.comparisonTools' | translate}}
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" [checked]="options.smileInformationFocus.includes('tips')"
+                           (change)="toggleArrayValue(options.smileInformationFocus, 'tips')">
+                    {{'AiAssistant.tipsTricks' | translate}}
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" [checked]="options.smileInformationFocus.includes('forums')"
+                           (change)="toggleArrayValue(options.smileInformationFocus, 'forums')">
+                    {{'AiAssistant.forumsCommunities' | translate}}
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" [checked]="options.smileInformationFocus.includes('guides')"
+                           (change)="toggleArrayValue(options.smileInformationFocus, 'guides')">
+                    {{'AiAssistant.expertGuides' | translate}}
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" [checked]="options.smileInformationFocus.includes('custom')"
+                           (change)="toggleArrayValue(options.smileInformationFocus, 'custom')">
+                    {{'AiAssistant.customInformationFocus' | translate}}
+                </label>
+            </div>
+            <input *ngIf="options.smileInformationFocus.includes('custom')" type="text" [(ngModel)]="customInformationFocus" 
+                   [placeholder]="'AiAssistant.customInformationFocusPlaceholder' | translate" class="custom-text-input">
+
+            <label for="smileComplexity">{{'AiAssistant.projectComplexity' | translate}}</label>
+            <select id="smileComplexity" [(ngModel)]="options.smileComplexity">
+                <option value="">{{'AiAssistant.notSpecified' | translate}}</option>
+                <option value="simple">{{'AiAssistant.simple' | translate}}</option>
+                <option value="moderate">{{'AiAssistant.moderate' | translate}}</option>
+                <option value="complex">{{'AiAssistant.complex' | translate}}</option>
+            </select>
+
+            <label for="smileSuggestionCount">{{'AiAssistant.numberOfSuggestions' | translate}}</label>
+            <p class="hint-text">{{'AiAssistant.numberOfSuggestionsHint' | translate}}</p>
+            <select id="smileSuggestionCount" [(ngModel)]="options.smileNumberOfSuggestions">
+                <option [ngValue]="undefined">{{'AiAssistant.notSpecified' | translate}}</option>
+                <option [ngValue]="1">1</option>
+                <option [ngValue]="3">3</option>
+                <option [ngValue]="5">5</option>
+                <option [ngValue]="8">8</option>
+                <option [ngValue]="10">10</option>
+                <option [ngValue]="-1">{{'AiAssistant.other' | translate}}</option>
+            </select>
+            <input *ngIf="options.smileNumberOfSuggestions === -1" type="number" [(ngModel)]="customNumberOfSuggestions" 
+                   min="1" max="50" placeholder="{{'AiAssistant.enterCustomNumber' | translate}}" class="custom-number-input">
+        </div>
+
+        <!-- ===== FIRE CREATE SETTINGS ===== -->
+        <div *ngIf="promptType === 'fire-create'">
+            <h4 class="section-label">{{'AiAssistant.settings' | translate}}</h4>
+
+            <label for="fireEmergencyType">{{'AiAssistant.emergencyType' | translate}}</label>
+            <select id="fireEmergencyType" [(ngModel)]="options.fireEmergencyType">
+                <option value="appliance">{{'AiAssistant.applianceFailure' | translate}}</option>
+                <option value="medical">{{'AiAssistant.medical' | translate}}</option>
+                <option value="car">{{'AiAssistant.carTrouble' | translate}}</option>
+                <option value="debt">{{'AiAssistant.debtPayback' | translate}}</option>
+                <option value="job-loss">{{'AiAssistant.jobLoss' | translate}}</option>
+                <option value="family-loan">{{'AiAssistant.familyLoan' | translate}}</option>
+                <option value="other">{{'AiAssistant.other' | translate}}</option>
+            </select>
+
+            <label for="fireTotalAmount">{{'AiAssistant.totalAmount' | translate}}</label>
+            <input type="number" id="fireTotalAmount" [(ngModel)]="options.fireTotalAmount" min="0" placeholder="0">
+
+            <label>{{'AiAssistant.alreadyBorrowed' | translate}}</label>
+            <div style="display: flex; gap: 16px; margin: 8px 0 16px;">
+                <label class="radio-label">
+                    <input type="radio" name="alreadyBorrowed" [(ngModel)]="options.fireAlreadyBorrowed" [value]="true">
+                    {{'AiAssistant.yes' | translate}}
+                </label>
+                <label class="radio-label">
+                    <input type="radio" name="alreadyBorrowed" [(ngModel)]="options.fireAlreadyBorrowed" [value]="false">
+                    {{'AiAssistant.no' | translate}}
+                </label>
+            </div>
+
+            <div *ngIf="options.fireAlreadyBorrowed">
+                <label for="fireLenderDetails">{{'AiAssistant.lenderDetails' | translate}}</label>
+                <textarea id="fireLenderDetails" [(ngModel)]="options.fireLenderDetails" rows="2" 
+                          [placeholder]="'AiAssistant.lenderPlaceholder' | translate"></textarea>
+            </div>
+
+            <label for="fireUrgency">{{'AiAssistant.urgency' | translate}}</label>
+            <select id="fireUrgency" [(ngModel)]="options.fireUrgency">
+                <option value="immediate">{{'AiAssistant.immediate' | translate}}</option>
+                <option value="1-month">{{'AiAssistant.1month' | translate}}</option>
+                <option value="3-months">{{'AiAssistant.3months' | translate}}</option>
+                <option value="6-months">{{'AiAssistant.6monthsPlus' | translate}}</option>
+                <option value="flexible">{{'AiAssistant.flexible' | translate}}</option>
+            </select>
+
+            <label for="firePaybackStrategy">{{'AiAssistant.paybackStrategy' | translate}}</label>
+            <select id="firePaybackStrategy" [(ngModel)]="options.firePaybackStrategy">
+                <option value="snowball">{{'AiAssistant.snowball' | translate}}</option>
+                <option value="avalanche">{{'AiAssistant.avalanche' | translate}}</option>
+                <option value="realistic">{{'AiAssistant.realistic' | translate}}</option>
+                <option value="ai-decide">{{'AiAssistant.letAIDecide' | translate}}</option>
+            </select>
+
+            <label>{{'AiAssistant.researchNeeds' | translate}}</label>
+            <div class="checkbox-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" value="comparisons" [checked]="options.fireResearchNeeds.includes('comparisons')"
+                           (change)="toggleArrayValue(options.fireResearchNeeds, 'comparisons')">
+                    {{'AiAssistant.costComparisons' | translate}}
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" value="diy" [checked]="options.fireResearchNeeds.includes('diy')"
+                           (change)="toggleArrayValue(options.fireResearchNeeds, 'diy')">
+                    {{'AiAssistant.diyGuides' | translate}}
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" value="financing" [checked]="options.fireResearchNeeds.includes('financing')"
+                           (change)="toggleArrayValue(options.fireResearchNeeds, 'financing')">
+                    {{'AiAssistant.financingOptions' | translate}}
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" value="insurance" [checked]="options.fireResearchNeeds.includes('insurance')"
+                           (change)="toggleArrayValue(options.fireResearchNeeds, 'insurance')">
+                    {{'AiAssistant.insuranceImplications' | translate}}
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" value="prevention" [checked]="options.fireResearchNeeds.includes('prevention')"
+                           (change)="toggleArrayValue(options.fireResearchNeeds, 'prevention')">
+                    {{'AiAssistant.preventionTips' | translate}}
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" value="custom" [checked]="options.fireResearchNeeds.includes('custom')"
+                           (change)="toggleArrayValue(options.fireResearchNeeds, 'custom')">
+                    {{'AiAssistant.customResearchNeeds' | translate}}
+                </label>
+            </div>
+            <input *ngIf="options.fireResearchNeeds.includes('custom')" type="text" [(ngModel)]="customResearchNeeds" 
+                   [placeholder]="'AiAssistant.customResearchNeedsPlaceholder' | translate" class="custom-text-input">
+
+            <label for="fireSuggestionCount">{{'AiAssistant.numberOfSuggestions' | translate}}</label>
+            <p class="hint-text">{{'AiAssistant.numberOfSuggestionsHint' | translate}}</p>
+            <select id="fireSuggestionCount" [(ngModel)]="options.fireNumberOfSuggestions">
+                <option [ngValue]="undefined">{{'AiAssistant.notSpecified' | translate}}</option>
+                <option [ngValue]="1">1</option>
+                <option [ngValue]="3">3</option>
+                <option [ngValue]="5">5</option>
+                <option [ngValue]="8">8</option>
+                <option [ngValue]="10">10</option>
+                <option [ngValue]="-1">{{'AiAssistant.other' | translate}}</option>
+            </select>
+            <input *ngIf="options.fireNumberOfSuggestions === -1" type="number" [(ngModel)]="customNumberOfSuggestions" 
+                   min="1" max="50" placeholder="{{'AiAssistant.enterCustomNumber' | translate}}" class="custom-number-input">
+        </div>
+
+        <!-- ===== SMILE IMPROVE SETTINGS ===== -->
+        <div *ngIf="promptType === 'smile-improve'">
+            <h4 class="section-label">{{'AiAssistant.selectProjects' | translate}}</h4>
+
+            <div *ngIf="getAvailableSmileProjects().length === 0" class="field-hint" style="color: orange; margin-bottom: 16px;">
+                {{'AiAssistant.noSmileProjects' | translate}}
+            </div>
+
+            <div *ngIf="getAvailableSmileProjects().length > 0">
+                <div class="tag-button-container" style="margin: 0 10px 10px 10px;">
+                    <button type="button"
+                        *ngFor="let project of getAvailableSmileProjects()"
+                        class="tag-button tag-fixed"
+                        [class.active]="isSmileProjectSelected(project.title)"
+                        (click)="toggleSmileProject(project.title)"
+                        [title]="project.sub || project.title">
+                        {{ project.title }}
+                    </button>
+                </div>
+                <div style="display: flex; gap: 8px; margin: 0 10px 16px 10px;">
+                    <button type="button" (click)="selectAllSmileProjects()" class="btn-secondary">
+                        {{'AiAssistant.selectAll' | translate}}
+                    </button>
+                    <button type="button" (click)="deselectAllSmileProjects()" class="btn-secondary">
+                        {{'AiAssistant.deselectAll' | translate}}
+                    </button>
+                </div>
+            </div>
+
+            <h4 class="section-label">{{'AiAssistant.settings' | translate}}</h4>
+
+            <label for="improveUserPlan">{{'AiAssistant.yourPlan' | translate}}</label>
+            <textarea id="improveUserPlan" [(ngModel)]="options.improveUserPlan" rows="3" 
+                      [placeholder]="'AiAssistant.yourPlanPlaceholder' | translate"></textarea>
+
+            <label>{{'AiAssistant.improvementAreas' | translate}}</label>
+            <div class="checkbox-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" [checked]="options.improveAreas.includes('description')" 
+                           (change)="toggleArrayValue(options.improveAreas, 'description')">
+                    {{'AiAssistant.improveDescription' | translate}}
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" [checked]="options.improveAreas.includes('budget-realism')" 
+                           (change)="toggleArrayValue(options.improveAreas, 'budget-realism')">
+                    {{'AiAssistant.improveBudget' | translate}}
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" [checked]="options.improveAreas.includes('add-buckets')" 
+                           (change)="toggleArrayValue(options.improveAreas, 'add-buckets')">
+                    {{'AiAssistant.improveBuckets' | translate}}
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" [checked]="options.improveAreas.includes('add-links')" 
+                           (change)="toggleArrayValue(options.improveAreas, 'add-links')">
+                    {{'AiAssistant.improveLinks' | translate}}
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" [checked]="options.improveAreas.includes('action-items')" 
+                           (change)="toggleArrayValue(options.improveAreas, 'action-items')">
+                    {{'AiAssistant.improveActions' | translate}}
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" [checked]="options.improveAreas.includes('payment-plan')" 
+                           (change)="toggleArrayValue(options.improveAreas, 'payment-plan')">
+                    {{'AiAssistant.improvePaymentPlan' | translate}}
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" [checked]="options.improveAreas.includes('timeline')" 
+                           (change)="toggleArrayValue(options.improveAreas, 'timeline')">
+                    {{'AiAssistant.improveTimeline' | translate}}
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" [checked]="options.improveAreas.includes('notes')" 
+                           (change)="toggleArrayValue(options.improveAreas, 'notes')">
+                    {{'AiAssistant.improveNotes' | translate}}
+                </label>
+            </div>
+
+            <label for="improveDetailLevel">{{'AiAssistant.researchDepth' | translate}}</label>
+            <select id="improveDetailLevel" [(ngModel)]="options.improveDetailLevel">
+                <option value="quick">{{'AiAssistant.quickOverview' | translate}}</option>
+                <option value="moderate">{{'AiAssistant.moderateResearch' | translate}}</option>
+                <option value="deep">{{'AiAssistant.deepResearch' | translate}}</option>
+            </select>
+
+            <label>{{'AiAssistant.informationFocus' | translate}}</label>
+            <div class="checkbox-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" [checked]="options.improveInformationFocus.includes('shopping')" 
+                           (change)="toggleArrayValue(options.improveInformationFocus, 'shopping')">
+                    {{'AiAssistant.shoppingSites' | translate}}
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" [checked]="options.improveInformationFocus.includes('reviews')"
+                           (change)="toggleArrayValue(options.improveInformationFocus, 'reviews')">
+                    {{'AiAssistant.userReviews' | translate}}
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" [checked]="options.improveInformationFocus.includes('comparisons')"
+                           (change)="toggleArrayValue(options.improveInformationFocus, 'comparisons')">
+                    {{'AiAssistant.comparisonTools' | translate}}
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" [checked]="options.improveInformationFocus.includes('tips')"
+                           (change)="toggleArrayValue(options.improveInformationFocus, 'tips')">
+                    {{'AiAssistant.tipsTricks' | translate}}
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" [checked]="options.improveInformationFocus.includes('forums')"
+                           (change)="toggleArrayValue(options.improveInformationFocus, 'forums')">
+                    {{'AiAssistant.forumsCommunities' | translate}}
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" [checked]="options.improveInformationFocus.includes('guides')"
+                           (change)="toggleArrayValue(options.improveInformationFocus, 'guides')">
+                    {{'AiAssistant.expertGuides' | translate}}
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" [checked]="options.improveInformationFocus.includes('custom')"
+                           (change)="toggleArrayValue(options.improveInformationFocus, 'custom')">
+                    {{'AiAssistant.customInformationFocus' | translate}}
+                </label>
+            </div>
+            <input *ngIf="options.improveInformationFocus.includes('custom')" type="text" [(ngModel)]="customImproveInformationFocus" 
+                   [placeholder]="'AiAssistant.customInformationFocusPlaceholder' | translate" class="custom-text-input">
+
+            <label for="improveCustomInstructions">{{'AiAssistant.customInstructions' | translate}}</label>
+            <textarea id="improveCustomInstructions" [(ngModel)]="options.improveCustomInstructions" rows="2" 
+                      [placeholder]="'AiAssistant.customInstructionsPlaceholder' | translate"></textarea>
+        </div>
+
+        <!-- ===== FIRE IMPROVE SETTINGS ===== -->
+        <div *ngIf="promptType === 'fire-improve'">
+            <h4 class="section-label">{{'AiAssistant.selectEmergencies' | translate}}</h4>
+
+            <div *ngIf="getAvailableFireEmergencies().length === 0" class="field-hint" style="color: orange; margin-bottom: 16px;">
+                {{'AiAssistant.noFireEmergencies' | translate}}
+            </div>
+
+            <div *ngIf="getAvailableFireEmergencies().length > 0">
+                <div class="tag-button-container" style="margin: 0 10px 10px 10px;">
+                    <button type="button"
+                        *ngFor="let emergency of getAvailableFireEmergencies()"
+                        class="tag-button tag-fixed"
+                        [class.active]="isFireEmergencySelected(emergency.title)"
+                        (click)="toggleFireEmergency(emergency.title)"
+                        [title]="emergency.sub || emergency.title">
+                        {{ emergency.title }}
+                    </button>
+                </div>
+                <div style="display: flex; gap: 8px; margin: 0 10px 16px 10px;">
+                    <button type="button" (click)="selectAllFireEmergencies()" class="btn-secondary">
+                        {{'AiAssistant.selectAll' | translate}}
+                    </button>
+                    <button type="button" (click)="deselectAllFireEmergencies()" class="btn-secondary">
+                        {{'AiAssistant.deselectAll' | translate}}
+                    </button>
+                </div>
+            </div>
+
+            <h4 class="section-label">{{'AiAssistant.settings' | translate}}</h4>
+
+            <label for="improveUserPlanFire">{{'AiAssistant.yourPlan' | translate}}</label>
+            <textarea id="improveUserPlanFire" [(ngModel)]="options.improveUserPlan" rows="3" 
+                      [placeholder]="'AiAssistant.yourPlanFirePlaceholder' | translate"></textarea>
+
+            <label>{{'AiAssistant.improvementAreas' | translate}}</label>
+            <div class="checkbox-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" [checked]="options.improveAreas.includes('description')" 
+                           (change)="toggleArrayValue(options.improveAreas, 'description')">
+                    {{'AiAssistant.improveDescription' | translate}}
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" [checked]="options.improveAreas.includes('budget-realism')" 
+                           (change)="toggleArrayValue(options.improveAreas, 'budget-realism')">
+                    {{'AiAssistant.improveBudget' | translate}}
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" [checked]="options.improveAreas.includes('add-buckets')" 
+                           (change)="toggleArrayValue(options.improveAreas, 'add-buckets')">
+                    {{'AiAssistant.improveBuckets' | translate}}
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" [checked]="options.improveAreas.includes('add-links')" 
+                           (change)="toggleArrayValue(options.improveAreas, 'add-links')">
+                    {{'AiAssistant.improveLinks' | translate}}
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" [checked]="options.improveAreas.includes('action-items')" 
+                           (change)="toggleArrayValue(options.improveAreas, 'action-items')">
+                    {{'AiAssistant.improveActions' | translate}}
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" [checked]="options.improveAreas.includes('payment-plan')" 
+                           (change)="toggleArrayValue(options.improveAreas, 'payment-plan')">
+                    {{'AiAssistant.improvePaymentPlan' | translate}}
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" [checked]="options.improveAreas.includes('timeline')" 
+                           (change)="toggleArrayValue(options.improveAreas, 'timeline')">
+                    {{'AiAssistant.improveTimeline' | translate}}
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" [checked]="options.improveAreas.includes('notes')" 
+                           (change)="toggleArrayValue(options.improveAreas, 'notes')">
+                    {{'AiAssistant.improveNotes' | translate}}
+                </label>
+            </div>
+
+            <label for="improveDetailLevelFire">{{'AiAssistant.researchDepth' | translate}}</label>
+            <select id="improveDetailLevelFire" [(ngModel)]="options.improveDetailLevel">
+                <option value="quick">{{'AiAssistant.quickOverview' | translate}}</option>
+                <option value="moderate">{{'AiAssistant.moderateResearch' | translate}}</option>
+                <option value="deep">{{'AiAssistant.deepResearch' | translate}}</option>
+            </select>
+
+            <label>{{'AiAssistant.researchNeeds' | translate}}</label>
+            <div class="checkbox-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" [checked]="options.improveInformationFocus.includes('comparisons')"
+                           (change)="toggleArrayValue(options.improveInformationFocus, 'comparisons')">
+                    {{'AiAssistant.costComparisons' | translate}}
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" [checked]="options.improveInformationFocus.includes('diy')"
+                           (change)="toggleArrayValue(options.improveInformationFocus, 'diy')">
+                    {{'AiAssistant.diyGuides' | translate}}
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" [checked]="options.improveInformationFocus.includes('financing')"
+                           (change)="toggleArrayValue(options.improveInformationFocus, 'financing')">
+                    {{'AiAssistant.financingOptions' | translate}}
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" [checked]="options.improveInformationFocus.includes('insurance')"
+                           (change)="toggleArrayValue(options.improveInformationFocus, 'insurance')">
+                    {{'AiAssistant.insuranceImplications' | translate}}
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" [checked]="options.improveInformationFocus.includes('prevention')"
+                           (change)="toggleArrayValue(options.improveInformationFocus, 'prevention')">
+                    {{'AiAssistant.preventionTips' | translate}}
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" [checked]="options.improveInformationFocus.includes('custom')"
+                           (change)="toggleArrayValue(options.improveInformationFocus, 'custom')">
+                    {{'AiAssistant.customResearchNeeds' | translate}}
+                </label>
+            </div>
+            <input *ngIf="options.improveInformationFocus.includes('custom')" type="text" [(ngModel)]="customImproveInformationFocus" 
+                   [placeholder]="'AiAssistant.customResearchNeedsPlaceholder' | translate" class="custom-text-input">
+
+            <label for="improveCustomInstructionsFire">{{'AiAssistant.customInstructions' | translate}}</label>
+            <textarea id="improveCustomInstructionsFire" [(ngModel)]="options.improveCustomInstructions" rows="2" 
+                      [placeholder]="'AiAssistant.customInstructionsFirePlaceholder' | translate"></textarea>
+        </div>
+
+        <!-- ===== PRIVACY SECTION (all prompt types) ===== -->
+        <h4 class="section-label">{{'AiAssistant.privacy' | translate}}</h4>
+
+        <div class="toggle-row" role="switch" tabindex="0"
+            [attr.aria-checked]="!options.anonymized"
+            (click)="toggleAnonymization()"
+            (keydown.enter)="toggleAnonymization()"
+            (keydown.space)="toggleAnonymization(); $event.preventDefault()">
+            <span class="toggle-label">
+                <span *ngIf="options.anonymized">🔒 {{'AiAssistant.anonymized' | translate}}</span>
+                <span *ngIf="!options.anonymized">🔓 {{'AiAssistant.exactValues' | translate}}</span>
+            </span>
+            <div class="toggle-switch" [ngClass]="{'toggle-on': !options.anonymized}">
+                <div class="toggle-knob"></div>
+            </div>
+        </div>
+        <p *ngIf="!options.anonymized" class="privacy-warning">{{'AiAssistant.privacyWarning' | translate}}</p>
+
+    </div>
+    <button *ngIf="currentStep === 'options'" class="panel-action-btn" (click)="generatePrompt()">{{'AiAssistant.generate' | translate}}</button>
+    <button *ngIf="currentStep === 'options'" class="panel-action-btn btn-skip" (click)="skipToImport()">{{'AiAssistant.skipToImport' | translate}} →</button>
+
+    <!-- STEP 2: View & Copy Prompt -->
+    <div *ngIf="currentStep === 'prompt'" id="input-container">
+        <p class="help-text">{{'AiAssistant.promptHelp' | translate}}</p>
+        <pre class="prompt-preview">{{generatedPrompt}}</pre>
+    </div>
+    <div *ngIf="currentStep === 'prompt'" class="panel-button-area">
+        <div class="button-row">
+            <button class="btn-secondary" (click)="goBack()">← {{'AiAssistant.back' | translate}}</button>
+            <button class="btn-primary" (click)="copyToClipboard()">
+                <span *ngIf="!copySuccess">{{'AiAssistant.copy' | translate}}</span>
+                <span *ngIf="copySuccess">✓ {{'AiAssistant.copied' | translate}}</span>
+            </button>
+        </div>
+        <button class="panel-action-btn" (click)="goToImport()">{{'AiAssistant.pasteResponse' | translate}} →</button>
+    </div>
+
+    <!-- STEP 3: Import Response -->
+    <div *ngIf="currentStep === 'import'" id="input-container">
+        <p class="help-text">{{'AiAssistant.importHelp' | translate}}</p>
+
+        <!-- Import Type Selection -->
+        <div class="import-type-section">
+            <label for="importType" class="import-type-label">{{'AiAssistant.importTypeLabel' | translate}}</label>
+            <select id="importType" [(ngModel)]="importType" class="import-type-selector">
+                <option *ngIf="isImportTypeVisible('income-growth')" value="income-growth">{{'AiAssistant.importType.income-growth' | translate}}</option>
+                <option *ngIf="isImportTypeVisible('budget-optimization')" value="budget-optimization">{{'AiAssistant.importType.budget-optimization' | translate}}</option>
+                <option *ngIf="isImportTypeVisible('subscription-action')" value="subscription-action">{{'AiAssistant.importType.subscription-action' | translate}}</option>
+                <option *ngIf="isImportTypeVisible('expense-insight')" value="expense-insight">{{'AiAssistant.importType.expense-insight' | translate}}</option>
+                <option *ngIf="isImportTypeVisible('smile-project')" value="smile-project">{{'AiAssistant.importType.smile-project' | translate}}</option>
+                <option *ngIf="isImportTypeVisible('fire-emergency')" value="fire-emergency">{{'AiAssistant.importType.fire-emergency' | translate}}</option>
+            </select>
+            <p class="field-hint">{{'AiAssistant.importTypeHint' | translate}}</p>
+        </div>
+
+        <textarea id="import-area" [(ngModel)]="importText"
+            [placeholder]="'AiAssistant.pastePlaceholder' | translate"
+            rows="8"></textarea>
+
+        <div class="file-upload-row">
+            <label for="jsonUpload" class="btn-file">{{'AiAssistant.uploadFile' | translate}}</label>
+            <input type="file" id="jsonUpload" accept=".json" (change)="onFileSelected($event)" hidden>
+        </div>
+
+        <p *ngIf="importError" class="error-text">{{importError}}</p>
+
+        <!-- Preview imported projects -->
+        <div *ngIf="importedProjects.length > 0 && !importSuccess" class="import-preview">
+            <h4 class="section-label" *ngIf="!isImproveMode">{{'AiAssistant.previewTitle' | translate}} ({{importedProjects.length}})</h4>
+            <h4 class="section-label" *ngIf="isImproveMode">{{'AiAssistant.previewUpdates' | translate}} ({{importedProjects.length}})</h4>
+            
+            <!-- Update constraint warnings -->
+            <div *ngIf="updateValidationWarnings.length > 0" class="update-warnings">
+                <p class="warning-title">⚠️ {{'AiAssistant.constraintWarnings' | translate}}</p>
+                <ul>
+                    <li *ngFor="let warning of updateValidationWarnings">{{warning}}</li>
+                </ul>
+            </div>
+
+            <!-- Improve mode preview cards -->
+            <div *ngIf="isImproveMode">
+                <div *ngFor="let p of $any(importedProjects); let i = index" class="preview-card">
+                    <strong>{{i + 1}}. {{p.title}}</strong>
+                    <span *ngIf="p.sub" class="preview-sub">{{p.sub}}</span>
+                    <span class="preview-phase" *ngIf="p.phase">{{p.phase}}</span>
+                    <span *ngIf="p.buckets?.length" class="preview-detail">{{p.buckets.length}} {{'AiAssistant.buckets' | translate}}</span>
+                    <span *ngIf="p.plannedSubscriptions?.length" class="preview-detail">{{p.plannedSubscriptions.length}} {{'AiAssistant.paymentPlans' | translate}}</span>
+                </div>
+            </div>
+
+            <!-- Create mode preview cards -->
+            <div *ngIf="!isImproveMode">
+                <div *ngFor="let p of importedProjects; let i = index" class="preview-card">
+                    <strong>{{i + 1}}. {{p.title}}</strong>
+                    <span *ngIf="p.sub" class="preview-sub">{{p.sub}}</span>
+                    <span class="preview-type" *ngIf="p.isAsset">Asset</span>
+                    <span class="preview-type" *ngIf="p.share">Share</span>
+                    <span class="preview-type" *ngIf="p.investment">Investment</span>
+                    <span *ngIf="p.amount" class="preview-amount">{{p.amount}}</span>
+                </div>
+            </div>
+        </div>
+
+        <div *ngIf="importSuccess" class="success-message">
+            <p>✓ {{'AiAssistant.importSuccess' | translate}}</p>
+        </div>
+    </div>
+    <div *ngIf="currentStep === 'import'" class="panel-button-area">
+        <div class="button-row" *ngIf="!importSuccess">
+            <button class="btn-secondary" (click)="goBack()">← {{'AiAssistant.back' | translate}}</button>
+            <button class="btn-primary" (click)="parseAndPreview()">{{'AiAssistant.preview' | translate}}</button>
+        </div>
+        <button *ngIf="importedProjects.length > 0 && !importSuccess && !isImproveMode" class="panel-action-btn" (click)="importProjects()">{{'AiAssistant.importAll' | translate}} ({{importedProjects.length}})</button>
+        <button *ngIf="importedProjects.length > 0 && !importSuccess && isImproveMode" class="panel-action-btn" (click)="importProjects()">{{'AiAssistant.updateAll' | translate}} ({{importedProjects.length}})</button>
+        <button *ngIf="importSuccess" class="panel-action-btn" (click)="closeWindow()">{{'AiAssistant.done' | translate}}</button>
+    </div>
+
+    <!-- Disclaimer — always visible -->
+    <p class="disclaimer">{{'AiAssistant.disclaimer' | translate}}</p>
+</div>

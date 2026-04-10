@@ -1,0 +1,201 @@
+<div class="filter-container">
+  <h4 class="filter-title">{{'Cashflow.Filter' | translate}}</h4>
+  <hr class="filter-divider">
+  
+  <!-- Date Range (Always Visible) -->
+  <div class="quick-filter-controls">
+    <div class="date-range-quick">
+      <label for="quickStartDate">{{'Cashflow.start' | translate}}</label>
+      <input type="date" id="quickStartDate" [(ngModel)]="filter.startDate">
+      
+      <label for="quickEndDate">{{'Cashflow.end' | translate}}</label>
+      <input type="date" id="quickEndDate" [(ngModel)]="filter.endDate">
+    </div>
+    
+    <!-- Basic Filter Buttons (Hidden when Advanced is expanded) -->
+    <div *ngIf="!isAdvancedExpanded">
+      <div class="quick-filter-buttons">
+        <button class="filter-btn filter-btn-primary" (click)="apply.emit()">
+          <i class="fa fa-filter"></i> {{'Cashflow.filter' | translate}}
+        </button>
+        <button class="filter-btn filter-btn-secondary" (click)="toggleAdvancedFilter()">
+          <i class="fa fa-sliders"></i> {{'Cashflow.showAdvanced' | translate}}
+        </button>
+        <button class="filter-btn filter-btn-clear" (click)="clear.emit()">
+          <i class="fa fa-times"></i> {{'Cashflow.clear' | translate}}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Advanced Filter Section (Expandable) -->
+  <div class="advanced-filter-section" *ngIf="isAdvancedExpanded">
+    <hr class="filter-divider">
+    
+    <!-- Search Text Filter -->
+    <div class="filter-group">
+      <div class="flex-row-gap">
+        <label class="filter-group-title">{{'Cashflow.searchText' | translate}}</label>
+        <button class="help-button" (click)="toggleSearchHelp()" title="Show search help">?</button>
+      </div>
+      <input type="text" class="search-text-input" [placeholder]="'Search.transactions' | translate" 
+             [(ngModel)]="filter.searchText"
+             (keyup.enter)="apply.emit()">
+      
+      <!-- Search Help -->
+      <div class="search-help" *ngIf="isSearchHelpVisible">
+        <div class="search-help-content">
+          <h4>{{'Cashflow.searchHelpTitle' | translate}}</h4>
+
+          <!-- Amount Section -->
+          <details class="help-section">
+            <summary>{{'Cashflow.searchHelpSectionAmount' | translate}}</summary>
+            <p class="help-section-desc">{{'Cashflow.searchHelpAmountDesc' | translate}}</p>
+            <ul>
+              <li><strong>{{'Cashflow.searchHelpAmountLess' | translate}}</strong> <code role="button" tabindex="0" (click)="appendToSearch('<-5')" (keydown.enter)="appendToSearch('<-5')">&lt;-5</code>, <code role="button" tabindex="0" (click)="appendToSearch('<=-20')" (keydown.enter)="appendToSearch('<=-20')">&lt;=-20</code>, <code role="button" tabindex="0" (click)="appendToSearch('<-100')" (keydown.enter)="appendToSearch('<-100')">&lt;-100</code></li>
+              <li><strong>{{'Cashflow.searchHelpAmountGreater' | translate}}</strong> <code role="button" tabindex="0" (click)="appendToSearch('>-10')" (keydown.enter)="appendToSearch('>-10')">>-10</code>, <code role="button" tabindex="0" (click)="appendToSearch('>0')" (keydown.enter)="appendToSearch('>0')">>=0</code>, <code role="button" tabindex="0" (click)="appendToSearch('>500')" (keydown.enter)="appendToSearch('>500')">>500</code></li>
+              <li><strong>{{'Cashflow.searchHelpAmountRange' | translate}}</strong> <code role="button" tabindex="0" (click)="appendToSearch('<=-1 && >=-50')" (keydown.enter)="appendToSearch('<=-1 && >=-50')">&lt;=-1 && >=-50</code>, <code role="button" tabindex="0" (click)="appendToSearch('>=10 && <=100')" (keydown.enter)="appendToSearch('>=10 && <=100')">>=10 && &lt;=100</code></li>
+            </ul>
+          </details>
+
+          <!-- Date Section -->
+          <details class="help-section">
+            <summary>{{'Cashflow.searchHelpSectionDate' | translate}}</summary>
+            <p class="help-section-desc">{{'Cashflow.searchHelpDateDesc' | translate}}</p>
+            <ul>
+              <li><strong>{{'Cashflow.searchHelpDateAfter' | translate}}</strong> <code role="button" tabindex="0" (click)="appendToSearch('>01.01.2026')" (keydown.enter)="appendToSearch('>01.01.2026')">>01.01.2026</code>, <code role="button" tabindex="0" (click)="appendToSearch('>2026-01-01')" (keydown.enter)="appendToSearch('>2026-01-01')">>2026-01-01</code>, <code role="button" tabindex="0" (click)="appendToSearch('>1/1/26')" (keydown.enter)="appendToSearch('>1/1/26')">>1/1/26</code></li>
+              <li><strong>{{'Cashflow.searchHelpDateBefore' | translate}}</strong> <code role="button" tabindex="0" (click)="appendToSearch('<20.03.2026')" (keydown.enter)="appendToSearch('<20.03.2026')">&lt;20.03.2026</code>, <code role="button" tabindex="0" (click)="appendToSearch('<2026-03-20')" (keydown.enter)="appendToSearch('<2026-03-20')">&lt;2026-03-20</code></li>
+              <li><strong>{{'Cashflow.searchHelpDateExact' | translate}}</strong> <code role="button" tabindex="0" (click)="appendToSearch('15.03.2026')" (keydown.enter)="appendToSearch('15.03.2026')">15.03.2026</code>, <code role="button" tabindex="0" (click)="appendToSearch('2026-03-15')" (keydown.enter)="appendToSearch('2026-03-15')">2026-03-15</code></li>
+              <li><strong>{{'Cashflow.searchHelpDateRange' | translate}}</strong> <code role="button" tabindex="0" (click)="appendToSearch('>01.02.2026 && <20.03.2026')" (keydown.enter)="appendToSearch('>01.02.2026 && <20.03.2026')">>01.02.2026 && &lt;20.03.2026</code></li>
+            </ul>
+          </details>
+
+          <!-- Time Section -->
+          <details class="help-section">
+            <summary>{{'Cashflow.searchHelpSectionTime' | translate}}</summary>
+            <p class="help-section-desc">{{'Cashflow.searchHelpTimeDesc' | translate}}</p>
+            <ul>
+              <li><strong>{{'Cashflow.searchHelpTimeAfter' | translate}}</strong> <code role="button" tabindex="0" (click)="appendToSearch('>10:30')" (keydown.enter)="appendToSearch('>10:30')">>10:30</code>, <code role="button" tabindex="0" (click)="appendToSearch('>3pm')" (keydown.enter)="appendToSearch('>3pm')">>3pm</code>, <code role="button" tabindex="0" (click)="appendToSearch('>3:30pm')" (keydown.enter)="appendToSearch('>3:30pm')">>3:30pm</code></li>
+              <li><strong>{{'Cashflow.searchHelpTimeBefore' | translate}}</strong> <code role="button" tabindex="0" (click)="appendToSearch('<12:00')" (keydown.enter)="appendToSearch('<12:00')">&lt;12:00</code>, <code role="button" tabindex="0" (click)="appendToSearch('<6pm')" (keydown.enter)="appendToSearch('<6pm')">&lt;6pm</code></li>
+              <li><strong>{{'Cashflow.searchHelpTimeRange' | translate}}</strong> <code role="button" tabindex="0" (click)="appendToSearch('>9:00 && <17:00')" (keydown.enter)="appendToSearch('>9:00 && <17:00')">>9:00 && &lt;17:00</code>, <code role="button" tabindex="0" (click)="appendToSearch('>8am && <6pm')" (keydown.enter)="appendToSearch('>8am && <6pm')">>8am && &lt;6pm</code></li>
+            </ul>
+          </details>
+
+          <!-- Text & Logic Section -->
+          <details class="help-section">
+            <summary>{{'Cashflow.searchHelpSectionLogic' | translate}}</summary>
+            <p class="help-section-desc">{{'Cashflow.searchHelpLogicDesc' | translate}}</p>
+            <ul>
+              <li><strong>{{'Cashflow.searchHelpText' | translate}}</strong> <code role="button" tabindex="0" (click)="appendToSearch('EDEKA')" (keydown.enter)="appendToSearch('EDEKA')">EDEKA</code>, <code role="button" tabindex="0" (click)="appendToSearch('Groceries')" (keydown.enter)="appendToSearch('Groceries')">Groceries</code></li>
+              <li><strong>{{'Cashflow.searchHelpAnd' | translate}}</strong> <code role="button" tabindex="0" (click)="appendToSearch('EDEKA && Groceries')" (keydown.enter)="appendToSearch('EDEKA && Groceries')">EDEKA && Groceries</code>, <code role="button" tabindex="0" (click)="appendToSearch('Rent and Housing')" (keydown.enter)="appendToSearch('Rent and Housing')">Rent and Housing</code></li>
+              <li><strong>{{'Cashflow.searchHelpOr' | translate}}</strong> <code role="button" tabindex="0" (click)="appendToSearch('EDEKA || REWE')" (keydown.enter)="appendToSearch('EDEKA || REWE')">EDEKA || REWE</code>, <code role="button" tabindex="0" (click)="appendToSearch('EDEKA or REWE')" (keydown.enter)="appendToSearch('EDEKA or REWE')">EDEKA or REWE</code></li>
+              <li><strong>{{'Cashflow.searchHelpNot' | translate}}</strong> <code role="button" tabindex="0" (click)="appendToSearch('!EDEKA')" (keydown.enter)="appendToSearch('!EDEKA')">!EDEKA</code>, <code role="button" tabindex="0" (click)="appendToSearch('not EDEKA')" (keydown.enter)="appendToSearch('not EDEKA')">not EDEKA</code></li>
+            </ul>
+          </details>
+
+          <!-- Combined Section -->
+          <details class="help-section">
+            <summary>{{'Cashflow.searchHelpSectionCombined' | translate}}</summary>
+            <p class="help-section-desc">{{'Cashflow.searchHelpCombinedDesc' | translate}}</p>
+            <ul>
+              <li><strong>{{'Cashflow.searchHelpCombinedDateAmount' | translate}}</strong> <code role="button" tabindex="0" (click)="appendToSearch('>01.03.2026 && <-20')" (keydown.enter)="appendToSearch('>01.03.2026 && <-20')">>01.03.2026 && &lt;-20</code>, <code role="button" tabindex="0" (click)="appendToSearch('>01.01.2026 && >500')" (keydown.enter)="appendToSearch('>01.01.2026 && >500')">>01.01.2026 && >500</code></li>
+              <li><strong>{{'Cashflow.searchHelpCombinedTextAmount' | translate}}</strong> <code role="button" tabindex="0" (click)="appendToSearch('EDEKA && <-5')" (keydown.enter)="appendToSearch('EDEKA && <-5')">EDEKA && &lt;-5</code>, <code role="button" tabindex="0" (click)="appendToSearch('Groceries && <-50')" (keydown.enter)="appendToSearch('Groceries && <-50')">Groceries && &lt;-50</code></li>
+              <li><strong>{{'Cashflow.searchHelpCombinedDateText' | translate}}</strong> <code role="button" tabindex="0" (click)="appendToSearch('>01.01.2026 && EDEKA')" (keydown.enter)="appendToSearch('>01.01.2026 && EDEKA')">>01.01.2026 && EDEKA</code>, <code role="button" tabindex="0" (click)="appendToSearch('<20.03.2026 && Rent')" (keydown.enter)="appendToSearch('<20.03.2026 && Rent')">&lt;20.03.2026 && Rent</code></li>
+              <li><strong>{{'Cashflow.searchHelpCombinedMulti' | translate}}</strong> <code role="button" tabindex="0" (click)="appendToSearch('>01.01.2026 && EDEKA && <-5')" (keydown.enter)="appendToSearch('>01.01.2026 && EDEKA && <-5')">>01.01.2026 && EDEKA && &lt;-5</code></li>
+              <li><strong>{{'Cashflow.searchHelpCombinedExclude' | translate}}</strong> <code role="button" tabindex="0" (click)="appendToSearch('>01.01.2026 && <-10 && !REWE')" (keydown.enter)="appendToSearch('>01.01.2026 && <-10 && !REWE')">>01.01.2026 && &lt;-10 && !REWE</code></li>
+              <li><strong>{{'Cashflow.searchHelpCombinedTimeAmount' | translate}}</strong> <code role="button" tabindex="0" (click)="appendToSearch('>12:00 && <-20')" (keydown.enter)="appendToSearch('>12:00 && <-20')">>12:00 && &lt;-20</code>, <code role="button" tabindex="0" (click)="appendToSearch('<9am && >100')" (keydown.enter)="appendToSearch('<9am && >100')">&lt;9am && >100</code></li>
+            </ul>
+          </details>
+
+          <p class="search-help-note">{{'Cashflow.searchHelpNote' | translate}}</p>
+        </div>
+      </div>
+      
+      <div class="search-fields-checkboxes mt-sm">
+        <label class="checkbox-label">
+          <input type="checkbox" [(ngModel)]="filter.searchFields.account">
+          {{'Cashflow.account' | translate}}
+        </label>
+        <label class="checkbox-label">
+          <input type="checkbox" [(ngModel)]="filter.searchFields.amount">
+          {{'Cashflow.amount' | translate}}
+        </label>
+        <label class="checkbox-label">
+          <input type="checkbox" [(ngModel)]="filter.searchFields.date">
+          {{'Cashflow.date' | translate}}
+        </label>
+        <label class="checkbox-label">
+          <input type="checkbox" [(ngModel)]="filter.searchFields.time">
+          {{'Cashflow.time' | translate}}
+        </label>
+        <label class="checkbox-label">
+          <input type="checkbox" [(ngModel)]="filter.searchFields.category">
+          {{'Cashflow.category' | translate}}
+        </label>
+        <label class="checkbox-label">
+          <input type="checkbox" [(ngModel)]="filter.searchFields.comment">
+          {{'Cashflow.comment' | translate}}
+        </label>
+      </div>
+    </div>
+
+    <!-- Accounts Filter -->
+    <div class="filter-group">
+      <label class="filter-group-title">{{'Cashflow.selectAccounts' | translate}}</label>
+      <div class="tags-container">
+        <button *ngFor="let account of availableAccounts" 
+                class="tag-button" 
+                [class.active]="isAccountSelected(account)"
+                (click)="toggleAccount(account)">
+          {{account}}
+        </button>
+      </div>
+    </div>
+
+    <!-- Tags Filter -->
+    <div class="filter-group">
+      <label class="filter-group-title">{{'Cashflow.selectTags' | translate}}</label>
+      <div class="tags-container">
+        <button *ngFor="let tag of availableTags" 
+                class="tag-button" 
+                [class.active]="isTagSelected(tag)"
+                [class.tag-fixed]="isFixedCost(tag)"
+                (click)="toggleTag(tag)"
+                [title]="isFixedCost(tag) ? 'Fixed Cost (Subscription)' : ''">
+          {{tag}}
+        </button>
+      </div>
+    </div>
+
+    <!-- Sort Options (Income only) -->
+    <div class="filter-group" *ngIf="showSortOptions">
+      <label class="filter-group-title">{{'Cashflow.sortBy' | translate}}</label>
+      <div class="sort-options">
+        <select [(ngModel)]="filter.sortBy" class="sort-select">
+          <option value="none">{{'Cashflow.noSort' | translate}}</option>
+          <option value="alphabetical">{{'Income.alphabetically' | translate}}</option>
+          <option value="amount">{{'Income.amount' | translate}}</option>
+        </select>
+        
+        <select [(ngModel)]="filter.sortOrder" class="sort-select" 
+                [disabled]="filter.sortBy === 'none'">
+          <option value="asc">{{'Cashflow.ascending' | translate}} ↑</option>
+          <option value="desc">{{'Cashflow.descending' | translate}} ↓</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="advanced-filter-actions">
+      <button class="filter-btn filter-btn-primary" (click)="apply.emit()">
+        <i class="fa fa-check"></i> {{'Cashflow.applyFilters' | translate}}
+      </button>
+      <button class="filter-btn filter-btn-secondary" (click)="toggleAdvancedFilter()">
+        <i class="fa fa-sliders"></i> {{'Cashflow.hideAdvanced' | translate}}
+      </button>
+      <button class="filter-btn filter-btn-clear" (click)="clear.emit()">
+        <i class="fa fa-times"></i> {{'Cashflow.clear' | translate}}
+      </button>
+    </div>
+  </div>
+</div>

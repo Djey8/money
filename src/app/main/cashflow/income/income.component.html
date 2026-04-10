@@ -1,0 +1,552 @@
+<!-- Toolbar -->
+<div class="toolbar" role="banner">
+  <img id="profile-pic" width="40" alt="Profile Logo" src="../assets/profile-blank.jpg"
+    role="button" tabindex="0" aria-label="Open profile" (keydown.enter)="appReference.clickProfile()" (click)="appReference.clickProfile()" />
+  <div id="heading" role="button" tabindex="0" (click)="appReference.openNavBar()" (keydown.enter)="appReference.openNavBar()">{{'Menu.statment' | translate}}</div>
+  <div class="spacer"></div>
+  <img class="filter-circle-btn" width="40" alt="filter" src="../../../assets/symbols/filter.png"
+        role="button" tabindex="0" aria-label="Filter" (keydown.enter)="scrollToFilter()" (click)="scrollToFilter()" style="margin-right: 0px;"/>
+  <img id="statsbtn" width="40" text="Stats" alt="stats" src="../../../assets/icons/graph.jpg"
+        role="button" tabindex="0" aria-label="View statistics" (keydown.enter)="goToStats()" (click)="goToStats()"/>
+</div>
+
+<!-- Original Income Statement (not filtered) -->
+<div id="incomeStatement" *ngIf="!classReference.isFiltered">
+  <div class="balanceBox" role="button" tabindex="0" (click)="goToCashflow()" (keydown.enter)="goToCashflow()" aria-label="Go to cashflow">
+    <h4 class="balanceLable">{{'Cashflow.title' | translate}}</h4>
+    <hr class="separator-black">
+    <h4 class="balanceLable">{{classReference.getTotalAmount() | appNumber}} {{settingsReference.currency}}</h4>
+  </div>
+
+  <div id="revenueBox">
+    <h4 id="revenueTitle">{{'Income.Revenue' | translate}}</h4>
+    <hr
+      style="background-color: white; margin-bottom: 5px; margin-left: 5%; width: 90%; height: 3px; border-radius: 5px; border-color: white;">
+    <div id="revenue-box">
+      <table id="revenuesTable" class="income-table">
+        <thead tabindex="0" role="button" (click)="toggleRevenues()" (keydown.enter)="toggleRevenues()" (keydown.space)="toggleRevenues(); $event.preventDefault()">
+          <tr>
+            <td>
+              <h4 class="infoLableA">{{'Income.Revenue' | translate}}: <br> <span class="amount {{classReference.getRevenues()>=0 ? 'amount-positive' : 'amount-negative'}}"
+                  *ngIf="classReference.getRevenues()!=0">{{classReference.getRevenues() | appNumber}}
+                  {{settingsReference.currency}}</span></h4>
+            </td>
+            <td class="toglebtn"><span class="toggle-icon">{{isRevenues ? '▲' : '▼'}}</span></td>
+          </tr>
+        </thead>
+        <tbody *ngIf="isRevenues">
+          <tr class="sortable-header-row">
+            <th class="sortable-header" tabindex="0" role="button" (click)="sortTable('revenues', 'tag'); $event.stopPropagation()" (keydown.enter)="sortTable('revenues', 'tag'); $event.stopPropagation()">
+              {{'Balance.Name' | translate}}{{getSortArrow('revenues', 'tag')}}
+            </th>
+            <th class="sortable-header sortable-header-right" tabindex="0" role="button" (click)="sortTable('revenues', 'amount'); $event.stopPropagation()" (keydown.enter)="sortTable('revenues', 'amount'); $event.stopPropagation()">
+              {{'Balance.Value' | translate}}{{getSortArrow('revenues', 'amount')}}
+            </th>
+          </tr>
+          <tr *ngFor="let row of classReference.allRevenues; let i = index" class="income-row">
+            <td class="text-truncate-income" class="revenueTitle">{{classReference.allRevenues[i].tag}}:</td>
+            <td class="revenueAmount {{classReference.allRevenues[i].amount>=0 ? 'amount-positive' : 'amount-negative'}}">{{classReference.allRevenues[i].amount| appNumber}} {{settingsReference.currency}}</td>
+          </tr>
+        </tbody>
+      </table>
+      <table id="intrestsTable" class="income-table">
+        <thead tabindex="0" role="button" (click)="toggleInterests()" (keydown.enter)="toggleInterests()" (keydown.space)="toggleInterests(); $event.preventDefault()">
+          <tr>
+            <td>
+              <h4 class="infoLableA">{{'Income.Interests' | translate}}: <br> <span class="amount {{classReference.getInterests()>=0 ? 'amount-positive' : 'amount-negative'}}"
+                  *ngIf="classReference.getInterests()!=0">{{classReference.getInterests() | appNumber}}
+                  {{settingsReference.currency}}</span></h4>
+            </td>
+            <td class="toglebtn"><span class="toggle-icon">{{isInterests ? '▲' : '▼'}}</span></td>
+          </tr>
+        </thead>
+        <tbody *ngIf="isInterests">
+          <tr class="sortable-header-row">
+            <th class="sortable-header" tabindex="0" role="button" (click)="sortTable('interests', 'tag'); $event.stopPropagation()" (keydown.enter)="sortTable('interests', 'tag'); $event.stopPropagation()">
+              {{'Balance.Name' | translate}}{{getSortArrow('interests', 'tag')}}
+            </th>
+            <th class="sortable-header sortable-header-right" tabindex="0" role="button" (click)="sortTable('interests', 'amount'); $event.stopPropagation()" (keydown.enter)="sortTable('interests', 'amount'); $event.stopPropagation()">
+              {{'Balance.Value' | translate}}{{getSortArrow('interests', 'amount')}}
+            </th>
+          </tr>
+          <tr *ngFor="let row of classReference.allIntrests; let i = index" tabindex="0" (click)="clickRowInterests(i)" (keydown.enter)="clickRowInterests(i)"
+            class="income-row">
+            <td class="text-truncate-income" class="revenueTitle">{{classReference.allIntrests[i].tag}}: </td>
+            <td class="revenueAmount {{classReference.allIntrests[i].amount>=0 ? 'amount-positive' : 'amount-negative'}}">{{classReference.allIntrests[i].amount| appNumber}} {{settingsReference.currency}}</td>
+          </tr>
+        </tbody>
+      </table>
+      <table id="propertiesTable" class="income-table">
+        <thead tabindex="0" role="button" (click)="toggleProperties()" (keydown.enter)="toggleProperties()" (keydown.space)="toggleProperties(); $event.preventDefault()">
+          <tr>
+            <td>
+              <h4 class="infoLableA">{{'Balance.Investments' | translate}}: <br> <span class="amount {{classReference.getProperties()>=0 ? 'amount-positive' : 'amount-negative'}}"
+                  *ngIf="classReference.getProperties()!=0">{{classReference.getProperties() | appNumber}}
+                  {{settingsReference.currency}}</span></h4>
+            </td>
+            <td class="toglebtn"><span class="toggle-icon">{{isProperties ? '▲' : '▼'}}</span></td>
+          </tr>
+        </thead>
+        <tbody *ngIf="isProperties">
+          <tr class="sortable-header-row">
+            <th class="sortable-header" tabindex="0" role="button" (click)="sortTable('properties', 'tag'); $event.stopPropagation()" (keydown.enter)="sortTable('properties', 'tag'); $event.stopPropagation()">
+              {{'Balance.Name' | translate}}{{getSortArrow('properties', 'tag')}}
+            </th>
+            <th class="sortable-header sortable-header-right" tabindex="0" role="button" (click)="sortTable('properties', 'amount'); $event.stopPropagation()" (keydown.enter)="sortTable('properties', 'amount'); $event.stopPropagation()">
+              {{'Balance.Value' | translate}}{{getSortArrow('properties', 'amount')}}
+            </th>
+          </tr>
+          <tr *ngFor="let row of classReference.allProperties; let i = index" tabindex="0" (click)="clickRowProperties(i)" (keydown.enter)="clickRowProperties(i)"
+            class="income-row">
+            <td class="text-truncate-income" class="revenueTitle">{{classReference.allProperties[i].tag}}:</td>
+            <td class="revenueAmount {{classReference.allProperties[i].amount>=0 ? 'amount-positive' : 'amount-negative'}}">{{classReference.allProperties[i].amount| appNumber}} {{settingsReference.currency}}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div id="creditAmountBox">
+      <h4 id="revenueTitle">{{'Balance.Credit' | translate}}</h4>
+      <hr class="separator-white">
+      <h4 id="creditAmountLable">{{classReference.getCreditAmount() | appNumber}} {{settingsReference.currency}}</h4>
+    </div>
+  </div>
+
+  <div id="expensesBox" role="button" tabindex="0" (click)="clickExpenses()" (keydown.enter)="clickExpenses()">
+    <h4 id="expensesTitle">{{'Cashflow.Expenses' | translate}}</h4>
+    <hr class="separator-white">
+    <div id="expenses-box">
+      <table id="dailyExpensesTable" class="income-table">
+        <thead tabindex="0" role="button" (click)="toggleDailyExpense()" (keydown.enter)="toggleDailyExpense()" (keydown.space)="toggleDailyExpense(); $event.preventDefault()">
+          <tr>
+            <td>
+              <h4 class="infoLableA">{{'Menu.daily' | translate}}: <br
+                  *ngIf="classReference.getDailyExpenses()!=0"><span class="amount {{classReference.getDailyExpenses()>=0 ? 'amount-positive' : 'amount-negative'}}"
+                  *ngIf="classReference.getDailyExpenses()!=0">{{classReference.getDailyExpenses() | appNumber}}
+                  {{settingsReference.currency}}</span></h4>
+            </td>
+            <td class="toglebtn"><span class="toggle-icon">{{isDailyExpenses ? '▲' : '▼'}}</span></td>
+          </tr>
+        </thead>
+        <tbody *ngIf="isDailyExpenses">
+          <tr class="sortable-header-row">
+            <th class="sortable-header" tabindex="0" role="button" (click)="sortTable('daily', 'tag'); $event.stopPropagation()" (keydown.enter)="sortTable('daily', 'tag'); $event.stopPropagation()">
+              {{'Balance.Name' | translate}}{{getSortArrow('daily', 'tag')}}
+            </th>
+            <th class="sortable-header sortable-header-right" tabindex="0" role="button" (click)="sortTable('daily', 'amount'); $event.stopPropagation()" (keydown.enter)="sortTable('daily', 'amount'); $event.stopPropagation()">
+              {{'Balance.Value' | translate}}{{getSortArrow('daily', 'amount')}}
+            </th>
+          </tr>
+          <tr *ngFor="let row of classReference.dailyExpenses; let i = index" class="income-row">
+            <td class="text-truncate-income" class="expenseTitle">{{classReference.dailyExpenses[i].tag}}:</td>
+            <td class="expenseAmount {{classReference.dailyExpenses[i].amount>=0 ? 'amount-positive' : 'amount-negative'}}">{{classReference.dailyExpenses[i].amount| appNumber}} {{settingsReference.currency}}</td>
+          </tr>
+        </tbody>
+      </table>
+      <table id="splurgeExpensesTable" class="income-table">
+        <thead tabindex="0" role="button" (click)="toggleSplurgeExpense()" (keydown.enter)="toggleSplurgeExpense()" (keydown.space)="toggleSplurgeExpense(); $event.preventDefault()">
+          <tr>
+            <td>
+              <h4 class="infoLableA">{{'Menu.splurge' | translate}}: <br
+                  *ngIf="classReference.getSplurgeExpenses()!=0"><span class="amount {{classReference.getSplurgeExpenses()>=0 ? 'amount-positive' : 'amount-negative'}}"
+                  *ngIf="classReference.getSplurgeExpenses()!=0">{{classReference.getSplurgeExpenses() |
+                  appNumber}} {{settingsReference.currency}}</span></h4>
+            </td>
+            <td class="toglebtn"><span class="toggle-icon">{{isSplurgeExpenses ? '▲' : '▼'}}</span></td>
+          </tr>
+        </thead>
+        <tbody *ngIf="isSplurgeExpenses">
+          <tr class="sortable-header-row">
+            <th class="sortable-header" tabindex="0" role="button" (click)="sortTable('splurge', 'tag'); $event.stopPropagation()" (keydown.enter)="sortTable('splurge', 'tag'); $event.stopPropagation()">
+              {{'Balance.Name' | translate}}{{getSortArrow('splurge', 'tag')}}
+            </th>
+            <th class="sortable-header sortable-header-right" tabindex="0" role="button" (click)="sortTable('splurge', 'amount'); $event.stopPropagation()" (keydown.enter)="sortTable('splurge', 'amount'); $event.stopPropagation()">
+              {{'Balance.Value' | translate}}{{getSortArrow('splurge', 'amount')}}
+            </th>
+          </tr>
+          <tr *ngFor="let row of classReference.splurgeExpenses; let i = index" class="income-row">
+            <td class="text-truncate-income" class="expenseTitle">{{classReference.splurgeExpenses[i].tag}}:</td>
+            <td class="expenseAmount {{classReference.splurgeExpenses[i].amount>=0 ? 'amount-positive' : 'amount-negative'}}">{{classReference.splurgeExpenses[i].amount| appNumber}} {{settingsReference.currency}}</td>
+          </tr>
+        </tbody>
+      </table>
+      <table id="smileExpensesTable" class="income-table">
+        <thead tabindex="0" role="button" (click)="toggleSmileExpense()" (keydown.enter)="toggleSmileExpense()" (keydown.space)="toggleSmileExpense(); $event.preventDefault()">
+          <tr>
+            <td>
+              <h4 class="infoLableA">{{'Menu.smile' | translate}}: <br *ngIf="classReference.getSmileExpenses()!=0">
+                <span class="amount {{classReference.getSmileExpenses()>=0 ? 'amount-positive' : 'amount-negative'}}" *ngIf="classReference.getSmileExpenses()!=0">{{classReference.getSmileExpenses()
+                  | appNumber}}
+                  {{settingsReference.currency}}</span></h4>
+            </td>
+            <td class="toglebtn"><span class="toggle-icon">{{isSmileExpenses ? '▲' : '▼'}}</span></td>
+          </tr>
+        </thead>
+        <tbody *ngIf="isSmileExpenses">
+          <tr class="sortable-header-row">
+            <th class="sortable-header" tabindex="0" role="button" (click)="sortTable('smile', 'tag'); $event.stopPropagation()" (keydown.enter)="sortTable('smile', 'tag'); $event.stopPropagation()">
+              {{'Balance.Name' | translate}}{{getSortArrow('smile', 'tag')}}
+            </th>
+            <th class="sortable-header sortable-header-right" tabindex="0" role="button" (click)="sortTable('smile', 'amount'); $event.stopPropagation()" (keydown.enter)="sortTable('smile', 'amount'); $event.stopPropagation()">
+              {{'Balance.Value' | translate}}{{getSortArrow('smile', 'amount')}}
+            </th>
+          </tr>
+          <tr *ngFor="let row of classReference.smileExpenses; let i = index" class="income-row">
+            <td class="text-truncate-income" class="expenseTitle">{{classReference.smileExpenses[i].tag}}:</td>
+            <td class="expenseAmount {{classReference.smileExpenses[i].amount>=0 ? 'amount-positive' : 'amount-negative'}}">{{classReference.smileExpenses[i].amount| appNumber}} {{settingsReference.currency}}</td>
+          </tr>
+        </tbody>
+      </table>
+      <table id="fireExpensesTable" class="income-table">
+        <thead tabindex="0" role="button" (click)="toggleFireExpense()" (keydown.enter)="toggleFireExpense()" (keydown.space)="toggleFireExpense(); $event.preventDefault()">
+          <tr>
+            <td>
+              <h4 class="infoLableA">{{'Menu.fire' | translate}}: <br *ngIf="classReference.getFireExpenses()!=0">
+                <span class="amount {{classReference.getFireExpenses()>=0 ? 'amount-positive' : 'amount-negative'}}" *ngIf="classReference.getFireExpenses()!=0">{{classReference.getFireExpenses() |
+                  appNumber}}
+                  {{settingsReference.currency}}</span></h4>
+            </td>
+            <td class="toglebtn"><span class="toggle-icon">{{isFireExpenses ? '▲' : '▼'}}</span></td>
+          </tr>
+        </thead>
+        <tbody *ngIf="isFireExpenses">
+          <tr class="sortable-header-row">
+            <th class="sortable-header" tabindex="0" role="button" (click)="sortTable('fire', 'tag'); $event.stopPropagation()" (keydown.enter)="sortTable('fire', 'tag'); $event.stopPropagation()">
+              {{'Balance.Name' | translate}}{{getSortArrow('fire', 'tag')}}
+            </th>
+            <th class="sortable-header sortable-header-right" tabindex="0" role="button" (click)="sortTable('fire', 'amount'); $event.stopPropagation()" (keydown.enter)="sortTable('fire', 'amount'); $event.stopPropagation()">
+              {{'Balance.Value' | translate}}{{getSortArrow('fire', 'amount')}}
+            </th>
+          </tr>
+          <tr *ngFor="let row of classReference.fireExpenses; let i = index" class="income-row">
+            <td class="text-truncate-income" class="expenseTitle">{{classReference.fireExpenses[i].tag}}:</td>
+            <td class="expenseAmount {{classReference.fireExpenses[i].amount>=0 ? 'amount-positive' : 'amount-negative'}}">{{classReference.fireExpenses[i].amount| appNumber}} {{settingsReference.currency}}</td>
+          </tr>
+        </tbody>
+      </table>
+      <table id="mojosTable" class="income-table">
+        <thead tabindex="0" role="button" (click)="toggleMojoExpense()" (keydown.enter)="toggleMojoExpense()" (keydown.space)="toggleMojoExpense(); $event.preventDefault()">
+          <tr>
+            <td>
+              <h4 class="infoLableA">{{'Income.Mojo' | translate}}: <br *ngIf="classReference.getMojoExpenses()!=0">
+                <span class="amount text-success"
+                  *ngIf="classReference.getMojoExpenses()!=0">{{classReference.getMojoExpenses() | appNumber}}
+                  {{settingsReference.currency}}</span></h4>
+            </td>
+            <td class="toglebtn"><span class="toggle-icon">{{isMojoExpenses ? '▲' : '▼'}}</span></td>
+          </tr>
+        </thead>
+        <tbody *ngIf="isMojoExpenses">
+          <tr class="sortable-header-row">
+            <th class="sortable-header" tabindex="0" role="button" (click)="sortTable('mojo', 'tag'); $event.stopPropagation()" (keydown.enter)="sortTable('mojo', 'tag'); $event.stopPropagation()">
+              {{'Balance.Name' | translate}}{{getSortArrow('mojo', 'tag')}}
+            </th>
+            <th class="sortable-header sortable-header-right" tabindex="0" role="button" (click)="sortTable('mojo', 'amount'); $event.stopPropagation()" (keydown.enter)="sortTable('mojo', 'amount'); $event.stopPropagation()">
+              {{'Balance.Value' | translate}}{{getSortArrow('mojo', 'amount')}}
+            </th>
+          </tr>
+          <tr *ngFor="let row of classReference.mojoExpenses; let i = index" class="income-row">
+            <td class="text-truncate-income" class="expenseTitle">{{classReference.mojoExpenses[i].tag}}:</td>
+            <td class="expenseAmount text-success">{{classReference.mojoExpenses[i].amount| appNumber}}
+              {{settingsReference.currency}}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div id="creditAmountBox">
+      <h4 id="revenueTitle">{{'Balance.Debit' | translate}}</h4>
+      <hr class="separator-white">
+      <h4 id="creditAmountLable">{{classReference.getDebitAmount() | appNumber}} {{settingsReference.currency}}</h4>
+    </div>
+  </div>
+</div>
+
+
+<!-- Filtered Icome Statement-->
+<div id="filteredncomeStatement" *ngIf="classReference.isFiltered">
+  <div class="balanceBox" role="button" tabindex="0" (click)="goToCashflow()" (keydown.enter)="goToCashflow()" aria-label="Go to cashflow">
+    <h4 class="balanceLable">{{'Cashflow.title' | translate}}</h4>
+    <hr class="separator-black">
+    <h4 class="balanceLable">{{classReference.getTotalAmountF() | appNumber}} {{settingsReference.currency}}</h4>
+  </div>
+
+  <div id="revenueBox">
+    <h4 id="revenueTitle">{{'Income.Revenue' | translate}}</h4>
+    <img src="../../../../assets/symbols/filter.png" alt="filter" width="40" class="filterAbtn">
+    <h4 class="searchDate" *ngIf="classReference.currentFilter.startDate && classReference.currentFilter.endDate">
+      {{classReference.currentFilter.startDate | appDate}} - {{classReference.currentFilter.endDate | appDate}}
+    </h4>
+    <h4 class="searchDate" *ngIf="classReference.currentFilter.startDate && !classReference.currentFilter.endDate">
+      {{classReference.currentFilter.startDate | appDate}}
+    </h4>
+    <h4 class="searchDate" *ngIf="!classReference.currentFilter.startDate && classReference.currentFilter.endDate">
+      {{classReference.currentFilter.endDate | appDate}}
+    </h4>
+    <h4 class="searchDate" *ngIf="classReference.currentFilter.searchText">
+      Search: {{classReference.currentFilter.searchText}}
+    </h4>
+    <hr
+      style="background-color: white; margin-bottom: 5px; margin-left: 5%; width: 90%; height: 3px; border-radius: 5px; border-color: white;">
+    <div id="revenue-box">
+      <table id="revenuesTable" class="income-table">
+        <thead tabindex="0" role="button" (click)="toggleRevenues()" (keydown.enter)="toggleRevenues()" (keydown.space)="toggleRevenues(); $event.preventDefault()">
+          <tr>
+            <td>
+              <h4 class="infoLableA">{{'Income.Revenue' | translate}}: <br> <span class="amount {{classReference.getRevenuesF()>=0 ? 'amount-positive' : 'amount-negative'}}"
+                  *ngIf="classReference.getRevenuesF()!=0">{{classReference.getRevenuesF() | appNumber}}
+                  {{settingsReference.currency}}</span></h4>
+            </td>
+            <td class="toglebtn"><span class="toggle-icon">{{isRevenues ? '▲' : '▼'}}</span></td>
+          </tr>
+        </thead>
+        <tbody *ngIf="isRevenues">
+          <tr class="sortable-header-row">
+            <th class="sortable-header" tabindex="0" role="button" (click)="sortTable('revenues', 'tag'); $event.stopPropagation()" (keydown.enter)="sortTable('revenues', 'tag'); $event.stopPropagation()">
+              {{'Balance.Name' | translate}}{{getSortArrow('revenues', 'tag')}}
+            </th>
+            <th class="sortable-header sortable-header-right" tabindex="0" role="button" (click)="sortTable('revenues', 'amount'); $event.stopPropagation()" (keydown.enter)="sortTable('revenues', 'amount'); $event.stopPropagation()">
+              {{'Balance.Value' | translate}}{{getSortArrow('revenues', 'amount')}}
+            </th>
+          </tr>
+          <tr *ngFor="let row of classReference.allRevenuesF; let i = index" class="income-row">
+            <td class="revenueTitle">{{classReference.allRevenuesF[i].tag}}:</td>
+            <td class="revenueAmount {{classReference.allRevenuesF[i].amount>=0 ? 'amount-positive' : 'amount-negative'}}">{{classReference.allRevenuesF[i].amount| appNumber}} {{settingsReference.currency}}</td>
+          </tr>
+        </tbody>
+      </table>
+      <table id="intrestsTable" class="income-table">
+        <thead tabindex="0" role="button" (click)="toggleInterests()" (keydown.enter)="toggleInterests()" (keydown.space)="toggleInterests(); $event.preventDefault()">
+          <tr>
+            <td>
+              <h4 class="infoLableA">{{'Income.Interests' | translate}}: <br><span class="amount {{classReference.getInterestsF()>=0 ? 'amount-positive' : 'amount-negative'}}"
+                  *ngIf="classReference.getInterestsF()!=0">{{classReference.getInterestsF() | appNumber}}
+                  {{settingsReference.currency}}</span></h4>
+            </td>
+            <td class="toglebtn"><span class="toggle-icon">{{isInterests ? '▲' : '▼'}}</span></td>
+          </tr>
+        </thead>
+        <tbody *ngIf="isInterests">
+          <tr class="sortable-header-row">
+            <th class="sortable-header" tabindex="0" role="button" (click)="sortTable('interests', 'tag'); $event.stopPropagation()" (keydown.enter)="sortTable('interests', 'tag'); $event.stopPropagation()">
+              {{'Balance.Name' | translate}}{{getSortArrow('interests', 'tag')}}
+            </th>
+            <th class="sortable-header sortable-header-right" tabindex="0" role="button" (click)="sortTable('interests', 'amount'); $event.stopPropagation()" (keydown.enter)="sortTable('interests', 'amount'); $event.stopPropagation()">
+              {{'Balance.Value' | translate}}{{getSortArrow('interests', 'amount')}}
+            </th>
+          </tr>
+          <tr *ngFor="let row of classReference.allIntrestsF; let i = index" tabindex="0" (click)="clickRowInterests(i)" (keydown.enter)="clickRowInterests(i)"
+            class="income-row">
+            <td class="revenueTitle">{{classReference.allIntrestsF[i].tag}}: </td>
+            <td class="revenueAmount {{classReference.allIntrestsF[i].amount>=0 ? 'amount-positive' : 'amount-negative'}}">{{classReference.allIntrestsF[i].amount| appNumber}} {{settingsReference.currency}}</td>
+          </tr>
+        </tbody>
+      </table>
+      <table id="propertiesTable" class="income-table">
+        <thead tabindex="0" role="button" (click)="toggleProperties()" (keydown.enter)="toggleProperties()" (keydown.space)="toggleProperties(); $event.preventDefault()">
+          <tr>
+            <td>
+              <h4 class="infoLableA">{{'Balance.Investments' | translate}}: <br><span class="amount {{classReference.getPropertiesF()>=0 ? 'amount-positive' : 'amount-negative'}}"
+                  *ngIf="classReference.getPropertiesF()!=0">{{classReference.getPropertiesF() | appNumber}}
+                  {{settingsReference.currency}}</span></h4>
+            </td>
+            <td class="toglebtn"><span class="toggle-icon">{{isProperties ? '▲' : '▼'}}</span></td>
+          </tr>
+        </thead>
+        <tbody *ngIf="isProperties">
+          <tr class="sortable-header-row">
+            <th class="sortable-header" tabindex="0" role="button" (click)="sortTable('properties', 'tag'); $event.stopPropagation()" (keydown.enter)="sortTable('properties', 'tag'); $event.stopPropagation()">
+              {{'Balance.Name' | translate}}{{getSortArrow('properties', 'tag')}}
+            </th>
+            <th class="sortable-header sortable-header-right" tabindex="0" role="button" (click)="sortTable('properties', 'amount'); $event.stopPropagation()" (keydown.enter)="sortTable('properties', 'amount'); $event.stopPropagation()">
+              {{'Balance.Value' | translate}}{{getSortArrow('properties', 'amount')}}
+            </th>
+          </tr>
+          <tr *ngFor="let row of classReference.allPropertiesF; let i = index" tabindex="0" (click)="clickRowProperties(i)" (keydown.enter)="clickRowProperties(i)"
+            class="income-row">
+            <td class="revenueTitle">{{classReference.allPropertiesF[i].tag}}:</td>
+            <td class="revenueAmount {{classReference.allPropertiesF[i].amount>=0 ? 'amount-positive' : 'amount-negative'}}">{{classReference.allPropertiesF[i].amount| appNumber}} {{settingsReference.currency}}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div id="creditAmountBox">
+      <h4 id="revenueTitle">{{'Balance.Credit' | translate}}</h4>
+      <hr class="separator-white">
+      <h4 id="creditAmountLable">{{classReference.getCreditAmountF() | appNumber}} {{settingsReference.currency}}</h4>
+    </div>
+  </div>
+
+  <div id="expensesBox" role="button" tabindex="0" (click)="clickExpenses()" (keydown.enter)="clickExpenses()">
+    <h4 id="expensesTitle">{{'Cashflow.Expenses' | translate}}</h4>
+    <img src="../../../../assets/symbols/filter.png" alt="filter" width="40" class="filterAbtn">
+    <h4 class="searchDate" *ngIf="classReference.currentFilter.startDate && classReference.currentFilter.endDate">
+      {{classReference.currentFilter.startDate | appDate}} - {{classReference.currentFilter.endDate | appDate}}
+    </h4>
+    <h4 class="searchDate" *ngIf="classReference.currentFilter.startDate && !classReference.currentFilter.endDate">
+      {{classReference.currentFilter.startDate | appDate}}
+    </h4>
+    <h4 class="searchDate" *ngIf="!classReference.currentFilter.startDate && classReference.currentFilter.endDate">
+      {{classReference.currentFilter.endDate | appDate}}
+    </h4>
+    <h4 class="searchDate" *ngIf="classReference.currentFilter.searchText">
+      Search: {{classReference.currentFilter.searchText}}
+    </h4>
+    <hr class="separator-white">
+    <div id="expenses-box">
+      <table id="dailyExpensesTable" class="income-table">
+        <thead tabindex="0" role="button" (click)="toggleDailyExpense()" (keydown.enter)="toggleDailyExpense()" (keydown.space)="toggleDailyExpense(); $event.preventDefault()">
+          <tr>
+            <td>
+              <h4 class="infoLableA">{{'Menu.daily' | translate}}: <br
+                  *ngIf="classReference.getDailyExpensesF()!=0"><span class="amount {{classReference.getDailyExpensesF()>=0 ? 'amount-positive' : 'amount-negative'}}"
+                  *ngIf="classReference.getDailyExpensesF()!=0">{{classReference.getDailyExpensesF() |
+                  appNumber}} {{settingsReference.currency}}</span></h4>
+            </td>
+            <td class="toglebtn"><span class="toggle-icon">{{isDailyExpenses ? '▲' : '▼'}}</span></td>
+          </tr>
+        </thead>
+        <tbody *ngIf="isDailyExpenses">
+          <tr class="sortable-header-row">
+            <th class="sortable-header" tabindex="0" role="button" (click)="sortTable('daily', 'tag'); $event.stopPropagation()" (keydown.enter)="sortTable('daily', 'tag'); $event.stopPropagation()">
+              {{'Balance.Name' | translate}}{{getSortArrow('daily', 'tag')}}
+            </th>
+            <th class="sortable-header sortable-header-right" tabindex="0" role="button" (click)="sortTable('daily', 'amount'); $event.stopPropagation()" (keydown.enter)="sortTable('daily', 'amount'); $event.stopPropagation()">
+              {{'Balance.Value' | translate}}{{getSortArrow('daily', 'amount')}}
+            </th>
+          </tr>
+          <tr *ngFor="let row of classReference.dailyExpensesF; let i = index" class="income-row">
+            <td class="expenseTitle">{{classReference.dailyExpensesF[i].tag}}:</td>
+            <td class="expenseAmount {{classReference.dailyExpensesF[i].amount>=0 ? 'amount-positive' : 'amount-negative'}}">{{classReference.dailyExpensesF[i].amount| appNumber}} {{settingsReference.currency}}</td>
+          </tr>
+        </tbody>
+      </table>
+      <table id="splurgeExpensesTable" class="income-table">
+        <thead tabindex="0" role="button" (click)="toggleSplurgeExpense()" (keydown.enter)="toggleSplurgeExpense()" (keydown.space)="toggleSplurgeExpense(); $event.preventDefault()">
+          <tr>
+            <td>
+              <h4 class="infoLableA">{{'Menu.splurge' | translate}}: <br
+                  *ngIf="classReference.getSplurgeExpensesF()!=0"><span class="amount {{classReference.getSplurgeExpensesF()>=0 ? 'amount-positive' : 'amount-negative'}}"
+                  *ngIf="classReference.getSplurgeExpensesF()!=0">{{classReference.getSplurgeExpensesF() |
+                  appNumber}} {{settingsReference.currency}}</span></h4>
+            </td>
+            <td class="toglebtn"><span class="toggle-icon">{{isSplurgeExpenses ? '▲' : '▼'}}</span></td>
+          </tr>
+        </thead>
+        <tbody *ngIf="isSplurgeExpenses">
+          <tr class="sortable-header-row">
+            <th class="sortable-header" tabindex="0" role="button" (click)="sortTable('splurge', 'tag'); $event.stopPropagation()" (keydown.enter)="sortTable('splurge', 'tag'); $event.stopPropagation()">
+              {{'Balance.Name' | translate}}{{getSortArrow('splurge', 'tag')}}
+            </th>
+            <th class="sortable-header sortable-header-right" tabindex="0" role="button" (click)="sortTable('splurge', 'amount'); $event.stopPropagation()" (keydown.enter)="sortTable('splurge', 'amount'); $event.stopPropagation()">
+              {{'Balance.Value' | translate}}{{getSortArrow('splurge', 'amount')}}
+            </th>
+          </tr>
+          <tr *ngFor="let row of classReference.splurgeExpensesF; let i = index" class="income-row">
+            <td class="expenseTitle">{{classReference.splurgeExpensesF[i].tag}}:</td>
+            <td class="expenseAmount {{classReference.splurgeExpensesF[i].amount>=0 ? 'amount-positive' : 'amount-negative'}}">{{classReference.splurgeExpensesF[i].amount| appNumber}} {{settingsReference.currency}}</td>
+          </tr>
+        </tbody>
+      </table>
+      <table id="smileExpensesTable" class="income-table">
+        <thead tabindex="0" role="button" (click)="toggleSmileExpense()" (keydown.enter)="toggleSmileExpense()" (keydown.space)="toggleSmileExpense(); $event.preventDefault()">
+          <tr>
+            <td>
+              <h4 class="infoLableA">{{'Menu.smile' | translate}}: <br *ngIf="classReference.getSmileExpensesF()!=0">
+                <span class="amount {{classReference.getSmileExpensesF()>=0 ? 'amount-positive' : 'amount-negative'}}"
+                  *ngIf="classReference.getSmileExpensesF()!=0">{{classReference.getSmileExpensesF() |
+                  appNumber}} {{settingsReference.currency}}</span></h4>
+            </td>
+            <td class="toglebtn"><span class="toggle-icon">{{isSmileExpenses ? '▲' : '▼'}}</span></td>
+          </tr>
+        </thead>
+        <tbody *ngIf="isSmileExpenses">
+          <tr class="sortable-header-row">
+            <th class="sortable-header" tabindex="0" role="button" (click)="sortTable('smile', 'tag'); $event.stopPropagation()" (keydown.enter)="sortTable('smile', 'tag'); $event.stopPropagation()">
+              {{'Balance.Name' | translate}}{{getSortArrow('smile', 'tag')}}
+            </th>
+            <th class="sortable-header sortable-header-right" tabindex="0" role="button" (click)="sortTable('smile', 'amount'); $event.stopPropagation()" (keydown.enter)="sortTable('smile', 'amount'); $event.stopPropagation()">
+              {{'Balance.Value' | translate}}{{getSortArrow('smile', 'amount')}}
+            </th>
+          </tr>
+          <tr *ngFor="let row of classReference.smileExpensesF; let i = index" class="income-row">
+            <td class="expenseTitle">{{classReference.smileExpensesF[i].tag}}:</td>
+            <td class="expenseAmount {{classReference.smileExpensesF[i].amount>=0 ? 'amount-positive' : 'amount-negative'}}">{{classReference.smileExpensesF[i].amount| appNumber}} {{settingsReference.currency}}</td>
+          </tr>
+        </tbody>
+      </table>
+      <table id="fireExpensesTable" class="income-table">
+        <thead tabindex="0" role="button" (click)="toggleFireExpense()" (keydown.enter)="toggleFireExpense()" (keydown.space)="toggleFireExpense(); $event.preventDefault()">
+          <tr>
+            <td>
+              <h4 class="infoLableA">{{'Menu.fire' | translate}}: <br *ngIf="classReference.getFireExpensesF()!=0">
+                <span class="amount {{classReference.getFireExpensesF()>=0 ? 'amount-positive' : 'amount-negative'}}" *ngIf="classReference.getFireExpensesF()!=0">{{classReference.getFireExpensesF()
+                  | appNumber}}
+                  {{settingsReference.currency}}</span></h4>
+            </td>
+            <td class="toglebtn"><span class="toggle-icon">{{isFireExpenses ? '▲' : '▼'}}</span></td>
+          </tr>
+        </thead>
+        <tbody *ngIf="isFireExpenses">
+          <tr class="sortable-header-row">
+            <th class="sortable-header" tabindex="0" role="button" (click)="sortTable('fire', 'tag'); $event.stopPropagation()" (keydown.enter)="sortTable('fire', 'tag'); $event.stopPropagation()">
+              {{'Balance.Name' | translate}}{{getSortArrow('fire', 'tag')}}
+            </th>
+            <th class="sortable-header sortable-header-right" tabindex="0" role="button" (click)="sortTable('fire', 'amount'); $event.stopPropagation()" (keydown.enter)="sortTable('fire', 'amount'); $event.stopPropagation()">
+              {{'Balance.Value' | translate}}{{getSortArrow('fire', 'amount')}}
+            </th>
+          </tr>
+          <tr *ngFor="let row of classReference.fireExpensesF; let i = index" class="income-row">
+            <td class="expenseTitle">{{classReference.fireExpensesF[i].tag}}:</td>
+            <td class="expenseAmount {{classReference.fireExpensesF[i].amount>=0 ? 'amount-positive' : 'amount-negative'}}">{{classReference.fireExpensesF[i].amount| appNumber}} {{settingsReference.currency}}</td>
+          </tr>
+        </tbody>
+      </table>
+      <table id="mojosTable" class="income-table">
+        <thead tabindex="0" role="button" (click)="toggleMojoExpense()" (keydown.enter)="toggleMojoExpense()" (keydown.space)="toggleMojoExpense(); $event.preventDefault()">
+          <tr>
+            <td>
+              <h4 class="infoLableA">{{'Income.Mojo' | translate}}: <br *ngIf="classReference.getMojoExpensesF()!=0">
+                <span class="amount text-success"
+                  *ngIf="classReference.getMojoExpensesF()!=0">{{classReference.getMojoExpensesF() | appNumber}}
+                  {{settingsReference.currency}}</span></h4>
+            </td>
+            <td class="toglebtn"><span class="toggle-icon">{{isMojoExpenses ? '▲' : '▼'}}</span></td>
+          </tr>
+        </thead>
+        <tbody *ngIf="isMojoExpenses">
+          <tr class="sortable-header-row">
+            <th class="sortable-header" tabindex="0" role="button" (click)="sortTable('mojo', 'tag'); $event.stopPropagation()" (keydown.enter)="sortTable('mojo', 'tag'); $event.stopPropagation()">
+              {{'Balance.Name' | translate}}{{getSortArrow('mojo', 'tag')}}
+            </th>
+            <th class="sortable-header sortable-header-right" tabindex="0" role="button" (click)="sortTable('mojo', 'amount'); $event.stopPropagation()" (keydown.enter)="sortTable('mojo', 'amount'); $event.stopPropagation()">
+              {{'Balance.Value' | translate}}{{getSortArrow('mojo', 'amount')}}
+            </th>
+          </tr>
+          <tr *ngFor="let row of classReference.mojoExpensesF; let i = index" class="income-row">
+            <td class="expenseTitle">{{classReference.mojoExpensesF[i].tag}}:</td>
+            <td class="expenseAmount text-success">{{classReference.mojoExpensesF[i].amount| appNumber}}
+              {{settingsReference.currency}}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div id="creditAmountBox">
+      <h4 id="revenueTitle">{{'Balance.Debit' | translate}}</h4>
+      <hr class="separator-white">
+      <h4 id="creditAmountLable">{{classReference.getDebitAmountF() | appNumber}} {{settingsReference.currency}}</h4>
+    </div>
+  </div>
+</div>
+
+<!-- New Unified Filter Box -->
+<app-shared-filter
+  style="margin-bottom: 80px; display: block;"
+  [filter]="classReference.currentFilter"
+  [availableAccounts]="classReference.availableAccounts"
+  [availableTags]="classReference.availableTags"
+  [showSortOptions]="true"
+  (apply)="quickFilterByDate()"
+  (clear)="clearAllFilters()">
+</app-shared-filter>
+
+<app-info-interests></app-info-interests>
+<app-info-properties></app-info-properties>

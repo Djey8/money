@@ -1,0 +1,18 @@
+{
+  "hosting": {
+    "public": "dist/money",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ],
+    "github": "github.com/Djey8/money-temp",
+    "branch": "main"
+  }
+}

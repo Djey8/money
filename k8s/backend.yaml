@@ -1,0 +1,136 @@
+# Backend API Deployment
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-config
+  namespace: money-app
+data:
+  PORT: "3000"
+  NODE_ENV: "production"
+  COUCHDB_URL: "http://couchdb:5984"
+  COUCHDB_USER: "admin"
+  # CORS: Using wildcard since frontend IP is dynamic via Ingress
+  # Ingress serves both on same domain, so same-origin in most cases
+  CORS_ORIGINS: "*"
+  # Skip IP-based rate limiting in Kubernetes (trust ingress/service mesh)
+  SKIP_RATE_LIMIT: "true"
+  # Reduce logging in production for Pi performance (set to "info" when debugging)
+  LOG_LEVEL: "warn"
+  # Enable debug logging for all requests
+  DEBUG_REQUESTS: "true"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: backend-secret
+  namespace: money-app
+type: Opaque
+stringData:
+  JWT_SECRET: "cdk2F40F15kvQJ5gaIwn79LW6x/Jp1Pe8ugKRy3xsbuOCNGxsrYyg65LxWSyET7HFQSdDgT6RbTfxBLwbniF/g=="
+  COUCHDB_PASSWORD: "=ka%yUE>a?R759u>Cs~sD#R5^k*snNDViwZFVohgW<j$nmkn*5^=Yy^?n~~2"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  namespace: money-app
+spec:
+  selector:
+    app: backend
+  ports:
+    - protocol: TCP
+      port: 3000
+      targetPort: 3000
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: money-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+      - name: backend
+        image: localhost/money-backend:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 3000
+        env:
+        - name: PORT
+          valueFrom:
+            configMapKeyRef:
+              name: backend-config
+              key: PORT
+        - name: NODE_ENV
+          valueFrom:
+            configMapKeyRef:
+              name: backend-config
+              key: NODE_ENV
+        - name: COUCHDB_URL
+          valueFrom:
+            configMapKeyRef:
+              name: backend-config
+              key: COUCHDB_URL
+        - name: COUCHDB_USER
+          valueFrom:
+            configMapKeyRef:
+              name: backend-config
+              key: COUCHDB_USER
+        - name: CORS_ORIGINS
+          valueFrom:
+            configMapKeyRef:
+              name: backend-config
+              key: CORS_ORIGINS
+        - name: SKIP_RATE_LIMIT
+          valueFrom:
+            configMapKeyRef:
+              name: backend-config
+              key: SKIP_RATE_LIMIT
+        - name: DEBUG_REQUESTS
+          valueFrom:
+            configMapKeyRef:
+              name: backend-config
+              key: DEBUG_REQUESTS
+        - name: LOG_LEVEL
+          valueFrom:
+            configMapKeyRef:
+              name: backend-config
+              key: LOG_LEVEL
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: backend-secret
+              key: JWT_SECRET
+        - name: COUCHDB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: backend-secret
+              key: COUCHDB_PASSWORD
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "192Mi"
+            cpu: "200m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 5
+          periodSeconds: 5

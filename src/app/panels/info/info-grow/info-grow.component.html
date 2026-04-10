@@ -1,0 +1,552 @@
+<div id="infoTransaction-Container" role="dialog" aria-modal="true" appTrapFocus *ngIf="classReference.isInfo" (click)="highlight()"
+    [style.z-index]="classReference.zIndex + 1001">
+    <button id="closebtn" aria-label="Close" (click)="closeWindow()">x</button>
+
+    <!-- ── VIEW MODE ── -->
+    <div *ngIf="!classReference.isEdit">
+
+        <!-- Header -->
+        <div class="detail-header">
+            <div class="badge-row">
+                <span class="phase-badge phase-{{classReference.phase}}">
+                    {{'Grow.phase.' + classReference.phase | translate}}
+                </span>
+                <span class="type-badge" *ngIf="classReference.type && classReference.type !== 'income-growth'">
+                    {{'Grow.type.' + classReference.type | translate}}
+                </span>
+            </div>
+            <h3 class="detail-title">{{classReference.title}} <span class="id-badge">#{{classReference.index+1}}</span></h3>
+            <p class="detail-sub" *ngIf="classReference.sub">{{classReference.sub}}</p>
+            <p class="detail-dates" *ngIf="classReference.createdAt">
+                {{'Grow.created' | translate}}: {{classReference.createdAt | date:'mediumDate'}}
+                <span *ngIf="classReference.updatedAt"> · {{'Grow.updated' | translate}}: {{classReference.updatedAt | date:'mediumDate'}}</span>
+            </p>
+        </div>
+
+        <!-- Phase Advance -->
+        <div class="phase-advance" *ngIf="classReference.phase !== 'completed'">
+            <button class="btn btn--sm btn--primary" (click)="advancePhase()">
+                {{'Grow.advancePhase' | translate}} → {{'Grow.phase.' + getNextPhase() | translate}}
+            </button>
+        </div>
+
+        <!-- Tabs -->
+        <div class="detail-tabs">
+            <button class="detail-tab" [class.active]="classReference.activeTab === 'overview'" (click)="classReference.activeTab = 'overview'">{{'Grow.tab.overview' | translate}}</button>
+            <button class="detail-tab" [class.active]="classReference.activeTab === 'actions'" (click)="classReference.activeTab = 'actions'">
+                {{'Grow.tab.actions' | translate}}
+                <span class="tab-badge" *ngIf="classReference.actionItems?.length">({{classReference.actionItems.length}})</span>
+            </button>
+            <button class="detail-tab" [class.active]="classReference.activeTab === 'notes'" (click)="classReference.activeTab = 'notes'">{{'Grow.tab.notes' | translate}}</button>
+            <button class="detail-tab" [class.active]="classReference.activeTab === 'financials'" (click)="classReference.activeTab = 'financials'">{{'Grow.tab.financials' | translate}}</button>
+        </div>
+
+        <!-- TAB: Overview -->
+        <div class="tab-content" *ngIf="classReference.activeTab === 'overview'">
+            <div class="info-section" *ngIf="classReference.description">
+                <h5 class="section-label">{{'AddGrow.description' | translate}}</h5>
+                <pre class="section-text">{{classReference.description}}</pre>
+            </div>
+            <div class="info-section" *ngIf="classReference.strategy">
+                <h5 class="section-label">{{'AddGrow.strategy' | translate}}</h5>
+                <pre class="section-text">{{classReference.strategy}}</pre>
+            </div>
+            <div class="info-section" *ngIf="classReference.riskScore > 0 || classReference.risks">
+                <h5 class="section-label">{{'AddGrow.risks' | translate}}</h5>
+                <div class="risk-meter" *ngIf="classReference.riskScore > 0">
+                    <div class="risk-dots">
+                        <span class="risk-dot" *ngFor="let d of [1,2,3,4,5]"
+                              [class.filled]="d <= classReference.riskScore"
+                              [class.risk-low]="classReference.riskScore <= 2 && d <= classReference.riskScore"
+                              [class.risk-mid]="classReference.riskScore > 2 && classReference.riskScore <= 3.5 && d <= classReference.riskScore"
+                              [class.risk-high]="classReference.riskScore > 3.5 && d <= classReference.riskScore"></span>
+                    </div>
+                    <span class="risk-score-label">{{classReference.riskScore}} / 5</span>
+                </div>
+                <pre class="section-text" *ngIf="classReference.risks">{{classReference.risks}}</pre>
+            </div>
+            <!-- Expense Optimization Fields -->
+            <div class="info-section" *ngIf="classReference.type && classReference.type !== 'income-growth'">
+                <h5 class="section-label">{{'Grow.expenseFields' | translate}}</h5>
+                <div class="expense-details">
+                    <p *ngIf="classReference.category">
+                        <strong>{{'Grow.category' | translate}}:</strong> 
+                        <ng-container *ngIf="isCategoryArray(classReference.category); else singleCategory">
+                            <span class="category-bundle" *ngFor="let cat of getCategoryArray(classReference.category); let last = last">
+                                {{cat}}<span *ngIf="!last">, </span>
+                            </span>
+                        </ng-container>
+                        <ng-template #singleCategory>{{classReference.category}}</ng-template>
+                    </p>
+                    <p *ngIf="classReference.currentCost !== undefined && classReference.currentCost > 0">
+                        <strong>{{'Grow.currentCost' | translate}}:</strong> {{classReference.currentCost | appNumber}} {{currency}}
+                    </p>
+                    <p *ngIf="classReference.targetCost !== undefined && classReference.targetCost > 0">
+                        <strong>{{'Grow.targetCost' | translate}}:</strong> {{classReference.targetCost | appNumber}} {{currency}}
+                    </p>
+                    <p *ngIf="classReference.monthlySavings !== undefined && classReference.monthlySavings > 0" class="savings-highlight">
+                        <strong>{{'Grow.monthlySavings' | translate}}:</strong> {{classReference.monthlySavings | appNumber}} {{currency}}
+                    </p>
+                    <p *ngIf="classReference.annualSavings !== undefined && classReference.annualSavings > 0" class="savings-highlight">
+                        <strong>{{'Grow.annualSavings' | translate}}:</strong> {{classReference.annualSavings | appNumber}} {{currency}}
+                    </p>
+                    <p *ngIf="classReference.alternative && classReference.type === 'subscription-action'">
+                        <strong>{{'Grow.alternative' | translate}}:</strong> {{classReference.alternative}}
+                        <span *ngIf="classReference.alternativeCost !== undefined && classReference.alternativeCost > 0">
+                            ({{classReference.alternativeCost | appNumber}} {{currency}})
+                        </span>
+                    </p>
+                    <p *ngIf="classReference.reasoning">
+                        <strong>{{'Grow.reasoning' | translate}}:</strong><br>
+                        <span class="reasoning-text">{{classReference.reasoning}}</span>
+                    </p>
+                </div>
+            </div>
+            <!-- Links -->
+            <div class="info-section" *ngIf="classReference.links?.length">
+                <h5 class="section-label">{{'Grow.links' | translate}}</h5>
+                <div class="link-list">
+                    <div class="link-item" *ngFor="let link of classReference.links; let li = index">
+                        <!-- Display Mode -->
+                        <div *ngIf="editingLinkIndex !== li" class="link-display">
+                            <a [href]="link.url" target="_blank" rel="noopener noreferrer">{{link.label}}</a>
+                            <div class="link-actions">
+                                <button class="btn-icon" (click)="startEditLink(li)" aria-label="Edit link">✐</button>
+                                <button class="btn-icon btn-icon--danger" (click)="removeLink(li)" aria-label="Remove link">×</button>
+                            </div>
+                        </div>
+                        <!-- Edit Mode -->
+                        <div *ngIf="editingLinkIndex === li" class="link-edit">
+                            <input type="text" [(ngModel)]="editingLinkLabel" [placeholder]="'Grow.linkTitlePlaceholder' | translate" class="input-sm flex-1">
+                            <input type="url" [(ngModel)]="editingLinkUrl" [placeholder]="'Grow.linkUrlPlaceholder' | translate" class="input-sm flex-1">
+                            <button class="btn btn--sm" (click)="saveEditLink(li)">✓</button>
+                            <button class="btn-icon" (click)="cancelEditLink()" aria-label="Cancel">×</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Add Link -->
+            <button class="btn btn--sm btn-inline-toggle" *ngIf="!showAddLink" (click)="showAddLink = true">+ {{'Grow.addLink' | translate}}</button>
+            <div class="inline-add" *ngIf="showAddLink">
+                <input type="text" [(ngModel)]="newLinkLabel" [placeholder]="'Grow.linkTitlePlaceholder' | translate" class="input-sm">
+                <input type="url" [(ngModel)]="newLinkUrl" [placeholder]="'Grow.linkUrlPlaceholder' | translate" class="input-sm">
+                <button class="btn btn--sm" (click)="submitLink()">{{'Grow.addLink' | translate}}</button>
+                <button class="btn-icon" (click)="showAddLink = false" aria-label="Cancel">×</button>
+            </div>
+        </div>
+
+        <!-- TAB: Actions -->
+        <div class="tab-content" *ngIf="classReference.activeTab === 'actions'">
+            <div class="action-list" *ngIf="classReference.actionItems?.length; else noActions">
+                <div class="action-item" *ngFor="let item of classReference.actionItems; let ai = index"
+                     [class.action-done]="item.done">
+                    <!-- Display Mode -->
+                    <div *ngIf="editingActionIndex !== ai" class="action-display">
+                        <input type="checkbox" [checked]="item.done" (change)="toggleActionItem(ai)">
+                        <span class="action-text">{{item.text}}</span>
+                        <div class="action-actions">
+                            <span class="action-priority priority-{{item.priority}}">{{item.priority}}</span>
+                            <span class="action-due" *ngIf="item.dueDate">{{item.dueDate}}</span>
+                            <button class="btn-icon" (click)="startEditAction(ai)" aria-label="Edit action">✎</button>
+                            <button class="btn-icon btn-icon--danger" (click)="removeActionItem(ai)" aria-label="Remove">×</button>
+                        </div>
+                    </div>
+                    <!-- Edit Mode -->
+                    <div *ngIf="editingActionIndex === ai" class="action-edit">
+                        <input type="text" [(ngModel)]="editingActionText" [placeholder]="'Grow.actionItemPlaceholder' | translate" class="input-sm flex-1">
+                        <select [(ngModel)]="editingActionPriority" class="input-sm">
+                            <option value="low">{{'Grow.priority.low' | translate}}</option>
+                            <option value="medium">{{'Grow.priority.medium' | translate}}</option>
+                            <option value="high">{{'Grow.priority.high' | translate}}</option>
+                        </select>
+                        <input type="date" [(ngModel)]="editingActionDueDate" class="input-sm">
+                        <button class="btn btn--sm" (click)="saveEditAction(ai)">✓</button>
+                        <button class="btn-icon" (click)="cancelEditAction()" aria-label="Cancel">×</button>
+                    </div>
+                </div>
+            </div>
+            <ng-template #noActions>
+                <p class="empty-tab">{{'Grow.noActions' | translate}}</p>
+            </ng-template>
+            <!-- Add Action -->
+            <button class="btn btn--sm btn-inline-toggle" *ngIf="!showAddAction" (click)="showAddAction = true">+ {{'Grow.addAction' | translate}}</button>
+            <div class="add-action-form" *ngIf="showAddAction">
+                <input type="text" [(ngModel)]="newActionText" [placeholder]="'Grow.actionItemPlaceholder' | translate" class="input-sm flex-1"
+                       (keydown.enter)="submitActionItem()">
+                <select [(ngModel)]="newActionPriority" class="input-sm">
+                    <option value="low">{{'Grow.priority.low' | translate}}</option>
+                    <option value="medium">{{'Grow.priority.medium' | translate}}</option>
+                    <option value="high">{{'Grow.priority.high' | translate}}</option>
+                </select>
+                <input type="date" [(ngModel)]="newActionDueDate" class="input-sm">
+                <button class="btn btn--sm" (click)="submitActionItem()">{{'Grow.addAction' | translate}}</button>
+                <button class="btn-icon" (click)="showAddAction = false" aria-label="Cancel">×</button>
+            </div>
+        </div>
+
+        <!-- TAB: Notes -->
+        <div class="tab-content" *ngIf="classReference.activeTab === 'notes'">
+            <!-- Add new note form -->
+            <div class="add-note-form">
+                <textarea class="input-sm" [(ngModel)]="newNoteText" [placeholder]="'Grow.notesPlaceholder' | translate" rows="3"></textarea>
+                <button class="btn btn--sm" (click)="addNote()">{{'Grow.addNote' | translate}}</button>
+            </div>
+            
+            <!-- Note list -->
+            <div class="note-list" *ngIf="notesList.length; else noNotes">
+                <div class="note-card" *ngFor="let note of notesList; let ni = index">
+                    <div class="note-header">
+                        <span class="note-date">{{note.createdAt | date:'medium'}}</span>
+                        <div class="note-actions">
+                            <button class="btn-icon" (click)="startEditNote(ni)" *ngIf="editingNoteIndex !== ni" aria-label="Edit">✎</button>
+                            <button class="btn-icon btn-icon--danger" (click)="deleteNote(ni)" aria-label="Delete">×</button>
+                        </div>
+                    </div>
+                    <pre class="note-text" *ngIf="editingNoteIndex !== ni">{{note.text}}</pre>
+                    <div *ngIf="editingNoteIndex === ni" class="note-edit-row">
+                        <textarea class="input-sm flex-1" [(ngModel)]="editingNoteText" rows="3"></textarea>
+                        <button class="btn btn--sm" (click)="saveEditNote(ni)">✓</button>
+                        <button class="btn-icon" (click)="cancelEditNote()" aria-label="Cancel">×</button>
+                    </div>
+                </div>
+            </div>
+            <ng-template #noNotes>
+                <p class="empty-tab">{{'Grow.noNotes' | translate}}</p>
+            </ng-template>
+        </div>
+
+        <!-- TAB: Financials - Only show for income-growth projects -->
+        <div class="tab-content" *ngIf="classReference.activeTab === 'financials' && !isExpenseType()">
+            <div class="info-section">
+                <h4 *ngIf="classReference.cashflow > 0" class="fin-line">{{'Menu.cashflow' | translate}}: {{classReference.cashflow | appNumber}} {{currency}}</h4>
+                <h4 class="fin-line">{{'Balance.Deposit' | translate}}: {{classReference.amount | appNumber}} {{currency}}</h4>
+                <h4 *ngIf="classReference.investment" class="fin-line">{{'AddGrow.Mortage' | translate}}: {{classReference.investment.amount | appNumber}} {{currency}}</h4>
+            </div>
+            <div class="info-section" *ngIf="classReference.share">
+                <h5 class="section-label">{{'Choose.Share' | translate}}</h5>
+                <h4 class="fin-line">{{'Balance.Quantity' | translate}}: {{classReference.share.quantity | appNumber}}</h4>
+                <h4 class="fin-line">{{'Balance.Price' | translate}}: {{classReference.share.price | appNumber}} {{currency}}</h4>
+            </div>
+            <div class="info-section" *ngIf="classReference.liabilitie">
+                <h5 class="section-label">{{'AddGrow.liabilitie' | translate}}</h5>
+                <h4 class="fin-line">{{'AddGrow.Loan' | translate}}: {{classReference.liabilitie.amount | appNumber}} {{currency}}</h4>
+                <h4 class="fin-line">{{'Balance.Credit' | translate}}: {{classReference.liabilitie.credit | appNumber}} {{currency}}</h4>
+            </div>
+            <!-- Related Transactions -->
+            <div class="info-section" *ngIf="relatedTransactions.length">
+                <h5 class="section-label">{{'Grow.relatedTransactions' | translate}} ({{relatedTransactions.length}})</h5>
+                <table class="related-tx-table">
+                    <thead>
+                        <tr>
+                            <th>{{'Transactions.Account' | translate}}</th>
+                            <th>{{'Transactions.Amount' | translate}}</th>
+                            <th>{{'Transactions.Date' | translate}}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let tx of relatedTransactions" (click)="openTransaction(tx)">
+                            <td>{{tx.account}}</td>
+                            <td class="{{tx.amount >= 0 ? 'amount-positive' : 'amount-negative'}}">{{tx.amount | appNumber}} {{currency}}</td>
+                            <td>{{tx.date | appDate}}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <button id="editbtn" class="btn btn--action" (click)="editGrowProject()">{{'Info.edit' | translate}}</button>
+    </div>
+
+    <!-- ── EDIT MODE ── -->
+    <div *ngIf="classReference.isEdit">
+        <h4 id="infoTransactionTitle">{{'Info.edit' | translate}} Grow #{{classReference.index+1}}</h4>
+        <hr class="separator-white">
+        
+        <!-- Section: Basics -->
+        <div class="form-section">
+            <h5 class="form-section-title">{{'AddGrow.sectionBasics' | translate}}</h5>
+            <form id="input-container">
+                <label for="title" class="required" [class.form-error-text]="classReference.isError">{{'AddAsset.key' | translate}}</label>
+                <input type="text" id="title" name="title" aria-required="true" [class.form-error-border]="classReference.isError" [(ngModel)]="titleTextField"
+                    [attr.aria-invalid]="classReference.isError ? true : null" [attr.aria-describedby]="classReference.isError ? 'title-error' : null">
+                <span class="field-error" id="title-error" role="alert" *ngIf="classReference.isError && !titleTextField">{{'AddAsset.key' | translate}}</span>
+
+                <label for="sub">{{'AddAsset.name' | translate}}</label>
+                <input type="text" id="sub" name="sub" [(ngModel)]="subTextField">
+
+                <label for="type">{{'Grow.typeLabel' | translate}}</label>
+                <select id="type" name="type" [(ngModel)]="typeField">
+                    <option value="income-growth">{{'Grow.type.income-growth' | translate}}</option>
+                    <option value="budget-optimization">{{'Grow.type.budget-optimization' | translate}}</option>
+                    <option value="subscription-action">{{'Grow.type.subscription-action' | translate}}</option>
+                    <option value="expense-insight">{{'Grow.type.expense-insight' | translate}}</option>
+                </select>
+
+                <label for="phase">{{'Grow.phaseLabel' | translate}}</label>
+                <select id="phase" name="phase" [(ngModel)]="phaseField">
+                    <option value="idea">{{'Grow.phase.idea' | translate}}</option>
+                    <option value="research">{{'Grow.phase.research' | translate}}</option>
+                    <option value="plan">{{'Grow.phase.plan' | translate}}</option>
+                    <option value="execute">{{'Grow.phase.execute' | translate}}</option>
+                    <option value="monitor">{{'Grow.phase.monitor' | translate}}</option>
+                    <option value="completed">{{'Grow.phase.completed' | translate}}</option>
+                </select>
+
+                <label for="description">{{'AddGrow.description' | translate}}</label>
+                <textarea id="description" name="description" [(ngModel)]="descriptionTextField"></textarea>
+            </form>
+        </div>
+
+        <!-- Section: Expense Optimization Fields (conditional) -->
+        <div class="form-section" *ngIf="isExpenseType()">
+            <h5 class="form-section-title">{{'Grow.expenseFields' | translate}}</h5>
+            <form id="input-container">
+                <label for="category">{{'Grow.categoryLabel' | translate}}</label>
+                <div class="category-manager">
+                    <!-- Selected Categories -->
+                    <div class="category-tags-container" *ngIf="categoryArray.length > 0">
+                        <span class="category-tag" *ngFor="let cat of categoryArray; let i = index">
+                            {{cat}}
+                            <button type="button" class="tag-remove" (click)="removeCategory(i)" aria-label="Remove category" title="Remove">×</button>
+                        </span>
+                    </div>
+                    <div class="empty-state" *ngIf="categoryArray.length === 0">
+                        {{'Grow.noCategoriesSelected' | translate}}
+                    </div>
+                    
+                    <!-- Add Category Section -->
+                    <div class="category-add-section">
+                        <div class="category-selector">
+                            <label class="input-label">{{'Grow.selectExisting' | translate}}</label>
+                            <select class="category-dropdown" [(ngModel)]="newCategoryInput" (change)="addCategoryFromDropdown()" name="categorySelect">
+                                <option value="" disabled selected>{{'Grow.chooseCategory' | translate}}</option>
+                                <option *ngFor="let cat of getExistingCategories()" [value]="cat">{{cat}}</option>
+                            </select>
+                        </div>
+                        <div class="category-divider">
+                            <span>{{'Grow.or' | translate}}</span>
+                        </div>
+                        <div class="category-custom">
+                            <label class="input-label">{{'Grow.customCategory' | translate}}</label>
+                            <div class="custom-input-row">
+                                <input type="text" class="custom-input" 
+                                       [(ngModel)]="newCategoryInput" 
+                                       (keydown.enter)="addCategory(); $event.preventDefault()"
+                                       name="customCategory"
+                                       placeholder="{{'Grow.enterCustomCategory' | translate}}">
+                                <button type="button" class="btn-add-category" (click)="addCategory()" [disabled]="!newCategoryInput.trim()">
+                                    <span class="btn-icon">+</span> {{'Grow.addCategory' | translate}}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <label for="currentCost">{{'Grow.currentCost' | translate}}</label>
+                <input type="number" step="any" id="currentCost" name="currentCost" [(ngModel)]="currentCostTextField">
+
+                <label for="targetCost">{{'Grow.targetCost' | translate}}</label>
+                <input type="number" step="any" id="targetCost" name="targetCost" [(ngModel)]="targetCostTextField">
+
+                <label for="monthlySavings">{{'Grow.monthlySavings' | translate}}</label>
+                <input type="number" step="any" id="monthlySavings" name="monthlySavings" [(ngModel)]="monthlySavingsTextField">
+
+                <label for="annualSavings">{{'Grow.annualSavings' | translate}}</label>
+                <input type="number" step="any" id="annualSavings" name="annualSavings" [(ngModel)]="annualSavingsTextField">
+
+                <label for="reasoning">{{'Grow.reasoning' | translate}}</label>
+                <textarea id="reasoning" name="reasoning" [(ngModel)]="reasoningTextField"></textarea>
+
+                <div *ngIf="typeField === 'subscription-action'">
+                    <label for="alternative">{{'Grow.alternative' | translate}}</label>
+                    <input type="text" id="alternative" name="alternative" [(ngModel)]="alternativeTextField">
+
+                    <label for="alternativeCost">{{'Grow.alternativeCost' | translate}}</label>
+                    <input type="number" step="any" id="alternativeCost" name="alternativeCost" [(ngModel)]="alternativeCostTextField">
+                </div>
+            </form>
+        </div>
+
+        <!-- Section: Strategy & Risks (collapsible) -->
+        <div class="form-section">
+            <button class="section-toggle" (click)="showStrategySection = !showStrategySection" type="button">
+                <h5 class="form-section-title">{{'AddGrow.sectionStrategy' | translate}}</h5>
+                <span class="toggle-chevron" [class.open]="showStrategySection">▸</span>
+            </button>
+            <div *ngIf="showStrategySection">
+                <form id="input-container">
+                    <label for="strategy">{{'AddGrow.strategy' | translate}}</label>
+                    <textarea id="strategy" name="strategy" [(ngModel)]="strategyTextField"></textarea>
+
+                    <label for="risks">{{'AddGrow.risks' | translate}}</label>
+                    <div class="risk-input-row">
+                        <label for="riskScore" class="risk-score-label-edit">{{'Grow.riskScore' | translate}} (0-5)</label>
+                        <input type="number" step="0.5" min="0" max="5" id="riskScore" name="riskScore" [(ngModel)]="riskScoreField">
+                    </div>
+                    <textarea id="risks" name="risks" [(ngModel)]="risksTextField" [placeholder]="'Grow.riskComment' | translate"></textarea>
+
+                    <label for="notes">{{'Grow.tab.notes' | translate}}</label>
+                    <textarea id="notes" name="notes" [(ngModel)]="notesTextField"></textarea>
+                </form>
+            </div>
+        </div>
+
+        <!-- Section: Financials (collapsible) - Only for income-growth projects -->
+        <div class="form-section" *ngIf="!isExpenseType()">
+            <button class="section-toggle" (click)="showFinancialsSection = !showFinancialsSection" type="button">
+                <h5 class="form-section-title">{{'Grow.tab.financials' | translate}}</h5>
+                <span class="toggle-chevron" [class.open]="showFinancialsSection">▸</span>
+            </button>
+            <div *ngIf="showFinancialsSection">
+                <form id="input-container">
+                    <label for="profit">{{'Menu.cashflow' | translate}}</label>
+                    <input type="number" step="any" id="profit" name="profit" [(ngModel)]="cashflowTextField">
+
+                    <label for="amount" *ngIf="!classReference.isShare">{{'Balance.Deposit' | translate}}</label>
+                    <input type="number" *ngIf="!classReference.isShare" step="any" id="amount" name="amount" [(ngModel)]="amountTextField" class="mb-xs">
+
+                    <div class="toggle-row" role="switch" tabindex="0" [attr.aria-checked]="classReference.isAsset" (click)="toggleAsset()" (keydown.enter)="toggleAsset()" (keydown.space)="toggleAsset(); $event.preventDefault()">
+                        <span class="toggle-label">{{'Choose.Asset' | translate}}</span>
+                        <div class="toggle-switch" [ngClass]="{'toggle-on': classReference.isAsset}">
+                            <div class="toggle-knob"></div>
+                        </div>
+                    </div>
+
+                    <div class="toggle-row" role="switch" tabindex="0" [attr.aria-checked]="classReference.isShare" (click)="toggleShare()" (keydown.enter)="toggleShare()" (keydown.space)="toggleShare(); $event.preventDefault()">
+                        <span class="toggle-label">{{'Choose.Share' | translate}}</span>
+                        <div class="toggle-switch" [ngClass]="{'toggle-on': classReference.isShare}">
+                            <div class="toggle-knob"></div>
+                        </div>
+                    </div>
+                    <label [class.form-error-text]="classReference.isError" class="required" *ngIf="classReference.isShare" for="quantity">{{'Balance.Quantity' | translate}}</label>
+                    <input [class.form-error-border]="classReference.isError" *ngIf="classReference.isShare" type="number" step="any" id="quantity" name="quantity" aria-required="true" [(ngModel)]="quantityTextField" class="mb-xs"
+                        [attr.aria-invalid]="classReference.isError ? true : null">
+                    <label [class.form-error-text]="classReference.isError" class="required" *ngIf="classReference.isShare" for="price">{{'Balance.Price' | translate}}</label>
+                    <input [class.form-error-border]="classReference.isError" *ngIf="classReference.isShare" type="number" step="any" id="price" name="price" aria-required="true" [(ngModel)]="priceTextField" class="mb-xs"
+                        [attr.aria-invalid]="classReference.isError ? true : null">
+
+                    <div class="toggle-row" role="switch" tabindex="0" [attr.aria-checked]="classReference.isInvestment" (click)="toggleInvestment()" (keydown.enter)="toggleInvestment()" (keydown.space)="toggleInvestment(); $event.preventDefault()">
+                        <span class="toggle-label">{{'Choose.Investment' | translate}}</span>
+                        <div class="toggle-switch" [ngClass]="{'toggle-on': classReference.isInvestment}">
+                            <div class="toggle-knob"></div>
+                        </div>
+                    </div>
+                    <label *ngIf="classReference.isInvestment" for="mortage">{{'AddGrow.Mortage' | translate}}</label>
+                    <input *ngIf="classReference.isInvestment" type="number" step="any" name="mortage" [(ngModel)]="mortageTextField" class="mb-xs">
+
+                    <div class="toggle-row" role="switch" tabindex="0" [attr.aria-checked]="classReference.isLoan" (click)="classReference.isLoan = !classReference.isLoan" (keydown.enter)="classReference.isLoan = !classReference.isLoan" (keydown.space)="classReference.isLoan = !classReference.isLoan; $event.preventDefault()">
+                        <span class="toggle-label">{{'AddGrow.Loan' | translate}}</span>
+                        <div class="toggle-switch" [ngClass]="{'toggle-on': classReference.isLoan}">
+                            <div class="toggle-knob"></div>
+                        </div>
+                    </div>
+                    <label *ngIf="classReference.isLoan" class="required" [class.form-error-text]="classReference.isError" for="loan">{{'AddGrow.Loan' | translate}}</label>
+                    <input *ngIf="classReference.isLoan" type="number" step="any" id="loan" name="loan" aria-required="true" [class.form-error-border]="classReference.isError" [(ngModel)]="loanTextField" class="mb-xs"
+                        [attr.aria-invalid]="classReference.isError ? true : null">
+                    <label *ngIf="classReference.isLoan && !showCreditOptions" for="credit">{{'Balance.Credit' | translate}} {{settingsReference.currency}}</label>
+                    <label *ngIf="classReference.isLoan && showCreditOptions" for="credit">{{'Balance.Credit' | translate}} %</label>
+                    <div class="input-row">
+                        <input *ngIf="classReference.isLoan" type="number" step="any" id="credit" name="credit" [(ngModel)]="creditTextField" class="flex-1">
+                        <button *ngIf="classReference.isLoan" type="button" (click)="toggleCreditOptions()" class="category-toggle-btn" aria-label="Toggle input mode">
+                            <span class="swap-icon">⇄</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Section: Links & Actions (collapsible) -->
+        <div class="form-section">
+            <button class="section-toggle" (click)="showLinksActionsSection = !showLinksActionsSection" type="button">
+                <h5 class="form-section-title">{{'Grow.linksAndActions' | translate}}</h5>
+                <span class="toggle-chevron" [class.open]="showLinksActionsSection">▸</span>
+            </button>
+            <div *ngIf="showLinksActionsSection">
+                <!-- Links -->
+                <div class="subsection">
+                    <label class="subsection-label">{{'Grow.links' | translate}}</label>
+                    <div class="link-list" *ngIf="links.length > 0">
+                        <div class="link-item" *ngFor="let link of links; let i = index">
+                            <!-- Display Mode -->
+                            <div *ngIf="editingLinkIndex !== i" class="link-display">
+                                <a [href]="link.url" target="_blank" rel="noopener noreferrer">{{link.label}}</a>
+                                <div class="link-actions">
+                                    <button type="button" class="btn-icon" (click)="startEditLink(i)" aria-label="Edit link">✎</button>
+                                    <button type="button" class="btn-icon btn-icon--danger" (click)="removeLink(i)" aria-label="Remove link">×</button>
+                                </div>
+                            </div>
+                            <!-- Edit Mode -->
+                            <div *ngIf="editingLinkIndex === i" class="link-edit">
+                                <input type="text" [(ngModel)]="editingLinkLabel" [placeholder]="'Grow.linkTitlePlaceholder' | translate" class="input-sm flex-1" name="editLinkLabel">
+                                <input type="url" [(ngModel)]="editingLinkUrl" [placeholder]="'Grow.linkUrlPlaceholder' | translate" class="input-sm flex-1" name="editLinkUrl">
+                                <button type="button" class="btn btn--sm" (click)="saveEditLink(i)">✓</button>
+                                <button type="button" class="btn-icon" (click)="cancelEditLink()" aria-label="Cancel">×</button>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="empty-state-sm" *ngIf="links.length === 0">{{'Grow.noLinks' | translate}}</p>
+                    <button type="button" class="btn btn--sm btn-inline-toggle" *ngIf="!showAddLink" (click)="showAddLink = true">+ {{'Grow.addLink' | translate}}</button>
+                    <div class="inline-add" *ngIf="showAddLink">
+                        <input type="text" [(ngModel)]="newLinkLabel" [placeholder]="'Grow.linkTitlePlaceholder' | translate" class="input-sm" name="newLinkLabel">
+                        <input type="url" [(ngModel)]="newLinkUrl" [placeholder]="'Grow.linkUrlPlaceholder' | translate" class="input-sm" name="newLinkUrl">
+                        <button type="button" class="btn btn--sm" (click)="submitLink()">{{'Grow.addLink' | translate}}</button>
+                        <button type="button" class="btn-icon" (click)="showAddLink = false" aria-label="Cancel">×</button>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="subsection">
+                    <label class="subsection-label">{{'Grow.actions' | translate}}</label>
+                    <div class="action-list" *ngIf="actionItems.length > 0">
+                        <div class="action-item" *ngFor="let item of actionItems; let i = index">
+                            <!-- Display Mode -->
+                            <div *ngIf="editingActionIndex !== i" class="action-display">
+                                <span class="action-text">{{item.text}}</span>
+                                <div class="action-actions">
+                                    <span class="action-priority priority-{{item.priority}}">{{item.priority}}</span>
+                                    <span class="action-due" *ngIf="item.dueDate">{{item.dueDate}}</span>
+                                    <button type="button" class="btn-icon" (click)="startEditAction(i)" aria-label="Edit action">✎</button>
+                                    <button type="button" class="btn-icon btn-icon--danger" (click)="removeActionItem(i)" aria-label="Remove">×</button>
+                                </div>
+                            </div>
+                            <!-- Edit Mode -->
+                            <div *ngIf="editingActionIndex === i" class="action-edit">
+                                <input type="text" [(ngModel)]="editingActionText" [placeholder]="'Grow.actionItemPlaceholder' | translate" class="input-sm flex-1">
+                                <select [(ngModel)]="editingActionPriority" class="input-sm">
+                                    <option value="low">{{'Grow.priority.low' | translate}}</option>
+                                    <option value="medium">{{'Grow.priority.medium' | translate}}</option>
+                                    <option value="high">{{'Grow.priority.high' | translate}}</option>
+                                </select>
+                                <input type="date" [(ngModel)]="editingActionDueDate" class="input-sm">
+                                <button type="button" class="btn btn--sm" (click)="saveEditAction(i)">✓</button>
+                                <button type="button" class="btn-icon" (click)="cancelEditAction()" aria-label="Cancel">×</button>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="empty-state-sm" *ngIf="actionItems.length === 0">{{'Grow.noActions' | translate}}</p>
+                    <button type="button" class="btn btn--sm btn-inline-toggle" *ngIf="!showAddAction" (click)="showAddAction = true">+ {{'Grow.addAction' | translate}}</button>
+                    <div class="add-action-form" *ngIf="showAddAction">
+                        <input type="text" [(ngModel)]="newActionText" [placeholder]="'Grow.actionItemPlaceholder' | translate" class="input-sm flex-1" name="newActionText"
+                               (keydown.enter)="submitActionItem()">
+                        <select [(ngModel)]="newActionPriority" class="input-sm" name="newActionPriority">
+                            <option value="low">{{'Grow.priority.low' | translate}}</option>
+                            <option value="medium">{{'Grow.priority.medium' | translate}}</option>
+                            <option value="high">{{'Grow.priority.high' | translate}}</option>
+                        </select>
+                        <input type="date" [(ngModel)]="newActionDueDate" class="input-sm" name="newActionDueDate">
+                        <button type="button" class="btn btn--sm" (click)="submitActionItem()">{{'Grow.addAction' | translate}}</button>
+                        <button type="button" class="btn-icon" (click)="showAddAction = false" aria-label="Cancel">×</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="form-footer">
+            <p id="errorLable" *ngIf="classReference.isError">{{errorTextLable}}</p>
+            <button id="addbtn" class="btn btn--action" (click)="updateGrowProject()">{{'Info.update' | translate}}</button>
+            <button id="deletebtn" class="btn btn--danger" (click)="deleteGrow(classReference.index)">{{'Info.delete' | translate}}</button>
+            <button id="canclebtn" class="btn btn--action" (click)="cancel()">{{'Info.cancel' | translate}}</button>
+        </div>
+    </div>
+</div>

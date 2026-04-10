@@ -1,0 +1,252 @@
+#balancebtn {
+  border-radius: var(--radius-full);
+  margin-right: 20px;
+}
+
+#cashflowbtn {
+  border-radius: var(--radius-full);
+  margin-left: 0px;
+}
+
+/* Section header with inline + button */
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.section-header .infoLableA {
+  margin-top: 20px;
+  flex: 1;
+}
+
+.section-header + .separator-black,
+.section-header + .divider--dark {
+  width: 95%;
+  margin-left: 2.5%;
+  height: 2px;
+  margin-bottom: 10px;
+}
+
+.section-add-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-full);
+  border: 3px solid black;
+  background: transparent;
+  color: black;
+  font-size: 18px;
+  font-weight: 900;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 2.5%;
+  margin-top: 12px;
+  flex-shrink: 0;
+  transition: background-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
+}
+
+:host-context([data-theme="dark"]) .section-add-btn {
+  color: white;
+  border-color: white;
+}
+
+.section-add-btn:hover {
+  transform: scale(1.1);
+}
+
+.section-add-btn:active {
+  transform: scale(0.95);
+}
+
+.income-table {
+  border-collapse: collapse;
+}
+
+.income-row {
+  border-bottom: 1pt solid black;
+}
+
+#assetsTitle,
+#liabilitiesTitle,
+#revenueTitle,
+#creditAmountLable {
+  text-align: center;
+  font-size: 2em;
+  color: white;
+  margin-top: 0px;
+  margin-bottom: 1%;
+  margin-left: auto;
+  margin-right: auto;
+  z-index: 0;
+  width: fit-content;
+}
+
+.cashflowLable,
+.balanceLable {
+  text-align: center;
+  font-size: 2em;
+  color: white;
+  margin-top: 0px;
+  margin-bottom: 0px;
+}
+
+.balanceBox {
+  width: 70%;
+  margin-left: auto;
+  margin-right: auto;
+  border: 3px solid white;
+  background-color: var(--color-primary);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  border-color: white;
+  border-width: 2%;
+  min-width: 275px;
+  margin-bottom: 20px;
+  z-index: 2;
+  max-width: 1000px;
+}
+
+@media screen and (min-width: 600px) {
+
+  #assetsBox,
+  #liabilitiesBox {
+    width: 70%;
+    margin-left: auto;
+    margin-right: auto;
+    border: 3px solid white;
+    background-color: var(--color-primary);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    border-color: white;
+    border-width: 2%;
+    min-width: 275px;
+    margin-bottom: 20px;
+    max-width: 1000px;
+  }
+
+  .assetsTitle,
+  .expenseTitle {
+    font-size: larger;
+    padding: 5px;
+  }
+
+  .infoLableA {
+    margin-top: 20px;
+    text-align: left;
+    margin-left: 2.5%;
+    font-size: larger;
+  }
+
+  .assetsAmount,
+  .expenseAmount {
+    text-align: right;
+    font-weight: bold;
+    min-width: 80px;
+  }
+
+  .assetsCount,
+  .assetsPrice,
+  .assetsPayment,
+  .LiabiliteAmount,
+  .LiabiliteCredit,
+  .assetsMortage {
+    text-align: center;
+  }
+
+  #assetsTable,
+  #liabilitiesTable,
+  #propertiesTable,
+  #sharesTable,
+  #propertiesLTable,
+  #cashflowTable {
+    width: 95%;
+    margin-left: 2.5%;
+  }
+
+  #assets-box,
+  #liabilities-box {
+    background-color: var(--color-surface);
+    margin-left: 5%;
+    margin-right: 5%;
+    border-radius: var(--radius-md);
+    margin-bottom: 10px;
+    padding: 10px;
+  }
+}
+
+@media screen and (max-width: 600px) {
+
+  #assetsBox,
+  #liabilitiesBox {
+    border: 3px solid white;
+    background-color: var(--color-primary);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    border-color: white;
+    border-width: 2%;
+    min-width: 275px;
+    margin-bottom: 20px;
+    max-width: 1000px;
+  }
+
+  .assetsTitle,
+  .expenseTitle {
+    font-size: small;
+  }
+
+  .infoLableA {
+    margin-top: 20px;
+    text-align: left;
+    margin-left: 2.5%;
+    font-size: medium;
+  }
+
+  .assetsAmount,
+  .expenseAmount {
+    text-align: right;
+    font-weight: bold;
+    min-width: 80px;
+    font-size: small;
+  }
+
+  .assetsCount,
+  .assetsPrice,
+  .assetsPayment,
+  .LiabiliteAmount,
+  .LiabiliteCredit,
+  .assetsMortage {
+    text-align: center;
+    font-size: small;
+  }
+
+  .headTable {
+    font-size: small;
+  }
+
+  #propertiesTable,
+  #sharesTable,
+  #propertiesLTable,
+  #cashflowTable {
+    width: 98%;
+    margin-left: 1%;
+  }
+
+  #assetsTable,
+  #liabilitiesTable {
+    width: 98%;
+    margin-left: 1%;
+  }
+
+  #assets-box,
+  #liabilities-box {
+    background-color: var(--color-surface);
+    margin-left: 1%;
+    margin-right: 1%;
+    border-radius: var(--radius-md);
+    margin-bottom: 10px;
+    padding: 10px;
+  }
+}

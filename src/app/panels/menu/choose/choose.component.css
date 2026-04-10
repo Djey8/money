@@ -1,0 +1,50 @@
+
+
+#menuNavBar-Container {
+    top: 70px;
+    left: 50%;
+    transform: translate(-50%, 0%);
+    width: min(90vw, 650px);
+    border: 3px solid white;
+    background-color: var(--color-primary);
+    border-radius: var(--radius-lg);
+    padding: 1.5%;
+    border-color: white;
+    border-width: 2%;
+    position: absolute;
+    box-shadow: var(--shadow-lg);
+}
+
+#menuNavBarTitle {
+    text-align: center;
+    font-size: 2em;
+    color: white;
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+#closebtn {
+    position: absolute;
+    top: 0;
+    right: 0;
+    margin-right: 10px;
+    color: white;
+    width: 40px;
+    height: 40px;
+    font-size: 25px;
+    background-color: transparent;
+    border-color: transparent;
+
+}
+
+.menubtn {
+    margin-left: 10%;
+    width: 80%;
+    margin-bottom: 3%;
+    background-color: transparent;
+    border-radius: var(--radius-sm);
+    border: 2px solid white;
+    color: white;
+    padding: 2%;
+    font-size: 17px;
+}

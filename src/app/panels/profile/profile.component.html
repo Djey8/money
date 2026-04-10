@@ -1,0 +1,24 @@
+<div id="profile-Container" role="dialog" aria-modal="true" appTrapFocus *ngIf="classReference.isProfile" (click)="highlight()"
+    [style.z-index]="classReference.zIndex + 1001">
+    <img id="profile-pic" alt="Profile Logo" src="../assets/profile-blank.jpg" />
+    <button id="closebtn" aria-label="Close" (click)="closeWindow()">x</button>
+    <h4 id="profileName">{{classReference.username}}</h4>
+    <h4 id="profileMail">{{classReference.mail}}</h4>
+    <hr class="separator-white">
+    <button class="profilebtn" (click)="goToAuthetication()"
+        *ngIf="classReference.isUser">{{'Profile.authentication' | translate}}</button>
+    <button id="settings-btn" class="profilebtn" (click)="goToSettings()">{{'Profile.settings' | translate}}</button>
+    <button id="help-btn" class="profilebtn" (click)="goToHelp()">{{'Profile.help' | translate}}</button>
+    <button id="impressum-btn" class="profilebtn" (click)="goToImpressum()">{{'Profile.impressum' | translate}}</button>
+    <button id="policy-btn" class="profilebtn" (click)="goToPolicy()">{{'Profile.policy' | translate}}</button>
+    <button class="profilebtn2" (click)="openConfirmation()" *ngIf="!classReference.isUser">{{'Profile.signOut' |
+        translate}}</button>
+</div>
+
+<div class="confirmation-backdrop" *ngIf="showConfirmation" (click)="closeConfirmation(false)"></div>
+<div #confirmationDialog class="confirmation-dialog" *ngIf="showConfirmation">
+    <h2>{{'Profile.Confirmation' | translate}}</h2>
+    <p>{{'Profile.sure' | translate}}</p>
+    <button (click)="closeConfirmation(false)" class="cancel-btn">{{'Profile.Cancel' | translate}}</button>
+    <button (click)="closeConfirmation(true)" class="delete-btn">{{'Profile.SignOut' | translate}}</button>
+</div>

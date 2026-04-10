@@ -1,0 +1,14 @@
+{
+  "projects": {
+    "default": "money98-b2242"
+  },
+  "targets": {
+    "money98-b2242": {
+      "hosting": {
+        "money": [
+          "money98-b2242"
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,37 @@
+<div id="infoTransaction-Container" role="dialog" aria-modal="true" appTrapFocus *ngIf="classReference.isInfo" (click)="highlight()"
+    [style.z-index]="classReference.zIndex + 1001">
+    <h4 id="infoTransactionTitle">{{'Impressum.title' | translate}}</h4>
+    <button id="closebtn" aria-label="Close" (click)="closeWindow()">x</button>
+    <hr class="separator-white">
+    <div id="info-box">
+        <div class="impressum-section">
+            <h3 class="section-title">&#9673; {{'Impressum.responsible' | translate}}</h3>
+            <div class="detail-row">
+                <span class="detail-value name-value">Jannis Frederick Klüß</span>
+            </div>
+        </div>
+        <div class="impressum-section">
+            <h3 class="section-title">&#9673; {{'Impressum.address' | translate}}</h3>
+            <div class="detail-row">
+                <span class="detail-value">Guldeinstraße 35</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-value">80339 München, Germany</span>
+            </div>
+        </div>
+        <div class="impressum-section">
+            <h3 class="section-title">&#9673; {{'Impressum.contact' | translate}}</h3>
+            <div class="detail-row">
+                <span class="detail-label">{{'Impressum.email' | translate}}</span>
+                <span class="detail-value">janniskluess&#64;yahoo.de</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">{{'Impressum.phone' | translate}}</span>
+                <span class="detail-value">+49 176 70555363</span>
+            </div>
+        </div>
+        <div class="impressum-section disclaimer">
+            <p class="disclaimer-text">{{'Impressum.disclaimer' | translate}}</p>
+        </div>
+    </div>
+</div>

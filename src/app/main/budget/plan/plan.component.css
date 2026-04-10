@@ -1,0 +1,266 @@
+#budgetbtn, #dotstn {
+  border-radius: var(--radius-full);
+  margin-right: 0px;
+}
+
+.plan-navigation{
+    display: flex; 
+    align-items: center; 
+    justify-content: space-between; 
+    margin-bottom: 16px;
+}
+
+.plan-month{
+    font-size: 2.2em;
+    font-weight: bold;
+    text-align: center;
+    flex: 1;
+}
+
+@media (max-width: 800px) {
+    .plan-month {
+        font-size: 1.8em;
+    }
+}
+
+@media (max-width: 500px) {
+    .plan-month {
+        font-size: 1.4em;
+    }
+}
+
+@media (max-width: 420px) {
+    .plan-month {
+        font-size: 1.0em;
+    }
+}
+
+.nav-arrow{
+    padding: 10px 20px;
+    font-size: 2em;
+    border: 1px solid var(--color-border);
+    background-color: var(--color-primary);
+    color: white;
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+}
+
+.left {
+    margin-left: 10px;
+}
+
+.right {
+    margin-right: 10px;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  width: 60%;
+  margin: 0 auto;
+  border: none;
+}
+
+#input-container-options{
+    width: 84%;
+    margin-left: 8%;
+    margin-bottom: 5px;
+}
+
+label {
+  margin-bottom: 1%;
+  margin-left: 10px;
+  margin-top: 10px;
+}
+
+/* Mat form field filter - dark mode */
+::ng-deep .mat-mdc-form-field {
+  color: var(--color-text);
+}
+
+::ng-deep .mat-mdc-text-field-wrapper {
+  background-color: var(--color-surface) !important;
+}
+
+::ng-deep .mdc-text-field--filled:not(.mdc-text-field--disabled) {
+  background-color: var(--color-surface) !important;
+}
+
+::ng-deep .mat-mdc-form-field .mdc-floating-label {
+  color: var(--color-text) !important;
+}
+
+::ng-deep .mat-mdc-form-field .mat-mdc-input-element {
+  color: var(--color-text) !important;
+}
+
+::ng-deep .mdc-line-ripple::before {
+  border-bottom-color: var(--color-border) !important;
+}
+
+:host-context([data-theme="dark"]) ::ng-deep .mat-mdc-input-element::placeholder {
+  color: rgba(255, 255, 255, 0.5) !important;
+}
+
+input[type="text"],
+input[type="month"],
+input[type="time"],
+input[type="number"],
+textarea,
+select {
+  background-color: var(--color-surface);
+  padding: 10px;
+  border-radius: var(--radius-sm);
+  border: 2px solid var(--color-border);
+  margin-bottom: 1%;
+  margin-left: 2%;
+  margin-right: 2%;
+  text-align: center;
+  color: var(--color-text);
+  -webkit-appearance: none; /* Remove default styling on iOS */
+  -moz-appearance: none; /* Remove default styling on Firefox */
+  appearance: none; /* Remove default styling on modern browsers */
+}
+
+:host-context([data-theme="dark"]) input[type="text"],
+:host-context([data-theme="dark"]) input[type="month"],
+:host-context([data-theme="dark"]) input[type="time"],
+:host-context([data-theme="dark"]) input[type="number"],
+:host-context([data-theme="dark"]) textarea,
+:host-context([data-theme="dark"]) select {
+  background-color: var(--color-input-bg);
+  border-color: var(--color-border-dark);
+}
+
+#optionsMonth{
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-sm);
+}
+
+
+#profile-Container {
+    position: absolute;
+    top: 75px;
+    right: 10px;
+    width: 18%;
+    border: 3px solid var(--color-primary);
+    background-color: var(--color-primary);
+    border-radius: var(--radius-lg);
+    padding: 1%;
+    min-width: 180px;
+    max-width: 350px;
+    border-color: white;
+    border-width: 3px;
+    box-shadow: var(--shadow-lg);
+}
+
+#profileName {
+    text-align: center;
+    font-size: 2em;
+    color: white;
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+
+
+#closebtn {
+    position: absolute;
+    top: 0;
+    right: 3%;
+    color: white;
+    width: 20px;
+    height: 20px;
+    margin-right: 3%;
+    font-size: 2em;
+    background-color: transparent;
+    border-color: transparent;
+}
+
+.profilebtn {
+    margin-left: 10%;
+    width: 80%;
+    margin-bottom: 3%;
+    background-color: var(--color-surface);
+    border-radius: var(--radius-sm);
+    border: 2px solid var(--color-border);
+    color: var(--color-text);
+    padding: 2%;
+    font-size: 17px;
+}
+.profilebtn2 {
+    margin-left: 10%;
+    width: 80%;
+    margin-bottom: 3%;
+    background-color: transparent;
+    border-radius: var(--radius-sm);
+    border: 2px solid var(--color-danger);
+    color: var(--color-danger);
+    background-color: var(--color-surface);
+    padding: 2%;
+    font-size: 17px;
+}
+
+.confirmation-dialog {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 25%; /* Kleiner gemacht, du kannst die Größe nach Bedarf anpassen */
+    border: 3px solid white;
+    background-color: var(--color-primary);
+    border-radius: var(--radius-lg);
+    padding: 2%;
+    min-width: 250px;
+    max-width: 350px;
+    border-color: white;
+    border-width: 2%;
+    z-index: 1000;
+    text-align: center;
+  }
+  
+  .confirmation-dialog h2,
+  .confirmation-dialog p,
+  .confirmation-dialog button {
+    color: white;
+  }
+  
+  .confirmation-dialog button {
+    background-color: transparent;
+    border: 2px solid white;
+    border-radius: var(--radius-sm);
+    color: white;
+    padding: 8px;
+    font-size: 16px;
+    margin: 0 5px;
+  }
+  
+  .confirmation-dialog button.delete-btn {
+    background-color: var(--color-surface);
+    color: var(--color-danger);
+    border: 2px solid var(--color-danger);
+  }
+  
+  .confirmation-dialog button.delete-btn:hover {
+    background-color: var(--color-danger);
+    color: white;
+  }
+
+  #actuals-amount-container {
+    margin-top: 20px;
+    margin-bottom: 20px;
+    margin-left: auto;
+    margin-right: auto;
+    width: 30%;
+    min-width: 250px;
+    border: 3px solid var(--color-border);
+    background-color: var(--color-surface);
+    border-radius: var(--radius-lg);
+    padding: 2%;
+}
+
+.amountLableActual{
+    text-align: center;
+    font-size: 2em;    
+}
+

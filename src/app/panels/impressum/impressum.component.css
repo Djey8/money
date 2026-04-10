@@ -1,0 +1,101 @@
+#infoTransaction-Container {
+    top: 3%;
+    left: 50%;
+    transform: translate(-50%, 0%);
+    width: min(90vw, 400px);
+    border: 3px solid white;
+    background-color: var(--color-primary);
+    border-radius: var(--radius-lg);
+    padding: 2%;
+    border-color: white;
+    border-width: 2%;
+    position: absolute;
+    box-shadow: var(--shadow-lg);
+}
+
+#infoTransactionTitle {
+    text-align: center;
+    font-size: 2em;
+    color: white;
+    margin-top: 0px;
+    margin-bottom: 1%;
+}
+
+#info-box {
+    background-color: var(--color-surface);
+    margin-left: 5%;
+    margin-right: 5%;
+    border-radius: var(--radius-md);
+    margin-bottom: 10px;
+    padding: 15px 12px;
+}
+
+#closebtn {
+    position: absolute;
+    top: 0;
+    right: 0;
+    margin-right: 10px;
+    color: white;
+    width: 40px;
+    height: 40px;
+    font-size: 25px;
+    background-color: transparent;
+    border-color: transparent;
+}
+
+.impressum-section {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--color-muted-light);
+}
+
+.impressum-section:last-child {
+    border-bottom: none;
+}
+
+.section-icon {
+    font-size: 20px;
+    margin-bottom: 4px;
+}
+
+.section-title {
+    color: var(--color-primary);
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 0 0 6px;
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 3px 0;
+}
+
+.detail-label {
+    color: var(--color-text-muted);
+    font-size: 13px;
+}
+
+.detail-value {
+    color: var(--color-text);
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.name-value {
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.disclaimer {
+    padding-top: 12px;
+}
+
+.disclaimer-text {
+    color: var(--color-text-hint);
+    font-size: 11px;
+    line-height: 1.5;
+    margin: 0;
+}

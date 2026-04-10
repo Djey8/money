@@ -1,0 +1,216 @@
+
+/* ---- Backdrop ---- */
+.menu-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 1000;
+}
+
+/* ---- Panel ---- */
+.menu-panel {
+  position: absolute;
+  top: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(92vw, 480px);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  padding: var(--space-md);
+  z-index: 1001;
+  box-shadow: var(--shadow-lg);
+  max-height: calc(100vh - 80px);
+  overflow-y: auto;
+}
+
+/* ---- Header ---- */
+.menu-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-md);
+  padding-bottom: var(--space-sm);
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.menu-title {
+  margin: 0;
+  font-size: var(--font-lg);
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.menu-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: var(--color-background);
+  color: var(--color-text-secondary);
+  border-radius: var(--radius-full);
+  font-size: var(--font-md);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.menu-close:hover {
+  background: var(--color-danger-hover);
+  color: var(--color-danger);
+}
+
+/* ---- Section ---- */
+.menu-section {
+  margin-bottom: var(--space-md);
+}
+
+.menu-section:last-child {
+  margin-bottom: 0;
+}
+
+.menu-section-label {
+  font-size: var(--font-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-xs);
+  padding-left: var(--space-xs);
+}
+
+/* ---- Grid ---- */
+.menu-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-xs);
+}
+
+.menu-grid--3 {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
+.menu-grid--4 {
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+}
+
+@media (max-width: 400px) {
+  .menu-grid--4 {
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: 4px;
+  }
+  .menu-grid--3 {
+    grid-template-columns: 1fr 1fr;
+  }
+  .menu-item--compact {
+    padding: 6px 4px;
+    font-size: 11px;
+  }
+}
+
+/* ---- Menu Item ---- */
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: 10px 12px;
+  background: var(--color-background);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  font-size: var(--font-base);
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+  text-align: start;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.menu-item:hover {
+  background: var(--color-primary-light);
+  border-color: var(--color-primary);
+}
+
+.menu-item:active {
+  transform: scale(0.97);
+}
+
+.menu-item--active {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+  font-weight: 600;
+}
+
+.menu-item--active:hover {
+  background: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
+}
+
+.menu-item--compact {
+  padding: 8px 10px;
+  font-size: var(--font-sm);
+  flex-direction: column;
+  text-align: center;
+  gap: 2px;
+}
+
+/* ---- Icons & Dots ---- */
+.menu-icon {
+  font-size: var(--font-md);
+  line-height: 1;
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+.menu-item--active .menu-icon {
+  opacity: 1;
+}
+
+.menu-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+}
+
+.menu-item--compact .menu-dot {
+  width: 6px;
+  height: 6px;
+}
+
+/* ---- Featured (BI, Financial Statement) ---- */
+.menu-item--featured {
+  padding: 14px 12px;
+  font-size: var(--font-base);
+  font-weight: 600;
+  background: var(--color-primary-light);
+  border: 1px solid var(--color-primary);
+  gap: var(--space-sm);
+}
+
+.menu-item--featured .menu-icon {
+  font-size: var(--font-lg);
+  opacity: 0.85;
+  color: var(--color-primary);
+}
+
+.menu-item--featured:hover {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+}
+
+/* Full-width featured item (not inside a grid) */
+.menu-item--full {
+  width: 100%;
+  justify-content: center;
+}
+
+.menu-item--featured:hover .menu-icon {
+  color: white;
+  opacity: 1;
+}

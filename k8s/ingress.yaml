@@ -1,0 +1,52 @@
+# Ingress for external access (optional - if using ingress controller)
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: money-app-ingress
+  namespace: money-app
+  annotations:
+    # Traefik annotations (K3s default ingress controller)
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+    # For Let's Encrypt SSL (optional)
+    # cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  rules:
+  - host: cashflowhero.uk
+    http:
+      paths:
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: backend
+            port:
+              number: 3000
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: frontend
+            port:
+              number: 80
+  - host: www.cashflowhero.uk
+    http:
+      paths:
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: backend
+            port:
+              number: 3000
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: frontend
+            port:
+              number: 80
+  # Uncomment for SSL
+  # tls:
+  # - hosts:
+  #   - money.local
+  #   secretName: money-tls-secret

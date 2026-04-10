@@ -1,0 +1,143 @@
+<div class="menu-backdrop" *ngIf="classReference.isMenu" (click)="closeWindow()"></div>
+
+<div class="menu-panel" role="dialog" aria-modal="true" appTrapFocus *ngIf="classReference.isMenu"
+    [style.z-index]="classReference.zIndex + 1001" (click)="highlight()">
+
+  <!-- Header -->
+  <div class="menu-header">
+    <h2 class="menu-title">{{'Menu.title' | translate}}</h2>
+    <button class="menu-close" aria-label="Close" (click)="closeWindow()">✕</button>
+  </div>
+
+  <!-- Charts Section — FIRST when on stats page -->
+  <div class="menu-section" *ngIf="isStatsPage">
+    <div class="menu-section-label">{{'Menu.stats' | translate}}</div>
+
+    <!-- All charts in one grid -->
+    <div class="menu-grid menu-grid--4">
+      <button class="menu-item menu-item--compact" (click)="clickedPiechart()">
+        <span class="menu-icon">◔</span>
+        <span>{{'Menu.overview' | translate}}</span>
+      </button>
+      <button class="menu-item menu-item--compact" (click)="clickedCashflowStats()">
+        <span class="menu-icon">⇄</span>
+        <span>{{'Menu.cashflow' | translate}}</span>
+      </button>
+      <button class="menu-item menu-item--compact" (click)="clickedKPI()">
+        <span class="menu-icon">⟟</span>
+        <span>{{'Menu.kpi' | translate}}</span>
+      </button>
+      <button class="menu-item menu-item--compact" (click)="clickedHistogram()">
+        <span class="menu-icon">▦</span>
+        <span>{{'Menu.histogram' | translate}}</span>
+      </button>
+      <button class="menu-item menu-item--compact" (click)="clickedZoomable()">
+        <span class="menu-icon">⊶</span>
+        <span>{{'AddTransaction.Category' | translate}}</span>
+      </button>
+      <button class="menu-item menu-item--compact" (click)="clickedCategory()">
+        <span class="menu-icon">⊜</span>
+        <span>{{'Menu.bubbles' | translate}}</span>
+      </button>
+      <button class="menu-item menu-item--compact" style="grid-column: span 2;" (click)="clickedMenuStats('income')">
+        <span class="menu-icon">▤</span>
+        <span>{{'Menu.transactions' | translate}}</span>
+      </button>
+    </div>
+    <div class="menu-grid menu-grid--4" style="margin-top: var(--space-xs)">
+      <button class="menu-item menu-item--compact" (click)="clickedMenuStats('daily')">
+        <span class="menu-dot" style="background: var(--color-cat-daily)"></span>
+        <span>{{'Menu.daily' | translate}}</span>
+      </button>
+      <button class="menu-item menu-item--compact" (click)="clickedMenuStats('splurge')">
+        <span class="menu-dot" style="background: var(--color-cat-splurge)"></span>
+        <span>{{'Menu.splurge' | translate}}</span>
+      </button>
+      <button class="menu-item menu-item--compact" (click)="clickedMenuStats('smile')">
+        <span class="menu-dot" style="background: var(--color-cat-smile)"></span>
+        <span>{{'Menu.smile' | translate}}</span>
+      </button>
+      <button class="menu-item menu-item--compact" (click)="clickedMenuStats('fire')">
+        <span class="menu-dot" style="background: var(--color-cat-fire)"></span>
+        <span>{{'Menu.fire' | translate}}</span>
+      </button>
+    </div>
+
+    <!-- BI & Financial Statement — full-width featured rows -->
+    <button class="menu-item menu-item--featured menu-item--full" (click)="clickedBusinessIntelligence()" style="margin-top: var(--space-sm)">
+      <span class="menu-icon">◉</span>
+      <span>{{'Menu.bi' | translate}}</span>
+    </button>
+    <button class="menu-item menu-item--featured menu-item--full" (click)="clickedMenuStatements()" style="margin-top: var(--space-xs)">
+      <span class="menu-icon">☷</span>
+      <span>{{'Menu.financial' | translate}}</span>
+    </button>
+  </div>
+
+  <!-- Accounts Section -->
+  <div class="menu-section">
+    <div class="menu-section-label">{{'Menu.home' | translate}}</div>
+    <div class="menu-grid">
+      <button class="menu-item" [class.menu-item--active]="router.url === '/home'" (click)="clickedHome()">
+        <span class="menu-icon">⌂</span>
+        <span>{{'Menu.home' | translate}}</span>
+      </button>
+      <button class="menu-item" [class.menu-item--active]="router.url === '/transactions'" (click)="clickedTransactions()">
+        <span class="menu-icon">☰</span>
+        <span>{{'Menu.transactions' | translate}}</span>
+      </button>
+    </div>
+    <div class="menu-grid menu-grid--4" style="margin-top: var(--space-xs)">
+      <button class="menu-item menu-item--compact" [class.menu-item--active]="router.url === '/daily'" (click)="clickedDaily()">
+        <span class="menu-dot" style="background: var(--color-cat-daily)"></span>
+        <span>{{'Menu.daily' | translate}}</span>
+      </button>
+      <button class="menu-item menu-item--compact" [class.menu-item--active]="router.url === '/splurge'" (click)="clickedSplurge()">
+        <span class="menu-dot" style="background: var(--color-cat-splurge)"></span>
+        <span>{{'Menu.splurge' | translate}}</span>
+      </button>
+      <button class="menu-item menu-item--compact" [class.menu-item--active]="router.url === '/smile'" (click)="clickedSmile()">
+        <span class="menu-dot" style="background: var(--color-cat-smile)"></span>
+        <span>{{'Menu.smile' | translate}}</span>
+      </button>
+      <button class="menu-item menu-item--compact" [class.menu-item--active]="router.url === '/fire'" (click)="clickedFire()">
+        <span class="menu-dot" style="background: var(--color-cat-fire)"></span>
+        <span>{{'Menu.fire' | translate}}</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Reports Section -->
+  <div class="menu-section">
+    <div class="menu-section-label">{{'Menu.financial' | translate}}</div>
+    <div class="menu-grid menu-grid--3">
+      <button class="menu-item menu-item--compact" [class.menu-item--active]="router.url === '/cashflow'" (click)="clickedCashflow()">
+        <span class="menu-icon">⇄</span>
+        <span>{{'Menu.cashflow' | translate}}</span>
+      </button>
+      <button class="menu-item menu-item--compact" [class.menu-item--active]="router.url === '/income'" (click)="clickedIncomeStatement()">
+        <span class="menu-icon">≡</span>
+        <span>{{'Menu.statment' | translate}}</span>
+      </button>
+      <button class="menu-item menu-item--compact" [class.menu-item--active]="router.url === '/balance'" (click)="clickedBalanceSheet()">
+        <span class="menu-icon">⊞</span>
+        <span>{{'Menu.sheet' | translate}}</span>
+      </button>
+      <button class="menu-item menu-item--compact" [class.menu-item--active]="router.url === '/subscription'" (click)="clickedSubscriptions()">
+        <span class="menu-icon">↻</span>
+        <span>{{'Menu.sub' | translate}}</span>
+      </button>
+      <button class="menu-item menu-item--compact" [class.menu-item--active]="router.url === '/budget'" (click)="clickedBudget()">
+        <span class="menu-icon">▤</span>
+        <span>{{'Menu.budget' | translate}}</span>
+      </button>
+      <button class="menu-item menu-item--compact" [class.menu-item--active]="router.url === '/grow'" (click)="clickedGrow()">
+        <span class="menu-icon">↗</span>
+        <span>{{'Menu.grow' | translate}}</span>
+      </button>
+    </div>
+  </div>
+
+
+
+</div>

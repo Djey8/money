@@ -1,0 +1,434 @@
+
+#infoTransaction-Container {
+    top: 3%;
+    left: 50%;
+    transform: translate(-50%, 0%);
+    width: min(90vw, 550px);
+    border: 3px solid white;
+    background-color: var(--color-primary);
+    border-radius: var(--radius-lg);
+    padding: 2%;
+    border-color: white;
+    border-width: 2%;
+    position: absolute;
+    z-index: 1001;
+    box-shadow: var(--shadow-lg);
+}
+
+#account-pic {
+    width: 30%;
+    margin-left: 35%;
+    border-radius: var(--radius-full);
+}
+p {
+  margin-bottom: 10px;
+  text-align: left;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--color-text);
+}
+
+
+#infoTransactionTitle {
+    text-align: center;
+    font-size: 2em;
+    color: white;
+    margin-top: 0px;
+    margin-bottom: 1%;
+}
+
+#info-box {
+    background-color: var(--color-surface);
+    margin-left: 5%;
+    margin-right: 5%;
+    border-radius: var(--radius-md);
+    margin-bottom: 10px;
+    padding: 15px;
+}
+
+.section-title {
+    text-align: center;
+    color: var(--color-primary);
+    font-size: 1.2em;
+    margin-top: 5px;
+    margin-bottom: 10px;
+    border-bottom: 2px solid var(--color-primary);
+    padding-bottom: 5px;
+}
+
+.help-section {
+    margin-bottom: 8px;
+    border: 1px solid var(--color-muted);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
+.help-section[open] {
+    border-color: var(--color-primary);
+}
+
+.help-summary {
+    padding: 10px 12px;
+    font-weight: bold;
+    font-size: 15px;
+    color: var(--color-primary);
+    cursor: pointer;
+    background-color: var(--color-background);
+    list-style: none;
+    display: flex;
+    align-items: center;
+}
+
+.help-summary::-webkit-details-marker {
+    display: none;
+}
+
+.help-summary::before {
+    content: "▸ ";
+    margin-right: 8px;
+    transition: transform 0.2s;
+    display: inline-block;
+}
+
+.help-section[open] > .help-summary::before {
+    transform: rotate(90deg);
+}
+
+.help-summary:hover {
+    background-color: var(--color-info-surface);
+}
+
+.help-section > ul,
+.help-section > ol,
+.help-section > p {
+    padding: 0 12px;
+}
+
+.help-section ul,
+.help-section ol {
+    text-align: left;
+    color: var(--color-text);
+    font-size: 14px;
+    line-height: 1.6;
+    padding-left: 30px;
+    margin-top: 5px;
+    margin-bottom: 10px;
+}
+
+.help-section li {
+    margin-bottom: 5px;
+}
+
+.account-list li {
+    margin-bottom: 8px;
+}
+
+.allocation-list {
+    padding-left: 30px;
+}
+
+.search-examples {
+    background-color: var(--color-surface-hover);
+    border-radius: var(--radius-sm);
+    padding: 10px 10px 10px 30px;
+}
+
+.search-examples code {
+    background-color: var(--color-muted-bg);
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+    font-family: var(--font-mono);
+    font-size: 13px;
+}
+
+.help-tip {
+    background-color: var(--color-info-surface);
+    border-left: 3px solid var(--color-primary);
+    padding: 8px 12px;
+    border-radius: 0 5px 5px 0;
+    font-size: 13px;
+    color: var(--color-primary-hover);
+    margin: 10px 12px;
+}
+
+.book-link {
+    text-align: center;
+    margin-top: 15px;
+    margin-bottom: 15px;
+    font-size: 13px;
+}
+
+.book-link a {
+    color: var(--color-primary);
+    text-decoration: none;
+}
+
+.book-link a:hover {
+    text-decoration: underline;
+}
+
+/* Help Menu */
+.help-menu {
+    padding: 0 5%;
+}
+
+.overview-text {
+    color: white;
+    text-align: center;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.help-menu .book-link a {
+    color: white;
+}
+
+.help-categories {
+    margin-top: 10px;
+}
+
+.help-menu-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 12px 14px;
+    background-color: rgba(255, 255, 255, 0.12);
+    border: none;
+    color: white;
+    font-size: 15px;
+    cursor: pointer;
+    text-align: left;
+    transition: background-color 0.15s;
+}
+
+.help-menu-item:first-of-type {
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
+}
+
+.help-menu-item:last-of-type {
+    border-radius: 0 0 8px 8px;
+}
+
+.help-menu-item:not(:last-of-type) {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.help-menu-item:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.menu-chevron {
+    font-size: 18px;
+    opacity: 0.6;
+}
+
+.amount-positive {
+    color: var(--color-text);
+}
+
+.amount-negative {
+    color: var(--color-danger);
+}
+
+#closebtn {
+    position: absolute;
+    top: 0;
+    right: 0;
+    margin-right: 10px;
+    color: white;
+    width: 40px;
+    height: 40px;
+    font-size: 25px;
+    background-color: transparent;
+    border-color: transparent;
+
+}
+
+.infoLable {
+  text-align: center;
+  color: var(--color-text);
+  font-size: larger;
+}
+
+.infoLableB {
+    margin-top: 0px;
+    margin-bottom: 0px;
+    text-align: center;
+    font-size: x-large;
+}
+
+
+#editbtn, #addbtn, #canclebtn {
+  margin-left: 10%;
+  width: 80%;
+  margin-top: 4%;
+  background-color: transparent;
+  border-radius: var(--radius-sm);
+  border: 2px solid white;
+  color: white;
+  padding: 2%;
+  font-size: 17px;
+  margin-bottom: 1%;
+  }
+  #deletebtn {
+    margin-left: 10%;
+    width: 80%;
+    margin-top: 4%;
+    background-color: transparent;
+    border-radius: var(--radius-sm);
+    border: 2px solid var(--color-danger);
+    color: var(--color-danger);
+    background-color: var(--color-surface);
+    padding: 2%;
+    font-size: 17px;
+    margin-bottom: 1%;
+  }
+
+  #input-container {
+    background-color: var(--color-surface);
+    margin-left: 5%;
+    width: 90%;
+    border-radius: var(--radius-md);
+    margin-bottom: 10px;
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    margin: 0 auto;
+  }
+  
+  label {
+    margin-bottom: 1%;
+    margin-left: 10px;
+    margin-top: 10px;
+  }
+  
+  input[type="text"],
+  input[type="date"],
+  input[type="time"] {
+    background-color: var(--color-surface);
+    padding: 10px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    margin-bottom: 1%;
+    margin-left: 2%;
+    margin-right: 2%;
+    color: var(--color-text);
+  }
+
+  input[type="date"]::-webkit-calendar-picker-indicator,
+  input[type="time"]::-webkit-calendar-picker-indicator {
+    filter: var(--date-icon-filter, none);
+  }
+
+  input[type="number"] {
+    background-color: var(--color-surface);
+    padding: 10px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    margin-bottom: 1%;
+    margin-left: 2%;
+    margin-right: 2%;
+    color: var(--color-text);
+  }
+
+  textarea, select {
+    padding: 10px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    margin-bottom: 2%;
+    background-color: var(--color-surface);
+    color: var(--color-text);
+  }
+
+  select {
+    margin-left: 2%;
+    width: 96%;
+  }
+
+  textarea {
+    resize: vertical;
+    margin-left: 2%;
+    margin-right: 2%;
+  }
+
+  #errorLable {
+    background-color: var(--color-surface);
+    border-radius: var(--radius-sm);
+    padding-top: 10px;
+    padding-bottom: 10px;
+    margin-left: 5%;
+    margin-right: 5%;
+    border-radius: var(--radius-md);
+    margin-bottom: 10px;
+    color: var(--color-danger);
+    text-align: center;
+  }
+
+  #profileName {
+    text-align: center;
+    font-size: 2em;
+    color: var(--color-text);
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+#profileMail {
+    text-align: center;
+    color: var(--color-text);
+    font-size:larger;
+}
+@media screen and (min-width: 1000px) {
+    
+    #profileMail {
+        font-size: large;
+    }
+}   
+
+#profile-pic {
+    width: 40%;
+    margin-left: 30%;
+    margin-top: 10px;
+    border-radius: var(--radius-full);
+    border: 5px solid white;
+
+}
+
+.notification {
+    background-color: var(--color-success-surface);
+    border: 1px solid var(--color-success-border);
+    color: var(--color-success-border);
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: var(--radius-sm);
+  }
+
+.tour-banner {
+    text-align: center;
+    padding: 8px 16px 16px;
+}
+.tour-btn {
+    width: auto;
+    display: inline-block;
+    margin: 0;
+    padding: 10px 28px;
+    font-size: var(--font-base);
+    border-radius: var(--radius-md);
+    background: white;
+    color: var(--color-primary);
+    border: 2px solid white;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s ease, transform 0.1s ease;
+}
+.tour-btn:hover {
+    background: rgba(255, 255, 255, 0.85);
+    transform: scale(1.03);
+}
+.tour-btn:active {
+    transform: scale(0.97);
+}
+  

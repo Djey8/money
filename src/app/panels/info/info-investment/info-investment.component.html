@@ -1,0 +1,35 @@
+<div id="infoTransaction-Container" role="dialog" aria-modal="true" appTrapFocus *ngIf="classReference.isInfo" (click)="highlight()"
+    [style.z-index]="classReference.zIndex + 1001">
+    <h4 id="infoTransactionTitle">#{{classReference.index+1}}</h4>
+    <button id="closebtn" aria-label="Close" (click)="closeWindow()">x</button>
+    <hr class="separator-white">
+    <div *ngIf="!isEdit">
+        <div id="info-box">
+            <h4 class="infoLableB">{{classReference.title}}</h4>
+            <hr class="divider-black">
+            <h4 class="infoLable">{{'InfoInvestment.deposit' | translate}}: {{classReference.deposit | appNumber}}
+                {{currency}}</h4>
+            <h4 class="infoLable">{{'AddGrow.Mortage' | translate}}: {{classReference.amount | appNumber}} {{currency}}
+            </h4>
+        </div>
+        <!-- <button id="editbtn" (click)="add()">{{'InfoInvestment.AddProfit' | translate}}</button>
+        <button id="editbtn" (click)="add()">{{'InfoInvestment.AddSubscription' | translate}}</button> -->
+        <button id="editbtn" (click)="editInvestment()">{{'Info.edit' | translate}}</button>
+    </div>
+    <div *ngIf="isEdit">
+        <form id="input-container">
+            <label for="title" [class.form-error-text]="classReference.isError">{{'AddAsset.name' | translate}}</label>
+            <input type="text" id="title" name="title" [class.form-error-border]="classReference.isError" [(ngModel)]="titleTextField">
+            <label for="deposit">{{'Balance.Deposit' | translate}}</label>
+            <input type=number step=any id="amount" name="deposit" [(ngModel)]="depositTextField"
+                class="mb-xs">
+            <label for="amount">{{'AddGrow.Mortage' | translate}}</label>
+            <input type=number step=any id="amount" name="amount" [(ngModel)]="amountTextField"
+                class="mb-xs">
+        </form>
+        <p id="errorLable" *ngIf="classReference.isError">{{errorTextLable}}</p>
+        <button id="addbtn" (click)="updateInvestment()">{{'Info.update' | translate}}</button>
+        <button id="deletebtn" (click)="deleteInvestment(classReference.index)">{{'Info.delete' | translate}}</button>
+        <button id="canclebtn" (click)="cancel()">{{'Info.cancel' | translate}}</button>
+    </div>
+</div>

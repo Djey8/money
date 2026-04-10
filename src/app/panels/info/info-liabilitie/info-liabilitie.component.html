@@ -1,0 +1,37 @@
+<div id="infoTransaction-Container" role="dialog" aria-modal="true" appTrapFocus *ngIf="classReference.isInfo" (click)="highlight()"
+    [style.z-index]="classReference.zIndex + 1001">
+    <h4 id="infoTransactionTitle">#{{classReference.index+1}}</h4>
+    <button id="closebtn" aria-label="Close" (click)="closeWindow()">x</button>
+    <hr class="separator-white">
+    <div *ngIf="!isEdit">
+        <div id="info-box">
+            <h4 class="infoLableB">{{classReference.title}}</h4>
+            <hr class="divider-black" style="margin-bottom: 10px;">
+            <h4 class="infoLable">{{'Fire.amount' | translate}}: {{classReference.amount |
+                appNumber}} {{currency}}</h4>
+            <h4 class="infoLable">{{'Balance.Credit' | translate}}: {{classReference.credit |
+                appNumber}} {{currency}}</h4>
+            <h4 style="text-align: center;" *ngIf="classReference.isInvestment">{{'InfoLiabilitie.investment' | translate}}
+            </h4>
+        </div>
+        <button id="editbtn" (click)="editLiabilitie()">{{'Info.edit' | translate}}</button>
+        <button id="editbtn" (click)="payback()">{{'InfoLiabilitie.payback' | translate}}</button>
+    </div>
+    <div *ngIf="isEdit">
+        <form id="input-container">
+            <label for="title" [class.form-error-text]="classReference.isError">{{'AddAsset.name' | translate}}</label>
+            <input type="text" id="title" name="title" [class.form-error-border]="classReference.isError" [(ngModel)]="titleTextField">
+            <label for="amount">{{'Transactions.Amount' | translate}}</label>
+            <input type=number step=any id="amount" name="amount" [(ngModel)]="amountTextField">
+            <label for="credit">{{'Balance.Credit' | translate}}</label>
+            <input type=number step=any id="credit" name="credit" [(ngModel)]="creditTextField"
+                    class="mb-xs">
+            <label for="isInvestment" class="checkLable"> <input type="checkbox" name="isInvestment"
+                    [(ngModel)]="isInvestment"><span>{{'Choose.Investment' | translate}}</span></label>
+        </form>
+        <p id="errorLable" *ngIf="classReference.isError">{{errorTextLable}}</p>
+        <button id="addbtn" (click)="updateLiabilitie()">{{'Info.update' | translate}}</button>
+        <button id="deletebtn" (click)="deleteLiabilitie(classReference.index)">{{'Info.delete' | translate}}</button>
+        <button id="canclebtn" (click)="cancel()">{{'Info.cancel' | translate}}</button>
+    </div>
+</div>

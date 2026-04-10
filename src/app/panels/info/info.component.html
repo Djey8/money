@@ -1,0 +1,64 @@
+<div id="infoTransaction-Container" role="dialog" aria-modal="true" appTrapFocus *ngIf="classReference.isInfo" (click)="highlight()"
+    [style.z-index]="classReference.zIndex + 1001">
+    <h4 id="infoTransactionTitle">#{{classReference.index+1}}</h4>
+    <button id="closebtn" aria-label="Close" (click)="closeWindow()">x</button>
+    <hr class="separator-white">
+    <div *ngIf="!isEdit">
+        <div id="info-box">
+            <h4 class="infoLableB">{{classReference.account}}</h4>
+            <img id="account-pic" alt="Account Pic" src="../../assets/icons/{{classReference.img}}.jpg"
+                role="button" tabindex="0" aria-label="View receipt" (click)="clickImage()" (keydown.enter)="clickImage()" />
+            <h4 class="{{classReference.amount>=0 ? 'amount-positive infoLableB' : 'amount-negative infoLableB'}}">
+                {{classReference.amount | appNumber}} {{settingsReference.currency}}</h4>
+            <h4 class="infoLable">{{classReference.date | appDate}}</h4>
+            <h4 class="infoLable">{{classReference.time}}</h4>
+            <h4 class="infoLable">{{classReference.category}}</h4>
+            <pre class="commentLable" style="white-space: pre-wrap; word-wrap: break-word; overflow-wrap: break-word; max-width: 100%;">{{classReference.comment}}</pre>
+            <div class="button-container">
+                <span class="action-button" role="button" tabindex="0" aria-label="Previous transaction" (click)="goLeft()" (keydown.enter)="goLeft()">&#x276E;</span>
+                <span class="action-button" role="button" tabindex="0" aria-label="Next transaction" (click)="goRight()" (keydown.enter)="goRight()">&#x276F;</span>
+            </div>
+        </div>
+        <button id="editbtn" class="btn btn--action" (click)="editTransaction()">{{'Info.edit' | translate}}</button>
+        <button id="copybtn" class="btn btn--action" (click)="copyTransaction()">{{'Info.copy' | translate}}</button>
+    </div>
+    <div *ngIf="isEdit">
+        <form id="input-container">
+            <label for="account">{{'Transactions.Account' | translate}}</label>
+            <select [(ngModel)]="selectedOption" id="account" name="account">
+                <option value="Daily">{{'Menu.daily' | translate}}</option>
+                <option value="Splurge">{{'Menu.splurge' | translate}}</option>
+                <option value="Smile">{{'Menu.smile' | translate}}</option>
+                <option value="Fire">{{'Menu.fire' | translate}}</option>
+                <option value="Income">{{'AddTransaction.Income' | translate}}</option>
+                <option value="Mojo">{{'Income.Mojo' | translate}}</option>
+            </select>
+            <label for="amount" [class.form-error-text]="classReference.isError">{{'AddAsset.amount' | translate}}</label>
+            <input type=number step=any id="amount" name="amount" [class.form-error-border]="classReference.isError"
+                [(ngModel)]="amountTextField"
+                (ngModelChange)="onAmountChange($event)">
+            <label for="date">{{'Transactions.Date' | translate}}</label>
+            <input type=date step=any id="date" name="date" [(ngModel)]="dateTextField">
+            <label for="time">{{'AddTransaction.Time' | translate}}</label>
+            <input type=time step=any id="time" name="time" [(ngModel)]="timeTextField">
+            <label for="category" [class.form-error-text]="classReference.isError">{{'AddTransaction.Category' | translate}}</label>
+            <div class="flex-row-center">
+                <input type="text" id="category" name="category" [class.form-error-border]="classReference.isError"
+                [(ngModel)]="categoryTextField" *ngIf="!showCategoryOptions" class="flex-1">
+                <select *ngIf="showCategoryOptions" id="categoryOptions" name="categoryOptions" 
+                [(ngModel)]="categoryTextField" (change)="showCategoryOptions = false" [class.form-error-border]="classReference.isError" class="mr-xs">
+                <option *ngFor="let option of categoryOptions" [value]="option.value">{{option.label | translate}}</option>
+                </select>
+                <button type="button" (click)="toggleCategoryOptions()" class="category-toggle-btn" aria-label="Toggle input mode">
+                <span class="swap-icon">⇄</span>
+                </button>
+            </div>
+            <label for="comment">{{'AddTransaction.Comment' | translate}}</label>
+            <textarea id="comment" name="comment" rows="4" cols="50" [(ngModel)]="commentTextField"></textarea>
+        </form>
+        <p id="errorLable" *ngIf="classReference.isError">{{errorTextLable}}</p>
+        <button id="addbtn" class="btn btn--action" (click)="updateTransaction()">{{'Info.update' | translate}}</button>
+        <button id="deletebtn" class="btn btn--danger" (click)="deleteTransaction(classReference.index)">{{'Info.delete' | translate}}</button>
+        <button id="canclebtn" class="btn btn--action" (click)="cancel()">{{'Info.cancel' | translate}}</button>
+    </div>
+</div>

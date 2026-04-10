@@ -1,0 +1,138 @@
+<!-- Toolbar -->
+<div class="toolbar" role="banner">
+  <img id="profile-pic" width="40" alt="Profile Logo" src="../assets/profile-blank.jpg"
+    role="button" tabindex="0" aria-label="Open profile" (keydown.enter)="appReference.clickProfile()" (click)="appReference.clickProfile()" />
+  <div id="heading" role="button" tabindex="0" (click)="appReference.openNavBar()" (keydown.enter)="appReference.openNavBar()">{{'SmileProjects.title' | translate}}</div>
+  <div class="spacer"></div>
+  <img id="ai-btn" width="40" alt="AI Assistant" src="assets/icons/ai.png"
+    role="button" tabindex="0" aria-label="AI Assistant" (click)="openAiAssistant()" (keydown.enter)="openAiAssistant()" />
+  <button id="addbtn" class="add-circle-btn" aria-label="Add" (click)="addSmileProject()">+</button>
+</div>
+
+<!-- Search -->
+<div class="search-bar-container" *ngIf="classReference.allSmileProjects.length > 0">
+  <input type="text" class="search-input" aria-label="Search" [placeholder]="'Search.placeholder' | translate" [(ngModel)]="searchTextField" (keyup.enter)="search()">
+  <button type="submit" class="search-button" (click)="search()"><i class="fa fa-search"></i>{{'Cashflow.filter' | translate}}</button>
+  <button type="clear" class="clear-button" (click)="clearSearch()" *ngIf="classReference.isSearched">{{'Cashflow.clear' | translate}}</button>
+</div>
+
+<!-- Phase Filter Tabs -->
+<div class="phase-tabs" *ngIf="classReference.allSmileProjects.length > 0">
+    <button *ngFor="let ph of phases"
+        class="phase-tab"
+        [class.active]="classReference.phaseFilter === ph"
+        (click)="setPhaseFilter(ph)">
+        <span *ngIf="ph === 'all'">{{'Smile.allPhases' | translate}}</span>
+        <span *ngIf="ph !== 'all'">{{'Smile.phase.' + ph | translate}}</span>
+        <span class="phase-count" *ngIf="ph !== 'all'">({{getPhaseCount(ph)}})</span>
+    </button>
+</div>
+
+<!-- Skeleton Loading -->
+<div class="skeleton-row" *ngIf="appState.isLoading" aria-hidden="true">
+  <div class="skeleton-cell"></div><div class="skeleton-cell"></div><div class="skeleton-cell"></div><div class="skeleton-cell"></div><div class="skeleton-cell"></div>
+</div>
+<div class="skeleton-row" *ngIf="appState.isLoading" aria-hidden="true">
+  <div class="skeleton-cell"></div><div class="skeleton-cell"></div><div class="skeleton-cell"></div><div class="skeleton-cell"></div><div class="skeleton-cell"></div>
+</div>
+<div class="skeleton-row" *ngIf="appState.isLoading" aria-hidden="true">
+  <div class="skeleton-cell"></div><div class="skeleton-cell"></div><div class="skeleton-cell"></div><div class="skeleton-cell"></div><div class="skeleton-cell"></div>
+</div>
+
+<!-- Amount Display -->
+<div id="amount-container" *ngIf="!appState.isLoading">
+  <h4 id="amountLable">{{smileAmount | appNumber}} {{settingsReference.currency}}</h4>
+</div>
+
+<!-- Project Cards -->
+<div class="smile-grid" *ngIf="!appState.isLoading && classReference.allSmileProjects.length > 0">
+    <div *ngFor="let project of getFilteredProjects(); let i = index"
+         class="smile-card"
+         role="button" tabindex="0"
+         (click)="clickRow(getOriginalIndex(project))"
+         (keydown.enter)="clickRow(getOriginalIndex(project))"
+         [class.goal-complete]="project.phase === 'completed'">
+
+        <!-- Card Header -->
+        <div class="card-header">
+            <span class="phase-badge phase-{{project.phase}}">
+                {{'Smile.phase.' + project.phase | translate}}
+            </span>
+            <span class="project-number">#{{getOriginalIndex(project) + 1}}</span>
+        </div>
+
+        <!-- Card Title -->
+        <h3 class="card-title">{{project.title}}</h3>
+        <p class="card-sub" *ngIf="project.sub">{{project.sub}}</p>
+
+        <!-- Description preview -->
+        <p class="card-desc" *ngIf="project.description">
+            {{project.description.length > 100 ? project.description.substring(0, 100) + '...' : project.description}}
+        </p>
+
+        <!-- Bucket Info -->
+        <div class="card-buckets" *ngIf="project.buckets && project.buckets.length > 0">
+            <span class="bucket-info">
+                <i class="fa fa-tasks"></i>
+                {{getCompletedBucketCount(project)}}/{{getTotalBucketCount(project)}} {{'Smile.bucketsComplete' | translate}}
+            </span>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="progress-container">
+            <div class="progress-bar" 
+                 [style.width.%]="getBucketProgress(project)"
+                 [class.complete]="project.phase === 'completed'">
+            </div>
+        </div>
+        <div class="progress-label">
+            {{getBucketProgress(project) | number:'1.0-1'}}%
+        </div>
+
+        <!-- Financial Metrics -->
+        <div class="card-metrics">
+            <div class="metric">
+                <span class="metric-label">{{'Fire.target' | translate}}</span>
+                <span class="metric-value">{{getTotalTarget(project) | appNumber}} {{settingsReference.currency}}</span>
+            </div>
+            <div class="metric">
+                <span class="metric-label">{{'Fire.amount' | translate}}</span>
+                <span class="metric-value">{{getTotalAmount(project) | appNumber}} {{settingsReference.currency}}</span>
+            </div>
+        </div>
+
+        <!-- Target Date -->
+        <div class="card-dates" *ngIf="project.targetDate">
+            <div class="date-info">
+                <i class="fa fa-calendar"></i>
+                <span class="date-label">{{'Smile.targetDate' | translate}}:</span>
+                <span class="date-value">{{project.targetDate | appDate}}</span>
+            </div>
+        </div>
+
+        <!-- Completed Date -->
+        <div class="card-dates" *ngIf="project.completionDate">
+            <div class="date-info completed">
+                <i class="fa fa-check-circle"></i>
+                <span class="date-label">{{'Smile.completedDate' | translate}}:</span>
+                <span class="date-value">{{project.completionDate | appDate}}</span>
+            </div>
+        </div>
+
+        <!-- Action Button -->
+        <button class="card-action-btn" 
+                *ngIf="!areAllBucketsFull(project)"
+                (click)="addToProject(getOriginalIndex(project)); $event.stopPropagation()">
+            {{'AddAsset.add' | translate}}
+        </button>
+    </div>
+</div>
+
+<!-- Empty State -->
+<div class="empty-state" *ngIf="!appState.isLoading && classReference.allSmileProjects.length === 0">
+  <p>{{'Empty.smileProjects' | translate}}</p>
+</div>
+
+<app-info-smile></app-info-smile>
+<router-outlet></router-outlet>
+<app-ai-assistant></app-ai-assistant>

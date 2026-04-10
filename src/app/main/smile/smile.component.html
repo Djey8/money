@@ -1,0 +1,146 @@
+<!-- Toolbar -->
+<div class="toolbar" role="banner">
+    <img id="profile-pic" width="40" alt="Profile Logo" src="../assets/profile-blank.jpg" role="button" tabindex="0" aria-label="Open profile" (keydown.enter)="appReference.clickProfile()" (click)="appReference.clickProfile()"/>
+    <div id="heading" role="button" tabindex="0" (click)="appReference.openNavBar()" (keydown.enter)="appReference.openNavBar()">{{'Menu.smile' | translate}}</div>
+    <div class="spacer"></div>
+    <img id="statsbtn" width="40" alt="Profile Logo" src="../../../assets/icons/graph.jpg" role="button" tabindex="0" aria-label="View statistics" (keydown.enter)="goToSmileStats()" (click)="goToSmileStats()" />
+    <img id="smilebtn" width="40" alt="Profile Logo" src="../../../assets/icons/smile.jpg" role="button" tabindex="0" aria-label="View smile projects" (keydown.enter)="goToSmileProjects()" (click)="goToSmileProjects()" />
+    <button id="addbtn" class="add-circle-btn" aria-label="Add" (click)="addTransaction()">+</button>
+  </div>
+  
+  <div class="search-bar-container" *ngIf="classReference.allTransactions.length > 0">
+  <input type="text" class="search-input" aria-label="Search" [placeholder]="'Search.placeholder' | translate" [(ngModel)]="searchTextField" (input)="search(); !searchTextField ? classReference.isSearched=false : null">
+    <!-- <button type="submit" class="search-button" (click)="search()"><i class="fa fa-search"></i>{{'Cashflow.filter' | translate}}</button> -->
+    <button type="clear" class="clear-button" (click)="clearSearch()" *ngIf="classReference.isSearched">{{'Cashflow.clear' | translate}}</button>
+  </div>
+  <div id="amount-container">
+    <h4 id="amountLable">{{classReference.smileAmount | appNumber}} {{settingsReference.currency}}</h4>
+  </div>
+  <div *ngIf="appState.isLoading" class="p-sm">
+    <div class="skeleton-row" *ngFor="let i of [1,2,3,4,5]">
+      <div class="skeleton skeleton-cell" style="flex: 0.5;"></div>
+      <div class="skeleton skeleton-cell"></div>
+      <div class="skeleton skeleton-cell"></div>
+      <div class="skeleton skeleton-cell" style="flex: 0.8;"></div>
+      <div class="skeleton skeleton-cell"></div>
+    </div>
+  </div>
+
+  <!-- <table id="smileTransactionsTable" class="account" *ngIf="!classReference.isSearched">
+    <thead>
+      <tr>
+        <th>{{'Transactions.ID' | translate}}</th>
+        <th>{{'Transactions.Account' | translate}}</th>
+        <th>{{'Transactions.Amount' | translate}}</th>
+        <th>{{'AddTransaction.Category' | translate}}</th>
+        <th>{{'Transactions.Date' | translate}}</th>
+      </tr>
+    </thead>
+   <tbody>
+      <tr *ngFor="let row of classReference.allTransactions; let i = index" (click)="clickRow(classReference.allTransactions.length-i-1)" [hidden]="classReference.allTransactions[classReference.allTransactions.length-i-1].account != 'Smile' && classReference.allTransactions[classReference.allTransactions.length-i-1].account != 'Income'">
+        <td>{{classReference.allTransactions.length-i}}</td>
+        <td>{{classReference.allTransactions[classReference.allTransactions.length-i-1].account}}</td>
+        <td class="{{classReference.allTransactions[classReference.allTransactions.length-i-1].amount>=0 ? 'amount-positive' : 'amount-negative'}}">{{(classReference.allTransactions[classReference.allTransactions.length-i-1].account == "Income") ? ((classReference.allTransactions[classReference.allTransactions.length-i-1].amount)*settingsReference.smile/100 | appNumber) : (classReference.allTransactions[classReference.allTransactions.length-i-1].amount | appNumber)}} {{settingsReference.currency}}</td>
+        <td class="text-truncate-cell">{{classReference.allTransactions[classReference.allTransactions.length-i-1].category.replace('@', '')}}</td>
+        <td>{{classReference.allTransactions[classReference.allTransactions.length-i-1].date | appDate}}</td>
+      </tr>  
+    </tbody>
+  </table>
+  <table id="transactionsSearchTable" class="account" *ngIf="classReference.isSearched">
+    <thead>
+      <tr>
+        <th>{{'Transactions.ID' | translate}}</th>
+        <th>{{'Transactions.Account' | translate}}</th>
+        <th>{{'Transactions.Amount' | translate}}</th>
+        <th>{{'AddTransaction.Category' | translate}}</th>
+        <th>{{'Transactions.Date' | translate}}</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let row of classReference.allSearchedTransactions; let i = index" (click)="clickRow(classReference.allSearchedTransactions.length-i-1)" [hidden]="!classReference.allSearchedTransactions[classReference.allSearchedTransactions.length-i-1].isFiltered || (classReference.allTransactions[classReference.allTransactions.length-i-1].account != 'Smile' && classReference.allTransactions[classReference.allTransactions.length-i-1].account != 'Income')">
+        <td>{{classReference.allSearchedTransactions.length-i}}</td>
+        <td>{{classReference.allSearchedTransactions[classReference.allSearchedTransactions.length-i-1].account}}</td>
+        <td class="{{classReference.allSearchedTransactions[classReference.allSearchedTransactions.length-i-1].amount>=0 ? 'amount-positive' : 'amount-negative'}}">{{(classReference.allSearchedTransactions[classReference.allSearchedTransactions.length-i-1].account == "Income") ? ((classReference.allSearchedTransactions[classReference.allSearchedTransactions.length-i-1].amount)*settingsReference.smile/100 | appNumber) : (classReference.allSearchedTransactions[classReference.allSearchedTransactions.length-i-1].amount | appNumber)}} {{settingsReference.currency}}</td>
+        <td class="text-truncate-cell">{{classReference.allSearchedTransactions[classReference.allSearchedTransactions.length-i-1].category.replace('@', '')}}</td>
+        <td>{{classReference.allSearchedTransactions[classReference.allSearchedTransactions.length-i-1].date | appDate}}</td>
+      </tr>  
+    </tbody>
+  </table> -->
+  <div id="table-container" *ngIf="!appState.isLoading">
+    <!-- Top Paginator -->
+    <mat-paginator class="paginator paginator-compact" #topPaginator
+            [pageSizeOptions]="appReference.getPageSizeOptions()"
+            [pageSize]="25"
+            [length]="accountingReference.dataSource?.data?.length"
+            [pageIndex]="0"
+            showFirstLastButtons
+            aria-label="Select page of transactions">
+    </mat-paginator>
+    
+    <!-- <mat-form-field>
+      <mat-label>Filter</mat-label>
+      <input matInput (keyup)="applyFilter($event)" placeholder="Ex. ium" #input>
+    </mat-form-field> -->
+  
+    <table mat-table [dataSource]="accountingReference.dataSource" matSort (matSortChange)="announceSortChange($event)" class="mat-elevation-z8 account">
+      
+      <!-- ID Column -->
+      <ng-container matColumnDef="id">
+      <th class="headder" mat-header-cell *matHeaderCellDef mat-sort-header="id">{{'Transactions.ID' | translate}}</th>
+      <td mat-cell *matCellDef="let row; let i = index">{{row.id+1}}</td>
+      </ng-container>
+    
+      <!-- Account Column -->
+      <ng-container matColumnDef="account">
+      <th class="headder" mat-header-cell *matHeaderCellDef mat-sort-header>{{'Transactions.Account' | translate}}</th>
+      <td mat-cell *matCellDef="let row; let i = index">{{row.account}}</td>
+      </ng-container>
+  
+      <!-- Amount Column -->
+      <ng-container matColumnDef="amount">
+      <th class="headder" mat-header-cell *matHeaderCellDef mat-sort-header>{{'Transactions.Amount' | translate}}</th>
+      <td mat-cell *matCellDef="let row; let i = index" class="{{row.amount>=0 ? 'amount-positive' : 'amount-negative'}}">
+        {{(row.account == "Income") ? ((row.amount)*settingsReference.smile/100 | appNumber) : (row.amount | appNumber)}} {{settingsReference.currency}}</td>
+      </ng-container>
+  
+      <!-- Category Column -->
+      <ng-container matColumnDef="category">
+        <th class="headder" mat-header-cell *matHeaderCellDef mat-sort-header>{{'AddTransaction.Category' | translate}}</th>
+        <td mat-cell *matCellDef="let row; let i = index" class="text-truncate-cell">{{row.category.replace("@", "")}}</td>
+      </ng-container>
+      
+      <!-- Date Column -->
+      <ng-container matColumnDef="date">
+      <th class="headder" mat-header-cell *matHeaderCellDef mat-sort-header>{{'Transactions.Date' | translate}}</th>
+      <td mat-cell *matCellDef="let row; let i = index"><span class="d-short">{{row.date | appDate:'short'}}</span><span class="d-full">{{row.date | appDate}}</span></td>
+      </ng-container>
+  
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns; let i = index" tabindex="0" (click)="clickRow(row.id)" (keydown.enter)="clickRow(row.id)" [hidden]="!!row.account && row.account != 'Smile' && row.account != 'Income'"></tr>
+    </table>
+    
+    <!-- Bottom Paginator -->
+    <mat-paginator class="paginator paginator-compact" #bottomPaginator
+            [pageSizeOptions]="appReference.getPageSizeOptions()"
+            [pageSize]="25"
+            [length]="accountingReference.dataSource?.data?.length"
+            [pageIndex]="0"
+            showFirstLastButtons
+            aria-label="Select page of transactions">
+    </mat-paginator>
+  </div>
+
+  <!-- Advanced Filter Section -->
+  <app-shared-filter *ngIf="classReference.allTransactions.length > 0"
+    [filter]="classReference.advancedFilter"
+    [availableAccounts]="classReference.availableAccounts"
+    [availableTags]="classReference.availableTags"
+    (apply)="applyAdvancedFilters()"
+    (clear)="clearAdvancedFilters()">
+  </app-shared-filter>
+
+  <div class="empty-state" *ngIf="!appState.isLoading && classReference.allTransactions.length === 0">
+    <p>{{'Empty.transactions' | translate}}</p>
+  </div>
+  <div class="page-bottom-spacer"></div>
+  <router-outlet></router-outlet>

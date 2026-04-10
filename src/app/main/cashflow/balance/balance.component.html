@@ -1,0 +1,170 @@
+<!-- Toolbar -->
+<div class="toolbar" role="banner">
+  <img id="profile-pic" width="40" alt="Profile Logo" src="../assets/profile-blank.jpg"
+    role="button" tabindex="0" aria-label="Open profile" (keydown.enter)="appReference.clickProfile()" (click)="appReference.clickProfile()" />
+  <div id="heading" role="button" tabindex="0" (click)="appReference.openNavBar()" (keydown.enter)="appReference.openNavBar()">{{'Menu.sheet' | translate}}</div>
+  <div class="spacer"></div>
+  <button id="addbtn" class="add-circle-btn" aria-label="Add" (click)="addAsset()">+</button>
+</div>
+
+<div class="balanceBox">
+  <h4 class="balanceLable">{{'Home.balance' | translate}}</h4>
+  <hr class="separator-black">
+  <h4 class="balanceLable">{{classReference.getTotalAmount() | appNumber}} {{settingsReference.currency}}</h4>
+</div>
+
+<div id="assetsBox">
+  <h4 id="assetsTitle">{{'Balance.Assets' | translate}}</h4>
+  <hr class="separator-white">
+    <div id="assets-box">
+    <table id="cashflowTable" class="income-table">
+      <tbody>
+        <tr tabindex="0" (click)="goToCashflow()" (keydown.enter)="goToCashflow()" class="income-row">
+          <td class="assetsTitle">{{'Cashflow.title' | translate}}</td>
+          <td class="assetsAmount">{{incomeRefference.getTotalAmount() | appNumber}} {{settingsReference.currency}}</td>
+        </tr>
+      </tbody>
+    </table>  
+    <div class="section-header">
+      <h4 class="infoLableA">{{'Balance.Assets' | translate}}:</h4>
+      <button class="section-add-btn" aria-label="Add asset" (click)="addOnlyAsset()">+</button>
+    </div>
+    <hr class="separator-black">
+    <table id="assetsTable" class="income-table">
+      <thead>
+        <tr>
+          <th class="headTable" style="text-align: left;">{{'Balance.Name' | translate}}</th>
+          <th class="headTable" style="text-align: right">{{'Balance.Value' | translate}}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let row of classReference.allAssets; let i = index" tabindex="0" (click)="clickRowAsset(i)" (keydown.enter)="clickRowAsset(i)" class="income-row">
+          <td class="assetsTitle">{{classReference.allAssets[i].tag}}:</td>
+          <td class="assetsAmount">{{classReference.allAssets[i].amount| appNumber}} {{settingsReference.currency}}</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="section-header">
+      <h4 class="infoLableA">{{'Balance.Shares' | translate}}:</h4>
+      <button class="section-add-btn" aria-label="Add share" (click)="addShare()">+</button>
+    </div>
+    <hr class="separator-black">
+    <table id="sharesTable" class="income-table">
+      <thead>
+        <tr>
+          <th class="headTable" style="text-align: left;">{{'Balance.Name' | translate}}</th>
+          <th class="headTable">{{'Balance.Quantity' | translate}}</th>
+          <th class="headTable">{{'Balance.Price' | translate}}</th>
+          <th class="headTable" style="text-align: right;">{{'Balance.Value' | translate}}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let row of classReference.allShares; let i = index" tabindex="0" (click)="clickRowShare(i)" (keydown.enter)="clickRowShare(i)" class="income-row">
+          <td class="assetsTitle">{{classReference.allShares[i].tag}}:</td>
+          <td class="assetsCount">{{classReference.allShares[i].quantity}}</td>
+          <td class="assetsPrice">{{classReference.allShares[i].price}} {{settingsReference.currency}}</td>
+          <td class="assetsAmount">{{classReference.allShares[i].price*classReference.allShares[i].quantity|
+            appNumber}} {{settingsReference.currency}}</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="section-header">
+      <h4 class="infoLableA">{{'Balance.Investments' | translate}}:</h4>
+      <button class="section-add-btn" aria-label="Add investment" (click)="addInvestment()">+</button>
+    </div>
+    <hr class="separator-black">
+    <table id="propertiesTable" class="income-table">
+      <thead>
+        <tr>
+          <th class="headTable" style="text-align: left;">{{'Balance.Name' | translate}}</th>
+          <th class="headTable">{{'Balance.Deposit' | translate}}</th>
+          <th class="headTable">{{'AddGrow.Mortage' | translate}}</th>
+          <th class="headTable" style="text-align: right">{{'Balance.Value' | translate}}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let row of classReference.allInvestments; let i = index" tabindex="0" (click)="clickRowInvestment(i)" (keydown.enter)="clickRowInvestment(i)"
+          class="income-row">
+          <td class="assetsTitle">{{classReference.allInvestments[i].tag}}:</td>
+          <td class="assetsPayment">{{classReference.allInvestments[i].deposit | appNumber}} {{settingsReference.currency}}</td>
+          <td class="assetsMortage">{{classReference.allInvestments[i].amount| appNumber}} {{settingsReference.currency}}</td>
+          <td class="assetsAmount">{{classReference.allInvestments[i].amount + classReference.allInvestments[i].deposit | appNumber}} {{settingsReference.currency}}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div id="creditAmountBox">
+    <h4 id="revenueTitle">{{'Balance.Credit' | translate}}</h4>
+    <hr class="separator-white">
+    <h4 id="creditAmountLable">{{classReference.getAssetsAmount() | appNumber}} {{settingsReference.currency}}</h4>
+  </div>
+</div>
+
+<div id="liabilitiesBox">
+  <h4 id="liabilitiesTitle">{{'Balance.Liabilities' | translate}}</h4>
+  <hr class="separator-white">
+  <div id="liabilities-box">
+    <div class="section-header mt-xs">
+      <h4 class="infoLableA mt-xs">{{'Balance.Liabilities' | translate}}:</h4>
+      <button class="section-add-btn" aria-label="Add liability" (click)="addLiabilitie()">+</button>
+    </div>
+    <hr class="separator-black">
+    <table id="liabilitiesTable" class="income-table">
+      <thead>
+        <tr>
+          <th class="headTable" style="text-align: left;">{{'Balance.Name' | translate}}</th>
+          <th class="headTable">{{'Balance.Amount' | translate}}</th>
+          <th class="headTable">{{'Balance.Credit' | translate}}</th>
+          <th class="headTable" style="text-align: right">{{'Balance.Value' | translate}}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let row of classReference.liabilities; let i = index" tabindex="0" (click)="clickRowLiabilitie(i)" (keydown.enter)="clickRowLiabilitie(i)"
+          class="income-row" [hidden]="classReference.liabilities[i].investment">
+          <td class="assetsTitle">{{classReference.liabilities[i].tag}}:</td>
+          <td class="LiabiliteAmount">{{classReference.liabilities[i].amount| appNumber}} {{settingsReference.currency}}</td>
+          <td class="LiabiliteCredit">{{classReference.liabilities[i].credit| appNumber}} {{settingsReference.currency}}</td>
+          <td class="assetsAmount">{{classReference.liabilities[i].amount + classReference.liabilities[i].credit| appNumber}} {{settingsReference.currency}}</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="section-header">
+      <h4 class="infoLableA">{{'Balance.Investments' | translate}}:</h4>
+      <button class="section-add-btn" aria-label="Add liability as investment" (click)="addLiabilitieAsInvestment()">+</button>
+    </div>
+    <hr class="separator-black">
+    <table id="propertiesLTable" class="income-table">
+      <thead>
+        <tr>
+          <th class="headTable" style="text-align: left;">{{'Balance.Name' | translate}}</th>
+          <th class="headTable">{{'Balance.Amount' | translate}}</th>
+          <th class="headTable">{{'Balance.Credit' | translate}}</th>
+          <th class="headTable" style="text-align: right">{{'Balance.Value' | translate}}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let row of classReference.liabilities; let i = index" tabindex="0" (click)="clickRowLiabilitie(i)" (keydown.enter)="clickRowLiabilitie(i)"
+          class="income-row" [hidden]="!classReference.liabilities[i].investment">
+          <td class="assetsTitle">{{classReference.liabilities[i].tag}}:</td>
+          <td class="LiabiliteAmount">{{classReference.liabilities[i].amount| appNumber}} {{settingsReference.currency}}</td>
+          <td class="LiabiliteCredit">{{classReference.liabilities[i].credit| appNumber}} {{settingsReference.currency}}</td>
+          <td class="assetsAmount">{{classReference.liabilities[i].amount + classReference.liabilities[i].credit| appNumber}} {{settingsReference.currency}}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div id="creditAmountBox">
+    <h4 id="revenueTitle">{{'Balance.Debit' | translate}}</h4>
+    <hr class="separator-white">
+    <h4 id="creditAmountLable">{{classReference.getLiabilities() | appNumber}} {{settingsReference.currency}}</h4>
+  </div>
+</div>
+
+<div class="balanceBox" style="margin-bottom: 80px;" role="button" tabindex="0" (click)="goToCashflow()" (keydown.enter)="goToCashflow()">
+  <h4 class="cashflowLable">{{'Cashflow.title' | translate}}</h4>
+</div>
+
+<app-info-asset></app-info-asset>
+<app-info-share></app-info-share>
+<app-info-liabilitie></app-info-liabilitie>
+<app-info-investment></app-info-investment>

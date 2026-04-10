@@ -1,0 +1,117 @@
+<div id="addTransaction-Container" role="dialog" aria-modal="true" appTrapFocus *ngIf="classReference.isAdd" (click)="highlight()"
+    [style.z-index]="classReference.zIndex + 1001">
+    <h4 id="addTransactionTitle">{{'AddTransaction.title' | translate}}</h4>
+    <button id="closebtn" aria-label="Close" (click)="closeWindow()">x</button>
+    <hr class="separator-white">
+    <form id="input-container">
+        <button *ngIf="!toggleScan" class="scan-toggle-btn" (click)="toggleButtons()" aria-label="Toggle scanner">
+            <span class="material-icons scan-icon">qr_code_scanner</span>
+        </button>
+        <div *ngIf="toggleScan" style="display: flex; align-items: center; gap: 5px; margin: 5px 5px 10px 5px;">
+            <button (click)="captureImage()" 
+                style="flex: 1; background-color: #4CAF50; color: white; border: none; padding: 8px; border-radius: 5px;">
+                {{'AddTransaction.captureImage' | translate}}
+            </button>
+            <button (click)="pickImage()" 
+                style="flex: 1; background-color: #008CBA; color: white; border: none; padding: 8px; border-radius: 5px;">
+                {{'AddTransaction.pickImage' | translate}}
+            </button>
+            <button (click)="toggleButtons()" style="background: none; border: none; font-size: 20px; color: var(--color-text); padding: 4px 8px;" aria-label="Close scanner">
+                ✕
+            </button>
+        </div>
+        <h5 *ngIf="isLoading" style="text-align: center;">{{'AddTransaction.loading' | translate}}</h5>
+        <h5 *ngIf="isError" style="text-align: center; color: red;">{{ errorLable }}</h5>
+
+        <label for="account" class="required" [class.form-error-text]="classReference.isError && fieldErrors['account']">{{'AddTransaction.Account' | translate}}</label>
+        <select [(ngModel)]="classReference.selectedOption" id="account" name="account" aria-required="true"
+            [class.form-error-border]="classReference.isError && fieldErrors['account']"
+            [attr.aria-describedby]="fieldErrors['account'] ? 'account-error' : null"
+            [attr.aria-invalid]="fieldErrors['account'] ? true : null">
+            <option value="Daily">{{'Menu.daily' | translate}}</option>
+            <option value="Splurge">{{'Menu.splurge' | translate}}</option>
+            <option value="Smile">{{'Menu.smile' | translate}}</option>
+            <option value="Fire">{{'Menu.fire' | translate}}</option>
+            <option value="Income">{{'AddTransaction.Income' | translate}}</option>
+            <option value="Mojo">{{'Income.Mojo' | translate}}</option>
+        </select>
+        <span class="field-error" id="account-error" role="alert" *ngIf="fieldErrors['account']">{{fieldErrors['account']}}</span>
+        <label for="amount" class="required" [class.form-error-text]="classReference.isError && fieldErrors['amount']">{{'Transactions.Amount' | translate}}</label>
+        <input type=number step=any id="amount" name="amount" aria-required="true" [class.form-error-border]="classReference.isError && fieldErrors['amount']"
+            [(ngModel)]="classReference.amountTextField"
+            (ngModelChange)="onAmountChange($event)"
+            [attr.aria-describedby]="fieldErrors['amount'] ? 'amount-error' : null"
+            [attr.aria-invalid]="fieldErrors['amount'] ? true : null">
+        <span class="field-error" id="amount-error" role="alert" *ngIf="fieldErrors['amount']">{{fieldErrors['amount']}}</span>
+        <label for="date">{{'Transactions.Date' | translate}}</label>
+        <input type=date step=any id="date" name="date" [(ngModel)]="dateTextField">
+        <label for="time">{{'AddTransaction.Time' | translate}}</label>
+        <input type=time step=any id="time" name="time" [(ngModel)]="timeTextField">
+        <label for="category" class="required" [class.form-error-text]="classReference.isError && fieldErrors['category']">{{'AddTransaction.Category' | translate}}</label>
+        <div class="flex-row-center">
+            <input type="text" id="category" name="category" aria-required="true" [class.form-error-border]="classReference.isError && fieldErrors['category']"
+            [(ngModel)]="classReference.categoryTextField" *ngIf="!showCategoryOptions" class="flex-1"
+            [attr.aria-describedby]="fieldErrors['category'] ? 'category-error' : null"
+            [attr.aria-invalid]="fieldErrors['category'] ? true : null">
+            <select *ngIf="showCategoryOptions" id="categoryOptions" name="categoryOptions" 
+            [(ngModel)]="classReference.categoryTextField" (change)="showCategoryOptions = false" [class.form-error-border]="classReference.isError && fieldErrors['category']" class="mr-xs"
+            [attr.aria-describedby]="fieldErrors['category'] ? 'category-error' : null"
+            [attr.aria-invalid]="fieldErrors['category'] ? true : null">
+            <option *ngFor="let option of classReference.categoryOptions" [value]="option.value">{{option.label | translate}}</option>
+            </select>
+            <button type="button" (click)="toggleCategoryOptions()" class="category-toggle-btn" aria-label="Toggle input mode">
+            <span class="swap-icon">⇄</span>
+            </button>
+        </div>
+        <span class="field-error" id="category-error" role="alert" *ngIf="fieldErrors['category']">{{fieldErrors['category']}}</span>
+        <label for="comment">{{'AddTransaction.Comment' | translate}}</label>
+        <textarea id="comment" name="comment" rows="4" cols="50"
+            [(ngModel)]="classReference.commentTextField"></textarea>
+        <div class="toggle-row" role="switch" tabindex="0" [attr.aria-checked]="classReference.isLiabilitie" (click)="classReference.isLiabilitie = !classReference.isLiabilitie" (keydown.enter)="classReference.isLiabilitie = !classReference.isLiabilitie" (keydown.space)="classReference.isLiabilitie = !classReference.isLiabilitie; $event.preventDefault()">
+            <span class="toggle-label">{{'AddGrow.Loan' | translate}}</span>
+            <div class="toggle-switch" [ngClass]="{'toggle-on': classReference.isLiabilitie}">
+                <div class="toggle-knob"></div>
+            </div>
+        </div>
+        <label *ngIf="classReference.isLiabilitie && !showLoanOptions" for="amount">{{'AddGrow.Loan' | translate}} {{settingsReference.currency}}</label>
+        <label *ngIf="classReference.isLiabilitie && showLoanOptions"  for="amount">{{'AddGrow.Loan' | translate}} %</label>
+        <div class="input-row">
+            <input *ngIf="classReference.isLiabilitie" type="number" step=any id="loan" name="loan" [(ngModel)]="classReference.loanTextField" class="flex-1">
+            <button *ngIf="classReference.isLiabilitie" type="button" (click)="toggleLoanOptions()" class="category-toggle-btn" aria-label="Toggle input mode">
+            <span class="swap-icon">⇄</span>
+            </button>
+        </div>
+        <label *ngIf="classReference.isLiabilitie && !showCreditOptions" for="amount">{{'Balance.Credit' | translate}} {{settingsReference.currency}}</label>
+        <label *ngIf="classReference.isLiabilitie && showCreditOptions"  for="amount">{{'Balance.Credit' | translate}} %</label>
+        <div class="input-row">
+            <input *ngIf="classReference.isLiabilitie" type="number" step=any id="credit" name="credit" [(ngModel)]="classReference.creditTextField" class="flex-1">
+            <button *ngIf="classReference.isLiabilitie" type="button" (click)="toggleCreditOptions()" class="category-toggle-btn" aria-label="Toggle input mode">
+            <span class="swap-icon">⇄</span>
+            </button>
+        </div>
+        <div class="toggle-row" role="switch" tabindex="0" [attr.aria-checked]="classReference.isShare" (click)="toggleIsShare()" (keydown.enter)="toggleIsShare()" (keydown.space)="toggleIsShare(); $event.preventDefault()">
+            <span class="toggle-label">{{'AddTransaction.share' | translate}}</span>
+            <div class="toggle-switch" [ngClass]="{'toggle-on': classReference.isShare}">
+                <div class="toggle-knob"></div>
+            </div>
+        </div>
+        <label *ngIf="classReference.isShare && !showShareOptions" for="amount">{{'AddTransaction.Share' | translate}} {{settingsReference.currency}}</label>
+        <label *ngIf="classReference.isShare && showShareOptions"  for="amount">{{'AddTransaction.Share' | translate}} %</label>
+        <div class="input-row">
+            <input *ngIf="classReference.isShare" type="number" step=any id="share" name="share" [(ngModel)]="classReference.shareTextField" class="flex-1">
+            <button *ngIf="classReference.isShare" type="button" (click)="toggleShareOptions()" class="category-toggle-btn" aria-label="Toggle input mode">
+            <span class="swap-icon">⇄</span>
+            </button>
+        </div>
+        <div class="toggle-row" role="switch" tabindex="0" [attr.aria-checked]="classReference.isTaxExpense" (click)="toggleIsTaxExpense()" (keydown.enter)="toggleIsTaxExpense()" (keydown.space)="toggleIsTaxExpense(); $event.preventDefault()">
+            <span class="toggle-label">{{'AddTransaction.professionalexpenses' | translate}}</span>
+            <div class="toggle-switch" [ngClass]="{'toggle-on': classReference.isTaxExpense}">
+                <div class="toggle-knob"></div>
+            </div>
+        </div>
+    </form>
+    <div class="sticky-footer">
+        <p id="errorLable" *ngIf="classReference.isError">{{errorTextLable}}</p>
+        <button id="addbtn" class="btn btn--action" (click)="addTransaction()">{{'AddAsset.add' | translate}}</button>
+    </div>
+</div>
