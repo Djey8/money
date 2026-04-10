@@ -1,0 +1,20 @@
+#!/bin/sh
+commit_msg=$(cat "$1")
+pattern="^(feat|fix|docs|chore|refactor|test|ci|style|perf)(\(.+\))?(!)?: .{1,100}"
+
+if ! echo "$commit_msg" | head -1 | grep -qE "$pattern"; then
+  echo ""
+  echo "ERROR: Commit message does not follow Conventional Commits format."
+  echo ""
+  echo "  Required: <type>(<scope>): <subject>"
+  echo "  Types:    feat|fix|docs|chore|refactor|test|ci|style|perf"
+  echo ""
+  echo "  Examples:"
+  echo "    feat(budget): add monthly overview chart"
+  echo "    fix(auth): handle expired token"
+  echo "    chore: update dependencies"
+  echo ""
+  echo "  Your message: $commit_msg"
+  echo ""
+  exit 1
+fi

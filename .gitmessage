@@ -1,0 +1,16 @@
+# <type>(<scope>): <subject>
+#
+# Types: feat|fix|docs|chore|refactor|test|ci|style|perf
+# Scope: optional, e.g. auth, budget, cashflow, settings, backend, e2e
+# Subject: imperative, lowercase, no period
+#
+# Examples:
+#   feat(budget): add monthly budget overview
+#   fix(auth): handle expired token on app resume
+#   feat!: redesign transaction data model
+#
+# Body (optional): explain WHY, not WHAT
+#
+# Footer (optional):
+#   BREAKING CHANGE: <description>
+#   Closes #123
