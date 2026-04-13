@@ -1,4 +1,6 @@
-import 'jest-preset-angular/setup-jest';
+import { setupZoneTestEnv } from 'jest-preset-angular/setup-env/zone';
+
+setupZoneTestEnv();
 
 // Global mocks for browser APIs not available in jsdom
 Object.defineProperty(window, 'getComputedStyle', {
