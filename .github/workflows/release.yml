@@ -1,6 +1,8 @@
 name: Release
-
+# GitHub Release is now created by auto-release.yml.
+# This workflow is kept as a manual fallback for tag pushes.
 on:
+  workflow_dispatch:
   push:
     tags:
       - 'v*'
@@ -8,6 +10,8 @@ on:
 jobs:
   release:
     runs-on: ubuntu-latest
+    # Skip when auto-release already handled this tag
+    if: github.event_name == 'workflow_dispatch'
     permissions:
       contents: write
     steps:
