@@ -1,0 +1,146 @@
+name: Auto Release
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  auto-release:
+    runs-on: ubuntu-latest
+    # Skip if this push was the auto-release commit itself
+    if: "!startsWith(github.event.head_commit.message, 'chore(release):')"
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci --legacy-peer-deps
+
+      # Run tests before releasing
+      - name: Frontend tests
+        run: npx jest --config jest.config.js --ci
+
+      # Detect bump type from conventional commits
+      - name: Detect version bump
+        id: bump
+        run: |
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [ -n "$LAST_TAG" ]; then
+            RANGE="$LAST_TAG..HEAD"
+          else
+            RANGE="HEAD"
+          fi
+
+          COMMITS=$(git log $RANGE --pretty=format:"%s")
+          BUMP="none"
+
+          while IFS= read -r msg; do
+            if echo "$msg" | grep -qE "BREAKING CHANGE|^[a-z]+(\(.+\))?!:"; then
+              BUMP="major"
+              break
+            fi
+            if echo "$msg" | grep -qE "^feat"; then
+              BUMP="minor"
+            fi
+            if [ "$BUMP" = "none" ] && echo "$msg" | grep -qE "^(fix|perf)"; then
+              BUMP="patch"
+            fi
+          done <<< "$COMMITS"
+
+          echo "type=$BUMP" >> $GITHUB_OUTPUT
+          echo "Detected bump: $BUMP"
+
+      # Bump version, update changelog, commit, tag
+      - name: Bump version and changelog
+        if: steps.bump.outputs.type != 'none'
+        id: version
+        run: |
+          BUMP="${{ steps.bump.outputs.type }}"
+          CURRENT=$(node -p "require('./package.json').version")
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
+
+          case "$BUMP" in
+            major) MAJOR=$((MAJOR + 1)); MINOR=0; PATCH=0 ;;
+            minor) MINOR=$((MINOR + 1)); PATCH=0 ;;
+            patch) PATCH=$((PATCH + 1)) ;;
+          esac
+
+          NEW_VERSION="$MAJOR.$MINOR.$PATCH"
+          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "Bumping $CURRENT -> $NEW_VERSION ($BUMP)"
+
+          # Update package.json files
+          npm version "$NEW_VERSION" --no-git-tag-version
+          cd backend && npm version "$NEW_VERSION" --no-git-tag-version && cd ..
+
+          # Generate changelog entry
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [ -n "$LAST_TAG" ]; then
+            RANGE="$LAST_TAG..HEAD"
+          else
+            RANGE="HEAD"
+          fi
+
+          DATE=$(date +%Y-%m-%d)
+          FEATURES=$(git log $RANGE --pretty=format:"%s" | grep "^feat" | sed 's/^/- /' || true)
+          FIXES=$(git log $RANGE --pretty=format:"%s" | grep "^fix" | sed 's/^/- /' || true)
+          PERFS=$(git log $RANGE --pretty=format:"%s" | grep "^perf" | sed 's/^/- /' || true)
+
+          ENTRY="## [$NEW_VERSION] - $DATE"$'\n'
+          if [ -n "$FEATURES" ]; then ENTRY+=$'\n'"### Features"$'\n'"$FEATURES"$'\n'; fi
+          if [ -n "$FIXES" ];    then ENTRY+=$'\n'"### Bug Fixes"$'\n'"$FIXES"$'\n'; fi
+          if [ -n "$PERFS" ];    then ENTRY+=$'\n'"### Performance"$'\n'"$PERFS"$'\n'; fi
+
+          if [ -f CHANGELOG.md ]; then
+            echo -e "$ENTRY\n$(cat CHANGELOG.md)" > CHANGELOG.md
+          else
+            echo -e "# Changelog\n\n$ENTRY" > CHANGELOG.md
+          fi
+
+          # Commit and tag
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json backend/package.json CHANGELOG.md
+          git commit -m "chore(release): v$NEW_VERSION"
+          git tag -a "v$NEW_VERSION" -m "Release v$NEW_VERSION"
+          git push origin main --tags
+
+      # Build for production
+      - name: Build
+        if: steps.bump.outputs.type != 'none'
+        run: npm run build
+
+      # Deploy to Firebase
+      - name: Deploy to Firebase
+        if: steps.bump.outputs.type != 'none'
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_MONEY98_B2242 }}
+          channelId: live
+          projectId: money98-b2242
+
+      # Create GitHub Release
+      - name: Create GitHub Release
+        if: steps.bump.outputs.type != 'none'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          generate_release_notes: true
+
+      # Sync develop with the release commit
+      - name: Sync develop branch
+        if: steps.bump.outputs.type != 'none'
+        run: |
+          git fetch origin develop
+          git checkout develop
+          git merge main --no-edit
+          git push origin develop
