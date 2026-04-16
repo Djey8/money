@@ -52,7 +52,7 @@
             [ngClass]="{ active: i === selectedIndex, latest: i === 0 }"
             (click)="selectVersion(i)">
           <span class="version-tag">v{{ v.version }}</span>
-          <span class="version-date">{{ v.date }}</span>
+          <span class="version-date">{{ v.date | appDate }}</span>
           <span class="latest-badge" *ngIf="i === 0">{{ 'Changelog.latest' | translate }}</span>
         </li>
       </ul>
@@ -82,7 +82,7 @@
             v{{ selected.version }}
             <span class="latest-pill" *ngIf="isLatest">{{ 'Changelog.latest' | translate }}</span>
           </h2>
-          <time class="version-card-date">{{ selected.date }}</time>
+          <time class="version-card-date">{{ selected.date | appDate }}</time>
         </div>
 
         <div class="version-card-body">
