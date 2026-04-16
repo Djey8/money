@@ -351,6 +351,9 @@ export class AppComponent {
     ProfileComponent.username = "Username";
     ProfileComponent.mail = "example@traiber.com";
     
+    // Clear all in-memory caches (read cache, ETags, dirty-tracker)
+    this.database.clearAllCaches();
+
     // Clear authentication based on mode
     if (this.appMode === 'firebase') {
       this.logoutFirebase();
