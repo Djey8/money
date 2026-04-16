@@ -228,6 +228,11 @@ export class ProfileComponent {
     ProfileComponent.zIndex = 0;
   }
 
+  openAbout() {
+    this.closeWindow();
+    this.router.navigate(['/about']);
+  }
+
   goToAuthetication() {
     this.router.navigate(['/authentication']);
     ProfileComponent.isProfile = false;

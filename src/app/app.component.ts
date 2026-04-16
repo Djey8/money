@@ -237,8 +237,8 @@ export class AppComponent {
         AppStateService.instance.isLoading = false;
         // If on landing page, stay there; otherwise redirect to auth
         const hash = window.location.hash;
-        if (hash === '' || hash === '#/') {
-          // Stay on landing page — no redirect
+        if (hash === '' || hash === '#/' || hash === '#/about') {
+          // Stay on landing / about page — no redirect
         } else {
           this.router.navigate(['/']);
         }
@@ -250,7 +250,7 @@ export class AppComponent {
         // Skip auth checks for demo mode and landing page
         if (DemoService.isDemoMode()) return;
         const hash = window.location.hash;
-        if (hash === '' || hash === '#/') return;
+        if (hash === '' || hash === '#/' || hash === '#/about') return;
 
         const authResult = await this.authService.checkAuthentication();
         if (!authResult.authenticated) {

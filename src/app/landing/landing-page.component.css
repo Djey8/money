@@ -74,6 +74,12 @@ app-landing-page ul {
 }
 
 /* --- Landing Toolbar Nav --- */
+.toolbar #heading {
+    width: auto;
+    flex: 1;
+    cursor: pointer;
+}
+
 .toolbar .logo {
     font-size: 1.3rem;
     font-weight: 800;
