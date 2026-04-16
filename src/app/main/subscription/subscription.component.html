@@ -48,10 +48,10 @@
     <thead>
       <tr>
         <th>{{'Transactions.ID' | translate}}</th>
-        <th>{{'Balance.Name' | translate}}</th>
-        <th>{{'Transactions.Account' | translate}}</th>
-        <th>{{'Transactions.Amount' | translate}}</th>
-        <th>{{'Transactions.Date' | translate}}</th>
+        <th>{{'Common.name' | translate}}</th>
+        <th>{{'Common.account' | translate}}</th>
+        <th>{{'Common.amount' | translate}}</th>
+        <th>{{'Common.date' | translate}}</th>
       </tr>
     </thead>
    <tbody>
@@ -83,10 +83,10 @@
     <thead>
       <tr>
         <th>{{'Transactions.ID' | translate}}</th>
-        <th>{{'Balance.Name' | translate}}</th>
-        <th>{{'Transactions.Account' | translate}}</th>
-        <th>{{'Transactions.Amount' | translate}}</th>
-        <th>{{'Transactions.Date' | translate}}</th>
+        <th>{{'Common.name' | translate}}</th>
+        <th>{{'Common.account' | translate}}</th>
+        <th>{{'Common.amount' | translate}}</th>
+        <th>{{'Common.date' | translate}}</th>
       </tr>
     </thead>
     <tbody>
@@ -134,25 +134,25 @@
     
       <!-- Name Column -->
       <ng-container matColumnDef="title">
-      <th class="headder" mat-header-cell *matHeaderCellDef mat-sort-header>{{'Balance.Name' | translate}}</th>
+      <th class="headder" mat-header-cell *matHeaderCellDef mat-sort-header>{{'Common.name' | translate}}</th>
       <td mat-cell *matCellDef="let sub; let i = index" [hidden]="classReference.isActive(sub.id)">{{sub.title}}</td>
       </ng-container>
     
       <!-- Account Column -->
       <ng-container matColumnDef="account">
-      <th class="headder" mat-header-cell *matHeaderCellDef mat-sort-header>{{'Transactions.Account' | translate}}</th>
+      <th class="headder" mat-header-cell *matHeaderCellDef mat-sort-header>{{'Common.account' | translate}}</th>
       <td mat-cell *matCellDef="let sub; let i = index" [hidden]="classReference.isActive(sub.id)">{{sub.account}}</td>
       </ng-container>
     
       <!-- Amount Column -->
       <ng-container matColumnDef="amount">
-      <th class="headder" mat-header-cell *matHeaderCellDef mat-sort-header>{{'Transactions.Amount' | translate}}</th>
+      <th class="headder" mat-header-cell *matHeaderCellDef mat-sort-header>{{'Common.amount' | translate}}</th>
       <td mat-cell *matCellDef="let sub; let i = index" [hidden]="classReference.isActive(sub.id)" class="{{sub.amount>=0 ? 'amount-positive' : 'amount-negative'}}">{{sub.amount | appNumber}} {{settingsReference.currency}}</td>
       </ng-container>
 
       <!-- Date Column -->
       <ng-container matColumnDef="startDate">
-      <th class="headder" mat-header-cell *matHeaderCellDef mat-sort-header>{{'Transactions.Date' | translate}}</th>
+      <th class="headder" mat-header-cell *matHeaderCellDef mat-sort-header>{{'Common.date' | translate}}</th>
       <td mat-cell *matCellDef="let sub; let i = index" [hidden]="classReference.isActive(sub.id)" class="{{isChecked ? (isPeriodPaid(sub) ? 'date-payed' : 'date') : 'date'}}"><span class="d-short">{{sub.startDate | appDate:'short'}}</span><span class="d-full">{{sub.startDate | appDate}}</span></td>
       </ng-container>
 
@@ -187,25 +187,25 @@
     
       <!-- Name Column -->
       <ng-container matColumnDef="title">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header>{{'Balance.Name' | translate}}</th>
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>{{'Common.name' | translate}}</th>
         <td mat-cell *matCellDef="let sub; let i = index" [hidden]="!classReference.isActive(sub.id)">{{sub.title}}</td>
       </ng-container>
     
       <!-- Account Column -->
       <ng-container matColumnDef="account">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header>{{'Transactions.Account' | translate}}</th>
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>{{'Common.account' | translate}}</th>
         <td mat-cell *matCellDef="let sub; let i = index" [hidden]="!classReference.isActive(sub.id)">{{sub.account}}</td>
       </ng-container>
     
       <!-- Amount Column -->
       <ng-container matColumnDef="amount">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header>{{'Transactions.Amount' | translate}}</th>
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>{{'Common.amount' | translate}}</th>
         <td mat-cell *matCellDef="let sub; let i = index" [hidden]="!classReference.isActive(sub.id)" class="{{sub.amount>=0 ? 'amount-positive' : 'amount-negative'}}">{{sub.amount | appNumber}} {{settingsReference.currency}}</td>
       </ng-container>
 
       <!-- Date Column -->
       <ng-container matColumnDef="endDate">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header>{{'Transactions.Date' | translate}}</th>
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>{{'Common.date' | translate}}</th>
         <td mat-cell *matCellDef="let sub; let i = index" [hidden]="!classReference.isActive(sub.id)"><span class="d-short">{{sub.endDate | appDate:'short'}}</span><span class="d-full">{{sub.endDate | appDate}}</span></td>
       </ng-container>
 

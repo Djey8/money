@@ -26,10 +26,10 @@
     </div>
     <div *ngIf="isEdit">
         <form id="input-container">
-            <label for="account">{{'Balance.Name' | translate}}</label>
+            <label for="account">{{'Common.name' | translate}}</label>
             <input type=text step=any id="title" name="title" [class.form-error-border]="classReference.isError"
                 [(ngModel)]="titleTextField">
-            <label for="account">{{'Transactions.Account' | translate}}</label>
+            <label for="account">{{'Common.account' | translate}}</label>
             <select [(ngModel)]="selectedOption" id="account" name="account">
                 <option value="Daily">{{'Menu.daily' | translate}}</option>
                 <option value="Splurge">{{'Menu.splurge' | translate}}</option>

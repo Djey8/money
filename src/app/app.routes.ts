@@ -1,6 +1,8 @@
 import { Routes } from '@angular/router';
 
 export const routes: Routes = [
+  { path: '', loadComponent: () => import('./landing/landing-page.component').then(m => m.LandingPageComponent) },
+  { path: 'changelog', loadComponent: () => import('./changelog/changelog.component').then(m => m.ChangelogComponent) },
   { path: 'authentication', loadComponent: () => import('./registration/registration.component').then(m => m.RegistrationComponent) },
   { path: 'home', loadComponent: () => import('./main/home/home.component').then(m => m.HomeComponent) },
   { path: 'transactions', loadComponent: () => import('./main/accounting/accounting.component').then(m => m.AccountingComponent) },

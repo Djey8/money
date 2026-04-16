@@ -1,0 +1,1605 @@
+﻿<!-- Toolbar -->
+<div class="toolbar" role="banner">
+  <img id="profile-pic" width="40" alt="Profile Logo" src="../assets/profile-blank.jpg"
+    role="button" tabindex="0" aria-label="Open profile" (click)="appReference.clickProfile()" (keydown.enter)="appReference.clickProfile()" />
+  <a href="#" class="logo">Money<span>App</span></a>
+  <div class="spacer"></div>
+  <input type="checkbox" id="nav-toggle" class="nav-toggle" aria-label="Toggle navigation">
+  <label for="nav-toggle" class="nav-toggle-label" aria-hidden="true"><span></span></label>
+  <label for="nav-toggle" class="nav-backdrop" aria-hidden="true"></label>
+  <ul class="nav-links">
+    <li><a href="#how-it-works" (click)="closeNav()">{{ 'Landing.nav.howItWorks' | translate }}</a></li>
+    <li><a routerLink="/changelog" (click)="closeNav()">{{ 'Landing.nav.changelog' | translate }}</a></li>
+    <li><a href="#get-started" (click)="closeNav()">{{ 'Landing.nav.getStarted' | translate }}</a></li>
+    <li><button class="nav-demo-btn" (click)="closeNav(); launchDemo()">{{ 'Landing.nav.demo' | translate }}</button></li>
+  </ul>
+</div>
+
+<main>
+
+  <!-- ============================================================
+  2. HERO
+  ============================================================ -->
+  <section class="hero" id="hero">
+    <div class="hero-shapes" aria-hidden="true">
+      <div class="shape shape--1"></div>
+      <div class="shape shape--2"></div>
+      <div class="shape shape--3"></div>
+      <div class="shape shape--4"></div>
+      <div class="shape shape--coin"></div>
+    </div>
+
+    <div class="container hero-content">
+      <h1>{{ 'Landing.hero.title' | translate }}</h1>
+      <p class="subtitle">{{ 'Landing.hero.subtitle' | translate }}</p>
+      <div class="hero-ctas">
+        <a href="#how-it-works" class="btn btn-primary">{{ 'Landing.hero.cta' | translate }}</a>
+        <a routerLink="/authentication" class="btn btn-secondary">{{ 'Landing.hero.signIn' | translate }}</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+  3. HOW IT WORKS — Bucket System
+  ============================================================ -->
+  <section class="how-it-works" id="how-it-works">
+    <div class="container">
+      <h2 class="section-title">{{ 'Landing.buckets.title' | translate }}</h2>
+      <p class="section-subtitle">{{ 'Landing.buckets.subtitle' | translate }}</p>
+
+      <div class="grid-container">
+        <div class="bucket-flip" [class.flipped]="flippedBuckets.has('daily')" (click)="toggleBucket('daily')" role="button" tabindex="0" aria-label="Daily — click for details" (keydown.enter)="toggleBucket('daily')">
+          <div class="bucket-flip-inner">
+            <div class="grid-item bucket-front">
+              <h3 class="grid-header">{{ 'Landing.buckets.daily' | translate }}</h3>
+              <img class="grid-pic" src="assets/icons/daily.jpg" alt="Daily bucket">
+              <div class="grid-value-positive">60 {{currencySymbol}}</div>
+            </div>
+            <div class="bucket-back bucket-back--daily">
+              <button class="bucket-back-close" (click)="flippedBuckets.delete('daily'); $event.stopPropagation()" aria-label="Close">&times;</button>
+              <strong>{{ 'Landing.buckets.dailyTitle' | translate }}</strong>
+              <p>{{ 'Landing.buckets.dailyDesc' | translate }}</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="bucket-flip" [class.flipped]="flippedBuckets.has('splurge')" (click)="toggleBucket('splurge')" role="button" tabindex="0" aria-label="Splurge — click for details" (keydown.enter)="toggleBucket('splurge')">
+          <div class="bucket-flip-inner">
+            <div class="grid-item bucket-front">
+              <h3 class="grid-header">{{ 'Landing.buckets.splurge' | translate }}</h3>
+              <img class="grid-pic" src="assets/icons/splurge.jpg" alt="Splurge bucket">
+              <div class="grid-value-positive">10 {{currencySymbol}}</div>
+            </div>
+            <div class="bucket-back bucket-back--splurge">
+              <button class="bucket-back-close" (click)="flippedBuckets.delete('splurge'); $event.stopPropagation()" aria-label="Close">&times;</button>
+              <strong>{{ 'Landing.buckets.splurgeTitle' | translate }}</strong>
+              <p>{{ 'Landing.buckets.splurgeDesc' | translate }}</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="bucket-flip" [class.flipped]="flippedBuckets.has('smile')" (click)="toggleBucket('smile')" role="button" tabindex="0" aria-label="Smile — click for details" (keydown.enter)="toggleBucket('smile')">
+          <div class="bucket-flip-inner">
+            <div class="grid-item bucket-front">
+              <h3 class="grid-header">{{ 'Landing.buckets.smile' | translate }}</h3>
+              <img class="grid-pic" src="assets/icons/smile.jpg" alt="Smile bucket">
+              <div class="grid-value-positive">10 {{currencySymbol}}</div>
+            </div>
+            <div class="bucket-back bucket-back--smile">
+              <button class="bucket-back-close" (click)="flippedBuckets.delete('smile'); $event.stopPropagation()" aria-label="Close">&times;</button>
+              <strong>{{ 'Landing.buckets.smileTitle' | translate }}</strong>
+              <p>{{ 'Landing.buckets.smileDesc' | translate }}</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="bucket-flip" [class.flipped]="flippedBuckets.has('fire')" (click)="toggleBucket('fire')" role="button" tabindex="0" aria-label="Fire — click for details" (keydown.enter)="toggleBucket('fire')">
+          <div class="bucket-flip-inner">
+            <div class="grid-item bucket-front">
+              <h3 class="grid-header">{{ 'Landing.buckets.fire' | translate }}</h3>
+              <img class="grid-pic" src="assets/icons/fire.jpg" alt="Fire bucket">
+              <div class="grid-value-positive">20 {{currencySymbol}}</div>
+            </div>
+            <div class="bucket-back bucket-back--fire">
+              <button class="bucket-back-close" (click)="flippedBuckets.delete('fire'); $event.stopPropagation()" aria-label="Close">&times;</button>
+              <strong>{{ 'Landing.buckets.fireTitle' | translate }}</strong>
+              <p>{{ 'Landing.buckets.fireDesc' | translate }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bucket-bars">
+        <div class="bar-row">
+          <span class="bar-label" style="color:var(--color-primary)">{{ 'Landing.buckets.dailyPct' | translate }}</span>
+          <div class="bar-track"><div class="bar-fill bar-fill--daily"></div></div>
+        </div>
+        <div class="bar-row">
+          <span class="bar-label" style="color:var(--color-warning)">{{ 'Landing.buckets.splurgePct' | translate }}</span>
+          <div class="bar-track"><div class="bar-fill bar-fill--splurge"></div></div>
+        </div>
+        <div class="bar-row">
+          <span class="bar-label" style="color:var(--color-success)">{{ 'Landing.buckets.smilePct' | translate }}</span>
+          <div class="bar-track"><div class="bar-fill bar-fill--smile"></div></div>
+        </div>
+        <div class="bar-row">
+          <span class="bar-label" style="color:var(--color-fire)">{{ 'Landing.buckets.firePct' | translate }}</span>
+          <div class="bar-track"><div class="bar-fill bar-fill--fire"></div></div>
+        </div>
+      </div>
+
+      <p class="bucket-note">{{ 'Landing.buckets.note' | translate }}</p>
+    </div>
+  </section>
+
+  <!-- ============================================================
+  4. BUILD WEALTH — Mojo & Grow
+  ============================================================ -->
+  <section class="build-wealth" id="build-wealth">
+    <div class="container">
+      <h2 class="section-title">{{ 'Landing.wealth.title' | translate }}</h2>
+      <p class="section-subtitle">{{ 'Landing.wealth.subtitle' | translate }}</p>
+
+      <div class="wealth-grid">
+        <div class="mojo-card">
+          <h3>{{ 'Landing.wealth.mojoTitle' | translate }}</h3>
+          <p>{{ 'Landing.wealth.mojoDesc1' | translate }}</p>
+          <p>{{ 'Landing.wealth.mojoDesc2' | translate }}</p>
+
+          <span class="mojo-highlight">{{ 'Landing.wealth.mojoStep' | translate }}</span>
+
+          <!-- Mini Mojo visual preview -->
+          <div class="mojo-preview">
+            <div class="mojo-preview-mojoBox">
+              <h4 class="mojo-preview-progressLabel">60%</h4>
+              <h4 class="mojo-preview-mojoTitle">{{ 'Landing.wealth.mojoLabel' | translate }}</h4>
+              <hr class="separator-white">
+              <div class="mojo-preview-info-box">
+                <div class="mojo-preview-gaugeContainer">
+                  <svg width="200" height="120" viewBox="0 0 100 50">
+                    <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="var(--color-border)" stroke-width="6"/>
+                    <path d="M 10 50 A 40 40 0 0 1 18.6 25.2" fill="none" stroke="red" stroke-width="6"/>
+                    <circle cx="18.6" cy="25.2" r="3" fill="red"/>
+                  </svg>
+                  <div class="mojo-preview-gauge-text">0.65 {{currencySymbol}} {{ 'Landing.wealth.mojoGauge' | translate }}</div>
+                  <div class="mojo-preview-gauge-avg"><b>{{currencySymbol}}</b> 1,850 {{currencySymbol}}</div>
+                </div>
+                <h4 class="mojo-preview-infoLabel">{{ 'Landing.wealth.mojoTarget' | translate }} +2,000 {{currencySymbol}}</h4>
+                <h4 class="mojo-preview-infoLabel">{{ 'Landing.wealth.mojoAmount' | translate }} +1,200 {{currencySymbol}}</h4>
+                <progress class="mojo-preview-progress" value="60" max="100"></progress>
+              </div>
+              <button class="mojo-preview-addBtn">{{ 'Landing.smile.add' | translate }}</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="grow-section">
+          <h3>{{ 'Landing.wealth.growTitle' | translate }}</h3>
+          <p class="grow-intro">{{ 'Landing.wealth.growIntro' | translate }}</p>
+
+          <!-- Mini Balance Assets preview -->
+          <div class="balance-preview">
+            <div class="balance-preview-assetsBox">
+              <h4 class="balance-preview-assetsTitle">{{ 'Landing.wealth.assets' | translate }}</h4>
+              <hr class="separator-white">
+              <div class="balance-preview-inner">
+                <!-- CASHFLOW -->
+                <div class="balance-preview-section-wrap" [class.active]="flippedBuckets.has('bp-cashflow')" (click)="toggleBucket('bp-cashflow')">
+                  <table class="balance-preview-table">
+                    <tbody>
+                      <tr class="balance-preview-row">
+                        <td class="balance-preview-name">{{ 'Landing.wealth.cashflow' | translate }}</td>
+                        <td class="balance-preview-value">+3,200 {{currencySymbol}}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                  <div class="balance-preview-info" *ngIf="flippedBuckets.has('bp-cashflow')" (click)="$event.stopPropagation()">
+                    <button class="balance-preview-info-close" (click)="flippedBuckets.delete('bp-cashflow'); $event.stopPropagation()">×</button>
+                    <strong>{{ 'Landing.wealth.cashflow' | translate }}</strong>
+                    <p>{{ 'Landing.wealth.cashflowInfo' | translate }}</p>
+                  </div>
+                </div>
+
+                <!-- Assets -->
+                <div class="balance-preview-section-wrap" [class.active]="flippedBuckets.has('bp-assets')" (click)="toggleBucket('bp-assets')">
+                  <div class="balance-preview-section-header">
+                    <h4 class="balance-preview-sectionLabel">{{ 'Landing.wealth.assets' | translate }}:</h4>
+                    <span class="balance-preview-add-btn">+</span>
+                  </div>
+                  <hr class="balance-preview-divider">
+                  <table class="balance-preview-table">
+                    <thead>
+                      <tr>
+                        <th class="balance-preview-th" style="text-align:left">{{ 'Common.name' | translate }}</th>
+                        <th class="balance-preview-th" style="text-align:right">{{ 'Common.value' | translate }}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr class="balance-preview-row">
+                        <td class="balance-preview-name">{{ 'Landing.sample.gold' | translate }}:</td>
+                        <td class="balance-preview-value">4,800 {{currencySymbol}}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                  <div class="balance-preview-info" *ngIf="flippedBuckets.has('bp-assets')" (click)="$event.stopPropagation()">
+                    <button class="balance-preview-info-close" (click)="flippedBuckets.delete('bp-assets'); $event.stopPropagation()">×</button>
+                    <strong>{{ 'Landing.wealth.assets' | translate }}</strong>
+                    <p>{{ 'Landing.wealth.assetsInfo' | translate }}</p>
+                  </div>
+                </div>
+
+                <!-- Shares -->
+                <div class="balance-preview-section-wrap" [class.active]="flippedBuckets.has('bp-shares')" (click)="toggleBucket('bp-shares')">
+                  <div class="balance-preview-section-header">
+                    <h4 class="balance-preview-sectionLabel">{{ 'Landing.sample.shares' | translate }}:</h4>
+                    <span class="balance-preview-add-btn">+</span>
+                  </div>
+                  <hr class="balance-preview-divider">
+                  <table class="balance-preview-table">
+                    <thead>
+                      <tr>
+                        <th class="balance-preview-th" style="text-align:left">{{ 'Common.name' | translate }}</th>
+                        <th class="balance-preview-th">{{ 'Common.qty' | translate }}</th>
+                        <th class="balance-preview-th">{{ 'Common.price' | translate }}</th>
+                        <th class="balance-preview-th" style="text-align:right">{{ 'Common.value' | translate }}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr class="balance-preview-row">
+                        <td class="balance-preview-name">{{ 'Landing.sample.bmw' | translate }}:</td>
+                        <td class="balance-preview-qty">15</td>
+                        <td class="balance-preview-qty">98 {{currencySymbol}}</td>
+                        <td class="balance-preview-value">1,470 {{currencySymbol}}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                  <div class="balance-preview-info" *ngIf="flippedBuckets.has('bp-shares')" (click)="$event.stopPropagation()">
+                    <button class="balance-preview-info-close" (click)="flippedBuckets.delete('bp-shares'); $event.stopPropagation()">×</button>
+                    <strong>{{ 'Landing.wealth.assets' | translate }}</strong>
+                    <p>{{ 'Landing.wealth.sharesInfo' | translate }}</p>
+                  </div>
+                </div>
+
+                <!-- Investments -->
+                <div class="balance-preview-section-wrap" [class.active]="flippedBuckets.has('bp-investments')" (click)="toggleBucket('bp-investments')">
+                  <div class="balance-preview-section-header">
+                    <h4 class="balance-preview-sectionLabel">{{ 'Landing.cashflow.investments' | translate }}:</h4>
+                    <span class="balance-preview-add-btn">+</span>
+                  </div>
+                  <hr class="balance-preview-divider">
+                  <table class="balance-preview-table">
+                    <thead>
+                      <tr>
+                        <th class="balance-preview-th" style="text-align:left">{{ 'Common.name' | translate }}</th>
+                        <th class="balance-preview-th">{{ 'Common.deposit' | translate }}</th>
+                        <th class="balance-preview-th">{{ 'Common.mortgage' | translate }}</th>
+                        <th class="balance-preview-th" style="text-align:right">{{ 'Common.value' | translate }}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr class="balance-preview-row">
+                        <td class="balance-preview-name">{{ 'Landing.sample.apartment' | translate }}:</td>
+                        <td class="balance-preview-qty">20,000 {{currencySymbol}}</td>
+                        <td class="balance-preview-qty">180,000 {{currencySymbol}}</td>
+                        <td class="balance-preview-value">200,000 {{currencySymbol}}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                  <div class="balance-preview-info" *ngIf="flippedBuckets.has('bp-investments')" (click)="$event.stopPropagation()">
+                    <button class="balance-preview-info-close" (click)="flippedBuckets.delete('bp-investments'); $event.stopPropagation()">×</button>
+                    <strong>{{ 'Landing.cashflow.investments' | translate }}</strong>
+                    <p>{{ 'Landing.wealth.investmentsInfo' | translate }}</p>
+                  </div>
+                </div>
+              </div>
+              <!-- Total Assets -->
+              <div class="balance-preview-totalBox">
+                <h4 class="balance-preview-totalTitle">{{ 'Common.credit' | translate }}</h4>
+                <hr class="separator-white">
+                <h4 class="balance-preview-totalAmount">209,470 {{currencySymbol}}</h4>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <p class="wealth-tagline">{{ 'Landing.wealth.tagline' | translate }}</p>
+    </div>
+  </section>
+
+  <!-- ============================================================
+  5. CASHFLOW
+  ============================================================ -->
+  <section class="cashflow" id="cashflow-section">
+    <div class="container">
+      <h2 class="section-title">{{ 'Landing.cashflow.title' | translate }}</h2>
+      <p class="section-subtitle">{{ 'Landing.cashflow.subtitle' | translate }}</p>
+
+      <div class="ratrace-explanation">
+        <p>{{ 'Landing.cashflow.ratrace1' | translate }}</p>
+        <p>{{ 'Landing.cashflow.ratrace2' | translate }}</p>
+      </div>
+
+      <!-- Cashflow + Liabilities side by side -->
+      <div class="income-statement-widget">
+
+        <div class="is-box cf-box">
+          <div class="cf-row" (click)="toggleBucket('cf-salary')" role="button" tabindex="0">
+            <h3 class="cf-text-label">{{ 'Landing.cashflow.salary' | translate }}</h3>
+            <h3 class="cf-amount-label">+3.200,00 {{currencySymbol}}</h3>
+            <div class="cf-info" *ngIf="flippedBuckets.has('cf-salary')" (click)="$event.stopPropagation()">
+              <button class="cf-info-close" (click)="flippedBuckets.delete('cf-salary'); $event.stopPropagation()">×</button>
+              <strong>{{ 'Landing.cashflow.salary' | translate }}</strong>
+              <p>{{ 'Landing.cashflow.salaryInfo' | translate }}</p>
+            </div>
+          </div>
+          <h4 class="cf-operation">+</h4>
+          <div class="cf-row" (click)="toggleBucket('cf-passive')" role="button" tabindex="0">
+            <h3 class="cf-text-label">{{ 'Landing.cashflow.passive' | translate }}</h3>
+            <h3 class="cf-amount-label">+120,00 {{currencySymbol}}</h3>
+            <div class="cf-info" *ngIf="flippedBuckets.has('cf-passive')" (click)="$event.stopPropagation()">
+              <button class="cf-info-close" (click)="flippedBuckets.delete('cf-passive'); $event.stopPropagation()">×</button>
+              <strong>{{ 'Landing.cashflow.passive' | translate }}</strong>
+              <p>{{ 'Landing.cashflow.passiveInfo' | translate }}</p>
+            </div>
+          </div>
+          <div class="cf-row" (click)="toggleBucket('cf-income')" role="button" tabindex="0">
+            <h3 class="cf-text-label">{{ 'Landing.cashflow.income' | translate }}</h3>
+            <h4 class="cf-amount-label">+3.320,00 {{currencySymbol}}</h4>
+            <div class="cf-info" *ngIf="flippedBuckets.has('cf-income')" (click)="$event.stopPropagation()">
+              <button class="cf-info-close" (click)="flippedBuckets.delete('cf-income'); $event.stopPropagation()">×</button>
+              <strong>{{ 'Landing.cashflow.income' | translate }}</strong>
+              <p>{{ 'Landing.cashflow.incomeInfo' | translate }}</p>
+            </div>
+          </div>
+          <h4 class="cf-operation">-</h4>
+          <div class="cf-row" (click)="toggleBucket('cf-expenses')" role="button" tabindex="0">
+            <h3 class="cf-text-label">{{ 'Landing.cashflow.expenses' | translate }}</h3>
+            <h4 class="cf-amount-label">-1.915,98 {{currencySymbol}}</h4>
+            <div class="cf-info" *ngIf="flippedBuckets.has('cf-expenses')" (click)="$event.stopPropagation()">
+              <button class="cf-info-close" (click)="flippedBuckets.delete('cf-expenses'); $event.stopPropagation()">×</button>
+              <strong>{{ 'Landing.cashflow.expenses' | translate }}</strong>
+              <p>{{ 'Landing.cashflow.expensesInfo' | translate }}</p>
+            </div>
+          </div>
+          <div class="cf-row" (click)="toggleBucket('cf-cashflow')" role="button" tabindex="0">
+            <h3 class="cf-text-label cf-total-label">{{ 'Landing.cashflow.cashflowLabel' | translate }}</h3>
+            <h4 class="cf-amount-label">+1.404,02 {{currencySymbol}}</h4>
+            <div class="cf-info" *ngIf="flippedBuckets.has('cf-cashflow')" (click)="$event.stopPropagation()">
+              <button class="cf-info-close" (click)="flippedBuckets.delete('cf-cashflow'); $event.stopPropagation()">×</button>
+              <strong>{{ 'Landing.cashflow.cashflowLabel' | translate }}</strong>
+              <p>{{ 'Landing.cashflow.cashflowInfo' | translate }}</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="is-box">
+          <h4 class="is-box-title">{{ 'Landing.cashflow.liabilities' | translate }}</h4>
+          <hr class="is-separator">
+          <div class="is-box-inner">
+
+            <!-- Liabilities section -->
+            <div class="cf-row-table" (click)="toggleBucket('cf-liabilities')" role="button" tabindex="0">
+              <table class="is-table">
+                <thead>
+                  <tr>
+                    <td colspan="4"><h4 class="is-cat-label">{{ 'Landing.cashflow.liabilities' | translate }}:</h4></td>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="is-sortable-header-row">
+                    <th class="is-sortable-header">{{ 'Common.name' | translate }}</th>
+                    <th class="is-sortable-header is-sortable-header--right">{{ 'Common.amount' | translate }}</th>
+                    <th class="is-sortable-header is-sortable-header--right">{{ 'Common.credit' | translate }}</th>
+                    <th class="is-sortable-header is-sortable-header--right">{{ 'Common.value' | translate }}</th>
+                  </tr>
+                  <tr class="is-row">
+                    <td class="is-td-name">{{ 'Landing.sample.creditCard' | translate }}:</td>
+                    <td class="is-td-amount">+1.200,00 {{currencySymbol}}</td>
+                    <td class="is-td-amount">+5.000,00 {{currencySymbol}}</td>
+                    <td class="is-td-amount">+6.200,00 {{currencySymbol}}</td>
+                  </tr>
+                  <tr class="is-row">
+                    <td class="is-td-name">{{ 'Landing.sample.studentLoan' | translate }}:</td>
+                    <td class="is-td-amount">+4.800,00 {{currencySymbol}}</td>
+                    <td class="is-td-amount">+12.000,00 {{currencySymbol}}</td>
+                    <td class="is-td-amount">+16.800,00 {{currencySymbol}}</td>
+                  </tr>
+                </tbody>
+              </table>
+              <div class="cf-info cf-info--surface" *ngIf="flippedBuckets.has('cf-liabilities')" (click)="$event.stopPropagation()">
+                <button class="cf-info-close" (click)="flippedBuckets.delete('cf-liabilities'); $event.stopPropagation()">×</button>
+                <strong>{{ 'Landing.cashflow.liabilities' | translate }}</strong>
+                <p>{{ 'Landing.cashflow.liabilitiesInfo' | translate }}</p>
+              </div>
+            </div>
+
+            <!-- Investments section -->
+            <div class="cf-row-table" (click)="toggleBucket('cf-investments')" role="button" tabindex="0">
+              <table class="is-table">
+                <thead>
+                  <tr>
+                    <td colspan="4"><h4 class="is-cat-label">{{ 'Landing.cashflow.investments' | translate }}:</h4></td>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="is-sortable-header-row">
+                    <th class="is-sortable-header">{{ 'Common.name' | translate }}</th>
+                    <th class="is-sortable-header is-sortable-header--right">{{ 'Common.amount' | translate }}</th>
+                    <th class="is-sortable-header is-sortable-header--right">{{ 'Common.credit' | translate }}</th>
+                    <th class="is-sortable-header is-sortable-header--right">{{ 'Common.value' | translate }}</th>
+                  </tr>
+                  <tr class="is-row">
+                    <td class="is-td-name">{{ 'Landing.sample.carLoan' | translate }}:</td>
+                    <td class="is-td-amount">+6.500,00 {{currencySymbol}}</td>
+                    <td class="is-td-amount">+15.000,00 {{currencySymbol}}</td>
+                    <td class="is-td-amount">+21.500,00 {{currencySymbol}}</td>
+                  </tr>
+                </tbody>
+              </table>
+              <div class="cf-info cf-info--surface" *ngIf="flippedBuckets.has('cf-investments')" (click)="$event.stopPropagation()">
+                <button class="cf-info-close" (click)="flippedBuckets.delete('cf-investments'); $event.stopPropagation()">×</button>
+                <strong>{{ 'Landing.cashflow.investments' | translate }}</strong>
+                <p>{{ 'Landing.cashflow.investmentsInfo' | translate }}</p>
+              </div>
+            </div>
+
+          </div>
+          <div class="is-debit-box">
+            <h4 class="is-debit-title">{{ 'Landing.cashflow.debit' | translate }}</h4>
+            <hr class="is-separator">
+            <h4 class="is-debit-amount">+44.500,00 {{currencySymbol}}</h4>
+          </div>
+        </div>
+      </div>
+
+      <div class="cashflow-split">
+        <div class="cashflow-side cashflow-side--liabilities">
+          <h3>{{ 'Landing.cashflow.liabilitiesTitle' | translate }}</h3>
+          <p class="cashflow-direction">{{ 'Landing.cashflow.liabilitiesFlowOut' | translate }}</p>
+          <ul class="cashflow-list">
+            <li>{{ 'Landing.cashflow.liabilitiesList.rent' | translate }}</li>
+            <li>{{ 'Landing.cashflow.liabilitiesList.car' | translate }}</li>
+            <li>{{ 'Landing.cashflow.liabilitiesList.subs' | translate }}</li>
+            <li>{{ 'Landing.cashflow.liabilitiesList.credit' | translate }}</li>
+            <li>{{ 'Landing.cashflow.liabilitiesList.unnecessary' | translate }}</li>
+          </ul>
+        </div>
+
+        <div class="cashflow-side cashflow-side--assets">
+          <h3>{{ 'Landing.cashflow.assetsTitle' | translate }}</h3>
+          <p class="cashflow-direction">{{ 'Landing.cashflow.assetsFlowIn' | translate }}</p>
+          <ul class="cashflow-list">
+            <li>{{ 'Landing.cashflow.assetsList.rental' | translate }}</li>
+            <li>{{ 'Landing.cashflow.assetsList.dividends' | translate }}</li>
+            <li>{{ 'Landing.cashflow.assetsList.business' | translate }}</li>
+            <li>{{ 'Landing.cashflow.assetsList.returns' | translate }}</li>
+            <li>{{ 'Landing.cashflow.assetsList.royalties' | translate }}</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="quote-callout">
+        <blockquote>{{ 'Landing.cashflow.quote' | translate }}</blockquote>
+        <cite>{{ 'Landing.cashflow.quoteAuthor' | translate }}</cite>
+      </div>
+
+      <p class="cashflow-bottom">{{ 'Landing.cashflow.bottom' | translate }}</p>
+    </div>
+  </section>
+
+  <!-- ============================================================
+  6. AI STRATEGY € Smile Projects & AI Assistant
+  ============================================================ -->
+  <section class="ai-strategy" id="ai-strategy">
+    <div class="container">
+      <h2 class="section-title">{{ 'Landing.ai.title' | translate }}</h2>
+      <p class="section-subtitle">{{ 'Landing.ai.subtitle' | translate }}</p>
+
+      <!-- — SMILE PROJECTS SHOWCASE — -->
+      <div class="smile-showcase">
+        <h3 class="showcase-heading">{{ 'Landing.ai.smileHeading' | translate }}</h3>
+        <p class="showcase-sub">{{ 'Landing.ai.smileSub' | translate }}</p>
+
+        <div class="smile-showcase-grid">
+
+          <!-- Card 1: Dream Holiday to Japan -->
+          <div class="sp-card" [class.active]="flippedBuckets.has('sp-japan')" (click)="toggleBucket('sp-japan')" role="button" tabindex="0">
+            <div class="sp-card-front">
+              <div class="sp-card-header">
+                <span class="sp-phase sp-phase--saving">{{ 'Common.phase.saving' | translate }}</span>
+                <span class="sp-number">#1</span>
+              </div>
+              <h4 class="sp-title">{{ 'Landing.sample.japan.name' | translate }}</h4>
+              <p class="sp-sub">{{ 'Landing.sample.japan.sub' | translate }}</p>
+              <p class="sp-desc">{{ 'Landing.sample.japan.desc' | translate }}</p>
+              <div class="sp-buckets-info"><i class="fa fa-tasks"></i> {{ 'Landing.sample.japan.bucketsComplete' | translate }}</div>
+              <div class="sp-progress-track"><div class="sp-progress-fill" style="width:65%"></div></div>
+              <div class="sp-progress-pct">65.0%</div>
+              <div class="sp-metrics">
+                <div class="sp-metric"><span class="sp-metric-label">{{ 'Common.target' | translate }}</span><span class="sp-metric-value">4.500,00 {{currencySymbol}}</span></div>
+                <div class="sp-metric"><span class="sp-metric-label">{{ 'Common.saved' | translate }}</span><span class="sp-metric-value">2.925,00 {{currencySymbol}}</span></div>
+              </div>
+              <div class="sp-date"><i class="fa fa-calendar"></i> {{ 'Common.target' | translate }}: Mar 2027</div>
+              <div class="sp-action-btn">{{ 'Landing.smile.add' | translate }}</div>
+            </div>
+          </div>
+
+          <!-- Card 2: Home Office Setup -->
+          <div class="sp-card" [class.active]="flippedBuckets.has('sp-office')" (click)="toggleBucket('sp-office')" role="button" tabindex="0">
+            <div class="sp-card-front">
+              <div class="sp-card-header">
+                <span class="sp-phase sp-phase--planning">{{ 'Common.phase.planning' | translate }}</span>
+                <span class="sp-number">#2</span>
+              </div>
+              <h4 class="sp-title">{{ 'Landing.sample.office.name' | translate }}</h4>
+              <p class="sp-sub">{{ 'Landing.sample.office.sub' | translate }}</p>
+              <p class="sp-desc">{{ 'Landing.sample.office.desc' | translate }}</p>
+              <div class="sp-buckets-info"><i class="fa fa-tasks"></i> {{ 'Landing.sample.office.bucketsComplete' | translate }}</div>
+              <div class="sp-progress-track"><div class="sp-progress-fill" style="width:30%"></div></div>
+              <div class="sp-progress-pct">30.0%</div>
+              <div class="sp-metrics">
+                <div class="sp-metric"><span class="sp-metric-label">{{ 'Common.target' | translate }}</span><span class="sp-metric-value">2.800,00 {{currencySymbol}}</span></div>
+                <div class="sp-metric"><span class="sp-metric-label">{{ 'Common.saved' | translate }}</span><span class="sp-metric-value">840,00 {{currencySymbol}}</span></div>
+              </div>
+              <div class="sp-date"><i class="fa fa-calendar"></i> {{ 'Common.target' | translate }}: Sep 2026</div>
+              <div class="sp-action-btn">{{ 'Landing.smile.add' | translate }}</div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Info panels placed below the card grid -->
+
+        <!-- Japan Info Panel -->
+        <div class="sp-info-panel" id="panel-sp-japan" *ngIf="flippedBuckets.has('sp-japan')">
+          <button class="sp-info-close" (click)="toggleBucket('sp-japan')" aria-label="Close">x</button>
+
+          <div class="sp-info-header">
+            <div class="sp-info-badge-row">
+              <span class="phase-badge phase-saving">{{ 'Common.phase.saving' | translate }}</span>
+            </div>
+            <h3 class="sp-info-title">{{ 'Landing.sample.japan.name' | translate }} <span class="sp-info-id">#1</span></h3>
+            <p class="sp-info-sub">{{ 'Landing.sample.japan.sub' | translate }}</p>
+            <p class="sp-info-dates">{{ 'Landing.sample.japan.created' | translate }} • {{ 'Landing.sample.japan.updated' | translate }}</p>
+          </div>
+
+          <div class="sp-info-tabs">
+            <button class="sp-info-tab" [class.active]="smileTab['sp-japan'] === 'overview'" (click)="setSmileTab('sp-japan', 'overview')">{{ 'Common.overview' | translate }}</button>
+            <button class="sp-info-tab" [class.active]="smileTab['sp-japan'] === 'buckets'" (click)="setSmileTab('sp-japan', 'buckets')">{{ 'Common.buckets' | translate }} <span class="sp-info-tab-badge">(4)</span></button>
+            <button class="sp-info-tab" [class.active]="smileTab['sp-japan'] === 'plans'" (click)="setSmileTab('sp-japan', 'plans')">{{ 'Common.plans' | translate }} <span class="sp-info-tab-badge">(2)</span></button>
+            <button class="sp-info-tab" [class.active]="smileTab['sp-japan'] === 'actions'" (click)="setSmileTab('sp-japan', 'actions')">{{ 'Common.actions' | translate }} <span class="sp-info-tab-badge">(6)</span></button>
+            <button class="sp-info-tab" [class.active]="smileTab['sp-japan'] === 'notes'" (click)="setSmileTab('sp-japan', 'notes')">{{ 'Common.notes' | translate }}</button>
+          </div>
+
+          <!-- TAB: Overview -->
+          <div class="sp-info-content" *ngIf="smileTab['sp-japan'] === 'overview'">
+            <div class="sp-info-section">
+              <h5 class="sp-info-label">{{ 'Common.description' | translate }}</h5>
+              <pre class="sp-info-text">{{ 'Landing.sample.japan.descFull' | translate }}</pre>
+            </div>
+            <div class="sp-info-section">
+              <h5 class="sp-info-label">{{ 'Common.overallProgress' | translate }}</h5>
+              <div class="sp-info-summary">
+                <h4 class="sp-info-fin">{{ 'Common.target' | translate }}: 4.500,00 {{currencySymbol}}</h4>
+                <h4 class="sp-info-fin">{{ 'Common.saved' | translate }}: 2.925,00 {{currencySymbol}}</h4>
+                <h4 class="sp-info-fin">{{ 'Common.remaining' | translate }}: 1.575,00 {{currencySymbol}}</h4>
+                <div class="sp-info-progress-bar">
+                  <div class="sp-info-segments">
+                    <div class="sp-info-seg bucket-color-1" style="width:20%" title="Flights: 900 / 1.200 {{currencySymbol}}"></div>
+                    <div class="sp-info-seg bucket-color-2" style="width:22.2%" title="Hotels: 1.000 / 1.500 {{currencySymbol}}"></div>
+                    <div class="sp-info-seg bucket-color-3" style="width:9.4%" title="Activities: 425 / 800 {{currencySymbol}}"></div>
+                    <div class="sp-info-seg bucket-color-4" style="width:13.3%" title="Food & Transport: 600 / 1.000 {{currencySymbol}}"></div>
+                  </div>
+                </div>
+                <div class="sp-info-pct">65.0%</div>
+              </div>
+              <p>{{ 'Common.targetDate' | translate }} Mar 2027</p>
+            </div>
+            <div class="sp-info-section">
+              <h5 class="sp-info-label">{{ 'Common.links' | translate }}</h5>
+              <div class="sp-info-links">
+                <div class="sp-info-link-item">
+                  <a class="sp-info-link" href="https://www.jrpass.com" target="_blank" rel="noopener noreferrer">{{ 'Landing.sample.link.jrPass' | translate }}</a>
+                  <div class="sp-info-link-actions">
+                    <button class="sp-info-btn-icon" (click)="requireLogin()" aria-label="Edit link">&#x270E;</button>
+                    <button class="sp-info-btn-icon sp-info-btn-danger" (click)="requireLogin()" aria-label="Remove link">&times;</button>
+                  </div>
+                </div>
+                <div class="sp-info-link-item">
+                  <a class="sp-info-link" href="https://www.jnto.go.jp" target="_blank" rel="noopener noreferrer">{{ 'Landing.sample.link.sakura' | translate }}</a>
+                  <div class="sp-info-link-actions">
+                    <button class="sp-info-btn-icon" (click)="requireLogin()" aria-label="Edit link">&#x270E;</button>
+                    <button class="sp-info-btn-icon sp-info-btn-danger" (click)="requireLogin()" aria-label="Remove link">&times;</button>
+                  </div>
+                </div>
+                <div class="sp-info-link-item">
+                  <a class="sp-info-link" href="https://www.booking.com" target="_blank" rel="noopener noreferrer">{{ 'Landing.sample.link.ryokan' | translate }}</a>
+                  <div class="sp-info-link-actions">
+                    <button class="sp-info-btn-icon" (click)="requireLogin()" aria-label="Edit link">&#x270E;</button>
+                    <button class="sp-info-btn-icon sp-info-btn-danger" (click)="requireLogin()" aria-label="Remove link">&times;</button>
+                  </div>
+                </div>
+                <div class="sp-info-link-item">
+                  <a class="sp-info-link" href="https://www.japan-guide.com" target="_blank" rel="noopener noreferrer">{{ 'Landing.sample.link.itinerary' | translate }}</a>
+                  <div class="sp-info-link-actions">
+                    <button class="sp-info-btn-icon" (click)="requireLogin()" aria-label="Edit link">&#x270E;</button>
+                    <button class="sp-info-btn-icon sp-info-btn-danger" (click)="requireLogin()" aria-label="Remove link">&times;</button>
+                  </div>
+                </div>
+                <div class="sp-info-link-item">
+                  <a class="sp-info-link" href="https://www.skyscanner.net" target="_blank" rel="noopener noreferrer">{{ 'Landing.sample.link.flights' | translate }}</a>
+                  <div class="sp-info-link-actions">
+                    <button class="sp-info-btn-icon" (click)="requireLogin()" aria-label="Edit link">&#x270E;</button>
+                    <button class="sp-info-btn-icon sp-info-btn-danger" (click)="requireLogin()" aria-label="Remove link">&times;</button>
+                  </div>
+                </div>
+              </div>
+              <button class="sp-info-add-btn" (click)="requireLogin()">{{ 'Common.addLink' | translate }}</button>
+            </div>
+          </div>
+
+          <!-- TAB: Buckets -->
+          <div class="sp-info-content" *ngIf="smileTab['sp-japan'] === 'buckets'">
+            <div class="sp-info-bucket-card">
+              <h5 class="sp-info-bucket-title">{{ 'Landing.sample.flights' | translate }}</h5>
+              <div class="sp-info-bucket-progress">
+                <span class="sp-info-bucket-amount">900,00 / 1.200,00 {{currencySymbol}}</span>
+                <div class="sp-info-bucket-bar"><div class="sp-info-bucket-fill" style="width:75%"></div></div>
+              </div>
+              <p class="sp-info-bucket-notes">{{ 'Landing.sample.flightsDesc' | translate }}</p>
+              <p class="sp-info-bucket-date">{{ 'Common.target' | translate }}: Dec 2026</p>
+              <div class="sp-info-bucket-links">
+                <strong>{{ 'Common.links' | translate }}:</strong>
+                <a class="sp-info-link" href="https://www.skyscanner.net" target="_blank" rel="noopener noreferrer">{{ 'Landing.sample.link.skyscanner' | translate }}</a>
+                <a class="sp-info-link" href="https://www.ana.co.jp" target="_blank" rel="noopener noreferrer">{{ 'Landing.sample.link.ana' | translate }}</a>
+              </div>
+              <button class="sp-info-bucket-add" (click)="requireLogin()">{{ 'Common.addToBucket' | translate }}</button>
+              <div class="sp-info-bucket-transactions">
+                <h6 class="sp-info-bucket-tx-title">{{ 'Common.relatedTx' | translate }} (3)</h6>
+                <div class="sp-info-table-wrapper">
+                  <table class="sp-info-tx-table">
+                    <thead>
+                      <tr>
+                        <th>{{ 'Common.id' | translate }}</th>
+                        <th>{{ 'Common.account' | translate }}</th>
+                        <th>{{ 'Common.amount' | translate }}</th>
+                        <th>{{ 'Common.date' | translate }}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr><td>#142</td><td>{{ 'Landing.sample.smile' | translate }}</td><td>+400,00 {{currencySymbol}}</td><td>Mar 15, 2026</td></tr>
+                      <tr><td>#118</td><td>{{ 'Landing.sample.smile' | translate }}</td><td>+250,00 {{currencySymbol}}</td><td>Feb 1, 2026</td></tr>
+                      <tr><td>#97</td><td>{{ 'Landing.sample.smile' | translate }}</td><td>+250,00 {{currencySymbol}}</td><td>Jan 15, 2026</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+            <div class="sp-info-bucket-card">
+              <h5 class="sp-info-bucket-title">{{ 'Landing.sample.hotels' | translate }}</h5>
+              <div class="sp-info-bucket-progress">
+                <span class="sp-info-bucket-amount">1.000,00 / 1.500,00 {{currencySymbol}}</span>
+                <div class="sp-info-bucket-bar"><div class="sp-info-bucket-fill" style="width:66.7%"></div></div>
+              </div>
+              <p class="sp-info-bucket-notes">{{ 'Landing.sample.hotelsDesc' | translate }}</p>
+              <p class="sp-info-bucket-date">{{ 'Common.target' | translate }}: Feb 2027</p>
+              <div class="sp-info-bucket-links">
+                <strong>{{ 'Common.links' | translate }}:</strong>
+                <a class="sp-info-link" href="https://www.booking.com" target="_blank" rel="noopener noreferrer">{{ 'Landing.sample.link.booking' | translate }}</a>
+                <a class="sp-info-link" href="https://www.japaneseguesthouses.com" target="_blank" rel="noopener noreferrer">{{ 'Landing.sample.link.guesthouses' | translate }}</a>
+              </div>
+              <button class="sp-info-bucket-add" (click)="requireLogin()">{{ 'Common.addToBucket' | translate }}</button>
+              <div class="sp-info-bucket-transactions">
+                <h6 class="sp-info-bucket-tx-title">{{ 'Common.relatedTx' | translate }} (4)</h6>
+                <div class="sp-info-table-wrapper">
+                  <table class="sp-info-tx-table">
+                    <thead>
+                      <tr>
+                        <th>{{ 'Common.id' | translate }}</th>
+                        <th>{{ 'Common.account' | translate }}</th>
+                        <th>{{ 'Common.amount' | translate }}</th>
+                        <th>{{ 'Common.date' | translate }}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr><td>#155</td><td>{{ 'Landing.sample.smile' | translate }}</td><td>+300,00 {{currencySymbol}}</td><td>Apr 1, 2026</td></tr>
+                      <tr><td>#131</td><td>{{ 'Landing.sample.smile' | translate }}</td><td>+250,00 {{currencySymbol}}</td><td>Mar 1, 2026</td></tr>
+                      <tr><td>#112</td><td>{{ 'Landing.sample.smile' | translate }}</td><td>+250,00 {{currencySymbol}}</td><td>Feb 1, 2026</td></tr>
+                      <tr><td>#91</td><td>{{ 'Landing.sample.smile' | translate }}</td><td>+200,00 {{currencySymbol}}</td><td>Jan 1, 2026</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+            <div class="sp-info-bucket-card">
+              <h5 class="sp-info-bucket-title">{{ 'Landing.sample.activities' | translate }}</h5>
+              <div class="sp-info-bucket-progress">
+                <span class="sp-info-bucket-amount">425,00 / 800,00 {{currencySymbol}}</span>
+                <div class="sp-info-bucket-bar"><div class="sp-info-bucket-fill" style="width:53.1%"></div></div>
+              </div>
+              <p class="sp-info-bucket-notes">{{ 'Landing.sample.activitiesDesc' | translate }}</p>
+              <div class="sp-info-bucket-links">
+                <strong>{{ 'Common.links' | translate }}:</strong>
+                <a class="sp-info-link" href="https://www.viator.com" target="_blank" rel="noopener noreferrer">{{ 'Landing.sample.link.viator' | translate }}</a>
+              </div>
+              <button class="sp-info-bucket-add" (click)="requireLogin()">{{ 'Common.addToBucket' | translate }}</button>
+              <div class="sp-info-bucket-transactions">
+                <h6 class="sp-info-bucket-tx-title">{{ 'Common.relatedTx' | translate }} (2)</h6>
+                <div class="sp-info-table-wrapper">
+                  <table class="sp-info-tx-table">
+                    <thead>
+                      <tr>
+                        <th>{{ 'Common.id' | translate }}</th>
+                        <th>{{ 'Common.account' | translate }}</th>
+                        <th>{{ 'Common.amount' | translate }}</th>
+                        <th>{{ 'Common.date' | translate }}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr><td>#148</td><td>{{ 'Landing.sample.smile' | translate }}</td><td>+225,00 {{currencySymbol}}</td><td>Mar 15, 2026</td></tr>
+                      <tr><td>#105</td><td>{{ 'Landing.sample.smile' | translate }}</td><td>+200,00 {{currencySymbol}}</td><td>Jan 15, 2026</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+            <div class="sp-info-bucket-card">
+              <h5 class="sp-info-bucket-title">{{ 'Landing.sample.foodTransport' | translate }}</h5>
+              <div class="sp-info-bucket-progress">
+                <span class="sp-info-bucket-amount">600,00 / 1.000,00 {{currencySymbol}}</span>
+                <div class="sp-info-bucket-bar"><div class="sp-info-bucket-fill" style="width:60%"></div></div>
+              </div>
+              <p class="sp-info-bucket-notes">{{ 'Landing.sample.foodTransportDesc' | translate:{ currency: currencySymbol } }}</p>
+              <div class="sp-info-bucket-links">
+                <strong>{{ 'Common.links' | translate }}:</strong>
+                <a class="sp-info-link" href="https://www.japan-guide.com/e/e2026.html" target="_blank" rel="noopener noreferrer">{{ 'Landing.sample.link.foodGuide' | translate }}</a>
+              </div>
+              <button class="sp-info-bucket-add" (click)="requireLogin()">{{ 'Common.addToBucket' | translate }}</button>
+              <div class="sp-info-bucket-transactions">
+                <h6 class="sp-info-bucket-tx-title">{{ 'Common.relatedTx' | translate }} (2)</h6>
+                <div class="sp-info-table-wrapper">
+                  <table class="sp-info-tx-table">
+                    <thead>
+                      <tr>
+                        <th>{{ 'Common.id' | translate }}</th>
+                        <th>{{ 'Common.account' | translate }}</th>
+                        <th>{{ 'Common.amount' | translate }}</th>
+                        <th>{{ 'Common.date' | translate }}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr><td>#138</td><td>{{ 'Landing.sample.smile' | translate }}</td><td>+350,00 {{currencySymbol}}</td><td>Mar 1, 2026</td></tr>
+                      <tr><td>#101</td><td>{{ 'Landing.sample.smile' | translate }}</td><td>+250,00 {{currencySymbol}}</td><td>Jan 1, 2026</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB: Plans -->
+          <div class="sp-info-content" *ngIf="smileTab['sp-japan'] === 'plans'">
+            <div class="sp-info-plan-summary">
+              <div class="sp-info-plan-stat"><span>{{ 'Common.totalPlans' | translate }}</span> <strong>2</strong></div>
+              <div class="sp-info-plan-stat"><span>{{ 'Common.active' | translate }}:</span> <strong class="sp-info-active-count">1</strong></div>
+              <div class="sp-info-plan-stat"><span>{{ 'Common.monthlyCommitment' | translate }}</span> <strong>375,00 {{currencySymbol}}</strong></div>
+            </div>
+            <h5 class="sp-info-label">{{ 'Common.active' | translate }}</h5>
+            <div class="sp-info-plan-card active">
+              <div class="sp-info-plan-header">
+                <h6 class="sp-info-plan-title">{{ 'Landing.sample.japanFund' | translate }}</h6>
+                <span class="sp-info-plan-status sp-info-status-active">{{ 'Common.active' | translate }}</span>
+              </div>
+              <div class="sp-info-plan-body">
+                <div class="sp-info-plan-row"><span>{{ 'Common.amount' | translate }}</span> <span>250,00 {{currencySymbol}} / {{ 'Landing.sample.monthly' | translate }}</span></div>
+                <div class="sp-info-plan-row"><span>{{ 'Common.buckets' | translate }}:</span> <span>{{ 'Common.allBuckets' | translate }}</span></div>
+                <div class="sp-info-plan-row"><span>{{ 'Common.schedule' | translate }}</span> <span>{{ 'Landing.sample.japanDateRange' | translate }}</span></div>
+                <div class="sp-info-plan-row"><span>{{ 'Common.account' | translate }}</span> <span>{{ 'Landing.sample.smile' | translate }}</span></div>
+              </div>
+              <div class="sp-info-plan-actions">
+                <button class="sp-info-plan-btn sp-info-plan-btn--warning" (click)="requireLogin()">{{ 'Common.deactivate' | translate }}</button>
+                <button class="sp-info-plan-btn" (click)="requireLogin()">{{ 'Common.duplicate' | translate }}</button>
+              </div>
+            </div>
+            <h5 class="sp-info-label">{{ 'Common.planned' | translate }}</h5>
+            <div class="sp-info-plan-card">
+              <div class="sp-info-plan-header">
+                <h6 class="sp-info-plan-title">{{ 'Landing.sample.bonusBoost' | translate }}</h6>
+                <span class="sp-info-plan-status sp-info-status-planned">{{ 'Common.planned' | translate }}</span>
+              </div>
+              <div class="sp-info-plan-body">
+                <div class="sp-info-plan-row"><span>{{ 'Common.amount' | translate }}</span> <span>125,00 {{currencySymbol}} / {{ 'Landing.sample.monthly' | translate }}</span></div>
+                <div class="sp-info-plan-row"><span>{{ 'Common.bucket' | translate }}:</span> <span>{{ 'Landing.sample.flights' | translate }}</span></div>
+                <div class="sp-info-plan-row"><span>{{ 'Common.schedule' | translate }}</span> <span>{{ 'Landing.sample.officeDateRange' | translate }}</span></div>
+              </div>
+              <div class="sp-info-plan-actions">
+                <button class="sp-info-plan-btn sp-info-plan-btn--success" (click)="requireLogin()">{{ 'Common.activate' | translate }}</button>
+                <button class="sp-info-plan-btn" (click)="requireLogin()">{{ 'Common.edit' | translate }}</button>
+                <button class="sp-info-plan-btn sp-info-plan-btn--danger" (click)="requireLogin()">{{ 'Common.delete' | translate }}</button>
+              </div>
+            </div>
+            <button class="sp-info-add-btn" (click)="requireLogin()">{{ 'Common.createPlan' | translate }}</button>
+          </div>
+
+          <!-- TAB: Actions -->
+          <div class="sp-info-content" *ngIf="smileTab['sp-japan'] === 'actions'">
+            <div class="sp-info-actions">
+              <div class="sp-info-action done">
+                <input type="checkbox" checked (change)="requireLogin()">
+                <span class="sp-info-action-text">{{ 'Landing.sample.action.cherryBlossom' | translate }}</span>
+                <div class="sp-info-action-meta">
+                  <span class="sp-info-priority sp-info-priority-high">{{ 'Common.priority.high' | translate }}</span>
+                  <span class="sp-info-due">Jan 2026</span>
+                  <button class="sp-info-btn-icon" (click)="requireLogin()">&#x270E;</button>
+                  <button class="sp-info-btn-icon sp-info-btn-danger" (click)="requireLogin()">&times;</button>
+                </div>
+              </div>
+              <div class="sp-info-action done">
+                <input type="checkbox" checked (change)="requireLogin()">
+                <span class="sp-info-action-text">{{ 'Landing.sample.action.flights' | translate }}</span>
+                <div class="sp-info-action-meta">
+                  <span class="sp-info-priority sp-info-priority-high">{{ 'Common.priority.high' | translate }}</span>
+                  <span class="sp-info-due">Mar 2026</span>
+                  <button class="sp-info-btn-icon" (click)="requireLogin()">&#x270E;</button>
+                  <button class="sp-info-btn-icon sp-info-btn-danger" (click)="requireLogin()">&times;</button>
+                </div>
+              </div>
+              <div class="sp-info-action">
+                <input type="checkbox" (change)="requireLogin()">
+                <span class="sp-info-action-text">{{ 'Landing.sample.action.railPass' | translate }}</span>
+                <div class="sp-info-action-meta">
+                  <span class="sp-info-priority sp-info-priority-medium">{{ 'Common.priority.medium' | translate }}</span>
+                  <span class="sp-info-due">Oct 2026</span>
+                  <button class="sp-info-btn-icon" (click)="requireLogin()">&#x270E;</button>
+                  <button class="sp-info-btn-icon sp-info-btn-danger" (click)="requireLogin()">&times;</button>
+                </div>
+              </div>
+              <div class="sp-info-action">
+                <input type="checkbox" (change)="requireLogin()">
+                <span class="sp-info-action-text">{{ 'Landing.sample.action.ryokan' | translate }}</span>
+                <div class="sp-info-action-meta">
+                  <span class="sp-info-priority sp-info-priority-medium">{{ 'Common.priority.medium' | translate }}</span>
+                  <span class="sp-info-due">Nov 2026</span>
+                  <button class="sp-info-btn-icon" (click)="requireLogin()">&#x270E;</button>
+                  <button class="sp-info-btn-icon sp-info-btn-danger" (click)="requireLogin()">&times;</button>
+                </div>
+              </div>
+              <div class="sp-info-action">
+                <input type="checkbox" (change)="requireLogin()">
+                <span class="sp-info-action-text">{{ 'Landing.sample.action.sumo' | translate }}</span>
+                <div class="sp-info-action-meta">
+                  <span class="sp-info-priority sp-info-priority-low">{{ 'Common.priority.low' | translate }}</span>
+                  <span class="sp-info-due">Jan 2027</span>
+                  <button class="sp-info-btn-icon" (click)="requireLogin()">&#x270E;</button>
+                  <button class="sp-info-btn-icon sp-info-btn-danger" (click)="requireLogin()">&times;</button>
+                </div>
+              </div>
+              <div class="sp-info-action">
+                <input type="checkbox" (change)="requireLogin()">
+                <span class="sp-info-action-text">{{ 'Landing.sample.action.insurance' | translate }}</span>
+                <div class="sp-info-action-meta">
+                  <span class="sp-info-priority sp-info-priority-medium">{{ 'Common.priority.medium' | translate }}</span>
+                  <span class="sp-info-due">Feb 2027</span>
+                  <button class="sp-info-btn-icon" (click)="requireLogin()">&#x270E;</button>
+                  <button class="sp-info-btn-icon sp-info-btn-danger" (click)="requireLogin()">&times;</button>
+                </div>
+              </div>
+            </div>
+            <button class="sp-info-add-btn" (click)="requireLogin()">{{ 'Common.addAction' | translate }}</button>
+          </div>
+
+          <!-- TAB: Notes -->
+          <div class="sp-info-content" *ngIf="smileTab['sp-japan'] === 'notes'">
+            <div class="sp-info-note-form">
+              <textarea class="sp-info-note-input" placeholder="{{ 'Common.writeNote' | translate }}" rows="3" (focus)="requireLogin()" readonly></textarea>
+              <button class="sp-info-note-submit" (click)="requireLogin()">{{ 'Common.addNote' | translate }}</button>
+            </div>
+            <div class="sp-info-note-card">
+              <div class="sp-info-note-header">
+                <span class="sp-info-note-date">{{ 'Landing.sample.note1.date' | translate }}</span>
+                <div class="sp-info-note-actions">
+                  <button class="sp-info-btn-icon" (click)="requireLogin()">&#x270E;</button>
+                  <button class="sp-info-btn-icon sp-info-btn-danger" (click)="requireLogin()">&times;</button>
+                </div>
+              </div>
+              <pre class="sp-info-note-text">{{ 'Landing.sample.note1.text' | translate }}</pre>
+            </div>
+            <div class="sp-info-note-card">
+              <div class="sp-info-note-header">
+                <span class="sp-info-note-date">{{ 'Landing.sample.note2.date' | translate }}</span>
+                <div class="sp-info-note-actions">
+                  <button class="sp-info-btn-icon" (click)="requireLogin()">&#x270E;</button>
+                  <button class="sp-info-btn-icon sp-info-btn-danger" (click)="requireLogin()">&times;</button>
+                </div>
+              </div>
+              <pre class="sp-info-note-text">{{ 'Landing.sample.note2.text' | translate }}</pre>
+            </div>
+          </div>
+
+          <button class="sp-info-bottom-btn" (click)="requireLogin()">{{ 'Landing.sample.addEntry' | translate }}</button>
+          <button class="sp-info-bottom-btn sp-info-edit-btn" (click)="requireLogin()">{{ 'Common.edit' | translate }}</button>
+        </div>
+
+        <!-- Office Info Panel -->
+        <div class="sp-info-panel" id="panel-sp-office" *ngIf="flippedBuckets.has('sp-office')">
+          <button class="sp-info-close" (click)="toggleBucket('sp-office')" aria-label="Close">x</button>
+
+          <div class="sp-info-header">
+            <div class="sp-info-badge-row">
+              <span class="phase-badge phase-planning">{{ 'Common.phase.planning' | translate }}</span>
+            </div>
+            <h3 class="sp-info-title">{{ 'Landing.sample.office.name' | translate }} <span class="sp-info-id">#2</span></h3>
+            <p class="sp-info-sub">{{ 'Landing.sample.office.sub' | translate }}</p>
+            <p class="sp-info-dates">{{ 'Landing.sample.office.created' | translate }}</p>
+          </div>
+
+          <div class="sp-info-tabs">
+            <button class="sp-info-tab" [class.active]="smileTab['sp-office'] === 'overview'" (click)="setSmileTab('sp-office', 'overview')">{{ 'Common.overview' | translate }}</button>
+            <button class="sp-info-tab" [class.active]="smileTab['sp-office'] === 'buckets'" (click)="setSmileTab('sp-office', 'buckets')">{{ 'Common.buckets' | translate }} <span class="sp-info-tab-badge">(3)</span></button>
+            <button class="sp-info-tab" [class.active]="smileTab['sp-office'] === 'plans'" (click)="setSmileTab('sp-office', 'plans')">{{ 'Common.plans' | translate }} <span class="sp-info-tab-badge">(1)</span></button>
+            <button class="sp-info-tab" [class.active]="smileTab['sp-office'] === 'actions'" (click)="setSmileTab('sp-office', 'actions')">{{ 'Common.actions' | translate }} <span class="sp-info-tab-badge">(4)</span></button>
+            <button class="sp-info-tab" [class.active]="smileTab['sp-office'] === 'notes'" (click)="setSmileTab('sp-office', 'notes')">{{ 'Common.notes' | translate }}</button>
+          </div>
+
+          <!-- TAB: Overview -->
+          <div class="sp-info-content" *ngIf="smileTab['sp-office'] === 'overview'">
+            <div class="sp-info-section">
+              <h5 class="sp-info-label">{{ 'Common.description' | translate }}</h5>
+              <pre class="sp-info-text">{{ 'Landing.sample.office.descFull' | translate }}</pre>
+            </div>
+            <div class="sp-info-section">
+              <h5 class="sp-info-label">{{ 'Common.overallProgress' | translate }}</h5>
+              <div class="sp-info-summary">
+                <h4 class="sp-info-fin">{{ 'Common.target' | translate }}: 2.800,00 {{currencySymbol}}</h4>
+                <h4 class="sp-info-fin">{{ 'Common.saved' | translate }}: 840,00 {{currencySymbol}}</h4>
+                <h4 class="sp-info-fin">{{ 'Common.remaining' | translate }}: 1.960,00 {{currencySymbol}}</h4>
+                <div class="sp-info-progress-bar">
+                  <div class="sp-info-segments">
+                    <div class="sp-info-seg bucket-color-1" style="width:30%" title="Desk & Chair: 840 / 1.500 {{currencySymbol}}"></div>
+                    <div class="sp-info-seg bucket-color-2" style="width:0%" title="Monitor & Peripherals: 0 / 900 {{currencySymbol}}"></div>
+                    <div class="sp-info-seg bucket-color-3" style="width:0%" title="Lighting & Extras: 0 / 400 {{currencySymbol}}"></div>
+                  </div>
+                </div>
+                <div class="sp-info-pct">30.0%</div>
+              </div>
+              <p>{{ 'Common.targetDate' | translate }}: Sep 2026</p>
+            </div>
+            <div class="sp-info-section">
+              <h5 class="sp-info-label">{{ 'Common.links' | translate }}</h5>
+              <div class="sp-info-links">
+                <div class="sp-info-link-item">
+                  <a class="sp-info-link" href="https://www.autonomous.ai" target="_blank" rel="noopener noreferrer">{{ 'Landing.sample.link.autonomous' | translate }}</a>
+                  <div class="sp-info-link-actions">
+                    <button class="sp-info-btn-icon" (click)="requireLogin()" aria-label="Edit link">&#x270E;</button>
+                    <button class="sp-info-btn-icon sp-info-btn-danger" (click)="requireLogin()" aria-label="Remove link">&times;</button>
+                  </div>
+                </div>
+                <div class="sp-info-link-item">
+                  <a class="sp-info-link" href="https://www.hermanmiller.com" target="_blank" rel="noopener noreferrer">{{ 'Landing.sample.link.herman' | translate }}</a>
+                  <div class="sp-info-link-actions">
+                    <button class="sp-info-btn-icon" (click)="requireLogin()" aria-label="Edit link">&#x270E;</button>
+                    <button class="sp-info-btn-icon sp-info-btn-danger" (click)="requireLogin()" aria-label="Remove link">&times;</button>
+                  </div>
+                </div>
+                <div class="sp-info-link-item">
+                  <a class="sp-info-link" href="https://www.rtings.com/monitor" target="_blank" rel="noopener noreferrer">{{ 'Landing.sample.link.rtings' | translate }}</a>
+                  <div class="sp-info-link-actions">
+                    <button class="sp-info-btn-icon" (click)="requireLogin()" aria-label="Edit link">&#x270E;</button>
+                    <button class="sp-info-btn-icon sp-info-btn-danger" (click)="requireLogin()" aria-label="Remove link">&times;</button>
+                  </div>
+                </div>
+              </div>
+              <button class="sp-info-add-btn" (click)="requireLogin()">{{ 'Common.addLink' | translate }}</button>
+            </div>
+          </div>
+
+          <!-- TAB: Buckets -->
+          <div class="sp-info-content" *ngIf="smileTab['sp-office'] === 'buckets'">
+            <div class="sp-info-bucket-card">
+              <h5 class="sp-info-bucket-title">{{ 'Landing.sample.deskChair' | translate }}</h5>
+              <div class="sp-info-bucket-progress">
+                <span class="sp-info-bucket-amount">840,00 / 1.500,00 {{currencySymbol}}</span>
+                <div class="sp-info-bucket-bar"><div class="sp-info-bucket-fill" style="width:56%"></div></div>
+              </div>
+              <p class="sp-info-bucket-notes">{{ 'Landing.sample.deskChairDesc' | translate }}</p>
+              <p class="sp-info-bucket-date">{{ 'Common.target' | translate }}: Jun 2026</p>
+              <div class="sp-info-bucket-links">
+                <strong>{{ 'Common.links' | translate }}:</strong>
+                <a class="sp-info-link" href="https://www.autonomous.ai" target="_blank" rel="noopener noreferrer">{{ 'Landing.sample.link.autonomousShort' | translate }}</a>
+                <a class="sp-info-link" href="https://www.hermanmiller.com" target="_blank" rel="noopener noreferrer">{{ 'Landing.sample.link.hermanShort' | translate }}</a>
+              </div>
+              <button class="sp-info-bucket-add" (click)="requireLogin()">{{ 'Common.addToBucket' | translate }}</button>
+              <div class="sp-info-bucket-transactions">
+                <h6 class="sp-info-bucket-tx-title">{{ 'Common.relatedTx' | translate }} (4)</h6>
+                <div class="sp-info-table-wrapper">
+                  <table class="sp-info-tx-table">
+                    <thead>
+                      <tr>
+                        <th>{{ 'Common.id' | translate }}</th>
+                        <th>{{ 'Common.account' | translate }}</th>
+                        <th>{{ 'Common.amount' | translate }}</th>
+                        <th>{{ 'Common.date' | translate }}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr><td>#160</td><td>{{ 'Landing.sample.smile' | translate }}</td><td>+210,00 {{currencySymbol}}</td><td>Apr 1, 2026</td></tr>
+                      <tr><td>#134</td><td>{{ 'Landing.sample.smile' | translate }}</td><td>+210,00 {{currencySymbol}}</td><td>Mar 1, 2026</td></tr>
+                      <tr><td>#109</td><td>{{ 'Landing.sample.smile' | translate }}</td><td>+210,00 {{currencySymbol}}</td><td>Feb 1, 2026</td></tr>
+                      <tr><td>#86</td><td>{{ 'Landing.sample.smile' | translate }}</td><td>+210,00 {{currencySymbol}}</td><td>Jan 1, 2026</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+            <div class="sp-info-bucket-card">
+              <h5 class="sp-info-bucket-title">{{ 'Landing.sample.monitorPeripherals' | translate }}</h5>
+              <div class="sp-info-bucket-progress">
+                <span class="sp-info-bucket-amount">0,00 / 900,00 {{currencySymbol}}</span>
+                <div class="sp-info-bucket-bar"><div class="sp-info-bucket-fill" style="width:0%"></div></div>
+              </div>
+              <p class="sp-info-bucket-notes">{{ 'Landing.sample.monitorDesc' | translate }}</p>
+              <p class="sp-info-bucket-date">{{ 'Common.target' | translate }}: Aug 2026</p>
+              <div class="sp-info-bucket-links">
+                <strong>{{ 'Common.links' | translate }}:</strong>
+                <a class="sp-info-link" href="https://www.rtings.com/monitor" target="_blank" rel="noopener noreferrer">{{ 'Landing.sample.link.rtingsShort' | translate }}</a>
+              </div>
+              <button class="sp-info-bucket-add" (click)="requireLogin()">{{ 'Common.addToBucket' | translate }}</button>
+            </div>
+            <div class="sp-info-bucket-card">
+              <h5 class="sp-info-bucket-title">{{ 'Landing.sample.lightingExtras' | translate }}</h5>
+              <div class="sp-info-bucket-progress">
+                <span class="sp-info-bucket-amount">0,00 / 400,00 {{currencySymbol}}</span>
+                <div class="sp-info-bucket-bar"><div class="sp-info-bucket-fill" style="width:0%"></div></div>
+              </div>
+              <p class="sp-info-bucket-notes">{{ 'Landing.sample.lightingDesc' | translate }}</p>
+              <button class="sp-info-bucket-add" (click)="requireLogin()">{{ 'Common.addToBucket' | translate }}</button>
+            </div>
+          </div>
+
+          <!-- TAB: Plans -->
+          <div class="sp-info-content" *ngIf="smileTab['sp-office'] === 'plans'">
+            <div class="sp-info-plan-summary">
+              <div class="sp-info-plan-stat"><span>{{ 'Common.totalPlans' | translate }}</span> <strong>1</strong></div>
+              <div class="sp-info-plan-stat"><span>{{ 'Common.active' | translate }}:</span> <strong class="sp-info-active-count">0</strong></div>
+              <div class="sp-info-plan-stat"><span>{{ 'Common.monthlyCommitment' | translate }}</span> <strong>0,00 {{currencySymbol}}</strong></div>
+            </div>
+            <h5 class="sp-info-label">{{ 'Common.planned' | translate }}</h5>
+            <div class="sp-info-plan-card">
+              <div class="sp-info-plan-header">
+                <h6 class="sp-info-plan-title">{{ 'Landing.sample.officePlan' | translate }}</h6>
+                <span class="sp-info-plan-status sp-info-status-planned">{{ 'Common.planned' | translate }}</span>
+              </div>
+              <div class="sp-info-plan-body">
+                <div class="sp-info-plan-row"><span>{{ 'Common.amount' | translate }}</span> <span>200,00 {{currencySymbol}} / {{ 'Landing.sample.monthly' | translate }}</span></div>
+                <div class="sp-info-plan-row"><span>{{ 'Common.buckets' | translate }}:</span> <span>{{ 'Common.allBuckets' | translate }}</span></div>
+                <div class="sp-info-plan-row"><span>{{ 'Common.schedule' | translate }}</span> <span>{{ 'Landing.sample.officeScheduleDateRange' | translate }}</span></div>
+              </div>
+              <div class="sp-info-plan-actions">
+                <button class="sp-info-plan-btn sp-info-plan-btn--success" (click)="requireLogin()">{{ 'Common.activate' | translate }}</button>
+                <button class="sp-info-plan-btn" (click)="requireLogin()">{{ 'Common.edit' | translate }}</button>
+                <button class="sp-info-plan-btn sp-info-plan-btn--danger" (click)="requireLogin()">{{ 'Common.delete' | translate }}</button>
+              </div>
+            </div>
+            <button class="sp-info-add-btn" (click)="requireLogin()">{{ 'Common.createPlan' | translate }}</button>
+          </div>
+
+          <!-- TAB: Actions -->
+          <div class="sp-info-content" *ngIf="smileTab['sp-office'] === 'actions'">
+            <div class="sp-info-actions">
+              <div class="sp-info-action done">
+                <input type="checkbox" checked (change)="requireLogin()">
+                <span class="sp-info-action-text">{{ 'Landing.sample.action.desk' | translate }}</span>
+                <div class="sp-info-action-meta">
+                  <span class="sp-info-priority sp-info-priority-high">{{ 'Common.priority.high' | translate }}</span>
+                  <span class="sp-info-due">Mar 2026</span>
+                  <button class="sp-info-btn-icon" (click)="requireLogin()">&#x270E;</button>
+                  <button class="sp-info-btn-icon sp-info-btn-danger" (click)="requireLogin()">&times;</button>
+                </div>
+              </div>
+              <div class="sp-info-action">
+                <input type="checkbox" (change)="requireLogin()">
+                <span class="sp-info-action-text">{{ 'Landing.sample.action.chairs' | translate }}</span>
+                <div class="sp-info-action-meta">
+                  <span class="sp-info-priority sp-info-priority-medium">{{ 'Common.priority.medium' | translate }}</span>
+                  <span class="sp-info-due">May 2026</span>
+                  <button class="sp-info-btn-icon" (click)="requireLogin()">&#x270E;</button>
+                  <button class="sp-info-btn-icon sp-info-btn-danger" (click)="requireLogin()">&times;</button>
+                </div>
+              </div>
+              <div class="sp-info-action">
+                <input type="checkbox" (change)="requireLogin()">
+                <span class="sp-info-action-text">{{ 'Landing.sample.action.monitor' | translate }}</span>
+                <div class="sp-info-action-meta">
+                  <span class="sp-info-priority sp-info-priority-low">{{ 'Common.priority.low' | translate }}</span>
+                  <span class="sp-info-due">Jun 2026</span>
+                  <button class="sp-info-btn-icon" (click)="requireLogin()">&#x270E;</button>
+                  <button class="sp-info-btn-icon sp-info-btn-danger" (click)="requireLogin()">&times;</button>
+                </div>
+              </div>
+              <div class="sp-info-action">
+                <input type="checkbox" (change)="requireLogin()">
+                <span class="sp-info-action-text">{{ 'Landing.sample.action.blackFriday' | translate }}</span>
+                <div class="sp-info-action-meta">
+                  <span class="sp-info-priority sp-info-priority-medium">{{ 'Common.priority.medium' | translate }}</span>
+                  <span class="sp-info-due">Nov 2026</span>
+                  <button class="sp-info-btn-icon" (click)="requireLogin()">&#x270E;</button>
+                  <button class="sp-info-btn-icon sp-info-btn-danger" (click)="requireLogin()">&times;</button>
+                </div>
+              </div>
+            </div>
+            <button class="sp-info-add-btn" (click)="requireLogin()">{{ 'Common.addAction' | translate }}</button>
+          </div>
+
+          <!-- TAB: Notes -->
+          <div class="sp-info-content" *ngIf="smileTab['sp-office'] === 'notes'">
+            <div class="sp-info-note-form">
+              <textarea class="sp-info-note-input" placeholder="{{ 'Common.writeNote' | translate }}" rows="3" (focus)="requireLogin()" readonly></textarea>
+              <button class="sp-info-note-submit" (click)="requireLogin()">{{ 'Common.addNote' | translate }}</button>
+            </div>
+            <p class="sp-info-empty-tab">{{ 'Common.noNotes' | translate }}</p>
+          </div>
+
+          <button class="sp-info-bottom-btn" (click)="requireLogin()">{{ 'Landing.sample.addEntry' | translate }}</button>
+          <button class="sp-info-bottom-btn sp-info-edit-btn" (click)="requireLogin()">{{ 'Common.edit' | translate }}</button>
+        </div>
+
+      </div>
+
+      <!-- — AI ASSISTANT SHOWCASE — -->
+      <div class="ai-showcase">
+        <h3 class="showcase-heading">{{ 'Landing.ai.aiHeading' | translate }}</h3>
+        <p class="showcase-sub">{{ 'Landing.ai.aiSub' | translate }}</p>
+
+        <div class="ai-showcase-layout">
+          <!-- Mock AI Assistant Panel -->
+          <div class="ai-mock-panel">
+            <h4 class="ai-mock-title">🔒 {{ 'Landing.ai.aiHeading' | translate }}</h4>
+            <hr class="ai-mock-sep">
+
+            <!-- Step Indicator -->
+            <div class="ai-mock-steps">
+              <span class="ai-mock-step" [class.active]="aiPreviewStep === 'options'" (click)="aiPreviewStep = 'options'">{{ 'Landing.ai.configure' | translate }}</span>
+              <span class="ai-mock-arrow">&rarr;</span>
+              <span class="ai-mock-step" [class.active]="aiPreviewStep === 'prompt'" (click)="aiPreviewStep = 'prompt'">{{ 'Landing.ai.prompt' | translate }}</span>
+              <span class="ai-mock-arrow">&rarr;</span>
+              <span class="ai-mock-step">{{ 'Landing.ai.import' | translate }}</span>
+            </div>
+
+            <!-- Step 1: Configure -->
+            <div class="ai-mock-body" *ngIf="aiPreviewStep === 'options'">
+              <div class="ai-mock-field">
+                <label class="ai-mock-label">{{ 'Landing.ai.promptType' | translate }}</label>
+                <div class="ai-mock-type-grid">
+                  <button class="ai-mock-type-btn" [class.active]="selectedPromptType === 'grow-strategy'" (click)="selectPromptType('grow-strategy')">{{ 'Landing.ai.growStrategy' | translate }}</button>
+                  <button class="ai-mock-type-btn" [class.active]="selectedPromptType === 'budget-optimizer'" (click)="selectPromptType('budget-optimizer')">{{ 'Landing.ai.budgetOptimizer' | translate }}</button>
+                  <button class="ai-mock-type-btn" [class.active]="selectedPromptType === 'subscription-audit'" (click)="selectPromptType('subscription-audit')">{{ 'Landing.ai.subscriptionAudit' | translate }}</button>
+                  <button class="ai-mock-type-btn" [class.active]="selectedPromptType === 'expense-pattern'" (click)="selectPromptType('expense-pattern')">{{ 'Landing.ai.expensePatterns' | translate }}</button>
+                  <button class="ai-mock-type-btn" [class.active]="selectedPromptType === 'smile-create'" (click)="selectPromptType('smile-create')">{{ 'Landing.ai.createSmile' | translate }}</button>
+                  <button class="ai-mock-type-btn" [class.active]="selectedPromptType === 'smile-improve'" (click)="selectPromptType('smile-improve')">{{ 'Landing.ai.improveSmile' | translate }}</button>
+                  <button class="ai-mock-type-btn" [class.active]="selectedPromptType === 'fire-create'" (click)="selectPromptType('fire-create')">{{ 'Landing.ai.fireEmergency' | translate }}</button>
+                  <button class="ai-mock-type-btn" [class.active]="selectedPromptType === 'fire-improve'" (click)="selectPromptType('fire-improve')">{{ 'Landing.ai.improveFire' | translate }}</button>
+                </div>
+              </div>
+
+              <!-- Smile Create Options -->
+              <div *ngIf="selectedPromptType === 'smile-create'" class="ai-mock-config">
+                <div class="ai-mock-field">
+                  <label class="ai-mock-label">{{ 'Landing.ai.goal' | translate }}</label>
+                  <div class="ai-mock-input">{{ 'Landing.sample.japan.name' | translate }} 🌸</div>
+                </div>
+                <div class="ai-mock-field-row">
+                  <div class="ai-mock-field">
+                    <label class="ai-mock-label">{{ 'Landing.ai.urgency' | translate }}</label>
+                    <div class="ai-mock-select">{{ 'Landing.ai.opt.within1Year' | translate }}</div>
+                  </div>
+                  <div class="ai-mock-field">
+                    <label class="ai-mock-label">{{ 'Landing.ai.researchDepth' | translate }}</label>
+                    <div class="ai-mock-select">{{ 'Landing.ai.opt.deepResearch' | translate }}</div>
+                  </div>
+                </div>
+                <div class="ai-mock-field">
+                  <label class="ai-mock-label">{{ 'Landing.ai.budgetFlex' | translate }}</label>
+                  <div class="ai-mock-select">{{ 'Landing.ai.opt.someFlexibility' | translate }}</div>
+                </div>
+                <div class="ai-mock-field">
+                  <label class="ai-mock-label">{{ 'Landing.ai.infoFocus' | translate }}</label>
+                  <div class="ai-mock-tags">
+                    <span class="ai-mock-tag active">{{ 'Landing.ai.opt.shopping' | translate }}</span>
+                    <span class="ai-mock-tag active">{{ 'Landing.ai.opt.reviews' | translate }}</span>
+                    <span class="ai-mock-tag active">{{ 'Landing.ai.opt.comparisons' | translate }}</span>
+                    <span class="ai-mock-tag">{{ 'Landing.ai.opt.tips' | translate }}</span>
+                    <span class="ai-mock-tag active">{{ 'Landing.ai.opt.guides' | translate }}</span>
+                    <span class="ai-mock-tag">{{ 'Landing.ai.opt.forums' | translate }}</span>
+                  </div>
+                </div>
+                <div class="ai-mock-field-row">
+                  <div class="ai-mock-field">
+                    <label class="ai-mock-label">{{ 'Landing.ai.complexity' | translate }}</label>
+                    <div class="ai-mock-select">{{ 'Landing.ai.opt.moderate' | translate }}</div>
+                  </div>
+                  <div class="ai-mock-field">
+                    <label class="ai-mock-label">{{ 'Landing.ai.suggestions' | translate }}</label>
+                    <div class="ai-mock-select">5</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Grow Strategy Options -->
+              <div *ngIf="selectedPromptType === 'grow-strategy'" class="ai-mock-config">
+                <div class="ai-mock-field">
+                  <label class="ai-mock-label">{{ 'Landing.ai.tracks' | translate }}</label>
+                  <div class="ai-mock-toggles">
+                    <div class="ai-mock-toggle-row"><span>{{ 'Landing.sample.assets' | translate }}</span><span class="ai-toggle on"></span></div>
+                    <div class="ai-mock-toggle-row"><span>{{ 'Landing.sample.shares' | translate }}</span><span class="ai-toggle on"></span></div>
+                    <div class="ai-mock-toggle-row"><span>{{ 'Landing.sample.investments' | translate }}</span><span class="ai-toggle"></span></div>
+                  </div>
+                </div>
+                <div class="ai-mock-field-row">
+                  <div class="ai-mock-field">
+                    <label class="ai-mock-label">{{ 'Landing.ai.riskTolerance' | translate }}</label>
+                    <div class="ai-mock-select">{{ 'Landing.ai.opt.moderate' | translate }}</div>
+                  </div>
+                  <div class="ai-mock-field">
+                    <label class="ai-mock-label">{{ 'Landing.ai.horizon' | translate }}</label>
+                    <div class="ai-mock-select">{{ 'Landing.ai.opt.years3to5' | translate }}</div>
+                  </div>
+                </div>
+                <div class="ai-mock-field-row">
+                  <div class="ai-mock-field">
+                    <label class="ai-mock-label">{{ 'Landing.ai.broker' | translate }}</label>
+                    <div class="ai-mock-select">{{ 'Landing.ai.opt.tradeRepublic' | translate }}</div>
+                  </div>
+                  <div class="ai-mock-field">
+                    <label class="ai-mock-label">{{ 'Landing.ai.country' | translate }}</label>
+                    <div class="ai-mock-select">{{ 'Landing.ai.opt.germany' | translate }}</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Budget Optimizer Options -->
+              <div *ngIf="selectedPromptType === 'budget-optimizer'" class="ai-mock-config">
+                <div class="ai-mock-field-row">
+                  <div class="ai-mock-field">
+                    <label class="ai-mock-label">{{ 'Landing.ai.analysisPeriod' | translate }}</label>
+                    <div class="ai-mock-select">{{ 'Landing.ai.opt.last6Months' | translate }}</div>
+                  </div>
+                  <div class="ai-mock-field">
+                    <label class="ai-mock-label">{{ 'Landing.ai.detailLevel' | translate }}</label>
+                    <div class="ai-mock-select">{{ 'Landing.ai.opt.detailed' | translate }}</div>
+                  </div>
+                </div>
+                <div class="ai-mock-field">
+                  <label class="ai-mock-label">{{ 'Landing.ai.budgetCategories' | translate }}</label>
+                  <div class="ai-mock-tags">
+                    <span class="ai-mock-tag active">{{ 'Landing.ai.opt.groceries' | translate }}</span>
+                    <span class="ai-mock-tag active">{{ 'Landing.ai.opt.transport' | translate }}</span>
+                    <span class="ai-mock-tag active">{{ 'Landing.ai.opt.entertainment' | translate }}</span>
+                    <span class="ai-mock-tag">{{ 'Landing.ai.opt.dining' | translate }}</span>
+                    <span class="ai-mock-tag active">{{ 'Landing.ai.opt.utilities' | translate }}</span>
+                    <span class="ai-mock-tag">{{ 'Landing.ai.opt.clothing' | translate }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Subscription Audit Options -->
+              <div *ngIf="selectedPromptType === 'subscription-audit'" class="ai-mock-config">
+                <div class="ai-mock-field">
+                  <label class="ai-mock-label">{{ 'Landing.ai.yourSubscriptions' | translate }}</label>
+                  <div class="ai-mock-tags">
+                    <span class="ai-mock-tag active">Netflix</span>
+                    <span class="ai-mock-tag active">Spotify</span>
+                    <span class="ai-mock-tag active">Gym</span>
+                    <span class="ai-mock-tag active">Cloud Storage</span>
+                    <span class="ai-mock-tag">YouTube Premium</span>
+                    <span class="ai-mock-tag active">Salary</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Expense Pattern Options -->
+              <div *ngIf="selectedPromptType === 'expense-pattern'" class="ai-mock-config">
+                <div class="ai-mock-field-row">
+                  <div class="ai-mock-field">
+                    <label class="ai-mock-label">{{ 'Landing.ai.analysisPeriod' | translate }}</label>
+                    <div class="ai-mock-select">{{ 'Landing.ai.opt.last12Months' | translate }}</div>
+                  </div>
+                  <div class="ai-mock-field">
+                    <label class="ai-mock-label">{{ 'Landing.ai.detailLevel' | translate }}</label>
+                    <div class="ai-mock-select">{{ 'Landing.ai.opt.deepAnalysis' | translate }}</div>
+                  </div>
+                </div>
+                <div class="ai-mock-toggles">
+                  <div class="ai-mock-toggle-row"><span>{{ 'Landing.ai.opt.seasonalAnalysis' | translate }}</span><span class="ai-toggle on"></span></div>
+                </div>
+              </div>
+
+              <!-- Smile Improve Options -->
+              <div *ngIf="selectedPromptType === 'smile-improve'" class="ai-mock-config">
+                <div class="ai-mock-field">
+                  <label class="ai-mock-label">{{ 'Landing.ai.selectProjects' | translate }}</label>
+                  <div class="ai-mock-tags">
+                    <span class="ai-mock-tag active">{{ 'Landing.ai.opt.japanHoliday' | translate }}</span>
+                    <span class="ai-mock-tag">{{ 'Landing.ai.opt.homeOffice' | translate }}</span>
+                  </div>
+                </div>
+                <div class="ai-mock-field">
+                  <label class="ai-mock-label">{{ 'Landing.ai.improvementAreas' | translate }}</label>
+                  <div class="ai-mock-checks">
+                    <span class="ai-mock-check on">{{ 'Landing.ai.opt.improvDesc' | translate }}</span>
+                    <span class="ai-mock-check on">{{ 'Landing.ai.opt.improvBudget' | translate }}</span>
+                    <span class="ai-mock-check on">{{ 'Landing.ai.opt.improvBuckets' | translate }}</span>
+                    <span class="ai-mock-check">{{ 'Landing.ai.opt.improvLinks' | translate }}</span>
+                    <span class="ai-mock-check on">{{ 'Landing.ai.opt.improvActions' | translate }}</span>
+                    <span class="ai-mock-check on">{{ 'Landing.ai.opt.improvPlan' | translate }}</span>
+                    <span class="ai-mock-check">{{ 'Landing.ai.opt.improvTimeline' | translate }}</span>
+                    <span class="ai-mock-check">{{ 'Landing.ai.opt.improvNotes' | translate }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Fire Create Options -->
+              <div *ngIf="selectedPromptType === 'fire-create'" class="ai-mock-config">
+                <div class="ai-mock-field-row">
+                  <div class="ai-mock-field">
+                    <label class="ai-mock-label">{{ 'Landing.ai.emergencyType' | translate }}</label>
+                    <div class="ai-mock-select">{{ 'Landing.ai.opt.carTrouble' | translate }}</div>
+                  </div>
+                  <div class="ai-mock-field">
+                    <label class="ai-mock-label">{{ 'Landing.ai.totalAmount' | translate }}</label>
+                    <div class="ai-mock-select">3.500 {{currencySymbol}}</div>
+                  </div>
+                </div>
+                <div class="ai-mock-field-row">
+                  <div class="ai-mock-field">
+                    <label class="ai-mock-label">{{ 'Landing.ai.urgency' | translate }}</label>
+                    <div class="ai-mock-select">{{ 'Landing.ai.opt.within1Month' | translate }}</div>
+                  </div>
+                  <div class="ai-mock-field">
+                    <label class="ai-mock-label">{{ 'Landing.ai.paybackStrategy' | translate }}</label>
+                    <div class="ai-mock-select">{{ 'Landing.ai.opt.letAIDecide' | translate }}</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Fire Improve Options -->
+              <div *ngIf="selectedPromptType === 'fire-improve'" class="ai-mock-config">
+                <div class="ai-mock-field">
+                  <label class="ai-mock-label">{{ 'Landing.ai.selectEmergencies' | translate }}</label>
+                  <div class="ai-mock-tags">
+                    <span class="ai-mock-tag active">{{ 'Landing.ai.opt.carRepair' | translate }}</span>
+                    <span class="ai-mock-tag">{{ 'Landing.ai.opt.washingMachine' | translate }}</span>
+                  </div>
+                </div>
+                <div class="ai-mock-field">
+                  <label class="ai-mock-label">{{ 'Landing.ai.improvementAreas' | translate }}</label>
+                  <div class="ai-mock-checks">
+                    <span class="ai-mock-check on">{{ 'Landing.ai.opt.improvDesc' | translate }}</span>
+                    <span class="ai-mock-check on">{{ 'Landing.ai.opt.improvBudget' | translate }}</span>
+                    <span class="ai-mock-check on">{{ 'Landing.ai.opt.improvActions' | translate }}</span>
+                    <span class="ai-mock-check on">{{ 'Landing.ai.opt.improvPlan' | translate }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Privacy Toggle -->
+              <div class="ai-mock-privacy">
+                <span>{{ 'Landing.ai.dataAnonymized' | translate }}</span>
+                <span class="ai-toggle on"></span>
+              </div>
+
+              <button class="ai-mock-generate-btn" (click)="aiPreviewStep = 'prompt'">{{ 'Landing.ai.generatePrompt' | translate }}</button>
+            </div>
+
+            <!-- Step 2: Generated Prompt Preview -->
+            <div class="ai-mock-body" *ngIf="aiPreviewStep === 'prompt'">
+              <p class="ai-mock-help">{{ 'Landing.ai.promptHelp' | translate }}</p>
+              <pre class="ai-mock-prompt" *ngIf="selectedPromptType === 'smile-create'">I want to plan a dream holiday to Japan  🌸 2 weeks during cherry blossom season.
+
+My current financial situation (anonymized):
+- Monthly income: ~XXXX €
+- Monthly expenses: ~XXXX €
+- Available savings rate: ~XXX €/month
+
+Please create a detailed Smile Project with:
+1. A clear project description
+2. Budget buckets (flights, hotels, activities, food)
+3. Realistic cost estimates for each bucket
+4. Action items with priorities and due dates
+5. Useful links (booking sites, travel guides, rail passes)
+6. A monthly payment plan to reach the target
+
+Settings: Urgency=1 year, Depth=deep, Flexibility=some
+Focus: shopping sites, reviews, comparisons, expert guides
+Suggestions: 5 alternative budget options
+
+Return as JSON matching the SmileProject schema.</pre>
+              <pre class="ai-mock-prompt" *ngIf="selectedPromptType === 'grow-strategy'">Based on my anonymized financial data, create a growth strategy.
+
+Portfolio: Assets (Gold: XXXX €), Shares (BMW: XX x XX €)
+Monthly cashflow: +X.XXX →
+Risk tolerance: Moderate
+Investment horizon: 3-5 years
+Broker: Trade Republic (Germany)
+
+Please suggest:
+1. Asset allocation strategy
+2. Diversification recommendations
+3. Monthly investment plan
+4. Rebalancing schedule
+
+Return as JSON matching the import schema.</pre>
+              <pre class="ai-mock-prompt" *ngIf="selectedPromptType === 'budget-optimizer'">Analyze my spending across these budget categories (last 6 months, anonymized):
+
+- Groceries: avg. XXX €/month
+- Transport: avg. XXX €/month
+- Entertainment: avg. XXX €/month
+- Utilities: avg. XXX €/month
+
+Please provide detailed optimization suggestions with estimated monthly savings for each category.
+
+Return as JSON matching the import schema.</pre>
+              <pre class="ai-mock-prompt" *ngIf="selectedPromptType === 'subscription-audit'">Audit my current subscriptions (anonymized):
+
+- Netflix: XX €/month (expense)
+- Spotify: XX €/month (expense)
+- Gym: XX €/month (expense)
+- Cloud Storage: XX €/month (expense)
+- Salary: X.XXX €/month (income)
+
+Identify: unnecessary subscriptions, cheaper alternatives, bundling opportunities. Estimate total monthly savings.
+
+Return as JSON matching the import schema.</pre>
+              <pre class="ai-mock-prompt" *ngIf="selectedPromptType === 'expense-pattern'">Analyze my expense patterns over the last 12 months (anonymized). Include seasonal analysis.
+
+Monthly averages by category provided. Identify spending trends, anomalies, and optimization opportunities.
+
+Return as JSON matching the import schema.</pre>
+              <pre class="ai-mock-prompt" *ngIf="selectedPromptType === 'smile-improve'">I have an existing Smile Project "Japan Holiday" that I'd like to improve.
+
+Current state (anonymized):
+- Phase: Saving, Progress: 65%
+- 4 buckets, 6 action items
+
+Please improve: description, budget realism, add buckets, action items, payment plan.
+
+Return updated project as JSON matching the SmileProject schema.</pre>
+              <pre class="ai-mock-prompt" *ngIf="selectedPromptType === 'fire-create'">I have a car emergency that needs immediate attention.
+
+Estimated cost: 3.500 {{currencySymbol}}
+Urgency: Within 1 month
+Available Mojo: X.XXX €
+
+Please create a Fire Emergency plan with:
+1. Cost breakdown and research
+2. Financing options
+3. Action items with priorities
+4. Payment/payback strategy (AI recommended)
+
+Return as JSON matching the FireEmergency schema.</pre>
+              <pre class="ai-mock-prompt" *ngIf="selectedPromptType === 'fire-improve'">I have an existing Fire Emergency "Car Repair" that needs improvement.
+
+Please improve: description, budget realism, action items, payment plan.
+
+Return updated emergency as JSON matching the FireEmergency schema.</pre>
+              <div class="ai-mock-btn-row">
+                <button class="ai-mock-back-btn" (click)="aiPreviewStep = 'options'">{{ 'Landing.ai.back' | translate }}</button>
+                <button class="ai-mock-copy-btn">{{ 'Landing.ai.copyPrompt' | translate }}</button>
+              </div>
+              <button class="ai-mock-next-btn">{{ 'Landing.ai.pasteResponse' | translate }}</button>
+            </div>
+          </div>
+
+          <!-- Right side: How it works -->
+          <div class="ai-showcase-explain">
+            <div class="ai-explain-step">
+              <div class="ai-explain-num">1</div>
+              <div>
+                <h4>{{ 'Landing.ai.step1Title' | translate }}</h4>
+                <p>{{ 'Landing.ai.step1Desc' | translate }}</p>
+              </div>
+            </div>
+            <div class="ai-explain-step">
+              <div class="ai-explain-num">2</div>
+              <div>
+                <h4>{{ 'Landing.ai.step2Title' | translate }}</h4>
+                <p>{{ 'Landing.ai.step2Desc' | translate }}</p>
+              </div>
+            </div>
+            <div class="ai-explain-step">
+              <div class="ai-explain-num">3</div>
+              <div>
+                <h4>{{ 'Landing.ai.step3Title' | translate }}</h4>
+                <p>{{ 'Landing.ai.step3Desc' | translate }}</p>
+              </div>
+            </div>
+
+            <div class="ai-privacy-badge">
+              <div class="ai-privacy-icon"><i class="fa fa-lock"></i></div>
+              <div>
+                <p><strong>{{ 'Landing.ai.privacyBold' | translate }}</strong></p>
+                <p class="ai-privacy-sub">{{ 'Landing.ai.privacySub' | translate }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============================================================
+  DEMO CTA
+  ============================================================ -->
+  <section class="demo" id="demo">
+    <div class="container">
+      <h2 class="section-title">{{ 'Landing.demo.title' | translate }}</h2>
+      <p class="section-subtitle">{{ 'Landing.demo.subtitle' | translate }}</p>
+      <div style="text-align:center; margin-top:2rem;">
+        <button (click)="launchDemo()" class="btn btn-primary" style="font-size:1.1rem; padding:1rem 2.5rem;">
+          {{ 'Landing.demo.launch' | translate }}
+        </button>
+      </div>
+      <p class="demo-footer-note">{{ 'Landing.demo.note' | translate }}</p>
+    </div>
+  </section>
+
+  <!-- ============================================================
+  8. CTA / GET STARTED
+  ============================================================ -->
+  <section class="cta-section" id="get-started">
+    <div class="container">
+      <h2>{{ 'Landing.cta.title' | translate }}</h2>
+      <p class="cta-sub">{{ 'Landing.cta.subtitle' | translate }}</p>
+
+      <div class="deploy-options">
+        <div class="deploy-card deploy-card--self-host">
+          <h3>{{ 'Landing.cta.selfHosted' | translate }}</h3>
+          <p>{{ 'Landing.cta.selfHostedDesc' | translate }}</p>
+          <code>git clone https://github.com/Djey8/money
+cd money
+docker compose up -d</code>
+          <br>
+          <a href="https://github.com/Djey8/money" class="btn-deploy btn-deploy--self" aria-label="View self-hosting guide on GitHub">{{ 'Landing.cta.viewGithub' | translate }}</a>
+        </div>
+
+        <div class="deploy-card deploy-card--cloud">
+          <h3>{{ 'Landing.cta.cloud' | translate }}</h3>
+          <p>{{ 'Landing.cta.cloudDesc' | translate }}</p>
+          <a routerLink="/authentication" class="btn-deploy btn-deploy--cloud" aria-label="Sign up or log in">{{ 'Landing.cta.signInUp' | translate }}</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ============================================================
+FOOTER
+============================================================ -->
+<footer class="site-footer">
+  <div class="container footer-content">
+    <p>{{ 'Landing.footer.rights' | translate }}</p>
+    <div class="footer-links">
+      <a href="https://github.com/Djey8/money">GitHub</a>
+      <a href="#how-it-works">{{ 'Landing.footer.howItWorks' | translate }}</a>
+    </div>
+    <div class="lang-badges">
+      <button *ngFor="let lang of languages"
+              class="lang-badge"
+              [ngClass]="{ active: currentLang === lang.code }"
+              (click)="switchLang(lang.code)">
+        <img [src]="lang.flag" [alt]="lang.label" class="lang-flag" />
+        <span>{{ lang.label }}</span>
+      </button>
+    </div>
+  </div>
+  <p class="footer-tagline">{{ 'Landing.footer.tagline' | translate }}</p>
+</footer>
+
+<!-- Login prompt toast -->
+<div class="login-toast" [class.visible]="showLoginPrompt">
+  <i class="fa fa-lock"></i>
+  <span>{{ 'Landing.toast.signIn' | translate }}</span>
+  <a routerLink="/authentication" class="login-toast-btn">{{ 'Landing.toast.signInBtn' | translate }}</a>
+</div>

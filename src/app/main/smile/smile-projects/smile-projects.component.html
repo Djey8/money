@@ -92,11 +92,11 @@
         <!-- Financial Metrics -->
         <div class="card-metrics">
             <div class="metric">
-                <span class="metric-label">{{'Fire.target' | translate}}</span>
+                <span class="metric-label">{{'Common.target' | translate}}</span>
                 <span class="metric-value">{{getTotalTarget(project) | appNumber}} {{settingsReference.currency}}</span>
             </div>
             <div class="metric">
-                <span class="metric-label">{{'Fire.amount' | translate}}</span>
+                <span class="metric-label">{{'Common.amount' | translate}}</span>
                 <span class="metric-value">{{getTotalAmount(project) | appNumber}} {{settingsReference.currency}}</span>
             </div>
         </div>
@@ -105,7 +105,7 @@
         <div class="card-dates" *ngIf="project.targetDate">
             <div class="date-info">
                 <i class="fa fa-calendar"></i>
-                <span class="date-label">{{'Smile.targetDate' | translate}}:</span>
+                <span class="date-label">{{'Common.targetDate' | translate}}:</span>
                 <span class="date-value">{{project.targetDate | appDate}}</span>
             </div>
         </div>
