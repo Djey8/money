@@ -1,28 +1,13 @@
-<!-- Toolbar — only visible on landing page -->
-<div class="toolbar" role="banner" *ngIf="router.url === '/'">
-  <img id="profile-pic" width="40" alt="Profile Logo" src="../assets/profile-blank.jpg"
-    role="button" tabindex="0" aria-label="Open profile" (click)="classReference.clickProfile()" (keydown.enter)="classReference.clickProfile()" />
-  <div id="heading" role="button" tabindex="0" (click)="classReference.openNavBar()" (keydown.enter)="classReference.openNavBar()">{{'Welcome' | translate}}</div>
-  <div class="spacer"></div>
-  <div class="mode-badge" [ngClass]="appMode" [title]="('Settings.runningIn' | translate) + ' ' + (appMode === 'selfhosted' ? ('Settings.mode.selfhosted' | translate) : ('Settings.mode.firebase' | translate)) + ' ' + ('Settings.mode' | translate)">
-    {{ (appMode === 'selfhosted' ? 'Settings.mode.selfhosted' : 'Settings.mode.firebase') | translate }}
-  </div>
-</div>
-<div class="content" role="main" (click)="clickCollapse()" data-ng-init="init()">
-  <div class="welcome-card" *ngIf="router.url === '/'">
-    <div class="welcome-icon" aria-hidden="true">👋</div>
-    <h2 class="welcome-title">{{'Welcome.title' | translate}}</h2>
-    <p class="welcome-subtitle">{{'Welcome.subtitle' | translate}}</p>
-    <button class="btn btn--primary welcome-cta"
-      (click)="classReference.openNavBar(); $event.stopPropagation()">
-      {{'Welcome.cta' | translate}}
-    </button>
-  </div>
+<!-- Demo mode banner -->
+<div class="demo-banner" *ngIf="isDemoMode">
+  🧪 Demo Mode — data is stored locally in your browser.
+  <a routerLink="/authentication" (click)="exitDemo()">Sign up for the full experience →</a>
 </div>
 
-<div>
+<div [class.demo-active]="isDemoMode">
   <router-outlet></router-outlet>
 </div>
+
 <app-add></app-add>
 <app-add-smile></app-add-smile>
 <app-add-fire></app-add-fire>
@@ -46,6 +31,7 @@
 <app-toast></app-toast>
 <app-confirm-dialog></app-confirm-dialog>
 <app-onboarding></app-onboarding>
+
 <app-pull-to-refresh></app-pull-to-refresh>
 <app-sw-update></app-sw-update>
 <app-bottom-nav></app-bottom-nav>

@@ -43,7 +43,7 @@
             <label for="amount">{{'AddFire.CurrentAmount' | translate}}</label>
             <input type="number" step="any" id="amount" name="amount" [(ngModel)]="amountTextField">
 
-            <label for="targetDate">{{'Fire.targetDate' | translate}}</label>
+            <label for="targetDate">{{'Common.targetDate' | translate}}</label>
             <input type="date" id="targetDate" name="targetDate" [(ngModel)]="targetDateField">
         </form>
     </div>
@@ -51,7 +51,7 @@
     <!-- Section: Buckets (collapsible) -->
     <div class="form-section">
         <button class="section-toggle" (click)="showBucketsSection = !showBucketsSection" type="button">
-            <h5 class="form-section-title">{{'Fire.buckets' | translate}}</h5>
+            <h5 class="form-section-title">{{'Common.buckets' | translate}}</h5>
             <span class="toggle-chevron" [class.open]="showBucketsSection">▸</span>
         </button>
         <div *ngIf="showBucketsSection">
@@ -64,7 +64,7 @@
                             <div class="bucket-header">
                                 <div class="bucket-content">
                                     <strong>{{bucket.title}}</strong>
-                                    <span>{{'Fire.target' | translate}}: {{bucket.target | appNumber}}</span>
+                                    <span>{{'Common.target' | translate}}: {{bucket.target | appNumber}}</span>
                                 </div>
                                 <div class="bucket-actions">
                                     <button type="button" class="btn-icon" (click)="startEditBucket(i)" aria-label="Edit bucket">✐</button>
@@ -79,7 +79,7 @@
                             
                             <!-- Bucket Target Date -->
                             <div class="bucket-target-date" *ngIf="bucket.targetDate">
-                                <small>{{'Fire.targetDate' | translate}}: {{bucket.targetDate | date:'mediumDate'}}</small>
+                                <small>{{'Common.targetDate' | translate}}: {{bucket.targetDate | date:'mediumDate'}}</small>
                             </div>
                             
                             <!-- Bucket Links -->
@@ -118,7 +118,7 @@
                             <input type="text" [(ngModel)]="editBucketTitle" [placeholder]="'Fire.bucketName' | translate" class="input-sm" [name]="'editBucketTitle' + i">
                             <input type="number" step="any" [(ngModel)]="editBucketTarget" [placeholder]="'Fire.bucketTarget' | translate" class="input-sm" [name]="'editBucketTarget' + i">
                             <textarea [(ngModel)]="editBucketNotes" [placeholder]="'Fire.bucketNotesPlaceholder' | translate" class="input-sm" rows="2" [name]="'editBucketNotes' + i"></textarea>
-                            <input type="date" [(ngModel)]="editBucketTargetDate" [placeholder]="'Fire.targetDate' | translate" class="input-sm" [name]="'editBucketTargetDate' + i">
+                            <input type="date" [(ngModel)]="editBucketTargetDate" [placeholder]="'Common.targetDate' | translate" class="input-sm" [name]="'editBucketTargetDate' + i">
                             <div class="bucket-edit-actions">
                                 <button type="button" class="btn btn--sm" (click)="saveEditBucket(i)" [disabled]="!editBucketTitle.trim() || !editBucketTarget">{{'Common.save' | translate: {default: 'Save'} }}</button>
                                 <button type="button" class="btn-icon" (click)="cancelEditBucket()" aria-label="Cancel">×</button>
@@ -137,7 +137,7 @@
                 <input type="text" [(ngModel)]="newBucketTitle" [placeholder]="'Fire.bucketName' | translate" class="input-sm" name="newBucketTitle">
                 <input type="number" step="any" [(ngModel)]="newBucketTarget" [placeholder]="'Fire.bucketTarget' | translate" class="input-sm" name="newBucketTarget">
                 <textarea [(ngModel)]="newBucketNotes" [placeholder]="'Fire.bucketNotesPlaceholder' | translate" class="input-sm" rows="2" name="newBucketNotes"></textarea>
-                <input type="date" [(ngModel)]="newBucketTargetDate" [placeholder]="'Fire.targetDate' | translate" class="input-sm" name="newBucketTargetDate">
+                <input type="date" [(ngModel)]="newBucketTargetDate" [placeholder]="'Common.targetDate' | translate" class="input-sm" name="newBucketTargetDate">
                 <div class="inline-add-actions">
                     <button type="button" class="btn btn--sm" (click)="addBucket()" [disabled]="!newBucketTitle.trim() || !newBucketTarget">{{'Fire.addBucket' | translate}}</button>
                     <button type="button" class="btn-icon" (click)="showAddBucket = false; newBucketTitle = ''; newBucketTarget = ''; newBucketNotes = ''; newBucketTargetDate = ''" aria-label="Cancel">×</button>
@@ -224,7 +224,7 @@
                         <option value="medium">{{'Fire.priorityMedium' | translate: {default: 'Medium'} }}</option>
                         <option value="high">{{'Fire.priorityHigh' | translate: {default: 'High'} }}</option>
                     </select>
-                    <input type="date" [(ngModel)]="newActionTargetDate" [placeholder]="'Fire.targetDate' | translate" class="input-sm input-full-row" name="newActionTargetDate">
+                    <input type="date" [(ngModel)]="newActionTargetDate" [placeholder]="'Common.targetDate' | translate" class="input-sm input-full-row" name="newActionTargetDate">
                     <button type="button" class="btn btn--sm" (click)="addActionItem()" [disabled]="!newActionItem.trim()">{{'Fire.addAction' | translate}}</button>
                     <button type="button" class="btn-icon" (click)="showAddAction = false" aria-label="Cancel">×</button>
                 </div>
@@ -259,7 +259,7 @@
                             <span class="separator">•</span>
                             <span *ngIf="plan.targetBucketIds.length === 0">{{'Fire.allBuckets' | translate: {default: 'All buckets'} }}</span>
                             <span *ngIf="plan.targetBucketIds.length === 1">{{getBucketNameById(plan.targetBucketIds[0])}}</span>
-                            <span *ngIf="plan.targetBucketIds.length > 1">{{plan.targetBucketIds.length}} {{'Fire.buckets' | translate}}</span>
+                            <span *ngIf="plan.targetBucketIds.length > 1">{{plan.targetBucketIds.length}} {{'Common.buckets' | translate}}</span>
                         </div>
                         <div class="plan-schedule" *ngIf="plan.startDate && plan.targetDate">
                             <small>{{'Fire.from' | translate: {default: 'From'} }} {{plan.startDate}} {{'Fire.until' | translate: {default: 'until'} }} {{plan.targetDate}}</small>

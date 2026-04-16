@@ -1,5 +1,5 @@
 #profile-Container {
-    position: absolute;
+    position: fixed;
     top: 75px;
     left: 10px;
     width: min(90vw, 350px);
@@ -9,7 +9,7 @@
     padding: 1.5%;
     border-color: white;
     border-width: 3px;
-    z-index: 1001;
+    z-index: 2000;
     box-shadow: var(--shadow-lg);
 }
 

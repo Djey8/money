@@ -33,7 +33,7 @@
             <span class="swap-icon">⇄</span>
             </button>
         </div>
-        <label for="amount" [class.form-error-text]="classReference.isError">{{'Transactions.Amount' | translate}}</label>
+        <label for="amount" [class.form-error-text]="classReference.isError">{{'Common.amount' | translate}}</label>
         <input type=number step=any id="amount" name="amount" [class.form-error-border]="classReference.isError"
             [(ngModel)]="amountTextField">
         </form>
