@@ -44,6 +44,7 @@ export class AppDataService {
 
   static instance: AppDataService;
   private appMode: 'firebase' | 'selfhosted' = environment.mode as 'firebase' | 'selfhosted';
+  decryptionFailed = false;
 
   // Tier 1: Critical path — blocks UI, loaded on startup
   static readonly TIER1_PATHS = [
@@ -238,6 +239,7 @@ export class AppDataService {
 
   async loadTier1(): Promise<void> {
     this.database.clearReadCache();
+    this.decryptionFailed = false;
     try {
       const response = await this.database.getBatchData(AppDataService.TIER1_PATHS);
       if (response === null) return;  // 304 Not Modified — data unchanged
@@ -361,15 +363,7 @@ export class AppDataService {
           // If more than 50% of transactions failed to decrypt, likely wrong key
           if (totalCount > 0 && invalidCount / totalCount > 0.5) {
             console.error(`❌ DECRYPTION ERROR: ${invalidCount}/${totalCount} transactions failed to decrypt.`);
-            console.error('⚠️  This usually means you entered the WRONG DECRYPTION KEY.');
-            console.error('💡 Please log out and log back in with the correct key.');
-            
-            // Optional: Show user-facing alert
-            if (typeof window !== 'undefined' && window.alert) {
-              setTimeout(() => {
-                alert('⚠️ Decryption Error\n\nMost of your data could not be decrypted.\nThis usually means you entered the wrong decryption key.\n\nPlease log out and log back in with the correct key.');
-              }, 500);
-            }
+            this.decryptionFailed = true;
           } else if (invalidCount > 0) {
             console.warn(`⚠️  Skipped ${invalidCount}/${totalCount} corrupted transactions.`);
           }
