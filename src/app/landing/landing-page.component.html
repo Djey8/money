@@ -47,13 +47,42 @@
       <h2 class="section-title">{{ 'Landing.buckets.title' | translate }}</h2>
       <p class="section-subtitle">{{ 'Landing.buckets.subtitle' | translate }}</p>
 
-      <div class="grid-container">
+      <!-- Income + flow lines + grid wrapper -->
+      <div class="income-flow-wrapper" #incomeFlowWrapper>
+        <div class="income-source">
+          <span class="income-label">{{ 'Landing.buckets.income' | translate }}</span>
+          <div class="income-circle-wrapper" (click)="onIncomeClick()" role="button" tabindex="0" (keydown.enter)="onIncomeClick()">
+            <img #incomePic class="income-pic" src="assets/icons/income.jpg" alt="Income — click to allocate">
+            <button *ngIf="showResetButton" class="income-reset-btn" (click)="resetBuckets(); $event.stopPropagation()" aria-label="Reset buckets">&times;</button>
+            <div class="thought-bubble" *ngIf="showThoughtBubble">
+              <span>{{ 'Landing.buckets.clickMe' | translate }}</span>
+            </div>
+          </div>
+          <div class="income-amount" [class.counting]="animationStarted" *ngIf="!editingIncome" (click)="startEditIncome()">{{incomeDisplay}} {{currencySymbol}}</div>
+          <div class="income-amount-edit" *ngIf="editingIncome">
+            <input #incomeInput class="income-amount-input" type="number" [(ngModel)]="customIncomeInput" min="0.01" step="any" (keydown.enter)="confirmIncome()">
+            <button class="income-amount-confirm" (click)="confirmIncome()" aria-label="Confirm income">&#10003;</button>
+          </div>
+        </div>
+
+        <!-- SVG flow lines from income circle to buckets -->
+        <svg class="flow-svg" [class.active]="animationStarted"
+             [attr.width]="svgWidth" [attr.height]="svgHeight"
+             [attr.viewBox]="'0 0 ' + svgWidth + ' ' + svgHeight">
+          <path *ngFor="let p of flowPaths" [attr.d]="p.d" [attr.stroke]="p.color"
+                fill="none" stroke-width="3" stroke-linecap="round"
+                class="flow-path" [style.transition-delay]="p.delay"/>
+          <circle *ngFor="let d of flowDots" [attr.cx]="d.x" [attr.cy]="d.y" r="6"
+                  [attr.fill]="d.color" class="flow-dot" [style.transition-delay]="d.delay"/>
+        </svg>
+
+        <div class="grid-container" #gridContainer>
         <div class="bucket-flip" [class.flipped]="flippedBuckets.has('daily')" (click)="toggleBucket('daily')" role="button" tabindex="0" aria-label="Daily — click for details" (keydown.enter)="toggleBucket('daily')">
           <div class="bucket-flip-inner">
             <div class="grid-item bucket-front">
               <h3 class="grid-header">{{ 'Landing.buckets.daily' | translate }}</h3>
               <img class="grid-pic" src="assets/icons/daily.jpg" alt="Daily bucket">
-              <div class="grid-value-positive">60 {{currencySymbol}}</div>
+              <div [class]="bucketValues.daily > 0 ? 'grid-value-positive' : 'grid-value-zero'">{{bucketValues.daily | number:'1.2-2'}} {{currencySymbol}}</div>
             </div>
             <div class="bucket-back bucket-back--daily">
               <button class="bucket-back-close" (click)="flippedBuckets.delete('daily'); $event.stopPropagation()" aria-label="Close">&times;</button>
@@ -68,7 +97,7 @@
             <div class="grid-item bucket-front">
               <h3 class="grid-header">{{ 'Landing.buckets.splurge' | translate }}</h3>
               <img class="grid-pic" src="assets/icons/splurge.jpg" alt="Splurge bucket">
-              <div class="grid-value-positive">10 {{currencySymbol}}</div>
+              <div [class]="bucketValues.splurge > 0 ? 'grid-value-positive' : 'grid-value-zero'">{{bucketValues.splurge | number:'1.2-2'}} {{currencySymbol}}</div>
             </div>
             <div class="bucket-back bucket-back--splurge">
               <button class="bucket-back-close" (click)="flippedBuckets.delete('splurge'); $event.stopPropagation()" aria-label="Close">&times;</button>
@@ -83,7 +112,7 @@
             <div class="grid-item bucket-front">
               <h3 class="grid-header">{{ 'Landing.buckets.smile' | translate }}</h3>
               <img class="grid-pic" src="assets/icons/smile.jpg" alt="Smile bucket">
-              <div class="grid-value-positive">10 {{currencySymbol}}</div>
+              <div [class]="bucketValues.smile > 0 ? 'grid-value-positive' : 'grid-value-zero'">{{bucketValues.smile | number:'1.2-2'}} {{currencySymbol}}</div>
             </div>
             <div class="bucket-back bucket-back--smile">
               <button class="bucket-back-close" (click)="flippedBuckets.delete('smile'); $event.stopPropagation()" aria-label="Close">&times;</button>
@@ -98,7 +127,7 @@
             <div class="grid-item bucket-front">
               <h3 class="grid-header">{{ 'Landing.buckets.fire' | translate }}</h3>
               <img class="grid-pic" src="assets/icons/fire.jpg" alt="Fire bucket">
-              <div class="grid-value-positive">20 {{currencySymbol}}</div>
+              <div [class]="bucketValues.fire > 0 ? 'grid-value-positive' : 'grid-value-zero'">{{bucketValues.fire | number:'1.2-2'}} {{currencySymbol}}</div>
             </div>
             <div class="bucket-back bucket-back--fire">
               <button class="bucket-back-close" (click)="flippedBuckets.delete('fire'); $event.stopPropagation()" aria-label="Close">&times;</button>
@@ -107,24 +136,25 @@
             </div>
           </div>
         </div>
+        </div>
       </div>
 
-      <div class="bucket-bars">
+      <div class="bucket-bars bucket-bars--clickable" (click)="openAllocation()" role="button" tabindex="0" (keydown.enter)="openAllocation()" aria-label="Edit allocation">
         <div class="bar-row">
-          <span class="bar-label" style="color:var(--color-primary)">{{ 'Landing.buckets.dailyPct' | translate }}</span>
-          <div class="bar-track"><div class="bar-fill bar-fill--daily"></div></div>
+          <span class="bar-label" style="color:var(--color-primary)">{{ 'Landing.buckets.daily' | translate }} {{allocation.daily}}%</span>
+          <div class="bar-track"><div class="bar-fill bar-fill--daily" [style.width.%]="allocation.daily"></div></div>
         </div>
         <div class="bar-row">
-          <span class="bar-label" style="color:var(--color-warning)">{{ 'Landing.buckets.splurgePct' | translate }}</span>
-          <div class="bar-track"><div class="bar-fill bar-fill--splurge"></div></div>
+          <span class="bar-label" style="color:var(--color-warning)">{{ 'Landing.buckets.splurge' | translate }} {{allocation.splurge}}%</span>
+          <div class="bar-track"><div class="bar-fill bar-fill--splurge" [style.width.%]="allocation.splurge"></div></div>
         </div>
         <div class="bar-row">
-          <span class="bar-label" style="color:var(--color-success)">{{ 'Landing.buckets.smilePct' | translate }}</span>
-          <div class="bar-track"><div class="bar-fill bar-fill--smile"></div></div>
+          <span class="bar-label" style="color:var(--color-success)">{{ 'Landing.buckets.smile' | translate }} {{allocation.smile}}%</span>
+          <div class="bar-track"><div class="bar-fill bar-fill--smile" [style.width.%]="allocation.smile"></div></div>
         </div>
         <div class="bar-row">
-          <span class="bar-label" style="color:var(--color-fire)">{{ 'Landing.buckets.firePct' | translate }}</span>
-          <div class="bar-track"><div class="bar-fill bar-fill--fire"></div></div>
+          <span class="bar-label" style="color:var(--color-fire)">{{ 'Landing.buckets.fire' | translate }} {{allocation.fire}}%</span>
+          <div class="bar-track"><div class="bar-fill bar-fill--fire" [style.width.%]="allocation.fire"></div></div>
         </div>
       </div>
 
