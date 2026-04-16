@@ -31,6 +31,7 @@ import { AccountingComponent } from '../../main/accounting/accounting.component'
 import { SubscriptionComponent } from '../../main/subscription/subscription.component';
 import { FireEmergenciesComponent } from '../../main/fire/fire-emergencies/fire-emergencies.component';
 import { environment } from '../../../environments/environment';
+import { DemoService } from './demo.service';
 
 @Injectable({
   providedIn: 'root'
@@ -75,6 +76,11 @@ export class AppDataService {
   }
 
   async checkAuthentication(): Promise<boolean> {
+    // Demo mode: always authenticated, no DB check needed
+    if (DemoService.isDemoMode()) {
+      return true;
+    }
+
     if (this.appMode === 'firebase') {
       try {
         const user = await firstValueFrom(this.afAuth.authState);
@@ -100,6 +106,13 @@ export class AppDataService {
   }
 
   async updateBasedOnTransaction() {
+    // Demo mode: only update localStorage, skip auth + DB
+    if (DemoService.isDemoMode()) {
+      this.incomeStatement.recalculate();
+      this.saveAllToLocalStorage();
+      return;
+    }
+
     const authResult = await this.authService.checkAuthentication();
     if (!authResult.authenticated) {
       console.error('Authentication failed:', authResult.error);
@@ -178,6 +191,12 @@ export class AppDataService {
   }
 
   updateDatabase() {
+    // Demo mode: only save to localStorage, skip DB writes
+    if (DemoService.isDemoMode()) {
+      this.saveAllToLocalStorage();
+      return;
+    }
+
     this.persistence.batchWriteAndSync({
       writes: [
         { tag: "income/revenue/interests", data: AppStateService.instance.allIntrests },

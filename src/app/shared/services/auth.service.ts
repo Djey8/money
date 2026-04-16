@@ -19,6 +19,11 @@ export class AuthService {
    * @returns Promise<{authenticated: boolean, error?: string}>
    */
   async checkAuthentication(): Promise<{authenticated: boolean, error?: string}> {
+    // Demo mode: always authenticated
+    if (sessionStorage.getItem('demo_mode') === 'true') {
+      return { authenticated: true };
+    }
+
     if (this.mode === 'firebase') {
       // Firebase authentication check - wait for auth state to initialize
       try {
