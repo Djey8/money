@@ -162,6 +162,24 @@ export class SettingsComponent {
   static zIndex;
   static isInfo;
   static isError;
+  static _pendingEdit = false;
+
+  static openAllocationEditor(): void {
+    SettingsComponent.isInfo = true;
+    SettingsComponent.isSettings = false;
+    SettingsComponent.isAllocation = true;
+    SettingsComponent.isLanguages = false;
+    SettingsComponent.isCurrency = false;
+    SettingsComponent.isEncryption = false;
+    SettingsComponent.isNumberFormat = false;
+    SettingsComponent.isDateFormat = false;
+    SettingsComponent.isBackup = false;
+    SettingsComponent.isRestore = false;
+    SettingsComponent.isTheme = false;
+    SettingsComponent.isError = false;
+    SettingsComponent._pendingEdit = true;
+  }
+
   public classReference = SettingsComponent;
   public get profileReference() { return ProfileComponent; }
   constructor(private translate: TranslateService, private router: Router, private localStorage: LocalService, private database: DatabaseService, private afAuth: AngularFireAuth, private cryptic: CrypticService, private authService: AuthService, private selfhosted: SelfhostedService, private frontendLogger: FrontendLoggerService, private persistence: PersistenceService, private incomeStatement: IncomeStatementService, private errorMapper: ErrorMapperService) {
@@ -218,6 +236,17 @@ export class SettingsComponent {
     this.keyTextField = AppStateService.instance.key;
     AppStateService.instance.isLocal = this.cryptic.getEncryptionLocalEnabled();
     AppStateService.instance.isDatabase = this.cryptic.getEncryptionDatabaseEnabled();
+  }
+
+  ngDoCheck(): void {
+    if (SettingsComponent._pendingEdit) {
+      SettingsComponent._pendingEdit = false;
+      this.isEdit = true;
+      this.dailyTextField = AppStateService.instance.daily;
+      this.splurgeTextField = AppStateService.instance.splurge;
+      this.smileTextField = AppStateService.instance.smile;
+      this.fireTextField = AppStateService.instance.fire;
+    }
   }
 
   toggleEye(){
@@ -717,6 +746,20 @@ export class SettingsComponent {
 
   editPersonalSettings() {
     this.isAuth = false;
+    // Allocation can be edited without authentication
+    if (this.classReference.isAllocation) {
+      AppComponent.gotoTop();
+      this.isEdit = true;
+      SettingsComponent.isError = false;
+      this.dailyTextField = AppStateService.instance.daily;
+      this.splurgeTextField = AppStateService.instance.splurge;
+      this.smileTextField = AppStateService.instance.smile;
+      this.fireTextField = AppStateService.instance.fire;
+      this.errorTextLable = "";
+      this.color = "black";
+      this.borderColor = "var(--color-border)";
+      return;
+    }
     if (ProfileComponent.username == "Username" && ProfileComponent.mail == "example@traiber.com") {
       SettingsComponent.isError = true;
       this.errorTextLable = "No authenticated user.";
@@ -949,6 +992,13 @@ export class SettingsComponent {
   changeFix() {
     this.updateBasedOnTransaction();
     this.isAuth = false;
+  }
+
+  resetAllocation() {
+    this.dailyTextField = 60;
+    this.splurgeTextField = 10;
+    this.smileTextField = 10;
+    this.fireTextField = 20;
   }
 
   changeAllocation() {
