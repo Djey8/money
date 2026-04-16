@@ -1,0 +1,376 @@
+/* ============================================================
+   Changelog Page Styles
+   Matches Money App landing design (glassmorphism, tokens, dark/light)
+   ============================================================ */
+
+.changelog-page {
+  min-height: 100vh;
+  padding: 5rem 1.5rem 3rem;
+  max-width: 1100px;
+  margin: 0 auto;
+  font-family: var(--font-family);
+  color: var(--color-text);
+  background: var(--color-background);
+}
+
+/* Active nav link highlight */
+.active-nav {
+  color: #fff !important;
+  border-bottom: 2px solid #fff;
+  padding-bottom: 2px;
+}
+
+/* ── Header ── */
+.changelog-header {
+  text-align: center;
+  margin-bottom: 2.5rem;
+}
+.changelog-title {
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: var(--color-text);
+  margin-bottom: 0.5rem;
+}
+.changelog-subtitle {
+  font-size: 1.05rem;
+  color: var(--color-text-secondary);
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+/* ── Loading skeleton ── */
+.changelog-skeleton {
+  max-width: 700px;
+  margin: 0 auto;
+}
+.skeleton-card {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  box-shadow: var(--shadow-md);
+}
+.skeleton-line {
+  height: 14px;
+  background: linear-gradient(90deg, var(--color-background-alt) 25%, var(--color-surface-hover) 50%, var(--color-background-alt) 75%);
+  background-size: 200% 100%;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+.skeleton-line--title { width: 40%; height: 22px; margin-bottom: 0.5rem; }
+.skeleton-line--date  { width: 25%; height: 12px; margin-bottom: 1.5rem; }
+.skeleton-line--short { width: 60%; }
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ── Error state ── */
+.changelog-error {
+  text-align: center;
+  padding: 4rem 1rem;
+}
+.error-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+.changelog-error h3 {
+  font-size: 1.3rem;
+  margin-bottom: 0.5rem;
+  color: var(--color-text);
+}
+.changelog-error p {
+  color: var(--color-text-secondary);
+}
+
+/* ── Content layout ── */
+.changelog-content {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 2rem;
+  align-items: start;
+}
+
+/* ── Sidebar ── */
+.changelog-sidebar {
+  position: sticky;
+  top: 5rem;
+}
+.sidebar-title {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted);
+  margin-bottom: 0.75rem;
+  padding-left: 0.5rem;
+}
+.version-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.version-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+  font-size: 0.9rem;
+}
+.version-item:hover {
+  background: var(--color-primary-light);
+}
+.version-item.active {
+  background: var(--color-primary);
+  color: #fff;
+}
+.version-item.active .version-date {
+  color: rgba(255,255,255,0.75);
+}
+.version-tag {
+  font-weight: 700;
+}
+.version-date {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  margin-left: auto;
+}
+.latest-badge {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  background: var(--color-cat-success, #4CAF50);
+  color: #fff;
+  padding: 0.1rem 0.45rem;
+  border-radius: 10px;
+}
+.version-item.active .latest-badge {
+  background: rgba(255,255,255,0.25);
+}
+
+/* ── Version navigation ── */
+.version-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+}
+.nav-btn {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  color: var(--color-primary);
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 0.55rem 1.1rem;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s;
+}
+.nav-btn:hover:not(:disabled) {
+  background: var(--color-primary-light);
+  box-shadow: var(--shadow-sm);
+}
+.nav-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.version-indicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+}
+.version-current {
+  font-weight: 800;
+  font-size: 1.1rem;
+  color: var(--color-text);
+}
+.version-counter {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+/* ── Version card ── */
+.version-card {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+}
+.version-card-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 1.5rem 2rem 1rem;
+  border-bottom: 1px solid var(--color-border);
+}
+.version-card-title {
+  font-size: 1.6rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.latest-pill {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  background: var(--color-cat-success, #4CAF50);
+  color: #fff;
+  padding: 0.2rem 0.6rem;
+  border-radius: 12px;
+}
+.version-card-date {
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+}
+.version-card-body {
+  padding: 1.5rem 2rem 2rem;
+}
+
+/* ── Change sections ── */
+.change-section {
+  margin-bottom: 1.5rem;
+}
+.change-section:last-child {
+  margin-bottom: 0;
+}
+.change-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+  color: var(--color-text);
+}
+
+/* Section icons */
+.change-icon {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+.icon-feature    { background: var(--color-cat-success, #4CAF50); }
+.icon-fix        { background: var(--color-primary); }
+.icon-breaking   { background: var(--color-cat-fire, #f44336); }
+.icon-deprecated { background: var(--color-cat-warning, #FF9800); }
+.icon-removed    { background: var(--color-cat-fire, #f44336); }
+.icon-security   { background: #9C27B0; }
+.icon-perf       { background: var(--color-cat-warning, #FF9800); }
+.icon-change     { background: var(--color-text-muted); }
+
+.change-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.change-item {
+  position: relative;
+  padding: 0.5rem 0 0.5rem 1.25rem;
+  font-size: 0.95rem;
+  color: var(--color-text);
+  border-bottom: 1px solid var(--color-border);
+  line-height: 1.5;
+}
+.change-item:last-child {
+  border-bottom: none;
+}
+.change-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.85rem;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-text-muted);
+}
+
+/* ── Mobile version pills ── */
+.mobile-version-select {
+  display: none;
+  margin-top: 2rem;
+}
+.mobile-select-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+  margin-bottom: 0.5rem;
+  display: block;
+}
+.mobile-select-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.mobile-pill {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  font-weight: 600;
+  font-size: 0.85rem;
+  padding: 0.4rem 0.9rem;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+.mobile-pill.active {
+  background: var(--color-primary);
+  color: #fff;
+  border-color: var(--color-primary);
+}
+.mobile-pill:hover:not(.active) {
+  background: var(--color-primary-light);
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .changelog-page {
+    padding: 4.5rem 1rem 2rem;
+  }
+  .changelog-title {
+    font-size: 1.6rem;
+  }
+  .changelog-content {
+    grid-template-columns: 1fr;
+  }
+  .changelog-sidebar {
+    display: none;
+  }
+  .mobile-version-select {
+    display: block;
+  }
+  .version-card-header {
+    flex-direction: column;
+    gap: 0.3rem;
+    padding: 1.2rem 1.25rem 0.8rem;
+  }
+  .version-card-title {
+    font-size: 1.3rem;
+  }
+  .version-card-body {
+    padding: 1rem 1.25rem 1.5rem;
+  }
+  .nav-btn {
+    font-size: 0.8rem;
+    padding: 0.45rem 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .changelog-title {
+    font-size: 1.35rem;
+  }
+  .version-nav {
+    gap: 0.3rem;
+  }
+}
