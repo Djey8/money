@@ -4,7 +4,7 @@ metadata:
   name: couchdb-backup
   namespace: money-app
 spec:
-  schedule: "0 2 * * *"
+  schedule: "30 8 * * *"
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 1
   jobTemplate:
@@ -31,20 +31,38 @@ spec:
               COUCHDB_USER="${COUCHDB_USER:-admin}"
               COUCHDB_PASSWORD="${COUCHDB_PASSWORD}"
               BACKUP_ROOT="/backups"
+              NAS_ROOT="/nas-backups"
               DATE=$(date +%Y-%m-%d)
               DAY_OF_WEEK=$(date +%u)   # 1=Mon … 7=Sun
               DAY_OF_MONTH=$(date +%d)
 
+              # Local dirs
               DAILY_DIR="${BACKUP_ROOT}/daily"
               WEEKLY_DIR="${BACKUP_ROOT}/weekly"
               MONTHLY_DIR="${BACKUP_ROOT}/monthly"
               BACKUP_FILE="${DAILY_DIR}/couchdb-backup-${DATE}.tar.gz"
 
+              # NAS dirs
+              NAS_DAILY_DIR="${NAS_ROOT}/daily"
+              NAS_WEEKLY_DIR="${NAS_ROOT}/weekly"
+              NAS_MONTHLY_DIR="${NAS_ROOT}/monthly"
+
+              # Check NAS availability
+              NAS_AVAILABLE=false
+              if [ -d "${NAS_ROOT}" ] && touch "${NAS_ROOT}/.healthcheck" 2>/dev/null; then
+                rm -f "${NAS_ROOT}/.healthcheck"
+                NAS_AVAILABLE=true
+              fi
+
               echo "==================================="
-              echo "CouchDB Backup - $(date)"
+              echo "CouchDB Daily Backup - $(date)"
+              echo "NAS: ${NAS_AVAILABLE}"
               echo "==================================="
 
               mkdir -p "${DAILY_DIR}" "${WEEKLY_DIR}" "${MONTHLY_DIR}" "${BACKUP_ROOT}/temp"
+              if [ "$NAS_AVAILABLE" = true ]; then
+                mkdir -p "${NAS_DAILY_DIR}" "${NAS_WEEKLY_DIR}" "${NAS_MONTHLY_DIR}"
+              fi
 
               # ── Fetch database list ────────────────────────────
               echo "Fetching database list..."
@@ -87,24 +105,63 @@ spec:
               SIZE=$(wc -c < "${BACKUP_FILE}")
               echo "Daily backup: ${BACKUP_FILE} (${SIZE} bytes)"
 
-              # ── Tier promotion ─────────────────────────────────
-              # Sunday → promote to weekly
+              # ── Local tier promotion ───────────────────────────
               if [ "$DAY_OF_WEEK" = "7" ]; then
                 cp "${BACKUP_FILE}" "${WEEKLY_DIR}/couchdb-backup-${DATE}.tar.gz"
-                echo "Promoted to weekly (Sunday)"
+                echo "Promoted to local weekly (Sunday)"
               fi
 
-              # 1st of month → promote to monthly (kept forever)
               if [ "$DAY_OF_MONTH" = "01" ]; then
                 cp "${BACKUP_FILE}" "${MONTHLY_DIR}/couchdb-backup-${DATE}.tar.gz"
-                echo "Promoted to monthly (1st of month)"
+                echo "Promoted to local monthly (1st of month)"
               fi
 
-              # ── Retention cleanup ──────────────────────────────
-              echo ""
-              echo "Applying retention policy..."
+              # ── NAS tier promotion ─────────────────────────────
+              if [ "$NAS_AVAILABLE" = true ]; then
+                echo "Writing to NAS..."
+                cp "${BACKUP_FILE}" "${NAS_DAILY_DIR}/couchdb-backup-${DATE}.tar.gz"
+                echo "NAS daily: couchdb-backup-${DATE}.tar.gz"
 
-              # Daily: keep last 7
+                if [ "$DAY_OF_WEEK" = "7" ]; then
+                  cp "${BACKUP_FILE}" "${NAS_WEEKLY_DIR}/couchdb-backup-${DATE}.tar.gz"
+                  echo "NAS weekly (Sunday)"
+                fi
+
+                if [ "$DAY_OF_MONTH" = "01" ]; then
+                  cp "${BACKUP_FILE}" "${NAS_MONTHLY_DIR}/couchdb-backup-${DATE}.tar.gz"
+                  echo "NAS monthly (1st of month)"
+                fi
+
+                # ── NAS catch-up sync (copy missing local → NAS) ─
+                echo ""
+                echo "Checking for local backups missing on NAS..."
+                SYNC_COUNT=0
+                for tier in daily weekly monthly; do
+                  LOCAL_TIER="${BACKUP_ROOT}/${tier}"
+                  NAS_TIER="${NAS_ROOT}/${tier}"
+                  for f in "${LOCAL_TIER}"/couchdb-backup-*.tar.gz; do
+                    [ -f "$f" ] || continue
+                    BASENAME=$(basename "$f")
+                    if [ ! -f "${NAS_TIER}/${BASENAME}" ]; then
+                      cp "$f" "${NAS_TIER}/${BASENAME}"
+                      echo "  Synced to NAS ${tier}: ${BASENAME}"
+                      SYNC_COUNT=$((SYNC_COUNT + 1))
+                    fi
+                  done
+                done
+                if [ "$SYNC_COUNT" -eq 0 ]; then
+                  echo "  NAS is in sync — nothing to copy"
+                else
+                  echo "  Synced ${SYNC_COUNT} backup(s) to NAS"
+                fi
+              else
+                echo "WARNING: NAS not available — NAS backup skipped"
+              fi
+
+              # ── Local retention ────────────────────────────────
+              echo ""
+              echo "Applying local retention..."
+
               COUNT=$(ls -1 "${DAILY_DIR}"/couchdb-backup-*.tar.gz 2>/dev/null | wc -l)
               if [ "$COUNT" -gt 7 ]; then
                 ls -1t "${DAILY_DIR}"/couchdb-backup-*.tar.gz | tail -n +8 | while read f; do
@@ -113,7 +170,6 @@ spec:
                 done
               fi
 
-              # Weekly: keep last 13 (~3 months)
               COUNT=$(ls -1 "${WEEKLY_DIR}"/couchdb-backup-*.tar.gz 2>/dev/null | wc -l)
               if [ "$COUNT" -gt 13 ]; then
                 ls -1t "${WEEKLY_DIR}"/couchdb-backup-*.tar.gz | tail -n +14 | while read f; do
@@ -122,14 +178,40 @@ spec:
                 done
               fi
 
-              # Monthly: never deleted
+              # ── NAS retention ──────────────────────────────────
+              if [ "$NAS_AVAILABLE" = true ]; then
+                echo "Applying NAS retention..."
+
+                COUNT=$(ls -1 "${NAS_DAILY_DIR}"/couchdb-backup-*.tar.gz 2>/dev/null | wc -l)
+                if [ "$COUNT" -gt 21 ]; then
+                  ls -1t "${NAS_DAILY_DIR}"/couchdb-backup-*.tar.gz | tail -n +22 | while read f; do
+                    echo "  Removing old NAS daily: $(basename "$f")"
+                    rm -f "$f"
+                  done
+                fi
+
+                COUNT=$(ls -1 "${NAS_WEEKLY_DIR}"/couchdb-backup-*.tar.gz 2>/dev/null | wc -l)
+                if [ "$COUNT" -gt 104 ]; then
+                  ls -1t "${NAS_WEEKLY_DIR}"/couchdb-backup-*.tar.gz | tail -n +105 | while read f; do
+                    echo "  Removing old NAS weekly: $(basename "$f")"
+                    rm -f "$f"
+                  done
+                fi
+              fi
 
               # ── Summary ────────────────────────────────────────
               echo ""
               echo "=== Current backups ==="
-              echo "Daily  (7 max):    $(ls -1 "${DAILY_DIR}"/couchdb-backup-*.tar.gz 2>/dev/null | wc -l)"
-              echo "Weekly (13 max):   $(ls -1 "${WEEKLY_DIR}"/couchdb-backup-*.tar.gz 2>/dev/null | wc -l)"
-              echo "Monthly (forever): $(ls -1 "${MONTHLY_DIR}"/couchdb-backup-*.tar.gz 2>/dev/null | wc -l)"
+              echo "LOCAL:"
+              echo "  Daily  (7 max):    $(ls -1 "${DAILY_DIR}"/couchdb-backup-*.tar.gz 2>/dev/null | wc -l)"
+              echo "  Weekly (13 max):   $(ls -1 "${WEEKLY_DIR}"/couchdb-backup-*.tar.gz 2>/dev/null | wc -l)"
+              echo "  Monthly (forever): $(ls -1 "${MONTHLY_DIR}"/couchdb-backup-*.tar.gz 2>/dev/null | wc -l)"
+              if [ "$NAS_AVAILABLE" = true ]; then
+                echo "NAS:"
+                echo "  Daily  (21 max):   $(ls -1 "${NAS_DAILY_DIR}"/couchdb-backup-*.tar.gz 2>/dev/null | wc -l)"
+                echo "  Weekly (104 max):  $(ls -1 "${NAS_WEEKLY_DIR}"/couchdb-backup-*.tar.gz 2>/dev/null | wc -l)"
+                echo "  Monthly (forever): $(ls -1 "${NAS_MONTHLY_DIR}"/couchdb-backup-*.tar.gz 2>/dev/null | wc -l)"
+              fi
               echo ""
               echo "Backup completed successfully!"
             env:
@@ -146,9 +228,15 @@ spec:
             volumeMounts:
             - name: backup-storage
               mountPath: /backups
+            - name: nas-storage
+              mountPath: /nas-backups
           restartPolicy: OnFailure
           volumes:
           - name: backup-storage
             hostPath:
               path: /opt/money-app-backups
+              type: DirectoryOrCreate
+          - name: nas-storage
+            hostPath:
+              path: /mnt/nas/backups
               type: DirectoryOrCreate

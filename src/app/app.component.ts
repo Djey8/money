@@ -64,6 +64,7 @@ let InfoSubscriptionComponent: any; setTimeout(() => import('src/app/panels/info
 let AddSubscriptionComponent: any; setTimeout(() => import('src/app/panels/add/add-subscription/add-subscription.component').then(m => AddSubscriptionComponent = m.AddSubscriptionComponent));
 let AddBudgetComponent: any; setTimeout(() => import('src/app/panels/add/add-budget/add-budget.component').then(m => AddBudgetComponent = m.AddBudgetComponent));
 let InfoBudgetComponent: any; setTimeout(() => import('src/app/panels/info/info-budget/info-budget.component').then(m => InfoBudgetComponent = m.InfoBudgetComponent));
+let HomeComponent: any; setTimeout(() => import('src/app/main/home/home.component').then(m => HomeComponent = m.HomeComponent));
 
 
 @Component({
@@ -192,6 +193,18 @@ export class AppComponent {
       AppStateService.instance.allFireEmergencies = [];
     }
 
+    // Optimistic early navigate: if we have evidence of a prior session,
+    // go to /home immediately so the landing page never flashes
+    const hash = window.location.hash;
+    if (hash === '' || hash === '#/') {
+      const hasSession = DemoService.isDemoMode()
+        || window.localStorage.getItem('selfhosted_token')
+        || this.localStorage.getData('uid');
+      if (hasSession) {
+        this.router.navigate(['/home']);
+      }
+    }
+
     // Check authentication before loading data
     AppDataService.instance.checkAuthentication().then(isAuthenticated => {
       if (isAuthenticated) {
@@ -208,6 +221,11 @@ export class AppComponent {
           }
           return;
         }
+        // Navigate to /home immediately so the user sees the loading skeleton
+        // instead of the landing page flashing briefly during data load
+        if (hash === '' || hash === '#/') {
+          this.router.navigate(['/home']);
+        }
         // Tier 1: Load critical data, block UI until ready
         AppDataService.instance.loadTier1().then(() => {
           if (AppDataService.instance.decryptionFailed) {
@@ -216,11 +234,8 @@ export class AppComponent {
             return;
           }
           AppStateService.instance.isLoading = false;
-          // Navigate to /home AFTER data is loaded so the home component
-          // constructs with populated state (avoids empty-data flash after login)
-          if (hash === '' || hash === '#/') {
-            this.router.navigate(['/home']);
-          }
+          // Recalculate home amounts now that data is loaded
+          if (HomeComponent) HomeComponent.getAmounts();
           if(!GameModeService.isCashflowGame()){
             // Auto-generate subscription transactions on load
             this.autoGenerateSubscriptionTransactions();
@@ -237,8 +252,8 @@ export class AppComponent {
         AppStateService.instance.isLoading = false;
         // If on landing page, stay there; otherwise redirect to auth
         const hash = window.location.hash;
-        if (hash === '' || hash === '#/') {
-          // Stay on landing page — no redirect
+        if (hash === '' || hash === '#/' || hash === '#/about') {
+          // Stay on landing / about page — no redirect
         } else {
           this.router.navigate(['/']);
         }
@@ -250,7 +265,7 @@ export class AppComponent {
         // Skip auth checks for demo mode and landing page
         if (DemoService.isDemoMode()) return;
         const hash = window.location.hash;
-        if (hash === '' || hash === '#/') return;
+        if (hash === '' || hash === '#/' || hash === '#/about') return;
 
         const authResult = await this.authService.checkAuthentication();
         if (!authResult.authenticated) {

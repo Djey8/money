@@ -61,6 +61,7 @@ npm start
 ### Self-hosted mode
 
 See [docs/SELFHOSTED.md](docs/SELFHOSTED.md) for the complete setup guide.
+See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for all deploy script flags and options.
 
 Shortest path with Docker Compose:
 
