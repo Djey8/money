@@ -210,6 +210,12 @@ export class AppComponent {
         }
         // Tier 1: Load critical data, block UI until ready
         AppDataService.instance.loadTier1().then(() => {
+          // If decryption failed, abort login and redirect to auth
+          if (AppDataService.instance.decryptionFailed) {
+            this.toastService.show('Login failed: wrong encryption settings. Please check your encryption key.', 'error');
+            this.logOut();
+            return;
+          }
           AppStateService.instance.isLoading = false;
           // Navigate to /home AFTER data is loaded so the home component
           // constructs with populated state (avoids empty-data flash after login)
@@ -257,6 +263,11 @@ export class AppComponent {
           if (hasChanged) {
             AppStateService.instance.isLoading = true;
             await AppDataService.instance.loadTier1();
+            if (AppDataService.instance.decryptionFailed) {
+              this.toastService.show('Login failed: wrong encryption settings. Please check your encryption key.', 'error');
+              this.logOut();
+              return;
+            }
             AppStateService.instance.isLoading = false;
             // Auto-generate subscription transactions after reload
             this.autoGenerateSubscriptionTransactions();
