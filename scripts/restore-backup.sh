@@ -22,6 +22,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 NAMESPACE="${NAMESPACE:-money-app}"
 BACKUP_POD="${BACKUP_POD:-couchdb-0}"
 BACKUP_ROOT="${BACKUP_DIR:-/opt/money-app-backups}"
+NAS_BACKUP_ROOT="${NAS_BACKUP_DIR:-/mnt/nas/backups}"
 BACKUP_FILE="$1"
 
 # Functions
@@ -34,14 +35,39 @@ log_error()   { echo -e "${RED}[ERROR]${NC} $1"; }
 if [ -z "$BACKUP_FILE" ]; then
     log_error "Usage: $0 <backup-file.tar.gz>"
     echo ""
-    echo "Available backups:"
-    for tier in daily weekly monthly; do
+    echo "Available LOCAL backups:"
+    for tier in hourly daily weekly monthly; do
         DIR="${BACKUP_ROOT}/${tier}"
         if ls "${DIR}"/couchdb-backup-*.tar.gz 1>/dev/null 2>&1; then
-            echo "  [${tier}]"
-            ls -1t "${DIR}"/couchdb-backup-*.tar.gz | sed 's/^/    /'
+            echo "  [local/${tier}]"
+            ls -1t "${DIR}"/couchdb-backup-*.tar.gz | head -5 | sed 's/^/    /'
+            count=$(ls -1 "${DIR}"/couchdb-backup-*.tar.gz | wc -l)
+            if [ "$count" -gt 5 ]; then
+                echo "    ... and $((count - 5)) more"
+            fi
         fi
     done
+    echo ""
+    NAS_AVAILABLE=false
+    if mountpoint -q "$(dirname "$NAS_BACKUP_ROOT")" 2>/dev/null || [ -d "$NAS_BACKUP_ROOT" ]; then
+        NAS_AVAILABLE=true
+    fi
+    if [ "$NAS_AVAILABLE" = true ]; then
+        echo "Available NAS backups:"
+        for tier in daily weekly monthly; do
+            DIR="${NAS_BACKUP_ROOT}/${tier}"
+            if ls "${DIR}"/couchdb-backup-*.tar.gz 1>/dev/null 2>&1; then
+                echo "  [nas/${tier}]"
+                ls -1t "${DIR}"/couchdb-backup-*.tar.gz | head -5 | sed 's/^/    /'
+                count=$(ls -1 "${DIR}"/couchdb-backup-*.tar.gz | wc -l)
+                if [ "$count" -gt 5 ]; then
+                    echo "    ... and $((count - 5)) more"
+                fi
+            fi
+        done
+    else
+        echo "NAS not available"
+    fi
     echo ""
     echo "List with details:  ./scripts/list-backups.sh"
     exit 1

@@ -25,7 +25,13 @@
     Skip Ingress deployment
     
 .PARAMETER NoBackup
-    Skip backup CronJob deployment
+    Skip ALL backup CronJob deployment (hourly + daily/NAS)
+
+.PARAMETER NoLocalBackup
+    Skip hourly local backup CronJob only
+
+.PARAMETER NoNasBackup
+    Skip daily+NAS backup CronJob only (for setups without NAS)
 
 .PARAMETER NoLogging
     Skip logging stack (Loki, Grafana w/7 pre-built dashboards, Promtail)
@@ -71,6 +77,14 @@
 .EXAMPLE
     .\deploy-local.ps1 -NoIngress -NoBackup -SkipTLS
     Minimal deployment without Ingress, backup, and TLS certificate
+
+.EXAMPLE
+    .\deploy-local.ps1 -NoNasBackup
+    Deploy without NAS backup (no NAS mount required)
+
+.EXAMPLE
+    .\deploy-local.ps1 -NoLocalBackup
+    Deploy without hourly local backup, keep daily+NAS
     
 .EXAMPLE
     .\deploy-local.ps1 -NoLogging
@@ -100,6 +114,8 @@ param(
     [switch]$CleanImages = $false,
     [switch]$NoIngress = $false,
     [switch]$NoBackup = $false,
+    [switch]$NoLocalBackup = $false,
+    [switch]$NoNasBackup = $false,
     [switch]$NoLogging = $false,
     [switch]$Prd = $false,
     [switch]$Dev = $false
@@ -562,17 +578,43 @@ if (-not $NoIngress) {
     Write-Host ""
 }
 
-# Deploy Backup CronJob (optional)
+# Deploy Backup CronJobs (optional)
+# Flags: -NoBackup (skip all), -NoLocalBackup (skip hourly), -NoNasBackup (skip daily+NAS)
 if (-not $NoBackup) {
-    Write-Host "Deploying Backup CronJob..." -ForegroundColor White
-    $backupPath = "$wslProjectDir/k8s/backup-cronjob.yaml"
-    $backupExists = wsl -d Ubuntu bash -c "test -f $backupPath && echo 'exists'"
-    if ($backupExists -eq 'exists') {
-        wsl -d Ubuntu bash -c "kubectl apply -f $backupPath"
-        Write-Host "[OK] Backup CronJob deployed (Daily: 2:00 AM)" -ForegroundColor Green
+
+    # Hourly local backup
+    if (-not $NoLocalBackup) {
+        Write-Host "Deploying Hourly Backup CronJob (local)..." -ForegroundColor White
+        $hourlyPath = "$wslProjectDir/k8s/backup-cronjob-hourly.yaml"
+        $hourlyExists = wsl -d Ubuntu bash -c "test -f $hourlyPath && echo 'exists'"
+        if ($hourlyExists -eq 'exists') {
+            wsl -d Ubuntu bash -c "kubectl apply -f $hourlyPath"
+            Write-Host "[OK] Hourly Backup CronJob deployed (every hour, local storage)" -ForegroundColor Green
+        } else {
+            Write-Host "[WARN] Hourly backup file not found: backup-cronjob-hourly.yaml" -ForegroundColor Yellow
+        }
     } else {
-        Write-Host "[WARN] Backup CronJob file not found" -ForegroundColor Yellow
+        Write-Host "[INFO] Skipping Hourly Backup CronJob (-NoLocalBackup)" -ForegroundColor Cyan
     }
+
+    # Daily backup with NAS
+    if (-not $NoNasBackup) {
+        Write-Host "Deploying Daily Backup CronJob (local + NAS)..." -ForegroundColor White
+        $dailyPath = "$wslProjectDir/k8s/backup-cronjob-daily.yaml"
+        $dailyExists = wsl -d Ubuntu bash -c "test -f $dailyPath && echo 'exists'"
+        if ($dailyExists -eq 'exists') {
+            wsl -d Ubuntu bash -c "kubectl apply -f $dailyPath"
+            Write-Host "[OK] Daily Backup CronJob deployed (2:00 AM, local + NAS)" -ForegroundColor Green
+        } else {
+            Write-Host "[WARN] Daily backup file not found: backup-cronjob-daily.yaml" -ForegroundColor Yellow
+        }
+    } else {
+        Write-Host "[INFO] Skipping Daily/NAS Backup CronJob (-NoNasBackup)" -ForegroundColor Cyan
+    }
+
+    Write-Host ""
+} else {
+    Write-Host "[INFO] Skipping ALL Backup CronJobs (-NoBackup)" -ForegroundColor Cyan
     Write-Host ""
 }
 
@@ -732,7 +774,12 @@ Write-Host ''
 if (-not $NoBackup) {
     Write-Host "  Backup Commands:" -ForegroundColor Cyan
     Write-Host "  List backups:          bash ./scripts/list-backups.sh" -ForegroundColor White
-    Write-Host "  Manual backup:         wsl kubectl create job -n money-app --from=cronjob/couchdb-backup manual-backup-`$(date +%s)" -ForegroundColor White
+    if (-not $NoNasBackup) {
+        Write-Host "  Manual daily backup:   wsl kubectl create job -n money-app --from=cronjob/couchdb-backup manual-backup-`$(date +%s)" -ForegroundColor White
+    }
+    if (-not $NoLocalBackup) {
+        Write-Host "  Manual hourly backup:  wsl kubectl create job -n money-app --from=cronjob/couchdb-backup-hourly manual-hourly-`$(date +%s)" -ForegroundColor White
+    }
     Write-Host "  Restore backup:        bash ./scripts/restore-backup.sh <backup-file.tar.gz>" -ForegroundColor White
     Write-Host ''
 }
