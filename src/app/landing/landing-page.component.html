@@ -2,8 +2,9 @@
 <div class="toolbar" role="banner">
   <img id="profile-pic" width="40" alt="Profile Logo" src="../assets/profile-blank.jpg"
     role="button" tabindex="0" aria-label="Open profile" (click)="appReference.clickProfile()" (keydown.enter)="appReference.clickProfile()" />
-  <a href="#" class="logo">Money<span>App</span></a>
-  <div class="spacer"></div>
+  <div id="heading" role="button" tabindex="0" (click)="appReference.openNavBar()" (keydown.enter)="appReference.openNavBar()">
+    <a href="#" class="logo">Money<span>App</span></a>
+  </div>
   <input type="checkbox" id="nav-toggle" class="nav-toggle" aria-label="Toggle navigation">
   <label for="nav-toggle" class="nav-toggle-label" aria-hidden="true"><span></span></label>
   <label for="nav-toggle" class="nav-backdrop" aria-hidden="true"></label>
