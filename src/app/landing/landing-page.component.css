@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    Money App â€” Landing Page Styles
    Pure CSS, no frameworks, mobile-first responsive
    ============================================================ */
@@ -471,50 +471,7 @@ section {
   top: 20%;
   right: 25%;
   animation: float 4s ease-in-out infinite;
-  opacity: 0.2;
-}
-
-/* ============================================================
-   ROADMAP â€” Big Picture Image
-   ============================================================ */
-.roadmap {
-  padding: 4rem 0 3rem;
-  background: var(--color-background);
-  text-align: center;
-}
-
-.roadmap-preview {
-  display: block;
-  max-width: 720px;
-  margin: 2rem auto 0;
-  border-radius: var(--radius);
-  overflow: hidden;
-  box-shadow: var(--shadow);
-  transition: transform var(--transition), box-shadow var(--transition);
-  text-decoration: none;
-}
-
-.roadmap-preview:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
-}
-
-.roadmap-img {
-  width: 100%;
-  display: block;
-}
-
-.roadmap-hint {
-  display: block;
-  padding: 0.5rem;
-  font-size: 0.8rem;
-  color: var(--color-text-muted);
-  background: var(--color-surface);
-  transition: color var(--transition);
-}
-
-.roadmap-preview:hover .roadmap-hint {
-  color: var(--color-primary);
+  opacity:-primary);
 }
 
 /* ============================================================
@@ -1461,16 +1418,19 @@ section {
   border-radius: var(--radius);
   padding: 2.5rem 2rem;
   animation: fadeInUp 0.6s ease both;
+  position: relative;
 }
 
 .cashflow-side--liabilities {
   background: rgba(244, 67, 54, 0.06);
   border: 1px solid rgba(244, 67, 54, 0.2);
+  border-left: 4px solid var(--color-fire);
 }
 
 .cashflow-side--assets {
   background: rgba(76, 175, 80, 0.06);
   border: 1px solid rgba(76, 175, 80, 0.2);
+  border-left: 4px solid var(--color-success);
   animation-delay: 0.2s;
 }
 
@@ -1484,15 +1444,24 @@ section {
 .cashflow-side--assets h3 { color: var(--color-success); }
 
 .cashflow-side .cashflow-direction {
-  font-size: 0.85rem;
-  font-weight: 600;
+  display: inline-block;
+  font-size: 0.8rem;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 1px;
-  margin-bottom: 1rem;
+  margin-bottom: 1.2rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
 }
 
-.cashflow-side--liabilities .cashflow-direction { color: var(--color-fire); }
-.cashflow-side--assets .cashflow-direction { color: var(--color-success); }
+.cashflow-side--liabilities .cashflow-direction {
+  color: var(--color-fire);
+  background: rgba(244, 67, 54, 0.1);
+}
+.cashflow-side--assets .cashflow-direction {
+  color: var(--color-success);
+  background: rgba(76, 175, 80, 0.1);
+}
 
 .cashflow-list {
   display: flex;
@@ -1501,10 +1470,27 @@ section {
 }
 
 .cashflow-list li {
-  padding: 0.5rem 0;
+  padding: 0.6rem 0 0.6rem 1.5rem;
   font-size: 0.95rem;
   color: var(--color-text-secondary);
   border-bottom: 1px solid var(--color-border);
+  position: relative;
+}
+
+.cashflow-list li::before {
+  position: absolute;
+  left: 0;
+  font-size: 0.85rem;
+}
+
+.cashflow-side--liabilities .cashflow-list li::before {
+  content: '▼';
+  color: var(--color-fire);
+}
+
+.cashflow-side--assets .cashflow-list li::before {
+  content: '▲';
+  color: var(--color-success);
 }
 
 .cashflow-list li:last-child {
@@ -3461,11 +3447,20 @@ section {
   .cashflow-side--liabilities {
     background: rgba(244, 67, 54, 0.1);
     border-color: rgba(244, 67, 54, 0.25);
+    border-left: 4px solid var(--color-fire);
   }
 
   .cashflow-side--assets {
     background: rgba(76, 175, 80, 0.1);
     border-color: rgba(76, 175, 80, 0.25);
+    border-left: 4px solid var(--color-success);
+  }
+
+  .cashflow-side--liabilities .cashflow-direction {
+    background: rgba(244, 67, 54, 0.15);
+  }
+  .cashflow-side--assets .cashflow-direction {
+    background: rgba(76, 175, 80, 0.15);
   }
 
   .quote-callout {
