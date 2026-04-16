@@ -200,33 +200,53 @@ Default Grafana credentials: `admin` / `admin`
 
 ## Backups
 
-Automated daily backups via Kubernetes CronJob (2:00 AM). Backups are stored on the host filesystem at `/opt/money-app-backups/` — independent of the namespace.
+Two Kubernetes CronJobs handle automated backups:
+
+1. **Hourly** — local only, every hour, keeps last 24
+2. **Daily** — local + NAS (if available), runs at 2:00 AM with tier promotion
+
+Both are deployed by default with `deploy.sh` / `deploy-local.ps1`. They can be individually skipped — see [DEPLOYMENT.md](DEPLOYMENT.md) for all flags.
 
 ```bash
-kubectl apply -f k8s/backup-cronjob.yaml
+# Deploy manually (if needed)
+kubectl apply -f k8s/backup-cronjob-hourly.yaml   # hourly local
+kubectl apply -f k8s/backup-cronjob-daily.yaml     # daily local + NAS
 ```
 
 ### Storage structure
 
 ```
-/opt/money-app-backups/
+/opt/money-app-backups/          (local)
+  hourly/   ← last 24 hours
   daily/    ← last 7 days
   weekly/   ← last 13 Sundays (~3 months)
+  monthly/  ← 1st of each month (kept forever)
+
+/mnt/nas/backups/                (NAS — optional, gracefully skipped if unavailable)
+  daily/    ← last 21 days (3 weeks)
+  weekly/   ← last 104 Sundays (2 years)
   monthly/  ← 1st of each month (kept forever)
 ```
 
 ### Retention policy
 
-| Tier | Kept | Promoted when |
-|------|------|---------------|
-| Daily | 7 days | Every day |
-| Weekly | 3 months (13 weeks) | Sundays |
-| Monthly | Forever | 1st of month |
+| Location | Tier | Kept | Promoted when |
+|----------|------|------|---------------|
+| Local | Hourly | 24 hours | Every hour |
+| Local | Daily | 7 days | Every day (2 AM) |
+| Local | Weekly | 3 months (13 weeks) | Sundays |
+| Local | Monthly | Forever | 1st of month |
+| NAS | Daily | 3 weeks (21 days) | Every day (2 AM) |
+| NAS | Weekly | 2 years (104 weeks) | Sundays |
+| NAS | Monthly | Forever | 1st of month |
+
+> **No NAS?** Use `--no-nas-backup` (or `-NoNasBackup` on Windows) and only the hourly local CronJob deploys. The daily CronJob also gracefully skips NAS writes if the mount is unavailable at runtime.
 
 ### Manual backup / restore
 
 ```bash
-./scripts/backup.sh                                          # backup now
+./scripts/backup.sh                                          # backup now (local + NAS)
+./scripts/backup.sh --hourly                                 # hourly backup (local only)
 ./scripts/list-backups.sh                                    # show all backups + restore commands
 ./scripts/restore-backup.sh /opt/money-app-backups/daily/couchdb-backup-2026-03-29.tar.gz   # restore
 ```
@@ -234,9 +254,15 @@ kubectl apply -f k8s/backup-cronjob.yaml
 ### Browse backups directly on the Pi
 
 ```bash
+ls -lh /opt/money-app-backups/hourly/
 ls -lh /opt/money-app-backups/daily/
 ls -lh /opt/money-app-backups/weekly/
 ls -lh /opt/money-app-backups/monthly/
+
+# NAS (if mounted)
+ls -lh /mnt/nas/backups/daily/
+ls -lh /mnt/nas/backups/weekly/
+ls -lh /mnt/nas/backups/monthly/
 ```
 
 ---

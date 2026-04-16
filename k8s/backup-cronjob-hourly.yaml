@@ -1,0 +1,121 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: couchdb-backup-hourly
+  namespace: money-app
+spec:
+  schedule: "0 * * * *"
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      ttlSecondsAfterFinished: 3600
+      template:
+        spec:
+          securityContext:
+            runAsUser: 0
+          containers:
+          - name: backup
+            image: curlimages/curl:latest
+            imagePullPolicy: IfNotPresent
+            command:
+            - /bin/sh
+            - -c
+            - |
+              #!/bin/sh
+              set -e
+
+              # ── Configuration ──────────────────────────────────
+              COUCHDB_HOST="couchdb.money-app.svc.cluster.local"
+              COUCHDB_PORT="5984"
+              COUCHDB_USER="${COUCHDB_USER:-admin}"
+              COUCHDB_PASSWORD="${COUCHDB_PASSWORD}"
+              BACKUP_ROOT="/backups"
+              DATE=$(date +%Y-%m-%d)
+              HOUR=$(date +%H)
+
+              HOURLY_DIR="${BACKUP_ROOT}/hourly"
+              HOURLY_FILE="${HOURLY_DIR}/couchdb-backup-${DATE}_${HOUR}00.tar.gz"
+
+              echo "==================================="
+              echo "CouchDB Hourly Backup - $(date)"
+              echo "==================================="
+
+              mkdir -p "${HOURLY_DIR}" "${BACKUP_ROOT}/temp"
+
+              # ── Fetch database list ────────────────────────────
+              echo "Fetching database list..."
+              RAW=$(curl -sf -u "${COUCHDB_USER}:${COUCHDB_PASSWORD}" \
+                "http://${COUCHDB_HOST}:${COUCHDB_PORT}/_all_dbs")
+
+              DATABASES=$(echo "$RAW" | tr -d '[]"' | tr ',' '\n' | grep -v '^_')
+
+              if [ -z "$DATABASES" ]; then
+                echo "ERROR: No user databases found — aborting."
+                exit 1
+              fi
+
+              echo "Databases to backup:"
+              echo "$DATABASES" | sed 's/^/  /'
+
+              # ── Backup each database ───────────────────────────
+              cd "${BACKUP_ROOT}/temp"
+              for db in $DATABASES; do
+                echo "Backing up: ${db}"
+                curl -sf -u "${COUCHDB_USER}:${COUCHDB_PASSWORD}" \
+                  "http://${COUCHDB_HOST}:${COUCHDB_PORT}/${db}/_all_docs?include_docs=true" \
+                  -o "${db}.json"
+                echo "  OK ($(wc -c < "${db}.json") bytes)"
+              done
+
+              # Metadata
+              cat > backup-metadata.json <<METAEOF
+              {
+                "date": "${DATE}",
+                "hour": "${HOUR}",
+                "timestamp": "$(date -Iseconds)",
+                "databases": "$(echo $DATABASES | tr '\n' ' ')",
+                "type": "hourly"
+              }
+              METAEOF
+
+              # ── Create archive ─────────────────────────────────
+              echo "Creating archive..."
+              tar -czf "${HOURLY_FILE}" -C "${BACKUP_ROOT}/temp" .
+              rm -rf "${BACKUP_ROOT}/temp"
+              SIZE=$(wc -c < "${HOURLY_FILE}")
+              echo "Hourly backup: ${HOURLY_FILE} (${SIZE} bytes)"
+
+              # ── Retention: keep last 24 ────────────────────────
+              COUNT=$(ls -1 "${HOURLY_DIR}"/couchdb-backup-*.tar.gz 2>/dev/null | wc -l)
+              if [ "$COUNT" -gt 24 ]; then
+                echo "Cleaning hourly (keeping last 24)..."
+                ls -1t "${HOURLY_DIR}"/couchdb-backup-*.tar.gz | tail -n +25 | while read f; do
+                  echo "  Removing: $(basename "$f")"
+                  rm -f "$f"
+                done
+              fi
+
+              echo ""
+              echo "Hourly backups: $(ls -1 "${HOURLY_DIR}"/couchdb-backup-*.tar.gz 2>/dev/null | wc -l) (max 24)"
+              echo "Hourly backup completed!"
+            env:
+            - name: COUCHDB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: couchdb-secret
+                  key: username
+            - name: COUCHDB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: couchdb-secret
+                  key: password
+            volumeMounts:
+            - name: backup-storage
+              mountPath: /backups
+          restartPolicy: OnFailure
+          volumes:
+          - name: backup-storage
+            hostPath:
+              path: /opt/money-app-backups
+              type: DirectoryOrCreate
