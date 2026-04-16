@@ -7,7 +7,7 @@
         <div id="info-box">
             <h4 class="infoLableB">{{classReference.title}}</h4>
             <hr class="divider-black" style="margin-bottom: 10px;">
-            <h4 class="infoLable">{{'Fire.amount' | translate}}: {{classReference.amount |
+            <h4 class="infoLable">{{'Common.amount' | translate}}: {{classReference.amount |
                 appNumber}} {{currency}}</h4>
             <h4 class="infoLable">{{'Balance.Credit' | translate}}: {{classReference.credit |
                 appNumber}} {{currency}}</h4>
@@ -21,7 +21,7 @@
         <form id="input-container">
             <label for="title" [class.form-error-text]="classReference.isError">{{'AddAsset.name' | translate}}</label>
             <input type="text" id="title" name="title" [class.form-error-border]="classReference.isError" [(ngModel)]="titleTextField">
-            <label for="amount">{{'Transactions.Amount' | translate}}</label>
+            <label for="amount">{{'Common.amount' | translate}}</label>
             <input type=number step=any id="amount" name="amount" [(ngModel)]="amountTextField">
             <label for="credit">{{'Balance.Credit' | translate}}</label>
             <input type=number step=any id="credit" name="credit" [(ngModel)]="creditTextField"

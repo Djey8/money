@@ -20,7 +20,7 @@
             <option value="Mojo">{{'Income.Mojo' | translate}}</option>
         </select>
         <span class="field-error" id="account-error" role="alert" *ngIf="fieldErrors['account']">{{fieldErrors['account']}}</span>
-        <label for="amount" class="required" [class.form-error-text]="classReference.isError && fieldErrors['amount']">{{'Transactions.Amount' | translate}}</label>
+        <label for="amount" class="required" [class.form-error-text]="classReference.isError && fieldErrors['amount']">{{'Common.amount' | translate}}</label>
         <input type=number step=any id="amount" name="amount" aria-required="true" [class.form-error-border]="classReference.isError && fieldErrors['amount']"
             [(ngModel)]="classReference.amountTextField"
             [attr.aria-describedby]="fieldErrors['amount'] ? 'amount-error' : null" [attr.aria-invalid]="fieldErrors['amount'] ? true : null">

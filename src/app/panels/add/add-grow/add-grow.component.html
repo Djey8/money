@@ -127,7 +127,7 @@
                 </div>
                 <textarea id="risks" name="risks" [(ngModel)]="risksTextField" [placeholder]="'Grow.riskComment' | translate"></textarea>
 
-                <label for="notes">{{'Grow.tab.notes' | translate}}</label>
+                <label for="notes">{{'Common.notes' | translate}}</label>
                 <textarea id="notes" name="notes" [(ngModel)]="notesTextField"></textarea>
             </form>
         </div>
@@ -144,7 +144,7 @@
                 <label for="profit">{{'Menu.cashflow' | translate}}</label>
                 <input type="number" step="any" id="profit" name="profit" [(ngModel)]="cashflowTextField">
 
-                <label for="amount" *ngIf="!classReference.isShare">{{'Balance.Deposit' | translate}}</label>
+                <label for="amount" *ngIf="!classReference.isShare">{{'Common.deposit' | translate}}</label>
                 <input type="number" *ngIf="!classReference.isShare" step="any" id="amount" name="amount" [(ngModel)]="amountTextField" class="mb-xs">
 
                 <div class="toggle-row" role="switch" tabindex="0" [attr.aria-checked]="classReference.isAsset" (click)="toggleAsset()" (keydown.enter)="toggleAsset()" (keydown.space)="toggleAsset(); $event.preventDefault()">
@@ -163,7 +163,7 @@
                 <label [class.form-error-text]="classReference.isError" class="required" *ngIf="classReference.isShare" for="quantity">{{'Balance.Quantity' | translate}}</label>
                 <input [class.form-error-border]="classReference.isError" *ngIf="classReference.isShare" type="number" step="any" id="quantity" name="quantity" aria-required="true" [(ngModel)]="quantityTextField" class="mb-xs"
                     [attr.aria-invalid]="classReference.isError ? true : null">
-                <label [class.form-error-text]="classReference.isError" class="required" *ngIf="classReference.isShare" for="price">{{'Balance.Price' | translate}}</label>
+                <label [class.form-error-text]="classReference.isError" class="required" *ngIf="classReference.isShare" for="price">{{'Common.price' | translate}}</label>
                 <input [class.form-error-border]="classReference.isError" *ngIf="classReference.isShare" type="number" step="any" id="price" name="price" aria-required="true" [(ngModel)]="priceTextField" class="mb-xs"
                     [attr.aria-invalid]="classReference.isError ? true : null">
 
@@ -206,7 +206,7 @@
         <div *ngIf="showLinksActionsSection">
             <!-- Links -->
             <div class="subsection">
-                <label class="subsection-label">{{'Grow.links' | translate}}</label>
+                <label class="subsection-label">{{'Common.links' | translate}}</label>
                 <div class="link-list" *ngIf="links.length > 0">
                     <div class="link-item" *ngFor="let link of links; let i = index">
                         <!-- Display Mode -->
@@ -238,7 +238,7 @@
 
             <!-- Actions -->
             <div class="subsection">
-                <label class="subsection-label">{{'Grow.actions' | translate}}</label>
+                <label class="subsection-label">{{'Common.actions' | translate}}</label>
                 <div class="action-list" *ngIf="actionItems.length > 0">
                     <div class="action-item" *ngFor="let item of actionItems; let i = index">
                         <!-- Display Mode -->

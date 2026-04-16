@@ -11,7 +11,7 @@
         <label for="amount">{{'Balance.Quantity' | translate}}</label>
         <input type=number step=any id="amount" name="amount" [(ngModel)]="quantityTextField"
             class="mb-xs">
-        <label for="amount">{{'Balance.Price' | translate}}</label>
+        <label for="amount">{{'Common.price' | translate}}</label>
         <input type=number step=any id="amount" name="amount" [(ngModel)]="priceTextField" class="mb-xs">
     </form>
     <p id="errorLable" *ngIf="classReference.isError">{{errorTextLable}}</p>
