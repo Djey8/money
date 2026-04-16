@@ -1,3 +1,15 @@
+## [1.2.0] - 2026-04-16
+
+### Features
+- feat(backup): add NAS catch-up sync and shift daily schedule to 8:30AM
+- feat(backup): add NAS redundancy, hourly local backups, and granular deploy flags
+- feat(profile): add about page route with nav menu toggle and i18n support
+- feat(landing): interactive income allocation with click-to-animate, editable amounts, flow lines and i18n
+- feat(settings): add allocation editor with reset to default percentages
+
+### Bug Fixes
+- fix(auth): skip landing page flash on login and recalculate home amounts after data load
+
 ## [1.1.1] - 2026-04-16
 
 ### Bug Fixes
