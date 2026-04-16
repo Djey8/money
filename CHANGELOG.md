@@ -1,3 +1,11 @@
+## [1.1.1] - 2026-04-16
+
+### Bug Fixes
+- fix(auth): block login on wrong decryption settings and show error
+- fix(changelog): add bottom padding for bottom nav bar visibility
+- fix(auth): block login on wrong decryption settings and show error
+- fix(auth): clear all caches on logout to prevent stale data on re-login
+
 ## [1.1.0] - 2026-04-16
 
 ### Features
