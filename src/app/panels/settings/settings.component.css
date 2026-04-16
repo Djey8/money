@@ -97,7 +97,7 @@
 }
 
 
-#editbtn, #addbtn, #canclebtn, #languagebtn, #allocationbtn, #fixbtn, #encryptionbtn, #defaultbtn, #savebtn, #loadbtn, #numberFormatbtn {
+#editbtn, #addbtn, #canclebtn, #languagebtn, #allocationbtn, #fixbtn, #encryptionbtn, #defaultbtn, #savebtn, #loadbtn, #numberFormatbtn, #resetbtn {
   margin-left: 10%;
   width: 80%;
   margin-top: 4%;

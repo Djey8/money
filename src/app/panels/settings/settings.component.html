@@ -422,6 +422,7 @@
         <button *ngIf="classReference.isEncryption" id="loadbtn" (click)="load()">{{'Settings.load' | translate}}</button>
         <button *ngIf="classReference.isEncryption" id="savebtn" (click)="save()">{{'Settings.save' | translate}}</button>
         <button *ngIf="!classReference.isEncryption" id="addbtn" (click)="updatePersonalSettings()">{{'Settings.update' | translate}}</button>
+        <button *ngIf="classReference.isAllocation" id="resetbtn" (click)="resetAllocation()">{{'Settings.default' | translate}}</button>
         <button id="canclebtn" (click)="cancel()">{{'Settings.cancel' | translate}}</button>
     </div>
 </div>
