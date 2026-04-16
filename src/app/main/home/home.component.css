@@ -98,7 +98,7 @@
    ========================================= */
 @media (orientation: portrait) {
   .container {
-    padding: 0 0 66px;
+    padding: clamp(3px, 0.5vh, 10px) 0 66px;
   }
 
   .grid-container {
@@ -187,8 +187,8 @@
    ========================================= */
 @media (orientation: landscape) {
   .container {
-    height: calc(100vh - 70px - 52px);
-    height: calc(100dvh - 70px - 52px);
+    height: calc(100vh - 70px - 52px - var(--demo-banner-height, 0px));
+    height: calc(100dvh - 70px - 52px - var(--demo-banner-height, 0px));
     overflow: hidden;
     padding: 1vh 3vw;
   }

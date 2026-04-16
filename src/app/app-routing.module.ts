@@ -19,6 +19,7 @@ import { RouterModule, Routes } from '@angular/router';
 
 
 const routes: Routes = [
+  { path: '', loadComponent: () => import('./landing/landing-page.component').then(m => m.LandingPageComponent) },
   { path: 'authentication', loadComponent: () => import('./registration/registration.component').then(m => m.RegistrationComponent) },
   { path: 'home', loadComponent: () => import('./main/home/home.component').then(m => m.HomeComponent) },
   { path: 'transactions', loadComponent: () => import('./main/accounting/accounting.component').then(m => m.AccountingComponent) },

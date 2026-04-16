@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
-import { Router, RouterOutlet } from '@angular/router';
-import { NgIf, NgClass } from '@angular/common';
+import { Router, RouterOutlet, RouterLink } from '@angular/router';
+import { NgIf } from '@angular/common';
 import { AngularFireAuth } from '@angular/fire/compat/auth';
 import { TranslateModule } from '@ngx-translate/core';
 import { LocalService } from './shared/services/local.service';
@@ -9,6 +9,7 @@ import { CrypticService } from './shared/services/cryptic.service';
 import { environment } from '../environments/environment';
 import { AuthService } from './shared/services/auth.service';
 import { FrontendLoggerService } from './shared/services/frontend-logger.service';
+import { DemoService } from './shared/services/demo.service';
 import { PersistenceService } from './shared/services/persistence.service';
 import { IncomeStatementService } from './shared/services/income-statement.service';
 import { AppStateService } from './shared/services/app-state.service';
@@ -70,8 +71,8 @@ let InfoBudgetComponent: any; setTimeout(() => import('src/app/panels/info/info-
   standalone: true,
   imports: [
     RouterOutlet,
+    RouterLink,
     NgIf,
-    NgClass,
     TranslateModule,
     AddComp,
     AddSmileComp,
@@ -107,6 +108,14 @@ export class AppComponent {
   appMode: 'firebase' | 'selfhosted' = environment.mode as 'firebase' | 'selfhosted';
 
   public classReference = AppComponent;
+
+  get isDemoMode(): boolean {
+    return DemoService.isDemoMode();
+  }
+
+  exitDemo(): void {
+    sessionStorage.removeItem('demo_mode');
+  }
 
   /**
    * Constructs a new instance of the AppComponent class.
@@ -186,9 +195,27 @@ export class AppComponent {
     // Check authentication before loading data
     AppDataService.instance.checkAuthentication().then(isAuthenticated => {
       if (isAuthenticated) {
+        const hash = window.location.hash;
+
+        // In demo mode, skip DB loads — data is already seeded in localStorage/AppState
+        if (DemoService.isDemoMode()) {
+          AppStateService.instance.isLoading = false;
+          AppStateService.instance.tier2Loaded = true;
+          AppStateService.instance.tier3GrowLoaded = true;
+          AppStateService.instance.tier3BalanceLoaded = true;
+          if (hash === '' || hash === '#/') {
+            this.router.navigate(['/home']);
+          }
+          return;
+        }
         // Tier 1: Load critical data, block UI until ready
         AppDataService.instance.loadTier1().then(() => {
           AppStateService.instance.isLoading = false;
+          // Navigate to /home AFTER data is loaded so the home component
+          // constructs with populated state (avoids empty-data flash after login)
+          if (hash === '' || hash === '#/') {
+            this.router.navigate(['/home']);
+          }
           if(!GameModeService.isCashflowGame()){
             // Auto-generate subscription transactions on load
             this.autoGenerateSubscriptionTransactions();
@@ -203,16 +230,27 @@ export class AppComponent {
         });
       } else {
         AppStateService.instance.isLoading = false;
-        this.router.navigate(['/authentication']);
+        // If on landing page, stay there; otherwise redirect to auth
+        const hash = window.location.hash;
+        if (hash === '' || hash === '#/') {
+          // Stay on landing page — no redirect
+        } else {
+          this.router.navigate(['/']);
+        }
       }
     });
     
     document.addEventListener('visibilitychange', async () => {
       if (document.visibilityState === 'visible') {
+        // Skip auth checks for demo mode and landing page
+        if (DemoService.isDemoMode()) return;
+        const hash = window.location.hash;
+        if (hash === '' || hash === '#/') return;
+
         const authResult = await this.authService.checkAuthentication();
         if (!authResult.authenticated) {
           console.error('Authentication failed:', authResult.error);
-          this.router.navigate(['/authentication']);
+          this.router.navigate(['/']);
         } else {
           // Smart reload: check if data changed before reloading
           const hasChanged = await AppDataService.instance.checkUpdatedAt();
@@ -363,7 +401,6 @@ export class AppComponent {
   }
 
   static clickProfile() {
-    AppComponent.gotoTop();
     ProfileComponent.isProfile = !ProfileComponent.isProfile;
     ProfileComponent.zIndex = 100;
   }
