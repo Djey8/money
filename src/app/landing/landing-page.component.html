@@ -552,7 +552,7 @@
         <!-- Info panels placed below the card grid -->
 
         <!-- Japan Info Panel -->
-        <div class="sp-info-panel" *ngIf="flippedBuckets.has('sp-japan')">
+        <div class="sp-info-panel" id="panel-sp-japan" *ngIf="flippedBuckets.has('sp-japan')">
           <button class="sp-info-close" (click)="toggleBucket('sp-japan')" aria-label="Close">x</button>
 
           <div class="sp-info-header">
@@ -750,7 +750,7 @@
                 <span class="sp-info-bucket-amount">600,00 / 1.000,00 {{currencySymbol}}</span>
                 <div class="sp-info-bucket-bar"><div class="sp-info-bucket-fill" style="width:60%"></div></div>
               </div>
-              <p class="sp-info-bucket-notes">{{ 'Landing.sample.foodTransportDesc' | translate }}</p>
+              <p class="sp-info-bucket-notes">{{ 'Landing.sample.foodTransportDesc' | translate:{ currency: currencySymbol } }}</p>
               <div class="sp-info-bucket-links">
                 <strong>{{ 'Common.links' | translate }}:</strong>
                 <a class="sp-info-link" href="https://www.japan-guide.com/e/e2026.html" target="_blank" rel="noopener noreferrer">{{ 'Landing.sample.link.foodGuide' | translate }}</a>
@@ -922,7 +922,7 @@
         </div>
 
         <!-- Office Info Panel -->
-        <div class="sp-info-panel" *ngIf="flippedBuckets.has('sp-office')">
+        <div class="sp-info-panel" id="panel-sp-office" *ngIf="flippedBuckets.has('sp-office')">
           <button class="sp-info-close" (click)="toggleBucket('sp-office')" aria-label="Close">x</button>
 
           <div class="sp-info-header">

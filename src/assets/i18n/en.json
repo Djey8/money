@@ -1634,7 +1634,7 @@
     "Landing.sample.flightsDesc": "International flights Tokyo round-trip, domestic bullet train pass.",
     "Landing.sample.hotelsDesc": "Mix of traditional ryokans and modern city hotels. 3 nights ryokan in Kyoto, 5 nights hotel in Tokyo, 3 nights Osaka.",
     "Landing.sample.activitiesDesc": "Temple tours, tea ceremonies, sumo tickets, and guided walks. Kinkaku-ji, Fushimi Inari, Arashiyama bamboo grove.",
-    "Landing.sample.foodTransportDesc": "Street food, local restaurants, subway passes, taxis. Budget ~70 €/day for food, ~30 €/day for local transport.",
+    "Landing.sample.foodTransportDesc": "Street food, local restaurants, subway passes, taxis. Budget ~70 {{currency}}/day for food, ~30 {{currency}}/day for local transport.",
     "Landing.sample.deskChairDesc": "Standing desk with memory presets + ergonomic mesh chair.",
     "Landing.sample.monitorDesc": "34\" ultrawide monitor, mechanical keyboard, mouse.",
     "Landing.sample.lightingDesc": "LED desk lamp, webcam light, cable management.",

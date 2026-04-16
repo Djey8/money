@@ -202,11 +202,17 @@ export class ProfileComponent {
 
     
     const savedTheme = localStorage.getItem('theme');
+    const savedLang = ['isEng', 'isDe', 'isEs', 'isFr', 'isCn', 'isAr'].find(k => localStorage.getItem(k) === 'true');
+    const savedCurrency = localStorage.getItem('currency');
+    const savedDateFormat = localStorage.getItem('dateFormat');
+    const savedEuropean = localStorage.getItem('isEuropeanFormat');
     localStorage.clear();
     sessionStorage.clear();
-    if (savedTheme) {
-      localStorage.setItem('theme', savedTheme);
-    }
+    if (savedTheme) localStorage.setItem('theme', savedTheme);
+    if (savedLang) localStorage.setItem(savedLang, 'true');
+    if (savedCurrency) localStorage.setItem('currency', savedCurrency);
+    if (savedDateFormat) localStorage.setItem('dateFormat', savedDateFormat);
+    if (savedEuropean) localStorage.setItem('isEuropeanFormat', savedEuropean);
     
     this.cryptic.updateConfig("default", true, false)    
 

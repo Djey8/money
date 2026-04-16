@@ -3,6 +3,7 @@ import { NgIf, NgClass, NgFor } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { DemoService } from '../shared/services/demo.service';
+import { AppStateService } from '../shared/services/app-state.service';
 
 // Deferred import to break circular chain
 let AppComponent: any; setTimeout(() => import('src/app/app.component').then(m => AppComponent = m.AppComponent));
@@ -32,8 +33,7 @@ export class LandingPageComponent {
 
   // Language & currency
   currentLang = 'en';
-  currencySymbol = '€';
-  private currencyMap: Record<string, string> = { en: '€', de: '€', es: '€', fr: '€', cn: '¥', ar: 'ر.س' };
+  currencySymbol = AppStateService.instance.currency || '€';
   languages = [
     { code: 'en', label: 'EN', flag: 'assets/flags/eng.png' },
     { code: 'de', label: 'DE', flag: 'assets/flags/de.png' },
@@ -47,7 +47,6 @@ export class LandingPageComponent {
     const saved = localStorage.getItem('landingLang');
     if (saved) {
       this.currentLang = saved;
-      this.currencySymbol = this.currencyMap[saved] || '€';
       this.translate.use(saved);
     }
   }
@@ -74,6 +73,15 @@ export class LandingPageComponent {
         }
       }
       this.flippedBuckets.add(bucket);
+      if (bucket.startsWith('sp-')) {
+        setTimeout(() => {
+          const el = document.getElementById('panel-' + bucket);
+          if (el) {
+            const top = el.getBoundingClientRect().top + window.scrollY - 70;
+            window.scrollTo({ top, behavior: 'smooth' });
+          }
+        }, 50);
+      }
     }
   }
 
@@ -99,7 +107,6 @@ export class LandingPageComponent {
 
   switchLang(code: string): void {
     this.currentLang = code;
-    this.currencySymbol = this.currencyMap[code] || '€';
     this.translate.use(code);
     localStorage.setItem('landingLang', code);
     if (code === 'ar') {
