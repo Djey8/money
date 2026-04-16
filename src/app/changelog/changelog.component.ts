@@ -4,6 +4,7 @@ import { RouterLink, Router } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 import { ChangelogService, ChangelogVersion } from '../shared/services/changelog.service';
 import { DemoService } from '../shared/services/demo.service';
+import { AppDatePipe } from '../shared/pipes/app-date.pipe';
 
 // Deferred import to break circular chain
 let AppComponent: any; setTimeout(() => import('src/app/app.component').then(m => AppComponent = m.AppComponent));
@@ -11,7 +12,7 @@ let AppComponent: any; setTimeout(() => import('src/app/app.component').then(m =
 @Component({
   selector: 'app-changelog',
   standalone: true,
-  imports: [NgIf, NgFor, NgClass, RouterLink, TranslateModule],
+  imports: [NgIf, NgFor, NgClass, RouterLink, TranslateModule, AppDatePipe],
   templateUrl: './changelog.component.html',
   styleUrls: ['./changelog.component.css', '../landing/landing-page.component.css', '../app.component.css'],
   encapsulation: ViewEncapsulation.None
