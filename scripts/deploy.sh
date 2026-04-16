@@ -13,7 +13,9 @@
 #   --skip-backend        Skip backend build/deploy
 #   --skip-tls            Skip TLS certificate creation
 #   --no-ingress          Skip Ingress deployment
-#   --no-backup           Skip backup CronJob deployment
+#   --no-backup           Skip ALL backup CronJob deployment (hourly + daily/NAS)
+#   --no-local-backup     Skip hourly local backup CronJob only
+#   --no-nas-backup       Skip daily+NAS backup CronJob only (for setups without NAS)
 #   --no-logging          Skip logging stack (Loki, Grafana w/dashboards, Promtail)
 #   --port-forward        Start port-forward after deployment
 #   --prd                 Production preset: --no-cache + --no-logging
@@ -26,7 +28,9 @@
 #   ./deploy.sh --no-cache --backend-only    # Rebuild only backend (no cache)
 #   ./deploy.sh --skip-frontend              # Deploy only backend + CouchDB
 #   ./deploy.sh --port-forward               # Deploy and auto port-forward
-#   ./deploy.sh --no-ingress --no-backup     # Minimal deployment
+#   ./deploy.sh --no-ingress --no-backup     # Minimal deployment (no backups at all)
+#   ./deploy.sh --no-nas-backup              # Deploy without NAS backup (no NAS required)
+#   ./deploy.sh --no-local-backup            # Deploy without hourly local backup
 #   ./deploy.sh --no-logging                 # Deploy without logging stack
 #   ./deploy.sh --prd                        # Production: fresh build, no logging
 #   ./deploy.sh --dev                        # Development: fresh build, with logging
@@ -42,6 +46,8 @@ SKIP_BACKEND=false
 SKIP_TLS=false
 NO_INGRESS=false
 NO_BACKUP=false
+NO_LOCAL_BACKUP=false
+NO_NAS_BACKUP=false
 NO_LOGGING=false
 PORT_FORWARD=false
 
@@ -73,6 +79,14 @@ for arg in "$@"; do
             ;;
         --no-backup)
             NO_BACKUP=true
+            shift
+            ;;
+        --no-local-backup)
+            NO_LOCAL_BACKUP=true
+            shift
+            ;;
+        --no-nas-backup)
+            NO_NAS_BACKUP=true
             shift
             ;;
         --no-logging)
@@ -786,21 +800,48 @@ else
 fi
 
 # ============================================
-# DEPLOY BACKUP CRONJOB
+# DEPLOY BACKUP CRONJOBS
 # ============================================
+# Flags:
+#   --no-backup         Skip ALL backup CronJobs
+#   --no-local-backup   Skip hourly local backup CronJob
+#   --no-nas-backup     Skip daily+NAS backup CronJob (for setups without NAS)
 if [ "${NO_BACKUP}" = false ]; then
-    log_step "Deploying Backup CronJob..."
-    if [ -f "${K8S_DIR}/backup-cronjob.yaml" ]; then
-        if kubectl apply -f "${K8S_DIR}/backup-cronjob.yaml" 2>&1 | sed 's/^/  → /'; then
-            log_success "Backup CronJob deployed (Daily: 2:00 AM)"
+
+    # ── Hourly local backup ──────────────────────────
+    if [ "${NO_LOCAL_BACKUP}" = false ]; then
+        log_step "Deploying Hourly Backup CronJob (local)..."
+        if [ -f "${K8S_DIR}/backup-cronjob-hourly.yaml" ]; then
+            if kubectl apply -f "${K8S_DIR}/backup-cronjob-hourly.yaml" 2>&1 | sed 's/^/  → /'; then
+                log_success "Hourly Backup CronJob deployed (every hour, local storage)"
+            else
+                log_warning "Failed to deploy hourly backup CronJob (optional)"
+            fi
         else
-            log_warning "Failed to deploy backup CronJob (optional)"
+            log_warning "Hourly backup CronJob file not found: backup-cronjob-hourly.yaml"
         fi
     else
-        log_warning "Backup CronJob file not found (optional)"
+        log_step "Skipping Hourly Backup CronJob (--no-local-backup)"
     fi
+
+    # ── Daily backup with NAS ────────────────────────
+    if [ "${NO_NAS_BACKUP}" = false ]; then
+        log_step "Deploying Daily Backup CronJob (local + NAS)..."
+        if [ -f "${K8S_DIR}/backup-cronjob-daily.yaml" ]; then
+            if kubectl apply -f "${K8S_DIR}/backup-cronjob-daily.yaml" 2>&1 | sed 's/^/  → /'; then
+                log_success "Daily Backup CronJob deployed (2:00 AM, local + NAS)"
+            else
+                log_warning "Failed to deploy daily backup CronJob (optional)"
+            fi
+        else
+            log_warning "Daily backup CronJob file not found: backup-cronjob-daily.yaml"
+        fi
+    else
+        log_step "Skipping Daily/NAS Backup CronJob (--no-nas-backup)"
+    fi
+
 else
-    log_step "Skipping Backup CronJob deployment (--no-backup specified)"
+    log_step "Skipping ALL Backup CronJobs (--no-backup)"
 fi
 
 # ============================================
@@ -936,11 +977,18 @@ echo "  View logs (Backend):   kubectl logs -n ${NAMESPACE} -l app=backend"
 echo "  View logs (Frontend):  kubectl logs -n ${NAMESPACE} -l app=frontend"
 echo "  Delete deployment:     kubectl delete namespace ${NAMESPACE}"
 echo ""
-echo "  Backup Commands:"
-echo "  List backups:          ./scripts/list-backups.sh"
-echo "  Manual backup:         kubectl create job -n ${NAMESPACE} --from=cronjob/couchdb-backup manual-backup-\$(date +%s)"
-echo "  Restore backup:        ./scripts/restore-backup.sh <backup-file.tar.gz>"
-echo ""
+if [ "${NO_BACKUP}" = false ]; then
+    echo "  Backup Commands:"
+    echo "  List backups:          ./scripts/list-backups.sh"
+    if [ "${NO_NAS_BACKUP}" = false ]; then
+        echo "  Manual daily backup:   kubectl create job -n ${NAMESPACE} --from=cronjob/couchdb-backup manual-backup-\$(date +%s)"
+    fi
+    if [ "${NO_LOCAL_BACKUP}" = false ]; then
+        echo "  Manual hourly backup:  kubectl create job -n ${NAMESPACE} --from=cronjob/couchdb-backup-hourly manual-hourly-\$(date +%s)"
+    fi
+    echo "  Restore backup:        ./scripts/restore-backup.sh <backup-file.tar.gz>"
+    echo ""
+fi
 
 log_success "Money App is now running on Kubernetes!"
 echo ""
