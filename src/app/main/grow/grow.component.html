@@ -94,11 +94,11 @@
             <!-- Asset metrics -->
             <ng-container *ngIf="project.isAsset && !project.share && !project.investment">
                 <div class="metric" *ngIf="getAssetAmount(getOriginalIndex(project)) > 0">
-                    <span class="metric-label">{{'Balance.Value' | translate}}</span>
+                    <span class="metric-label">{{'Common.value' | translate}}</span>
                     <span class="metric-value">{{getAssetAmount(getOriginalIndex(project)) | appNumber}} {{settingsReference.currency}}</span>
                 </div>
                 <div class="metric" *ngIf="getDepositAmount(project) > 0">
-                    <span class="metric-label">{{'Balance.Deposit' | translate}}</span>
+                    <span class="metric-label">{{'Common.deposit' | translate}}</span>
                     <span class="metric-value">{{getDepositAmount(project) | appNumber}} {{settingsReference.currency}}</span>
                 </div>
             </ng-container>
@@ -110,15 +110,15 @@
                     <span class="metric-value">{{getShareQuantity(project) | appNumber}}</span>
                 </div>
                 <div class="metric" *ngIf="getSharePrice(project) > 0">
-                    <span class="metric-label">{{'Balance.Price' | translate}}</span>
+                    <span class="metric-label">{{'Common.price' | translate}}</span>
                     <span class="metric-value">{{getSharePrice(project) | appNumber}} {{settingsReference.currency}}</span>
                 </div>
                 <div class="metric" *ngIf="getAssetAmount(getOriginalIndex(project)) > 0">
-                    <span class="metric-label">{{'Balance.Value' | translate}}</span>
+                    <span class="metric-label">{{'Common.value' | translate}}</span>
                     <span class="metric-value">{{getAssetAmount(getOriginalIndex(project)) | appNumber}} {{settingsReference.currency}}</span>
                 </div>
                 <div class="metric" *ngIf="getDepositAmount(project) > 0">
-                    <span class="metric-label">{{'Balance.Deposit' | translate}}</span>
+                    <span class="metric-label">{{'Common.deposit' | translate}}</span>
                     <span class="metric-value">{{getDepositAmount(project) | appNumber}} {{settingsReference.currency}}</span>
                 </div>
             </ng-container>
@@ -126,11 +126,11 @@
             <!-- Investment metrics -->
             <ng-container *ngIf="project.investment">
                 <div class="metric" *ngIf="getAssetAmount(getOriginalIndex(project)) > 0">
-                    <span class="metric-label">{{'Balance.Value' | translate}}</span>
+                    <span class="metric-label">{{'Common.value' | translate}}</span>
                     <span class="metric-value">{{getAssetAmount(getOriginalIndex(project)) | appNumber}} {{settingsReference.currency}}</span>
                 </div>
                 <div class="metric" *ngIf="getDepositAmount(project) > 0">
-                    <span class="metric-label">{{'Balance.Deposit' | translate}}</span>
+                    <span class="metric-label">{{'Common.deposit' | translate}}</span>
                     <span class="metric-value">{{getDepositAmount(project) | appNumber}} {{settingsReference.currency}}</span>
                 </div>
                 <div class="metric" *ngIf="getMortgageAmount(project) > 0">
@@ -196,7 +196,7 @@
             <div class="progress-bar-track">
                 <div class="progress-bar-fill" [style.width.%]="getActionPercent(project)"></div>
             </div>
-            <span class="progress-text">{{'Grow.actions' | translate}}: {{getActionProgress(project)}}</span>
+            <span class="progress-text">{{'Common.actions' | translate}}: {{getActionProgress(project)}}</span>
         </div>
 
         <!-- Card Footer: Quick Actions (income-growth only) -->

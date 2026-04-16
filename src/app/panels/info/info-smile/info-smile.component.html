@@ -29,7 +29,7 @@
 
         <!-- Tabs -->
         <div class="detail-tabs">
-            <button class="detail-tab" [class.active]="classReference.activeTab === 'overview'" (click)="classReference.activeTab = 'overview'">{{'Grow.tab.overview' | translate}}</button>
+            <button class="detail-tab" [class.active]="classReference.activeTab === 'overview'" (click)="classReference.activeTab = 'overview'">{{'Common.overview' | translate}}</button>
             <button class="detail-tab" [class.active]="classReference.activeTab === 'buckets'" (click)="classReference.activeTab = 'buckets'">
                 {{'Smile.tab.buckets' | translate}}
                 <span class="tab-badge" *ngIf="classReference.buckets?.length">({{classReference.buckets.length}})</span>
@@ -40,10 +40,10 @@
                 <span class="tab-badge" *ngIf="classReference.plannedSubscriptions?.length"> ({{classReference.plannedSubscriptions.length}})</span>
             </button>
             <button class="detail-tab" [class.active]="classReference.activeTab === 'actions'" (click)="classReference.activeTab = 'actions'">
-                {{'Grow.tab.actions' | translate}}
+                {{'Common.actions' | translate}}
                 <span class="tab-badge" *ngIf="classReference.actionItems?.length">({{classReference.actionItems.length}})</span>
             </button>
-            <button class="detail-tab" [class.active]="classReference.activeTab === 'notes'" (click)="classReference.activeTab = 'notes'">{{'Grow.tab.notes' | translate}}</button>
+            <button class="detail-tab" [class.active]="classReference.activeTab === 'notes'" (click)="classReference.activeTab = 'notes'">{{'Common.notes' | translate}}</button>
         </div>
 
         <!-- TAB: Overview -->
@@ -56,11 +56,11 @@
 
             <!-- Overall Progress -->
             <div class="info-section">
-                <h5 class="section-label">{{'Smile.overallProgress' | translate}}</h5>
+                <h5 class="section-label">{{'Common.overallProgress' | translate}}</h5>
                 <div class="progress-summary">
-                    <h4 class="fin-line">{{'Fire.target' | translate}}: {{getTotalTarget() | appNumber}} {{currency}}</h4>
-                    <h4 class="fin-line">{{'Fire.amount' | translate}}: {{getTotalAmount() | appNumber}} {{currency}}</h4>
-                    <h4 class="fin-line">{{'Smile.remaining' | translate}}: {{getTotalTarget() - getTotalAmount() | appNumber}} {{currency}}</h4>
+                    <h4 class="fin-line">{{'Common.target' | translate}}: {{getTotalTarget() | appNumber}} {{currency}}</h4>
+                    <h4 class="fin-line">{{'Common.amount' | translate}}: {{getTotalAmount() | appNumber}} {{currency}}</h4>
+                    <h4 class="fin-line">{{'Common.remaining' | translate}}: {{getTotalTarget() - getTotalAmount() | appNumber}} {{currency}}</h4>
                     <div class="progress-bar-container">
                         <!-- Segmented progress bar showing each bucket's contribution -->
                         <div class="progress-bar-segments" *ngIf="classReference.buckets?.length; else singleProgress">
@@ -76,13 +76,13 @@
                     </div>
                     <div class="progress-percentage">{{getOverallProgress() | number:'1.0-1'}}%</div>
                 </div>
-                <p *ngIf="classReference.targetDate">{{'Smile.targetDate' | translate}}: {{classReference.targetDate | date:'mediumDate'}}</p>
+                <p *ngIf="classReference.targetDate">{{'Common.targetDate' | translate}}: {{classReference.targetDate | date:'mediumDate'}}</p>
                 <p *ngIf="classReference.completionDate">{{'Smile.completionDate' | translate}}: {{classReference.completionDate | date:'mediumDate'}}</p>
             </div>
             
             <!-- Links -->
             <div class="info-section">
-                <h5 class="section-label">{{'Grow.links' | translate}}</h5>
+                <h5 class="section-label">{{'Common.links' | translate}}</h5>
                 <div class="link-list" *ngIf="classReference.links?.length">
                     <div class="link-item" *ngFor="let link of classReference.links; let li = index">
                         <!-- Display Mode -->
@@ -125,10 +125,10 @@
                         </div>
                     </div>
                     <p class="bucket-notes" *ngIf="bucket.notes">{{bucket.notes}}</p>
-                    <p class="bucket-dates" *ngIf="bucket.targetDate">{{'Smile.targetDate' | translate}}: {{bucket.targetDate | date:'mediumDate'}}</p>
+                    <p class="bucket-dates" *ngIf="bucket.targetDate">{{'Common.targetDate' | translate}}: {{bucket.targetDate | date:'mediumDate'}}</p>
                     <p class="bucket-dates" *ngIf="bucket.completionDate">{{'Smile.completionDate' | translate}}: {{bucket.completionDate | date:'mediumDate'}}</p>
                     <div class="bucket-links" *ngIf="bucket.links?.length">
-                        <strong>{{'Grow.links' | translate}}:</strong>
+                        <strong>{{'Common.links' | translate}}:</strong>
                         <a *ngFor="let link of bucket.links" [href]="link.url" target="_blank" rel="noopener noreferrer">{{link.label}}</a>
                     </div>
                     
@@ -150,13 +150,13 @@
                                             ID <span class="sort-icon">{{getSortIcon('id')}}</span>
                                         </th>
                                         <th class="sortable" (click)="toggleSort('account')">
-                                            {{'Transactions.Account' | translate}} <span class="sort-icon">{{getSortIcon('account')}}</span>
+                                            {{'Common.account' | translate}} <span class="sort-icon">{{getSortIcon('account')}}</span>
                                         </th>
                                         <th class="sortable" (click)="toggleSort('amount')">
-                                            {{'Transactions.Amount' | translate}} <span class="sort-icon">{{getSortIcon('amount')}}</span>
+                                            {{'Common.amount' | translate}} <span class="sort-icon">{{getSortIcon('amount')}}</span>
                                         </th>
                                         <th class="sortable" (click)="toggleSort('date')">
-                                            {{'Transactions.Date' | translate}} <span class="sort-icon">{{getSortIcon('date')}}</span>
+                                            {{'Common.date' | translate}} <span class="sort-icon">{{getSortIcon('date')}}</span>
                                         </th>
                                     </tr>
                                 </thead>
@@ -185,13 +185,13 @@
                                         ID <span class="sort-icon">{{getSortIcon('id')}}</span>
                                     </th>
                                     <th class="sortable" (click)="toggleSort('account')">
-                                        {{'Transactions.Account' | translate}} <span class="sort-icon">{{getSortIcon('account')}}</span>
+                                        {{'Common.account' | translate}} <span class="sort-icon">{{getSortIcon('account')}}</span>
                                     </th>
                                     <th class="sortable" (click)="toggleSort('amount')">
-                                        {{'Transactions.Amount' | translate}} <span class="sort-icon">{{getSortIcon('amount')}}</span>
+                                        {{'Common.amount' | translate}} <span class="sort-icon">{{getSortIcon('amount')}}</span>
                                     </th>
                                     <th class="sortable" (click)="toggleSort('date')">
-                                        {{'Transactions.Date' | translate}} <span class="sort-icon">{{getSortIcon('date')}}</span>
+                                        {{'Common.date' | translate}} <span class="sort-icon">{{getSortIcon('date')}}</span>
                                     </th>
                                 </tr>
                             </thead>
@@ -220,13 +220,13 @@
                                         ID <span class="sort-icon">{{getSortIcon('id')}}</span>
                                     </th>
                                     <th class="sortable" (click)="toggleSort('account')">
-                                        {{'Transactions.Account' | translate}} <span class="sort-icon">{{getSortIcon('account')}}</span>
+                                        {{'Common.account' | translate}} <span class="sort-icon">{{getSortIcon('account')}}</span>
                                     </th>
                                     <th class="sortable" (click)="toggleSort('amount')">
-                                        {{'Transactions.Amount' | translate}} <span class="sort-icon">{{getSortIcon('amount')}}</span>
+                                        {{'Common.amount' | translate}} <span class="sort-icon">{{getSortIcon('amount')}}</span>
                                     </th>
                                     <th class="sortable" (click)="toggleSort('date')">
-                                        {{'Transactions.Date' | translate}} <span class="sort-icon">{{getSortIcon('date')}}</span>
+                                        {{'Common.date' | translate}} <span class="sort-icon">{{getSortIcon('date')}}</span>
                                     </th>
                                 </tr>
                             </thead>
@@ -273,20 +273,20 @@
                         </div>
                         <div class="plan-card-body">
                             <div class="plan-info-row">
-                                <span class="plan-label">{{'Smile.paymentPlans.amount' | translate: {default: 'Amount'} }}:</span>
+                                <span class="plan-label">{{'Common.amount' | translate: {default: 'Amount'} }}:</span>
                                 <span class="plan-value">{{plan.amount | appNumber}} / {{plan.frequency | translate: {default: plan.frequency} }}</span>
                             </div>
                             <div class="plan-info-row" *ngIf="plan.targetBucketIds.length === 0">
-                                <span class="plan-label">{{'Smile.paymentPlans.buckets' | translate}}:</span>
-                                <span class="plan-value">{{'Smile.paymentPlans.allBuckets' | translate: {default: 'All buckets'} }}</span>
+                                <span class="plan-label">{{'Common.buckets' | translate}}:</span>
+                                <span class="plan-value">{{'Common.allBuckets' | translate: {default: 'All buckets'} }}</span>
                             </div>
                             <div class="plan-info-row" *ngIf="plan.targetBucketIds.length === 1">
                                 <span class="plan-label">{{'Smile.bucket' | translate: {default: 'Bucket'} }}:</span>
                                 <span class="plan-value">{{getBucketNameById(plan.targetBucketIds[0])}}</span>
                             </div>
                             <div class="plan-info-row" *ngIf="plan.targetBucketIds.length > 1">
-                                <span class="plan-label">{{'Smile.paymentPlans.buckets' | translate}}:</span>
-                                <span class="plan-value">{{plan.targetBucketIds.length}} {{'Smile.buckets' | translate}}</span>
+                                <span class="plan-label">{{'Common.buckets' | translate}}:</span>
+                                <span class="plan-value">{{plan.targetBucketIds.length}} {{'Common.buckets' | translate}}</span>
                             </div>
                             <div class="plan-info-row" *ngIf="plan.startDate && plan.targetDate">
                                 <span class="plan-label">{{'Smile.paymentPlans.schedule' | translate: {default: 'Schedule'} }}:</span>
@@ -299,16 +299,16 @@
                         </div>
                         <div class="plan-card-actions">
                             <button type="button" class="btn btn--sm btn--success" (click)="activatePaymentPlan(classReference.plannedSubscriptions.indexOf(plan))">
-                                {{'Smile.paymentPlans.activate' | translate: {default: 'Activate'} }}
+                                {{'Common.activate' | translate: {default: 'Activate'} }}
                             </button>
                             <button type="button" class="btn btn--sm" (click)="editPaymentPlan(classReference.plannedSubscriptions.indexOf(plan))">
-                                {{'Smile.paymentPlans.edit' | translate: {default: 'Edit'} }}
+                                {{'Common.edit' | translate: {default: 'Edit'} }}
                             </button>
                             <button type="button" class="btn btn--sm" (click)="duplicatePaymentPlan(classReference.plannedSubscriptions.indexOf(plan))">
-                                {{'Smile.paymentPlans.duplicate' | translate: {default: 'Duplicate'} }}
+                                {{'Common.duplicate' | translate: {default: 'Duplicate'} }}
                             </button>
                             <button type="button" class="btn btn--sm btn--danger" (click)="deletePaymentPlan(classReference.plannedSubscriptions.indexOf(plan))">
-                                {{'Smile.paymentPlans.delete' | translate: {default: 'Delete'} }}
+                                {{'Common.delete' | translate: {default: 'Delete'} }}
                             </button>
                         </div>
                     </div>
@@ -333,11 +333,11 @@
                         </div>
                         <div class="plan-card-body">
                             <div class="plan-info-row">
-                                <span class="plan-label">{{'Smile.amount' | translate: {default: 'Amount'} }}:</span>
+                                <span class="plan-label">{{'Common.amount' | translate: {default: 'Amount'} }}:</span>
                                 <span class="plan-value">{{plan.amount | appNumber}} / {{plan.frequency | translate: {default: plan.frequency} }}</span>
                             </div>
                             <div class="plan-info-row" *ngIf="plan.targetBucketIds.length === 0">
-                                <span class="plan-label">{{'Smile.buckets' | translate}}:</span>
+                                <span class="plan-label">{{'Common.buckets' | translate}}:</span>
                                 <span class="plan-value">{{'Smile.allBuckets' | translate: {default: 'All buckets'} }}</span>
                             </div>
                             <div class="plan-info-row" *ngIf="plan.targetBucketIds.length === 1">
@@ -345,8 +345,8 @@
                                 <span class="plan-value">{{getBucketNameById(plan.targetBucketIds[0])}}</span>
                             </div>
                             <div class="plan-info-row" *ngIf="plan.targetBucketIds.length > 1">
-                                <span class="plan-label">{{'Smile.buckets' | translate}}:</span>
-                                <span class="plan-value">{{plan.targetBucketIds.length}} {{'Smile.buckets' | translate}}</span>
+                                <span class="plan-label">{{'Common.buckets' | translate}}:</span>
+                                <span class="plan-value">{{plan.targetBucketIds.length}} {{'Common.buckets' | translate}}</span>
                             </div>
                             <div class="plan-info-row" *ngIf="plan.activatedAt">
                                 <span class="plan-label">{{'Smile.activatedAt' | translate: {default: 'Activated'} }}:</span>
@@ -376,7 +376,7 @@
                         </div>
                         <div class="plan-card-body">
                             <div class="plan-info-row">
-                                <span class="plan-label">{{'Smile.amount' | translate: {default: 'Amount'} }}:</span>
+                                <span class="plan-label">{{'Common.amount' | translate: {default: 'Amount'} }}:</span>
                                 <span class="plan-value">{{plan.amount | appNumber}} / {{plan.frequency | translate: {default: plan.frequency} }}</span>
                             </div>
                             <div class="plan-info-row" *ngIf="plan.deactivatedAt">
@@ -519,7 +519,7 @@
                 <label for="description">{{'AddGrow.description' | translate}}</label>
                 <textarea id="description" name="description" [(ngModel)]="descriptionTextField"></textarea>
 
-                <label for="targetDate">{{'Smile.targetDate' | translate}}</label>
+                <label for="targetDate">{{'Common.targetDate' | translate}}</label>
                 <input type="date" id="targetDate" name="targetDate" [(ngModel)]="targetDateTextField">
 
                 <label for="completionDate">{{'Smile.completionDate' | translate}}</label>
@@ -530,7 +530,7 @@
         <!-- Section: Buckets (collapsible) -->
         <div class="form-section">
             <button class="section-toggle" (click)="showBucketsSection = !showBucketsSection" type="button">
-                <h5 class="form-section-title">{{'Smile.buckets' | translate}}</h5>
+                <h5 class="form-section-title">{{'Common.buckets' | translate}}</h5>
                 <span class="toggle-chevron" [class.open]="showBucketsSection">▸</span>
             </button>
             <div *ngIf="showBucketsSection" class="subsection">
@@ -546,7 +546,7 @@
                                         <span class="bucket-amount-sm">{{bucket.target | appNumber}} {{currency}}</span>
                                     </div>
                                     <div class="bucket-meta" *ngIf="bucket.amount">
-                                        {{'Fire.amount' | translate}}: {{bucket.amount | appNumber}} {{currency}}
+                                        {{'Common.amount' | translate}}: {{bucket.amount | appNumber}} {{currency}}
                                     </div>
                                 </div>
                                 <div class="bucket-actions">
@@ -562,7 +562,7 @@
                             
                             <!-- Bucket Target Date -->
                             <div class="bucket-target-date" *ngIf="bucket.targetDate">
-                                <small>{{'Smile.targetDate' | translate}}: {{bucket.targetDate | date:'mediumDate'}}</small>
+                                <small>{{'Common.targetDate' | translate}}: {{bucket.targetDate | date:'mediumDate'}}</small>
                             </div>
                             
                             <!-- Bucket Links -->
@@ -600,9 +600,9 @@
                         <div *ngIf="editingBucketIndex === i" class="bucket-edit-mode">
                             <input type="text" [(ngModel)]="editingBucketTitle" [placeholder]="'Smile.bucketName' | translate" class="input-sm" [name]="'editBucketTitle' + i">
                             <input type="number" step="any" [(ngModel)]="editingBucketTarget" [placeholder]="'Smile.bucketTarget' | translate" class="input-sm" [name]="'editBucketTarget' + i">
-                            <input type="number" step="any" [(ngModel)]="editingBucketAmount" [placeholder]="'Fire.amount' | translate" class="input-sm" [name]="'editBucketAmount' + i">
+                            <input type="number" step="any" [(ngModel)]="editingBucketAmount" [placeholder]="'Common.amount' | translate" class="input-sm" [name]="'editBucketAmount' + i">
                             <textarea [(ngModel)]="editBucketNotes" [placeholder]="'Smile.bucketNotesPlaceholder' | translate" class="input-sm" rows="2" [name]="'editBucketNotes' + i"></textarea>
-                            <input type="date" [(ngModel)]="editBucketTargetDate" [placeholder]="'Smile.targetDate' | translate" class="input-sm" [name]="'editBucketTargetDate' + i">
+                            <input type="date" [(ngModel)]="editBucketTargetDate" [placeholder]="'Common.targetDate' | translate" class="input-sm" [name]="'editBucketTargetDate' + i">
                             <div class="bucket-edit-actions">
                                 <button type="button" class="btn btn--sm" (click)="saveEditBucket(i)" [disabled]="!editingBucketTitle.trim() || !editingBucketTarget">{{'Common.save' | translate: {default: 'Save'} }}</button>
                                 <button type="button" class="btn-icon" (click)="cancelEditBucket()" aria-label="Cancel">×</button>

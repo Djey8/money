@@ -24,7 +24,7 @@
     </div>
     <div *ngIf="isEdit">
         <form id="input-container">
-            <label for="account">{{'Transactions.Account' | translate}}</label>
+            <label for="account">{{'Common.account' | translate}}</label>
             <select [(ngModel)]="selectedOption" id="account" name="account">
                 <option value="Daily">{{'Menu.daily' | translate}}</option>
                 <option value="Splurge">{{'Menu.splurge' | translate}}</option>
@@ -37,7 +37,7 @@
             <input type=number step=any id="amount" name="amount" [class.form-error-border]="classReference.isError"
                 [(ngModel)]="amountTextField"
                 (ngModelChange)="onAmountChange($event)">
-            <label for="date">{{'Transactions.Date' | translate}}</label>
+            <label for="date">{{'Common.date' | translate}}</label>
             <input type=date step=any id="date" name="date" [(ngModel)]="dateTextField">
             <label for="time">{{'AddTransaction.Time' | translate}}</label>
             <input type=time step=any id="time" name="time" [(ngModel)]="timeTextField">

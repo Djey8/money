@@ -32,12 +32,12 @@
 
         <!-- Tabs -->
         <div class="detail-tabs">
-            <button class="detail-tab" [class.active]="classReference.activeTab === 'overview'" (click)="classReference.activeTab = 'overview'">{{'Grow.tab.overview' | translate}}</button>
+            <button class="detail-tab" [class.active]="classReference.activeTab === 'overview'" (click)="classReference.activeTab = 'overview'">{{'Common.overview' | translate}}</button>
             <button class="detail-tab" [class.active]="classReference.activeTab === 'actions'" (click)="classReference.activeTab = 'actions'">
-                {{'Grow.tab.actions' | translate}}
+                {{'Common.actions' | translate}}
                 <span class="tab-badge" *ngIf="classReference.actionItems?.length">({{classReference.actionItems.length}})</span>
             </button>
-            <button class="detail-tab" [class.active]="classReference.activeTab === 'notes'" (click)="classReference.activeTab = 'notes'">{{'Grow.tab.notes' | translate}}</button>
+            <button class="detail-tab" [class.active]="classReference.activeTab === 'notes'" (click)="classReference.activeTab = 'notes'">{{'Common.notes' | translate}}</button>
             <button class="detail-tab" [class.active]="classReference.activeTab === 'financials'" (click)="classReference.activeTab = 'financials'">{{'Grow.tab.financials' | translate}}</button>
         </div>
 
@@ -104,7 +104,7 @@
             </div>
             <!-- Links -->
             <div class="info-section" *ngIf="classReference.links?.length">
-                <h5 class="section-label">{{'Grow.links' | translate}}</h5>
+                <h5 class="section-label">{{'Common.links' | translate}}</h5>
                 <div class="link-list">
                     <div class="link-item" *ngFor="let link of classReference.links; let li = index">
                         <!-- Display Mode -->
@@ -219,13 +219,13 @@
         <div class="tab-content" *ngIf="classReference.activeTab === 'financials' && !isExpenseType()">
             <div class="info-section">
                 <h4 *ngIf="classReference.cashflow > 0" class="fin-line">{{'Menu.cashflow' | translate}}: {{classReference.cashflow | appNumber}} {{currency}}</h4>
-                <h4 class="fin-line">{{'Balance.Deposit' | translate}}: {{classReference.amount | appNumber}} {{currency}}</h4>
+                <h4 class="fin-line">{{'Common.deposit' | translate}}: {{classReference.amount | appNumber}} {{currency}}</h4>
                 <h4 *ngIf="classReference.investment" class="fin-line">{{'AddGrow.Mortage' | translate}}: {{classReference.investment.amount | appNumber}} {{currency}}</h4>
             </div>
             <div class="info-section" *ngIf="classReference.share">
                 <h5 class="section-label">{{'Choose.Share' | translate}}</h5>
                 <h4 class="fin-line">{{'Balance.Quantity' | translate}}: {{classReference.share.quantity | appNumber}}</h4>
-                <h4 class="fin-line">{{'Balance.Price' | translate}}: {{classReference.share.price | appNumber}} {{currency}}</h4>
+                <h4 class="fin-line">{{'Common.price' | translate}}: {{classReference.share.price | appNumber}} {{currency}}</h4>
             </div>
             <div class="info-section" *ngIf="classReference.liabilitie">
                 <h5 class="section-label">{{'AddGrow.liabilitie' | translate}}</h5>
@@ -238,9 +238,9 @@
                 <table class="related-tx-table">
                     <thead>
                         <tr>
-                            <th>{{'Transactions.Account' | translate}}</th>
-                            <th>{{'Transactions.Amount' | translate}}</th>
-                            <th>{{'Transactions.Date' | translate}}</th>
+                            <th>{{'Common.account' | translate}}</th>
+                            <th>{{'Common.amount' | translate}}</th>
+                            <th>{{'Common.date' | translate}}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -385,7 +385,7 @@
                     </div>
                     <textarea id="risks" name="risks" [(ngModel)]="risksTextField" [placeholder]="'Grow.riskComment' | translate"></textarea>
 
-                    <label for="notes">{{'Grow.tab.notes' | translate}}</label>
+                    <label for="notes">{{'Common.notes' | translate}}</label>
                     <textarea id="notes" name="notes" [(ngModel)]="notesTextField"></textarea>
                 </form>
             </div>
@@ -402,7 +402,7 @@
                     <label for="profit">{{'Menu.cashflow' | translate}}</label>
                     <input type="number" step="any" id="profit" name="profit" [(ngModel)]="cashflowTextField">
 
-                    <label for="amount" *ngIf="!classReference.isShare">{{'Balance.Deposit' | translate}}</label>
+                    <label for="amount" *ngIf="!classReference.isShare">{{'Common.deposit' | translate}}</label>
                     <input type="number" *ngIf="!classReference.isShare" step="any" id="amount" name="amount" [(ngModel)]="amountTextField" class="mb-xs">
 
                     <div class="toggle-row" role="switch" tabindex="0" [attr.aria-checked]="classReference.isAsset" (click)="toggleAsset()" (keydown.enter)="toggleAsset()" (keydown.space)="toggleAsset(); $event.preventDefault()">
@@ -421,7 +421,7 @@
                     <label [class.form-error-text]="classReference.isError" class="required" *ngIf="classReference.isShare" for="quantity">{{'Balance.Quantity' | translate}}</label>
                     <input [class.form-error-border]="classReference.isError" *ngIf="classReference.isShare" type="number" step="any" id="quantity" name="quantity" aria-required="true" [(ngModel)]="quantityTextField" class="mb-xs"
                         [attr.aria-invalid]="classReference.isError ? true : null">
-                    <label [class.form-error-text]="classReference.isError" class="required" *ngIf="classReference.isShare" for="price">{{'Balance.Price' | translate}}</label>
+                    <label [class.form-error-text]="classReference.isError" class="required" *ngIf="classReference.isShare" for="price">{{'Common.price' | translate}}</label>
                     <input [class.form-error-border]="classReference.isError" *ngIf="classReference.isShare" type="number" step="any" id="price" name="price" aria-required="true" [(ngModel)]="priceTextField" class="mb-xs"
                         [attr.aria-invalid]="classReference.isError ? true : null">
 
@@ -464,7 +464,7 @@
             <div *ngIf="showLinksActionsSection">
                 <!-- Links -->
                 <div class="subsection">
-                    <label class="subsection-label">{{'Grow.links' | translate}}</label>
+                    <label class="subsection-label">{{'Common.links' | translate}}</label>
                     <div class="link-list" *ngIf="links.length > 0">
                         <div class="link-item" *ngFor="let link of links; let i = index">
                             <!-- Display Mode -->
@@ -496,7 +496,7 @@
 
                 <!-- Actions -->
                 <div class="subsection">
-                    <label class="subsection-label">{{'Grow.actions' | translate}}</label>
+                    <label class="subsection-label">{{'Common.actions' | translate}}</label>
                     <div class="action-list" *ngIf="actionItems.length > 0">
                         <div class="action-item" *ngFor="let item of actionItems; let i = index">
                             <!-- Display Mode -->

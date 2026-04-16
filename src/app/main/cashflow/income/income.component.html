@@ -37,10 +37,10 @@
         <tbody *ngIf="isRevenues">
           <tr class="sortable-header-row">
             <th class="sortable-header" tabindex="0" role="button" (click)="sortTable('revenues', 'tag'); $event.stopPropagation()" (keydown.enter)="sortTable('revenues', 'tag'); $event.stopPropagation()">
-              {{'Balance.Name' | translate}}{{getSortArrow('revenues', 'tag')}}
+              {{'Common.name' | translate}}{{getSortArrow('revenues', 'tag')}}
             </th>
             <th class="sortable-header sortable-header-right" tabindex="0" role="button" (click)="sortTable('revenues', 'amount'); $event.stopPropagation()" (keydown.enter)="sortTable('revenues', 'amount'); $event.stopPropagation()">
-              {{'Balance.Value' | translate}}{{getSortArrow('revenues', 'amount')}}
+              {{'Common.value' | translate}}{{getSortArrow('revenues', 'amount')}}
             </th>
           </tr>
           <tr *ngFor="let row of classReference.allRevenues; let i = index" class="income-row">
@@ -63,10 +63,10 @@
         <tbody *ngIf="isInterests">
           <tr class="sortable-header-row">
             <th class="sortable-header" tabindex="0" role="button" (click)="sortTable('interests', 'tag'); $event.stopPropagation()" (keydown.enter)="sortTable('interests', 'tag'); $event.stopPropagation()">
-              {{'Balance.Name' | translate}}{{getSortArrow('interests', 'tag')}}
+              {{'Common.name' | translate}}{{getSortArrow('interests', 'tag')}}
             </th>
             <th class="sortable-header sortable-header-right" tabindex="0" role="button" (click)="sortTable('interests', 'amount'); $event.stopPropagation()" (keydown.enter)="sortTable('interests', 'amount'); $event.stopPropagation()">
-              {{'Balance.Value' | translate}}{{getSortArrow('interests', 'amount')}}
+              {{'Common.value' | translate}}{{getSortArrow('interests', 'amount')}}
             </th>
           </tr>
           <tr *ngFor="let row of classReference.allIntrests; let i = index" tabindex="0" (click)="clickRowInterests(i)" (keydown.enter)="clickRowInterests(i)"
@@ -90,10 +90,10 @@
         <tbody *ngIf="isProperties">
           <tr class="sortable-header-row">
             <th class="sortable-header" tabindex="0" role="button" (click)="sortTable('properties', 'tag'); $event.stopPropagation()" (keydown.enter)="sortTable('properties', 'tag'); $event.stopPropagation()">
-              {{'Balance.Name' | translate}}{{getSortArrow('properties', 'tag')}}
+              {{'Common.name' | translate}}{{getSortArrow('properties', 'tag')}}
             </th>
             <th class="sortable-header sortable-header-right" tabindex="0" role="button" (click)="sortTable('properties', 'amount'); $event.stopPropagation()" (keydown.enter)="sortTable('properties', 'amount'); $event.stopPropagation()">
-              {{'Balance.Value' | translate}}{{getSortArrow('properties', 'amount')}}
+              {{'Common.value' | translate}}{{getSortArrow('properties', 'amount')}}
             </th>
           </tr>
           <tr *ngFor="let row of classReference.allProperties; let i = index" tabindex="0" (click)="clickRowProperties(i)" (keydown.enter)="clickRowProperties(i)"
@@ -130,10 +130,10 @@
         <tbody *ngIf="isDailyExpenses">
           <tr class="sortable-header-row">
             <th class="sortable-header" tabindex="0" role="button" (click)="sortTable('daily', 'tag'); $event.stopPropagation()" (keydown.enter)="sortTable('daily', 'tag'); $event.stopPropagation()">
-              {{'Balance.Name' | translate}}{{getSortArrow('daily', 'tag')}}
+              {{'Common.name' | translate}}{{getSortArrow('daily', 'tag')}}
             </th>
             <th class="sortable-header sortable-header-right" tabindex="0" role="button" (click)="sortTable('daily', 'amount'); $event.stopPropagation()" (keydown.enter)="sortTable('daily', 'amount'); $event.stopPropagation()">
-              {{'Balance.Value' | translate}}{{getSortArrow('daily', 'amount')}}
+              {{'Common.value' | translate}}{{getSortArrow('daily', 'amount')}}
             </th>
           </tr>
           <tr *ngFor="let row of classReference.dailyExpenses; let i = index" class="income-row">
@@ -157,10 +157,10 @@
         <tbody *ngIf="isSplurgeExpenses">
           <tr class="sortable-header-row">
             <th class="sortable-header" tabindex="0" role="button" (click)="sortTable('splurge', 'tag'); $event.stopPropagation()" (keydown.enter)="sortTable('splurge', 'tag'); $event.stopPropagation()">
-              {{'Balance.Name' | translate}}{{getSortArrow('splurge', 'tag')}}
+              {{'Common.name' | translate}}{{getSortArrow('splurge', 'tag')}}
             </th>
             <th class="sortable-header sortable-header-right" tabindex="0" role="button" (click)="sortTable('splurge', 'amount'); $event.stopPropagation()" (keydown.enter)="sortTable('splurge', 'amount'); $event.stopPropagation()">
-              {{'Balance.Value' | translate}}{{getSortArrow('splurge', 'amount')}}
+              {{'Common.value' | translate}}{{getSortArrow('splurge', 'amount')}}
             </th>
           </tr>
           <tr *ngFor="let row of classReference.splurgeExpenses; let i = index" class="income-row">
@@ -184,10 +184,10 @@
         <tbody *ngIf="isSmileExpenses">
           <tr class="sortable-header-row">
             <th class="sortable-header" tabindex="0" role="button" (click)="sortTable('smile', 'tag'); $event.stopPropagation()" (keydown.enter)="sortTable('smile', 'tag'); $event.stopPropagation()">
-              {{'Balance.Name' | translate}}{{getSortArrow('smile', 'tag')}}
+              {{'Common.name' | translate}}{{getSortArrow('smile', 'tag')}}
             </th>
             <th class="sortable-header sortable-header-right" tabindex="0" role="button" (click)="sortTable('smile', 'amount'); $event.stopPropagation()" (keydown.enter)="sortTable('smile', 'amount'); $event.stopPropagation()">
-              {{'Balance.Value' | translate}}{{getSortArrow('smile', 'amount')}}
+              {{'Common.value' | translate}}{{getSortArrow('smile', 'amount')}}
             </th>
           </tr>
           <tr *ngFor="let row of classReference.smileExpenses; let i = index" class="income-row">
@@ -211,10 +211,10 @@
         <tbody *ngIf="isFireExpenses">
           <tr class="sortable-header-row">
             <th class="sortable-header" tabindex="0" role="button" (click)="sortTable('fire', 'tag'); $event.stopPropagation()" (keydown.enter)="sortTable('fire', 'tag'); $event.stopPropagation()">
-              {{'Balance.Name' | translate}}{{getSortArrow('fire', 'tag')}}
+              {{'Common.name' | translate}}{{getSortArrow('fire', 'tag')}}
             </th>
             <th class="sortable-header sortable-header-right" tabindex="0" role="button" (click)="sortTable('fire', 'amount'); $event.stopPropagation()" (keydown.enter)="sortTable('fire', 'amount'); $event.stopPropagation()">
-              {{'Balance.Value' | translate}}{{getSortArrow('fire', 'amount')}}
+              {{'Common.value' | translate}}{{getSortArrow('fire', 'amount')}}
             </th>
           </tr>
           <tr *ngFor="let row of classReference.fireExpenses; let i = index" class="income-row">
@@ -238,10 +238,10 @@
         <tbody *ngIf="isMojoExpenses">
           <tr class="sortable-header-row">
             <th class="sortable-header" tabindex="0" role="button" (click)="sortTable('mojo', 'tag'); $event.stopPropagation()" (keydown.enter)="sortTable('mojo', 'tag'); $event.stopPropagation()">
-              {{'Balance.Name' | translate}}{{getSortArrow('mojo', 'tag')}}
+              {{'Common.name' | translate}}{{getSortArrow('mojo', 'tag')}}
             </th>
             <th class="sortable-header sortable-header-right" tabindex="0" role="button" (click)="sortTable('mojo', 'amount'); $event.stopPropagation()" (keydown.enter)="sortTable('mojo', 'amount'); $event.stopPropagation()">
-              {{'Balance.Value' | translate}}{{getSortArrow('mojo', 'amount')}}
+              {{'Common.value' | translate}}{{getSortArrow('mojo', 'amount')}}
             </th>
           </tr>
           <tr *ngFor="let row of classReference.mojoExpenses; let i = index" class="income-row">
@@ -301,10 +301,10 @@
         <tbody *ngIf="isRevenues">
           <tr class="sortable-header-row">
             <th class="sortable-header" tabindex="0" role="button" (click)="sortTable('revenues', 'tag'); $event.stopPropagation()" (keydown.enter)="sortTable('revenues', 'tag'); $event.stopPropagation()">
-              {{'Balance.Name' | translate}}{{getSortArrow('revenues', 'tag')}}
+              {{'Common.name' | translate}}{{getSortArrow('revenues', 'tag')}}
             </th>
             <th class="sortable-header sortable-header-right" tabindex="0" role="button" (click)="sortTable('revenues', 'amount'); $event.stopPropagation()" (keydown.enter)="sortTable('revenues', 'amount'); $event.stopPropagation()">
-              {{'Balance.Value' | translate}}{{getSortArrow('revenues', 'amount')}}
+              {{'Common.value' | translate}}{{getSortArrow('revenues', 'amount')}}
             </th>
           </tr>
           <tr *ngFor="let row of classReference.allRevenuesF; let i = index" class="income-row">
@@ -327,10 +327,10 @@
         <tbody *ngIf="isInterests">
           <tr class="sortable-header-row">
             <th class="sortable-header" tabindex="0" role="button" (click)="sortTable('interests', 'tag'); $event.stopPropagation()" (keydown.enter)="sortTable('interests', 'tag'); $event.stopPropagation()">
-              {{'Balance.Name' | translate}}{{getSortArrow('interests', 'tag')}}
+              {{'Common.name' | translate}}{{getSortArrow('interests', 'tag')}}
             </th>
             <th class="sortable-header sortable-header-right" tabindex="0" role="button" (click)="sortTable('interests', 'amount'); $event.stopPropagation()" (keydown.enter)="sortTable('interests', 'amount'); $event.stopPropagation()">
-              {{'Balance.Value' | translate}}{{getSortArrow('interests', 'amount')}}
+              {{'Common.value' | translate}}{{getSortArrow('interests', 'amount')}}
             </th>
           </tr>
           <tr *ngFor="let row of classReference.allIntrestsF; let i = index" tabindex="0" (click)="clickRowInterests(i)" (keydown.enter)="clickRowInterests(i)"
@@ -354,10 +354,10 @@
         <tbody *ngIf="isProperties">
           <tr class="sortable-header-row">
             <th class="sortable-header" tabindex="0" role="button" (click)="sortTable('properties', 'tag'); $event.stopPropagation()" (keydown.enter)="sortTable('properties', 'tag'); $event.stopPropagation()">
-              {{'Balance.Name' | translate}}{{getSortArrow('properties', 'tag')}}
+              {{'Common.name' | translate}}{{getSortArrow('properties', 'tag')}}
             </th>
             <th class="sortable-header sortable-header-right" tabindex="0" role="button" (click)="sortTable('properties', 'amount'); $event.stopPropagation()" (keydown.enter)="sortTable('properties', 'amount'); $event.stopPropagation()">
-              {{'Balance.Value' | translate}}{{getSortArrow('properties', 'amount')}}
+              {{'Common.value' | translate}}{{getSortArrow('properties', 'amount')}}
             </th>
           </tr>
           <tr *ngFor="let row of classReference.allPropertiesF; let i = index" tabindex="0" (click)="clickRowProperties(i)" (keydown.enter)="clickRowProperties(i)"
@@ -407,10 +407,10 @@
         <tbody *ngIf="isDailyExpenses">
           <tr class="sortable-header-row">
             <th class="sortable-header" tabindex="0" role="button" (click)="sortTable('daily', 'tag'); $event.stopPropagation()" (keydown.enter)="sortTable('daily', 'tag'); $event.stopPropagation()">
-              {{'Balance.Name' | translate}}{{getSortArrow('daily', 'tag')}}
+              {{'Common.name' | translate}}{{getSortArrow('daily', 'tag')}}
             </th>
             <th class="sortable-header sortable-header-right" tabindex="0" role="button" (click)="sortTable('daily', 'amount'); $event.stopPropagation()" (keydown.enter)="sortTable('daily', 'amount'); $event.stopPropagation()">
-              {{'Balance.Value' | translate}}{{getSortArrow('daily', 'amount')}}
+              {{'Common.value' | translate}}{{getSortArrow('daily', 'amount')}}
             </th>
           </tr>
           <tr *ngFor="let row of classReference.dailyExpensesF; let i = index" class="income-row">
@@ -434,10 +434,10 @@
         <tbody *ngIf="isSplurgeExpenses">
           <tr class="sortable-header-row">
             <th class="sortable-header" tabindex="0" role="button" (click)="sortTable('splurge', 'tag'); $event.stopPropagation()" (keydown.enter)="sortTable('splurge', 'tag'); $event.stopPropagation()">
-              {{'Balance.Name' | translate}}{{getSortArrow('splurge', 'tag')}}
+              {{'Common.name' | translate}}{{getSortArrow('splurge', 'tag')}}
             </th>
             <th class="sortable-header sortable-header-right" tabindex="0" role="button" (click)="sortTable('splurge', 'amount'); $event.stopPropagation()" (keydown.enter)="sortTable('splurge', 'amount'); $event.stopPropagation()">
-              {{'Balance.Value' | translate}}{{getSortArrow('splurge', 'amount')}}
+              {{'Common.value' | translate}}{{getSortArrow('splurge', 'amount')}}
             </th>
           </tr>
           <tr *ngFor="let row of classReference.splurgeExpensesF; let i = index" class="income-row">
@@ -461,10 +461,10 @@
         <tbody *ngIf="isSmileExpenses">
           <tr class="sortable-header-row">
             <th class="sortable-header" tabindex="0" role="button" (click)="sortTable('smile', 'tag'); $event.stopPropagation()" (keydown.enter)="sortTable('smile', 'tag'); $event.stopPropagation()">
-              {{'Balance.Name' | translate}}{{getSortArrow('smile', 'tag')}}
+              {{'Common.name' | translate}}{{getSortArrow('smile', 'tag')}}
             </th>
             <th class="sortable-header sortable-header-right" tabindex="0" role="button" (click)="sortTable('smile', 'amount'); $event.stopPropagation()" (keydown.enter)="sortTable('smile', 'amount'); $event.stopPropagation()">
-              {{'Balance.Value' | translate}}{{getSortArrow('smile', 'amount')}}
+              {{'Common.value' | translate}}{{getSortArrow('smile', 'amount')}}
             </th>
           </tr>
           <tr *ngFor="let row of classReference.smileExpensesF; let i = index" class="income-row">
@@ -488,10 +488,10 @@
         <tbody *ngIf="isFireExpenses">
           <tr class="sortable-header-row">
             <th class="sortable-header" tabindex="0" role="button" (click)="sortTable('fire', 'tag'); $event.stopPropagation()" (keydown.enter)="sortTable('fire', 'tag'); $event.stopPropagation()">
-              {{'Balance.Name' | translate}}{{getSortArrow('fire', 'tag')}}
+              {{'Common.name' | translate}}{{getSortArrow('fire', 'tag')}}
             </th>
             <th class="sortable-header sortable-header-right" tabindex="0" role="button" (click)="sortTable('fire', 'amount'); $event.stopPropagation()" (keydown.enter)="sortTable('fire', 'amount'); $event.stopPropagation()">
-              {{'Balance.Value' | translate}}{{getSortArrow('fire', 'amount')}}
+              {{'Common.value' | translate}}{{getSortArrow('fire', 'amount')}}
             </th>
           </tr>
           <tr *ngFor="let row of classReference.fireExpensesF; let i = index" class="income-row">
@@ -515,10 +515,10 @@
         <tbody *ngIf="isMojoExpenses">
           <tr class="sortable-header-row">
             <th class="sortable-header" tabindex="0" role="button" (click)="sortTable('mojo', 'tag'); $event.stopPropagation()" (keydown.enter)="sortTable('mojo', 'tag'); $event.stopPropagation()">
-              {{'Balance.Name' | translate}}{{getSortArrow('mojo', 'tag')}}
+              {{'Common.name' | translate}}{{getSortArrow('mojo', 'tag')}}
             </th>
             <th class="sortable-header sortable-header-right" tabindex="0" role="button" (click)="sortTable('mojo', 'amount'); $event.stopPropagation()" (keydown.enter)="sortTable('mojo', 'amount'); $event.stopPropagation()">
-              {{'Balance.Value' | translate}}{{getSortArrow('mojo', 'amount')}}
+              {{'Common.value' | translate}}{{getSortArrow('mojo', 'amount')}}
             </th>
           </tr>
           <tr *ngFor="let row of classReference.mojoExpensesF; let i = index" class="income-row">
