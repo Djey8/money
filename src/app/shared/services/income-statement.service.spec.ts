@@ -149,24 +149,43 @@ describe('IncomeStatementService', () => {
   // --- getWrites -----------------------------------------------------------
 
   describe('getWrites()', () => {
-    it('returns 11 write operations', () => {
+    it('returns 5 write operations when tier2 not loaded', () => {
+      AppStateService.instance.tier2Loaded = false;
+      expect(service.getWrites()).toHaveLength(5);
+    });
+
+    it('returns 11 write operations when tier2 loaded', () => {
+      AppStateService.instance.tier2Loaded = true;
       expect(service.getWrites()).toHaveLength(11);
     });
 
     it('includes revenue tags', () => {
+      AppStateService.instance.tier2Loaded = true;
       const tags = service.getWrites().map(w => w.tag);
       expect(tags).toContain('income/revenue/revenues');
       expect(tags).toContain('income/revenue/interests');
       expect(tags).toContain('income/revenue/properties');
     });
 
-    it('includes expense tags', () => {
+    it('includes expense tags when tier2 loaded', () => {
+      AppStateService.instance.tier2Loaded = true;
       const tags = service.getWrites().map(w => w.tag);
       expect(tags).toContain('income/expenses/daily');
       expect(tags).toContain('income/expenses/splurge');
       expect(tags).toContain('income/expenses/smile');
       expect(tags).toContain('income/expenses/fire');
       expect(tags).toContain('income/expenses/mojo');
+    });
+
+    it('excludes smile/fire/mojo tags when tier2 not loaded', () => {
+      AppStateService.instance.tier2Loaded = false;
+      const tags = service.getWrites().map(w => w.tag);
+      expect(tags).not.toContain('income/expenses/smile');
+      expect(tags).not.toContain('income/expenses/fire');
+      expect(tags).not.toContain('income/expenses/mojo');
+      expect(tags).not.toContain('smile');
+      expect(tags).not.toContain('fire');
+      expect(tags).not.toContain('mojo');
     });
   });
 

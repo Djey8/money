@@ -127,71 +127,45 @@ export class AppComponent {
   constructor(public router: Router, private localStorage: LocalService, private database: DatabaseService, public afAuth: AngularFireAuth, private cryptic: CrypticService, private authService: AuthService, private frontendLogger: FrontendLoggerService, private persistence: PersistenceService, private incomeStatement: IncomeStatementService, private appState: AppStateService, private appData: AppDataService, private gameMode: GameModeService, private subscriptionProcessing: SubscriptionProcessingService, private onboardingService: OnboardingService, private toastService: ToastService) {
     AppComponent.instance = this;
 
-    try {
-      AppStateService.instance.allTransactions = this.localStorage.getData("transactions") == "" ? [] : JSON.parse(this.localStorage.getData("transactions"));
-      AppStateService.instance.allSubscriptions = this.localStorage.getData("subscriptions") == "" ? [] : migrateSubscriptionArray(JSON.parse(this.localStorage.getData("subscriptions")));
-      //Income Statement
-      AppStateService.instance.allRevenues = this.localStorage.getData("revenues") == "" ? [] : JSON.parse(this.localStorage.getData("revenues"));
-      AppStateService.instance.allIntrests = this.localStorage.getData("interests") == "" ? [] : JSON.parse(this.localStorage.getData("interests"));
-      AppStateService.instance.allProperties = this.localStorage.getData("properties") == "" ? [] : JSON.parse(this.localStorage.getData("properties"));
-
-      AppStateService.instance.dailyExpenses = this.localStorage.getData("dailyEx") == "" ? [] : JSON.parse(this.localStorage.getData("dailyEx"));
-      AppStateService.instance.splurgeExpenses = this.localStorage.getData("splurgeEx") == "" ? [] : JSON.parse(this.localStorage.getData("splurgeEx"));
-      AppStateService.instance.smileExpenses = this.localStorage.getData("smileEx") == "" ? [] : JSON.parse(this.localStorage.getData("smileEx"));
-      AppStateService.instance.fireExpenses = this.localStorage.getData("fireEx") == "" ? [] : JSON.parse(this.localStorage.getData("fireEx"));
-      AppStateService.instance.mojoExpenses = this.localStorage.getData("mojoEx") == "" ? [] : JSON.parse(this.localStorage.getData("mojoEx"));
-
-      AppStateService.instance.allAssets = this.localStorage.getData("assets") == "" ? [] : JSON.parse(this.localStorage.getData("assets"));
-      AppStateService.instance.allShares = this.localStorage.getData("shares") == "" ? [] : JSON.parse(this.localStorage.getData("shares"));
-      AppStateService.instance.allInvestments = this.localStorage.getData("investments") == "" ? [] : JSON.parse(this.localStorage.getData("investments"));
-      AppStateService.instance.liabilities = this.localStorage.getData("liabilities") == "" ? [] : JSON.parse(this.localStorage.getData("liabilities"));
-      
-      const growRaw = this.localStorage.getData("grow");
-      if (growRaw && growRaw !== "") {
-        const parsed = JSON.parse(growRaw);
-        console.log('[App Init] Loaded from localStorage, sample types:', parsed.slice(-2).map((g: any) => ({ title: g.title, type: g.type })));
-        AppStateService.instance.allGrowProjects = migrateGrowArray(parsed);
-      } else {
-        AppStateService.instance.allGrowProjects = [];
+    // Parse each localStorage key individually so one corrupt entry
+    // doesn't wipe all data via a single catch block
+    const safeParse = (key: string, fallback: any = []): any => {
+      try {
+        const raw = this.localStorage.getData(key);
+        if (raw == null || raw === "") return fallback;
+        return JSON.parse(raw);
+      } catch (e) {
+        console.error(`[App Init] Corrupt localStorage key "${key}", using fallback:`, e);
+        this.localStorage.removeData(key);
+        return fallback;
       }
+    };
 
-      AppStateService.instance.allSmileProjects = this.localStorage.getData("smile") == "" ? [] : migrateSmileArray(JSON.parse(this.localStorage.getData("smile")));
-      AppStateService.instance.allFireEmergencies = this.localStorage.getData("fire") == "" ? [] : migrateFireArray(JSON.parse(this.localStorage.getData("fire")));
-      AppStateService.instance.mojo = this.localStorage.getData("mojo") == "" ? { amount: 0, target: 0 } : JSON.parse(this.localStorage.getData("mojo"));
-      AppStateService.instance.allBudgets = this.localStorage.getData("budget") == "" ? [] : JSON.parse(this.localStorage.getData("budget"));
-    } 
-    catch (e: any) {
-      alert(e);
-      // Reset local Storage
-      this.localStorage.removeData("transactions");
-      this.localStorage.removeData("subscriptions");
-      this.localStorage.removeData("smile");
-      this.localStorage.removeData("fire");
-      this.localStorage.removeData("mojo");
-      this.localStorage.removeData("revenues");
-      this.localStorage.removeData("interests");
-      this.localStorage.removeData("properties");
-      this.localStorage.removeData("dailyEx");
-      this.localStorage.removeData("splurgeEx");
-      this.localStorage.removeData("smileEx");
-      this.localStorage.removeData("fireEx");
-      this.localStorage.removeData("mojoEx");
-      this.localStorage.removeData("assets");
-      this.localStorage.removeData("shares");
-      this.localStorage.removeData("investments");
-      this.localStorage.removeData("liabilitiesEx");
-      this.localStorage.removeData("username");
-      this.localStorage.removeData("uid");
-      this.localStorage.removeData("email");
-      this.localStorage.removeData("grow");
-      this.localStorage.removeData("budget");
-      AppStateService.instance.allTransactions = [];
-      AppStateService.instance.allSubscriptions = [];
-      AppStateService.instance.allBudgets = [];
-      AppStateService.instance.allGrowProjects = [];
-      AppStateService.instance.allSmileProjects = [];
-      AppStateService.instance.allFireEmergencies = [];
-    }
+    AppStateService.instance.allTransactions = safeParse("transactions");
+    AppStateService.instance.allSubscriptions = migrateSubscriptionArray(safeParse("subscriptions"));
+    //Income Statement
+    AppStateService.instance.allRevenues = safeParse("revenues");
+    AppStateService.instance.allIntrests = safeParse("interests");
+    AppStateService.instance.allProperties = safeParse("properties");
+
+    AppStateService.instance.dailyExpenses = safeParse("dailyEx");
+    AppStateService.instance.splurgeExpenses = safeParse("splurgeEx");
+    AppStateService.instance.smileExpenses = safeParse("smileEx");
+    AppStateService.instance.fireExpenses = safeParse("fireEx");
+    AppStateService.instance.mojoExpenses = safeParse("mojoEx");
+
+    AppStateService.instance.allAssets = safeParse("assets");
+    AppStateService.instance.allShares = safeParse("shares");
+    AppStateService.instance.allInvestments = safeParse("investments");
+    AppStateService.instance.liabilities = safeParse("liabilities");
+    
+    const growParsed = safeParse("grow");
+    AppStateService.instance.allGrowProjects = migrateGrowArray(growParsed);
+
+    AppStateService.instance.allSmileProjects = migrateSmileArray(safeParse("smile"));
+    AppStateService.instance.allFireEmergencies = migrateFireArray(safeParse("fire"));
+    AppStateService.instance.mojo = safeParse("mojo", { amount: 0, target: 0 });
+    AppStateService.instance.allBudgets = safeParse("budget");
 
     // Optimistic early navigate: if we have evidence of a prior session,
     // go to /home immediately so the landing page never flashes
@@ -276,6 +250,10 @@ export class AppComponent {
           const hasChanged = await AppDataService.instance.checkUpdatedAt();
           if (hasChanged) {
             AppStateService.instance.isLoading = true;
+            // Reset tier 3 flags so on-demand data is re-fetched from server
+            // when user next navigates to those pages
+            AppStateService.instance.tier3BalanceLoaded = false;
+            AppStateService.instance.tier3GrowLoaded = false;
             await AppDataService.instance.loadTier1();
             if (AppDataService.instance.decryptionFailed) {
               this.toastService.show('Login failed: wrong encryption settings. Please check your encryption key.', 'error');
