@@ -667,4 +667,79 @@ describe('AppDataService', () => {
       expect(AppStateService.instance.allGrowProjects[0].share.tag).toBe('AAPL');
     });
   });
+
+  // ==========================================================
+  //  Tier flags on error — prevent permanent "not loaded" state
+  // ==========================================================
+
+  describe('tier flags set on error (data loss prevention)', () => {
+    let service: AppDataService;
+
+    beforeEach(() => {
+      service = createService();
+    });
+
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
+
+    it('should set tier2Loaded=true even when loadTier2 throws', async () => {
+      AppStateService.instance.tier2Loaded = false;
+      mockDatabase.getBatchData.mockRejectedValue(new Error('Network error'));
+
+      await service.loadTier2();
+
+      expect(AppStateService.instance.tier2Loaded).toBe(true);
+    });
+
+    it('should set tier3GrowLoaded=true even when loadGrowData throws', async () => {
+      AppStateService.instance.tier3GrowLoaded = false;
+      mockDatabase.getBatchData.mockRejectedValue(new Error('Network error'));
+
+      await service.loadGrowData();
+
+      expect(AppStateService.instance.tier3GrowLoaded).toBe(true);
+    });
+
+    it('should set tier3BalanceLoaded=true even when loadBalanceData throws', async () => {
+      AppStateService.instance.tier3BalanceLoaded = false;
+      mockDatabase.getBatchData.mockRejectedValue(new Error('Network error'));
+
+      await service.loadBalanceData();
+
+      expect(AppStateService.instance.tier3BalanceLoaded).toBe(true);
+    });
+
+    it('should not corrupt existing data when loadTier2 fails', async () => {
+      AppStateService.instance.allSmileProjects = [{ title: 'Vacation' }] as any;
+      AppStateService.instance.allFireEmergencies = [{ title: 'Fund' }] as any;
+      mockDatabase.getBatchData.mockRejectedValue(new Error('Timeout'));
+
+      await service.loadTier2();
+
+      // Data should be untouched — no empty overwrite
+      expect(AppStateService.instance.allSmileProjects).toEqual([{ title: 'Vacation' }]);
+      expect(AppStateService.instance.allFireEmergencies).toEqual([{ title: 'Fund' }]);
+    });
+
+    it('should not corrupt existing data when loadGrowData fails', async () => {
+      AppStateService.instance.allGrowProjects = [{ title: 'Portfolio' }] as any;
+      mockDatabase.getBatchData.mockRejectedValue(new Error('Timeout'));
+
+      await service.loadGrowData();
+
+      expect(AppStateService.instance.allGrowProjects).toEqual([{ title: 'Portfolio' }]);
+    });
+
+    it('should not corrupt existing data when loadBalanceData fails', async () => {
+      AppStateService.instance.allAssets = [{ tag: 'Car', amount: 15000 }] as any;
+      AppStateService.instance.liabilities = [{ tag: 'Mortgage', amount: 200000 }] as any;
+      mockDatabase.getBatchData.mockRejectedValue(new Error('Timeout'));
+
+      await service.loadBalanceData();
+
+      expect(AppStateService.instance.allAssets).toEqual([{ tag: 'Car', amount: 15000 }]);
+      expect(AppStateService.instance.liabilities).toEqual([{ tag: 'Mortgage', amount: 200000 }]);
+    });
+  });
 });

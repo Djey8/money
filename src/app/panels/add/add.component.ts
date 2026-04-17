@@ -1652,24 +1652,34 @@ export class AddComponent extends BaseAddComponent {
             //WRITE to Storage
             // In selfhosted mode, writeObject returns Observable that must be subscribed
             // In firebase mode, writeObject returns void and executes immediately
+            // Only write balance/grow data if it has been loaded (Tier 3 on-demand).
+            // Writing before load would overwrite real DB data with empty arrays.
             const writes = [
               { tag: "income/revenue/interests", data: AppStateService.instance.allIntrests },
               { tag: "income/revenue/properties", data: AppStateService.instance.allProperties },
               { tag: "income/revenue/revenues", data: AppStateService.instance.allRevenues },
-              { tag: "balance/liabilities", data: AppStateService.instance.liabilities },
               { tag: "income/expenses/daily", data: AppStateService.instance.dailyExpenses },
               { tag: "income/expenses/splurge", data: AppStateService.instance.splurgeExpenses },
-              { tag: "income/expenses/smile", data: AppStateService.instance.smileExpenses },
-              { tag: "income/expenses/fire", data: AppStateService.instance.fireExpenses },
-              { tag: "income/expenses/mojo", data: AppStateService.instance.mojoExpenses },
-              { tag: "smile", data: AppStateService.instance.allSmileProjects },
-              { tag: "fire", data: AppStateService.instance.allFireEmergencies },
-              { tag: "mojo", data: AppStateService.instance.mojo },
+              // Only write tier2 data (smile/fire/mojo) if tier2 has been loaded.
+              // Writing before load would overwrite real DB data with empty defaults.
+              ...(AppStateService.instance.tier2Loaded ? [
+                { tag: "income/expenses/smile", data: AppStateService.instance.smileExpenses },
+                { tag: "income/expenses/fire", data: AppStateService.instance.fireExpenses },
+                { tag: "income/expenses/mojo", data: AppStateService.instance.mojoExpenses },
+                { tag: "smile", data: AppStateService.instance.allSmileProjects },
+                { tag: "fire", data: AppStateService.instance.allFireEmergencies },
+                { tag: "mojo", data: AppStateService.instance.mojo },
+              ] : []),
               { tag: "transactions", data: AppStateService.instance.allTransactions },
-              { tag: "balance/asset/shares", data: AppStateService.instance.allShares },
-              { tag: "balance/asset/assets", data: AppStateService.instance.allAssets },
-              { tag: "balance/asset/investments", data: AppStateService.instance.allInvestments },
-              { tag: "grow", data: AppStateService.instance.allGrowProjects }
+              ...(AppStateService.instance.tier3BalanceLoaded ? [
+                { tag: "balance/liabilities", data: AppStateService.instance.liabilities },
+                { tag: "balance/asset/shares", data: AppStateService.instance.allShares },
+                { tag: "balance/asset/assets", data: AppStateService.instance.allAssets },
+                { tag: "balance/asset/investments", data: AppStateService.instance.allInvestments }
+              ] : []),
+              ...(AppStateService.instance.tier3GrowLoaded ? [
+                { tag: "grow", data: AppStateService.instance.allGrowProjects }
+              ] : [])
             ];
 
             if (this.mode === 'firebase') {
@@ -1731,20 +1741,29 @@ export class AddComponent extends BaseAddComponent {
     this.localStorage.saveData("interests", JSON.stringify(AppStateService.instance.allIntrests))
     this.localStorage.saveData("properties", JSON.stringify(AppStateService.instance.allProperties))
     this.localStorage.saveData("revenues", JSON.stringify(AppStateService.instance.allRevenues))
-    this.localStorage.saveData("liabilities", JSON.stringify(AppStateService.instance.liabilities))
     this.localStorage.saveData("dailyEx", JSON.stringify(AppStateService.instance.dailyExpenses))
     this.localStorage.saveData("splurgeEx", JSON.stringify(AppStateService.instance.splurgeExpenses))
-    this.localStorage.saveData("smileEx", JSON.stringify(AppStateService.instance.smileExpenses))
-    this.localStorage.saveData("fireEx", JSON.stringify(AppStateService.instance.fireExpenses))
-    this.localStorage.saveData("mojoEx", JSON.stringify(AppStateService.instance.mojoExpenses))
-    this.localStorage.saveData("smile", JSON.stringify(AppStateService.instance.allSmileProjects))
-    this.localStorage.saveData("fire", JSON.stringify(AppStateService.instance.allFireEmergencies))
-    this.localStorage.saveData("mojo", JSON.stringify(AppStateService.instance.mojo))
+    // Only save tier2 data if loaded
+    if (AppStateService.instance.tier2Loaded) {
+      this.localStorage.saveData("smileEx", JSON.stringify(AppStateService.instance.smileExpenses))
+      this.localStorage.saveData("fireEx", JSON.stringify(AppStateService.instance.fireExpenses))
+      this.localStorage.saveData("mojoEx", JSON.stringify(AppStateService.instance.mojoExpenses))
+      this.localStorage.saveData("smile", JSON.stringify(AppStateService.instance.allSmileProjects))
+      this.localStorage.saveData("fire", JSON.stringify(AppStateService.instance.allFireEmergencies))
+      this.localStorage.saveData("mojo", JSON.stringify(AppStateService.instance.mojo))
+    }
     this.localStorage.saveData("transactions", JSON.stringify(AppStateService.instance.allTransactions))
-    this.localStorage.saveData("shares", JSON.stringify(AppStateService.instance.allShares))
-    this.localStorage.saveData("assets", JSON.stringify(AppStateService.instance.allAssets))
-    this.localStorage.saveData("investments", JSON.stringify(AppStateService.instance.allInvestments))
-    this.localStorage.saveData("grow", JSON.stringify(AppStateService.instance.allGrowProjects))
+    // Only save balance/grow data to localStorage if it has been loaded (Tier 3 on-demand).
+    // Saving before load would overwrite real localStorage data with empty arrays.
+    if (AppStateService.instance.tier3BalanceLoaded) {
+      this.localStorage.saveData("liabilities", JSON.stringify(AppStateService.instance.liabilities))
+      this.localStorage.saveData("shares", JSON.stringify(AppStateService.instance.allShares))
+      this.localStorage.saveData("assets", JSON.stringify(AppStateService.instance.allAssets))
+      this.localStorage.saveData("investments", JSON.stringify(AppStateService.instance.allInvestments))
+    }
+    if (AppStateService.instance.tier3GrowLoaded) {
+      this.localStorage.saveData("grow", JSON.stringify(AppStateService.instance.allGrowProjects))
+    }
   }
 
   /**
