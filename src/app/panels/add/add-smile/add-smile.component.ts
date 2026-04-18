@@ -88,12 +88,12 @@ export class AddSmileComponent extends BaseAddComponent {
   editingPlanIndex: number | null = null;
 
   // UI state
-  showBucketsSection = false;
-  showLinksActionsSection = false;
+  showBucketsSection = true;
+  showLinksActionsSection = true;
   showAddBucket = false;
   showAddLink = false;
   showAddAction = false;
-  showPaymentPlansSection = false;
+  showPaymentPlansSection = true;
 
   phases: SmilePhase[] = ['idea', 'planning', 'saving', 'ready', 'completed'];
 

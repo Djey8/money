@@ -31,27 +31,27 @@
             <div *ngIf="classReference.isLanguages">
                 <h3 class="sub-title">{{'Settings.languageLable' | translate}}</h3>
                 <div class="language-grid">
-                    <button (click)="chooseEng()" class="language-option" [ngClass]="classReference.isEng ? 'selected' : 'notSelected'">
+                    <button (click)="chooseEng()" class="language-option" [ngClass]="currentLang === 'en' ? 'selected' : 'notSelected'">
                         <img src="../../assets/flags/eng.png" alt="English" class="flag-img">
                         <span class="lang-name">English</span>
                     </button>
-                    <button (click)="chooseDe()" class="language-option" [ngClass]="classReference.isDe ? 'selected' : 'notSelected'">
+                    <button (click)="chooseDe()" class="language-option" [ngClass]="currentLang === 'de' ? 'selected' : 'notSelected'">
                         <img src="../../assets/flags/de.png" alt="Deutsch" class="flag-img">
                         <span class="lang-name">Deutsch</span>
                     </button>
-                    <button (click)="chooseEs()" class="language-option" [ngClass]="classReference.isEs ? 'selected' : 'notSelected'">
+                    <button (click)="chooseEs()" class="language-option" [ngClass]="currentLang === 'es' ? 'selected' : 'notSelected'">
                         <img src="../../assets/flags/es.png" alt="Español" class="flag-img">
                         <span class="lang-name">Español</span>
                     </button>
-                    <button (click)="chooseFr()" class="language-option" [ngClass]="classReference.isFr ? 'selected' : 'notSelected'">
+                    <button (click)="chooseFr()" class="language-option" [ngClass]="currentLang === 'fr' ? 'selected' : 'notSelected'">
                         <img src="../../assets/flags/fr.png" alt="Français" class="flag-img">
                         <span class="lang-name">Français</span>
                     </button>
-                    <button (click)="chooseCn()" class="language-option" [ngClass]="classReference.isCn ? 'selected' : 'notSelected'">
+                    <button (click)="chooseCn()" class="language-option" [ngClass]="currentLang === 'cn' ? 'selected' : 'notSelected'">
                         <img src="../../assets/flags/cn.png" alt="中文" class="flag-img">
                         <span class="lang-name">中文</span>
                     </button>
-                    <button (click)="chooseAr()" class="language-option" [ngClass]="classReference.isAr ? 'selected' : 'notSelected'">
+                    <button (click)="chooseAr()" class="language-option" [ngClass]="currentLang === 'ar' ? 'selected' : 'notSelected'">
                         <img src="../../assets/flags/tu.png" alt="العربية" class="flag-img">
                         <span class="lang-name">العربية</span>
                     </button>

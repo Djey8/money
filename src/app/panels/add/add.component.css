@@ -1,3 +1,8 @@
+:host:has(#addTransaction-Container) {
+  display: block;
+  min-height: 75vh;
+}
+
 #addTransaction-Container {
   top: 70px;
   left: 50%;

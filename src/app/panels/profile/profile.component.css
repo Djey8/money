@@ -2,46 +2,60 @@
     position: fixed;
     top: 75px;
     left: 10px;
-    width: min(90vw, 350px);
-    border: 3px solid var(--color-primary);
+    width: min(94vw, 380px);
+    border: 2px solid white;
     background-color: var(--color-primary);
     border-radius: var(--radius-lg);
-    padding: 1.5%;
-    border-color: white;
-    border-width: 3px;
+    padding: 18px 20px;
     z-index: 2000;
     box-shadow: var(--shadow-lg);
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
 }
 
-#profileName {
-    text-align: center;
-    font-size: 2em;
-    color: white;
-    margin-top: 10px;
-    margin-bottom: 10px;
-}
-
-#profileMail {
-    text-align: center;
-    color: white;
-    font-size: small;
-}
-@media screen and (min-width: 1000px) {
-    
-    #profileMail {
-        font-size: large;
+@media screen and (min-width: 700px) {
+    #profile-Container {
+        width: 400px;
+        padding: 22px 24px;
+        gap: 8px;
     }
-}   
+    #profile-pic {
+        width: 120px;
+        height: 120px;
+        border-width: 3px;
+    }
+    #profileName {
+        font-size: 1.8em;
+    }
+    #profileMail {
+        font-size: 1.15em;
+    }
+    .profilebtn, .profilebtn2 {
+        padding: 10px 14px;
+        font-size: 16px;
+    }
+}
 
+#profile-pic {
+    width: 110px;
+    height: 110px;
+    object-fit: cover;
+    border-radius: var(--radius-full);
+    border: 3px solid white;
+    margin-top: 4px;
+}
 
 #closebtn {
     position: absolute;
-    top: 5px;
-    right: 5px;
+    top: 4px;
+    right: 4px;
     color: white;
-    width: 32px;
-    height: 32px;
-    font-size: 1.4em;
+    width: 26px;
+    height: 26px;
+    font-size: 1.1em;
     background-color: transparent;
     border: none;
     display: flex;
@@ -52,37 +66,52 @@
     line-height: 1;
 }
 
+#profileName {
+    text-align: center;
+    font-size: 1.75em;
+    font-weight: 600;
+    color: white;
+    margin: 0;
+}
+
+#profileMail {
+    text-align: center;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 1.1em;
+    margin: 0;
+}
+
+.separator-white {
+    width: 85%;
+    margin: 6px 0;
+    border: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.3);
+}
+
 .profilebtn {
-    margin-left: 10%;
-    width: 80%;
-    margin-bottom: 3%;
+    width: 92%;
     background-color: var(--color-surface);
     border-radius: var(--radius-sm);
-    border: 2px solid var(--color-border);
+    border: 1.5px solid var(--color-border);
     color: var(--color-text);
-    padding: 2%;
-    font-size: 17px;
+    padding: 9px 12px;
+    font-size: 14.5px;
+    cursor: pointer;
+    text-align: center;
+    margin: 0;
 }
+
 .profilebtn2 {
-    margin-left: 10%;
-    width: 80%;
-    margin-bottom: 3%;
-    background-color: transparent;
-    border-radius: var(--radius-sm);
-    border: 2px solid var(--color-danger);
-    color: var(--color-danger);
+    width: 92%;
     background-color: var(--color-surface);
-    padding: 2%;
-    font-size: 17px;
-}
-
-#profile-pic {
-    width: 40%;
-    margin-left: 30%;
-    margin-top: 10px;
-    border-radius: var(--radius-full);
-    border: 5px solid white;
-
+    border-radius: var(--radius-sm);
+    border: 1.5px solid var(--color-danger);
+    color: var(--color-danger);
+    padding: 9px 12px;
+    font-size: 14.5px;
+    cursor: pointer;
+    text-align: center;
+    margin: 0;
 }
 
 .confirmation-dialog {
@@ -90,15 +119,11 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 25%;
-    border: 3px solid white;
+    width: min(80vw, 260px);
+    border: 2px solid white;
     background-color: var(--color-primary);
     border-radius: var(--radius-lg);
-    padding: 2%;
-    min-width: 250px;
-    max-width: 350px;
-    border-color: white;
-    border-width: 2%;
+    padding: 16px;
     z-index: 11000;
     text-align: center;
   }
@@ -139,3 +164,42 @@
     background: rgba(0, 0, 0, 0.5);
     z-index: 10999;
   }
+
+/* Landscape mobile — compact profile */
+@media (max-height: 500px) {
+  #profile-Container {
+    top: 60px;
+    left: 5px;
+    width: min(60vw, 220px);
+    padding: 8px 10px;
+    gap: 3px;
+    max-height: calc(100vh - 65px);
+    overflow-y: auto;
+  }
+
+  #profile-pic {
+    width: 40px;
+    height: 40px;
+    border-width: 2px;
+  }
+
+  #profileName {
+    font-size: 0.85em;
+  }
+
+  #profileMail {
+    font-size: 0.65em;
+  }
+
+  .profilebtn, .profilebtn2 {
+    padding: 4px 6px;
+    font-size: 12px;
+    width: 92%;
+  }
+
+  #closebtn {
+    width: 22px;
+    height: 22px;
+    font-size: 0.95em;
+  }
+}

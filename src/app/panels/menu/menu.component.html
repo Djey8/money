@@ -78,29 +78,29 @@
   <div class="menu-section">
     <div class="menu-section-label">{{'Menu.home' | translate}}</div>
     <div class="menu-grid">
-      <button class="menu-item" [class.menu-item--active]="router.url === '/home'" (click)="clickedHome()">
+      <button class="menu-item" data-tour-route="/home" [class.menu-item--active]="router.url === '/home'" (click)="clickedHome()">
         <span class="menu-icon">⌂</span>
         <span>{{'Menu.home' | translate}}</span>
       </button>
-      <button class="menu-item" [class.menu-item--active]="router.url === '/transactions'" (click)="clickedTransactions()">
+      <button class="menu-item" data-tour-route="/transactions" [class.menu-item--active]="router.url === '/transactions'" (click)="clickedTransactions()">
         <span class="menu-icon">☰</span>
         <span>{{'Menu.transactions' | translate}}</span>
       </button>
     </div>
     <div class="menu-grid menu-grid--4" style="margin-top: var(--space-xs)">
-      <button class="menu-item menu-item--compact" [class.menu-item--active]="router.url === '/daily'" (click)="clickedDaily()">
+      <button class="menu-item menu-item--compact" data-tour-route="/daily" [class.menu-item--active]="router.url === '/daily'" (click)="clickedDaily()">
         <span class="menu-dot" style="background: var(--color-cat-daily)"></span>
         <span>{{'Menu.daily' | translate}}</span>
       </button>
-      <button class="menu-item menu-item--compact" [class.menu-item--active]="router.url === '/splurge'" (click)="clickedSplurge()">
+      <button class="menu-item menu-item--compact" data-tour-route="/splurge" [class.menu-item--active]="router.url === '/splurge'" (click)="clickedSplurge()">
         <span class="menu-dot" style="background: var(--color-cat-splurge)"></span>
         <span>{{'Menu.splurge' | translate}}</span>
       </button>
-      <button class="menu-item menu-item--compact" [class.menu-item--active]="router.url === '/smile'" (click)="clickedSmile()">
+      <button class="menu-item menu-item--compact" data-tour-route="/smile" [class.menu-item--active]="router.url === '/smile'" (click)="clickedSmile()">
         <span class="menu-dot" style="background: var(--color-cat-smile)"></span>
         <span>{{'Menu.smile' | translate}}</span>
       </button>
-      <button class="menu-item menu-item--compact" [class.menu-item--active]="router.url === '/fire'" (click)="clickedFire()">
+      <button class="menu-item menu-item--compact" data-tour-route="/fire" [class.menu-item--active]="router.url === '/fire'" (click)="clickedFire()">
         <span class="menu-dot" style="background: var(--color-cat-fire)"></span>
         <span>{{'Menu.fire' | translate}}</span>
       </button>
@@ -111,27 +111,27 @@
   <div class="menu-section">
     <div class="menu-section-label">{{'Menu.financial' | translate}}</div>
     <div class="menu-grid menu-grid--3">
-      <button class="menu-item menu-item--compact" [class.menu-item--active]="router.url === '/cashflow'" (click)="clickedCashflow()">
+      <button class="menu-item menu-item--compact" data-tour-route="/cashflow" [class.menu-item--active]="router.url === '/cashflow'" (click)="clickedCashflow()">
         <span class="menu-icon">⇄</span>
         <span>{{'Menu.cashflow' | translate}}</span>
       </button>
-      <button class="menu-item menu-item--compact" [class.menu-item--active]="router.url === '/income'" (click)="clickedIncomeStatement()">
+      <button class="menu-item menu-item--compact" data-tour-route="/income" [class.menu-item--active]="router.url === '/income'" (click)="clickedIncomeStatement()">
         <span class="menu-icon">≡</span>
         <span>{{'Menu.statment' | translate}}</span>
       </button>
-      <button class="menu-item menu-item--compact" [class.menu-item--active]="router.url === '/balance'" (click)="clickedBalanceSheet()">
+      <button class="menu-item menu-item--compact" data-tour-route="/balance" [class.menu-item--active]="router.url === '/balance'" (click)="clickedBalanceSheet()">
         <span class="menu-icon">⊞</span>
         <span>{{'Menu.sheet' | translate}}</span>
       </button>
-      <button class="menu-item menu-item--compact" [class.menu-item--active]="router.url === '/subscription'" (click)="clickedSubscriptions()">
+      <button class="menu-item menu-item--compact" data-tour-route="/subscription" [class.menu-item--active]="router.url === '/subscription'" (click)="clickedSubscriptions()">
         <span class="menu-icon">↻</span>
         <span>{{'Menu.sub' | translate}}</span>
       </button>
-      <button class="menu-item menu-item--compact" [class.menu-item--active]="router.url === '/budget'" (click)="clickedBudget()">
+      <button class="menu-item menu-item--compact" data-tour-route="/budget" [class.menu-item--active]="router.url === '/budget'" (click)="clickedBudget()">
         <span class="menu-icon">▤</span>
         <span>{{'Menu.budget' | translate}}</span>
       </button>
-      <button class="menu-item menu-item--compact" [class.menu-item--active]="router.url === '/grow'" (click)="clickedGrow()">
+      <button class="menu-item menu-item--compact" data-tour-route="/grow" [class.menu-item--active]="router.url === '/grow'" (click)="clickedGrow()">
         <span class="menu-icon">↗</span>
         <span>{{'Menu.grow' | translate}}</span>
       </button>

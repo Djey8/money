@@ -380,6 +380,11 @@ label.required::after {
   outline-offset: 2px;
 }
 
+/* Suppress focus outlines during tour to prevent brief orange flash on step transitions */
+body.tour-active *:focus-visible {
+  outline: none !important;
+}
+
 /* ========================================
    Shared Utility Classes
    ======================================== */
@@ -736,3 +741,28 @@ label.required::after {
 .text-success { color: var(--color-success); }
 .flex-row-gap { display: flex; align-items: center; gap: 10px; }
 .input-row { display: flex; align-items: center; margin-bottom: 10px; }
+
+/* ========================================
+   Tour — Menu highlight during navigation
+   ======================================== */
+.tour-menu-highlight {
+  position: relative;
+  background: var(--color-primary-light) !important;
+  box-shadow: 0 0 0 3px var(--color-primary), 0 0 20px rgba(25, 118, 210, 0.3) !important;
+  border-radius: var(--radius-md) !important;
+  animation: tour-menu-pulse 0.6s ease-in-out infinite alternate;
+  z-index: 1;
+}
+@keyframes tour-menu-pulse {
+  from { box-shadow: 0 0 0 3px var(--color-primary), 0 0 12px rgba(25, 118, 210, 0.2); }
+  to   { box-shadow: 0 0 0 3px var(--color-primary), 0 0 24px rgba(25, 118, 210, 0.5); }
+}
+.tour-menu-click {
+  animation: tour-menu-click-press 0.35s ease-out forwards !important;
+}
+@keyframes tour-menu-click-press {
+  0%   { transform: scale(1);    opacity: 1; }
+  40%  { transform: scale(0.92); opacity: 0.85; }
+  70%  { transform: scale(1.03); opacity: 1; }
+  100% { transform: scale(1);    opacity: 1; }
+}

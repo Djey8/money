@@ -13,6 +13,7 @@ import { CommonModule } from '@angular/common';
 import { TranslateModule } from '@ngx-translate/core';
 import { TrapFocusDirective } from 'src/app/shared/directives/trap-focus.directive';
 import { OnboardingService } from 'src/app/shared/services/onboarding.service';
+import { TourService } from 'src/app/shared/services/tour.service';
 
 /**
  * Represents the InstructionsComponent class.
@@ -37,7 +38,7 @@ export class InstructionsComponent {
    * @param database - The database service.
    * @param afAuth - The AngularFireAuth service.
    */
-  constructor(private router: Router, private localStorage: LocalService, private database: DatabaseService, private afAuth: AngularFireAuth, private onboardingService: OnboardingService) {
+  constructor(private router: Router, private localStorage: LocalService, private database: DatabaseService, private afAuth: AngularFireAuth, private onboardingService: OnboardingService, private tourService: TourService) {
     InstructionsComponent.isInfo = false;
     InstructionsComponent.zIndex = 0;
   }
@@ -66,7 +67,7 @@ export class InstructionsComponent {
 
   launchTour() {
     this.closeWindow();
-    setTimeout(() => this.onboardingService.startTour(), 300);
+    setTimeout(() => this.tourService.startTour(), 300);
   }
 
   /**

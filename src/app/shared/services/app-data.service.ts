@@ -133,32 +133,23 @@ export class AppDataService {
       const write1 = this.database.writeObject("income/revenue/interests", AppStateService.instance.allIntrests);
       const write2 = this.database.writeObject("income/revenue/properties", AppStateService.instance.allProperties);
       const write3 = this.database.writeObject("income/revenue/revenues", AppStateService.instance.allRevenues);
-      const write4 = this.database.writeObject("balance/liabilities", AppStateService.instance.liabilities);
-      const write5 = this.database.writeObject("income/expenses/daily", AppStateService.instance.dailyExpenses);
-      const write6 = this.database.writeObject("income/expenses/splurge", AppStateService.instance.splurgeExpenses);
-      const write7 = this.database.writeObject("income/expenses/smile", AppStateService.instance.smileExpenses);
-      const write8 = this.database.writeObject("income/expenses/fire", AppStateService.instance.fireExpenses);
-      const write9 = this.database.writeObject("income/expenses/mojo", AppStateService.instance.mojoExpenses);
-      const write10 = this.database.writeObject("smile", AppStateService.instance.allSmileProjects);
-      const write11 = this.database.writeObject("fire", AppStateService.instance.allFireEmergencies);
-      const write12 = this.database.writeObject("mojo", AppStateService.instance.mojo);
-      const write13 = this.database.writeObject("balance/liabilities", AppStateService.instance.liabilities);
+      const write4 = this.database.writeObject("income/expenses/daily", AppStateService.instance.dailyExpenses);
+      const write5 = this.database.writeObject("income/expenses/splurge", AppStateService.instance.splurgeExpenses);
+
+      // Only write tier2 data (smile/fire/mojo) if tier2 has been loaded.
+      // Writing before load would overwrite real DB data with empty defaults.
+      const write6 = AppStateService.instance.tier2Loaded ? this.database.writeObject("income/expenses/smile", AppStateService.instance.smileExpenses) : null;
+      const write7 = AppStateService.instance.tier2Loaded ? this.database.writeObject("income/expenses/fire", AppStateService.instance.fireExpenses) : null;
+      const write8 = AppStateService.instance.tier2Loaded ? this.database.writeObject("income/expenses/mojo", AppStateService.instance.mojoExpenses) : null;
+      const write9 = AppStateService.instance.tier2Loaded ? this.database.writeObject("smile", AppStateService.instance.allSmileProjects) : null;
+      const write10 = AppStateService.instance.tier2Loaded ? this.database.writeObject("fire", AppStateService.instance.allFireEmergencies) : null;
+      const write11 = AppStateService.instance.tier2Loaded ? this.database.writeObject("mojo", AppStateService.instance.mojo) : null;
+
+      // Only write balance/liabilities if tier3Balance has been loaded.
+      const write12 = AppStateService.instance.tier3BalanceLoaded ? this.database.writeObject("balance/liabilities", AppStateService.instance.liabilities) : null;
 
       if (environment.mode === 'selfhosted') {
-        const observables = [];
-        if (write1) observables.push(write1);
-        if (write2) observables.push(write2);
-        if (write3) observables.push(write3);
-        if (write4) observables.push(write4);
-        if (write5) observables.push(write5);
-        if (write6) observables.push(write6);
-        if (write7) observables.push(write7);
-        if (write8) observables.push(write8);
-        if (write9) observables.push(write9);
-        if (write10) observables.push(write10);
-        if (write11) observables.push(write11);
-        if (write12) observables.push(write12);
-        if (write13) observables.push(write13);
+        const observables = [write1, write2, write3, write4, write5, write6, write7, write8, write9, write10, write11, write12].filter(w => w != null);
 
         if (observables.length > 0) {
           observables.forEach(obs => {
@@ -179,16 +170,21 @@ export class AppDataService {
     this.localStorage.saveData("interests", JSON.stringify(AppStateService.instance.allIntrests));
     this.localStorage.saveData("properties", JSON.stringify(AppStateService.instance.allProperties));
     this.localStorage.saveData("revenues", JSON.stringify(AppStateService.instance.allRevenues));
-    this.localStorage.saveData("liabilities", JSON.stringify(AppStateService.instance.liabilities));
     this.localStorage.saveData("dailyEx", JSON.stringify(AppStateService.instance.dailyExpenses));
     this.localStorage.saveData("splurgeEx", JSON.stringify(AppStateService.instance.splurgeExpenses));
-    this.localStorage.saveData("smileEx", JSON.stringify(AppStateService.instance.smileExpenses));
-    this.localStorage.saveData("fireEx", JSON.stringify(AppStateService.instance.fireExpenses));
-    this.localStorage.saveData("mojoEx", JSON.stringify(AppStateService.instance.mojoExpenses));
-    this.localStorage.saveData("smile", JSON.stringify(AppStateService.instance.allSmileProjects));
-    this.localStorage.saveData("fire", JSON.stringify(AppStateService.instance.allFireEmergencies));
-    this.localStorage.saveData("mojo", JSON.stringify(AppStateService.instance.mojo));
-    this.localStorage.saveData("liabilities", JSON.stringify(AppStateService.instance.liabilities));
+    // Only save tier2 data if loaded
+    if (AppStateService.instance.tier2Loaded) {
+      this.localStorage.saveData("smileEx", JSON.stringify(AppStateService.instance.smileExpenses));
+      this.localStorage.saveData("fireEx", JSON.stringify(AppStateService.instance.fireExpenses));
+      this.localStorage.saveData("mojoEx", JSON.stringify(AppStateService.instance.mojoExpenses));
+      this.localStorage.saveData("smile", JSON.stringify(AppStateService.instance.allSmileProjects));
+      this.localStorage.saveData("fire", JSON.stringify(AppStateService.instance.allFireEmergencies));
+      this.localStorage.saveData("mojo", JSON.stringify(AppStateService.instance.mojo));
+    }
+    // Only save balance/liabilities if tier3Balance loaded
+    if (AppStateService.instance.tier3BalanceLoaded) {
+      this.localStorage.saveData("liabilities", JSON.stringify(AppStateService.instance.liabilities));
+    }
   }
 
   updateDatabase() {
@@ -203,30 +199,40 @@ export class AppDataService {
         { tag: "income/revenue/interests", data: AppStateService.instance.allIntrests },
         { tag: "income/revenue/properties", data: AppStateService.instance.allProperties },
         { tag: "income/revenue/revenues", data: AppStateService.instance.allRevenues },
-        { tag: "balance/liabilities", data: AppStateService.instance.liabilities },
         { tag: "income/expenses/daily", data: AppStateService.instance.dailyExpenses },
         { tag: "income/expenses/splurge", data: AppStateService.instance.splurgeExpenses },
-        { tag: "income/expenses/smile", data: AppStateService.instance.smileExpenses },
-        { tag: "income/expenses/fire", data: AppStateService.instance.fireExpenses },
-        { tag: "income/expenses/mojo", data: AppStateService.instance.mojoExpenses },
-        { tag: "smile", data: AppStateService.instance.allSmileProjects },
-        { tag: "fire", data: AppStateService.instance.allFireEmergencies },
-        { tag: "mojo", data: AppStateService.instance.mojo },
+        // Only write tier2 data (smile/fire/mojo) if tier2 has been loaded
+        ...(AppStateService.instance.tier2Loaded ? [
+          { tag: "income/expenses/smile", data: AppStateService.instance.smileExpenses },
+          { tag: "income/expenses/fire", data: AppStateService.instance.fireExpenses },
+          { tag: "income/expenses/mojo", data: AppStateService.instance.mojoExpenses },
+          { tag: "smile", data: AppStateService.instance.allSmileProjects },
+          { tag: "fire", data: AppStateService.instance.allFireEmergencies },
+          { tag: "mojo", data: AppStateService.instance.mojo },
+        ] : []),
+        // Only write balance/liabilities if tier3Balance has been loaded
+        ...(AppStateService.instance.tier3BalanceLoaded ? [
+          { tag: "balance/liabilities", data: AppStateService.instance.liabilities },
+        ] : []),
         { tag: "transactions", data: AppStateService.instance.allTransactions }
       ],
       localStorageSaves: [
         { key: "interests", data: JSON.stringify(AppStateService.instance.allIntrests) },
         { key: "properties", data: JSON.stringify(AppStateService.instance.allProperties) },
         { key: "revenues", data: JSON.stringify(AppStateService.instance.allRevenues) },
-        { key: "liabilities", data: JSON.stringify(AppStateService.instance.liabilities) },
         { key: "dailyEx", data: JSON.stringify(AppStateService.instance.dailyExpenses) },
         { key: "splurgeEx", data: JSON.stringify(AppStateService.instance.splurgeExpenses) },
-        { key: "smileEx", data: JSON.stringify(AppStateService.instance.smileExpenses) },
-        { key: "fireEx", data: JSON.stringify(AppStateService.instance.fireExpenses) },
-        { key: "mojoEx", data: JSON.stringify(AppStateService.instance.mojoExpenses) },
-        { key: "smile", data: JSON.stringify(AppStateService.instance.allSmileProjects) },
-        { key: "fire", data: JSON.stringify(AppStateService.instance.allFireEmergencies) },
-        { key: "mojo", data: JSON.stringify(AppStateService.instance.mojo) },
+        ...(AppStateService.instance.tier2Loaded ? [
+          { key: "smileEx", data: JSON.stringify(AppStateService.instance.smileExpenses) },
+          { key: "fireEx", data: JSON.stringify(AppStateService.instance.fireExpenses) },
+          { key: "mojoEx", data: JSON.stringify(AppStateService.instance.mojoExpenses) },
+          { key: "smile", data: JSON.stringify(AppStateService.instance.allSmileProjects) },
+          { key: "fire", data: JSON.stringify(AppStateService.instance.allFireEmergencies) },
+          { key: "mojo", data: JSON.stringify(AppStateService.instance.mojo) },
+        ] : []),
+        ...(AppStateService.instance.tier3BalanceLoaded ? [
+          { key: "liabilities", data: JSON.stringify(AppStateService.instance.liabilities) },
+        ] : []),
         { key: "transactions", data: JSON.stringify(AppStateService.instance.allTransactions) }
       ]
     });
@@ -261,6 +267,8 @@ export class AppDataService {
       AppStateService.instance.tier2Loaded = true;
     } catch (err) {
       console.error('Tier 2 load error:', err);
+      // Still mark as loaded so unloaded-state guards don't write empty arrays
+      AppStateService.instance.tier2Loaded = true;
     }
   }
 
@@ -276,6 +284,7 @@ export class AppDataService {
       AppStateService.instance.tier3GrowLoaded = true;
     } catch (err) {
       console.error('Grow data load error:', err);
+      AppStateService.instance.tier3GrowLoaded = true;
     }
   }
 
@@ -291,6 +300,7 @@ export class AppDataService {
       AppStateService.instance.tier3BalanceLoaded = true;
     } catch (err) {
       console.error('Balance data load error:', err);
+      AppStateService.instance.tier3BalanceLoaded = true;
     }
   }
 
