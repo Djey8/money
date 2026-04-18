@@ -349,6 +349,7 @@ export class GrowComponent {
   }
 
   openAiAssistant() {
+    AiAssistantComponent.initialContext = 'grow';
     AiAssistantComponent.isOpen = true;
     AiAssistantComponent.zIndex = 2;
   }

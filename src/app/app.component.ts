@@ -22,6 +22,7 @@ import { migrateSmileArray } from './shared/smile-migration.utils';
 import { migrateFireArray } from './shared/fire-migration.utils';
 import { migrateSubscriptionArray } from './shared/migrations/subscription-migration.utils';
 import { OnboardingService } from './shared/services/onboarding.service';
+import { TourService } from './shared/services/tour.service';
 import { gotoTop as scrollToTop, gotoTopAuto as scrollToTopAuto } from './shared/scroll.utils';
 
 // Standalone component imports used in template
@@ -47,6 +48,7 @@ import { ToastComponent } from './shared/components/toast/toast.component';
 import { ConfirmDialogComponent } from './shared/components/confirm-dialog/confirm-dialog.component';
 import { BottomNavComponent } from './shared/components/bottom-nav/bottom-nav.component';
 import { OnboardingComponent } from './shared/components/onboarding/onboarding.component';
+import { TourOverlayComponent } from './shared/components/tour-overlay/tour-overlay.component';
 import { PullToRefreshComponent } from './shared/components/pull-to-refresh/pull-to-refresh.component';
 import { SwUpdateComponent } from './shared/components/sw-update/sw-update.component';
 
@@ -65,6 +67,8 @@ let AddSubscriptionComponent: any; setTimeout(() => import('src/app/panels/add/a
 let AddBudgetComponent: any; setTimeout(() => import('src/app/panels/add/add-budget/add-budget.component').then(m => AddBudgetComponent = m.AddBudgetComponent));
 let InfoBudgetComponent: any; setTimeout(() => import('src/app/panels/info/info-budget/info-budget.component').then(m => InfoBudgetComponent = m.InfoBudgetComponent));
 let HomeComponent: any; setTimeout(() => import('src/app/main/home/home.component').then(m => HomeComponent = m.HomeComponent));
+let AiAssistantComponent: any; setTimeout(() => import('src/app/panels/ai-assistant/ai-assistant.component').then(m => AiAssistantComponent = m.AiAssistantComponent));
+let AddGrowComponent: any; setTimeout(() => import('src/app/panels/add/add-grow/add-grow.component').then(m => AddGrowComponent = m.AddGrowComponent));
 
 
 @Component({
@@ -97,6 +101,7 @@ let HomeComponent: any; setTimeout(() => import('src/app/main/home/home.componen
     ConfirmDialogComponent,
     BottomNavComponent,
     OnboardingComponent,
+    TourOverlayComponent,
     PullToRefreshComponent,
     SwUpdateComponent,
   ],
@@ -124,8 +129,11 @@ export class AppComponent {
    * @param localStorage - The local storage service.
    * @param database - The database service.
    */
-  constructor(public router: Router, private localStorage: LocalService, private database: DatabaseService, public afAuth: AngularFireAuth, private cryptic: CrypticService, private authService: AuthService, private frontendLogger: FrontendLoggerService, private persistence: PersistenceService, private incomeStatement: IncomeStatementService, private appState: AppStateService, private appData: AppDataService, private gameMode: GameModeService, private subscriptionProcessing: SubscriptionProcessingService, private onboardingService: OnboardingService, private toastService: ToastService) {
+  constructor(public router: Router, private localStorage: LocalService, private database: DatabaseService, public afAuth: AngularFireAuth, private cryptic: CrypticService, private authService: AuthService, private frontendLogger: FrontendLoggerService, private persistence: PersistenceService, private incomeStatement: IncomeStatementService, private appState: AppStateService, private appData: AppDataService, private gameMode: GameModeService, private subscriptionProcessing: SubscriptionProcessingService, private onboardingService: OnboardingService, private toastService: ToastService, private tourService: TourService) {
     AppComponent.instance = this;
+
+    // Subscribe to tour actions for panel management
+    this.tourService.action$.subscribe(action => this.handleTourAction(action));
 
     // Parse each localStorage key individually so one corrupt entry
     // doesn't wipe all data via a single catch block
@@ -214,10 +222,10 @@ export class AppComponent {
             // Auto-generate subscription transactions on load
             this.autoGenerateSubscriptionTransactions();
           }
-          // Auto-start onboarding tour for new users
+          // Auto-start interactive tour for new users
           if (window.localStorage.getItem('onboarding_pending') === 'true') {
             window.localStorage.removeItem('onboarding_pending');
-            setTimeout(() => this.onboardingService.startTour(), 600);
+            setTimeout(() => this.tourService.startTour(), 600);
           }
           // Tier 2: Load deferred data in background (non-blocking)
           AppDataService.instance.loadTier2().catch(err => console.error('Tier 2 load error:', err));
@@ -288,6 +296,56 @@ export class AppComponent {
       // Log error but don't block app load
       console.error('Failed to auto-generate subscription transactions:', error);
       // Don't show error toast on initial load to avoid alarming users
+    }
+  }
+
+  /** Handles tour panel actions (open/close panels during the walkthrough) */
+  private handleTourAction(action: string): void {
+    switch (action) {
+      case 'closeAllPanels':
+        if (AddComponent) AddComponent.isAdd = false;
+        if (AddSmileComponent) AddSmileComponent.isAddSmile = false;
+        if (MenuComponent) MenuComponent.isMenu = false;
+        if (ProfileComponent) ProfileComponent.isProfile = false;
+        if (SettingsComponent) SettingsComponent.zIndex = 0;
+        if (InstructionsComponent) InstructionsComponent.zIndex = 0;
+        if (ImpressumComponent) ImpressumComponent.zIndex = 0;
+        if (PolicyComponent) PolicyComponent.zIndex = 0;
+        if (InfoComponent) InfoComponent.isInfo = false;
+        if (AiAssistantComponent) AiAssistantComponent.isOpen = false;
+        break;
+      case 'openAddTransaction':
+        if (AddComponent) {
+          AddComponent.isAdd = true;
+          AddComponent.selectedOption = 'Daily';
+          AddComponent.amountTextField = '';
+          AddComponent.categoryTextField = '@';
+          AddComponent.commentTextField = '';
+          AddComponent.url = '/transactions';
+          AddComponent.zIndex = 100;
+        }
+        break;
+      case 'closeAddPanel':
+        if (AddComponent) AddComponent.isAdd = false;
+        break;
+      case 'openAddSmile':
+        if (AddSmileComponent) {
+          AddSmileComponent.isAddSmile = true;
+          AddSmileComponent.zIndex = 100;
+        }
+        break;
+      case 'closeAddSmile':
+        if (AddSmileComponent) AddSmileComponent.isAddSmile = false;
+        break;
+      case 'openAiAssistant':
+        if (AiAssistantComponent) {
+          AiAssistantComponent.isOpen = true;
+          AiAssistantComponent.zIndex = 100;
+        }
+        break;
+      case 'closeAiAssistant':
+        if (AiAssistantComponent) AiAssistantComponent.isOpen = false;
+        break;
     }
   }
 
