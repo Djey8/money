@@ -49,7 +49,7 @@
     </div>
 
     <!-- Section: Buckets (collapsible) -->
-    <div class="form-section">
+    <div id="bucketsSection" class="form-section">
         <button class="section-toggle" (click)="showBucketsSection = !showBucketsSection" type="button">
             <h5 class="form-section-title">{{'Common.buckets' | translate}}</h5>
             <span class="toggle-chevron" [class.open]="showBucketsSection">▸</span>
@@ -147,7 +147,7 @@
     </div>
 
     <!-- Section: Links & Actions (collapsible) -->
-    <div class="form-section">
+    <div id="linksActionsSection" class="form-section">
         <button class="section-toggle" (click)="showLinksActionsSection = !showLinksActionsSection" type="button">
             <h5 class="form-section-title">{{'Grow.linksAndActions' | translate}}</h5>
             <span class="toggle-chevron" [class.open]="showLinksActionsSection">▸</span>
@@ -233,7 +233,7 @@
     </div>
 
     <!-- Section: Payment Plans (collapsible) -->
-    <div class="form-section">
+    <div id="paymentPlansSection" class="form-section">
         <button class="section-toggle" (click)="showPaymentPlansSection = !showPaymentPlansSection" type="button">
             <h5 class="form-section-title">{{'Smile.paymentPlans' | translate: {default: 'Payment Plans'} }}</h5>
             <span class="toggle-chevron" [class.open]="showPaymentPlansSection">▸</span>

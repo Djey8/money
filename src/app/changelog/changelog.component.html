@@ -45,8 +45,16 @@
 
     <!-- Version sidebar (desktop) -->
     <aside class="changelog-sidebar">
-      <h3 class="sidebar-title">{{ 'Changelog.versions' | translate }}</h3>
-      <ul class="version-list">
+      <div class="sidebar-header">
+        <h3 class="sidebar-title">{{ 'Changelog.versions' | translate }}</h3>
+        <button class="view-toggle" *ngIf="groupEntries.length > 0" (click)="toggleGroupMode()"
+                [attr.aria-label]="groupMode ? 'Switch to version view' : 'Switch to group view'">
+          {{ groupMode ? 'v1.2.3' : 'x.x' }}
+        </button>
+      </div>
+
+      <!-- Normal mode: individual versions -->
+      <ul class="version-list" *ngIf="!groupMode">
         <li *ngFor="let v of versions; let i = index"
             class="version-item"
             [ngClass]="{ active: i === selectedIndex, latest: i === 0 }"
@@ -56,13 +64,49 @@
           <span class="latest-badge" *ngIf="i === 0">{{ 'Changelog.latest' | translate }}</span>
         </li>
       </ul>
+
+      <!-- Group mode: consolidated entries -->
+      <ul class="version-list" *ngIf="groupMode">
+        <li *ngFor="let g of groupEntries; let i = index"
+            class="version-item is-group"
+            [ngClass]="{ active: i === selectedGroupIndex }"
+            (click)="selectGroup(i)">
+          <span class="version-tag">{{ g.label }}</span>
+          <span class="group-count">{{ g.versions.length }} versions</span>
+        </li>
+      </ul>
     </aside>
 
     <!-- Main detail -->
     <main class="changelog-detail">
 
-      <!-- Navigation arrows -->
-      <div class="version-nav">
+      <!-- Mobile version select -->
+      <div class="mobile-version-select">
+        <div class="mobile-toggle-row" *ngIf="groupEntries.length > 0">
+          <button class="view-toggle" (click)="toggleGroupMode()">
+            {{ groupMode ? 'v1.2.3' : 'x.x' }}
+          </button>
+        </div>
+
+        <label class="mobile-select-label" for="version-select">{{ 'Changelog.jumpTo' | translate }}</label>
+        <select id="version-select" class="mobile-version-dropdown"
+                *ngIf="!groupMode"
+                [ngModel]="selectedIndex" (ngModelChange)="selectVersion($event)">
+          <option *ngFor="let v of versions; let i = index" [ngValue]="i">
+            v{{ v.version }} — {{ v.date | appDate }}
+          </option>
+        </select>
+        <select id="version-select" class="mobile-version-dropdown"
+                *ngIf="groupMode"
+                [ngModel]="selectedGroupIndex" (ngModelChange)="selectGroup($event)">
+          <option *ngFor="let g of groupEntries; let i = index" [ngValue]="i">
+            {{ g.label }} ({{ g.versions.length }} versions)
+          </option>
+        </select>
+      </div>
+
+      <!-- Navigation arrows (normal mode only) -->
+      <div class="version-nav" *ngIf="!groupMode">
         <button class="nav-btn" [disabled]="isLatest" (click)="goNewer()" aria-label="Newer version">
           &larr; {{ 'Changelog.newer' | translate }}
         </button>
@@ -75,41 +119,54 @@
         </button>
       </div>
 
-      <!-- Version card -->
-      <article class="version-card">
+      <!-- Group header (group mode) -->
+      <div class="group-header" *ngIf="groupMode">
+        <h2 class="group-header-title">{{ groupEntries[selectedGroupIndex]?.label }}</h2>
+        <span class="group-header-count">{{ displayVersions.length }} versions</span>
+      </div>
+
+      <!-- Version cards -->
+      <article class="version-card" *ngFor="let ver of displayVersions; let first = first">
         <div class="version-card-header">
-          <h2 class="version-card-title">
-            v{{ selected.version }}
-            <span class="latest-pill" *ngIf="isLatest">{{ 'Changelog.latest' | translate }}</span>
-          </h2>
-          <time class="version-card-date">{{ selected.date | appDate }}</time>
+          <div class="version-card-top">
+            <h2 class="version-card-title">
+              v{{ ver.version }}
+              <span class="latest-pill" *ngIf="!groupMode && isLatest">{{ 'Changelog.latest' | translate }}</span>
+            </h2>
+            <time class="version-card-date">{{ ver.date | appDate }}</time>
+          </div>
+          <div class="version-header-meta">
+            <div class="version-authors" *ngIf="ver.authors && ver.authors.length">
+              <a *ngFor="let a of ver.authors" [href]="a.url" target="_blank" rel="noopener"
+                 class="author-avatar-link" [title]="a.login">
+                <img [src]="a.avatarUrl" [alt]="a.login" class="author-avatar" />
+              </a>
+            </div>
+            <a *ngIf="ver.prNumber" [href]="ver.prUrl" target="_blank" rel="noopener" class="version-pr-link">
+              PR #{{ ver.prNumber }}
+            </a>
+          </div>
         </div>
 
         <div class="version-card-body">
-          <div *ngFor="let section of selected.sections" class="change-section">
+          <div *ngFor="let section of ver.sections" class="change-section">
             <h3 class="change-heading">
               <span class="change-icon" [ngClass]="sectionIcon(section.heading)"></span>
               {{ section.heading }}
             </h3>
             <ul class="change-list">
-              <li *ngFor="let item of section.items" class="change-item">{{ item }}</li>
+              <li *ngFor="let item of section.items" class="change-item">
+                <span class="change-text">{{ item.text }}</span>
+                <a *ngIf="item.author" [href]="item.authorUrl" target="_blank" rel="noopener"
+                   class="commit-author-link" [title]="item.author">
+                  <img [src]="item.avatarUrl" [alt]="item.author" class="commit-author-avatar" />
+                  {{ item.author }}
+                </a>
+              </li>
             </ul>
           </div>
         </div>
       </article>
-
-      <!-- Mobile version select -->
-      <div class="mobile-version-select">
-        <label class="mobile-select-label" for="version-select">{{ 'Changelog.jumpTo' | translate }}</label>
-        <div class="mobile-select-pills">
-          <button *ngFor="let v of versions; let i = index"
-                  class="mobile-pill"
-                  [ngClass]="{ active: i === selectedIndex }"
-                  (click)="selectVersion(i)">
-            v{{ v.version }}
-          </button>
-        </div>
-      </div>
 
     </main>
   </div>
