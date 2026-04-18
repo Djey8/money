@@ -1,3 +1,15 @@
+## [1.3.0] - 2026-04-18
+
+### Features
+- feat(changelog): add GitHub API enrichment with per-version PR links, author avatars, and view toggle
+- feat(tour): add interactive guided tour with spotlight overlay and i18n
+
+### Bug Fixes
+- fix(i18n): update ar, cn, de, es, and fr translations
+- fix(landing): remove lock emoji from AI showcase heading
+- fix(settings): use translate service as source of truth for language selection
+- fix(data): add tier guards to all write paths preventing data loss
+
 ## [1.2.0] - 2026-04-16
 
 ### Features
