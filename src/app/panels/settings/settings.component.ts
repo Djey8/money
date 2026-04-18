@@ -211,25 +211,23 @@ export class SettingsComponent {
     this.smileTextField = AppStateService.instance.smile
     this.fireTextField = AppStateService.instance.fire
     this.currencyTextField = AppStateService.instance.currency
-    if (SettingsComponent.isEng) {
-      this.translate.use("en");
-    }
-    if (SettingsComponent.isDe) {
-      this.translate.use("de");
-    }
-    if (SettingsComponent.isEs) {
-      this.translate.use("es");
-    }
-    if (SettingsComponent.isFr) {
-      this.translate.use("fr");
-    }
-    if (SettingsComponent.isCn) {
-      this.translate.use("cn");
-    }
     if (SettingsComponent.isAr) {
       this.translate.use("ar");
       document.body.classList.add('rtl-text');
+    } else if (SettingsComponent.isCn) {
+      this.translate.use("cn");
+      document.body.classList.remove('rtl-text');
+    } else if (SettingsComponent.isFr) {
+      this.translate.use("fr");
+      document.body.classList.remove('rtl-text');
+    } else if (SettingsComponent.isEs) {
+      this.translate.use("es");
+      document.body.classList.remove('rtl-text');
+    } else if (SettingsComponent.isDe) {
+      this.translate.use("de");
+      document.body.classList.remove('rtl-text');
     } else {
+      this.translate.use("en");
       document.body.classList.remove('rtl-text');
     }
     AppStateService.instance.key = this.cryptic.getKey() === this.cryptic.getDefaultKey() ? "default" : this.cryptic.getKey();
@@ -430,6 +428,10 @@ export class SettingsComponent {
   }
 
   showConfirmation: boolean = false;
+
+  get currentLang(): string {
+    return this.translate.currentLang || 'en';
+  }
 
   switchLanguage(language: string) {
     this.translate.use(language);
