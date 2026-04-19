@@ -1,5 +1,6 @@
 import { Router } from '@angular/router';
 import { InfoFireComponent } from 'src/app/panels/info/info-fire/info-fire.component';
+import { InfoMojoComponent } from 'src/app/panels/info/info-mojo/info-mojo.component';
 import { LocalService } from 'src/app/shared/services/local.service';
 import { Component } from '@angular/core';
 import { MatTableDataSource } from '@angular/material/table';
@@ -34,7 +35,7 @@ let MenuComponent: any; setTimeout(() => import('src/app/panels/menu/menu.compon
 @Component({
   selector: 'app-fire',
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslateModule, AppDatePipe, AppNumberPipe, MatTableModule, MatSortModule, MatPaginatorModule, MatFormFieldModule, MatInputModule, RouterModule, SharedFilterComponent, InfoFireComponent],
+  imports: [CommonModule, FormsModule, TranslateModule, AppDatePipe, AppNumberPipe, MatTableModule, MatSortModule, MatPaginatorModule, MatFormFieldModule, MatInputModule, RouterModule, SharedFilterComponent, InfoFireComponent, InfoMojoComponent],
   templateUrl: './fire.component.html',
   styleUrls: ['./fire.component.css', '../../app.component.css', '../../shared/styles/table.css']
 })
@@ -201,8 +202,7 @@ export class FireComponent extends BaseAccountComponent {
   }
 
   clickMojo(){
-    // TODO: Mojo info panel needs separate component - Fire panel is now bucket-based
-    console.log('Mojo click - needs dedicated info panel');
+    InfoMojoComponent.openMojo();
   }
 
   /**

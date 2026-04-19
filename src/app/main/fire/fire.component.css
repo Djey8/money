@@ -15,12 +15,13 @@
     border-width: 2%;
     min-width: 275px;
     margin-bottom: 20px;
+    container-type: inline-size;
 }
 
 
 #mojoTitle {
     text-align: center;
-    font-size: 2em;
+    font-size: clamp(16px, 6cqi, 28px);
     color: white;
     margin-top: 0px;
     margin-bottom: 1%;
@@ -31,7 +32,7 @@
     float: left;
     margin-top: 0;
     margin-left: 1%;
-    font-size: 1.5em;
+    font-size: clamp(14px, 5cqi, 22px);
     color: white;
 }
 
@@ -52,7 +53,7 @@
 .infoLableA {
     text-align: center;
     color: var(--color-text);
-    font-size: x-large;
+    font-size: clamp(13px, 4.5cqi, 20px);
 }
 
 
