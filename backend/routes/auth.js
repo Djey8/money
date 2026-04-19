@@ -9,7 +9,74 @@ const { authenticateToken } = require('../middleware/auth');
 const router = express.Router();
 
 const JWT_SECRET = process.env.JWT_SECRET;
-const JWT_EXPIRES_IN = '7d';
+const ACCESS_TOKEN_EXPIRES_IN = '15m';
+const REFRESH_TOKEN_EXPIRES_IN = '7d';
+const IS_PRODUCTION = process.env.NODE_ENV === 'production';
+
+// Cookie configuration
+const COOKIE_OPTIONS = {
+  httpOnly: true,
+  secure: IS_PRODUCTION,
+  sameSite: 'strict',
+  path: '/'
+};
+
+function setAuthCookies(res, accessToken, refreshToken) {
+  res.cookie('access_token', accessToken, {
+    ...COOKIE_OPTIONS,
+    maxAge: 15 * 60 * 1000 // 15 minutes
+  });
+  res.cookie('refresh_token', refreshToken, {
+    ...COOKIE_OPTIONS,
+    path: '/api/auth',
+    maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+  });
+}
+
+function clearAuthCookies(res) {
+  res.clearCookie('access_token', { ...COOKIE_OPTIONS });
+  res.clearCookie('refresh_token', { ...COOKIE_OPTIONS, path: '/api/auth' });
+}
+
+async function createRefreshToken(userId, email) {
+  const jti = crypto.randomUUID();
+  const refreshToken = jwt.sign({ userId, email, jti }, JWT_SECRET, { expiresIn: REFRESH_TOKEN_EXPIRES_IN });
+  
+  // Store refresh token reference in auth database for revocation
+  const authDb = getAuthDb();
+  await authDb.insert({
+    _id: `rt_${jti}`,
+    type: 'refresh_token',
+    userId,
+    createdAt: new Date().toISOString(),
+    expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+  });
+  
+  return refreshToken;
+}
+
+async function revokeRefreshToken(jti) {
+  const authDb = getAuthDb();
+  try {
+    const doc = await authDb.get(`rt_${jti}`);
+    await authDb.destroy(doc._id, doc._rev);
+  } catch (err) {
+    // Token already revoked or doesn't exist — that's fine
+    if (err.statusCode !== 404) {
+      logger.logError(err, { context: 'revoke_refresh_token', jti });
+    }
+  }
+}
+
+async function isRefreshTokenValid(jti) {
+  const authDb = getAuthDb();
+  try {
+    await authDb.get(`rt_${jti}`);
+    return true;
+  } catch (err) {
+    return false;
+  }
+}
 
 // Account lockout configuration
 const LOCKOUT_THRESHOLD = 10; // Lock after 10 consecutive failures
@@ -141,13 +208,14 @@ router.post('/register', async (req, res) => {
     logAuthEvent('register', userId, true, { email, username: username || email.split('@')[0] });
     logUserActivity(userId, 'account_created', { email, registrationMethod: 'email' });
 
-    // Generate JWT
-    const token = jwt.sign({ userId, email }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+    // Generate tokens and set cookies
+    const accessToken = jwt.sign({ userId, email }, JWT_SECRET, { expiresIn: ACCESS_TOKEN_EXPIRES_IN });
+    const refreshToken = await createRefreshToken(userId, email);
+    setAuthCookies(res, accessToken, refreshToken);
 
     res.status(201).json({
       userId,
-      email,
-      token
+      email
     });
   } catch (error) {
     console.error('Registration error:', error);
@@ -207,13 +275,14 @@ router.post('/login', async (req, res) => {
     logAuthEvent('login', user._id, true, { email });
     logUserActivity(user._id, 'user_login', { email, loginMethod: 'password' });
 
-    // Generate JWT
-    const token = jwt.sign({ userId: user._id, email: user.email }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+    // Generate tokens and set cookies
+    const accessToken = jwt.sign({ userId: user._id, email: user.email }, JWT_SECRET, { expiresIn: ACCESS_TOKEN_EXPIRES_IN });
+    const refreshToken = await createRefreshToken(user._id, user.email);
+    setAuthCookies(res, accessToken, refreshToken);
 
     res.json({
       userId: user._id,
-      email: user.email,
-      token
+      email: user.email
     });
   } catch (error) {
     console.error('Login error:', error);
@@ -222,21 +291,8 @@ router.post('/login', async (req, res) => {
 });
 
 // Verify token (for frontend to check if token is still valid)
-router.get('/verify', async (req, res) => {
-  try {
-    const token = req.headers.authorization?.split(' ')[1];
-    
-    if (!token) {
-      return res.status(401).json({ error: 'No token provided' });
-    }
-
-    const decoded = jwt.verify(token, JWT_SECRET);
-    logUserActivity(decoded.userId, 'token_verified', { email: decoded.email });
-    res.json({ valid: true, userId: decoded.userId, email: decoded.email });
-  } catch (error) {
-    logSecurityEvent('token_verification_failed', 'low', { error: error.message });
-    res.status(401).json({ valid: false, error: 'Invalid token' });
-  }
+router.get('/verify', authenticateToken, async (req, res) => {
+  res.json({ valid: true, userId: req.userId, email: req.userEmail });
 });
 
 // Verify password (for sensitive operations like accessing encryption settings)
@@ -334,8 +390,12 @@ router.put('/update-email', authenticateToken, async (req, res) => {
 
     await authDb.insert(userDoc);
 
-    // Generate new JWT with updated email
-    const token = jwt.sign({ userId, email: newEmail }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+    // Generate new access token with updated email and set cookie
+    const accessToken = jwt.sign({ userId, email: newEmail }, JWT_SECRET, { expiresIn: ACCESS_TOKEN_EXPIRES_IN });
+    res.cookie('access_token', accessToken, {
+      ...COOKIE_OPTIONS,
+      maxAge: 15 * 60 * 1000
+    });
 
     logger.logUserActivity(userId, 'email_updated', {
       previousEmail: req.userEmail,
@@ -344,8 +404,7 @@ router.put('/update-email', authenticateToken, async (req, res) => {
 
     res.json({
       success: true,
-      email: newEmail,
-      token // Return new token with updated email
+      email: newEmail
     });
   } catch (error) {
     logger.logError(error, { context: 'email_update', userId: req.userId });
@@ -383,10 +442,78 @@ router.delete('/delete-account', authenticateToken, async (req, res) => {
 
     logUserActivity(userId, 'account_deleted', { email: req.userEmail });
 
+    clearAuthCookies(res);
     res.json({ success: true });
   } catch (error) {
     logger.logError(error, { context: 'delete_account', userId: req.userId });
     res.status(500).json({ error: 'Failed to delete account' });
+  }
+});
+
+// Refresh access token using refresh token cookie
+router.post('/refresh', async (req, res) => {
+  try {
+    const refreshToken = req.cookies?.refresh_token;
+    
+    if (!refreshToken) {
+      return res.status(401).json({ error: 'No refresh token' });
+    }
+
+    let decoded;
+    try {
+      decoded = jwt.verify(refreshToken, JWT_SECRET);
+    } catch (err) {
+      clearAuthCookies(res);
+      return res.status(401).json({ error: 'Invalid refresh token' });
+    }
+
+    // Check if refresh token is still valid in database (not revoked)
+    const isValid = await isRefreshTokenValid(decoded.jti);
+    if (!isValid) {
+      clearAuthCookies(res);
+      logSecurityEvent('refresh_token_reuse_detected', { userId: decoded.userId });
+      return res.status(401).json({ error: 'Refresh token revoked' });
+    }
+
+    // Rotate: revoke old refresh token, issue new pair
+    await revokeRefreshToken(decoded.jti);
+
+    const accessToken = jwt.sign(
+      { userId: decoded.userId, email: decoded.email },
+      JWT_SECRET,
+      { expiresIn: ACCESS_TOKEN_EXPIRES_IN }
+    );
+    const newRefreshToken = await createRefreshToken(decoded.userId, decoded.email);
+    setAuthCookies(res, accessToken, newRefreshToken);
+
+    res.json({ userId: decoded.userId, email: decoded.email });
+  } catch (error) {
+    logger.logError(error, { context: 'token_refresh' });
+    clearAuthCookies(res);
+    res.status(500).json({ error: 'Token refresh failed' });
+  }
+});
+
+// Logout — revoke refresh token and clear cookies
+router.post('/logout', async (req, res) => {
+  try {
+    const refreshToken = req.cookies?.refresh_token;
+    
+    if (refreshToken) {
+      try {
+        const decoded = jwt.verify(refreshToken, JWT_SECRET);
+        await revokeRefreshToken(decoded.jti);
+        logUserActivity(decoded.userId, 'user_logout', { email: decoded.email });
+      } catch (err) {
+        // Token invalid/expired — just clear cookies
+      }
+    }
+
+    clearAuthCookies(res);
+    res.json({ success: true });
+  } catch (error) {
+    clearAuthCookies(res);
+    res.json({ success: true }); // Logout should always succeed from client perspective
   }
 });
 

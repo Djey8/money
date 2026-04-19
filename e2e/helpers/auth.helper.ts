@@ -84,7 +84,9 @@ export async function clickMenuButton(page: Page, text: string) {
  * Call this in afterAll/afterEach to clean up e2e test users.
  */
 export async function deleteAccount(page: Page) {
-  const token = await page.evaluate(() => localStorage.getItem('selfhosted_token'));
+  const cookies = await page.context().cookies();
+  const accessCookie = cookies.find(c => c.name === 'access_token');
+  const token = accessCookie?.value;
   if (!token) return; // not logged in — nothing to clean up
 
   const apiUrl = 'http://localhost:3000/api';

@@ -10,8 +10,8 @@ process.env.JWT_SECRET = 'test-secret-for-unit-tests';
 const { authenticateToken } = require('../../middleware/auth');
 
 // Helper to build mock req/res/next
-function createMocks(authHeader) {
-  const req = { headers: {} };
+function createMocks(authHeader, cookies) {
+  const req = { headers: {}, cookies: cookies || {} };
   if (authHeader !== undefined) {
     req.headers.authorization = authHeader;
   }
@@ -60,7 +60,7 @@ describe('authenticateToken middleware', () => {
     expect(next).not.toHaveBeenCalled();
   });
 
-  it('returns 403 for an expired token', () => {
+  it('returns 401 for an expired token', () => {
     const expired = jwt.sign(
       { userId: 'u1', email: 'a@b.com' },
       secret,
@@ -70,8 +70,8 @@ describe('authenticateToken middleware', () => {
 
     authenticateToken(req, res, next);
 
-    expect(res._status).toBe(403);
-    expect(res._json).toEqual({ error: 'Invalid or expired token' });
+    expect(res._status).toBe(401);
+    expect(res._json).toEqual({ error: 'Token expired', code: 'TOKEN_EXPIRED' });
     expect(next).not.toHaveBeenCalled();
   });
 
@@ -113,6 +113,41 @@ describe('authenticateToken middleware', () => {
 
     expect(req.userId).toBe('u1');
     expect(req.userEmail).toBeUndefined();
+    expect(next).toHaveBeenCalled();
+  });
+
+  it('accepts token from access_token cookie', () => {
+    const token = jwt.sign(
+      { userId: 'cookie_user', email: 'cookie@test.com' },
+      secret,
+      { expiresIn: '1h' }
+    );
+    const { req, res, next } = createMocks(undefined, { access_token: token });
+
+    authenticateToken(req, res, next);
+
+    expect(req.userId).toBe('cookie_user');
+    expect(req.userEmail).toBe('cookie@test.com');
+    expect(next).toHaveBeenCalledTimes(1);
+  });
+
+  it('prefers cookie over Authorization header', () => {
+    const cookieToken = jwt.sign(
+      { userId: 'from_cookie', email: 'c@test.com' },
+      secret,
+      { expiresIn: '1h' }
+    );
+    const headerToken = jwt.sign(
+      { userId: 'from_header', email: 'h@test.com' },
+      secret,
+      { expiresIn: '1h' }
+    );
+    const { req, res, next } = createMocks(`Bearer ${headerToken}`, { access_token: cookieToken });
+
+    authenticateToken(req, res, next);
+
+    expect(req.userId).toBe('from_cookie');
+    expect(req.userEmail).toBe('c@test.com');
     expect(next).toHaveBeenCalled();
   });
 });

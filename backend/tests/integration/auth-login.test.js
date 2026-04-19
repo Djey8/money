@@ -22,7 +22,10 @@ beforeAll(async () => {
     .post('/api/auth/register')
     .send({ email: testEmail, password: testPassword });
 
-  testToken = res.body.token;
+  // Extract token from Set-Cookie header
+  const cookies = res.headers['set-cookie'] || [];
+  const accessCookie = cookies.find(c => c.startsWith('access_token='));
+  testToken = accessCookie ? accessCookie.split(';')[0].split('=')[1] : null;
   testUserId = res.body.userId;
 });
 
@@ -38,25 +41,31 @@ describe('POST /api/auth/login', () => {
     expect(true).toBe(true);
   });
 
-  skipIf(!dbAvailable, 'returns 200 with token for correct credentials', async () => {
+  skipIf(!dbAvailable, 'returns 200 with cookies for correct credentials', async () => {
     const res = await request(app)
       .post('/api/auth/login')
       .send({ email: testEmail, password: testPassword });
 
     expect(res.status).toBe(200);
-    expect(res.body).toHaveProperty('token');
     expect(res.body).toHaveProperty('userId', testUserId);
     expect(res.body).toHaveProperty('email', testEmail);
+    // Token is in Set-Cookie, not in response body
+    const cookies = res.headers['set-cookie'] || [];
+    expect(cookies.some(c => c.startsWith('access_token='))).toBe(true);
+    expect(cookies.some(c => c.startsWith('refresh_token='))).toBe(true);
   });
 
-  skipIf(!dbAvailable, 'returned JWT contains correct userId and email', async () => {
+  skipIf(!dbAvailable, 'access token cookie contains correct userId and email', async () => {
     const res = await request(app)
       .post('/api/auth/login')
       .send({ email: testEmail, password: testPassword });
 
     expect(res.status).toBe(200);
 
-    const decoded = jwt.verify(res.body.token, process.env.JWT_SECRET);
+    const cookies = res.headers['set-cookie'] || [];
+    const accessCookie = cookies.find(c => c.startsWith('access_token='));
+    const token = accessCookie.split(';')[0].split('=')[1];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
     expect(decoded.userId).toBe(testUserId);
     expect(decoded.email).toBe(testEmail);
   });
@@ -116,16 +125,16 @@ describe('GET /api/auth/verify', () => {
     const res = await request(app).get('/api/auth/verify');
 
     expect(res.status).toBe(401);
-    expect(res.body).toHaveProperty('error', 'No token provided');
+    expect(res.body).toHaveProperty('error', 'Access token required');
   });
 
-  it('returns 401 for an invalid token', async () => {
+  it('returns 403 for an invalid token', async () => {
     const res = await request(app)
       .get('/api/auth/verify')
       .set('Authorization', 'Bearer totally.invalid.token');
 
-    expect(res.status).toBe(401);
-    expect(res.body).toHaveProperty('valid', false);
+    expect(res.status).toBe(403);
+    expect(res.body).toHaveProperty('error', 'Invalid or expired token');
   });
 
   it('returns 401 for an expired token', async () => {
@@ -142,7 +151,7 @@ describe('GET /api/auth/verify', () => {
       .set('Authorization', `Bearer ${expired}`);
 
     expect(res.status).toBe(401);
-    expect(res.body).toHaveProperty('valid', false);
+    expect(res.body).toHaveProperty('error', 'Token expired');
   });
 });
 
@@ -191,26 +200,33 @@ describe('POST /api/auth/verify-password', () => {
 // --- Email Update ------------------------------------------------------------
 
 describe('PUT /api/auth/update-email', () => {
-  skipIf(!dbAvailable, 'updates email and returns new token', async () => {
+  skipIf(!dbAvailable, 'updates email and returns new access cookie', async () => {
     // Register a disposable user for this test
     const email = `email_update_${Date.now()}@test.local`;
     const reg = await request(app)
       .post('/api/auth/register')
       .send({ email, password: 'UpdatePass123!' });
 
+    const cookies = reg.headers['set-cookie'] || [];
+    const accessCookie = cookies.find(c => c.startsWith('access_token='));
+    const regToken = accessCookie.split(';')[0].split('=')[1];
+
     const newEmail = `updated_${Date.now()}@test.local`;
     const res = await request(app)
       .put('/api/auth/update-email')
-      .set('Authorization', `Bearer ${reg.body.token}`)
+      .set('Authorization', `Bearer ${regToken}`)
       .send({ newEmail });
 
     expect(res.status).toBe(200);
     expect(res.body).toHaveProperty('success', true);
     expect(res.body).toHaveProperty('email', newEmail);
-    expect(res.body).toHaveProperty('token');
 
-    // New token should contain updated email
-    const decoded = jwt.verify(res.body.token, process.env.JWT_SECRET);
+    // New access token cookie should contain updated email
+    const resCookies = res.headers['set-cookie'] || [];
+    const newAccessCookie = resCookies.find(c => c.startsWith('access_token='));
+    expect(newAccessCookie).toBeDefined();
+    const newToken = newAccessCookie.split(';')[0].split('=')[1];
+    const decoded = jwt.verify(newToken, process.env.JWT_SECRET);
     expect(decoded.email).toBe(newEmail);
   });
 

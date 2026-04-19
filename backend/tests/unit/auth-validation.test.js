@@ -91,9 +91,11 @@ describe('POST /api/auth/register — input validation', () => {
       .send({ email: 'new@test.com', password: 'Pass1234' });
 
     expect(res.status).toBe(201);
-    expect(res.body).toHaveProperty('token');
     expect(res.body).toHaveProperty('userId');
     expect(res.body.email).toBe('new@test.com');
+    // Token is now in cookies, not response body
+    const cookies = res.headers['set-cookie'] || [];
+    expect(cookies.some(c => c.startsWith('access_token='))).toBe(true);
   });
 });
 
@@ -154,11 +156,14 @@ describe('POST /api/auth/login — input validation', () => {
       .send({ email: 'u@t.com', password: 'correct' });
 
     expect(res.status).toBe(200);
-    expect(res.body).toHaveProperty('token');
     expect(res.body.userId).toBe('u1');
 
-    // Verify token contents
-    const decoded = jwt.verify(res.body.token, process.env.JWT_SECRET);
+    // Token is now in cookies
+    const cookies = res.headers['set-cookie'] || [];
+    const accessCookie = cookies.find(c => c.startsWith('access_token='));
+    expect(accessCookie).toBeDefined();
+    const token = accessCookie.split(';')[0].split('=')[1];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
     expect(decoded.userId).toBe('u1');
     expect(decoded.email).toBe('u@t.com');
   });
