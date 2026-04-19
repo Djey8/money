@@ -112,7 +112,7 @@ describe('SettingsComponent', () => {
 
       // Minimal mock to bypass constructor side effects
       const mockLocalService = { getData: jest.fn().mockReturnValue(''), saveData: jest.fn() };
-      const mockCryptic = { getKey: jest.fn().mockReturnValue('default'), getDefaultKey: jest.fn().mockReturnValue('default'), getEncryptionLocalEnabled: jest.fn().mockReturnValue(false), getEncryptionDatabaseEnabled: jest.fn().mockReturnValue(false) };
+      const mockCryptic = { getKey: jest.fn().mockReturnValue(''), getEncryptionLocalEnabled: jest.fn().mockReturnValue(false), getEncryptionDatabaseEnabled: jest.fn().mockReturnValue(false) };
       const mockTranslate = { setDefaultLang: jest.fn(), use: jest.fn() };
 
       // Create instance bypassing constructor
@@ -285,8 +285,7 @@ describe('SettingsComponent', () => {
       };
       const mockCryptic = {
         updateConfig: jest.fn(),
-        getKey: jest.fn().mockReturnValue('default'),
-        getDefaultKey: jest.fn().mockReturnValue('default'),
+        getKey: jest.fn().mockReturnValue(''),
         getEncryptionLocalEnabled: jest.fn().mockReturnValue(false),
         getEncryptionDatabaseEnabled: jest.fn().mockReturnValue(false),
       };

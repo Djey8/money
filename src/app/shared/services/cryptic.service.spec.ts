@@ -17,10 +17,10 @@ describe('CrypticService', () => {
       expect(s.getKey()).toBe('myKey');
     });
 
-    it('uses default key when stored value is "default"', () => {
+    it('returns null when stored value is "default"', () => {
       localStorage.setItem('encryptKey', 'default');
       const s = new CrypticService();
-      expect(s.getKey()).toBe(s.getDefaultKey());
+      expect(s.getKey()).toBeNull();
     });
 
     it('defaults encryption toggles to false', () => {
@@ -46,9 +46,10 @@ describe('CrypticService', () => {
       expect(localStorage.getItem('encryptKey')).toBe('newKey');
     });
 
-    it('converts "default" to the default key', () => {
+    it('stores "default" as-is (no special handling)', () => {
       service.updateConfig('default', false, false);
-      expect(service.getKey()).toBe(service.getDefaultKey());
+      expect(service.getKey()).toBeNull();
+      expect(localStorage.getItem('encryptKey')).toBe('default');
     });
 
     it('persists encryption toggles', () => {
