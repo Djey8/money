@@ -11,6 +11,52 @@ const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRES_IN = '7d';
 
+// Account lockout configuration
+const LOCKOUT_THRESHOLD = 10; // Lock after 10 consecutive failures
+const LOCKOUT_DURATION_MS = 15 * 60 * 1000; // 15-minute lockout
+const FAILED_ATTEMPT_WINDOW_MS = 30 * 60 * 1000; // Reset counter after 30 min of no attempts
+
+// In-memory store for failed login attempts (keyed by email)
+const failedAttempts = new Map();
+
+function getFailedAttempts(email) {
+  const record = failedAttempts.get(email);
+  if (!record) return null;
+  // Expire stale records
+  if (Date.now() - record.lastAttempt > FAILED_ATTEMPT_WINDOW_MS) {
+    failedAttempts.delete(email);
+    return null;
+  }
+  return record;
+}
+
+function recordFailedAttempt(email) {
+  const record = failedAttempts.get(email) || { count: 0, lastAttempt: 0, lockedUntil: 0 };
+  record.count += 1;
+  record.lastAttempt = Date.now();
+  if (record.count >= LOCKOUT_THRESHOLD) {
+    record.lockedUntil = Date.now() + LOCKOUT_DURATION_MS;
+  }
+  failedAttempts.set(email, record);
+  return record;
+}
+
+function clearFailedAttempts(email) {
+  failedAttempts.delete(email);
+}
+
+function isAccountLocked(email) {
+  const record = getFailedAttempts(email);
+  if (!record) return false;
+  if (record.lockedUntil > Date.now()) return true;
+  // Lockout expired — reset
+  if (record.lockedUntil > 0 && record.lockedUntil <= Date.now()) {
+    failedAttempts.delete(email);
+    return false;
+  }
+  return false;
+}
+
 // Register
 router.post('/register', async (req, res) => {
   try {
@@ -118,6 +164,15 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ error: 'Email and password are required' });
     }
 
+    // Check if account is locked
+    if (isAccountLocked(email)) {
+      const record = getFailedAttempts(email);
+      const retryAfter = Math.ceil((record.lockedUntil - Date.now()) / 1000);
+      logSecurityEvent('account_locked', { email, attempts: record.count });
+      res.set('Retry-After', String(retryAfter));
+      return res.status(429).json({ error: 'Account temporarily locked due to too many failed attempts. Try again later.' });
+    }
+
     const authDb = getAuthDb();
 
     // Find user
@@ -127,6 +182,7 @@ router.post('/login', async (req, res) => {
     });
 
     if (result.docs.length === 0) {
+      recordFailedAttempt(email);
       logAuthEvent('login', email, false, { reason: 'user_not_found' });
       return res.status(401).json({ error: 'Invalid credentials' });
     }
@@ -136,9 +192,16 @@ router.post('/login', async (req, res) => {
     // Verify password
     const isValidPassword = await bcrypt.compare(password, user.password);
     if (!isValidPassword) {
-      logAuthEvent('login', user._id, false, { email, reason: 'invalid_password' });
+      const record = recordFailedAttempt(email);
+      logAuthEvent('login', user._id, false, { email, reason: 'invalid_password', failedAttempts: record.count });
+      if (record.count >= LOCKOUT_THRESHOLD) {
+        logSecurityEvent('account_locked', { email, userId: user._id, attempts: record.count });
+      }
       return res.status(401).json({ error: 'Invalid credentials' });
     }
+
+    // Successful login — clear failed attempts
+    clearFailedAttempts(email);
 
     // Log successful login
     logAuthEvent('login', user._id, true, { email });
