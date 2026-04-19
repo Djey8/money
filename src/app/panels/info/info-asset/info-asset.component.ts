@@ -123,6 +123,10 @@ export class InfoAssetComponent extends BaseInfoComponent {
         InfoAssetComponent.title = this.titleTextField;
         InfoAssetComponent.amount = this.amountTextField;
 
+        InfoAssetComponent.isInfo = false;
+        InfoAssetComponent.isError = false;
+        AppStateService.instance.isSaving = true;
+
         this.persistence.writeAndSync({
           tag: 'balance/asset/assets',
           data: AppStateService.instance.allAssets,
@@ -130,13 +134,12 @@ export class InfoAssetComponent extends BaseInfoComponent {
           logEvent: 'update_asset',
           logMetadata: { title: this.titleTextField, amount: this.amountTextField },
           onSuccess: () => {
-            this.clearError();
-            this.isEdit = false;
+            AppStateService.instance.isSaving = false;
             this.toastService.show('Asset updated', 'update');
-            AppComponent.gotoTop();
           },
           onError: (error) => {
-            this.showError(error.message || 'Database write failed');
+            AppStateService.instance.isSaving = false;
+            this.toastService.show(error.message || 'Database write failed', 'error');
           }
         });
       }
@@ -154,6 +157,7 @@ export class InfoAssetComponent extends BaseInfoComponent {
 
         InfoAssetComponent.isInfo = false;
         InfoAssetComponent.isError = false;
+        AppStateService.instance.isSaving = true;
 
         this.persistence.writeAndSync({
           tag: 'balance/asset/assets',
@@ -162,10 +166,12 @@ export class InfoAssetComponent extends BaseInfoComponent {
           logEvent: 'delete_asset',
           logMetadata: { title: deletedTitle, index: index },
           onSuccess: () => {
+            AppStateService.instance.isSaving = false;
             this.toastService.show('Asset deleted', 'delete');
           },
           onError: (error) => {
-            this.showError(error.message || 'Database write failed');
+            AppStateService.instance.isSaving = false;
+            this.toastService.show(error.message || 'Database write failed', 'error');
           }
         });
       } catch (error) {

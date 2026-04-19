@@ -45,6 +45,7 @@ export class RegistrationComponent {
   passwordTextField = '';
 
   eyePic = "../../assets/symbols/eye.png";
+  showPassword = false;
 
   isUploaded = false;
   filename = "";
@@ -257,15 +258,7 @@ export class RegistrationComponent {
     }
 
     toggleEye(){
-      if(this.eyePic == "../../assets/symbols/eye.png"){
-        this.eyePic = "../../assets/symbols/eye-slash.png";
-        document.getElementById("password").setAttribute("type", "text");
-        document.getElementById("passwordL").setAttribute("type", "text");
-      } else {
-        this.eyePic = "../../assets/symbols/eye.png";
-        document.getElementById("password").setAttribute("type", "password");
-        document.getElementById("passwordL").setAttribute("type", "password");
-      }
+      this.showPassword = !this.showPassword;
     }
 
   /**

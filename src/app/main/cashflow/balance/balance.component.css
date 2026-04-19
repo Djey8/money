@@ -8,6 +8,13 @@
   margin-left: 0px;
 }
 
+/* Skeleton loading animation */
+.skeleton-row { display: flex; gap: 16px; max-width: 900px; margin: 16px auto; padding: 0 16px; }
+.skeleton-cell { flex: 1; height: 24px; border-radius: var(--radius-md);
+  background: linear-gradient(90deg, var(--color-surface) 25%, rgba(255,255,255,0.08) 50%, var(--color-surface) 75%);
+  background-size: 200% 100%; animation: shimmer 1.4s infinite; }
+@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
 /* Section header with inline + button */
 .section-header {
   display: flex;
@@ -29,14 +36,14 @@
 }
 
 .section-add-btn {
-  width: 26px;
-  height: 26px;
+  width: 24px;
+  height: 24px;
   border-radius: var(--radius-full);
-  border: 3px solid black;
+  border: 2.5px solid black;
   background: transparent;
   color: black;
-  font-size: 18px;
-  font-weight: 900;
+  font-size: 15px;
+  font-weight: 300;
   line-height: 1;
   cursor: pointer;
   display: flex;

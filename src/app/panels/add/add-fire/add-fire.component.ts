@@ -12,7 +12,6 @@ import { PlannedSubscription } from 'src/app/interfaces/planned-subscription';
 import { BaseAddComponent } from 'src/app/shared/base/base-add.component';
 import { generateBucketId } from 'src/app/shared/fire-migration.utils';
 
-import { environment } from 'src/environments/environment';
 import { isDuplicateTitle } from 'src/app/shared/validation.utils';
 import { AppStateService } from 'src/app/shared/services/app-state.service';
 import { PaymentPlannerService } from 'src/app/shared/services/payment-planner.service';
@@ -535,8 +534,7 @@ export class AddFireComponent extends BaseAddComponent {
         AppStateService.instance.isSaving = false;
         this.toastService.show('Emergency fund added', 'success');
         gotoTop();
-        const route = environment.mode === 'selfhosted' ? '/fire' : '/fireemergencies';
-        this.router.navigate([route]);
+        this.router.navigate(['/fireemergencies']);
       },
       onError: (error) => {
         AppStateService.instance.isSaving = false;

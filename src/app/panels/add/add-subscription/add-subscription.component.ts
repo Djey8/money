@@ -195,6 +195,8 @@ export class AddSubscriptionComponent extends BaseAddComponent {
       AddSubscriptionComponent.commentTextField = "";
       AddSubscriptionComponent.categoryTextField = "@";
       this.clearError();
+      this.closeWindow();
+      AppStateService.instance.isSaving = true;
       this.persistence.batchWriteAndSync({
         writes: [
           { tag: "income/revenue/interests", data: AppStateService.instance.allIntrests },
@@ -244,13 +246,14 @@ export class AddSubscriptionComponent extends BaseAddComponent {
           amount: AddSubscriptionComponent.amountTextField
         },
         onSuccess: () => {
-          this.closeWindow();
+          AppStateService.instance.isSaving = false;
           this.toastService.show('Subscription added', 'success');
           AppComponent.gotoTop();
           this.router.navigate([AddSubscriptionComponent.url]);
         },
         onError: (error) => {
-          this.showError(error);
+          AppStateService.instance.isSaving = false;
+          this.toastService.show(error.message || 'Database write failed', 'error');
         }
       });
     }

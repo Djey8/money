@@ -1686,19 +1686,23 @@ export class AddComponent extends BaseAddComponent {
               // Firebase mode - save to localStorage first
               this.saveToLocalStorage();
               
-              // Close dialog immediately
+              // Close dialog and show spinner
               this.closeWindowAndNavigate();
+              AppStateService.instance.isSaving = true;
               
               // Then write to database
               writes.forEach(write => {
                 this.database.writeObject(write.tag, write.data);
               });
+              AppStateService.instance.isSaving = false;
+              this.toastService.show('Transaction added successfully', 'success');
             } else {
               // Selfhosted mode - save to localStorage first
               this.saveToLocalStorage();
               
-              // Close dialog immediately for better UX
+              // Close dialog and show spinner
               this.closeWindowAndNavigate();
+              AppStateService.instance.isSaving = true;
 
               // Execute batch write in background (only writes changed data)
               this.database.batchWrite(writes).subscribe({
@@ -1713,19 +1717,21 @@ export class AddComponent extends BaseAddComponent {
                     amount: AddComponent.amountTextField,
                     date: this.dateTextField
                   });
+                  AppStateService.instance.isSaving = false;
+                  this.toastService.show('Transaction added successfully', 'success');
                 },
                 error: (error) => {
+                  AppStateService.instance.isSaving = false;
+                  this.toastService.show('Failed to sync to database', 'error');
                   console.error('Error writing data to database:', error);
-                  // Alert user about database write failure
-                  alert('Warning: Data saved locally but failed to sync to database. Error: ' + (error.message || error));
                 }
               });
             }
 
           } catch (error) {
-            this.showError(error);
+            AppStateService.instance.isSaving = false;
+            this.toastService.show('Error writing to database', 'error');
             console.error('Error in database write:', error);
-            alert('Error writing to database: ' + (error.message || error));
           }
         } catch (error) {
           console.error('Error in addTransaction:', error);
@@ -1778,7 +1784,6 @@ export class AddComponent extends BaseAddComponent {
     AddComponent.creditTextField = "";
     AddComponent.shareTextField = "50";
     this.closeWindow();
-    this.toastService.show('Transaction added successfully', 'success');
     AppComponent.gotoTop();
     this.router.navigate([AddComponent.url]);
   }

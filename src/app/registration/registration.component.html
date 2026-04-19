@@ -20,10 +20,14 @@
 
     <label for="password" class="required"> {{'Registration.Password' | translate}} </label>
     <div class="password-wrapper">
-      <input type="password" id="password" name="Password" aria-required="true" [(ngModel)]="passwordTextField"
+      <input [type]="showPassword ? 'text' : 'password'" id="password" name="Password" aria-required="true" [(ngModel)]="passwordTextField"
           [attr.aria-invalid]="isError ? true : null" [attr.aria-describedby]="isError ? 'reg-error' : 'password-hint'">
       <button type="button" (click)="toggleEye()" class="password-toggle-btn" aria-label="Toggle password visibility">
-      <img src={{eyePic}} alt="Toggle Password Visibility" width="20" height="20" class="password-toggle-img"/>
+      <svg class="password-toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+        <circle cx="12" cy="12" r="3"/>
+        <line [attr.visibility]="showPassword ? 'visible' : 'hidden'" x1="1" y1="1" x2="23" y2="23"/>
+      </svg>
       </button>
     </div>
     <small id="password-hint" class="password-hint">{{'Registration.PasswordHint' | translate}}</small>
@@ -42,10 +46,14 @@
 
     <label for="password" class="required"> {{'Registration.Password' | translate}}</label>
     <div class="password-wrapper">
-      <input type="password" id="passwordL" name="Password" aria-required="true" [(ngModel)]="passwordTextField"
+      <input [type]="showPassword ? 'text' : 'password'" id="passwordL" name="Password" aria-required="true" [(ngModel)]="passwordTextField"
           [attr.aria-invalid]="isError ? true : null" [attr.aria-describedby]="isError ? 'login-error' : null">
       <button type="button" (click)="toggleEye()" class="password-toggle-btn" aria-label="Toggle password visibility">
-      <img src={{eyePic}} alt="Toggle Password Visibility" width="20" height="20" class="password-toggle-img"/>
+      <svg class="password-toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+        <circle cx="12" cy="12" r="3"/>
+        <line [attr.visibility]="showPassword ? 'visible' : 'hidden'" x1="1" y1="1" x2="23" y2="23"/>
+      </svg>
       </button>
     </div>
     <p *ngIf="isError" id="login-error" role="alert">{{errorMessageLable}}</p>

@@ -739,7 +739,7 @@ export class InfoComponent extends BaseInfoComponent {
       });
 
       // Write to DB
-      this.updateStorage();
+      this.updateStorage('Transaction updated');
 
       // Always recalculate income statement when transaction is updated
       // This ensures bucket amounts are always in sync with transaction allocations
@@ -752,7 +752,6 @@ export class InfoComponent extends BaseInfoComponent {
       // Clean Up close Window
       this.clearError();
       this.isEdit = false;
-      this.toastService.show('Transaction updated', 'update');
       AppComponent.gotoTop();
     }
   }
@@ -1280,8 +1279,7 @@ export class InfoComponent extends BaseInfoComponent {
     this.incomeStatement.recalculate();
     
     // WRITE to Storage
-    this.updateStorage();
-    this.toastService.show('Transaction deleted', 'delete');
+    this.updateStorage('Transaction deleted');
     this.isEdit = false;
     InfoComponent.isInfo = false;
     });
@@ -1683,15 +1681,16 @@ export class InfoComponent extends BaseInfoComponent {
     // No manual updates needed - the service recalculates all bucket amounts from transactions
   }
 
-  updateStorage() {
+  updateStorage(successMessage?: string) {
     // Skip blocking authentication check for better UX
     // Database writes will fail gracefully if user is not authenticated
 
     // User is authenticated
     try {
-      // Close dialog immediately for better UX
+      // Close dialog and show spinner
       InfoComponent.isInfo = false;
       InfoComponent.isError = false;
+      AppStateService.instance.isSaving = true;
 
       this.persistence.batchWriteAndSync({
         writes: [
@@ -1748,11 +1747,19 @@ export class InfoComponent extends BaseInfoComponent {
             { key: "grow", data: JSON.stringify(AppStateService.instance.allGrowProjects) }
           ] : [])
         ],
+        onSuccess: () => {
+          AppStateService.instance.isSaving = false;
+          if (successMessage) {
+            this.toastService.show(successMessage, successMessage.includes('deleted') ? 'delete' : 'update');
+          }
+        },
         onError: (error) => {
-          this.showError(error);
+          AppStateService.instance.isSaving = false;
+          this.toastService.show(error.message || 'Database write failed', 'error');
         }
       });
     } catch (error) {
+      AppStateService.instance.isSaving = false;
       this.showError(error);
     }
   }

@@ -122,6 +122,10 @@ export class InfoLiabilitieComponent extends BaseInfoComponent {
         InfoLiabilitieComponent.credit = this.creditTextField;
         InfoLiabilitieComponent.isInvestment = this.isInvestment;
         
+        InfoLiabilitieComponent.isInfo = false;
+        InfoLiabilitieComponent.isError = false;
+        AppStateService.instance.isSaving = true;
+
         this.persistence.writeAndSync({
           tag: 'balance/liabilities',
           data: AppStateService.instance.liabilities,
@@ -134,13 +138,12 @@ export class InfoLiabilitieComponent extends BaseInfoComponent {
             isInvestment: this.isInvestment
           },
           onSuccess: () => {
-            this.clearError();
-            this.isEdit = false;
+            AppStateService.instance.isSaving = false;
             this.toastService.show('Liability updated', 'update');
-            AppComponent.gotoTop();
           },
           onError: (error) => {
-            this.showError(error.message || 'Database write failed');
+            AppStateService.instance.isSaving = false;
+            this.toastService.show(error.message || 'Database write failed', 'error');
           }
         });
       }
@@ -155,6 +158,7 @@ export class InfoLiabilitieComponent extends BaseInfoComponent {
       AppStateService.instance.liabilities.splice(index, 1);
       InfoLiabilitieComponent.isInfo = false;
       InfoLiabilitieComponent.isError = false;
+      AppStateService.instance.isSaving = true;
 
       this.persistence.writeAndSync({
         tag: 'balance/liabilities',
@@ -163,12 +167,13 @@ export class InfoLiabilitieComponent extends BaseInfoComponent {
         logEvent: 'delete_liability',
         logMetadata: { title: deletedTitle, index: index },
         onSuccess: () => {
+          AppStateService.instance.isSaving = false;
           this.toastService.show('Liability deleted', 'delete');
-          AppComponent.gotoTop();
           this.router.navigate(['/balance']);
         },
         onError: (error) => {
-          this.showError(error.message || 'Database write failed');
+          AppStateService.instance.isSaving = false;
+          this.toastService.show(error.message || 'Database write failed', 'error');
         }
       });
     });

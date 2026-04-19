@@ -159,6 +159,7 @@ form {
   }
   
   input[type="text"],
+  input[type="password"],
   input[type="date"],
   input[type="time"] {
     background-color: var(--color-surface);
@@ -171,6 +172,16 @@ form {
     color: var(--color-text);
     width: 96%;
     box-sizing: border-box;
+  }
+
+  .password-wrapper input {
+    padding-right: 45px;
+    margin-bottom: 0 !important;
+    width: 96% !important;
+    margin-left: 2% !important;
+    margin-right: 2% !important;
+    font-family: inherit;
+    font-size: inherit;
   }
 
   input[type="date"]::-webkit-calendar-picker-indicator,
@@ -804,14 +815,14 @@ form {
     margin-top: 10px;
     margin-left: 10%;
     width: 80%;
-    background-color: rgb(255, 136, 0);
+    background-color: var(--color-primary);
     border-radius: var(--radius-lg);
-    color: var(--color-text);
+    color: white;
     font-weight: bold;
     font-size: 20px;
     padding: 1.5%;
     border-width: 1%;
-    border-color: var(--color-border);
+    border-color: var(--color-primary-hover);
   }
 
   /* Settings Menu */

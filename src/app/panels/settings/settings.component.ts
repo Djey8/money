@@ -16,6 +16,7 @@ import { PersistenceService } from 'src/app/shared/services/persistence.service'
 import { IncomeStatementService } from 'src/app/shared/services/income-statement.service';
 import { ErrorMapperService } from 'src/app/shared/services/error-mapper.service';
 import { AppStateService } from 'src/app/shared/services/app-state.service';
+import { ToastService } from 'src/app/shared/services/toast.service';
 import { migrateGrowArray } from 'src/app/shared/grow-migration.utils';
 import { migrateSmileArray } from 'src/app/shared/smile-migration.utils';
 import { CommonModule } from '@angular/common';
@@ -151,12 +152,14 @@ export class SettingsComponent {
   passwordTextField = "";
   errorMessageLable = "Error: Password is not correct!";
   eyePic = "../../assets/symbols/eye.png";
+  showPassword = false;
 
   isDeleteAuth = false;
   isDeleteError = false;
   deletePasswordTextField = "";
   deleteErrorLabel = "";
   deleteEyePic = "../../assets/symbols/eye.png";
+  showDeletePassword = false;
 
 
   static zIndex;
@@ -182,7 +185,7 @@ export class SettingsComponent {
 
   public classReference = SettingsComponent;
   public get profileReference() { return ProfileComponent; }
-  constructor(private translate: TranslateService, private router: Router, private localStorage: LocalService, private database: DatabaseService, private afAuth: AngularFireAuth, private cryptic: CrypticService, private authService: AuthService, private selfhosted: SelfhostedService, private frontendLogger: FrontendLoggerService, private persistence: PersistenceService, private incomeStatement: IncomeStatementService, private errorMapper: ErrorMapperService) {
+  constructor(private translate: TranslateService, private router: Router, private localStorage: LocalService, private database: DatabaseService, private afAuth: AngularFireAuth, private cryptic: CrypticService, private authService: AuthService, private selfhosted: SelfhostedService, private frontendLogger: FrontendLoggerService, private persistence: PersistenceService, private incomeStatement: IncomeStatementService, private errorMapper: ErrorMapperService, private toastService: ToastService) {
     this.translate.setDefaultLang('en');
     SettingsComponent.isInfo = false;
     SettingsComponent.isError = false;
@@ -248,13 +251,7 @@ export class SettingsComponent {
   }
 
   toggleEye(){
-    if(this.eyePic == "../../assets/symbols/eye.png"){
-      this.eyePic = "../../assets/symbols/eye-slash.png";
-      document.getElementById("password").setAttribute("type", "text");
-    } else {
-      this.eyePic = "../../assets/symbols/eye.png";
-      document.getElementById("password").setAttribute("type", "password");
-    }
+    this.showPassword = !this.showPassword;
   }
 
   toggleIsLocal() {
@@ -443,18 +440,11 @@ export class SettingsComponent {
     this.deleteErrorLabel = "";
     this.deletePasswordTextField = "";
     this.deleteEyePic = "../../assets/symbols/eye.png";
-    document.getElementById("deletePassword")?.setAttribute("type", "password");
+    this.showDeletePassword = false;
   }
 
   toggleDeleteEye() {
-    const el = document.getElementById("deletePassword");
-    if (el?.getAttribute("type") === "password") {
-      el.setAttribute("type", "text");
-      this.deleteEyePic = "../../assets/symbols/eye-open.png";
-    } else {
-      el?.setAttribute("type", "password");
-      this.deleteEyePic = "../../assets/symbols/eye.png";
-    }
+    this.showDeletePassword = !this.showDeletePassword;
   }
 
   authenticateForDelete() {
@@ -526,6 +516,7 @@ export class SettingsComponent {
     const authResult = await this.authService.checkAuthentication();
     if (!authResult.authenticated) {
       console.error("Authentication failed:", authResult.error);
+      AppStateService.instance.isSaving = false;
       return;
     }
 
@@ -567,10 +558,20 @@ export class SettingsComponent {
             ] : [])
           ],
           forceWrite: true,
-          logEvent: 'recalculate_from_transactions'
+          logEvent: 'recalculate_from_transactions',
+          onSuccess: () => {
+            AppStateService.instance.isSaving = false;
+            this.toastService.show('Accounting fixed successfully', 'success');
+          },
+          onError: (error: any) => {
+            AppStateService.instance.isSaving = false;
+            this.toastService.show(error.message || 'Fix accounting failed', 'error');
+          }
         });
 
       } catch (error) {
+        AppStateService.instance.isSaving = false;
+        this.toastService.show('Fix accounting failed', 'error');
       }
   }
 
@@ -1016,6 +1017,8 @@ export class SettingsComponent {
   }
 
   changeFix() {
+    SettingsComponent.isInfo = false;
+    AppStateService.instance.isSaving = true;
     this.updateBasedOnTransaction();
     this.isAuth = false;
   }

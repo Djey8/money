@@ -179,6 +179,10 @@ export class InfoShareComponent extends BaseInfoComponent {
             { tag: "grow", data: AppStateService.instance.allGrowProjects }
           ];
 
+          InfoShareComponent.isInfo = false;
+          InfoShareComponent.isError = false;
+          AppStateService.instance.isSaving = true;
+
           this.persistence.batchWriteAndSync({
             writes,
             localStorageSaves: [
@@ -192,16 +196,16 @@ export class InfoShareComponent extends BaseInfoComponent {
               price: this.priceTextField
             },
             onSuccess: () => {
-              this.clearError();
-              this.isEdit = false;
+              AppStateService.instance.isSaving = false;
               this.toastService.show('Share updated', 'update');
-              AppComponent.gotoTop();
             },
             onError: (error) => {
-              this.showError(error.message || 'Database write failed');
+              AppStateService.instance.isSaving = false;
+              this.toastService.show(error.message || 'Database write failed', 'error');
             }
           });
         } catch (error) {
+          AppStateService.instance.isSaving = false;
           this.showError(error.message || 'Error occurred');
         }
       }
@@ -216,6 +220,7 @@ export class InfoShareComponent extends BaseInfoComponent {
       AppStateService.instance.allShares.splice(index, 1);
       InfoShareComponent.isInfo = false;
       InfoShareComponent.isError = false;
+      AppStateService.instance.isSaving = true;
 
       this.persistence.writeAndSync({
         tag: 'balance/asset/shares',
@@ -224,12 +229,13 @@ export class InfoShareComponent extends BaseInfoComponent {
         logEvent: 'delete_share',
         logMetadata: { title: deletedTitle, index: index },
         onSuccess: () => {
+          AppStateService.instance.isSaving = false;
           this.toastService.show('Share deleted', 'delete');
-          AppComponent.gotoTop();
           this.router.navigate(['/balance']);
         },
         onError: (error) => {
-          this.showError(error.message || 'Database write failed');
+          AppStateService.instance.isSaving = false;
+          this.toastService.show(error.message || 'Database write failed', 'error');
         }
       });
     });

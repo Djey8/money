@@ -207,6 +207,8 @@ export class AddBudgetComponent extends BaseAddComponent {
           AddBudgetComponent.amountTextField = "";
           AddBudgetComponent.categoryTextField = "@";
           this.clearError();
+          this.closeWindow();
+          AppStateService.instance.isSaving = true;
 
 
       try {
@@ -225,7 +227,8 @@ export class AddBudgetComponent extends BaseAddComponent {
               this.finalizeAddBudget();
             },
             error: (error) => {
-              this.showError(error);
+              AppStateService.instance.isSaving = false;
+              this.toastService.show(error.message || 'Database write failed', 'error');
             }
           });
         } else {
@@ -241,7 +244,8 @@ export class AddBudgetComponent extends BaseAddComponent {
         }
 
       } catch (error) {
-        this.showError(error);
+        AppStateService.instance.isSaving = false;
+        this.toastService.show(error.message || 'Database write failed', 'error');
       }
     }
   }
@@ -250,7 +254,7 @@ export class AddBudgetComponent extends BaseAddComponent {
     if (!AddBudgetComponent.isError) {
       this.showCategoryOptions = false;
       this.localStorage.saveData("budget", JSON.stringify(AppStateService.instance.allBudgets));
-      this.closeWindow();
+      AppStateService.instance.isSaving = false;
       this.toastService.show('Budget added', 'success');
       gotoTop();
       this.router.navigate([AddBudgetComponent.url]);
