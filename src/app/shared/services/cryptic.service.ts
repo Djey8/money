@@ -9,8 +9,7 @@ import *  as CryptoJS from 'crypto-js';
  * Manages encryption keys and per-location (local/database) encryption toggles.
  */
 export class CrypticService {
-  defaultKey = "akj154072mjakjajah825";
-  key: string;
+  private key: string;
   encryptionLocalEnabled: boolean;
   encryptionDatabaseEnabled: boolean;
 
@@ -30,13 +29,9 @@ export class CrypticService {
     return this.encryptionDatabaseEnabled;
   }
 
-  public getDefaultKey(): string {
-    return this.defaultKey;
-  }
-
   private loadConfig(): void {
     const storedKey = localStorage.getItem('encryptKey');
-    this.key = storedKey === "default" ? this.defaultKey : storedKey; // default key
+    this.key = (storedKey && storedKey !== 'default') ? storedKey : null;
 
     const encryptLocal = localStorage.getItem('encryptLocal');
     this.encryptionLocalEnabled = encryptLocal === "true" ? true : false;
@@ -46,7 +41,7 @@ export class CrypticService {
   }
 
   public updateConfig(key: string, encryptLocal: boolean, encryptDatabase: boolean): void {
-    this.key = key == "default" ? this.defaultKey : key;
+    this.key = (key && key !== 'default') ? key : null;
     localStorage.setItem('encryptKey', key);
     this.encryptionLocalEnabled = encryptLocal;
     localStorage.setItem('encryptLocal', encryptLocal.toString());

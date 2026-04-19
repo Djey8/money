@@ -78,7 +78,7 @@ describe('POST /api/auth/register — input validation', () => {
       .send({ email: 'exists@test.com', password: 'Pass1234' });
 
     expect(res.status).toBe(409);
-    expect(res.body.error).toMatch(/already exists/i);
+    expect(res.body.error).toBe('Registration failed');
   });
 
   it('returns 201 with token for a valid registration', async () => {
