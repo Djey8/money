@@ -292,9 +292,13 @@
                 <form>
                     <label for="password"> {{'Registration.Password' | translate}}</label>
                     <div class="password-wrapper mb-md">
-                    <input type="password" id="password" name="Password" [(ngModel)]="passwordTextField" class="mb-0">
+                    <input [type]="showPassword ? 'text' : 'password'" id="password" name="Password" [(ngModel)]="passwordTextField" class="mb-0">
                     <button id="eyebtn" type="button" (click)="toggleEye()" class="password-toggle-btn">
-                        <img src={{eyePic}} alt="Toggle Password Visibility" width="20" height="20" class="password-toggle-img"/>
+                        <svg class="password-toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                            <circle cx="12" cy="12" r="3"/>
+                            <line [attr.visibility]="showPassword ? 'visible' : 'hidden'" x1="1" y1="1" x2="23" y2="23"/>
+                        </svg>
                     </button>
                     </div>
                     <p *ngIf="isError" id="errorMessage">{{errorMessageLable}}</p>
@@ -325,9 +329,13 @@
                     <form>
                         <label for="deletePassword">{{'Registration.Password' | translate}}</label>
                         <div class="password-wrapper mb-md">
-                            <input type="password" id="deletePassword" name="deletePassword" [(ngModel)]="deletePasswordTextField" class="mb-0">
+                            <input [type]="showDeletePassword ? 'text' : 'password'" id="deletePassword" name="deletePassword" [(ngModel)]="deletePasswordTextField" class="mb-0">
                             <button id="deleteEyebtn" type="button" (click)="toggleDeleteEye()" class="password-toggle-btn">
-                                <img src={{deleteEyePic}} alt="Toggle Password Visibility" width="20" height="20" class="password-toggle-img"/>
+                                <svg class="password-toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                    <circle cx="12" cy="12" r="3"/>
+                                    <line [attr.visibility]="showDeletePassword ? 'visible' : 'hidden'" x1="1" y1="1" x2="23" y2="23"/>
+                                </svg>
                             </button>
                         </div>
                         <p *ngIf="isDeleteError" id="deleteErrorMessage">{{deleteErrorLabel}}</p>

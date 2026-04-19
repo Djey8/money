@@ -159,6 +159,7 @@ form {
   }
   
   input[type="text"],
+  input[type="password"],
   input[type="date"],
   input[type="time"] {
     background-color: var(--color-surface);
@@ -171,6 +172,16 @@ form {
     color: var(--color-text);
     width: 96%;
     box-sizing: border-box;
+  }
+
+  .password-wrapper input {
+    padding-right: 45px;
+    margin-bottom: 0 !important;
+    width: 96% !important;
+    margin-left: 2% !important;
+    margin-right: 2% !important;
+    font-family: inherit;
+    font-size: inherit;
   }
 
   input[type="date"]::-webkit-calendar-picker-indicator,
