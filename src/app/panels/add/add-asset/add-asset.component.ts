@@ -95,6 +95,8 @@ export class AddAssetComponent extends BaseAddComponent {
       this.titleTextField = "";
       this.amountTextField = "";
       this.clearError();
+      this.closeWindow();
+      AppStateService.instance.isSaving = true;
 
       this.persistence.writeAndSync({
         tag: 'balance/asset/assets',
@@ -103,13 +105,14 @@ export class AddAssetComponent extends BaseAddComponent {
         logEvent: 'add_asset',
         logMetadata: { title: this.titleTextField, amount: this.amountTextField },
         onSuccess: () => {
-          this.closeWindow();
+          AppStateService.instance.isSaving = false;
           this.toastService.show('Asset added', 'success');
           gotoTop();
           this.router.navigate([`/balance`]);
         },
         onError: (error) => {
-          this.showError(error.message || 'Database write failed');
+          AppStateService.instance.isSaving = false;
+          this.toastService.show(error.message || 'Database write failed', 'error');
         }
       });
     }

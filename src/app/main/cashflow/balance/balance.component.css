@@ -8,6 +8,13 @@
   margin-left: 0px;
 }
 
+/* Skeleton loading animation */
+.skeleton-row { display: flex; gap: 16px; max-width: 900px; margin: 16px auto; padding: 0 16px; }
+.skeleton-cell { flex: 1; height: 24px; border-radius: var(--radius-md);
+  background: linear-gradient(90deg, var(--color-surface) 25%, rgba(255,255,255,0.08) 50%, var(--color-surface) 75%);
+  background-size: 200% 100%; animation: shimmer 1.4s infinite; }
+@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
 /* Section header with inline + button */
 .section-header {
   display: flex;
