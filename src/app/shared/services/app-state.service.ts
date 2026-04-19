@@ -67,6 +67,7 @@ export class AppStateService {
   // Phase C: Settings
   currency: string = '€';
   isLoading: boolean = true;
+  isSaving: boolean = false;
   lastUpdatedAt: string | null = null;
   tier2Loaded = false;
   tier3GrowLoaded = false;
