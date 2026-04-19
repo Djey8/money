@@ -20,7 +20,7 @@ spec:
             runAsUser: 100
           containers:
           - name: backup
-            image: curlimages/curl:latest
+            image: curlimages/curl:latest@sha256:7ac8e4f7b7a42ba28baaf5c330778ba89ae25c824745a76a4d27f12bd8602ce7
             securityContext:
               allowPrivilegeEscalation: false
               capabilities:
@@ -91,21 +91,33 @@ spec:
               echo "Creating archive..."
               tar -czf "${HOURLY_FILE}" -C "${BACKUP_ROOT}/temp" .
               rm -rf "${BACKUP_ROOT}/temp"
+
+              # ── Encrypt archive if key is provided ─────────────
+              if [ -n "${BACKUP_ENCRYPTION_KEY}" ]; then
+                echo "Encrypting backup..."
+                gpg --batch --yes --symmetric --cipher-algo AES256 \
+                  --passphrase "${BACKUP_ENCRYPTION_KEY}" \
+                  --output "${HOURLY_FILE}.gpg" "${HOURLY_FILE}"
+                rm -f "${HOURLY_FILE}"
+                HOURLY_FILE="${HOURLY_FILE}.gpg"
+                echo "Backup encrypted with AES-256"
+              fi
+
               SIZE=$(wc -c < "${HOURLY_FILE}")
               echo "Hourly backup: ${HOURLY_FILE} (${SIZE} bytes)"
 
               # ── Retention: keep last 24 ────────────────────────
-              COUNT=$(ls -1 "${HOURLY_DIR}"/couchdb-backup-*.tar.gz 2>/dev/null | wc -l)
+              COUNT=$(ls -1 "${HOURLY_DIR}"/couchdb-backup-*.tar.gz* 2>/dev/null | wc -l)
               if [ "$COUNT" -gt 24 ]; then
                 echo "Cleaning hourly (keeping last 24)..."
-                ls -1t "${HOURLY_DIR}"/couchdb-backup-*.tar.gz | tail -n +25 | while read f; do
+                ls -1t "${HOURLY_DIR}"/couchdb-backup-*.tar.gz* | tail -n +25 | while read f; do
                   echo "  Removing: $(basename "$f")"
                   rm -f "$f"
                 done
               fi
 
               echo ""
-              echo "Hourly backups: $(ls -1 "${HOURLY_DIR}"/couchdb-backup-*.tar.gz 2>/dev/null | wc -l) (max 24)"
+              echo "Hourly backups: $(ls -1 "${HOURLY_DIR}"/couchdb-backup-*.tar.gz* 2>/dev/null | wc -l) (max 24)"
               echo "Hourly backup completed!"
             env:
             - name: COUCHDB_USER
@@ -118,6 +130,12 @@ spec:
                 secretKeyRef:
                   name: couchdb-secret
                   key: password
+            - name: BACKUP_ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: backup-encryption-secret
+                  key: encryption-key
+                  optional: true
             volumeMounts:
             - name: backup-storage
               mountPath: /backups
