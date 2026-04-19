@@ -1,4 +1,5 @@
 const express = require('express');
+const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { getAuthDb, getUsersDb } = require('../config/db');
@@ -19,6 +20,20 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ error: 'Email and password are required' });
     }
 
+    // Email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ error: 'Invalid email format' });
+    }
+
+    // Password policy: min 8 chars, at least 1 uppercase, 1 lowercase, 1 number
+    if (password.length < 8) {
+      return res.status(400).json({ error: 'Password must be at least 8 characters' });
+    }
+    if (!/[A-Z]/.test(password) || !/[a-z]/.test(password) || !/[0-9]/.test(password)) {
+      return res.status(400).json({ error: 'Password must contain uppercase, lowercase, and a number' });
+    }
+
     const authDb = getAuthDb();
     const usersDb = getUsersDb();
 
@@ -30,7 +45,7 @@ router.post('/register', async (req, res) => {
       });
 
       if (result.docs.length > 0) {
-        return res.status(409).json({ error: 'User already exists' });
+        return res.status(409).json({ error: 'Registration failed' });
       }
     } catch (err) {
       console.error('Error checking user:', err);
@@ -40,7 +55,7 @@ router.post('/register', async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Create user in auth database (for authentication)
-    const userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const userId = `user_${Date.now()}_${crypto.randomUUID().replace(/-/g, '').substring(0, 9)}`;
     const user = {
       _id: userId,
       email,
