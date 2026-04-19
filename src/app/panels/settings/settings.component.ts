@@ -230,7 +230,7 @@ export class SettingsComponent {
       this.translate.use("en");
       document.body.classList.remove('rtl-text');
     }
-    AppStateService.instance.key = this.cryptic.getKey() === this.cryptic.getDefaultKey() ? "default" : this.cryptic.getKey();
+    AppStateService.instance.key = this.cryptic.getKey() || "";
     this.keyTextField = AppStateService.instance.key;
     AppStateService.instance.isLocal = this.cryptic.getEncryptionLocalEnabled();
     AppStateService.instance.isDatabase = this.cryptic.getEncryptionDatabaseEnabled();
