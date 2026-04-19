@@ -47,8 +47,8 @@ The application has good foundational security practices (Helmet, bcrypt, JWT au
 | Severity | Total | Fixed | Remaining |
 |----------|-------|-------|-----------|
 | CRITICAL | 4 | 4 ✅ | 0 |
-| HIGH | 6 | 3 ✅ | 3 |
-| MEDIUM | 8 | 3 ✅ | 5 |
+| HIGH | 6 | 6 ✅ | 0 |
+| MEDIUM | 8 | 4 ✅ | 4 |
 | LOW/Info | 7 | 4 ✅ | 3 |
 
 ---
@@ -286,23 +286,17 @@ Failed login attempts are logged but no lockout mechanism exists. Combined with 
 
 ## 5. Findings — MEDIUM
 
-### M1: innerHTML Usage in BI Dashboard ❌ OPEN
+### M1: innerHTML Usage in BI Dashboard ✅ FIXED
 **OWASP:** A03:2021 Injection (XSS)  
 **ASVS:** 5.3.3  
-**File:** `src/app/stats/bi/bi-dashboard.ts` line 3879
+**File:** `src/app/stats/bi/bi-dashboard.ts`
 
-```typescript
-modalContent.innerHTML = `...`
-```
+`innerHTML` and D3 `.html()` calls interpolated user-controlled data (transaction categories, comments) without escaping, bypassing Angular's built-in XSS protection.
 
-This `innerHTML` assignment uses template literals that include computed values. While current usage appears to use application-controlled data (not direct user input), this pattern is dangerous because:
-- D3.js `.html()` calls throughout the BI dashboard may interpolate user-controlled data (transaction comments, category names)
-- Angular's built-in XSS protection does not apply to D3-rendered DOM
-
-**Remediation:**
-1. Use `textContent` instead of `innerHTML` for user-provided data
-2. Sanitize any user-derived data before inserting into D3 `.html()` calls
-3. Review all D3 `.html()` and `.text()` calls that use transaction data
+**Fix Applied:**
+1. Added `escapeHtml()` helper that escapes `&`, `<`, `>`, `"`, `'`
+2. All user-controlled data (`category`, `comment`) passed through `escapeHtml()` before innerHTML interpolation
+3. Changed D3 `.html()` to `.text()` where only plain text + emoji is needed (transaction table category column)
 
 ---
 
@@ -488,7 +482,7 @@ Both deployments now have pod-level and container-level securityContext:
 | Control | Status | Notes |
 |---------|--------|-------|
 | XSS Protection (Angular built-in) | ✅ PASS | Angular auto-escapes interpolation. ViewEncapsulation used. |
-| D3.js XSS Risk | ⚠️ WARN | innerHTML and .html() used in BI dashboard (M1) |
+| D3.js XSS Risk | ✅ FIXED | User data escaped via escapeHtml(), .text() used where possible |
 | CSP Header | ❌ FAIL | No Content-Security-Policy on frontend (L4) — note: other security headers now added |
 | Service Worker (PWA) | ✅ PASS | ngsw-config.json properly configured |
 | Dependency `crypto-js` | ⚠️ WARN | CryptoJS AES with string passphrase uses insecure KDF internally (MD5-based) |
@@ -665,7 +659,7 @@ Both deployments now have pod-level and container-level securityContext:
 | 🟠 P2 | H4 | Move JWT to httpOnly cookie | 4h | Protects against XSS token theft | ✅ FIXED |
 | 🟡 P2 | L4 | Add security headers to nginx | 30min | Defense in depth | ✅ FIXED |
 | 🟡 P2 | L5 | Add Kubernetes NetworkPolicies | 1h | Limits blast radius | ✅ FIXED |
-| 🟡 P3 | M1 | Sanitize D3 innerHTML usage | 2h | Prevents stored XSS | ❌ OPEN |
+| 🟡 P3 | M1 | Sanitize D3 innerHTML usage | 2h | Prevents stored XSS | ✅ FIXED |
 | 🟡 P3 | M2 | Fix user enumeration | 1h | Protects user privacy | ✅ FIXED |
 | 🟡 P3 | M4 | Stop persisting encryption key | 2h | Limits key exposure | ❌ OPEN |
 | 🟡 P3 | M5 | Disable debug mode in prod | 5min | Reduces data leakage | ✅ FIXED |
