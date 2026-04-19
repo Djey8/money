@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { AngularFireAuth } from '@angular/fire/compat/auth';
+import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { firstValueFrom } from 'rxjs';
 
@@ -12,7 +13,7 @@ import { firstValueFrom } from 'rxjs';
 export class AuthService {
   private mode: 'firebase' | 'selfhosted' = environment.mode as 'firebase' | 'selfhosted';
 
-  constructor(private afAuth: AngularFireAuth) {}
+  constructor(private afAuth: AngularFireAuth, private http: HttpClient) {}
 
   /**
    * Check if user is authenticated (works for both Firebase and Selfhosted modes)
@@ -44,11 +45,10 @@ export class AuthService {
         return { authenticated: false, error: 'Authentication error occurred.' };
       }
     } else {
-      // Selfhosted mode - check if token exists
-      const token = localStorage.getItem('selfhosted_token');
+      // Selfhosted mode - check if userId exists (cookie is validated server-side)
       const userId = localStorage.getItem('selfhosted_userId');
       
-      if (!token || !userId) {
+      if (!userId) {
         return { authenticated: false, error: 'Session expired. Please log in again.' };
       }
       
@@ -66,9 +66,8 @@ export class AuthService {
       // For Firebase, we need to do async check, so this is just a quick check
       return true; // Requires async check via checkAuthentication()
     } else {
-      const token = localStorage.getItem('selfhosted_token');
       const userId = localStorage.getItem('selfhosted_userId');
-      return !!(token && userId);
+      return !!userId;
     }
   }
 
@@ -88,9 +87,15 @@ export class AuthService {
     if (this.mode === 'firebase') {
       await this.afAuth.signOut();
     } else {
-      // Selfhosted mode - clear tokens
-      localStorage.removeItem('selfhosted_token');
+      // Selfhosted mode - call logout endpoint to revoke refresh token + clear cookies
       localStorage.removeItem('selfhosted_userId');
+      try {
+        await firstValueFrom(
+          this.http.post(`${environment.selfhosted.apiUrl}/auth/logout`, {}, { withCredentials: true })
+        );
+      } catch {
+        // Logout should succeed even if the request fails
+      }
     }
   }
 }

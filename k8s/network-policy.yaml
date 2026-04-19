@@ -1,0 +1,28 @@
+# NetworkPolicy: restrict CouchDB access to backend pods only (L5)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: couchdb-allow-backend-only
+  namespace: money-app
+spec:
+  podSelector:
+    matchLabels:
+      app: couchdb
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: backend
+    ports:
+    - protocol: TCP
+      port: 5984
+  # Also allow backup jobs to reach CouchDB
+  - from:
+    - podSelector:
+        matchLabels:
+          job-type: couchdb-backup
+    ports:
+    - protocol: TCP
+      port: 5984

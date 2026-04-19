@@ -170,18 +170,17 @@ export class FrontendLoggerService {
    * Send logs to backend
    */
   private sendLogsToBackend(logs: any[]): void {
-    const token = localStorage.getItem('selfhosted_token');
-    if (!token) {
-      console.warn('[FrontendLogger] No auth token, skipping log send');
+    const userId = localStorage.getItem('selfhosted_userId');
+    if (!userId) {
+      console.warn('[FrontendLogger] No session, skipping log send');
       return;
     }
 
     const headers = new HttpHeaders({
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
+      'Content-Type': 'application/json'
     });
 
-    this.http.post(`${this.apiUrl}/logs/frontend`, { logs }, { headers })
+    this.http.post(`${this.apiUrl}/logs/frontend`, { logs }, { headers, withCredentials: true })
       .subscribe({
         next: () => {
           console.log(`[FrontendLogger] Sent ${logs.length} logs to backend`);
