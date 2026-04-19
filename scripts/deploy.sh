@@ -563,6 +563,27 @@ else
 fi
 
 # ============================================
+# DEPLOY SECRETS (if secrets.yaml exists)
+# ============================================
+if [ -f "${K8S_DIR}/secrets.yaml" ]; then
+    log_step "Applying secrets..."
+    set +e
+    SECRETS_OUTPUT=$(kubectl apply -f "${K8S_DIR}/secrets.yaml" 2>&1)
+    SECRETS_EXIT=$?
+    set -e
+    if [ ${SECRETS_EXIT} -eq 0 ]; then
+        echo "${SECRETS_OUTPUT}" | sed 's/^/  → /'
+        log_success "Secrets applied"
+    else
+        log_error "Failed to apply secrets"
+        echo "${SECRETS_OUTPUT}"
+        exit 1
+    fi
+else
+    log_warning "k8s/secrets.yaml not found — secrets must already exist in the cluster"
+fi
+
+# ============================================
 # DEPLOY COUCHDB
 # ============================================
 log_step "Deploying CouchDB..."
