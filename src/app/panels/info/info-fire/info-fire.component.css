@@ -7,7 +7,7 @@
   border: 3px solid white;
   background-color: var(--color-primary);
   border-radius: var(--radius-lg);
-  padding: 2%;
+  padding: clamp(12px, 3vw, 20px);
   border-color: white;
   border-width: 2%;
   position: absolute;
@@ -88,26 +88,26 @@
 
 .detail-title {
   margin: 8px 0 2px;
-  font-size: 20px;
+  font-size: clamp(16px, 4vw, 20px);
   color: #ffffff;
 }
 
 .id-badge {
-  font-size: 14px;
+  font-size: clamp(11px, 2.8vw, 14px);
   opacity: 0.6;
   font-weight: 400;
 }
 
 .detail-sub {
   margin: 0;
-  font-size: 14px;
+  font-size: clamp(12px, 3vw, 14px);
   opacity: 0.7;
   color: #ffffff;
 }
 
 .detail-dates {
   margin: 6px 0 0;
-  font-size: 11px;
+  font-size: clamp(10px, 2.5vw, 11px);
   opacity: 0.5;
   color: #ffffff;
 }
@@ -284,7 +284,7 @@
 
 .fin-line {
   margin: 4px 0;
-  font-size: 14px;
+  font-size: clamp(12px, 3vw, 14px);
   color: rgba(255,255,255,0.9);
 }
 
@@ -671,7 +671,9 @@
 }
 
 .add-note-form textarea {
-  width: 100%;
+  width: calc(100% - 16px);
+  margin-left: 8px;
+  margin-right: 8px;
   min-height: 60px;
   resize: vertical;
   box-sizing: border-box;
