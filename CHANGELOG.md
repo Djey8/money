@@ -1,3 +1,13 @@
+## [1.3.3] - 2026-04-19
+
+### Bug Fixes
+- fix(security): increase global rate limit to 500/15min, add strict 10/15min auth limiter
+- fix(security): sanitize D3 innerHTML with escapeHtml for user data (M1)
+- fix(security): implement refresh tokens and httpOnly cookie auth (H3, H4)
+- fix(security): add NetworkPolicy, pod security contexts, non-root backups (L5, L6, L7)
+- fix(security): enable TLS with cert-manager, HSTS, and HTTP-to-HTTPS redirect (H6)
+- fix(security): add account lockout after 10 failed login attempts (H5)
+
 ## [1.3.2] - 2026-04-19
 
 ### Bug Fixes
