@@ -1425,7 +1425,7 @@ export class SettingsComponent {
     else if (SettingsComponent.isAr) language = 'ar';
 
     // Gather encryption config
-    const encryptKey = localStorage.getItem('encryptKey');
+    const encryptKey = sessionStorage.getItem('encryptKey');
     const encryptLocal = localStorage.getItem('encryptLocal');
     const encryptDatabase = localStorage.getItem('encryptDatabase');
 
