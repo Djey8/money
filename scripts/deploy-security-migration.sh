@@ -51,9 +51,14 @@ echo ""
 
 # Step 1: Trigger backup
 echo "[2/7] Triggering backup before migration..."
-kubectl create job --from=cronjob/couchdb-backup-daily "pre-migration-backup-$(date +%s)" -n "$NAMESPACE"
-echo "  ✓ Backup job created. Waiting 30s for completion..."
-sleep 30
+if kubectl get cronjob couchdb-backup -n "$NAMESPACE" &>/dev/null; then
+  kubectl create job --from=cronjob/couchdb-backup "pre-migration-backup-$(date +%s)" -n "$NAMESPACE"
+  echo "  ✓ Backup job created. Waiting 30s for completion..."
+  sleep 30
+else
+  echo "  ⚠ No couchdb-backup cronjob found, skipping automatic backup."
+  echo "    Consider taking a manual backup before proceeding."
+fi
 echo ""
 
 # Step 2: Apply new k8s configs (ConfigMap changes: CORS, rate limiting, debug off)
