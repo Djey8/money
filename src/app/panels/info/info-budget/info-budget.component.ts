@@ -249,12 +249,11 @@ export class InfoBudgetComponent extends BaseInfoComponent {
       });
 
       // Write to DB
-      this.updateStorage();
+      this.updateStorage('Budget updated');
 
       // Clean Up close Window
       this.clearError();
       this.isEdit = false;
-      this.toastService.show('Budget updated', 'update');
       AppComponent.gotoTop();
     }
   }
@@ -280,14 +279,13 @@ export class InfoBudgetComponent extends BaseInfoComponent {
       });
       
       // WRITE to Storage
-      this.updateStorage();
-      this.toastService.show('Budget deleted', 'delete');
+      this.updateStorage('Budget deleted');
       this.isEdit = false;
     });
   }
 
 
-  async updateStorage() {
+  async updateStorage(successMessage?: string) {
     // Check authentication using the centralized service
     const authResult = await this.authService.checkAuthentication();
     if (!authResult.authenticated) {
@@ -300,30 +298,40 @@ export class InfoBudgetComponent extends BaseInfoComponent {
 
     // User is authenticated
     try {
+      InfoBudgetComponent.isInfo = false;
+      InfoBudgetComponent.isError = false;
+      AppStateService.instance.isSaving = true;
+
       // WRITE to Storage
       // In selfhosted mode, writeObject returns Observables that need to be subscribed
       if (environment.mode === 'selfhosted') {
         const budgetWrite = this.database.writeObject("budget", AppStateService.instance.allBudgets) as Observable<any>;
         budgetWrite.subscribe({
           next: () => {
-            InfoBudgetComponent.isInfo = false;
-            InfoBudgetComponent.isError = false;
             this.localStorage.saveData("budget", JSON.stringify(AppStateService.instance.allBudgets));
+            AppStateService.instance.isSaving = false;
+            if (successMessage) {
+              this.toastService.show(successMessage, successMessage.includes('deleted') ? 'delete' : 'update');
+            }
           },
           error: (error) => {
-            this.showError(error);
+            AppStateService.instance.isSaving = false;
+            this.toastService.show(error.message || 'Database write failed', 'error');
           }
         });
       } else {
         // Firebase mode - writes complete synchronously
         this.database.writeObject("budget", AppStateService.instance.allBudgets);
-        InfoBudgetComponent.isInfo = false;
-        InfoBudgetComponent.isError = false;
         this.localStorage.saveData("budget", JSON.stringify(AppStateService.instance.allBudgets));
+        AppStateService.instance.isSaving = false;
+        if (successMessage) {
+          this.toastService.show(successMessage, successMessage.includes('deleted') ? 'delete' : 'update');
+        }
       }
 
     } catch (error) {
-      this.showError(error);
+      AppStateService.instance.isSaving = false;
+      this.toastService.show(error.message || 'Database write failed', 'error');
     }
   }
 }

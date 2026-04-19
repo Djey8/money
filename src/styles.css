@@ -635,9 +635,9 @@ body.tour-active *:focus-visible {
 
 .password-toggle-btn {
   position: absolute;
-  right: 10px;
+  right: 18px;
   top: 50%;
-  transform: translateY(-80%);
+  transform: translateY(-50%);
   background-color: transparent;
   border: none;
   padding: 0;
@@ -648,10 +648,11 @@ body.tour-active *:focus-visible {
   justify-content: center;
 }
 
-.password-toggle-img {
-  background-color: transparent;
-  border: none;
+.password-toggle-icon {
+  width: 20px;
+  height: 20px;
   display: block;
+  color: var(--color-text, #000);
 }
 
 /* Number format radio buttons */

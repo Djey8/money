@@ -58,6 +58,7 @@ export class BalanceComponent {
   public get appReference() { return AppComponent; }
   public settingsReference = SettingsComponent;
   public incomeRefference = IncomeComponent;
+  public appState = AppStateService.instance;
 
   /**
    * Constructs a new BalanceComponent.
