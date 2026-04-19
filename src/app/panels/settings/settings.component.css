@@ -815,14 +815,14 @@ form {
     margin-top: 10px;
     margin-left: 10%;
     width: 80%;
-    background-color: rgb(255, 136, 0);
+    background-color: var(--color-primary);
     border-radius: var(--radius-lg);
-    color: var(--color-text);
+    color: white;
     font-weight: bold;
     font-size: 20px;
     padding: 1.5%;
     border-width: 1%;
-    border-color: var(--color-border);
+    border-color: var(--color-primary-hover);
   }
 
   /* Settings Menu */
