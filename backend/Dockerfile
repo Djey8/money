@@ -1,5 +1,5 @@
 # Backend Dockerfile
-FROM node:22-alpine
+FROM node:22-alpine@sha256:1e8b5d68cac394f76c931b266fe5c224c3fe4cdbc33131e064c83b88235fe77e
 
 WORKDIR /app
 
