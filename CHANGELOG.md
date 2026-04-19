@@ -1,3 +1,8 @@
+## [1.3.2] - 2026-04-19
+
+### Bug Fixes
+- fix(deploy): correct backup cronjob name and add graceful fallback in migration script
+
 ## [1.3.1] - 2026-04-19
 
 ### Bug Fixes
