@@ -3,6 +3,15 @@ import * as d3 from 'd3';
 import { ChartFilterService } from '../../shared/services/chart-filter.service';
 import { AppStateService } from '../../shared/services/app-state.service';
 
+function escapeHtml(unsafe: string): string {
+  return unsafe
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 // Deferred import to break circular chain
 let IncomeComponent: any; setTimeout(() => import('../../main/cashflow/income/income.component').then(m => IncomeComponent = m.IncomeComponent));
 
@@ -3840,7 +3849,7 @@ export function showOutlierAnalysis(transaction: any) {
     const percentOver = ((difference / Math.abs(baseline)) * 100).toFixed(0);
     
     reason = `<strong>IQR-Methode:</strong><br>` +
-             `Baseline ${category}: ${baseline.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${AppStateService.instance.currency}<br>` +
+             `Baseline ${escapeHtml(category)}: ${baseline.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${AppStateService.instance.currency}<br>` +
              `${StatsComponent.translateService.instant('BI.qrExceedance')} ${difference.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${AppStateService.instance.currency} (+${percentOver}%)`;
   } else if (outlierType === 'rare-category') {
     reason = StatsComponent.translateService.instant('BI.rareCategoryReason');
@@ -3888,9 +3897,9 @@ export function showOutlierAnalysis(transaction: any) {
     
     <div style="background: var(--color-background); padding: 15px; border-radius: 5px; margin-bottom: 20px;">
       <div style="margin-bottom: 8px;"><strong>${StatsComponent.translateService.instant('BI.qrDate')}</strong> ${formattedDate}</div>
-      <div style="margin-bottom: 8px;"><strong>${StatsComponent.translateService.instant('BI.qrCategory')}</strong> ${transaction.category}</div>
+      <div style="margin-bottom: 8px;"><strong>${StatsComponent.translateService.instant('BI.qrCategory')}</strong> ${escapeHtml(transaction.category)}</div>
       <div style="margin-bottom: 8px;"><strong>${StatsComponent.translateService.instant('BI.qrAmount')}</strong> <span style="color: ${Number(transaction.amount) >= 0 ? '#4caf50' : '#f44336'}; font-weight: bold;">${Number(transaction.amount).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${AppStateService.instance.currency}</span></div>
-      <div><strong>${StatsComponent.translateService.instant('BI.qrComment')}</strong> ${transaction.comment || '-'}</div>
+      <div><strong>${StatsComponent.translateService.instant('BI.qrComment')}</strong> ${escapeHtml(transaction.comment || '-')}</div>
     </div>
     
     <button id="closeOutlierModal" style="
@@ -4380,7 +4389,7 @@ export function createTransactionDetailsTable(container: any, width: number) {
   rows.append("td")
     .style("padding", "10px")
     .style("font-size", "12px")
-    .html((d: any) => d.isOutlier ? `⚠️ ${d.category}` : d.category);
+    .text((d: any) => d.isOutlier ? `⚠️ ${d.category}` : d.category);
 
   rows.append("td")
     .style("padding", "10px")
