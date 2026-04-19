@@ -30,6 +30,11 @@
 <app-info></app-info>
 <app-toast></app-toast>
 <app-confirm-dialog></app-confirm-dialog>
+
+<!-- Saving spinner overlay -->
+<div class="saving-overlay" *ngIf="appState.isSaving">
+  <div class="saving-spinner"></div>
+</div>
 <app-onboarding></app-onboarding>
 <app-tour-overlay></app-tour-overlay>
 

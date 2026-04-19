@@ -54,7 +54,7 @@
             <h5 class="form-section-title">{{'Common.buckets' | translate}}</h5>
             <span class="toggle-chevron" [class.open]="showBucketsSection">▸</span>
         </button>
-        <div *ngIf="showBucketsSection">
+        <div *ngIf="showBucketsSection || classReference.expandAllSections">
             <!-- Existing Buckets -->
             <div class="subsection" *ngIf="buckets.length > 0">
                 <div class="bucket-list">
@@ -152,7 +152,7 @@
             <h5 class="form-section-title">{{'Grow.linksAndActions' | translate}}</h5>
             <span class="toggle-chevron" [class.open]="showLinksActionsSection">▸</span>
         </button>
-        <div *ngIf="showLinksActionsSection">
+        <div *ngIf="showLinksActionsSection || classReference.expandAllSections">
             <!-- Links -->
             <div class="subsection">
                 <label class="subsection-label">{{'Common.links' | translate}}</label>
@@ -238,7 +238,7 @@
             <h5 class="form-section-title">{{'Smile.paymentPlans' | translate: {default: 'Payment Plans'} }}</h5>
             <span class="toggle-chevron" [class.open]="showPaymentPlansSection">▸</span>
         </button>
-        <div *ngIf="showPaymentPlansSection">
+        <div *ngIf="showPaymentPlansSection || classReference.expandAllSections">
             <p class="help-text-section">
                 {{'Smile.paymentPlansHelp' | translate: {default: 'Create subscription plans to automate bucket funding. Multiple plans can target different buckets with flexible allocation.'} }}
             </p>

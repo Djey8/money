@@ -1,0 +1,41 @@
+<div id="infoTransaction-Container" role="dialog" aria-modal="true" appTrapFocus *ngIf="classReference.isInfo" (click)="highlight()"
+    [style.z-index]="classReference.zIndex + 1001">
+    <button id="closebtn" aria-label="Close" (click)="closeWindow()">x</button>
+
+    <!-- ── VIEW MODE ── -->
+    <div *ngIf="!isEdit">
+        <h3 id="infoTransactionTitle">{{'Income.Mojo' | translate}}</h3>
+
+        <div id="info-box">
+            <h4 class="infoLable">{{'Common.target' | translate}}</h4>
+            <h4 class="infoLableB">{{mojo.target | appNumber}} {{settingsReference.currency}}</h4>
+
+            <h4 class="infoLable" style="margin-top: 15px;">{{'Common.amount' | translate}}</h4>
+            <h4 class="infoLableB">{{mojo.amount | appNumber}} {{settingsReference.currency}}</h4>
+
+            <progress style="width: 80%; margin-left: 10%; margin-top: 15px;" [value]="mojo.amount" [max]="mojo.target"></progress>
+            <p style="text-align: center; margin-top: 5px; color: var(--color-text-muted);">
+                {{mojo.amount * 100 / mojo.target | appNumber}}%
+            </p>
+        </div>
+
+        <button id="editbtn" (click)="edit()">{{'Common.edit' | translate}}</button>
+    </div>
+
+    <!-- ── EDIT MODE ── -->
+    <div *ngIf="isEdit">
+        <h3 id="infoTransactionTitle">{{'Income.Mojo' | translate}}</h3>
+
+        <div id="input-container">
+            <form (ngSubmit)="save()">
+                <label>{{'Common.target' | translate}} ({{settingsReference.currency}})</label>
+                <input type="number" [(ngModel)]="targetTextField" name="target" [style.border-color]="borderColor" min="1" step="any">
+
+                <p *ngIf="classReference.isError" style="color: red; text-align: center; margin-top: 5px;">{{errorTextLable}}</p>
+            </form>
+        </div>
+
+        <button id="editbtn" (click)="save()">{{'Info.update' | translate}}</button>
+        <button id="canclebtn" (click)="cancel()">{{'Info.cancel' | translate}}</button>
+    </div>
+</div>

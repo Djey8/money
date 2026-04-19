@@ -452,6 +452,7 @@ export class InfoFireComponent extends BaseInfoComponent {
     this.phaseField = InfoFireComponent.phase;
     this.descriptionTextField = InfoFireComponent.description;
     this.targetDateTextField = InfoFireComponent.targetDate;
+    this.completionDateTextField = InfoFireComponent.completionDate;
     this.buckets = JSON.parse(JSON.stringify(InfoFireComponent.buckets));
     this.links = JSON.parse(JSON.stringify(InfoFireComponent.links));
     this.actionItems = JSON.parse(JSON.stringify(InfoFireComponent.actionItems));
@@ -708,7 +709,7 @@ export class InfoFireComponent extends BaseInfoComponent {
     fire.phase = this.phaseField;
     fire.description = this.descriptionTextField.trim();
     fire.targetDate = this.targetDateTextField || '';
-    fire.completionDate = this.phaseField === 'completed' ? (fire.completionDate || now) : '';
+    fire.completionDate = this.completionDateTextField || (this.phaseField === 'completed' ? now : '');
     fire.buckets = this.buckets;
     fire.links = this.links;
     fire.actionItems = this.actionItems;
@@ -726,6 +727,11 @@ export class InfoFireComponent extends BaseInfoComponent {
     InfoFireComponent.targetDate = fire.targetDate;
     InfoFireComponent.completionDate = fire.completionDate;
     
+    InfoFireComponent.isEdit = false;
+    InfoFireComponent.isInfo = false;
+    this.isEdit = false;
+    AppStateService.instance.isSaving = true;
+
     this.persistence.writeAndSync({
       tag: 'fire',
       data: AppStateService.instance.allFireEmergencies,
@@ -736,14 +742,14 @@ export class InfoFireComponent extends BaseInfoComponent {
         phase: fire.phase
       },
       onSuccess: () => {
+        AppStateService.instance.isSaving = false;
         this.clearError();
-        InfoFireComponent.isEdit = false;
-        this.isEdit = false;
         this.toastService.show('Emergency fund updated', 'update');
         AppComponent.gotoTop();
       },
       onError: (error) => {
-        this.showError(error.message || 'Database write failed');
+        AppStateService.instance.isSaving = false;
+        this.toastService.show(error.message || 'Database write failed', 'error');
       }
     });
   }
@@ -1087,6 +1093,7 @@ export class InfoFireComponent extends BaseInfoComponent {
 
         InfoFireComponent.isInfo = false;
         InfoFireComponent.isError = false;
+        AppStateService.instance.isSaving = true;
 
         this.persistence.batchWriteAndSync({
           writes,
@@ -1097,6 +1104,7 @@ export class InfoFireComponent extends BaseInfoComponent {
           logEvent: 'delete_fire',
           logMetadata: { title: deletedTitle, index: index },
           onSuccess: () => {
+            AppStateService.instance.isSaving = false;
             if (this.deleteTransactionsChecked) {
               this.incomeStatement.saveToLocalStorage();
             }
@@ -1105,7 +1113,8 @@ export class InfoFireComponent extends BaseInfoComponent {
             this.router.navigate(['/fireemergencies']);
           },
           onError: (error) => {
-            this.showError(error.message || 'Database write failed');
+            AppStateService.instance.isSaving = false;
+            this.toastService.show(error.message || 'Database write failed', 'error');
           }
         });
       } catch (error) {
