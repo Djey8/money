@@ -39,7 +39,7 @@ export class FireEmergenciesComponent {
   static allSearchedFireEmergencies = []
 
   searchTextField = "";
-  phases: Array<'all' | FirePhase> = ['all', 'planning', 'saving', 'ready', 'completed'];
+  phases: Array<'all' | FirePhase> = ['all', 'idea', 'planning', 'saving', 'ready', 'completed'];
 
   public classReference = FireEmergenciesComponent;
   public get appReference() { return AppComponent; }
