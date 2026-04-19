@@ -261,7 +261,7 @@ Failed login attempts are logged but no lockout mechanism exists. Combined with 
 
 ---
 
-### H6: No TLS Enforcement by Default ❌ OPEN
+### H6: No TLS Enforcement by Default ✅ FIXED
 **OWASP:** A02:2021 Cryptographic Failures  
 **ASVS:** 9.1.1  
 **Files:**
@@ -271,10 +271,12 @@ Failed login attempts are logged but no lockout mechanism exists. Combined with 
 **Impact:** The default deployment serves everything over HTTP. JWT tokens, passwords, and financial data are transmitted in plaintext. The HTTPS block in nginx.conf exists but the HTTP→HTTPS redirect is disabled.
 
 **Remediation:**
-1. Enable the HTTP→HTTPS redirect in nginx.conf
-2. Uncomment and configure the TLS section in ingress.yaml
-3. Use cert-manager with Let's Encrypt for automated TLS certificates
-4. Add HSTS header: `Strict-Transport-Security: max-age=31536000; includeSubDomains`
+1. ~~Enable the HTTP→HTTPS redirect in nginx.conf~~ ✅
+2. ~~Uncomment and configure the TLS section in ingress.yaml~~ ✅
+3. ~~Use cert-manager with Let's Encrypt for automated TLS certificates~~ ✅
+4. ~~Add HSTS header: `Strict-Transport-Security: max-age=31536000; includeSubDomains`~~ ✅
+
+**Fix Applied:** Ingress TLS enabled with cert-manager/Let's Encrypt ClusterIssuer, Traefik HTTP→HTTPS redirect middleware, HSTS header added to nginx.
 
 ---
 
@@ -571,7 +573,7 @@ The Dockerfiles correctly create non-root users, but Kubernetes does not enforce
 | Resource Limits | ✅ PASS | CouchDB and frontend have resource requests/limits |
 | Resource Limits (Backend) | ❌ FAIL | Backend deployment has NO resource limits |
 | Pod Security Context | ❌ FAIL | No securityContext on backend/frontend pods (L7) |
-| Ingress TLS | ❌ FAIL | TLS commented out (H6) |
+| Ingress TLS | ✅ FIXED | cert-manager + Let's Encrypt, HSTS enabled (H6) |
 | NodePort Services | ⚠️ WARN | Frontend uses NodePort (30080, 30545) which bypasses ingress. Only use if behind firewall |
 | Image Pull Policy | ✅ PASS | `imagePullPolicy: Never` for local images |
 | RBAC | ⚠️ WARN | No custom RBAC roles defined. Relies on k3s defaults |
@@ -625,7 +627,7 @@ The Dockerfiles correctly create non-root users, but Kubernetes does not enforce
 | Category | Status |
 |----------|--------|
 | A01: Broken Access Control | ✅ CouchDB proxy removed, CORS restricted |
-| A02: Cryptographic Failures | ⚠️ Secrets fixed, hardcoded key removed. TLS still open |
+| A02: Cryptographic Failures | ✅ Secrets fixed, hardcoded key removed. TLS enforced with HSTS |
 | A03: Injection | ✅ Angular escaping, parameterized queries |
 | A04: Insecure Design | ✅ Rate limiting enabled. Account lockout after 10 failures |
 | A05: Security Misconfiguration | ⚠️ Debug off, CORS fixed, security headers added. No CSP yet |
@@ -661,7 +663,7 @@ The Dockerfiles correctly create non-root users, but Kubernetes does not enforce
 | 🔴 P1 | C4 | Add server-side password policy | 1h | Prevents trivial brute-force | ✅ FIXED |
 | 🟠 P1 | H1 | Fix CORS to specific origins | 30min | Prevents cross-origin attacks | ✅ FIXED |
 | 🟠 P1 | H2 | Enable rate limiting in production | 30min | Prevents brute-force and DoS | ✅ FIXED |
-| 🟠 P1 | H6 | Enable TLS / HTTPS redirect | 1h | Encrypts all traffic | ❌ OPEN |
+| 🟠 P1 | H6 | Enable TLS / HTTPS redirect | 1h | Encrypts all traffic | ✅ FIXED |
 | 🟠 P2 | H5 | Add account lockout | 2h | Prevents credential stuffing | ✅ FIXED |
 | 🟠 P2 | H3 | Implement refresh tokens | 4h | Enables token revocation | ❌ OPEN |
 | 🟠 P2 | H4 | Move JWT to httpOnly cookie | 4h | Protects against XSS token theft | ❌ OPEN |
