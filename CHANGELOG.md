@@ -1,3 +1,15 @@
+## [1.4.1] - 2026-04-19
+
+### Bug Fixes
+- fix(settings): align auth button colors with login button style
+- fix(auth): replace PNG eye icons with inline SVG and fix password toggle layout
+- fix(balance): refine section add button size and border thickness
+- fix(grow): center empty state button
+- fix(income-statement): remove duplicate fire expense entries in recalculate
+- fix(filters): add missing idea phase to smile and fire filter tabs
+- fix(ux): add spinner and toast feedback to all write operations
+- fix(add-fire): navigate to fireemergencies after successful add
+
 ## [1.4.0] - 2026-04-19
 
 ### Features
