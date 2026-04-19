@@ -96,14 +96,5 @@ data:
     [chttpd]
     bind_address = 0.0.0.0
     max_connections = 50
----
-# CouchDB Secret
-apiVersion: v1
-kind: Secret
-metadata:
-  name: couchdb-secret
-  namespace: money-app
-type: Opaque
-stringData:
-  username: admin
-  password: "=ka%yUE>a?R759u>Cs~sD#R5^k*snNDViwZFVohgW<j$nmkn*5^=Yy^?n~~2"
+# Secret "couchdb-secret" is defined in k8s/secrets.yaml (not committed to Git)
+# Apply separately: kubectl apply -f k8s/secrets.yaml
