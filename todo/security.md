@@ -209,39 +209,43 @@ The backend `/register` endpoint only checks that email and password are non-emp
 
 ---
 
-### H3: JWT Token Has No Refresh Mechanism ❌ OPEN
+### H3: JWT Token Has No Refresh Mechanism ✅ FIXED
 **OWASP:** A07:2021 Identification and Authentication Failures  
 **ASVS:** 3.5.1, 3.5.3  
 **Files:**
-- `backend/routes/auth.js` line 11: `JWT_EXPIRES_IN = '7d'`
-- `src/app/shared/services/selfhosted.service.ts` — no refresh token logic
+- `backend/routes/auth.js` — refresh token endpoints and rotation logic
+- `src/app/shared/interceptors/auth.interceptor.ts` — automatic token refresh on 401
 
-**Impact:** JWTs are issued with a 7-day expiration and stored in `localStorage`. There is no refresh token mechanism and no way to revoke tokens server-side. If a token is stolen:
-- The attacker has a 7-day window of access
-- There is no way to invalidate the token without changing the JWT_SECRET (which invalidates ALL sessions)
-- Users cannot "log out" other sessions
+**Impact:** JWTs were issued with a 7-day expiration and no way to revoke tokens server-side.
 
-**Remediation:**
-1. Implement short-lived access tokens (15 min) + refresh tokens (7 day)
-2. Store refresh tokens in the database and allow server-side revocation
-3. Add a token blacklist for logout
-4. Consider using `httpOnly` cookies instead of `localStorage` for token storage
+**Fix Applied:**
+1. Short-lived access tokens (15 min) + long-lived refresh tokens (7 day)
+2. Refresh tokens stored in CouchDB `auth` DB as `rt_<jti>` documents
+3. Token rotation on refresh: old token revoked, new pair issued
+4. `/api/auth/refresh` endpoint for transparent token renewal
+5. `/api/auth/logout` endpoint revokes refresh token in DB and clears cookies
+6. Angular HTTP interceptor auto-refreshes on 401 responses
 
 ---
 
-### H4: JWT Token Stored in localStorage ❌ OPEN
+### H4: JWT Token Stored in localStorage ✅ FIXED
 **OWASP:** A07:2021 Identification and Authentication Failures  
 **ASVS:** 3.3.2  
 **Files:**
-- `src/app/shared/services/selfhosted.service.ts` lines 46, 65
-- `src/app/shared/services/auth.service.ts` line 53
+- `backend/routes/auth.js` — cookie-based token delivery
+- `backend/middleware/auth.js` — cookie-first token extraction
+- `src/app/shared/interceptors/auth.interceptor.ts` — `withCredentials: true`
+- `src/app/shared/services/selfhosted.service.ts` — removed localStorage token storage
 
-**Impact:** `localStorage` is accessible to any JavaScript running on the page. If an XSS vulnerability exists (see M1), the attacker can steal the JWT. Unlike `httpOnly` cookies, localStorage tokens cannot be protected from script access.
+**Impact:** `localStorage` was accessible to any JavaScript running on the page, enabling XSS-based token theft.
 
-**Remediation:**
-1. Move JWT to `httpOnly`, `Secure`, `SameSite=Strict` cookies
-2. Implement CSRF protection if using cookies
-3. As an alternative, use in-memory storage with refresh tokens
+**Fix Applied:**
+1. Access token delivered via `httpOnly`, `Secure` (production), `SameSite=Strict` cookie (`access_token`, path=/)
+2. Refresh token in `httpOnly` cookie (`refresh_token`, path=/api/auth)
+3. `cookie-parser` middleware added to Express
+4. Auth middleware reads cookie first, then falls back to Authorization header for backward compat
+5. Frontend no longer stores/reads `selfhosted_token` from localStorage; only `selfhosted_userId` persisted
+6. No separate CSRF token needed: `SameSite=Strict` prevents cross-origin cookie submission
 
 ---
 
@@ -377,13 +381,11 @@ Firebase client config (apiKey, projectId, etc.) is bundled into the frontend. W
 
 ---
 
-### M7: No CSRF Protection ⏭️ N/A (only needed if moving to cookie auth)
+### M7: No CSRF Protection ⏭️ N/A (mitigated by SameSite=Strict cookies)
 **OWASP:** A01:2021 Broken Access Control  
 **ASVS:** 4.2.2  
 
-The API uses JWT Bearer tokens which are not automatically sent by browsers (unlike cookies), so traditional CSRF is not directly applicable. However:
-- If the app ever migrates to cookie-based auth (recommended in H4), CSRF becomes critical
-- The CORS wildcard (H1) makes cross-origin attacks possible
+The API now uses `httpOnly` cookies with `SameSite=Strict` (H4 fixed). `SameSite=Strict` prevents cookies from being sent on any cross-origin request, effectively mitigating CSRF without a separate token. The Authorization Bearer header is still accepted as a fallback for backward compatibility.
 
 **Remediation:**
 1. If moving to cookie auth, add CSRF tokens (csurf middleware or double-submit pattern)
@@ -490,7 +492,7 @@ Both deployments now have pod-level and container-level securityContext:
 | CSP Header | ❌ FAIL | No Content-Security-Policy on frontend (L4) — note: other security headers now added |
 | Service Worker (PWA) | ✅ PASS | ngsw-config.json properly configured |
 | Dependency `crypto-js` | ⚠️ WARN | CryptoJS AES with string passphrase uses insecure KDF internally (MD5-based) |
-| Token Storage | ❌ FAIL | JWT in localStorage (H4) |
+| Token Storage | ✅ PASS | JWT in httpOnly cookies (H4 fixed) |
 | Encryption Key Storage | ❌ FAIL | Key in localStorage in plaintext (M4) — note: hardcoded default key removed |
 | DomSanitizer bypass | ✅ PASS | No `bypassSecurityTrust*` calls found |
 | `eval()` / `Function()` | ✅ PASS | No unsafe eval patterns found |
@@ -506,7 +508,7 @@ Both deployments now have pod-level and container-level securityContext:
 | Rate Limiting (production) | ✅ FIXED | Was bypassed via SKIP_RATE_LIMIT=true → now set to false (H2) |
 | Password Hashing | ✅ PASS | bcrypt with cost factor 10 |
 | Password Policy | ✅ FIXED | Server-side: min 8 chars, upper/lower/number required (C4) |
-| JWT Implementation | ⚠️ WARN | No refresh tokens, no revocation (H3) |
+| JWT Implementation | ✅ PASS | Refresh tokens with rotation and revocation (H3 fixed) |
 | Input Validation | ⚠️ WARN | Minimal — no schema validation library (e.g., Joi, Zod) |
 | SQL/NoSQL Injection | ✅ PASS | CouchDB Mango queries use parameterized selectors |
 | Error Handling | ✅ PASS | Production errors are generic; dev errors have detail |
@@ -626,7 +628,7 @@ Both deployments now have pod-level and container-level securityContext:
 | A04: Insecure Design | ✅ Rate limiting enabled. Account lockout after 10 failures |
 | A05: Security Misconfiguration | ⚠️ Debug off, CORS fixed, security headers added. No CSP yet |
 | A06: Vulnerable Components | ⚠️ No automated scanning |
-| A07: Auth Failures | ⚠️ Password policy added. No MFA, no token revocation yet |
+| A07: Auth Failures | ✅ Password policy, account lockout, refresh tokens with rotation, httpOnly cookies. No MFA yet |
 | A08: Software/Data Integrity | ⚠️ No SBOM, no signed builds |
 | A09: Logging & Monitoring | ✅ Comprehensive Winston/Loki logging |
 | A10: SSRF | ✅ No user-controlled URL fetching |
@@ -659,8 +661,8 @@ Both deployments now have pod-level and container-level securityContext:
 | 🟠 P1 | H2 | Enable rate limiting in production | 30min | Prevents brute-force and DoS | ✅ FIXED |
 | 🟠 P1 | H6 | Enable TLS / HTTPS redirect | 1h | Encrypts all traffic | ✅ FIXED |
 | 🟠 P2 | H5 | Add account lockout | 2h | Prevents credential stuffing | ✅ FIXED |
-| 🟠 P2 | H3 | Implement refresh tokens | 4h | Enables token revocation | ❌ OPEN |
-| 🟠 P2 | H4 | Move JWT to httpOnly cookie | 4h | Protects against XSS token theft | ❌ OPEN |
+| 🟠 P2 | H3 | Implement refresh tokens | 4h | Enables token revocation | ✅ FIXED |
+| 🟠 P2 | H4 | Move JWT to httpOnly cookie | 4h | Protects against XSS token theft | ✅ FIXED |
 | 🟡 P2 | L4 | Add security headers to nginx | 30min | Defense in depth | ✅ FIXED |
 | 🟡 P2 | L5 | Add Kubernetes NetworkPolicies | 1h | Limits blast radius | ✅ FIXED |
 | 🟡 P3 | M1 | Sanitize D3 innerHTML usage | 2h | Prevents stored XSS | ❌ OPEN |

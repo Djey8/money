@@ -68,7 +68,9 @@ describe('Account Lockout (H5)', () => {
       .send({ email, password: 'CorrectPass1' });
 
     expect(res.status).toBe(200);
-    expect(res.body).toHaveProperty('token');
+    expect(res.body).toHaveProperty('userId');
+    const cookies = res.headers['set-cookie'] || [];
+    expect(cookies.some(c => c.startsWith('access_token='))).toBe(true);
   });
 
   it('locks account after 10 consecutive failed attempts', async () => {

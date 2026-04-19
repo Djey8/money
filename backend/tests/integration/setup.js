@@ -33,6 +33,7 @@ async function checkDb() {
 
 /**
  * Register a unique test user and return { token, userId, email }.
+ * Extracts the access_token from the Set-Cookie header.
  */
 async function registerTestUser(suffix = '') {
   const email = `jest_${Date.now()}${suffix}@test.local`;
@@ -41,7 +42,13 @@ async function registerTestUser(suffix = '') {
     .send({ email, password: 'TestPassword123!' });
 
   expect(res.status).toBe(201);
-  return { token: res.body.token, userId: res.body.userId, email };
+  
+  // Extract access_token from Set-Cookie header
+  const cookies = res.headers['set-cookie'] || [];
+  const accessCookie = cookies.find(c => c.startsWith('access_token='));
+  const token = accessCookie ? accessCookie.split(';')[0].split('=')[1] : null;
+  
+  return { token, userId: res.body.userId, email };
 }
 
 module.exports = { app, checkDb, registerTestUser };

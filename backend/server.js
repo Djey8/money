@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const cookieParser = require('cookie-parser');
 const rateLimit = require('express-rate-limit');
 const authRoutes = require('./routes/auth');
 const dataRoutes = require('./routes/data');
@@ -43,6 +44,9 @@ app.use('/api/', limiter);
 // Body parser
 app.use(express.json({ limit: '2mb' }));
 app.use(express.text({ limit: '2mb', type: 'text/plain' }));
+
+// Cookie parser (for httpOnly auth cookies)
+app.use(cookieParser());
 
 // Enhanced request logging middleware
 app.use(requestLoggingMiddleware);
