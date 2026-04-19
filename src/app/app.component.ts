@@ -129,7 +129,7 @@ export class AppComponent {
    * @param localStorage - The local storage service.
    * @param database - The database service.
    */
-  constructor(public router: Router, private localStorage: LocalService, private database: DatabaseService, public afAuth: AngularFireAuth, private cryptic: CrypticService, private authService: AuthService, private frontendLogger: FrontendLoggerService, private persistence: PersistenceService, private incomeStatement: IncomeStatementService, private appState: AppStateService, private appData: AppDataService, private gameMode: GameModeService, private subscriptionProcessing: SubscriptionProcessingService, private onboardingService: OnboardingService, private toastService: ToastService, private tourService: TourService) {
+  constructor(public router: Router, private localStorage: LocalService, private database: DatabaseService, public afAuth: AngularFireAuth, private cryptic: CrypticService, private authService: AuthService, private frontendLogger: FrontendLoggerService, private persistence: PersistenceService, private incomeStatement: IncomeStatementService, public appState: AppStateService, private appData: AppDataService, private gameMode: GameModeService, private subscriptionProcessing: SubscriptionProcessingService, private onboardingService: OnboardingService, private toastService: ToastService, private tourService: TourService) {
     AppComponent.instance = this;
 
     // Subscribe to tour actions for panel management
@@ -304,7 +304,7 @@ export class AppComponent {
     switch (action) {
       case 'closeAllPanels':
         if (AddComponent) AddComponent.isAdd = false;
-        if (AddSmileComponent) AddSmileComponent.isAddSmile = false;
+        if (AddSmileComponent) { AddSmileComponent.isAddSmile = false; AddSmileComponent.expandAllSections = false; }
         if (MenuComponent) MenuComponent.isMenu = false;
         if (ProfileComponent) ProfileComponent.isProfile = false;
         if (SettingsComponent) SettingsComponent.zIndex = 0;
@@ -332,6 +332,7 @@ export class AppComponent {
         if (AddSmileComponent) {
           AddSmileComponent.isAddSmile = true;
           AddSmileComponent.zIndex = 100;
+          AddSmileComponent.expandAllSections = true;
         }
         break;
       case 'closeAddSmile':
