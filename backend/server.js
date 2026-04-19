@@ -13,17 +13,17 @@ const { requestLoggingMiddleware, errorLoggingMiddleware } = require('./middlewa
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Trust proxy - required when behind nginx/ingress
-app.set('trust proxy', true);
+// Trust proxy - only trust 1 hop (k8s ingress/nginx)
+app.set('trust proxy', 1);
 
 // Security middleware
 app.use(helmet());
 
-// CORS configuration - handle both specific origins and wildcard
+// CORS configuration
 const corsOrigins = process.env.CORS_ORIGINS || 'http://localhost:4200';
 app.use(cors({
-  origin: corsOrigins === '*' ? true : corsOrigins.split(','),
-  credentials: corsOrigins !== '*'
+  origin: corsOrigins.split(','),
+  credentials: true
 }));
 
 // Rate limiting - with proper trust proxy configuration
