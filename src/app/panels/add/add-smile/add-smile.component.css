@@ -1,6 +1,5 @@
 :host:has(#addSmile-Container) {
   display: block;
-  min-height: 200vh;
 }
 
 #addSmile-Container {

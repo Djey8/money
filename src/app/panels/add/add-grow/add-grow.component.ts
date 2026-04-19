@@ -403,6 +403,8 @@ export class AddGrowComponent extends BaseAddComponent {
       AddGrowComponent.isAsset = false;
       AddGrowComponent.isInvestment = false;
       this.clearError();
+      this.closeWindow();
+      AppStateService.instance.isSaving = true;
       // Only write balance data if it has been loaded (Tier 3 on-demand).
       // Writing before load would overwrite real DB data with empty arrays.
       this.persistence.batchWriteAndSync({
@@ -432,13 +434,14 @@ export class AddGrowComponent extends BaseAddComponent {
           hasInvestment: AddGrowComponent.isInvestment
         },
         onSuccess: () => {
-          this.closeWindow();
+          AppStateService.instance.isSaving = false;
           this.toastService.show('Grow project added', 'success');
           gotoTop();
           this.router.navigate(['/grow']);
         },
         onError: (error) => {
-          this.showError(error.message || 'Database write failed');
+          AppStateService.instance.isSaving = false;
+          this.toastService.show(error.message || 'Database write failed', 'error');
         }
       });
     }

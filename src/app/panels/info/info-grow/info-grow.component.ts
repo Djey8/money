@@ -387,7 +387,9 @@ export class InfoGrowComponent extends BaseInfoComponent {
         InfoGrowComponent.investment = investment;
         InfoGrowComponent.liabilitie = liabilitie;
 
-        
+        InfoGrowComponent.isEdit = false;
+        InfoGrowComponent.isInfo = false;
+        AppStateService.instance.isSaving = true;
 
         this.persistence.writeAndSync({
           tag: 'grow',
@@ -401,13 +403,14 @@ export class InfoGrowComponent extends BaseInfoComponent {
             hasInvestment: InfoGrowComponent.isInvestment
           },
           onSuccess: () => {
+            AppStateService.instance.isSaving = false;
             this.clearError();
-            InfoGrowComponent.isEdit = false;
             this.toastService.show('Grow project updated', 'update');
             AppComponent.gotoTop();
           },
           onError: (error) => {
-            this.showError(error.message || 'Database write failed');
+            AppStateService.instance.isSaving = false;
+            this.toastService.show(error.message || 'Database write failed', 'error');
           }
         });
       }
@@ -447,6 +450,7 @@ export class InfoGrowComponent extends BaseInfoComponent {
 
       InfoGrowComponent.isInfo = false;
       InfoGrowComponent.isError = false;
+      AppStateService.instance.isSaving = true;
 
       this.persistence.batchWriteAndSync({
         writes,
@@ -457,13 +461,15 @@ export class InfoGrowComponent extends BaseInfoComponent {
         logEvent: 'delete_grow',
         logMetadata: { title: deletedTitle, index: index },
         onSuccess: () => {
+          AppStateService.instance.isSaving = false;
           this.incomeStatement.saveToLocalStorage();
           this.toastService.show('Grow project deleted', 'delete');
           AppComponent.gotoTop();
           this.router.navigate(['/grow']);
         },
         onError: (error) => {
-          this.showError(error.message || 'Database write failed');
+          AppStateService.instance.isSaving = false;
+          this.toastService.show(error.message || 'Database write failed', 'error');
         }
       });
     } catch (error) {
