@@ -1,3 +1,14 @@
+## [1.3.1] - 2026-04-19
+
+### Bug Fixes
+- fix(security): move Grafana admin password to env template and secrets.yaml
+- fix(deploy): apply secrets.yaml in deploy script and add one-time migration helper
+- fix(security): restrict trust proxy to 1 hop and remove CORS wildcard fallback
+- fix(auth): add password policy, email validation, generic errors, and crypto UUIDs (C4, L1, L2, M2)
+- fix(security): remove CouchDB proxy, CORS wildcard headers, and add security headers to nginx (C3, L4)
+- fix(security): remove hardcoded default encryption key from cryptic service (C2)
+- fix(security): move secrets to gitignored templates and harden k8s config (C1, H1, H2, M5)
+
 ## [1.3.0] - 2026-04-18
 
 ### Features
