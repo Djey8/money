@@ -13,7 +13,7 @@ services:
       - "5984:5984"
     environment:
       - COUCHDB_USER=admin
-      - COUCHDB_PASSWORD=changeme
+      - COUCHDB_PASSWORD=${COUCHDB_PASSWORD:?Set COUCHDB_PASSWORD in .env}
     volumes:
       - couchdb-data:/opt/couchdb/data
       - ./config/couchdb-local.ini:/opt/couchdb/etc/local.d/local.ini
@@ -32,10 +32,10 @@ services:
       - LOG_LEVEL=warn
       - COUCHDB_URL=http://couchdb:5984
       - COUCHDB_USER=admin
-      - COUCHDB_PASSWORD=changeme
-      - JWT_SECRET=your-super-secret-jwt-key-change-this
+      - COUCHDB_PASSWORD=${COUCHDB_PASSWORD:?Set COUCHDB_PASSWORD in .env}
+      - JWT_SECRET=${JWT_SECRET:?Set JWT_SECRET in .env}
       - CORS_ORIGINS=http://localhost:4200,http://localhost,http://frontend:8080,https://cashflowhero.uk,https://www.cashflowhero.uk
-      - SKIP_RATE_LIMIT=true
+      - SKIP_RATE_LIMIT=false
     depends_on:
       - couchdb
     networks:
