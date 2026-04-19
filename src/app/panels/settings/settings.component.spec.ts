@@ -177,10 +177,11 @@ describe('SettingsComponent', () => {
       jest.restoreAllMocks();
       (window as any).Blob = originalBlob;
       localStorage.clear();
+      sessionStorage.clear();
     });
 
     it('should produce a single JSON file with version 2', () => {
-      localStorage.setItem('encryptKey', 'my-secret');
+      sessionStorage.setItem('encryptKey', 'my-secret');
       localStorage.setItem('encryptLocal', 'true');
       localStorage.setItem('encryptDatabase', 'true');
 
@@ -195,7 +196,7 @@ describe('SettingsComponent', () => {
     it('should include language, dateFormat, isEuropeanFormat, and encryption in settings', () => {
       SettingsComponent.isEng = false;
       SettingsComponent.isDe = true;
-      localStorage.setItem('encryptKey', 'my-secret');
+      sessionStorage.setItem('encryptKey', 'my-secret');
       localStorage.setItem('encryptLocal', 'true');
       localStorage.setItem('encryptDatabase', 'true');
 

@@ -30,8 +30,14 @@ export class CrypticService {
   }
 
   private loadConfig(): void {
-    const storedKey = localStorage.getItem('encryptKey');
+    const storedKey = sessionStorage.getItem('encryptKey') || localStorage.getItem('encryptKey');
     this.key = (storedKey && storedKey !== 'default') ? storedKey : null;
+
+    // Migrate key from localStorage to sessionStorage if present
+    if (localStorage.getItem('encryptKey')) {
+      sessionStorage.setItem('encryptKey', localStorage.getItem('encryptKey'));
+      localStorage.removeItem('encryptKey');
+    }
 
     const encryptLocal = localStorage.getItem('encryptLocal');
     this.encryptionLocalEnabled = encryptLocal === "true" ? true : false;
@@ -42,7 +48,7 @@ export class CrypticService {
 
   public updateConfig(key: string, encryptLocal: boolean, encryptDatabase: boolean): void {
     this.key = (key && key !== 'default') ? key : null;
-    localStorage.setItem('encryptKey', key);
+    sessionStorage.setItem('encryptKey', key);
     this.encryptionLocalEnabled = encryptLocal;
     localStorage.setItem('encryptLocal', encryptLocal.toString());
     this.encryptionDatabaseEnabled = encryptDatabase;

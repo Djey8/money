@@ -5,20 +5,29 @@ describe('CrypticService', () => {
 
   beforeEach(() => {
     localStorage.clear();
+    sessionStorage.clear();
     service = new CrypticService();
   });
 
   // --- constructor / loadConfig -------------------------------------------
 
   describe('loadConfig()', () => {
-    it('uses stored key when present', () => {
-      localStorage.setItem('encryptKey', 'myKey');
+    it('uses stored key from sessionStorage when present', () => {
+      sessionStorage.setItem('encryptKey', 'myKey');
       const s = new CrypticService();
       expect(s.getKey()).toBe('myKey');
     });
 
+    it('migrates key from localStorage to sessionStorage', () => {
+      localStorage.setItem('encryptKey', 'legacyKey');
+      const s = new CrypticService();
+      expect(s.getKey()).toBe('legacyKey');
+      expect(sessionStorage.getItem('encryptKey')).toBe('legacyKey');
+      expect(localStorage.getItem('encryptKey')).toBeNull();
+    });
+
     it('returns null when stored value is "default"', () => {
-      localStorage.setItem('encryptKey', 'default');
+      sessionStorage.setItem('encryptKey', 'default');
       const s = new CrypticService();
       expect(s.getKey()).toBeNull();
     });
@@ -40,16 +49,16 @@ describe('CrypticService', () => {
   // --- updateConfig -------------------------------------------------------
 
   describe('updateConfig()', () => {
-    it('updates key and persists to localStorage', () => {
+    it('updates key and persists to sessionStorage', () => {
       service.updateConfig('newKey', false, false);
       expect(service.getKey()).toBe('newKey');
-      expect(localStorage.getItem('encryptKey')).toBe('newKey');
+      expect(sessionStorage.getItem('encryptKey')).toBe('newKey');
     });
 
     it('stores "default" as-is (no special handling)', () => {
       service.updateConfig('default', false, false);
       expect(service.getKey()).toBeNull();
-      expect(localStorage.getItem('encryptKey')).toBe('default');
+      expect(sessionStorage.getItem('encryptKey')).toBe('default');
     });
 
     it('persists encryption toggles', () => {
