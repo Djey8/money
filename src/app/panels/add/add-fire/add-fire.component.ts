@@ -518,26 +518,29 @@ export class AddFireComponent extends BaseAddComponent {
     AppStateService.instance.allFireEmergencies.push(newFire);
     
     this.clearError();
+    this.resetForm();
+    this.closeWindow();
+    AppStateService.instance.isSaving = true;
     this.persistence.writeAndSync({
       tag: 'fire',
       data: AppStateService.instance.allFireEmergencies,
       localStorageKey: 'fire',
       logEvent: 'add_fire',
       logMetadata: { 
-        title: this.titleTextField, 
+        title: newFire.title, 
         target: finalBuckets.reduce((sum, b) => sum + b.target, 0), 
         phase: this.phaseField 
       },
       onSuccess: () => {
-        this.resetForm();
-        this.closeWindow();
+        AppStateService.instance.isSaving = false;
         this.toastService.show('Emergency fund added', 'success');
         gotoTop();
         const route = environment.mode === 'selfhosted' ? '/fire' : '/fireemergencies';
         this.router.navigate([route]);
       },
       onError: (error) => {
-        this.showError(error.message || 'Database write failed');
+        AppStateService.instance.isSaving = false;
+        this.toastService.show(error.message || 'Database write failed', 'error');
       }
     });
   }
