@@ -14,6 +14,10 @@ let isRefreshing = false;
  * 3. On refresh failure, redirects to login
  */
 export const authInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, next: HttpHandlerFn) => {
+  // Capture injected services HERE (within the injection context).
+  // catchError runs async — inject() would fail with NG0203 there.
+  const http = inject(HttpClient);
+  const router = inject(Router);
   const apiUrl = environment.selfhosted?.apiUrl;
 
   // Only intercept requests to our API
@@ -27,22 +31,20 @@ export const authInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, ne
   return next(credentialReq).pipe(
     catchError((error: HttpErrorResponse) => {
       if (error.status === 401 && !req.url.includes('/auth/refresh') && !req.url.includes('/auth/login')) {
-        return handleTokenExpiry(credentialReq, next);
+        return handleTokenExpiry(credentialReq, next, http, router);
       }
       return throwError(() => error);
     })
   );
 };
 
-function handleTokenExpiry(req: HttpRequest<unknown>, next: HttpHandlerFn) {
+function handleTokenExpiry(req: HttpRequest<unknown>, next: HttpHandlerFn, http: HttpClient, router: Router) {
   if (isRefreshing) {
     // Already refreshing — fail this request (avoids infinite loops)
     return throwError(() => new HttpErrorResponse({ status: 401, statusText: 'Refreshing' }));
   }
 
   isRefreshing = true;
-  const http = inject(HttpClient);
-  const router = inject(Router);
   const apiUrl = environment.selfhosted.apiUrl;
 
   return http.post(`${apiUrl}/auth/refresh`, {}, { withCredentials: true }).pipe(
