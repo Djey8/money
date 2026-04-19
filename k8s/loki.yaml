@@ -143,15 +143,8 @@ spec:
           storage: 2Gi  # 7 days retention
 
 ---
-# Grafana admin credentials
-apiVersion: v1
-kind: Secret
-metadata:
-  name: grafana-secret
-  namespace: money-app
-type: Opaque
-stringData:
-  admin-password: "ohP!b94b&?oN>p9dKHcVi@Z`<22y<4CedLXhF>2Vk2%?LK7nwk@H$i#wW7DA"
+# Secret "grafana-secret" is defined in k8s/secrets.yaml (not committed to Git)
+# Apply separately: kubectl apply -f k8s/secrets.yaml
 
 ---
 # Grafana - Visualization and querying interface for Loki
