@@ -1,3 +1,17 @@
+## [1.4.0] - 2026-04-19
+
+### Features
+- feat(info-mojo): add mojo info panel component with responsive design
+- feat(app): add global saving spinner overlay with isSaving state
+
+### Bug Fixes
+- fix(fire): responsive mojo display with container query font sizes
+- fix(ui): center textarea and responsive font sizes for info panels
+- fix(info-fire): add editable completionDate and spinner on update/delete
+- fix(info): show spinner on update/delete with toast error handling
+- fix(add): close panel and show spinner on write operations
+- fix(add-smile): collapse sections by default and support tour expansion
+
 ## [1.3.3] - 2026-04-19
 
 ### Bug Fixes
