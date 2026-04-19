@@ -1,7 +1,59 @@
 const logger = require('../config/logger');
 const jwt = require('jsonwebtoken');
+const https = require('https');
+const http = require('http');
 
 const JWT_SECRET = process.env.JWT_SECRET;
+const SECURITY_ALERT_WEBHOOK_URL = process.env.SECURITY_ALERT_WEBHOOK_URL;
+
+// High-severity events that should trigger immediate alerts
+const HIGH_SEVERITY_EVENTS = [
+  'account_locked',
+  'refresh_token_reuse_detected',
+  'brute_force_detected',
+  'unauthorized_access',
+  'data_breach_attempt'
+];
+
+/**
+ * Send a security alert to the configured webhook endpoint.
+ * Fires asynchronously — failures are logged but never block the caller.
+ */
+function sendSecurityAlert(event, severity, details) {
+  if (!SECURITY_ALERT_WEBHOOK_URL) return;
+
+  const payload = JSON.stringify({
+    text: `[${severity.toUpperCase()}] Security event: ${event}`,
+    event,
+    severity,
+    timestamp: new Date().toISOString(),
+    service: 'money-backend',
+    details
+  });
+
+  const url = new URL(SECURITY_ALERT_WEBHOOK_URL);
+  const transport = url.protocol === 'https:' ? https : http;
+  const req = transport.request({
+    hostname: url.hostname,
+    port: url.port,
+    path: url.pathname + url.search,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(payload) },
+    timeout: 5000
+  }, (res) => {
+    if (res.statusCode >= 400) {
+      logger.warn('Security alert webhook returned error', { statusCode: res.statusCode, event });
+    }
+    res.resume();
+  });
+
+  req.on('error', (err) => {
+    logger.warn('Security alert webhook failed', { error: err.message, event });
+  });
+  req.on('timeout', () => { req.destroy(); });
+  req.write(payload);
+  req.end();
+}
 
 /**
  * Extract userId from JWT token in Authorization header
@@ -214,6 +266,11 @@ function logSecurityEvent(event, severity = 'medium', details = {}) {
     context_source: 'security',
     ...details
   });
+
+  // Fire webhook alert for high-severity events or explicit high severity
+  if (severity === 'high' || HIGH_SEVERITY_EVENTS.includes(event)) {
+    sendSecurityAlert(event, severity, details);
+  }
 }
 
 module.exports = {
