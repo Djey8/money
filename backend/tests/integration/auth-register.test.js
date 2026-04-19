@@ -24,20 +24,23 @@ describe('POST /api/auth/register', () => {
 
   // --- Successful registration -----------------------------------------------
 
-  skipIf(!dbAvailable, 'returns 201 with token and userId on success', async () => {
+  skipIf(!dbAvailable, 'returns 201 with userId and sets auth cookies on success', async () => {
     const email = `reg_success_${Date.now()}@test.local`;
     const res = await request(app)
       .post('/api/auth/register')
       .send({ email, password: 'StrongPass123!' });
 
     expect(res.status).toBe(201);
-    expect(res.body).toHaveProperty('token');
     expect(res.body).toHaveProperty('userId');
     expect(res.body).toHaveProperty('email', email);
     expect(res.body.userId).toMatch(/^user_/);
+    // Auth cookies should be set
+    const cookies = res.headers['set-cookie'] || [];
+    expect(cookies.some(c => c.startsWith('access_token='))).toBe(true);
+    expect(cookies.some(c => c.startsWith('refresh_token='))).toBe(true);
   });
 
-  skipIf(!dbAvailable, 'returned JWT contains correct userId and email claims', async () => {
+  skipIf(!dbAvailable, 'access token cookie contains correct userId and email claims', async () => {
     const email = `reg_jwt_${Date.now()}@test.local`;
     const res = await request(app)
       .post('/api/auth/register')
@@ -45,7 +48,10 @@ describe('POST /api/auth/register', () => {
 
     expect(res.status).toBe(201);
 
-    const decoded = jwt.verify(res.body.token, process.env.JWT_SECRET);
+    const cookies = res.headers['set-cookie'] || [];
+    const accessCookie = cookies.find(c => c.startsWith('access_token='));
+    const token = accessCookie.split(';')[0].split('=')[1];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
     expect(decoded.userId).toBe(res.body.userId);
     expect(decoded.email).toBe(email);
     expect(decoded).toHaveProperty('exp');
@@ -60,10 +66,15 @@ describe('POST /api/auth/register', () => {
 
     expect(res.status).toBe(201);
 
+    // Extract token from cookie for data read
+    const cookies = res.headers['set-cookie'] || [];
+    const accessCookie = cookies.find(c => c.startsWith('access_token='));
+    const token = accessCookie.split(';')[0].split('=')[1];
+
     // Read the user data document to verify it was created
     const dataRes = await request(app)
       .get('/api/data/read/info')
-      .set('Authorization', `Bearer ${res.body.token}`);
+      .set('Authorization', `Bearer ${token}`);
 
     expect(dataRes.status).toBe(200);
     expect(dataRes.body.data).toHaveProperty('email', email);
@@ -79,9 +90,13 @@ describe('POST /api/auth/register', () => {
 
     expect(res.status).toBe(201);
 
+    const cookies = res.headers['set-cookie'] || [];
+    const accessCookie = cookies.find(c => c.startsWith('access_token='));
+    const token = accessCookie.split(';')[0].split('=')[1];
+
     const dataRes = await request(app)
       .get('/api/data/read/info')
-      .set('Authorization', `Bearer ${res.body.token}`);
+      .set('Authorization', `Bearer ${token}`);
 
     expect(dataRes.status).toBe(200);
     expect(dataRes.body.data).toHaveProperty('username', 'CustomName');
@@ -103,7 +118,7 @@ describe('POST /api/auth/register', () => {
       .post('/api/auth/register')
       .send({ email, password: 'DifferentPass456!' });
     expect(second.status).toBe(409);
-    expect(second.body).toHaveProperty('error', 'User already exists');
+    expect(second.body).toHaveProperty('error', 'Registration failed');
   });
 
   // --- Missing fields --------------------------------------------------------

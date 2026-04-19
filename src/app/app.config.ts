@@ -1,8 +1,9 @@
 import { ApplicationConfig, importProvidersFrom, LOCALE_ID, isDevMode } from '@angular/core';
 import { provideRouter, withHashLocation } from '@angular/router';
 import { provideAnimations } from '@angular/platform-browser/animations';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { routes } from './app.routes';
+import { authInterceptor } from './shared/interceptors/auth.interceptor';
 
 // Firebase compat providers (until modular migration)
 import { AngularFireModule } from '@angular/fire/compat';
@@ -37,7 +38,7 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideRouter(routes, withHashLocation()),
     provideAnimations(),
-    provideHttpClient(),
+    provideHttpClient(withInterceptors([authInterceptor])),
 
     // Firebase (compat only — app uses AngularFireAuth + AngularFireDatabase)
     importProvidersFrom(

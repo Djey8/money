@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const cookieParser = require('cookie-parser');
 const rateLimit = require('express-rate-limit');
 const authRoutes = require('./routes/auth');
 const dataRoutes = require('./routes/data');
@@ -29,7 +30,7 @@ app.use(cors({
 // Rate limiting - with proper trust proxy configuration
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
+  max: 500, // limit each IP to 500 requests per windowMs
   standardHeaders: true,
   legacyHeaders: false,
   // Skip rate limiting by IP in local development or when behind proxy
@@ -40,9 +41,23 @@ const limiter = rateLimit({
 });
 app.use('/api/', limiter);
 
+// Strict rate limiting for auth endpoints (brute-force protection)
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // max 10 login/register attempts per 15 min
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => process.env.SKIP_RATE_LIMIT === 'true'
+});
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/register', authLimiter);
+
 // Body parser
 app.use(express.json({ limit: '2mb' }));
 app.use(express.text({ limit: '2mb', type: 'text/plain' }));
+
+// Cookie parser (for httpOnly auth cookies)
+app.use(cookieParser());
 
 // Enhanced request logging middleware
 app.use(requestLoggingMiddleware);

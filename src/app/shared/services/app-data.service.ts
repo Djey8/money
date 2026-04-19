@@ -91,8 +91,8 @@ export class AppDataService {
         return false;
       }
     } else {
-      const token = localStorage.getItem('selfhosted_token');
-      if (!token) {
+      const userId = localStorage.getItem('selfhosted_userId');
+      if (!userId) {
         return false;
       }
       try {

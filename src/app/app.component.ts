@@ -180,7 +180,7 @@ export class AppComponent {
     const hash = window.location.hash;
     if (hash === '' || hash === '#/') {
       const hasSession = DemoService.isDemoMode()
-        || window.localStorage.getItem('selfhosted_token')
+        || window.localStorage.getItem('selfhosted_userId')
         || this.localStorage.getData('uid');
       if (hasSession) {
         this.router.navigate(['/home']);
@@ -419,8 +419,7 @@ export class AppComponent {
     if (this.appMode === 'firebase') {
       this.logoutFirebase();
     } else {
-      // Selfhosted mode - clear tokens
-      localStorage.removeItem('selfhosted_token');
+      // Selfhosted mode - clear userId (cookies cleared by backend logout)
       localStorage.removeItem('selfhosted_userId');
     }
     

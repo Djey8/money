@@ -47,8 +47,8 @@ The application has good foundational security practices (Helmet, bcrypt, JWT au
 | Severity | Total | Fixed | Remaining |
 |----------|-------|-------|-----------|
 | CRITICAL | 4 | 4 ✅ | 0 |
-| HIGH | 6 | 2 ✅ | 4 |
-| MEDIUM | 8 | 3 ✅ | 5 |
+| HIGH | 6 | 6 ✅ | 0 |
+| MEDIUM | 8 | 4 ✅ | 4 |
 | LOW/Info | 7 | 4 ✅ | 3 |
 
 ---
@@ -209,43 +209,47 @@ The backend `/register` endpoint only checks that email and password are non-emp
 
 ---
 
-### H3: JWT Token Has No Refresh Mechanism ❌ OPEN
+### H3: JWT Token Has No Refresh Mechanism ✅ FIXED
 **OWASP:** A07:2021 Identification and Authentication Failures  
 **ASVS:** 3.5.1, 3.5.3  
 **Files:**
-- `backend/routes/auth.js` line 11: `JWT_EXPIRES_IN = '7d'`
-- `src/app/shared/services/selfhosted.service.ts` — no refresh token logic
+- `backend/routes/auth.js` — refresh token endpoints and rotation logic
+- `src/app/shared/interceptors/auth.interceptor.ts` — automatic token refresh on 401
 
-**Impact:** JWTs are issued with a 7-day expiration and stored in `localStorage`. There is no refresh token mechanism and no way to revoke tokens server-side. If a token is stolen:
-- The attacker has a 7-day window of access
-- There is no way to invalidate the token without changing the JWT_SECRET (which invalidates ALL sessions)
-- Users cannot "log out" other sessions
+**Impact:** JWTs were issued with a 7-day expiration and no way to revoke tokens server-side.
 
-**Remediation:**
-1. Implement short-lived access tokens (15 min) + refresh tokens (7 day)
-2. Store refresh tokens in the database and allow server-side revocation
-3. Add a token blacklist for logout
-4. Consider using `httpOnly` cookies instead of `localStorage` for token storage
+**Fix Applied:**
+1. Short-lived access tokens (15 min) + long-lived refresh tokens (7 day)
+2. Refresh tokens stored in CouchDB `auth` DB as `rt_<jti>` documents
+3. Token rotation on refresh: old token revoked, new pair issued
+4. `/api/auth/refresh` endpoint for transparent token renewal
+5. `/api/auth/logout` endpoint revokes refresh token in DB and clears cookies
+6. Angular HTTP interceptor auto-refreshes on 401 responses
 
 ---
 
-### H4: JWT Token Stored in localStorage ❌ OPEN
+### H4: JWT Token Stored in localStorage ✅ FIXED
 **OWASP:** A07:2021 Identification and Authentication Failures  
 **ASVS:** 3.3.2  
 **Files:**
-- `src/app/shared/services/selfhosted.service.ts` lines 46, 65
-- `src/app/shared/services/auth.service.ts` line 53
+- `backend/routes/auth.js` — cookie-based token delivery
+- `backend/middleware/auth.js` — cookie-first token extraction
+- `src/app/shared/interceptors/auth.interceptor.ts` — `withCredentials: true`
+- `src/app/shared/services/selfhosted.service.ts` — removed localStorage token storage
 
-**Impact:** `localStorage` is accessible to any JavaScript running on the page. If an XSS vulnerability exists (see M1), the attacker can steal the JWT. Unlike `httpOnly` cookies, localStorage tokens cannot be protected from script access.
+**Impact:** `localStorage` was accessible to any JavaScript running on the page, enabling XSS-based token theft.
 
-**Remediation:**
-1. Move JWT to `httpOnly`, `Secure`, `SameSite=Strict` cookies
-2. Implement CSRF protection if using cookies
-3. As an alternative, use in-memory storage with refresh tokens
+**Fix Applied:**
+1. Access token delivered via `httpOnly`, `Secure` (production), `SameSite=Strict` cookie (`access_token`, path=/)
+2. Refresh token in `httpOnly` cookie (`refresh_token`, path=/api/auth)
+3. `cookie-parser` middleware added to Express
+4. Auth middleware reads cookie first, then falls back to Authorization header for backward compat
+5. Frontend no longer stores/reads `selfhosted_token` from localStorage; only `selfhosted_userId` persisted
+6. No separate CSRF token needed: `SameSite=Strict` prevents cross-origin cookie submission
 
 ---
 
-### H5: No Account Lockout After Failed Login Attempts ❌ OPEN
+### H5: No Account Lockout After Failed Login Attempts ✅ FIXED
 **OWASP:** A07:2021 Identification and Authentication Failures  
 **ASVS:** 2.2.1  
 **File:** `backend/routes/auth.js` — login endpoint
@@ -253,13 +257,15 @@ The backend `/register` endpoint only checks that email and password are non-emp
 Failed login attempts are logged but no lockout mechanism exists. Combined with H2 (rate limiting disabled), this allows unlimited brute-force attempts.
 
 **Remediation:**
-1. Implement progressive delay after failed attempts (1s, 2s, 4s, 8s, etc.)
-2. Lock account after 10 consecutive failures, require email verification to unlock
-3. Implement CAPTCHA after 3 failed attempts
+1. ~~Implement progressive delay after failed attempts (1s, 2s, 4s, 8s, etc.)~~
+2. ~~Lock account after 10 consecutive failures, require email verification to unlock~~
+3. Implement CAPTCHA after 3 failed attempts (optional enhancement)
+
+**Fix Applied:** In-memory account lockout: 10 consecutive failures → 15-minute lockout with `Retry-After` header. Counter resets on successful login or after 30 minutes of inactivity. Security event logged on lockout.
 
 ---
 
-### H6: No TLS Enforcement by Default ❌ OPEN
+### H6: No TLS Enforcement by Default ✅ FIXED
 **OWASP:** A02:2021 Cryptographic Failures  
 **ASVS:** 9.1.1  
 **Files:**
@@ -269,32 +275,28 @@ Failed login attempts are logged but no lockout mechanism exists. Combined with 
 **Impact:** The default deployment serves everything over HTTP. JWT tokens, passwords, and financial data are transmitted in plaintext. The HTTPS block in nginx.conf exists but the HTTP→HTTPS redirect is disabled.
 
 **Remediation:**
-1. Enable the HTTP→HTTPS redirect in nginx.conf
-2. Uncomment and configure the TLS section in ingress.yaml
-3. Use cert-manager with Let's Encrypt for automated TLS certificates
-4. Add HSTS header: `Strict-Transport-Security: max-age=31536000; includeSubDomains`
+1. ~~Enable the HTTP→HTTPS redirect in nginx.conf~~ ✅
+2. ~~Uncomment and configure the TLS section in ingress.yaml~~ ✅
+3. ~~Use cert-manager with Let's Encrypt for automated TLS certificates~~ ✅
+4. ~~Add HSTS header: `Strict-Transport-Security: max-age=31536000; includeSubDomains`~~ ✅
+
+**Fix Applied:** Ingress TLS enabled with cert-manager/Let's Encrypt ClusterIssuer, Traefik HTTP→HTTPS redirect middleware, HSTS header added to nginx.
 
 ---
 
 ## 5. Findings — MEDIUM
 
-### M1: innerHTML Usage in BI Dashboard ❌ OPEN
+### M1: innerHTML Usage in BI Dashboard ✅ FIXED
 **OWASP:** A03:2021 Injection (XSS)  
 **ASVS:** 5.3.3  
-**File:** `src/app/stats/bi/bi-dashboard.ts` line 3879
+**File:** `src/app/stats/bi/bi-dashboard.ts`
 
-```typescript
-modalContent.innerHTML = `...`
-```
+`innerHTML` and D3 `.html()` calls interpolated user-controlled data (transaction categories, comments) without escaping, bypassing Angular's built-in XSS protection.
 
-This `innerHTML` assignment uses template literals that include computed values. While current usage appears to use application-controlled data (not direct user input), this pattern is dangerous because:
-- D3.js `.html()` calls throughout the BI dashboard may interpolate user-controlled data (transaction comments, category names)
-- Angular's built-in XSS protection does not apply to D3-rendered DOM
-
-**Remediation:**
-1. Use `textContent` instead of `innerHTML` for user-provided data
-2. Sanitize any user-derived data before inserting into D3 `.html()` calls
-3. Review all D3 `.html()` and `.text()` calls that use transaction data
+**Fix Applied:**
+1. Added `escapeHtml()` helper that escapes `&`, `<`, `>`, `"`, `'`
+2. All user-controlled data (`category`, `comment`) passed through `escapeHtml()` before innerHTML interpolation
+3. Changed D3 `.html()` to `.text()` where only plain text + emoji is needed (transaction table category column)
 
 ---
 
@@ -373,13 +375,11 @@ Firebase client config (apiKey, projectId, etc.) is bundled into the frontend. W
 
 ---
 
-### M7: No CSRF Protection ⏭️ N/A (only needed if moving to cookie auth)
+### M7: No CSRF Protection ⏭️ N/A (mitigated by SameSite=Strict cookies)
 **OWASP:** A01:2021 Broken Access Control  
 **ASVS:** 4.2.2  
 
-The API uses JWT Bearer tokens which are not automatically sent by browsers (unlike cookies), so traditional CSRF is not directly applicable. However:
-- If the app ever migrates to cookie-based auth (recommended in H4), CSRF becomes critical
-- The CORS wildcard (H1) makes cross-origin attacks possible
+The API now uses `httpOnly` cookies with `SameSite=Strict` (H4 fixed). `SameSite=Strict` prevents cookies from being sent on any cross-origin request, effectively mitigating CSRF without a separate token. The Authorization Bearer header is still accepted as a fallback for backward compatibility.
 
 **Remediation:**
 1. If moving to cookie auth, add CSRF tokens (csurf middleware or double-submit pattern)
@@ -445,41 +445,35 @@ Helmet sets security headers on the backend API, but the nginx server serving th
 
 ---
 
-### L5: No Kubernetes Network Policies ❌ OPEN
-**File:** `k8s/namespace.yaml`
+### L5: No Kubernetes Network Policies ✅ FIXED
+**File:** `k8s/network-policy.yaml`
 
-No NetworkPolicy resources are defined. All pods in the `money-app` namespace can communicate freely. The CouchDB pod should only accept connections from the backend pod.
+NetworkPolicy added to restrict CouchDB ingress to only backend pods and backup jobs on port 5984.
 
-**Remediation:** Add NetworkPolicy to restrict CouchDB ingress to only the backend pod label.
-
----
-
-### L6: Backup CronJob Runs as Root ❌ OPEN
-**File:** `k8s/backup-cronjob-daily.yaml` line 16
-
-```yaml
-securityContext:
-  runAsUser: 0
-```
-
-The backup container runs as root. This increases blast radius if the container is compromised.
-
-**Remediation:** Run as non-root user. Use `initContainers` for any setup requiring elevated privileges.
+**Fix Applied:** Created `k8s/network-policy.yaml` with podSelector matching `app: couchdb`, allowing ingress only from `app: backend` and `job-type: couchdb-backup` on TCP 5984.
 
 ---
 
-### L7: No Pod Security Standards / Security Contexts ❌ OPEN
+### L6: Backup CronJob Runs as Root ✅ FIXED
+**File:** `k8s/backup-cronjob-daily.yaml`, `k8s/backup-cronjob-hourly.yaml`
+
+Backup containers now run as non-root (UID 100, the curl user in curlimages/curl), with `allowPrivilegeEscalation: false` and all capabilities dropped.
+
+**Fix Applied:** Changed `runAsUser: 0` to `runAsUser: 100` with `runAsNonRoot: true`, added container-level securityContext.
+
+---
+
+### L7: No Pod Security Standards / Security Contexts ✅ FIXED
 **Files:** `k8s/backend.yaml`, `k8s/frontend.yaml`
 
-Backend and frontend deployments do not define `securityContext` with:
-- `readOnlyRootFilesystem: true`
+Both deployments now have pod-level and container-level securityContext:
+- `runAsNonRoot: true`
 - `allowPrivilegeEscalation: false`
 - `capabilities.drop: ["ALL"]`
-- `runAsNonRoot: true`
+- Backend: `readOnlyRootFilesystem: true`, `runAsUser: 1000`
+- Frontend: `runAsUser: 101` (nginx user), writable tmpfs for /tmp, /var/cache/nginx, /var/run
 
-The Dockerfiles correctly create non-root users, but Kubernetes does not enforce this.
-
-**Remediation:** Add security contexts to all pod specs and enforce with Pod Security Standards (Restricted profile).
+**Fix Applied:** Added comprehensive security contexts to all pod specs.
 
 ---
 
@@ -488,11 +482,11 @@ The Dockerfiles correctly create non-root users, but Kubernetes does not enforce
 | Control | Status | Notes |
 |---------|--------|-------|
 | XSS Protection (Angular built-in) | ✅ PASS | Angular auto-escapes interpolation. ViewEncapsulation used. |
-| D3.js XSS Risk | ⚠️ WARN | innerHTML and .html() used in BI dashboard (M1) |
+| D3.js XSS Risk | ✅ FIXED | User data escaped via escapeHtml(), .text() used where possible |
 | CSP Header | ❌ FAIL | No Content-Security-Policy on frontend (L4) — note: other security headers now added |
 | Service Worker (PWA) | ✅ PASS | ngsw-config.json properly configured |
 | Dependency `crypto-js` | ⚠️ WARN | CryptoJS AES with string passphrase uses insecure KDF internally (MD5-based) |
-| Token Storage | ❌ FAIL | JWT in localStorage (H4) |
+| Token Storage | ✅ PASS | JWT in httpOnly cookies (H4 fixed) |
 | Encryption Key Storage | ❌ FAIL | Key in localStorage in plaintext (M4) — note: hardcoded default key removed |
 | DomSanitizer bypass | ✅ PASS | No `bypassSecurityTrust*` calls found |
 | `eval()` / `Function()` | ✅ PASS | No unsafe eval patterns found |
@@ -508,7 +502,7 @@ The Dockerfiles correctly create non-root users, but Kubernetes does not enforce
 | Rate Limiting (production) | ✅ FIXED | Was bypassed via SKIP_RATE_LIMIT=true → now set to false (H2) |
 | Password Hashing | ✅ PASS | bcrypt with cost factor 10 |
 | Password Policy | ✅ FIXED | Server-side: min 8 chars, upper/lower/number required (C4) |
-| JWT Implementation | ⚠️ WARN | No refresh tokens, no revocation (H3) |
+| JWT Implementation | ✅ PASS | Refresh tokens with rotation and revocation (H3 fixed) |
 | Input Validation | ⚠️ WARN | Minimal — no schema validation library (e.g., Joi, Zod) |
 | SQL/NoSQL Injection | ✅ PASS | CouchDB Mango queries use parameterized selectors |
 | Error Handling | ✅ PASS | Production errors are generic; dev errors have detail |
@@ -564,16 +558,16 @@ The Dockerfiles correctly create non-root users, but Kubernetes does not enforce
 
 | Control | Status | Notes |
 |---------|--------|-------|
-| Namespace Isolation | ⚠️ WARN | money-app namespace exists, but no NetworkPolicies (L5) |
+| Namespace Isolation | ✅ FIXED | NetworkPolicy restricts CouchDB to backend + backup jobs (L5) |
 | Secrets Management | ✅ FIXED | Secrets moved to gitignored secrets.yaml, referenced by name (C1) |
 | Resource Limits | ✅ PASS | CouchDB and frontend have resource requests/limits |
 | Resource Limits (Backend) | ❌ FAIL | Backend deployment has NO resource limits |
-| Pod Security Context | ❌ FAIL | No securityContext on backend/frontend pods (L7) |
-| Ingress TLS | ❌ FAIL | TLS commented out (H6) |
+| Pod Security Context | ✅ FIXED | securityContext on all pods with runAsNonRoot, drop ALL caps (L7) |
+| Ingress TLS | ✅ FIXED | cert-manager + Let's Encrypt, HSTS enabled (H6) |
 | NodePort Services | ⚠️ WARN | Frontend uses NodePort (30080, 30545) which bypasses ingress. Only use if behind firewall |
 | Image Pull Policy | ✅ PASS | `imagePullPolicy: Never` for local images |
 | RBAC | ⚠️ WARN | No custom RBAC roles defined. Relies on k3s defaults |
-| Backup Security | ⚠️ WARN | Backups run as root (L6), no encryption |
+| Backup Security | ✅ FIXED | Backups run as non-root UID 100, caps dropped (L6) |
 
 ---
 
@@ -623,12 +617,12 @@ The Dockerfiles correctly create non-root users, but Kubernetes does not enforce
 | Category | Status |
 |----------|--------|
 | A01: Broken Access Control | ✅ CouchDB proxy removed, CORS restricted |
-| A02: Cryptographic Failures | ⚠️ Secrets fixed, hardcoded key removed. TLS still open |
+| A02: Cryptographic Failures | ✅ Secrets fixed, hardcoded key removed. TLS enforced with HSTS |
 | A03: Injection | ✅ Angular escaping, parameterized queries |
-| A04: Insecure Design | ⚠️ Rate limiting enabled. No account lockout yet |
+| A04: Insecure Design | ✅ Rate limiting enabled. Account lockout after 10 failures |
 | A05: Security Misconfiguration | ⚠️ Debug off, CORS fixed, security headers added. No CSP yet |
 | A06: Vulnerable Components | ⚠️ No automated scanning |
-| A07: Auth Failures | ⚠️ Password policy added. No MFA, no token revocation yet |
+| A07: Auth Failures | ✅ Password policy, account lockout, refresh tokens with rotation, httpOnly cookies. No MFA yet |
 | A08: Software/Data Integrity | ⚠️ No SBOM, no signed builds |
 | A09: Logging & Monitoring | ✅ Comprehensive Winston/Loki logging |
 | A10: SSRF | ✅ No user-controlled URL fetching |
@@ -659,17 +653,17 @@ The Dockerfiles correctly create non-root users, but Kubernetes does not enforce
 | 🔴 P1 | C4 | Add server-side password policy | 1h | Prevents trivial brute-force | ✅ FIXED |
 | 🟠 P1 | H1 | Fix CORS to specific origins | 30min | Prevents cross-origin attacks | ✅ FIXED |
 | 🟠 P1 | H2 | Enable rate limiting in production | 30min | Prevents brute-force and DoS | ✅ FIXED |
-| 🟠 P1 | H6 | Enable TLS / HTTPS redirect | 1h | Encrypts all traffic | ❌ OPEN |
-| 🟠 P2 | H5 | Add account lockout | 2h | Prevents credential stuffing | ❌ OPEN |
-| 🟠 P2 | H3 | Implement refresh tokens | 4h | Enables token revocation | ❌ OPEN |
-| 🟠 P2 | H4 | Move JWT to httpOnly cookie | 4h | Protects against XSS token theft | ❌ OPEN |
+| 🟠 P1 | H6 | Enable TLS / HTTPS redirect | 1h | Encrypts all traffic | ✅ FIXED |
+| 🟠 P2 | H5 | Add account lockout | 2h | Prevents credential stuffing | ✅ FIXED |
+| 🟠 P2 | H3 | Implement refresh tokens | 4h | Enables token revocation | ✅ FIXED |
+| 🟠 P2 | H4 | Move JWT to httpOnly cookie | 4h | Protects against XSS token theft | ✅ FIXED |
 | 🟡 P2 | L4 | Add security headers to nginx | 30min | Defense in depth | ✅ FIXED |
-| 🟡 P2 | L5 | Add Kubernetes NetworkPolicies | 1h | Limits blast radius | ❌ OPEN |
-| 🟡 P3 | M1 | Sanitize D3 innerHTML usage | 2h | Prevents stored XSS | ❌ OPEN |
+| 🟡 P2 | L5 | Add Kubernetes NetworkPolicies | 1h | Limits blast radius | ✅ FIXED |
+| 🟡 P3 | M1 | Sanitize D3 innerHTML usage | 2h | Prevents stored XSS | ✅ FIXED |
 | 🟡 P3 | M2 | Fix user enumeration | 1h | Protects user privacy | ✅ FIXED |
 | 🟡 P3 | M4 | Stop persisting encryption key | 2h | Limits key exposure | ❌ OPEN |
 | 🟡 P3 | M5 | Disable debug mode in prod | 5min | Reduces data leakage | ✅ FIXED |
-| 🟡 P3 | L7 | Add pod security contexts | 1h | Kubernetes hardening | ❌ OPEN |
+| 🟡 P3 | L7 | Add pod security contexts | 1h | Kubernetes hardening | ✅ FIXED |
 | 🟢 P4 | L1 | Use crypto.randomUUID() | 15min | Better ID generation | ✅ FIXED |
 | 🟢 P4 | L2 | Add email validation to register | 15min | Input hygiene | ✅ FIXED |
 | 🟢 P4 | M3 | Add email verification | 4h | Prevents fake accounts | ❌ OPEN |
