@@ -1,17 +1,25 @@
 import { Injectable } from '@angular/core';
-import *  as CryptoJS from 'crypto-js';
+import * as CryptoJS from 'crypto-js';
+
+const PBKDF2_ITERATIONS = 10000;
+const PBKDF2_KEY_SIZE = 8; // 8 words = 32 bytes = 256 bits
+const V2_PREFIX = 'v2:';
 
 @Injectable({
   providedIn: 'root'
 })
 /**
- * Encryption service using AES (crypto-js) for local storage and database data.
- * Manages encryption keys and per-location (local/database) encryption toggles.
+ * Encryption service using AES-256-CBC with PBKDF2-SHA256 key derivation
+ * and HMAC-SHA256 authentication. Maintains backward compatibility with
+ * legacy CryptoJS passphrase-encrypted data.
  */
 export class CrypticService {
   private key: string;
   encryptionLocalEnabled: boolean;
   encryptionDatabaseEnabled: boolean;
+
+  private derivedKeyCache = new Map<string, CryptoJS.lib.WordArray>();
+  private sessionSalt: CryptoJS.lib.WordArray | null = null;
 
   constructor() {
     this.loadConfig();
@@ -48,6 +56,8 @@ export class CrypticService {
 
   public updateConfig(key: string, encryptLocal: boolean, encryptDatabase: boolean): void {
     this.key = (key && key !== 'default') ? key : null;
+    this.derivedKeyCache.clear();
+    this.sessionSalt = null;
     sessionStorage.setItem('encryptKey', key);
     this.encryptionLocalEnabled = encryptLocal;
     localStorage.setItem('encryptLocal', encryptLocal.toString());
@@ -55,31 +65,98 @@ export class CrypticService {
     localStorage.setItem('encryptDatabase', encryptDatabase.toString());
   }
 
-  
+  private getDerivedKey(salt: CryptoJS.lib.WordArray): CryptoJS.lib.WordArray {
+    const saltHex = CryptoJS.enc.Hex.stringify(salt);
+    const cached = this.derivedKeyCache.get(saltHex);
+    if (cached) return cached;
+
+    const key = CryptoJS.PBKDF2(this.key, salt, {
+      keySize: PBKDF2_KEY_SIZE,
+      iterations: PBKDF2_ITERATIONS,
+      hasher: CryptoJS.algo.SHA256
+    });
+    this.derivedKeyCache.set(saltHex, key);
+    return key;
+  }
+
+  private getSessionSalt(): CryptoJS.lib.WordArray {
+    if (!this.sessionSalt) {
+      this.sessionSalt = CryptoJS.lib.WordArray.random(16);
+    }
+    return this.sessionSalt;
+  }
 
   public encrypt(txt: string, location: string): string {
-    if (location === "local" && this.encryptionLocalEnabled) {
-      return CryptoJS.AES.encrypt(txt, this.key).toString();
-    } else if (location === "database" && this.encryptionDatabaseEnabled) {
-      return CryptoJS.AES.encrypt(txt, this.key).toString();
-    } else {
-      return txt;
-    }
+    const shouldEncrypt = (location === 'local' && this.encryptionLocalEnabled) ||
+                          (location === 'database' && this.encryptionDatabaseEnabled);
+    if (!shouldEncrypt || !this.key) return txt;
+
+    const salt = this.getSessionSalt();
+    const iv = CryptoJS.lib.WordArray.random(16);
+    const derivedKey = this.getDerivedKey(salt);
+
+    const encrypted = CryptoJS.AES.encrypt(txt, derivedKey, {
+      iv: iv,
+      mode: CryptoJS.mode.CBC,
+      padding: CryptoJS.pad.Pkcs7
+    });
+
+    const ciphertextWA = encrypted.ciphertext;
+    const payload = salt.clone().concat(iv).concat(ciphertextWA);
+    const hmac = CryptoJS.HmacSHA256(payload, derivedKey);
+
+    // Format: "v2:" + base64(salt[16] + iv[16] + hmac[32] + ciphertext)
+    const result = salt.clone().concat(iv).concat(hmac).concat(ciphertextWA);
+    return V2_PREFIX + CryptoJS.enc.Base64.stringify(result);
   }
 
   public decrypt(txtToDecrypt: string, location: string): string {
     try {
-      if (location === "local" && this.encryptionLocalEnabled) {
-        return CryptoJS.AES.decrypt(txtToDecrypt, this.key).toString(CryptoJS.enc.Utf8);
-      } else if (location === "database" && this.encryptionDatabaseEnabled) {
-        return CryptoJS.AES.decrypt(txtToDecrypt, this.key).toString(CryptoJS.enc.Utf8);
+      const shouldDecrypt = (location === 'local' && this.encryptionLocalEnabled) ||
+                            (location === 'database' && this.encryptionDatabaseEnabled);
+      if (!shouldDecrypt || !this.key) return txtToDecrypt;
+
+      if (txtToDecrypt.startsWith(V2_PREFIX)) {
+        return this.decryptV2(txtToDecrypt.slice(V2_PREFIX.length));
       } else {
-        return txtToDecrypt;
+        return this.decryptLegacy(txtToDecrypt);
       }
     } catch (error) {
       console.warn('Decryption failed for location:', location, 'Error:', error);
-      // Return empty string if decryption fails (corrupted or wrong key)
       return '';
     }
+  }
+
+  private decryptV2(base64Data: string): string {
+    const data = CryptoJS.enc.Base64.parse(base64Data);
+    const words = data.words;
+    const totalBytes = data.sigBytes;
+    if (totalBytes < 64) throw new Error('Invalid v2 ciphertext: too short');
+
+    const salt = CryptoJS.lib.WordArray.create(words.slice(0, 4), 16);
+    const iv = CryptoJS.lib.WordArray.create(words.slice(4, 8), 16);
+    const storedHmac = CryptoJS.lib.WordArray.create(words.slice(8, 16), 32);
+    const ciphertext = CryptoJS.lib.WordArray.create(words.slice(16), totalBytes - 64);
+
+    const derivedKey = this.getDerivedKey(salt);
+
+    // Verify HMAC before decrypting
+    const payload = salt.clone().concat(iv).concat(ciphertext);
+    const computedHmac = CryptoJS.HmacSHA256(payload, derivedKey);
+    if (CryptoJS.enc.Hex.stringify(computedHmac) !== CryptoJS.enc.Hex.stringify(storedHmac)) {
+      throw new Error('HMAC verification failed');
+    }
+
+    const cipherParams = CryptoJS.lib.CipherParams.create({ ciphertext: ciphertext });
+    const decrypted = CryptoJS.AES.decrypt(cipherParams, derivedKey, {
+      iv: iv,
+      mode: CryptoJS.mode.CBC,
+      padding: CryptoJS.pad.Pkcs7
+    });
+    return decrypted.toString(CryptoJS.enc.Utf8);
+  }
+
+  private decryptLegacy(txtToDecrypt: string): string {
+    return CryptoJS.AES.decrypt(txtToDecrypt, this.key).toString(CryptoJS.enc.Utf8);
   }
 }
