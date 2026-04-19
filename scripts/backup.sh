@@ -89,9 +89,9 @@ if ! kubectl get namespace "$NAMESPACE" &> /dev/null; then
     exit 1
 fi
 
-# Check NAS availability
+# Check NAS availability (5s timeout — stale NFS mounts can hang)
 NAS_AVAILABLE=false
-if mountpoint -q "$(dirname "$NAS_BACKUP_ROOT")" 2>/dev/null || [ -d "$NAS_BACKUP_ROOT" ]; then
+if timeout 5 stat "$NAS_BACKUP_ROOT" >/dev/null 2>&1; then
     NAS_AVAILABLE=true
 fi
 
@@ -188,6 +188,23 @@ ARCHIVE_FILE="${TEMP_DIR}/couchdb-backup-${DATE}_${HOUR}00.tar.gz"
 tar -czf "$ARCHIVE_FILE" -C "$TEMP_DIR" --exclude='*.tar.gz' .
 BACKUP_SIZE=$(du -h "$ARCHIVE_FILE" | cut -f1)
 log_success "Archive created ($BACKUP_SIZE)"
+
+# Encrypt archive if BACKUP_ENCRYPTION_KEY is set
+BACKUP_ENCRYPTION_KEY="${BACKUP_ENCRYPTION_KEY:-}"
+ARCHIVE_EXT="tar.gz"
+if [ -n "$BACKUP_ENCRYPTION_KEY" ]; then
+    log_info "Encrypting backup with AES-256..."
+    gpg --batch --yes --symmetric --cipher-algo AES256 \
+        --passphrase "$BACKUP_ENCRYPTION_KEY" \
+        --output "${ARCHIVE_FILE}.gpg" "$ARCHIVE_FILE"
+    rm -f "$ARCHIVE_FILE"
+    ARCHIVE_FILE="${ARCHIVE_FILE}.gpg"
+    HOURLY_FILE="${HOURLY_FILE}.gpg"
+    BACKUP_FILE="${BACKUP_FILE}.gpg"
+    ARCHIVE_EXT="tar.gz.gpg"
+    BACKUP_SIZE=$(du -h "$ARCHIVE_FILE" | cut -f1)
+    log_success "Backup encrypted ($BACKUP_SIZE)"
+fi
 echo ""
 
 # ── Write to local storage ─────────────────────────
@@ -206,7 +223,7 @@ if [ "$HOURLY_ONLY" = false ]; then
 
     # Sunday → promote to weekly
     if [ "$DAY_OF_WEEK" = "7" ]; then
-        cp "$ARCHIVE_FILE" "${WEEKLY_DIR}/couchdb-backup-${DATE}.tar.gz"
+        cp "$ARCHIVE_FILE" "${WEEKLY_DIR}/couchdb-backup-${DATE}.${ARCHIVE_EXT}"
         log_success "Local weekly (Sunday)"
     else
         log_info "Not Sunday — skipping weekly promotion"
@@ -214,7 +231,7 @@ if [ "$HOURLY_ONLY" = false ]; then
 
     # 1st of month → promote to monthly
     if [ "$DAY_OF_MONTH" = "01" ]; then
-        cp "$ARCHIVE_FILE" "${MONTHLY_DIR}/couchdb-backup-${DATE}.tar.gz"
+        cp "$ARCHIVE_FILE" "${MONTHLY_DIR}/couchdb-backup-${DATE}.${ARCHIVE_EXT}"
         log_success "Local monthly (1st of month)"
     else
         log_info "Not 1st — skipping monthly promotion"
@@ -230,18 +247,18 @@ if [ "$NAS_AVAILABLE" = true ]; then
 
     if [ "$HOURLY_ONLY" = false ]; then
         # Daily
-        cp "$ARCHIVE_FILE" "${NAS_DAILY_DIR}/couchdb-backup-${DATE}.tar.gz"
-        log_success "NAS daily: couchdb-backup-${DATE}.tar.gz"
+        cp "$ARCHIVE_FILE" "${NAS_DAILY_DIR}/couchdb-backup-${DATE}.${ARCHIVE_EXT}"
+        log_success "NAS daily: couchdb-backup-${DATE}.${ARCHIVE_EXT}"
 
         # Sunday → weekly
         if [ "$DAY_OF_WEEK" = "7" ]; then
-            cp "$ARCHIVE_FILE" "${NAS_WEEKLY_DIR}/couchdb-backup-${DATE}.tar.gz"
+            cp "$ARCHIVE_FILE" "${NAS_WEEKLY_DIR}/couchdb-backup-${DATE}.${ARCHIVE_EXT}"
             log_success "NAS weekly (Sunday)"
         fi
 
         # 1st of month → monthly
         if [ "$DAY_OF_MONTH" = "01" ]; then
-            cp "$ARCHIVE_FILE" "${NAS_MONTHLY_DIR}/couchdb-backup-${DATE}.tar.gz"
+            cp "$ARCHIVE_FILE" "${NAS_MONTHLY_DIR}/couchdb-backup-${DATE}.${ARCHIVE_EXT}"
             log_success "NAS monthly (1st of month)"
         fi
     else
@@ -261,10 +278,10 @@ echo "==================================="
 cleanup_tier() {
     local dir=$1 keep=$2 label=$3
     local count
-    count=$(ls -1 "${dir}"/couchdb-backup-*.tar.gz 2>/dev/null | wc -l)
+    count=$(ls -1 "${dir}"/couchdb-backup-*.tar.gz* 2>/dev/null | wc -l)
     if [ "$count" -gt "$keep" ]; then
         log_info "Cleaning ${label} (keeping last ${keep})..."
-        ls -1t "${dir}"/couchdb-backup-*.tar.gz | tail -n +$((keep + 1)) | while read f; do
+        ls -1t "${dir}"/couchdb-backup-*.tar.gz* | tail -n +$((keep + 1)) | while read f; do
             log_warning "  → Removing: $(basename "$f")"
             rm -f "$f"
         done
@@ -277,13 +294,13 @@ echo "── Local ──"
 cleanup_tier "$HOURLY_DIR"  24 "Local hourly"
 cleanup_tier "$DAILY_DIR"   7  "Local daily"
 cleanup_tier "$WEEKLY_DIR"  13 "Local weekly"
-log_info "Local monthly: $(ls -1 "${MONTHLY_DIR}"/couchdb-backup-*.tar.gz 2>/dev/null | wc -l) (kept forever)"
+log_info "Local monthly: $(ls -1 "${MONTHLY_DIR}"/couchdb-backup-*.tar.gz* 2>/dev/null | wc -l) (kept forever)"
 
 if [ "$NAS_AVAILABLE" = true ]; then
     echo "── NAS ──"
     cleanup_tier "$NAS_DAILY_DIR"   21  "NAS daily"
     cleanup_tier "$NAS_WEEKLY_DIR"  104 "NAS weekly"
-    log_info "NAS monthly: $(ls -1 "${NAS_MONTHLY_DIR}"/couchdb-backup-*.tar.gz 2>/dev/null | wc -l) (kept forever)"
+    log_info "NAS monthly: $(ls -1 "${NAS_MONTHLY_DIR}"/couchdb-backup-*.tar.gz* 2>/dev/null | wc -l) (kept forever)"
 fi
 echo ""
 
@@ -295,8 +312,8 @@ echo "==================================="
 print_tier_summary() {
     local dir=$1 label=$2
     echo "── ${label} ──"
-    if ls "${dir}"/couchdb-backup-*.tar.gz 1>/dev/null 2>&1; then
-        for backup in $(ls -1t "${dir}"/couchdb-backup-*.tar.gz); do
+    if ls "${dir}"/couchdb-backup-*.tar.gz* 1>/dev/null 2>&1; then
+        for backup in $(ls -1t "${dir}"/couchdb-backup-*.tar.gz*); do
             printf "  %-50s %s\n" "$(basename "$backup")" "$(du -h "$backup" | cut -f1)"
         done
     else
