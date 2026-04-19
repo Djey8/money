@@ -11,23 +11,15 @@ data:
   COUCHDB_USER: "admin"
   # CORS: Using wildcard since frontend IP is dynamic via Ingress
   # Ingress serves both on same domain, so same-origin in most cases
-  CORS_ORIGINS: "*"
+  CORS_ORIGINS: "https://cashflowhero.uk,https://www.cashflowhero.uk"
   # Skip IP-based rate limiting in Kubernetes (trust ingress/service mesh)
-  SKIP_RATE_LIMIT: "true"
+  SKIP_RATE_LIMIT: "false"
   # Reduce logging in production for Pi performance (set to "info" when debugging)
   LOG_LEVEL: "warn"
   # Enable debug logging for all requests
-  DEBUG_REQUESTS: "true"
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: backend-secret
-  namespace: money-app
-type: Opaque
-stringData:
-  JWT_SECRET: "cdk2F40F15kvQJ5gaIwn79LW6x/Jp1Pe8ugKRy3xsbuOCNGxsrYyg65LxWSyET7HFQSdDgT6RbTfxBLwbniF/g=="
-  COUCHDB_PASSWORD: "=ka%yUE>a?R759u>Cs~sD#R5^k*snNDViwZFVohgW<j$nmkn*5^=Yy^?n~~2"
+  DEBUG_REQUESTS: "false"
+# Secret "backend-secret" is defined in k8s/secrets.yaml (not committed to Git)
+# Apply separately: kubectl apply -f k8s/secrets.yaml
 ---
 apiVersion: v1
 kind: Service
