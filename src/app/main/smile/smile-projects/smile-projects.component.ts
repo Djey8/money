@@ -42,7 +42,7 @@ export class SmileProjectsComponent {
   static allSearchedSmileProjects: Smile[] = [];
 
   searchTextField = "";
-  phases: (SmilePhase | 'all')[] = ['all', 'planning', 'saving', 'ready', 'completed'];
+  phases: (SmilePhase | 'all')[] = ['all', 'idea', 'planning', 'saving', 'ready', 'completed'];
 
   public classReference = SmileProjectsComponent;
   public get appReference() { return AppComponent; }
