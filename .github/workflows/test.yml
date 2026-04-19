@@ -185,3 +185,42 @@ jobs:
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  sbom:
+    name: SBOM Generation
+    runs-on: ubuntu-latest
+    needs: [frontend-unit, backend-unit]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install frontend dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Generate frontend SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          path: .
+          artifact-name: sbom-frontend.spdx.json
+          output-file: sbom-frontend.spdx.json
+
+      - name: Install backend dependencies
+        run: cd backend && npm ci
+
+      - name: Generate backend SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          path: ./backend
+          artifact-name: sbom-backend.spdx.json
+          output-file: sbom-backend.spdx.json
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: |
+            sbom-frontend.spdx.json
+            sbom-backend.spdx.json
