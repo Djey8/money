@@ -115,6 +115,8 @@ export class AddLiabilitieComponent extends BaseAddComponent {
       let newLiabilitie: Liability = { tag: this.titleTextField, amount: this.amountTextField == "" ? 0.0 : parseFloat(this.amountTextField), investment: this.isInvestment, credit: this.creditTextField == "" ? 0.0 : parseFloat(this.creditTextField) };
       AppStateService.instance.liabilities.push(newLiabilitie);
 
+      this.closeWindow();
+      AppStateService.instance.isSaving = true;
       this.persistence.writeAndSync({
         tag: 'balance/liabilities',
         data: AppStateService.instance.liabilities,
@@ -122,18 +124,19 @@ export class AddLiabilitieComponent extends BaseAddComponent {
         logEvent: 'add_liability',
         logMetadata: { title: this.titleTextField, amount: this.amountTextField, credit: this.creditTextField, isInvestment: this.isInvestment },
         onSuccess: () => {
+          AppStateService.instance.isSaving = false;
           if (this.AddToFire) {
             gotoTop();
             import('src/app/app.component').then(m => m.AppComponent.copyTransaction("Fire", parseFloat(this.amountTextField), `@${this.titleTextField}`, "funding", "balance"));
             ProfileComponent.isProfile = false;
           }
-          this.closeWindow();
           this.toastService.show('Liability added', 'success');
           gotoTop();
           this.router.navigate([`/balance`]);
         },
         onError: (error) => {
-          this.showError(error.message || 'Database write failed');
+          AppStateService.instance.isSaving = false;
+          this.toastService.show(error.message || 'Database write failed', 'error');
         }
       });
     }

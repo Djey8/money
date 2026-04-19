@@ -13,7 +13,17 @@
   <h4 class="balanceLable">{{classReference.getTotalAmount() | appNumber}} {{settingsReference.currency}}</h4>
 </div>
 
-<div id="assetsBox">
+<div *ngIf="!appState.tier3BalanceLoaded && classReference.allAssets.length === 0 && classReference.allShares.length === 0 && classReference.allInvestments.length === 0 && classReference.liabilities.length === 0" class="p-sm">
+  <div class="skeleton-row" *ngFor="let i of [1,2,3,4,5]">
+    <div class="skeleton skeleton-cell" style="flex: 0.5;"></div>
+    <div class="skeleton skeleton-cell"></div>
+    <div class="skeleton skeleton-cell"></div>
+    <div class="skeleton skeleton-cell" style="flex: 0.8;"></div>
+    <div class="skeleton skeleton-cell"></div>
+  </div>
+</div>
+
+<div id="assetsBox" *ngIf="appState.tier3BalanceLoaded || classReference.allAssets.length > 0 || classReference.allShares.length > 0 || classReference.allInvestments.length > 0 || classReference.liabilities.length > 0">
   <h4 id="assetsTitle">{{'Balance.Assets' | translate}}</h4>
   <hr class="separator-white">
     <div id="assets-box">
@@ -100,7 +110,7 @@
   </div>
 </div>
 
-<div id="liabilitiesBox">
+<div id="liabilitiesBox" *ngIf="appState.tier3BalanceLoaded || classReference.allAssets.length > 0 || classReference.allShares.length > 0 || classReference.allInvestments.length > 0 || classReference.liabilities.length > 0">
   <h4 id="liabilitiesTitle">{{'Balance.Liabilities' | translate}}</h4>
   <hr class="separator-white">
   <div id="liabilities-box">
