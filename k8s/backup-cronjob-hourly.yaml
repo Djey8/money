@@ -11,12 +11,20 @@ spec:
     spec:
       ttlSecondsAfterFinished: 3600
       template:
+        metadata:
+          labels:
+            job-type: couchdb-backup
         spec:
           securityContext:
-            runAsUser: 0
+            runAsNonRoot: true
+            runAsUser: 100
           containers:
           - name: backup
             image: curlimages/curl:latest
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop: ["ALL"]
             imagePullPolicy: IfNotPresent
             command:
             - /bin/sh

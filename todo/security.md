@@ -449,41 +449,35 @@ Helmet sets security headers on the backend API, but the nginx server serving th
 
 ---
 
-### L5: No Kubernetes Network Policies ❌ OPEN
-**File:** `k8s/namespace.yaml`
+### L5: No Kubernetes Network Policies ✅ FIXED
+**File:** `k8s/network-policy.yaml`
 
-No NetworkPolicy resources are defined. All pods in the `money-app` namespace can communicate freely. The CouchDB pod should only accept connections from the backend pod.
+NetworkPolicy added to restrict CouchDB ingress to only backend pods and backup jobs on port 5984.
 
-**Remediation:** Add NetworkPolicy to restrict CouchDB ingress to only the backend pod label.
-
----
-
-### L6: Backup CronJob Runs as Root ❌ OPEN
-**File:** `k8s/backup-cronjob-daily.yaml` line 16
-
-```yaml
-securityContext:
-  runAsUser: 0
-```
-
-The backup container runs as root. This increases blast radius if the container is compromised.
-
-**Remediation:** Run as non-root user. Use `initContainers` for any setup requiring elevated privileges.
+**Fix Applied:** Created `k8s/network-policy.yaml` with podSelector matching `app: couchdb`, allowing ingress only from `app: backend` and `job-type: couchdb-backup` on TCP 5984.
 
 ---
 
-### L7: No Pod Security Standards / Security Contexts ❌ OPEN
+### L6: Backup CronJob Runs as Root ✅ FIXED
+**File:** `k8s/backup-cronjob-daily.yaml`, `k8s/backup-cronjob-hourly.yaml`
+
+Backup containers now run as non-root (UID 100, the curl user in curlimages/curl), with `allowPrivilegeEscalation: false` and all capabilities dropped.
+
+**Fix Applied:** Changed `runAsUser: 0` to `runAsUser: 100` with `runAsNonRoot: true`, added container-level securityContext.
+
+---
+
+### L7: No Pod Security Standards / Security Contexts ✅ FIXED
 **Files:** `k8s/backend.yaml`, `k8s/frontend.yaml`
 
-Backend and frontend deployments do not define `securityContext` with:
-- `readOnlyRootFilesystem: true`
+Both deployments now have pod-level and container-level securityContext:
+- `runAsNonRoot: true`
 - `allowPrivilegeEscalation: false`
 - `capabilities.drop: ["ALL"]`
-- `runAsNonRoot: true`
+- Backend: `readOnlyRootFilesystem: true`, `runAsUser: 1000`
+- Frontend: `runAsUser: 101` (nginx user), writable tmpfs for /tmp, /var/cache/nginx, /var/run
 
-The Dockerfiles correctly create non-root users, but Kubernetes does not enforce this.
-
-**Remediation:** Add security contexts to all pod specs and enforce with Pod Security Standards (Restricted profile).
+**Fix Applied:** Added comprehensive security contexts to all pod specs.
 
 ---
 
@@ -568,16 +562,16 @@ The Dockerfiles correctly create non-root users, but Kubernetes does not enforce
 
 | Control | Status | Notes |
 |---------|--------|-------|
-| Namespace Isolation | ⚠️ WARN | money-app namespace exists, but no NetworkPolicies (L5) |
+| Namespace Isolation | ✅ FIXED | NetworkPolicy restricts CouchDB to backend + backup jobs (L5) |
 | Secrets Management | ✅ FIXED | Secrets moved to gitignored secrets.yaml, referenced by name (C1) |
 | Resource Limits | ✅ PASS | CouchDB and frontend have resource requests/limits |
 | Resource Limits (Backend) | ❌ FAIL | Backend deployment has NO resource limits |
-| Pod Security Context | ❌ FAIL | No securityContext on backend/frontend pods (L7) |
+| Pod Security Context | ✅ FIXED | securityContext on all pods with runAsNonRoot, drop ALL caps (L7) |
 | Ingress TLS | ✅ FIXED | cert-manager + Let's Encrypt, HSTS enabled (H6) |
 | NodePort Services | ⚠️ WARN | Frontend uses NodePort (30080, 30545) which bypasses ingress. Only use if behind firewall |
 | Image Pull Policy | ✅ PASS | `imagePullPolicy: Never` for local images |
 | RBAC | ⚠️ WARN | No custom RBAC roles defined. Relies on k3s defaults |
-| Backup Security | ⚠️ WARN | Backups run as root (L6), no encryption |
+| Backup Security | ✅ FIXED | Backups run as non-root UID 100, caps dropped (L6) |
 
 ---
 
@@ -668,12 +662,12 @@ The Dockerfiles correctly create non-root users, but Kubernetes does not enforce
 | 🟠 P2 | H3 | Implement refresh tokens | 4h | Enables token revocation | ❌ OPEN |
 | 🟠 P2 | H4 | Move JWT to httpOnly cookie | 4h | Protects against XSS token theft | ❌ OPEN |
 | 🟡 P2 | L4 | Add security headers to nginx | 30min | Defense in depth | ✅ FIXED |
-| 🟡 P2 | L5 | Add Kubernetes NetworkPolicies | 1h | Limits blast radius | ❌ OPEN |
+| 🟡 P2 | L5 | Add Kubernetes NetworkPolicies | 1h | Limits blast radius | ✅ FIXED |
 | 🟡 P3 | M1 | Sanitize D3 innerHTML usage | 2h | Prevents stored XSS | ❌ OPEN |
 | 🟡 P3 | M2 | Fix user enumeration | 1h | Protects user privacy | ✅ FIXED |
 | 🟡 P3 | M4 | Stop persisting encryption key | 2h | Limits key exposure | ❌ OPEN |
 | 🟡 P3 | M5 | Disable debug mode in prod | 5min | Reduces data leakage | ✅ FIXED |
-| 🟡 P3 | L7 | Add pod security contexts | 1h | Kubernetes hardening | ❌ OPEN |
+| 🟡 P3 | L7 | Add pod security contexts | 1h | Kubernetes hardening | ✅ FIXED |
 | 🟢 P4 | L1 | Use crypto.randomUUID() | 15min | Better ID generation | ✅ FIXED |
 | 🟢 P4 | L2 | Add email validation to register | 15min | Input hygiene | ✅ FIXED |
 | 🟢 P4 | M3 | Add email verification | 4h | Prevents fake accounts | ❌ OPEN |
