@@ -224,7 +224,6 @@ export class IncomeStatementService {
                   const bucketRemaining = bucket.target - bucket.amount;
                   const contribution = Math.min(Math.abs(amount), bucketRemaining);
                   bucket.amount = Math.round((bucket.amount + contribution) * 100) / 100;
-                  this.addOrUpdateExpense(AppStateService.instance.fireExpenses, "@" + bucket.title, contribution);
                 });
               } else {
                 // Allocate to matched bucket
@@ -236,7 +235,6 @@ export class IncomeStatementService {
                   // Cap contribution to remaining bucket target
                   const contribution = Math.min(Math.abs(result), bucketRemaining);
                   matchedBucket.amount = Math.round((matchedBucket.amount + contribution) * 100) / 100;
-                  this.addOrUpdateExpense(AppStateService.instance.fireExpenses, "@" + matchedBucket.title, contribution);
                 }
               }
               
