@@ -215,12 +215,16 @@ export class AppComponent {
         if (this.appMode === 'selfhosted') {
           await firstValueFrom(this.selfhosted.fetchEncryptionConfig());
           // Migrate: if a key was found in localStorage but the server had 'default',
-          // push the old key to the server so it persists across reloads.
+          // push the old key + flags to the server so it persists across reloads.
           if (this.cryptic._pendingMigrationKey) {
             const migratedKey = this.cryptic._pendingMigrationKey;
+            const migratedEncryptLocal = this.cryptic._pendingMigrationEncryptLocal ?? this.cryptic.getEncryptionLocalEnabled();
+            const migratedEncryptDatabase = this.cryptic._pendingMigrationEncryptDatabase ?? this.cryptic.getEncryptionDatabaseEnabled();
             this.cryptic._pendingMigrationKey = null;
+            this.cryptic._pendingMigrationEncryptLocal = null;
+            this.cryptic._pendingMigrationEncryptDatabase = null;
             await firstValueFrom(
-              this.selfhosted.saveEncryptionConfig(migratedKey, this.cryptic.getEncryptionLocalEnabled(), this.cryptic.getEncryptionDatabaseEnabled())
+              this.selfhosted.saveEncryptionConfig(migratedKey, migratedEncryptLocal, migratedEncryptDatabase)
             ).catch(err => console.error('Failed to migrate encryption key to server:', err));
           }
         }
