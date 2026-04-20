@@ -9,8 +9,8 @@ const { authenticateToken } = require('../middleware/auth');
 const router = express.Router();
 
 const JWT_SECRET = process.env.JWT_SECRET;
-const ACCESS_TOKEN_EXPIRES_IN = '15m';
-const REFRESH_TOKEN_EXPIRES_IN = '7d';
+const ACCESS_TOKEN_EXPIRES_IN = '1h';
+const REFRESH_TOKEN_EXPIRES_IN = '30d';
 const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 
 // Cookie configuration
@@ -24,12 +24,12 @@ const COOKIE_OPTIONS = {
 function setAuthCookies(res, accessToken, refreshToken) {
   res.cookie('access_token', accessToken, {
     ...COOKIE_OPTIONS,
-    maxAge: 15 * 60 * 1000 // 15 minutes
+    maxAge: 60 * 60 * 1000 // 1 hour
   });
   res.cookie('refresh_token', refreshToken, {
     ...COOKIE_OPTIONS,
     path: '/api/auth',
-    maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
   });
 }
 
@@ -49,7 +49,7 @@ async function createRefreshToken(userId, email) {
     type: 'refresh_token',
     userId,
     createdAt: new Date().toISOString(),
-    expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+    expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
   });
   
   return refreshToken;
@@ -122,6 +122,32 @@ function isAccountLocked(email) {
     return false;
   }
   return false;
+}
+
+// --- Encryption config helpers ------------------------------------------------
+// Stored in the user's auth document as `encryptionConfig`.
+// Returns { key, encryptLocal, encryptDatabase } or defaults.
+
+async function getEncryptionConfig(userId) {
+  try {
+    const authDb = getAuthDb();
+    const userDoc = await authDb.get(userId);
+    return userDoc.encryptionConfig || { key: 'default', encryptLocal: true, encryptDatabase: false };
+  } catch {
+    return { key: 'default', encryptLocal: true, encryptDatabase: false };
+  }
+}
+
+async function setEncryptionConfig(userId, config) {
+  const authDb = getAuthDb();
+  const userDoc = await authDb.get(userId);
+  userDoc.encryptionConfig = {
+    key: config.key || 'default',
+    encryptLocal: !!config.encryptLocal,
+    encryptDatabase: !!config.encryptDatabase
+  };
+  userDoc.updatedAt = new Date().toISOString();
+  await authDb.insert(userDoc);
 }
 
 // Register
@@ -213,9 +239,13 @@ router.post('/register', async (req, res) => {
     const refreshToken = await createRefreshToken(userId, email);
     setAuthCookies(res, accessToken, refreshToken);
 
+    // Return encryption config (defaults for new user)
+    const encryptionConfig = { key: 'default', encryptLocal: true, encryptDatabase: false };
+
     res.status(201).json({
       userId,
-      email
+      email,
+      encryptionConfig
     });
   } catch (error) {
     console.error('Registration error:', error);
@@ -280,9 +310,13 @@ router.post('/login', async (req, res) => {
     const refreshToken = await createRefreshToken(user._id, user.email);
     setAuthCookies(res, accessToken, refreshToken);
 
+    // Include encryption config so frontend can restore in-memory key
+    const encryptionConfig = await getEncryptionConfig(user._id);
+
     res.json({
       userId: user._id,
-      email: user.email
+      email: user.email,
+      encryptionConfig
     });
   } catch (error) {
     console.error('Login error:', error);
@@ -486,11 +520,41 @@ router.post('/refresh', async (req, res) => {
     const newRefreshToken = await createRefreshToken(decoded.userId, decoded.email);
     setAuthCookies(res, accessToken, newRefreshToken);
 
-    res.json({ userId: decoded.userId, email: decoded.email });
+    // Include encryption config so frontend can restore in-memory key after refresh
+    const encryptionConfig = await getEncryptionConfig(decoded.userId);
+
+    res.json({ userId: decoded.userId, email: decoded.email, encryptionConfig });
   } catch (error) {
     logger.logError(error, { context: 'token_refresh' });
     clearAuthCookies(res);
     res.status(500).json({ error: 'Token refresh failed' });
+  }
+});
+
+// Get encryption config (for page reload — key stays in memory only on frontend)
+router.get('/encryption-config', authenticateToken, async (req, res) => {
+  try {
+    const config = await getEncryptionConfig(req.userId);
+    res.json(config);
+  } catch (error) {
+    logger.logError(error, { context: 'get_encryption_config', userId: req.userId });
+    res.status(500).json({ error: 'Failed to retrieve encryption config' });
+  }
+});
+
+// Update encryption config
+router.put('/encryption-config', authenticateToken, async (req, res) => {
+  try {
+    const { key, encryptLocal, encryptDatabase } = req.body;
+    if (key === undefined) {
+      return res.status(400).json({ error: 'Encryption key is required' });
+    }
+    await setEncryptionConfig(req.userId, { key, encryptLocal, encryptDatabase });
+    logUserActivity(req.userId, 'encryption_config_updated', { encryptLocal: !!encryptLocal, encryptDatabase: !!encryptDatabase });
+    res.json({ success: true });
+  } catch (error) {
+    logger.logError(error, { context: 'update_encryption_config', userId: req.userId });
+    res.status(500).json({ error: 'Failed to update encryption config' });
   }
 });
 

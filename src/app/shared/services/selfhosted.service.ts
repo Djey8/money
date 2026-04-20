@@ -3,6 +3,7 @@ import { HttpClient, HttpHeaders, HttpResponse } from '@angular/common/http';
 import { Observable, from, of } from 'rxjs';
 import { map, catchError, tap } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
+import { CrypticService } from './cryptic.service';
 
 @Injectable({
   providedIn: 'root'
@@ -17,7 +18,7 @@ export class SelfhostedService {
   private etagCache: Record<string, string> = {};
   private _authenticated = false;
 
-  constructor(private http: HttpClient) {
+  constructor(private http: HttpClient, private cryptic: CrypticService) {
     // Check if we have a userId (indicates a prior session — cookie will be validated by backend)
     this._authenticated = !!localStorage.getItem('selfhosted_userId');
   }
@@ -35,6 +36,9 @@ export class SelfhostedService {
         map((response: any) => {
           this._authenticated = true;
           localStorage.setItem('selfhosted_userId', response.userId);
+          if (response.encryptionConfig) {
+            this.cryptic.loadFromServer(response.encryptionConfig);
+          }
           return response;
         })
       );
@@ -46,6 +50,9 @@ export class SelfhostedService {
         map((response: any) => {
           this._authenticated = true;
           localStorage.setItem('selfhosted_userId', response.userId);
+          if (response.encryptionConfig) {
+            this.cryptic.loadFromServer(response.encryptionConfig);
+          }
           return response;
         })
       );
@@ -75,6 +82,27 @@ export class SelfhostedService {
 
   verifyPassword(password: string): Observable<any> {
     return this.http.post(`${this.apiUrl}/auth/verify-password`, { password }, { headers: this.getHeaders() });
+  }
+
+  /**
+   * Fetch encryption config from server and load into CrypticService (for page reload).
+   */
+  fetchEncryptionConfig(): Observable<any> {
+    return this.http.get(`${this.apiUrl}/auth/encryption-config`, { withCredentials: true })
+      .pipe(
+        tap((config: any) => this.cryptic.loadFromServer(config)),
+        catchError((err) => {
+          console.error('Failed to fetch encryption config:', err);
+          return of(null);
+        })
+      );
+  }
+
+  /**
+   * Save encryption config to server (when user changes settings).
+   */
+  saveEncryptionConfig(key: string, encryptLocal: boolean, encryptDatabase: boolean): Observable<any> {
+    return this.http.put(`${this.apiUrl}/auth/encryption-config`, { key, encryptLocal, encryptDatabase }, { withCredentials: true });
   }
 
   isAuthenticated(): boolean {
