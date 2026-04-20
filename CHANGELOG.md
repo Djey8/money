@@ -1,3 +1,9 @@
+## [1.6.1] - 2026-04-20
+
+### Bug Fixes
+- fix(k8s): switch backup cronjobs to alpine with curl+gnupg for encryption support
+- fix(profile): fetch email from database to avoid encrypted display
+
 ## [1.6.0] - 2026-04-20
 
 ### Features
