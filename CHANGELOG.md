@@ -1,3 +1,8 @@
+## [1.6.4] - 2026-04-20
+
+### Bug Fixes
+- fix(selfhosted): fix CSP connect-src and skip localStorage parse before encryption key loaded
+
 ## [1.6.3] - 2026-04-20
 
 ### Bug Fixes
