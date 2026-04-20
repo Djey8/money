@@ -1,3 +1,8 @@
+## [1.5.1] - 2026-04-20
+
+### Bug Fixes
+- fix(docker): pin multi-arch manifest digests for arm64 CI compatibility
+
 ## [1.5.0] - 2026-04-20
 
 ### Features
