@@ -1,5 +1,5 @@
 # Backend Dockerfile
-FROM node:22-alpine@sha256:1e8b5d68cac394f76c931b266fe5c224c3fe4cdbc33131e064c83b88235fe77e
+FROM node:22-alpine@sha256:8ea2348b068a9544dae7317b4f3aafcdc032df1647bb7d768a05a5cad1a7683f
 
 # Patch known CVEs in Alpine system packages
 RUN apk upgrade --no-cache libcrypto3 libssl3 musl musl-utils zlib
