@@ -22,6 +22,9 @@ export class CrypticService {
   private derivedKeyCache = new Map<string, CryptoJS.lib.WordArray>();
   private sessionSalt: CryptoJS.lib.WordArray | null = null;
 
+  /** Key found in localStorage during init — needs migration to server. */
+  public _pendingMigrationKey: string | null = null;
+
   constructor() {
     this.loadConfig();
   }
@@ -43,7 +46,10 @@ export class CrypticService {
     sessionStorage.removeItem('encryptKey');
 
     if (environment.mode === 'selfhosted') {
-      // Selfhosted: key is fetched from server, kept in memory only
+      // Selfhosted: key is fetched from server, kept in memory only.
+      // Preserve any pre-existing localStorage key for migration to server.
+      const legacyKey = localStorage.getItem('encryptKey');
+      this._pendingMigrationKey = (legacyKey && legacyKey !== 'default') ? legacyKey : null;
       localStorage.removeItem('encryptKey');
       this.key = null as any;
     } else {
@@ -65,7 +71,17 @@ export class CrypticService {
    */
   public loadFromServer(config: { key: string; encryptLocal: boolean; encryptDatabase: boolean } | null): void {
     if (!config) return;
-    this.key = (config.key && config.key !== 'default') ? config.key : null;
+    const serverKey = (config.key && config.key !== 'default') ? config.key : null;
+
+    // Migration: server has no real key but localStorage had one → use the old key
+    if (!serverKey && this._pendingMigrationKey) {
+      this.key = this._pendingMigrationKey;
+      // _pendingMigrationKey is consumed by the caller to push it to the server
+    } else {
+      this.key = serverKey;
+      this._pendingMigrationKey = null; // server already has the right key
+    }
+
     this.derivedKeyCache.clear();
     this.sessionSalt = null;
     this.encryptionLocalEnabled = !!config.encryptLocal;
