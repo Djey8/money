@@ -41,13 +41,37 @@ input[type="password"] {
   box-sizing: border-box;
 }
 
+.password-wrapper {
+  position: relative;
+  margin-bottom: 15px;
+}
+
 .password-wrapper input[type="password"],
 .password-wrapper input[type="text"] {
   margin-bottom: 0;
 }
 
-.password-wrapper {
-  margin-bottom: 15px;
+.password-toggle-btn {
+  position: absolute;
+  right: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  background-color: transparent;
+  border: none;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.password-toggle-icon {
+  width: 20px;
+  height: 20px;
+  display: block;
+  color: var(--color-text, #000);
 }
 
 #registerbtn {
@@ -76,6 +100,22 @@ input[type="password"] {
   font-size: var(--font-sm);
   margin-top: -10px;
   margin-bottom: 10px;
+}
+
+.password-rules {
+  list-style: none;
+  padding: 0;
+  margin: 4px 0 10px;
+}
+
+.password-rules li {
+  font-size: var(--font-sm, 0.85rem);
+  color: var(--color-danger, #e53935);
+  padding: 2px 0;
+}
+
+.password-rules li::before {
+  content: '\2717 ';
 }
 
 #goToLoginbtn,
