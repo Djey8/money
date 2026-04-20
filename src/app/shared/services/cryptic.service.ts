@@ -45,9 +45,6 @@ export class CrypticService {
   }
 
   private loadConfig(): void {
-    // Always migrate away from sessionStorage
-    sessionStorage.removeItem('encryptKey');
-
     if (environment.mode === 'selfhosted') {
       // Selfhosted: key is fetched from server, kept in memory only.
       // Preserve any pre-existing localStorage key + flags for migration to server.
@@ -58,9 +55,12 @@ export class CrypticService {
         this._pendingMigrationEncryptDatabase = localStorage.getItem('encryptDatabase') === 'true';
       }
       localStorage.removeItem('encryptKey');
-      this.key = null as any;
+      // Use sessionStorage-cached key for instant decrypt on page refresh
+      const cached = sessionStorage.getItem('encryptKey');
+      this.key = (cached && cached !== 'default') ? cached : null as any;
     } else {
       // Firebase: key persists in localStorage (no backend to store it)
+      sessionStorage.removeItem('encryptKey'); // clean up any stale session cache
       const stored = localStorage.getItem('encryptKey');
       this.key = (stored && stored !== 'default') ? stored : null as any;
     }
@@ -107,6 +107,10 @@ export class CrypticService {
       localStorage.setItem('encryptLocal', this.encryptionLocalEnabled.toString());
       this.encryptionDatabaseEnabled = !!config.encryptDatabase;
       localStorage.setItem('encryptDatabase', this.encryptionDatabaseEnabled.toString());
+    }
+    // Cache key in sessionStorage for instant decrypt on next page refresh
+    if (environment.mode === 'selfhosted') {
+      sessionStorage.setItem('encryptKey', this.key || 'default');
     }
   }
 

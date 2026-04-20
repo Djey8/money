@@ -210,22 +210,32 @@ export class AppComponent {
         if (hash === '' || hash === '#/') {
           this.router.navigate(['/home']);
         }
-        // Selfhosted: fetch encryption config from server before loading data
-        // (key lives in memory only — not in localStorage)
+        // Selfhosted: fetch encryption config from server
+        // If the key is cached in sessionStorage, don't block on the HTTP call
         if (this.appMode === 'selfhosted') {
-          await firstValueFrom(this.selfhosted.fetchEncryptionConfig());
-          // Migrate: if a key was found in localStorage but the server had 'default',
-          // push the old key + flags to the server so it persists across reloads.
-          if (this.cryptic._pendingMigrationKey) {
-            const migratedKey = this.cryptic._pendingMigrationKey;
-            const migratedEncryptLocal = this.cryptic._pendingMigrationEncryptLocal ?? this.cryptic.getEncryptionLocalEnabled();
-            const migratedEncryptDatabase = this.cryptic._pendingMigrationEncryptDatabase ?? this.cryptic.getEncryptionDatabaseEnabled();
-            this.cryptic._pendingMigrationKey = null;
-            this.cryptic._pendingMigrationEncryptLocal = null;
-            this.cryptic._pendingMigrationEncryptDatabase = null;
-            await firstValueFrom(
-              this.selfhosted.saveEncryptionConfig(migratedKey, migratedEncryptLocal, migratedEncryptDatabase)
-            ).catch(err => console.error('Failed to migrate encryption key to server:', err));
+          const hasCachedKey = !!this.cryptic.getKey();
+          const hasPendingMigration = !!this.cryptic._pendingMigrationKey;
+          if (hasCachedKey && !hasPendingMigration) {
+            // Key already loaded from sessionStorage — fetch in background to keep in sync
+            firstValueFrom(this.selfhosted.fetchEncryptionConfig()).catch(
+              err => console.error('Background encryption config fetch failed:', err)
+            );
+          } else {
+            // No cached key or migration pending — must wait for server
+            await firstValueFrom(this.selfhosted.fetchEncryptionConfig());
+            // Migrate: if a key was found in localStorage but the server had 'default',
+            // push the old key + flags to the server so it persists across reloads.
+            if (this.cryptic._pendingMigrationKey) {
+              const migratedKey = this.cryptic._pendingMigrationKey;
+              const migratedEncryptLocal = this.cryptic._pendingMigrationEncryptLocal ?? this.cryptic.getEncryptionLocalEnabled();
+              const migratedEncryptDatabase = this.cryptic._pendingMigrationEncryptDatabase ?? this.cryptic.getEncryptionDatabaseEnabled();
+              this.cryptic._pendingMigrationKey = null;
+              this.cryptic._pendingMigrationEncryptLocal = null;
+              this.cryptic._pendingMigrationEncryptDatabase = null;
+              await firstValueFrom(
+                this.selfhosted.saveEncryptionConfig(migratedKey, migratedEncryptLocal, migratedEncryptDatabase)
+              ).catch(err => console.error('Failed to migrate encryption key to server:', err));
+            }
           }
         }
         // Tier 1: Load critical data, block UI until ready
