@@ -1,3 +1,8 @@
+## [1.5.2] - 2026-04-20
+
+### Bug Fixes
+- fix(security): add migration path for encryption key from localStorage to server-side storage
+
 ## [1.5.1] - 2026-04-20
 
 ### Bug Fixes
