@@ -1,3 +1,8 @@
+## [1.6.2] - 2026-04-20
+
+### Bug Fixes
+- fix(k8s): remove capabilities drop that blocks curl in backup cronjobs
+
 ## [1.6.1] - 2026-04-20
 
 ### Bug Fixes
