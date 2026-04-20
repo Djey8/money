@@ -1,3 +1,13 @@
+## [1.6.5] - 2026-04-20
+
+### Bug Fixes
+- fix(selfhosted): disable beasties CSS inlining to avoid CSP-blocked onload handler
+- fix(nginx): add unsafe-inline to CSP script-src for Firebase Auth handlers
+- fix(encryption): return empty string for encrypted data when key unavailable
+
+### Performance
+- perf(encryption): cache key in sessionStorage for instant decrypt on refresh
+
 ## [1.6.4] - 2026-04-20
 
 ### Bug Fixes
