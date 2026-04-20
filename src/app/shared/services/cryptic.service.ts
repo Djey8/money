@@ -189,7 +189,12 @@ export class CrypticService {
     try {
       const shouldDecrypt = (location === 'local' && this.encryptionLocalEnabled) ||
                             (location === 'database' && this.encryptionDatabaseEnabled);
-      if (!shouldDecrypt || !this.key) return txtToDecrypt;
+      if (!shouldDecrypt || !this.key) {
+        // If data looks encrypted but we can't decrypt (no key yet, or decryption disabled),
+        // return empty string instead of leaking the raw ciphertext blob
+        if (txtToDecrypt.startsWith(V2_PREFIX)) return '';
+        return txtToDecrypt;
+      }
 
       if (txtToDecrypt.startsWith(V2_PREFIX)) {
         return this.decryptV2(txtToDecrypt.slice(V2_PREFIX.length));
