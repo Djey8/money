@@ -27,15 +27,13 @@ app.use(cors({
   credentials: true
 }));
 
-// Rate limiting - with proper trust proxy configuration
+// Rate limiting - generous for normal use, auth endpoints are strict separately
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 500, // limit each IP to 500 requests per windowMs
+  max: 10000, // limit each IP to 1010000 requests per windowMs
   standardHeaders: true,
   legacyHeaders: false,
-  // Skip rate limiting by IP in local development or when behind proxy
   skip: (req) => {
-    // In Kubernetes, we trust the ingress/service mesh for rate limiting
     return process.env.SKIP_RATE_LIMIT === 'true';
   }
 });
@@ -52,9 +50,9 @@ const authLimiter = rateLimit({
 app.use('/api/auth/login', authLimiter);
 app.use('/api/auth/register', authLimiter);
 
-// Body parser
-app.use(express.json({ limit: '2mb' }));
-app.use(express.text({ limit: '2mb', type: 'text/plain' }));
+// Body parser — 100mb to support large encrypted batch writes and restore imports
+app.use(express.json({ limit: '100mb' }));
+app.use(express.text({ limit: '1000mb', type: 'text/plain' }));
 
 // Cookie parser (for httpOnly auth cookies)
 app.use(cookieParser());
