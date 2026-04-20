@@ -20,8 +20,6 @@ spec:
             image: alpine:3.21
             securityContext:
               allowPrivilegeEscalation: false
-              capabilities:
-                drop: ["ALL"]
             imagePullPolicy: IfNotPresent
             command:
             - /bin/sh
