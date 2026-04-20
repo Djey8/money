@@ -195,10 +195,23 @@ export class RegistrationComponent {
               ProfileComponent.mail = this.emailTextField;
               ProfileComponent.isUser = true;
               
-              // Trigger onboarding tour for new user
-              localStorage.setItem('onboarding_pending', 'true');
-              // Redirect only after all writes are complete
-              window.location.href = "/";
+              // Save encryption config to server after registration
+              const key = this.cryptic.getKey() || 'default';
+              const encryptLocal = this.cryptic.getEncryptionLocalEnabled();
+              const encryptDatabase = this.cryptic.getEncryptionDatabaseEnabled();
+              this.selfhosted.saveEncryptionConfig(key, encryptLocal, encryptDatabase).subscribe({
+                complete: () => {
+                  // Trigger onboarding tour for new user
+                  localStorage.setItem('onboarding_pending', 'true');
+                  // Redirect only after all writes are complete
+                  window.location.href = "/";
+                },
+                error: () => {
+                  // Still redirect even if config save fails — it can be set later
+                  localStorage.setItem('onboarding_pending', 'true');
+                  window.location.href = "/";
+                }
+              });
             }
           });
         })

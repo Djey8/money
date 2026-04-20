@@ -20,7 +20,7 @@ spec:
             runAsUser: 100
           containers:
           - name: backup
-            image: curlimages/curl:latest
+            image: curlimages/curl:latest@sha256:7ac8e4f7b7a42ba28baaf5c330778ba89ae25c824745a76a4d27f12bd8602ce7
             securityContext:
               allowPrivilegeEscalation: false
               capabilities:
@@ -110,33 +110,46 @@ spec:
               echo "Creating archive..."
               tar -czf "${BACKUP_FILE}" -C "${BACKUP_ROOT}/temp" .
               rm -rf "${BACKUP_ROOT}/temp"
+
+              # ── Encrypt archive if key is provided ─────────────
+              if [ -n "${BACKUP_ENCRYPTION_KEY}" ]; then
+                echo "Encrypting backup..."
+                gpg --batch --yes --symmetric --cipher-algo AES256 \
+                  --passphrase "${BACKUP_ENCRYPTION_KEY}" \
+                  --output "${BACKUP_FILE}.gpg" "${BACKUP_FILE}"
+                rm -f "${BACKUP_FILE}"
+                BACKUP_FILE="${BACKUP_FILE}.gpg"
+                echo "Backup encrypted with AES-256"
+              fi
+
               SIZE=$(wc -c < "${BACKUP_FILE}")
+              BACKUP_BASENAME=$(basename "${BACKUP_FILE}")
               echo "Daily backup: ${BACKUP_FILE} (${SIZE} bytes)"
 
               # ── Local tier promotion ───────────────────────────
               if [ "$DAY_OF_WEEK" = "7" ]; then
-                cp "${BACKUP_FILE}" "${WEEKLY_DIR}/couchdb-backup-${DATE}.tar.gz"
+                cp "${BACKUP_FILE}" "${WEEKLY_DIR}/${BACKUP_BASENAME}"
                 echo "Promoted to local weekly (Sunday)"
               fi
 
               if [ "$DAY_OF_MONTH" = "01" ]; then
-                cp "${BACKUP_FILE}" "${MONTHLY_DIR}/couchdb-backup-${DATE}.tar.gz"
+                cp "${BACKUP_FILE}" "${MONTHLY_DIR}/${BACKUP_BASENAME}"
                 echo "Promoted to local monthly (1st of month)"
               fi
 
               # ── NAS tier promotion ─────────────────────────────
               if [ "$NAS_AVAILABLE" = true ]; then
                 echo "Writing to NAS..."
-                cp "${BACKUP_FILE}" "${NAS_DAILY_DIR}/couchdb-backup-${DATE}.tar.gz"
-                echo "NAS daily: couchdb-backup-${DATE}.tar.gz"
+                cp "${BACKUP_FILE}" "${NAS_DAILY_DIR}/${BACKUP_BASENAME}"
+                echo "NAS daily: ${BACKUP_BASENAME}"
 
                 if [ "$DAY_OF_WEEK" = "7" ]; then
-                  cp "${BACKUP_FILE}" "${NAS_WEEKLY_DIR}/couchdb-backup-${DATE}.tar.gz"
+                  cp "${BACKUP_FILE}" "${NAS_WEEKLY_DIR}/${BACKUP_BASENAME}"
                   echo "NAS weekly (Sunday)"
                 fi
 
                 if [ "$DAY_OF_MONTH" = "01" ]; then
-                  cp "${BACKUP_FILE}" "${NAS_MONTHLY_DIR}/couchdb-backup-${DATE}.tar.gz"
+                  cp "${BACKUP_FILE}" "${NAS_MONTHLY_DIR}/${BACKUP_BASENAME}"
                   echo "NAS monthly (1st of month)"
                 fi
 
@@ -147,7 +160,7 @@ spec:
                 for tier in daily weekly monthly; do
                   LOCAL_TIER="${BACKUP_ROOT}/${tier}"
                   NAS_TIER="${NAS_ROOT}/${tier}"
-                  for f in "${LOCAL_TIER}"/couchdb-backup-*.tar.gz; do
+                  for f in "${LOCAL_TIER}"/couchdb-backup-*.tar.gz*; do
                     [ -f "$f" ] || continue
                     BASENAME=$(basename "$f")
                     if [ ! -f "${NAS_TIER}/${BASENAME}" ]; then
@@ -170,17 +183,17 @@ spec:
               echo ""
               echo "Applying local retention..."
 
-              COUNT=$(ls -1 "${DAILY_DIR}"/couchdb-backup-*.tar.gz 2>/dev/null | wc -l)
+              COUNT=$(ls -1 "${DAILY_DIR}"/couchdb-backup-*.tar.gz* 2>/dev/null | wc -l)
               if [ "$COUNT" -gt 7 ]; then
-                ls -1t "${DAILY_DIR}"/couchdb-backup-*.tar.gz | tail -n +8 | while read f; do
+                ls -1t "${DAILY_DIR}"/couchdb-backup-*.tar.gz* | tail -n +8 | while read f; do
                   echo "  Removing old daily: $(basename "$f")"
                   rm -f "$f"
                 done
               fi
 
-              COUNT=$(ls -1 "${WEEKLY_DIR}"/couchdb-backup-*.tar.gz 2>/dev/null | wc -l)
+              COUNT=$(ls -1 "${WEEKLY_DIR}"/couchdb-backup-*.tar.gz* 2>/dev/null | wc -l)
               if [ "$COUNT" -gt 13 ]; then
-                ls -1t "${WEEKLY_DIR}"/couchdb-backup-*.tar.gz | tail -n +14 | while read f; do
+                ls -1t "${WEEKLY_DIR}"/couchdb-backup-*.tar.gz* | tail -n +14 | while read f; do
                   echo "  Removing old weekly: $(basename "$f")"
                   rm -f "$f"
                 done
@@ -190,17 +203,17 @@ spec:
               if [ "$NAS_AVAILABLE" = true ]; then
                 echo "Applying NAS retention..."
 
-                COUNT=$(ls -1 "${NAS_DAILY_DIR}"/couchdb-backup-*.tar.gz 2>/dev/null | wc -l)
+                COUNT=$(ls -1 "${NAS_DAILY_DIR}"/couchdb-backup-*.tar.gz* 2>/dev/null | wc -l)
                 if [ "$COUNT" -gt 21 ]; then
-                  ls -1t "${NAS_DAILY_DIR}"/couchdb-backup-*.tar.gz | tail -n +22 | while read f; do
+                  ls -1t "${NAS_DAILY_DIR}"/couchdb-backup-*.tar.gz* | tail -n +22 | while read f; do
                     echo "  Removing old NAS daily: $(basename "$f")"
                     rm -f "$f"
                   done
                 fi
 
-                COUNT=$(ls -1 "${NAS_WEEKLY_DIR}"/couchdb-backup-*.tar.gz 2>/dev/null | wc -l)
+                COUNT=$(ls -1 "${NAS_WEEKLY_DIR}"/couchdb-backup-*.tar.gz* 2>/dev/null | wc -l)
                 if [ "$COUNT" -gt 104 ]; then
-                  ls -1t "${NAS_WEEKLY_DIR}"/couchdb-backup-*.tar.gz | tail -n +105 | while read f; do
+                  ls -1t "${NAS_WEEKLY_DIR}"/couchdb-backup-*.tar.gz* | tail -n +105 | while read f; do
                     echo "  Removing old NAS weekly: $(basename "$f")"
                     rm -f "$f"
                   done
@@ -211,14 +224,14 @@ spec:
               echo ""
               echo "=== Current backups ==="
               echo "LOCAL:"
-              echo "  Daily  (7 max):    $(ls -1 "${DAILY_DIR}"/couchdb-backup-*.tar.gz 2>/dev/null | wc -l)"
-              echo "  Weekly (13 max):   $(ls -1 "${WEEKLY_DIR}"/couchdb-backup-*.tar.gz 2>/dev/null | wc -l)"
-              echo "  Monthly (forever): $(ls -1 "${MONTHLY_DIR}"/couchdb-backup-*.tar.gz 2>/dev/null | wc -l)"
+              echo "  Daily  (7 max):    $(ls -1 "${DAILY_DIR}"/couchdb-backup-*.tar.gz* 2>/dev/null | wc -l)"
+              echo "  Weekly (13 max):   $(ls -1 "${WEEKLY_DIR}"/couchdb-backup-*.tar.gz* 2>/dev/null | wc -l)"
+              echo "  Monthly (forever): $(ls -1 "${MONTHLY_DIR}"/couchdb-backup-*.tar.gz* 2>/dev/null | wc -l)"
               if [ "$NAS_AVAILABLE" = true ]; then
                 echo "NAS:"
-                echo "  Daily  (21 max):   $(ls -1 "${NAS_DAILY_DIR}"/couchdb-backup-*.tar.gz 2>/dev/null | wc -l)"
-                echo "  Weekly (104 max):  $(ls -1 "${NAS_WEEKLY_DIR}"/couchdb-backup-*.tar.gz 2>/dev/null | wc -l)"
-                echo "  Monthly (forever): $(ls -1 "${NAS_MONTHLY_DIR}"/couchdb-backup-*.tar.gz 2>/dev/null | wc -l)"
+                echo "  Daily  (21 max):   $(ls -1 "${NAS_DAILY_DIR}"/couchdb-backup-*.tar.gz* 2>/dev/null | wc -l)"
+                echo "  Weekly (104 max):  $(ls -1 "${NAS_WEEKLY_DIR}"/couchdb-backup-*.tar.gz* 2>/dev/null | wc -l)"
+                echo "  Monthly (forever): $(ls -1 "${NAS_MONTHLY_DIR}"/couchdb-backup-*.tar.gz* 2>/dev/null | wc -l)"
               fi
               echo ""
               echo "Backup completed successfully!"
@@ -233,6 +246,12 @@ spec:
                 secretKeyRef:
                   name: couchdb-secret
                   key: password
+            - name: BACKUP_ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: backup-encryption-secret
+                  key: encryption-key
+                  optional: true
             volumeMounts:
             - name: backup-storage
               mountPath: /backups

@@ -33,15 +33,15 @@ log_error()   { echo -e "${RED}[ERROR]${NC} $1"; }
 
 # ── Usage ────────────────────────────────────────────
 if [ -z "$BACKUP_FILE" ]; then
-    log_error "Usage: $0 <backup-file.tar.gz>"
+    log_error "Usage: $0 <backup-file.tar.gz[.gpg]>"
     echo ""
     echo "Available LOCAL backups:"
     for tier in hourly daily weekly monthly; do
         DIR="${BACKUP_ROOT}/${tier}"
-        if ls "${DIR}"/couchdb-backup-*.tar.gz 1>/dev/null 2>&1; then
+        if ls "${DIR}"/couchdb-backup-*.tar.gz* 1>/dev/null 2>&1; then
             echo "  [local/${tier}]"
-            ls -1t "${DIR}"/couchdb-backup-*.tar.gz | head -5 | sed 's/^/    /'
-            count=$(ls -1 "${DIR}"/couchdb-backup-*.tar.gz | wc -l)
+            ls -1t "${DIR}"/couchdb-backup-*.tar.gz* | head -5 | sed 's/^/    /'
+            count=$(ls -1 "${DIR}"/couchdb-backup-*.tar.gz* | wc -l)
             if [ "$count" -gt 5 ]; then
                 echo "    ... and $((count - 5)) more"
             fi
@@ -49,17 +49,17 @@ if [ -z "$BACKUP_FILE" ]; then
     done
     echo ""
     NAS_AVAILABLE=false
-    if mountpoint -q "$(dirname "$NAS_BACKUP_ROOT")" 2>/dev/null || [ -d "$NAS_BACKUP_ROOT" ]; then
+    if timeout 3 stat "$NAS_BACKUP_ROOT" >/dev/null 2>&1; then
         NAS_AVAILABLE=true
     fi
     if [ "$NAS_AVAILABLE" = true ]; then
         echo "Available NAS backups:"
         for tier in daily weekly monthly; do
             DIR="${NAS_BACKUP_ROOT}/${tier}"
-            if ls "${DIR}"/couchdb-backup-*.tar.gz 1>/dev/null 2>&1; then
+            if ls "${DIR}"/couchdb-backup-*.tar.gz* 1>/dev/null 2>&1; then
                 echo "  [nas/${tier}]"
-                ls -1t "${DIR}"/couchdb-backup-*.tar.gz | head -5 | sed 's/^/    /'
-                count=$(ls -1 "${DIR}"/couchdb-backup-*.tar.gz | wc -l)
+                ls -1t "${DIR}"/couchdb-backup-*.tar.gz* | head -5 | sed 's/^/    /'
+                count=$(ls -1 "${DIR}"/couchdb-backup-*.tar.gz* | wc -l)
                 if [ "$count" -gt 5 ]; then
                     echo "    ... and $((count - 5)) more"
                 fi
@@ -128,6 +128,26 @@ fi
 # Create temporary directory
 TEMP_DIR="./restore_temp_$$"
 mkdir -p "$TEMP_DIR"
+
+# Decrypt if the backup is GPG-encrypted
+if [[ "$BACKUP_FILE" == *.gpg ]]; then
+    log_info "Encrypted backup detected — decrypting..."
+    BACKUP_ENCRYPTION_KEY="${BACKUP_ENCRYPTION_KEY:-}"
+    if [ -z "$BACKUP_ENCRYPTION_KEY" ]; then
+        read -sp "Enter encryption key: " BACKUP_ENCRYPTION_KEY
+        echo ""
+    fi
+    DECRYPTED_FILE="${TEMP_DIR}/$(basename "${BACKUP_FILE%.gpg}")"
+    if ! gpg --batch --yes --decrypt \
+        --passphrase "$BACKUP_ENCRYPTION_KEY" \
+        --output "$DECRYPTED_FILE" "$BACKUP_FILE" 2>/dev/null; then
+        log_error "Decryption failed — wrong key or corrupt file"
+        rm -rf "$TEMP_DIR"
+        exit 1
+    fi
+    BACKUP_FILE="$DECRYPTED_FILE"
+    log_success "Decryption successful"
+fi
 
 # Extract backup
 log_info "Extracting backup archive..."

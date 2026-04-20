@@ -88,7 +88,7 @@ list_tier() {
 
     echo -e "${color}═══ ${label} ═══${NC}"
 
-    if ! ls "${dir}"/couchdb-backup-*.tar.gz 1>/dev/null 2>&1; then
+    if ! ls "${dir}"/couchdb-backup-*.tar.gz* 1>/dev/null 2>&1; then
         echo "  (none)"
         echo ""
         return
@@ -97,7 +97,7 @@ list_tier() {
     printf "  ${CYAN}%-50s %-8s %-15s${NC}\n" "Filename" "Size" "Age"
     printf "  %-50s %-8s %-15s\n" "────────" "────" "───"
 
-    for backup in $(ls -1t "${dir}"/couchdb-backup-*.tar.gz 2>/dev/null); do
+    for backup in $(ls -1t "${dir}"/couchdb-backup-*.tar.gz* 2>/dev/null); do
         backup_name=$(basename "$backup")
         backup_size=$(du -h "$backup" | cut -f1)
         if [ "$age_func" = "hourly" ]; then
@@ -138,7 +138,7 @@ echo ""
 
 # ── NAS ──────────────────────────────────────────────
 NAS_AVAILABLE=false
-if mountpoint -q "$(dirname "$NAS_BACKUP_ROOT")" 2>/dev/null || [ -d "$NAS_BACKUP_ROOT" ]; then
+if timeout 5 stat "$NAS_BACKUP_ROOT" >/dev/null 2>&1; then
     NAS_AVAILABLE=true
 fi
 
@@ -148,8 +148,8 @@ echo -e "${GREEN}║  ${NC}${NAS_BACKUP_ROOT}"
 echo -e "${GREEN}╚══════════════════════════════════════╝${NC}"
 echo ""
 
-if [ "$NAS_AVAILABLE" = false ] || [ ! -d "$NAS_BACKUP_ROOT" ]; then
-    log_warning "NAS not available or backup directory does not exist: $NAS_BACKUP_ROOT"
+if [ "$NAS_AVAILABLE" = false ]; then
+    log_warning "NAS not reachable or backup directory does not exist: $NAS_BACKUP_ROOT"
 else
     list_tier "${NAS_BACKUP_ROOT}/daily"   "DAILY   (last 21 days / 3 weeks)"    "$NC"      "date"
     list_tier "${NAS_BACKUP_ROOT}/weekly"  "WEEKLY  (last 104 weeks / 2 years)"  "$YELLOW"  "date"
@@ -182,7 +182,7 @@ echo "==================================="
 echo ""
 
 echo "Restore latest local hourly:"
-LATEST=$(ls -1t "${BACKUP_ROOT}/hourly"/couchdb-backup-*.tar.gz 2>/dev/null | head -1)
+LATEST=$(ls -1t "${BACKUP_ROOT}/hourly"/couchdb-backup-*.tar.gz* 2>/dev/null | head -1)
 if [ -n "$LATEST" ]; then
     echo -e "  ${CYAN}./scripts/restore-backup.sh ${LATEST}${NC}"
 else
@@ -191,7 +191,7 @@ fi
 echo ""
 
 echo "Restore latest local daily:"
-LATEST=$(ls -1t "${BACKUP_ROOT}/daily"/couchdb-backup-*.tar.gz 2>/dev/null | head -1)
+LATEST=$(ls -1t "${BACKUP_ROOT}/daily"/couchdb-backup-*.tar.gz* 2>/dev/null | head -1)
 if [ -n "$LATEST" ]; then
     echo -e "  ${CYAN}./scripts/restore-backup.sh ${LATEST}${NC}"
 else
@@ -200,16 +200,20 @@ fi
 echo ""
 
 echo "Restore latest NAS daily:"
-LATEST=$(ls -1t "${NAS_BACKUP_ROOT}/daily"/couchdb-backup-*.tar.gz 2>/dev/null | head -1)
-if [ -n "$LATEST" ]; then
-    echo -e "  ${CYAN}./scripts/restore-backup.sh ${LATEST}${NC}"
+if [ "$NAS_AVAILABLE" = true ]; then
+    LATEST=$(timeout 5 ls -1t "${NAS_BACKUP_ROOT}/daily"/couchdb-backup-*.tar.gz* 2>/dev/null | head -1)
+    if [ -n "$LATEST" ]; then
+        echo -e "  ${CYAN}./scripts/restore-backup.sh ${LATEST}${NC}"
+    else
+        echo "  (none available)"
+    fi
 else
-    echo "  (none available)"
+    echo "  (NAS not reachable)"
 fi
 echo ""
 
 echo "Restore a specific backup:"
-echo -e "  ${CYAN}./scripts/restore-backup.sh <path-to-backup.tar.gz>${NC}"
+echo -e "  ${CYAN}./scripts/restore-backup.sh <path-to-backup.tar.gz[.gpg]>${NC}"
 echo ""
 
 echo "Manual backup now:"
