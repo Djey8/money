@@ -15,12 +15,9 @@ spec:
           labels:
             job-type: couchdb-backup
         spec:
-          securityContext:
-            runAsNonRoot: true
-            runAsUser: 100
           containers:
           - name: backup
-            image: curlimages/curl:latest@sha256:7ac8e4f7b7a42ba28baaf5c330778ba89ae25c824745a76a4d27f12bd8602ce7
+            image: alpine:3.21
             securityContext:
               allowPrivilegeEscalation: false
               capabilities:
@@ -32,6 +29,9 @@ spec:
             - |
               #!/bin/sh
               set -e
+
+              # Install required tools
+              apk add --no-cache curl gnupg > /dev/null 2>&1
 
               # ── Configuration ──────────────────────────────────
               COUCHDB_HOST="couchdb.money-app.svc.cluster.local"
