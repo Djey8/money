@@ -1,3 +1,8 @@
+## [1.6.3] - 2026-04-20
+
+### Bug Fixes
+- fix(nginx): increase client_max_body_size to 5m for encrypted batch writes
+
 ## [1.6.2] - 2026-04-20
 
 ### Bug Fixes
