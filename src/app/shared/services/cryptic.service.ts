@@ -24,6 +24,9 @@ export class CrypticService {
 
   /** Key found in localStorage during init — needs migration to server. */
   public _pendingMigrationKey: string | null = null;
+  /** Flags from localStorage captured alongside _pendingMigrationKey for migration. */
+  public _pendingMigrationEncryptLocal: boolean | null = null;
+  public _pendingMigrationEncryptDatabase: boolean | null = null;
 
   constructor() {
     this.loadConfig();
@@ -47,9 +50,13 @@ export class CrypticService {
 
     if (environment.mode === 'selfhosted') {
       // Selfhosted: key is fetched from server, kept in memory only.
-      // Preserve any pre-existing localStorage key for migration to server.
+      // Preserve any pre-existing localStorage key + flags for migration to server.
       const legacyKey = localStorage.getItem('encryptKey');
       this._pendingMigrationKey = (legacyKey && legacyKey !== 'default') ? legacyKey : null;
+      if (this._pendingMigrationKey) {
+        this._pendingMigrationEncryptLocal = localStorage.getItem('encryptLocal') === 'true';
+        this._pendingMigrationEncryptDatabase = localStorage.getItem('encryptDatabase') === 'true';
+      }
       localStorage.removeItem('encryptKey');
       this.key = null as any;
     } else {
@@ -73,21 +80,34 @@ export class CrypticService {
     if (!config) return;
     const serverKey = (config.key && config.key !== 'default') ? config.key : null;
 
-    // Migration: server has no real key but localStorage had one → use the old key
+    // Migration: server has no real key but localStorage had one → use the old key + flags
     if (!serverKey && this._pendingMigrationKey) {
       this.key = this._pendingMigrationKey;
+      // Preserve localStorage flags — server has defaults, not the user's real settings
+      this.derivedKeyCache.clear();
+      this.sessionSalt = null;
+      if (this._pendingMigrationEncryptLocal !== null) {
+        this.encryptionLocalEnabled = this._pendingMigrationEncryptLocal;
+        localStorage.setItem('encryptLocal', this.encryptionLocalEnabled.toString());
+      }
+      if (this._pendingMigrationEncryptDatabase !== null) {
+        this.encryptionDatabaseEnabled = this._pendingMigrationEncryptDatabase;
+        localStorage.setItem('encryptDatabase', this.encryptionDatabaseEnabled.toString());
+      }
       // _pendingMigrationKey is consumed by the caller to push it to the server
     } else {
       this.key = serverKey;
       this._pendingMigrationKey = null; // server already has the right key
-    }
+      this._pendingMigrationEncryptLocal = null;
+      this._pendingMigrationEncryptDatabase = null;
 
-    this.derivedKeyCache.clear();
-    this.sessionSalt = null;
-    this.encryptionLocalEnabled = !!config.encryptLocal;
-    localStorage.setItem('encryptLocal', this.encryptionLocalEnabled.toString());
-    this.encryptionDatabaseEnabled = !!config.encryptDatabase;
-    localStorage.setItem('encryptDatabase', this.encryptionDatabaseEnabled.toString());
+      this.derivedKeyCache.clear();
+      this.sessionSalt = null;
+      this.encryptionLocalEnabled = !!config.encryptLocal;
+      localStorage.setItem('encryptLocal', this.encryptionLocalEnabled.toString());
+      this.encryptionDatabaseEnabled = !!config.encryptDatabase;
+      localStorage.setItem('encryptDatabase', this.encryptionDatabaseEnabled.toString());
+    }
   }
 
   public updateConfig(key: string, encryptLocal: boolean, encryptDatabase: boolean): void {

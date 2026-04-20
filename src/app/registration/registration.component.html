@@ -30,10 +30,15 @@
       </svg>
       </button>
     </div>
-    <small id="password-hint" class="password-hint">{{'Registration.PasswordHint' | translate}}</small>
+    <ul class="password-rules" *ngIf="passwordTextField.length > 0">
+      <li *ngIf="!hasMinLength">{{'Registration.RuleMinLength' | translate}}</li>
+      <li *ngIf="!hasUppercase">{{'Registration.RuleUppercase' | translate}}</li>
+      <li *ngIf="!hasLowercase">{{'Registration.RuleLowercase' | translate}}</li>
+      <li *ngIf="!hasNumber">{{'Registration.RuleNumber' | translate}}</li>
+    </ul>
     <p *ngIf="isError" id="reg-error" role="alert">{{errorMessageLable}}</p>
-    <button id="registerbtn" class="btn btn--primary" (click)="register()">{{'Registration.Register' | translate}}</button>
-    <button id="goToLoginbtn" class="btn btn--outline" (click)="goToLogin()">{{'Registration.SignIn' | translate}}</button>
+    <button type="button" id="registerbtn" class="btn btn--primary" (click)="register()">{{'Registration.Register' | translate}}</button>
+    <button type="button" id="goToLoginbtn" class="btn btn--outline" (click)="goToLogin()">{{'Registration.SignIn' | translate}}</button>
   </form>
 </div>
 
@@ -57,8 +62,8 @@
       </button>
     </div>
     <p *ngIf="isError" id="login-error" role="alert">{{errorMessageLable}}</p>
-    <button id="loginbtn" class="btn btn--primary" (click)="login()">{{'Registration.SignIn' | translate}}</button>
-    <button id="backbtn" class="btn btn--outline" (click)="goToRegister()">{{'Registration.Register' | translate}}</button>
+    <button type="button" id="loginbtn" class="btn btn--primary" (click)="login()">{{'Registration.SignIn' | translate}}</button>
+    <button type="button" id="backbtn" class="btn btn--outline" (click)="goToRegister()">{{'Registration.Register' | translate}}</button>
     <h3 id="encryptionLable">{{'Settings.encryptionLable' | translate}}</h3>
                 <hr
                     class="separator-black">
