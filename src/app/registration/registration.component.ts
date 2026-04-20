@@ -282,6 +282,11 @@ export class RegistrationComponent {
    */
   async SignIn() {
     if (this.mode === 'selfhosted') {
+      // Capture uploaded encryption settings before login (login will overwrite with server config)
+      const uploadedKey = this.isUploaded ? this.cryptic.getKey() : null;
+      const uploadedEncryptLocal = this.isUploaded ? this.cryptic.getEncryptionLocalEnabled() : false;
+      const uploadedEncryptDatabase = this.isUploaded ? this.cryptic.getEncryptionDatabaseEnabled() : false;
+
       // Selfhosted mode - use backend API
       return this.selfhosted.login(this.emailTextField, this.passwordTextField)
         .toPromise()
@@ -291,6 +296,15 @@ export class RegistrationComponent {
             email: this.emailTextField,
             mode: 'selfhosted'
           });
+
+          // If user uploaded encryption settings, restore them and push to server
+          // (login's loadFromServer overwrote them with the server's stale config)
+          if (uploadedKey) {
+            this.cryptic.updateConfig(uploadedKey, uploadedEncryptLocal, uploadedEncryptDatabase);
+            await this.selfhosted.saveEncryptionConfig(uploadedKey, uploadedEncryptLocal, uploadedEncryptDatabase)
+              .toPromise()
+              .catch(err => console.error('Failed to save uploaded encryption config:', err));
+          }
           
           // Clear local storage
           this.localStorage.removeData("username");
@@ -422,22 +436,23 @@ export class RegistrationComponent {
    * Registers a new user.
    * Performs error handling and validation before calling the SignUp method.
    */
+  get hasMinLength(): boolean { return this.passwordTextField.length >= 8; }
+  get hasUppercase(): boolean { return /[A-Z]/.test(this.passwordTextField); }
+  get hasLowercase(): boolean { return /[a-z]/.test(this.passwordTextField); }
+  get hasNumber(): boolean { return /[0-9]/.test(this.passwordTextField); }
+  get isPasswordValid(): boolean { return this.hasMinLength && this.hasUppercase && this.hasLowercase && this.hasNumber; }
+
   public register(): void {
-    // Error Handling
-    // 1. Error: check fields are empty
     if (this.emailTextField == "" || this.passwordTextField == "" || this.usernameTextField == "") {
       this.isError = true;
       this.errorMessageLable = "Please fill out all fields";
-    } else if (this.passwordTextField.length<6) {
-      // 2. Error: check if Password is valid (p>=6)
-      this.isError = true;
-      this.errorMessageLable = "Invalid password (min. 6 char)";
     } else if (!this.validateEmail(this.emailTextField)) {
-      // 3. Error: check email is valid
       this.isError = true;
       this.errorMessageLable = "Invalid email format";
+    } else if (!this.isPasswordValid) {
+      this.isError = true;
+      this.errorMessageLable = "Please meet all password requirements";
     } else {
-      // Keine Fehler -> Try to REgister new User
       this.isError = false;
       this.errorMessageLable = "";
       this.SignUp(this.emailTextField, this.passwordTextField);
