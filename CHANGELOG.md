@@ -1,3 +1,8 @@
+## [1.6.6] - 2026-04-20
+
+### Bug Fixes
+- fix(backend): increase body size to 100mb and rate limit to 10000/15min for normal use
+
 ## [1.6.5] - 2026-04-20
 
 ### Bug Fixes
