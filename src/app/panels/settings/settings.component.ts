@@ -268,6 +268,10 @@ export class SettingsComponent {
     this.keyTextField = "default";
     AppStateService.instance.isLocal = true;
     AppStateService.instance.isDatabase = false;
+    // Persist encryption config to server (selfhosted mode)
+    if (environment.mode === 'selfhosted') {
+      this.selfhosted.saveEncryptionConfig('default', true, false).subscribe();
+    }
     await this.updateStorage();
     this.isEdit = false;
   }
@@ -287,6 +291,10 @@ export class SettingsComponent {
         AppStateService.instance.isLocal = data.local;
         AppStateService.instance.isDatabase = data.database;
         this.cryptic.updateConfig(data.key, data.local, data.database);
+        // Persist encryption config to server (selfhosted mode)
+        if (environment.mode === 'selfhosted') {
+          this.selfhosted.saveEncryptionConfig(data.key, data.local, data.database).subscribe();
+        }
         await this.updateStorage();
       };
       reader.readAsText(file);
@@ -297,6 +305,10 @@ export class SettingsComponent {
 
   async save() {
     this.cryptic.updateConfig(this.keyTextField, AppStateService.instance.isLocal, AppStateService.instance.isDatabase);
+    // Persist encryption config to server (selfhosted mode)
+    if (environment.mode === 'selfhosted') {
+      this.selfhosted.saveEncryptionConfig(this.keyTextField, AppStateService.instance.isLocal, AppStateService.instance.isDatabase).subscribe();
+    }
     await this.updateStorage();
     const data = {
       key: this.keyTextField,
@@ -1425,7 +1437,7 @@ export class SettingsComponent {
     else if (SettingsComponent.isAr) language = 'ar';
 
     // Gather encryption config
-    const encryptKey = sessionStorage.getItem('encryptKey');
+    const encryptKey = this.cryptic.getKey();
     const encryptLocal = localStorage.getItem('encryptLocal');
     const encryptDatabase = localStorage.getItem('encryptDatabase');
 

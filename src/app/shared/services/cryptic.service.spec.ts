@@ -10,25 +10,23 @@ describe('CrypticService', () => {
     service = new CrypticService();
   });
 
-  // --- constructor / loadConfig -------------------------------------------
+  // --- constructor / loadConfig (default env = Firebase mode) ---------------
 
   describe('loadConfig()', () => {
-    it('uses stored key from sessionStorage when present', () => {
-      sessionStorage.setItem('encryptKey', 'myKey');
+    it('restores key from localStorage in Firebase mode', () => {
+      localStorage.setItem('encryptKey', 'myKey');
       const s = new CrypticService();
       expect(s.getKey()).toBe('myKey');
     });
 
-    it('migrates key from localStorage to sessionStorage', () => {
-      localStorage.setItem('encryptKey', 'legacyKey');
+    it('clears legacy encryptKey from sessionStorage on init', () => {
+      sessionStorage.setItem('encryptKey', 'sessionKey');
       const s = new CrypticService();
-      expect(s.getKey()).toBe('legacyKey');
-      expect(sessionStorage.getItem('encryptKey')).toBe('legacyKey');
-      expect(localStorage.getItem('encryptKey')).toBeNull();
+      expect(sessionStorage.getItem('encryptKey')).toBeNull();
     });
 
     it('returns null when stored value is "default"', () => {
-      sessionStorage.setItem('encryptKey', 'default');
+      localStorage.setItem('encryptKey', 'default');
       const s = new CrypticService();
       expect(s.getKey()).toBeNull();
     });
@@ -47,25 +45,71 @@ describe('CrypticService', () => {
     });
   });
 
-  // --- updateConfig -------------------------------------------------------
+  // --- loadFromServer -----------------------------------------------------
+
+  describe('loadFromServer()', () => {
+    it('sets key and toggles from server config', () => {
+      service.loadFromServer({ key: 'serverKey', encryptLocal: true, encryptDatabase: true });
+      expect(service.getKey()).toBe('serverKey');
+      expect(service.getEncryptionLocalEnabled()).toBe(true);
+      expect(service.getEncryptionDatabaseEnabled()).toBe(true);
+    });
+
+    it('sets key to null when server sends "default"', () => {
+      service.loadFromServer({ key: 'default', encryptLocal: true, encryptDatabase: false });
+      expect(service.getKey()).toBeNull();
+    });
+
+    it('does not write key to localStorage or sessionStorage', () => {
+      service.loadFromServer({ key: 'secret', encryptLocal: false, encryptDatabase: false });
+      expect(localStorage.getItem('encryptKey')).toBeNull();
+      expect(sessionStorage.getItem('encryptKey')).toBeNull();
+    });
+
+    it('does nothing when config is null', () => {
+      service.loadFromServer(null);
+      expect(service.getKey()).toBeNull();
+    });
+  });
+
+  // --- updateConfig (Firebase mode: persists key to localStorage) ----------
 
   describe('updateConfig()', () => {
-    it('updates key and persists to sessionStorage', () => {
+    it('updates key and persists to localStorage in Firebase mode', () => {
       service.updateConfig('newKey', false, false);
       expect(service.getKey()).toBe('newKey');
-      expect(sessionStorage.getItem('encryptKey')).toBe('newKey');
+      expect(localStorage.getItem('encryptKey')).toBe('newKey');
     });
 
-    it('stores "default" as-is (no special handling)', () => {
+    it('stores "default" as null key', () => {
       service.updateConfig('default', false, false);
       expect(service.getKey()).toBeNull();
-      expect(sessionStorage.getItem('encryptKey')).toBe('default');
+      expect(localStorage.getItem('encryptKey')).toBe('default');
     });
 
-    it('persists encryption toggles', () => {
+    it('persists encryption toggles to localStorage', () => {
       service.updateConfig('k', true, true);
       expect(localStorage.getItem('encryptLocal')).toBe('true');
       expect(localStorage.getItem('encryptDatabase')).toBe('true');
+    });
+  });
+
+  // --- clearConfig --------------------------------------------------------
+
+  describe('clearConfig()', () => {
+    it('wipes key and toggles from memory and storage', () => {
+      service.updateConfig('myKey', true, true);
+      expect(service.getKey()).toBe('myKey');
+      expect(localStorage.getItem('encryptKey')).toBe('myKey');
+
+      service.clearConfig();
+
+      expect(service.getKey()).toBe('default');
+      expect(service.getEncryptionLocalEnabled()).toBe(false);
+      expect(service.getEncryptionDatabaseEnabled()).toBe(false);
+      expect(localStorage.getItem('encryptKey')).toBeNull();
+      expect(localStorage.getItem('encryptLocal')).toBeNull();
+      expect(localStorage.getItem('encryptDatabase')).toBeNull();
     });
   });
 

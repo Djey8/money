@@ -181,7 +181,7 @@ describe('SettingsComponent', () => {
     });
 
     it('should produce a single JSON file with version 2', () => {
-      sessionStorage.setItem('encryptKey', 'my-secret');
+      component.cryptic.getKey.mockReturnValue('my-secret');
       localStorage.setItem('encryptLocal', 'true');
       localStorage.setItem('encryptDatabase', 'true');
 
@@ -196,7 +196,7 @@ describe('SettingsComponent', () => {
     it('should include language, dateFormat, isEuropeanFormat, and encryption in settings', () => {
       SettingsComponent.isEng = false;
       SettingsComponent.isDe = true;
-      sessionStorage.setItem('encryptKey', 'my-secret');
+      component.cryptic.getKey.mockReturnValue('my-secret');
       localStorage.setItem('encryptLocal', 'true');
       localStorage.setItem('encryptDatabase', 'true');
 

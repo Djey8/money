@@ -3,6 +3,7 @@ import { Router, RouterOutlet, RouterLink } from '@angular/router';
 import { NgIf } from '@angular/common';
 import { AngularFireAuth } from '@angular/fire/compat/auth';
 import { TranslateModule } from '@ngx-translate/core';
+import { firstValueFrom } from 'rxjs';
 import { LocalService } from './shared/services/local.service';
 import { DatabaseService } from './shared/services/database.service';
 import { CrypticService } from './shared/services/cryptic.service';
@@ -23,6 +24,7 @@ import { migrateFireArray } from './shared/fire-migration.utils';
 import { migrateSubscriptionArray } from './shared/migrations/subscription-migration.utils';
 import { OnboardingService } from './shared/services/onboarding.service';
 import { TourService } from './shared/services/tour.service';
+import { SelfhostedService } from './shared/services/selfhosted.service';
 import { gotoTop as scrollToTop, gotoTopAuto as scrollToTopAuto } from './shared/scroll.utils';
 
 // Standalone component imports used in template
@@ -129,7 +131,7 @@ export class AppComponent {
    * @param localStorage - The local storage service.
    * @param database - The database service.
    */
-  constructor(public router: Router, private localStorage: LocalService, private database: DatabaseService, public afAuth: AngularFireAuth, private cryptic: CrypticService, private authService: AuthService, private frontendLogger: FrontendLoggerService, private persistence: PersistenceService, private incomeStatement: IncomeStatementService, public appState: AppStateService, private appData: AppDataService, private gameMode: GameModeService, private subscriptionProcessing: SubscriptionProcessingService, private onboardingService: OnboardingService, private toastService: ToastService, private tourService: TourService) {
+  constructor(public router: Router, private localStorage: LocalService, private database: DatabaseService, public afAuth: AngularFireAuth, private cryptic: CrypticService, private authService: AuthService, private frontendLogger: FrontendLoggerService, private persistence: PersistenceService, private incomeStatement: IncomeStatementService, public appState: AppStateService, private appData: AppDataService, private gameMode: GameModeService, private subscriptionProcessing: SubscriptionProcessingService, private onboardingService: OnboardingService, private toastService: ToastService, private tourService: TourService, private selfhosted: SelfhostedService) {
     AppComponent.instance = this;
 
     // Subscribe to tour actions for panel management
@@ -188,7 +190,7 @@ export class AppComponent {
     }
 
     // Check authentication before loading data
-    AppDataService.instance.checkAuthentication().then(isAuthenticated => {
+    AppDataService.instance.checkAuthentication().then(async isAuthenticated => {
       if (isAuthenticated) {
         const hash = window.location.hash;
 
@@ -207,6 +209,11 @@ export class AppComponent {
         // instead of the landing page flashing briefly during data load
         if (hash === '' || hash === '#/') {
           this.router.navigate(['/home']);
+        }
+        // Selfhosted: fetch encryption config from server before loading data
+        // (key lives in memory only — not in localStorage)
+        if (this.appMode === 'selfhosted') {
+          await firstValueFrom(this.selfhosted.fetchEncryptionConfig());
         }
         // Tier 1: Load critical data, block UI until ready
         AppDataService.instance.loadTier1().then(() => {
@@ -232,12 +239,12 @@ export class AppComponent {
         });
       } else {
         AppStateService.instance.isLoading = false;
-        // If on landing page, stay there; otherwise redirect to auth
+        // Session expired or not authenticated — clean up encrypted data and redirect
         const hash = window.location.hash;
         if (hash === '' || hash === '#/' || hash === '#/about') {
           // Stay on landing / about page — no redirect
         } else {
-          this.router.navigate(['/']);
+          this.logOut();
         }
       }
     });
@@ -252,7 +259,7 @@ export class AppComponent {
         const authResult = await this.authService.checkAuthentication();
         if (!authResult.authenticated) {
           console.error('Authentication failed:', authResult.error);
-          this.router.navigate(['/']);
+          this.logOut();
         } else {
           // Smart reload: check if data changed before reloading
           const hasChanged = await AppDataService.instance.checkUpdatedAt();
@@ -408,7 +415,21 @@ export class AppComponent {
     AppStateService.instance.allBudgets = [];
     AppStateService.instance.mojo = { amount: 0, target: 0 };
 
-    this.cryptic.updateConfig("default", true, false);
+    // Reset settings to defaults
+    AppStateService.instance.currency = '€';
+    AppStateService.instance.daily = 60;
+    AppStateService.instance.splurge = 10;
+    AppStateService.instance.smile = 10;
+    AppStateService.instance.fire = 20;
+    AppStateService.instance.key = 'default';
+    AppStateService.instance.dateFormat = 'dd.MM.yyyy';
+    AppStateService.instance.isEuropeanFormat = true;
+    AppStateService.instance.isLocal = true;
+    AppStateService.instance.isDatabase = false;
+
+    // Wipe encryption key + toggles from memory and storage
+    this.cryptic.clearConfig();
+
     ProfileComponent.isUser = true;
     ProfileComponent.username = "Username";
     ProfileComponent.mail = "example@traiber.com";
@@ -420,11 +441,12 @@ export class AppComponent {
     if (this.appMode === 'firebase') {
       this.logoutFirebase();
     } else {
-      // Selfhosted mode - clear userId (cookies cleared by backend logout)
+      // Selfhosted mode - clear userId and call backend to clear cookies
       localStorage.removeItem('selfhosted_userId');
+      this.selfhosted.logout().subscribe({ error: () => {} });
     }
     
-    this.router.navigate(['/authentication']);
+    this.router.navigate(['/']);
   }
 
 
