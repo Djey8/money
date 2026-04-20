@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import * as CryptoJS from 'crypto-js';
+import { environment } from '../../../environments/environment';
 
 const PBKDF2_ITERATIONS = 10000;
 const PBKDF2_KEY_SIZE = 8; // 8 words = 32 bytes = 256 bits
@@ -38,13 +39,17 @@ export class CrypticService {
   }
 
   private loadConfig(): void {
-    const storedKey = sessionStorage.getItem('encryptKey') || localStorage.getItem('encryptKey');
-    this.key = (storedKey && storedKey !== 'default') ? storedKey : null;
+    // Always migrate away from sessionStorage
+    sessionStorage.removeItem('encryptKey');
 
-    // Migrate key from localStorage to sessionStorage if present
-    if (localStorage.getItem('encryptKey')) {
-      sessionStorage.setItem('encryptKey', localStorage.getItem('encryptKey'));
+    if (environment.mode === 'selfhosted') {
+      // Selfhosted: key is fetched from server, kept in memory only
       localStorage.removeItem('encryptKey');
+      this.key = null as any;
+    } else {
+      // Firebase: key persists in localStorage (no backend to store it)
+      const stored = localStorage.getItem('encryptKey');
+      this.key = (stored && stored !== 'default') ? stored : null as any;
     }
 
     const encryptLocal = localStorage.getItem('encryptLocal');
@@ -54,15 +59,49 @@ export class CrypticService {
     this.encryptionDatabaseEnabled = encryptDatabase === "true" ? true : false;
   }
 
+  /**
+   * Load encryption config from a server response (login, register, refresh, or GET /encryption-config).
+   * Key is kept in memory only — never written to localStorage or sessionStorage.
+   */
+  public loadFromServer(config: { key: string; encryptLocal: boolean; encryptDatabase: boolean } | null): void {
+    if (!config) return;
+    this.key = (config.key && config.key !== 'default') ? config.key : null;
+    this.derivedKeyCache.clear();
+    this.sessionSalt = null;
+    this.encryptionLocalEnabled = !!config.encryptLocal;
+    localStorage.setItem('encryptLocal', this.encryptionLocalEnabled.toString());
+    this.encryptionDatabaseEnabled = !!config.encryptDatabase;
+    localStorage.setItem('encryptDatabase', this.encryptionDatabaseEnabled.toString());
+  }
+
   public updateConfig(key: string, encryptLocal: boolean, encryptDatabase: boolean): void {
     this.key = (key && key !== 'default') ? key : null;
     this.derivedKeyCache.clear();
     this.sessionSalt = null;
-    sessionStorage.setItem('encryptKey', key);
+    // Firebase: persist key in localStorage (no backend). Selfhosted: memory-only.
+    if (environment.mode !== 'selfhosted') {
+      localStorage.setItem('encryptKey', key || 'default');
+    }
     this.encryptionLocalEnabled = encryptLocal;
     localStorage.setItem('encryptLocal', encryptLocal.toString());
     this.encryptionDatabaseEnabled = encryptDatabase;
     localStorage.setItem('encryptDatabase', encryptDatabase.toString());
+  }
+
+  /**
+   * Wipe all encryption state (key + toggles) from memory and storage.
+   * Called on logout to ensure no sensitive data lingers.
+   */
+  public clearConfig(): void {
+    this.key = 'default';
+    this.derivedKeyCache.clear();
+    this.sessionSalt = null;
+    this.encryptionLocalEnabled = false;
+    this.encryptionDatabaseEnabled = false;
+    localStorage.removeItem('encryptKey');
+    localStorage.removeItem('encryptLocal');
+    localStorage.removeItem('encryptDatabase');
+    sessionStorage.removeItem('encryptKey');
   }
 
   private getDerivedKey(salt: CryptoJS.lib.WordArray): CryptoJS.lib.WordArray {
