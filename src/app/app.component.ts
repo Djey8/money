@@ -151,31 +151,37 @@ export class AppComponent {
       }
     };
 
-    AppStateService.instance.allTransactions = safeParse("transactions");
-    AppStateService.instance.allSubscriptions = migrateSubscriptionArray(safeParse("subscriptions"));
-    //Income Statement
-    AppStateService.instance.allRevenues = safeParse("revenues");
-    AppStateService.instance.allIntrests = safeParse("interests");
-    AppStateService.instance.allProperties = safeParse("properties");
+    // In selfhosted mode with local encryption, skip eager localStorage parsing —
+    // the encryption key isn't available yet (it's fetched from the server after login).
+    // Data will be loaded from the server via loadTier1() instead.
+    const skipLocalParse = this.appMode === 'selfhosted' && this.cryptic.getEncryptionLocalEnabled();
+    if (!skipLocalParse) {
+      AppStateService.instance.allTransactions = safeParse("transactions");
+      AppStateService.instance.allSubscriptions = migrateSubscriptionArray(safeParse("subscriptions"));
+      //Income Statement
+      AppStateService.instance.allRevenues = safeParse("revenues");
+      AppStateService.instance.allIntrests = safeParse("interests");
+      AppStateService.instance.allProperties = safeParse("properties");
 
-    AppStateService.instance.dailyExpenses = safeParse("dailyEx");
-    AppStateService.instance.splurgeExpenses = safeParse("splurgeEx");
-    AppStateService.instance.smileExpenses = safeParse("smileEx");
-    AppStateService.instance.fireExpenses = safeParse("fireEx");
-    AppStateService.instance.mojoExpenses = safeParse("mojoEx");
+      AppStateService.instance.dailyExpenses = safeParse("dailyEx");
+      AppStateService.instance.splurgeExpenses = safeParse("splurgeEx");
+      AppStateService.instance.smileExpenses = safeParse("smileEx");
+      AppStateService.instance.fireExpenses = safeParse("fireEx");
+      AppStateService.instance.mojoExpenses = safeParse("mojoEx");
 
-    AppStateService.instance.allAssets = safeParse("assets");
-    AppStateService.instance.allShares = safeParse("shares");
-    AppStateService.instance.allInvestments = safeParse("investments");
-    AppStateService.instance.liabilities = safeParse("liabilities");
-    
-    const growParsed = safeParse("grow");
-    AppStateService.instance.allGrowProjects = migrateGrowArray(growParsed);
+      AppStateService.instance.allAssets = safeParse("assets");
+      AppStateService.instance.allShares = safeParse("shares");
+      AppStateService.instance.allInvestments = safeParse("investments");
+      AppStateService.instance.liabilities = safeParse("liabilities");
+      
+      const growParsed = safeParse("grow");
+      AppStateService.instance.allGrowProjects = migrateGrowArray(growParsed);
 
-    AppStateService.instance.allSmileProjects = migrateSmileArray(safeParse("smile"));
-    AppStateService.instance.allFireEmergencies = migrateFireArray(safeParse("fire"));
-    AppStateService.instance.mojo = safeParse("mojo", { amount: 0, target: 0 });
-    AppStateService.instance.allBudgets = safeParse("budget");
+      AppStateService.instance.allSmileProjects = migrateSmileArray(safeParse("smile"));
+      AppStateService.instance.allFireEmergencies = migrateFireArray(safeParse("fire"));
+      AppStateService.instance.mojo = safeParse("mojo", { amount: 0, target: 0 });
+      AppStateService.instance.allBudgets = safeParse("budget");
+    }
 
     // Optimistic early navigate: if we have evidence of a prior session,
     // go to /home immediately so the landing page never flashes
