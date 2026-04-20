@@ -151,37 +151,31 @@ export class AppComponent {
       }
     };
 
-    // In selfhosted mode with local encryption, skip eager localStorage parsing —
-    // the encryption key isn't available yet (it's fetched from the server after login).
-    // Data will be loaded from the server via loadTier1() instead.
-    const skipLocalParse = this.appMode === 'selfhosted' && this.cryptic.getEncryptionLocalEnabled();
-    if (!skipLocalParse) {
-      AppStateService.instance.allTransactions = safeParse("transactions");
-      AppStateService.instance.allSubscriptions = migrateSubscriptionArray(safeParse("subscriptions"));
-      //Income Statement
-      AppStateService.instance.allRevenues = safeParse("revenues");
-      AppStateService.instance.allIntrests = safeParse("interests");
-      AppStateService.instance.allProperties = safeParse("properties");
+    AppStateService.instance.allTransactions = safeParse("transactions");
+    AppStateService.instance.allSubscriptions = migrateSubscriptionArray(safeParse("subscriptions"));
+    //Income Statement
+    AppStateService.instance.allRevenues = safeParse("revenues");
+    AppStateService.instance.allIntrests = safeParse("interests");
+    AppStateService.instance.allProperties = safeParse("properties");
 
-      AppStateService.instance.dailyExpenses = safeParse("dailyEx");
-      AppStateService.instance.splurgeExpenses = safeParse("splurgeEx");
-      AppStateService.instance.smileExpenses = safeParse("smileEx");
-      AppStateService.instance.fireExpenses = safeParse("fireEx");
-      AppStateService.instance.mojoExpenses = safeParse("mojoEx");
+    AppStateService.instance.dailyExpenses = safeParse("dailyEx");
+    AppStateService.instance.splurgeExpenses = safeParse("splurgeEx");
+    AppStateService.instance.smileExpenses = safeParse("smileEx");
+    AppStateService.instance.fireExpenses = safeParse("fireEx");
+    AppStateService.instance.mojoExpenses = safeParse("mojoEx");
 
-      AppStateService.instance.allAssets = safeParse("assets");
-      AppStateService.instance.allShares = safeParse("shares");
-      AppStateService.instance.allInvestments = safeParse("investments");
-      AppStateService.instance.liabilities = safeParse("liabilities");
-      
-      const growParsed = safeParse("grow");
-      AppStateService.instance.allGrowProjects = migrateGrowArray(growParsed);
+    AppStateService.instance.allAssets = safeParse("assets");
+    AppStateService.instance.allShares = safeParse("shares");
+    AppStateService.instance.allInvestments = safeParse("investments");
+    AppStateService.instance.liabilities = safeParse("liabilities");
+    
+    const growParsed = safeParse("grow");
+    AppStateService.instance.allGrowProjects = migrateGrowArray(growParsed);
 
-      AppStateService.instance.allSmileProjects = migrateSmileArray(safeParse("smile"));
-      AppStateService.instance.allFireEmergencies = migrateFireArray(safeParse("fire"));
-      AppStateService.instance.mojo = safeParse("mojo", { amount: 0, target: 0 });
-      AppStateService.instance.allBudgets = safeParse("budget");
-    }
+    AppStateService.instance.allSmileProjects = migrateSmileArray(safeParse("smile"));
+    AppStateService.instance.allFireEmergencies = migrateFireArray(safeParse("fire"));
+    AppStateService.instance.mojo = safeParse("mojo", { amount: 0, target: 0 });
+    AppStateService.instance.allBudgets = safeParse("budget");
 
     // Optimistic early navigate: if we have evidence of a prior session,
     // go to /home immediately so the landing page never flashes
@@ -216,22 +210,32 @@ export class AppComponent {
         if (hash === '' || hash === '#/') {
           this.router.navigate(['/home']);
         }
-        // Selfhosted: fetch encryption config from server before loading data
-        // (key lives in memory only — not in localStorage)
+        // Selfhosted: fetch encryption config from server
+        // If the key is cached in sessionStorage, don't block on the HTTP call
         if (this.appMode === 'selfhosted') {
-          await firstValueFrom(this.selfhosted.fetchEncryptionConfig());
-          // Migrate: if a key was found in localStorage but the server had 'default',
-          // push the old key + flags to the server so it persists across reloads.
-          if (this.cryptic._pendingMigrationKey) {
-            const migratedKey = this.cryptic._pendingMigrationKey;
-            const migratedEncryptLocal = this.cryptic._pendingMigrationEncryptLocal ?? this.cryptic.getEncryptionLocalEnabled();
-            const migratedEncryptDatabase = this.cryptic._pendingMigrationEncryptDatabase ?? this.cryptic.getEncryptionDatabaseEnabled();
-            this.cryptic._pendingMigrationKey = null;
-            this.cryptic._pendingMigrationEncryptLocal = null;
-            this.cryptic._pendingMigrationEncryptDatabase = null;
-            await firstValueFrom(
-              this.selfhosted.saveEncryptionConfig(migratedKey, migratedEncryptLocal, migratedEncryptDatabase)
-            ).catch(err => console.error('Failed to migrate encryption key to server:', err));
+          const hasCachedKey = !!this.cryptic.getKey();
+          const hasPendingMigration = !!this.cryptic._pendingMigrationKey;
+          if (hasCachedKey && !hasPendingMigration) {
+            // Key already loaded from sessionStorage — fetch in background to keep in sync
+            firstValueFrom(this.selfhosted.fetchEncryptionConfig()).catch(
+              err => console.error('Background encryption config fetch failed:', err)
+            );
+          } else {
+            // No cached key or migration pending — must wait for server
+            await firstValueFrom(this.selfhosted.fetchEncryptionConfig());
+            // Migrate: if a key was found in localStorage but the server had 'default',
+            // push the old key + flags to the server so it persists across reloads.
+            if (this.cryptic._pendingMigrationKey) {
+              const migratedKey = this.cryptic._pendingMigrationKey;
+              const migratedEncryptLocal = this.cryptic._pendingMigrationEncryptLocal ?? this.cryptic.getEncryptionLocalEnabled();
+              const migratedEncryptDatabase = this.cryptic._pendingMigrationEncryptDatabase ?? this.cryptic.getEncryptionDatabaseEnabled();
+              this.cryptic._pendingMigrationKey = null;
+              this.cryptic._pendingMigrationEncryptLocal = null;
+              this.cryptic._pendingMigrationEncryptDatabase = null;
+              await firstValueFrom(
+                this.selfhosted.saveEncryptionConfig(migratedKey, migratedEncryptLocal, migratedEncryptDatabase)
+              ).catch(err => console.error('Failed to migrate encryption key to server:', err));
+            }
           }
         }
         // Tier 1: Load critical data, block UI until ready
