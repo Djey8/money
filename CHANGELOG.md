@@ -1,3 +1,13 @@
+## [1.6.0] - 2026-04-20
+
+### Features
+- feat(registration): add live password rules with i18n support (6 languages)
+
+### Bug Fixes
+- fix(auth): restore uploaded encryption config after selfhosted login
+- fix(security): preserve encryption flags during localStorage-to-server migration
+- fix(security): add Firebase Auth and Google domains to CSP headers
+
 ## [1.5.2] - 2026-04-20
 
 ### Bug Fixes
