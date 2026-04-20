@@ -1,3 +1,27 @@
+## [1.5.0] - 2026-04-20
+
+### Features
+- feat(receipt): add structured receipt parser with store-specific readers
+- feat(ci): add SBOM generation job for frontend and backend
+- feat(security): add webhook-based security alerting for high-severity events (M8)
+
+### Bug Fixes
+- fix(ci): use POSIX-compatible redirect in pre-commit gitleaks check
+- fix(security): patch Alpine CVEs and picomatch ReDoS in backend Docker image
+- fix(security): patch Alpine CVEs in frontend Docker image (libcrypto3, libpng, musl, zlib)
+- fix(auth): center password toggle eye icon in registration input field
+- fix(security): move encryption key to server-side storage with mode-aware config and clean logout
+- fix(security): add Google Fonts origins to CSP header (M10)
+- fix(security): pin Docker image digests for reproducible builds (M7)
+- fix(security): upgrade cryptic service to PBKDF2-SHA256 key derivation with HMAC auth (M5)
+- fix(backup): add encryption support to restore, fix .gpg extension in promotions, add NAS timeout
+- fix(auth): move inject() calls to synchronous interceptor context (NG0203)
+- fix(security): move encryption key from localStorage to sessionStorage (M4)
+- fix(security): add gitleaks secret scanning to pre-commit hook
+- fix(security): add npm audit, container scanning, and secret scanning to CI
+- fix(security): add Content-Security-Policy header to nginx (M10)
+- fix(security): fix vulnerable dependencies via npm audit fix (M9)
+
 ## [1.4.1] - 2026-04-19
 
 ### Bug Fixes
