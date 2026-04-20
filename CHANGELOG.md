@@ -1,3 +1,8 @@
+## [1.6.7] - 2026-04-20
+
+### Bug Fixes
+- fix(selfhosted): add OCR API to CSP connect-src for receipt scanning
+
 ## [1.6.6] - 2026-04-20
 
 ### Bug Fixes
