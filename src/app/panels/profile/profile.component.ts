@@ -65,6 +65,18 @@ export class ProfileComponent {
       .catch((err: any) => {
         //handle error
       })
+
+    this.database.getData("info/email")
+      .then(snapshot => {
+        let email: string = snapshot.val();  // Email is NOT encrypted in DB
+        if (email) {
+          ProfileComponent.mail = email;
+          this.localStorage.saveData("email", email);
+        }
+      })
+      .catch((err: any) => {
+        //handle error
+      })
   }
 
   @ViewChild('confirmationDialog') confirmationDialog!: ElementRef;
