@@ -25,6 +25,7 @@ import { SettingsComponent } from '../settings/settings.component';
 import { TrapFocusDirective } from 'src/app/shared/directives/trap-focus.directive';
 import { migrateSmileArray } from 'src/app/shared/smile-migration.utils';
 import { migrateFireArray } from 'src/app/shared/fire-migration.utils';
+import { ReceiptParserService } from 'src/app/shared/services/receipt-parser.service';
 
 
 // Deferred imports — resolved after module init to break circular chains
@@ -93,7 +94,8 @@ export class AddComponent extends BaseAddComponent {
     private database: DatabaseService, 
     public afAuth: AngularFireAuth,
     private authService: AuthService,
-    private frontendLogger: FrontendLoggerService
+    private frontendLogger: FrontendLoggerService,
+    private receiptParser: ReceiptParserService
   ) {
     super(router);
     AddComponent.isAdd = false;
@@ -134,7 +136,8 @@ export class AddComponent extends BaseAddComponent {
    *
    * Parses the JSON response to extract the receipt total and date, cross-validates
    * the total against raw OCR text (looking for "Summe"/"Total" lines), and
-   * auto-fills the amount (negated) and date fields in the add-transaction form.
+   * Delegates parsing to ReceiptParserService which uses store-specific readers
+   * (Paradise, go asia, REWE, EDEKA) or a generic fallback.
    */
   async recognizeImage() {
     if (!this.image) {
@@ -163,460 +166,33 @@ export class AddComponent extends BaseAddComponent {
       }
       const body = await response.json();
       this.isLoading = false;
-      
-      // Validate receipt data exists
+      console.log('Receipt OCR response:', body);
+
       if (!body.receipts || body.receipts.length === 0) {
         this.isError = true;
         this.errorLable = "No receipt data found";
         return;
       }
-      
-      const receipt = body.receipts[0];
-      
-      // Validate total from OCR text
-      let validatedTotal = receipt.total;
-      if (receipt.ocr_text && receipt.total !== null && receipt.total !== undefined) {
-        const lines = receipt.ocr_text.split('\n');
-        let ocrTotal: number | null = null;
-        
-        for (const line of lines) {
-          const lowerLine = line.toLowerCase();
-          // Look for total/summe lines
-          if (lowerLine.includes('summe') || lowerLine.includes('zu zahlen') || 
-              lowerLine.includes('total') || lowerLine.includes('gesamt')) {
-            // Extract number from line (format: "SUMME EUR 23,52" or "23,52 EUR")
-            const match = line.match(/(\d+[,\.]\d{2})\s*(EUR|USD|GBP)?/i);
-            if (match) {
-              const amount = parseFloat(match[1].replace(',', '.'));
-              if (!isNaN(amount) && amount > 0) {
-                ocrTotal = amount;
-                break;
-              }
-            }
-          }
-        }
-        
-        // Compare OCR total with API total
-        if (ocrTotal !== null) {
-          const tolerance = 0.01; // Allow 1 cent difference due to rounding
-          if (Math.abs(ocrTotal - receipt.total) > tolerance) {
-            console.warn(`Total mismatch: API=${receipt.total}, OCR=${ocrTotal}. Using OCR value.`);
-            validatedTotal = ocrTotal;
-          }
-        }
+
+      const parsed = this.receiptParser.parse(body);
+
+      if (parsed.total !== null) {
+        AddComponent.amountTextField = "-" + parsed.total;
       }
-      
-      // Set the total field *-1 if not null
-      if (validatedTotal !== null && validatedTotal !== undefined) {
-        AddComponent.amountTextField = "-" + validatedTotal;
+      if (parsed.date) {
+        this.dateTextField = parsed.date;
+      }
+      if (parsed.time) {
+        this.timeTextField = parsed.time;
+      }
+      if (parsed.comment) {
+        AddComponent.commentTextField = parsed.comment;
       }
 
-      // Set the date if not null
-      if (receipt.date !== null && receipt.date !== undefined) {
-        this.dateTextField = receipt.date;
-      }
-
-      // Set the time if not null and valid, otherwise search in OCR text
-      if (receipt.time !== null && receipt.time !== undefined && receipt.time !== '') {
-        this.timeTextField = receipt.time;
-      } else if (receipt.ocr_text) {
-        // Fallback: Search for time in OCR text
-        const timeMatch = this.extractTimeFromOCR(receipt.ocr_text);
-        if (timeMatch) {
-          this.timeTextField = timeMatch;
-        }
-      }
-
-      // Parse the OCR text directly for better formatting
-      let comment = '';
-      
-      if (receipt.ocr_text) {
-        const lines = receipt.ocr_text.split('\n').map(l => l.trim());
-        let inItemSection = false;
-        let merchantLines: string[] = [];
-        let itemLines: string[] = [];
-        
-        // Smart merchant detection from OCR
-        let merchantName = '';
-        for (let i = 0; i < Math.min(10, lines.length); i++) {
-          const line = lines[i];
-          if (!line || line.length < 2) continue;
-          
-          const lowerLine = line.toLowerCase();
-          
-          // Skip currency markers and section headers
-          if (line.match(/^\s*(EUR|USD|GBP|Preis|Menge|Artikel)\s*$/i)) continue;
-          
-          // Skip tax IDs and legal info
-          if (lowerLine.includes('uid') || lowerLine.includes('ust-id') || 
-              lowerLine.includes('tax') || lowerLine.includes('mwst') ||
-              lowerLine.includes('kundenbeleg')) continue;
-          
-          // Skip separator lines
-          if (line.match(/^\s*-+\s*$/)) continue;
-          
-          // Skip long numeric IDs (product/article IDs like "4007123560059")
-          if (line.match(/^\d{10,}$/)) continue;
-          
-          // Skip lines that are clearly addresses or have street patterns
-          if (lowerLine.match(/str\.|straße|strasse|platz|weg|allee/i) || 
-              line.match(/^\d{5}/)) {
-            // This is an address, add to merchant info but don't use as merchant name
-            // Limit to 2 address lines (street + city) after merchant name
-            if (merchantLines.length < 2) {
-              merchantLines.push(line);
-            }
-            continue;
-          }
-          
-          // If line doesn't have numbers (prices) and is reasonably short, might be merchant name
-          if (!merchantName && !line.match(/\d+[,\.]\d+/) && line.length < 40 && line.length > 2) {
-            merchantName = line;
-            continue;
-          }
-          
-          // Once we find a line with a price, stop looking for merchant
-          if (line.match(/\d+[,\.]\d+\s*€?\s*[A-Z]?/)) {
-            break;
-          }
-        }
-        
-        // Fallback to API merchant_name if we didn't find one in OCR
-        if (!merchantName && receipt.merchant_name) {
-          merchantName = receipt.merchant_name;
-        }
-        
-        // Build merchant header
-        if (merchantName) {
-          merchantLines.unshift(merchantName);
-        }
-        
-        for (let i = 0; i < lines.length; i++) {
-          const line = lines[i];
-          if (!line) continue;
-          
-          const lowerLine = line.toLowerCase();
-          
-          // Skip column headers
-          if (lowerLine.match(/^\s*(menge|artikel|preis|artikelname)\s*$/i) || 
-              lowerLine.match(/artikelname\s+\/€/i)) continue;
-          
-          // Detect start of item section (after header, when we see prices)
-          if (!inItemSection) {
-            // More robust price detection - matches lines ending with prices
-            // Patterns: "4,50 € B", "9.99 A", "27,13 A", "4,50 €/stk. #111883 4,50 € B"
-            // Also detect lines with EAN codes followed by product names
-            // Also detect "Product name    1st x 2,50 (A)" format
-            const hasPriceAtEnd = line.match(/\d+[,\.]\d{2}\s+[A-Z]\s*$/i) || // "9.99 A"
-                                  line.match(/\d+[,\.]\d{2}\s*€\s*[A-Z]?\s*$/i) || // "4,50 € B" or "4,50 €"
-                                  line.match(/\d+[,\.]\d{2}\s*\([A-Z]\)\s*$/i); // "2,50 (A)"
-            
-            // Detect EAN code pattern (long number followed by text)
-            const hasEanPattern = line.match(/^\s*\d{8,13}\s+[a-zA-Z]/);
-            
-            // Detect product with price pattern (e.g., "Apfelkrapfen    1st x 2,50 (A)")
-            const hasProductPricePattern = line.match(/^[a-zA-Z][a-zA-Z\s]{2,}?\s+\d+\s*st\s*x\s*\d+[,\.]\d{2}/i);
-            
-            if (hasPriceAtEnd || hasEanPattern || hasProductPricePattern) {
-              inItemSection = true;
-              
-              // Check PREVIOUS line for product name (first item case)
-              if (i > 0) {
-                const prevLine = lines[i - 1].trim();
-                const prevLineLower = prevLine.toLowerCase();
-                
-                // Add previous line if it's a product name
-                if (prevLine && 
-                    !prevLine.match(/\d+[,\.]\d{2}\s*€?\s*[A-Z]?\*?\s*$/) && // No price at end
-                    !prevLineLower.includes('summe') && 
-                    !prevLineLower.includes('menge') && 
-                    !prevLineLower.includes('artikel') &&
-                    !prevLineLower.includes('preis') &&
-                    !prevLineLower.match(/^\s*-+\s*$/) && // Not separator
-                    prevLine.length > 2 &&
-                    prevLine.match(/[a-zA-Z]{3,}/)) { // Has at least 3 letters
-                  itemLines.push('  ' + prevLine); // Indent product name
-                }
-              }
-              // Don't continue - process this line
-            } else {
-              // Skip header lines before items start
-              continue;
-            }
-          }
-          
-          // Stop at totals/payment section
-          if (lowerLine.includes('summe') || 
-              lowerLine.includes('zu zahlen') ||
-              lowerLine.includes('gesamtmenge') ||
-              lowerLine.match(/typ\s*\/\/\s*type/i) ||
-              lowerLine.match(/netto\/€.*mwst/i) ||
-              lowerLine.match(/geg\.?\s*(mastercard|visa|kreditkarte|ec)/i) ||
-              lowerLine.includes('posten:') ||
-              lowerLine.includes('mwst') ||
-              lowerLine.includes('betrag eur') ||
-              lowerLine.includes('kundenbeleg') ||
-              lowerLine.includes('datum:') ||
-              lowerLine.includes('uhrzeit:') ||
-              lowerLine.includes('beleg-nr') ||
-              lowerLine.includes('belegnummer') ||
-              lowerLine.includes('trace-nr') ||
-              lowerLine.includes('terminal') ||
-              lowerLine.includes('bezahlung') ||
-              lowerLine.includes('kartenzahlung') ||
-              lowerLine.includes('approved') ||
-              lowerLine.includes('bedienung:') ||
-              lowerLine.includes('filiale')) {
-            break;
-          }
-          
-          if (inItemSection) {
-            // Skip deposit/return lines (LEERGUT, Pfand with negative amounts)
-            if ((lowerLine.includes('leergut') || lowerLine.includes('pfand')) && line.includes('-')) {
-              continue;
-            }
-            
-            // Skip lines with only quantity info (e.g., "12 Stk x 0,08")
-            if (line.match(/^\d+\s*Stk\s*x\s*\d/i)) {
-              continue;
-            }
-            
-            // Skip standalone negative amounts or tax markers
-            if (line.match(/^\s*-?\d+[,\.]\d+\s*[A-Z]?\*?\s*$/) && !line.match(/[a-zA-Z]{3,}/)) {
-              continue;
-            }
-            
-            // Skip lines that are just tax codes or flags
-            if (line.match(/^\s*[A-Z]{1,3}\s*$/) || line.match(/^RBW$/)) {
-              continue;
-            }
-            
-            // Skip very short lines without prices (likely fragments)
-            if (line.length < 5 && !line.match(/\d/)) {
-              continue;
-            }
-            
-            // Pattern 1: EAN code with product name on same line (e.g., "4042448502452 tesa Malerband")
-            const eanWithProductMatch = line.match(/^\s*(\d{8,13})\s+(.+)/);
-            if (eanWithProductMatch) {
-              const productName = eanWithProductMatch[2].trim();
-              // Only add if it looks like a product name (has letters, not just numbers/prices)
-              if (productName && productName.match(/[a-zA-Z]{3,}/) && !productName.match(/^\d+[,\.]\d{2}/)) {
-                itemLines.push(productName);
-                continue; // Move to next line
-              }
-            }
-            
-            // Pattern 2: Product name with quantity and price on same line
-            // Examples: "Apfelkrapfen                1st x 2,50 (A)" or "Kaffee 2x 3,50 (B)"
-            const productWithPriceMatch = line.match(/^([a-zA-Z][a-zA-Z\s]{2,}?)\s+(\d+\s*st\s*x\s*\d+[,\.]\d{2})\s*\(([A-Z])\)/i);
-            if (productWithPriceMatch) {
-              const productName = productWithPriceMatch[1].trim();
-              const qtyPrice = productWithPriceMatch[2].trim().toLowerCase();
-              
-              // Keep on same line as original: "Product Name  1 st x 2,50"
-              itemLines.push(`${productName}  ${qtyPrice}`);
-              continue;
-            }
-            
-            // Pattern 3: Quantity x unit price followed by total price in parentheses
-            // Examples: "5 st x 0,95                      4,75 (A)"
-            const qtyPriceTotalMatch = line.match(/^\s*(\d+\s+st\s+x\s+\d+[,\.]\d{2})\s+(\d+[,\.]\d{2})\s*\(([A-Z])\)/i);
-            if (qtyPriceTotalMatch) {
-              const qtyPrice = qtyPriceTotalMatch[1].trim();
-              const total = qtyPriceTotalMatch[2];
-              
-              // Check if previous line is a product name
-              if (i > 0) {
-                const prevLine = lines[i - 1].trim();
-                const prevLineLower = prevLine.toLowerCase();
-                
-                // If previous line looks like a product name, add it
-                if (prevLine && prevLine.match(/^[a-zA-Z][a-zA-Z\s]{2,}$/) && 
-                    !prevLineLower.includes('artikelname') &&
-                    !itemLines.some(il => il.trim() === prevLine)) {
-                  itemLines.push(prevLine);
-                }
-              }
-              
-              // Add the quantity/price info and total
-              itemLines.push(`    ${qtyPriceTotalMatch[1].toLowerCase()} = ${total}`);
-              continue;
-            }
-            
-            // Pattern 4: Price line (quantity/unit + price + tax code)
-            // Examples: "     1 ST                 B            9,99" or "1 ST B 9,99"
-            const priceLineMatch = line.match(/^\s*(\d+\s+ST)\s+([A-Z])\s+(\d+[,\.]\d{2})\s*$/i);
-            if (priceLineMatch) {
-              const quantity = priceLineMatch[1].trim();
-              const taxCode = priceLineMatch[2];
-              const price = priceLineMatch[3];
-              
-              // Format: "1x 9,99" or just "9,99"
-              itemLines.push(`    ${quantity.toLowerCase()}  ${price}`);
-              continue;
-            }
-            
-            // Pattern 3: Check if this line has a price (item line)
-            // Must end with: "9.99 A", "4,50 € B", "27,13 A" (price + optional € + tax code)
-            const isPriceLine = line.match(/\d+[,\.]\d{2}\s*€?\s*[A-Z]\s*$/i) || // Must have tax code
-                               line.match(/\d+[,\.]\d{2}\s*€\s*$/); // Or just € without tax code
-            
-            if (isPriceLine) {
-              // Check if the line has a product name at the start (REWE format: "INGWER BIO    0,55 B")
-              const productPriceOnSameLine = line.match(/^([A-Z][A-Z\s\.\/\-]{2,}?)\s{2,}(\d+[,\.]\d{2}\s*€?\s*[A-Z]?\*?\s*)$/i);
-              
-              if (productPriceOnSameLine) {
-                // Product name and price on same line (REWE format)
-                // Keep the original line format
-                itemLines.push(line);
-                continue;
-              }
-              
-              // Check PREVIOUS line for product name (name above price format)
-              if (i > 0) {
-                const prevLine = lines[i - 1].trim();
-                const prevLineLower = prevLine.toLowerCase();
-                
-                // Check if previous line is a product name (not already added)
-                // Also check if it's an EAN + product line that we haven't processed yet
-                const prevEanMatch = prevLine.match(/^\s*\d{8,13}\s+(.+)/);
-                if (prevEanMatch) {
-                  const productName = prevEanMatch[1].trim();
-                  if (productName && productName.match(/[a-zA-Z]{3,}/) && 
-                      !itemLines.some(il => il.trim() === productName)) {
-                    itemLines.push(productName);
-                  }
-                } else if (prevLine && 
-                    !prevLine.match(/\d+[,\.]\d{2}\s*€?\s*[A-Z]?\*?\s*$/i) && // No price at end
-                    !prevLine.match(/^\d{8,13}/) && // Not an EAN code line
-                    !prevLineLower.includes('summe') && 
-                    !prevLineLower.includes('menge') && 
-                    !prevLineLower.includes('artikel') &&
-                    !prevLineLower.includes('preis') &&
-                    prevLine.length > 2 &&
-                    prevLine.match(/[a-zA-Z]{3,}/) && // Has at least 3 letters
-                    !itemLines.some(il => il.trim() === prevLine)) { // Not already added
-                  itemLines.push('  ' + prevLine); // Indent product name
-                }
-              }
-              
-              // Extract just the price and quantity info from the line
-              const priceExtract = line.match(/(\d+\s+ST)?\s*([A-Z])?\s*(\d+[,\.]\d{2})\s*€?\s*([A-Z])?\s*$/i);
-              if (priceExtract) {
-                const qty = priceExtract[1] ? priceExtract[1].toLowerCase() + ' ' : '';
-                const price = priceExtract[3];
-                itemLines.push(`    ${qty}${price}`);
-              } else {
-                // Fallback: Add the whole line
-                itemLines.push(line);
-              }
-              
-              // Check NEXT line for product name (name below price format)
-              if (i + 1 < lines.length) {
-                const nextLine = lines[i + 1].trim();
-                const nextLineLower = nextLine.toLowerCase();
-                
-                // Check if next line is EAN + product
-                const nextEanMatch = nextLine.match(/^\s*\d{8,13}\s+(.+)/);
-                if (nextEanMatch) {
-                  // This is the next item, don't add it here
-                  continue;
-                }
-                
-                // Add next line if it's a product name (no price, not empty, not a section marker)
-                if (nextLine && 
-                    !nextLine.match(/\d+[,\.]\d{2}\s*€?\s*[A-Z]?\s*$/i) && // No price at end
-                    !nextLine.match(/^\d{8,13}/) && // Not an EAN line
-                    !nextLineLower.includes('summe') && 
-                    !nextLineLower.includes('zu zahlen') &&
-                    !nextLineLower.includes('kundenbeleg') &&
-                    !nextLineLower.includes('datum:') &&
-                    !nextLineLower.includes('uhrzeit:') &&
-                    !nextLineLower.includes('beleg-nr') &&
-                    !nextLineLower.includes('posten:') &&
-                    nextLine.length > 2 &&
-                    nextLine.match(/[a-zA-Z]{3,}/)) { // Has at least 3 letters (product name)
-                  itemLines.push('  ' + nextLine); // Indent product name for clarity
-                  i++; // Skip next line since we already processed it
-                }
-              }
-            }
-            // Include detail lines (like weight/quantity info)
-            else if (line.match(/\d+\s*Stk\s*x/i) ||
-                     line.match(/\d+[,\.]\d+\s*(kg|g|l|ml|m2|m²)/i)) {
-              itemLines.push('  ' + line); // Indent detail lines
-            }
-            // Collect lines that might be product names (will be added when price line is found)
-            else if (line.match(/^\s*\d+\s+[Ss]tk\s+/i) || // Lines starting with quantity (e.g., "1 Stk Laugenecke")
-                     (line.match(/[a-zA-Z]{5,}/) && !line.match(/\d{8,}/))) { // Text lines without EAN codes
-              // Don't add here, will be picked up by previous/next line check above
-              continue;
-            }
-          }
-        }
-        
-        // Normalize price alignment - make prices right-aligned
-        if (itemLines.length > 0) {
-          itemLines = this.normalizePriceAlignment(itemLines);
-        }
-        
-        // Build the comment
-        if (merchantLines.length > 0) {
-          comment = merchantLines.join('\n') + '\n' + '---\n';
-        }
-        
-        if (itemLines.length > 0) {
-          comment += itemLines.join('\n');
-        }
-      }
-      
-      // Fallback: if OCR text parsing didn't work, use structured items
-      if (!comment || comment.trim().length < 10) {
-        comment = '';
-        
-        // Add merchant info
-        if (receipt.merchant_name) {
-          comment += receipt.merchant_name;
-          if (receipt.merchant_address) {
-            comment += '\n' + receipt.merchant_address;
-          }
-          comment += '\n';
-        }
-        
-        // Add items from structured data
-        if (receipt.items && receipt.items.length > 0) {
-          const purchaseItems = receipt.items.filter(item => {
-            if (!item.description) return false;
-            const desc = item.description.toLowerCase().trim();
-            if (desc.length < 3) return false;
-            if (desc.match(/^(stk|x|kg|g|l|ml)\s*x?$/i)) return false;
-            if (desc.includes('kreditkarte') || desc.includes('mastercard') || 
-                desc.includes('geg.') || desc.includes('summe') || desc.includes('leergut')) return false;
-            if (item.amount <= 0) return false;
-            return true;
-          });
-          
-          purchaseItems.forEach(item => {
-            let line = item.description;
-            if (item.amount !== null && item.amount !== undefined) {
-              line += ' ' + item.amount.toFixed(2);
-            }
-            if (item.flags && item.flags.trim()) {
-              line += ' ' + item.flags.trim();
-            }
-            comment += line + '\n';
-          });
-        }
-      }
-
-      AddComponent.commentTextField = comment.trim();
-      
     } catch (error) {
       console.error("Error recognizing image:", error);
       this.isLoading = false;
       this.isError = true;
-      // Only set generic error if no specific error was already set
       if (!this.errorLable) {
         this.errorLable = error instanceof Error ? error.message : "Error processing receipt";
       }
@@ -633,92 +209,6 @@ export class AddComponent extends BaseAddComponent {
       u8arr[n] = bstr.charCodeAt(n);
     }
     return new Blob([u8arr], { type: mime });
-  }
-
-  /**
-   * Extracts time from OCR text
-   * Searches for common time patterns like "18:18:09", "09:31:48", "18:18", etc.
-   * Returns time in HH:MM format (hours and minutes only)
-   */
-  extractTimeFromOCR(ocrText: string): string | null {
-    const lines = ocrText.split('\n');
-    
-    for (const line of lines) {
-      const lowerLine = line.toLowerCase();
-      
-      // Look for lines with "uhrzeit:", "zeit:", "time:" markers
-      if (lowerLine.includes('uhrzeit:') || lowerLine.includes('zeit:') || lowerLine.includes('time:')) {
-        // Extract time after marker: "Uhrzeit: 18:18:09 Uhr" or "Zeit: 09:31"
-        const timeMatch = line.match(/(\d{1,2}):(\d{2})(?::(\d{2}))?/);
-        if (timeMatch) {
-          const hours = timeMatch[1].padStart(2, '0');
-          const minutes = timeMatch[2];
-          return `${hours}:${minutes}`;
-        }
-      }
-      
-      // Look for standalone time patterns (HH:MM:SS or HH:MM format)
-      // Must be reasonable time (00-23 hours, 00-59 minutes)
-      const timePattern = line.match(/\b(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(?:Uhr|uhr)?\b/);
-      if (timePattern) {
-        const hours = parseInt(timePattern[1], 10);
-        const minutes = parseInt(timePattern[2], 10);
-        
-        // Validate time range
-        if (hours >= 0 && hours <= 23 && minutes >= 0 && minutes <= 59) {
-          const hoursStr = hours.toString().padStart(2, '0');
-          const minutesStr = minutes.toString().padStart(2, '0');
-          return `${hoursStr}:${minutesStr}`;
-        }
-      }
-    }
-    
-    return null; // No valid time found
-  }
-
-  /**
-   * Normalizes price alignment in item lines
-   * Makes all prices right-aligned by adding spaces before the price
-   */
-  normalizePriceAlignment(itemLines: string[]): string[] {
-    const priceLines: { index: number; line: string; beforePrice: string; price: string }[] = [];
-    
-    // Identify all lines with prices and extract price parts
-    itemLines.forEach((line, index) => {
-      // Match price at end: "4007123560059 9.99 A" or "4006559394283                    39,99 A"
-      const priceMatch = line.match(/^(.+?)(\s+)(\d+[,\.]\d{2}\s*€?\s*[A-Z]\s*)$/i);
-      if (priceMatch) {
-        priceLines.push({
-          index: index,
-          line: line,
-          beforePrice: priceMatch[1],
-          price: priceMatch[3]
-        });
-      }
-    });
-    
-    // Find the longest line (to use as reference for padding)
-    let maxLength = 0;
-    priceLines.forEach(pl => {
-      const totalLength = pl.beforePrice.length + pl.price.length;
-      if (totalLength > maxLength) {
-        maxLength = totalLength;
-      }
-    });
-    
-    // Use a mobile-friendly target length (30-35 chars works well on 390px+ screens)
-    // For 375px screens, text may wrap but will still be readable
-    const targetLength = Math.max(maxLength, 32);
-    
-    // Rebuild lines with normalized spacing
-    const result = [...itemLines];
-    priceLines.forEach(pl => {
-      const spacesNeeded = targetLength - pl.beforePrice.length - pl.price.length;
-      const padding = ' '.repeat(Math.max(1, spacesNeeded)); // At least 1 space
-      result[pl.index] = pl.beforePrice + padding + pl.price;
-    });
-    
-    return result;
   }
 
   async captureImage() {
