@@ -1,6 +1,6 @@
 npx lint-staged
 
 # Secret scanning — skip if gitleaks is not installed
-if command -v gitleaks &> /dev/null; then
+if command -v gitleaks >/dev/null 2>&1; then
   gitleaks git --pre-commit --staged --verbose
 fi
