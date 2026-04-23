@@ -32,12 +32,13 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
 import { AppNumberPipe } from 'src/app/shared/pipes/app-number.pipe';
+import { FinancialStatementComponent } from './statement/financial-statement.component';
 
 
 @Component({
   selector: 'app-stats',
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslateModule, AppNumberPipe],
+  imports: [CommonModule, FormsModule, TranslateModule, FinancialStatementComponent],
   templateUrl: './stats.component.html',
   styleUrls: ['./stats.component.css', '../app.component.css', '../shared/styles/filter-styles.css']
 })

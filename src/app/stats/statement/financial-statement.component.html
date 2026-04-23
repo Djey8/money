@@ -1,0 +1,274 @@
+<div class="statement" aria-labelledby="statement-title">
+  <!-- Report header -->
+  <header class="statement-header">
+    <div class="statement-masthead">
+      <div class="statement-brand">
+        <div class="statement-brand-mark">☷</div>
+        <div>
+          <div class="statement-brand-label">{{ 'Statement.reportType' | translate }}</div>
+          <h1 id="statement-title" class="statement-title">{{ 'Stats.financialStatement' | translate }}</h1>
+        </div>
+      </div>
+      <button class="statement-print-btn" type="button" (click)="print()" [attr.aria-label]="'Statement.print' | translate">
+        <span aria-hidden="true">⎙</span> {{ 'Statement.print' | translate }}
+      </button>
+    </div>
+
+    <!-- Period selector -->
+    <div class="period-toolbar" role="toolbar" [attr.aria-label]="'Statement.periodSelector' | translate">
+      <div class="period-types" role="tablist">
+        <button
+          *ngFor="let opt of periodTypes"
+          type="button"
+          class="period-type-btn"
+          role="tab"
+          [class.active]="selectedType === opt.type"
+          [attr.aria-selected]="selectedType === opt.type"
+          (click)="selectType(opt.type)">
+          {{ opt.labelKey | translate }}
+        </button>
+      </div>
+      <div class="period-nav">
+        <button type="button" class="period-nav-btn" (click)="prev()" [attr.aria-label]="'Statement.prevPeriod' | translate">‹</button>
+        <div class="period-label-wrap">
+          <div class="period-label">{{ periodLabel }}</div>
+          <div class="period-range">{{ dateRangeLabel }}</div>
+        </div>
+        <button type="button" class="period-nav-btn" (click)="next()" [disabled]="selectedIndex >= 0" [attr.aria-label]="'Statement.nextPeriod' | translate">›</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Summary cards -->
+  <section class="summary-cards" *ngIf="statement" aria-label="Summary">
+    <div class="summary-card">
+      <div class="summary-card-label">{{ 'Statement.totalIncome' | translate }}</div>
+      <div class="summary-card-value">{{ statement.income.totalIncome.current | appNumber }} <span class="summary-card-unit">{{ currency }}</span></div>
+      <div class="summary-card-change" [ngClass]="trendClass(statement.income.totalIncome.change)">
+        <span aria-hidden="true">{{ trendArrow(statement.income.totalIncome.change) }}</span>
+        {{ statement.income.totalIncome.change | appNumber }} %
+        <span class="summary-card-change-hint">{{ 'Statement.vsPrevious' | translate }}</span>
+      </div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-card-label">{{ 'Statement.totalExpenses' | translate }}</div>
+      <div class="summary-card-value">{{ statement.income.totalExpenses.current | appNumber }} <span class="summary-card-unit">{{ currency }}</span></div>
+      <div class="summary-card-change" [ngClass]="trendClass(statement.income.totalExpenses.change, true)">
+        <span aria-hidden="true">{{ trendArrow(statement.income.totalExpenses.change) }}</span>
+        {{ statement.income.totalExpenses.change | appNumber }} %
+        <span class="summary-card-change-hint">{{ 'Statement.vsPrevious' | translate }}</span>
+      </div>
+    </div>
+    <div class="summary-card" [class.summary-card--positive]="statement.income.netResult.current >= 0" [class.summary-card--negative]="statement.income.netResult.current < 0">
+      <div class="summary-card-label">{{ 'Statement.netResult' | translate }}</div>
+      <div class="summary-card-value">{{ statement.income.netResult.current | appNumber }} <span class="summary-card-unit">{{ currency }}</span></div>
+      <div class="summary-card-change" [ngClass]="trendClass(statement.income.netResult.change)">
+        <span aria-hidden="true">{{ trendArrow(statement.income.netResult.change) }}</span>
+        {{ statement.income.netResult.change | appNumber }} %
+        <span class="summary-card-change-hint">{{ 'Statement.vsPrevious' | translate }}</span>
+      </div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-card-label">{{ 'Statement.savingsRate' | translate }}</div>
+      <div class="summary-card-value">{{ statement.income.savingsRate.current | appNumber }} <span class="summary-card-unit">%</span></div>
+      <div class="summary-card-change" [ngClass]="trendClass(statement.income.savingsRate.change)">
+        <span aria-hidden="true">{{ trendArrow(statement.income.savingsRate.change) }}</span>
+        {{ statement.income.savingsRate.change | appNumber }} %
+        <span class="summary-card-change-hint">{{ 'Statement.vsPrevious' | translate }}</span>
+      </div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-card-label">{{ 'Statement.netWorth' | translate }}</div>
+      <div class="summary-card-value">{{ statement.balance.netWorth | appNumber }} <span class="summary-card-unit">{{ currency }}</span></div>
+      <div class="summary-card-change summary-card-note">{{ 'Statement.currentSnapshot' | translate }}</div>
+    </div>
+  </section>
+
+  <!-- Income Statement -->
+  <section class="stmt-section" *ngIf="statement">
+    <h2 class="stmt-section-title">{{ 'Statement.incomeStatement' | translate }}</h2>
+    <div class="stmt-section-subtitle">{{ 'Statement.incomeStatementSubtitle' | translate }}</div>
+    <div class="table-wrap">
+      <table class="stmt-table">
+        <thead>
+          <tr>
+            <th scope="col" class="col-label">&nbsp;</th>
+            <th scope="col" class="col-num">{{ periodLabel }}</th>
+            <th scope="col" class="col-num">{{ statement.previousPeriod.label }}</th>
+            <th scope="col" class="col-num">{{ 'Statement.change' | translate }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="stmt-group-header"><td colspan="4">{{ 'Statement.income' | translate }}</td></tr>
+          <tr *ngFor="let row of [statement.income.revenues, statement.income.interests, statement.income.propertyIncome, statement.income.otherIncome]; trackBy: trackByLabel">
+            <th scope="row" class="col-label">{{ row.label | translate }}</th>
+            <td class="col-num">{{ row.current | appNumber }}</td>
+            <td class="col-num col-muted">{{ row.previous | appNumber }}</td>
+            <td class="col-num" [ngClass]="trendClass(row.change)">{{ row.change | appNumber }} %</td>
+          </tr>
+          <tr class="stmt-total-row">
+            <th scope="row" class="col-label">{{ 'Statement.totalIncome' | translate }}</th>
+            <td class="col-num">{{ statement.income.totalIncome.current | appNumber }} {{ currency }}</td>
+            <td class="col-num col-muted">{{ statement.income.totalIncome.previous | appNumber }} {{ currency }}</td>
+            <td class="col-num" [ngClass]="trendClass(statement.income.totalIncome.change)">{{ statement.income.totalIncome.change | appNumber }} %</td>
+          </tr>
+
+          <tr class="stmt-group-header"><td colspan="4">{{ 'Statement.expenses' | translate }}</td></tr>
+          <tr *ngFor="let row of statement.income.expensesByAccount; trackBy: trackByLabel">
+            <th scope="row" class="col-label">{{ row.label | translate }}</th>
+            <td class="col-num">{{ row.current | appNumber }}</td>
+            <td class="col-num col-muted">{{ row.previous | appNumber }}</td>
+            <td class="col-num" [ngClass]="trendClass(row.change, true)">{{ row.change | appNumber }} %</td>
+          </tr>
+          <tr class="stmt-total-row">
+            <th scope="row" class="col-label">{{ 'Statement.totalExpenses' | translate }}</th>
+            <td class="col-num">{{ statement.income.totalExpenses.current | appNumber }} {{ currency }}</td>
+            <td class="col-num col-muted">{{ statement.income.totalExpenses.previous | appNumber }} {{ currency }}</td>
+            <td class="col-num" [ngClass]="trendClass(statement.income.totalExpenses.change, true)">{{ statement.income.totalExpenses.change | appNumber }} %</td>
+          </tr>
+
+          <tr class="stmt-net-row" [class.stmt-net-negative]="statement.income.netResult.current < 0">
+            <th scope="row" class="col-label">{{ 'Statement.netResult' | translate }}</th>
+            <td class="col-num">{{ statement.income.netResult.current | appNumber }} {{ currency }}</td>
+            <td class="col-num col-muted">{{ statement.income.netResult.previous | appNumber }} {{ currency }}</td>
+            <td class="col-num" [ngClass]="trendClass(statement.income.netResult.change)">{{ statement.income.netResult.change | appNumber }} %</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Cashflow Statement -->
+  <section class="stmt-section" *ngIf="statement">
+    <h2 class="stmt-section-title">{{ 'Statement.cashflowStatement' | translate }}</h2>
+    <div class="stmt-section-subtitle">{{ 'Statement.cashflowStatementSubtitle' | translate }}</div>
+    <div class="table-wrap">
+      <table class="stmt-table">
+        <thead>
+          <tr>
+            <th scope="col" class="col-label">&nbsp;</th>
+            <th scope="col" class="col-num">{{ periodLabel }}</th>
+            <th scope="col" class="col-num">{{ statement.previousPeriod.label }}</th>
+            <th scope="col" class="col-num">{{ 'Statement.change' | translate }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of [statement.cashflow.operating, statement.cashflow.investing, statement.cashflow.financing, statement.cashflow.mojo]; trackBy: trackByLabel">
+            <th scope="row" class="col-label">{{ row.label | translate }}</th>
+            <td class="col-num">{{ row.current | appNumber }} {{ currency }}</td>
+            <td class="col-num col-muted">{{ row.previous | appNumber }} {{ currency }}</td>
+            <td class="col-num" [ngClass]="trendClass(row.change)">{{ row.change | appNumber }} %</td>
+          </tr>
+          <tr class="stmt-net-row" [class.stmt-net-negative]="statement.cashflow.netCashflow.current < 0">
+            <th scope="row" class="col-label">{{ 'Statement.netCashflow' | translate }}</th>
+            <td class="col-num">{{ statement.cashflow.netCashflow.current | appNumber }} {{ currency }}</td>
+            <td class="col-num col-muted">{{ statement.cashflow.netCashflow.previous | appNumber }} {{ currency }}</td>
+            <td class="col-num" [ngClass]="trendClass(statement.cashflow.netCashflow.change)">{{ statement.cashflow.netCashflow.change | appNumber }} %</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Balance Sheet -->
+  <section class="stmt-section" *ngIf="statement">
+    <h2 class="stmt-section-title">{{ 'Statement.balanceSheet' | translate }}</h2>
+    <div class="stmt-section-subtitle">{{ statement.balance.note | translate }}</div>
+    <div class="balance-grid">
+      <div class="balance-col">
+        <h3 class="balance-col-title">{{ 'Statement.assets' | translate }}</h3>
+        <div class="balance-row"><span>{{ 'Statement.cashAccounts' | translate }}</span><span class="col-num">{{ statement.balance.assets.cash | appNumber }} {{ currency }}</span></div>
+        <div class="balance-row"><span>{{ 'Statement.shares' | translate }}</span><span class="col-num">{{ statement.balance.assets.shares | appNumber }} {{ currency }}</span></div>
+        <div class="balance-row"><span>{{ 'Balance.Investments' | translate }}</span><span class="col-num">{{ statement.balance.assets.investments | appNumber }} {{ currency }}</span></div>
+        <div class="balance-row"><span>{{ 'Statement.properties' | translate }}</span><span class="col-num">{{ statement.balance.assets.properties | appNumber }} {{ currency }}</span></div>
+        <div class="balance-row balance-total"><span>{{ 'Statement.totalAssets' | translate }}</span><span class="col-num">{{ statement.balance.assets.total | appNumber }} {{ currency }}</span></div>
+      </div>
+      <div class="balance-col">
+        <h3 class="balance-col-title">{{ 'Statement.liabilities' | translate }}</h3>
+        <div class="balance-row"><span>{{ 'Statement.debts' | translate }}</span><span class="col-num">{{ statement.balance.liabilities.debts | appNumber }} {{ currency }}</span></div>
+        <div class="balance-row balance-total"><span>{{ 'Statement.totalLiabilities' | translate }}</span><span class="col-num">{{ statement.balance.liabilities.total | appNumber }} {{ currency }}</span></div>
+        <h3 class="balance-col-title balance-col-title--spaced">{{ 'Statement.equity' | translate }}</h3>
+        <div class="balance-row balance-equity" [class.balance-negative]="statement.balance.equity < 0"><span>{{ 'Statement.netWorth' | translate }}</span><span class="col-num">{{ statement.balance.equity | appNumber }} {{ currency }}</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Key Ratios -->
+  <section class="stmt-section" *ngIf="statement">
+    <h2 class="stmt-section-title">{{ 'Statement.keyRatios' | translate }}</h2>
+    <div class="stmt-section-subtitle">{{ 'Statement.keyRatiosSubtitle' | translate }}</div>
+    <div class="ratio-grid">
+      <div class="ratio-card" *ngFor="let meta of ratioMeta">
+        <div class="ratio-card-header">
+          <div class="ratio-card-label">{{ meta.labelKey | translate }}</div>
+          <div class="ratio-card-change" [ngClass]="trendClass(ratioChange(meta), meta.lowerIsBetter)">
+            <span aria-hidden="true">{{ trendArrow(ratioChange(meta)) }}</span>
+            {{ ratioChange(meta) | appNumber }} %
+          </div>
+        </div>
+        <div class="ratio-card-value" [ngClass]="ratioHealthClass(meta)">
+          {{ statement.ratios[meta.key] | appNumber }}<span class="ratio-card-unit">{{ meta.unit }}</span>
+        </div>
+        <div class="ratio-card-formula">{{ meta.formulaKey | translate }}</div>
+        <div class="ratio-card-hint">{{ meta.healthyKey | translate }}</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Top categories -->
+  <section class="stmt-section top-lists" *ngIf="statement">
+    <div class="top-list">
+      <h2 class="stmt-section-title">{{ 'Statement.topExpenses' | translate }}</h2>
+      <div class="stmt-section-subtitle">{{ 'Statement.topExpensesSubtitle' | translate }}</div>
+      <table class="stmt-table" *ngIf="statement.topExpenses.length; else noExpensesTpl">
+        <thead>
+          <tr>
+            <th scope="col" class="col-label">{{ 'Cashflow.category' | translate }}</th>
+            <th scope="col" class="col-num">{{ 'Cashflow.amount' | translate }}</th>
+            <th scope="col" class="col-num">{{ 'Statement.share' | translate }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of statement.topExpenses; trackBy: trackByCategory">
+            <th scope="row" class="col-label">{{ row.category }}</th>
+            <td class="col-num">{{ row.amount | appNumber }} {{ currency }}</td>
+            <td class="col-num">
+              <div class="share-bar"><div class="share-bar-fill share-bar-fill--expense" [style.width.%]="row.percent"></div></div>
+              <span class="share-bar-label">{{ row.percent | appNumber }} %</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <ng-template #noExpensesTpl><div class="empty-state">{{ 'Statement.noData' | translate }}</div></ng-template>
+    </div>
+
+    <div class="top-list">
+      <h2 class="stmt-section-title">{{ 'Statement.topIncomes' | translate }}</h2>
+      <div class="stmt-section-subtitle">{{ 'Statement.topIncomesSubtitle' | translate }}</div>
+      <table class="stmt-table" *ngIf="statement.topIncomes.length; else noIncomesTpl">
+        <thead>
+          <tr>
+            <th scope="col" class="col-label">{{ 'Cashflow.category' | translate }}</th>
+            <th scope="col" class="col-num">{{ 'Cashflow.amount' | translate }}</th>
+            <th scope="col" class="col-num">{{ 'Statement.share' | translate }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of statement.topIncomes; trackBy: trackByCategory">
+            <th scope="row" class="col-label">{{ row.category }}</th>
+            <td class="col-num">{{ row.amount | appNumber }} {{ currency }}</td>
+            <td class="col-num">
+              <div class="share-bar"><div class="share-bar-fill share-bar-fill--income" [style.width.%]="row.percent"></div></div>
+              <span class="share-bar-label">{{ row.percent | appNumber }} %</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <ng-template #noIncomesTpl><div class="empty-state">{{ 'Statement.noData' | translate }}</div></ng-template>
+    </div>
+  </section>
+
+  <footer class="statement-footer" *ngIf="statement">
+    <span>{{ 'Statement.reportFooter' | translate }}</span>
+  </footer>
+</div>
