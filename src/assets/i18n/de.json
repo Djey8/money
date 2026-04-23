@@ -878,6 +878,8 @@
     "Registration.Register": "Registrieren",
     "Registration.Password": "Passwort",
     "Registration.submit": "bestätigen",
+    "Registration.Loading": "Registrierung…",
+    "Registration.LoadingSignIn": "Anmeldung…",
     "Registration.SignIn": "Anmelden",
     "Registration.PasswordHint": "Min. 8 Zeichen, mit Groß-, Kleinbuchstaben und einer Zahl",
     "Registration.RuleMinLength": "Mindestens 8 Zeichen",

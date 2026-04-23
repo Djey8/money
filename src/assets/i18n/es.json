@@ -861,6 +861,8 @@
     "Registration.Register": "Registrar",
     "Registration.Password": "Contraseña",
     "Registration.submit": "enviar",
+    "Registration.Loading": "Registrando…",
+    "Registration.LoadingSignIn": "Iniciando sesión…",
     "Registration.SignIn": "Iniciar sesión",
     "Registration.PasswordHint": "Mín. 8 caracteres, con mayúscula, minúscula y un número",
     "Registration.RuleMinLength": "Al menos 8 caracteres",

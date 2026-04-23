@@ -888,6 +888,8 @@
     "Registration.Register": "注册",
     "Registration.Password": "密码",
     "Registration.submit": "提交",
+    "Registration.Loading": "注册中…",
+    "Registration.LoadingSignIn": "登录中…",
     "Registration.SignIn": "登录",
     "Registration.PasswordHint": "至少8个字符，包含大写、小写字母和数字",
     "Registration.RuleMinLength": "至少8个字符",
