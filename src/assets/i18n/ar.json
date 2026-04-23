@@ -861,6 +861,8 @@
     "Registration.Register": "تسجيل",
     "Registration.Password": "كلمة المرور",
     "Registration.submit": "إرسال",
+    "Registration.Loading": "جارٍ التسجيل…",
+    "Registration.LoadingSignIn": "جارٍ تسجيل الدخول…",
     "Registration.SignIn": "تسجيل الدخول",
     "Registration.PasswordHint": "8 أحرف على الأقل، مع حرف كبير وصغير ورقم",
     "Registration.RuleMinLength": "8 أحرف على الأقل",

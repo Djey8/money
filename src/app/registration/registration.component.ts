@@ -38,6 +38,7 @@ export class RegistrationComponent {
 
   isError = false;
   errorMessageLable = "Error";
+  isLoading = false;
 
   //Textfield Variables
   usernameTextField = '';
@@ -189,6 +190,7 @@ export class RegistrationComponent {
               console.error("Error writing initial data:", error);
               this.isError = true;
               this.errorMessageLable = "Failed to initialize user data";
+              this.isLoading = false;
             },
             complete: () => {
               ProfileComponent.username = this.usernameTextField;
@@ -218,6 +220,7 @@ export class RegistrationComponent {
         .catch((error) => {
           this.isError = true;
           this.errorMessageLable = this.errorMapper.toUserMessage(error, 'Registration failed');
+          this.isLoading = false;
           console.error('Selfhosted registration error:', error);
           
           // Log failed registration
@@ -265,6 +268,7 @@ export class RegistrationComponent {
         .catch((error) => {
           this.isError = true;
           this.errorMessageLable = this.errorMapper.toUserMessage(error);
+          this.isLoading = false;
           // Handle the error, display an error message, etc.
         });
     }
@@ -350,6 +354,7 @@ export class RegistrationComponent {
           
           this.isError = true;
           this.errorMessageLable = this.errorMapper.toUserMessage(error, 'Login failed');
+          this.isLoading = false;
           console.error('Selfhosted login error:', error);
         });
     } else {
@@ -416,6 +421,7 @@ export class RegistrationComponent {
           
           this.isError = true;
           this.errorMessageLable = this.errorMapper.toUserMessage(error, 'Login failed');
+          this.isLoading = false;
         });
     }
   }
@@ -455,6 +461,7 @@ export class RegistrationComponent {
     } else {
       this.isError = false;
       this.errorMessageLable = "";
+      this.isLoading = true;
       this.SignUp(this.emailTextField, this.passwordTextField);
     }
   }
@@ -473,6 +480,7 @@ export class RegistrationComponent {
       // Keine Fehler -> Try to Login User
       this.isError = false;
       this.errorMessageLable = "";
+      this.isLoading = true;
       this.SignIn();
     }  
   }
