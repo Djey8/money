@@ -1,5 +1,6 @@
-import { Component } from '@angular/core';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
+import { Subscription } from 'rxjs';
 import { AppStateService } from 'src/app/shared/services/app-state.service';
 import { CommonModule } from '@angular/common';
 import { TranslateModule } from '@ngx-translate/core';
@@ -22,7 +23,7 @@ let MenuComponent: any; setTimeout(() => import('src/app/panels/menu/menu.compon
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.css', '../../app.component.css']
 })
-export class HomeComponent {
+export class HomeComponent implements OnInit, OnDestroy {
   
   // Value variables 
   static dailyValue = 0;
@@ -39,14 +40,31 @@ export class HomeComponent {
   public settingsReference = SettingsComponent;
   public appState = AppStateService.instance;
 
+  private txSub?: Subscription;
+
   /**
    * Constructs a new HomeComponent.
    * @param router - The router service.
    */
-  constructor(private router:Router){
+  constructor(private router:Router, private cdr: ChangeDetectorRef){
     HomeComponent.allTransactions = AppStateService.instance.allTransactions;
     HomeComponent.getAmounts();
 
+  }
+
+  ngOnInit(): void {
+    // Refresh displayed amounts whenever transactions change
+    // (e.g. subscription auto-generated transactions after login,
+    // manual refresh from subscriptions page, or cashflow game edits).
+    this.txSub = AppStateService.instance.transactionsUpdated$.subscribe(() => {
+      HomeComponent.allTransactions = AppStateService.instance.allTransactions;
+      HomeComponent.getAmounts();
+      this.cdr.markForCheck();
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.txSub?.unsubscribe();
   }
 
   static getAmounts(){
