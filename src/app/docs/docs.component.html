@@ -1,0 +1,35 @@
+<!-- Toolbar -->
+<div class="toolbar" role="banner">
+  <img id="profile-pic" width="40" alt="Profile Logo" src="../assets/profile-blank.jpg"
+    role="button" tabindex="0" aria-label="Open profile" (click)="appReference.clickProfile()" (keydown.enter)="appReference.clickProfile()" />
+  <a routerLink="/" class="logo">Money<span>App</span></a>
+  <div class="spacer"></div>
+  <input type="checkbox" id="nav-toggle" class="nav-toggle" aria-label="Toggle navigation">
+  <label for="nav-toggle" class="nav-toggle-label" aria-hidden="true"><span></span></label>
+  <label for="nav-toggle" class="nav-backdrop" aria-hidden="true"></label>
+  <ul class="nav-links">
+    <li><a routerLink="/" (click)="closeNav()">{{ 'Landing.nav.howItWorks' | translate }}</a></li>
+    <li><a routerLink="/changelog" (click)="closeNav()">{{ 'Landing.nav.changelog' | translate }}</a></li>
+    <li><a routerLink="/docs" class="active-nav" (click)="closeNav()">{{ 'Landing.nav.docs' | translate }}</a></li>
+    <li><a href="javascript:void(0)" (click)="closeNav(); navigateToSection('get-started')">{{ 'Landing.nav.getStarted' | translate }}</a></li>
+    <li><button class="nav-demo-btn" (click)="closeNav(); launchDemo()">{{ 'Landing.nav.demo' | translate }}</button></li>
+  </ul>
+</div>
+
+<div class="docs-page">
+
+  <header class="docs-header">
+    <h1 class="docs-title">{{ 'Docs.title' | translate }}</h1>
+    <p class="docs-subtitle">{{ 'Docs.subtitle' | translate }}</p>
+  </header>
+
+  <div class="docs-grid">
+    <a *ngFor="let topic of topics" [routerLink]="topic.route" class="docs-card">
+      <span class="docs-card-icon">{{ topic.icon }}</span>
+      <h2 class="docs-card-title">{{ 'Docs.topics.' + topic.id + '.title' | translate }}</h2>
+      <p class="docs-card-desc">{{ 'Docs.topics.' + topic.id + '.desc' | translate }}</p>
+      <span class="docs-card-arrow">→</span>
+    </a>
+  </div>
+
+</div>

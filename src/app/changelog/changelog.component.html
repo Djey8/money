@@ -10,6 +10,7 @@
   <ul class="nav-links">
     <li><a routerLink="/" (click)="closeNav()">{{ 'Landing.nav.howItWorks' | translate }}</a></li>
     <li><a routerLink="/changelog" class="active-nav" (click)="closeNav()">{{ 'Landing.nav.changelog' | translate }}</a></li>
+    <li><a routerLink="/docs" (click)="closeNav()">{{ 'Landing.nav.docs' | translate }}</a></li>
     <li><a href="javascript:void(0)" (click)="closeNav(); navigateToSection('get-started')">{{ 'Landing.nav.getStarted' | translate }}</a></li>
     <li><button class="nav-demo-btn" (click)="closeNav(); launchDemo()">{{ 'Landing.nav.demo' | translate }}</button></li>
   </ul>

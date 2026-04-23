@@ -11,6 +11,7 @@
   <ul class="nav-links">
     <li><a href="#how-it-works" (click)="closeNav()">{{ 'Landing.nav.howItWorks' | translate }}</a></li>
     <li><a routerLink="/changelog" (click)="closeNav()">{{ 'Landing.nav.changelog' | translate }}</a></li>
+    <li><a routerLink="/docs" (click)="closeNav()">{{ 'Landing.nav.docs' | translate }}</a></li>
     <li><a href="#get-started" (click)="closeNav()">{{ 'Landing.nav.getStarted' | translate }}</a></li>
     <li><button class="nav-demo-btn" (click)="closeNav(); launchDemo()">{{ 'Landing.nav.demo' | translate }}</button></li>
   </ul>
@@ -1586,7 +1587,7 @@ Return updated emergency as JSON matching the FireEmergency schema.</pre>
       <div class="deploy-options">
         <div class="deploy-card deploy-card--self-host">
           <h3>{{ 'Landing.cta.selfHosted' | translate }}</h3>
-          <p>{{ 'Landing.cta.selfHostedDesc' | translate }}</p>
+          <p>{{ 'Landing.cta.selfHostedDesc' | translate }} <a routerLink="/docs/selfhosted" class="deploy-guide-link">{{ 'Landing.cta.deployGuide' | translate }}</a></p>
           <code>git clone https://github.com/Djey8/money
 cd money
 docker compose up -d</code>

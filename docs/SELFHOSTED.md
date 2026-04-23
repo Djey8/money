@@ -115,12 +115,22 @@ docker load < money-backend.tar.gz
 
 ### 3. Configure secrets
 
-Edit the Kubernetes manifests with your credentials:
+All secrets live in `k8s/secrets.yaml` (gitignored). Copy the template and fill in real values — the manifests `couchdb.yaml` and `backend.yaml` already consume them via `secretKeyRef`, so you do **not** edit those files.
 
 ```bash
-vi k8s/couchdb.yaml    # COUCHDB_PASSWORD
-vi k8s/backend.yaml    # JWT_SECRET, COUCHDB_PASSWORD
+cp k8s/secrets.yaml.example k8s/secrets.yaml
+vi k8s/secrets.yaml    # JWT_SECRET, COUCHDB_PASSWORD, Grafana password
 ```
+
+Generate strong values:
+
+```bash
+openssl rand -base64 64                 # JWT_SECRET
+openssl rand -base64 30 | tr -d '/+='   # COUCHDB_PASSWORD
+openssl rand -base64 40                 # Grafana admin password
+```
+
+> The same values are used locally via `.env` (copied from `.env.example`) for Docker Compose runs. Keep the two in sync only if you share data between local and cluster.
 
 ### 4. Deploy
 
