@@ -19,14 +19,21 @@ This is the fastest path. One command, three containers.
 ### 1. Clone and configure
 
 ```bash
-git clone <repo-url> && cd money-temp
+git clone <repo-url> && cd money
 ```
 
-Edit `docker-compose.yml` — change these two values:
+Copy `.env.example` to `.env` and fill in real values — `docker-compose.yml` reads them via `${VAR:?...}` (it fails fast if anything is missing, so you do **not** edit the compose file itself):
 
-```yaml
-COUCHDB_PASSWORD=<strong-password>    # lines 10 + 26
-JWT_SECRET=<random-string-32-chars>   # line 27
+```bash
+cp .env.example .env
+```
+
+Minimum required:
+
+```bash
+JWT_SECRET=<random ≥32 chars>            # openssl rand -base64 64
+COUCHDB_PASSWORD=<strong password>       # openssl rand -base64 30 | tr -d '/+='
+GRAFANA_ADMIN_PASSWORD=<strong password> # only required when running the logging overlay
 ```
 
 ### 2. Start (minimal stack — recommended)
@@ -194,7 +201,7 @@ kubectl delete -f k8s/promtail.yaml
 kubectl delete -f k8s/loki.yaml
 ```
 
-Grafana is available on port 30300. Pre-built dashboards are in `grafana/dashboards/`:
+Grafana is available on port 30300. Pre-built dashboards ship as `ConfigMap`s in `k8s/grafana-dashboards.yaml` and `k8s/grafana-frontend-dashboard.yaml`:
 
 - System overview
 - Backend API performance
@@ -204,7 +211,7 @@ Grafana is available on port 30300. Pre-built dashboards are in `grafana/dashboa
 - User activity
 - Security monitoring
 
-Default Grafana credentials: `admin` / `admin`
+Grafana admin credentials are read from the `GRAFANA_ADMIN_PASSWORD` value in `k8s/secrets.yaml` (or `.env` for Docker Compose). Login as `admin` with that password.
 
 ---
 
