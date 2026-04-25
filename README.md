@@ -1,8 +1,6 @@
 # Money App
 
-![Tests](https://github.com/nicokluess/money/actions/workflows/test.yml/badge.svg?branch=main)
-
-Personal finance management application built with Angular. Tracks income, expenses, budgets, subscriptions, investments, and financial independence progress. Supports client-side AES encryption and multi-language UI (EN, DE, ES, FR, CN).
+Personal finance management application built with Angular. Tracks income, expenses, budgets, subscriptions, investments, and financial independence progress. Supports client-side AES encryption and multi-language UI (EN, DE, ES, FR, CN, AR).
 
 Runs in two modes:
 - **Firebase** (cloud) — Firebase Realtime Database + Firebase Auth. Default for development and hosted production.
@@ -41,7 +39,7 @@ Firebase  Express API ── CouchDB
 
 | Layer | Firebase Mode | Self-Hosted Mode |
 |-------|--------------|-----------------|
-| Frontend | Angular 15, Angular Material, D3.js | Same |
+| Frontend | Angular 19, Angular Material, D3.js | Same |
 | Auth | Firebase Auth | JWT (Express) |
 | Database | Firebase Realtime DB | CouchDB 3.3 |
 | Hosting | Firebase Hosting | Nginx (container) |
@@ -93,6 +91,3 @@ docker-compose.yml    One-command self-hosted deployment
 ## License
 
 Private
-
-ng build --configuration firebase
-npx http-server dist/money -p 4200
