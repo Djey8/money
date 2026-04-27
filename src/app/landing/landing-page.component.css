@@ -3189,6 +3189,17 @@ section {
   transform: translateY(-2px);
 }
 
+.deploy-guide-link {
+  color: var(--color-success);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.deploy-guide-link:hover {
+  color: #388E3C;
+}
+
 .btn-deploy--cloud {
   background: #fff;
   color: var(--color-primary-dark);

@@ -32,12 +32,13 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
 import { AppNumberPipe } from 'src/app/shared/pipes/app-number.pipe';
+import { FinancialStatementComponent } from './statement/financial-statement.component';
 
 
 @Component({
   selector: 'app-stats',
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslateModule, AppNumberPipe],
+  imports: [CommonModule, FormsModule, TranslateModule, FinancialStatementComponent],
   templateUrl: './stats.component.html',
   styleUrls: ['./stats.component.css', '../app.component.css', '../shared/styles/filter-styles.css']
 })
@@ -222,7 +223,16 @@ export class StatsComponent implements AfterViewInit, AfterViewChecked, OnDestro
 
   /** Modes that support chart filtering (all except BI which has its own filters) */
   static chartFilterModes = ['kpi', 'cashflow', 'category', 'daily', 'splurge', 'smile', 'fire', 'home', 'income', 'statement', 'histogram'];
-  static pageTitle: string = 'Stats.title'; // Dynamic page title: 'Stats.title' or 'Stats.biTitle'
+
+  /**
+   * Dynamic page title — derived from the active view flags.
+   * Statement mode wins over BI which wins over the default Statistics title.
+   */
+  static get pageTitle(): string {
+    if (StatsComponent.isStatment) return 'Stats.financialStatement';
+    if (StatsComponent.isBIDashboard) return 'Menu.bi';
+    return 'Stats.title';
+  }
   static translateService: TranslateService;
   static d3Service: D3VisualizationService;
   static currentInstance: StatsComponent | null = null;
@@ -613,7 +623,7 @@ export class StatsComponent implements AfterViewInit, AfterViewChecked, OnDestro
       // Reset BI dashboard flags
       StatsComponent.isBIDashboard = false;
       StatsComponent.activeAnalyticsLevel = 'deskriptive';
-      StatsComponent.pageTitle = 'Stats.title'; // Revert title to Statistics
+      // pageTitle is a derived getter — no need to assign it.
       
       // Trigger change detection to update the title in the view
       if (StatsComponent.currentInstance) {
