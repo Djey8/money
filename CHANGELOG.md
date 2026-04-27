@@ -1,3 +1,16 @@
+## [1.7.0] - 2026-04-27
+
+### Features
+- feat(auth): show spinner and disable buttons while login/register is in flight
+- feat(stats): redesign financial statement with period selector and key ratios
+- feat(docs): add in-app documentation hub with self-hosted setup guide
+
+### Bug Fixes
+- fix(backup): prevent CronJob pile-up with concurrency and deadline guards
+- fix(home): refresh home amounts when transactions are added (e.g. subscription auto-load after login)
+- fix(stats): derive page title from active view so it updates on switch
+- fix(selfhosted): add GitHub API and avatar CDN to CSP whitelist
+
 ## [1.6.7] - 2026-04-20
 
 ### Bug Fixes
