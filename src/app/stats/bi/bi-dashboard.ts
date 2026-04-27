@@ -37,7 +37,7 @@ export function createBIDashboard(dashboardNumber: number) {
   chartContainer.selectAll("*").remove();
   
   StatsComponent.isBIDashboard = true;
-  StatsComponent.pageTitle = 'Menu.bi'; // Change title to Business Intelligence
+  // pageTitle is a derived getter on StatsComponent — no need to assign it.
   
   // Trigger change detection to update the title in the view
   if (StatsComponent.currentInstance) {

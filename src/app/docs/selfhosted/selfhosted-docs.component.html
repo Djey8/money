@@ -1,0 +1,1223 @@
+<!-- Toolbar -->
+<div class="toolbar" role="banner">
+  <img id="profile-pic" width="40" alt="Profile Logo" src="../../assets/profile-blank.jpg"
+    role="button" tabindex="0" aria-label="Open profile" (click)="appReference.clickProfile()" (keydown.enter)="appReference.clickProfile()" />
+  <a routerLink="/" class="logo">Money<span>App</span></a>
+  <div class="spacer"></div>
+  <input type="checkbox" id="nav-toggle" class="nav-toggle" aria-label="Toggle navigation">
+  <label for="nav-toggle" class="nav-toggle-label" aria-hidden="true"><span></span></label>
+  <label for="nav-toggle" class="nav-backdrop" aria-hidden="true"></label>
+  <ul class="nav-links">
+    <li><a routerLink="/" (click)="closeNav()">{{ 'Landing.nav.howItWorks' | translate }}</a></li>
+    <li><a routerLink="/changelog" (click)="closeNav()">{{ 'Landing.nav.changelog' | translate }}</a></li>
+    <li><a routerLink="/docs" class="active-nav" (click)="closeNav()">{{ 'Landing.nav.docs' | translate }}</a></li>
+    <li><a href="javascript:void(0)" (click)="closeNav(); navigateToSection('get-started')">{{ 'Landing.nav.getStarted' | translate }}</a></li>
+    <li><button class="nav-demo-btn" (click)="closeNav(); launchDemo()">{{ 'Landing.nav.demo' | translate }}</button></li>
+  </ul>
+</div>
+
+<div class="selfhosted-page">
+
+  <header class="selfhosted-header">
+    <a routerLink="/docs" class="back-link">← {{ 'Docs.back' | translate }}</a>
+    <h1 class="selfhosted-title">{{ 'Docs.selfhosted.title' | translate }}</h1>
+    <p class="selfhosted-subtitle">{{ 'Docs.selfhosted.subtitle' | translate }}</p>
+  </header>
+
+  <div class="selfhosted-content">
+
+    <!-- Section sidebar (desktop) -->
+    <aside class="selfhosted-sidebar">
+      <h3 class="sidebar-title">{{ 'Docs.selfhosted.sections' | translate }}</h3>
+      <ul class="section-list">
+        <li *ngFor="let s of sections; let i = index"
+            class="section-item"
+            [ngClass]="{ active: i === selectedIndex, 'level-1': s.level === 1, 'level-2': s.level === 2 }"
+            (click)="selectSection(i)">
+          <span class="section-number">{{ s.number }}</span>
+          <span class="section-label">{{ 'Docs.selfhosted.' + s.id + '.nav' | translate }}</span>
+        </li>
+      </ul>
+    </aside>
+
+    <!-- Main detail -->
+    <main class="selfhosted-detail">
+
+      <!-- Mobile section select -->
+      <div class="mobile-section-select">
+        <label class="mobile-select-label">{{ 'Docs.selfhosted.jumpTo' | translate }}</label>
+        <select class="mobile-section-dropdown" [value]="selectedIndex" (change)="selectSection(+$any($event.target).value)">
+          <option *ngFor="let s of sections; let i = index" [value]="i">
+            {{ s.number }} {{ 'Docs.selfhosted.' + s.id + '.nav' | translate }}
+          </option>
+        </select>
+      </div>
+
+      <!-- ============================================================
+           SECTION: Overview
+           ============================================================ -->
+      <article class="doc-section" *ngIf="selected.id === 'overview'">
+        <h2 class="doc-section-title">{{ 'Docs.selfhosted.overview.title' | translate }}</h2>
+        <p class="doc-intro">{{ 'Docs.selfhosted.overview.intro' | translate }}</p>
+
+        <div class="info-card">
+          <div class="info-card-header">{{ 'Docs.selfhosted.overview.whatYouGet' | translate }}</div>
+          <ul class="feature-list">
+            <li>{{ 'Docs.selfhosted.overview.feature1' | translate }}</li>
+            <li>{{ 'Docs.selfhosted.overview.feature2' | translate }}</li>
+            <li>{{ 'Docs.selfhosted.overview.feature3' | translate }}</li>
+            <li>{{ 'Docs.selfhosted.overview.feature4' | translate }}</li>
+            <li>{{ 'Docs.selfhosted.overview.feature5' | translate }}</li>
+            <li>{{ 'Docs.selfhosted.overview.feature6' | translate }}</li>
+          </ul>
+        </div>
+
+        <h3 class="doc-subheading">{{ 'Docs.selfhosted.overview.optionsTitle' | translate }}</h3>
+        <div class="option-cards">
+          <div class="option-card">
+            <span class="option-icon">🐳</span>
+            <h4>{{ 'Docs.selfhosted.overview.optionA' | translate }}</h4>
+            <p>{{ 'Docs.selfhosted.overview.optionADesc' | translate }}</p>
+          </div>
+          <div class="option-card">
+            <span class="option-icon">☸️</span>
+            <h4>{{ 'Docs.selfhosted.overview.optionB' | translate }}</h4>
+            <p>{{ 'Docs.selfhosted.overview.optionBDesc' | translate }}</p>
+          </div>
+        </div>
+      </article>
+
+      <!-- ============================================================
+           SECTION: Technology Stack
+           ============================================================ -->
+      <article class="doc-section" *ngIf="selected.id === 'techstack'">
+        <h2 class="doc-section-title">{{ 'Docs.selfhosted.techstack.title' | translate }}</h2>
+        <p class="doc-intro">{{ 'Docs.selfhosted.techstack.intro' | translate }}</p>
+
+        <div class="stack-grid">
+          <div class="stack-card">
+            <div class="stack-card-header">
+              <span class="stack-icon">🅰️</span>
+              <h4>{{ 'Docs.selfhosted.techstack.frontendTitle' | translate }}</h4>
+            </div>
+            <p>{{ 'Docs.selfhosted.techstack.frontendDesc' | translate }}</p>
+            <ul class="stack-details">
+              <li>Angular 19 (standalone components)</li>
+              <li>Nginx (reverse proxy + static files)</li>
+              <li>PWA with Service Worker</li>
+              <li>ngx-translate (6 languages)</li>
+            </ul>
+          </div>
+
+          <div class="stack-card">
+            <div class="stack-card-header">
+              <span class="stack-icon">Node</span>
+              <h4>{{ 'Docs.selfhosted.techstack.backendTitle' | translate }}</h4>
+            </div>
+            <p>{{ 'Docs.selfhosted.techstack.backendDesc' | translate }}</p>
+            <ul class="stack-details">
+              <li>Node.js + Express</li>
+              <li>JWT authentication</li>
+              <li>AES-256 encryption at rest</li>
+              <li>ETag caching + batch API</li>
+            </ul>
+          </div>
+
+          <div class="stack-card">
+            <div class="stack-card-header">
+              <span class="stack-icon">DB</span>
+              <h4>{{ 'Docs.selfhosted.techstack.dbTitle' | translate }}</h4>
+            </div>
+            <p>{{ 'Docs.selfhosted.techstack.dbDesc' | translate }}</p>
+            <ul class="stack-details">
+              <li>Apache CouchDB</li>
+              <li>{{ 'Docs.selfhosted.techstack.dbDetail1' | translate }}</li>
+              <li>{{ 'Docs.selfhosted.techstack.dbDetail2' | translate }}</li>
+              <li>{{ 'Docs.selfhosted.techstack.dbDetail3' | translate }}</li>
+            </ul>
+          </div>
+
+          <div class="stack-card">
+            <div class="stack-card-header">
+              <span class="stack-icon">Log</span>
+              <h4>{{ 'Docs.selfhosted.techstack.loggingTitle' | translate }}</h4>
+            </div>
+            <p>{{ 'Docs.selfhosted.techstack.loggingDesc' | translate }}</p>
+            <ul class="stack-details">
+              <li>Grafana (dashboards)</li>
+              <li>Loki (log aggregation)</li>
+              <li>Promtail (log shipping)</li>
+              <li>{{ 'Docs.selfhosted.techstack.loggingDetail' | translate }}</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="architecture-diagram">
+          <h3 class="doc-subheading">{{ 'Docs.selfhosted.techstack.archTitle' | translate }}</h3>
+          <div class="arch-flow">
+            <div class="arch-node arch-client">{{ 'Docs.selfhosted.techstack.archBrowser' | translate }}</div>
+            <div class="arch-arrow">→</div>
+            <div class="arch-node arch-nginx">Nginx<small>:8080 / :8443</small></div>
+            <div class="arch-arrow">→</div>
+            <div class="arch-node arch-backend">Express API<small>:3000</small></div>
+            <div class="arch-arrow">→</div>
+            <div class="arch-node arch-db">CouchDB<small>:5984</small></div>
+          </div>
+        </div>
+      </article>
+
+      <!-- ============================================================
+           SECTION: Prerequisites
+           ============================================================ -->
+      <article class="doc-section" *ngIf="selected.id === 'prereqs'">
+        <h2 class="doc-section-title">{{ 'Docs.selfhosted.prereqs.title' | translate }}</h2>
+        <p class="doc-intro">{{ 'Docs.selfhosted.prereqs.intro' | translate }}</p>
+
+        <h3 class="doc-subheading">{{ 'Docs.selfhosted.prereqs.hardwareTitle' | translate }}</h3>
+        <ul class="req-list">
+          <li>{{ 'Docs.selfhosted.prereqs.hw1' | translate }}</li>
+          <li>{{ 'Docs.selfhosted.prereqs.hw2' | translate }}</li>
+          <li>{{ 'Docs.selfhosted.prereqs.hw3' | translate }}</li>
+        </ul>
+
+        <h3 class="doc-subheading">{{ 'Docs.selfhosted.prereqs.softwareTitle' | translate }}</h3>
+
+        <div class="info-card">
+          <div class="info-card-header">{{ 'Docs.selfhosted.prereqs.podmanPath' | translate }}</div>
+          <p class="req-note">{{ 'Docs.selfhosted.prereqs.podmanReqs' | translate }}</p>
+          <div class="code-block">
+            <div class="code-header">
+              <span>{{ 'Docs.selfhosted.prereqs.installPodman' | translate }}</span>
+              <button class="copy-btn" (click)="copyToClipboard('sudo apt update && sudo apt install -y podman podman-compose', 'podman-install')"
+                      [ngClass]="{ copied: copiedSnippet === 'podman-install' }">
+                {{ copiedSnippet === 'podman-install' ? '✓' : '⧉' }}
+              </button>
+            </div>
+            <pre><code>sudo apt update &amp;&amp; sudo apt install -y podman podman-compose</code></pre>
+          </div>
+        </div>
+
+        <div class="info-card">
+          <div class="info-card-header">{{ 'Docs.selfhosted.prereqs.k3sPath' | translate }}</div>
+          <p class="req-note">{{ 'Docs.selfhosted.prereqs.k3sReqs' | translate }}</p>
+          <div class="code-block">
+            <div class="code-header">
+              <span>{{ 'Docs.selfhosted.prereqs.installK3s' | translate }}</span>
+              <button class="copy-btn" (click)="copyToClipboard('curl -sfL https://get.k3s.io | sh -\nsudo chmod 644 /etc/rancher/k3s/k3s.yaml\necho &quot;export KUBECONFIG=/etc/rancher/k3s/k3s.yaml&quot; >> ~/.bashrc\nsource ~/.bashrc', 'k3s-install')"
+                      [ngClass]="{ copied: copiedSnippet === 'k3s-install' }">
+                {{ copiedSnippet === 'k3s-install' ? '✓' : '⧉' }}
+              </button>
+            </div>
+            <pre><code>curl -sfL https://get.k3s.io | sh -
+sudo chmod 644 /etc/rancher/k3s/k3s.yaml
+echo "export KUBECONFIG=/etc/rancher/k3s/k3s.yaml" >> ~/.bashrc
+source ~/.bashrc</code></pre>
+          </div>
+        </div>
+
+        <div class="info-card">
+          <div class="info-card-header">Git</div>
+          <div class="code-block">
+            <div class="code-header">
+              <span>{{ 'Docs.selfhosted.prereqs.installGit' | translate }}</span>
+              <button class="copy-btn" (click)="copyToClipboard('sudo apt update && sudo apt install -y git', 'git-install')"
+                      [ngClass]="{ copied: copiedSnippet === 'git-install' }">
+                {{ copiedSnippet === 'git-install' ? '✓' : '⧉' }}
+              </button>
+            </div>
+            <pre><code>sudo apt update &amp;&amp; sudo apt install -y git</code></pre>
+          </div>
+        </div>
+      </article>
+
+      <!-- ============================================================
+           SECTION: Deployment (choice)
+           ============================================================ -->
+      <article class="doc-section" *ngIf="selected.id === 'deployment'">
+        <h2 class="doc-section-title">{{ 'Docs.selfhosted.deployment.title' | translate }}</h2>
+        <p class="doc-intro">{{ 'Docs.selfhosted.deployment.intro' | translate }}</p>
+
+        <p>{{ 'Docs.selfhosted.deployment.chooseDesc' | translate }}</p>
+
+        <div class="deploy-choice-cards">
+          <div class="deploy-choice-card" (click)="selectSection(4)">
+            <span class="deploy-choice-icon">🐳</span>
+            <h4>{{ 'Docs.selfhosted.deployment.podmanTitle' | translate }}</h4>
+            <p>{{ 'Docs.selfhosted.deployment.podmanDesc' | translate }}</p>
+          </div>
+          <div class="deploy-choice-card" (click)="selectSection(5)">
+            <span class="deploy-choice-icon">☸️</span>
+            <h4>{{ 'Docs.selfhosted.deployment.k3sTitle' | translate }}</h4>
+            <p>{{ 'Docs.selfhosted.deployment.k3sDesc' | translate }}</p>
+          </div>
+        </div>
+
+        <div class="warning-card">
+          <span class="warning-icon">💡</span>
+          <span>{{ 'Docs.selfhosted.deployment.tip' | translate }}</span>
+        </div>
+      </article>
+
+      <!-- ============================================================
+           SECTION: Podman Compose (4.1)
+           ============================================================ -->
+      <article class="doc-section" *ngIf="selected.id === 'docker'">
+        <h2 class="doc-section-title">{{ 'Docs.selfhosted.docker.title' | translate }}</h2>
+        <p class="doc-intro">{{ 'Docs.selfhosted.docker.intro' | translate }}</p>
+
+        <div class="step-card">
+          <div class="step-number">1</div>
+          <div class="step-body">
+            <h3>{{ 'Docs.selfhosted.docker.step1Title' | translate }}</h3>
+            <p>{{ 'Docs.selfhosted.docker.step1Desc' | translate }}</p>
+            <div class="code-block">
+              <div class="code-header">
+                <span>Terminal</span>
+                <button class="copy-btn" (click)="copyToClipboard('git clone https://github.com/Djey8/money.git && cd money', 'docker-clone')"
+                        [ngClass]="{ copied: copiedSnippet === 'docker-clone' }">
+                  {{ copiedSnippet === 'docker-clone' ? '✓' : '⧉' }}
+                </button>
+              </div>
+              <pre><code>git clone https://github.com/Djey8/money.git &amp;&amp; cd money</code></pre>
+            </div>
+          </div>
+        </div>
+
+        <div class="step-card">
+          <div class="step-number">2</div>
+          <div class="step-body">
+            <h3>{{ 'Docs.selfhosted.docker.step2Title' | translate }}</h3>
+            <p>{{ 'Docs.selfhosted.docker.step2Desc' | translate }}</p>
+            <div class="code-block">
+              <div class="code-header">
+                <span>docker-compose.yml</span>
+                <button class="copy-btn" (click)="copyToClipboard('COUCHDB_PASSWORD=your-strong-password-here\nJWT_SECRET=your-random-string-32-chars-minimum', 'docker-secrets')"
+                        [ngClass]="{ copied: copiedSnippet === 'docker-secrets' }">
+                  {{ copiedSnippet === 'docker-secrets' ? '✓' : '⧉' }}
+                </button>
+              </div>
+              <pre><code>COUCHDB_PASSWORD=your-strong-password-here
+JWT_SECRET=your-random-string-32-chars-minimum</code></pre>
+            </div>
+            <div class="warning-card">
+              <span class="warning-icon">⚠️</span>
+              <span>{{ 'Docs.selfhosted.docker.step2Warning' | translate }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="step-card">
+          <div class="step-number">3</div>
+          <div class="step-body">
+            <h3>{{ 'Docs.selfhosted.docker.step3Title' | translate }}</h3>
+            <p>{{ 'Docs.selfhosted.docker.step3Desc' | translate }}</p>
+            <div class="code-block">
+              <div class="code-header">
+                <span>Terminal</span>
+                <button class="copy-btn" (click)="copyToClipboard('podman-compose up -d', 'docker-start')"
+                        [ngClass]="{ copied: copiedSnippet === 'docker-start' }">
+                  {{ copiedSnippet === 'docker-start' ? '✓' : '⧉' }}
+                </button>
+              </div>
+              <pre><code>podman-compose up -d</code></pre>
+            </div>
+
+            <div class="endpoint-table">
+              <table>
+                <thead>
+                  <tr>
+                    <th>{{ 'Docs.selfhosted.docker.service' | translate }}</th>
+                    <th>URL</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td>Frontend</td><td><code>http://&lt;server-ip&gt;</code></td></tr>
+                  <tr><td>Backend API</td><td><code>http://&lt;server-ip&gt;:3000</code></td></tr>
+                  <tr><td>CouchDB Admin</td><td><code>http://&lt;server-ip&gt;:5984/_utils</code></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="step-card">
+          <div class="step-number">4</div>
+          <div class="step-body">
+            <h3>{{ 'Docs.selfhosted.docker.step4Title' | translate }}</h3>
+            <p>{{ 'Docs.selfhosted.docker.step4Desc' | translate }}</p>
+            <div class="code-block">
+              <div class="code-header">
+                <span>{{ 'Docs.selfhosted.docker.loggingStart' | translate }}</span>
+                <button class="copy-btn" (click)="copyToClipboard('podman-compose -f docker-compose.yml -f docker-compose.logging.yml up -d', 'docker-logging')"
+                        [ngClass]="{ copied: copiedSnippet === 'docker-logging' }">
+                  {{ copiedSnippet === 'docker-logging' ? '✓' : '⧉' }}
+                </button>
+              </div>
+              <pre><code>podman-compose -f docker-compose.yml -f docker-compose.logging.yml up -d</code></pre>
+            </div>
+            <div class="code-block">
+              <div class="code-header">
+                <span>{{ 'Docs.selfhosted.docker.loggingStop' | translate }}</span>
+                <button class="copy-btn" (click)="copyToClipboard('podman-compose -f docker-compose.yml -f docker-compose.logging.yml down\npodman-compose up -d', 'docker-logging-stop')"
+                        [ngClass]="{ copied: copiedSnippet === 'docker-logging-stop' }">
+                  {{ copiedSnippet === 'docker-logging-stop' ? '✓' : '⧉' }}
+                </button>
+              </div>
+              <pre><code>podman-compose -f docker-compose.yml -f docker-compose.logging.yml down
+podman-compose up -d</code></pre>
+            </div>
+          </div>
+        </div>
+
+        <div class="step-card">
+          <div class="step-number">5</div>
+          <div class="step-body">
+            <h3>{{ 'Docs.selfhosted.docker.step5Title' | translate }}</h3>
+            <div class="code-block">
+              <div class="code-header">
+                <span>{{ 'Docs.selfhosted.docker.stop' | translate }}</span>
+                <button class="copy-btn" (click)="copyToClipboard('podman-compose down', 'docker-stop')"
+                        [ngClass]="{ copied: copiedSnippet === 'docker-stop' }">
+                  {{ copiedSnippet === 'docker-stop' ? '✓' : '⧉' }}
+                </button>
+              </div>
+              <pre><code>podman-compose down</code></pre>
+            </div>
+            <div class="code-block">
+              <div class="code-header">
+                <span>{{ 'Docs.selfhosted.docker.rebuild' | translate }}</span>
+                <button class="copy-btn" (click)="copyToClipboard('podman-compose up -d --build', 'docker-rebuild')"
+                        [ngClass]="{ copied: copiedSnippet === 'docker-rebuild' }">
+                  {{ copiedSnippet === 'docker-rebuild' ? '✓' : '⧉' }}
+                </button>
+              </div>
+              <pre><code>podman-compose up -d --build</code></pre>
+            </div>
+          </div>
+        </div>
+
+        <h3 class="doc-subheading">{{ 'Docs.selfhosted.docker.memoryTitle' | translate }}</h3>
+        <div class="endpoint-table">
+          <table>
+            <thead>
+              <tr>
+                <th>{{ 'Docs.selfhosted.docker.mode' | translate }}</th>
+                <th>{{ 'Docs.selfhosted.docker.containers' | translate }}</th>
+                <th>RAM</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>{{ 'Docs.selfhosted.docker.minimal' | translate }}</td><td>CouchDB + Backend + Frontend</td><td>~640 MB</td></tr>
+              <tr><td>{{ 'Docs.selfhosted.docker.debug' | translate }}</td><td>+ Loki + Promtail + Grafana</td><td>~1.5 GB</td></tr>
+              <tr><td>{{ 'Docs.selfhosted.docker.osBaseline' | translate }}</td><td>—</td><td>~1.4 GB</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </article>
+
+      <!-- ============================================================
+           SECTION: Kubernetes (K3s)
+           ============================================================ -->
+      <article class="doc-section" *ngIf="selected.id === 'k3s'">
+        <h2 class="doc-section-title">{{ 'Docs.selfhosted.k3s.title' | translate }}</h2>
+        <p class="doc-intro">{{ 'Docs.selfhosted.k3s.intro' | translate }}</p>
+
+        <div class="step-card">
+          <div class="step-number">1</div>
+          <div class="step-body">
+            <h3>{{ 'Docs.selfhosted.k3s.step1Title' | translate }}</h3>
+            <p>{{ 'Docs.selfhosted.k3s.step1Desc' | translate }}</p>
+            <div class="code-block">
+              <div class="code-header">
+                <span>Terminal</span>
+                <button class="copy-btn" (click)="copyToClipboard('curl -sfL https://get.k3s.io | sh -\nsudo chmod 644 /etc/rancher/k3s/k3s.yaml\necho &quot;export KUBECONFIG=/etc/rancher/k3s/k3s.yaml&quot; >> ~/.bashrc\nsource ~/.bashrc', 'k3s-step1')"
+                        [ngClass]="{ copied: copiedSnippet === 'k3s-step1' }">
+                  {{ copiedSnippet === 'k3s-step1' ? '✓' : '⧉' }}
+                </button>
+              </div>
+              <pre><code>curl -sfL https://get.k3s.io | sh -
+sudo chmod 644 /etc/rancher/k3s/k3s.yaml
+echo "export KUBECONFIG=/etc/rancher/k3s/k3s.yaml" >> ~/.bashrc
+source ~/.bashrc</code></pre>
+            </div>
+          </div>
+        </div>
+
+        <div class="step-card">
+          <div class="step-number">2</div>
+          <div class="step-body">
+            <h3>{{ 'Docs.selfhosted.k3s.step2Title' | translate }}</h3>
+            <p>{{ 'Docs.selfhosted.k3s.step2Desc' | translate }}</p>
+            <div class="code-block">
+              <div class="code-header">
+                <span>{{ 'Docs.selfhosted.k3s.buildLocal' | translate }}</span>
+                <button class="copy-btn" (click)="copyToClipboard('podman build -t money-frontend:latest .\npodman build -t money-backend:latest ./backend', 'k3s-build')"
+                        [ngClass]="{ copied: copiedSnippet === 'k3s-build' }">
+                  {{ copiedSnippet === 'k3s-build' ? '✓' : '⧉' }}
+                </button>
+              </div>
+              <pre><code>podman build -t money-frontend:latest .
+podman build -t money-backend:latest ./backend</code></pre>
+            </div>
+            <div class="code-block">
+              <div class="code-header">
+                <span>{{ 'Docs.selfhosted.k3s.buildTransfer' | translate }}</span>
+                <button class="copy-btn" (click)="copyToClipboard('# On build machine\npodman save money-frontend:latest | gzip > money-frontend.tar.gz\npodman save money-backend:latest | gzip > money-backend.tar.gz\n\n# On server\npodman load < money-frontend.tar.gz\npodman load < money-backend.tar.gz', 'k3s-transfer')"
+                        [ngClass]="{ copied: copiedSnippet === 'k3s-transfer' }">
+                  {{ copiedSnippet === 'k3s-transfer' ? '✓' : '⧉' }}
+                </button>
+              </div>
+              <pre><code># On build machine
+podman save money-frontend:latest | gzip > money-frontend.tar.gz
+podman save money-backend:latest | gzip > money-backend.tar.gz
+
+# On server
+podman load &lt; money-frontend.tar.gz
+podman load &lt; money-backend.tar.gz</code></pre>
+            </div>
+          </div>
+        </div>
+
+        <div class="step-card">
+          <div class="step-number">3</div>
+          <div class="step-body">
+            <h3>{{ 'Docs.selfhosted.k3s.step3Title' | translate }}</h3>
+            <p>{{ 'Docs.selfhosted.k3s.step3Desc' | translate }}</p>
+            <div class="code-block">
+              <div class="code-header">
+                <span>Terminal</span>
+                <button class="copy-btn" (click)="copyToClipboard('cp k8s/secrets.yaml.example k8s/secrets.yaml\nvi k8s/secrets.yaml    # JWT_SECRET, COUCHDB_PASSWORD, Grafana password', 'k3s-secrets')"
+                        [ngClass]="{ copied: copiedSnippet === 'k3s-secrets' }">
+                  {{ copiedSnippet === 'k3s-secrets' ? '✓' : '⧉' }}
+                </button>
+              </div>
+              <pre><code>cp k8s/secrets.yaml.example k8s/secrets.yaml
+vi k8s/secrets.yaml    # JWT_SECRET, COUCHDB_PASSWORD, Grafana password</code></pre>
+            </div>
+          </div>
+        </div>
+
+        <div class="step-card">
+          <div class="step-number">4</div>
+          <div class="step-body">
+            <h3>{{ 'Docs.selfhosted.k3s.step4Title' | translate }}</h3>
+            <p>{{ 'Docs.selfhosted.k3s.step4Desc' | translate }}</p>
+            <div class="code-block">
+              <div class="code-header">
+                <span>{{ 'Docs.selfhosted.k3s.manualDeploy' | translate }}</span>
+                <button class="copy-btn" (click)="copyToClipboard('kubectl apply -f k8s/namespace.yaml\nkubectl apply -f k8s/couchdb.yaml\nkubectl wait --for=condition=ready pod -l app=couchdb -n money-app --timeout=120s\nkubectl apply -f k8s/backend.yaml\nkubectl wait --for=condition=ready pod -l app=backend -n money-app --timeout=120s\nkubectl apply -f k8s/frontend.yaml\nkubectl apply -f k8s/ingress.yaml', 'k3s-deploy')"
+                        [ngClass]="{ copied: copiedSnippet === 'k3s-deploy' }">
+                  {{ copiedSnippet === 'k3s-deploy' ? '✓' : '⧉' }}
+                </button>
+              </div>
+              <pre><code>kubectl apply -f k8s/namespace.yaml
+kubectl apply -f k8s/couchdb.yaml
+kubectl wait --for=condition=ready pod -l app=couchdb -n money-app --timeout=120s
+kubectl apply -f k8s/backend.yaml
+kubectl wait --for=condition=ready pod -l app=backend -n money-app --timeout=120s
+kubectl apply -f k8s/frontend.yaml
+kubectl apply -f k8s/ingress.yaml</code></pre>
+            </div>
+            <div class="code-block">
+              <div class="code-header">
+                <span>{{ 'Docs.selfhosted.k3s.scriptDeploy' | translate }}</span>
+                <button class="copy-btn" (click)="copyToClipboard('./scripts/deploy.sh', 'k3s-script')"
+                        [ngClass]="{ copied: copiedSnippet === 'k3s-script' }">
+                  {{ copiedSnippet === 'k3s-script' ? '✓' : '⧉' }}
+                </button>
+              </div>
+              <pre><code>./scripts/deploy.sh</code></pre>
+            </div>
+          </div>
+        </div>
+
+        <div class="step-card">
+          <div class="step-number">5</div>
+          <div class="step-body">
+            <h3>{{ 'Docs.selfhosted.k3s.step5Title' | translate }}</h3>
+            <div class="code-block">
+              <div class="code-header">
+                <span>Terminal</span>
+                <button class="copy-btn" (click)="copyToClipboard('kubectl get pods -n money-app', 'k3s-verify')"
+                        [ngClass]="{ copied: copiedSnippet === 'k3s-verify' }">
+                  {{ copiedSnippet === 'k3s-verify' ? '✓' : '⧉' }}
+                </button>
+              </div>
+              <pre><code>kubectl get pods -n money-app</code></pre>
+            </div>
+            <p>{{ 'Docs.selfhosted.k3s.step5Desc' | translate }}</p>
+          </div>
+        </div>
+
+        <h3 class="doc-subheading">{{ 'Docs.selfhosted.k3s.windowsTitle' | translate }}</h3>
+        <p>{{ 'Docs.selfhosted.k3s.windowsDesc' | translate }}</p>
+        <div class="code-block">
+          <div class="code-header">
+            <span>PowerShell</span>
+            <button class="copy-btn" (click)="copyToClipboard('.\\scripts\\deploy-local.ps1              # full build + deploy + port-forward + browser\n.\\scripts\\deploy-local.ps1 -SkipBuild   # redeploy without rebuilding images\n.\\scripts\\deploy-local.ps1 -NoCache     # rebuild from scratch\n.\\scripts\\cleanup-local.ps1             # tear down', 'k3s-windows')"
+                    [ngClass]="{ copied: copiedSnippet === 'k3s-windows' }">
+              {{ copiedSnippet === 'k3s-windows' ? '✓' : '⧉' }}
+            </button>
+          </div>
+          <pre><code>.\scripts\deploy-local.ps1              # full build + deploy + port-forward + browser
+.\scripts\deploy-local.ps1 -SkipBuild   # redeploy without rebuilding images
+.\scripts\deploy-local.ps1 -NoCache     # rebuild from scratch
+.\scripts\cleanup-local.ps1             # tear down</code></pre>
+        </div>
+      </article>
+
+      <!-- ============================================================
+           SECTION: Deployment Script Reference
+           ============================================================ -->
+      <article class="doc-section" *ngIf="selected.id === 'deploy'">
+        <h2 class="doc-section-title">{{ 'Docs.selfhosted.deploy.title' | translate }}</h2>
+        <p class="doc-intro">{{ 'Docs.selfhosted.deploy.intro' | translate }}</p>
+
+        <h3 class="doc-subheading">deploy.sh (Linux / Raspberry Pi)</h3>
+        <p>{{ 'Docs.selfhosted.deploy.linuxDesc' | translate }}</p>
+
+        <div class="endpoint-table flag-table">
+          <table>
+            <thead>
+              <tr>
+                <th>{{ 'Docs.selfhosted.deploy.flag' | translate }}</th>
+                <th>{{ 'Docs.selfhosted.deploy.description' | translate }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td><code>--no-cache</code></td><td>{{ 'Docs.selfhosted.deploy.noCache' | translate }}</td></tr>
+              <tr><td><code>--skip-build</code></td><td>{{ 'Docs.selfhosted.deploy.skipBuild' | translate }}</td></tr>
+              <tr><td><code>--skip-frontend</code></td><td>{{ 'Docs.selfhosted.deploy.skipFrontend' | translate }}</td></tr>
+              <tr><td><code>--skip-backend</code></td><td>{{ 'Docs.selfhosted.deploy.skipBackend' | translate }}</td></tr>
+              <tr><td><code>--skip-tls</code></td><td>{{ 'Docs.selfhosted.deploy.skipTls' | translate }}</td></tr>
+              <tr><td><code>--no-ingress</code></td><td>{{ 'Docs.selfhosted.deploy.noIngress' | translate }}</td></tr>
+              <tr><td><code>--no-backup</code></td><td>{{ 'Docs.selfhosted.deploy.noBackup' | translate }}</td></tr>
+              <tr><td><code>--no-local-backup</code></td><td>{{ 'Docs.selfhosted.deploy.noLocalBackup' | translate }}</td></tr>
+              <tr><td><code>--no-nas-backup</code></td><td>{{ 'Docs.selfhosted.deploy.noNasBackup' | translate }}</td></tr>
+              <tr><td><code>--no-logging</code></td><td>{{ 'Docs.selfhosted.deploy.noLogging' | translate }}</td></tr>
+              <tr><td><code>--port-forward</code></td><td>{{ 'Docs.selfhosted.deploy.portForward' | translate }}</td></tr>
+              <tr><td><code>--prd</code></td><td>{{ 'Docs.selfhosted.deploy.prd' | translate }}</td></tr>
+              <tr><td><code>--dev</code></td><td>{{ 'Docs.selfhosted.deploy.dev' | translate }}</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 class="doc-subheading">{{ 'Docs.selfhosted.deploy.examplesTitle' | translate }}</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <span>{{ 'Docs.selfhosted.deploy.commonExamples' | translate }}</span>
+            <button class="copy-btn" (click)="copyToClipboard('./scripts/deploy.sh --prd                  # Production: fresh build, no logging\n./scripts/deploy.sh --dev                  # Development: fresh build, with logging\n./scripts/deploy.sh --skip-build           # Redeploy without rebuilding\n./scripts/deploy.sh --no-nas-backup        # No NAS? Skip NAS CronJob\n./scripts/deploy.sh --no-backup            # No backups at all', 'deploy-examples')"
+                    [ngClass]="{ copied: copiedSnippet === 'deploy-examples' }">
+              {{ copiedSnippet === 'deploy-examples' ? '✓' : '⧉' }}
+            </button>
+          </div>
+          <pre><code>./scripts/deploy.sh --prd                  # Production: fresh build, no logging
+./scripts/deploy.sh --dev                  # Development: fresh build, with logging
+./scripts/deploy.sh --skip-build           # Redeploy without rebuilding
+./scripts/deploy.sh --no-nas-backup        # No NAS? Skip NAS CronJob
+./scripts/deploy.sh --no-backup            # No backups at all</code></pre>
+        </div>
+
+        <h3 class="doc-subheading">deploy-local.ps1 (Windows / WSL)</h3>
+        <p>{{ 'Docs.selfhosted.deploy.windowsDesc' | translate }}</p>
+
+        <div class="endpoint-table flag-table">
+          <table>
+            <thead>
+              <tr>
+                <th>{{ 'Docs.selfhosted.deploy.flag' | translate }}</th>
+                <th>{{ 'Docs.selfhosted.deploy.description' | translate }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td><code>-NoCache</code></td><td>{{ 'Docs.selfhosted.deploy.noCache' | translate }}</td></tr>
+              <tr><td><code>-SkipBuild</code></td><td>{{ 'Docs.selfhosted.deploy.skipBuild' | translate }}</td></tr>
+              <tr><td><code>-SkipFrontend</code></td><td>{{ 'Docs.selfhosted.deploy.skipFrontend' | translate }}</td></tr>
+              <tr><td><code>-SkipBackend</code></td><td>{{ 'Docs.selfhosted.deploy.skipBackend' | translate }}</td></tr>
+              <tr><td><code>-NoIngress</code></td><td>{{ 'Docs.selfhosted.deploy.noIngress' | translate }}</td></tr>
+              <tr><td><code>-NoBackup</code></td><td>{{ 'Docs.selfhosted.deploy.noBackup' | translate }}</td></tr>
+              <tr><td><code>-NoLogging</code></td><td>{{ 'Docs.selfhosted.deploy.noLogging' | translate }}</td></tr>
+              <tr><td><code>-Prd</code></td><td>{{ 'Docs.selfhosted.deploy.prd' | translate }}</td></tr>
+              <tr><td><code>-Dev</code></td><td>{{ 'Docs.selfhosted.deploy.dev' | translate }}</td></tr>
+              <tr><td><code>-CleanImages</code></td><td>{{ 'Docs.selfhosted.deploy.cleanImages' | translate }}</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 class="doc-subheading">{{ 'Docs.selfhosted.deploy.orderTitle' | translate }}</h3>
+        <p>{{ 'Docs.selfhosted.deploy.orderDesc' | translate }}</p>
+        <ol class="deploy-order">
+          <li><strong>Namespace</strong> — money-app</li>
+          <li><strong>TLS</strong> — {{ 'Docs.selfhosted.deploy.order2' | translate }}</li>
+          <li><strong>CouchDB</strong> — {{ 'Docs.selfhosted.deploy.order3' | translate }}</li>
+          <li><strong>Backend</strong> — Node.js API</li>
+          <li><strong>Frontend</strong> — Angular PWA (Nginx)</li>
+          <li><strong>Ingress</strong> — Nginx ingress controller</li>
+          <li><strong>Backups</strong> — {{ 'Docs.selfhosted.deploy.order7' | translate }}</li>
+          <li><strong>Logging</strong> — Loki + Grafana + Promtail</li>
+        </ol>
+      </article>
+
+      <!-- ============================================================
+           SECTION: Custom Domain (Cloudflare)
+           ============================================================ -->
+      <article class="doc-section" *ngIf="selected.id === 'domain'">
+        <h2 class="doc-section-title">{{ 'Docs.selfhosted.domain.title' | translate }}</h2>
+        <p class="doc-intro">{{ 'Docs.selfhosted.domain.intro' | translate }}</p>
+
+        <div class="step-card">
+          <div class="step-number">1</div>
+          <div class="step-body">
+            <h3>{{ 'Docs.selfhosted.domain.step1Title' | translate }}</h3>
+            <p>{{ 'Docs.selfhosted.domain.step1Desc' | translate }}</p>
+          </div>
+        </div>
+
+        <div class="step-card">
+          <div class="step-number">2</div>
+          <div class="step-body">
+            <h3>{{ 'Docs.selfhosted.domain.step2Title' | translate }}</h3>
+            <p>{{ 'Docs.selfhosted.domain.step2Desc' | translate }}</p>
+          </div>
+        </div>
+
+        <div class="step-card">
+          <div class="step-number">3</div>
+          <div class="step-body">
+            <h3>{{ 'Docs.selfhosted.domain.step3Title' | translate }}</h3>
+            <p>{{ 'Docs.selfhosted.domain.step3Desc' | translate }}</p>
+            <div class="info-card">
+              <div class="info-card-header">{{ 'Docs.selfhosted.domain.dnsRecords' | translate }}</div>
+              <div class="endpoint-table">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>{{ 'Docs.selfhosted.domain.type' | translate }}</th>
+                      <th>{{ 'Docs.selfhosted.domain.name' | translate }}</th>
+                      <th>{{ 'Docs.selfhosted.domain.value' | translate }}</th>
+                      <th>{{ 'Docs.selfhosted.domain.proxy' | translate }}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr><td>A</td><td>yourdomain.com</td><td>{{ 'Docs.selfhosted.domain.yourServerIp' | translate }}</td><td>{{ 'Docs.selfhosted.domain.proxied' | translate }}</td></tr>
+                    <tr><td>A</td><td>www</td><td>{{ 'Docs.selfhosted.domain.yourServerIp' | translate }}</td><td>{{ 'Docs.selfhosted.domain.proxied' | translate }}</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="step-card">
+          <div class="step-number">4</div>
+          <div class="step-body">
+            <h3>{{ 'Docs.selfhosted.domain.step4Title' | translate }}</h3>
+            <p>{{ 'Docs.selfhosted.domain.step4Desc' | translate }}</p>
+            <ul class="config-list">
+              <li>{{ 'Docs.selfhosted.domain.ssl' | translate }}</li>
+              <li>{{ 'Docs.selfhosted.domain.redirect' | translate }}</li>
+              <li>{{ 'Docs.selfhosted.domain.minTls' | translate }}</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="step-card">
+          <div class="step-number">5</div>
+          <div class="step-body">
+            <h3>{{ 'Docs.selfhosted.domain.step5Title' | translate }}</h3>
+            <p>{{ 'Docs.selfhosted.domain.step5Desc' | translate }}</p>
+            <div class="code-block">
+              <div class="code-header">
+                <span>nginx.conf</span>
+                <button class="copy-btn" (click)="copyToClipboard('server_name  localhost money.local yourdomain.com www.yourdomain.com;', 'domain-nginx')"
+                        [ngClass]="{ copied: copiedSnippet === 'domain-nginx' }">
+                  {{ copiedSnippet === 'domain-nginx' ? '✓' : '⧉' }}
+                </button>
+              </div>
+              <pre><code>server_name  localhost money.local yourdomain.com www.yourdomain.com;</code></pre>
+            </div>
+            <div class="code-block">
+              <div class="code-header">
+                <span>k8s/backend.yaml</span>
+                <button class="copy-btn" (click)="copyToClipboard('CORS_ORIGINS=https://yourdomain.com,https://www.yourdomain.com', 'domain-cors')"
+                        [ngClass]="{ copied: copiedSnippet === 'domain-cors' }">
+                  {{ copiedSnippet === 'domain-cors' ? '✓' : '⧉' }}
+                </button>
+              </div>
+              <pre><code>CORS_ORIGINS=https://yourdomain.com,https://www.yourdomain.com</code></pre>
+            </div>
+          </div>
+        </div>
+
+        <div class="step-card">
+          <div class="step-number">6</div>
+          <div class="step-body">
+            <h3>{{ 'Docs.selfhosted.domain.step6Title' | translate }}</h3>
+            <p>{{ 'Docs.selfhosted.domain.step6Desc' | translate }}</p>
+            <div class="code-block">
+              <div class="code-header">
+                <span>nginx.conf — Content-Security-Policy</span>
+                <button class="copy-btn" (click)="copyToClipboard('connect-src \'self\' https://yourdomain.com https://*.yourdomain.com ...', 'domain-csp')"
+                        [ngClass]="{ copied: copiedSnippet === 'domain-csp' }">
+                  {{ copiedSnippet === 'domain-csp' ? '✓' : '⧉' }}
+                </button>
+              </div>
+              <pre><code>connect-src 'self' https://yourdomain.com https://*.yourdomain.com ...</code></pre>
+            </div>
+          </div>
+        </div>
+
+        <div class="warning-card" style="margin-top: 1.5rem;">
+          <span class="warning-icon">💡</span>
+          <span>{{ 'Docs.selfhosted.domain.tip' | translate }}</span>
+        </div>
+      </article>
+
+      <!-- ============================================================
+           SECTION: Monitoring
+           ============================================================ -->
+      <article class="doc-section" *ngIf="selected.id === 'monitoring'">
+        <h2 class="doc-section-title">{{ 'Docs.selfhosted.monitoring.title' | translate }}</h2>
+        <p class="doc-intro">{{ 'Docs.selfhosted.monitoring.intro' | translate }}</p>
+
+        <p>{{ 'Docs.selfhosted.monitoring.desc' | translate }}</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span>{{ 'Docs.selfhosted.monitoring.enable' | translate }}</span>
+            <button class="copy-btn" (click)="copyToClipboard('kubectl apply -f k8s/loki.yaml\nkubectl apply -f k8s/promtail.yaml', 'mon-enable')"
+                    [ngClass]="{ copied: copiedSnippet === 'mon-enable' }">
+              {{ copiedSnippet === 'mon-enable' ? '✓' : '⧉' }}
+            </button>
+          </div>
+          <pre><code>kubectl apply -f k8s/loki.yaml
+kubectl apply -f k8s/promtail.yaml</code></pre>
+        </div>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span>{{ 'Docs.selfhosted.monitoring.disable' | translate }}</span>
+            <button class="copy-btn" (click)="copyToClipboard('kubectl delete -f k8s/promtail.yaml\nkubectl delete -f k8s/loki.yaml', 'mon-disable')"
+                    [ngClass]="{ copied: copiedSnippet === 'mon-disable' }">
+              {{ copiedSnippet === 'mon-disable' ? '✓' : '⧉' }}
+            </button>
+          </div>
+          <pre><code>kubectl delete -f k8s/promtail.yaml
+kubectl delete -f k8s/loki.yaml</code></pre>
+        </div>
+
+        <h3 class="doc-subheading">{{ 'Docs.selfhosted.monitoring.dashboardsTitle' | translate }}</h3>
+        <p>{{ 'Docs.selfhosted.monitoring.dashboardsDesc' | translate }}</p>
+        <ul class="feature-list">
+          <li>{{ 'Docs.selfhosted.monitoring.dash1' | translate }}</li>
+          <li>{{ 'Docs.selfhosted.monitoring.dash2' | translate }}</li>
+          <li>{{ 'Docs.selfhosted.monitoring.dash3' | translate }}</li>
+          <li>{{ 'Docs.selfhosted.monitoring.dash4' | translate }}</li>
+          <li>{{ 'Docs.selfhosted.monitoring.dash5' | translate }}</li>
+          <li>{{ 'Docs.selfhosted.monitoring.dash6' | translate }}</li>
+          <li>{{ 'Docs.selfhosted.monitoring.dash7' | translate }}</li>
+        </ul>
+
+        <div class="info-card">
+          <div class="info-card-header">{{ 'Docs.selfhosted.monitoring.access' | translate }}</div>
+          <div class="endpoint-table">
+            <table>
+              <thead><tr><th>{{ 'Docs.selfhosted.monitoring.setting' | translate }}</th><th>{{ 'Docs.selfhosted.domain.value' | translate }}</th></tr></thead>
+              <tbody>
+                <tr><td>URL</td><td><code>http://&lt;server-ip&gt;:30300</code></td></tr>
+                <tr><td>{{ 'Docs.selfhosted.monitoring.user' | translate }}</td><td><code>admin</code></td></tr>
+                <tr><td>{{ 'Docs.selfhosted.monitoring.password' | translate }}</td><td><code>admin</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </article>
+
+      <!-- ============================================================
+           SECTION: Backups
+           ============================================================ -->
+      <article class="doc-section" *ngIf="selected.id === 'backups'">
+        <h2 class="doc-section-title">{{ 'Docs.selfhosted.backups.title' | translate }}</h2>
+        <p class="doc-intro">{{ 'Docs.selfhosted.backups.intro' | translate }}</p>
+
+        <h3 class="doc-subheading">{{ 'Docs.selfhosted.backups.retentionTitle' | translate }}</h3>
+        <div class="endpoint-table">
+          <table>
+            <thead>
+              <tr>
+                <th>{{ 'Docs.selfhosted.backups.location' | translate }}</th>
+                <th>{{ 'Docs.selfhosted.backups.tier' | translate }}</th>
+                <th>{{ 'Docs.selfhosted.backups.kept' | translate }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>Local</td><td>Hourly</td><td>24 {{ 'Docs.selfhosted.backups.hours' | translate }}</td></tr>
+              <tr><td>Local</td><td>Daily</td><td>7 {{ 'Docs.selfhosted.backups.days' | translate }}</td></tr>
+              <tr><td>Local</td><td>Weekly</td><td>3 {{ 'Docs.selfhosted.backups.months' | translate }}</td></tr>
+              <tr><td>Local</td><td>Monthly</td><td>{{ 'Docs.selfhosted.backups.forever' | translate }}</td></tr>
+              <tr><td>NAS</td><td>Daily</td><td>3 {{ 'Docs.selfhosted.backups.weeks' | translate }}</td></tr>
+              <tr><td>NAS</td><td>Weekly</td><td>2 {{ 'Docs.selfhosted.backups.years' | translate }}</td></tr>
+              <tr><td>NAS</td><td>Monthly</td><td>{{ 'Docs.selfhosted.backups.forever' | translate }}</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 class="doc-subheading">{{ 'Docs.selfhosted.backups.manualTitle' | translate }}</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <span>Terminal</span>
+            <button class="copy-btn" (click)="copyToClipboard('./scripts/backup.sh                     # Backup now (local + NAS)\n./scripts/backup.sh --hourly              # Hourly backup (local only)\n./scripts/list-backups.sh                 # Show all backups + restore commands\n./scripts/restore-backup.sh /path/to/backup.tar.gz   # Restore', 'backup-manual')"
+                    [ngClass]="{ copied: copiedSnippet === 'backup-manual' }">
+              {{ copiedSnippet === 'backup-manual' ? '✓' : '⧉' }}
+            </button>
+          </div>
+          <pre><code>./scripts/backup.sh                     # Backup now (local + NAS)
+./scripts/backup.sh --hourly              # Hourly backup (local only)
+./scripts/list-backups.sh                 # Show all backups + restore commands
+./scripts/restore-backup.sh /path/to/backup.tar.gz   # Restore</code></pre>
+        </div>
+
+        <h3 class="doc-subheading">{{ 'Docs.selfhosted.backups.storageTitle' | translate }}</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <span>{{ 'Docs.selfhosted.backups.storageStructure' | translate }}</span>
+          </div>
+          <pre><code>/opt/money-app-backups/          (local)
+  hourly/   ← last 24 hours
+  daily/    ← last 7 days
+  weekly/   ← last 13 Sundays (~3 months)
+  monthly/  ← 1st of each month (kept forever)
+
+/mnt/nas/backups/                (NAS — optional)
+  daily/    ← last 21 days (3 weeks)
+  weekly/   ← last 104 Sundays (2 years)
+  monthly/  ← 1st of each month (kept forever)</code></pre>
+        </div>
+
+        <div class="warning-card" style="margin-top: 1.5rem;">
+          <span class="warning-icon">💡</span>
+          <span>{{ 'Docs.selfhosted.backups.noNasTip' | translate }}</span>
+        </div>
+      </article>
+
+      <!-- ============================================================
+           SECTION: Raspberry Pi
+           ============================================================ -->
+      <article class="doc-section" *ngIf="selected.id === 'raspi'">
+        <h2 class="doc-section-title">{{ 'Docs.selfhosted.raspi.title' | translate }}</h2>
+        <p class="doc-intro">{{ 'Docs.selfhosted.raspi.intro' | translate }}</p>
+
+        <h3 class="doc-subheading">{{ 'Docs.selfhosted.raspi.swapTitle' | translate }}</h3>
+        <p>{{ 'Docs.selfhosted.raspi.swapDesc' | translate }}</p>
+        <div class="code-block">
+          <div class="code-header">
+            <span>Terminal</span>
+            <button class="copy-btn" (click)="copyToClipboard('sudo fallocate -l 1G /swapfile\nsudo chmod 600 /swapfile\nsudo mkswap /swapfile\nsudo swapon /swapfile\necho \'/swapfile none swap sw 0 0\' | sudo tee -a /etc/fstab', 'raspi-swap')"
+                    [ngClass]="{ copied: copiedSnippet === 'raspi-swap' }">
+              {{ copiedSnippet === 'raspi-swap' ? '✓' : '⧉' }}
+            </button>
+          </div>
+          <pre><code>sudo fallocate -l 1G /swapfile
+sudo chmod 600 /swapfile
+sudo mkswap /swapfile
+sudo swapon /swapfile
+echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab</code></pre>
+        </div>
+
+        <h3 class="doc-subheading">{{ 'Docs.selfhosted.raspi.perfTitle' | translate }}</h3>
+        <ul class="feature-list">
+          <li>{{ 'Docs.selfhosted.raspi.perf1' | translate }}</li>
+          <li>{{ 'Docs.selfhosted.raspi.perf2' | translate }}</li>
+          <li>{{ 'Docs.selfhosted.raspi.perf3' | translate }}</li>
+          <li>{{ 'Docs.selfhosted.raspi.perf4' | translate }}</li>
+          <li>{{ 'Docs.selfhosted.raspi.perf5' | translate }}</li>
+          <li>{{ 'Docs.selfhosted.raspi.perf6' | translate }}</li>
+          <li>{{ 'Docs.selfhosted.raspi.perf7' | translate }}</li>
+        </ul>
+
+        <h3 class="doc-subheading">{{ 'Docs.selfhosted.raspi.staticIpTitle' | translate }}</h3>
+        <p>{{ 'Docs.selfhosted.raspi.staticIpDesc' | translate }}</p>
+        <div class="code-block">
+          <div class="code-header">
+            <span>/etc/netplan/50-cloud-init.yaml</span>
+            <button class="copy-btn" (click)="copyToClipboard('network:\n  version: 2\n  ethernets:\n    eth0:\n      dhcp4: no\n      addresses: [192.168.0.100/24]\n      routes:\n        - to: default\n          via: 192.168.0.1\n      nameservers:\n        addresses: [192.168.0.1, 8.8.8.8]', 'raspi-ip')"
+                    [ngClass]="{ copied: copiedSnippet === 'raspi-ip' }">
+              {{ copiedSnippet === 'raspi-ip' ? '✓' : '⧉' }}
+            </button>
+          </div>
+          <pre><code>network:
+  version: 2
+  ethernets:
+    eth0:
+      dhcp4: no
+      addresses: [192.168.0.100/24]
+      routes:
+        - to: default
+          via: 192.168.0.1
+      nameservers:
+        addresses: [192.168.0.1, 8.8.8.8]</code></pre>
+        </div>
+        <div class="code-block">
+          <div class="code-header">
+            <span>Terminal</span>
+            <button class="copy-btn" (click)="copyToClipboard('sudo netplan apply', 'raspi-netplan')"
+                    [ngClass]="{ copied: copiedSnippet === 'raspi-netplan' }">
+              {{ copiedSnippet === 'raspi-netplan' ? '✓' : '⧉' }}
+            </button>
+          </div>
+          <pre><code>sudo netplan apply</code></pre>
+        </div>
+      </article>
+
+      <!-- ============================================================
+           SECTION: Configuration Reference
+           ============================================================ -->
+      <article class="doc-section" *ngIf="selected.id === 'config'">
+        <h2 class="doc-section-title">{{ 'Docs.selfhosted.config.title' | translate }}</h2>
+        <p class="doc-intro">{{ 'Docs.selfhosted.config.intro' | translate }}</p>
+
+        <h3 class="doc-subheading">{{ 'Docs.selfhosted.config.buildModes' | translate }}</h3>
+        <div class="endpoint-table">
+          <table>
+            <thead>
+              <tr>
+                <th>{{ 'Docs.selfhosted.config.file' | translate }}</th>
+                <th>{{ 'Docs.selfhosted.docker.mode' | translate }}</th>
+                <th>{{ 'Docs.selfhosted.config.usage' | translate }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td><code>environment.ts</code></td><td>firebase</td><td><code>npm start</code> (dev)</td></tr>
+              <tr><td><code>environment.production.ts</code></td><td>firebase</td><td><code>npm run build</code></td></tr>
+              <tr><td><code>environment.selfhosted.ts</code></td><td>selfhosted</td><td><code>npm run build:selfhosted</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 class="doc-subheading">{{ 'Docs.selfhosted.config.envVarsTitle' | translate }}</h3>
+        <div class="endpoint-table">
+          <table>
+            <thead>
+              <tr>
+                <th>{{ 'Docs.selfhosted.config.variable' | translate }}</th>
+                <th>{{ 'Docs.selfhosted.deploy.description' | translate }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td><code>COUCHDB_URL</code></td><td>{{ 'Docs.selfhosted.config.couchUrl' | translate }}</td></tr>
+              <tr><td><code>COUCHDB_USER</code></td><td>{{ 'Docs.selfhosted.config.couchUser' | translate }}</td></tr>
+              <tr><td><code>COUCHDB_PASSWORD</code></td><td>{{ 'Docs.selfhosted.config.couchPass' | translate }}</td></tr>
+              <tr><td><code>JWT_SECRET</code></td><td>{{ 'Docs.selfhosted.config.jwtSecret' | translate }}</td></tr>
+              <tr><td><code>PORT</code></td><td>{{ 'Docs.selfhosted.config.port' | translate }}</td></tr>
+              <tr><td><code>CORS_ORIGINS</code></td><td>{{ 'Docs.selfhosted.config.cors' | translate }}</td></tr>
+              <tr><td><code>LOG_LEVEL</code></td><td>{{ 'Docs.selfhosted.config.logLevel' | translate }}</td></tr>
+              <tr><td><code>SKIP_RATE_LIMIT</code></td><td>{{ 'Docs.selfhosted.config.rateLimit' | translate }}</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 class="doc-subheading">{{ 'Docs.selfhosted.config.envFileTitle' | translate }}</h3>
+        <p>{{ 'Docs.selfhosted.config.envFileDesc' | translate }}</p>
+        <div class="code-block">
+          <div class="code-header">
+            <span>.env.example → .env</span>
+            <button class="copy-btn" (click)="copyToClipboard('cp .env.example .env', 'config-env-cp')"
+                    [ngClass]="{ copied: copiedSnippet === 'config-env-cp' }">
+              {{ copiedSnippet === 'config-env-cp' ? '✓' : '⧉' }}
+            </button>
+          </div>
+          <pre><code>cp .env.example .env</code></pre>
+        </div>
+        <div class="code-block">
+          <div class="code-header">
+            <span>.env</span>
+            <button class="copy-btn" (click)="copyToClipboard('# Generate with: openssl rand -base64 64\nJWT_SECRET=change-me\n\n# Generate with: openssl rand -base64 30 | tr -d \'/+=\'\nCOUCHDB_PASSWORD=change-me\n\n# Generate with: openssl rand -base64 40\nGRAFANA_ADMIN_PASSWORD=change-me\n\n# Optional — leave empty to keep backups unencrypted\nBACKUP_ENCRYPTION_KEY=', 'config-env')"
+                    [ngClass]="{ copied: copiedSnippet === 'config-env' }">
+              {{ copiedSnippet === 'config-env' ? '✓' : '⧉' }}
+            </button>
+          </div>
+          <pre><code># Generate with: openssl rand -base64 64
+JWT_SECRET=change-me
+
+# Generate with: openssl rand -base64 30 | tr -d '/+='
+COUCHDB_PASSWORD=change-me
+
+# Generate with: openssl rand -base64 40
+GRAFANA_ADMIN_PASSWORD=change-me
+
+# Optional — leave empty to keep backups unencrypted
+BACKUP_ENCRYPTION_KEY=</code></pre>
+        </div>
+        <div class="warning-card">
+          <span class="warning-icon">⚠️</span>
+          <span>{{ 'Docs.selfhosted.config.envFileWarning' | translate }}</span>
+        </div>
+
+        <p style="margin-top: 1rem;">{{ 'Docs.selfhosted.config.backendEnvDesc' | translate }}</p>
+        <div class="code-block">
+          <div class="code-header">
+            <span>backend/.env.example → backend/.env</span>
+            <button class="copy-btn" (click)="copyToClipboard('cp backend/.env.example backend/.env', 'config-backend-env-cp')"
+                    [ngClass]="{ copied: copiedSnippet === 'config-backend-env-cp' }">
+              {{ copiedSnippet === 'config-backend-env-cp' ? '✓' : '⧉' }}
+            </button>
+          </div>
+          <pre><code>cp backend/.env.example backend/.env</code></pre>
+        </div>
+        <div class="code-block">
+          <div class="code-header">
+            <span>backend/.env</span>
+            <button class="copy-btn" (click)="copyToClipboard('COUCHDB_URL=http://couchdb:5984\nCOUCHDB_USER=admin\nCOUCHDB_PASSWORD=changeme\nPORT=3000\nNODE_ENV=production\nJWT_SECRET=your-super-secret-jwt-key-change-this\nCORS_ORIGINS=http://localhost:4200,http://localhost', 'config-backend-env')"
+                    [ngClass]="{ copied: copiedSnippet === 'config-backend-env' }">
+              {{ copiedSnippet === 'config-backend-env' ? '✓' : '⧉' }}
+            </button>
+          </div>
+          <pre><code>COUCHDB_URL=http://couchdb:5984
+COUCHDB_USER=admin
+COUCHDB_PASSWORD=changeme
+PORT=3000
+NODE_ENV=production
+JWT_SECRET=your-super-secret-jwt-key-change-this
+CORS_ORIGINS=http://localhost:4200,http://localhost</code></pre>
+        </div>
+
+        <h3 class="doc-subheading">{{ 'Docs.selfhosted.config.secretsTitle' | translate }}</h3>
+        <p>{{ 'Docs.selfhosted.config.secretsDesc' | translate }}</p>
+        <div class="code-block">
+          <div class="code-header">
+            <span>secrets.yaml.example → secrets.yaml</span>
+            <button class="copy-btn" (click)="copyToClipboard('cp k8s/secrets.yaml.example k8s/secrets.yaml', 'config-secrets-cp')"
+                    [ngClass]="{ copied: copiedSnippet === 'config-secrets-cp' }">
+              {{ copiedSnippet === 'config-secrets-cp' ? '✓' : '⧉' }}
+            </button>
+          </div>
+          <pre><code>cp k8s/secrets.yaml.example k8s/secrets.yaml</code></pre>
+        </div>
+        <p>{{ 'Docs.selfhosted.config.secretsStructure' | translate }}</p>
+        <div class="endpoint-table">
+          <table>
+            <thead>
+              <tr>
+                <th>Secret</th>
+                <th>{{ 'Docs.selfhosted.config.secretsKeys' | translate }}</th>
+                <th>{{ 'Docs.selfhosted.config.usage' | translate }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td><code>backend-secret</code></td><td>JWT_SECRET, COUCHDB_PASSWORD</td><td>{{ 'Docs.selfhosted.config.secretsBackendUse' | translate }}</td></tr>
+              <tr><td><code>couchdb-secret</code></td><td>username, password</td><td>{{ 'Docs.selfhosted.config.secretsCouchUse' | translate }}</td></tr>
+              <tr><td><code>grafana-secret</code></td><td>admin-password</td><td>{{ 'Docs.selfhosted.config.secretsGrafanaUse' | translate }}</td></tr>
+              <tr><td><code>backup-encryption-secret</code></td><td>encryption-key</td><td>{{ 'Docs.selfhosted.config.secretsBackupUse' | translate }}</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="code-block">
+          <div class="code-header">
+            <span>{{ 'Docs.selfhosted.config.secretsGenerate' | translate }}</span>
+            <button class="copy-btn" (click)="copyToClipboard('# JWT secret\nopenssl rand -base64 64\n\n# CouchDB password\nopenssl rand -base64 30 | tr -d \'/+=\'\n\n# Grafana password\nopenssl rand -base64 40\n\n# Backup encryption key (optional)\nopenssl rand -base64 32', 'config-secrets-gen')"
+                    [ngClass]="{ copied: copiedSnippet === 'config-secrets-gen' }">
+              {{ copiedSnippet === 'config-secrets-gen' ? '✓' : '⧉' }}
+            </button>
+          </div>
+          <pre><code># JWT secret
+openssl rand -base64 64
+
+# CouchDB password
+openssl rand -base64 30 | tr -d '/+='
+
+# Grafana password
+openssl rand -base64 40
+
+# Backup encryption key (optional)
+openssl rand -base64 32</code></pre>
+        </div>
+        <div class="warning-card">
+          <span class="warning-icon">⚠️</span>
+          <span>{{ 'Docs.selfhosted.config.secretsWarning' | translate }}</span>
+        </div>
+      </article>
+
+      <!-- ============================================================
+           SECTION: Migration from Firebase
+           ============================================================ -->
+      <article class="doc-section" *ngIf="selected.id === 'migration'">
+        <h2 class="doc-section-title">{{ 'Docs.selfhosted.migration.title' | translate }}</h2>
+        <p class="doc-intro">{{ 'Docs.selfhosted.migration.intro' | translate }}</p>
+
+        <div class="step-card">
+          <div class="step-number">1</div>
+          <div class="step-body">
+            <h3>{{ 'Docs.selfhosted.migration.step1' | translate }}</h3>
+          </div>
+        </div>
+        <div class="step-card">
+          <div class="step-number">2</div>
+          <div class="step-body">
+            <h3>{{ 'Docs.selfhosted.migration.step2' | translate }}</h3>
+          </div>
+        </div>
+        <div class="step-card">
+          <div class="step-number">3</div>
+          <div class="step-body">
+            <h3>{{ 'Docs.selfhosted.migration.step3' | translate }}</h3>
+          </div>
+        </div>
+        <div class="step-card">
+          <div class="step-number">4</div>
+          <div class="step-body">
+            <h3>{{ 'Docs.selfhosted.migration.step4' | translate }}</h3>
+          </div>
+        </div>
+        <div class="step-card">
+          <div class="step-number">5</div>
+          <div class="step-body">
+            <h3>{{ 'Docs.selfhosted.migration.step5' | translate }}</h3>
+          </div>
+        </div>
+
+        <div class="info-card" style="margin-top: 1.5rem;">
+          <div class="info-card-header">{{ 'Docs.selfhosted.migration.note' | translate }}</div>
+          <p>{{ 'Docs.selfhosted.migration.noteDesc' | translate }}</p>
+        </div>
+      </article>
+
+      <!-- Prev / Next navigation (branching: deployment splits into Podman / K3s paths) -->
+      <div class="section-nav">
+        <!-- Single prev button -->
+        <button class="nav-btn prev"
+                *ngIf="getNavPrev().length === 1"
+                (click)="navigateTo(getNavPrev()[0].id)">
+          <span class="nav-btn-label">← {{ 'Docs.selfhosted.nav.prev' | translate }}</span>
+          <span class="nav-btn-title">{{ sectionById(getNavPrev()[0].id)?.number }} {{ 'Docs.selfhosted.' + getNavPrev()[0].id + '.nav' | translate }}</span>
+        </button>
+        <!-- Two prev options (Custom Domain ← Podman Compose | Deploy Script) -->
+        <div class="nav-btn-group prev" *ngIf="getNavPrev().length === 2">
+          <button class="nav-btn prev" *ngFor="let link of getNavPrev()" (click)="navigateTo(link.id)">
+            <span class="nav-btn-label">← {{ 'Docs.selfhosted.nav.prev' | translate }}</span>
+            <span class="nav-btn-title">{{ sectionById(link.id)?.number }} {{ 'Docs.selfhosted.' + link.id + '.nav' | translate }}</span>
+          </button>
+        </div>
+
+        <!-- Spacer when no prev -->
+        <div *ngIf="getNavPrev().length === 0"></div>
+
+        <!-- Single next button -->
+        <button class="nav-btn next"
+                *ngIf="getNavNext().length === 1"
+                (click)="navigateTo(getNavNext()[0].id)">
+          <span class="nav-btn-label">{{ 'Docs.selfhosted.nav.next' | translate }} →</span>
+          <span class="nav-btn-title">{{ sectionById(getNavNext()[0].id)?.number }} {{ 'Docs.selfhosted.' + getNavNext()[0].id + '.nav' | translate }}</span>
+        </button>
+        <!-- Two next options (Deployment → Podman Compose | K3s) -->
+        <div class="nav-btn-group next" *ngIf="getNavNext().length === 2">
+          <button class="nav-btn next" *ngFor="let link of getNavNext()" (click)="navigateTo(link.id)">
+            <span class="nav-btn-label">{{ 'Docs.selfhosted.nav.next' | translate }} →</span>
+            <span class="nav-btn-title">{{ sectionById(link.id)?.number }} {{ 'Docs.selfhosted.' + link.id + '.nav' | translate }}</span>
+          </button>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+</div>

@@ -37,8 +37,11 @@
       <li *ngIf="!hasNumber">{{'Registration.RuleNumber' | translate}}</li>
     </ul>
     <p *ngIf="isError" id="reg-error" role="alert">{{errorMessageLable}}</p>
-    <button type="button" id="registerbtn" class="btn btn--primary" (click)="register()">{{'Registration.Register' | translate}}</button>
-    <button type="button" id="goToLoginbtn" class="btn btn--outline" (click)="goToLogin()">{{'Registration.SignIn' | translate}}</button>
+    <button type="button" id="registerbtn" class="btn btn--primary" (click)="register()" [disabled]="isLoading" [attr.aria-busy]="isLoading ? true : null">
+      <span *ngIf="isLoading" class="spinner" aria-hidden="true"></span>
+      <span>{{(isLoading ? 'Registration.Loading' : 'Registration.Register') | translate}}</span>
+    </button>
+    <button type="button" id="goToLoginbtn" class="btn btn--outline" (click)="goToLogin()" [disabled]="isLoading">{{'Registration.SignIn' | translate}}</button>
   </form>
 </div>
 
@@ -62,8 +65,11 @@
       </button>
     </div>
     <p *ngIf="isError" id="login-error" role="alert">{{errorMessageLable}}</p>
-    <button type="button" id="loginbtn" class="btn btn--primary" (click)="login()">{{'Registration.SignIn' | translate}}</button>
-    <button type="button" id="backbtn" class="btn btn--outline" (click)="goToRegister()">{{'Registration.Register' | translate}}</button>
+    <button type="button" id="loginbtn" class="btn btn--primary" (click)="login()" [disabled]="isLoading" [attr.aria-busy]="isLoading ? true : null">
+      <span *ngIf="isLoading" class="spinner" aria-hidden="true"></span>
+      <span>{{(isLoading ? 'Registration.LoadingSignIn' : 'Registration.SignIn') | translate}}</span>
+    </button>
+    <button type="button" id="backbtn" class="btn btn--outline" (click)="goToRegister()" [disabled]="isLoading">{{'Registration.Register' | translate}}</button>
     <h3 id="encryptionLable">{{'Settings.encryptionLable' | translate}}</h3>
                 <hr
                     class="separator-black">

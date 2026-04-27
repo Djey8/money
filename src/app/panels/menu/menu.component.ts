@@ -110,12 +110,14 @@ export class MenuComponent {
   }
 
   clickedMenuStatements() {
+    StatsComponent.resetBIStateIfNeeded('statement');
     StatsComponent.isStatment = true;
     StatsComponent.isKPI = false;
     StatsComponent.isStatistic = false;
     MenuComponent.isMenu = false;
     MenuComponent.isStats = false;
     StatsComponent.isSwitch = false;
+    StatsComponent.currentInstance?.cdr.detectChanges();
   }
 
   clickedMenuStatistic() {
@@ -125,6 +127,7 @@ export class MenuComponent {
     MenuComponent.isMenu = false;
     MenuComponent.isStats = false;
     StatsComponent.isSwitch = false;
+    StatsComponent.currentInstance?.cdr.detectChanges();
   }
   
 

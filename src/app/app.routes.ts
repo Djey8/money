@@ -4,6 +4,8 @@ export const routes: Routes = [
   { path: '', loadComponent: () => import('./landing/landing-page.component').then(m => m.LandingPageComponent) },
   { path: 'about', loadComponent: () => import('./landing/landing-page.component').then(m => m.LandingPageComponent) },
   { path: 'changelog', loadComponent: () => import('./changelog/changelog.component').then(m => m.ChangelogComponent) },
+  { path: 'docs', loadComponent: () => import('./docs/docs.component').then(m => m.DocsComponent) },
+  { path: 'docs/selfhosted', loadComponent: () => import('./docs/selfhosted/selfhosted-docs.component').then(m => m.SelfhostedDocsComponent) },
   { path: 'authentication', loadComponent: () => import('./registration/registration.component').then(m => m.RegistrationComponent) },
   { path: 'home', loadComponent: () => import('./main/home/home.component').then(m => m.HomeComponent) },
   { path: 'transactions', loadComponent: () => import('./main/accounting/accounting.component').then(m => m.AccountingComponent) },
