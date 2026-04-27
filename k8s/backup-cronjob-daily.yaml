@@ -5,11 +5,19 @@ metadata:
   namespace: money-app
 spec:
   schedule: "30 8 * * *"
+  # Skip a run rather than queuing if it cannot start within 5 minutes
+  startingDeadlineSeconds: 300
+  # Never run two daily backups concurrently
+  concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 1
   jobTemplate:
     spec:
       ttlSecondsAfterFinished: 86400
+      # Kill the job if it runs longer than 60 minutes
+      activeDeadlineSeconds: 3600
+      # Do not retry endlessly on failure
+      backoffLimit: 1
       template:
         metadata:
           labels:
