@@ -32,17 +32,32 @@ export class AuthService {
         if (!user) {
           return { authenticated: false, error: 'Session expired. Please log in again.' };
         }
-        
+
         try {
-          // Refresh token to ensure it's still valid
+          // Refresh token to ensure it's still valid.
           await user.getIdToken(true);
           return { authenticated: true };
-        } catch (err) {
-          return { authenticated: false, error: 'Session expired. Please log in again.' };
+        } catch (err: any) {
+          // Distinguish a real auth failure (token revoked / user disabled) from a transient
+          // network/offline blip. For transient errors keep the session alive so the user can
+          // continue working with cached data instead of being booted to the landing page.
+          const code = err?.code || '';
+          const isAuthFailure =
+            code === 'auth/user-token-expired' ||
+            code === 'auth/user-disabled' ||
+            code === 'auth/invalid-user-token' ||
+            code === 'auth/user-not-found' ||
+            code === 'auth/requires-recent-login';
+          if (isAuthFailure) {
+            return { authenticated: false, error: 'Session expired. Please log in again.' };
+          }
+          // Treat as transient — assume still authenticated.
+          return { authenticated: true };
         }
       } catch (error) {
         console.error('Error checking Firebase auth state:', error);
-        return { authenticated: false, error: 'Authentication error occurred.' };
+        // Transient error reading auth state — don't force a logout.
+        return { authenticated: true };
       }
     } else {
       // Selfhosted mode - check if userId exists (cookie is validated server-side)
