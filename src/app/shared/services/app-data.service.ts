@@ -91,18 +91,14 @@ export class AppDataService {
         return false;
       }
     } else {
+      // Selfhosted: trust the locally stored userId for the cold-start "do we have a session?"
+      // check. The actual cookie/token validity is verified lazily on the next API call by the
+      // auth interceptor, which transparently refreshes the access token (or logs out if the
+      // refresh token is truly invalid). Probing the server here was racy on cold start
+      // (e.g. after a long idle) — a transient failure would wipe the local session and force
+      // a manual re-login even though the refresh token was still valid.
       const userId = localStorage.getItem('selfhosted_userId');
-      if (!userId) {
-        return false;
-      }
-      try {
-        const isValid = await this.database.getData('info/username')
-          .then(() => true)
-          .catch(() => false);
-        return isValid;
-      } catch {
-        return false;
-      }
+      return !!userId;
     }
   }
 
