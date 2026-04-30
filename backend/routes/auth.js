@@ -9,8 +9,14 @@ const { authenticateToken } = require('../middleware/auth');
 const router = express.Router();
 
 const JWT_SECRET = process.env.JWT_SECRET;
-const ACCESS_TOKEN_EXPIRES_IN = '1h';
-const REFRESH_TOKEN_EXPIRES_IN = '30d';
+// Long-lived sessions: UX is prioritized over re-authentication frequency.
+// The access token is short enough to limit blast radius if leaked, but long enough that
+// most users never see a refresh round-trip. The refresh token rotates on every use, so the
+// effective sliding session is REFRESH_TOKEN_EXPIRES_IN of inactivity.
+const ACCESS_TOKEN_EXPIRES_IN = '24h';
+const REFRESH_TOKEN_EXPIRES_IN = '365d';
+const ACCESS_TOKEN_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+const REFRESH_TOKEN_MAX_AGE_MS = 365 * 24 * 60 * 60 * 1000;
 const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 
 // Cookie configuration
@@ -24,12 +30,12 @@ const COOKIE_OPTIONS = {
 function setAuthCookies(res, accessToken, refreshToken) {
   res.cookie('access_token', accessToken, {
     ...COOKIE_OPTIONS,
-    maxAge: 60 * 60 * 1000 // 1 hour
+    maxAge: ACCESS_TOKEN_MAX_AGE_MS
   });
   res.cookie('refresh_token', refreshToken, {
     ...COOKIE_OPTIONS,
     path: '/api/auth',
-    maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+    maxAge: REFRESH_TOKEN_MAX_AGE_MS
   });
 }
 
@@ -49,7 +55,7 @@ async function createRefreshToken(userId, email) {
     type: 'refresh_token',
     userId,
     createdAt: new Date().toISOString(),
-    expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+    expiresAt: new Date(Date.now() + REFRESH_TOKEN_MAX_AGE_MS).toISOString()
   });
   
   return refreshToken;
