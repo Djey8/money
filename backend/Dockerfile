@@ -1,8 +1,9 @@
 # Backend Dockerfile
 FROM node:22-alpine@sha256:8ea2348b068a9544dae7317b4f3aafcdc032df1647bb7d768a05a5cad1a7683f
 
-# Patch known CVEs in Alpine system packages
-RUN apk upgrade --no-cache libcrypto3 libssl3 musl musl-utils zlib
+# Patch known CVEs in Alpine system packages.
+# Upgrade everything rather than chasing individual packages.
+RUN apk upgrade --no-cache
 
 # Patch picomatch ReDoS (CVE-2026-33671) in global npm
 RUN cd /usr/local/lib/node_modules/npm/node_modules/picomatch && \
