@@ -17,8 +17,21 @@
       }
     },
     {
+      "name": "page-images",
+      "installMode": "prefetch",
+      "updateMode": "prefetch",
+      "resources": {
+        "files": [
+          "/assets/icons/**",
+          "/assets/symbols/**",
+          "/assets/flags/**",
+          "/assets/profile-blank.jpg"
+        ]
+      }
+    },
+    {
       "name": "assets",
-      "installMode": "lazy",
+      "installMode": "prefetch",
       "updateMode": "prefetch",
       "resources": {
         "files": [
@@ -38,6 +51,18 @@
         "maxSize": 20,
         "maxAge": "365d",
         "strategy": "performance"
+      }
+    },
+    {
+      "name": "api-reads",
+      "urls": [
+        "/api/**"
+      ],
+      "cacheConfig": {
+        "maxSize": 100,
+        "maxAge": "30d",
+        "timeout": "5s",
+        "strategy": "freshness"
       }
     }
   ]

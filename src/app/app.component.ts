@@ -25,6 +25,9 @@ import { migrateSubscriptionArray } from './shared/migrations/subscription-migra
 import { OnboardingService } from './shared/services/onboarding.service';
 import { TourService } from './shared/services/tour.service';
 import { SelfhostedService } from './shared/services/selfhosted.service';
+import { ConnectivityService } from './shared/services/connectivity.service';
+import { SyncService } from './shared/services/sync.service';
+import { OutboxService } from './shared/services/outbox.service';
 import { gotoTop as scrollToTop, gotoTopAuto as scrollToTopAuto } from './shared/scroll.utils';
 
 // Standalone component imports used in template
@@ -53,6 +56,7 @@ import { OnboardingComponent } from './shared/components/onboarding/onboarding.c
 import { TourOverlayComponent } from './shared/components/tour-overlay/tour-overlay.component';
 import { PullToRefreshComponent } from './shared/components/pull-to-refresh/pull-to-refresh.component';
 import { SwUpdateComponent } from './shared/components/sw-update/sw-update.component';
+import { OfflineIndicatorComponent } from './shared/components/offline-indicator/offline-indicator.component';
 
 // Deferred imports — resolved after module init to break circular chains
 let ProfileComponent: any; setTimeout(() => import('./panels/profile/profile.component').then(m => ProfileComponent = m.ProfileComponent));
@@ -106,6 +110,7 @@ let AddGrowComponent: any; setTimeout(() => import('src/app/panels/add/add-grow/
     TourOverlayComponent,
     PullToRefreshComponent,
     SwUpdateComponent,
+    OfflineIndicatorComponent,
   ],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css']
@@ -131,11 +136,44 @@ export class AppComponent {
    * @param localStorage - The local storage service.
    * @param database - The database service.
    */
-  constructor(public router: Router, private localStorage: LocalService, private database: DatabaseService, public afAuth: AngularFireAuth, private cryptic: CrypticService, private authService: AuthService, private frontendLogger: FrontendLoggerService, private persistence: PersistenceService, private incomeStatement: IncomeStatementService, public appState: AppStateService, private appData: AppDataService, private gameMode: GameModeService, private subscriptionProcessing: SubscriptionProcessingService, private onboardingService: OnboardingService, private toastService: ToastService, private tourService: TourService, private selfhosted: SelfhostedService) {
+  constructor(public router: Router, private localStorage: LocalService, private database: DatabaseService, public afAuth: AngularFireAuth, private cryptic: CrypticService, private authService: AuthService, private frontendLogger: FrontendLoggerService, private persistence: PersistenceService, private incomeStatement: IncomeStatementService, public appState: AppStateService, private appData: AppDataService, private gameMode: GameModeService, private subscriptionProcessing: SubscriptionProcessingService, private onboardingService: OnboardingService, private toastService: ToastService, private tourService: TourService, private selfhosted: SelfhostedService, private connectivity: ConnectivityService, private syncService: SyncService, private outbox: OutboxService) {
     AppComponent.instance = this;
 
     // Subscribe to tour actions for panel management
     this.tourService.action$.subscribe(action => this.handleTourAction(action));
+
+    // Start draining the outbox whenever connectivity returns.
+    this.syncService.init();
+
+    // Log offline-readiness milestones to the console so the developer (and curious users)
+    // can see when the app is fully cached and safe to use offline. These are intentionally
+    // console-only — no UI noise.
+    this.logOfflineReadiness();
+
+    // Surface connectivity transitions as toasts so the user understands why the app is
+    // accepting writes locally instead of round-tripping to the server. The toast wording
+    // depends on whether there's anything queued to sync — we shouldn't promise "syncing
+    // your changes" when there's nothing pending.
+    let firstConnectivityEvent = true;
+    this.connectivity.online$.subscribe(online => {
+      if (firstConnectivityEvent) {
+        firstConnectivityEvent = false;
+        return; // skip initial replay so we don't show a toast on every page load
+      }
+      if (online) {
+        const pending = this.outbox.pendingCount();
+        if (pending > 0) {
+          this.toastService.show(
+            `Back online — syncing ${pending} ${pending === 1 ? 'change' : 'changes'}…`,
+            'info'
+          );
+        } else {
+          this.toastService.show('Back online', 'success');
+        }
+      } else {
+        this.toastService.show("You're offline — changes will sync when reconnected", 'info');
+      }
+    });
 
     // Parse each localStorage key individually so one corrupt entry
     // doesn't wipe all data via a single catch block
@@ -177,6 +215,12 @@ export class AppComponent {
     AppStateService.instance.mojo = safeParse("mojo", { amount: 0, target: 0 });
     AppStateService.instance.allBudgets = safeParse("budget");
 
+    // Cache-first / PWA pattern: localStorage is now hydrated into AppState. Release the
+    // global loading spinner UNCONDITIONALLY \u2014 the UI has data to render, so there is no
+    // reason to block on network at this point. Per-page loaders / refresh-in-place still
+    // run in the background to refresh stale data; they don't drive the global spinner.
+    AppStateService.instance.isLoading = false;
+
     // Optimistic early navigate: if we have evidence of a prior session,
     // go to /home immediately so the landing page never flashes
     const hash = window.location.hash;
@@ -188,6 +232,18 @@ export class AppComponent {
         this.router.navigate(['/home']);
       }
     }
+
+    // Global safety net: no matter what happens during init (hung Firebase auth, blocked
+    // network, thrown errors deep in tier loaders), force the loading spinner off after a
+    // short timeout. The user always has the localStorage snapshot loaded at boot, so the
+    // UI has something to render even if the server pipeline is wedged.
+    const LOADING_HARD_TIMEOUT_MS = 3_000;
+    setTimeout(() => {
+      if (AppStateService.instance.isLoading) {
+        console.warn('[App Init] Loading state stuck — releasing spinner from local cache');
+        AppStateService.instance.isLoading = false;
+      }
+    }, LOADING_HARD_TIMEOUT_MS);
 
     // Check authentication before loading data
     AppDataService.instance.checkAuthentication().then(async isAuthenticated => {
@@ -238,7 +294,66 @@ export class AppComponent {
             }
           }
         }
-        // Tier 1: Load critical data, block UI until ready
+        // PWA-style boot: localStorage was already hydrated above synchronously, so AppState
+        // already has the user's data ready to render. Release the spinner immediately so the
+        // user sees their data — the network loads run in the background and refresh state
+        // when the server replies. This is the cache-first / stale-while-revalidate pattern.
+        const hasLocalData =
+          (AppStateService.instance.allTransactions?.length ?? 0) > 0 ||
+          (AppStateService.instance.allAssets?.length ?? 0) > 0 ||
+          (AppStateService.instance.allRevenues?.length ?? 0) > 0 ||
+          (AppStateService.instance.liabilities?.length ?? 0) > 0;
+        if (hasLocalData) {
+          AppStateService.instance.isLoading = false;
+        }
+
+        // Determine current connectivity for the right boot-time toast. waitForReady
+        // resolves after Firebase's first round-trip verification completes (or .info/connected
+        // fires false), so onlineAtBoot reflects reality \u2014 not the optimistic navigator.onLine.
+        await this.connectivity.waitForReady();
+        const onlineAtBoot = this.connectivity.isOnline;
+
+        // If we have NO local data and we're offline, there's nothing to load and nothing
+        // to wait for \u2014 release the spinner so the user sees the empty state instead of
+        // staring at a spinner for 8 seconds until the hard-timeout fires.
+        if (!onlineAtBoot) {
+          AppStateService.instance.isLoading = false;
+        }
+
+        if (hasLocalData) {
+          if (onlineAtBoot) {
+            this.toastService.show('Refreshing your data\u2026', 'info');
+          } else {
+            this.toastService.show('Offline \u2014 showing your last saved data', 'info');
+          }
+        } else if (!onlineAtBoot) {
+          this.toastService.show("You're offline \u2014 connect to load your data", 'info');
+        }
+
+        // Offline at boot: don't even try to talk to the server. Local data is already in
+        // AppState, the spinner is already off, and the outbox drain + tier loads will run
+        // automatically the moment connectivity returns (via the connectivity.online$
+        // subscription handler in initOfflineSync). Returning here avoids the 10s-per-tier
+        // hang while the Firebase SDK times out blocked requests.
+        if (!onlineAtBoot) {
+          AppStateService.instance.tier2Loaded = true;
+          AppStateService.instance.tier3GrowLoaded = true;
+          AppStateService.instance.tier3BalanceLoaded = true;
+          return;
+        }
+
+        // Drain the outbox BEFORE any server reads. If the user made writes offline and is now
+        // online again, we must push those snapshots to the server first - otherwise the upcoming
+        // loadTier1/loadBalanceData reads would overwrite local state with stale server data and
+        // the offline edits would silently disappear.
+        try {
+          await this.syncService.drain();
+        } catch (err) {
+          console.error('[App Init] Outbox drain failed (will retry on next reconnect):', err);
+        }
+        // Tier 1: Load critical data. We already released the spinner above when local data
+        // was present, so this load is non-blocking from the user's perspective — it just
+        // refreshes the in-memory state with the latest server data when it arrives.
         AppDataService.instance.loadTier1().then(() => {
           if (AppDataService.instance.decryptionFailed) {
             this.toastService.show('Login failed: wrong encryption settings. Please check your encryption key.', 'error');
@@ -246,6 +361,11 @@ export class AppComponent {
             return;
           }
           AppStateService.instance.isLoading = false;
+          // Confirm to the user that the refresh actually completed when we were online at
+          // boot. Skip if we were offline (the offline toast already explained the state).
+          if (hasLocalData && onlineAtBoot) {
+            this.toastService.show('Up to date', 'success');
+          }
           // Recalculate home amounts now that data is loaded
           if (HomeComponent) HomeComponent.getAmounts();
           if(!GameModeService.isCashflowGame()){
@@ -258,7 +378,31 @@ export class AppComponent {
             setTimeout(() => this.tourService.startTour(), 600);
           }
           // Tier 2: Load deferred data in background (non-blocking)
-          AppDataService.instance.loadTier2().catch(err => console.error('Tier 2 load error:', err));
+          const t0 = performance.now();
+          AppDataService.instance.loadTier2()
+            .catch(err => console.error('Tier 2 load error:', err))
+            .then(() => {
+              console.log(`[Offline] Tier 2 ready (${Math.round(performance.now() - t0)}ms) — smile/fire/mojo/budget cached`);
+              // Tier 3: Prefetch the rest in the background so the offline cache is fully
+              // hydrated even for pages the user hasn't opened yet. These are best-effort —
+              // failures are logged but don't surface to the UI.
+              const tier3 = Promise.all([
+                AppDataService.instance.loadGrowData()
+                  .catch(err => console.error('Tier 3 grow prefetch error:', err)),
+                AppDataService.instance.loadBalanceData()
+                  .catch(err => console.error('Tier 3 balance prefetch error:', err))
+              ]);
+              tier3.then(() => {
+                console.log(`[Offline] Tier 3 ready (${Math.round(performance.now() - t0)}ms) — grow + balance cached. App data fully loaded.`);
+              });
+            });
+        }).catch(err => {
+          // Last-resort safety net: any unhandled rejection from loadTier1 must NOT leave the
+          // user staring at a forever-spinner. The localStorage snapshot loaded at boot is
+          // already in AppState, so the UI has data to render — we just need to release the
+          // spinner.
+          console.error('[App Init] loadTier1 failed (rendering from local cache):', err);
+          AppStateService.instance.isLoading = false;
         });
       } else {
         AppStateService.instance.isLoading = false;
@@ -292,15 +436,20 @@ export class AppComponent {
             // when user next navigates to those pages
             AppStateService.instance.tier3BalanceLoaded = false;
             AppStateService.instance.tier3GrowLoaded = false;
-            await AppDataService.instance.loadTier1();
-            if (AppDataService.instance.decryptionFailed) {
-              this.toastService.show('Login failed: wrong encryption settings. Please check your encryption key.', 'error');
-              this.logOut();
-              return;
+            try {
+              await AppDataService.instance.loadTier1();
+              if (AppDataService.instance.decryptionFailed) {
+                this.toastService.show('Login failed: wrong encryption settings. Please check your encryption key.', 'error');
+                this.logOut();
+                return;
+              }
+              // Auto-generate subscription transactions after reload
+              this.autoGenerateSubscriptionTransactions();
+            } finally {
+              // Always clear the spinner — otherwise a hung Firebase read or thrown error
+              // leaves the UI stuck on a loading state that only a hard refresh can fix.
+              AppStateService.instance.isLoading = false;
             }
-            AppStateService.instance.isLoading = false;
-            // Auto-generate subscription transactions after reload
-            this.autoGenerateSubscriptionTransactions();
           }
         }
       }
@@ -326,6 +475,46 @@ export class AppComponent {
       // Log error but don't block app load
       console.error('Failed to auto-generate subscription transactions:', error);
       // Don't show error toast on initial load to avoid alarming users
+    }
+  }
+
+  /**
+   * Logs milestones describing when the app becomes fully usable offline:
+   *   - service worker activated (shell + assets cached)
+   *   - all lazy route chunks preloaded
+   * Tier-1/2/3 data readiness is logged from the auth-success path where it actually runs.
+   */
+  private logOfflineReadiness(): void {
+    const startedAt = performance.now();
+
+    // 1. Service worker activation (means shell + assetGroups are in cache).
+    if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
+      navigator.serviceWorker.ready
+        .then(() => {
+          console.log(
+            `[Offline] Service worker active (${Math.round(performance.now() - startedAt)}ms) — app shell + page images cached`
+          );
+        })
+        .catch(err => console.warn('[Offline] Service worker not ready:', err));
+    } else {
+      console.log('[Offline] Service worker unavailable — only in-memory + localStorage cache');
+    }
+
+    // 2. Lazy-route preloading. PreloadAllModules walks the route table after bootstrap;
+    //    once the browser is idle, every chunk has been requested. Falls back to a timer
+    //    in environments without requestIdleCallback (Safari < 16, jsdom).
+    const announcePreloaded = () => {
+      console.log(
+        `[Offline] All route chunks preloaded (${Math.round(performance.now() - startedAt)}ms) — every page reachable offline`
+      );
+    };
+    if (typeof window !== 'undefined') {
+      const ric = (window as any).requestIdleCallback;
+      if (typeof ric === 'function') {
+        ric(announcePreloaded, { timeout: 5_000 });
+      } else {
+        setTimeout(announcePreloaded, 3_000);
+      }
     }
   }
 

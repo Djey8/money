@@ -10,14 +10,13 @@ spec:
   # Never run two daily backups concurrently
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 3
-  failedJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 5
   jobTemplate:
     spec:
       ttlSecondsAfterFinished: 86400
       # Kill the job if it runs longer than 60 minutes
       activeDeadlineSeconds: 3600
-      # Do not retry endlessly on failure
-      backoffLimit: 1
+      backoffLimit: 3
       template:
         metadata:
           labels:
@@ -36,8 +35,16 @@ spec:
               #!/bin/sh
               set -e
 
-              # Install required tools
-              apk add --no-cache curl gnupg > /dev/null 2>&1
+              # Install required tools (retry — Alpine mirrors flap occasionally)
+              for i in 1 2 3 4 5; do
+                if apk add --no-cache curl gnupg > /dev/null 2>&1; then
+                  break
+                fi
+                echo "apk add attempt $i failed, retrying in 10s..."
+                sleep 10
+              done
+              command -v curl >/dev/null || { echo "curl install failed"; exit 1; }
+              command -v gpg  >/dev/null || { echo "gpg install failed";  exit 1; }
 
               # ── Configuration ──────────────────────────────────
               COUCHDB_HOST="couchdb.money-app.svc.cluster.local"

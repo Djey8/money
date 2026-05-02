@@ -24,8 +24,10 @@ RUN npm run build:selfhosted
 # Stage 2: Serve with nginx
 FROM docker.io/library/nginx:alpine@sha256:5616878291a2eed594aee8db4dade5878cf7edcb475e59193904b198d9b830de
 
-# Patch known CVEs in Alpine system packages
-RUN apk upgrade --no-cache libcrypto3 libssl3 libpng musl musl-utils zlib
+# Patch known CVEs in Alpine system packages.
+# Upgrade everything rather than chasing individual packages — keeps Trivy
+# scans green without manual edits each time a new CVE drops.
+RUN apk upgrade --no-cache
 
 # Copy custom nginx configuration
 COPY ./nginx.conf /etc/nginx/nginx.conf

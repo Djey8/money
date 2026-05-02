@@ -83,26 +83,34 @@ export class AppDataService {
     }
 
     if (this.appMode === 'firebase') {
+      // Firebase's authState observable can hang forever when offline (the SDK is waiting
+      // for the server to confirm the cached token). Race it against a localStorage check
+      // and a hard timeout so a refresh while offline doesn't park the entire app on the
+      // loading spinner. If the user logged in before, we have `uid` cached locally — trust
+      // that for the cold-start "is there a session?" question and let the next online
+      // request re-validate.
+      const AUTH_TIMEOUT_MS = 4_000;
+      const cachedUid = this.localStorage.getData('uid');
+      const fallback = !!cachedUid;
       try {
-        const user = await firstValueFrom(this.afAuth.authState);
-        return user !== null;
+        const result = await Promise.race([
+          firstValueFrom(this.afAuth.authState).then(user => user !== null),
+          new Promise<boolean>(resolve => setTimeout(() => resolve(fallback), AUTH_TIMEOUT_MS))
+        ]);
+        return result;
       } catch (error) {
-        console.error('Error checking Firebase auth state:', error);
-        return false;
+        console.error('Error checking Firebase auth state (falling back to cached uid):', error);
+        return fallback;
       }
     } else {
+      // Selfhosted: trust the locally stored userId for the cold-start "do we have a session?"
+      // check. The actual cookie/token validity is verified lazily on the next API call by the
+      // auth interceptor, which transparently refreshes the access token (or logs out if the
+      // refresh token is truly invalid). Probing the server here was racy on cold start
+      // (e.g. after a long idle) — a transient failure would wipe the local session and force
+      // a manual re-login even though the refresh token was still valid.
       const userId = localStorage.getItem('selfhosted_userId');
-      if (!userId) {
-        return false;
-      }
-      try {
-        const isValid = await this.database.getData('info/username')
-          .then(() => true)
-          .catch(() => false);
-        return isValid;
-      } catch {
-        return false;
-      }
+      return !!userId;
     }
   }
 
