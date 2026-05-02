@@ -11,9 +11,18 @@ export class CountUpDirective implements OnChanges {
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['targetValue']) {
-      const from = changes['targetValue'].previousValue ?? 0;
-      const to = changes['targetValue'].currentValue ?? 0;
-      this.animateCount(Number(from), Number(to));
+      const change = changes['targetValue'];
+      const to = Number(change.currentValue ?? 0);
+      // First render: paint the target value directly. Animating from 0 produces a
+      // visible "0" flash on cached refresh — the user already had this number on disk,
+      // so there is nothing to count up to.
+      if (change.firstChange) {
+        if (this.animationFrame) cancelAnimationFrame(this.animationFrame);
+        this.el.nativeElement.textContent = this.format(to);
+        return;
+      }
+      const from = Number(change.previousValue ?? 0);
+      this.animateCount(from, to);
     }
   }
 

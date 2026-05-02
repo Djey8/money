@@ -10,6 +10,7 @@ import { IncomeStatementService } from './income-statement.service';
 import { AppStateService } from './app-state.service';
 import { SubscriptionProcessingService } from './subscription-processing.service';
 import { ToastService } from './toast.service';
+import { OutboxService } from './outbox.service';
 import { Transaction } from '../../interfaces/transaction';
 import { Subscription } from '../../interfaces/subscription';
 import { Revenue } from '../../interfaces/revenue';
@@ -71,7 +72,8 @@ export class AppDataService {
     private persistence: PersistenceService,
     private incomeStatement: IncomeStatementService,
     private toastService: ToastService,
-    private subscriptionProcessing: SubscriptionProcessingService
+    private subscriptionProcessing: SubscriptionProcessingService,
+    private outbox: OutboxService
   ) {
     AppDataService.instance = this;
   }
@@ -251,16 +253,18 @@ export class AppDataService {
     return this.loadTier1().then(() => this.loadTier2());
   }
 
-  async loadTier1(): Promise<void> {
+  async loadTier1(): Promise<boolean> {
     this.database.clearReadCache();
     this.decryptionFailed = false;
     try {
       const response = await this.database.getBatchData(AppDataService.TIER1_PATHS);
-      if (response === null) return;  // 304 Not Modified — data unchanged
+      if (response === null) return false; // 304 Not Modified — data unchanged
       this.applyBatchData(response.data);
       AppStateService.instance.lastUpdatedAt = response.updatedAt;
+      return true;
     } catch (err) {
       console.error('Tier 1 load error:', err);
+      return false;
     }
   }
 
@@ -319,7 +323,17 @@ export class AppDataService {
   }
 
   private applyBatchData(data: Record<string, any>): void {
+    // Critical safety net against data loss: if the user made an offline edit that's still
+    // queued in the outbox, the server's snapshot for that tag is STALE relative to local.
+    // Applying it would silently destroy the user's pending edit (they edit, app thinks
+    // online flickers, they reload, server data overwrites localStorage — transaction lost).
+    // Skip any tag that has a pending outbox entry; it will reach the server on next drain.
+    const pendingTags = new Set(this.outbox.list().map(e => e.tag));
     for (const path in data) {
+      if (pendingTags.has(path)) {
+        console.warn(`[AppData] Skipping server data for "${path}" — pending outbox entry would be overwritten.`);
+        continue;
+      }
       try {
         this.applyPathData(path, data[path]);
       } catch (err) {

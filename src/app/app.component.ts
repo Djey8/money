@@ -320,14 +320,15 @@ export class AppComponent {
           AppStateService.instance.isLoading = false;
         }
 
-        if (hasLocalData) {
-          if (onlineAtBoot) {
-            this.toastService.show('Refreshing your data\u2026', 'info');
-          } else {
+        // Toast policy: only surface state the user can act on. Refreshing in the
+        // background after a cached-boot is the default behavior and not news \u2014 no toast.
+        // We DO surface offline states because they change what the user can do.
+        if (!onlineAtBoot) {
+          if (hasLocalData) {
             this.toastService.show('Offline \u2014 showing your last saved data', 'info');
+          } else {
+            this.toastService.show("You're offline \u2014 connect to load your data", 'info');
           }
-        } else if (!onlineAtBoot) {
-          this.toastService.show("You're offline \u2014 connect to load your data", 'info');
         }
 
         // Offline at boot: don't even try to talk to the server. Local data is already in
@@ -354,17 +355,18 @@ export class AppComponent {
         // Tier 1: Load critical data. We already released the spinner above when local data
         // was present, so this load is non-blocking from the user's perspective — it just
         // refreshes the in-memory state with the latest server data when it arrives.
-        AppDataService.instance.loadTier1().then(() => {
+        AppDataService.instance.loadTier1().then((changed) => {
           if (AppDataService.instance.decryptionFailed) {
             this.toastService.show('Login failed: wrong encryption settings. Please check your encryption key.', 'error');
             this.logOut();
             return;
           }
           AppStateService.instance.isLoading = false;
-          // Confirm to the user that the refresh actually completed when we were online at
-          // boot. Skip if we were offline (the offline toast already explained the state).
-          if (hasLocalData && onlineAtBoot) {
-            this.toastService.show('Up to date', 'success');
+          // Only toast when something actually changed on the server since the last load.
+          // A silent refresh that returns 304 (or applies no diff) is not news. This
+          // eliminates the every-refresh "Up to date" / "Refreshing\u2026" toast spam.
+          if (changed && hasLocalData && onlineAtBoot) {
+            this.toastService.show('Updated', 'success');
           }
           // Recalculate home amounts now that data is loaded
           if (HomeComponent) HomeComponent.getAmounts();
@@ -432,8 +434,13 @@ export class AppComponent {
           const hasChanged = await AppDataService.instance.checkUpdatedAt();
           if (hasChanged) {
             AppStateService.instance.isLoading = true;
-            // Reset tier 3 flags so on-demand data is re-fetched from server
-            // when user next navigates to those pages
+            // Snapshot which tiers were already loaded so we can refresh them too.
+            // Just resetting the flags isn't enough — the user has to navigate to those
+            // pages again to see the updated data, hence the "needs two refreshes" bug.
+            const wasTier2 = AppStateService.instance.tier2Loaded;
+            const wasBalance = AppStateService.instance.tier3BalanceLoaded;
+            const wasGrow = AppStateService.instance.tier3GrowLoaded;
+            AppStateService.instance.tier2Loaded = false;
             AppStateService.instance.tier3BalanceLoaded = false;
             AppStateService.instance.tier3GrowLoaded = false;
             try {
@@ -443,6 +450,12 @@ export class AppComponent {
                 this.logOut();
                 return;
               }
+              // Refresh whichever follow-up tiers had been loaded before, in parallel.
+              const followUps: Promise<unknown>[] = [];
+              if (wasTier2) followUps.push(AppDataService.instance.loadTier2());
+              if (wasBalance) followUps.push(AppDataService.instance.loadBalanceData());
+              if (wasGrow) followUps.push(AppDataService.instance.loadGrowData());
+              if (followUps.length) await Promise.allSettled(followUps);
               // Auto-generate subscription transactions after reload
               this.autoGenerateSubscriptionTransactions();
             } finally {

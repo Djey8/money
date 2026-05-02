@@ -5,6 +5,26 @@ html, body {
   overscroll-behavior-y: contain;
 }
 
+/* Prevent iOS Safari auto-zoom on input focus.
+   iOS zooms in when an input's computed font-size is < 16px. Setting all form
+   controls to >= 16px on coarse-pointer devices keeps inputs readable without
+   triggering the auto-zoom. We do NOT set maximum-scale on the viewport, so
+   the user can still pinch-zoom intentionally. */
+@media (hover: none) and (pointer: coarse) {
+  input, select, textarea,
+  input[type="text"], input[type="number"], input[type="email"],
+  input[type="password"], input[type="date"], input[type="search"],
+  input[type="tel"], input[type="url"] {
+    font-size: 16px !important;
+  }
+}
+
+/* Remove the iOS 300ms double-tap-to-zoom delay on interactive elements while
+   keeping intentional pinch-zoom intact. */
+button, a, [role="button"], input, select, textarea, label {
+  touch-action: manipulation;
+}
+
 /* ========================================
    Design Tokens
    ======================================== */
