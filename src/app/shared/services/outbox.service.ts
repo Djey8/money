@@ -52,10 +52,25 @@ export class OutboxService {
     if (this.loadPromise) return this.loadPromise;
     this.loadPromise = (async () => {
       try {
+        // Load from BOTH stores and union by id. The localStorage fallback is also written
+        // synchronously on every enqueue() so that a reload immediately after a queue (before
+        // the async IndexedDB transaction commits) doesn't lose the entry. On normal startup
+        // both stores agree; in the crash-recovery case we recover from localStorage and
+        // re-persist to IDB.
+        const fromIdb = this.useIdb ? await idbGetAll<OutboxEntry>(OUTBOX_STORE) : [];
+        const fromFallback = this.readFallback();
+        const byId = new Map<string, OutboxEntry>();
+        for (const e of fromIdb) byId.set(e.id, e);
+        for (const e of fromFallback) if (!byId.has(e.id)) byId.set(e.id, e);
+        this.entries = Array.from(byId.values());
+        // If we recovered any entries that IDB didn't have, push them in so future reads
+        // and removes stay consistent.
         if (this.useIdb) {
-          this.entries = await idbGetAll<OutboxEntry>(OUTBOX_STORE);
-        } else {
-          this.entries = this.readFallback();
+          for (const e of fromFallback) {
+            if (!fromIdb.some(x => x.id === e.id)) {
+              try { await idbPut(OUTBOX_STORE, e); } catch { /* best-effort recovery */ }
+            }
+          }
         }
       } catch (err) {
         console.error('[Outbox] Failed to load persisted entries:', err);
@@ -83,6 +98,11 @@ export class OutboxService {
    * Queue a snapshot for the given tag. If a pending entry for the same tag already exists,
    * it is replaced — the latest snapshot wins. This avoids the queue growing unbounded when
    * the user is offline and edits the same data repeatedly.
+   *
+   * The localStorage fallback is written SYNCHRONOUSLY before this method returns so that
+   * an immediate page reload (e.g. user accidentally hits refresh after saving offline)
+   * cannot lose the entry to a half-committed IndexedDB transaction. The IndexedDB write
+   * still runs async for performance — ready() reconciles both stores at boot.
    */
   async enqueue(tag: string, data: unknown): Promise<OutboxEntry> {
     await this.ready();
@@ -98,6 +118,9 @@ export class OutboxService {
       attempts: 0
     };
     this.entries.push(entry);
+    // Synchronous safety net: write the fallback BEFORE the async IDB call so a reload
+    // mid-flight still recovers the entry on next boot.
+    this.writeFallback();
     await this.persist(entry);
     this.publish();
     return entry;
@@ -106,11 +129,11 @@ export class OutboxService {
   /** Permanently remove an entry (e.g. after it has been successfully synced). */
   async remove(id: string): Promise<void> {
     this.entries = this.entries.filter(e => e.id !== id);
+    // Keep both stores in sync — fallback is the synchronous truth, IDB the async backing.
+    this.writeFallback();
     try {
       if (this.useIdb) {
         await idbDelete(OUTBOX_STORE, id);
-      } else {
-        this.writeFallback();
       }
     } catch (err) {
       console.error('[Outbox] Failed to remove entry', id, err);
@@ -123,6 +146,7 @@ export class OutboxService {
     const idx = this.entries.findIndex(e => e.id === entry.id);
     if (idx === -1) return;
     this.entries[idx] = entry;
+    this.writeFallback();
     await this.persist(entry);
     this.publish();
   }
