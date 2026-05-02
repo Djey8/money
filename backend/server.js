@@ -96,6 +96,12 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+// Health check (mirror under /api so the SPA can probe via the same base URL it uses
+// for every other call — simplifies CORS, proxying, and offline detection).
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/data', dataRoutes);
