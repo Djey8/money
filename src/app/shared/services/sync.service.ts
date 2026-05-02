@@ -62,12 +62,23 @@ export class SyncService {
 
   private async runDrain(): Promise<void> {
     await this.outbox.ready();
-    if (!this.outbox.hasPending()) return;
 
     // Confirm we're really online before pushing — the OS event can fire before the radio
     // is ready, causing the first request to fail and bump every entry's attempt counter.
     const online = await this.connectivity.probe();
     if (!online) return;
+
+    // Even when there's nothing to push, a peer device may have changed data while we were
+    // offline. Refresh tier1 + already-loaded tiers so the UI reflects the latest server
+    // state without forcing the user to refresh manually. Skip if a tier1 load is already
+    // happening at boot — app.component drives that.
+    if (!this.outbox.hasPending()) {
+      const hasChanged = await this.appData.checkUpdatedAt().catch(() => true);
+      if (hasChanged) {
+        await this.refreshAllLoadedTiers();
+      }
+      return;
+    }
 
     const queueSnapshot = this.outbox.list();
 
@@ -136,13 +147,38 @@ export class SyncService {
     // actually synced, to avoid an unnecessary network round-trip on every reconnect.
     if (synced > 0) {
       try {
-        await this.appData.loadTier1();
+        await this.refreshAllLoadedTiers();
       } catch (err) {
-        console.error('[Sync] post-drain loadTier1 failed', err);
+        console.error('[Sync] post-drain refresh failed', err);
       } finally {
         // Belt-and-braces: ensure the global spinner is cleared even if loadTier1 set it.
         AppStateService.instance.isLoading = false;
       }
+    }
+  }
+
+  /**
+   * Reload tier1 and any tier that had been loaded before. Without this, a successful
+   * drain or peer-device update only refreshes tier1 — the user has to navigate to
+   * balance/grow/etc to see the updated data, hence the "needs two refreshes" bug.
+   */
+  private async refreshAllLoadedTiers(): Promise<void> {
+    // Snapshot which tiers had been loaded before we invalidate them.
+    const wasTier2 = AppStateService.instance.tier2Loaded !== false;
+    const wasBalance = AppStateService.instance.tier3BalanceLoaded === true;
+    const wasGrow = AppStateService.instance.tier3GrowLoaded === true;
+
+    AppStateService.instance.tier2Loaded = false;
+    AppStateService.instance.tier3BalanceLoaded = false;
+    AppStateService.instance.tier3GrowLoaded = false;
+
+    await this.appData.loadTier1();
+    const followUps: Promise<unknown>[] = [];
+    if (wasTier2) followUps.push(this.appData.loadTier2());
+    if (wasBalance) followUps.push(this.appData.loadBalanceData());
+    if (wasGrow) followUps.push(this.appData.loadGrowData());
+    if (followUps.length) {
+      await Promise.allSettled(followUps);
     }
   }
 
