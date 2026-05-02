@@ -1,3 +1,11 @@
+## [1.8.1] - 2026-05-02
+
+### Bug Fixes
+- fix(mobile): stop iOS input zoom and harden pull-to-refresh against accidental triggers
+- fix(offline): prevent transaction loss on reload after false-offline write
+- fix(offline): refresh all loaded tiers on resync, not just tier1
+- fix(offline): selfhosted boot probe, no-op toasts, kill 0-flash
+
 ## [1.8.0] - 2026-05-02
 
 ### Features
