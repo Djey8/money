@@ -251,16 +251,18 @@ export class AppDataService {
     return this.loadTier1().then(() => this.loadTier2());
   }
 
-  async loadTier1(): Promise<void> {
+  async loadTier1(): Promise<boolean> {
     this.database.clearReadCache();
     this.decryptionFailed = false;
     try {
       const response = await this.database.getBatchData(AppDataService.TIER1_PATHS);
-      if (response === null) return;  // 304 Not Modified — data unchanged
+      if (response === null) return false; // 304 Not Modified — data unchanged
       this.applyBatchData(response.data);
       AppStateService.instance.lastUpdatedAt = response.updatedAt;
+      return true;
     } catch (err) {
       console.error('Tier 1 load error:', err);
+      return false;
     }
   }
 

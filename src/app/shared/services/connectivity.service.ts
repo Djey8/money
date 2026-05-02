@@ -119,8 +119,14 @@ export class ConnectivityService {
       // cold start to break ties before `.info/connected` fires — once the SDK socket is
       // up the probe is no longer needed.
       this.bootProbe();
+    } else if (environment.mode === 'selfhosted') {
+      // Selfhosted needs the same honest verdict as firebase: navigator.onLine lies on
+      // installed mobile PWAs (it can stay true after OS suspend/resume while every fetch
+      // hangs). Run a real /health round-trip before resolving waitForReady() so cold-start
+      // callers don't fire tier1 against a server they can't actually reach.
+      this.selfhostedBootProbe();
     } else {
-      // Non-firebase modes: ready immediately — navigator.onLine is our truth.
+      // Other modes: ready immediately — navigator.onLine is our truth.
       this.resolveReady();
     }
   }
@@ -135,7 +141,7 @@ export class ConnectivityService {
    * blocked). Once this confirms reachability we let `.info/connected` take over.
    */
   private async bootProbe(): Promise<void> {
-    const dbURL = (environment as any)?.firebaseConfig?.databaseURL;
+    const dbURL = (environment as any)?.firebase?.databaseURL;
     if (!dbURL) {
       // No URL to probe — fall back to navigator.onLine.
       this.bootProbeConfirmedReachable = typeof navigator === 'undefined' || navigator.onLine;
@@ -176,6 +182,64 @@ export class ConnectivityService {
     } else {
       // Network blocked — force offline regardless of any `.info/connected=true` the SDK
       // emits later until reachability is reconfirmed.
+      this.lastOfflineAt = Date.now();
+      this.zone.run(() => {
+        if (this._online$.value !== false) this._online$.next(false);
+      });
+    }
+    this.resolveReady();
+  }
+
+  /**
+   * Selfhosted equivalent of {@link bootProbe}. Runs a real `/health` round-trip at cold
+   * start so the initial connectivity verdict is honest before any tier load fires.
+   * Without this, `waitForReady()` resolves instantly on `navigator.onLine` — which is
+   * unreliable on mobile PWAs after OS suspend/resume — and tier1 hangs for 10s against
+   * an unreachable backend instead of falling back to cached data immediately.
+   */
+  private async selfhostedBootProbe(): Promise<void> {
+    const apiUrl = environment.selfhosted?.apiUrl;
+    const navOnline = typeof navigator === 'undefined' ? true : navigator.onLine;
+    if (!apiUrl || !navOnline) {
+      // No server URL or OS reports offline: trust navigator and resolve.
+      if (!navOnline) {
+        this.lastOfflineAt = Date.now();
+        this.zone.run(() => {
+          if (this._online$.value !== false) this._online$.next(false);
+        });
+      }
+      this.resolveReady();
+      return;
+    }
+    let reachable = false;
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(
+        () => controller.abort(),
+        ConnectivityService.HEARTBEAT_TIMEOUT_MS
+      );
+      try {
+        const res = await fetch(`${apiUrl}/health?_=${Date.now()}`, {
+          method: 'GET',
+          credentials: 'omit',
+          cache: 'no-store',
+          headers: { 'ngsw-bypass': 'true' },
+          signal: controller.signal
+        });
+        reachable = res.ok;
+      } finally {
+        clearTimeout(timer);
+      }
+    } catch {
+      reachable = false;
+    }
+    if (reachable) {
+      // Commit online immediately, skipping the runtime stability debounce — boot callers
+      // need an honest verdict before tier1 fires.
+      this.zone.run(() => {
+        if (this._online$.value !== true) this._online$.next(true);
+      });
+    } else {
       this.lastOfflineAt = Date.now();
       this.zone.run(() => {
         if (this._online$.value !== false) this._online$.next(false);
@@ -258,9 +322,52 @@ export class ConnectivityService {
   async probe(): Promise<boolean> {
     if (this.inFlight) return this._online$.value;
 
-    // Firebase mode: there is no selfhosted backend to probe. The `.info/connected`
-    // listener is our authoritative signal — just mirror navigator.onLine downward, never
-    // upward. Going up to online is the SDK's job (or the boot fallback).
+    // Firebase mode: do a real REST round-trip against the database host. We can't rely
+    // solely on `.info/connected` because the SDK socket can stay half-open on mobile PWAs
+    // (OS suspend/resume, captive portal, flaky cellular) reporting connected=true while
+    // every read/write hangs. The periodic REST probe is our authoritative liveness signal.
+    if (environment.mode === 'firebase') {
+      const navOnline = typeof navigator === 'undefined' ? true : navigator.onLine;
+      if (!navOnline) {
+        this.set(false);
+        return false;
+      }
+      const dbURL = (environment as any)?.firebase?.databaseURL;
+      if (!dbURL) return this._online$.value;
+      this.inFlight = true;
+      try {
+        const controller = new AbortController();
+        const timer = setTimeout(
+          () => controller.abort(),
+          ConnectivityService.FIREBASE_VERIFY_TIMEOUT_MS
+        );
+        try {
+          const res = await fetch(`${dbURL}/.json?shallow=true&_=${Date.now()}`, {
+            method: 'GET',
+            cache: 'no-store',
+            headers: { 'ngsw-bypass': 'true' },
+            signal: controller.signal
+          });
+          const reachable = res.status > 0;
+          if (reachable) {
+            this.bootProbeConfirmedReachable = true;
+            this.set(true);
+          } else {
+            this.set(false);
+          }
+          return reachable;
+        } finally {
+          clearTimeout(timer);
+        }
+      } catch {
+        this.set(false);
+        return false;
+      } finally {
+        this.inFlight = false;
+      }
+    }
+
+    // Non-firebase, non-selfhosted modes: mirror navigator.onLine downward only.
     if (environment.mode !== 'selfhosted') {
       const navOnline = typeof navigator === 'undefined' ? true : navigator.onLine;
       if (!navOnline) {
