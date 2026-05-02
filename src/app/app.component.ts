@@ -434,8 +434,13 @@ export class AppComponent {
           const hasChanged = await AppDataService.instance.checkUpdatedAt();
           if (hasChanged) {
             AppStateService.instance.isLoading = true;
-            // Reset tier 3 flags so on-demand data is re-fetched from server
-            // when user next navigates to those pages
+            // Snapshot which tiers were already loaded so we can refresh them too.
+            // Just resetting the flags isn't enough — the user has to navigate to those
+            // pages again to see the updated data, hence the "needs two refreshes" bug.
+            const wasTier2 = AppStateService.instance.tier2Loaded;
+            const wasBalance = AppStateService.instance.tier3BalanceLoaded;
+            const wasGrow = AppStateService.instance.tier3GrowLoaded;
+            AppStateService.instance.tier2Loaded = false;
             AppStateService.instance.tier3BalanceLoaded = false;
             AppStateService.instance.tier3GrowLoaded = false;
             try {
@@ -445,6 +450,12 @@ export class AppComponent {
                 this.logOut();
                 return;
               }
+              // Refresh whichever follow-up tiers had been loaded before, in parallel.
+              const followUps: Promise<unknown>[] = [];
+              if (wasTier2) followUps.push(AppDataService.instance.loadTier2());
+              if (wasBalance) followUps.push(AppDataService.instance.loadBalanceData());
+              if (wasGrow) followUps.push(AppDataService.instance.loadGrowData());
+              if (followUps.length) await Promise.allSettled(followUps);
               // Auto-generate subscription transactions after reload
               this.autoGenerateSubscriptionTransactions();
             } finally {
