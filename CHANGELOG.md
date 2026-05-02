@@ -1,3 +1,15 @@
+## [1.8.0] - 2026-05-02
+
+### Features
+- feat(offline): offline indicator, toasts, and readiness feedback
+- feat(offline): full prefetch and service worker caching
+- feat(offline): connectivity detection and IndexedDB outbox
+- feat(auth): keep session alive across cold starts and extend lifetime
+
+### Bug Fixes
+- fix(docker): apk upgrade all packages to clear Trivy HIGH (nghttp2 CVE-2026-27135)
+- fix(backup): harden cronjobs and add host watchdog after systemd-wedge incident
+
 ## [1.7.0] - 2026-04-27
 
 ### Features
