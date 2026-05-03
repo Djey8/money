@@ -15,8 +15,9 @@ spec:
   jobTemplate:
     spec:
       ttlSecondsAfterFinished: 86400
-      # Kill the job if it runs longer than 30 minutes
-      activeDeadlineSeconds: 1800
+      # Kill the job if it runs longer than 10 minutes — a healthy backup completes in ~10s.
+      # Failing fast prevents a stuck job from blocking the next scheduled hour.
+      activeDeadlineSeconds: 600
       # Retry a few times — a transient node hiccup shouldn't fail the hour
       backoffLimit: 3
       template:
@@ -30,6 +31,15 @@ spec:
             securityContext:
               allowPrivilegeEscalation: false
             imagePullPolicy: IfNotPresent
+            # Resource requests promote this pod out of BestEffort QoS so it isn't
+            # the first thing blocked / evicted under node pressure.
+            resources:
+              requests:
+                cpu: "50m"
+                memory: "64Mi"
+              limits:
+                cpu: "200m"
+                memory: "256Mi"
             command:
             - /bin/sh
             - -c
