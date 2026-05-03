@@ -1,3 +1,13 @@
+## [1.9.0] - 2026-05-03
+
+### Features
+- feat(ops): expose Grafana on grafana.cashflowhero.uk via Traefik ingress
+
+### Bug Fixes
+- fix(ux): keep loading skeleton up longer on first login to avoid 0-flash
+- fix(backup): promote cronjobs out of BestEffort, shorten hourly deadline
+- fix(ux): show loading spinner on first login and stop false-offline on slow writes
+
 ## [1.8.1] - 2026-05-02
 
 ### Bug Fixes
