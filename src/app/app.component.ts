@@ -215,11 +215,22 @@ export class AppComponent {
     AppStateService.instance.mojo = safeParse("mojo", { amount: 0, target: 0 });
     AppStateService.instance.allBudgets = safeParse("budget");
 
-    // Cache-first / PWA pattern: localStorage is now hydrated into AppState. Release the
-    // global loading spinner UNCONDITIONALLY \u2014 the UI has data to render, so there is no
-    // reason to block on network at this point. Per-page loaders / refresh-in-place still
-    // run in the background to refresh stale data; they don't drive the global spinner.
-    AppStateService.instance.isLoading = false;
+    // Cache-first / PWA pattern: localStorage is now hydrated into AppState. If we have ANY
+    // cached data the UI can render immediately, so release the spinner. On the very first
+    // login, however, every collection is empty — releasing here would show "0 0 0 0" until
+    // tier1 returns. In that case we keep the spinner up; the auth callback below releases
+    // it (after tier1, on offline verdict, or via the 3s hard-timeout safety net).
+    const hasAnyLocalData =
+      (AppStateService.instance.allTransactions?.length ?? 0) > 0 ||
+      (AppStateService.instance.allAssets?.length ?? 0) > 0 ||
+      (AppStateService.instance.allRevenues?.length ?? 0) > 0 ||
+      (AppStateService.instance.liabilities?.length ?? 0) > 0 ||
+      (AppStateService.instance.allSubscriptions?.length ?? 0) > 0 ||
+      (AppStateService.instance.allShares?.length ?? 0) > 0 ||
+      (AppStateService.instance.allInvestments?.length ?? 0) > 0;
+    if (hasAnyLocalData) {
+      AppStateService.instance.isLoading = false;
+    }
 
     // Optimistic early navigate: if we have evidence of a prior session,
     // go to /home immediately so the landing page never flashes
@@ -234,10 +245,15 @@ export class AppComponent {
     }
 
     // Global safety net: no matter what happens during init (hung Firebase auth, blocked
-    // network, thrown errors deep in tier loaders), force the loading spinner off after a
-    // short timeout. The user always has the localStorage snapshot loaded at boot, so the
-    // UI has something to render even if the server pipeline is wedged.
-    const LOADING_HARD_TIMEOUT_MS = 3_000;
+    // network, thrown errors deep in tier loaders), force the loading spinner off so the UI
+    // isn't stuck forever. Two different timeouts depending on whether we have anything to
+    // render:
+    //   - With local data: release fast (3s). Even if tier1 hangs, the cached snapshot is
+    //     already in AppState and the UI has correct values to show.
+    //   - Without local data (first login on this device): wait much longer. Releasing
+    //     early here means home renders "0 0 0 0" until tier1 returns and the numbers flip
+    //     in — a worse UX than showing the loading skeleton for a few extra seconds.
+    const LOADING_HARD_TIMEOUT_MS = hasAnyLocalData ? 3_000 : 20_000;
     setTimeout(() => {
       if (AppStateService.instance.isLoading) {
         console.warn('[App Init] Loading state stuck — releasing spinner from local cache');
