@@ -28,6 +28,15 @@ spec:
             securityContext:
               allowPrivilegeEscalation: false
             imagePullPolicy: IfNotPresent
+            # Resource requests promote this pod out of BestEffort QoS so it isn't
+            # the first thing blocked / evicted under node pressure.
+            resources:
+              requests:
+                cpu: "50m"
+                memory: "64Mi"
+              limits:
+                cpu: "200m"
+                memory: "256Mi"
             command:
             - /bin/sh
             - -c

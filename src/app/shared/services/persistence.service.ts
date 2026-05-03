@@ -50,8 +50,11 @@ function isTransientError(error: any): boolean {
   return false;
 }
 
-/** Max time we'll wait for a single write before treating it as offline and queuing it. */
-const WRITE_TIMEOUT_MS = 5_000;
+/** Max time we'll wait for a single write before treating it as offline and queuing it.
+ *  Generous on purpose: mobile/cellular round-trips of large transaction arrays can take
+ *  several seconds. A too-tight timeout flipped the user into "offline" mode every time
+ *  they added a transaction on a slow connection, which is far worse than a queued write. */
+const WRITE_TIMEOUT_MS = 12_000;
 
 @Injectable({
   providedIn: 'root'
@@ -118,9 +121,13 @@ export class PersistenceService {
               this.outbox.enqueue(config.tag, config.data).catch(err =>
                 console.error('[Persistence] Failed to queue write after transient error:', err)
               );
-              // Trigger a probe so the connectivity service flips to offline immediately and
-              // the offline indicator appears without waiting for the next 30s heartbeat.
-              this.connectivity.probe().catch(() => { /* probe handles its own errors */ });
+              // We deliberately do NOT call connectivity.probe() here. A single slow write
+              // is not authoritative evidence that the user is offline — it could be a
+              // backend hiccup, a large payload over cellular, etc. Flipping the whole
+              // app into offline mode on every slow write produced a flood of false
+              // "You're offline" toasts. The 30s heartbeat is the source of truth for
+              // connectivity; the SyncService will drain the outbox automatically the
+              // moment a heartbeat or `.info/connected` confirms we're back online.
               handleSuccess();
               return;
             }
@@ -178,7 +185,9 @@ export class PersistenceService {
           error: (error: any) => {
             if (isTransientError(error)) {
               queueAll();
-              this.connectivity.probe().catch(() => { /* probe handles its own errors */ });
+              // No connectivity.probe() here — see writeAndSync for rationale. A slow batch
+              // write is not proof of being offline; we'd rather queue silently than spam
+              // false-offline toasts every time the user adds a transaction.
               handleSuccess();
               return;
             }
