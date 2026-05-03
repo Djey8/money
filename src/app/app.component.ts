@@ -245,10 +245,15 @@ export class AppComponent {
     }
 
     // Global safety net: no matter what happens during init (hung Firebase auth, blocked
-    // network, thrown errors deep in tier loaders), force the loading spinner off after a
-    // short timeout. The user always has the localStorage snapshot loaded at boot, so the
-    // UI has something to render even if the server pipeline is wedged.
-    const LOADING_HARD_TIMEOUT_MS = 3_000;
+    // network, thrown errors deep in tier loaders), force the loading spinner off so the UI
+    // isn't stuck forever. Two different timeouts depending on whether we have anything to
+    // render:
+    //   - With local data: release fast (3s). Even if tier1 hangs, the cached snapshot is
+    //     already in AppState and the UI has correct values to show.
+    //   - Without local data (first login on this device): wait much longer. Releasing
+    //     early here means home renders "0 0 0 0" until tier1 returns and the numbers flip
+    //     in — a worse UX than showing the loading skeleton for a few extra seconds.
+    const LOADING_HARD_TIMEOUT_MS = hasAnyLocalData ? 3_000 : 20_000;
     setTimeout(() => {
       if (AppStateService.instance.isLoading) {
         console.warn('[App Init] Loading state stuck — releasing spinner from local cache');
