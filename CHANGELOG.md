@@ -1,3 +1,17 @@
+## [1.10.0] - 2026-05-10
+
+### Features
+- feat(auth): extend session lifetime to prioritize UX (24h access, 1y sliding refresh)
+
+### Bug Fixes
+- fix(release): base bumps on highest existing tag
+- fix(docker): upgrade nghttp2-libs in frontend runtime image
+- fix(deps): resolve backend axios high severity vulnerability
+- fix(deps): resolve fast-uri high severity vulnerability
+- fix(backup): use configurable European timezone for backup age display
+- fix(backup): harden restore flow and add freshness checks
+- fix(auth): keep session alive across cold starts and transient errors
+
 ## [1.7.0] - 2026-04-27
 
 ### Features
