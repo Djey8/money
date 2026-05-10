@@ -130,15 +130,26 @@ fi
 
 # Fetch database list
 log_info "Fetching database list..."
-DATABASES=$(kubectl exec -n "$NAMESPACE" "$BACKUP_POD" -- curl -s -u "${COUCHDB_USER}:${COUCHDB_PASSWORD}" \
-    "http://localhost:5984/_all_dbs" | grep -v '^_' || echo "[]")
+DB_JSON=$(kubectl exec -n "$NAMESPACE" "$BACKUP_POD" -- curl -s -u "${COUCHDB_USER}:${COUCHDB_PASSWORD}" \
+    "http://localhost:5984/_all_dbs" || echo "[]")
 
-if [ "$DATABASES" = "[]" ] || [ -z "$DATABASES" ]; then
+DATABASES=$(python3 -c "
+import json, sys
+try:
+    dbs = json.loads(sys.argv[1])
+except Exception:
+    dbs = []
+for db in dbs:
+    if isinstance(db, str) and not db.startswith('_'):
+        print(db)
+" "$DB_JSON" 2>/dev/null || true)
+
+if [ -z "$DATABASES" ]; then
     log_warning "No user databases found to backup"
     exit 0
 fi
 
-log_success "Found databases: $DATABASES"
+log_success "Found databases: $(echo "$DATABASES" | tr '\n' ' ')"
 echo ""
 
 # Create temporary directory for backup
