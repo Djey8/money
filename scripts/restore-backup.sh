@@ -178,6 +178,8 @@ fi
 log_info "Found ${#DB_FILES[@]} database(s) to restore"
 echo ""
 
+RESTORE_HAD_ERRORS=false
+
 # Restore each database
 for db_file in "${DB_FILES[@]}"; do
     db_name=$(basename "$db_file" .json)
@@ -222,16 +224,31 @@ import json, sys
 with open('$db_file') as f:
     data = json.load(f)
 docs = []
+seen = set()
+dupes = 0
 for row in data.get('rows', []):
     doc = row.get('doc', {})
-    if doc.get('_id', '').startswith('_design'):
+    doc_id = doc.get('_id')
+    if not doc_id:
+        continue
+    if doc_id in seen:
+        dupes += 1
+        continue
+    seen.add(doc_id)
+    if doc_id.startswith('_design'):
         doc.pop('_rev', None)
         docs.append(doc)
         continue
     doc.pop('_rev', None)
     docs.append(doc)
+if dupes:
+    print(f'[WARN] skipped_duplicate_ids={dupes}', file=sys.stderr)
 print(json.dumps({'docs': docs, 'new_edits': True}))
-" > "${TEMP_DIR}/${db_name}_bulk.json" 2>/dev/null
+" > "${TEMP_DIR}/${db_name}_bulk.json" 2> "${TEMP_DIR}/${db_name}_prep.log"
+
+    if [ -s "${TEMP_DIR}/${db_name}_prep.log" ]; then
+        sed 's/^/  → /' "${TEMP_DIR}/${db_name}_prep.log"
+    fi
 
     # Fallback if python3 is not available: use sed-based approach
     if [ $? -ne 0 ] || [ ! -s "${TEMP_DIR}/${db_name}_bulk.json" ]; then
@@ -267,6 +284,7 @@ print(json.dumps({'docs': docs, 'new_edits': True}))
     if [ "$err_count" -gt 0 ]; then
         log_warning "  → $ok_count OK, $err_count errors"
         echo "$RESULT" | grep '"error"' | head -5 | sed 's/^/    /'
+        RESTORE_HAD_ERRORS=true
     else
         log_success "  → $ok_count documents restored successfully"
     fi
@@ -286,4 +304,9 @@ kubectl exec -n "$NAMESPACE" "$BACKUP_POD" -- \
     "http://localhost:5984/_all_dbs" | tr -d '[]"' | tr ',' '\n' | grep -v '^_' | sed 's/^/  /'
 
 echo ""
+if [ "$RESTORE_HAD_ERRORS" = true ]; then
+    log_error "Restore completed with errors. Some documents were not restored; inspect warnings above."
+    exit 1
+fi
+
 log_success "Restore completed successfully!"

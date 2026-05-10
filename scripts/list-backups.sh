@@ -26,6 +26,66 @@ NAS_BACKUP_ROOT="${NAS_BACKUP_DIR:-/mnt/nas/backups}"
 log_info()    { echo -e "${BLUE}[INFO]${NC} $1"; }
 log_warning() { echo -e "${YELLOW}[WARNING]${NC} $1"; }
 
+# Return backup age in whole hours. Echoes -1 if age cannot be computed.
+get_backup_age_hours() {
+    local backup_path=$1
+    local backup_name
+    local backup_timestamp
+    local now
+    local diff
+
+    backup_name=$(basename "$backup_path")
+    now=$(date +%s)
+
+    # Hourly format: couchdb-backup-YYYY-MM-DD_HHMM.tar.gz(.gpg)
+    if echo "$backup_name" | grep -qE '[0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{4}'; then
+        local dt
+        dt=$(echo "$backup_name" | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{4}' | sed 's/_/ /' | sed 's/\([0-9][0-9]\)\([0-9][0-9]\)$/\1:\2/')
+        backup_timestamp=$(date -d "$dt" +%s 2>/dev/null || echo "-1")
+    else
+        # Daily/weekly/monthly format: couchdb-backup-YYYY-MM-DD.tar.gz(.gpg)
+        local d
+        d=$(echo "$backup_name" | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}' || true)
+        if [ -z "$d" ]; then
+            echo "-1"
+            return
+        fi
+        backup_timestamp=$(date -d "$d" +%s 2>/dev/null || echo "-1")
+    fi
+
+    if [ "$backup_timestamp" = "-1" ]; then
+        echo "-1"
+        return
+    fi
+
+    diff=$((now - backup_timestamp))
+    echo $((diff / 3600))
+}
+
+print_freshness_status() {
+    local label=$1
+    local latest_file=$2
+    local warn_threshold_hours=$3
+
+    if [ -z "$latest_file" ]; then
+        log_warning "Freshness check: ${label} backup missing"
+        return
+    fi
+
+    local age_hours
+    age_hours=$(get_backup_age_hours "$latest_file")
+    if [ "$age_hours" = "-1" ]; then
+        log_warning "Freshness check: ${label} age unknown for $(basename "$latest_file")"
+        return
+    fi
+
+    if [ "$age_hours" -gt "$warn_threshold_hours" ]; then
+        log_warning "Freshness check: ${label} backup is stale (${age_hours}h old): $(basename "$latest_file")"
+    else
+        log_info "Freshness check: ${label} backup is fresh (${age_hours}h old): $(basename "$latest_file")"
+    fi
+}
+
 # Function to get age of backup
 get_backup_age() {
     local backup_date=$1
@@ -157,6 +217,26 @@ else
 
     total_nas=$(du -sh "${NAS_BACKUP_ROOT}" 2>/dev/null | cut -f1 || echo "0")
     log_info "NAS storage: $total_nas"
+fi
+echo ""
+
+# ── Freshness checks ──────────────────────────────────
+echo "==================================="
+echo "Backup Freshness Check"
+echo "==================================="
+
+LATEST_LOCAL_HOURLY=$(ls -1t "${BACKUP_ROOT}/hourly"/couchdb-backup-*.tar.gz* 2>/dev/null | head -1 || true)
+LATEST_LOCAL_DAILY=$(ls -1t "${BACKUP_ROOT}/daily"/couchdb-backup-*.tar.gz* 2>/dev/null | head -1 || true)
+
+# Thresholds chosen to detect cron/service stalls quickly:
+# - Hourly should be updated roughly every hour -> warn if >2h
+# - Daily should be from current/previous day -> warn if >30h
+print_freshness_status "Local hourly" "$LATEST_LOCAL_HOURLY" 2
+print_freshness_status "Local daily" "$LATEST_LOCAL_DAILY" 30
+
+if [ "$NAS_AVAILABLE" = true ]; then
+    LATEST_NAS_DAILY=$(ls -1t "${NAS_BACKUP_ROOT}/daily"/couchdb-backup-*.tar.gz* 2>/dev/null | head -1 || true)
+    print_freshness_status "NAS daily" "$LATEST_NAS_DAILY" 30
 fi
 echo ""
 
