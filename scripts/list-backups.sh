@@ -22,9 +22,15 @@ NC='\033[0m' # No Color
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BACKUP_ROOT="${BACKUP_DIR:-/opt/money-app-backups}"
 NAS_BACKUP_ROOT="${NAS_BACKUP_DIR:-/mnt/nas/backups}"
+DISPLAY_TZ="${BACKUP_DISPLAY_TZ:-Europe/Berlin}"
 
 log_info()    { echo -e "${BLUE}[INFO]${NC} $1"; }
 log_warning() { echo -e "${YELLOW}[WARNING]${NC} $1"; }
+
+if ! TZ="$DISPLAY_TZ" date +%s >/dev/null 2>&1; then
+    log_warning "Invalid BACKUP_DISPLAY_TZ '$DISPLAY_TZ' — falling back to UTC"
+    DISPLAY_TZ="UTC"
+fi
 
 # Return backup age in whole hours. Echoes -1 if age cannot be computed.
 get_backup_age_hours() {
@@ -35,13 +41,13 @@ get_backup_age_hours() {
     local diff
 
     backup_name=$(basename "$backup_path")
-    now=$(date +%s)
+    now=$(TZ="$DISPLAY_TZ" date +%s)
 
     # Hourly format: couchdb-backup-YYYY-MM-DD_HHMM.tar.gz(.gpg)
     if echo "$backup_name" | grep -qE '[0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{4}'; then
         local dt
         dt=$(echo "$backup_name" | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{4}' | sed 's/_/ /' | sed 's/\([0-9][0-9]\)\([0-9][0-9]\)$/\1:\2/')
-        backup_timestamp=$(date -d "$dt" +%s 2>/dev/null || echo "-1")
+        backup_timestamp=$(TZ="$DISPLAY_TZ" date -d "$dt" +%s 2>/dev/null || echo "-1")
     else
         # Daily/weekly/monthly format: couchdb-backup-YYYY-MM-DD.tar.gz(.gpg)
         local d
@@ -50,7 +56,7 @@ get_backup_age_hours() {
             echo "-1"
             return
         fi
-        backup_timestamp=$(date -d "$d" +%s 2>/dev/null || echo "-1")
+        backup_timestamp=$(TZ="$DISPLAY_TZ" date -d "$d" +%s 2>/dev/null || echo "-1")
     fi
 
     if [ "$backup_timestamp" = "-1" ]; then
@@ -89,8 +95,8 @@ print_freshness_status() {
 # Function to get age of backup
 get_backup_age() {
     local backup_date=$1
-    local current_date=$(date +%s)
-    local backup_timestamp=$(date -d "$backup_date" +%s 2>/dev/null || echo "0")
+    local current_date=$(TZ="$DISPLAY_TZ" date +%s)
+    local backup_timestamp=$(TZ="$DISPLAY_TZ" date -d "$backup_date" +%s 2>/dev/null || echo "0")
 
     if [ "$backup_timestamp" = "0" ]; then
         echo "Unknown"
@@ -125,8 +131,8 @@ get_hourly_age() {
         return
     fi
     local d=$(echo "$backup_datetime" | sed 's/_/ /' | sed 's/\([0-9][0-9]\)\([0-9][0-9]\)$/\1:\2/')
-    local current_date=$(date +%s)
-    local backup_timestamp=$(date -d "$d" +%s 2>/dev/null || echo "0")
+    local current_date=$(TZ="$DISPLAY_TZ" date +%s)
+    local backup_timestamp=$(TZ="$DISPLAY_TZ" date -d "$d" +%s 2>/dev/null || echo "0")
     if [ "$backup_timestamp" = "0" ]; then
         echo "Unknown"
         return
@@ -174,6 +180,7 @@ list_tier() {
 echo "==================================="
 echo "CouchDB Backup Inventory"
 echo "==================================="
+log_info "Age timezone: ${DISPLAY_TZ}"
 echo ""
 
 # ── LOCAL ────────────────────────────────────────────
