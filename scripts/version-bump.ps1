@@ -7,7 +7,25 @@ param(
 
 $pkg = Get-Content package.json | ConvertFrom-Json
 $current = $pkg.version
-$parts = $current.Split(".")
+
+# Use the highest existing semantic version tag as baseline to avoid
+# collisions after history rewrites/resets (e.g. v1.8.0 already exists).
+$latestTag = git tag --list "v*" --sort=-version:refname | Select-Object -First 1
+$tagVersion = $null
+if ($latestTag -and $latestTag -match '^v(\d+)\.(\d+)\.(\d+)$') {
+    $tagVersion = $Matches[1..3] -join "."
+}
+
+$baseVersion = $current
+if ($tagVersion) {
+    $currentObj = [version]$current
+    $tagObj = [version]$tagVersion
+    if ($tagObj -gt $currentObj) {
+        $baseVersion = $tagVersion
+    }
+}
+
+$parts = $baseVersion.Split(".")
 
 switch ($Type) {
     "major" { $parts[0] = [int]$parts[0] + 1; $parts[1] = 0; $parts[2] = 0 }
@@ -17,8 +35,16 @@ switch ($Type) {
 
 $newVersion = $parts -join "."
 
+# If the computed tag still exists (e.g. mixed history), keep bumping patch
+# until we get a free version.
+while ((git tag --list "v$newVersion" | Measure-Object).Count -gt 0) {
+    $parts = $newVersion.Split(".")
+    $parts[2] = [int]$parts[2] + 1
+    $newVersion = $parts -join "."
+}
+
 if ($DryRun) {
-    Write-Host "Would bump: $current -> $newVersion" -ForegroundColor Yellow
+    Write-Host "Would bump: $baseVersion -> $newVersion (package.json currently $current)" -ForegroundColor Yellow
     exit 0
 }
 
