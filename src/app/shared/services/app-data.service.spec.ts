@@ -76,7 +76,6 @@ const mockPersistence = { batchWriteAndSync: jest.fn() };
 const mockIncomeStatement = { recalculate: jest.fn() };
 const mockToastService = { show: jest.fn(), dismiss: jest.fn() };
 const mockSubscriptionProcessing = { setTransactionsForSubscriptions: jest.fn() };
-const mockOutbox = { list: jest.fn(() => []), ready: jest.fn(() => Promise.resolve()), enqueue: jest.fn(), remove: jest.fn(), update: jest.fn(), pendingCount: jest.fn(() => 0), hasPending: jest.fn(() => false) };
 
 function createService(): AppDataService {
   return new AppDataService(
@@ -88,8 +87,7 @@ function createService(): AppDataService {
     mockPersistence as any,
     mockIncomeStatement as any,
     mockToastService as any,
-    mockSubscriptionProcessing as any,
-    mockOutbox as any
+    mockSubscriptionProcessing as any
   );
 }
 

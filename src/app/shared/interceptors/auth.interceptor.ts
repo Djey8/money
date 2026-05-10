@@ -1,7 +1,7 @@
 import { HttpInterceptorFn, HttpRequest, HttpHandlerFn, HttpErrorResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, catchError, filter, switchMap, take, throwError, tap, timeout } from 'rxjs';
+import { BehaviorSubject, catchError, filter, switchMap, take, throwError, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { Router } from '@angular/router';
 import { AppComponent } from '../../app.component';
@@ -11,11 +11,6 @@ import { CrypticService } from '../services/cryptic.service';
 // `null` = no refresh in flight; `true` = last refresh succeeded; `false` = last refresh failed.
 let isRefreshing = false;
 const refreshGate$ = new BehaviorSubject<boolean | null>(null);
-
-// Hard cap on every API request so a stuck network (offline, backend down, captive portal)
-// can't leave callers waiting forever. Reads/writes both fall through to their offline fallback
-// path (cached data / outbox) once this fires.
-const REQUEST_TIMEOUT_MS = 10_000;
 
 /**
  * HTTP interceptor that:
@@ -41,7 +36,6 @@ export const authInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, ne
   const credentialReq = req.clone({ withCredentials: true });
 
   return next(credentialReq).pipe(
-    timeout(REQUEST_TIMEOUT_MS),
     catchError((error: HttpErrorResponse) => {
       if (error.status === 401 && !req.url.includes('/auth/refresh') && !req.url.includes('/auth/login')) {
         return handleTokenExpiry(credentialReq, next, http, router, cryptic);

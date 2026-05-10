@@ -9,7 +9,6 @@ import { CrypticService } from './cryptic.service';
 import { SelfhostedService } from './selfhosted.service';
 import { DirtyTrackerService } from './dirty-tracker.service';
 import { CacheService } from './cache.service';
-import { ConnectivityService } from './connectivity.service';
 import { environment } from '../../../environments/environment';
 import { Observable, from, forkJoin, of } from 'rxjs';
 import { map, catchError, tap } from 'rxjs/operators';
@@ -45,8 +44,7 @@ export class DatabaseService {
     private selfhosted: SelfhostedService,
     private dirtyTracker: DirtyTrackerService,
     private cacheService: CacheService,
-    private injector: EnvironmentInjector,
-    private connectivity: ConnectivityService
+    private injector: EnvironmentInjector
   ) {
     if (this.mode === 'selfhosted') {
     }
@@ -271,32 +269,7 @@ export class DatabaseService {
    */
   getData(id: string): Promise<any> {
     if (this.mode === 'firebase') {
-      // Wrap once('value') in a timeout. The Firebase SDK queues reads indefinitely while
-      // disconnected (e.g. when an ad-blocker blocks .lp long-polling). Without this, any
-      // post-reconnect loadTier1 can hang forever and the UI sits on a spinner.
-      const FIREBASE_READ_TIMEOUT_MS = 10_000;
-      const ref = this.db.database.ref(`users/${this.localStorage.getData("uid")}/${id}`);
-      return new Promise((resolve, reject) => {
-        let settled = false;
-        const timer = setTimeout(() => {
-          if (settled) return;
-          settled = true;
-          // Resolve with an empty snapshot rather than rejecting so callers fall back to
-          // their cached/local copy instead of crashing the load pipeline.
-          resolve({ val: () => null, exists: () => false });
-        }, FIREBASE_READ_TIMEOUT_MS);
-        ref.once('value').then(snap => {
-          if (settled) return;
-          settled = true;
-          clearTimeout(timer);
-          resolve(snap);
-        }).catch(err => {
-          if (settled) return;
-          settled = true;
-          clearTimeout(timer);
-          reject(err);
-        });
-      });
+      return this.db.database.ref(`users/${this.localStorage.getData("uid")}/${id}`).once('value');
     } else {
       // Selfhosted mode with caching
       // Check cache first
@@ -340,20 +313,7 @@ export class DatabaseService {
     this.cacheService.clearAll();
   }
 
-  async getBatchData(paths: string[]): Promise<{data: Record<string, any>, updatedAt: string | null} | null> {
-    // In firebase mode the cached `connectivity.isOnline` value can be optimistically true
-    // at cold start (initialized from `navigator.onLine`) before Firebase's `.info/connected`
-    // has reported. Wait for the definitive verdict so we don't fire reads that will hang
-    // for the full 10s timeout when the SDK is actually blocked (ad-blocker, captive portal).
-    if (this.mode === 'firebase') {
-      await this.connectivity.waitForReady();
-    }
-    // Offline short-circuit: don't even attempt the network. Callers fall back to the
-    // localStorage snapshot loaded at boot, so the UI renders instantly instead of waiting
-    // for the request to time out.
-    if (!this.connectivity.isOnline) {
-      return null;
-    }
+  getBatchData(paths: string[]): Promise<{data: Record<string, any>, updatedAt: string | null} | null> {
     if (this.mode === 'firebase') {
       const results: Record<string, any> = {};
       const promises = paths.map(path =>
@@ -363,16 +323,7 @@ export class DatabaseService {
           results[path] = null;
         })
       );
-      await Promise.all(promises);
-      // Defensive: if EVERY path came back null/empty, the most likely cause is that the
-      // Firebase SDK is silently failing (blocked socket, auth glitch). Treat it as
-      // "no change" rather than wiping the user's localStorage-cached state with empties.
-      const allEmpty = paths.every(p => {
-        const v = results[p];
-        return v == null || (typeof v === 'object' && Object.keys(v).length === 0);
-      });
-      if (allEmpty) return null;
-      return { data: results, updatedAt: null };
+      return Promise.all(promises).then(() => ({ data: results, updatedAt: null }));
     } else {
       return new Promise((resolve, reject) => {
         this.selfhosted.readBatch(paths).subscribe({
@@ -384,9 +335,6 @@ export class DatabaseService {
   }
 
   getUpdatedAt(): Promise<string | null> {
-    if (!this.connectivity.isOnline) {
-      return Promise.resolve(null);
-    }
     if (this.mode === 'firebase') {
       return Promise.resolve(null);
     }
