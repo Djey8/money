@@ -65,7 +65,20 @@ jobs:
         run: |
           BUMP="${{ steps.bump.outputs.type }}"
           CURRENT=$(node -p "require('./package.json').version")
-          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
+          LATEST_TAG=$(git tag --list 'v*' --sort=-version:refname | head -n1)
+          TAG_VERSION=""
+          if [[ "$LATEST_TAG" =~ ^v([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
+            TAG_VERSION="${BASH_REMATCH[1]}"
+          fi
+
+          BASE_VERSION="$CURRENT"
+          if [ -n "$TAG_VERSION" ]; then
+            if [ "$(printf '%s\n' "$CURRENT" "$TAG_VERSION" | sort -V | tail -n1)" = "$TAG_VERSION" ]; then
+              BASE_VERSION="$TAG_VERSION"
+            fi
+          fi
+
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$BASE_VERSION"
 
           case "$BUMP" in
             major) MAJOR=$((MAJOR + 1)); MINOR=0; PATCH=0 ;;
@@ -74,8 +87,13 @@ jobs:
           esac
 
           NEW_VERSION="$MAJOR.$MINOR.$PATCH"
+          while git rev-parse -q --verify "refs/tags/v$NEW_VERSION" >/dev/null; do
+            PATCH=$((PATCH + 1))
+            NEW_VERSION="$MAJOR.$MINOR.$PATCH"
+          done
+
           echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
-          echo "Bumping $CURRENT -> $NEW_VERSION ($BUMP)"
+          echo "Bumping $BASE_VERSION -> $NEW_VERSION ($BUMP; package.json currently $CURRENT)"
 
           # Update package.json files
           npm version "$NEW_VERSION" --no-git-tag-version
