@@ -1,6 +1,6 @@
 
 # Stage 1: Build Angular application
-FROM node:22-alpine@sha256:8ea2348b068a9544dae7317b4f3aafcdc032df1647bb7d768a05a5cad1a7683f as build
+FROM node:22-alpine@sha256:8ea2348b068a9544dae7317b4f3aafcdc032df1647bb7d768a05a5cad1a7683f AS build
 
 # Create working directory
 WORKDIR /app
@@ -24,10 +24,8 @@ RUN npm run build:selfhosted
 # Stage 2: Serve with nginx
 FROM docker.io/library/nginx:alpine@sha256:5616878291a2eed594aee8db4dade5878cf7edcb475e59193904b198d9b830de
 
-# Patch known CVEs in Alpine system packages.
-# Upgrade everything rather than chasing individual packages — keeps Trivy
-# scans green without manual edits each time a new CVE drops.
-RUN apk upgrade --no-cache
+# Patch known CVEs in Alpine system packages
+RUN apk upgrade --no-cache libcrypto3 libssl3 libpng musl musl-utils zlib nghttp2-libs
 
 # Copy custom nginx configuration
 COPY ./nginx.conf /etc/nginx/nginx.conf

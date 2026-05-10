@@ -1,33 +1,3 @@
-## [1.9.0] - 2026-05-03
-
-### Features
-- feat(ops): expose Grafana on grafana.cashflowhero.uk via Traefik ingress
-
-### Bug Fixes
-- fix(ux): keep loading skeleton up longer on first login to avoid 0-flash
-- fix(backup): promote cronjobs out of BestEffort, shorten hourly deadline
-- fix(ux): show loading spinner on first login and stop false-offline on slow writes
-
-## [1.8.1] - 2026-05-02
-
-### Bug Fixes
-- fix(mobile): stop iOS input zoom and harden pull-to-refresh against accidental triggers
-- fix(offline): prevent transaction loss on reload after false-offline write
-- fix(offline): refresh all loaded tiers on resync, not just tier1
-- fix(offline): selfhosted boot probe, no-op toasts, kill 0-flash
-
-## [1.8.0] - 2026-05-02
-
-### Features
-- feat(offline): offline indicator, toasts, and readiness feedback
-- feat(offline): full prefetch and service worker caching
-- feat(offline): connectivity detection and IndexedDB outbox
-- feat(auth): keep session alive across cold starts and extend lifetime
-
-### Bug Fixes
-- fix(docker): apk upgrade all packages to clear Trivy HIGH (nghttp2 CVE-2026-27135)
-- fix(backup): harden cronjobs and add host watchdog after systemd-wedge incident
-
 ## [1.7.0] - 2026-04-27
 
 ### Features

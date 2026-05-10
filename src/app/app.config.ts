@@ -1,5 +1,5 @@
 import { ApplicationConfig, importProvidersFrom, LOCALE_ID, isDevMode } from '@angular/core';
-import { provideRouter, withHashLocation, withPreloading, PreloadAllModules } from '@angular/router';
+import { provideRouter, withHashLocation } from '@angular/router';
 import { provideAnimations } from '@angular/platform-browser/animations';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { routes } from './app.routes';
@@ -36,11 +36,7 @@ export function HttpLoaderFactory(http: HttpClient) {
 
 export const appConfig: ApplicationConfig = {
   providers: [
-    // PreloadAllModules: every lazy route chunk is fetched in the background once the app
-    // is bootstrapped. This keeps initial load fast (only the first route's chunk is needed
-    // synchronously) but guarantees the rest of the app is in cache before the user goes
-    // offline — even pages they haven't visited yet.
-    provideRouter(routes, withHashLocation(), withPreloading(PreloadAllModules)),
+    provideRouter(routes, withHashLocation()),
     provideAnimations(),
     provideHttpClient(withInterceptors([authInterceptor])),
 

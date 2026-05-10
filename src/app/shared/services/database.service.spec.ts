@@ -84,14 +84,11 @@ function createService(overrides: Record<string, any> = {}): DatabaseService {
     selfhosted: makeMockSelfhosted(),
     dirtyTracker: makeMockDirtyTracker(),
     cacheService: makeMockCache(),
-    injector: { runInContext: (fn: any) => fn() } as any,
-    connectivity: { isOnline: true, waitForReady: () => Promise.resolve() } as any,
     ...overrides
   };
   return new (DatabaseService as any)(
     deps.db, deps.localStorage, deps.cryptic,
-    deps.selfhosted, deps.dirtyTracker, deps.cacheService,
-    deps.injector, deps.connectivity
+    deps.selfhosted, deps.dirtyTracker, deps.cacheService
   );
 }
 
@@ -331,26 +328,11 @@ describe('DatabaseService (firebase mode)', () => {
       expect(result!.updatedAt).toBeNull();
     });
 
-    it('returns null when all paths come back empty (avoids wiping local state)', async () => {
+    it('returns null for paths that fail', async () => {
       const refOnce = jest.fn().mockRejectedValue(new Error('not found'));
       db.database.ref.mockReturnValue({ once: refOnce, set: jest.fn() });
 
       const result = await service.getBatchData(['missing']);
-      // Defensive: when every path is empty/null, treat as no-change rather than overwriting
-      // localStorage cache with empties (which would happen if Firebase's socket is silently
-      // failing).
-      expect(result).toBeNull();
-    });
-
-    it('returns data when at least one path has a value (partial failures tolerated)', async () => {
-      const refOnce = jest.fn()
-        .mockResolvedValueOnce({ val: () => [{ a: 1 }] })
-        .mockRejectedValueOnce(new Error('not found'));
-      db.database.ref.mockReturnValue({ once: refOnce, set: jest.fn() });
-
-      const result = await service.getBatchData(['transactions', 'missing']);
-      expect(result).not.toBeNull();
-      expect(result!.data['transactions']).toEqual([{ a: 1 }]);
       expect(result!.data['missing']).toBeNull();
     });
   });

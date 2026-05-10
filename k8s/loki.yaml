@@ -194,15 +194,6 @@ spec:
             secretKeyRef:
               name: grafana-secret
               key: admin-password
-        # Public URL so absolute links, alerting webhooks, and OAuth redirects resolve
-        # to the proper HTTPS subdomain instead of localhost:3000.
-        - name: GF_SERVER_ROOT_URL
-          value: "https://grafana.cashflowhero.uk"
-        - name: GF_SERVER_DOMAIN
-          value: "grafana.cashflowhero.uk"
-        # Behind Traefik, which terminates TLS \u2014 stay on HTTP inside the cluster.
-        - name: GF_SERVER_PROTOCOL
-          value: "http"
         volumeMounts:
         - name: grafana-storage
           mountPath: /var/lib/grafana
@@ -278,35 +269,3 @@ data:
         allowUiUpdates: true
         options:
           path: /var/lib/grafana/dashboards
-
----
-# Public ingress for Grafana on grafana.cashflowhero.uk.
-# Lives in the logging overlay so it is only applied when the logging stack is deployed
-# (e.g. with ./scripts/deploy.sh --dev). Production runs (--prd / --no-logging) skip
-# this entirely, so Traefik never sees a route to a missing grafana Service.
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: grafana-ingress
-  namespace: money-app
-  annotations:
-    traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
-    traefik.ingress.kubernetes.io/router.tls: "true"
-    traefik.ingress.kubernetes.io/router.middlewares: money-app-redirect-https@kubernetescrd
-    cert-manager.io/cluster-issuer: "letsencrypt-prod"
-spec:
-  tls:
-  - hosts:
-    - grafana.cashflowhero.uk
-    secretName: grafana-cashflowhero-tls
-  rules:
-  - host: grafana.cashflowhero.uk
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: grafana
-            port:
-              number: 3000
