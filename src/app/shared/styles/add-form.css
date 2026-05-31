@@ -125,6 +125,7 @@ select {
   -webkit-appearance: none;
   -moz-appearance: none;
   appearance: none;
+  font-size: 16px; /* Prevent iOS zoom on focus */
 }
 
 input[type="date"],
@@ -159,6 +160,7 @@ textarea, select {
   margin-bottom: 2%;
   background-color: var(--color-surface);
   color: var(--color-text);
+  font-size: 16px; /* Prevent iOS zoom on textarea */
 }
 
 select {
