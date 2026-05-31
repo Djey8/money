@@ -1,3 +1,12 @@
+## [1.11.0] - 2026-05-31
+
+### Features
+- feat(backup): add hash comparison to skip redundant backups for daily and hourly jobs
+- feat(scripts): add weekly and monthly backup promotions
+
+### Bug Fixes
+- fix(ui): adjust font size for input and textarea to prevent iOS zoom on focus
+
 ## [1.10.0] - 2026-05-10
 
 ### Features
