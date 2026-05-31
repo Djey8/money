@@ -18,6 +18,8 @@
 # Usage:
 #   ./backup.sh              Full backup (local + NAS)
 #   ./backup.sh --hourly     Hourly backup only (local only)
+#   ./backup.sh --weekly     Weekly backup promotion (local only)
+#   ./backup.sh --monthly    Monthly backup promotion (local only)
 # ============================================
 
 set -e
@@ -41,10 +43,19 @@ TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 DAY_OF_WEEK=$(date +%u)   # 1=Mon … 7=Sun
 DAY_OF_MONTH=$(date +%d)
 HOURLY_ONLY=false
+WEEKLY_PROMOTION=false
+MONTHLY_PROMOTION=false
 
 # Parse arguments
 if [ "$1" = "--hourly" ]; then
     HOURLY_ONLY=true
+elif [ "$1" = "--weekly" ]; then
+    WEEKLY_PROMOTION=true
+elif [ "$1" = "--monthly" ]; then
+    MONTHLY_PROMOTION=true
+elif [ "$1" = "--weekly" ] && [ "$2" = "--monthly" ]; then
+    WEEKLY_PROMOTION=true
+    MONTHLY_PROMOTION=true
 fi
 
 # Local directories
