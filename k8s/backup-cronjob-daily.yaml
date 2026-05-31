@@ -112,10 +112,23 @@ spec:
               }
               METAEOF
 
+
               # ── Create archive ─────────────────────────────────
               echo "Creating archive..."
               tar -czf "${BACKUP_FILE}" -C "${BACKUP_ROOT}/temp" .
               rm -rf "${BACKUP_ROOT}/temp"
+
+              # ── Compare hash with previous backup ──────────────
+              LATEST_BACKUP=$(ls -1t "${DAILY_DIR}"/couchdb-backup-*.tar.gz* 2>/dev/null | grep -v "${BACKUP_FILE}" | head -n1)
+              if [ -f "$LATEST_BACKUP" ]; then
+                NEW_HASH=$(sha256sum "${BACKUP_FILE}" | awk '{print $1}')
+                OLD_HASH=$(sha256sum "$LATEST_BACKUP" | awk '{print $1}')
+                if [ "$NEW_HASH" = "$OLD_HASH" ]; then
+                  echo "No changes since last backup (hash match). Skipping backup."
+                  rm -f "${BACKUP_FILE}"
+                  exit 0
+                fi
+              fi
 
               # ── Encrypt archive if key is provided ─────────────
               if [ -n "${BACKUP_ENCRYPTION_KEY}" ]; then
