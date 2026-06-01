@@ -36,8 +36,9 @@ spec:
               #!/bin/sh
               set -e
 
-              # Install required tools
-              apk add --no-cache curl gnupg coreutils > /dev/null 2>&1 || true
+              # Install required tools and ensure libxml2 is updated to patched revision
+              apk update >/dev/null 2>&1 || true
+              apk add --no-cache curl gnupg coreutils libxml2 > /dev/null 2>&1 || true
 
               # ── Configuration ──────────────────────────────────
               COUCHDB_HOST="couchdb.money-app.svc.cluster.local"
