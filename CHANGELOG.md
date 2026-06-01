@@ -1,3 +1,12 @@
+## [1.11.1] - 2026-06-01
+
+### Bug Fixes
+- fix(frontend): patch libxml2 CVE-2026-6732
+- fix(backup): patch libxml2 CVE-2026-6732
+- fix(backup): rerun daily, weekly or monthly when missing
+- fix(add): remove placeholder for amount
+- fix(input): allow negative decimals for amount input (iOS-friendly, comma→dot)
+
 ## [1.11.0] - 2026-05-31
 
 ### Features
