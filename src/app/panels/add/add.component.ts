@@ -311,6 +311,40 @@ export class AddComponent extends BaseAddComponent {
     }
   }
 
+  /**
+   * Normalize user input for the amount field to support iOS keyboards:
+   * - allow a leading minus sign
+   * - accept both comma and dot as decimal separator and normalize to dot
+   * - strip invalid characters
+   */
+  onAmountInput(event: Event) {
+    const input = event.target as HTMLInputElement;
+    let v = input.value || '';
+
+    // Normalize comma to dot
+    v = v.replace(/,/g, '.');
+
+    // Remove characters other than digits, dot and minus
+    v = v.replace(/[^0-9.\-]/g, '');
+
+    // Keep at most one dot
+    const parts = v.split('.');
+    if (parts.length > 2) {
+      v = parts.shift() + '.' + parts.join('');
+    }
+
+    // Ensure minus only at the start
+    const hasMinus = v.indexOf('-') !== -1;
+    v = v.replace(/-/g, '');
+    if (hasMinus) {
+      v = '-' + v;
+    }
+
+    // Update model and run existing change handler
+    AddComponent.amountTextField = v;
+    this.onAmountChange(v);
+  }
+
   addTransaction() {
     this.clearError();
     this.errorTextLable = "";
