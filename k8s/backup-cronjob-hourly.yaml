@@ -37,7 +37,7 @@ spec:
               set -e
 
               # Install required tools
-              apk add --no-cache curl gnupg > /dev/null 2>&1
+              apk add --no-cache curl gnupg coreutils > /dev/null 2>&1 || true
 
               # ── Configuration ──────────────────────────────────
               COUCHDB_HOST="couchdb.money-app.svc.cluster.local"
@@ -45,6 +45,7 @@ spec:
               COUCHDB_USER="${COUCHDB_USER:-admin}"
               COUCHDB_PASSWORD="${COUCHDB_PASSWORD}"
               BACKUP_ROOT="/backups"
+              NAS_ROOT="/nas-backups"
               DATE=$(date +%Y-%m-%d)
               HOUR=$(date +%H)
 
@@ -57,10 +58,21 @@ spec:
 
               mkdir -p "${HOURLY_DIR}" "${BACKUP_ROOT}/temp"
 
+              # NAS dirs (may be unavailable)
+              NAS_AVAILABLE=false
+              NAS_DAILY_DIR="${NAS_ROOT}/daily"
+              NAS_WEEKLY_DIR="${NAS_ROOT}/weekly"
+              NAS_MONTHLY_DIR="${NAS_ROOT}/monthly"
+              if [ -d "${NAS_ROOT}" ] && touch "${NAS_ROOT}/.healthcheck" 2>/dev/null; then
+                rm -f "${NAS_ROOT}/.healthcheck"
+                NAS_AVAILABLE=true
+                mkdir -p "${NAS_DAILY_DIR}" "${NAS_WEEKLY_DIR}" "${NAS_MONTHLY_DIR}"
+              fi
+
               # ── Fetch database list ────────────────────────────
               echo "Fetching database list..."
               RAW=$(curl -sf -u "${COUCHDB_USER}:${COUCHDB_PASSWORD}" \
-                "http://${COUCHDB_HOST}:${COUCHDB_PORT}/_all_dbs")
+                "http://${COUCHDB_HOST}:${COUCHDB_PORT}/_all_dbs") || { echo "Failed to fetch DB list"; exit 1; }
 
               DATABASES=$(echo "$RAW" | tr -d '[]"' | tr ',' '\n' | grep -v '^_')
 
@@ -93,15 +105,14 @@ spec:
               }
               METAEOF
 
-
               # ── Create archive ─────────────────────────────────
               echo "Creating archive..."
               tar -czf "${HOURLY_FILE}" -C "${BACKUP_ROOT}/temp" .
               rm -rf "${BACKUP_ROOT}/temp"
 
               # ── Compare hash with previous backup ──────────────
-              LATEST_BACKUP=$(ls -1t "${HOURLY_DIR}"/couchdb-backup-*.tar.gz* 2>/dev/null | grep -v "${HOURLY_FILE}" | head -n1)
-              if [ -f "$LATEST_BACKUP" ]; then
+              LATEST_BACKUP=$(ls -1t "${HOURLY_DIR}"/couchdb-backup-*.tar.gz* 2>/dev/null | grep -v "${HOURLY_FILE}" | head -n1 || true)
+              if [ -n "$LATEST_BACKUP" ] && [ -f "$LATEST_BACKUP" ]; then
                 NEW_HASH=$(sha256sum "${HOURLY_FILE}" | awk '{print $1}')
                 OLD_HASH=$(sha256sum "$LATEST_BACKUP" | awk '{print $1}')
                 if [ "$NEW_HASH" = "$OLD_HASH" ]; then
@@ -133,6 +144,89 @@ spec:
                   echo "  Removing: $(basename "$f")"
                   rm -f "$f"
                 done
+              fi
+
+              # ── Retry missing backups per user policy ──
+              # Daily: recreate today's and yesterday's daily backups if missing
+              TODAY=$(date +%Y-%m-%d)
+              YESTERDAY=$(date -d "yesterday" +%Y-%m-%d)
+              for DATE_CAND in "$TODAY" "$YESTERDAY"; do
+                if ! ls "${BACKUP_ROOT}/daily"/couchdb-backup-"${DATE_CAND}".tar.gz* >/dev/null 2>&1; then
+                  HOURLY_SRC=$(ls -1t "${HOURLY_DIR}"/couchdb-backup-"${DATE_CAND}"_*.tar.gz* 2>/dev/null | head -n1)
+                  if [ -f "$HOURLY_SRC" ]; then
+                    BASENAME=$(basename "$HOURLY_SRC")
+                    DAILY_NAME=$(echo "$BASENAME" | sed -E 's/_[0-9]{2}00//')
+                    cp "$HOURLY_SRC" "${BACKUP_ROOT}/daily/${DAILY_NAME}"
+                    echo "Recreated daily backup for ${DATE_CAND} from ${BASENAME}"
+                    if [ "$NAS_AVAILABLE" = true ]; then
+                      cp "${BACKUP_ROOT}/daily/${DAILY_NAME}" "${NAS_DAILY_DIR}/${DAILY_NAME}"
+                      echo "Also copied recreated daily backup to NAS: ${DAILY_NAME}"
+                    fi
+                  else
+                    echo "No hourly archive available to recreate daily for ${DATE_CAND}"
+                  fi
+                else
+                  echo "Daily backup exists for ${DATE_CAND}, skipping."
+                fi
+              done
+
+              # Weekly: recreate last week's Sunday backup if missing
+              LAST_WEEK_SUN=$(date -d "last sunday -7 days" +%Y-%m-%d)
+              if ! ls "${BACKUP_ROOT}/weekly"/couchdb-backup-"${LAST_WEEK_SUN}".tar.gz* >/dev/null 2>&1; then
+                if ls "${BACKUP_ROOT}/daily"/couchdb-backup-"${LAST_WEEK_SUN}".tar.gz* >/dev/null 2>&1; then
+                  SRC=$(ls -1t "${BACKUP_ROOT}/daily"/couchdb-backup-"${LAST_WEEK_SUN}".tar.gz* | head -n1)
+                  cp "$SRC" "${BACKUP_ROOT}/weekly/$(basename "$SRC")"
+                  echo "Recreated weekly backup for ${LAST_WEEK_SUN} from daily"
+                  if [ "$NAS_AVAILABLE" = true ]; then
+                    cp "$SRC" "${NAS_WEEKLY_DIR}/$(basename "$SRC")"
+                    echo "Also copied recreated weekly backup to NAS"
+                  fi
+                else
+                  HOURLY_SRC=$(ls -1t "${HOURLY_DIR}"/couchdb-backup-"${LAST_WEEK_SUN}"_*.tar.gz* 2>/dev/null | head -n1)
+                  if [ -f "$HOURLY_SRC" ]; then
+                    WEEKLY_BASENAME=$(basename "$HOURLY_SRC" | sed -E 's/_[0-9]{2}00//')
+                    cp "$HOURLY_SRC" "${BACKUP_ROOT}/weekly/${WEEKLY_BASENAME}"
+                    echo "Recreated weekly backup for ${LAST_WEEK_SUN} from hourly"
+                    if [ "$NAS_AVAILABLE" = true ]; then
+                      cp "${BACKUP_ROOT}/weekly/${WEEKLY_BASENAME}" "${NAS_WEEKLY_DIR}/${WEEKLY_BASENAME}"
+                      echo "Also copied recreated weekly backup to NAS"
+                    fi
+                  else
+                    echo "No source hourly/daily available to recreate weekly backup for ${LAST_WEEK_SUN}"
+                  fi
+                fi
+              else
+                echo "Weekly backup exists for ${LAST_WEEK_SUN}, skipping."
+              fi
+
+              # Monthly: recreate last month's first day if missing
+              LAST_MONTH_START=$(date -d "$(date +%Y-%m-01) -1 month" +%Y-%m-01)
+              if ! ls "${BACKUP_ROOT}/monthly"/couchdb-backup-"${LAST_MONTH_START}".tar.gz* >/dev/null 2>&1; then
+                if ls "${BACKUP_ROOT}/daily"/couchdb-backup-"${LAST_MONTH_START}".tar.gz* >/dev/null 2>&1; then
+                  SRC=$(ls -1t "${BACKUP_ROOT}/daily"/couchdb-backup-"${LAST_MONTH_START}".tar.gz* | head -n1)
+                  MNAME=$(basename "$SRC")
+                  cp "$SRC" "${BACKUP_ROOT}/monthly/${MNAME}"
+                  echo "Recreated monthly backup for ${LAST_MONTH_START} from daily"
+                  if [ "$NAS_AVAILABLE" = true ]; then
+                    cp "${BACKUP_ROOT}/monthly/${MNAME}" "${NAS_MONTHLY_DIR}/${MNAME}"
+                    echo "Also copied recreated monthly backup to NAS"
+                  fi
+                else
+                  HOURLY_SRC=$(ls -1t "${HOURLY_DIR}"/couchdb-backup-"${LAST_MONTH_START}"_*.tar.gz* 2>/dev/null | head -n1)
+                  if [ -f "$HOURLY_SRC" ]; then
+                    MONTHLY_BASENAME=$(basename "$HOURLY_SRC" | sed -E 's/_[0-9]{2}00//')
+                    cp "$HOURLY_SRC" "${BACKUP_ROOT}/monthly/${MONTHLY_BASENAME}"
+                    echo "Recreated monthly backup for ${LAST_MONTH_START} from hourly"
+                    if [ "$NAS_AVAILABLE" = true ]; then
+                      cp "${BACKUP_ROOT}/monthly/${MONTHLY_BASENAME}" "${NAS_MONTHLY_DIR}/${MONTHLY_BASENAME}"
+                      echo "Also copied recreated monthly backup to NAS"
+                    fi
+                  else
+                    echo "No source hourly/daily available to recreate monthly backup for ${LAST_MONTH_START}"
+                  fi
+                fi
+              else
+                echo "Monthly backup exists for ${LAST_MONTH_START}, skipping."
               fi
 
               echo ""
