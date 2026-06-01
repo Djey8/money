@@ -1,3 +1,8 @@
+## [1.11.2] - 2026-06-01
+
+### Bug Fixes
+- fix(backup): recreate daily, weekly and monthly backup
+
 ## [1.11.1] - 2026-06-01
 
 ### Bug Fixes
