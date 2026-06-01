@@ -148,86 +148,64 @@ spec:
               fi
 
               # ── Retry missing backups per user policy ──
-              # Daily: recreate today's and yesterday's daily backups if missing
-              TODAY=$(date +%Y-%m-%d)
-              YESTERDAY=$(date -d "yesterday" +%Y-%m-%d)
-              for DATE_CAND in "$TODAY" "$YESTERDAY"; do
-                if ! ls "${BACKUP_ROOT}/daily"/couchdb-backup-"${DATE_CAND}".tar.gz* >/dev/null 2>&1; then
-                  HOURLY_SRC=$(ls -1t "${HOURLY_DIR}"/couchdb-backup-"${DATE_CAND}"_*.tar.gz* 2>/dev/null | head -n1)
-                  if [ -f "$HOURLY_SRC" ]; then
-                    BASENAME=$(basename "$HOURLY_SRC")
-                    DAILY_NAME=$(echo "$BASENAME" | sed -E 's/_[0-9]{2}00//')
-                    cp "$HOURLY_SRC" "${BACKUP_ROOT}/daily/${DAILY_NAME}"
-                    echo "Recreated daily backup for ${DATE_CAND} from ${BASENAME}"
-                    if [ "$NAS_AVAILABLE" = true ]; then
-                      cp "${BACKUP_ROOT}/daily/${DAILY_NAME}" "${NAS_DAILY_DIR}/${DAILY_NAME}"
-                      echo "Also copied recreated daily backup to NAS: ${DAILY_NAME}"
-                    fi
-                  else
-                    echo "No hourly archive available to recreate daily for ${DATE_CAND}"
-                  fi
-                else
-                  echo "Daily backup exists for ${DATE_CAND}, skipping."
-                fi
-              done
-
-              # Weekly: recreate last week's Sunday backup if missing
-              LAST_WEEK_SUN=$(date -d "last sunday -7 days" +%Y-%m-%d)
-              if ! ls "${BACKUP_ROOT}/weekly"/couchdb-backup-"${LAST_WEEK_SUN}".tar.gz* >/dev/null 2>&1; then
-                if ls "${BACKUP_ROOT}/daily"/couchdb-backup-"${LAST_WEEK_SUN}".tar.gz* >/dev/null 2>&1; then
-                  SRC=$(ls -1t "${BACKUP_ROOT}/daily"/couchdb-backup-"${LAST_WEEK_SUN}".tar.gz* | head -n1)
-                  cp "$SRC" "${BACKUP_ROOT}/weekly/$(basename "$SRC")"
-                  echo "Recreated weekly backup for ${LAST_WEEK_SUN} from daily"
-                  if [ "$NAS_AVAILABLE" = true ]; then
-                    cp "$SRC" "${NAS_WEEKLY_DIR}/$(basename "$SRC")"
-                    echo "Also copied recreated weekly backup to NAS"
-                  fi
-                else
-                  HOURLY_SRC=$(ls -1t "${HOURLY_DIR}"/couchdb-backup-"${LAST_WEEK_SUN}"_*.tar.gz* 2>/dev/null | head -n1)
-                  if [ -f "$HOURLY_SRC" ]; then
-                    WEEKLY_BASENAME=$(basename "$HOURLY_SRC" | sed -E 's/_[0-9]{2}00//')
-                    cp "$HOURLY_SRC" "${BACKUP_ROOT}/weekly/${WEEKLY_BASENAME}"
-                    echo "Recreated weekly backup for ${LAST_WEEK_SUN} from hourly"
-                    if [ "$NAS_AVAILABLE" = true ]; then
-                      cp "${BACKUP_ROOT}/weekly/${WEEKLY_BASENAME}" "${NAS_WEEKLY_DIR}/${WEEKLY_BASENAME}"
-                      echo "Also copied recreated weekly backup to NAS"
-                    fi
-                  else
-                    echo "No source hourly/daily available to recreate weekly backup for ${LAST_WEEK_SUN}"
-                  fi
-                fi
+              # Use the just-created HOURLY_FILE as the canonical source for recreating missing tier backups.
+              # Preserve encryption: if HOURLY_FILE ends with .gpg, created targets will also end with .gpg.
+              HOURLY_BASENAME=$(basename "${HOURLY_FILE}")
+              if echo "${HOURLY_BASENAME}" | grep -q '\.gpg$'; then
+                SUFFIX='.tar.gz.gpg'
               else
-                echo "Weekly backup exists for ${LAST_WEEK_SUN}, skipping."
+                SUFFIX='.tar.gz'
               fi
 
-              # Monthly: recreate last month's first day if missing
-              LAST_MONTH_START=$(date -d "$(date +%Y-%m-01) -1 month" +%Y-%m-01)
-              if ! ls "${BACKUP_ROOT}/monthly"/couchdb-backup-"${LAST_MONTH_START}".tar.gz* >/dev/null 2>&1; then
-                if ls "${BACKUP_ROOT}/daily"/couchdb-backup-"${LAST_MONTH_START}".tar.gz* >/dev/null 2>&1; then
-                  SRC=$(ls -1t "${BACKUP_ROOT}/daily"/couchdb-backup-"${LAST_MONTH_START}".tar.gz* | head -n1)
-                  MNAME=$(basename "$SRC")
-                  cp "$SRC" "${BACKUP_ROOT}/monthly/${MNAME}"
-                  echo "Recreated monthly backup for ${LAST_MONTH_START} from daily"
-                  if [ "$NAS_AVAILABLE" = true ]; then
-                    cp "${BACKUP_ROOT}/monthly/${MNAME}" "${NAS_MONTHLY_DIR}/${MNAME}"
-                    echo "Also copied recreated monthly backup to NAS"
-                  fi
-                else
-                  HOURLY_SRC=$(ls -1t "${HOURLY_DIR}"/couchdb-backup-"${LAST_MONTH_START}"_*.tar.gz* 2>/dev/null | head -n1)
-                  if [ -f "$HOURLY_SRC" ]; then
-                    MONTHLY_BASENAME=$(basename "$HOURLY_SRC" | sed -E 's/_[0-9]{2}00//')
-                    cp "$HOURLY_SRC" "${BACKUP_ROOT}/monthly/${MONTHLY_BASENAME}"
-                    echo "Recreated monthly backup for ${LAST_MONTH_START} from hourly"
-                    if [ "$NAS_AVAILABLE" = true ]; then
-                      cp "${BACKUP_ROOT}/monthly/${MONTHLY_BASENAME}" "${NAS_MONTHLY_DIR}/${MONTHLY_BASENAME}"
-                      echo "Also copied recreated monthly backup to NAS"
-                    fi
-                  else
-                    echo "No source hourly/daily available to recreate monthly backup for ${LAST_MONTH_START}"
-                  fi
+              # Daily: target is TODAY if current time >= 08:30, otherwise YESTERDAY
+              NOW_HM=$(date +%H%M)
+              if [ "$NOW_HM" -ge 0830 ]; then
+                DAILY_TARGET=$(date +%Y-%m-%d)
+              else
+                DAILY_TARGET=$(date -d "yesterday" +%Y-%m-%d)
+              fi
+              TARGET_D="${BACKUP_ROOT}/daily/couchdb-backup-${DAILY_TARGET}${SUFFIX}"
+              if [ ! -f "$TARGET_D" ]; then
+                cp "${HOURLY_FILE}" "$TARGET_D"
+                echo "Copied current hourly to recreate daily backup: $(basename "$TARGET_D")"
+                if [ "$NAS_AVAILABLE" = true ]; then
+                  cp "$TARGET_D" "${NAS_DAILY_DIR}/$(basename "$TARGET_D")"
+                  echo "Also copied recreated daily backup to NAS: $(basename "$TARGET_D")"
                 fi
               else
-                echo "Monthly backup exists for ${LAST_MONTH_START}, skipping."
+                echo "Daily backup exists for ${DAILY_TARGET}, skipping."
+              fi
+
+              # Weekly: target is last Sunday, except if today is Sunday then target is today
+              if [ "$(date +%u)" -eq 7 ]; then
+                WEEK_TARGET=$(date +%Y-%m-%d)
+              else
+                WEEK_TARGET=$(date -d "last sunday" +%Y-%m-%d)
+              fi
+              TARGET_W="${BACKUP_ROOT}/weekly/couchdb-backup-${WEEK_TARGET}${SUFFIX}"
+              if [ ! -f "$TARGET_W" ]; then
+                cp "${HOURLY_FILE}" "$TARGET_W"
+                echo "Copied current hourly to recreate weekly backup: $(basename "$TARGET_W")"
+                if [ "$NAS_AVAILABLE" = true ]; then
+                  cp "$TARGET_W" "${NAS_WEEKLY_DIR}/$(basename "$TARGET_W")"
+                  echo "Also copied recreated weekly backup to NAS: $(basename "$TARGET_W")"
+                fi
+              else
+                echo "Weekly backup exists for ${WEEK_TARGET}, skipping."
+              fi
+
+              # Monthly: target is this month's first day
+              MONTH_TARGET=$(date +%Y-%m-01)
+              TARGET_M="${BACKUP_ROOT}/monthly/couchdb-backup-${MONTH_TARGET}${SUFFIX}"
+              if [ ! -f "$TARGET_M" ]; then
+                cp "${HOURLY_FILE}" "$TARGET_M"
+                echo "Copied current hourly to recreate monthly backup: $(basename "$TARGET_M")"
+                if [ "$NAS_AVAILABLE" = true ]; then
+                  cp "$TARGET_M" "${NAS_MONTHLY_DIR}/$(basename "$TARGET_M")"
+                  echo "Also copied recreated monthly backup to NAS: $(basename "$TARGET_M")"
+                fi
+              else
+                echo "Monthly backup exists for ${MONTH_TARGET}, skipping."
               fi
 
               echo ""
