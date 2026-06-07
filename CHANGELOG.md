@@ -1,3 +1,8 @@
+## [1.11.3] - 2026-06-07
+
+### Bug Fixes
+- fix(add): update amount input to use text inputmode with autocorrect disabled
+
 ## [1.11.2] - 2026-06-01
 
 ### Bug Fixes
