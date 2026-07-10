@@ -61,7 +61,9 @@ function makeMockDirtyTracker() {
     takeSnapshot: jest.fn(),
     hasChanged: jest.fn().mockReturnValue(true),
     isDirty: jest.fn().mockReturnValue(false),
-    getDirtyTags: jest.fn().mockReturnValue([])
+    getDirtyTags: jest.fn().mockReturnValue([]),
+    clearAll: jest.fn(),
+    clearAllSnapshots: jest.fn()
   };
 }
 
@@ -223,6 +225,18 @@ describe('DatabaseService (selfhosted mode)', () => {
     it('clears the CacheService', () => {
       service.clearReadCache();
       expect(cacheService.clearAll).toHaveBeenCalled();
+    });
+  });
+
+  // ── clearAllCaches ──────────────────────────────────────────────────────
+
+  describe('clearAllCaches()', () => {
+    it('clears read cache, ETag cache, and dirty tracker on selfhosted', () => {
+      service.clearAllCaches();
+      expect(cacheService.clearAll).toHaveBeenCalled();
+      expect(selfhosted.clearEtagCache).toHaveBeenCalled();
+      expect(dirtyTracker.clearAll).toHaveBeenCalled();
+      expect(dirtyTracker.clearAllSnapshots).toHaveBeenCalled();
     });
   });
 

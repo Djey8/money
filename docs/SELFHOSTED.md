@@ -19,14 +19,21 @@ This is the fastest path. One command, three containers.
 ### 1. Clone and configure
 
 ```bash
-git clone <repo-url> && cd money-temp
+git clone <repo-url> && cd money
 ```
 
-Edit `docker-compose.yml` — change these two values:
+Copy `.env.example` to `.env` and fill in real values — `docker-compose.yml` reads them via `${VAR:?...}` (it fails fast if anything is missing, so you do **not** edit the compose file itself):
 
-```yaml
-COUCHDB_PASSWORD=<strong-password>    # lines 10 + 26
-JWT_SECRET=<random-string-32-chars>   # line 27
+```bash
+cp .env.example .env
+```
+
+Minimum required:
+
+```bash
+JWT_SECRET=<random ≥32 chars>            # openssl rand -base64 64
+COUCHDB_PASSWORD=<strong password>       # openssl rand -base64 30 | tr -d '/+='
+GRAFANA_ADMIN_PASSWORD=<strong password> # only required when running the logging overlay
 ```
 
 ### 2. Start (minimal stack — recommended)
@@ -115,12 +122,22 @@ docker load < money-backend.tar.gz
 
 ### 3. Configure secrets
 
-Edit the Kubernetes manifests with your credentials:
+All secrets live in `k8s/secrets.yaml` (gitignored). Copy the template and fill in real values — the manifests `couchdb.yaml` and `backend.yaml` already consume them via `secretKeyRef`, so you do **not** edit those files.
 
 ```bash
-vi k8s/couchdb.yaml    # COUCHDB_PASSWORD
-vi k8s/backend.yaml    # JWT_SECRET, COUCHDB_PASSWORD
+cp k8s/secrets.yaml.example k8s/secrets.yaml
+vi k8s/secrets.yaml    # JWT_SECRET, COUCHDB_PASSWORD, Grafana password
 ```
+
+Generate strong values:
+
+```bash
+openssl rand -base64 64                 # JWT_SECRET
+openssl rand -base64 30 | tr -d '/+='   # COUCHDB_PASSWORD
+openssl rand -base64 40                 # Grafana admin password
+```
+
+> The same values are used locally via `.env` (copied from `.env.example`) for Docker Compose runs. Keep the two in sync only if you share data between local and cluster.
 
 ### 4. Deploy
 
@@ -184,7 +201,7 @@ kubectl delete -f k8s/promtail.yaml
 kubectl delete -f k8s/loki.yaml
 ```
 
-Grafana is available on port 30300. Pre-built dashboards are in `grafana/dashboards/`:
+Grafana is available on port 30300. Pre-built dashboards ship as `ConfigMap`s in `k8s/grafana-dashboards.yaml` and `k8s/grafana-frontend-dashboard.yaml`:
 
 - System overview
 - Backend API performance
@@ -194,39 +211,59 @@ Grafana is available on port 30300. Pre-built dashboards are in `grafana/dashboa
 - User activity
 - Security monitoring
 
-Default Grafana credentials: `admin` / `admin`
+Grafana admin credentials are read from the `GRAFANA_ADMIN_PASSWORD` value in `k8s/secrets.yaml` (or `.env` for Docker Compose). Login as `admin` with that password.
 
 ---
 
 ## Backups
 
-Automated daily backups via Kubernetes CronJob (2:00 AM). Backups are stored on the host filesystem at `/opt/money-app-backups/` — independent of the namespace.
+Two Kubernetes CronJobs handle automated backups:
+
+1. **Hourly** — local only, every hour, keeps last 24
+2. **Daily** — local + NAS (if available), runs at 2:00 AM with tier promotion
+
+Both are deployed by default with `deploy.sh` / `deploy-local.ps1`. They can be individually skipped — see [DEPLOYMENT.md](DEPLOYMENT.md) for all flags.
 
 ```bash
-kubectl apply -f k8s/backup-cronjob.yaml
+# Deploy manually (if needed)
+kubectl apply -f k8s/backup-cronjob-hourly.yaml   # hourly local
+kubectl apply -f k8s/backup-cronjob-daily.yaml     # daily local + NAS
 ```
 
 ### Storage structure
 
 ```
-/opt/money-app-backups/
+/opt/money-app-backups/          (local)
+  hourly/   ← last 24 hours
   daily/    ← last 7 days
   weekly/   ← last 13 Sundays (~3 months)
+  monthly/  ← 1st of each month (kept forever)
+
+/mnt/nas/backups/                (NAS — optional, gracefully skipped if unavailable)
+  daily/    ← last 21 days (3 weeks)
+  weekly/   ← last 104 Sundays (2 years)
   monthly/  ← 1st of each month (kept forever)
 ```
 
 ### Retention policy
 
-| Tier | Kept | Promoted when |
-|------|------|---------------|
-| Daily | 7 days | Every day |
-| Weekly | 3 months (13 weeks) | Sundays |
-| Monthly | Forever | 1st of month |
+| Location | Tier | Kept | Promoted when |
+|----------|------|------|---------------|
+| Local | Hourly | 24 hours | Every hour |
+| Local | Daily | 7 days | Every day (2 AM) |
+| Local | Weekly | 3 months (13 weeks) | Sundays |
+| Local | Monthly | Forever | 1st of month |
+| NAS | Daily | 3 weeks (21 days) | Every day (2 AM) |
+| NAS | Weekly | 2 years (104 weeks) | Sundays |
+| NAS | Monthly | Forever | 1st of month |
+
+> **No NAS?** Use `--no-nas-backup` (or `-NoNasBackup` on Windows) and only the hourly local CronJob deploys. The daily CronJob also gracefully skips NAS writes if the mount is unavailable at runtime.
 
 ### Manual backup / restore
 
 ```bash
-./scripts/backup.sh                                          # backup now
+./scripts/backup.sh                                          # backup now (local + NAS)
+./scripts/backup.sh --hourly                                 # hourly backup (local only)
 ./scripts/list-backups.sh                                    # show all backups + restore commands
 ./scripts/restore-backup.sh /opt/money-app-backups/daily/couchdb-backup-2026-03-29.tar.gz   # restore
 ```
@@ -234,9 +271,15 @@ kubectl apply -f k8s/backup-cronjob.yaml
 ### Browse backups directly on the Pi
 
 ```bash
+ls -lh /opt/money-app-backups/hourly/
 ls -lh /opt/money-app-backups/daily/
 ls -lh /opt/money-app-backups/weekly/
 ls -lh /opt/money-app-backups/monthly/
+
+# NAS (if mounted)
+ls -lh /mnt/nas/backups/daily/
+ls -lh /mnt/nas/backups/weekly/
+ls -lh /mnt/nas/backups/monthly/
 ```
 
 ---

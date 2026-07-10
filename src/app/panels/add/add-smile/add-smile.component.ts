@@ -95,6 +95,8 @@ export class AddSmileComponent extends BaseAddComponent {
   showAddAction = false;
   showPaymentPlansSection = false;
 
+  static expandAllSections = false;
+
   phases: SmilePhase[] = ['idea', 'planning', 'saving', 'ready', 'completed'];
 
   static zIndex;
@@ -504,25 +506,28 @@ export class AddSmileComponent extends BaseAddComponent {
     AppStateService.instance.allSmileProjects.push(newSmile);
     
     this.clearError();
+    this.resetForm();
+    this.closeWindow();
+    AppStateService.instance.isSaving = true;
     this.persistence.writeAndSync({
       tag: 'smile',
       data: AppStateService.instance.allSmileProjects,
       localStorageKey: 'smile',
       logEvent: 'add_smile',
       logMetadata: { 
-        title: this.titleTextField, 
+        title: newSmile.title, 
         target: finalBuckets.reduce((sum, b) => sum + b.target, 0), 
         phase: this.phaseField 
       },
       onSuccess: () => {
-        this.resetForm();
-        this.closeWindow();
+        AppStateService.instance.isSaving = false;
         this.toastService.show('Smile project added', 'success');
         gotoTop();
         this.router.navigate([`/smileprojects`]);
       },
       onError: (error) => {
-        this.showError(error.message || 'Database write failed');
+        AppStateService.instance.isSaving = false;
+        this.toastService.show(error.message || 'Database write failed', 'error');
       }
     });
   }

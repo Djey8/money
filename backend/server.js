@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const cookieParser = require('cookie-parser');
 const rateLimit = require('express-rate-limit');
 const authRoutes = require('./routes/auth');
 const dataRoutes = require('./routes/data');
@@ -13,36 +14,48 @@ const { requestLoggingMiddleware, errorLoggingMiddleware } = require('./middlewa
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Trust proxy - required when behind nginx/ingress
-app.set('trust proxy', true);
+// Trust proxy - only trust 1 hop (k8s ingress/nginx)
+app.set('trust proxy', 1);
 
 // Security middleware
 app.use(helmet());
 
-// CORS configuration - handle both specific origins and wildcard
+// CORS configuration
 const corsOrigins = process.env.CORS_ORIGINS || 'http://localhost:4200';
 app.use(cors({
-  origin: corsOrigins === '*' ? true : corsOrigins.split(','),
-  credentials: corsOrigins !== '*'
+  origin: corsOrigins.split(','),
+  credentials: true
 }));
 
-// Rate limiting - with proper trust proxy configuration
+// Rate limiting - generous for normal use, auth endpoints are strict separately
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
+  max: 10000, // limit each IP to 1010000 requests per windowMs
   standardHeaders: true,
   legacyHeaders: false,
-  // Skip rate limiting by IP in local development or when behind proxy
   skip: (req) => {
-    // In Kubernetes, we trust the ingress/service mesh for rate limiting
     return process.env.SKIP_RATE_LIMIT === 'true';
   }
 });
 app.use('/api/', limiter);
 
-// Body parser
-app.use(express.json({ limit: '2mb' }));
-app.use(express.text({ limit: '2mb', type: 'text/plain' }));
+// Strict rate limiting for auth endpoints (brute-force protection)
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // max 10 login/register attempts per 15 min
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => process.env.SKIP_RATE_LIMIT === 'true'
+});
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/register', authLimiter);
+
+// Body parser — 100mb to support large encrypted batch writes and restore imports
+app.use(express.json({ limit: '100mb' }));
+app.use(express.text({ limit: '1000mb', type: 'text/plain' }));
+
+// Cookie parser (for httpOnly auth cookies)
+app.use(cookieParser());
 
 // Enhanced request logging middleware
 app.use(requestLoggingMiddleware);

@@ -1,3 +1,7 @@
+:host:has(#addSmile-Container) {
+  display: block;
+}
+
 #addSmile-Container {
   top: 70px;
   left: 50%;

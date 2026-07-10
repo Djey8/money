@@ -16,6 +16,7 @@ import { PersistenceService } from 'src/app/shared/services/persistence.service'
 import { IncomeStatementService } from 'src/app/shared/services/income-statement.service';
 import { ErrorMapperService } from 'src/app/shared/services/error-mapper.service';
 import { AppStateService } from 'src/app/shared/services/app-state.service';
+import { ToastService } from 'src/app/shared/services/toast.service';
 import { migrateGrowArray } from 'src/app/shared/grow-migration.utils';
 import { migrateSmileArray } from 'src/app/shared/smile-migration.utils';
 import { CommonModule } from '@angular/common';
@@ -151,20 +152,40 @@ export class SettingsComponent {
   passwordTextField = "";
   errorMessageLable = "Error: Password is not correct!";
   eyePic = "../../assets/symbols/eye.png";
+  showPassword = false;
 
   isDeleteAuth = false;
   isDeleteError = false;
   deletePasswordTextField = "";
   deleteErrorLabel = "";
   deleteEyePic = "../../assets/symbols/eye.png";
+  showDeletePassword = false;
 
 
   static zIndex;
   static isInfo;
   static isError;
+  static _pendingEdit = false;
+
+  static openAllocationEditor(): void {
+    SettingsComponent.isInfo = true;
+    SettingsComponent.isSettings = false;
+    SettingsComponent.isAllocation = true;
+    SettingsComponent.isLanguages = false;
+    SettingsComponent.isCurrency = false;
+    SettingsComponent.isEncryption = false;
+    SettingsComponent.isNumberFormat = false;
+    SettingsComponent.isDateFormat = false;
+    SettingsComponent.isBackup = false;
+    SettingsComponent.isRestore = false;
+    SettingsComponent.isTheme = false;
+    SettingsComponent.isError = false;
+    SettingsComponent._pendingEdit = true;
+  }
+
   public classReference = SettingsComponent;
   public get profileReference() { return ProfileComponent; }
-  constructor(private translate: TranslateService, private router: Router, private localStorage: LocalService, private database: DatabaseService, private afAuth: AngularFireAuth, private cryptic: CrypticService, private authService: AuthService, private selfhosted: SelfhostedService, private frontendLogger: FrontendLoggerService, private persistence: PersistenceService, private incomeStatement: IncomeStatementService, private errorMapper: ErrorMapperService) {
+  constructor(private translate: TranslateService, private router: Router, private localStorage: LocalService, private database: DatabaseService, private afAuth: AngularFireAuth, private cryptic: CrypticService, private authService: AuthService, private selfhosted: SelfhostedService, private frontendLogger: FrontendLoggerService, private persistence: PersistenceService, private incomeStatement: IncomeStatementService, private errorMapper: ErrorMapperService, private toastService: ToastService) {
     this.translate.setDefaultLang('en');
     SettingsComponent.isInfo = false;
     SettingsComponent.isError = false;
@@ -193,41 +214,44 @@ export class SettingsComponent {
     this.smileTextField = AppStateService.instance.smile
     this.fireTextField = AppStateService.instance.fire
     this.currencyTextField = AppStateService.instance.currency
-    if (SettingsComponent.isEng) {
-      this.translate.use("en");
-    }
-    if (SettingsComponent.isDe) {
-      this.translate.use("de");
-    }
-    if (SettingsComponent.isEs) {
-      this.translate.use("es");
-    }
-    if (SettingsComponent.isFr) {
-      this.translate.use("fr");
-    }
-    if (SettingsComponent.isCn) {
-      this.translate.use("cn");
-    }
     if (SettingsComponent.isAr) {
       this.translate.use("ar");
       document.body.classList.add('rtl-text');
+    } else if (SettingsComponent.isCn) {
+      this.translate.use("cn");
+      document.body.classList.remove('rtl-text');
+    } else if (SettingsComponent.isFr) {
+      this.translate.use("fr");
+      document.body.classList.remove('rtl-text');
+    } else if (SettingsComponent.isEs) {
+      this.translate.use("es");
+      document.body.classList.remove('rtl-text');
+    } else if (SettingsComponent.isDe) {
+      this.translate.use("de");
+      document.body.classList.remove('rtl-text');
     } else {
+      this.translate.use("en");
       document.body.classList.remove('rtl-text');
     }
-    AppStateService.instance.key = this.cryptic.getKey() === this.cryptic.getDefaultKey() ? "default" : this.cryptic.getKey();
+    AppStateService.instance.key = this.cryptic.getKey() || "";
     this.keyTextField = AppStateService.instance.key;
     AppStateService.instance.isLocal = this.cryptic.getEncryptionLocalEnabled();
     AppStateService.instance.isDatabase = this.cryptic.getEncryptionDatabaseEnabled();
   }
 
-  toggleEye(){
-    if(this.eyePic == "../../assets/symbols/eye.png"){
-      this.eyePic = "../../assets/symbols/eye-slash.png";
-      document.getElementById("password").setAttribute("type", "text");
-    } else {
-      this.eyePic = "../../assets/symbols/eye.png";
-      document.getElementById("password").setAttribute("type", "password");
+  ngDoCheck(): void {
+    if (SettingsComponent._pendingEdit) {
+      SettingsComponent._pendingEdit = false;
+      this.isEdit = true;
+      this.dailyTextField = AppStateService.instance.daily;
+      this.splurgeTextField = AppStateService.instance.splurge;
+      this.smileTextField = AppStateService.instance.smile;
+      this.fireTextField = AppStateService.instance.fire;
     }
+  }
+
+  toggleEye(){
+    this.showPassword = !this.showPassword;
   }
 
   toggleIsLocal() {
@@ -244,6 +268,10 @@ export class SettingsComponent {
     this.keyTextField = "default";
     AppStateService.instance.isLocal = true;
     AppStateService.instance.isDatabase = false;
+    // Persist encryption config to server (selfhosted mode)
+    if (environment.mode === 'selfhosted') {
+      this.selfhosted.saveEncryptionConfig('default', true, false).subscribe();
+    }
     await this.updateStorage();
     this.isEdit = false;
   }
@@ -263,6 +291,10 @@ export class SettingsComponent {
         AppStateService.instance.isLocal = data.local;
         AppStateService.instance.isDatabase = data.database;
         this.cryptic.updateConfig(data.key, data.local, data.database);
+        // Persist encryption config to server (selfhosted mode)
+        if (environment.mode === 'selfhosted') {
+          this.selfhosted.saveEncryptionConfig(data.key, data.local, data.database).subscribe();
+        }
         await this.updateStorage();
       };
       reader.readAsText(file);
@@ -273,6 +305,10 @@ export class SettingsComponent {
 
   async save() {
     this.cryptic.updateConfig(this.keyTextField, AppStateService.instance.isLocal, AppStateService.instance.isDatabase);
+    // Persist encryption config to server (selfhosted mode)
+    if (environment.mode === 'selfhosted') {
+      this.selfhosted.saveEncryptionConfig(this.keyTextField, AppStateService.instance.isLocal, AppStateService.instance.isDatabase).subscribe();
+    }
     await this.updateStorage();
     const data = {
       key: this.keyTextField,
@@ -321,26 +357,36 @@ export class SettingsComponent {
 
     try {
       //WRITE to Storage
+      // Only write balance/grow data if it has been loaded (Tier 3 on-demand).
+      // Writing before load would overwrite real DB data with empty arrays.
       const writes = [
         { tag: "income/revenue/interests", data: AppStateService.instance.allIntrests },
         { tag: "income/revenue/properties", data: AppStateService.instance.allProperties },
         { tag: "income/revenue/revenues", data: AppStateService.instance.allRevenues },
-        { tag: "balance/liabilities", data: AppStateService.instance.liabilities },
         { tag: "income/expenses/daily", data: AppStateService.instance.dailyExpenses },
         { tag: "income/expenses/splurge", data: AppStateService.instance.splurgeExpenses },
-        { tag: "income/expenses/smile", data: AppStateService.instance.smileExpenses },
-        { tag: "income/expenses/fire", data: AppStateService.instance.fireExpenses },
-        { tag: "income/expenses/mojo", data: AppStateService.instance.mojoExpenses },
-        { tag: "smile", data: AppStateService.instance.allSmileProjects },
-        { tag: "fire", data: AppStateService.instance.allFireEmergencies },
-        { tag: "mojo", data: AppStateService.instance.mojo },
+        // Only write tier2 data (smile/fire/mojo) if tier2 has been loaded.
+        // Writing before load would overwrite real DB data with empty defaults.
+        ...(AppStateService.instance.tier2Loaded ? [
+          { tag: "income/expenses/smile", data: AppStateService.instance.smileExpenses },
+          { tag: "income/expenses/fire", data: AppStateService.instance.fireExpenses },
+          { tag: "income/expenses/mojo", data: AppStateService.instance.mojoExpenses },
+          { tag: "smile", data: AppStateService.instance.allSmileProjects },
+          { tag: "fire", data: AppStateService.instance.allFireEmergencies },
+          { tag: "mojo", data: AppStateService.instance.mojo },
+          { tag: "budget", data: AppStateService.instance.allBudgets }
+        ] : []),
         { tag: "transactions", data: AppStateService.instance.allTransactions },
         { tag: "subscriptions", data: AppStateService.instance.allSubscriptions },
-        { tag: "balance/asset/shares", data: AppStateService.instance.allShares },
-        { tag: "balance/asset/assets", data: AppStateService.instance.allAssets },
-        { tag: "balance/asset/investments", data: AppStateService.instance.allInvestments },
-        { tag: "grow", data: AppStateService.instance.allGrowProjects },
-        { tag: "budget", data: AppStateService.instance.allBudgets }
+        ...(AppStateService.instance.tier3BalanceLoaded ? [
+          { tag: "balance/liabilities", data: AppStateService.instance.liabilities },
+          { tag: "balance/asset/shares", data: AppStateService.instance.allShares },
+          { tag: "balance/asset/assets", data: AppStateService.instance.allAssets },
+          { tag: "balance/asset/investments", data: AppStateService.instance.allInvestments }
+        ] : []),
+        ...(AppStateService.instance.tier3GrowLoaded ? [
+          { tag: "grow", data: AppStateService.instance.allGrowProjects }
+        ] : [])
       ];
 
       this.persistence.batchWriteAndSync({
@@ -349,22 +395,28 @@ export class SettingsComponent {
           { key: "interests", data: JSON.stringify(AppStateService.instance.allIntrests) },
           { key: "properties", data: JSON.stringify(AppStateService.instance.allProperties) },
           { key: "revenues", data: JSON.stringify(AppStateService.instance.allRevenues) },
-          { key: "liabilities", data: JSON.stringify(AppStateService.instance.liabilities) },
           { key: "dailyEx", data: JSON.stringify(AppStateService.instance.dailyExpenses) },
           { key: "splurgeEx", data: JSON.stringify(AppStateService.instance.splurgeExpenses) },
-          { key: "smileEx", data: JSON.stringify(AppStateService.instance.smileExpenses) },
-          { key: "fireEx", data: JSON.stringify(AppStateService.instance.fireExpenses) },
-          { key: "mojoEx", data: JSON.stringify(AppStateService.instance.mojoExpenses) },
-          { key: "smile", data: JSON.stringify(AppStateService.instance.allSmileProjects) },
-          { key: "fire", data: JSON.stringify(AppStateService.instance.allFireEmergencies) },
-          { key: "mojo", data: JSON.stringify(AppStateService.instance.mojo) },
+          ...(AppStateService.instance.tier2Loaded ? [
+            { key: "smileEx", data: JSON.stringify(AppStateService.instance.smileExpenses) },
+            { key: "fireEx", data: JSON.stringify(AppStateService.instance.fireExpenses) },
+            { key: "mojoEx", data: JSON.stringify(AppStateService.instance.mojoExpenses) },
+            { key: "smile", data: JSON.stringify(AppStateService.instance.allSmileProjects) },
+            { key: "fire", data: JSON.stringify(AppStateService.instance.allFireEmergencies) },
+            { key: "mojo", data: JSON.stringify(AppStateService.instance.mojo) },
+            { key: "budget", data: JSON.stringify(AppStateService.instance.allBudgets) }
+          ] : []),
           { key: "transactions", data: JSON.stringify(AppStateService.instance.allTransactions) },
           { key: "subscriptions", data: JSON.stringify(AppStateService.instance.allSubscriptions) },
-          { key: "shares", data: JSON.stringify(AppStateService.instance.allShares) },
-          { key: "assets", data: JSON.stringify(AppStateService.instance.allAssets) },
-          { key: "investments", data: JSON.stringify(AppStateService.instance.allInvestments) },
-          { key: "grow", data: JSON.stringify(AppStateService.instance.allGrowProjects) },
-          { key: "budget", data: JSON.stringify(AppStateService.instance.allBudgets) }
+          ...(AppStateService.instance.tier3BalanceLoaded ? [
+            { key: "liabilities", data: JSON.stringify(AppStateService.instance.liabilities) },
+            { key: "shares", data: JSON.stringify(AppStateService.instance.allShares) },
+            { key: "assets", data: JSON.stringify(AppStateService.instance.allAssets) },
+            { key: "investments", data: JSON.stringify(AppStateService.instance.allInvestments) }
+          ] : []),
+          ...(AppStateService.instance.tier3GrowLoaded ? [
+            { key: "grow", data: JSON.stringify(AppStateService.instance.allGrowProjects) }
+          ] : [])
         ],
         forceWrite: true,
         logEvent: 'change_encryption',
@@ -386,6 +438,10 @@ export class SettingsComponent {
 
   showConfirmation: boolean = false;
 
+  get currentLang(): string {
+    return this.translate.currentLang || 'en';
+  }
+
   switchLanguage(language: string) {
     this.translate.use(language);
   }
@@ -396,18 +452,11 @@ export class SettingsComponent {
     this.deleteErrorLabel = "";
     this.deletePasswordTextField = "";
     this.deleteEyePic = "../../assets/symbols/eye.png";
-    document.getElementById("deletePassword")?.setAttribute("type", "password");
+    this.showDeletePassword = false;
   }
 
   toggleDeleteEye() {
-    const el = document.getElementById("deletePassword");
-    if (el?.getAttribute("type") === "password") {
-      el.setAttribute("type", "text");
-      this.deleteEyePic = "../../assets/symbols/eye-open.png";
-    } else {
-      el?.setAttribute("type", "password");
-      this.deleteEyePic = "../../assets/symbols/eye.png";
-    }
+    this.showDeletePassword = !this.showDeletePassword;
   }
 
   authenticateForDelete() {
@@ -479,6 +528,7 @@ export class SettingsComponent {
     const authResult = await this.authService.checkAuthentication();
     if (!authResult.authenticated) {
       console.error("Authentication failed:", authResult.error);
+      AppStateService.instance.isSaving = false;
       return;
     }
 
@@ -492,7 +542,11 @@ export class SettingsComponent {
       try {
         const writes = [
           ...this.incomeStatement.getWrites(),
-          { tag: "balance/liabilities", data: AppStateService.instance.liabilities }
+          // Only write balance data if it has been loaded (Tier 3 on-demand).
+          // Writing before load would overwrite real DB data with empty arrays.
+          ...(AppStateService.instance.tier3BalanceLoaded ? [
+            { tag: "balance/liabilities", data: AppStateService.instance.liabilities }
+          ] : [])
         ];
 
         this.persistence.batchWriteAndSync({
@@ -503,19 +557,33 @@ export class SettingsComponent {
             { key: "revenues", data: JSON.stringify(AppStateService.instance.allRevenues) },
             { key: "dailyEx", data: JSON.stringify(AppStateService.instance.dailyExpenses) },
             { key: "splurgeEx", data: JSON.stringify(AppStateService.instance.splurgeExpenses) },
-            { key: "smileEx", data: JSON.stringify(AppStateService.instance.smileExpenses) },
-            { key: "fireEx", data: JSON.stringify(AppStateService.instance.fireExpenses) },
-            { key: "mojoEx", data: JSON.stringify(AppStateService.instance.mojoExpenses) },
-            { key: "smile", data: JSON.stringify(AppStateService.instance.allSmileProjects) },
-            { key: "fire", data: JSON.stringify(AppStateService.instance.allFireEmergencies) },
-            { key: "mojo", data: JSON.stringify(AppStateService.instance.mojo) },
-            { key: "liabilities", data: JSON.stringify(AppStateService.instance.liabilities) }
+            ...(AppStateService.instance.tier2Loaded ? [
+              { key: "smileEx", data: JSON.stringify(AppStateService.instance.smileExpenses) },
+              { key: "fireEx", data: JSON.stringify(AppStateService.instance.fireExpenses) },
+              { key: "mojoEx", data: JSON.stringify(AppStateService.instance.mojoExpenses) },
+              { key: "smile", data: JSON.stringify(AppStateService.instance.allSmileProjects) },
+              { key: "fire", data: JSON.stringify(AppStateService.instance.allFireEmergencies) },
+              { key: "mojo", data: JSON.stringify(AppStateService.instance.mojo) }
+            ] : []),
+            ...(AppStateService.instance.tier3BalanceLoaded ? [
+              { key: "liabilities", data: JSON.stringify(AppStateService.instance.liabilities) }
+            ] : [])
           ],
           forceWrite: true,
-          logEvent: 'recalculate_from_transactions'
+          logEvent: 'recalculate_from_transactions',
+          onSuccess: () => {
+            AppStateService.instance.isSaving = false;
+            this.toastService.show('Accounting fixed successfully', 'success');
+          },
+          onError: (error: any) => {
+            AppStateService.instance.isSaving = false;
+            this.toastService.show(error.message || 'Fix accounting failed', 'error');
+          }
         });
 
       } catch (error) {
+        AppStateService.instance.isSaving = false;
+        this.toastService.show('Fix accounting failed', 'error');
       }
   }
 
@@ -717,6 +785,20 @@ export class SettingsComponent {
 
   editPersonalSettings() {
     this.isAuth = false;
+    // Allocation can be edited without authentication
+    if (this.classReference.isAllocation) {
+      AppComponent.gotoTop();
+      this.isEdit = true;
+      SettingsComponent.isError = false;
+      this.dailyTextField = AppStateService.instance.daily;
+      this.splurgeTextField = AppStateService.instance.splurge;
+      this.smileTextField = AppStateService.instance.smile;
+      this.fireTextField = AppStateService.instance.fire;
+      this.errorTextLable = "";
+      this.color = "black";
+      this.borderColor = "var(--color-border)";
+      return;
+    }
     if (ProfileComponent.username == "Username" && ProfileComponent.mail == "example@traiber.com") {
       SettingsComponent.isError = true;
       this.errorTextLable = "No authenticated user.";
@@ -947,8 +1029,17 @@ export class SettingsComponent {
   }
 
   changeFix() {
+    SettingsComponent.isInfo = false;
+    AppStateService.instance.isSaving = true;
     this.updateBasedOnTransaction();
     this.isAuth = false;
+  }
+
+  resetAllocation() {
+    this.dailyTextField = 60;
+    this.splurgeTextField = 10;
+    this.smileTextField = 10;
+    this.fireTextField = 20;
   }
 
   changeAllocation() {
@@ -1346,7 +1437,7 @@ export class SettingsComponent {
     else if (SettingsComponent.isAr) language = 'ar';
 
     // Gather encryption config
-    const encryptKey = localStorage.getItem('encryptKey');
+    const encryptKey = this.cryptic.getKey();
     const encryptLocal = localStorage.getItem('encryptLocal');
     const encryptDatabase = localStorage.getItem('encryptDatabase');
 

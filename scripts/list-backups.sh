@@ -4,7 +4,8 @@
 # CouchDB Backup Listing Script
 # ============================================
 # Lists all available backups with restore commands
-# Storage: /opt/money-app-backups/{daily,weekly,monthly}
+# Local:  /opt/money-app-backups/{hourly,daily,weekly,monthly}
+# NAS:    /mnt/nas/backups/{daily,weekly,monthly}
 # ============================================
 
 set -e
@@ -20,15 +21,82 @@ NC='\033[0m' # No Color
 # Configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BACKUP_ROOT="${BACKUP_DIR:-/opt/money-app-backups}"
+NAS_BACKUP_ROOT="${NAS_BACKUP_DIR:-/mnt/nas/backups}"
+DISPLAY_TZ="${BACKUP_DISPLAY_TZ:-Europe/Berlin}"
 
 log_info()    { echo -e "${BLUE}[INFO]${NC} $1"; }
 log_warning() { echo -e "${YELLOW}[WARNING]${NC} $1"; }
 
+if ! TZ="$DISPLAY_TZ" date +%s >/dev/null 2>&1; then
+    log_warning "Invalid BACKUP_DISPLAY_TZ '$DISPLAY_TZ' — falling back to UTC"
+    DISPLAY_TZ="UTC"
+fi
+
+# Return backup age in whole hours. Echoes -1 if age cannot be computed.
+get_backup_age_hours() {
+    local backup_path=$1
+    local backup_name
+    local backup_timestamp
+    local now
+    local diff
+
+    backup_name=$(basename "$backup_path")
+    now=$(TZ="$DISPLAY_TZ" date +%s)
+
+    # Hourly format: couchdb-backup-YYYY-MM-DD_HHMM.tar.gz(.gpg)
+    if echo "$backup_name" | grep -qE '[0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{4}'; then
+        local dt
+        dt=$(echo "$backup_name" | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{4}' | sed 's/_/ /' | sed 's/\([0-9][0-9]\)\([0-9][0-9]\)$/\1:\2/')
+        backup_timestamp=$(TZ="$DISPLAY_TZ" date -d "$dt" +%s 2>/dev/null || echo "-1")
+    else
+        # Daily/weekly/monthly format: couchdb-backup-YYYY-MM-DD.tar.gz(.gpg)
+        local d
+        d=$(echo "$backup_name" | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}' || true)
+        if [ -z "$d" ]; then
+            echo "-1"
+            return
+        fi
+        backup_timestamp=$(TZ="$DISPLAY_TZ" date -d "$d" +%s 2>/dev/null || echo "-1")
+    fi
+
+    if [ "$backup_timestamp" = "-1" ]; then
+        echo "-1"
+        return
+    fi
+
+    diff=$((now - backup_timestamp))
+    echo $((diff / 3600))
+}
+
+print_freshness_status() {
+    local label=$1
+    local latest_file=$2
+    local warn_threshold_hours=$3
+
+    if [ -z "$latest_file" ]; then
+        log_warning "Freshness check: ${label} backup missing"
+        return
+    fi
+
+    local age_hours
+    age_hours=$(get_backup_age_hours "$latest_file")
+    if [ "$age_hours" = "-1" ]; then
+        log_warning "Freshness check: ${label} age unknown for $(basename "$latest_file")"
+        return
+    fi
+
+    if [ "$age_hours" -gt "$warn_threshold_hours" ]; then
+        log_warning "Freshness check: ${label} backup is stale (${age_hours}h old): $(basename "$latest_file")"
+    else
+        log_info "Freshness check: ${label} backup is fresh (${age_hours}h old): $(basename "$latest_file")"
+    fi
+}
+
 # Function to get age of backup
 get_backup_age() {
     local backup_date=$1
-    local current_date=$(date +%s)
-    local backup_timestamp=$(date -d "$backup_date" +%s 2>/dev/null || echo "0")
+    local current_date=$(TZ="$DISPLAY_TZ" date +%s)
+    local backup_timestamp=$(TZ="$DISPLAY_TZ" date -d "$backup_date" +%s 2>/dev/null || echo "0")
 
     if [ "$backup_timestamp" = "0" ]; then
         echo "Unknown"
@@ -37,9 +105,16 @@ get_backup_age() {
 
     local diff=$((current_date - backup_timestamp))
     local days=$((diff / 86400))
+    local hours=$(( (diff % 86400) / 3600 ))
 
     if [ $days -eq 0 ]; then
-        echo "Today"
+        if [ $hours -eq 0 ]; then
+            echo "Just now"
+        elif [ $hours -eq 1 ]; then
+            echo "1 hour ago"
+        else
+            echo "${hours} hours ago"
+        fi
     elif [ $days -eq 1 ]; then
         echo "1 day ago"
     else
@@ -47,103 +122,188 @@ get_backup_age() {
     fi
 }
 
+# Get age for hourly backups (includes time in filename)
+get_hourly_age() {
+    local backup_name=$1
+    local backup_datetime=$(echo "$backup_name" | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{4}')
+    if [ -z "$backup_datetime" ]; then
+        get_backup_age "$(echo "$backup_name" | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}')"
+        return
+    fi
+    local d=$(echo "$backup_datetime" | sed 's/_/ /' | sed 's/\([0-9][0-9]\)\([0-9][0-9]\)$/\1:\2/')
+    local current_date=$(TZ="$DISPLAY_TZ" date +%s)
+    local backup_timestamp=$(TZ="$DISPLAY_TZ" date -d "$d" +%s 2>/dev/null || echo "0")
+    if [ "$backup_timestamp" = "0" ]; then
+        echo "Unknown"
+        return
+    fi
+    local diff=$((current_date - backup_timestamp))
+    local hours=$((diff / 3600))
+    if [ $hours -eq 0 ]; then
+        echo "Just now"
+    elif [ $hours -eq 1 ]; then
+        echo "1 hour ago"
+    else
+        echo "${hours} hours ago"
+    fi
+}
+
+# Function to list a tier
+list_tier() {
+    local dir=$1 label=$2 color=$3 age_func=${4:-date}
+
+    echo -e "${color}═══ ${label} ═══${NC}"
+
+    if ! ls "${dir}"/couchdb-backup-*.tar.gz* 1>/dev/null 2>&1; then
+        echo "  (none)"
+        echo ""
+        return
+    fi
+
+    printf "  ${CYAN}%-50s %-8s %-15s${NC}\n" "Filename" "Size" "Age"
+    printf "  %-50s %-8s %-15s\n" "────────" "────" "───"
+
+    for backup in $(ls -1t "${dir}"/couchdb-backup-*.tar.gz* 2>/dev/null); do
+        backup_name=$(basename "$backup")
+        backup_size=$(du -h "$backup" | cut -f1)
+        if [ "$age_func" = "hourly" ]; then
+            backup_age=$(get_hourly_age "$backup_name")
+        else
+            backup_date=$(echo "$backup_name" | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}')
+            backup_age=$(get_backup_age "$backup_date")
+        fi
+        printf "  %-50s %-8s %-15s\n" "$backup_name" "$backup_size" "$backup_age"
+    done
+    echo ""
+}
+
 echo "==================================="
 echo "CouchDB Backup Inventory"
 echo "==================================="
-echo "Location: $BACKUP_ROOT"
+log_info "Age timezone: ${DISPLAY_TZ}"
+echo ""
+
+# ── LOCAL ────────────────────────────────────────────
+echo -e "${BLUE}╔══════════════════════════════════════╗${NC}"
+echo -e "${BLUE}║         LOCAL BACKUPS                ║${NC}"
+echo -e "${BLUE}║  ${NC}${BACKUP_ROOT}"
+echo -e "${BLUE}╚══════════════════════════════════════╝${NC}"
 echo ""
 
 if [ ! -d "$BACKUP_ROOT" ]; then
-    log_warning "Backup directory does not exist: $BACKUP_ROOT"
-    echo "Run: sudo mkdir -p $BACKUP_ROOT"
-    exit 0
+    log_warning "Local backup directory does not exist: $BACKUP_ROOT"
+else
+    list_tier "${BACKUP_ROOT}/hourly"  "HOURLY  (last 24)"                  "$CYAN"   "hourly"
+    list_tier "${BACKUP_ROOT}/daily"   "DAILY   (last 7 days)"              "$NC"      "date"
+    list_tier "${BACKUP_ROOT}/weekly"  "WEEKLY  (last 13 weeks, Sundays)"   "$YELLOW"  "date"
+    list_tier "${BACKUP_ROOT}/monthly" "MONTHLY (forever, 1st of month)"    "$GREEN"   "date"
+
+    total_local=$(du -sh "${BACKUP_ROOT}" 2>/dev/null | cut -f1 || echo "0")
+    log_info "Local storage: $total_local"
 fi
-
-# Count totals
-total=0
-for tier in daily weekly monthly; do
-    DIR="${BACKUP_ROOT}/${tier}"
-    count=$(ls -1 "${DIR}"/couchdb-backup-*.tar.gz 2>/dev/null | wc -l)
-    total=$((total + count))
-done
-
-if [ "$total" -eq 0 ]; then
-    log_warning "No backup files found"
-    exit 0
-fi
-
-# Display each tier
-for tier in daily weekly monthly; do
-    DIR="${BACKUP_ROOT}/${tier}"
-
-    case $tier in
-        daily)   COLOR=$NC;     LABEL="DAILY  (last 7 days)" ;;
-        weekly)  COLOR=$YELLOW; LABEL="WEEKLY (last 3 months, Sundays)" ;;
-        monthly) COLOR=$GREEN;  LABEL="MONTHLY (forever, 1st of month)" ;;
-    esac
-
-    echo -e "${COLOR}═══ ${LABEL} ═══${NC}"
-
-    if ! ls "${DIR}"/couchdb-backup-*.tar.gz 1>/dev/null 2>&1; then
-        echo "  (none)"
-        echo ""
-        continue
-    fi
-
-    printf "  ${CYAN}%-38s %-8s %-15s${NC}\n" "Filename" "Size" "Age"
-    printf "  %-38s %-8s %-15s\n" "────────" "────" "───"
-
-    for backup in $(ls -1t "${DIR}"/couchdb-backup-*.tar.gz 2>/dev/null); do
-        backup_name=$(basename "$backup")
-        backup_size=$(du -h "$backup" | cut -f1)
-        backup_date=$(echo "$backup_name" | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}')
-        backup_age=$(get_backup_age "$backup_date")
-        printf "  %-38s %-8s %-15s\n" "$backup_name" "$backup_size" "$backup_age"
-    done
-    echo ""
-done
-
-# Storage summary
-total_size=$(du -sh "${BACKUP_ROOT}" 2>/dev/null | cut -f1 || echo "0")
-log_info "Total backup storage: $total_size"
 echo ""
 
-# Retention policy
+# ── NAS ──────────────────────────────────────────────
+NAS_AVAILABLE=false
+if timeout 5 stat "$NAS_BACKUP_ROOT" >/dev/null 2>&1; then
+    NAS_AVAILABLE=true
+fi
+
+echo -e "${GREEN}╔══════════════════════════════════════╗${NC}"
+echo -e "${GREEN}║         NAS BACKUPS                  ║${NC}"
+echo -e "${GREEN}║  ${NC}${NAS_BACKUP_ROOT}"
+echo -e "${GREEN}╚══════════════════════════════════════╝${NC}"
+echo ""
+
+if [ "$NAS_AVAILABLE" = false ]; then
+    log_warning "NAS not reachable or backup directory does not exist: $NAS_BACKUP_ROOT"
+else
+    list_tier "${NAS_BACKUP_ROOT}/daily"   "DAILY   (last 21 days / 3 weeks)"    "$NC"      "date"
+    list_tier "${NAS_BACKUP_ROOT}/weekly"  "WEEKLY  (last 104 weeks / 2 years)"  "$YELLOW"  "date"
+    list_tier "${NAS_BACKUP_ROOT}/monthly" "MONTHLY (forever, 1st of month)"     "$GREEN"   "date"
+
+    total_nas=$(du -sh "${NAS_BACKUP_ROOT}" 2>/dev/null | cut -f1 || echo "0")
+    log_info "NAS storage: $total_nas"
+fi
+echo ""
+
+# ── Freshness checks ──────────────────────────────────
+echo "==================================="
+echo "Backup Freshness Check"
+echo "==================================="
+
+LATEST_LOCAL_HOURLY=$(ls -1t "${BACKUP_ROOT}/hourly"/couchdb-backup-*.tar.gz* 2>/dev/null | head -1 || true)
+LATEST_LOCAL_DAILY=$(ls -1t "${BACKUP_ROOT}/daily"/couchdb-backup-*.tar.gz* 2>/dev/null | head -1 || true)
+
+# Thresholds chosen to detect cron/service stalls quickly:
+# - Hourly should be updated roughly every hour -> warn if >2h
+# - Daily should be from current/previous day -> warn if >30h
+print_freshness_status "Local hourly" "$LATEST_LOCAL_HOURLY" 2
+print_freshness_status "Local daily" "$LATEST_LOCAL_DAILY" 30
+
+if [ "$NAS_AVAILABLE" = true ]; then
+    LATEST_NAS_DAILY=$(ls -1t "${NAS_BACKUP_ROOT}/daily"/couchdb-backup-*.tar.gz* 2>/dev/null | head -1 || true)
+    print_freshness_status "NAS daily" "$LATEST_NAS_DAILY" 30
+fi
+echo ""
+
+# ── Retention policy ─────────────────────────────────
 echo "==================================="
 echo "Retention Policy"
 echo "==================================="
-echo "  Daily:   7 days"
-echo "  Weekly:  13 weeks (3 months)"
-echo "  Monthly: forever"
+echo "  LOCAL:"
+echo "    Hourly:   24"
+echo "    Daily:    7 days"
+echo "    Weekly:   13 weeks (3 months)"
+echo "    Monthly:  forever"
+echo "  NAS:"
+echo "    Daily:    21 days (3 weeks)"
+echo "    Weekly:   104 weeks (2 years)"
+echo "    Monthly:  forever"
 echo ""
 
-# Restore commands
+# ── Quick restore commands ───────────────────────────
 echo "==================================="
 echo "Quick Restore Commands"
 echo "==================================="
 echo ""
-echo "Restore the latest daily backup:"
-LATEST_DAILY=$(ls -1t "${BACKUP_ROOT}/daily"/couchdb-backup-*.tar.gz 2>/dev/null | head -1)
-if [ -n "$LATEST_DAILY" ]; then
-    echo -e "  ${CYAN}./scripts/restore-backup.sh ${LATEST_DAILY}${NC}"
+
+echo "Restore latest local hourly:"
+LATEST=$(ls -1t "${BACKUP_ROOT}/hourly"/couchdb-backup-*.tar.gz* 2>/dev/null | head -1)
+if [ -n "$LATEST" ]; then
+    echo -e "  ${CYAN}./scripts/restore-backup.sh ${LATEST}${NC}"
 else
-    echo "  (no daily backups available)"
+    echo "  (none available)"
 fi
 echo ""
 
-echo "Restore the latest weekly backup:"
-LATEST_WEEKLY=$(ls -1t "${BACKUP_ROOT}/weekly"/couchdb-backup-*.tar.gz 2>/dev/null | head -1)
-if [ -n "$LATEST_WEEKLY" ]; then
-    echo -e "  ${CYAN}./scripts/restore-backup.sh ${LATEST_WEEKLY}${NC}"
+echo "Restore latest local daily:"
+LATEST=$(ls -1t "${BACKUP_ROOT}/daily"/couchdb-backup-*.tar.gz* 2>/dev/null | head -1)
+if [ -n "$LATEST" ]; then
+    echo -e "  ${CYAN}./scripts/restore-backup.sh ${LATEST}${NC}"
 else
-    echo "  (no weekly backups available)"
+    echo "  (none available)"
+fi
+echo ""
+
+echo "Restore latest NAS daily:"
+if [ "$NAS_AVAILABLE" = true ]; then
+    LATEST=$(timeout 5 ls -1t "${NAS_BACKUP_ROOT}/daily"/couchdb-backup-*.tar.gz* 2>/dev/null | head -1)
+    if [ -n "$LATEST" ]; then
+        echo -e "  ${CYAN}./scripts/restore-backup.sh ${LATEST}${NC}"
+    else
+        echo "  (none available)"
+    fi
+else
+    echo "  (NAS not reachable)"
 fi
 echo ""
 
 echo "Restore a specific backup:"
-echo -e "  ${CYAN}./scripts/restore-backup.sh /opt/money-app-backups/<tier>/couchdb-backup-YYYY-MM-DD.tar.gz${NC}"
+echo -e "  ${CYAN}./scripts/restore-backup.sh <path-to-backup.tar.gz[.gpg]>${NC}"
 echo ""
 
 echo "Manual backup now:"
 echo -e "  ${CYAN}./scripts/backup.sh${NC}"
+echo -e "  ${CYAN}./scripts/backup.sh --hourly${NC}  (hourly only, local)"
 echo ""

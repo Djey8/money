@@ -403,20 +403,28 @@ export class AddGrowComponent extends BaseAddComponent {
       AddGrowComponent.isAsset = false;
       AddGrowComponent.isInvestment = false;
       this.clearError();
+      this.closeWindow();
+      AppStateService.instance.isSaving = true;
+      // Only write balance data if it has been loaded (Tier 3 on-demand).
+      // Writing before load would overwrite real DB data with empty arrays.
       this.persistence.batchWriteAndSync({
         writes: [
           { tag: "grow", data: AppStateService.instance.allGrowProjects },
-          { tag: "balance/liabilities", data: AppStateService.instance.liabilities },
-          { tag: "balance/asset/assets", data: AppStateService.instance.allAssets },
-          { tag: "balance/asset/shares", data: AppStateService.instance.allShares },
-          { tag: "balance/asset/investments", data: AppStateService.instance.allInvestments }
+          ...(AppStateService.instance.tier3BalanceLoaded ? [
+            { tag: "balance/liabilities", data: AppStateService.instance.liabilities },
+            { tag: "balance/asset/assets", data: AppStateService.instance.allAssets },
+            { tag: "balance/asset/shares", data: AppStateService.instance.allShares },
+            { tag: "balance/asset/investments", data: AppStateService.instance.allInvestments }
+          ] : [])
         ],
         localStorageSaves: [
           { key: "grow", data: JSON.stringify(AppStateService.instance.allGrowProjects) },
-          { key: "liabilities", data: JSON.stringify(AppStateService.instance.liabilities) },
-          { key: "assets", data: JSON.stringify(AppStateService.instance.allAssets) },
-          { key: "shares", data: JSON.stringify(AppStateService.instance.allShares) },
-          { key: "investments", data: JSON.stringify(AppStateService.instance.allInvestments) }
+          ...(AppStateService.instance.tier3BalanceLoaded ? [
+            { key: "liabilities", data: JSON.stringify(AppStateService.instance.liabilities) },
+            { key: "assets", data: JSON.stringify(AppStateService.instance.allAssets) },
+            { key: "shares", data: JSON.stringify(AppStateService.instance.allShares) },
+            { key: "investments", data: JSON.stringify(AppStateService.instance.allInvestments) }
+          ] : [])
         ],
         logEvent: 'add_grow',
         logMetadata: {
@@ -426,13 +434,14 @@ export class AddGrowComponent extends BaseAddComponent {
           hasInvestment: AddGrowComponent.isInvestment
         },
         onSuccess: () => {
-          this.closeWindow();
+          AppStateService.instance.isSaving = false;
           this.toastService.show('Grow project added', 'success');
           gotoTop();
           this.router.navigate(['/grow']);
         },
         onError: (error) => {
-          this.showError(error.message || 'Database write failed');
+          AppStateService.instance.isSaving = false;
+          this.toastService.show(error.message || 'Database write failed', 'error');
         }
       });
     }

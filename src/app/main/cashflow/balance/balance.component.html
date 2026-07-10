@@ -13,7 +13,17 @@
   <h4 class="balanceLable">{{classReference.getTotalAmount() | appNumber}} {{settingsReference.currency}}</h4>
 </div>
 
-<div id="assetsBox">
+<div *ngIf="!appState.tier3BalanceLoaded && classReference.allAssets.length === 0 && classReference.allShares.length === 0 && classReference.allInvestments.length === 0 && classReference.liabilities.length === 0" class="p-sm">
+  <div class="skeleton-row" *ngFor="let i of [1,2,3,4,5]">
+    <div class="skeleton skeleton-cell" style="flex: 0.5;"></div>
+    <div class="skeleton skeleton-cell"></div>
+    <div class="skeleton skeleton-cell"></div>
+    <div class="skeleton skeleton-cell" style="flex: 0.8;"></div>
+    <div class="skeleton skeleton-cell"></div>
+  </div>
+</div>
+
+<div id="assetsBox" *ngIf="appState.tier3BalanceLoaded || classReference.allAssets.length > 0 || classReference.allShares.length > 0 || classReference.allInvestments.length > 0 || classReference.liabilities.length > 0">
   <h4 id="assetsTitle">{{'Balance.Assets' | translate}}</h4>
   <hr class="separator-white">
     <div id="assets-box">
@@ -33,8 +43,8 @@
     <table id="assetsTable" class="income-table">
       <thead>
         <tr>
-          <th class="headTable" style="text-align: left;">{{'Balance.Name' | translate}}</th>
-          <th class="headTable" style="text-align: right">{{'Balance.Value' | translate}}</th>
+          <th class="headTable" style="text-align: left;">{{'Common.name' | translate}}</th>
+          <th class="headTable" style="text-align: right">{{'Common.value' | translate}}</th>
         </tr>
       </thead>
       <tbody>
@@ -52,10 +62,10 @@
     <table id="sharesTable" class="income-table">
       <thead>
         <tr>
-          <th class="headTable" style="text-align: left;">{{'Balance.Name' | translate}}</th>
+          <th class="headTable" style="text-align: left;">{{'Common.name' | translate}}</th>
           <th class="headTable">{{'Balance.Quantity' | translate}}</th>
-          <th class="headTable">{{'Balance.Price' | translate}}</th>
-          <th class="headTable" style="text-align: right;">{{'Balance.Value' | translate}}</th>
+          <th class="headTable">{{'Common.price' | translate}}</th>
+          <th class="headTable" style="text-align: right;">{{'Common.value' | translate}}</th>
         </tr>
       </thead>
       <tbody>
@@ -76,10 +86,10 @@
     <table id="propertiesTable" class="income-table">
       <thead>
         <tr>
-          <th class="headTable" style="text-align: left;">{{'Balance.Name' | translate}}</th>
-          <th class="headTable">{{'Balance.Deposit' | translate}}</th>
+          <th class="headTable" style="text-align: left;">{{'Common.name' | translate}}</th>
+          <th class="headTable">{{'Common.deposit' | translate}}</th>
           <th class="headTable">{{'AddGrow.Mortage' | translate}}</th>
-          <th class="headTable" style="text-align: right">{{'Balance.Value' | translate}}</th>
+          <th class="headTable" style="text-align: right">{{'Common.value' | translate}}</th>
         </tr>
       </thead>
       <tbody>
@@ -100,7 +110,7 @@
   </div>
 </div>
 
-<div id="liabilitiesBox">
+<div id="liabilitiesBox" *ngIf="appState.tier3BalanceLoaded || classReference.allAssets.length > 0 || classReference.allShares.length > 0 || classReference.allInvestments.length > 0 || classReference.liabilities.length > 0">
   <h4 id="liabilitiesTitle">{{'Balance.Liabilities' | translate}}</h4>
   <hr class="separator-white">
   <div id="liabilities-box">
@@ -112,10 +122,10 @@
     <table id="liabilitiesTable" class="income-table">
       <thead>
         <tr>
-          <th class="headTable" style="text-align: left;">{{'Balance.Name' | translate}}</th>
+          <th class="headTable" style="text-align: left;">{{'Common.name' | translate}}</th>
           <th class="headTable">{{'Balance.Amount' | translate}}</th>
           <th class="headTable">{{'Balance.Credit' | translate}}</th>
-          <th class="headTable" style="text-align: right">{{'Balance.Value' | translate}}</th>
+          <th class="headTable" style="text-align: right">{{'Common.value' | translate}}</th>
         </tr>
       </thead>
       <tbody>
@@ -136,10 +146,10 @@
     <table id="propertiesLTable" class="income-table">
       <thead>
         <tr>
-          <th class="headTable" style="text-align: left;">{{'Balance.Name' | translate}}</th>
+          <th class="headTable" style="text-align: left;">{{'Common.name' | translate}}</th>
           <th class="headTable">{{'Balance.Amount' | translate}}</th>
           <th class="headTable">{{'Balance.Credit' | translate}}</th>
-          <th class="headTable" style="text-align: right">{{'Balance.Value' | translate}}</th>
+          <th class="headTable" style="text-align: right">{{'Common.value' | translate}}</th>
         </tr>
       </thead>
       <tbody>

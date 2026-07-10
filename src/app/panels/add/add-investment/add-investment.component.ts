@@ -102,6 +102,8 @@ export class AddInvestmentComponent extends BaseAddComponent {
       this.depositTextField = "";
       this.amountTextField = "";
       this.clearError();
+      this.closeWindow();
+      AppStateService.instance.isSaving = true;
       this.persistence.writeAndSync({
         tag: 'balance/asset/investments',
         data: AppStateService.instance.allInvestments,
@@ -109,13 +111,14 @@ export class AddInvestmentComponent extends BaseAddComponent {
         logEvent: 'add_investment',
         logMetadata: { title: this.titleTextField, deposit: this.depositTextField, amount: this.amountTextField },
         onSuccess: () => {
-          this.closeWindow();
+          AppStateService.instance.isSaving = false;
           this.toastService.show('Investment added', 'success');
           gotoTop();
           this.router.navigate([`/balance`]);
         },
         onError: (error) => {
-          this.showError(error.message || 'Database write failed');
+          AppStateService.instance.isSaving = false;
+          this.toastService.show(error.message || 'Database write failed', 'error');
         }
       });
     }

@@ -23,35 +23,35 @@
                     {{ (appMode === 'selfhosted' ? 'Settings.mode.selfhosted' : 'Settings.mode.firebase') | translate }}
                 </div>
                 <div class="version-info">
-                    <span class="profile-label">Version</span>
-                    <span class="profile-value">v{{appVersion}}</span>
+                    <span class="profile-label">Version:</span>
+                    <span class="profile-value"> v{{appVersion}}</span>
                 </div>
             </div>
             <!-- Language -->
             <div *ngIf="classReference.isLanguages">
                 <h3 class="sub-title">{{'Settings.languageLable' | translate}}</h3>
                 <div class="language-grid">
-                    <button (click)="chooseEng()" class="language-option" [ngClass]="classReference.isEng ? 'selected' : 'notSelected'">
+                    <button (click)="chooseEng()" class="language-option" [ngClass]="currentLang === 'en' ? 'selected' : 'notSelected'">
                         <img src="../../assets/flags/eng.png" alt="English" class="flag-img">
                         <span class="lang-name">English</span>
                     </button>
-                    <button (click)="chooseDe()" class="language-option" [ngClass]="classReference.isDe ? 'selected' : 'notSelected'">
+                    <button (click)="chooseDe()" class="language-option" [ngClass]="currentLang === 'de' ? 'selected' : 'notSelected'">
                         <img src="../../assets/flags/de.png" alt="Deutsch" class="flag-img">
                         <span class="lang-name">Deutsch</span>
                     </button>
-                    <button (click)="chooseEs()" class="language-option" [ngClass]="classReference.isEs ? 'selected' : 'notSelected'">
+                    <button (click)="chooseEs()" class="language-option" [ngClass]="currentLang === 'es' ? 'selected' : 'notSelected'">
                         <img src="../../assets/flags/es.png" alt="Español" class="flag-img">
                         <span class="lang-name">Español</span>
                     </button>
-                    <button (click)="chooseFr()" class="language-option" [ngClass]="classReference.isFr ? 'selected' : 'notSelected'">
+                    <button (click)="chooseFr()" class="language-option" [ngClass]="currentLang === 'fr' ? 'selected' : 'notSelected'">
                         <img src="../../assets/flags/fr.png" alt="Français" class="flag-img">
                         <span class="lang-name">Français</span>
                     </button>
-                    <button (click)="chooseCn()" class="language-option" [ngClass]="classReference.isCn ? 'selected' : 'notSelected'">
+                    <button (click)="chooseCn()" class="language-option" [ngClass]="currentLang === 'cn' ? 'selected' : 'notSelected'">
                         <img src="../../assets/flags/cn.png" alt="中文" class="flag-img">
                         <span class="lang-name">中文</span>
                     </button>
-                    <button (click)="chooseAr()" class="language-option" [ngClass]="classReference.isAr ? 'selected' : 'notSelected'">
+                    <button (click)="chooseAr()" class="language-option" [ngClass]="currentLang === 'ar' ? 'selected' : 'notSelected'">
                         <img src="../../assets/flags/tu.png" alt="العربية" class="flag-img">
                         <span class="lang-name">العربية</span>
                     </button>
@@ -292,9 +292,13 @@
                 <form>
                     <label for="password"> {{'Registration.Password' | translate}}</label>
                     <div class="password-wrapper mb-md">
-                    <input type="password" id="password" name="Password" [(ngModel)]="passwordTextField" class="mb-0">
+                    <input [type]="showPassword ? 'text' : 'password'" id="password" name="Password" [(ngModel)]="passwordTextField" class="mb-0">
                     <button id="eyebtn" type="button" (click)="toggleEye()" class="password-toggle-btn">
-                        <img src={{eyePic}} alt="Toggle Password Visibility" width="20" height="20" class="password-toggle-img"/>
+                        <svg class="password-toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                            <circle cx="12" cy="12" r="3"/>
+                            <line [attr.visibility]="showPassword ? 'visible' : 'hidden'" x1="1" y1="1" x2="23" y2="23"/>
+                        </svg>
                     </button>
                     </div>
                     <p *ngIf="isError" id="errorMessage">{{errorMessageLable}}</p>
@@ -325,9 +329,13 @@
                     <form>
                         <label for="deletePassword">{{'Registration.Password' | translate}}</label>
                         <div class="password-wrapper mb-md">
-                            <input type="password" id="deletePassword" name="deletePassword" [(ngModel)]="deletePasswordTextField" class="mb-0">
+                            <input [type]="showDeletePassword ? 'text' : 'password'" id="deletePassword" name="deletePassword" [(ngModel)]="deletePasswordTextField" class="mb-0">
                             <button id="deleteEyebtn" type="button" (click)="toggleDeleteEye()" class="password-toggle-btn">
-                                <img src={{deleteEyePic}} alt="Toggle Password Visibility" width="20" height="20" class="password-toggle-img"/>
+                                <svg class="password-toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                    <circle cx="12" cy="12" r="3"/>
+                                    <line [attr.visibility]="showDeletePassword ? 'visible' : 'hidden'" x1="1" y1="1" x2="23" y2="23"/>
+                                </svg>
                             </button>
                         </div>
                         <p *ngIf="isDeleteError" id="deleteErrorMessage">{{deleteErrorLabel}}</p>
@@ -422,6 +430,7 @@
         <button *ngIf="classReference.isEncryption" id="loadbtn" (click)="load()">{{'Settings.load' | translate}}</button>
         <button *ngIf="classReference.isEncryption" id="savebtn" (click)="save()">{{'Settings.save' | translate}}</button>
         <button *ngIf="!classReference.isEncryption" id="addbtn" (click)="updatePersonalSettings()">{{'Settings.update' | translate}}</button>
+        <button *ngIf="classReference.isAllocation" id="resetbtn" (click)="resetAllocation()">{{'Settings.default' | translate}}</button>
         <button id="canclebtn" (click)="cancel()">{{'Settings.cancel' | translate}}</button>
     </div>
 </div>

@@ -105,6 +105,8 @@ export class AddShareComponent extends BaseAddComponent {
       this.quantityTextField = "";
       this.priceTextField = "";
       this.clearError();
+      this.closeWindow();
+      AppStateService.instance.isSaving = true;
       this.persistence.writeAndSync({
         tag: 'balance/asset/shares',
         data: AppStateService.instance.allShares,
@@ -112,14 +114,15 @@ export class AddShareComponent extends BaseAddComponent {
         logEvent: 'add_share',
         logMetadata: { title: this.titleTextField, quantity: this.quantityTextField, price: this.priceTextField },
         onSuccess: () => {
+          AppStateService.instance.isSaving = false;
           this.localStorage.saveData("interests", JSON.stringify(AppStateService.instance.allIntrests));
-          this.closeWindow();
           this.toastService.show('Share added', 'success');
           gotoTop();
           this.router.navigate([`/balance`]);
         },
         onError: (error) => {
-          this.showError(error.message || 'Database write failed');
+          AppStateService.instance.isSaving = false;
+          this.toastService.show(error.message || 'Database write failed', 'error');
         }
       });
     }

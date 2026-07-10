@@ -38,8 +38,10 @@ test.describe('Selfhosted Full Stack', () => {
     await registerAndRedirect(page, user);
     await expect(page.locator('#heading').first()).toBeVisible();
 
-    // Grab the JWT from localStorage (key: selfhosted_token)
-    authToken = await page.evaluate(() => localStorage.getItem('selfhosted_token') ?? '');
+    // Grab the JWT from the access_token cookie
+    const cookies = await page.context().cookies();
+    const accessCookie = cookies.find(c => c.name === 'access_token');
+    authToken = accessCookie?.value ?? '';
     expect(authToken).toBeTruthy();
 
     // ── Step 2: Add a transaction via UI ──

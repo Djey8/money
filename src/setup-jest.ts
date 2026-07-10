@@ -1,4 +1,6 @@
-import 'jest-preset-angular/setup-jest';
+import { setupZoneTestEnv } from 'jest-preset-angular/setup-env/zone';
+
+setupZoneTestEnv();
 
 // Global mocks for browser APIs not available in jsdom
 Object.defineProperty(window, 'getComputedStyle', {
@@ -34,6 +36,8 @@ const SUPPRESSED_PATTERNS = [
   /No provider for/, // expected in isolated unit tests
   /No #chart-container/, // BudgetComponent — no DOM in test harness
   /Decryption failed/, // CrypticService — expected in wrong-key tests
+  /load error:/, // AppDataService — expected in tier-flag-on-error tests
+  /Authentication failed/, // SettingsComponent — expected in auth-failure tests
 ];
 
 console.error = (...args: any[]) => {

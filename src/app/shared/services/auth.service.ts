@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { AngularFireAuth } from '@angular/fire/compat/auth';
+import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { firstValueFrom } from 'rxjs';
 
@@ -12,13 +13,18 @@ import { firstValueFrom } from 'rxjs';
 export class AuthService {
   private mode: 'firebase' | 'selfhosted' = environment.mode as 'firebase' | 'selfhosted';
 
-  constructor(private afAuth: AngularFireAuth) {}
+  constructor(private afAuth: AngularFireAuth, private http: HttpClient) {}
 
   /**
    * Check if user is authenticated (works for both Firebase and Selfhosted modes)
    * @returns Promise<{authenticated: boolean, error?: string}>
    */
   async checkAuthentication(): Promise<{authenticated: boolean, error?: string}> {
+    // Demo mode: always authenticated
+    if (sessionStorage.getItem('demo_mode') === 'true') {
+      return { authenticated: true };
+    }
+
     if (this.mode === 'firebase') {
       // Firebase authentication check - wait for auth state to initialize
       try {
@@ -26,24 +32,38 @@ export class AuthService {
         if (!user) {
           return { authenticated: false, error: 'Session expired. Please log in again.' };
         }
-        
+
         try {
-          // Refresh token to ensure it's still valid
+          // Refresh token to ensure it's still valid.
           await user.getIdToken(true);
           return { authenticated: true };
-        } catch (err) {
-          return { authenticated: false, error: 'Session expired. Please log in again.' };
+        } catch (err: any) {
+          // Distinguish a real auth failure (token revoked / user disabled) from a transient
+          // network/offline blip. For transient errors keep the session alive so the user can
+          // continue working with cached data instead of being booted to the landing page.
+          const code = err?.code || '';
+          const isAuthFailure =
+            code === 'auth/user-token-expired' ||
+            code === 'auth/user-disabled' ||
+            code === 'auth/invalid-user-token' ||
+            code === 'auth/user-not-found' ||
+            code === 'auth/requires-recent-login';
+          if (isAuthFailure) {
+            return { authenticated: false, error: 'Session expired. Please log in again.' };
+          }
+          // Treat as transient — assume still authenticated.
+          return { authenticated: true };
         }
       } catch (error) {
         console.error('Error checking Firebase auth state:', error);
-        return { authenticated: false, error: 'Authentication error occurred.' };
+        // Transient error reading auth state — don't force a logout.
+        return { authenticated: true };
       }
     } else {
-      // Selfhosted mode - check if token exists
-      const token = localStorage.getItem('selfhosted_token');
+      // Selfhosted mode - check if userId exists (cookie is validated server-side)
       const userId = localStorage.getItem('selfhosted_userId');
       
-      if (!token || !userId) {
+      if (!userId) {
         return { authenticated: false, error: 'Session expired. Please log in again.' };
       }
       
@@ -61,9 +81,8 @@ export class AuthService {
       // For Firebase, we need to do async check, so this is just a quick check
       return true; // Requires async check via checkAuthentication()
     } else {
-      const token = localStorage.getItem('selfhosted_token');
       const userId = localStorage.getItem('selfhosted_userId');
-      return !!(token && userId);
+      return !!userId;
     }
   }
 
@@ -83,9 +102,15 @@ export class AuthService {
     if (this.mode === 'firebase') {
       await this.afAuth.signOut();
     } else {
-      // Selfhosted mode - clear tokens
-      localStorage.removeItem('selfhosted_token');
+      // Selfhosted mode - call logout endpoint to revoke refresh token + clear cookies
       localStorage.removeItem('selfhosted_userId');
+      try {
+        await firstValueFrom(
+          this.http.post(`${environment.selfhosted.apiUrl}/auth/logout`, {}, { withCredentials: true })
+        );
+      } catch {
+        // Logout should succeed even if the request fails
+      }
     }
   }
 }

@@ -39,10 +39,10 @@
   <thead>
     <tr>
       <th>{{'Transactions.ID' | translate}}</th>
-      <th>{{'Transactions.Account' | translate}}</th>
-      <th>{{'Transactions.Amount' | translate}}</th>
+      <th>{{'Common.account' | translate}}</th>
+      <th>{{'Common.amount' | translate}}</th>
       <th>{{'AddTransaction.Category' | translate}}</th>
-      <th>{{'Transactions.Date' | translate}}</th>
+      <th>{{'Common.date' | translate}}</th>
     </tr>
   </thead>
  <tbody>
@@ -59,10 +59,10 @@
   <thead>
     <tr>
       <th>{{'Transactions.ID' | translate}}</th>
-      <th>{{'Transactions.Account' | translate}}</th>
-      <th>{{'Transactions.Amount' | translate}}</th>
+      <th>{{'Common.account' | translate}}</th>
+      <th>{{'Common.amount' | translate}}</th>
       <th>{{'AddTransaction.Category' | translate}}</th>
-      <th>{{'Transactions.Date' | translate}}</th>
+      <th>{{'Common.date' | translate}}</th>
     </tr>
   </thead>
   <tbody>
@@ -101,13 +101,13 @@
   
     <!-- Account Column -->
     <ng-container matColumnDef="account">
-    <th class="headder" mat-header-cell *matHeaderCellDef mat-sort-header>{{'Transactions.Account' | translate}}</th>
+    <th class="headder" mat-header-cell *matHeaderCellDef mat-sort-header>{{'Common.account' | translate}}</th>
     <td mat-cell *matCellDef="let row; let i = index">{{row.account}}</td>
     </ng-container>
   
     <!-- Amount Column -->
     <ng-container matColumnDef="amount">
-    <th class="headder" mat-header-cell *matHeaderCellDef mat-sort-header>{{'Transactions.Amount' | translate}}</th>
+    <th class="headder" mat-header-cell *matHeaderCellDef mat-sort-header>{{'Common.amount' | translate}}</th>
     <td mat-cell *matCellDef="let row; let i = index" [ngClass]="row.account === 'Mojo' ? 'amount-mojo' : (row.amount >= 0 ? 'amount-positive' : 'amount-negative')">
       {{row.amount | appNumber}} {{settingsReference.currency}}
     </td>
@@ -121,7 +121,7 @@
     
     <!-- Date Column -->
     <ng-container matColumnDef="date">
-    <th class="headder" mat-header-cell *matHeaderCellDef mat-sort-header>{{'Transactions.Date' | translate}}</th>
+    <th class="headder" mat-header-cell *matHeaderCellDef mat-sort-header>{{'Common.date' | translate}}</th>
     <td mat-cell *matCellDef="let row; let i = index"><span class="d-short">{{row.date | appDate:'short'}}</span><span class="d-full">{{row.date | appDate}}</span></td>
     </ng-container>
 

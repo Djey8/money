@@ -1,0 +1,116 @@
+<div *ngIf="visible" class="tour-backdrop" [class.tour-leaving]="leaving" [class.tour-menu-nav]="menuNavigating">
+  <!-- Persistent dark overlay during menu navigation -->
+  <div *ngIf="menuNavigating" class="tour-overlay-dark"></div>
+
+  <!-- SVG spotlight overlay -->
+  <svg *ngIf="spotlightRect && !menuNavigating" class="tour-spotlight-svg" [class.step-fading]="stepFading" (click)="next()">
+    <path [attr.d]="spotlightClipPath" fill="rgba(0,0,0,0.6)" fill-rule="evenodd"/>
+  </svg>
+
+  <!-- Dark overlay for center-mode (no target) -->
+  <div *ngIf="!spotlightRect && !menuNavigating" class="tour-overlay-dark" [class.step-fading]="stepFading" (click)="next()"></div>
+
+  <!-- Section jump menu (pops UP from bottom bar) -->
+  <div *ngIf="sectionMenuOpen" class="tour-section-menu">
+    <button *ngFor="let sec of sections; let i = index"
+            class="tour-section-item"
+            [class.active]="isSectionActive(i)"
+            [class.completed]="isSectionCompleted(i)"
+            (click)="goToSection(i)">
+      <span class="tour-section-icon">{{ i + 1 }}</span>
+      <span class="tour-section-label">{{ sec.titleKey | translate }}</span>
+      <span *ngIf="isSectionCompleted(i)" class="tour-section-check">✓</span>
+    </button>
+  </div>
+
+  <!-- Tooltip card (positioned near target) -->
+  <div *ngIf="spotlightRect && !menuNavigating" class="tour-tooltip" [class.step-fading]="stepFading" [ngStyle]="tooltipStyle">
+    <div class="tour-tooltip-accent" [style.background]="step.accent"></div>
+    <h3 class="tour-tooltip-title">
+      {{ step.titleKey | translate }}
+      <button class="tour-collapse-btn" (click)="bodyCollapsed = !bodyCollapsed" [attr.aria-label]="bodyCollapsed ? 'Expand' : 'Collapse'">
+        <span class="tour-collapse-chevron" [class.collapsed]="bodyCollapsed">▾</span>
+      </button>
+    </h3>
+    <p *ngIf="!bodyCollapsed" class="tour-tooltip-body">{{ step.bodyKey | translate }}</p>
+    <div class="tour-tooltip-nav">
+      <button *ngIf="!isFirst" class="tour-btn tour-btn--back" (click)="prev()">
+        ‹ {{ 'Tour.back' | translate }}
+      </button>
+      <div *ngIf="isFirst" class="tour-spacer"></div>
+      <div class="tour-dots">
+        <span *ngFor="let s of section.steps; let i = index"
+              class="tour-dot"
+              [class.active]="i === stepIndexInSection"
+              [style.background]="i === stepIndexInSection ? step.accent : ''">
+        </span>
+      </div>
+      <button class="tour-btn tour-btn--next" [style.background]="step.accent" (click)="next()">
+        {{ (isLast ? 'Tour.finish' : 'Tour.next') | translate }} ›
+      </button>
+    </div>
+  </div>
+
+  <!-- Center card (no target — full intro/summary step) -->
+  <div *ngIf="!spotlightRect && !menuNavigating" class="tour-center-card" [class.step-fading]="stepFading">
+    <div class="tour-center-accent" [style.background]="step.accent"></div>
+    <div *ngIf="step.icon" class="tour-center-icon" [style.background]="step.icon?.includes('/') ? 'transparent' : step.accent + '18'">
+      <img *ngIf="step.icon?.includes('/')" [src]="step.icon" class="tour-center-icon-img" alt="">
+      <span *ngIf="!step.icon?.includes('/')">{{ step.icon }}</span>
+    </div>
+    <h2 class="tour-center-title" [class.no-icon]="!step.icon">
+      {{ step.titleKey | translate }}
+    </h2>
+    <p class="tour-center-body">{{ step.bodyKey | translate }}</p>
+
+    <!-- Language switcher on the first step -->
+    <div *ngIf="isFirst" class="tour-lang-switcher">
+      <div class="tour-lang-row">
+        <button *ngFor="let lang of languagesRow1"
+                class="tour-lang-btn"
+                [class.tour-lang-active]="currentLang === lang.code"
+                (click)="switchLanguage(lang.code)"
+                [attr.aria-label]="lang.label">
+          <img [src]="lang.flag" [alt]="lang.label" class="tour-lang-flag">
+          <span class="tour-lang-code">{{ lang.label }}</span>
+        </button>
+      </div>
+      <div class="tour-lang-row">
+        <button *ngFor="let lang of languagesRow2"
+                class="tour-lang-btn"
+                [class.tour-lang-active]="currentLang === lang.code"
+                (click)="switchLanguage(lang.code)"
+                [attr.aria-label]="lang.label">
+          <img [src]="lang.flag" [alt]="lang.label" class="tour-lang-flag">
+          <span class="tour-lang-code">{{ lang.label }}</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="tour-center-nav">
+      <button *ngIf="!isFirst" class="tour-btn tour-btn--back" (click)="prev()">
+        ‹ {{ 'Tour.back' | translate }}
+      </button>
+      <div *ngIf="isFirst" class="tour-spacer"></div>
+      <button class="tour-btn tour-btn--next" [style.background]="step.accent" (click)="next()">
+        {{ (isLast ? 'Tour.finish' : 'Tour.next') | translate }} ›
+      </button>
+    </div>
+    <p class="tour-keyboard-hint">{{ 'Tour.keyboardHint' | translate }}</p>
+  </div>
+
+  <!-- Bottom bar — progress + section toggle + skip -->
+  <div class="tour-bottombar">
+    <div class="tour-progress-track">
+      <div class="tour-progress-fill" [style.width.%]="progress" [style.background]="step.accent"></div>
+    </div>
+    <div class="tour-bottombar-row">
+      <button class="tour-section-toggle" (click)="toggleSectionMenu()" [attr.aria-label]="'Tour.sections' | translate">
+        {{ tour.currentSectionIndex + 1 }}. {{ section.titleKey | translate }}
+        <span class="tour-chevron" [class.open]="sectionMenuOpen">▴</span>
+      </button>
+      <span class="tour-step-counter">{{ tour.globalStepIndex + 1 }}/{{ tour.totalSteps }}</span>
+      <button class="tour-skip-btn" (click)="skip()">{{ 'Tour.skip' | translate }}</button>
+    </div>
+  </div>
+</div>

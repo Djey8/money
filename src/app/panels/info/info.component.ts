@@ -739,7 +739,7 @@ export class InfoComponent extends BaseInfoComponent {
       });
 
       // Write to DB
-      this.updateStorage();
+      this.updateStorage('Transaction updated');
 
       // Always recalculate income statement when transaction is updated
       // This ensures bucket amounts are always in sync with transaction allocations
@@ -752,7 +752,6 @@ export class InfoComponent extends BaseInfoComponent {
       // Clean Up close Window
       this.clearError();
       this.isEdit = false;
-      this.toastService.show('Transaction updated', 'update');
       AppComponent.gotoTop();
     }
   }
@@ -768,7 +767,17 @@ export class InfoComponent extends BaseInfoComponent {
     try {
       const writes = [
         ...this.incomeStatement.getWrites(),
-        { tag: "balance/liabilities", data: AppStateService.instance.liabilities }
+        // Only write balance/grow data if it has been loaded (Tier 3 on-demand).
+        // Writing before load would overwrite real DB data with empty arrays.
+        ...(AppStateService.instance.tier3BalanceLoaded ? [
+          { tag: "balance/liabilities", data: AppStateService.instance.liabilities },
+          { tag: "balance/asset/assets", data: AppStateService.instance.allAssets },
+          { tag: "balance/asset/shares", data: AppStateService.instance.allShares },
+          { tag: "balance/asset/investments", data: AppStateService.instance.allInvestments }
+        ] : []),
+        ...(AppStateService.instance.tier3GrowLoaded ? [
+          { tag: "grow", data: AppStateService.instance.allGrowProjects }
+        ] : [])
       ];
 
       this.persistence.batchWriteAndSync({
@@ -777,20 +786,26 @@ export class InfoComponent extends BaseInfoComponent {
           { key: "interests", data: JSON.stringify(AppStateService.instance.allIntrests) },
           { key: "properties", data: JSON.stringify(AppStateService.instance.allProperties) },
           { key: "revenues", data: JSON.stringify(AppStateService.instance.allRevenues) },
-          { key: "liabilities", data: JSON.stringify(AppStateService.instance.liabilities) },
           { key: "dailyEx", data: JSON.stringify(AppStateService.instance.dailyExpenses) },
           { key: "splurgeEx", data: JSON.stringify(AppStateService.instance.splurgeExpenses) },
-          { key: "smileEx", data: JSON.stringify(AppStateService.instance.smileExpenses) },
-          { key: "fireEx", data: JSON.stringify(AppStateService.instance.fireExpenses) },
-          { key: "mojoEx", data: JSON.stringify(AppStateService.instance.mojoExpenses) },
-          { key: "smile", data: JSON.stringify(AppStateService.instance.allSmileProjects) },
-          { key: "fire", data: JSON.stringify(AppStateService.instance.allFireEmergencies) },
-          { key: "mojo", data: JSON.stringify(AppStateService.instance.mojo) },
+          ...(AppStateService.instance.tier2Loaded ? [
+            { key: "smileEx", data: JSON.stringify(AppStateService.instance.smileExpenses) },
+            { key: "fireEx", data: JSON.stringify(AppStateService.instance.fireExpenses) },
+            { key: "mojoEx", data: JSON.stringify(AppStateService.instance.mojoExpenses) },
+            { key: "smile", data: JSON.stringify(AppStateService.instance.allSmileProjects) },
+            { key: "fire", data: JSON.stringify(AppStateService.instance.allFireEmergencies) },
+            { key: "mojo", data: JSON.stringify(AppStateService.instance.mojo) },
+          ] : []),
           { key: "transactions", data: JSON.stringify(AppStateService.instance.allTransactions) },
-          { key: "shares", data: JSON.stringify(AppStateService.instance.allShares) },
-          { key: "assets", data: JSON.stringify(AppStateService.instance.allAssets) },
-          { key: "investments", data: JSON.stringify(AppStateService.instance.allInvestments) },
-          { key: "grow", data: JSON.stringify(AppStateService.instance.allGrowProjects) }
+          ...(AppStateService.instance.tier3BalanceLoaded ? [
+            { key: "liabilities", data: JSON.stringify(AppStateService.instance.liabilities) },
+            { key: "shares", data: JSON.stringify(AppStateService.instance.allShares) },
+            { key: "assets", data: JSON.stringify(AppStateService.instance.allAssets) },
+            { key: "investments", data: JSON.stringify(AppStateService.instance.allInvestments) }
+          ] : []),
+          ...(AppStateService.instance.tier3GrowLoaded ? [
+            { key: "grow", data: JSON.stringify(AppStateService.instance.allGrowProjects) }
+          ] : [])
         ]
       });
     } catch (error) {
@@ -1264,8 +1279,7 @@ export class InfoComponent extends BaseInfoComponent {
     this.incomeStatement.recalculate();
     
     // WRITE to Storage
-    this.updateStorage();
-    this.toastService.show('Transaction deleted', 'delete');
+    this.updateStorage('Transaction deleted');
     this.isEdit = false;
     InfoComponent.isInfo = false;
     });
@@ -1667,15 +1681,16 @@ export class InfoComponent extends BaseInfoComponent {
     // No manual updates needed - the service recalculates all bucket amounts from transactions
   }
 
-  updateStorage() {
+  updateStorage(successMessage?: string) {
     // Skip blocking authentication check for better UX
     // Database writes will fail gracefully if user is not authenticated
 
     // User is authenticated
     try {
-      // Close dialog immediately for better UX
+      // Close dialog and show spinner
       InfoComponent.isInfo = false;
       InfoComponent.isError = false;
+      AppStateService.instance.isSaving = true;
 
       this.persistence.batchWriteAndSync({
         writes: [
@@ -1684,43 +1699,67 @@ export class InfoComponent extends BaseInfoComponent {
           { tag: "income/revenue/revenues", data: AppStateService.instance.allRevenues },
           { tag: "income/expenses/daily", data: AppStateService.instance.dailyExpenses },
           { tag: "income/expenses/splurge", data: AppStateService.instance.splurgeExpenses },
-          { tag: "income/expenses/smile", data: AppStateService.instance.smileExpenses },
-          { tag: "income/expenses/fire", data: AppStateService.instance.fireExpenses },
-          { tag: "income/expenses/mojo", data: AppStateService.instance.mojoExpenses },
-          { tag: "balance/asset/assets", data: AppStateService.instance.allAssets },
-          { tag: "balance/asset/shares", data: AppStateService.instance.allShares },
-          { tag: "balance/asset/investments", data: AppStateService.instance.allInvestments },
-          { tag: "balance/liabilities", data: AppStateService.instance.liabilities },
-          { tag: "smile", data: AppStateService.instance.allSmileProjects },
-          { tag: "fire", data: AppStateService.instance.allFireEmergencies },
-          { tag: "mojo", data: AppStateService.instance.mojo },
+          // Only write tier2 data (smile/fire/mojo) if tier2 has been loaded.
+          // Writing before load would overwrite real DB data with empty defaults.
+          ...(AppStateService.instance.tier2Loaded ? [
+            { tag: "income/expenses/smile", data: AppStateService.instance.smileExpenses },
+            { tag: "income/expenses/fire", data: AppStateService.instance.fireExpenses },
+            { tag: "income/expenses/mojo", data: AppStateService.instance.mojoExpenses },
+            { tag: "smile", data: AppStateService.instance.allSmileProjects },
+            { tag: "fire", data: AppStateService.instance.allFireEmergencies },
+            { tag: "mojo", data: AppStateService.instance.mojo },
+          ] : []),
+          // Only write balance/grow data if it has been loaded (Tier 3 on-demand).
+          // Writing before load would overwrite real DB data with empty arrays.
+          ...(AppStateService.instance.tier3BalanceLoaded ? [
+            { tag: "balance/asset/assets", data: AppStateService.instance.allAssets },
+            { tag: "balance/asset/shares", data: AppStateService.instance.allShares },
+            { tag: "balance/asset/investments", data: AppStateService.instance.allInvestments },
+            { tag: "balance/liabilities", data: AppStateService.instance.liabilities }
+          ] : []),
           { tag: "transactions", data: AppStateService.instance.allTransactions },
-          { tag: "grow", data: AppStateService.instance.allGrowProjects }
+          ...(AppStateService.instance.tier3GrowLoaded ? [
+            { tag: "grow", data: AppStateService.instance.allGrowProjects }
+          ] : [])
         ],
         localStorageSaves: [
           { key: "transactions", data: JSON.stringify(AppStateService.instance.allTransactions) },
           { key: "interests", data: JSON.stringify(AppStateService.instance.allIntrests) },
           { key: "properties", data: JSON.stringify(AppStateService.instance.allProperties) },
           { key: "revenues", data: JSON.stringify(AppStateService.instance.allRevenues) },
-          { key: "liabilities", data: JSON.stringify(AppStateService.instance.liabilities) },
           { key: "dailyEx", data: JSON.stringify(AppStateService.instance.dailyExpenses) },
           { key: "splurgeEx", data: JSON.stringify(AppStateService.instance.splurgeExpenses) },
-          { key: "smileEx", data: JSON.stringify(AppStateService.instance.smileExpenses) },
-          { key: "fireEx", data: JSON.stringify(AppStateService.instance.fireExpenses) },
-          { key: "mojoEx", data: JSON.stringify(AppStateService.instance.mojoExpenses) },
-          { key: "assets", data: JSON.stringify(AppStateService.instance.allAssets) },
-          { key: "shares", data: JSON.stringify(AppStateService.instance.allShares) },
-          { key: "investments", data: JSON.stringify(AppStateService.instance.allInvestments) },
-          { key: "smile", data: JSON.stringify(AppStateService.instance.allSmileProjects) },
-          { key: "fire", data: JSON.stringify(AppStateService.instance.allFireEmergencies) },
-          { key: "mojo", data: JSON.stringify(AppStateService.instance.mojo) },
-          { key: "grow", data: JSON.stringify(AppStateService.instance.allGrowProjects) }
+          ...(AppStateService.instance.tier2Loaded ? [
+            { key: "smileEx", data: JSON.stringify(AppStateService.instance.smileExpenses) },
+            { key: "fireEx", data: JSON.stringify(AppStateService.instance.fireExpenses) },
+            { key: "mojoEx", data: JSON.stringify(AppStateService.instance.mojoExpenses) },
+            { key: "smile", data: JSON.stringify(AppStateService.instance.allSmileProjects) },
+            { key: "fire", data: JSON.stringify(AppStateService.instance.allFireEmergencies) },
+            { key: "mojo", data: JSON.stringify(AppStateService.instance.mojo) },
+          ] : []),
+          ...(AppStateService.instance.tier3BalanceLoaded ? [
+            { key: "liabilities", data: JSON.stringify(AppStateService.instance.liabilities) },
+            { key: "assets", data: JSON.stringify(AppStateService.instance.allAssets) },
+            { key: "shares", data: JSON.stringify(AppStateService.instance.allShares) },
+            { key: "investments", data: JSON.stringify(AppStateService.instance.allInvestments) }
+          ] : []),
+          ...(AppStateService.instance.tier3GrowLoaded ? [
+            { key: "grow", data: JSON.stringify(AppStateService.instance.allGrowProjects) }
+          ] : [])
         ],
+        onSuccess: () => {
+          AppStateService.instance.isSaving = false;
+          if (successMessage) {
+            this.toastService.show(successMessage, successMessage.includes('deleted') ? 'delete' : 'update');
+          }
+        },
         onError: (error) => {
-          this.showError(error);
+          AppStateService.instance.isSaving = false;
+          this.toastService.show(error.message || 'Database write failed', 'error');
         }
       });
     } catch (error) {
+      AppStateService.instance.isSaving = false;
       this.showError(error);
     }
   }

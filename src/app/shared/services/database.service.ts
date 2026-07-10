@@ -363,6 +363,19 @@ export class DatabaseService {
   }
 
   /**
+   * Clears all in-memory caches (read cache, ETag cache, dirty-tracker snapshots).
+   * Must be called on logout so the next login fetches fresh data from the server.
+   */
+  clearAllCaches(): void {
+    this.cacheService.clearAll();
+    if (this.mode === 'selfhosted') {
+      this.selfhosted.clearEtagCache();
+      this.dirtyTracker.clearAll();
+      this.dirtyTracker.clearAllSnapshots();
+    }
+  }
+
+  /**
    * Delete the entire user data node from Firebase Realtime Database.
    * @param {string} uid - The user's Firebase UID.
    * @returns {Promise<void>}

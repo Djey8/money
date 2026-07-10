@@ -22,6 +22,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 NAMESPACE="${NAMESPACE:-money-app}"
 BACKUP_POD="${BACKUP_POD:-couchdb-0}"
 BACKUP_ROOT="${BACKUP_DIR:-/opt/money-app-backups}"
+NAS_BACKUP_ROOT="${NAS_BACKUP_DIR:-/mnt/nas/backups}"
 BACKUP_FILE="$1"
 
 # Functions
@@ -32,16 +33,41 @@ log_error()   { echo -e "${RED}[ERROR]${NC} $1"; }
 
 # ── Usage ────────────────────────────────────────────
 if [ -z "$BACKUP_FILE" ]; then
-    log_error "Usage: $0 <backup-file.tar.gz>"
+    log_error "Usage: $0 <backup-file.tar.gz[.gpg]>"
     echo ""
-    echo "Available backups:"
-    for tier in daily weekly monthly; do
+    echo "Available LOCAL backups:"
+    for tier in hourly daily weekly monthly; do
         DIR="${BACKUP_ROOT}/${tier}"
-        if ls "${DIR}"/couchdb-backup-*.tar.gz 1>/dev/null 2>&1; then
-            echo "  [${tier}]"
-            ls -1t "${DIR}"/couchdb-backup-*.tar.gz | sed 's/^/    /'
+        if ls "${DIR}"/couchdb-backup-*.tar.gz* 1>/dev/null 2>&1; then
+            echo "  [local/${tier}]"
+            ls -1t "${DIR}"/couchdb-backup-*.tar.gz* | head -5 | sed 's/^/    /'
+            count=$(ls -1 "${DIR}"/couchdb-backup-*.tar.gz* | wc -l)
+            if [ "$count" -gt 5 ]; then
+                echo "    ... and $((count - 5)) more"
+            fi
         fi
     done
+    echo ""
+    NAS_AVAILABLE=false
+    if timeout 3 stat "$NAS_BACKUP_ROOT" >/dev/null 2>&1; then
+        NAS_AVAILABLE=true
+    fi
+    if [ "$NAS_AVAILABLE" = true ]; then
+        echo "Available NAS backups:"
+        for tier in daily weekly monthly; do
+            DIR="${NAS_BACKUP_ROOT}/${tier}"
+            if ls "${DIR}"/couchdb-backup-*.tar.gz* 1>/dev/null 2>&1; then
+                echo "  [nas/${tier}]"
+                ls -1t "${DIR}"/couchdb-backup-*.tar.gz* | head -5 | sed 's/^/    /'
+                count=$(ls -1 "${DIR}"/couchdb-backup-*.tar.gz* | wc -l)
+                if [ "$count" -gt 5 ]; then
+                    echo "    ... and $((count - 5)) more"
+                fi
+            fi
+        done
+    else
+        echo "NAS not available"
+    fi
     echo ""
     echo "List with details:  ./scripts/list-backups.sh"
     exit 1
@@ -103,6 +129,26 @@ fi
 TEMP_DIR="./restore_temp_$$"
 mkdir -p "$TEMP_DIR"
 
+# Decrypt if the backup is GPG-encrypted
+if [[ "$BACKUP_FILE" == *.gpg ]]; then
+    log_info "Encrypted backup detected — decrypting..."
+    BACKUP_ENCRYPTION_KEY="${BACKUP_ENCRYPTION_KEY:-}"
+    if [ -z "$BACKUP_ENCRYPTION_KEY" ]; then
+        read -sp "Enter encryption key: " BACKUP_ENCRYPTION_KEY
+        echo ""
+    fi
+    DECRYPTED_FILE="${TEMP_DIR}/$(basename "${BACKUP_FILE%.gpg}")"
+    if ! gpg --batch --yes --decrypt \
+        --passphrase "$BACKUP_ENCRYPTION_KEY" \
+        --output "$DECRYPTED_FILE" "$BACKUP_FILE" 2>/dev/null; then
+        log_error "Decryption failed — wrong key or corrupt file"
+        rm -rf "$TEMP_DIR"
+        exit 1
+    fi
+    BACKUP_FILE="$DECRYPTED_FILE"
+    log_success "Decryption successful"
+fi
+
 # Extract backup
 log_info "Extracting backup archive..."
 tar -xzf "$BACKUP_FILE" -C "$TEMP_DIR"
@@ -131,6 +177,8 @@ fi
 
 log_info "Found ${#DB_FILES[@]} database(s) to restore"
 echo ""
+
+RESTORE_HAD_ERRORS=false
 
 # Restore each database
 for db_file in "${DB_FILES[@]}"; do
@@ -176,16 +224,31 @@ import json, sys
 with open('$db_file') as f:
     data = json.load(f)
 docs = []
+seen = set()
+dupes = 0
 for row in data.get('rows', []):
     doc = row.get('doc', {})
-    if doc.get('_id', '').startswith('_design'):
+    doc_id = doc.get('_id')
+    if not doc_id:
+        continue
+    if doc_id in seen:
+        dupes += 1
+        continue
+    seen.add(doc_id)
+    if doc_id.startswith('_design'):
         doc.pop('_rev', None)
         docs.append(doc)
         continue
     doc.pop('_rev', None)
     docs.append(doc)
+if dupes:
+    print(f'[WARN] skipped_duplicate_ids={dupes}', file=sys.stderr)
 print(json.dumps({'docs': docs, 'new_edits': True}))
-" > "${TEMP_DIR}/${db_name}_bulk.json" 2>/dev/null
+" > "${TEMP_DIR}/${db_name}_bulk.json" 2> "${TEMP_DIR}/${db_name}_prep.log"
+
+    if [ -s "${TEMP_DIR}/${db_name}_prep.log" ]; then
+        sed 's/^/  → /' "${TEMP_DIR}/${db_name}_prep.log"
+    fi
 
     # Fallback if python3 is not available: use sed-based approach
     if [ $? -ne 0 ] || [ ! -s "${TEMP_DIR}/${db_name}_bulk.json" ]; then
@@ -221,6 +284,7 @@ print(json.dumps({'docs': docs, 'new_edits': True}))
     if [ "$err_count" -gt 0 ]; then
         log_warning "  → $ok_count OK, $err_count errors"
         echo "$RESULT" | grep '"error"' | head -5 | sed 's/^/    /'
+        RESTORE_HAD_ERRORS=true
     else
         log_success "  → $ok_count documents restored successfully"
     fi
@@ -240,4 +304,9 @@ kubectl exec -n "$NAMESPACE" "$BACKUP_POD" -- \
     "http://localhost:5984/_all_dbs" | tr -d '[]"' | tr ',' '\n' | grep -v '^_' | sed 's/^/  /'
 
 echo ""
+if [ "$RESTORE_HAD_ERRORS" = true ]; then
+    log_error "Restore completed with errors. Some documents were not restored; inspect warnings above."
+    exit 1
+fi
+
 log_success "Restore completed successfully!"

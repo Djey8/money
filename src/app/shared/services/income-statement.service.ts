@@ -224,7 +224,6 @@ export class IncomeStatementService {
                   const bucketRemaining = bucket.target - bucket.amount;
                   const contribution = Math.min(Math.abs(amount), bucketRemaining);
                   bucket.amount = Math.round((bucket.amount + contribution) * 100) / 100;
-                  this.addOrUpdateExpense(AppStateService.instance.fireExpenses, "@" + bucket.title, contribution);
                 });
               } else {
                 // Allocate to matched bucket
@@ -236,7 +235,6 @@ export class IncomeStatementService {
                   // Cap contribution to remaining bucket target
                   const contribution = Math.min(Math.abs(result), bucketRemaining);
                   matchedBucket.amount = Math.round((matchedBucket.amount + contribution) * 100) / 100;
-                  this.addOrUpdateExpense(AppStateService.instance.fireExpenses, "@" + matchedBucket.title, contribution);
                 }
               }
               
@@ -343,12 +341,16 @@ export class IncomeStatementService {
       { tag: "income/revenue/revenues", data: AppStateService.instance.allRevenues },
       { tag: "income/expenses/daily", data: AppStateService.instance.dailyExpenses },
       { tag: "income/expenses/splurge", data: AppStateService.instance.splurgeExpenses },
-      { tag: "income/expenses/smile", data: AppStateService.instance.smileExpenses },
-      { tag: "income/expenses/fire", data: AppStateService.instance.fireExpenses },
-      { tag: "income/expenses/mojo", data: AppStateService.instance.mojoExpenses },
-      { tag: "smile", data: AppStateService.instance.allSmileProjects },
-      { tag: "fire", data: AppStateService.instance.allFireEmergencies },
-      { tag: "mojo", data: AppStateService.instance.mojo }
+      // Only include tier2 data (smile/fire/mojo) if tier2 has been loaded.
+      // Writing before load would overwrite real DB data with empty defaults.
+      ...(AppStateService.instance.tier2Loaded ? [
+        { tag: "income/expenses/smile", data: AppStateService.instance.smileExpenses },
+        { tag: "income/expenses/fire", data: AppStateService.instance.fireExpenses },
+        { tag: "income/expenses/mojo", data: AppStateService.instance.mojoExpenses },
+        { tag: "smile", data: AppStateService.instance.allSmileProjects },
+        { tag: "fire", data: AppStateService.instance.allFireEmergencies },
+        { tag: "mojo", data: AppStateService.instance.mojo }
+      ] : [])
     ];
   }
 

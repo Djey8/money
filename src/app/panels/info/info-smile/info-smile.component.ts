@@ -1077,6 +1077,10 @@ export class InfoSmileComponent extends BaseInfoComponent {
     InfoSmileComponent.buckets = this.buckets;
     InfoSmileComponent.links = this.links;
     InfoSmileComponent.actionItems = this.actionItems;
+
+    InfoSmileComponent.isEdit = false;
+    InfoSmileComponent.isInfo = false;
+    AppStateService.instance.isSaving = true;
     
     this.persistence.writeAndSync({
       tag: 'smile',
@@ -1089,13 +1093,14 @@ export class InfoSmileComponent extends BaseInfoComponent {
         bucketCount: this.buckets.length
       },
       onSuccess: () => {
+        AppStateService.instance.isSaving = false;
         this.clearError();
-        InfoSmileComponent.isEdit = false;
         this.toastService.show('Smile project updated', 'update');
         AppComponent.gotoTop();
       },
       onError: (error) => {
-        this.showError(error.message || 'Database write failed');
+        AppStateService.instance.isSaving = false;
+        this.toastService.show(error.message || 'Database write failed', 'error');
       }
     });
   }
@@ -1133,6 +1138,7 @@ export class InfoSmileComponent extends BaseInfoComponent {
 
       InfoSmileComponent.isInfo = false;
       InfoSmileComponent.isError = false;
+      AppStateService.instance.isSaving = true;
 
       // Use batchWriteAndSync ONLY if transactions were actually deleted
       if (deletedTransactionsCount > 0) {
@@ -1153,13 +1159,15 @@ export class InfoSmileComponent extends BaseInfoComponent {
           logEvent: 'delete_smile',
           logMetadata: { title: deletedTitle, index: index, deletedTransactions: deletedTransactionsCount },
           onSuccess: () => {
+            AppStateService.instance.isSaving = false;
             this.incomeStatement.saveToLocalStorage();
             this.toastService.show('Smile project deleted', 'delete');
             AppComponent.gotoTop();
             this.router.navigate(['/smileprojects']);
           },
           onError: (error) => {
-            this.showError(error.message || 'Database write failed');
+            AppStateService.instance.isSaving = false;
+            this.toastService.show(error.message || 'Database write failed', 'error');
           }
         });
       } else {
@@ -1171,12 +1179,14 @@ export class InfoSmileComponent extends BaseInfoComponent {
           logEvent: 'delete_smile',
           logMetadata: { title: deletedTitle, index: index },
           onSuccess: () => {
+            AppStateService.instance.isSaving = false;
             this.toastService.show('Smile project deleted', 'delete');
             AppComponent.gotoTop();
             this.router.navigate(['/smileprojects']);
           },
           onError: (error) => {
-            this.showError(error.message || 'Database write failed');
+            AppStateService.instance.isSaving = false;
+            this.toastService.show(error.message || 'Database write failed', 'error');
           }
         });
       }

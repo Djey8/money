@@ -1,0 +1,239 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: couchdb-backup-hourly
+  namespace: money-app
+spec:
+  schedule: "0 * * * *"
+  # Skip a run rather than queuing if it cannot start within 5 minutes
+  startingDeadlineSeconds: 300
+  # Never run two hourly backups concurrently
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      ttlSecondsAfterFinished: 3600
+      # Kill the job if it runs longer than 30 minutes
+      activeDeadlineSeconds: 1800
+      # Do not retry endlessly on failure
+      backoffLimit: 1
+      template:
+        metadata:
+          labels:
+            job-type: couchdb-backup
+        spec:
+          containers:
+          - name: backup
+            image: alpine:3.21
+            securityContext:
+              allowPrivilegeEscalation: false
+            imagePullPolicy: IfNotPresent
+            command:
+            - /bin/sh
+            - -c
+            - |
+              #!/bin/sh
+              set -e
+
+              # Install required tools and ensure libxml2 is updated to patched revision
+              apk update >/dev/null 2>&1 || true
+              apk add --no-cache curl gnupg coreutils libxml2 > /dev/null 2>&1 || true
+
+              # ── Configuration ──────────────────────────────────
+              COUCHDB_HOST="couchdb.money-app.svc.cluster.local"
+              COUCHDB_PORT="5984"
+              COUCHDB_USER="${COUCHDB_USER:-admin}"
+              COUCHDB_PASSWORD="${COUCHDB_PASSWORD}"
+              BACKUP_ROOT="/backups"
+              NAS_ROOT="/nas-backups"
+              DATE=$(date +%Y-%m-%d)
+              HOUR=$(date +%H)
+
+              HOURLY_DIR="${BACKUP_ROOT}/hourly"
+              HOURLY_FILE="${HOURLY_DIR}/couchdb-backup-${DATE}_${HOUR}00.tar.gz"
+
+              echo "==================================="
+              echo "CouchDB Hourly Backup - $(date)"
+              echo "==================================="
+
+              mkdir -p "${HOURLY_DIR}" "${BACKUP_ROOT}/temp"
+
+              # NAS dirs (may be unavailable)
+              NAS_AVAILABLE=false
+              NAS_DAILY_DIR="${NAS_ROOT}/daily"
+              NAS_WEEKLY_DIR="${NAS_ROOT}/weekly"
+              NAS_MONTHLY_DIR="${NAS_ROOT}/monthly"
+              if [ -d "${NAS_ROOT}" ] && touch "${NAS_ROOT}/.healthcheck" 2>/dev/null; then
+                rm -f "${NAS_ROOT}/.healthcheck"
+                NAS_AVAILABLE=true
+                mkdir -p "${NAS_DAILY_DIR}" "${NAS_WEEKLY_DIR}" "${NAS_MONTHLY_DIR}"
+              fi
+
+              # ── Fetch database list ────────────────────────────
+              echo "Fetching database list..."
+              RAW=$(curl -sf -u "${COUCHDB_USER}:${COUCHDB_PASSWORD}" \
+                "http://${COUCHDB_HOST}:${COUCHDB_PORT}/_all_dbs") || { echo "Failed to fetch DB list"; exit 1; }
+
+              DATABASES=$(echo "$RAW" | tr -d '[]"' | tr ',' '\n' | grep -v '^_')
+
+              if [ -z "$DATABASES" ]; then
+                echo "ERROR: No user databases found — aborting."
+                exit 1
+              fi
+
+              echo "Databases to backup:"
+              echo "$DATABASES" | sed 's/^/  /'
+
+              # ── Backup each database ───────────────────────────
+              cd "${BACKUP_ROOT}/temp"
+              for db in $DATABASES; do
+                echo "Backing up: ${db}"
+                curl -sf -u "${COUCHDB_USER}:${COUCHDB_PASSWORD}" \
+                  "http://${COUCHDB_HOST}:${COUCHDB_PORT}/${db}/_all_docs?include_docs=true" \
+                  -o "${db}.json"
+                echo "  OK ($(wc -c < "${db}.json") bytes)"
+              done
+
+              # Metadata
+              cat > backup-metadata.json <<METAEOF
+              {
+                "date": "${DATE}",
+                "hour": "${HOUR}",
+                "timestamp": "$(date -Iseconds)",
+                "databases": "$(echo $DATABASES | tr '\n' ' ')",
+                "type": "hourly"
+              }
+              METAEOF
+
+              # ── Create archive ─────────────────────────────────
+              echo "Creating archive..."
+              tar -czf "${HOURLY_FILE}" -C "${BACKUP_ROOT}/temp" .
+              rm -rf "${BACKUP_ROOT}/temp"
+
+              # ── Compare hash with previous backup ──────────────
+              LATEST_BACKUP=$(ls -1t "${HOURLY_DIR}"/couchdb-backup-*.tar.gz* 2>/dev/null | grep -v "${HOURLY_FILE}" | head -n1 || true)
+              if [ -n "$LATEST_BACKUP" ] && [ -f "$LATEST_BACKUP" ]; then
+                NEW_HASH=$(sha256sum "${HOURLY_FILE}" | awk '{print $1}')
+                OLD_HASH=$(sha256sum "$LATEST_BACKUP" | awk '{print $1}')
+                if [ "$NEW_HASH" = "$OLD_HASH" ]; then
+                  echo "No changes since last backup (hash match). Skipping backup."
+                  rm -f "${HOURLY_FILE}"
+                  exit 0
+                fi
+              fi
+
+              # ── Encrypt archive if key is provided ─────────────
+              if [ -n "${BACKUP_ENCRYPTION_KEY}" ]; then
+                echo "Encrypting backup..."
+                gpg --batch --yes --symmetric --cipher-algo AES256 \
+                  --passphrase "${BACKUP_ENCRYPTION_KEY}" \
+                  --output "${HOURLY_FILE}.gpg" "${HOURLY_FILE}"
+                rm -f "${HOURLY_FILE}"
+                HOURLY_FILE="${HOURLY_FILE}.gpg"
+                echo "Backup encrypted with AES-256"
+              fi
+
+              SIZE=$(wc -c < "${HOURLY_FILE}")
+              echo "Hourly backup: ${HOURLY_FILE} (${SIZE} bytes)"
+
+              # ── Retention: keep last 24 ────────────────────────
+              COUNT=$(ls -1 "${HOURLY_DIR}"/couchdb-backup-*.tar.gz* 2>/dev/null | wc -l)
+              if [ "$COUNT" -gt 24 ]; then
+                echo "Cleaning hourly (keeping last 24)..."
+                ls -1t "${HOURLY_DIR}"/couchdb-backup-*.tar.gz* | tail -n +25 | while read f; do
+                  echo "  Removing: $(basename "$f")"
+                  rm -f "$f"
+                done
+              fi
+
+              # ── Retry missing backups per user policy ──
+              # Use the just-created HOURLY_FILE as the canonical source for recreating missing tier backups.
+              # Preserve encryption: if HOURLY_FILE ends with .gpg, created targets will also end with .gpg.
+              HOURLY_BASENAME=$(basename "${HOURLY_FILE}")
+              if echo "${HOURLY_BASENAME}" | grep -q '\.gpg$'; then
+                SUFFIX='.tar.gz.gpg'
+              else
+                SUFFIX='.tar.gz'
+              fi
+
+              # Daily: target is TODAY if current time >= 08:30, otherwise YESTERDAY
+              NOW_HM=$(date +%H%M)
+              if [ "$NOW_HM" -ge 0830 ]; then
+                DAILY_TARGET=$(date +%Y-%m-%d)
+              else
+                DAILY_TARGET=$(date -d "yesterday" +%Y-%m-%d)
+              fi
+              TARGET_D="${BACKUP_ROOT}/daily/couchdb-backup-${DAILY_TARGET}${SUFFIX}"
+              if [ ! -f "$TARGET_D" ]; then
+                cp "${HOURLY_FILE}" "$TARGET_D"
+                echo "Copied current hourly to recreate daily backup: $(basename "$TARGET_D")"
+                if [ "$NAS_AVAILABLE" = true ]; then
+                  cp "$TARGET_D" "${NAS_DAILY_DIR}/$(basename "$TARGET_D")"
+                  echo "Also copied recreated daily backup to NAS: $(basename "$TARGET_D")"
+                fi
+              else
+                echo "Daily backup exists for ${DAILY_TARGET}, skipping."
+              fi
+
+              # Weekly: target is last Sunday, except if today is Sunday then target is today
+              if [ "$(date +%u)" -eq 7 ]; then
+                WEEK_TARGET=$(date +%Y-%m-%d)
+              else
+                WEEK_TARGET=$(date -d "last sunday" +%Y-%m-%d)
+              fi
+              TARGET_W="${BACKUP_ROOT}/weekly/couchdb-backup-${WEEK_TARGET}${SUFFIX}"
+              if [ ! -f "$TARGET_W" ]; then
+                cp "${HOURLY_FILE}" "$TARGET_W"
+                echo "Copied current hourly to recreate weekly backup: $(basename "$TARGET_W")"
+                if [ "$NAS_AVAILABLE" = true ]; then
+                  cp "$TARGET_W" "${NAS_WEEKLY_DIR}/$(basename "$TARGET_W")"
+                  echo "Also copied recreated weekly backup to NAS: $(basename "$TARGET_W")"
+                fi
+              else
+                echo "Weekly backup exists for ${WEEK_TARGET}, skipping."
+              fi
+
+              # Monthly: target is this month's first day
+              MONTH_TARGET=$(date +%Y-%m-01)
+              TARGET_M="${BACKUP_ROOT}/monthly/couchdb-backup-${MONTH_TARGET}${SUFFIX}"
+              if [ ! -f "$TARGET_M" ]; then
+                cp "${HOURLY_FILE}" "$TARGET_M"
+                echo "Copied current hourly to recreate monthly backup: $(basename "$TARGET_M")"
+                if [ "$NAS_AVAILABLE" = true ]; then
+                  cp "$TARGET_M" "${NAS_MONTHLY_DIR}/$(basename "$TARGET_M")"
+                  echo "Also copied recreated monthly backup to NAS: $(basename "$TARGET_M")"
+                fi
+              else
+                echo "Monthly backup exists for ${MONTH_TARGET}, skipping."
+              fi
+
+              echo ""
+              echo "Hourly backups: $(ls -1 "${HOURLY_DIR}"/couchdb-backup-*.tar.gz* 2>/dev/null | wc -l) (max 24)"
+              echo "Hourly backup completed!"
+            env:
+            - name: COUCHDB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: couchdb-secret
+                  key: username
+            - name: COUCHDB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: couchdb-secret
+                  key: password
+            - name: BACKUP_ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: backup-encryption-secret
+                  key: encryption-key
+                  optional: true
+            volumeMounts:
+            - name: backup-storage
+              mountPath: /backups
+          restartPolicy: OnFailure
+          volumes:
+          - name: backup-storage
+            hostPath:
+              path: /opt/money-app-backups
+              type: DirectoryOrCreate

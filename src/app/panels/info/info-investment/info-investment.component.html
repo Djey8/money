@@ -20,7 +20,7 @@
         <form id="input-container">
             <label for="title" [class.form-error-text]="classReference.isError">{{'AddAsset.name' | translate}}</label>
             <input type="text" id="title" name="title" [class.form-error-border]="classReference.isError" [(ngModel)]="titleTextField">
-            <label for="deposit">{{'Balance.Deposit' | translate}}</label>
+            <label for="deposit">{{'Common.deposit' | translate}}</label>
             <input type=number step=any id="amount" name="deposit" [(ngModel)]="depositTextField"
                 class="mb-xs">
             <label for="amount">{{'AddGrow.Mortage' | translate}}</label>

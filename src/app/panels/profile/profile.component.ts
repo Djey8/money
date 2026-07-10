@@ -65,6 +65,18 @@ export class ProfileComponent {
       .catch((err: any) => {
         //handle error
       })
+
+    this.database.getData("info/email")
+      .then(snapshot => {
+        let email: string = snapshot.val();  // Email is NOT encrypted in DB
+        if (email) {
+          ProfileComponent.mail = email;
+          this.localStorage.saveData("email", email);
+        }
+      })
+      .catch((err: any) => {
+        //handle error
+      })
   }
 
   @ViewChild('confirmationDialog') confirmationDialog!: ElementRef;
@@ -202,11 +214,17 @@ export class ProfileComponent {
 
     
     const savedTheme = localStorage.getItem('theme');
+    const savedLang = ['isEng', 'isDe', 'isEs', 'isFr', 'isCn', 'isAr'].find(k => localStorage.getItem(k) === 'true');
+    const savedCurrency = localStorage.getItem('currency');
+    const savedDateFormat = localStorage.getItem('dateFormat');
+    const savedEuropean = localStorage.getItem('isEuropeanFormat');
     localStorage.clear();
     sessionStorage.clear();
-    if (savedTheme) {
-      localStorage.setItem('theme', savedTheme);
-    }
+    if (savedTheme) localStorage.setItem('theme', savedTheme);
+    if (savedLang) localStorage.setItem(savedLang, 'true');
+    if (savedCurrency) localStorage.setItem('currency', savedCurrency);
+    if (savedDateFormat) localStorage.setItem('dateFormat', savedDateFormat);
+    if (savedEuropean) localStorage.setItem('isEuropeanFormat', savedEuropean);
     
     this.cryptic.updateConfig("default", true, false)    
 
@@ -220,6 +238,11 @@ export class ProfileComponent {
   closeWindow() {
     ProfileComponent.isProfile = !ProfileComponent.isProfile;
     ProfileComponent.zIndex = 0;
+  }
+
+  openAbout() {
+    this.closeWindow();
+    this.router.navigate(['/about']);
   }
 
   goToAuthetication() {
