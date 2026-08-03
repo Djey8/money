@@ -10,6 +10,24 @@ RUN cd /usr/local/lib/node_modules/npm/node_modules/picomatch && \
     tar xzf picomatch-4.0.4.tgz --strip-components=1 && \
     rm -f picomatch-4.0.4.tgz
 
+# Patch brace-expansion ReDoS (CVE-2026-13149, CVE-2026-14257) in global npm
+RUN cd /usr/local/lib/node_modules/npm/node_modules/brace-expansion && \
+    npm pack brace-expansion@2.1.3 2>/dev/null && \
+    tar xzf brace-expansion-2.1.3.tgz --strip-components=1 && \
+    rm -f brace-expansion-2.1.3.tgz
+
+# Patch node-tar DoS via gzip bomb / malformed headers (CVE-2026-59873, CVE-2026-59874) in global npm
+RUN cd /usr/local/lib/node_modules/npm/node_modules/tar && \
+    npm pack tar@7.5.19 2>/dev/null && \
+    tar xzf tar-7.5.19.tgz --strip-components=1 && \
+    rm -f tar-7.5.19.tgz
+
+# Patch sigstore ignored certificateOIDs verification (CVE-2026-48815) in global npm
+RUN cd /usr/local/lib/node_modules/npm/node_modules/sigstore && \
+    npm pack sigstore@4.1.1 2>/dev/null && \
+    tar xzf sigstore-4.1.1.tgz --strip-components=1 && \
+    rm -f sigstore-4.1.1.tgz
+
 WORKDIR /app
 
 # Copy package files

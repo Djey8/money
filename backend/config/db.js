@@ -4,14 +4,18 @@ const couchdbUrl = process.env.COUCHDB_URL || 'http://localhost:5984';
 const couchdbUser = process.env.COUCHDB_USER || 'admin';
 const couchdbPassword = process.env.COUCHDB_PASSWORD;
 
-// Create connection with authentication
+// Create connection with authentication.
+// nano v11 dropped its axios-based `requestDefaults.auth` option (axios itself
+// is gone, replaced with native fetch). The replacement is a stateless Basic
+// Auth header sent with every request — deliberately not nano's alternative
+// `nano.auth()` cookie-session flow, which expires after CouchDB's idle
+// timeout and would need re-authentication logic for a long-running service.
+const basicAuthHeader = 'Basic ' + Buffer.from(`${couchdbUser}:${couchdbPassword}`).toString('base64');
+
 const connection = nano({
   url: couchdbUrl,
-  requestDefaults: {
-    auth: {
-      username: couchdbUser,
-      password: couchdbPassword
-    }
+  headers: {
+    Authorization: basicAuthHeader
   }
 });
 
