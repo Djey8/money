@@ -10,11 +10,12 @@ RUN cd /usr/local/lib/node_modules/npm/node_modules/picomatch && \
     tar xzf picomatch-4.0.4.tgz --strip-components=1 && \
     rm -f picomatch-4.0.4.tgz
 
-# Patch brace-expansion ReDoS (CVE-2026-13149, CVE-2026-14257) in global npm
+# Patch brace-expansion ReDoS (CVE-2026-13149, CVE-2026-14257, and the
+# CVE-2026-69152 bypass of the CVE-2026-14257 mitigation) in global npm
 RUN cd /usr/local/lib/node_modules/npm/node_modules/brace-expansion && \
-    npm pack brace-expansion@2.1.3 2>/dev/null && \
-    tar xzf brace-expansion-2.1.3.tgz --strip-components=1 && \
-    rm -f brace-expansion-2.1.3.tgz
+    npm pack brace-expansion@2.1.4 2>/dev/null && \
+    tar xzf brace-expansion-2.1.4.tgz --strip-components=1 && \
+    rm -f brace-expansion-2.1.4.tgz
 
 # Patch node-tar DoS via gzip bomb / malformed headers (CVE-2026-59873, CVE-2026-59874) in global npm
 RUN cd /usr/local/lib/node_modules/npm/node_modules/tar && \
