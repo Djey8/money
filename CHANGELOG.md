@@ -1,3 +1,14 @@
+## [1.12.0] - 2026-08-03
+
+### Features
+- feat(community): add public Community section with guest/admin support
+
+### Bug Fixes
+- fix(backend): bump brace-expansion to 2.1.4 (CVE-2026-69152 bypass)
+- fix(backend): resolve 7 container CVEs (axios, form-data, brace-expansion, tar, sigstore)
+- fix(docker): patch c-ares, curl, libcurl and libexpat CVEs in frontend image
+- fix(ci): resolve fast-uri audit finding, grant gitleaks PR read access
+
 ## [1.11.3] - 2026-06-07
 
 ### Bug Fixes
