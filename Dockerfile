@@ -25,7 +25,7 @@ RUN npm run build:selfhosted
 FROM docker.io/library/nginx:alpine@sha256:5616878291a2eed594aee8db4dade5878cf7edcb475e59193904b198d9b830de
 
 # Patch known CVEs in Alpine system packages
-RUN apk upgrade --no-cache libcrypto3 libssl3 libpng musl musl-utils zlib nghttp2-libs libxml2
+RUN apk upgrade --no-cache libcrypto3 libssl3 libpng musl musl-utils zlib nghttp2-libs libxml2 c-ares curl libcurl libexpat
 
 # Copy custom nginx configuration
 COPY ./nginx.conf /etc/nginx/nginx.conf
