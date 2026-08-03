@@ -4,24 +4,29 @@ const couchdbUrl = process.env.COUCHDB_URL || 'http://localhost:5984';
 const couchdbUser = process.env.COUCHDB_USER || 'admin';
 const couchdbPassword = process.env.COUCHDB_PASSWORD;
 
-// Create connection with authentication
+// Create connection with authentication.
+// nano v11 dropped its axios-based `requestDefaults.auth` option (axios itself
+// is gone, replaced with native fetch). The replacement is a stateless Basic
+// Auth header sent with every request — deliberately not nano's alternative
+// `nano.auth()` cookie-session flow, which expires after CouchDB's idle
+// timeout and would need re-authentication logic for a long-running service.
+const basicAuthHeader = 'Basic ' + Buffer.from(`${couchdbUser}:${couchdbPassword}`).toString('base64');
+
 const connection = nano({
   url: couchdbUrl,
-  requestDefaults: {
-    auth: {
-      username: couchdbUser,
-      password: couchdbPassword
-    }
+  headers: {
+    Authorization: basicAuthHeader
   }
 });
 
 let usersDb;
 let authDb;
+let communityDb;
 
 async function initializeDatabase() {
   try {
     console.log('Connecting to CouchDB...');
-    
+
     // Create users database if it doesn't exist
     try {
       await connection.db.create('users');
@@ -44,8 +49,20 @@ async function initializeDatabase() {
       console.log('Auth database already exists');
     }
 
+    // Create community database if it doesn't exist
+    try {
+      await connection.db.create('community');
+      console.log('Created community database');
+    } catch (err) {
+      if (err.statusCode !== 412) {
+        throw err;
+      }
+      console.log('Community database already exists');
+    }
+
     usersDb = connection.db.use('users');
     authDb = connection.db.use('auth');
+    communityDb = connection.db.use('community');
 
     // Create indexes
     await createIndexes();
@@ -77,6 +94,16 @@ async function createIndexes() {
         fields: ['userId']
       },
       name: 'userId-index'
+    });
+
+    // Index for community database — serves both "list threads" (selector on
+    // type only) and "list posts of a thread" (selector on type + threadId)
+    // queries as a prefix match on the same compound index.
+    await communityDb.createIndex({
+      index: {
+        fields: ['type', 'threadId', 'createdAt']
+      },
+      name: 'community-type-thread-index'
     });
 
     console.log('Indexes created successfully');
@@ -157,6 +184,19 @@ async function setupDatabaseSecurity() {
       }
     };
 
+    // Community data is publicly readable through the backend API, but the
+    // database itself is still only directly reachable by the service account.
+    const communitySecurity = {
+      admins: {
+        names: [couchdbUser],
+        roles: ['_admin']
+      },
+      members: {
+        names: [couchdbUser],
+        roles: []
+      }
+    };
+
     // Apply security settings
     try {
       await connection.request({
@@ -182,6 +222,18 @@ async function setupDatabaseSecurity() {
       console.error('Error setting auth database security:', err.message);
     }
 
+    try {
+      await connection.request({
+        db: 'community',
+        path: '_security',
+        method: 'PUT',
+        body: communitySecurity
+      });
+      console.log('Community database security configured');
+    } catch (err) {
+      console.error('Error setting community database security:', err.message);
+    }
+
   } catch (error) {
     console.error('Error setting up database security:', error);
     // Don't fail initialization if security setup fails
@@ -196,8 +248,13 @@ function getAuthDb() {
   return authDb;
 }
 
+function getCommunityDb() {
+  return communityDb;
+}
+
 module.exports = {
   initializeDatabase,
   getUsersDb,
-  getAuthDb
+  getAuthDb,
+  getCommunityDb
 };

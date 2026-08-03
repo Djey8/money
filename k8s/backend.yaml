@@ -115,6 +115,12 @@ spec:
             secretKeyRef:
               name: backend-secret
               key: COUCHDB_PASSWORD
+        - name: ADMIN_EMAILS
+          valueFrom:
+            secretKeyRef:
+              name: backend-secret
+              key: ADMIN_EMAILS
+              optional: true
         resources:
           requests:
             memory: "128Mi"

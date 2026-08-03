@@ -156,6 +156,37 @@ async function setEncryptionConfig(userId, config) {
   await authDb.insert(userDoc);
 }
 
+// Guest identity — issues a lightweight JWT (role: 'guest') for unauthenticated
+// visitors who want to post in the Community section without registering.
+// Idempotent: if the caller already has a valid access token (guest or full
+// user), that identity is returned unchanged instead of minting a new one.
+const GUEST_TOKEN_EXPIRES_IN = '180d';
+const GUEST_TOKEN_MAX_AGE_MS = 180 * 24 * 60 * 60 * 1000;
+
+router.post('/guest', (req, res) => {
+  const existingToken = req.cookies?.access_token;
+  if (existingToken) {
+    try {
+      const decoded = jwt.verify(existingToken, JWT_SECRET);
+      return res.json({ userId: decoded.userId, role: decoded.role || 'user' });
+    } catch {
+      // Expired/invalid — fall through and issue a fresh guest identity
+    }
+  }
+
+  const guestId = `guest_${Date.now()}_${crypto.randomUUID().replace(/-/g, '').substring(0, 9)}`;
+  const accessToken = jwt.sign({ userId: guestId, role: 'guest' }, JWT_SECRET, { expiresIn: GUEST_TOKEN_EXPIRES_IN });
+
+  res.cookie('access_token', accessToken, {
+    ...COOKIE_OPTIONS,
+    maxAge: GUEST_TOKEN_MAX_AGE_MS
+  });
+
+  logAuthEvent('guest_login', guestId, true, {});
+
+  res.json({ userId: guestId, role: 'guest' });
+});
+
 // Register
 router.post('/register', async (req, res) => {
   try {
@@ -332,7 +363,7 @@ router.post('/login', async (req, res) => {
 
 // Verify token (for frontend to check if token is still valid)
 router.get('/verify', authenticateToken, async (req, res) => {
-  res.json({ valid: true, userId: req.userId, email: req.userEmail });
+  res.json({ valid: true, userId: req.userId, email: req.userEmail, isAdmin: req.isAdmin });
 });
 
 // Verify password (for sensitive operations like accessing encryption settings)

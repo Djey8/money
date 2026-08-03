@@ -51,4 +51,20 @@ async function registerTestUser(suffix = '') {
   return { token, userId: res.body.userId, email };
 }
 
-module.exports = { app, checkDb, registerTestUser };
+/**
+ * Obtain a guest identity (no credentials) and return { token, userId }.
+ * Extracts the access_token from the Set-Cookie header, same as registerTestUser.
+ */
+async function guestLogin() {
+  const res = await request(app).post('/api/auth/guest').send();
+
+  expect(res.status).toBe(200);
+
+  const cookies = res.headers['set-cookie'] || [];
+  const accessCookie = cookies.find(c => c.startsWith('access_token='));
+  const token = accessCookie ? accessCookie.split(';')[0].split('=')[1] : null;
+
+  return { token, userId: res.body.userId };
+}
+
+module.exports = { app, checkDb, registerTestUser, guestLogin };

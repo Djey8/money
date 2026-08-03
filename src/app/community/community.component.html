@@ -1,0 +1,78 @@
+<!-- Toolbar -->
+<div class="toolbar" role="banner">
+  <img id="profile-pic" width="40" alt="Profile Logo" src="../assets/profile-blank.jpg"
+    role="button" tabindex="0" aria-label="Open profile" (click)="appReference.clickProfile()" (keydown.enter)="appReference.clickProfile()" />
+  <a routerLink="/" class="logo">Money<span>App</span></a>
+  <div class="spacer"></div>
+  <input type="checkbox" id="nav-toggle" class="nav-toggle" aria-label="Toggle navigation">
+  <label for="nav-toggle" class="nav-toggle-label" aria-hidden="true"><span></span></label>
+  <label for="nav-toggle" class="nav-backdrop" aria-hidden="true"></label>
+  <ul class="nav-links">
+    <li><a routerLink="/" (click)="closeNav()">{{ 'Landing.nav.howItWorks' | translate }}</a></li>
+    <li><a routerLink="/changelog" (click)="closeNav()">{{ 'Landing.nav.changelog' | translate }}</a></li>
+    <li><a routerLink="/docs" (click)="closeNav()">{{ 'Landing.nav.docs' | translate }}</a></li>
+    <li><a routerLink="/community" class="active-nav" (click)="closeNav()">{{ 'Landing.nav.community' | translate }}</a></li>
+    <li><a href="javascript:void(0)" (click)="closeNav(); navigateToSection('get-started')">{{ 'Landing.nav.getStarted' | translate }}</a></li>
+    <li><button class="nav-demo-btn" (click)="closeNav(); launchDemo()">{{ 'Landing.nav.demo' | translate }}</button></li>
+  </ul>
+</div>
+
+<div class="community-page">
+
+  <header class="community-header">
+    <h1 class="community-title">{{ 'Community.title' | translate }}</h1>
+    <p class="community-subtitle">{{ 'Community.subtitle' | translate }}</p>
+    <button class="community-new-btn" (click)="toggleComposer()">
+      {{ (showComposer ? 'Community.composer.cancel' : 'Community.newThreadButton') | translate }}
+    </button>
+  </header>
+
+  <form class="community-composer" *ngIf="showComposer" (ngSubmit)="submitThread()">
+    <label class="community-field">
+      <span>{{ 'Community.composer.titleLabel' | translate }}</span>
+      <input type="text" name="title" [(ngModel)]="newTitle" maxlength="120"
+        placeholder="{{ 'Community.composer.titlePlaceholder' | translate }}" />
+    </label>
+    <label class="community-field">
+      <span>{{ 'Community.composer.bodyLabel' | translate }}</span>
+      <textarea name="body" [(ngModel)]="newBody" maxlength="5000" rows="5"
+        placeholder="{{ 'Community.composer.bodyPlaceholder' | translate }}"></textarea>
+    </label>
+    <label class="community-field" *ngIf="isGuestUser">
+      <span>{{ 'Community.composer.nameLabel' | translate }}</span>
+      <input type="text" name="displayName" [(ngModel)]="displayName" maxlength="40"
+        placeholder="{{ 'Community.composer.namePlaceholder' | translate }}" />
+    </label>
+    <label class="community-field community-field--checkbox" *ngIf="!isGuestUser">
+      <input type="checkbox" name="anonymous" [(ngModel)]="anonymous" />
+      <span>{{ 'Community.postAnonymously' | translate }}</span>
+    </label>
+
+    <p class="community-form-error" *ngIf="formError">{{ formError | translate }}</p>
+
+    <div class="community-form-actions">
+      <button type="submit" class="community-submit-btn" [disabled]="submitting">
+        {{ 'Community.composer.submit' | translate }}
+      </button>
+    </div>
+  </form>
+
+  <div class="community-list" *ngIf="!loading && !error">
+    <p class="community-empty" *ngIf="threads.length === 0">{{ 'Community.empty' | translate }}</p>
+
+    <a *ngFor="let thread of threads" [routerLink]="['/community', thread.id]" class="community-thread-card">
+      <h2 class="community-thread-title">{{ thread.title }}</h2>
+      <div class="community-thread-meta">
+        <span class="community-thread-author">{{ thread.authorName }}</span>
+        <span class="community-thread-dot">·</span>
+        <span class="community-thread-date">{{ thread.lastActivityAt | date:'short' }}</span>
+        <span class="community-thread-dot">·</span>
+        <span class="community-thread-replies">{{ thread.replyCount }} {{ 'Community.replies' | translate }}</span>
+      </div>
+    </a>
+  </div>
+
+  <p class="community-loading" *ngIf="loading">{{ 'Community.loading' | translate }}</p>
+  <p class="community-error" *ngIf="error">{{ 'Community.error' | translate }}</p>
+
+</div>
