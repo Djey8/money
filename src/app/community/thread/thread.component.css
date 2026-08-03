@@ -1,0 +1,170 @@
+/* ============================================================
+   Community Thread Detail Styles
+   ============================================================ */
+
+.thread-page {
+  max-width: 720px;
+}
+
+.thread-back {
+  display: inline-block;
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem;
+}
+.thread-back:hover {
+  color: var(--color-primary);
+}
+
+.thread-header {
+  margin-bottom: 1.5rem;
+}
+.thread-title {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--color-text);
+  margin: 0;
+}
+
+/* ── Posts ── */
+.thread-post {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1rem;
+}
+.thread-post--opening {
+  border-color: var(--color-primary);
+}
+.thread-post-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+  margin-bottom: 0.6rem;
+}
+.thread-post-badge {
+  background: var(--color-primary);
+  color: #fff;
+  border-radius: 999px;
+  padding: 0.1rem 0.6rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.thread-post-body {
+  color: var(--color-text);
+  line-height: 1.6;
+  white-space: pre-wrap;
+  margin: 0 0 0.75rem;
+}
+.thread-post-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.thread-post-edited {
+  font-style: italic;
+  opacity: 0.8;
+}
+
+/* ── Reactions ── */
+.thread-reactions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.75rem;
+}
+.thread-reaction-btn {
+  background: var(--color-background-alt);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  padding: 0.25rem 0.6rem;
+  font-size: 0.9rem;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--color-text-secondary);
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+.thread-reaction-btn span {
+  font-size: 0.75rem;
+  font-weight: 700;
+  margin-left: 0.15rem;
+}
+.thread-reaction-btn:hover {
+  border-color: var(--color-primary);
+}
+.thread-reaction-btn.is-mine {
+  border-color: var(--color-primary);
+  background: var(--color-surface-hover, var(--color-background-alt));
+  color: var(--color-primary);
+}
+.thread-reaction-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* ── Edit ── */
+.thread-edit-btn {
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+  cursor: pointer;
+  text-decoration: underline;
+}
+.thread-edit-form {
+  margin-top: 0.5rem;
+}
+
+/* ── Delete ── */
+.thread-delete-btn {
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+  cursor: pointer;
+  text-decoration: underline;
+}
+.thread-delete-confirm {
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.thread-delete-confirm-yes,
+.thread-delete-confirm-no {
+  border: none;
+  border-radius: 6px;
+  padding: 0.2rem 0.6rem;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+.thread-delete-confirm-yes {
+  background: var(--color-error, #e05555);
+  color: #fff;
+}
+.thread-delete-confirm-no {
+  background: var(--color-background-alt);
+  color: var(--color-text);
+}
+
+/* ── Feed ── */
+.thread-feed {
+  margin: 2rem 0;
+}
+.thread-feed-title {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted);
+  margin: 0 0 1rem;
+}
+
+.thread-reply-form {
+  margin-top: 1rem;
+}

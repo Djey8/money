@@ -245,6 +245,11 @@ export class ProfileComponent {
     this.router.navigate(['/about']);
   }
 
+  goToCommunity() {
+    this.closeWindow();
+    this.router.navigate(['/community']);
+  }
+
   goToAuthetication() {
     this.router.navigate(['/authentication']);
     ProfileComponent.isProfile = false;

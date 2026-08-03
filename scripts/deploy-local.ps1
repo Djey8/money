@@ -510,6 +510,19 @@ Write-Host "==> Deploying to K3s..." -ForegroundColor Yellow
 Write-Host "Creating namespace..." -ForegroundColor White
 wsl -d Ubuntu bash -c "kubectl apply -f $wslProjectDir/k8s/namespace.yaml"
 
+# Apply secrets (JWT_SECRET, COUCHDB_PASSWORD, ADMIN_EMAILS, ...) if a local
+# k8s/secrets.yaml exists. This file is gitignored - copy it once from
+# k8s/secrets.yaml.example and fill in real values before first deploy.
+$secretsExists = wsl -d Ubuntu bash -c "test -f $wslProjectDir/k8s/secrets.yaml && echo 'exists'"
+if ($secretsExists -eq 'exists') {
+    Write-Host "Applying secrets..." -ForegroundColor White
+    wsl -d Ubuntu bash -c "kubectl apply -f $wslProjectDir/k8s/secrets.yaml"
+    Write-Host "[OK] Secrets applied" -ForegroundColor Green
+} else {
+    Write-Host "[WARN] k8s/secrets.yaml not found - secrets must already exist in the cluster" -ForegroundColor Yellow
+    Write-Host "[INFO] Copy k8s/secrets.yaml.example to k8s/secrets.yaml and fill in real values" -ForegroundColor Cyan
+}
+
 # Create self-signed certificate for local development (after namespace exists)
 if (-not $SkipTLS) {
     Write-Host "Creating TLS certificate..." -ForegroundColor White

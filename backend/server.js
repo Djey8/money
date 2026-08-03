@@ -7,6 +7,7 @@ const rateLimit = require('express-rate-limit');
 const authRoutes = require('./routes/auth');
 const dataRoutes = require('./routes/data');
 const logsRoutes = require('./routes/logs');
+const communityRoutes = require('./routes/community');
 const { initializeDatabase } = require('./config/db');
 const logger = require('./config/logger');
 const { requestLoggingMiddleware, errorLoggingMiddleware } = require('./middleware/logging');
@@ -49,6 +50,7 @@ const authLimiter = rateLimit({
 });
 app.use('/api/auth/login', authLimiter);
 app.use('/api/auth/register', authLimiter);
+app.use('/api/auth/guest', authLimiter);
 
 // Body parser — 100mb to support large encrypted batch writes and restore imports
 app.use(express.json({ limit: '100mb' }));
@@ -100,6 +102,7 @@ app.get('/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/data', dataRoutes);
 app.use('/api/logs', logsRoutes);
+app.use('/api/community', communityRoutes);
 
 // Enhanced error handler
 app.use(errorLoggingMiddleware);
