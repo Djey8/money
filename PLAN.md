@@ -199,6 +199,8 @@ Rewriting this correctly needs: characterization tests against all 12 (likely mo
 
 **Slice 1 v1 API foundation complete:** mounted `/api/v1` with RFC 9457 Problem Details; session/PAT authentication; token-keyed rate limiting; `GET /me`; and session-only `POST/GET/DELETE /auth/tokens`. Browser-issued PATs cannot have `admin` scope, guest JWTs cannot manage tokens, revocation is owner-scoped, and token lifecycle writes have durable audit records. The real-CouchDB integration suite covers session/PAT identity, no-auth rejection, PAT and guest token-management denial, admin-scope denial, and cross-user revocation isolation. OpenAPI and agent/operator guidance are in `docs/api/`.
 
+**Transactions prerequisite started:** `packages/domain` now exports `normalizeTransaction`, which validates the six-field legacy transaction shape and preserves or assigns a stable ID. Existing UI records remain compatible because their on-disk shape is unchanged until the future transaction repository deliberately persists a backfilled ID. Domain verification is green (42 tests, lint, Prettier, and TypeScript build). The next implementation step is a repository-level ID backfill plus schema-version-aware decimal/minor-unit conversion, followed by the first read endpoint; no transaction write endpoint ships until its derived-state recalculation parity is extracted and tested.
+
 While the slice 0 live-database validation above is blocked on environment access, moved ahead on the pieces of slice 1 that are equally mock-testable and don't depend on slice 0's Grow-DSL/live-DB items being finished first:
 
 - **`mm-admin user create/list`** — direct account creation mirroring `/api/auth/register`'s validation and document shape, for scripted self-hosted setup.
