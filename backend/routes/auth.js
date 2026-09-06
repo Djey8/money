@@ -315,11 +315,9 @@ router.post('/login', async (req, res) => {
       const retryAfter = Math.ceil((record.lockedUntil - Date.now()) / 1000);
       logSecurityEvent('account_locked', { email, attempts: record.count });
       res.set('Retry-After', String(retryAfter));
-      return res
-        .status(429)
-        .json({
-          error: 'Account temporarily locked due to too many failed attempts. Try again later.',
-        });
+      return res.status(429).json({
+        error: 'Account temporarily locked due to too many failed attempts. Try again later.',
+      });
     }
 
     const authDb = getAuthDb();
