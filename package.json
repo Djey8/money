@@ -86,9 +86,11 @@
   },
   "lint-staged": {
     "src/**/*.ts": [
+      "eslint --fix",
       "npx jest --config jest.config.js --bail --passWithNoTests --findRelatedTests"
     ],
     "backend/**/*.js": [
+      "eslint --fix",
       "npx jest --forceExit --bail --passWithNoTests -- tests/unit"
     ]
   }
