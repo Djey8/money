@@ -36,6 +36,39 @@ describe('v1 API authentication and PAT management', () => {
     });
   });
 
+  it("returns the caller's legacy transactions as integer minor units", async () => {
+    const write = await sessionRequest('post', '/api/data/write/transactions').send([
+      {
+        id: 'tx_integration_1',
+        account: 'Daily',
+        amount: -12.5,
+        date: '2026-09-06',
+        time: '09:30',
+        category: '@Food',
+        comment: 'Shop',
+      },
+    ]);
+    expect(write.status).toBe(200);
+
+    const response = await sessionRequest('get', '/api/v1/transactions');
+    expect(response.status).toBe(200);
+    expect(response.body.transactions).toEqual([
+      expect.objectContaining({ id: 'tx_integration_1', amountMinor: -1250, currency: 'EUR' }),
+    ]);
+  });
+
+  it('rejects a PAT without transactions:r scope', async () => {
+    const created = await sessionRequest('post', '/api/v1/auth/tokens').send({
+      name: 'write-only-agent',
+      scopes: ['transactions:w'],
+    });
+    const response = await request(app)
+      .get('/api/v1/transactions')
+      .set('Authorization', `Bearer ${created.body.token}`);
+    expect(response.status).toBe(403);
+    expect(response.body.code).toBe('scope_insufficient');
+  });
+
   it('creates a PAT once and exposes its identity to /me', async () => {
     const create = await sessionRequest('post', '/api/v1/auth/tokens').send({
       name: 'integration-agent',

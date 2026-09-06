@@ -5,6 +5,48 @@ info:
 servers:
   - url: /api/v1
 paths:
+  /transactions:
+    get:
+      operationId: listTransactions
+      summary: List transactions
+      description: Returns the caller's transactions in integer minor units. Existing records must first receive stable IDs through `mm-admin migrate-transaction-ids`.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+      responses:
+        '200':
+          description: Transactions owned by the caller
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [transactions]
+                properties:
+                  transactions:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ApiTransaction'
+              example:
+                transactions:
+                  - id: tx_01234567-89ab-cdef-0123-456789abcdef
+                    account: Daily
+                    amountMinor: -1250
+                    currency: EUR
+                    date: '2026-09-06'
+                    time: '09:30'
+                    category: '@Groceries'
+                    comment: Weekly shop
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
   /me:
     get:
       operationId: getCurrentIdentity
@@ -179,6 +221,28 @@ components:
         expiresInDays:
           type: integer
           minimum: 1
+    ApiTransaction:
+      type: object
+      required: [id, account, amountMinor, currency, date, time, category, comment]
+      properties:
+        id:
+          type: string
+        account:
+          type: string
+        amountMinor:
+          type: integer
+        currency:
+          type: string
+          pattern: '^[A-Z]{3}$'
+        date:
+          type: string
+          format: date
+        time:
+          type: string
+        category:
+          type: string
+        comment:
+          type: string
     Problem:
       type: object
       required: [type, title, status, detail, code]
@@ -231,6 +295,18 @@ components:
             status: 400
             detail: At least one scope is required.
             code: validation_invalid
+    InsufficientScope:
+      description: The supplied token does not grant the required scope
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://money-manager.dev/problems/scope_insufficient
+            title: Insufficient scope
+            status: 403
+            detail: This operation requires the 'transactions:r' scope.
+            code: scope_insufficient
     NotFound:
       description: Requested resource was not found
       content:

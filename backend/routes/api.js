@@ -1,11 +1,17 @@
 'use strict';
 
 const express = require('express');
-const { getAuthDb } = require('../config/db');
 const { getAuditDb } = require('../config/db');
 const { recordAuditEntry } = require('../config/audit');
 const { createToken, listTokens, revokeToken } = require('../cli/commands/token');
-const { authenticateApiToken, requireSession, problem } = require('../middleware/api-auth');
+const { listTransactions } = require('../repositories/transaction-repository');
+const { getUsersDb, getAuthDb } = require('../config/db');
+const {
+  authenticateApiToken,
+  requireScope,
+  requireSession,
+  problem,
+} = require('../middleware/api-auth');
 
 const router = express.Router();
 
@@ -18,6 +24,29 @@ router.get('/me', (req, res) => {
     tokenName: req.auth.name,
     scopes: req.auth.scopes,
   });
+});
+
+router.get('/transactions', requireScope('transactions:r'), async (req, res, next) => {
+  try {
+    const limit = Number(req.query.limit || 50);
+    if (!Number.isInteger(limit) || limit < 1 || limit > 100) {
+      return problem(
+        res,
+        400,
+        'validation_invalid',
+        'Invalid transaction request',
+        'limit must be 1 to 100.',
+      );
+    }
+    return res.json(
+      await listTransactions({ usersDb: getUsersDb(), authDb: getAuthDb() }, req.userId, {
+        cursor: req.query.cursor,
+        limit,
+      }),
+    );
+  } catch (error) {
+    return next(error);
+  }
 });
 
 router.post('/auth/tokens', requireSession, async (req, res) => {
