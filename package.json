@@ -1,12 +1,17 @@
 {
   "name": "money",
   "version": "1.12.0",
+  "workspaces": [
+    "packages/domain"
+  ],
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "build": "ng build --configuration firebase",
-    "build:selfhosted": "ng build --configuration selfhosted",
-    "build:firebase": "ng build --configuration firebase",
+    "build:domain": "npm run build --workspace=packages/domain",
+    "test:domain": "npm run test --workspace=packages/domain",
+    "build": "npm run build:domain && ng build --configuration firebase",
+    "build:selfhosted": "npm run build:domain && ng build --configuration selfhosted",
+    "build:firebase": "npm run build:domain && ng build --configuration firebase",
     "watch": "ng build --watch --configuration development",
     "test": "npx jest --config jest.config.js",
     "test:watch": "npx jest --config jest.config.js --watch",
@@ -28,7 +33,7 @@
     "format": "prettier --check .",
     "format:fix": "prettier --write .",
     "typecheck": "tsc --noEmit -p tsconfig.app.json",
-    "verify": "npm run lint && npm run format && npm run typecheck && npm test -- --watchAll=false && npm run --prefix backend verify"
+    "verify": "npm run build:domain && npm run test:domain && npm run lint && npm run format && npm run typecheck && npm test -- --watchAll=false && npm run --prefix backend verify"
   },
   "private": true,
   "dependencies": {
@@ -92,6 +97,10 @@
     "backend/**/*.js": [
       "eslint --fix",
       "npx jest --forceExit --bail --passWithNoTests -- tests/unit"
+    ],
+    "packages/domain/src/**/*.ts": [
+      "eslint --fix",
+      "npm run test --workspace=packages/domain --if-present -- --bail --findRelatedTests --passWithNoTests"
     ]
   }
 }

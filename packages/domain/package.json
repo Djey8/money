@@ -1,0 +1,28 @@
+{
+  "name": "@money/domain",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Framework-agnostic domain logic shared by the Money Manager Angular frontend and Express backend. See docs/adr/0005-domain-package-structure.md.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "rm -rf dist",
+    "test": "jest",
+    "lint": "eslint .",
+    "format": "prettier --check . --config ../../.prettierrc.json --ignore-path ../../.prettierignore",
+    "verify": "npm run lint && npm run format && npm run build && npm test"
+  },
+  "dependencies": {
+    "crypto-js": "^4.1.1"
+  },
+  "devDependencies": {
+    "@types/crypto-js": "^4.2.2",
+    "@types/jest": "^29.5.14",
+    "@types/node": "^20.6.4",
+    "globals": "^17.12.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.4.6",
+    "typescript": "~5.9.3"
+  }
+}
