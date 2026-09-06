@@ -324,7 +324,7 @@ export class AppDataService {
           AppStateService.instance.allTransactions = [];
           this.localStorage.saveData("transactions", JSON.stringify([]));
         } else {
-          let myTransactions: Transaction[] = [];
+          const myTransactions: Transaction[] = [];
           let invalidCount = 0;
           const totalCount = Object.keys(raw).length;
           
@@ -350,7 +350,7 @@ export class AppDataService {
                 continue; // Skip this transaction
               }
 
-              let newT: Transaction = { 
+              const newT: Transaction = { 
                 account, 
                 amount: parseFloat(amount) || 0, 
                 date: dateStr, 
@@ -392,7 +392,7 @@ export class AppDataService {
           this.localStorage.saveData("subscriptions", JSON.stringify([]));
         } else {
           // Decrypt subscription data
-          let rawSubscriptions: any[] = [];
+          const rawSubscriptions: any[] = [];
           for (const k in raw) {
             const decrypted = {
               title: this.cryptic.decrypt(raw[k].title, 'database'),
@@ -430,9 +430,9 @@ export class AppDataService {
           AppStateService.instance.allIntrests = [];
           this.localStorage.saveData("interests", JSON.stringify([]));
         } else {
-          let myInterests: Interest[] = [];
+          const myInterests: Interest[] = [];
           for (const k in raw) {
-            let newR: Interest = { tag: this.cryptic.decrypt(raw[k].tag, 'database'), amount: parseFloat(this.cryptic.decrypt(raw[k].amount, 'database')) };
+            const newR: Interest = { tag: this.cryptic.decrypt(raw[k].tag, 'database'), amount: parseFloat(this.cryptic.decrypt(raw[k].amount, 'database')) };
             myInterests.push(newR);
           }
           AppStateService.instance.allIntrests = myInterests;
@@ -445,9 +445,9 @@ export class AppDataService {
           AppStateService.instance.allProperties = [];
           this.localStorage.saveData("properties", JSON.stringify([]));
         } else {
-          let myProperties: Property[] = [];
+          const myProperties: Property[] = [];
           for (const k in raw) {
-            let newP: Property = { tag: this.cryptic.decrypt(raw[k].tag, 'database'), amount: parseFloat(this.cryptic.decrypt(raw[k].amount, 'database')) };
+            const newP: Property = { tag: this.cryptic.decrypt(raw[k].tag, 'database'), amount: parseFloat(this.cryptic.decrypt(raw[k].amount, 'database')) };
             myProperties.push(newP);
           }
           AppStateService.instance.allProperties = myProperties;
@@ -460,9 +460,9 @@ export class AppDataService {
           AppStateService.instance.allRevenues = [];
           this.localStorage.saveData("revenues", JSON.stringify([]));
         } else {
-          let myRevenues: Revenue[] = [];
+          const myRevenues: Revenue[] = [];
           for (const k in raw) {
-            let newR: Revenue = { tag: this.cryptic.decrypt(raw[k].tag, 'database'), amount: parseFloat(this.cryptic.decrypt(raw[k].amount, 'database')) };
+            const newR: Revenue = { tag: this.cryptic.decrypt(raw[k].tag, 'database'), amount: parseFloat(this.cryptic.decrypt(raw[k].amount, 'database')) };
             myRevenues.push(newR);
           }
           AppStateService.instance.allRevenues = myRevenues;
@@ -475,9 +475,9 @@ export class AppDataService {
           AppStateService.instance.dailyExpenses = [];
           this.localStorage.saveData("dailyEx", JSON.stringify([]));
         } else {
-          let myExpenses: Expense[] = [];
+          const myExpenses: Expense[] = [];
           for (const k in raw) {
-            let newR: Expense = { tag: this.cryptic.decrypt(raw[k].tag, 'database'), amount: parseFloat(this.cryptic.decrypt(raw[k].amount, 'database')) };
+            const newR: Expense = { tag: this.cryptic.decrypt(raw[k].tag, 'database'), amount: parseFloat(this.cryptic.decrypt(raw[k].amount, 'database')) };
             myExpenses.push(newR);
           }
           AppStateService.instance.dailyExpenses = myExpenses;
@@ -490,9 +490,9 @@ export class AppDataService {
           AppStateService.instance.splurgeExpenses = [];
           this.localStorage.saveData("splurgeEx", JSON.stringify([]));
         } else {
-          let myExpenses: Expense[] = [];
+          const myExpenses: Expense[] = [];
           for (const k in raw) {
-            let newR: Expense = { tag: this.cryptic.decrypt(raw[k].tag, 'database'), amount: parseFloat(this.cryptic.decrypt(raw[k].amount, 'database')) };
+            const newR: Expense = { tag: this.cryptic.decrypt(raw[k].tag, 'database'), amount: parseFloat(this.cryptic.decrypt(raw[k].amount, 'database')) };
             myExpenses.push(newR);
           }
           AppStateService.instance.splurgeExpenses = myExpenses;
@@ -505,9 +505,9 @@ export class AppDataService {
           AppStateService.instance.smileExpenses = [];
           this.localStorage.saveData("smileEx", JSON.stringify([]));
         } else {
-          let myExpenses: Expense[] = [];
+          const myExpenses: Expense[] = [];
           for (const k in raw) {
-            let newR: Expense = { tag: this.cryptic.decrypt(raw[k].tag, 'database'), amount: parseFloat(this.cryptic.decrypt(raw[k].amount, 'database')) };
+            const newR: Expense = { tag: this.cryptic.decrypt(raw[k].tag, 'database'), amount: parseFloat(this.cryptic.decrypt(raw[k].amount, 'database')) };
             myExpenses.push(newR);
           }
           AppStateService.instance.smileExpenses = myExpenses;
@@ -520,9 +520,9 @@ export class AppDataService {
           AppStateService.instance.fireExpenses = [];
           this.localStorage.saveData("fireEx", JSON.stringify([]));
         } else {
-          let myExpenses: Expense[] = [];
+          const myExpenses: Expense[] = [];
           for (const k in raw) {
-            let newR: Expense = { tag: this.cryptic.decrypt(raw[k].tag, 'database'), amount: parseFloat(this.cryptic.decrypt(raw[k].amount, 'database')) };
+            const newR: Expense = { tag: this.cryptic.decrypt(raw[k].tag, 'database'), amount: parseFloat(this.cryptic.decrypt(raw[k].amount, 'database')) };
             myExpenses.push(newR);
           }
           AppStateService.instance.fireExpenses = myExpenses;
@@ -535,9 +535,9 @@ export class AppDataService {
           AppStateService.instance.mojoExpenses = [];
           this.localStorage.saveData("mojoEx", JSON.stringify([]));
         } else {
-          let myExpenses: Expense[] = [];
+          const myExpenses: Expense[] = [];
           for (const k in raw) {
-            let newR: Expense = { tag: this.cryptic.decrypt(raw[k].tag, 'database'), amount: parseFloat(this.cryptic.decrypt(raw[k].amount, 'database')) };
+            const newR: Expense = { tag: this.cryptic.decrypt(raw[k].tag, 'database'), amount: parseFloat(this.cryptic.decrypt(raw[k].amount, 'database')) };
             myExpenses.push(newR);
           }
           AppStateService.instance.mojoExpenses = myExpenses;
@@ -550,10 +550,10 @@ export class AppDataService {
           AppStateService.instance.allSmileProjects = [];
           this.localStorage.saveData("smile", JSON.stringify([]));
         } else {
-          let mySmile: any[] = [];
+          const mySmile: any[] = [];
           for (const k in raw) {
             // Decrypt all Smile fields
-            let rawSmile: any = { 
+            const rawSmile: any = { 
               title: this.cryptic.decrypt(raw[k].title, 'database')
             };
 
@@ -656,10 +656,10 @@ export class AppDataService {
           AppStateService.instance.allFireEmergencies = [];
           this.localStorage.saveData("fire", JSON.stringify([]));
         } else {
-          let myFire: Fire[] = [];
+          const myFire: Fire[] = [];
           for (const k in raw) {
             // Decrypt and create raw object with all fields
-            let rawFire: any = { 
+            const rawFire: any = { 
               title: this.cryptic.decrypt(raw[k].title, 'database')
             };
             
@@ -769,7 +769,7 @@ export class AppDataService {
       }
       case 'mojo': {
         if (raw != null) {
-          let newm: Mojo = { target: parseFloat(this.cryptic.decrypt(raw['target'], 'database')), amount: parseFloat(this.cryptic.decrypt(raw['amount'], 'database')) };
+          const newm: Mojo = { target: parseFloat(this.cryptic.decrypt(raw['target'], 'database')), amount: parseFloat(this.cryptic.decrypt(raw['amount'], 'database')) };
           AppStateService.instance.mojo = newm;
           this.localStorage.saveData("mojo", JSON.stringify(newm));
         }
@@ -780,9 +780,9 @@ export class AppDataService {
           AppStateService.instance.allBudgets = [];
           this.localStorage.saveData("budget", JSON.stringify([]));
         } else {
-          let myBudgets: Budget[] = [];
+          const myBudgets: Budget[] = [];
           for (const k in raw) {
-            let newBudget: Budget = { date: this.cryptic.decrypt(raw[k].date, 'database'), tag: this.cryptic.decrypt(raw[k].tag, 'database'), amount: parseFloat(this.cryptic.decrypt(raw[k].amount, 'database')) };
+            const newBudget: Budget = { date: this.cryptic.decrypt(raw[k].date, 'database'), tag: this.cryptic.decrypt(raw[k].tag, 'database'), amount: parseFloat(this.cryptic.decrypt(raw[k].amount, 'database')) };
             myBudgets.push(newBudget);
           }
           AppStateService.instance.allBudgets = myBudgets;
@@ -795,7 +795,7 @@ export class AppDataService {
           AppStateService.instance.allGrowProjects = [];
           this.localStorage.saveData("grow", JSON.stringify([]));
         } else {
-          let myGrowProjects = [];
+          const myGrowProjects = [];
           for (const k in raw) {
             let share = null;
             if (raw[k].share) {
@@ -823,7 +823,7 @@ export class AppDataService {
               };
             }
             // Decrypt nested arrays
-            let links = [];
+            const links = [];
             if (raw[k].links) {
               for (const li in raw[k].links) {
                 links.push({
@@ -832,7 +832,7 @@ export class AppDataService {
                 });
               }
             }
-            let actionItems = [];
+            const actionItems = [];
             if (raw[k].actionItems) {
               for (const ai in raw[k].actionItems) {
                 const item: any = {
@@ -846,7 +846,7 @@ export class AppDataService {
                 actionItems.push(item);
               }
             }
-            let notes = [];
+            const notes = [];
             if (raw[k].notes) {
               for (const ni in raw[k].notes) {
                 notes.push({
@@ -855,7 +855,7 @@ export class AppDataService {
                 });
               }
             }
-            let newG = {
+            const newG = {
               title: this.cryptic.decrypt(raw[k].title, 'database'),
               sub: this.cryptic.decrypt(raw[k].sub, 'database'),
               status: this.cryptic.decrypt(raw[k].status, 'database'),
@@ -906,9 +906,9 @@ export class AppDataService {
           AppStateService.instance.allAssets = [];
           this.localStorage.saveData("assets", JSON.stringify([]));
         } else {
-          let myAssets: Expense[] = [];
+          const myAssets: Expense[] = [];
           for (const k in raw) {
-            let newR: Expense = { tag: this.cryptic.decrypt(raw[k].tag, 'database'), amount: parseFloat(this.cryptic.decrypt(raw[k].amount, 'database')) };
+            const newR: Expense = { tag: this.cryptic.decrypt(raw[k].tag, 'database'), amount: parseFloat(this.cryptic.decrypt(raw[k].amount, 'database')) };
             myAssets.push(newR);
           }
           AppStateService.instance.allAssets = myAssets;
@@ -921,9 +921,9 @@ export class AppDataService {
           AppStateService.instance.allShares = [];
           this.localStorage.saveData("shares", JSON.stringify([]));
         } else {
-          let myShares: Share[] = [];
+          const myShares: Share[] = [];
           for (const k in raw) {
-            let newR: Share = { tag: this.cryptic.decrypt(raw[k].tag, 'database'), quantity: parseFloat(this.cryptic.decrypt(raw[k].quantity, 'database')), price: parseFloat(this.cryptic.decrypt(raw[k].price, 'database')) };
+            const newR: Share = { tag: this.cryptic.decrypt(raw[k].tag, 'database'), quantity: parseFloat(this.cryptic.decrypt(raw[k].quantity, 'database')), price: parseFloat(this.cryptic.decrypt(raw[k].price, 'database')) };
             myShares.push(newR);
           }
           AppStateService.instance.allShares = myShares;
@@ -936,9 +936,9 @@ export class AppDataService {
           AppStateService.instance.allInvestments = [];
           this.localStorage.saveData("investments", JSON.stringify([]));
         } else {
-          let myInvestments: Investment[] = [];
+          const myInvestments: Investment[] = [];
           for (const k in raw) {
-            let newR: Investment = { tag: this.cryptic.decrypt(raw[k].tag, 'database'), deposit: parseFloat(this.cryptic.decrypt(raw[k].deposit, 'database')), amount: parseFloat(this.cryptic.decrypt(raw[k].amount, 'database')) };
+            const newR: Investment = { tag: this.cryptic.decrypt(raw[k].tag, 'database'), deposit: parseFloat(this.cryptic.decrypt(raw[k].deposit, 'database')), amount: parseFloat(this.cryptic.decrypt(raw[k].amount, 'database')) };
             myInvestments.push(newR);
           }
           AppStateService.instance.allInvestments = myInvestments;
@@ -951,9 +951,9 @@ export class AppDataService {
           AppStateService.instance.liabilities = [];
           this.localStorage.saveData("liabilities", JSON.stringify([]));
         } else {
-          let myLiabilities: Liability[] = [];
+          const myLiabilities: Liability[] = [];
           for (const k in raw) {
-            let newR: Liability = { tag: this.cryptic.decrypt(raw[k].tag, 'database'), amount: parseFloat(this.cryptic.decrypt(raw[k].amount, 'database')), investment: this.cryptic.decrypt(raw[k].investment, 'database')=="true", credit: parseFloat(this.cryptic.decrypt(raw[k].credit, 'database')) };
+            const newR: Liability = { tag: this.cryptic.decrypt(raw[k].tag, 'database'), amount: parseFloat(this.cryptic.decrypt(raw[k].amount, 'database')), investment: this.cryptic.decrypt(raw[k].investment, 'database')=="true", credit: parseFloat(this.cryptic.decrypt(raw[k].credit, 'database')) };
             myLiabilities.push(newR);
           }
           AppStateService.instance.liabilities = myLiabilities;

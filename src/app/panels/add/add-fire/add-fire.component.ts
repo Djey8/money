@@ -498,7 +498,7 @@ export class AddFireComponent extends BaseAddComponent {
     }
     
     // Create new Fire emergency - ALL amounts now in buckets
-    let newFire: Fire = {
+    const newFire: Fire = {
       title: this.titleTextField,
       sub: this.subTextField.trim(),
       phase: this.phaseField,

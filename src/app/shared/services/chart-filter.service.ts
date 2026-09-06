@@ -163,7 +163,7 @@ export class ChartFilterService {
     // Search text filter with boolean logic (delegates to TransactionFilterService for operator-aware matching)
     if (state.searchText.trim()) {
       transactions = transactions.filter(t => {
-        let expr = state.searchText
+        const expr = state.searchText
           .replace(/\band\b/gi, '&&')
           .replace(/\bor\b/gi, '||')
           .replace(/\bnot\b/gi, '!');

@@ -159,10 +159,10 @@ export class BalanceComponent {
    * @returns The total amount of assets, shares, and investments.
    */
   static getAssetsAmount(){
-    let cashflow = IncomeComponent.getTotalAmount();
-    let assets = BalanceComponent.getAssets();
-    let shares = BalanceComponent.getShares();
-    let investments = BalanceComponent.getInvestments();
+    const cashflow = IncomeComponent.getTotalAmount();
+    const assets = BalanceComponent.getAssets();
+    const shares = BalanceComponent.getShares();
+    const investments = BalanceComponent.getInvestments();
     return cashflow+assets+shares+investments;
   }
 
@@ -171,8 +171,8 @@ export class BalanceComponent {
    * @returns The total amount of assets minus liabilities.
    */
   static getTotalAmount(){
-    let assets = BalanceComponent.getAssetsAmount();
-    let liabilites = BalanceComponent.getLiabilities();
+    const assets = BalanceComponent.getAssetsAmount();
+    const liabilites = BalanceComponent.getLiabilities();
     return assets-liabilites;
   }
 

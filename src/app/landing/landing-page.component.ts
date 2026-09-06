@@ -35,7 +35,7 @@ export class LandingPageComponent implements AfterViewInit, OnDestroy {
   aiPreviewStep: 'options' | 'prompt' = 'options';
 
   // Smile info panel tab tracking
-  smileTab: { [key: string]: string } = {
+  smileTab: Record<string, string> = {
     'sp-japan': 'overview',
     'sp-office': 'overview'
   };

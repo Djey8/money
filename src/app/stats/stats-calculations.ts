@@ -334,7 +334,7 @@ export function calculateFixedCostsRatio(month?: string): number {
 }/**
  * Get monthly aggregated data for time series
  */
-export function getMonthlyData(): Array<{month: string, date: Date, income: number, expenses: number, savings: number}> {
+export function getMonthlyData(): {month: string, date: Date, income: number, expenses: number, savings: number}[] {
   const expenseAccounts = ['Daily', 'Splurge', 'Smile', 'Fire'];
   const accountCategoriesToExclude = ['Daily', 'Splurge', 'Smile', 'Fire', 'Income'];
   const monthlyMap = new Map<string, {income: number, expenses: number}>();

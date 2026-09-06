@@ -26,13 +26,13 @@ export class IncomeStatementService {
    * Returns array of {bucket, amount} for allocations found in comment.
    * Format: #bucket:BucketName:Amount
    */
-  private parseTransactionBucketAllocations(transaction: any, project: any): Array<{bucket: any, amount: number}> {
+  private parseTransactionBucketAllocations(transaction: any, project: any): {bucket: any, amount: number}[] {
     if (!transaction.comment || !project.buckets) return [];
     
     const bucketTagMatches = transaction.comment.match(/#bucket:([^:]+):([\d.]+)/g);
     if (!bucketTagMatches) return [];
     
-    const allocations: Array<{bucket: any, amount: number}> = [];
+    const allocations: {bucket: any, amount: number}[] = [];
     bucketTagMatches.forEach((tag: string) => {
       const match = tag.match(/#bucket:([^:]+):([\d.]+)/);
       if (match) {
@@ -82,7 +82,7 @@ export class IncomeStatementService {
     AppStateService.instance.allTransactions.forEach(transaction => {
       const { amount, account, category } = transaction;
       if (amount != 0) {
-        let amountStr = String(amount);
+        const amountStr = String(amount);
 
         // Handle @Mojo
         if (category === "@Mojo") {
@@ -110,7 +110,7 @@ export class IncomeStatementService {
               if (bucketAllocations.length > 0) {
                 // Use stored allocations from comment tags (amounts are positive, so add them)
                 // BUT cap each bucket at its target to prevent overflow
-                const actualAllocations: Array<{bucketName: string, requestedAmount: number, appliedAmount: number}> = [];
+                const actualAllocations: {bucketName: string, requestedAmount: number, appliedAmount: number}[] = [];
                 
                 bucketAllocations.forEach(allocation => {
                   if (allocation.bucket) {
@@ -193,7 +193,7 @@ export class IncomeStatementService {
 
         // Handle Fire emergencies
         if (category !== "@Mojo") {
-          let result = parseFloat(amountStr);
+          const result = parseFloat(amountStr);
           for (let i = 0; i < AppStateService.instance.allFireEmergencies.length; i++) {
             const emergency = AppStateService.instance.allFireEmergencies[i];
             
@@ -272,7 +272,7 @@ export class IncomeStatementService {
               for (let i = 0; i < AppStateService.instance.allShares.length; i++) {
                 if (category.toLocaleLowerCase() === "@" + AppStateService.instance.allShares[i].tag.toLocaleLowerCase()) {
                   found = true;
-                  let new_interest: Revenue = { tag: category.replace("@", ""), amount: parseFloat(amountStr) };
+                  const new_interest: Revenue = { tag: category.replace("@", ""), amount: parseFloat(amountStr) };
                   AppStateService.instance.allIntrests.push(new_interest);
                 }
               }
@@ -287,7 +287,7 @@ export class IncomeStatementService {
               for (let i = 0; i < AppStateService.instance.allInvestments.length; i++) {
                 if (category.toLocaleLowerCase() === "@" + AppStateService.instance.allInvestments[i].tag.toLocaleLowerCase()) {
                   found = true;
-                  let new_property: Revenue = { tag: category.replace("@", ""), amount: parseFloat(amountStr) };
+                  const new_property: Revenue = { tag: category.replace("@", ""), amount: parseFloat(amountStr) };
                   AppStateService.instance.allProperties.push(new_property);
                 }
               }
@@ -299,7 +299,7 @@ export class IncomeStatementService {
               }
             }
             if (!found) {
-              let new_revenue: Revenue = { tag: category.replace("@", ""), amount: parseFloat(amountStr) };
+              const new_revenue: Revenue = { tag: category.replace("@", ""), amount: parseFloat(amountStr) };
               AppStateService.instance.allRevenues.push(new_revenue);
               found = true;
             }
@@ -307,7 +307,7 @@ export class IncomeStatementService {
         }
 
         // Calculating account expenses
-        const expenseMap: { [key: string]: Expense[] } = {
+        const expenseMap: Record<string, Expense[]> = {
           "Daily": AppStateService.instance.dailyExpenses,
           "Splurge": AppStateService.instance.splurgeExpenses,
           "Smile": AppStateService.instance.smileExpenses,

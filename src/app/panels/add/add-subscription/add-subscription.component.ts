@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { LocalService } from 'src/app/shared/services/local.service';
 import { AngularFireAuth } from '@angular/fire/compat/auth';
@@ -36,7 +36,7 @@ let AppComponent: any; setTimeout(() => import('src/app/app.component').then(m =
   styleUrls: ['../../../shared/styles/add-form.css', './add-subscription.component.css']
 })
 
-export class AddSubscriptionComponent extends BaseAddComponent {
+export class AddSubscriptionComponent extends BaseAddComponent implements OnInit {
   static titleTextField = "Spotify"
   static selectedOption = "Daily";
   static amountTextField = "";
@@ -156,7 +156,7 @@ export class AddSubscriptionComponent extends BaseAddComponent {
     } else {
 
       // ready to writek to Database new Transaction
-      let newSubscritpion: Subscription = { 
+      const newSubscritpion: Subscription = { 
         title: AddSubscriptionComponent.titleTextField, 
         account: AddSubscriptionComponent.selectedOption, 
         amount: parseFloat(AddSubscriptionComponent.amountTextField), 

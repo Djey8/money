@@ -177,7 +177,7 @@ export class TransactionFilterService {
       // Search text filter with boolean logic
       if (filter.searchText.trim()) {
         // Replace word operators with symbols
-        let searchExpression = filter.searchText
+        const searchExpression = filter.searchText
           .replace(/\band\b/gi, '&&')
           .replace(/\bor\b/gi, '||')
           .replace(/\bnot\b/gi, '!');
@@ -191,7 +191,7 @@ export class TransactionFilterService {
           const andTerms = orGroup.split('&&').map(t => t.trim());
           let allAndTermsMatch = true;
           
-          for (let term of andTerms) {
+          for (const term of andTerms) {
             let isNegated = false;
             let searchTerm = term.toLowerCase().trim();
             

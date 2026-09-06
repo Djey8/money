@@ -5,6 +5,6 @@
  * @param field - The property name to compare against (default: 'title').
  * @returns True if the title is found (invalid/duplicate), false otherwise.
  */
-export function isDuplicateTitle(title: string, arrays: any[][], field: string = 'title'): boolean {
+export function isDuplicateTitle(title: string, arrays: any[][], field = 'title'): boolean {
   return arrays.some(arr => arr.some(item => item[field] === title));
 }

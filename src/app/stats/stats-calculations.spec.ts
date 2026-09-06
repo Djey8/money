@@ -31,7 +31,7 @@ import {
 } from './stats-calculations';
 import { StatsComponent } from './stats.component';
 
-function tx(account: string, amount: number, date: string, category: string = 'Misc'): Transaction {
+function tx(account: string, amount: number, date: string, category = 'Misc'): Transaction {
   return { account, amount, date, time: '', category, comment: '' };
 }
 

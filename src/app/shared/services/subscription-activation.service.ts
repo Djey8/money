@@ -360,7 +360,7 @@ export class SubscriptionActivationService {
    */
   findLinkedPlan(
     subscription: Subscription,
-    allProjects: Array<Smile | Fire>
+    allProjects: (Smile | Fire)[]
   ): PlannedSubscription | undefined {
     for (const project of allProjects) {
       if (!project.plannedSubscriptions) continue;

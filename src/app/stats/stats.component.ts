@@ -4,7 +4,7 @@ import * as d3 from 'd3';
 import * as sankey from 'd3-sankey'
 import { D3VisualizationService } from '../shared/services/d3-visualization.service';
 import { ChartFilterService, ChartFilterState } from '../shared/services/chart-filter.service';
-import { HostListener } from '@angular/core';
+import { HostListener, OnInit } from '@angular/core';
 import { LangChangeEvent, TranslateService } from '@ngx-translate/core';
 import { AppStateService } from '../shared/services/app-state.service';
 
@@ -42,7 +42,7 @@ import { FinancialStatementComponent } from './statement/financial-statement.com
   templateUrl: './stats.component.html',
   styleUrls: ['./stats.component.css', '../app.component.css', '../shared/styles/filter-styles.css']
 })
-export class StatsComponent implements AfterViewInit, AfterViewChecked, OnDestroy {
+export class StatsComponent implements AfterViewInit, AfterViewChecked, OnDestroy, OnInit {
 
   // Mapping of KPI keys to corresponding render functions
   kpiFunctions: Record<string, () => void> = {
@@ -89,7 +89,7 @@ export class StatsComponent implements AfterViewInit, AfterViewChecked, OnDestro
     // Add more KPI functions as needed
   };
   
-  static modus: string = "home";
+  static modus = "home";
 
   static screenWidth: number;
   static screenHeight: number;
@@ -105,21 +105,21 @@ export class StatsComponent implements AfterViewInit, AfterViewChecked, OnDestro
 
   static translatedIncomeValues: string[] = [];
 
-  static isStatment: boolean = false;
-  static isStatistic: boolean = false;
-  static isBIDashboard: boolean = false;
-  static activeBIDashboard: number = 1; // 1, 2, 3, or 4
-  static activeAnalyticsLevel: string = 'deskriptive'; // 'deskriptive', 'explorative', 'praediktive', 'praeskriptive'
-  static dashboard4CostTypeFilter: string = 'all'; // 'all', 'fixed', 'variable' - selected cost type from pie chart
-  static dashboard4SelectedCategory: string = ''; // Selected category for transaction detail view
-  static dashboard4SortColumn: string = 'amount'; // 'category', 'type', 'count', 'amount', 'percentage'
-  static dashboard4SortOrder: string = 'desc'; // 'asc', 'desc'
-  static dashboard4TransactionSortColumn: string = 'date'; // 'date', 'account', 'amount', 'comment'
-  static dashboard4TransactionSortOrder: string = 'desc'; // 'asc', 'desc'
-  static savedBIAnalyticsLevel: string = 'deskriptive'; // Saved analytics level when leaving BI mode
-  static filterPanelMoved: boolean = false; // Track if filter panel has been moved
-  static lastScreenWidth: number = 0; // Track screen width to detect resize
-  static lastScreenHeight: number = 0; // Track screen height to detect resize
+  static isStatment = false;
+  static isStatistic = false;
+  static isBIDashboard = false;
+  static activeBIDashboard = 1; // 1, 2, 3, or 4
+  static activeAnalyticsLevel = 'deskriptive'; // 'deskriptive', 'explorative', 'praediktive', 'praeskriptive'
+  static dashboard4CostTypeFilter = 'all'; // 'all', 'fixed', 'variable' - selected cost type from pie chart
+  static dashboard4SelectedCategory = ''; // Selected category for transaction detail view
+  static dashboard4SortColumn = 'amount'; // 'category', 'type', 'count', 'amount', 'percentage'
+  static dashboard4SortOrder = 'desc'; // 'asc', 'desc'
+  static dashboard4TransactionSortColumn = 'date'; // 'date', 'account', 'amount', 'comment'
+  static dashboard4TransactionSortOrder = 'desc'; // 'asc', 'desc'
+  static savedBIAnalyticsLevel = 'deskriptive'; // Saved analytics level when leaving BI mode
+  static filterPanelMoved = false; // Track if filter panel has been moved
+  static lastScreenWidth = 0; // Track screen width to detect resize
+  static lastScreenHeight = 0; // Track screen height to detect resize
 
   public get appReference() { return AppComponent; }
   public classReference = StatsComponent;
@@ -127,10 +127,10 @@ export class StatsComponent implements AfterViewInit, AfterViewChecked, OnDestro
   public settingsReference = SettingsComponent;
   public balanceReference = BalanceComponent;
 
-  static selectedYear: string = "all";
-  static period: string = "all";
-  static Index: number = 0;
-  static numCategories: number = 5;
+  static selectedYear = "all";
+  static period = "all";
+  static Index = 0;
+  static numCategories = 5;
   static viewMode = "year";
 
   static activeKPI = "net-worth-trend";  
@@ -150,9 +150,9 @@ export class StatsComponent implements AfterViewInit, AfterViewChecked, OnDestro
   // Explorative Analytics filters
   static explorativeSelectedAccounts: string[] = [] // Selected accounts for filtering
   static explorativeSelectedCategories: string[] = [] // Selected categories for filtering
-  static explorativeAmountMin: number = -9999 // Minimum amount filter (negative for expenses)
-  static explorativeAmountMax: number = 0 // Maximum amount filter (0 for expenses)
-  static explorativeSearchText: string = "" // Search text for transactions
+  static explorativeAmountMin = -9999 // Minimum amount filter (negative for expenses)
+  static explorativeAmountMax = 0 // Maximum amount filter (0 for expenses)
+  static explorativeSearchText = "" // Search text for transactions
   static explorativeSearchFields = { // Search field toggles
     account: true,
     amount: true,
@@ -161,55 +161,55 @@ export class StatsComponent implements AfterViewInit, AfterViewChecked, OnDestro
     category: true,
     comment: true
   }
-  static explorativeSearchHelpVisible: boolean = false // Toggle search help panel
-  static explorativeBreadcrumbs: Array<{level: string, value: string}> = [] // Navigation breadcrumbs
-  static explorativeDrilldownLevel: string = "overview" // Current drill-down level: overview, account, category, transaction
-  static explorativeDrilldownAccount: string = "" // Selected account for drill-down
-  static explorativeDrilldownCategory: string = "" // Selected category for drill-down
-  static explorativeSortBy: string = "amount" // Sort by: amount, frequency, date
-  static explorativeSortOrder: string = "desc" // Sort order: asc, desc
-  static explorativeComparisonMode: boolean = false // Toggle period comparison
-  static explorativeTableSortColumn: string = "date" // Table sort column: date, account, category, amount
-  static explorativeTableSortOrder: string = "desc" // Table sort order: asc, desc
-  static dashboard3TableSortColumn: string = "date" // Dashboard 3 table sort column
-  static dashboard3TableSortOrder: string = "desc" // Dashboard 3 table sort order: asc, desc
-  static periodComparisonSortColumn: string = "period" // Period comparison sort column
-  static periodComparisonSortOrder: string = "asc" // Period comparison sort order: asc, desc
+  static explorativeSearchHelpVisible = false // Toggle search help panel
+  static explorativeBreadcrumbs: {level: string, value: string}[] = [] // Navigation breadcrumbs
+  static explorativeDrilldownLevel = "overview" // Current drill-down level: overview, account, category, transaction
+  static explorativeDrilldownAccount = "" // Selected account for drill-down
+  static explorativeDrilldownCategory = "" // Selected category for drill-down
+  static explorativeSortBy = "amount" // Sort by: amount, frequency, date
+  static explorativeSortOrder = "desc" // Sort order: asc, desc
+  static explorativeComparisonMode = false // Toggle period comparison
+  static explorativeTableSortColumn = "date" // Table sort column: date, account, category, amount
+  static explorativeTableSortOrder = "desc" // Table sort order: asc, desc
+  static dashboard3TableSortColumn = "date" // Dashboard 3 table sort column
+  static dashboard3TableSortOrder = "desc" // Dashboard 3 table sort order: asc, desc
+  static periodComparisonSortColumn = "period" // Period comparison sort column
+  static periodComparisonSortOrder = "asc" // Period comparison sort order: asc, desc
   
   // Prädiktive Analytics settings
-  static predictiveMonthsHistory: number = 12 // Number of historical months to use for prediction
-  static predictiveMonthsFuture: number = 3 // Number of months to predict into future
-  static predictiveAlpha: number = 0.3 // Exponential smoothing parameter (0-1)
-  static predictiveMojoGoal: number = 10000 // Mojo savings goal in currency
-  static predictiveSelectedMetric: string = "savings-rate" // Which metric to predict
-  static predictiveSelectedCategory: string = "" // Selected category for category-spending predictions
+  static predictiveMonthsHistory = 12 // Number of historical months to use for prediction
+  static predictiveMonthsFuture = 3 // Number of months to predict into future
+  static predictiveAlpha = 0.3 // Exponential smoothing parameter (0-1)
+  static predictiveMojoGoal = 10000 // Mojo savings goal in currency
+  static predictiveSelectedMetric = "savings-rate" // Which metric to predict
+  static predictiveSelectedCategory = "" // Selected category for category-spending predictions
   
   // Präskriptive Analytics settings
-  static selectedScenario: string = "optimize-savings-rate" // Selected scenario: optimize-savings-rate, accelerate-mojo, savings-goal-simulator
-  static savingsOptimizationMethod: string = "reduce-category" // Sub-scenario: reduce-category, increase-income
+  static selectedScenario = "optimize-savings-rate" // Selected scenario: optimize-savings-rate, accelerate-mojo, savings-goal-simulator
+  static savingsOptimizationMethod = "reduce-category" // Sub-scenario: reduce-category, increase-income
   
   // Category reduction - support multiple categories
-  static categoryReductions: Array<{category: string, method: string, percent: number, amount: number}> = [
+  static categoryReductions: {category: string, method: string, percent: number, amount: number}[] = [
     {category: "", method: "percentage", percent: 10, amount: 50}
   ];
   
   // Income increase - support multiple increases
-  static incomeIncreases: Array<{method: string, amount: number, percent: number}> = [
+  static incomeIncreases: {method: string, amount: number, percent: number}[] = [
     {method: "fixed", amount: 500, percent: 10}
   ];
   
   // Legacy single values for backward compatibility
-  static scenarioCategory: string = "" // Category for reduction scenario
-  static categoryReductionMethod: string = "percentage" // Method for category reduction: percentage or fixed
-  static scenarioReductionPercent: number = 10 // Percentage to reduce category spending
-  static scenarioReductionAmount: number = 50 // Fixed amount to reduce category spending
-  static incomeIncreaseMethod: string = "fixed" // Method for income increase: percentage or fixed
-  static scenarioIncomeIncrease: number = 500 // Additional monthly income amount
-  static scenarioIncreasePercent: number = 10 // Percentage to increase income
-  static mojoIncreaseMethod: string = "fixed" // Method for Mojo increase: fixed or percentage
-  static mojoIncreaseAmount: number = 100 // Additional Mojo contribution (fixed amount)
-  static mojoIncreasePercent: number = 10 // Percentage to increase Mojo contribution
-  static savingsGoalAmount: number = 10000 // Target savings goal
+  static scenarioCategory = "" // Category for reduction scenario
+  static categoryReductionMethod = "percentage" // Method for category reduction: percentage or fixed
+  static scenarioReductionPercent = 10 // Percentage to reduce category spending
+  static scenarioReductionAmount = 50 // Fixed amount to reduce category spending
+  static incomeIncreaseMethod = "fixed" // Method for income increase: percentage or fixed
+  static scenarioIncomeIncrease = 500 // Additional monthly income amount
+  static scenarioIncreasePercent = 10 // Percentage to increase income
+  static mojoIncreaseMethod = "fixed" // Method for Mojo increase: fixed or percentage
+  static mojoIncreaseAmount = 100 // Additional Mojo contribution (fixed amount)
+  static mojoIncreasePercent = 10 // Percentage to increase Mojo contribution
+  static savingsGoalAmount = 10000 // Target savings goal
   
   static incomeVsExpensesChartMode = "line" // "line" or "bar"
   static showAverageView = false; // Toggle between total and average view for KPIs
@@ -237,8 +237,8 @@ export class StatsComponent implements AfterViewInit, AfterViewChecked, OnDestro
   static d3Service: D3VisualizationService;
   static currentInstance: StatsComponent | null = null;
   static resizeTimeout: any = null; // Timeout for debouncing window resize events
-  static lastWindowWidth: number = 0; // Track last window width
-  static lastWindowHeight: number = 0; // Track last window height
+  static lastWindowWidth = 0; // Track last window width
+  static lastWindowHeight = 0; // Track last window height
 
   /**
    * Constructs a new StatsComponent.
@@ -987,8 +987,8 @@ export class StatsComponent implements AfterViewInit, AfterViewChecked, OnDestro
   touchStartX?: number;
   touchStartY?: number;
   touchStartTime?: number;
-  isTouchScrolling: boolean = false;
-  isPageScrolling: boolean = false; // Track if page is currently scrolling (including momentum)
+  isTouchScrolling = false;
+  isPageScrolling = false; // Track if page is currently scrolling (including momentum)
   scrollTimeout: any = null; // Debounce timer for scroll end detection
 
   onSwipeLeft() {
@@ -1035,7 +1035,7 @@ export class StatsComponent implements AfterViewInit, AfterViewChecked, OnDestro
   static createHistogramChart() { return createHistogramChart(); }
   static createCashflowBarChart(p?: any, y?: any) { return createCashflowBarChart(p, y); }
   static createCategoryBubbleChart(p?: string, i?: number) { return createCategoryBubbleChart(p, i); }
-  static createChart(filter: string, selectedYear: string = "all", isChecked: boolean = true, selectedMode: string = "year", selectedMonth: string = "all") { return createAccountChart(filter, selectedYear, isChecked, selectedMode, selectedMonth); }
+  static createChart(filter: string, selectedYear = "all", isChecked = true, selectedMode = "year", selectedMonth = "all") { return createAccountChart(filter, selectedYear, isChecked, selectedMode, selectedMonth); }
   static showTransactionDetails(t: any[], d: string, f: string) { return showTransactionDetails(t, d, f); }
   static createPieChart() { return createPieChart(); }
   static createBIDashboard(n: number) { return createBIDashboard(n); }

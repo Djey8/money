@@ -2,7 +2,7 @@ import { Router } from '@angular/router';
 import { AppComponent } from 'src/app/app.component';
 import { SettingsComponent } from 'src/app/panels/settings/settings.component';
 import {LiveAnnouncer} from '@angular/cdk/a11y';
-import {AfterViewInit, Component, ElementRef, HostListener, ViewChild, inject, ChangeDetectorRef, ChangeDetectionStrategy} from '@angular/core';
+import {AfterViewInit, Component, ElementRef, HostListener, ViewChild, inject, ChangeDetectorRef, ChangeDetectionStrategy, OnInit} from '@angular/core';
 import {MatSort, Sort, MatSortModule} from '@angular/material/sort';
 import {MatTableDataSource, MatTableModule} from '@angular/material/table';
 import {MatPaginator, MatPaginatorModule} from '@angular/material/paginator';
@@ -50,7 +50,7 @@ interface BudgetRow {
   styleUrls: ['./plan.component.css', '../../../app.component.css', '../../../shared/styles/table.css'],
   changeDetection: ChangeDetectionStrategy.OnPush // Enable OnPush for better performance
 })
-export class PlanComponent {
+export class PlanComponent implements OnInit, AfterViewInit {
   public get appReference() { return AppComponent; }
   public classReference = PlanComponent;
   public settingsReference = SettingsComponent;
@@ -71,13 +71,13 @@ export class PlanComponent {
   static zeroPlanDataSource = new MatTableDataSource<BudgetRow>([]);
 
   // Cache for performance
-  private actualsCache: Map<string, number> = new Map();
+  private actualsCache = new Map<string, number>();
   private selectedYearMonth: { year: number; month: number } = { year: 0, month: 0 };
   
   // Pre-computed values
-  budgetAmount: number = 0;
-  othersActuals: number = 0;
-  hasOthers: boolean = false;
+  budgetAmount = 0;
+  othersActuals = 0;
+  hasOthers = false;
 
   constructor(
     private router: Router, 
@@ -361,7 +361,7 @@ export class PlanComponent {
   }
 
   @ViewChild('confirmationDialog') confirmationDialog!: ElementRef;
-  showConfirmation: boolean = false;
+  showConfirmation = false;
 
   openConfirmation(): void {
     this.showConfirmation = true;
@@ -411,8 +411,8 @@ export class PlanComponent {
 
   fill() {
     const [yearStr, monthStr] = PlanComponent.selectedMonthYear.split('-');
-    let currentYear = parseInt(yearStr, 10);
-    let currentMonth = parseInt(monthStr, 10);
+    const currentYear = parseInt(yearStr, 10);
+    const currentMonth = parseInt(monthStr, 10);
 
     let lastBudgetDate: string | null = null;
     let lastYear = currentYear;
@@ -503,7 +503,7 @@ export class PlanComponent {
     const currentYear = now.getFullYear();
     const currentMonth = now.getMonth() + 1;
 
-    const monthlyCategoryAmounts: { [date: string]: { [category: string]: number } } = {};
+    const monthlyCategoryAmounts: Record<string, Record<string, number>> = {};
 
     for (const sub of AppStateService.instance.allSubscriptions) {
       if (sub.account === "Income") continue;
@@ -511,7 +511,7 @@ export class PlanComponent {
       const [subYearStr, subMonthStr, subDayStr] = sub.startDate.split('-');
       let subYear = parseInt(subYearStr, 10);
       let subMonth = parseInt(subMonthStr, 10);
-      let subDay = subDayStr ? parseInt(subDayStr, 10) : 1;
+      const subDay = subDayStr ? parseInt(subDayStr, 10) : 1;
 
       let endYear = currentYear;
       let endMonth = currentMonth;

@@ -62,7 +62,7 @@ export class D3VisualizationService {
   clearAndCreateSvg(
     containerSelector: string,
     margin: ChartMargin,
-    heightOffset: number = 110
+    heightOffset = 110
   ): ChartSetup {
     d3.select(containerSelector).selectAll("*").remove();
 

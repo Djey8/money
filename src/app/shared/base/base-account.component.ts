@@ -1,4 +1,4 @@
-import { ViewChild, inject, Directive, OnDestroy } from '@angular/core';
+import { ViewChild, inject, Directive, OnDestroy, OnInit, AfterViewChecked } from '@angular/core';
 import { LiveAnnouncer } from '@angular/cdk/a11y';
 import { MatSort } from '@angular/material/sort';
 import { MatPaginator } from '@angular/material/paginator';
@@ -19,7 +19,7 @@ import { AppStateService } from '../services/app-state.service';
  * Each child defines its own `allowedAccounts`, `classReference`, and account-specific logic.
  */
 @Directive()
-export abstract class BaseAccountComponent implements OnDestroy {
+export abstract class BaseAccountComponent implements OnDestroy, OnInit, AfterViewChecked {
 
   protected _liveAnnouncer = inject(LiveAnnouncer);
   private txSub?: RxSubscription;

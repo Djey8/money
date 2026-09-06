@@ -89,7 +89,7 @@ export class AddAssetComponent extends BaseAddComponent {
       this.showError("This fire asset already exists.");
     } else {
       // ready to write to Database new Transaction
-      let newAsset: Asset = {tag:this.titleTextField, amount: this.amountTextField == "" ? 0.0 : parseFloat(this.amountTextField)};
+      const newAsset: Asset = {tag:this.titleTextField, amount: this.amountTextField == "" ? 0.0 : parseFloat(this.amountTextField)};
       AppStateService.instance.allAssets.push(newAsset);
       // Clean Up close Window
       this.titleTextField = "";

@@ -54,7 +54,7 @@ export class InfoSmileComponent extends BaseInfoComponent {
   static isEdit = false;
   
   // Sorting for related transactions
-  static sortColumn: string = 'id';  // 'id', 'account', 'amount', 'date'
+  static sortColumn = 'id';  // 'id', 'account', 'amount', 'date'
   static sortDirection: 'asc' | 'desc' = 'desc';  // Default: highest ID first
 
   // Current detail tab
@@ -259,11 +259,11 @@ export class InfoSmileComponent extends BaseInfoComponent {
    * Get allocation details for a distributed transaction
    * Parses #bucket:Name:Amount tags from comment
    */
-  getTransactionAllocations(tx: any): Array<{bucket: SmileBucket, amount: number}> {
+  getTransactionAllocations(tx: any): {bucket: SmileBucket, amount: number}[] {
     const project = AppStateService.instance.allSmileProjects[InfoSmileComponent.index];
     if (!project || !tx.comment) return [];
     
-    const allocations: Array<{bucket: SmileBucket, amount: number}> = [];
+    const allocations: {bucket: SmileBucket, amount: number}[] = [];
     
     // Parse all #bucket:Name:Amount tags
     const bucketTagMatches = tx.comment.match(/#bucket:([^:]+):([\d.]+)/g);
@@ -417,7 +417,7 @@ export class InfoSmileComponent extends BaseInfoComponent {
    * Get bucket segments for stacked progress bar
    * Returns array of {bucket, percentage, color}
    */
-  getBucketSegments(): Array<{bucket: SmileBucket, percentage: number, colorClass: string}> {
+  getBucketSegments(): {bucket: SmileBucket, percentage: number, colorClass: string}[] {
     const project = AppStateService.instance.allSmileProjects[InfoSmileComponent.index];
     if (!project?.buckets?.length) return [];
     

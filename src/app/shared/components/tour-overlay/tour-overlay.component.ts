@@ -327,7 +327,7 @@ export class TourOverlayComponent implements OnInit, OnDestroy {
       position = 'bottom-fixed';
     }
 
-    let style: Record<string, string> = { 'max-width': tooltipWidth + 'px' };
+    const style: Record<string, string> = { 'max-width': tooltipWidth + 'px' };
 
     switch (position) {
       case 'bottom':

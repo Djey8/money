@@ -97,7 +97,7 @@ export class AddShareComponent extends BaseAddComponent {
       this.showError("This share already exists.");
     } else {
       // ready to write to Database new Transaction
-      let newShare: Share = {tag:this.titleTextField.replace(" ", ""), quantity: this.quantityTextField == "" ? 0.0 : parseFloat(this.quantityTextField), price: this.priceTextField == "" ? 0.0 : parseFloat(this.priceTextField)};
+      const newShare: Share = {tag:this.titleTextField.replace(" ", ""), quantity: this.quantityTextField == "" ? 0.0 : parseFloat(this.quantityTextField), price: this.priceTextField == "" ? 0.0 : parseFloat(this.priceTextField)};
       AppStateService.instance.allShares.push(newShare);
 
       // Clean Up close Window

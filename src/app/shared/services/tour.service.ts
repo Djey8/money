@@ -52,7 +52,7 @@ export class TourService {
 
   /** Set to true to skip the current menu animation */
   private _skipAnimation = false;
-  private _skipResolvers: Array<() => void> = [];
+  private _skipResolvers: (() => void)[] = [];
 
   /** Signal to skip the ongoing menu animation */
   skipMenuAnimation(): void {

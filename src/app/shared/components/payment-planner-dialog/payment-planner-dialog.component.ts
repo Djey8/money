@@ -31,7 +31,7 @@ export class PaymentPlannerDialogComponent implements OnInit, OnChanges {
   @Input() projectType: 'smile' | 'fire' = 'smile';
   @Input() projectTitle = '';
   @Input() projectTargetDate = '';  // Project target date to prefill
-  @Input() buckets: Array<SmileBucket | FireBucket> = [];
+  @Input() buckets: (SmileBucket | FireBucket)[] = [];
   @Input() existingPlan?: PlannedSubscription;  // For editing
   
   @Output() planCreated = new EventEmitter<PlannedSubscription>();

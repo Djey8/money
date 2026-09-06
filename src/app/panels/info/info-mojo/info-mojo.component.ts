@@ -34,7 +34,7 @@ export class InfoMojoComponent extends BaseInfoComponent {
   classReference = InfoMojoComponent;
   settingsReference = SettingsComponent;
 
-  targetTextField: number = 0;
+  targetTextField = 0;
 
   constructor(
     router: Router,

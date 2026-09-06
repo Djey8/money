@@ -1,4 +1,4 @@
-import { Component, ViewChild, ElementRef } from '@angular/core';
+import { Component, ViewChild, ElementRef, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { LocalService } from 'src/app/shared/services/local.service';
 import { DatabaseService } from 'src/app/shared/services/database.service';
@@ -36,7 +36,7 @@ let AppComponent: any; setTimeout(() => import('src/app/app.component').then(m =
   styleUrls: ['./profile.component.css']
 })
 
-export class ProfileComponent {
+export class ProfileComponent implements OnInit {
   static zIndex: number;
   static isProfile: boolean;
   static isUser: boolean;
@@ -57,7 +57,7 @@ export class ProfileComponent {
   ngOnInit(): void {
     this.database.getData("info/username")
       .then(snapshot => {
-        let username: string = snapshot.val();  // Username is NOT encrypted
+        const username: string = snapshot.val();  // Username is NOT encrypted
         ProfileComponent.username = username;
         this.localStorage.saveData("username", username);
         ProfileComponent.isUser = false;  // false = logged in (show sign out button)
@@ -68,7 +68,7 @@ export class ProfileComponent {
 
     this.database.getData("info/email")
       .then(snapshot => {
-        let email: string = snapshot.val();  // Email is NOT encrypted in DB
+        const email: string = snapshot.val();  // Email is NOT encrypted in DB
         if (email) {
           ProfileComponent.mail = email;
           this.localStorage.saveData("email", email);
@@ -80,7 +80,7 @@ export class ProfileComponent {
   }
 
   @ViewChild('confirmationDialog') confirmationDialog!: ElementRef;
-  showConfirmation: boolean = false;
+  showConfirmation = false;
 
   openConfirmation(): void {
     this.showConfirmation = true;

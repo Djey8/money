@@ -9,7 +9,7 @@ import { InfoShareComponent } from 'src/app/panels/info/info-share/info-share.co
 import { InfoInvestmentComponent } from 'src/app/panels/info/info-investment/info-investment.component';
 import {MatPaginator, MatPaginatorModule} from '@angular/material/paginator';
 import {LiveAnnouncer} from '@angular/cdk/a11y';
-import {AfterViewInit, Component, ViewChild, inject} from '@angular/core';
+import {AfterViewInit, Component, ViewChild, inject, OnInit} from '@angular/core';
 import {MatSort, Sort, MatSortModule} from '@angular/material/sort';
 import {MatTableDataSource, MatTableModule} from '@angular/material/table';
 import {MatFormFieldModule} from '@angular/material/form-field';
@@ -43,7 +43,7 @@ let InfoInterestsComponent: any; setTimeout(() => import('src/app/panels/info/in
   templateUrl: './grow.component.html',
   styleUrls: ['./grow.component.css', '../../app.component.css', '../../shared/styles/table.css']
 })
-export class GrowComponent {
+export class GrowComponent implements OnInit, AfterViewInit {
 
   static isSearched = false;
   static phaseFilter: GrowPhase | 'all' = 'all';
@@ -197,14 +197,14 @@ export class GrowComponent {
     let found = false;
     if(AppStateService.instance.allGrowProjects[index].isAsset){
       found = true;
-      let totalAmount = (AppStateService.instance.allGrowProjects[index].amount ? Number(AppStateService.instance.allGrowProjects[index].amount) : 0) + 
+      const totalAmount = (AppStateService.instance.allGrowProjects[index].amount ? Number(AppStateService.instance.allGrowProjects[index].amount) : 0) + 
             (AppStateService.instance.allGrowProjects[index].liabilitie && AppStateService.instance.allGrowProjects[index].liabilitie.amount ? Number(AppStateService.instance.allGrowProjects[index].liabilitie.amount) : 0);
       AddComponent.amountTextField = "-1";
       AddComponent.commentTextField = `Buy Asset ${AppStateService.instance.allGrowProjects[index].title} 1 x ${totalAmount};`;
     } else if (AppStateService.instance.allGrowProjects[index].share){
       found = true;
-      let quantity = AppStateService.instance.allGrowProjects[index].share.quantity;
-      let price = AppStateService.instance.allGrowProjects[index].share.price;
+      const quantity = AppStateService.instance.allGrowProjects[index].share.quantity;
+      const price = AppStateService.instance.allGrowProjects[index].share.price;
       
       AddComponent.amountTextField = "-1";
       AddComponent.commentTextField = `Buy Share ${AppStateService.instance.allGrowProjects[index].title} ${quantity} x ${price};`;

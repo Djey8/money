@@ -320,15 +320,15 @@ export class AddGrowComponent extends BaseAddComponent {
           this.creditTextField = "0";
         } 
       }
-      let loanAmount = AddGrowComponent.isLoan ? parseFloat(this.loanTextField) : 0;
+      const loanAmount = AddGrowComponent.isLoan ? parseFloat(this.loanTextField) : 0;
       if(AddGrowComponent.isShare){
         this.amountTextField = String(parseFloat(this.quantityTextField) * parseFloat(this.priceTextField) - loanAmount);
       }
 
-      let isInvest = AddGrowComponent.isAsset || AddGrowComponent.isShare || AddGrowComponent.isInvestment
+      const isInvest = AddGrowComponent.isAsset || AddGrowComponent.isShare || AddGrowComponent.isInvestment
       
       // ready to write to Database new Transaction
-      let newGrow: Grow = {
+      const newGrow: Grow = {
         title: this.titleTextField,
         sub: this.subTextField || "",
         type: this.typeField,

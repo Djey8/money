@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, DoCheck } from '@angular/core';
 import { Router } from '@angular/router';
 import { gotoTop } from 'src/app/shared/scroll.utils';
 import { PersistenceService } from 'src/app/shared/services/persistence.service';
@@ -29,7 +29,7 @@ import { TrapFocusDirective } from 'src/app/shared/directives/trap-focus.directi
   templateUrl: './add-liabilitie.component.html',
   styleUrls: ['../../../shared/styles/add-form.css', './add-liabilitie.component.css']
 })
-export class AddLiabilitieComponent extends BaseAddComponent {
+export class AddLiabilitieComponent extends BaseAddComponent implements DoCheck {
 
   titleTextField = "";
   amountTextField = "";
@@ -112,7 +112,7 @@ export class AddLiabilitieComponent extends BaseAddComponent {
       this.showError("This liabilitie already exists.");
     } else {
       // ready to write to Database new Transaction
-      let newLiabilitie: Liability = { tag: this.titleTextField, amount: this.amountTextField == "" ? 0.0 : parseFloat(this.amountTextField), investment: this.isInvestment, credit: this.creditTextField == "" ? 0.0 : parseFloat(this.creditTextField) };
+      const newLiabilitie: Liability = { tag: this.titleTextField, amount: this.amountTextField == "" ? 0.0 : parseFloat(this.amountTextField), investment: this.isInvestment, credit: this.creditTextField == "" ? 0.0 : parseFloat(this.creditTextField) };
       AppStateService.instance.liabilities.push(newLiabilitie);
 
       this.closeWindow();

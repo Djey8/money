@@ -27,7 +27,7 @@ export class LocalService {
    * @returns The retrieved data.
    */
   public getData(key: string) {
-    let data = localStorage.getItem(key) || "";
+    const data = localStorage.getItem(key) || "";
     return this.cryptic.decrypt(data, 'local');
   }
 

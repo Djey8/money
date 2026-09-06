@@ -144,7 +144,7 @@
     <ng-container matColumnDef="amount">
     <th class="headder" mat-header-cell *matHeaderCellDef mat-sort-header>{{'Common.amount' | translate}}</th>
     <td mat-cell *matCellDef="let row; let i = index" class="{{row.amount>=0 ? 'amount-positive' : 'amount-negative'}}">
-      {{(row.account == "Income") ? ((row.amount)*settingsReference.fire/100 | appNumber) : (row.amount | appNumber)}} {{settingsReference.currency}}</td>
+      {{(row.account === "Income") ? ((row.amount)*settingsReference.fire/100 | appNumber) : (row.amount | appNumber)}} {{settingsReference.currency}}</td>
     </ng-container>
 
     <!-- Category Column -->
@@ -160,7 +160,7 @@
     </ng-container>
 
     <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-    <tr mat-row *matRowDef="let row; columns: displayedColumns; let i = index" tabindex="0" (click)="clickRow(row.id)" (keydown.enter)="clickRow(row.id)" [hidden]="!!row.account && row.account != 'Fire' && row.account != 'Income'"></tr>
+    <tr mat-row *matRowDef="let row; columns: displayedColumns; let i = index" tabindex="0" (click)="clickRow(row.id)" (keydown.enter)="clickRow(row.id)" [hidden]="!!row.account && row.account !== 'Fire' && row.account !== 'Income'"></tr>
   </table>
   
   <!-- Bottom Paginator -->

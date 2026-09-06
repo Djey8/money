@@ -487,7 +487,7 @@ export class AddSmileComponent extends BaseAddComponent {
     }
     
     // Create new Smile project - ALL amounts now in buckets
-    let newSmile: Smile = {
+    const newSmile: Smile = {
       title: this.titleTextField,
       sub: this.subTextField.trim(),
       phase: this.phaseField,

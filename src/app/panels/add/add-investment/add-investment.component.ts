@@ -94,7 +94,7 @@ export class AddInvestmentComponent extends BaseAddComponent {
       this.showError("This investment already exists.");
     } else {
       // ready to write to Database new Transaction
-      let newInvestment: Investment = {tag:this.titleTextField, deposit: this.depositTextField == "" ? 0.0 : parseFloat(this.depositTextField), amount: this.amountTextField == "" ? 0.0 : parseFloat(this.amountTextField)};
+      const newInvestment: Investment = {tag:this.titleTextField, deposit: this.depositTextField == "" ? 0.0 : parseFloat(this.depositTextField), amount: this.amountTextField == "" ? 0.0 : parseFloat(this.amountTextField)};
       AppStateService.instance.allInvestments.push(newInvestment);
 
       // Clean Up close Window
