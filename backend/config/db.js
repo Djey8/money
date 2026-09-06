@@ -23,48 +23,37 @@ const connection = nano({
 let usersDb;
 let authDb;
 let communityDb;
+let auditDb;
+
+async function createDbIfNotExists(name) {
+  try {
+    await connection.db.create(name);
+    console.log(`Created ${name} database`);
+  } catch (err) {
+    if (err.statusCode !== 412) {
+      // 412 = database already exists
+      throw err;
+    }
+    console.log(`${name} database already exists`);
+  }
+}
 
 async function initializeDatabase() {
   try {
     console.log('Connecting to CouchDB...');
 
-    // Create users database if it doesn't exist
-    try {
-      await connection.db.create('users');
-      console.log('Created users database');
-    } catch (err) {
-      if (err.statusCode !== 412) {
-        // 412 = database already exists
-        throw err;
-      }
-      console.log('Users database already exists');
-    }
-
-    // Create auth database if it doesn't exist
-    try {
-      await connection.db.create('auth');
-      console.log('Created auth database');
-    } catch (err) {
-      if (err.statusCode !== 412) {
-        throw err;
-      }
-      console.log('Auth database already exists');
-    }
-
-    // Create community database if it doesn't exist
-    try {
-      await connection.db.create('community');
-      console.log('Created community database');
-    } catch (err) {
-      if (err.statusCode !== 412) {
-        throw err;
-      }
-      console.log('Community database already exists');
-    }
+    await createDbIfNotExists('users');
+    await createDbIfNotExists('auth');
+    await createDbIfNotExists('community');
+    // Audit log for Pro API writes — docs/adr/0006-api-scopes-and-access-control.md.
+    // Empty until slice 1's write endpoints exist; created now so the schema
+    // and security lockdown are in place from day one.
+    await createDbIfNotExists('audit');
 
     usersDb = connection.db.use('users');
     authDb = connection.db.use('auth');
     communityDb = connection.db.use('community');
+    auditDb = connection.db.use('audit');
 
     // Create indexes
     await createIndexes();
@@ -106,6 +95,15 @@ async function createIndexes() {
         fields: ['type', 'threadId', 'createdAt'],
       },
       name: 'community-type-thread-index',
+    });
+
+    // Index for audit database — serves "all entries for this user" and
+    // "entries for this user + resource" queries.
+    await auditDb.createIndex({
+      index: {
+        fields: ['userId', 'resource'],
+      },
+      name: 'audit-user-resource-index',
     });
 
     console.log('Indexes created successfully');
@@ -199,6 +197,19 @@ async function setupDatabaseSecurity() {
       },
     };
 
+    // Audit log — never publicly readable, service account only. No route
+    // should ever proxy this database's contents wholesale to a client.
+    const auditSecurity = {
+      admins: {
+        names: [couchdbUser],
+        roles: ['_admin'],
+      },
+      members: {
+        names: [couchdbUser],
+        roles: [],
+      },
+    };
+
     // Apply security settings
     try {
       await connection.request({
@@ -235,6 +246,18 @@ async function setupDatabaseSecurity() {
     } catch (err) {
       console.error('Error setting community database security:', err.message);
     }
+
+    try {
+      await connection.request({
+        db: 'audit',
+        path: '_security',
+        method: 'PUT',
+        body: auditSecurity,
+      });
+      console.log('Audit database security configured');
+    } catch (err) {
+      console.error('Error setting audit database security:', err.message);
+    }
   } catch (error) {
     console.error('Error setting up database security:', error);
     // Don't fail initialization if security setup fails
@@ -253,9 +276,14 @@ function getCommunityDb() {
   return communityDb;
 }
 
+function getAuditDb() {
+  return auditDb;
+}
+
 module.exports = {
   initializeDatabase,
   getUsersDb,
   getAuthDb,
   getCommunityDb,
+  getAuditDb,
 };
