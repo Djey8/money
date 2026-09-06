@@ -16,6 +16,7 @@
     "verify": "npm run lint && npm run format && npm run test:unit"
   },
   "dependencies": {
+    "@money/domain": "file:../packages/domain",
     "bcryptjs": "^2.4.3",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
