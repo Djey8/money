@@ -25,6 +25,10 @@ function assertNonEmptyString(value: unknown, field: string): asserts value is s
   }
 }
 
+function assertString(value: unknown, field: string): asserts value is string {
+  if (typeof value !== 'string') throw new Error(`Transaction ${field} must be a string`);
+}
+
 /**
  * Makes one legacy transaction addressable by the API without changing its
  * established six-field storage shape. Callers persist the returned record
@@ -38,7 +42,7 @@ export function normalizeTransaction(
   assertNonEmptyString(transaction.date, 'date');
   assertNonEmptyString(transaction.time, 'time');
   assertNonEmptyString(transaction.category, 'category');
-  assertNonEmptyString(transaction.comment, 'comment');
+  assertString(transaction.comment, 'comment');
   if (typeof transaction.amount !== 'number' || !Number.isFinite(transaction.amount)) {
     throw new Error('Transaction amount must be a finite number');
   }

@@ -26,6 +26,14 @@ describe('normalizeTransaction', () => {
     });
   });
 
+  it('preserves an empty legacy comment', () => {
+    expect(
+      normalizeTransaction({ ...legacyTransaction, comment: '' }, () => 'tx_new'),
+    ).toMatchObject({
+      comment: '',
+    });
+  });
+
   it.each([
     [{ ...legacyTransaction, account: '' }, 'account'],
     [{ ...legacyTransaction, date: '' }, 'date'],
