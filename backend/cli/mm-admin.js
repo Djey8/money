@@ -24,6 +24,7 @@ const { initializeDatabase, getUsersDb, getAuthDb } = require('../config/db');
 const { runMigration } = require('./commands/migrate');
 const { createUser, listUsers } = require('./commands/user');
 const { createToken, listTokens, revokeToken } = require('./commands/token');
+const { backfillTransactionIds } = require('./commands/backfill-transaction-ids');
 
 function parseArgs(argv) {
   const options = {};
@@ -54,6 +55,7 @@ function printUsage() {
   );
   console.error('  mm-admin token list --user <id>');
   console.error('  mm-admin token revoke --token-id <id>');
+  console.error('  mm-admin migrate-transaction-ids --user <id> [--dry-run]');
 }
 
 function print(result) {
@@ -135,6 +137,13 @@ async function main() {
   }
   if (command === 'token') {
     await handleToken(deps, second, parseArgs(rest));
+    return;
+  }
+  if (command === 'migrate-transaction-ids') {
+    const args = parseArgs([second, ...rest].filter((arg) => arg !== undefined));
+    print(
+      await backfillTransactionIds(deps, { userId: args.user, dryRun: Boolean(args['dry-run']) }),
+    );
     return;
   }
 
