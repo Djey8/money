@@ -46,6 +46,7 @@ const SUPPRESSED_PATTERNS = [
   /Decryption failed/, // CrypticService — expected in wrong-key tests
   /load error:/, // AppDataService — expected in tier-flag-on-error tests
   /Authentication failed/, // SettingsComponent — expected in auth-failure tests
+  /Write refused: server data changed/, // AppDataService — expected in write-conflict tests (docs/adr/0003)
 ];
 
 console.error = (...args: any[]) => {

@@ -278,6 +278,16 @@ export class AppDataService {
           : []),
         { tag: 'transactions', data: AppStateService.instance.allTransactions },
       ],
+      onConflict: () => {
+        // Someone else (another device, tab, or an agent via the Pro API)
+        // wrote since we last read — refuse to overwrite blindly. Refresh
+        // from the server so the next attempt to change something operates
+        // on current data. See docs/adr/0003-api-ui-write-consistency.md.
+        console.warn(
+          '[updateDatabase] Write refused: server data changed since last read. Reloading.',
+        );
+        this.loadFromDB();
+      },
       localStorageSaves: [
         { key: 'interests', data: JSON.stringify(AppStateService.instance.allIntrests) },
         { key: 'properties', data: JSON.stringify(AppStateService.instance.allProperties) },

@@ -26,6 +26,7 @@ jest.mock('../../../environments/environment', () => ({
 
 import { of, throwError } from 'rxjs';
 import { DatabaseService } from './database.service';
+import { AppStateService } from './app-state.service';
 
 // ── Mock factories ──────────────────────────────────────────────────────────
 
@@ -232,6 +233,77 @@ describe('DatabaseService (selfhosted mode)', () => {
       const obs = service.batchWrite([{ tag: 'transactions', data: [] }]);
       obs.subscribe();
       expect(selfhosted.clearEtagCache).not.toHaveBeenCalled();
+    });
+  });
+
+  // ── batchWrite() conflict detection (docs/adr/0003) ─────────────────────
+
+  describe('batchWrite() conflict detection', () => {
+    afterEach(() => {
+      AppStateService.instance.lastUpdatedAt = null;
+    });
+
+    it('writes immediately, without checking the server, when there is no local baseline yet', async () => {
+      AppStateService.instance.lastUpdatedAt = null;
+      dirtyTracker.hasChanged.mockReturnValue(true);
+      selfhosted.writeBatch.mockReturnValue(of({ success: true }));
+
+      const result = await service
+        .batchWrite([
+          { tag: 'transactions', data: [] },
+          { tag: 'budget', data: [] },
+        ])
+        .toPromise();
+
+      expect(selfhosted.getUpdatedAt).not.toHaveBeenCalled();
+      expect(result.success).toBe(true);
+      expect(result.conflict).toBeUndefined();
+    });
+
+    it('writes when the server updatedAt still matches the local baseline', async () => {
+      AppStateService.instance.lastUpdatedAt = '2026-03-29T10:00:00.000Z';
+      dirtyTracker.hasChanged.mockReturnValue(true);
+      selfhosted.getUpdatedAt.mockReturnValue(of({ updatedAt: '2026-03-29T10:00:00.000Z' }));
+      selfhosted.writeBatch.mockReturnValue(of({ success: true }));
+
+      const result = await service
+        .batchWrite([
+          { tag: 'transactions', data: [] },
+          { tag: 'budget', data: [] },
+        ])
+        .toPromise();
+
+      expect(result.success).toBe(true);
+      expect(selfhosted.writeBatch).toHaveBeenCalled();
+    });
+
+    it('refuses to write and reports a conflict when the server updatedAt has moved on', async () => {
+      AppStateService.instance.lastUpdatedAt = '2026-03-29T10:00:00.000Z';
+      dirtyTracker.hasChanged.mockReturnValue(true);
+      selfhosted.getUpdatedAt.mockReturnValue(of({ updatedAt: '2026-03-29T11:00:00.000Z' }));
+
+      const result = await service
+        .batchWrite([
+          { tag: 'transactions', data: [] },
+          { tag: 'budget', data: [] },
+        ])
+        .toPromise();
+
+      expect(result.conflict).toBe(true);
+      expect(result.success).toBe(false);
+      expect(selfhosted.writeBatch).not.toHaveBeenCalled();
+      expect(selfhosted.clearEtagCache).not.toHaveBeenCalled();
+    });
+
+    it('writes when the server has no updatedAt to compare (treated as no conflict, not blocked)', async () => {
+      AppStateService.instance.lastUpdatedAt = '2026-03-29T10:00:00.000Z';
+      dirtyTracker.hasChanged.mockReturnValue(true);
+      selfhosted.getUpdatedAt.mockReturnValue(of(null));
+      selfhosted.writeBatch.mockReturnValue(of({ success: true }));
+
+      const result = await service.batchWrite([{ tag: 'transactions', data: [] }]).toPromise();
+
+      expect(result.success).toBe(true);
     });
   });
 

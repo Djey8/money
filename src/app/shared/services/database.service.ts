@@ -9,9 +9,10 @@ import { CrypticService } from './cryptic.service';
 import { SelfhostedService } from './selfhosted.service';
 import { DirtyTrackerService } from './dirty-tracker.service';
 import { CacheService } from './cache.service';
+import { AppStateService } from './app-state.service';
 import { environment } from '../../../environments/environment';
 import { Observable, from, forkJoin, of } from 'rxjs';
-import { map, catchError, tap } from 'rxjs/operators';
+import { map, catchError, tap, switchMap } from 'rxjs/operators';
 
 @Injectable({
   providedIn: 'root',
@@ -158,7 +159,13 @@ export class DatabaseService {
    * Batch write multiple objects, filtering only dirty ones in selfhosted mode.
    * @param {Array<{tag: string, data: any}>} writes - Array of write operations
    * @param {boolean} forceWrite - If true, skip dirty tracking and write all (for encryption changes)
-   * @returns {Observable<any>} - Observable that completes when all writes finish
+   * @returns {Observable<any>} - Observable that completes when all writes finish. `{ conflict: true }`
+   *   means the write was refused because the server has changed since our last read — the caller
+   *   should refresh (e.g. `AppDataService.instance.loadFromDB()`) and let the user retry, not treat
+   *   this as a generic failure. See docs/adr/0003-api-ui-write-consistency.md: this is the
+   *   detect-and-refuse half of that ADR's write-safety mechanism (automatic re-read-and-merge is a
+   *   further improvement, not required to close the blob-clobber risk — refusing a stale write is
+   *   itself loss-safe, since nothing is silently overwritten).
    */
   batchWrite(writes: { tag: string; data: any }[], forceWrite = false): Observable<any> {
     if (this.mode === 'firebase') {
@@ -177,50 +184,70 @@ export class DatabaseService {
         return of({ success: true, skipped: true, totalWrites: 0 });
       }
 
-      // Use backend batch endpoint if available (more efficient)
-      if (dirtyWrites.length > 1) {
-        return this.selfhosted
-          .writeBatch(
-            dirtyWrites.map((w) => ({
-              path: w.tag,
-              data: this.prepareDataForWrite(w.tag, w.data),
-            })),
-          )
-          .pipe(
-            tap({
-              next: () => {
-                // Mark all as clean and take snapshots
-                dirtyWrites.forEach((w) => {
-                  this.dirtyTracker.markClean(w.tag);
-                  this.dirtyTracker.takeSnapshot(w.tag, w.data);
-                  this.cacheService.invalidate(w.tag);
-                });
-                this.selfhosted.clearEtagCache(); // Invalidate ETags so next read fetches fresh data
-              },
-              error: (error) => {
-                console.error('[BatchWrite] Failed:', error);
-              },
-            }),
-            map((response) => ({
-              success: true,
-              skipped: false,
-              totalWrites: dirtyWrites.length,
-              response,
-            })),
-          );
-      } else {
-        // Single write, use regular write
-        const observables = dirtyWrites.map(
-          (w) => this.writeObject(w.tag, w.data) as Observable<any>,
-        );
-        return forkJoin(observables).pipe(
-          map(() => ({
+      // No baseline to compare against yet (e.g. nothing loaded this
+      // session) — nothing meaningful to conflict with, so skip the
+      // extra round-trip and write immediately.
+      if (AppStateService.instance.lastUpdatedAt === null) {
+        return this.performDirtyWrites(dirtyWrites);
+      }
+
+      return from(this.getUpdatedAt()).pipe(
+        switchMap((serverUpdatedAt) => {
+          const conflict =
+            serverUpdatedAt !== null && serverUpdatedAt !== AppStateService.instance.lastUpdatedAt;
+          if (conflict) {
+            return of({ success: false, skipped: true, conflict: true, totalWrites: 0 });
+          }
+          return this.performDirtyWrites(dirtyWrites);
+        }),
+      );
+    }
+  }
+
+  private performDirtyWrites(dirtyWrites: { tag: string; data: any }[]): Observable<any> {
+    // Use backend batch endpoint if available (more efficient)
+    if (dirtyWrites.length > 1) {
+      return this.selfhosted
+        .writeBatch(
+          dirtyWrites.map((w) => ({
+            path: w.tag,
+            data: this.prepareDataForWrite(w.tag, w.data),
+          })),
+        )
+        .pipe(
+          tap({
+            next: () => {
+              // Mark all as clean and take snapshots
+              dirtyWrites.forEach((w) => {
+                this.dirtyTracker.markClean(w.tag);
+                this.dirtyTracker.takeSnapshot(w.tag, w.data);
+                this.cacheService.invalidate(w.tag);
+              });
+              this.selfhosted.clearEtagCache(); // Invalidate ETags so next read fetches fresh data
+            },
+            error: (error) => {
+              console.error('[BatchWrite] Failed:', error);
+            },
+          }),
+          map((response) => ({
             success: true,
             skipped: false,
             totalWrites: dirtyWrites.length,
+            response,
           })),
         );
-      }
+    } else {
+      // Single write, use regular write
+      const observables = dirtyWrites.map(
+        (w) => this.writeObject(w.tag, w.data) as Observable<any>,
+      );
+      return forkJoin(observables).pipe(
+        map(() => ({
+          success: true,
+          skipped: false,
+          totalWrites: dirtyWrites.length,
+        })),
+      );
     }
   }
 

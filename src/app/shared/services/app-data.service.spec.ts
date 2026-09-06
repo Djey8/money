@@ -97,6 +97,24 @@ describe('AppDataService', () => {
     jest.clearAllMocks();
   });
 
+  describe('updateDatabase()', () => {
+    it('reloads from the server via onConflict when the write is refused as stale (docs/adr/0003)', () => {
+      const service = createService();
+      AppStateService.instance.allTransactions = [];
+
+      service.updateDatabase();
+
+      expect(mockPersistence.batchWriteAndSync).toHaveBeenCalledTimes(1);
+      const config = mockPersistence.batchWriteAndSync.mock.calls[0][0];
+      expect(typeof config.onConflict).toBe('function');
+
+      mockDatabase.getBatchData.mockResolvedValue(null);
+      config.onConflict();
+
+      expect(mockDatabase.clearReadCache).toHaveBeenCalled();
+    });
+  });
+
   it('should set static instance on construction', () => {
     const service = createService();
     expect(AppDataService.instance).toBe(service);
