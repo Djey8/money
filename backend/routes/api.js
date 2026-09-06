@@ -38,10 +38,27 @@ router.get('/transactions', requireScope('transactions:r'), async (req, res, nex
         'limit must be 1 to 100.',
       );
     }
+    const sort = req.query.sort || 'date';
+    const order = req.query.order || 'desc';
+    if (!['date', 'amount'].includes(sort) || !['asc', 'desc'].includes(order)) {
+      return problem(
+        res,
+        400,
+        'validation_invalid',
+        'Invalid transaction request',
+        'sort and order are invalid.',
+      );
+    }
     return res.json(
       await listTransactions({ usersDb: getUsersDb(), authDb: getAuthDb() }, req.userId, {
         cursor: req.query.cursor,
         limit,
+        account: req.query.account,
+        category: req.query.category,
+        from: req.query.from,
+        to: req.query.to,
+        sort,
+        order,
       }),
     );
   } catch (error) {

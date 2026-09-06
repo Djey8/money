@@ -25,7 +25,29 @@ function decodeCursor(cursor) {
   return offset;
 }
 
-async function listTransactions({ usersDb, authDb }, userId, { cursor, limit = 50 } = {}) {
+function filterAndSortTransactions(
+  transactions,
+  { account, category, from, to, sort = 'date', order = 'desc' },
+) {
+  const filtered = transactions.filter((transaction) => {
+    if (account && transaction.account !== account) return false;
+    if (category && transaction.category !== category) return false;
+    if (from && transaction.date < from) return false;
+    if (to && transaction.date > to) return false;
+    return true;
+  });
+  const direction = order === 'asc' ? 1 : -1;
+  return filtered.sort((left, right) => {
+    const comparison =
+      sort === 'amount'
+        ? left.amountMinor - right.amountMinor
+        : `${left.date}T${left.time}`.localeCompare(`${right.date}T${right.time}`);
+    return comparison === 0 ? left.id.localeCompare(right.id) : comparison * direction;
+  });
+}
+
+async function listTransactions({ usersDb, authDb }, userId, options = {}) {
+  const { cursor, limit = 50 } = options;
   let userDoc;
   try {
     userDoc = await usersDb.get(userId);
@@ -45,13 +67,14 @@ async function listTransactions({ usersDb, authDb }, userId, { cursor, limit = 5
       );
     }),
   );
+  const matchingTransactions = filterAndSortTransactions(apiTransactions, options);
   const offset = decodeCursor(cursor);
-  const page = apiTransactions.slice(offset, offset + limit);
+  const page = matchingTransactions.slice(offset, offset + limit);
   const nextOffset = offset + page.length;
   return {
     transactions: page,
     nextCursor:
-      nextOffset < apiTransactions.length
+      nextOffset < matchingTransactions.length
         ? Buffer.from(String(nextOffset)).toString('base64url')
         : null,
   };
@@ -62,4 +85,10 @@ async function getTransaction(deps, userId, transactionId) {
   return result.transactions.find((transaction) => transaction.id === transactionId) || null;
 }
 
-module.exports = { listTransactions, getTransaction, decryptTransaction, decodeCursor };
+module.exports = {
+  listTransactions,
+  getTransaction,
+  decryptTransaction,
+  decodeCursor,
+  filterAndSortTransactions,
+};

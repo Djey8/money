@@ -1,7 +1,11 @@
 'use strict';
 
 const { EncryptionSession } = require('@money/domain');
-const { getTransaction, listTransactions } = require('../../repositories/transaction-repository');
+const {
+  filterAndSortTransactions,
+  getTransaction,
+  listTransactions,
+} = require('../../repositories/transaction-repository');
 
 function dependencies(data, encryptionConfig) {
   return {
@@ -94,5 +98,35 @@ describe('transaction repository', () => {
       comment: 'Two',
     });
     await expect(getTransaction(deps, 'user_1', 'tx_missing')).resolves.toBeNull();
+  });
+
+  it('filters and sorts without mutating the API transaction collection', () => {
+    const transactions = [
+      {
+        id: 'tx_1',
+        account: 'Daily',
+        category: '@Food',
+        date: '2026-09-02',
+        time: '09:00',
+        amountMinor: -100,
+      },
+      {
+        id: 'tx_2',
+        account: 'Income',
+        category: '@Salary',
+        date: '2026-09-01',
+        time: '10:00',
+        amountMinor: 200,
+      },
+    ];
+    expect(
+      filterAndSortTransactions(transactions, { account: 'Daily', sort: 'date', order: 'asc' }),
+    ).toEqual([transactions[0]]);
+    expect(
+      filterAndSortTransactions(transactions, { sort: 'amount', order: 'asc' }).map(
+        (transaction) => transaction.id,
+      ),
+    ).toEqual(['tx_1', 'tx_2']);
+    expect(transactions.map((transaction) => transaction.id)).toEqual(['tx_1', 'tx_2']);
   });
 });
