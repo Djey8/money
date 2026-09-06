@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { LocalService } from 'src/app/shared/services/local.service';
 import { DatabaseService } from 'src/app/shared/services/database.service';
@@ -44,7 +44,7 @@ let AppComponent: any; setTimeout(() => import('src/app/app.component').then(m =
   templateUrl: './info-budget.component.html',
   styleUrls: ['../../../shared/styles/info-panel.css', './info-budget.component.css']
 })
-export class InfoBudgetComponent extends BaseInfoComponent {
+export class InfoBudgetComponent extends BaseInfoComponent implements OnInit {
 
   // Static properties
   static index = 1;
@@ -108,7 +108,7 @@ export class InfoBudgetComponent extends BaseInfoComponent {
       const date = AppStateService.instance.allBudgets[i].date
       const tag = AppStateService.instance.allBudgets[i].tag
 
-      let selectedDate = PlanComponent.selectedMonthYear
+      const selectedDate = PlanComponent.selectedMonthYear
       ? `${PlanComponent.selectedMonthYear.split(' ')[1]}-${('0' + (new Date(`${PlanComponent.selectedMonthYear.split(' ')[0]} 1`).getMonth() + 1)).slice(-2)}`
       : '';
       if (date === selectedDate) {
@@ -218,6 +218,7 @@ export class InfoBudgetComponent extends BaseInfoComponent {
   /**
    * Handles the click event on the image.
    */
+  // eslint-disable-next-line @typescript-eslint/no-empty-function -- bound in template via (click)/(keydown.enter); intentionally a no-op placeholder
   clickImage() {
   }
 

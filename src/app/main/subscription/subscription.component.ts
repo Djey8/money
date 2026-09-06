@@ -8,7 +8,7 @@ import { MatDividerModule } from '@angular/material/divider';
 import {MatPaginator, MatPaginatorModule} from '@angular/material/paginator';
 import { Subscription } from 'rxjs';
 import {LiveAnnouncer} from '@angular/cdk/a11y';
-import {AfterViewInit, Component, ViewChild, inject, OnDestroy} from '@angular/core';
+import {AfterViewInit, Component, ViewChild, inject, OnDestroy, AfterViewChecked, OnInit} from '@angular/core';
 import {MatSort, Sort, MatSortModule} from '@angular/material/sort';
 import {MatTableDataSource, MatTableModule} from '@angular/material/table';
 import {MatFormFieldModule} from '@angular/material/form-field';
@@ -34,7 +34,7 @@ import { FrontendLoggerService } from 'src/app/shared/services/frontend-logger.s
   styleUrls: ['./subscription.component.css', '../../app.component.css', '../../shared/styles/table.css' ] // '../../shared/styles/table.css'
 })
 
-export class SubscriptionComponent implements OnDestroy {
+export class SubscriptionComponent implements OnDestroy, AfterViewChecked, OnInit, AfterViewInit {
   private _liveAnnouncer = inject(LiveAnnouncer);
   private tableInitialized = false;
 
@@ -119,33 +119,35 @@ export class SubscriptionComponent implements OnDestroy {
     let periodEnd: Date;
 
     switch (frequency) {
-      case 'weekly':
+      case 'weekly': {
         // Current week: Monday 00:00 to Sunday 23:59
         periodStart = new Date(today);
         const dayOfWeek = today.getDay(); // 0 = Sunday, 1 = Monday, ...
         const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Adjust so Monday = 0
         periodStart.setDate(today.getDate() - daysFromMonday);
         periodStart.setHours(0, 0, 0, 0);
-        
+
         periodEnd = new Date(periodStart);
         periodEnd.setDate(periodStart.getDate() + 6); // Sunday
         periodEnd.setHours(23, 59, 59, 999);
         break;
+      }
 
-      case 'biweekly':
+      case 'biweekly': {
         // Current 2-week period based on subscription start date
         const startDate = new Date(subscription.startDate);
         const daysSinceStart = Math.floor((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
         const currentBiweekIndex = Math.floor(daysSinceStart / 14);
-        
+
         periodStart = new Date(startDate);
         periodStart.setDate(startDate.getDate() + (currentBiweekIndex * 14));
         periodStart.setHours(0, 0, 0, 0);
-        
+
         periodEnd = new Date(periodStart);
         periodEnd.setDate(periodStart.getDate() + 13); // 14 days total (0-13)
         periodEnd.setHours(23, 59, 59, 999);
         break;
+      }
 
       case 'monthly':
         // Current month: 1st 00:00 to last day 23:59
@@ -153,12 +155,13 @@ export class SubscriptionComponent implements OnDestroy {
         periodEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59, 999);
         break;
 
-      case 'quarterly':
+      case 'quarterly': {
         // Current quarter: Q1 (Jan-Mar), Q2 (Apr-Jun), Q3 (Jul-Sep), Q4 (Oct-Dec)
         const currentQuarter = Math.floor(today.getMonth() / 3);
         periodStart = new Date(today.getFullYear(), currentQuarter * 3, 1);
         periodEnd = new Date(today.getFullYear(), (currentQuarter + 1) * 3, 0, 23, 59, 59, 999);
         break;
+      }
 
       case 'yearly':
         // Current year: Jan 1 00:00 to Dec 31 23:59
@@ -230,6 +233,7 @@ export class SubscriptionComponent implements OnDestroy {
   }
 
 
+  // eslint-disable-next-line @angular-eslint/no-empty-lifecycle-method -- required by `implements AfterViewInit`; actual work happens in ngAfterViewChecked
   ngAfterViewInit() {
     // Handled by ngAfterViewChecked to support *ngIf="!isLoading" timing
   }
@@ -241,6 +245,7 @@ export class SubscriptionComponent implements OnDestroy {
     }
   }
 
+  // eslint-disable-next-line @angular-eslint/no-empty-lifecycle-method, @typescript-eslint/no-empty-function -- required by `implements OnDestroy`; nothing to clean up here
   ngOnDestroy() {}
 
   private setupTableFeatures() {
@@ -428,7 +433,7 @@ export class SubscriptionComponent implements OnDestroy {
    * @returns Translated frequency label.
    */
   getFrequencyLabel(frequency: string): string {
-    const labels: { [key: string]: string } = {
+    const labels: Record<string, string> = {
       weekly: 'Weekly',
       biweekly: 'Biweekly',
       monthly: 'Monthly',

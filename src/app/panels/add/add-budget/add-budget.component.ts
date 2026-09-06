@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, AfterViewInit } from '@angular/core';
 import { ProfileComponent } from '../../profile/profile.component';
 import { MenuComponent } from '../../menu/menu.component';
 import { InfoComponent } from '../../info/info.component';
@@ -34,7 +34,7 @@ import { TrapFocusDirective } from 'src/app/shared/directives/trap-focus.directi
   templateUrl: './add-budget.component.html',
   styleUrls: ['../../../shared/styles/add-form.css', './add-budget.component.css']
 })
-export class AddBudgetComponent extends BaseAddComponent {
+export class AddBudgetComponent extends BaseAddComponent implements OnInit, AfterViewInit {
   static amountTextField = "";
   static categoryTextField = "@";
   static dateTextField = "";
@@ -76,6 +76,7 @@ export class AddBudgetComponent extends BaseAddComponent {
     AddBudgetComponent.populateCategoryOptions();
   }
 
+  // eslint-disable-next-line @angular-eslint/no-empty-lifecycle-method -- required by `implements AfterViewInit`; placeholder hook, no work needed currently
   ngAfterViewInit() {
     // Add any additional logic you want to execute when the component is visible
   }
@@ -96,7 +97,7 @@ export class AddBudgetComponent extends BaseAddComponent {
       const date = AppStateService.instance.allBudgets[i].date
       const tag = AppStateService.instance.allBudgets[i].tag
 
-      let selectedDate = PlanComponent.selectedMonthYear
+      const selectedDate = PlanComponent.selectedMonthYear
       ? `${PlanComponent.selectedMonthYear.split(' ')[1]}-${('0' + (new Date(`${PlanComponent.selectedMonthYear.split(' ')[0]} 1`).getMonth() + 1)).slice(-2)}`
       : '';
       if (date === selectedDate) {
@@ -184,7 +185,7 @@ export class AddBudgetComponent extends BaseAddComponent {
           const amount = Math.abs(isNaN(parseFloat(AddBudgetComponent.amountTextField)) ? 0 : parseFloat(AddBudgetComponent.amountTextField));
 
           // Find if a budget for the same month and category already exists
-          let existingBudget = AppStateService.instance.allBudgets.find(
+          const existingBudget = AppStateService.instance.allBudgets.find(
             (b: any) => b.date === AddBudgetComponent.dateTextField && b.tag === tag
           );
 
@@ -193,7 +194,7 @@ export class AddBudgetComponent extends BaseAddComponent {
             existingBudget.amount = amount;
           } else {
             // Create new budget entry
-            let newBudget = {
+            const newBudget = {
               date,
               tag,
               amount

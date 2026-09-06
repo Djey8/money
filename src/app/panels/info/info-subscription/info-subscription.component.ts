@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { LocalService } from 'src/app/shared/services/local.service';
 import { DatabaseService } from 'src/app/shared/services/database.service';
@@ -34,7 +34,7 @@ let AppComponent: any; setTimeout(() => import('src/app/app.component').then(m =
   templateUrl: './info-subscription.component.html',
   styleUrls: ['../../../shared/styles/info-panel.css', './info-subscription.component.css']
 })
-export class InfoSubscriptionComponent extends BaseInfoComponent {
+export class InfoSubscriptionComponent extends BaseInfoComponent implements OnInit {
 
   // Static properties
   static index = 1;
@@ -135,7 +135,7 @@ export class InfoSubscriptionComponent extends BaseInfoComponent {
    * @returns Translated frequency label.
    */
   getFrequencyLabel(frequency: string): string {
-    const labels: { [key: string]: string } = {
+    const labels: Record<string, string> = {
       weekly: 'Weekly',
       biweekly: 'Biweekly',
       monthly: 'Monthly',
@@ -215,6 +215,7 @@ export class InfoSubscriptionComponent extends BaseInfoComponent {
   /**
    * Handles the click event on the image.
    */
+  // eslint-disable-next-line @typescript-eslint/no-empty-function -- bound in template via (click)/(keydown.enter); intentionally a no-op placeholder
   clickImage() {
   }
 
@@ -295,7 +296,7 @@ export class InfoSubscriptionComponent extends BaseInfoComponent {
    * Updates the liabilities with the new amount based on the category.
    * @param category - The category of the transaction.
    */
-  updateLiabilities(category: String) {
+  updateLiabilities(category: string) {
     for (let i = 0; i < AppStateService.instance.liabilities.length; i++) {
       if (category.toLocaleLowerCase() === ("@" + AppStateService.instance.liabilities[i].tag.toLocaleLowerCase())) {
         AppStateService.instance.liabilities[i].amount += this.amountTextField - SubscriptionComponent.allSubscriptions[InfoSubscriptionComponent.index].amount;
@@ -362,6 +363,7 @@ export class InfoSubscriptionComponent extends BaseInfoComponent {
    */
   deleteSubscription(index: number) {
     this.confirmService.confirm(this.translate.instant('Confirm.deleteSubscription'), () => {
+      // eslint-disable-next-line no-useless-assignment -- initial 0 is a default that's always overwritten before read; pre-existing, out of scope for lint setup
       let deletedTransactionsCount = 0;
       
       // Save data before deleting
@@ -427,6 +429,7 @@ export class InfoSubscriptionComponent extends BaseInfoComponent {
    * @param index - The index of the transaction to be deleted.
    */
   deleteTransactions(index: number) {
+    // eslint-disable-next-line no-useless-assignment -- initial 0 is a default that's always overwritten before read; pre-existing, out of scope for lint setup
     let deletedTransactionsCount = 0;
     
     // Delete Transactions

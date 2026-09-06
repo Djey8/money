@@ -10,7 +10,7 @@ import { AddComponent } from 'src/app/panels/add/add.component';
 import { MatDividerModule } from '@angular/material/divider';
 import {MatPaginator, MatPaginatorModule} from '@angular/material/paginator';
 import {LiveAnnouncer} from '@angular/cdk/a11y';
-import {AfterViewInit, Component, ViewChild, inject, OnDestroy} from '@angular/core';
+import {AfterViewInit, Component, ViewChild, inject, OnDestroy, AfterViewChecked, OnInit} from '@angular/core';
 import {MatSort, Sort, MatSortModule} from '@angular/material/sort';
 import {MatTableDataSource, MatTableModule} from '@angular/material/table';
 import {MatFormFieldModule} from '@angular/material/form-field';
@@ -38,7 +38,7 @@ import { SharedFilterComponent } from 'src/app/shared/components/shared-filter/s
   templateUrl: './accounting.component.html',
   styleUrls: ['./accounting.component.css', '../../app.component.css', '../../shared/styles/table.css']
 })
-export class AccountingComponent implements OnDestroy {
+export class AccountingComponent implements OnDestroy, AfterViewChecked, OnInit, AfterViewInit {
 
   private _liveAnnouncer = inject(LiveAnnouncer);
   private tableInitialized = false;
@@ -203,6 +203,7 @@ export class AccountingComponent implements OnDestroy {
   }
 
 
+  // eslint-disable-next-line @angular-eslint/no-empty-lifecycle-method -- required by `implements AfterViewInit`; actual work happens in ngAfterViewChecked
   ngAfterViewInit() {
     // Handled by ngAfterViewChecked to support *ngIf="!isLoading" timing
   }
@@ -432,7 +433,7 @@ export class AccountingComponent implements OnDestroy {
 
       // Search text filter with boolean logic
       if (AccountingComponent.advancedFilter.searchText.trim()) {
-        let searchExpression = AccountingComponent.advancedFilter.searchText
+        const searchExpression = AccountingComponent.advancedFilter.searchText
           .replace(/\band\b/gi, '&&')
           .replace(/\bor\b/gi, '||')
           .replace(/\bnot\b/gi, '!');

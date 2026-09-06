@@ -90,6 +90,7 @@ export class CommunityThreadComponent implements OnInit {
         return this.guestIdentity.isAdmin();
       })
       .then(isAdmin => { this.isAdmin = isAdmin; })
+      // eslint-disable-next-line @typescript-eslint/no-empty-function -- intentionally swallow identity-setup errors; not critical to page load
       .catch(() => {});
     this.load();
   }

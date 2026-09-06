@@ -301,7 +301,7 @@ export class InfoGrowComponent extends BaseInfoComponent {
           this.showError("This grow project already exists.");
         }
       }
-      let isInvest = InfoGrowComponent.isAsset || InfoGrowComponent.isShare || InfoGrowComponent.isInvestment
+      const isInvest = InfoGrowComponent.isAsset || InfoGrowComponent.isShare || InfoGrowComponent.isInvestment
 
       let liabilitie: Liability = null
       if(InfoGrowComponent.isLoan){
@@ -338,7 +338,7 @@ export class InfoGrowComponent extends BaseInfoComponent {
         if (this.mortageTextField === "" || this.mortageTextField === "0") {
           this.showError("Please fill out all required fields (Mortage).");
         } else {
-            let deposit = Number(this.amountTextField) + parseFloat(this.loanTextField);
+            const deposit = Number(this.amountTextField) + parseFloat(this.loanTextField);
             investment = {tag: this.titleTextField, deposit: deposit, amount: this.mortageTextField}
         }
       }
@@ -678,6 +678,7 @@ export class InfoGrowComponent extends BaseInfoComponent {
       localStorageKey: 'grow',
       logEvent: 'update_grow',
       logMetadata: { index: InfoGrowComponent.index },
+      // eslint-disable-next-line @typescript-eslint/no-empty-function -- required callback shape; nothing to do on success here
       onSuccess: () => {},
       onError: (error: any) => {
         this.showError(error.message || 'Save failed');

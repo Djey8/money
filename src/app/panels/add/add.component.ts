@@ -1,4 +1,4 @@
-import { Component, ɵNOT_FOUND_CHECK_ONLY_ELEMENT_INJECTOR } from '@angular/core';
+import { Component, ɵNOT_FOUND_CHECK_ONLY_ELEMENT_INJECTOR, OnInit, AfterViewInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { LocalService } from 'src/app/shared/services/local.service';
 import { Transaction } from '../../interfaces/transaction';
@@ -48,7 +48,7 @@ let AppComponent: any; setTimeout(() => import('src/app/app.component').then(m =
   templateUrl: './add.component.html',
   styleUrls: ['../../shared/styles/add-form.css', './add.component.css']
 })
-export class AddComponent extends BaseAddComponent {
+export class AddComponent extends BaseAddComponent implements OnInit, AfterViewInit {
   static selectedOption = "Daily";
   static amountTextField = "";
   d = new Date();
@@ -115,6 +115,7 @@ export class AddComponent extends BaseAddComponent {
     AddComponent.populateCategoryOptions();
   }
 
+  // eslint-disable-next-line @angular-eslint/no-empty-lifecycle-method -- required by `implements AfterViewInit`; placeholder hook, no work needed currently
   ngAfterViewInit() {
     // Add any additional logic you want to execute when the component is visible
   }
@@ -325,7 +326,7 @@ export class AddComponent extends BaseAddComponent {
     v = v.replace(/,/g, '.');
 
     // Remove characters other than digits, dot and minus
-    v = v.replace(/[^0-9.\-]/g, '');
+    v = v.replace(/[^0-9.-]/g, '');
 
     // Keep at most one dot
     const parts = v.split('.');
@@ -410,8 +411,7 @@ export class AddComponent extends BaseAddComponent {
 
       // Now process the transaction
       if (AddComponent.isShare) {
-        if (AddComponent.shareTextField === "") {
-        } else {
+        if (AddComponent.shareTextField !== "") {
           if (this.showShareOptions){
             AddComponent.shareTextField = String(Math.round(parseFloat(AddComponent.amountTextField) * (parseFloat(AddComponent.shareTextField) / 100) * 100) / 100);
           }
@@ -424,10 +424,10 @@ export class AddComponent extends BaseAddComponent {
       }
 
       if (AddComponent.commentTextField.includes("Buy Asset")) {
-        let split = AddComponent.commentTextField.split(" ");
-        let title = split[2];
-        let quantity = split[3];
-        let price = split[5];
+        const split = AddComponent.commentTextField.split(" ");
+        const title = split[2];
+        const quantity = split[3];
+        const price = split[5];
         let amount = parseFloat(quantity) * parseFloat(price)
         
         let found = false;
@@ -438,7 +438,7 @@ export class AddComponent extends BaseAddComponent {
           }
         }
         if(!found){
-          let newAsset = { tag: title, amount: amount }
+          const newAsset = { tag: title, amount: amount }
           AppStateService.instance.allAssets.push(newAsset);
         }
         if(AddComponent.isLiabilitie){
@@ -459,11 +459,11 @@ export class AddComponent extends BaseAddComponent {
       }
 
       if (AddComponent.commentTextField.includes("Sell Asset")) {
-        let split = AddComponent.commentTextField.split(" ");
-        let title = split[2];
-            let quantity = split[3];
-            let price = split[5];
-            let amount = parseFloat(quantity) * parseFloat(price);
+        const split = AddComponent.commentTextField.split(" ");
+        const title = split[2];
+            const quantity = split[3];
+            const price = split[5];
+            const amount = parseFloat(quantity) * parseFloat(price);
             
             for (let i = 0; i < AppStateService.instance.allAssets.length; i++) {
               if (AppStateService.instance.allAssets[i].tag === title) {
@@ -484,10 +484,10 @@ export class AddComponent extends BaseAddComponent {
           }
 
           if (AddComponent.commentTextField.includes("Buy Share")) {
-            let split = AddComponent.commentTextField.split(" ");
-            let title = split[2];
-            let quantity = split[3];
-            let price = split[5];
+            const split = AddComponent.commentTextField.split(" ");
+            const title = split[2];
+            const quantity = split[3];
+            const price = split[5];
             let amount = parseFloat(quantity) * parseFloat(price);
 
             let found = false;
@@ -499,7 +499,7 @@ export class AddComponent extends BaseAddComponent {
               }
             }
             if(!found){
-              let newShare: Share = { tag: title, quantity: parseFloat(quantity), price: parseFloat(price) }
+              const newShare: Share = { tag: title, quantity: parseFloat(quantity), price: parseFloat(price) }
               AppStateService.instance.allShares.push(newShare);
             }
 
@@ -524,21 +524,21 @@ export class AddComponent extends BaseAddComponent {
           }
 
           if (AddComponent.commentTextField.includes("Dividende Share")) {
-            let split = AddComponent.commentTextField.split(" ");
-            let title = split[2];
-            let quantity = split[3];
-            let price = split[5];
-            let amount = parseFloat(quantity) * parseFloat(price);
+            const split = AddComponent.commentTextField.split(" ");
+            const title = split[2];
+            const quantity = split[3];
+            const price = split[5];
+            const amount = parseFloat(quantity) * parseFloat(price);
 
             AddComponent.amountTextField = `${amount}`;
           }
 
           if (AddComponent.commentTextField.includes("Sell Share")) {
-            let split = AddComponent.commentTextField.split(" ");
-            let title = split[2];
-            let quantity = split[3];
-            let price = split[5];
-            let amount = parseFloat(quantity) * parseFloat(price);
+            const split = AddComponent.commentTextField.split(" ");
+            const title = split[2];
+            const quantity = split[3];
+            const price = split[5];
+            const amount = parseFloat(quantity) * parseFloat(price);
             for (let i = 0; i < AppStateService.instance.allShares.length; i++) {
               if (AppStateService.instance.allShares[i].tag === title) {
                 AppStateService.instance.allShares[i].quantity -= parseFloat(quantity);
@@ -563,10 +563,10 @@ export class AddComponent extends BaseAddComponent {
           }
 
           if (AddComponent.commentTextField.includes("Buy Investment")) {
-            let split = AddComponent.commentTextField.split(" ");
-            let title = split[2];
-            let deposit = split[3];
-            let mortage = split[4];
+            const split = AddComponent.commentTextField.split(" ");
+            const title = split[2];
+            const deposit = split[3];
+            const mortage = split[4];
 
             let found = false;
             for (let i = 0; i < AppStateService.instance.allInvestments.length; i++) {
@@ -577,7 +577,7 @@ export class AddComponent extends BaseAddComponent {
               }
             }
             if(!found){
-              let newInvestment: Investment = { tag: title, deposit: parseFloat(deposit), amount: parseFloat(mortage) }
+              const newInvestment: Investment = { tag: title, deposit: parseFloat(deposit), amount: parseFloat(mortage) }
               AppStateService.instance.allInvestments.push(newInvestment);
             }
 
@@ -589,7 +589,7 @@ export class AddComponent extends BaseAddComponent {
               }
             }
             if(!foundM){
-              let newLiabilitie: Liability = { tag: "M-"+title, amount: parseFloat(mortage), investment: true, credit: 0 }
+              const newLiabilitie: Liability = { tag: "M-"+title, amount: parseFloat(mortage), investment: true, credit: 0 }
               AppStateService.instance.liabilities.push(newLiabilitie);
             }
 
@@ -691,7 +691,7 @@ export class AddComponent extends BaseAddComponent {
                   isInvesmtent = true;
                 }
               }
-              let newLiabilitie: Liability = {tag: AddComponent.categoryTextField.replace("@",""), amount: parseFloat(AddComponent.loanTextField), investment: isInvesmtent, credit: parseFloat(AddComponent.creditTextField)};
+              const newLiabilitie: Liability = {tag: AddComponent.categoryTextField.replace("@",""), amount: parseFloat(AddComponent.loanTextField), investment: isInvesmtent, credit: parseFloat(AddComponent.creditTextField)};
               AppStateService.instance.liabilities.push(newLiabilitie);
               for(let e=0; e < AppStateService.instance.allGrowProjects.length; e++){
                 if(AppStateService.instance.allGrowProjects[e].title === AddComponent.categoryTextField.replace("@","")){
@@ -704,7 +704,7 @@ export class AddComponent extends BaseAddComponent {
           }
 
           if(AddComponent.commentTextField.includes("Payback Liabilitie")){
-            let split = AddComponent.commentTextField.split(" ");
+            const split = AddComponent.commentTextField.split(" ");
             let amount = 0.0;
             if (split[2].includes("%")) {
               for(let i=0; i < AppStateService.instance.liabilities.length; i++){
@@ -765,13 +765,13 @@ export class AddComponent extends BaseAddComponent {
           if (AddComponent.commentTextField.includes("Sell Investment")) {
             let clean_comment = AddComponent.commentTextField;
             if(clean_comment.includes("Payback Liabilitie")){
-              let clean_split = clean_comment.split("; ");
+              const clean_split = clean_comment.split("; ");
               clean_comment = clean_split[1];
             }
-            let split = clean_comment.split(" ");
-            let title = split[2];
-            let deposit = split[3];
-            let mortage = split[4];
+            const split = clean_comment.split(" ");
+            const title = split[2];
+            const deposit = split[3];
+            const mortage = split[4];
             for (let i = 0; i < AppStateService.instance.allInvestments.length; i++) {
               if (AppStateService.instance.allInvestments[i].tag === title) {
                 AppStateService.instance.allInvestments[i].deposit -= parseFloat(deposit);
@@ -795,9 +795,9 @@ export class AddComponent extends BaseAddComponent {
 
             let profit = parseFloat(deposit);
             if(AddComponent.commentTextField.includes("Payback Liabilitie")){
-              let liabilitie_split = AddComponent.commentTextField.split(" ");
-              let loan = liabilitie_split[2];
-              let credit = liabilitie_split[3]; 
+              const liabilitie_split = AddComponent.commentTextField.split(" ");
+              const loan = liabilitie_split[2];
+              const credit = liabilitie_split[3]; 
               profit = parseFloat(deposit) - parseFloat(loan) - parseFloat(credit)
             }
 
@@ -876,7 +876,7 @@ export class AddComponent extends BaseAddComponent {
                 for (let i = 0; i < AppStateService.instance.allShares.length; i++) {
                   if (this.classReference.categoryTextField.toLocaleLowerCase() === "@" + AppStateService.instance.allShares[i].tag.toLocaleLowerCase()) {
                     found = true;
-                    let newInterest: Interest = { tag: AppStateService.instance.allShares[i].tag, amount: parseFloat(AddComponent.amountTextField) }
+                    const newInterest: Interest = { tag: AppStateService.instance.allShares[i].tag, amount: parseFloat(AddComponent.amountTextField) }
                     AppStateService.instance.allIntrests.push(newInterest);
                     this.frontendLogger.logActivity('update_income_statement_item', 'info', {
                       itemType: 'interest',
@@ -894,7 +894,7 @@ export class AddComponent extends BaseAddComponent {
                 for (let i = 0; i < AppStateService.instance.allInvestments.length; i++) {
                   if (this.classReference.categoryTextField.toLocaleLowerCase() === "@" + AppStateService.instance.allInvestments[i].tag.toLocaleLowerCase()) {
                     found = true;
-                    let newPropertie: Property = { tag: AppStateService.instance.allInvestments[i].tag, amount: parseFloat(AddComponent.amountTextField) }
+                    const newPropertie: Property = { tag: AppStateService.instance.allInvestments[i].tag, amount: parseFloat(AddComponent.amountTextField) }
                     AppStateService.instance.allProperties.push(newPropertie);
                     this.frontendLogger.logActivity('update_income_statement_item', 'info', {
                       itemType: 'property',
@@ -913,7 +913,7 @@ export class AddComponent extends BaseAddComponent {
                   if (this.classReference.categoryTextField.toLocaleLowerCase() === "@" + AppStateService.instance.allGrowProjects[i].title.toLocaleLowerCase()) {
                     found = true;
                     if(AppStateService.instance.allGrowProjects[i].share){
-                      let newInterest: Interest = { tag: AppStateService.instance.allGrowProjects[i].title, amount: parseFloat(AddComponent.amountTextField) }
+                      const newInterest: Interest = { tag: AppStateService.instance.allGrowProjects[i].title, amount: parseFloat(AddComponent.amountTextField) }
                       AppStateService.instance.allIntrests.push(newInterest);
                       this.frontendLogger.logActivity('update_income_statement_item', 'info', {
                         itemType: 'interest',
@@ -925,7 +925,7 @@ export class AddComponent extends BaseAddComponent {
                       });
                     }
                     if(AppStateService.instance.allGrowProjects[i].investment){
-                      let newPropertie: Property = { tag: AppStateService.instance.allGrowProjects[i].title, amount: parseFloat(AddComponent.amountTextField) }
+                      const newPropertie: Property = { tag: AppStateService.instance.allGrowProjects[i].title, amount: parseFloat(AddComponent.amountTextField) }
                       AppStateService.instance.allProperties.push(newPropertie);
                       this.frontendLogger.logActivity('update_income_statement_item', 'info', {
                         itemType: 'property',
@@ -941,7 +941,7 @@ export class AddComponent extends BaseAddComponent {
               }
               // else add new to reveneus
               if (!found) {
-                let new_revenue: Revenue = { tag: this.classReference.categoryTextField.replace("@", ""), amount: parseFloat(AddComponent.amountTextField) }
+                const new_revenue: Revenue = { tag: this.classReference.categoryTextField.replace("@", ""), amount: parseFloat(AddComponent.amountTextField) }
                 AppStateService.instance.allRevenues.push(new_revenue);
                 this.frontendLogger.logActivity('update_income_statement_item', 'info', {
                   itemType: 'revenue',
@@ -976,7 +976,7 @@ export class AddComponent extends BaseAddComponent {
                 }
                 //else add to dailyEx
                 if (!found) {
-                  let new_expense: Expense = { tag: this.classReference.categoryTextField.replace("@", ""), amount: parseFloat(AddComponent.amountTextField) }
+                  const new_expense: Expense = { tag: this.classReference.categoryTextField.replace("@", ""), amount: parseFloat(AddComponent.amountTextField) }
                   AppStateService.instance.dailyExpenses.push(new_expense);
                   this.frontendLogger.logActivity('update_income_statement_item', 'info', {
                     itemType: 'dailyExpense',
@@ -1011,7 +1011,7 @@ export class AddComponent extends BaseAddComponent {
                 }
                 //else add to splurgeEx
                 if (!found) {
-                  let new_expense: Expense = { tag: this.classReference.categoryTextField.replace("@", ""), amount: parseFloat(AddComponent.amountTextField) }
+                  const new_expense: Expense = { tag: this.classReference.categoryTextField.replace("@", ""), amount: parseFloat(AddComponent.amountTextField) }
                   AppStateService.instance.splurgeExpenses.push(new_expense);
                   this.frontendLogger.logActivity('update_income_statement_item', 'info', {
                     itemType: 'splurgeExpense',
@@ -1046,7 +1046,7 @@ export class AddComponent extends BaseAddComponent {
                 }
                 //else add to smileEx
                 if (!found) {
-                  let new_expense: Expense = { tag: this.classReference.categoryTextField.replace("@", ""), amount: parseFloat(AddComponent.amountTextField) }
+                  const new_expense: Expense = { tag: this.classReference.categoryTextField.replace("@", ""), amount: parseFloat(AddComponent.amountTextField) }
                   AppStateService.instance.smileExpenses.push(new_expense);
                   this.frontendLogger.logActivity('update_income_statement_item', 'info', {
                     itemType: 'smileExpense',
@@ -1081,7 +1081,7 @@ export class AddComponent extends BaseAddComponent {
                 }
                 //else add to fireEx
                 if (!found) {
-                  let new_expense: Expense = { tag: this.classReference.categoryTextField.replace("@", ""), amount: parseFloat(AddComponent.amountTextField) }
+                  const new_expense: Expense = { tag: this.classReference.categoryTextField.replace("@", ""), amount: parseFloat(AddComponent.amountTextField) }
                   AppStateService.instance.fireExpenses.push(new_expense);
                   this.frontendLogger.logActivity('update_income_statement_item', 'info', {
                     itemType: 'fireExpense',
@@ -1116,7 +1116,7 @@ export class AddComponent extends BaseAddComponent {
                 }
                 //else add to mojoEx
                 if (!found) {
-                  let new_expense: Expense = { tag: this.classReference.categoryTextField.replace("@", ""), amount: parseFloat(AddComponent.amountTextField) }
+                  const new_expense: Expense = { tag: this.classReference.categoryTextField.replace("@", ""), amount: parseFloat(AddComponent.amountTextField) }
                   AppStateService.instance.mojoExpenses.push(new_expense);
                   this.frontendLogger.logActivity('update_income_statement_item', 'info', {
                     itemType: 'mojoExpense',
@@ -1139,7 +1139,7 @@ export class AddComponent extends BaseAddComponent {
           
 
           // ready to write to Database new Transaction
-          let newTransaction: Transaction = { account: AddComponent.selectedOption, amount: parseFloat(AddComponent.amountTextField), date: this.dateTextField, time: this.timeTextField, category: AddComponent.categoryTextField, comment: AddComponent.commentTextField }
+          const newTransaction: Transaction = { account: AddComponent.selectedOption, amount: parseFloat(AddComponent.amountTextField), date: this.dateTextField, time: this.timeTextField, category: AddComponent.categoryTextField, comment: AddComponent.commentTextField }
           AppStateService.instance.allTransactions.push(newTransaction);
           
           // After transaction is added, update it with smart bucket allocation tags
@@ -1230,10 +1230,7 @@ export class AddComponent extends BaseAddComponent {
 
               // Execute batch write in background (only writes changed data)
               this.database.batchWrite(writes).subscribe({
-                next: (result) => {
-                  if (result.skipped) {
-                  } else {
-                  }
+                next: () => {
                   // Log user activity
                   this.frontendLogger.logActivity('add_transaction', 'info', {
                     account: AddComponent.selectedOption,
@@ -1383,11 +1380,11 @@ export class AddComponent extends BaseAddComponent {
    * Returns { allocations, adjustedAmount }
    */
   distributeAmountToBuckets(buckets: any[], transactionAmount: number): { 
-    allocations: Array<{bucketName: string, amount: number}>,
+    allocations: {bucketName: string, amount: number}[],
     adjustedAmount?: number 
   } {
     const amountToDistribute = Math.abs(transactionAmount);
-    const allocations: Array<{bucketName: string, amount: number}> = [];
+    const allocations: {bucketName: string, amount: number}[] = [];
     
     // Calculate remaining capacity for each bucket
     const bucketInfo = buckets.map(bucket => ({
@@ -1480,7 +1477,7 @@ export class AddComponent extends BaseAddComponent {
    * @param projectBuckets - Array of bucket objects to validate bucket names
    * @returns Array of allocations if valid, null if invalid or not present
    */
-  parseManualBucketAllocations(comment: string | undefined, transactionAmount: number, projectBuckets: any[]): Array<{bucketName: string, amount: number}> | null {
+  parseManualBucketAllocations(comment: string | undefined, transactionAmount: number, projectBuckets: any[]): {bucketName: string, amount: number}[] | null {
     if (!comment) return null;
     
     // Find all bucket tags in comment
@@ -1488,7 +1485,7 @@ export class AddComponent extends BaseAddComponent {
     if (!bucketTagMatches || bucketTagMatches.length === 0) return null;
     
     // Parse allocations
-    const allocations: Array<{bucketName: string, amount: number}> = [];
+    const allocations: {bucketName: string, amount: number}[] = [];
     let totalAllocated = 0;
     
     for (const tag of bucketTagMatches) {
@@ -1528,13 +1525,13 @@ export class AddComponent extends BaseAddComponent {
           project.buckets || []
         );
         
-        let usedAllocations: Array<{bucketName: string, amount: number}> | null = null;
+        let usedAllocations: {bucketName: string, amount: number}[] | null = null;
         let needsCommentUpdate = false;
         
         if (manualAllocations) {
           // User manually specified valid allocations that add up
           // Cap each allocation at bucket capacity (NO overflow redistribution)
-          const cappedAllocations: Array<{bucketName: string, amount: number}> = [];
+          const cappedAllocations: {bucketName: string, amount: number}[] = [];
           
           manualAllocations.forEach(allocation => {
             const bucket = project.buckets.find(b => b.title === allocation.bucketName);
@@ -1645,13 +1642,13 @@ export class AddComponent extends BaseAddComponent {
           emergency.buckets || []
         );
         
-        let usedAllocations: Array<{bucketName: string, amount: number}> | null = null;
+        let usedAllocations: {bucketName: string, amount: number}[] | null = null;
         let needsCommentUpdate = false;
         
         if (manualAllocations) {
           // User manually specified valid allocations that add up
           // Cap each allocation at bucket capacity (NO overflow redistribution)
-          const cappedAllocations: Array<{bucketName: string, amount: number}> = [];
+          const cappedAllocations: {bucketName: string, amount: number}[] = [];
           
           manualAllocations.forEach(allocation => {
             const bucket = emergency.buckets.find(b => b.title === allocation.bucketName);

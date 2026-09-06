@@ -54,6 +54,7 @@ export function migrateSmile(raw: any): Smile {
     : (typeof raw.amount === 'number' ? raw.amount : parseFloat(raw.amount) || 0);
 
   // Auto-determine phase if not set or if we should override
+  // eslint-disable-next-line no-useless-assignment -- initial 'planning' is always overwritten below; pre-existing, out of scope for lint setup
   let phase: SmilePhase = 'planning';
   let completionDate = raw.completionDate || raw.completedDate || undefined;
 

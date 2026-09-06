@@ -65,6 +65,7 @@ export class CommunityComponent implements OnInit {
     // Establish an identity eagerly so composing/reacting has no first-click delay.
     this.guestIdentity.ensureIdentity()
       .then(() => { this.isGuestUser = this.guestIdentity.isGuest(); })
+      // eslint-disable-next-line @typescript-eslint/no-empty-function -- intentionally swallow identity-setup errors; not critical to page load
       .catch(() => {});
     this.loadThreads();
   }

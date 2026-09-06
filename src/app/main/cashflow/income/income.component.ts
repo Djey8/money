@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
 import { AppComponent } from 'src/app/app.component';
 import { Revenue } from 'src/app/interfaces/revenue';
@@ -31,7 +31,7 @@ import { SharedFilterComponent } from 'src/app/shared/components/shared-filter/s
   templateUrl: './income.component.html',
   styleUrls: ['./income.component.css', '../../../app.component.css', '../../../shared/styles/table.css']
 })
-export class IncomeComponent {
+export class IncomeComponent implements OnDestroy {
 
   static get allRevenues(): Revenue[] { return AppStateService.instance.allRevenues; }
   static set allRevenues(v: Revenue[]) { AppStateService.instance.allRevenues = v; }
@@ -380,7 +380,7 @@ export class IncomeComponent {
       // Search text filter across selected fields (supports boolean logic: &&, ||, and, or, not)
       if (IncomeComponent.currentFilter.searchText.trim()) {
         // Replace word operators with symbols for easier parsing
-        let searchExpression = IncomeComponent.currentFilter.searchText
+        const searchExpression = IncomeComponent.currentFilter.searchText
           .replace(/\band\b/gi, '&&')
           .replace(/\bor\b/gi, '||')
           .replace(/\bnot\b/gi, '!');
@@ -1210,20 +1210,20 @@ export class IncomeComponent {
   }
 
   static getTotalAmount() {
-    let credit = IncomeComponent.getCreditAmount();
-    let debit = IncomeComponent.getDebitAmount();
+    const credit = IncomeComponent.getCreditAmount();
+    const debit = IncomeComponent.getDebitAmount();
     return credit + debit;
   }
   static getTotalAmountF() {
-    let credit = IncomeComponent.getCreditAmountF();
-    let debit = IncomeComponent.getDebitAmountF();
+    const credit = IncomeComponent.getCreditAmountF();
+    const debit = IncomeComponent.getDebitAmountF();
     return credit + debit;
   }
 
   static getNettogewinnmarge() {
     let result = 0.0;
-    let cashflow = IncomeComponent.getTotalAmount();
-    let credit = IncomeComponent.getCreditAmount();
+    const cashflow = IncomeComponent.getTotalAmount();
+    const credit = IncomeComponent.getCreditAmount();
     if(credit > 0.0){
       result = cashflow / credit * 100;
     }
@@ -1232,8 +1232,8 @@ export class IncomeComponent {
 
   static getEigenkaptitalRen() {
     let result = 0.0;
-    let cashflow = IncomeComponent.getTotalAmount();
-    let capital = BalanceComponent.getAssetsAmount();
+    const cashflow = IncomeComponent.getTotalAmount();
+    const capital = BalanceComponent.getAssetsAmount();
     if(capital > 0.0){
       result = cashflow / capital * 100;
     }
@@ -1242,8 +1242,8 @@ export class IncomeComponent {
 
   static getVerschuldungsgrad() {
     let result = 0.0;
-    let credit = BalanceComponent.getAssetsAmount();
-    let liabilitie = BalanceComponent.getLiabilities();
+    const credit = BalanceComponent.getAssetsAmount();
+    const liabilitie = BalanceComponent.getLiabilities();
     if(credit > 0.0){
       result = liabilitie / credit ;
     }
@@ -1256,8 +1256,8 @@ export class IncomeComponent {
 
   static getEigenkapitalquote() {
     let result = 0.0;
-    let credit = BalanceComponent.getAssetsAmount();
-    let capital = BalanceComponent.getLiabilities() + credit;
+    const credit = BalanceComponent.getAssetsAmount();
+    const capital = BalanceComponent.getLiabilities() + credit;
     if(capital > 0.0){
       result = credit / capital * 100;
     }
@@ -1268,8 +1268,8 @@ export class IncomeComponent {
     let result = 0.0;
     for (let i = 0; i < AppStateService.instance.allTransactions.length; i++) {
       if(AppStateService.instance.allTransactions[i].comment.includes("Payback Liabilitie")){
-        let split = AppStateService.instance.allTransactions[i].comment.split(" ");
-        let credit = parseFloat(split[split.length - 1]);
+        const split = AppStateService.instance.allTransactions[i].comment.split(" ");
+        const credit = parseFloat(split[split.length - 1]);
         result += credit;
       }
     }
@@ -1278,8 +1278,8 @@ export class IncomeComponent {
 
   static getZinsdeckungsgrad() {
     let result = 0.0;
-    let cashflow = IncomeComponent.getTotalAmount();
-    let credit = IncomeComponent.getZinsaufwendungen();
+    const cashflow = IncomeComponent.getTotalAmount();
+    const credit = IncomeComponent.getZinsaufwendungen();
     if(credit > 0.0){
       result = cashflow / credit;
     }
@@ -1360,9 +1360,7 @@ export class IncomeComponent {
     AppComponent.gotoTop();
   }
 
-  clickRevenue() {
-  }
-
+  // eslint-disable-next-line @typescript-eslint/no-empty-function -- bound in template via (click)/(keydown.enter); intentionally a no-op placeholder
   clickExpenses() {
   }
 

@@ -68,7 +68,7 @@ function extractUserIdFromToken(req) {
     const token = authHeader.split(' ')[1];
     const decoded = jwt.verify(token, JWT_SECRET);
     return decoded.userId || 'anonymous';
-  } catch (error) {
+  } catch {
     // Token invalid or expired - that's okay, just log as anonymous
     return 'anonymous';
   }
@@ -172,6 +172,7 @@ function logResponse(req, res, responseTime, requestId, responseData) {
 /**
  * Error handling middleware
  */
+// eslint-disable-next-line no-unused-vars -- Express identifies error-handling middleware by function arity (4 params); `next` must stay even though it's unused here
 function errorLoggingMiddleware(err, req, res, next) {
   const requestId = req.requestId || 'unknown';
   

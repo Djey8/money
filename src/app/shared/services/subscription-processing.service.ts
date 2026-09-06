@@ -199,7 +199,7 @@ export class SubscriptionProcessingService {
       this.updateExpenseCategory(AppStateService.instance.mojoExpenses, 'mojoExpense', category, amount);
     }
 
-    let newTransaction: Transaction = { account: selectedOption, amount: parseFloat(amount), date: date, time: time, category: category, comment: comment ? title + " + " + comment : title }
+    const newTransaction: Transaction = { account: selectedOption, amount: parseFloat(amount), date: date, time: time, category: category, comment: comment ? title + " + " + comment : title }
     AppStateService.instance.allTransactions.push(newTransaction);
     AccountingComponent.allTransactions = AppStateService.instance.allTransactions;
     AccountingComponent.dataSource.data = AppStateService.instance.allTransactions;
@@ -222,6 +222,7 @@ export class SubscriptionProcessingService {
 
   private updateIncomeStatement(category: string, amount) {
     let found = false;
+    // eslint-disable-next-line no-useless-assignment -- initial '' is always overwritten below; pre-existing, out of scope for lint setup
     let itemType = '';
     while (!found) {
       for (let i = 0; i < AppStateService.instance.allIntrests.length; i++) {
@@ -261,7 +262,7 @@ export class SubscriptionProcessingService {
         }
       }
       if (!found) {
-        let new_revenue: Revenue = { tag: category.replace("@", ""), amount: parseFloat(amount) }
+        const new_revenue: Revenue = { tag: category.replace("@", ""), amount: parseFloat(amount) }
         AppStateService.instance.allRevenues.push(new_revenue);
         found = true;
         this.frontendLogger.logActivity('update_income_statement_item', 'info', {
@@ -288,7 +289,7 @@ export class SubscriptionProcessingService {
         }
       }
       if (!found) {
-        let new_expense: Expense = { tag: category.replace("@", ""), amount: parseFloat(amount) }
+        const new_expense: Expense = { tag: category.replace("@", ""), amount: parseFloat(amount) }
         expenses.push(new_expense);
         found = true;
         this.frontendLogger.logActivity('update_income_statement_item', 'info', {
@@ -327,10 +328,10 @@ export class SubscriptionProcessingService {
    * Distribute amount across buckets based on their remaining capacity
    * Returns array of allocations: {bucketName, amount}
    */
-  distributeAmountToBuckets(buckets: any[], transactionAmount: number): Array<{bucketName: string, amount: number}> {
+  distributeAmountToBuckets(buckets: any[], transactionAmount: number): {bucketName: string, amount: number}[] {
     // Amount is negative for contributions
     const amountToDistribute = Math.abs(transactionAmount);
-    const allocations: Array<{bucketName: string, amount: number}> = [];
+    const allocations: {bucketName: string, amount: number}[] = [];
     
     // Get buckets with remaining capacity
     const bucketsWithSpace = buckets
@@ -367,7 +368,7 @@ export class SubscriptionProcessingService {
       });
     } else {
       // Amount exceeds total capacity - fill each bucket to target, distribute overflow equally
-      let overflow = amountToDistribute - totalRemaining;
+      const overflow = amountToDistribute - totalRemaining;
       
       bucketsWithSpace.forEach(({bucket, remaining}) => {
         allocations.push({

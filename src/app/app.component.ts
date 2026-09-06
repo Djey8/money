@@ -466,6 +466,7 @@ export class AppComponent {
     } else {
       // Selfhosted mode - clear userId and call backend to clear cookies
       localStorage.removeItem('selfhosted_userId');
+      // eslint-disable-next-line @typescript-eslint/no-empty-function -- intentionally swallow logout errors; local state is cleared regardless
       this.selfhosted.logout().subscribe({ error: () => {} });
     }
     

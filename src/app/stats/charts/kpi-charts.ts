@@ -491,7 +491,7 @@ export function createExpenseIncomeRatio() {
         .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
       // Build expandable info content
-      let info = `
+      const info = `
         <strong>${d3.timeFormat("%B %Y")(d.month)}</strong><br/>
         Ratio: <span style="color:${d.ratio > 1 ? 'red' : 'var(--color-text)'}">${(d.ratio * 100).toFixed(1)}%</span><br/>
         Income: <span style="color:${d.income < 0 ? 'red' : 'var(--color-text)'}">${d.income.toFixed(2)} ${AppStateService.instance.currency}</span><br/>
@@ -1261,7 +1261,7 @@ export function createSavingsRate() {
           .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
         // Build expandable info content
-        let info = `
+        const info = `
           <strong>${d3.timeFormat("%B %Y")(d.month)}</strong><br/>
           Savings Rate: <span style="color:${d.rate < 0 ? 'red' : 'var(--color-text)'}">${(d.rate * 100).toFixed(1)}%</span><br/>
           Income: <span style="color:${d.income < 0 ? 'red' : 'var(--color-text)'}">${d.income.toFixed(2)} ${AppStateService.instance.currency}</span><br/>
@@ -1561,7 +1561,7 @@ if (unfinishedData.length === 2) {
         .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
       // Build expandable info content
-      let info = `
+      const info = `
         <strong>${d3.timeFormat("%B %Y")(d.month)}</strong><br/>
         Burn Rate: <span style="color:${d.amount*-1 < 0 ? 'red' : 'var(--color-text)'}">${d.amount.toFixed(2)*-1} ${AppStateService.instance.currency}</span>
         <br>
@@ -1654,7 +1654,7 @@ if (unfinishedData.length === 2) {
  * @param selectedIndex - Index within the selected period for navigation.
  * @param numCategories - Number of top categories to display (default 5).
  */
-export function createTopSpendingCategories(selectedPeriod: string = "all", selectedIndex: number = 0, numCategories: number = 5) {
+export function createTopSpendingCategories(selectedPeriod = "all", selectedIndex = 0, numCategories = 5) {
   d3.select("#chart-container").selectAll("*").remove();
 
   // Save period/index for swipe navigation
@@ -1762,7 +1762,7 @@ export function createTopSpendingCategories(selectedPeriod: string = "all", sele
         .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
       // Build expandable info content
-      let info = `
+      const info = `
         <strong>${category}</strong><br/>
         Total: ${d[1].toFixed(2)} ${AppStateService.instance.currency}
         <br>
@@ -1895,7 +1895,7 @@ export function createTopSpendingCategories(selectedPeriod: string = "all", sele
  * Renders a stacked bar chart comparing recurring (subscription-matched) vs.
  * one-time expenses per category for the selected period.
  */
-export function createRecurringVsOneTimeChart(selectedPeriod: string = "all", selectedIndex: number = 0) {
+export function createRecurringVsOneTimeChart(selectedPeriod = "all", selectedIndex = 0) {
   // Remove all chart content
   d3.select("#chart-container").selectAll("*").remove();
 
@@ -2105,7 +2105,7 @@ export function createHeatmapCalendar(selectedYear: number = new Date().getFullY
   // Use window.innerWidth for width, but clamp to 100vw if container is smaller (fixes mobile centering)
   const container = document.getElementById("chart-container");
   let width = (container ? container.clientWidth : window.innerWidth) - margin.left - margin.right;
-  let height = window.innerHeight - margin.top - margin.bottom - 80 - 75;
+  const height = window.innerHeight - margin.top - margin.bottom - 80 - 75;
 
   // On mobile, ensure width is at least 95vw (fixes left-half bug)
   if (window.innerWidth < 600) {
@@ -2470,6 +2470,7 @@ export function createHeatmapCalendar(selectedYear: number = new Date().getFullY
       .style("top", `${event.pageY - 30}px`);
     
     // Add content with appropriate label based on value
+    // eslint-disable-next-line no-useless-assignment -- initial '' is always overwritten below; pre-existing, out of scope for lint setup
     let valueLabel = "";
     let valueColor = "var(--color-text)";
     if (value > 0) {

@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { LocalService } from 'src/app/shared/services/local.service';
 import { FrontendLoggerService } from 'src/app/shared/services/frontend-logger.service';
@@ -39,7 +39,7 @@ let AppComponent: any; setTimeout(() => import('src/app/app.component').then(m =
   templateUrl: './info.component.html',
   styleUrls: ['../../shared/styles/info-panel.css', './info.component.css']
 })
-export class InfoComponent extends BaseInfoComponent {
+export class InfoComponent extends BaseInfoComponent implements OnInit {
 
   // Static properties
   static index = 1;
@@ -191,6 +191,7 @@ export class InfoComponent extends BaseInfoComponent {
   /**
    * Handles the click event on the image.
    */
+  // eslint-disable-next-line @typescript-eslint/no-empty-function -- bound in template via (click)/(keydown.enter); intentionally a no-op placeholder
   clickImage() {
   }
 
@@ -212,30 +213,30 @@ export class InfoComponent extends BaseInfoComponent {
     } else {
       let clean_comment = AppStateService.instance.allTransactions[InfoComponent.index].comment;
       if(AppStateService.instance.allTransactions[InfoComponent.index].comment.includes("Liabilitie")) {
-        let split = clean_comment.split(";");
+        const split = clean_comment.split(";");
         clean_comment = split[1];
         clean_comment = clean_comment.trimStart();
       }
       let clean_local_comment = this.commentTextField;
       if(this.commentTextField.includes("Liabilitie")) {
-        let split = clean_local_comment.split(";");
+        const split = clean_local_comment.split(";");
         clean_local_comment = split[1];
         clean_local_comment = clean_local_comment.trimStart();
       }
       // Update existing transaction (PATCH)
       if (clean_comment.includes("Buy Asset")) {
-        let split_old = clean_comment.split(" ");
-        let quantity_old = split_old[3];
-        let price_old = split_old[5];
-        let amount_old = parseFloat(quantity_old) * parseFloat(price_old);
-        let split = clean_local_comment.split(" ");
-        let title = split[2];
-        let quantity = split[3];
+        const split_old = clean_comment.split(" ");
+        const quantity_old = split_old[3];
+        const price_old = split_old[5];
+        const amount_old = parseFloat(quantity_old) * parseFloat(price_old);
+        const split = clean_local_comment.split(" ");
+        const title = split[2];
+        const quantity = split[3];
 
-        let price = split[5];
-        let amount = parseFloat(quantity) * parseFloat(price);
+        const price = split[5];
+        const amount = parseFloat(quantity) * parseFloat(price);
 
-        let amount_diff = amount_old - amount;
+        const amount_diff = amount_old - amount;
 
         for (let i = 0; i < AppStateService.instance.allAssets.length; i++) {
 
@@ -256,18 +257,18 @@ export class InfoComponent extends BaseInfoComponent {
 
       // Update existing transaction (PATCH)
       if (clean_comment.includes("Sell Asset")) {
-        let split_old = clean_comment.split(" ");
-        let quantity_old = split_old[3];
-        let price_old = split_old[5];
-        let amount_old = parseFloat(quantity_old) * parseFloat(price_old);
+        const split_old = clean_comment.split(" ");
+        const quantity_old = split_old[3];
+        const price_old = split_old[5];
+        const amount_old = parseFloat(quantity_old) * parseFloat(price_old);
         
-        let split = clean_local_comment.split(" ");
-        let title = split[2];
-        let quantity = split[3];
+        const split = clean_local_comment.split(" ");
+        const title = split[2];
+        const quantity = split[3];
 
-        let price = split[5];
-        let amount = parseFloat(quantity) * parseFloat(price);
-        let amount_diff = amount_old - amount;
+        const price = split[5];
+        const amount = parseFloat(quantity) * parseFloat(price);
+        const amount_diff = amount_old - amount;
 
         if(quantity_old !== quantity){
           let found = false;
@@ -280,7 +281,7 @@ export class InfoComponent extends BaseInfoComponent {
           }
 
           if (!found) {
-            let newAsset: Asset = {tag: title, amount: amount};
+            const newAsset: Asset = {tag: title, amount: amount};
             AppStateService.instance.allAssets.push(newAsset);
           }
         }
@@ -290,20 +291,20 @@ export class InfoComponent extends BaseInfoComponent {
       }
 
       if (clean_comment.includes("Buy Share")) {
-        let split_old = clean_comment.split(" ");
-        let quantity_old = split_old[3];
-        let price_old = split_old[5];
+        const split_old = clean_comment.split(" ");
+        const quantity_old = split_old[3];
+        const price_old = split_old[5];
 
-        let split = clean_local_comment.split(" ");
-        let title = split[2];
-        let quantity = split[3];
+        const split = clean_local_comment.split(" ");
+        const title = split[2];
+        const quantity = split[3];
 
-        let quantity_diff = parseFloat(quantity_old) - parseFloat(quantity);
+        const quantity_diff = parseFloat(quantity_old) - parseFloat(quantity);
 
-        let price = split[5];
-        let amount = parseFloat(quantity) * parseFloat(price);
-        let amount_old = parseFloat(quantity_old) * parseFloat(price_old);
-        let amount_diff = amount_old - amount;
+        const price = split[5];
+        const amount = parseFloat(quantity) * parseFloat(price);
+        const amount_old = parseFloat(quantity_old) * parseFloat(price_old);
+        const amount_diff = amount_old - amount;
 
         for (let i = 0; i < AppStateService.instance.allShares.length; i++) {
           if (AppStateService.instance.allShares[i].tag === title) {
@@ -326,17 +327,17 @@ export class InfoComponent extends BaseInfoComponent {
 
       // Update existing transaction (PATCH)
       if (clean_comment.includes("Sell Share")) {
-        let split_old = clean_comment.split(" ");
-        let quantity_old = split_old[3];
+        const split_old = clean_comment.split(" ");
+        const quantity_old = split_old[3];
         
-        let split = clean_local_comment.split(" ");
-        let title = split[2];
-        let quantity = split[3];
+        const split = clean_local_comment.split(" ");
+        const title = split[2];
+        const quantity = split[3];
 
-        let quantity_diff = parseFloat(quantity_old) - parseFloat(quantity);
+        const quantity_diff = parseFloat(quantity_old) - parseFloat(quantity);
 
-        let price = split[5];
-        let amount = parseFloat(quantity) * parseFloat(price);
+        const price = split[5];
+        const amount = parseFloat(quantity) * parseFloat(price);
 
         let found = false;
         for (let i = 0; i < AppStateService.instance.allShares.length; i++) {
@@ -352,7 +353,7 @@ export class InfoComponent extends BaseInfoComponent {
         }
 
         if (!found && quantity_diff != 0) {
-          let newShare: Share = {tag: title, quantity: quantity_diff, price: parseFloat(price)};
+          const newShare: Share = {tag: title, quantity: quantity_diff, price: parseFloat(price)};
           AppStateService.instance.allShares.push(newShare);
         }
 
@@ -368,17 +369,17 @@ export class InfoComponent extends BaseInfoComponent {
       }
 
       if (clean_comment.includes("Buy Investment")) {
-        let split_old = clean_comment.split(" ");
-        let deposit_old = split_old[3];
-        let mortage_old = split_old[4];
+        const split_old = clean_comment.split(" ");
+        const deposit_old = split_old[3];
+        const mortage_old = split_old[4];
 
-        let split = clean_local_comment.split(" ");
-        let title = split[2];
-        let deposit = split[3];
-        let mortage = split[4];
+        const split = clean_local_comment.split(" ");
+        const title = split[2];
+        const deposit = split[3];
+        const mortage = split[4];
 
-        let deposit_diff = parseFloat(deposit_old) - parseFloat(deposit);
-        let mortage_diff = parseFloat(mortage_old) - parseFloat(mortage);
+        const deposit_diff = parseFloat(deposit_old) - parseFloat(deposit);
+        const mortage_diff = parseFloat(mortage_old) - parseFloat(mortage);
 
         for (let i = 0; i < AppStateService.instance.allInvestments.length; i++) {
           if (AppStateService.instance.allInvestments[i].tag === title) {
@@ -395,13 +396,13 @@ export class InfoComponent extends BaseInfoComponent {
         // calculate new deposit
         let growAmount_diff = parseFloat(deposit);
         if(this.commentTextField.includes("Liabilitie")){
-          let split = this.commentTextField.split(" ");
-          let liabilitAmount = parseFloat(split[1]);
-          let newDeposit = parseFloat(deposit) - liabilitAmount;
+          const split = this.commentTextField.split(" ");
+          const liabilitAmount = parseFloat(split[1]);
+          const newDeposit = parseFloat(deposit) - liabilitAmount;
           
-          let split_old = AppStateService.instance.allTransactions[InfoComponent.index].comment.split(" ");
-          let liabilitAmount_old = parseFloat(split_old[1]);
-          let newDeposit_old = parseFloat(deposit_old) - liabilitAmount_old;
+          const split_old = AppStateService.instance.allTransactions[InfoComponent.index].comment.split(" ");
+          const liabilitAmount_old = parseFloat(split_old[1]);
+          const newDeposit_old = parseFloat(deposit_old) - liabilitAmount_old;
           growAmount_diff = newDeposit - newDeposit_old;
         } 
 
@@ -418,16 +419,16 @@ export class InfoComponent extends BaseInfoComponent {
       }
 
       if (AppStateService.instance.allTransactions[InfoComponent.index].comment.includes("Payback Liabilitie")) {
-        let split_old = AppStateService.instance.allTransactions[InfoComponent.index].comment.split(" ");
-        let amount_old = split_old[2];
-        let credit_old = split_old[3]; 
+        const split_old = AppStateService.instance.allTransactions[InfoComponent.index].comment.split(" ");
+        const amount_old = split_old[2];
+        const credit_old = split_old[3]; 
         
-        let split = this.commentTextField.split(" ");
-        let amount_new = split[2];
-        let credit_new = split[3];
+        const split = this.commentTextField.split(" ");
+        const amount_new = split[2];
+        const credit_new = split[3];
 
-        let amount_diff = parseFloat(amount_new) - parseFloat(amount_old);
-        let credit_diff = parseFloat(credit_new) - parseFloat(credit_old);
+        const amount_diff = parseFloat(amount_new) - parseFloat(amount_old);
+        const credit_diff = parseFloat(credit_new) - parseFloat(credit_old);
 
         let found = false;
         for (let i = 0; i < AppStateService.instance.liabilities.length; i++) {
@@ -462,7 +463,7 @@ export class InfoComponent extends BaseInfoComponent {
               investemt = AppStateService.instance.allGrowProjects[i].isAsset || AppStateService.instance.allGrowProjects[i].share != null || AppStateService.instance.allGrowProjects[i].investment != null;
             }
           }
-          let newLiability: Liability = { tag: AppStateService.instance.allTransactions[InfoComponent.index].category.replace("@", ""), amount: amount_diff*-1, credit: credit_diff*-1, investment: investemt }  
+          const newLiability: Liability = { tag: AppStateService.instance.allTransactions[InfoComponent.index].category.replace("@", ""), amount: amount_diff*-1, credit: credit_diff*-1, investment: investemt }  
           AppStateService.instance.liabilities.push(newLiability);
         }
 
@@ -497,7 +498,7 @@ export class InfoComponent extends BaseInfoComponent {
               }
 
             } else {
-              let newLiabilitie: Liability = { tag: AppStateService.instance.allGrowProjects[i].title, amount: amount_diff*-1, credit: credit_diff*-1, investment: (AppStateService.instance.allGrowProjects[i].isAsset || AppStateService.instance.allGrowProjects[i].share != null || AppStateService.instance.allGrowProjects[i].investment != null) }
+              const newLiabilitie: Liability = { tag: AppStateService.instance.allGrowProjects[i].title, amount: amount_diff*-1, credit: credit_diff*-1, investment: (AppStateService.instance.allGrowProjects[i].isAsset || AppStateService.instance.allGrowProjects[i].share != null || AppStateService.instance.allGrowProjects[i].investment != null) }
               AppStateService.instance.allGrowProjects[i].liabilitie = newLiabilitie;
             }
           }
@@ -506,9 +507,9 @@ export class InfoComponent extends BaseInfoComponent {
         this.amountTextField = (parseFloat(amount_new) + parseFloat(credit_new))*-1;
       } else {
         if (AppStateService.instance.allTransactions[InfoComponent.index].comment.includes("Liabilitie")) {
-          let split_old = AppStateService.instance.allTransactions[InfoComponent.index].comment.split(" ");
-          let amount_old = split_old[1];
-          let credit_old = split_old[2];
+          const split_old = AppStateService.instance.allTransactions[InfoComponent.index].comment.split(" ");
+          const amount_old = split_old[1];
+          const credit_old = split_old[2];
 
           if(!this.commentTextField.includes("Liabilitie")){
             // remove from liablities
@@ -534,18 +535,18 @@ export class InfoComponent extends BaseInfoComponent {
               }
             }
           } else {
-            let split = this.commentTextField.split(" ");
-            let amount_new = split[1];
+            const split = this.commentTextField.split(" ");
+            const amount_new = split[1];
             let credit_new = split[2];
             if (credit_new.includes("%")){
-              let percentage = parseFloat(split[2].replace("%", ""));
+              const percentage = parseFloat(split[2].replace("%", ""));
               credit_new = parseFloat((Math.round((parseFloat(amount_new) * percentage) / 100 * 100) / 100).toFixed(2)).toString();
               this.commentTextField = `${split[0]} ${split[1]} ${credit_new};`;
             }
             
     
-            let amount_diff = parseFloat(amount_new) - parseFloat(amount_old);
-            let credit_diff = parseFloat(credit_new) - parseFloat(credit_old);
+            const amount_diff = parseFloat(amount_new) - parseFloat(amount_old);
+            const credit_diff = parseFloat(credit_new) - parseFloat(credit_old);
 
             for(let i=0; i < AppStateService.instance.allGrowProjects.length; i++){
               if(AppStateService.instance.allGrowProjects[i].title === InfoComponent.category.replace("@", "")){
@@ -553,8 +554,8 @@ export class InfoComponent extends BaseInfoComponent {
                   AppStateService.instance.allGrowProjects[i].liabilitie.amount += amount_diff;
                   AppStateService.instance.allGrowProjects[i].liabilitie.credit += credit_diff;
                 } else {
-                  let invstment = AppStateService.instance.allGrowProjects[i].isAsset || AppStateService.instance.allGrowProjects[i].share != null || AppStateService.instance.allGrowProjects[i].investment != null;
-                  let newLiability: Liability = { tag: InfoComponent.category.replace("@", ""), amount: amount_diff*-1, credit: credit_diff*-1, investment: invstment }
+                  const invstment = AppStateService.instance.allGrowProjects[i].isAsset || AppStateService.instance.allGrowProjects[i].share != null || AppStateService.instance.allGrowProjects[i].investment != null;
+                  const newLiability: Liability = { tag: InfoComponent.category.replace("@", ""), amount: amount_diff*-1, credit: credit_diff*-1, investment: invstment }
                   AppStateService.instance.allGrowProjects[i].liabilitie = newLiability;
                 }
                 
@@ -594,17 +595,17 @@ export class InfoComponent extends BaseInfoComponent {
       }
 
       if (clean_comment.includes("Sell Investment")) {
-        let split_old = clean_comment.split(" ");
-        let deposit_old = split_old[3];
-        let mortage_old = split_old[4];
+        const split_old = clean_comment.split(" ");
+        const deposit_old = split_old[3];
+        const mortage_old = split_old[4];
 
-        let split = clean_local_comment.split(" ");
-        let title = split[2];
-        let deposit = split[3];
-        let mortage = split[4];
+        const split = clean_local_comment.split(" ");
+        const title = split[2];
+        const deposit = split[3];
+        const mortage = split[4];
 
-        let deposit_diff = parseFloat(deposit_old) - parseFloat(deposit);
-        let mortage_diff = parseFloat(mortage_old) - parseFloat(mortage);
+        const deposit_diff = parseFloat(deposit_old) - parseFloat(deposit);
+        const mortage_diff = parseFloat(mortage_old) - parseFloat(mortage);
 
         for (let i = 0; i < AppStateService.instance.allInvestments.length; i++) {
           if (AppStateService.instance.allInvestments[i].tag === title) {
@@ -621,8 +622,8 @@ export class InfoComponent extends BaseInfoComponent {
         // calculate new deposit
         let newDeposit = parseFloat(deposit);
         if(this.commentTextField.includes("Payback Liabilitie")){
-          let split = this.commentTextField.split(" ");
-          let liabilitAmount = parseFloat(split[2]);
+          const split = this.commentTextField.split(" ");
+          const liabilitAmount = parseFloat(split[2]);
           newDeposit = parseFloat(deposit) - liabilitAmount;
         } 
 
@@ -808,6 +809,7 @@ export class InfoComponent extends BaseInfoComponent {
           ] : [])
         ]
       });
+      // eslint-disable-next-line no-empty -- intentionally swallow batch-write errors here
     } catch (error) {
     }
   }
@@ -816,7 +818,7 @@ export class InfoComponent extends BaseInfoComponent {
    * Updates the liabilities with the new amount based on the category.
    * @param category - The category of the transaction.
    */
-  updateLiabilities(category: String) {
+  updateLiabilities(category: string) {
     for (let i = 0; i < AppStateService.instance.liabilities.length; i++) {
       if (category.toLocaleLowerCase() === ("@" + AppStateService.instance.liabilities[i].tag.toLocaleLowerCase())) {
         AppStateService.instance.liabilities[i].amount += this.amountTextField - (AppStateService.instance.allTransactions[InfoComponent.index]?.amount ?? 0);
@@ -840,16 +842,16 @@ export class InfoComponent extends BaseInfoComponent {
     
     let clean_comment = AppStateService.instance.allTransactions[InfoComponent.index].comment;
       if(AppStateService.instance.allTransactions[InfoComponent.index].comment.includes("Liabilitie")) {
-        let split = clean_comment.split(";");
+        const split = clean_comment.split(";");
         clean_comment = split[1];
         clean_comment = clean_comment.trimStart();
       }
     if (clean_comment.includes("Buy Asset")) {
-      let split = clean_comment.split(" ");      
-      let title = split[2];
-      let quantity = parseFloat(split[3]);
-      let price = parseFloat(split[5])
-      let amount = quantity * price
+      const split = clean_comment.split(" ");      
+      const title = split[2];
+      const quantity = parseFloat(split[3]);
+      const price = parseFloat(split[5])
+      const amount = quantity * price
 
       for (let i = 0; i < AppStateService.instance.allAssets.length; i++) {
         if (AppStateService.instance.allAssets[i].tag === title) {
@@ -872,11 +874,11 @@ export class InfoComponent extends BaseInfoComponent {
     }
 
     if (clean_comment.includes("Sell Asset")) {
-      let split = clean_comment.split(" ");      
-      let title = split[2];
-      let quantity = parseFloat(split[3]);
-      let price = parseFloat(split[5]);
-      let amount = quantity * price;
+      const split = clean_comment.split(" ");      
+      const title = split[2];
+      const quantity = parseFloat(split[3]);
+      const price = parseFloat(split[5]);
+      const amount = quantity * price;
 
       let found = false;
       for (let i = 0; i < AppStateService.instance.allAssets.length; i++) {
@@ -890,7 +892,7 @@ export class InfoComponent extends BaseInfoComponent {
         }
       }
       if(!found && amount != 0){
-        let asset: Asset = { tag: title, amount: amount }
+        const asset: Asset = { tag: title, amount: amount }
         AppStateService.instance.allAssets.push(asset);
       }
 
@@ -907,10 +909,10 @@ export class InfoComponent extends BaseInfoComponent {
       }
     }
     if (clean_comment.includes("Buy Share")) {
-      let split = clean_comment.split(" ");      
-      let title = split[2];
-      let quantity = parseFloat(split[3]);
-      let price = parseFloat(split[5]);
+      const split = clean_comment.split(" ");      
+      const title = split[2];
+      const quantity = parseFloat(split[3]);
+      const price = parseFloat(split[5]);
 
       for (let i = 0; i < AppStateService.instance.allShares.length; i++) {
         if (AppStateService.instance.allShares[i].tag === title) {
@@ -935,10 +937,10 @@ export class InfoComponent extends BaseInfoComponent {
     }
 
     if (clean_comment.includes("Sell Share")) {
-      let split = clean_comment.split(" ");      
-      let title = split[2];
-      let quantity = parseFloat(split[3]);
-      let price = parseFloat(split[5]);
+      const split = clean_comment.split(" ");      
+      const title = split[2];
+      const quantity = parseFloat(split[3]);
+      const price = parseFloat(split[5]);
 
       let found = false;
       for (let i = 0; i < AppStateService.instance.allShares.length; i++) {
@@ -952,7 +954,7 @@ export class InfoComponent extends BaseInfoComponent {
         }
       }
       if (!found && quantity != 0) {
-        let share: Share = { tag: title, quantity: quantity, price: price };
+        const share: Share = { tag: title, quantity: quantity, price: price };
         AppStateService.instance.allShares.push(share);
       }
 
@@ -977,10 +979,10 @@ export class InfoComponent extends BaseInfoComponent {
     }
 
     if (clean_comment.includes("Buy Investment")) {
-      let split = clean_comment.split(" ");      
-      let title = split[2];
-      let deposit = parseFloat(split[3]);
-      let mortage = parseFloat(split[4]);
+      const split = clean_comment.split(" ");      
+      const title = split[2];
+      const deposit = parseFloat(split[3]);
+      const mortage = parseFloat(split[4]);
 
       for (let i = 0; i < AppStateService.instance.allInvestments.length; i++) {
         if (AppStateService.instance.allInvestments[i].tag === title) {
@@ -1007,8 +1009,8 @@ export class InfoComponent extends BaseInfoComponent {
 
       let growAmount = deposit;
       if(AppStateService.instance.allTransactions[InfoComponent.index].comment.includes("Liabilitie")){
-        let liabilitie_split = InfoComponent.comment.split(" ");
-        let liabilitAmount = parseFloat(liabilitie_split[1]);
+        const liabilitie_split = InfoComponent.comment.split(" ");
+        const liabilitAmount = parseFloat(liabilitie_split[1]);
         growAmount -= liabilitAmount;
       }
 
@@ -1028,10 +1030,10 @@ export class InfoComponent extends BaseInfoComponent {
     }
 
     if (clean_comment.includes("Sell Investment")) {
-      let split = clean_comment.split(" ");      
-      let title = split[2];
-      let deposit = parseFloat(split[3]);
-      let mortage = parseFloat(split[4]);
+      const split = clean_comment.split(" ");      
+      const title = split[2];
+      const deposit = parseFloat(split[3]);
+      const mortage = parseFloat(split[4]);
 
       let found = false;
       for (let i = 0; i < AppStateService.instance.allInvestments.length; i++) {
@@ -1042,7 +1044,7 @@ export class InfoComponent extends BaseInfoComponent {
         }
       }
       if(!found){
-        let investment: Investment = { tag: title, deposit: deposit, amount: mortage }
+        const investment: Investment = { tag: title, deposit: deposit, amount: mortage }
         AppStateService.instance.allInvestments.push(investment);
       }
 
@@ -1055,7 +1057,7 @@ export class InfoComponent extends BaseInfoComponent {
         }
       }
       if(!foundM){
-        let newLiabilitie: Liability = { tag: "M-"+title, amount: mortage, credit: 0, investment: true }
+        const newLiabilitie: Liability = { tag: "M-"+title, amount: mortage, credit: 0, investment: true }
         AppStateService.instance.liabilities.push(newLiabilitie);
       }
 
@@ -1069,9 +1071,9 @@ export class InfoComponent extends BaseInfoComponent {
     }
 
     if (AppStateService.instance.allTransactions[InfoComponent.index].comment.includes("Payback Liabilitie")) {
-      let split = AppStateService.instance.allTransactions[InfoComponent.index].comment.split(" ");      
-      let amount = parseFloat(split[2]);
-      let credit = parseFloat(split[3]);
+      const split = AppStateService.instance.allTransactions[InfoComponent.index].comment.split(" ");      
+      const amount = parseFloat(split[2]);
+      const credit = parseFloat(split[3]);
 
       let found = false;
       for (let i = 0; i < AppStateService.instance.liabilities.length; i++) {
@@ -1110,7 +1112,7 @@ export class InfoComponent extends BaseInfoComponent {
             investemt = AppStateService.instance.allGrowProjects[i].isAsset || AppStateService.instance.allGrowProjects[i].share != null || AppStateService.instance.allGrowProjects[i].investment != null;
           }
         }
-        let newLiability: Liability = { tag: AppStateService.instance.allTransactions[InfoComponent.index].category.replace("@", ""), amount: amount, credit: credit, investment: investemt }  
+        const newLiability: Liability = { tag: AppStateService.instance.allTransactions[InfoComponent.index].category.replace("@", ""), amount: amount, credit: credit, investment: investemt }  
         AppStateService.instance.liabilities.push(newLiability);
       }
 
@@ -1152,7 +1154,7 @@ export class InfoComponent extends BaseInfoComponent {
             AppStateService.instance.allGrowProjects[i].liabilitie.amount += amount;
             AppStateService.instance.allGrowProjects[i].liabilitie.credit += credit;
           } else {
-            let newLiabilitie: Liability = { tag: AppStateService.instance.allGrowProjects[i].title, amount: amount, credit: credit, investment: (AppStateService.instance.allGrowProjects[i].isAsset || AppStateService.instance.allGrowProjects[i].share != null || AppStateService.instance.allGrowProjects[i].investment != null) }
+            const newLiabilitie: Liability = { tag: AppStateService.instance.allGrowProjects[i].title, amount: amount, credit: credit, investment: (AppStateService.instance.allGrowProjects[i].isAsset || AppStateService.instance.allGrowProjects[i].share != null || AppStateService.instance.allGrowProjects[i].investment != null) }
             AppStateService.instance.allGrowProjects[i].liabilitie = newLiabilitie;
           }
         }
@@ -1160,9 +1162,9 @@ export class InfoComponent extends BaseInfoComponent {
 
     } else {
       if (AppStateService.instance.allTransactions[InfoComponent.index].comment.includes("Liabilitie")) {
-        let split = AppStateService.instance.allTransactions[InfoComponent.index].comment.split(" ");      
-        let amount = parseFloat(split[1]);
-        let credit = parseFloat(split[2]);
+        const split = AppStateService.instance.allTransactions[InfoComponent.index].comment.split(" ");      
+        const amount = parseFloat(split[1]);
+        const credit = parseFloat(split[2]);
   
         for (let i = 0; i < AppStateService.instance.liabilities.length; i++) {
           if (AppStateService.instance.liabilities[i].tag === AppStateService.instance.allTransactions[InfoComponent.index].category.replace("@", "")) {
@@ -1289,7 +1291,7 @@ export class InfoComponent extends BaseInfoComponent {
    * Parses manual bucket allocations from comment and validates they sum to the transaction amount.
    * Returns the allocations if valid, null otherwise.
    */
-  parseManualBucketAllocations(comment: string | undefined, transactionAmount: number, projectBuckets: any[]): Array<{bucketName: string, amount: number}> | null {
+  parseManualBucketAllocations(comment: string | undefined, transactionAmount: number, projectBuckets: any[]): {bucketName: string, amount: number}[] | null {
     if (!comment) return null;
     
     // Find all bucket tags in comment
@@ -1297,7 +1299,7 @@ export class InfoComponent extends BaseInfoComponent {
     if (!bucketTagMatches || bucketTagMatches.length === 0) return null;
     
     // Parse allocations
-    const allocations: Array<{bucketName: string, amount: number}> = [];
+    const allocations: {bucketName: string, amount: number}[] = [];
     let totalAllocated = 0;
     
     for (const tag of bucketTagMatches) {
@@ -1554,11 +1556,11 @@ export class InfoComponent extends BaseInfoComponent {
    * Smart allocation algorithm - same as in AddComponent
    */
   distributeAmountToBuckets(buckets: any[], transactionAmount: number): { 
-    allocations: Array<{bucketName: string, amount: number}>,
+    allocations: {bucketName: string, amount: number}[],
     adjustedAmount?: number 
   } {
     const amountToDistribute = Math.abs(transactionAmount);
-    const allocations: Array<{bucketName: string, amount: number}> = [];
+    const allocations: {bucketName: string, amount: number}[] = [];
     
     const bucketInfo = buckets.map(bucket => ({
       bucket,

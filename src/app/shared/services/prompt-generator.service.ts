@@ -935,6 +935,7 @@ After ALL suggestions, end with:
     }
 
     // If no categories selected, default to ALL budget categories from last month
+    // eslint-disable-next-line no-useless-assignment -- initial [] is always overwritten below; pre-existing, out of scope for lint setup
     let categoriesToAnalyze: string[] = [];
     if (!options.selectedBudgetCategories || options.selectedBudgetCategories.length === 0) {
       // Get all unique budget categories from last month
@@ -955,7 +956,7 @@ After ALL suggestions, end with:
     }
 
     // Get budgets for last month, filtered to selected/default categories
-    const selectedBudgets: Array<{ category: string, budget: number }> = [];
+    const selectedBudgets: { category: string, budget: number }[] = [];
     const normalizedSelectedCategories = categoriesToAnalyze.map(c => c.replace(/@/g, '').trim());
     
     this.state.allBudgets.forEach(budget => {
@@ -968,6 +969,7 @@ After ALL suggestions, end with:
     // Calculate actual spending for last month, per selected category
     const monthly = this.getMonthlyBreakdown();
     let lastMonthData = monthly[lastMonthKey];
+    // eslint-disable-next-line no-useless-assignment -- initial value only read after being overwritten in the fallback branch; pre-existing, out of scope for lint setup
     let actualMonthName = monthName;
     
     // Fallback: if last month has no data, use the most recent month with data
@@ -1004,7 +1006,7 @@ After ALL suggestions, end with:
     lines.push('');
     lines.push('--- BUDGET VS ACTUAL (Selected Categories) ---');
     
-    const comparisons: Array<{ cat: string, budget: number, actual: number, diff: number, variance: number }> = [];
+    const comparisons: { cat: string, budget: number, actual: number, diff: number, variance: number }[] = [];
     selectedBudgets.forEach(({ category, budget }) => {
       // Normalize transaction category names for comparison (remove @ and trim)
       let actual = actualByCategory[category] || 0;
@@ -1030,6 +1032,7 @@ After ALL suggestions, end with:
     comparisons.forEach(c => {
       const budgetStr = anon ? this.toRange(c.budget) : this.currency + c.budget.toFixed(0);
       const actualStr = anon ? this.toRange(c.actual) : this.currency + c.actual.toFixed(0);
+      // eslint-disable-next-line no-useless-assignment -- initial '' is always overwritten below; pre-existing, out of scope for lint setup
       let status = '';
       if (Math.abs(c.variance) < 5) {
         status = ' ✓ on target';
@@ -1095,7 +1098,7 @@ After ALL suggestions, end with:
       lines.push('');
       lines.push('--- Recent Trends ---');
       const recentMonths = sortedMonths.slice(0, 3);
-      const trends: Array<{ month: string, income: number, expenses: number, savings: number }> = [];
+      const trends: { month: string, income: number, expenses: number, savings: number }[] = [];
       
       recentMonths.forEach(monthKey => {
         const data = monthly[monthKey];
@@ -1238,7 +1241,7 @@ Then, at the END, include a JSON code block with an ARRAY of budget optimization
     "annualSavings": 600,
     "reasoning": "Impulse purchases add up. Setting a strict €100/mo budget with tracking will create awareness and reduce spending.",
     "actionItems": [
-      { "text": "Create \"Online Shopping\" budget category at €100/mo", "priority": "high", "done": false },
+      { "text": "Create "Online Shopping" budget category at €100/mo", "priority": "high", "done": false },
       { "text": "Wait 48 hours before purchasing non-essentials", "priority": "medium", "done": false },
       { "text": "Unsubscribe from marketing emails", "priority": "low", "done": false }
     ],

@@ -1,5 +1,5 @@
 import { Component } from '@angular/core'
-import { Injectable } from '@angular/core';
+import { Injectable, OnInit, OnDestroy } from '@angular/core';
 import { AngularFireAuth } from '@angular/fire/compat/auth';
 import { ProfileComponent } from '../panels/profile/profile.component';
 import { AppComponent } from '../app.component';
@@ -32,7 +32,7 @@ import { TranslateModule } from '@ngx-translate/core';
   templateUrl: './registration.component.html',
   styleUrls: ['./registration.component.css', '../app.component.css'],
 })
-export class RegistrationComponent { 
+export class RegistrationComponent implements OnInit, OnDestroy { 
   //Variables
   isRegister = false;
 
@@ -86,12 +86,14 @@ export class RegistrationComponent {
   /**
    * Called when the component becomes visible (inserted into the DOM).
    */
+  // eslint-disable-next-line @angular-eslint/contextual-lifecycle, @angular-eslint/no-empty-lifecycle-method, @typescript-eslint/no-empty-function -- required by `implements OnInit`; the stray @Injectable() decorator above is pre-existing and out of scope for lint setup (Angular still invokes this hook since the class is also a routed @Component)
   ngOnInit(): void {
   }
 
   /**
    * Called when the component is destroyed (removed from the DOM).
    */
+  // eslint-disable-next-line @angular-eslint/no-empty-lifecycle-method, @typescript-eslint/no-empty-function -- required by `implements OnDestroy`; nothing to clean up here
   ngOnDestroy(): void {
   }
 
@@ -242,7 +244,7 @@ export class RegistrationComponent {
           this.localStorage.saveData("username", this.usernameTextField);
           this.localStorage.saveData("uid", result.user.uid);
           this.localStorage.saveData("email", result.user.email);
-          let profile: Profile = {
+          const profile: Profile = {
             info: {
               username: this.usernameTextField,
               email: result.user.email,
@@ -401,7 +403,7 @@ export class RegistrationComponent {
           ProfileComponent.mail = result.user.email;
           this.database.getData("info/username")
             .then(snapshot => {
-              let username = this.cryptic.decrypt(snapshot.val(), 'database');
+              const username = this.cryptic.decrypt(snapshot.val(), 'database');
               ProfileComponent.username = username;
               this.localStorage.saveData("username", username);
               ProfileComponent.isUser = false;  // false = logged in (show sign out button)

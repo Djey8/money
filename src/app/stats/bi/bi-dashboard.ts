@@ -409,9 +409,11 @@ export function createBIDashboard1_FinancialOverview() {
   }
   
   // Determine what data to show based on filter
+  /* eslint-disable no-useless-assignment -- initial defaults are always overwritten below; pre-existing, out of scope for lint setup */
   let displayIncome = 0;
   let displayExpenses = 0;
   let kpiLabel = "";
+  /* eslint-enable no-useless-assignment */
   let filteredData = monthlyData;
   
   if (filterType === 'month' && selectedMonth && selectedMonth !== 'all') {
@@ -687,10 +689,12 @@ export function updateDashboard1ViewMode() {
   const selectedMonth = StatsComponent.selectedMonth;
   const filterType = StatsComponent.filterType;
   const monthlyData = StatsComponent.getMonthlyData();
-  
+
+  /* eslint-disable no-useless-assignment -- initial defaults are always overwritten below; pre-existing, out of scope for lint setup */
   let displayIncome = 0;
   let displayExpenses = 0;
   let kpiLabel = "";
+  /* eslint-enable no-useless-assignment */
   let filteredData = monthlyData;
   
   if (filterType === 'month' && selectedMonth && selectedMonth !== 'all') {
@@ -1737,7 +1741,7 @@ export function createDashboard4CategoryTable(container: any, transactions: any[
   }
 
   // Convert to array
-  let categoryData = Array.from(categoryMap.entries())
+  const categoryData = Array.from(categoryMap.entries())
     .map(([category, data]) => ({category, ...data}));
 
   // Calculate total for percentage
@@ -1941,7 +1945,7 @@ export function createDashboard4TransactionTable(container: any, transactions: a
   const accountCategoriesToExclude = ['Daily', 'Splurge', 'Smile', 'Fire', 'Income'];
 
   // Filter transactions for selected category
-  let categoryTransactions = transactions
+  const categoryTransactions = transactions
     .filter(t => {
       const cleanCategory = t.category.replace('@', '');
       if (t.amount >= 0) return false; // Only expenses
@@ -2640,7 +2644,7 @@ export function createSavingsRateChart(svg: any, data: any[], width: number, hei
 /**
  * Create Fixed vs Variable Costs chart
  */
-export function createFixedVsVariableCostsChart(svg: any, width: number, height: number, isMultiMonth: boolean = false) {
+export function createFixedVsVariableCostsChart(svg: any, width: number, height: number, isMultiMonth = false) {
   // Responsive left margin based on width
   const leftMargin = width < 600 ? 45 : 60;
   const margin = {top: 50, right: 30, bottom: 30, left: leftMargin};
@@ -2651,7 +2655,7 @@ export function createFixedVsVariableCostsChart(svg: any, width: number, height:
     .attr("transform", `translate(${margin.left},${margin.top})`);
 
   // Calculate fixed/variable costs ratio - if average mode is on and multiple months, calculate average
-  let fixedRatio = StatsComponent.calculateFixedCostsRatio(StatsComponent.selectedMonth);
+  const fixedRatio = StatsComponent.calculateFixedCostsRatio(StatsComponent.selectedMonth);
   
   // If average view is enabled and we have multiple months, the ratio calculation already handles averaging
   // But we need to divide the fixed costs by the number of months for display purposes
@@ -2752,7 +2756,7 @@ export function createFixedVsVariableCostsChart(svg: any, width: number, height:
 /**
  * Get account balances and budget data
  */
-export function getAccountBalances(): Array<{account: string, balance: number, target: number, actual: number, compliance: number}> {
+export function getAccountBalances(): {account: string, balance: number, target: number, actual: number, compliance: number}[] {
   const accounts = ['Daily', 'Splurge', 'Smile', 'Fire'];
   const targetPercentages = {
     'Daily': AppStateService.instance.daily,
@@ -3278,7 +3282,7 @@ export function createAccountDevelopmentChart(svg: any, width: number, height: n
   }
 
   // Calculate cumulative starting from 0 for the selected period
-  let cumulative = {Daily: 0, Splurge: 0, Smile: 0, Fire: 0};
+  const cumulative = {Daily: 0, Splurge: 0, Smile: 0, Fire: 0};
   filledData.forEach(d => {
     accounts.forEach(acc => {
       cumulative[acc] += d[acc];
@@ -3636,7 +3640,7 @@ export function createCategoryTimelineChart(svg: any, width: number, height: num
 
   // Generate all months in range
   const allMonths: string[] = [];
-  let currentDate = new Date(minDate.getFullYear(), minDate.getMonth(), 1);
+  const currentDate = new Date(minDate.getFullYear(), minDate.getMonth(), 1);
   const endDate = new Date(maxDate.getFullYear(), maxDate.getMonth(), 1);
   
   while (currentDate <= endDate) {
@@ -3839,6 +3843,7 @@ export function createCategoryTimelineChart(svg: any, width: number, height: num
 export function showOutlierAnalysis(transaction: any) {
   const outlierType = transaction.outlierType;
   const metadata = transaction.outlierMetadata;
+  // eslint-disable-next-line no-useless-assignment -- initial '' is always overwritten below; pre-existing, out of scope for lint setup
   let reason = '';
   
   if (outlierType === 'iqr' && metadata) {

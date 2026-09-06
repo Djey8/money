@@ -55,7 +55,7 @@ export class InfoFireComponent extends BaseInfoComponent {
   static isEdit = false;
   
   // Sorting for related transactions
-  static sortColumn: string = 'id';  // 'id', 'account', 'amount', 'date'
+  static sortColumn = 'id';  // 'id', 'account', 'amount', 'date'
   static sortDirection: 'asc' | 'desc' = 'desc';  // Default: highest ID first
   
   // Current detail tab
@@ -761,6 +761,7 @@ export class InfoFireComponent extends BaseInfoComponent {
       localStorageKey: 'fire',
       logEvent: 'update_fire_emergency',
       logMetadata: { source: 'info_panel' },
+      // eslint-disable-next-line @typescript-eslint/no-empty-function -- required callback shape; nothing to do on success here
       onSuccess: () => {},
       onError: (error) => console.error('Save failed:', error)
     });

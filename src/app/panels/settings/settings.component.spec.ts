@@ -129,6 +129,7 @@ describe('SettingsComponent', () => {
       jest.spyOn(document.body, 'removeChild').mockImplementation(() => null as any);
       jest.spyOn(document, 'createElement').mockImplementation((tag: string) => {
         const el: any = { click: jest.fn() };
+        // eslint-disable-next-line @typescript-eslint/no-empty-function -- test mock; href setter is a no-op stub
         Object.defineProperty(el, 'href', { set: () => {}, get: () => '' });
         Object.defineProperty(el, 'download', {
           set: (v: string) => { downloadFilename = v; },
