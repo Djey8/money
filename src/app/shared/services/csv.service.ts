@@ -9,8 +9,6 @@ import { Transaction } from '../../interfaces/transaction';
 })
 export class CsvService {
 
-  constructor() { }
-
   /**
    * Downloads a CSV file containing the provided transactions.
    * @param transactions - The array of transactions to be included in the CSV file.

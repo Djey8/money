@@ -38,8 +38,6 @@ export interface ValidationResult {
 })
 export class PaymentPlannerService {
 
-  constructor() { }
-
   /**
    * Calculate the total missing amount for selected buckets
    * @param buckets - Array of buckets with target and current amount
@@ -47,7 +45,7 @@ export class PaymentPlannerService {
    * @returns Total missing amount across selected buckets
    */
   calculateMissingAmount(
-    buckets: Array<{id: string, target: number, amount: number}>,
+    buckets: {id: string, target: number, amount: number}[],
     selectedBucketIds: string[]
   ): number {
     const bucketsToConsider = selectedBucketIds.length === 0 
@@ -89,20 +87,23 @@ export class PaymentPlannerService {
         return Math.ceil(diffDays / 7);
       case 'biweekly':
         return Math.ceil(diffDays / 14);
-      case 'monthly':
+      case 'monthly': {
         // More accurate monthly calculation
-        const months = (end.getFullYear() - start.getFullYear()) * 12 + 
+        const months = (end.getFullYear() - start.getFullYear()) * 12 +
                        (end.getMonth() - start.getMonth());
         return Math.max(1, months);
-      case 'quarterly':
+      }
+      case 'quarterly': {
         const quarters = Math.ceil(
-          ((end.getFullYear() - start.getFullYear()) * 12 + 
+          ((end.getFullYear() - start.getFullYear()) * 12 +
            (end.getMonth() - start.getMonth())) / 3
         );
         return Math.max(1, quarters);
-      case 'yearly':
+      }
+      case 'yearly': {
         const years = end.getFullYear() - start.getFullYear();
         return Math.max(1, years);
+      }
       default:
         return 1;
     }
@@ -118,7 +119,7 @@ export class PaymentPlannerService {
    * @returns Array of allocations per bucket
    */
   calculateProportionalDistribution(
-    buckets: Array<{id: string, title: string, target: number, amount: number}>,
+    buckets: {id: string, title: string, target: number, amount: number}[],
     selectedBucketIds: string[],
     paymentAmount: number
   ): BucketAllocation[] {
@@ -209,7 +210,7 @@ export class PaymentPlannerService {
     projectType: 'smile' | 'fire',
     projectTitle: string,
     planTitle: string,
-    buckets: Array<{id: string, title: string, target: number, amount: number}>,
+    buckets: {id: string, title: string, target: number, amount: number}[],
     selectedBucketIds: string[],
     startDate: string,
     targetDate: string,
@@ -325,7 +326,7 @@ export class PaymentPlannerService {
    */
   validateMultiplePlans(
     plans: PlannedSubscription[],
-    buckets: Array<{id: string, title: string, target: number, amount: number}>
+    buckets: {id: string, title: string, target: number, amount: number}[]
   ): ValidationResult {
     const warnings: string[] = [];
     
@@ -404,13 +405,13 @@ export class PaymentPlannerService {
    * @param comment - Comment string with bucket tags
    * @returns Array of bucket allocations
    */
-  parseAllocationComment(comment: string): Array<{bucketName: string, amount: number}> {
+  parseAllocationComment(comment: string): {bucketName: string, amount: number}[] {
     if (!comment) return [];
     
     const bucketTagMatches = comment.match(/#bucket:([^:]+):([\d.]+)/g);
     if (!bucketTagMatches) return [];
     
-    const allocations: Array<{bucketName: string, amount: number}> = [];
+    const allocations: {bucketName: string, amount: number}[] = [];
     
     for (const tag of bucketTagMatches) {
       const match = tag.match(/#bucket:([^:]+):([\d.]+)/);

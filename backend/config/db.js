@@ -120,7 +120,7 @@ async function setupDatabaseSecurity() {
     // This ensures users can only be created/modified by the backend API
     const validationDoc = {
       _id: '_design/validation',
-      validate_doc_update: function(newDoc, oldDoc, userCtx, secObj) {
+      validate_doc_update: function(newDoc, oldDoc, userCtx) {
         // Only admin or the backend service can write
         // In production, the backend should use a service account
         if (userCtx.roles.indexOf('_admin') === -1) {

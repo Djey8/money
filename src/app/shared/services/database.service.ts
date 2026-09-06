@@ -46,8 +46,6 @@ export class DatabaseService {
     private cacheService: CacheService,
     private injector: EnvironmentInjector
   ) {
-    if (this.mode === 'selfhosted') {
-    }
   }
 
   /**
@@ -68,7 +66,7 @@ export class DatabaseService {
 
     const encryptObjectValues = (obj: any): void => {
       for (const key in obj) {
-        if (obj.hasOwnProperty(key)) {
+        if (Object.prototype.hasOwnProperty.call(obj, key)) {
           if (typeof obj[key] === 'number' || typeof obj[key] === 'boolean' || typeof obj[key] === 'string') {
             obj[key] = this.cryptic.encrypt(obj[key].toString(), 'database');
           } else if (typeof obj[key] === 'object' && obj[key] !== null) {
@@ -155,7 +153,7 @@ export class DatabaseService {
    * @param {boolean} forceWrite - If true, skip dirty tracking and write all (for encryption changes)
    * @returns {Observable<any>} - Observable that completes when all writes finish
    */
-  batchWrite(writes: {tag: string, data: any}[], forceWrite: boolean = false): Observable<any> {
+  batchWrite(writes: {tag: string, data: any}[], forceWrite = false): Observable<any> {
     if (this.mode === 'firebase') {
       // Firebase: write all
       const observables = writes
@@ -227,7 +225,7 @@ export class DatabaseService {
 
     const encryptObjectValues = (obj: any): void => {
       for (const key in obj) {
-        if (obj.hasOwnProperty(key)) {
+        if (Object.prototype.hasOwnProperty.call(obj, key)) {
           if (typeof obj[key] === 'number' || typeof obj[key] === 'boolean' || typeof obj[key] === 'string') {
             obj[key] = this.cryptic.encrypt(obj[key].toString(), 'database');
           } else if (typeof obj[key] === 'object' && obj[key] !== null) {

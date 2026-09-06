@@ -34,7 +34,7 @@ const limiter = rateLimit({
   max: 10000, // limit each IP to 1010000 requests per windowMs
   standardHeaders: true,
   legacyHeaders: false,
-  skip: (req) => {
+  skip: () => {
     return process.env.SKIP_RATE_LIMIT === 'true';
   }
 });
@@ -46,7 +46,7 @@ const authLimiter = rateLimit({
   max: 10, // max 10 login/register attempts per 15 min
   standardHeaders: true,
   legacyHeaders: false,
-  skip: (req) => process.env.SKIP_RATE_LIMIT === 'true'
+  skip: () => process.env.SKIP_RATE_LIMIT === 'true'
 });
 app.use('/api/auth/login', authLimiter);
 app.use('/api/auth/register', authLimiter);

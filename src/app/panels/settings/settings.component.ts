@@ -1,4 +1,4 @@
-import { Component, ViewChild, ElementRef } from '@angular/core';
+import { Component, ViewChild, ElementRef, DoCheck } from '@angular/core';
 import { Router } from '@angular/router';
 import { LocalService } from 'src/app/shared/services/local.service';
 import { DatabaseService } from 'src/app/shared/services/database.service';
@@ -47,7 +47,7 @@ let SubscriptionComponent: any; setTimeout(() => import('src/app/main/subscripti
   templateUrl: './settings.component.html',
   styleUrls: ['./settings.component.css']
 })
-export class SettingsComponent {
+export class SettingsComponent implements DoCheck {
   static get username() { return AppStateService.instance.username; }
   static set username(v: string) { AppStateService.instance.username = v; }
   static get email() { return AppStateService.instance.email; }
@@ -128,8 +128,8 @@ export class SettingsComponent {
   isEdit = false;
 
   // Backup state
-  importStatus: string = '';
-  isImporting: boolean = false;
+  importStatus = '';
+  isImporting = false;
 
   @ViewChild('migrationFileInput') migrationFileInput!: ElementRef;
 
@@ -345,7 +345,7 @@ export class SettingsComponent {
         this.localStorage.saveData("email", user.email);
         this.database.getData("info/username")
           .then(snapshot => {
-            let username = snapshot.val();  // Username is NOT encrypted
+            const username = snapshot.val();  // Username is NOT encrypted
             ProfileComponent.username = username;
             this.localStorage.saveData("username", username);
           })
@@ -436,7 +436,7 @@ export class SettingsComponent {
     }
   }
 
-  showConfirmation: boolean = false;
+  showConfirmation = false;
 
   get currentLang(): string {
     return this.translate.currentLang || 'en';
@@ -1780,7 +1780,6 @@ export class SettingsComponent {
           this.borderColor = "red";
           SettingsComponent.isError = true;
         }
-      } else {
       }
     }
   }

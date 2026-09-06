@@ -79,7 +79,7 @@ async function isRefreshTokenValid(jti) {
   try {
     await authDb.get(`rt_${jti}`);
     return true;
-  } catch (err) {
+  } catch {
     return false;
   }
 }
@@ -382,8 +382,8 @@ router.post('/verify-password', authenticateToken, async (req, res) => {
     let userDoc;
     try {
       userDoc = await authDb.get(userId);
-    } catch (err) {
-      logger.logSecurity('password_verification_failed', { 
+    } catch {
+      logger.logSecurity('password_verification_failed', {
         userId, 
         reason: 'user_not_found' 
       });
@@ -533,7 +533,7 @@ router.post('/refresh', async (req, res) => {
     let decoded;
     try {
       decoded = jwt.verify(refreshToken, JWT_SECRET);
-    } catch (err) {
+    } catch {
       clearAuthCookies(res);
       return res.status(401).json({ error: 'Invalid refresh token' });
     }
@@ -605,14 +605,14 @@ router.post('/logout', async (req, res) => {
         const decoded = jwt.verify(refreshToken, JWT_SECRET);
         await revokeRefreshToken(decoded.jti);
         logUserActivity(decoded.userId, 'user_logout', { email: decoded.email });
-      } catch (err) {
+      } catch {
         // Token invalid/expired — just clear cookies
       }
     }
 
     clearAuthCookies(res);
     res.json({ success: true });
-  } catch (error) {
+  } catch {
     clearAuthCookies(res);
     res.json({ success: true }); // Logout should always succeed from client perspective
   }

@@ -20,7 +20,7 @@ export function createZoomableChart() {
     svgElement.remove();
   }
 
-  let data = {
+  const data = {
     name: "All",
     children: []
   };
@@ -77,7 +77,7 @@ export function createZoomableChart() {
   const fireExp = mapToArray(fireExpMap);
   const mojoExp = mapToArray(mojoExpMap);
 
-  let incomeChildren = [];
+  const incomeChildren = [];
   if (revenues.length > 0) {
     incomeChildren.push({
       name: `${StatsComponent.translatedIncomeValues[0]} ${Number(revenues.reduce((sum, el) => sum + Math.abs(el.amount), 0).toFixed(2)) > 0 ? '+' : '-'}${revenues.reduce((sum, el) => sum + Math.abs(el.amount), 0).toFixed(2)}`,
@@ -115,7 +115,7 @@ export function createZoomableChart() {
     });
   }
 
-  let expensesChildren = [];
+  const expensesChildren = [];
   if (dailyExp.length > 0) {
     expensesChildren.push({
     name: `${StatsComponent.translatedIncomeValues[4]} ${dailyExp.reduce((sum, el) => sum + el.amount, 0).toFixed(2)}`,
@@ -341,7 +341,7 @@ export function createHistogramChart() {
     .attr("transform", `translate(${margin.left},${margin.top})`);
 
   // Set up the x-axis scale
-  let x = d3.scaleLinear()
+  const x = d3.scaleLinear()
     .domain([d3.min(data) - 1, d3.max(data) + 1]) // Add 1 bin to the left and right
     .nice()
     .range([0, width]);
@@ -364,7 +364,7 @@ export function createHistogramChart() {
   let bins = generateBins(x.domain() as [number, number], 50);
 
   // Set up the y-axis scale
-  let y = d3.scaleLinear()
+  const y = d3.scaleLinear()
     .domain([0, d3.max(bins, d => d.length)])
     .nice()
     .range([height, 0]);
@@ -690,11 +690,6 @@ export function createCategoryBubbleChart(selectedPeriod = "all", selectedIndex 
     svgElement.remove();
   }
 
-  // Reset the index to 0 when the period is changed
-  if (selectedIndex === 0) {
-    selectedIndex = 0;
-  }
-
   // Filter transactions using the unified chart filter
   const filteredTransactions = ChartFilterService.filterTransactions(StatsComponent.chartFilter);
 
@@ -788,7 +783,7 @@ export function createCategoryBubbleChart(selectedPeriod = "all", selectedIndex 
     .text((d: { value: number }) => format(d.value));
 }
 
-export function createChart(filter: string, selectedYear: string = "all", isChecked: boolean = true, selectedMode: string = "year", selectedMonth: string = "all") {
+export function createChart(filter: string, selectedYear = "all", isChecked = true, selectedMode = "year", selectedMonth = "all") {
   const svgElement = d3.select("#chart-container").select("svg");
   d3.select("#chart-container").selectAll("*").remove();
   if (!svgElement.empty()) svgElement.remove();
@@ -815,7 +810,7 @@ export function createChart(filter: string, selectedYear: string = "all", isChec
 
   // Use ChartFilterService to apply all filters (time range, accounts, categories, search)
   const filteredRaw = ChartFilterService.filterTransactions(StatsComponent.chartFilter);
-  let transactions = filteredRaw.map(t => ({
+  const transactions = filteredRaw.map(t => ({
     date: parseDate(t.date),
     account: t.account,
     amount: Number(t.amount),
@@ -830,7 +825,7 @@ export function createChart(filter: string, selectedYear: string = "all", isChec
   const dailyAddMojoTransactions = new Map<string, any[]>();
   const dailyGrowTransactions = new Map<string, any[]>();
   
-  for (let t of transactions) {
+  for (const t of transactions) {
     const dateStr = t.date.toISOString().split("T")[0];
     let value = 0;
     // Track Smile transactions for insights when isChecked is true
@@ -908,7 +903,7 @@ export function createChart(filter: string, selectedYear: string = "all", isChec
   const firstDate = d3.min(transactions, d => d.date)!;
   const lastDate = d3.max(transactions, d => d.date)!;
   const dateMap = new Map<string, number>(dailyTotals);
-  let cursor = new Date(firstDate);
+  const cursor = new Date(firstDate);
   while (cursor <= lastDate) {
     const dateStr = cursor.toISOString().split("T")[0];
     if (!dateMap.has(dateStr)) dateMap.set(dateStr, 0);
@@ -947,7 +942,7 @@ export function createChart(filter: string, selectedYear: string = "all", isChec
   }
 
   const dataset: { date: Date, value: number }[] = [];
-  for (let [dateStr, dailyValue] of [...dateMap.entries()].sort()) {
+  for (const [dateStr, dailyValue] of [...dateMap.entries()].sort()) {
     cumulative += dailyValue;
     dataset.push({ date: new Date(dateStr), value: cumulative });
   }
@@ -1068,7 +1063,7 @@ export function createChart(filter: string, selectedYear: string = "all", isChec
   // === Mojo TRANSACTION INDICATORS ===
   if (isChecked) {
     // Add mojo icons for outgoing Mojo transactions
-    for (let [dateStr, mojoTransactions] of dailyAddMojoTransactions.entries()) {
+    for (const [dateStr, mojoTransactions] of dailyAddMojoTransactions.entries()) {
       const mojoAccounts = new Set<string>();
       mojoTransactions.forEach((t: any) => {
         if (t.account) {
@@ -1139,7 +1134,7 @@ export function createChart(filter: string, selectedYear: string = "all", isChec
 
   if (isChecked) {
     // Add grow icons for outgoing Grow transactions
-    for (let [dateStr, growTransactions] of dailyGrowTransactions.entries()) {
+    for (const [dateStr, growTransactions] of dailyGrowTransactions.entries()) {
     const growAccounts = new Set<string>();
     growTransactions.forEach((t: any) => {
       if (t.account) {
@@ -1216,7 +1211,7 @@ export function createChart(filter: string, selectedYear: string = "all", isChec
     // === SMILE TRANSACTION INDICATORS ===
   if (isChecked && (filter === "income" || filter === "smile")) {
     // Add smile icons for outgoing Smile transactions
-    for (let [dateStr, smileTransactions] of dailySmileTransactions.entries()) {
+    for (const [dateStr, smileTransactions] of dailySmileTransactions.entries()) {
       const date = new Date(dateStr);
       const dataPoint = dataset.find(d => d.date.toISOString().split("T")[0] === dateStr);
       
@@ -1277,7 +1272,7 @@ export function createChart(filter: string, selectedYear: string = "all", isChec
 
   if (isChecked && (filter === "income" || filter === "fire")) {
     // Add fire icons for outgoing Smile transactions
-    for (let [dateStr, fireTransactions] of dailyFireTransactions.entries()) {
+    for (const [dateStr, fireTransactions] of dailyFireTransactions.entries()) {
       const date = new Date(dateStr);
       const dataPoint = dataset.find(d => d.date.toISOString().split("T")[0] === dateStr);
       

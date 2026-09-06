@@ -1,4 +1,4 @@
-import { Component, HostListener } from '@angular/core';
+import { Component, HostListener, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { TranslateService } from '@ngx-translate/core';
 import { AppComponent } from 'src/app/app.component';
@@ -23,7 +23,7 @@ import { TranslateModule } from '@ngx-translate/core';
   templateUrl: './budget.component.html',
   styleUrls: ['./budget.component.css', '../../app.component.css', '../../shared/styles/filter-styles.css']
 })
-export class BudgetComponent {
+export class BudgetComponent implements OnInit {
   static get allBudgets(): Budget[] { return AppStateService.instance.allBudgets; }
   static set allBudgets(v: Budget[]) { AppStateService.instance.allBudgets = v; }
 
@@ -130,12 +130,20 @@ export class BudgetComponent {
   isChartFilterAccountSelected(acc: string) { return BudgetComponent.chartFilter.selectedAccounts.includes(acc); }
   toggleChartFilterAccount(acc: string) {
     const idx = BudgetComponent.chartFilter.selectedAccounts.indexOf(acc);
-    idx >= 0 ? BudgetComponent.chartFilter.selectedAccounts.splice(idx, 1) : BudgetComponent.chartFilter.selectedAccounts.push(acc);
+    if (idx >= 0) {
+      BudgetComponent.chartFilter.selectedAccounts.splice(idx, 1);
+    } else {
+      BudgetComponent.chartFilter.selectedAccounts.push(acc);
+    }
   }
   isChartFilterCategorySelected(cat: string) { return BudgetComponent.chartFilter.selectedCategories.includes(cat); }
   toggleChartFilterCategory(cat: string) {
     const idx = BudgetComponent.chartFilter.selectedCategories.indexOf(cat);
-    idx >= 0 ? BudgetComponent.chartFilter.selectedCategories.splice(idx, 1) : BudgetComponent.chartFilter.selectedCategories.push(cat);
+    if (idx >= 0) {
+      BudgetComponent.chartFilter.selectedCategories.splice(idx, 1);
+    } else {
+      BudgetComponent.chartFilter.selectedCategories.push(cat);
+    }
   }
   applyChartFilter() { this.callCharts(); }
   resetChartFilter() {
@@ -160,7 +168,7 @@ export class BudgetComponent {
     return Array.from(cats).sort();
   }
 
-  static createBudgetVsActuals(selectedPeriod: string = "all", selectedIndex: number = 0) {
+  static createBudgetVsActuals(selectedPeriod = "all", selectedIndex = 0) {
   // Remove previous chart and controls
   d3.select("#chart-container").selectAll("*").remove();
 
@@ -241,12 +249,12 @@ export class BudgetComponent {
   }
 
   // Determine months to show based on chart filter
-  let monthsToShow: string[] = [];
+  const monthsToShow: string[] = [];
   const range = ChartFilterService.getDateRange(BudgetComponent.chartFilter.filterType, BudgetComponent.chartFilter.selectedIndex);
 
   if (range) {
     // Generate month keys within the filter date range
-    let tempDate = new Date(range.startDate.getFullYear(), range.startDate.getMonth(), 1);
+    const tempDate = new Date(range.startDate.getFullYear(), range.startDate.getMonth(), 1);
     const rangeEnd = new Date(range.endDate.getFullYear(), range.endDate.getMonth(), 1);
     while (tempDate <= rangeEnd) {
       const monthKey = `${tempDate.getFullYear()}-${String(tempDate.getMonth() + 1).padStart(2, '0')}`;
@@ -256,7 +264,7 @@ export class BudgetComponent {
   } else if (BudgetComponent.chartFilter.filterType === 'custom' && BudgetComponent.chartFilter.customDateStart) {
     const cs = new Date(BudgetComponent.chartFilter.customDateStart);
     const ce = BudgetComponent.chartFilter.customDateEnd ? new Date(BudgetComponent.chartFilter.customDateEnd) : new Date();
-    let tempDate = new Date(cs.getFullYear(), cs.getMonth(), 1);
+    const tempDate = new Date(cs.getFullYear(), cs.getMonth(), 1);
     const rangeEnd = new Date(ce.getFullYear(), ce.getMonth(), 1);
     while (tempDate <= rangeEnd) {
       const monthKey = `${tempDate.getFullYear()}-${String(tempDate.getMonth() + 1).padStart(2, '0')}`;
@@ -265,7 +273,7 @@ export class BudgetComponent {
     }
   } else {
     // "all" - show all months from first to last
-    let tempDate = new Date(firstMonth);
+    const tempDate = new Date(firstMonth);
     while (tempDate <= lastMonth) {
       const monthKey = `${tempDate.getFullYear()}-${String(tempDate.getMonth() + 1).padStart(2, '0')}`;
       monthsToShow.push(monthKey);
@@ -316,7 +324,7 @@ export class BudgetComponent {
 
     const infoBoxWidth = 200;
     const xPercent = xPos / width;
-    let left = xPercent < 0.5 
+    const left = xPercent < 0.5 
       ? xPos + margin.left + 12 
       : xPos + margin.left - infoBoxWidth;
     let top = Math.min(y(d.underBudget), y(d.actual), y(d.planned)) + margin.top - 10;

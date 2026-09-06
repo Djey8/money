@@ -286,7 +286,7 @@ export function getExplorativeFilteredTransactions(): any[] {
   if (StatsComponent.explorativeSearchText.trim()) {
     transactions = transactions.filter(t => {
       // Replace word operators with symbols for easier parsing
-      let searchExpression = StatsComponent.explorativeSearchText
+      const searchExpression = StatsComponent.explorativeSearchText
         .replace(/\band\b/gi, '&&')
         .replace(/\bor\b/gi, '||')
         .replace(/\bnot\b/gi, '!');
@@ -953,8 +953,6 @@ export function createExplorativeTransactionTable(container: any) {
     const key = `${t.date}_${t.account}_${t.category}_${t.amount}_${t.comment || ''}`;
     const outlierInfo = outlierMap.get(key);
     const isOutlier = outlierInfo ? !outlierInfo.isRecurring : false;
-    if (isOutlier) {
-    }
     return {
       ...t,
       isOutlier: isOutlier,

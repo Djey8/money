@@ -65,9 +65,7 @@ export class CacheService {
    * @param key - The cache key to invalidate
    */
   invalidate(key: string): void {
-    const deleted = this.cache.delete(key);
-    if (deleted) {
-    }
+    this.cache.delete(key);
   }
 
   /**
@@ -114,9 +112,6 @@ export class CacheService {
     });
     
     expiredKeys.forEach(key => this.cache.delete(key));
-    
-    if (expiredKeys.length > 0) {
-    }
   }
 
   /**

@@ -1214,8 +1214,8 @@ export function calculatePredictions(historicalData: any[]): any {
     arimaPredictions = calculateARIMAPredictions(historicalData, lastMonth);
   } catch (error) {
     console.warn('[ARIMA] Prediction failed, using fallback:', error);
-    // Fallback: use ensemble if ARIMA fails
-    arimaPredictions = [];
+    // Fallback: use ensemble if ARIMA fails (arimaPredictions is already [] here since the
+    // assignment above never completed, so no reset needed)
   }
 
   // AI-Enhanced: Ensemble prediction (average of linear, exponential, and ARIMA)

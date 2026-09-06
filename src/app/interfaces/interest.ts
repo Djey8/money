@@ -1,3 +1,3 @@
 import { TaggedAmount } from './tagged-amount';
 
-export interface Interest extends TaggedAmount {}
+export type Interest = TaggedAmount;

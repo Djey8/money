@@ -11,11 +11,8 @@ import { Injectable } from '@angular/core';
   providedIn: 'root'
 })
 export class DirtyTrackerService {
-  private dirtyTags: Set<string> = new Set();
-  private lastSnapshots: Map<string, string> = new Map();
-
-  constructor() {
-  }
+  private dirtyTags = new Set<string>();
+  private lastSnapshots = new Map<string, string>();
 
   /**
    * Mark a data tag as dirty (needs saving)

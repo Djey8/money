@@ -32,15 +32,14 @@ jest.mock('../../config/db', () => {
 
 const { __mockAuthDb } = require('../../config/db');
 
-// Access the failedAttempts map to reset between tests
-const authModule = require('../../routes/auth');
+// Load the module for its side effects (initializes the in-memory failedAttempts map)
+require('../../routes/auth');
 
 beforeEach(() => {
   jest.clearAllMocks();
 });
 
 describe('Account Lockout (H5)', () => {
-  const testEmail = 'lockout@test.com';
   const hashedPassword = bcrypt.hashSync('CorrectPass1', 10);
 
   beforeEach(() => {

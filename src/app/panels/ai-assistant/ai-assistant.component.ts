@@ -224,7 +224,7 @@ export class AiAssistantComponent implements DoCheck {
       case 'expense-pattern':
         this.generatedPrompt = this.promptService.generateExpensePatternAnalysisPrompt(opts);
         break;
-      case 'smile-create':
+      case 'smile-create': {
         const smileOpts = { ...opts };
         if (smileOpts.smileNumberOfSuggestions === -1 && this.customNumberOfSuggestions && this.customNumberOfSuggestions > 0) {
           smileOpts.smileNumberOfSuggestions = this.customNumberOfSuggestions;
@@ -240,7 +240,8 @@ export class AiAssistantComponent implements DoCheck {
           anonymized: smileOpts.anonymized
         });
         break;
-      case 'smile-improve':
+      }
+      case 'smile-improve': {
         if (opts.selectedSmileProjects.length === 0) {
           this.generatedPrompt = 'Please select at least one Smile project to improve.';
           this.currentStep = 'prompt';
@@ -261,7 +262,8 @@ export class AiAssistantComponent implements DoCheck {
           anonymized: opts.anonymized
         });
         break;
-      case 'fire-create':
+      }
+      case 'fire-create': {
         const fireOpts = { ...opts };
         if (fireOpts.fireNumberOfSuggestions === -1 && this.customNumberOfSuggestions && this.customNumberOfSuggestions > 0) {
           fireOpts.fireNumberOfSuggestions = this.customNumberOfSuggestions;
@@ -278,7 +280,8 @@ export class AiAssistantComponent implements DoCheck {
           anonymized: fireOpts.anonymized
         });
         break;
-      case 'fire-improve':
+      }
+      case 'fire-improve': {
         if (opts.selectedFireEmergencies.length === 0) {
           this.generatedPrompt = 'Please select at least one Fire emergency to improve.';
           this.currentStep = 'prompt';
@@ -299,6 +302,7 @@ export class AiAssistantComponent implements DoCheck {
           anonymized: opts.anonymized
         });
         break;
+      }
       default:
         this.generatedPrompt = this.promptService.generateGrowPrompt(opts);
     }
@@ -475,7 +479,7 @@ export class AiAssistantComponent implements DoCheck {
         };
 
         // Use the user-selected import type from the dropdown
-        let growType = this.importType;
+        const growType = this.importType;
 
         // For budget optimization: recalculate using real budget amounts
         let actualCurrentCost = typeof item.currentCost === 'number' ? item.currentCost : (item.currentCost ? parseFloat(item.currentCost) : undefined);
@@ -489,7 +493,7 @@ export class AiAssistantComponent implements DoCheck {
           
           // Sum up budget amounts from all categories
           let totalRealBudgetAmount = 0;
-          let foundCategories: string[] = [];
+          const foundCategories: string[] = [];
           
           categories.forEach(cat => {
             const realAmount = this.getActualBudgetAmount(cat);

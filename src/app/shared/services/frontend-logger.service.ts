@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, OnDestroy } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { LocalService } from './local.service';
@@ -20,7 +20,7 @@ import { CrypticService } from './cryptic.service';
 @Injectable({
   providedIn: 'root'
 })
-export class FrontendLoggerService {
+export class FrontendLoggerService implements OnDestroy {
   private apiUrl = environment.mode === 'selfhosted' 
     ? environment.selfhosted.apiUrl 
     : '';
@@ -244,7 +244,7 @@ export class FrontendLoggerService {
       }
 
       for (const key in obj) {
-        if (!obj.hasOwnProperty(key)) {
+        if (!Object.prototype.hasOwnProperty.call(obj, key)) {
           continue;
         }
 
