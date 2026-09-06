@@ -25,7 +25,8 @@
 
 const fs = require('fs');
 const path = require('path');
-const { convertDocumentToMinorUnits, EncryptionSession, fromMinorUnits } = require('@money/domain');
+const { convertDocumentToMinorUnits, fromMinorUnits } = require('@money/domain');
+const { getEncryptionSession } = require('../../services/encryption-session');
 
 const DEFAULT_BACKUP_DIR = path.join(__dirname, '..', '..', 'migration-backups');
 const MAX_WRITE_RETRIES = 10;
@@ -34,26 +35,6 @@ class MigrationError extends Error {}
 
 function getSchemaVersion(userDoc) {
   return userDoc?.data?.meta?.schemaVersion || 1;
-}
-
-async function getEncryptionSession(authDb, userId) {
-  let encryptionConfig;
-  try {
-    const authDoc = await authDb.get(userId);
-    encryptionConfig = authDoc.encryptionConfig || {
-      key: 'default',
-      encryptLocal: true,
-      encryptDatabase: false,
-    };
-  } catch (err) {
-    if (err.statusCode !== 404) throw err;
-    encryptionConfig = { key: 'default', encryptLocal: true, encryptDatabase: false };
-  }
-
-  if (!encryptionConfig.encryptDatabase || encryptionConfig.key === 'default') {
-    return null; // Data is stored as native types — no decrypt/encrypt needed.
-  }
-  return new EncryptionSession(encryptionConfig.key);
 }
 
 /**
