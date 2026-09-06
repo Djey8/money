@@ -6,5 +6,5 @@
  * @returns True if the title is found (invalid/duplicate), false otherwise.
  */
 export function isDuplicateTitle(title: string, arrays: any[][], field = 'title'): boolean {
-  return arrays.some(arr => arr.some(item => item[field] === title));
+  return arrays.some((arr) => arr.some((item) => item[field] === title));
 }

@@ -4,24 +4,24 @@
 > **Strategy:** Each exercise builds on the previous one, progressively enhancing a real marketing/landing page for the Money App.  
 > **Repository:** New standalone repo (separate from `Djey8/money`)  
 > **Source data:** GitHub API from `https://github.com/Djey8/money`  
-> **Design system:** Matches Money App's existing color palette & modern trends  
+> **Design system:** Matches Money App's existing color palette & modern trends
 
 ---
 
 ## Color Palette (from Money App)
 
-| Token | Hex | Usage |
-|-------|-----|-------|
-| Primary (Daily) | `#1976d2` | Headlines, CTAs, links |
-| Warning (Splurge) | `#FF9800` | Accent, highlights |
-| Success (Smile) | `#4CAF50` | Positive indicators, savings |
-| Fire | `#f44336` | Emergency, urgency |
-| Text | `#333333` | Body copy |
-| Text Secondary | `#666666` | Subtitles, captions |
-| Background | `#f5f5f5` | Page background |
-| Surface | `#ffffff` | Cards, sections |
-| Border | `#cccccc` | Dividers |
-| Focus/Accent | `#FFD600` | Interactive focus states |
+| Token             | Hex       | Usage                        |
+| ----------------- | --------- | ---------------------------- |
+| Primary (Daily)   | `#1976d2` | Headlines, CTAs, links       |
+| Warning (Splurge) | `#FF9800` | Accent, highlights           |
+| Success (Smile)   | `#4CAF50` | Positive indicators, savings |
+| Fire              | `#f44336` | Emergency, urgency           |
+| Text              | `#333333` | Body copy                    |
+| Text Secondary    | `#666666` | Subtitles, captions          |
+| Background        | `#f5f5f5` | Page background              |
+| Surface           | `#ffffff` | Cards, sections              |
+| Border            | `#cccccc` | Dividers                     |
+| Focus/Accent      | `#FFD600` | Interactive focus states     |
 
 ---
 
@@ -33,21 +33,23 @@
 
 **Sections (mapped from video script scenes):**
 
-| # | Scene | Landing Page Section | Content |
-|---|-------|---------------------|---------|
-| 1 | The Problem | Hero / Hook | "You work hard. You earn money. And yet… it's gone." Eye-catching hero with tagline, CTA button, abstract illustration (CSS shapes or SVG). |
-| 2 | Barefoot Buckets | How It Works | Visual 4-bucket system (Daily 60%, Splurge 10%, Smile 10%, Fire 20%). CSS-animated bucket fill bars. Color-coded cards for each bucket. |
-| 3 | Mojo & Grow | Build Wealth | Mojo safety target → transition to Grow. Three investment track cards (Assets, Shares, Leveraged). Progress visualization. |
-| 4 | Cashflow / Hamster Wheel | Understand Your Money | Income statement vs. balance sheet layout. Assets vs. liabilities visual. "Escape the hamster wheel" messaging. |
-| 5 | AI Strategy | Smart Planning | AI prompt generator feature showcase. Privacy-first anonymization highlight. Import flow visualization. |
-| 6 | CTA / Closing | Get Started | Final call-to-action. Self-hosted + encrypted + 5 languages + free. Deploy options (Docker, Firebase). Links. |
+| #   | Scene                    | Landing Page Section  | Content                                                                                                                                     |
+| --- | ------------------------ | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | The Problem              | Hero / Hook           | "You work hard. You earn money. And yet… it's gone." Eye-catching hero with tagline, CTA button, abstract illustration (CSS shapes or SVG). |
+| 2   | Barefoot Buckets         | How It Works          | Visual 4-bucket system (Daily 60%, Splurge 10%, Smile 10%, Fire 20%). CSS-animated bucket fill bars. Color-coded cards for each bucket.     |
+| 3   | Mojo & Grow              | Build Wealth          | Mojo safety target → transition to Grow. Three investment track cards (Assets, Shares, Leveraged). Progress visualization.                  |
+| 4   | Cashflow / Hamster Wheel | Understand Your Money | Income statement vs. balance sheet layout. Assets vs. liabilities visual. "Escape the hamster wheel" messaging.                             |
+| 5   | AI Strategy              | Smart Planning        | AI prompt generator feature showcase. Privacy-first anonymization highlight. Import flow visualization.                                     |
+| 6   | CTA / Closing            | Get Started           | Final call-to-action. Self-hosted + encrypted + 5 languages + free. Deploy options (Docker, Firebase). Links.                               |
 
 **Additional sections:**
+
 - **Navigation:** Sticky top nav with smooth-scroll anchor links
 - **Features grid:** USP cards (Privacy, Self-hosted, Multi-language, Bucket system, AI, Cashflow)
 - **Footer:** Links, language badges, "Your money. Your plan. Your future."
 
 **Design requirements:**
+
 - Mobile-first responsive (breakpoints: 480px, 768px, 1024px, 1200px)
 - Modern trends: glassmorphism cards, gradient backgrounds, subtle CSS animations (fade-in on scroll via CSS only), large typography, generous whitespace
 - Dark/light aware (CSS `prefers-color-scheme` media query)
@@ -55,6 +57,7 @@
 - Deployable to GitHub Pages as-is
 
 **Deliverables:**
+
 - `index.html` — semantic HTML5 structure
 - `styles.css` — all styling, animations, responsive rules
 - `assets/` — SVG icons/illustrations (inline or file)
@@ -96,6 +99,7 @@
    - Parallax effects on hero section
 
 **Technical constraints:**
+
 - Vanilla JavaScript (no libraries/frameworks)
 - `fetch()` API for GitHub calls
 - DOM manipulation for dynamic content
@@ -103,6 +107,7 @@
 - Error handling for API failures (rate limiting, network errors)
 
 **Deliverables:**
+
 - `script.js` — all JavaScript logic
 - Updated `index.html` with new sections (changelog, stats)
 - Updated `styles.css` with styles for dynamic content
@@ -114,6 +119,7 @@
 **Goal:** Conduct a usability evaluation of the Money App landing page (exercises 1+2) using established heuristics and guidelines.
 
 **Approach:**
+
 - Apply **Nielsen's 10 Usability Heuristics** to the page
 - Evaluate against **WCAG 2.1 AA** accessibility guidelines
 - Test with **3 real users** (think-aloud protocol)
@@ -121,6 +127,7 @@
 - Propose concrete improvements with mockups/screenshots
 
 **Deliverables:**
+
 - Written evaluation document (~500 words for portfolio)
 - Screenshots with annotated issues
 - Priority-ranked improvement list
@@ -132,12 +139,14 @@
 **Goal:** Add a lightweight Node.js backend to the landing page for features that require server-side processing.
 
 **Features:**
+
 - **Contact/Feedback form** — server-side validation, email sending or file-based storage
 - **Newsletter signup** — store email addresses, send confirmation
 - **GitHub API proxy** — server-side caching to avoid client-side rate limits, add authentication for higher limits
 - **Analytics endpoint** — anonymous page view tracking (privacy-first, no cookies)
 
 **Tech stack:**
+
 - Node.js + Express
 - Server-side rendering for SEO-critical content (optional)
 - JSON file storage (no database dependency for simplicity)
@@ -149,6 +158,7 @@
 **Goal:** Rebuild the landing page as an Angular application. This is the exercise where the **interactive demo** becomes reality.
 
 **Features:**
+
 - Component-based architecture matching the 6 sections
 - **Embedded demo modules** — for each feature scene, users can interact with a sandboxed version:
   - Bucket allocation: input income, see real bucket splits, drag & adjust
@@ -163,6 +173,7 @@
 - SSR with Angular Universal for SEO
 
 **Architecture idea:**
+
 ```
 src/
   app/
@@ -184,6 +195,7 @@ src/
 **Goal:** Formal user-centered evaluation of the Angular landing page (exercise 5).
 
 **Methods (pick 2–3):**
+
 - **A/B testing** — two versions of the hero section, measure engagement
 - **System Usability Scale (SUS)** — questionnaire with 5+ participants
 - **Task-based usability test** — "Find out how the bucket system works", "Try the demo", "Check the latest release"
@@ -191,6 +203,7 @@ src/
 - **Accessibility audit** — screen reader testing, contrast checks, keyboard navigation
 
 **Deliverables:**
+
 - Evaluation report (~500 words for portfolio)
 - Data tables, charts, SUS scores
 - Before/after comparison with exercise 3 evaluation
@@ -227,6 +240,7 @@ money-landing/
 ## Portfolio Reminder
 
 Each exercise → ~500 words covering:
+
 1. What did you learn?
 2. What was the hardest part?
 3. What stood out?
@@ -248,13 +262,13 @@ Use this exact color palette:
 
 ```css
 :root {
-  --color-primary: #1976d2;       /* Daily bucket — headlines, CTAs */
+  --color-primary: #1976d2; /* Daily bucket — headlines, CTAs */
   --color-primary-hover: #1565c0;
   --color-primary-dark: #0d47a1;
-  --color-success: #4CAF50;       /* Smile bucket — positive, savings */
-  --color-warning: #FF9800;       /* Splurge bucket — accents */
-  --color-fire: #f44336;          /* Fire bucket — urgency, safety */
-  --color-focus: #FFD600;         /* Interactive focus */
+  --color-success: #4caf50; /* Smile bucket — positive, savings */
+  --color-warning: #ff9800; /* Splurge bucket — accents */
+  --color-fire: #f44336; /* Fire bucket — urgency, safety */
+  --color-focus: #ffd600; /* Interactive focus */
   --color-text: #333333;
   --color-text-secondary: #666666;
   --color-text-muted: #888888;
@@ -267,6 +281,7 @@ Use this exact color palette:
 **Typography:** System font stack: `-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif`
 
 **Design trends to apply:**
+
 - Glassmorphism cards (semi-transparent backgrounds, backdrop-filter blur, subtle borders)
 - Gradient hero section (primary blue → dark blue with subtle radial accent)
 - Large bold typography for headlines (clamp-based fluid sizing)
@@ -279,12 +294,14 @@ Use this exact color palette:
 ## Page Structure — 8 Sections
 
 ### 1. Navigation (sticky)
+
 - Logo/app name "Money App" on the left
 - Anchor links: How It Works, Build Wealth, Cashflow, AI Strategy, Get Started
 - Hamburger menu on mobile
 - Semi-transparent glassmorphism background on scroll
 
 ### 2. Hero Section — "The Problem"
+
 - Large headline: "Take Control of Your Money"
 - Subheadline: "You work hard. You earn money. And yet… at the end of every month, it's just gone."
 - CTA button: "See How It Works" (scrolls to section 3)
@@ -293,6 +310,7 @@ Use this exact color palette:
 - Gradient background
 
 ### 3. How It Works — "The Barefoot Investor Bucket System"
+
 - Section title: "Four Buckets. One System. No Thinking Required."
 - 4 color-coded cards in a responsive grid:
   - **Daily (60%)** — color: primary blue — "Rent, groceries, utilities. The essentials." Icon: 🏠
@@ -303,15 +321,17 @@ Use this exact color palette:
 - Below the cards: "You don't need four bank accounts. Money App creates the virtual separation for you."
 
 ### 4. Build Wealth — "Mojo & Grow"
+
 - Two-column layout (stacked on mobile)
 - Left: Mojo explanation — "Build your emergency fund first. Once you hit your Mojo target, your safety net is complete."
 - Right: Grow tracks — 3 cards for investment types:
   - Assets (gold icon)
-  - Shares (chart icon)  
+  - Shares (chart icon)
   - Leveraged Investments (building icon)
 - Tagline: "Money App doesn't just track spending — it helps you build wealth."
 
 ### 5. Cashflow — "Escape the Hamster Wheel"
+
 - Section with a visual split:
   - Left side (red-tinted): "Liabilities" — things that take money OUT (rent, car payments, subscriptions)
   - Right side (green-tinted): "Assets" — things that put money IN (rental income, dividends, side business)
@@ -320,6 +340,7 @@ Use this exact color palette:
 - Visual: CSS-animated balance scale or comparison bars
 
 ### 6. AI Strategy — "Smart Planning, Zero Data Sharing"
+
 - Feature highlight: AI Prompt Generator
 - Three-step flow visualization:
   1. "Your data is anonymized" (shield icon)
@@ -329,6 +350,7 @@ Use this exact color palette:
 - Privacy callout card: "No API keys. No subscriptions. No data leaves your device."
 
 ### 7. Features Grid — USPs
+
 - 6 feature cards in a 2×3 (desktop) / 1×6 (mobile) grid:
   1. 🔒 **Privacy First** — Client-side AES-256 encryption. Your data never leaves unencrypted.
   2. 🏠 **Self-Hosted** — Run on a Raspberry Pi. 3 Docker containers. ~640 MB RAM.
@@ -339,6 +361,7 @@ Use this exact color palette:
 - Competitive comparison table (Money App vs. YNAB vs. Mint vs. Toshl vs. Goodbudget) — simplified version from marketing doc
 
 ### 8. CTA / Footer — "Get Started"
+
 - Large CTA: "Your money. Your plan. Your future."
 - Two deployment option cards:
   - **Self-Hosted** (green accent): "Deploy in 5 minutes with Docker Compose" + code snippet preview
@@ -352,6 +375,7 @@ Use this exact color palette:
 3. **README.md** — Project description, how to run (just open index.html), screenshot placeholder.
 
 ## Important Constraints
+
 - NO JavaScript
 - NO external CSS frameworks (no Bootstrap, Tailwind, etc.)
 - NO build tools or preprocessors
@@ -362,6 +386,7 @@ Use this exact color palette:
 - Hamburger menu: use CSS-only checkbox hack for mobile toggle
 
 ## Content Tone
+
 - Friendly, empowering, slightly playful but credible
 - "Your smart friend explaining something over coffee"
 - Avoid corporate jargon
@@ -371,4 +396,4 @@ Use this exact color palette:
 
 ---
 
-*Last updated: 2026-04-10*
+_Last updated: 2026-04-10_

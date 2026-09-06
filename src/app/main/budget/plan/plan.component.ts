@@ -1,11 +1,21 @@
 import { Router } from '@angular/router';
 import { AppComponent } from 'src/app/app.component';
 import { SettingsComponent } from 'src/app/panels/settings/settings.component';
-import {LiveAnnouncer} from '@angular/cdk/a11y';
-import {AfterViewInit, Component, ElementRef, HostListener, ViewChild, inject, ChangeDetectorRef, ChangeDetectionStrategy, OnInit} from '@angular/core';
-import {MatSort, Sort, MatSortModule} from '@angular/material/sort';
-import {MatTableDataSource, MatTableModule} from '@angular/material/table';
-import {MatPaginator, MatPaginatorModule} from '@angular/material/paginator';
+import { LiveAnnouncer } from '@angular/cdk/a11y';
+import {
+  AfterViewInit,
+  Component,
+  ElementRef,
+  HostListener,
+  ViewChild,
+  inject,
+  ChangeDetectorRef,
+  ChangeDetectionStrategy,
+  OnInit,
+} from '@angular/core';
+import { MatSort, Sort, MatSortModule } from '@angular/material/sort';
+import { MatTableDataSource, MatTableModule } from '@angular/material/table';
+import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { AddBudgetComponent } from 'src/app/panels/add/add-budget/add-budget.component';
 import { MenuComponent } from 'src/app/panels/menu/menu.component';
 import { InfoComponent } from 'src/app/panels/info/info.component';
@@ -45,13 +55,32 @@ interface BudgetRow {
 @Component({
   selector: 'app-plan',
   standalone: true,
-  imports: [TrapFocusDirective, CommonModule, FormsModule, TranslateModule, AppNumberPipe, MatTableModule, MatSortModule, MatPaginatorModule, MatFormFieldModule, MatInputModule, RouterModule, InfoBudgetComponent],
+  imports: [
+    TrapFocusDirective,
+    CommonModule,
+    FormsModule,
+    TranslateModule,
+    AppNumberPipe,
+    MatTableModule,
+    MatSortModule,
+    MatPaginatorModule,
+    MatFormFieldModule,
+    MatInputModule,
+    RouterModule,
+    InfoBudgetComponent,
+  ],
   templateUrl: './plan.component.html',
-  styleUrls: ['./plan.component.css', '../../../app.component.css', '../../../shared/styles/table.css'],
-  changeDetection: ChangeDetectionStrategy.OnPush // Enable OnPush for better performance
+  styleUrls: [
+    './plan.component.css',
+    '../../../app.component.css',
+    '../../../shared/styles/table.css',
+  ],
+  changeDetection: ChangeDetectionStrategy.OnPush, // Enable OnPush for better performance
 })
 export class PlanComponent implements OnInit, AfterViewInit {
-  public get appReference() { return AppComponent; }
+  public get appReference() {
+    return AppComponent;
+  }
   public classReference = PlanComponent;
   public settingsReference = SettingsComponent;
   private static instance: PlanComponent;
@@ -60,9 +89,9 @@ export class PlanComponent implements OnInit, AfterViewInit {
   static zIndex = 0;
 
   static isSelectMonth = false;
-  static selectedMonthYear = ""
-  static selectedCopyDate = ""
-  static selectedMonthCategories = []
+  static selectedMonthYear = '';
+  static selectedCopyDate = '';
+  static selectedMonthCategories = [];
 
   private _liveAnnouncer = inject(LiveAnnouncer);
   private toastService = inject(ToastService);
@@ -73,27 +102,27 @@ export class PlanComponent implements OnInit, AfterViewInit {
   // Cache for performance
   private actualsCache = new Map<string, number>();
   private selectedYearMonth: { year: number; month: number } = { year: 0, month: 0 };
-  
+
   // Pre-computed values
   budgetAmount = 0;
   othersActuals = 0;
   hasOthers = false;
 
   constructor(
-    private router: Router, 
-    private localStorage: LocalService, 
-    private database: DatabaseService, 
+    private router: Router,
+    private localStorage: LocalService,
+    private database: DatabaseService,
     public afAuth: AngularFireAuth,
     private cdr: ChangeDetectorRef,
-    private authService: AuthService
-  ) { 
+    private authService: AuthService,
+  ) {
     PlanComponent.instance = this;
     const now = new Date();
     const year = now.getFullYear();
     const month = String(now.getMonth() + 1).padStart(2, '0');
     PlanComponent.selectedMonthYear = `${year}-${month}`;
     PlanComponent.selectedCopyDate = `${year}-${month}`;
-    
+
     this.updateSelectedMonth();
     this.rebuildDataSources();
   }
@@ -111,7 +140,7 @@ export class PlanComponent implements OnInit, AfterViewInit {
     const [yearStr, monthStr] = PlanComponent.selectedMonthYear.split('-');
     this.selectedYearMonth = {
       year: parseInt(yearStr, 10),
-      month: parseInt(monthStr, 10) - 1
+      month: parseInt(monthStr, 10) - 1,
     };
   }
 
@@ -125,10 +154,10 @@ export class PlanComponent implements OnInit, AfterViewInit {
     for (const tx of AppStateService.instance.allTransactions) {
       const txDate = new Date(tx.date);
       if (
-        txDate.getFullYear() === year && 
+        txDate.getFullYear() === year &&
         txDate.getMonth() === month &&
-        tx.account !== "Income" && 
-        tx.account !== "Mojo" &&
+        tx.account !== 'Income' &&
+        tx.account !== 'Mojo' &&
         tx.amount < 0
       ) {
         totalActuals += Number(tx.amount) || 0;
@@ -150,7 +179,7 @@ export class PlanComponent implements OnInit, AfterViewInit {
     const activeCategories = new Set<string>();
     for (const budget of AppStateService.instance.allBudgets) {
       const [budgetYear, budgetMonth] = budget.date.split('-').map(Number);
-      if (budgetYear === year && (budgetMonth - 1) === month) {
+      if (budgetYear === year && budgetMonth - 1 === month) {
         activeCategories.add(budget.tag);
       }
     }
@@ -163,13 +192,13 @@ export class PlanComponent implements OnInit, AfterViewInit {
       const txDate = new Date(tx.date);
       if (txDate.getFullYear() === year && txDate.getMonth() === month) {
         const amount = Number(tx.amount) || 0;
-        
+
         // Update category total
         const currentTotal = categoryTotals.get(tx.category) || 0;
         categoryTotals.set(tx.category, currentTotal + amount);
 
         // Update others total if not in active categories and not Income
-        if (!activeCategories.has(tx.category) && tx.account !== "Income") {
+        if (!activeCategories.has(tx.category) && tx.account !== 'Income') {
           othersTotal += amount;
         }
       }
@@ -185,14 +214,14 @@ export class PlanComponent implements OnInit, AfterViewInit {
     for (const tx of AppStateService.instance.allTransactions) {
       const txDate = new Date(tx.date);
       if (
-        txDate.getFullYear() === year && 
+        txDate.getFullYear() === year &&
         txDate.getMonth() === month &&
-        tx.category === "@others"
+        tx.category === '@others'
       ) {
         othersWithCategory += Number(tx.amount) || 0;
       }
     }
-    
+
     this.actualsCache.set('@others', othersWithCategory);
     this.othersActuals = othersTotal;
   }
@@ -209,9 +238,9 @@ export class PlanComponent implements OnInit, AfterViewInit {
    */
   private rebuildDataSources(): void {
     this.buildActualsCache();
-    
+
     const { year, month } = this.selectedYearMonth;
-    
+
     // Filter budgets for selected month and calculate all values at once
     const monthBudgets: BudgetRow[] = [];
     let totalBudget = 0;
@@ -220,23 +249,23 @@ export class PlanComponent implements OnInit, AfterViewInit {
     for (let i = 0; i < AppStateService.instance.allBudgets.length; i++) {
       const budget = AppStateService.instance.allBudgets[i];
       const [budgetYear, budgetMonth] = budget.date.split('-').map(Number);
-      
-      if (budgetYear === year && (budgetMonth - 1) === month) {
+
+      if (budgetYear === year && budgetMonth - 1 === month) {
         const actual = this.getActualsCached(budget.tag);
         const amount = Number(budget.amount) || 0;
-        
+
         monthBudgets.push({
           id: i,
           date: budget.date,
           tag: budget.tag,
           amount: amount,
           actual: actual,
-          diff: amount + actual
+          diff: amount + actual,
         });
-        
+
         totalBudget += amount;
-        
-        if (budget.tag === "@others") {
+
+        if (budget.tag === '@others') {
           hasOthersTag = true;
         }
       }
@@ -250,7 +279,7 @@ export class PlanComponent implements OnInit, AfterViewInit {
 
     // Build zero-plan data source
     this.buildZeroPlanDataSource(monthBudgets);
-    
+
     // Trigger change detection
     this.cdr.markForCheck();
   }
@@ -260,9 +289,9 @@ export class PlanComponent implements OnInit, AfterViewInit {
    */
   private buildZeroPlanDataSource(monthBudgets: BudgetRow[]): void {
     const { year, month } = this.selectedYearMonth;
-    
+
     // Get planned categories (as a Set for O(1) lookup)
-    const plannedCategories = new Set(monthBudgets.map(b => b.tag));
+    const plannedCategories = new Set(monthBudgets.map((b) => b.tag));
 
     // Get transaction categories for the month (excluding Income & Mojo)
     const transactionCategories = new Set<string>();
@@ -271,8 +300,8 @@ export class PlanComponent implements OnInit, AfterViewInit {
       if (
         txDate.getFullYear() === year &&
         txDate.getMonth() === month &&
-        tx.account !== "Income" &&
-        tx.account !== "Mojo"
+        tx.account !== 'Income' &&
+        tx.account !== 'Mojo'
       ) {
         transactionCategories.add(tx.category);
       }
@@ -281,9 +310,9 @@ export class PlanComponent implements OnInit, AfterViewInit {
     // Find unplanned categories
     const zeroPlanBudgets: BudgetRow[] = [];
     let index = 0;
-    
+
     for (const cat of transactionCategories) {
-      if (!plannedCategories.has(cat) && cat !== "@others") {
+      if (!plannedCategories.has(cat) && cat !== '@others') {
         const actual = this.getActualsCached(cat);
         zeroPlanBudgets.push({
           id: index++,
@@ -291,7 +320,7 @@ export class PlanComponent implements OnInit, AfterViewInit {
           tag: cat,
           amount: 0,
           actual: actual,
-          diff: actual
+          diff: actual,
         });
       }
     }
@@ -427,7 +456,7 @@ export class PlanComponent implements OnInit, AfterViewInit {
       }
       const checkMonthStr = String(checkMonth).padStart(2, '0');
       const checkDateStr = `${checkYear}-${checkMonthStr}`;
-      const found = AppStateService.instance.allBudgets.some(b => b.date === checkDateStr);
+      const found = AppStateService.instance.allBudgets.some((b) => b.date === checkDateStr);
       if (found) {
         lastBudgetDate = checkDateStr;
         lastYear = checkYear;
@@ -448,16 +477,18 @@ export class PlanComponent implements OnInit, AfterViewInit {
       const nextMonthStr = String(nextMonth).padStart(2, '0');
       const nextDateStr = `${nextYear}-${nextMonthStr}`;
 
-      const prevBudgets = AppStateService.instance.allBudgets.filter(b => b.date === lastBudgetDate);
+      const prevBudgets = AppStateService.instance.allBudgets.filter(
+        (b) => b.date === lastBudgetDate,
+      );
 
       for (const prevBudget of prevBudgets) {
         const exists = AppStateService.instance.allBudgets.some(
-          b => b.date === nextDateStr && b.tag === prevBudget.tag
+          (b) => b.date === nextDateStr && b.tag === prevBudget.tag,
         );
         if (!exists) {
           AppStateService.instance.allBudgets.push({
             ...prevBudget,
-            date: nextDateStr
+            date: nextDateStr,
           });
         }
       }
@@ -475,17 +506,17 @@ export class PlanComponent implements OnInit, AfterViewInit {
     const copyDate = PlanComponent.selectedCopyDate;
     if (!copyDate) return;
 
-    const budgetsToCopy = AppStateService.instance.allBudgets.filter(b => b.date === copyDate);
+    const budgetsToCopy = AppStateService.instance.allBudgets.filter((b) => b.date === copyDate);
     const targetDate = PlanComponent.selectedMonthYear;
 
     for (const budget of budgetsToCopy) {
       const existingIndex = AppStateService.instance.allBudgets.findIndex(
-        b => b.date === targetDate && b.tag === budget.tag
+        (b) => b.date === targetDate && b.tag === budget.tag,
       );
       if (existingIndex === -1) {
         AppStateService.instance.allBudgets.push({
           ...budget,
-          date: targetDate
+          date: targetDate,
         });
       } else {
         if (AppStateService.instance.allBudgets[existingIndex].amount !== budget.amount) {
@@ -506,7 +537,7 @@ export class PlanComponent implements OnInit, AfterViewInit {
     const monthlyCategoryAmounts: Record<string, Record<string, number>> = {};
 
     for (const sub of AppStateService.instance.allSubscriptions) {
-      if (sub.account === "Income") continue;
+      if (sub.account === 'Income') continue;
 
       const [subYearStr, subMonthStr, subDayStr] = sub.startDate.split('-');
       let subYear = parseInt(subYearStr, 10);
@@ -523,20 +554,12 @@ export class PlanComponent implements OnInit, AfterViewInit {
         endDay = endDayStr ? parseInt(endDayStr, 10) : 1;
       }
 
-      while (
-        subYear < endYear ||
-        (subYear === endYear && subMonth <= endMonth)
-      ) {
+      while (subYear < endYear || (subYear === endYear && subMonth <= endMonth)) {
         const budgetDate = `${subYear}-${String(subMonth).padStart(2, '0')}`;
         let shouldAdd = true;
 
-        if (
-          subYear === endYear &&
-          subMonth === endMonth &&
-          sub.endDate &&
-          endDay > subDay
-        ) {
-          const hasTransaction = AppStateService.instance.allTransactions.some(tx => {
+        if (subYear === endYear && subMonth === endMonth && sub.endDate && endDay > subDay) {
+          const hasTransaction = AppStateService.instance.allTransactions.some((tx) => {
             const txDate = new Date(tx.date);
             return (
               tx.category === sub.category &&
@@ -545,7 +568,12 @@ export class PlanComponent implements OnInit, AfterViewInit {
             );
           });
           shouldAdd = hasTransaction;
-        } else if (subYear === endYear && subMonth === endMonth && sub.endDate && endDay <= subDay) {
+        } else if (
+          subYear === endYear &&
+          subMonth === endMonth &&
+          sub.endDate &&
+          endDay <= subDay
+        ) {
           shouldAdd = false;
         }
 
@@ -574,13 +602,13 @@ export class PlanComponent implements OnInit, AfterViewInit {
       for (const category in monthlyCategoryAmounts[date]) {
         const totalAmount = monthlyCategoryAmounts[date][category];
         const existingIndex = AppStateService.instance.allBudgets.findIndex(
-          b => b.date === date && b.tag === category
+          (b) => b.date === date && b.tag === category,
         );
         if (existingIndex === -1) {
           AppStateService.instance.allBudgets.push({
             date,
             tag: category,
-            amount: totalAmount
+            amount: totalAmount,
           });
         } else {
           AppStateService.instance.allBudgets[existingIndex].amount = totalAmount;
@@ -597,7 +625,7 @@ export class PlanComponent implements OnInit, AfterViewInit {
     const selectedYear = year;
     const selectedMonth = month + 1;
 
-    AppStateService.instance.allBudgets = AppStateService.instance.allBudgets.filter(budget => {
+    AppStateService.instance.allBudgets = AppStateService.instance.allBudgets.filter((budget) => {
       const [budgetYear, budgetMonth] = budget.date.split('-').map(Number);
       return !(budgetYear === selectedYear && budgetMonth === selectedMonth);
     });
@@ -610,7 +638,7 @@ export class PlanComponent implements OnInit, AfterViewInit {
     // Check authentication using the centralized service
     const authResult = await this.authService.checkAuthentication();
     if (!authResult.authenticated) {
-      console.error("Authentication failed:", authResult.error);
+      console.error('Authentication failed:', authResult.error);
       if (this.authService.getMode() === 'firebase') {
         this.afAuth.signOut();
       }
@@ -624,28 +652,30 @@ export class PlanComponent implements OnInit, AfterViewInit {
     try {
       // In selfhosted mode, writeObject returns Observables that need to be subscribed
       if (environment.mode === 'selfhosted') {
-        const budgetWrite = this.database.writeObject("budget", AppStateService.instance.allBudgets) as Observable<any>;
+        const budgetWrite = this.database.writeObject(
+          'budget',
+          AppStateService.instance.allBudgets,
+        ) as Observable<any>;
         budgetWrite.subscribe({
           next: () => {
             this.finalizeSave();
           },
           error: (error) => {
             isError = true;
-          }
+          },
         });
       } else {
         // Firebase mode - writes complete synchronously
-        this.database.writeObject("budget", AppStateService.instance.allBudgets);
+        this.database.writeObject('budget', AppStateService.instance.allBudgets);
         this.finalizeSave();
       }
-
     } catch (error) {
       isError = true;
     }
   }
 
   finalizeSave() {
-    this.localStorage.saveData("budget", JSON.stringify(AppStateService.instance.allBudgets));
+    this.localStorage.saveData('budget', JSON.stringify(AppStateService.instance.allBudgets));
     this.closeWindow();
   }
 
@@ -668,7 +698,7 @@ export class PlanComponent implements OnInit, AfterViewInit {
 
   addBudget() {
     AddBudgetComponent.populateCategoryOptions();
-    AddBudgetComponent.categoryTextField = "@";
+    AddBudgetComponent.categoryTextField = '@';
     AddBudgetComponent.dateTextField = PlanComponent.selectedMonthYear;
     AddBudgetComponent.isAdd = true;
     MenuComponent.isMenu = false;
@@ -682,7 +712,7 @@ export class PlanComponent implements OnInit, AfterViewInit {
 
   @ViewChild(MatSort) sort!: MatSort;
   @ViewChild('otherSort') zeroPlanSort!: MatSort;
-  
+
   applyFilter(event: Event) {
     const filterValue = (event.target as HTMLInputElement).value;
     PlanComponent.dataSource.filter = filterValue.trim().toLowerCase();
@@ -729,11 +759,11 @@ export class PlanComponent implements OnInit, AfterViewInit {
     }
   }
 
-  ngOnInit() { 
+  ngOnInit() {
     this.applyCustomSorting(PlanComponent.dataSource);
     this.applyCustomSorting(PlanComponent.zeroPlanDataSource);
   }
-  
+
   announceSortChange(sortState: any) {
     if (sortState && sortState.direction) {
       this._liveAnnouncer.announce(`Sorted ${sortState.direction}ending`);
@@ -741,14 +771,14 @@ export class PlanComponent implements OnInit, AfterViewInit {
       this._liveAnnouncer.announce('Sorting cleared');
     }
   }
-  
+
   clickRow(index: number) {
     AppComponent.gotoTop();
     InfoBudgetComponent.setInfoComponent(
       index,
       AppStateService.instance.allBudgets[index].date,
       AppStateService.instance.allBudgets[index].tag,
-      AppStateService.instance.allBudgets[index].amount
+      AppStateService.instance.allBudgets[index].amount,
     );
   }
 

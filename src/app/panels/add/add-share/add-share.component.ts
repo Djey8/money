@@ -27,13 +27,12 @@ import { TrapFocusDirective } from 'src/app/shared/directives/trap-focus.directi
   standalone: true,
   imports: [TrapFocusDirective, CommonModule, FormsModule, TranslateModule],
   templateUrl: './add-share.component.html',
-  styleUrls: ['../../../shared/styles/add-form.css', './add-share.component.css']
+  styleUrls: ['../../../shared/styles/add-form.css', './add-share.component.css'],
 })
 export class AddShareComponent extends BaseAddComponent {
-
-  titleTextField = "";
-  quantityTextField = "";
-  priceTextField = "";
+  titleTextField = '';
+  quantityTextField = '';
+  priceTextField = '';
 
   static zIndex;
   static isAddShare;
@@ -48,7 +47,11 @@ export class AddShareComponent extends BaseAddComponent {
    * @param database - The database service.
    * @param frontendLogger - The frontend logging service.
    */
-  constructor(router: Router, private localStorage: LocalService, private persistence: PersistenceService) {
+  constructor(
+    router: Router,
+    private localStorage: LocalService,
+    private persistence: PersistenceService,
+  ) {
     super(router);
     AddShareComponent.isAddShare = false;
     this.initStatic(AddShareComponent);
@@ -67,9 +70,9 @@ export class AddShareComponent extends BaseAddComponent {
    */
   override closeWindow() {
     AddShareComponent.isAddShare = false;
-    this.titleTextField = "";
-    this.quantityTextField = "";
-    this.priceTextField = "";
+    this.titleTextField = '';
+    this.quantityTextField = '';
+    this.priceTextField = '';
     super.closeWindow();
   }
 
@@ -79,31 +82,41 @@ export class AddShareComponent extends BaseAddComponent {
    * @returns True if the title is invalid, false otherwise.
    */
   invalidTitle(title: string) {
-    return isDuplicateTitle(title, [AppStateService.instance.allAssets, AppStateService.instance.allShares, AppStateService.instance.allInvestments], 'tag');
+    return isDuplicateTitle(
+      title,
+      [
+        AppStateService.instance.allAssets,
+        AppStateService.instance.allShares,
+        AppStateService.instance.allInvestments,
+      ],
+      'tag',
+    );
   }
 
   /**
    * Adds an asset.
    */
-  addAsset(){
+  addAsset() {
     //First trim string
     this.titleTextField = this.titleTextField.trim();
     //Validation (check if Amount is not empty)
-    if (!this.validateRequired([
-      { name: 'title', value: this.titleTextField, label: 'Title' }
-    ])) {
+    if (!this.validateRequired([{ name: 'title', value: this.titleTextField, label: 'Title' }])) {
       // field errors shown inline
     } else if (this.invalidTitle(this.titleTextField)) {
-      this.showError("This share already exists.");
+      this.showError('This share already exists.');
     } else {
       // ready to write to Database new Transaction
-      const newShare: Share = {tag:this.titleTextField.replace(" ", ""), quantity: this.quantityTextField == "" ? 0.0 : parseFloat(this.quantityTextField), price: this.priceTextField == "" ? 0.0 : parseFloat(this.priceTextField)};
+      const newShare: Share = {
+        tag: this.titleTextField.replace(' ', ''),
+        quantity: this.quantityTextField == '' ? 0.0 : parseFloat(this.quantityTextField),
+        price: this.priceTextField == '' ? 0.0 : parseFloat(this.priceTextField),
+      };
       AppStateService.instance.allShares.push(newShare);
 
       // Clean Up close Window
-      this.titleTextField = "";
-      this.quantityTextField = "";
-      this.priceTextField = "";
+      this.titleTextField = '';
+      this.quantityTextField = '';
+      this.priceTextField = '';
       this.clearError();
       this.closeWindow();
       AppStateService.instance.isSaving = true;
@@ -112,10 +125,17 @@ export class AddShareComponent extends BaseAddComponent {
         data: AppStateService.instance.allShares,
         localStorageKey: 'shares',
         logEvent: 'add_share',
-        logMetadata: { title: this.titleTextField, quantity: this.quantityTextField, price: this.priceTextField },
+        logMetadata: {
+          title: this.titleTextField,
+          quantity: this.quantityTextField,
+          price: this.priceTextField,
+        },
         onSuccess: () => {
           AppStateService.instance.isSaving = false;
-          this.localStorage.saveData("interests", JSON.stringify(AppStateService.instance.allIntrests));
+          this.localStorage.saveData(
+            'interests',
+            JSON.stringify(AppStateService.instance.allIntrests),
+          );
           this.toastService.show('Share added', 'success');
           gotoTop();
           this.router.navigate([`/balance`]);
@@ -123,7 +143,7 @@ export class AddShareComponent extends BaseAddComponent {
         onError: (error) => {
           AppStateService.instance.isSaving = false;
           this.toastService.show(error.message || 'Database write failed', 'error');
-        }
+        },
       });
     }
   }

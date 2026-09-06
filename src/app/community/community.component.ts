@@ -8,15 +8,20 @@ import { GuestIdentityService } from '../shared/services/guest-identity.service'
 import { DemoService } from '../shared/services/demo.service';
 
 // Deferred import to break circular chain
-let AppComponent: any; setTimeout(() => import('src/app/app.component').then(m => AppComponent = m.AppComponent));
+let AppComponent: any;
+setTimeout(() => import('src/app/app.component').then((m) => (AppComponent = m.AppComponent)));
 
 @Component({
   selector: 'app-community',
   standalone: true,
   imports: [NgIf, NgFor, DatePipe, FormsModule, RouterLink, TranslateModule],
   templateUrl: './community.component.html',
-  styleUrls: ['./community.component.css', '../landing/landing-page.component.css', '../app.component.css'],
-  encapsulation: ViewEncapsulation.None
+  styleUrls: [
+    './community.component.css',
+    '../landing/landing-page.component.css',
+    '../app.component.css',
+  ],
+  encapsulation: ViewEncapsulation.None,
 })
 export class CommunityComponent implements OnInit {
   threads: CommunityThread[] = [];
@@ -37,14 +42,18 @@ export class CommunityComponent implements OnInit {
     private communityService: CommunityService,
     private guestIdentity: GuestIdentityService,
     private demoService: DemoService,
-    private router: Router
+    private router: Router,
   ) {}
 
-  get appReference() { return AppComponent; }
+  get appReference() {
+    return AppComponent;
+  }
 
   closeNav(): void {
     const toggle = document.getElementById('nav-toggle') as HTMLInputElement;
-    if (toggle) { toggle.checked = false; }
+    if (toggle) {
+      toggle.checked = false;
+    }
   }
 
   launchDemo(): void {
@@ -63,8 +72,11 @@ export class CommunityComponent implements OnInit {
     this.displayName = this.guestIdentity.getDisplayName();
     this.anonymous = this.guestIdentity.getAnonymousPreference();
     // Establish an identity eagerly so composing/reacting has no first-click delay.
-    this.guestIdentity.ensureIdentity()
-      .then(() => { this.isGuestUser = this.guestIdentity.isGuest(); })
+    this.guestIdentity
+      .ensureIdentity()
+      .then(() => {
+        this.isGuestUser = this.guestIdentity.isGuest();
+      })
       // eslint-disable-next-line @typescript-eslint/no-empty-function -- intentionally swallow identity-setup errors; not critical to page load
       .catch(() => {});
     this.loadThreads();
@@ -74,14 +86,14 @@ export class CommunityComponent implements OnInit {
     this.loading = true;
     this.error = false;
     this.communityService.listThreads().subscribe({
-      next: threads => {
+      next: (threads) => {
         this.threads = threads;
         this.loading = false;
       },
       error: () => {
         this.loading = false;
         this.error = true;
-      }
+      },
     });
   }
 
@@ -112,7 +124,10 @@ export class CommunityComponent implements OnInit {
     }
 
     try {
-      const authorName = await this.guestIdentity.resolveAuthorName(this.displayName, this.anonymous);
+      const authorName = await this.guestIdentity.resolveAuthorName(
+        this.displayName,
+        this.anonymous,
+      );
       const { thread } = await this.communityService.createThread(title, body, authorName);
       this.newTitle = '';
       this.newBody = '';

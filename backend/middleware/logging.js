@@ -12,7 +12,7 @@ const HIGH_SEVERITY_EVENTS = [
   'refresh_token_reuse_detected',
   'brute_force_detected',
   'unauthorized_access',
-  'data_breach_attempt'
+  'data_breach_attempt',
 ];
 
 /**
@@ -28,29 +28,34 @@ function sendSecurityAlert(event, severity, details) {
     severity,
     timestamp: new Date().toISOString(),
     service: 'money-backend',
-    details
+    details,
   });
 
   const url = new URL(SECURITY_ALERT_WEBHOOK_URL);
   const transport = url.protocol === 'https:' ? https : http;
-  const req = transport.request({
-    hostname: url.hostname,
-    port: url.port,
-    path: url.pathname + url.search,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(payload) },
-    timeout: 5000
-  }, (res) => {
-    if (res.statusCode >= 400) {
-      logger.warn('Security alert webhook returned error', { statusCode: res.statusCode, event });
-    }
-    res.resume();
-  });
+  const req = transport.request(
+    {
+      hostname: url.hostname,
+      port: url.port,
+      path: url.pathname + url.search,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(payload) },
+      timeout: 5000,
+    },
+    (res) => {
+      if (res.statusCode >= 400) {
+        logger.warn('Security alert webhook returned error', { statusCode: res.statusCode, event });
+      }
+      res.resume();
+    },
+  );
 
   req.on('error', (err) => {
     logger.warn('Security alert webhook failed', { error: err.message, event });
   });
-  req.on('timeout', () => { req.destroy(); });
+  req.on('timeout', () => {
+    req.destroy();
+  });
   req.write(payload);
   req.end();
 }
@@ -64,7 +69,7 @@ function extractUserIdFromToken(req) {
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return 'anonymous';
     }
-    
+
     const token = authHeader.split(' ')[1];
     const decoded = jwt.verify(token, JWT_SECRET);
     return decoded.userId || 'anonymous';
@@ -80,13 +85,13 @@ function extractUserIdFromToken(req) {
 function requestLoggingMiddleware(req, res, next) {
   const startTime = Date.now();
   const requestId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-  
+
   // Attach request ID to request object
   req.requestId = requestId;
-  
+
   // Extract userId from JWT token or use from auth middleware or default to anonymous
   const userId = req.userId || extractUserIdFromToken(req);
-  
+
   // Log incoming request
   logger.info('Incoming request', {
     requestId,
@@ -98,29 +103,29 @@ function requestLoggingMiddleware(req, res, next) {
     userAgent: req.headers['user-agent'],
     contentType: req.headers['content-type'],
     requestType: 'incoming_request',
-    context_source: 'api'
+    context_source: 'api',
   });
-  
+
   // Capture response
   const originalSend = res.send;
   const originalJson = res.json;
-  
-  res.send = function(data) {
+
+  res.send = function (data) {
     res.send = originalSend;
     const responseTime = Date.now() - startTime;
-    
+
     logResponse(req, res, responseTime, requestId, data);
     return originalSend.call(this, data);
   };
-  
-  res.json = function(data) {
+
+  res.json = function (data) {
     res.json = originalJson;
     const responseTime = Date.now() - startTime;
-    
+
     logResponse(req, res, responseTime, requestId, data);
     return originalJson.call(this, data);
   };
-  
+
   next();
 }
 
@@ -130,7 +135,7 @@ function requestLoggingMiddleware(req, res, next) {
 function logResponse(req, res, responseTime, requestId, responseData) {
   // Extract userId from JWT or use from auth middleware
   const userId = req.userId || extractUserIdFromToken(req);
-  
+
   const logData = {
     requestId,
     method: req.method,
@@ -142,27 +147,27 @@ function logResponse(req, res, responseTime, requestId, responseData) {
     userId,
     userAgent: req.headers['user-agent'],
     requestType: 'api_call',
-    context_source: 'api'
+    context_source: 'api',
   };
-  
+
   // Add performance warning for slow requests
   if (responseTime > 1000) {
     logData.performanceWarning = 'slow_request';
     logData.warningType = 'performance';
   }
-  
+
   // Log based on status code
   if (res.statusCode >= 500) {
     logger.error('Server error response', {
       ...logData,
       errorType: 'server_error',
-      responseBody: responseData
+      responseBody: responseData,
     });
   } else if (res.statusCode >= 400) {
     logger.warn('Client error response', {
       ...logData,
       errorType: 'client_error',
-      responseBody: responseData
+      responseBody: responseData,
     });
   } else {
     logger.info('Successful response', logData);
@@ -175,7 +180,7 @@ function logResponse(req, res, responseTime, requestId, responseData) {
 // eslint-disable-next-line no-unused-vars -- Express identifies error-handling middleware by function arity (4 params); `next` must stay even though it's unused here
 function errorLoggingMiddleware(err, req, res, next) {
   const requestId = req.requestId || 'unknown';
-  
+
   logger.error('Unhandled error', {
     requestId,
     method: req.method,
@@ -183,20 +188,18 @@ function errorLoggingMiddleware(err, req, res, next) {
     error: {
       name: err.name,
       message: err.message,
-      stack: err.stack
+      stack: err.stack,
     },
     errorType: 'unhandled_exception',
     statusCode: err.statusCode || 500,
     userId: req.userId || req.user?.userId,
-    context_source: 'api'
+    context_source: 'api',
   });
-  
+
   // Send error response
   res.status(err.statusCode || 500).json({
-    error: process.env.NODE_ENV === 'production' 
-      ? 'Internal server error' 
-      : err.message,
-    requestId
+    error: process.env.NODE_ENV === 'production' ? 'Internal server error' : err.message,
+    requestId,
   });
 }
 
@@ -210,7 +213,7 @@ function logDatabaseOperation(operation, userId, details = {}) {
     activityType: 'data_operation',
     requestType: 'database',
     context_source: 'database',
-    ...details
+    ...details,
   });
 }
 
@@ -225,15 +228,15 @@ function logAuthEvent(event, userId, success, details = {}) {
     activityType: 'authentication',
     securityType: success ? 'auth_success' : 'auth_failure',
     context_source: 'auth',
-    ...details
+    ...details,
   };
-  
+
   if (success) {
     logger.info('Authentication event', logData);
   } else {
     logger.warn('Authentication failure', {
       ...logData,
-      warningType: 'security'
+      warningType: 'security',
     });
   }
 }
@@ -249,7 +252,7 @@ function logUserActivity(userId, action, details = {}) {
     requestType: 'user_action',
     context_source: 'user',
     timestamp: new Date().toISOString(),
-    ...details
+    ...details,
   });
 }
 
@@ -258,14 +261,14 @@ function logUserActivity(userId, action, details = {}) {
  */
 function logSecurityEvent(event, severity = 'medium', details = {}) {
   const logLevel = severity === 'high' ? 'error' : 'warn';
-  
+
   logger[logLevel]('Security event', {
     event,
     severity,
     securityType: 'security_event',
     activityType: 'security',
     context_source: 'security',
-    ...details
+    ...details,
   });
 
   // Fire webhook alert for high-severity events or explicit high severity
@@ -280,5 +283,5 @@ module.exports = {
   logDatabaseOperation,
   logAuthEvent,
   logUserActivity,
-  logSecurityEvent
+  logSecurityEvent,
 };

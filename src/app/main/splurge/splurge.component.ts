@@ -29,19 +29,38 @@ import { SharedFilterComponent } from 'src/app/shared/components/shared-filter/s
 @Component({
   selector: 'app-splurge',
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslateModule, AppDatePipe, AppNumberPipe, MatTableModule, MatSortModule, MatPaginatorModule, MatFormFieldModule, MatInputModule, RouterModule, SharedFilterComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    TranslateModule,
+    AppDatePipe,
+    AppNumberPipe,
+    MatTableModule,
+    MatSortModule,
+    MatPaginatorModule,
+    MatFormFieldModule,
+    MatInputModule,
+    RouterModule,
+    SharedFilterComponent,
+  ],
   templateUrl: './splurge.component.html',
-  styleUrls: ['./splurge.component.css', '../../app.component.css', '../../shared/styles/table.css']
+  styleUrls: [
+    './splurge.component.css',
+    '../../app.component.css',
+    '../../shared/styles/table.css',
+  ],
 })
 export class SplurgeComponent extends BaseAccountComponent {
-  
-  static splurgeAmount = AppStateService.instance.getAmount("Splurge", AppStateService.instance.splurge/100);
+  static splurgeAmount = AppStateService.instance.getAmount(
+    'Splurge',
+    AppStateService.instance.splurge / 100,
+  );
 
   static dataSource = new MatTableDataSource<any>([]);
 
   static isSearched = false;
-  static allTransactions = []
-  static allSearchedTransactions = []
+  static allTransactions = [];
+  static allSearchedTransactions = [];
 
   // Advanced filter system
   static advancedFilter: IncomeFilter = {
@@ -58,10 +77,10 @@ export class SplurgeComponent extends BaseAccountComponent {
       date: true,
       time: true,
       category: true,
-      comment: true
-    }
+      comment: true,
+    },
   };
-  
+
   static isAdvancedFilterExpanded = false;
   static isSearchHelpVisible = false;
   static availableAccounts: string[] = [];
@@ -70,7 +89,7 @@ export class SplurgeComponent extends BaseAccountComponent {
   static d: Date;
   static startDateTextField: string;
   static endDateTextField: string;
-  
+
   public classReference = SplurgeComponent;
 
   /**
@@ -80,7 +99,10 @@ export class SplurgeComponent extends BaseAccountComponent {
    */
   constructor(router: Router, filterService: TransactionFilterService) {
     super(router, filterService);
-    SplurgeComponent.splurgeAmount = AppStateService.instance.getAmount("Splurge", AppStateService.instance.splurge/100);
+    SplurgeComponent.splurgeAmount = AppStateService.instance.getAmount(
+      'Splurge',
+      AppStateService.instance.splurge / 100,
+    );
     this.initAccount(SplurgeComponent);
   }
 
@@ -88,18 +110,26 @@ export class SplurgeComponent extends BaseAccountComponent {
    * Updates the dailyAmount value.
    */
   static updateDailyAmount() {
-    SplurgeComponent.splurgeAmount = AppStateService.instance.getAmount("Splurge", AppStateService.instance.splurge / 100);
+    SplurgeComponent.splurgeAmount = AppStateService.instance.getAmount(
+      'Splurge',
+      AppStateService.instance.splurge / 100,
+    );
   }
 
   addTransaction() {
-    AppComponent.addTransaction("Splurge", "@", "splurge");
+    AppComponent.addTransaction('Splurge', '@', 'splurge');
   }
 
   static setDate() {
     SplurgeComponent.d = new Date();
-    SplurgeComponent.startDateTextField = "";
-    SplurgeComponent.endDateTextField = SplurgeComponent.d.getFullYear() + "-" + SplurgeComponent.zeroPadded(SplurgeComponent.d.getMonth() + 1) + "-" + SplurgeComponent.zeroPadded(SplurgeComponent.d.getDate());
-    SplurgeComponent.advancedFilter.startDate = "";
+    SplurgeComponent.startDateTextField = '';
+    SplurgeComponent.endDateTextField =
+      SplurgeComponent.d.getFullYear() +
+      '-' +
+      SplurgeComponent.zeroPadded(SplurgeComponent.d.getMonth() + 1) +
+      '-' +
+      SplurgeComponent.zeroPadded(SplurgeComponent.d.getDate());
+    SplurgeComponent.advancedFilter.startDate = '';
     SplurgeComponent.advancedFilter.endDate = SplurgeComponent.endDateTextField;
   }
 
@@ -108,8 +138,8 @@ export class SplurgeComponent extends BaseAccountComponent {
   }
 
   goToSplurgeStats() {
-    StatsComponent.resetBIStateIfNeeded("splurge");
-    StatsComponent.modus = "splurge";
+    StatsComponent.resetBIStateIfNeeded('splurge');
+    StatsComponent.modus = 'splurge';
     MenuComponent.openStats = !MenuComponent.openStats;
     StatsComponent.isSwitch = true;
     this.router.navigate(['/stats']);

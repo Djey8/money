@@ -5,10 +5,9 @@ import { Transaction } from '../../interfaces/transaction';
  * Service for handling CSV operations.
  */
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class CsvService {
-
   /**
    * Downloads a CSV file containing the provided transactions.
    * @param transactions - The array of transactions to be included in the CSV file.
@@ -34,14 +33,18 @@ export class CsvService {
    */
   private convertToCsv(transactions: Transaction[]): string {
     const header = Object.keys(transactions[0]).join(',');
-    const rows = transactions.map(t => {
-      return Object.values(t).map(value => {
-        if (typeof value === 'string' && value.includes(',')) {
-          return `"${value}"`;
-        }
-        return value;
-      }).join(',');
-    }).join('\n');
+    const rows = transactions
+      .map((t) => {
+        return Object.values(t)
+          .map((value) => {
+            if (typeof value === 'string' && value.includes(',')) {
+              return `"${value}"`;
+            }
+            return value;
+          })
+          .join(',');
+      })
+      .join('\n');
     return `${header}\n${rows}`;
   }
 }

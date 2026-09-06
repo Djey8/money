@@ -1,4 +1,11 @@
-import { Component, ViewEncapsulation, AfterViewInit, OnDestroy, ElementRef, ViewChild } from '@angular/core';
+import {
+  Component,
+  ViewEncapsulation,
+  AfterViewInit,
+  OnDestroy,
+  ElementRef,
+  ViewChild,
+} from '@angular/core';
 import { NgIf, NgClass, NgFor, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -7,8 +14,14 @@ import { DemoService } from '../shared/services/demo.service';
 import { AppStateService } from '../shared/services/app-state.service';
 
 // Deferred imports to break circular chains
-let AppComponent: any; setTimeout(() => import('src/app/app.component').then(m => AppComponent = m.AppComponent));
-let SettingsComponent: any; setTimeout(() => import('src/app/panels/settings/settings.component').then(m => SettingsComponent = m.SettingsComponent));
+let AppComponent: any;
+setTimeout(() => import('src/app/app.component').then((m) => (AppComponent = m.AppComponent)));
+let SettingsComponent: any;
+setTimeout(() =>
+  import('src/app/panels/settings/settings.component').then(
+    (m) => (SettingsComponent = m.SettingsComponent),
+  ),
+);
 
 @Component({
   selector: 'app-landing-page',
@@ -16,7 +29,7 @@ let SettingsComponent: any; setTimeout(() => import('src/app/panels/settings/set
   imports: [RouterLink, NgIf, NgClass, NgFor, DecimalPipe, TranslateModule, FormsModule],
   templateUrl: './landing-page.component.html',
   styleUrls: ['./landing-page.component.css', '../app.component.css'],
-  encapsulation: ViewEncapsulation.None
+  encapsulation: ViewEncapsulation.None,
 })
 export class LandingPageComponent implements AfterViewInit, OnDestroy {
   @ViewChild('incomeFlowWrapper') wrapperRef!: ElementRef<HTMLDivElement>;
@@ -37,7 +50,7 @@ export class LandingPageComponent implements AfterViewInit, OnDestroy {
   // Smile info panel tab tracking
   smileTab: Record<string, string> = {
     'sp-japan': 'overview',
-    'sp-office': 'overview'
+    'sp-office': 'overview',
   };
 
   // Login prompt
@@ -46,14 +59,16 @@ export class LandingPageComponent implements AfterViewInit, OnDestroy {
 
   // Language & currency
   currentLang = 'en';
-  get currencySymbol(): string { return AppStateService.instance.currency || '€'; }
+  get currencySymbol(): string {
+    return AppStateService.instance.currency || '€';
+  }
   languages = [
     { code: 'en', label: 'EN', flag: 'assets/flags/eng.png' },
     { code: 'de', label: 'DE', flag: 'assets/flags/de.png' },
     { code: 'es', label: 'ES', flag: 'assets/flags/es.png' },
     { code: 'fr', label: 'FR', flag: 'assets/flags/fr.png' },
     { code: 'cn', label: 'ZH', flag: 'assets/flags/cn.png' },
-    { code: 'ar', label: 'AR', flag: 'assets/flags/tu.png' }
+    { code: 'ar', label: 'AR', flag: 'assets/flags/tu.png' },
   ];
 
   // Income → bucket animation
@@ -70,7 +85,10 @@ export class LandingPageComponent implements AfterViewInit, OnDestroy {
   private thoughtBubbleTimer: any;
   private lineHideTimer: any;
 
-  constructor(private demoService: DemoService, private translate: TranslateService) {
+  constructor(
+    private demoService: DemoService,
+    private translate: TranslateService,
+  ) {
     const saved = localStorage.getItem('landingLang');
     if (saved) {
       this.currentLang = saved;
@@ -80,7 +98,9 @@ export class LandingPageComponent implements AfterViewInit, OnDestroy {
     this.scheduleThoughtBubble();
   }
 
-  get appReference() { return AppComponent; }
+  get appReference() {
+    return AppComponent;
+  }
 
   ngAfterViewInit(): void {
     setTimeout(() => this.updateFlowLines(), 200);
@@ -106,9 +126,9 @@ export class LandingPageComponent implements AfterViewInit, OnDestroy {
     this.svgHeight = wr.height;
 
     // Income circle geometry
-    const cx = ir.left + ir.width / 2 - wr.left;   // center X
-    const cy = ir.top + ir.height / 2 - wr.top;     // center Y
-    const r = ir.width / 2;                          // radius
+    const cx = ir.left + ir.width / 2 - wr.left; // center X
+    const cy = ir.top + ir.height / 2 - wr.top; // center Y
+    const r = ir.width / 2; // radius
 
     // Start points per bucket depend on layout mode
     const cards = grid.querySelectorAll('.bucket-flip');
@@ -117,24 +137,24 @@ export class LandingPageComponent implements AfterViewInit, OnDestroy {
     const startPoints: Record<number, { x: number; y: number }> = isNarrow
       ? {
           // 2-row layout: top row (daily, splurge) from bottom; bottom row (smile, fire) from sides
-          0: { x: cx, y: cy + r },     // daily: bottom center
-          1: { x: cx, y: cy + r },     // splurge: bottom center
-          2: { x: cx - r, y: cy },     // smile: left side of circle
-          3: { x: cx + r, y: cy }      // fire: right side of circle
+          0: { x: cx, y: cy + r }, // daily: bottom center
+          1: { x: cx, y: cy + r }, // splurge: bottom center
+          2: { x: cx - r, y: cy }, // smile: left side of circle
+          3: { x: cx + r, y: cy }, // fire: right side of circle
         }
       : {
           // Single-row layout: outer buckets from sides, inner from bottom
-          0: { x: cx - r, y: cy },     // daily: left side
-          1: { x: cx, y: cy + r },     // splurge: bottom center
-          2: { x: cx, y: cy + r },     // smile: bottom center
-          3: { x: cx + r, y: cy }      // fire: right side
+          0: { x: cx - r, y: cy }, // daily: left side
+          1: { x: cx, y: cy + r }, // splurge: bottom center
+          2: { x: cx, y: cy + r }, // smile: bottom center
+          3: { x: cx + r, y: cy }, // fire: right side
         };
 
     const bucketColors: Record<string, string> = {
       0: 'var(--color-primary)',
       1: 'var(--color-warning)',
       2: 'var(--color-success)',
-      3: 'var(--color-fire)'
+      3: 'var(--color-fire)',
     };
     const delays = ['0s', '0.1s', '0.2s', '0.3s'];
 
@@ -223,7 +243,7 @@ export class LandingPageComponent implements AfterViewInit, OnDestroy {
   requireLogin(): void {
     this.showLoginPrompt = true;
     clearTimeout(this.loginPromptTimer);
-    this.loginPromptTimer = setTimeout(() => this.showLoginPrompt = false, 3000);
+    this.loginPromptTimer = setTimeout(() => (this.showLoginPrompt = false), 3000);
   }
 
   selectPromptType(type: string): void {
@@ -233,7 +253,9 @@ export class LandingPageComponent implements AfterViewInit, OnDestroy {
 
   closeNav(): void {
     const toggle = document.getElementById('nav-toggle') as HTMLInputElement;
-    if (toggle) { toggle.checked = false; }
+    if (toggle) {
+      toggle.checked = false;
+    }
   }
 
   switchLang(code: string): void {
@@ -268,8 +290,11 @@ export class LandingPageComponent implements AfterViewInit, OnDestroy {
 
   private scheduleThoughtBubble(): void {
     this.thoughtBubbleTimer = setTimeout(() => {
-      const isEmpty = this.bucketValues.daily === 0 && this.bucketValues.splurge === 0
-        && this.bucketValues.smile === 0 && this.bucketValues.fire === 0;
+      const isEmpty =
+        this.bucketValues.daily === 0 &&
+        this.bucketValues.splurge === 0 &&
+        this.bucketValues.smile === 0 &&
+        this.bucketValues.fire === 0;
       if (isEmpty) {
         this.showThoughtBubble = true;
       }
@@ -318,10 +343,10 @@ export class LandingPageComponent implements AfterViewInit, OnDestroy {
     let step = 0;
 
     const t = this.totalIncome;
-    const addDaily = +(t * this.allocation.daily / 100).toFixed(2);
-    const addSplurge = +(t * this.allocation.splurge / 100).toFixed(2);
-    const addSmile = +(t * this.allocation.smile / 100).toFixed(2);
-    const addFire = +(t * this.allocation.fire / 100).toFixed(2);
+    const addDaily = +((t * this.allocation.daily) / 100).toFixed(2);
+    const addSplurge = +((t * this.allocation.splurge) / 100).toFixed(2);
+    const addSmile = +((t * this.allocation.smile) / 100).toFixed(2);
+    const addFire = +((t * this.allocation.fire) / 100).toFixed(2);
     const startBuckets = { ...this.bucketValues };
 
     const timer = setInterval(() => {
@@ -334,7 +359,7 @@ export class LandingPageComponent implements AfterViewInit, OnDestroy {
         daily: +(startBuckets.daily + addDaily * eased).toFixed(2),
         splurge: +(startBuckets.splurge + addSplurge * eased).toFixed(2),
         smile: +(startBuckets.smile + addSmile * eased).toFixed(2),
-        fire: +(startBuckets.fire + addFire * eased).toFixed(2)
+        fire: +(startBuckets.fire + addFire * eased).toFixed(2),
       };
 
       if (step >= steps) {
@@ -344,7 +369,7 @@ export class LandingPageComponent implements AfterViewInit, OnDestroy {
           daily: +(startBuckets.daily + addDaily).toFixed(2),
           splurge: +(startBuckets.splurge + addSplurge).toFixed(2),
           smile: +(startBuckets.smile + addSmile).toFixed(2),
-          fire: +(startBuckets.fire + addFire).toFixed(2)
+          fire: +(startBuckets.fire + addFire).toFixed(2),
         };
         this.animationRunning = false;
         this.showResetButton = true;

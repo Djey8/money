@@ -22,33 +22,53 @@ import { RouterModule } from '@angular/router';
 import { SharedFilterComponent } from 'src/app/shared/components/shared-filter/shared-filter.component';
 import { SettingsComponent } from 'src/app/panels/settings/settings.component';
 
-
 /**
  * Represents the FireComponent class.
  */
 
 // Deferred imports — resolved after module init to break circular chains
-let AppComponent: any; setTimeout(() => import('src/app/app.component').then(m => AppComponent = m.AppComponent));
-let HomeComponent: any; setTimeout(() => import('../home/home.component').then(m => HomeComponent = m.HomeComponent));
-let StatsComponent: any; setTimeout(() => import('src/app/stats/stats.component').then(m => StatsComponent = m.StatsComponent));
-let MenuComponent: any; setTimeout(() => import('src/app/panels/menu/menu.component').then(m => MenuComponent = m.MenuComponent));
+let AppComponent: any;
+setTimeout(() => import('src/app/app.component').then((m) => (AppComponent = m.AppComponent)));
+let HomeComponent: any;
+setTimeout(() => import('../home/home.component').then((m) => (HomeComponent = m.HomeComponent)));
+let StatsComponent: any;
+setTimeout(() =>
+  import('src/app/stats/stats.component').then((m) => (StatsComponent = m.StatsComponent)),
+);
+let MenuComponent: any;
+setTimeout(() =>
+  import('src/app/panels/menu/menu.component').then((m) => (MenuComponent = m.MenuComponent)),
+);
 @Component({
   selector: 'app-fire',
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslateModule, AppDatePipe, AppNumberPipe, MatTableModule, MatSortModule, MatPaginatorModule, MatFormFieldModule, MatInputModule, RouterModule, SharedFilterComponent, InfoFireComponent, InfoMojoComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    TranslateModule,
+    AppDatePipe,
+    AppNumberPipe,
+    MatTableModule,
+    MatSortModule,
+    MatPaginatorModule,
+    MatFormFieldModule,
+    MatInputModule,
+    RouterModule,
+    SharedFilterComponent,
+    InfoFireComponent,
+    InfoMojoComponent,
+  ],
   templateUrl: './fire.component.html',
-  styleUrls: ['./fire.component.css', '../../app.component.css', '../../shared/styles/table.css']
+  styleUrls: ['./fire.component.css', '../../app.component.css', '../../shared/styles/table.css'],
 })
 export class FireComponent extends BaseAccountComponent {
-
   static fireAmount: number;
-  
 
   static dataSource = new MatTableDataSource<any>([]);
 
   static isSearched = false;
-  static allTransactions = []
-  static allSearchedTransactions = []
+  static allTransactions = [];
+  static allSearchedTransactions = [];
 
   // Advanced filter system
   static advancedFilter: IncomeFilter = {
@@ -65,10 +85,10 @@ export class FireComponent extends BaseAccountComponent {
       date: true,
       time: true,
       category: true,
-      comment: true
-    }
+      comment: true,
+    },
   };
-  
+
   static isAdvancedFilterExpanded = false;
   static isSearchHelpVisible = false;
   static availableAccounts: string[] = [];
@@ -78,8 +98,12 @@ export class FireComponent extends BaseAccountComponent {
   static startDateTextField: string;
   static endDateTextField: string;
 
-  static get mojo() { return AppStateService.instance.mojo; }
-  static set mojo(v: any) { AppStateService.instance.mojo = v; }
+  static get mojo() {
+    return AppStateService.instance.mojo;
+  }
+  static set mojo(v: any) {
+    AppStateService.instance.mojo = v;
+  }
 
   public classReference = FireComponent;
   /**
@@ -88,36 +112,52 @@ export class FireComponent extends BaseAccountComponent {
    * @param localStorage - The local storage service.
    * @param filterService - The transaction filter service.
    */
-  constructor(router: Router, private localStorage: LocalService, filterService: TransactionFilterService) {
+  constructor(
+    router: Router,
+    private localStorage: LocalService,
+    filterService: TransactionFilterService,
+  ) {
     super(router, filterService);
-    AppStateService.instance.mojo = this.localStorage.getData("mojo")=="" ? {target: 2000.0, amount: 0} : JSON.parse(this.localStorage.getData("mojo"));
-    FireComponent.fireAmount = AppStateService.instance.getAmount("Fire", AppStateService.instance.fire/100);
+    AppStateService.instance.mojo =
+      this.localStorage.getData('mojo') == ''
+        ? { target: 2000.0, amount: 0 }
+        : JSON.parse(this.localStorage.getData('mojo'));
+    FireComponent.fireAmount = AppStateService.instance.getAmount(
+      'Fire',
+      AppStateService.instance.fire / 100,
+    );
     this.initAccount(FireComponent);
   }
 
   static updateDailyAmount() {
-    FireComponent.fireAmount = AppStateService.instance.getAmount("Fire", AppStateService.instance.fire / 100);
+    FireComponent.fireAmount = AppStateService.instance.getAmount(
+      'Fire',
+      AppStateService.instance.fire / 100,
+    );
   }
 
   override ngOnInit() {
     super.ngOnInit();
-    FireComponent.fireAmount = AppStateService.instance.getAmount("Fire", AppStateService.instance.fire / 100);
+    FireComponent.fireAmount = AppStateService.instance.getAmount(
+      'Fire',
+      AppStateService.instance.fire / 100,
+    );
   }
 
   getAverageMonthlyExpenses(): number {
     // Parse transactions and group by month
-    const transactions = AppStateService.instance.allTransactions.map(t => ({
+    const transactions = AppStateService.instance.allTransactions.map((t) => ({
       date: new Date(t.date),
       month: `${new Date(t.date).getFullYear()}-${(new Date(t.date).getMonth() + 1).toString().padStart(2, '0')}`,
       amount: Number(t.amount),
       account: t.account,
-      category: t.category || "Other"
+      category: t.category || 'Other',
     }));
 
     // Group by month and sum expenses (exclude "Income" account)
     const monthExpenseMap = new Map<string, number>();
     transactions.forEach((t: any) => {
-      if (t.account !== "Income") {
+      if (t.account !== 'Income') {
         if (!monthExpenseMap.has(t.month)) {
           monthExpenseMap.set(t.month, 0);
         }
@@ -127,7 +167,9 @@ export class FireComponent extends BaseAccountComponent {
 
     // Remove current month
     const now = new Date();
-    const filteredMonthlyExpenses: [string, number][] = Array.from(monthExpenseMap.entries()).filter(([month]) => {
+    const filteredMonthlyExpenses: [string, number][] = Array.from(
+      monthExpenseMap.entries(),
+    ).filter(([month]) => {
       const [year, mon] = month.split('-').map(Number);
       return !(year === now.getFullYear() && mon === now.getMonth() + 1);
     });
@@ -143,7 +185,7 @@ export class FireComponent extends BaseAccountComponent {
     const start = this.getStartOfLastMonth();
     const end = this.getEndOfLastMonth();
 
-    const avgMonthExpenses = this.getAverageMonthlyExpenses() * -1
+    const avgMonthExpenses = this.getAverageMonthlyExpenses() * -1;
 
     return this.classReference.mojo.amount / (avgMonthExpenses || 1);
   }
@@ -186,14 +228,19 @@ export class FireComponent extends BaseAccountComponent {
   }
 
   addTransaction() {
-    AppComponent.addTransaction("Fire", "@", "fire");
+    AppComponent.addTransaction('Fire', '@', 'fire');
   }
 
   static setDate() {
     FireComponent.d = new Date();
-    FireComponent.startDateTextField = "";
-    FireComponent.endDateTextField = FireComponent.d.getFullYear() + "-" + FireComponent.zeroPadded(FireComponent.d.getMonth() + 1) + "-" + FireComponent.zeroPadded(FireComponent.d.getDate());
-    FireComponent.advancedFilter.startDate = "";
+    FireComponent.startDateTextField = '';
+    FireComponent.endDateTextField =
+      FireComponent.d.getFullYear() +
+      '-' +
+      FireComponent.zeroPadded(FireComponent.d.getMonth() + 1) +
+      '-' +
+      FireComponent.zeroPadded(FireComponent.d.getDate());
+    FireComponent.advancedFilter.startDate = '';
     FireComponent.advancedFilter.endDate = FireComponent.endDateTextField;
   }
 
@@ -201,7 +248,7 @@ export class FireComponent extends BaseAccountComponent {
     return val >= 10 ? String(val) : '0' + val;
   }
 
-  clickMojo(){
+  clickMojo() {
     InfoMojoComponent.openMojo();
   }
 
@@ -209,10 +256,10 @@ export class FireComponent extends BaseAccountComponent {
    * Adds a transaction to the mojo.
    */
   addToMojo() {
-    AppComponent.addTransaction("Fire", "@Mojo", "fire");
+    AppComponent.addTransaction('Fire', '@Mojo', 'fire');
   }
 
-  goToFireProjects(){
+  goToFireProjects() {
     this.router.navigate(['/fireemergencies']);
   }
 
@@ -220,8 +267,8 @@ export class FireComponent extends BaseAccountComponent {
    * Navigates to the Fire Stats page.
    */
   goToFireStats() {
-    StatsComponent.resetBIStateIfNeeded("fire");
-    StatsComponent.modus = "fire";
+    StatsComponent.resetBIStateIfNeeded('fire');
+    StatsComponent.modus = 'fire';
     MenuComponent.openStats = !MenuComponent.openStats;
     StatsComponent.isSwitch = true;
     this.router.navigate(['/stats']);

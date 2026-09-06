@@ -1,7 +1,6 @@
 import { ChartFilterService } from './chart-filter.service';
 
 describe('ChartFilterService', () => {
-
   // --- defaultState -------------------------------------------------------
 
   describe('defaultState()', () => {
@@ -79,8 +78,8 @@ describe('ChartFilterService', () => {
       const range = ChartFilterService.getDateRange('year', 0);
       const now = new Date();
       expect(range!.startDate.getFullYear()).toBe(now.getFullYear());
-      expect(range!.startDate.getMonth()).toBe(0);  // January
-      expect(range!.endDate.getMonth()).toBe(11);    // December
+      expect(range!.startDate.getMonth()).toBe(0); // January
+      expect(range!.endDate.getMonth()).toBe(11); // December
     });
 
     it('returns null for unknown filter type', () => {
@@ -98,7 +97,7 @@ describe('ChartFilterService', () => {
     });
 
     it('formats quarter range', () => {
-      const start = new Date(2026, 3, 1);  // April = Q2
+      const start = new Date(2026, 3, 1); // April = Q2
       const end = new Date(2026, 5, 30);
       expect(ChartFilterService.formatDateRange('quarter', start, end)).toBe('Q2 2026');
     });

@@ -11,12 +11,12 @@ interface CacheEntry {
 
 /**
  * Service to cache database reads and reduce redundant HTTP requests.
- * 
+ *
  * This is used to optimize selfhosted mode by caching frequently accessed data,
  * reducing read requests significantly.
  */
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class CacheService {
   private cache = new Map<string, CacheEntry>();
@@ -37,7 +37,7 @@ export class CacheService {
     if (!entry) {
       return null;
     }
-    
+
     if (Date.now() > entry.expiresAt) {
       this.cache.delete(key);
       return null;
@@ -55,7 +55,7 @@ export class CacheService {
     const entry: CacheEntry = {
       data,
       timestamp: Date.now(),
-      expiresAt: Date.now() + ttlMs
+      expiresAt: Date.now() + ttlMs,
     };
     this.cache.set(key, entry);
   }
@@ -73,7 +73,7 @@ export class CacheService {
    * @param keys - Array of cache keys to invalidate
    */
   invalidateMultiple(keys: string[]): void {
-    keys.forEach(key => this.invalidate(key));
+    keys.forEach((key) => this.invalidate(key));
   }
 
   /**
@@ -87,7 +87,7 @@ export class CacheService {
         keysToInvalidate.push(key);
       }
     });
-    keysToInvalidate.forEach(key => this.invalidate(key));
+    keysToInvalidate.forEach((key) => this.invalidate(key));
   }
 
   /**
@@ -104,14 +104,14 @@ export class CacheService {
   private cleanExpired(): void {
     const now = Date.now();
     const expiredKeys: string[] = [];
-    
+
     this.cache.forEach((entry, key) => {
       if (now > entry.expiresAt) {
         expiredKeys.push(key);
       }
     });
-    
-    expiredKeys.forEach(key => this.cache.delete(key));
+
+    expiredKeys.forEach((key) => this.cache.delete(key));
   }
 
   /**
@@ -121,7 +121,7 @@ export class CacheService {
   getStats(): { size: number; keys: string[] } {
     return {
       size: this.cache.size,
-      keys: Array.from(this.cache.keys())
+      keys: Array.from(this.cache.keys()),
     };
   }
 

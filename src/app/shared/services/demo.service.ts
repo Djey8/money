@@ -6,8 +6,10 @@ import { ProfileComponent } from '../../panels/profile/profile.component';
 
 @Injectable({ providedIn: 'root' })
 export class DemoService {
-
-  constructor(private router: Router, private localStorage: LocalService) {}
+  constructor(
+    private router: Router,
+    private localStorage: LocalService,
+  ) {}
 
   /** Whether demo mode is currently active (session-scoped). */
   static isDemoMode(): boolean {
@@ -21,35 +23,145 @@ export class DemoService {
     const today = new Date();
     const fmt = (d: Date) => d.toISOString().slice(0, 10);
     const iso = (d: Date) => d.toISOString();
-    const daysAgo = (n: number) => { const d = new Date(today); d.setDate(d.getDate() - n); return fmt(d); };
-    const daysFromNow = (n: number) => { const d = new Date(today); d.setDate(d.getDate() + n); return fmt(d); };
+    const daysAgo = (n: number) => {
+      const d = new Date(today);
+      d.setDate(d.getDate() - n);
+      return fmt(d);
+    };
+    const daysFromNow = (n: number) => {
+      const d = new Date(today);
+      d.setDate(d.getDate() + n);
+      return fmt(d);
+    };
     const currentMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
 
     // ── Transactions (relative to today) ──
     const sampleTransactions = [
       // Income
-      { amount: 3500, account: 'Income', category: 'Salary', comment: 'Monthly salary', date: daysAgo(28) },
-      { amount: 500, account: 'Income', category: 'Bonus', comment: 'Q1 performance bonus', date: daysAgo(10) },
-      { amount: 120, account: 'Income', category: 'Dividends', comment: 'MSFT dividend payout', date: daysAgo(14) },
-      { amount: 85, account: 'Income', category: 'Rental', comment: 'Parking spot rental', date: daysAgo(7) },
+      {
+        amount: 3500,
+        account: 'Income',
+        category: 'Salary',
+        comment: 'Monthly salary',
+        date: daysAgo(28),
+      },
+      {
+        amount: 500,
+        account: 'Income',
+        category: 'Bonus',
+        comment: 'Q1 performance bonus',
+        date: daysAgo(10),
+      },
+      {
+        amount: 120,
+        account: 'Income',
+        category: 'Dividends',
+        comment: 'MSFT dividend payout',
+        date: daysAgo(14),
+      },
+      {
+        amount: 85,
+        account: 'Income',
+        category: 'Rental',
+        comment: 'Parking spot rental',
+        date: daysAgo(7),
+      },
       // Daily expenses
-      { amount: -45.50, account: 'Daily', category: 'Groceries', comment: 'Weekly groceries', date: daysAgo(25) },
-      { amount: -12.99, account: 'Daily', category: 'Transport', comment: 'Bus pass', date: daysAgo(22) },
-      { amount: -29.99, account: 'Daily', category: 'Utilities', comment: 'Phone bill', date: daysAgo(15) },
-      { amount: -120.00, account: 'Daily', category: 'Groceries', comment: 'Big shop', date: daysAgo(12) },
-      { amount: -85.00, account: 'Daily', category: 'Utilities', comment: 'Electricity', date: daysAgo(5) },
-      { amount: -22.50, account: 'Daily', category: 'Groceries', comment: 'Midweek shop', date: daysAgo(1) },
+      {
+        amount: -45.5,
+        account: 'Daily',
+        category: 'Groceries',
+        comment: 'Weekly groceries',
+        date: daysAgo(25),
+      },
+      {
+        amount: -12.99,
+        account: 'Daily',
+        category: 'Transport',
+        comment: 'Bus pass',
+        date: daysAgo(22),
+      },
+      {
+        amount: -29.99,
+        account: 'Daily',
+        category: 'Utilities',
+        comment: 'Phone bill',
+        date: daysAgo(15),
+      },
+      {
+        amount: -120.0,
+        account: 'Daily',
+        category: 'Groceries',
+        comment: 'Big shop',
+        date: daysAgo(12),
+      },
+      {
+        amount: -85.0,
+        account: 'Daily',
+        category: 'Utilities',
+        comment: 'Electricity',
+        date: daysAgo(5),
+      },
+      {
+        amount: -22.5,
+        account: 'Daily',
+        category: 'Groceries',
+        comment: 'Midweek shop',
+        date: daysAgo(1),
+      },
       // Splurge
-      { amount: -65.00, account: 'Splurge', category: 'Dining', comment: 'Birthday dinner', date: daysAgo(18) },
-      { amount: -35.00, account: 'Splurge', category: 'Entertainment', comment: 'Concert tickets', date: daysAgo(3) },
+      {
+        amount: -65.0,
+        account: 'Splurge',
+        category: 'Dining',
+        comment: 'Birthday dinner',
+        date: daysAgo(18),
+      },
+      {
+        amount: -35.0,
+        account: 'Splurge',
+        category: 'Entertainment',
+        comment: 'Concert tickets',
+        date: daysAgo(3),
+      },
       // Smile — holiday fund
-      { amount: -200.00, account: 'Smile', category: '@Summer Holiday', comment: '#bucket:Flights:120 #bucket:Hotel:80', date: daysAgo(20) },
-      { amount: -150.00, account: 'Smile', category: '@Summer Holiday', comment: '#bucket:Flights:80 #bucket:Hotel:70', date: daysAgo(7) },
+      {
+        amount: -200.0,
+        account: 'Smile',
+        category: '@Summer Holiday',
+        comment: '#bucket:Flights:120 #bucket:Hotel:80',
+        date: daysAgo(20),
+      },
+      {
+        amount: -150.0,
+        account: 'Smile',
+        category: '@Summer Holiday',
+        comment: '#bucket:Flights:80 #bucket:Hotel:70',
+        date: daysAgo(7),
+      },
       // Fire — emergency fund
-      { amount: -100.00, account: 'Fire', category: '@Car Repair Fund', comment: '#bucket:Tyres:60 #bucket:Service:40', date: daysAgo(16) },
-      { amount: -75.00, account: 'Fire', category: '@Car Repair Fund', comment: '#bucket:Tyres:40 #bucket:Service:35', date: daysAgo(4) },
+      {
+        amount: -100.0,
+        account: 'Fire',
+        category: '@Car Repair Fund',
+        comment: '#bucket:Tyres:60 #bucket:Service:40',
+        date: daysAgo(16),
+      },
+      {
+        amount: -75.0,
+        account: 'Fire',
+        category: '@Car Repair Fund',
+        comment: '#bucket:Tyres:40 #bucket:Service:35',
+        date: daysAgo(4),
+      },
       // Mojo
-      { amount: -250.00, account: 'Fire', category: '@Mojo', comment: 'Building safety net', date: daysAgo(26) },
+      {
+        amount: -250.0,
+        account: 'Fire',
+        category: '@Mojo',
+        comment: 'Building safety net',
+        date: daysAgo(26),
+      },
     ];
 
     // ── Income Statement ──
@@ -57,32 +169,22 @@ export class DemoService {
       { tag: 'Salary', amount: 3500 },
       { tag: 'Bonus', amount: 500 },
     ];
-    const sampleInterests = [
-      { tag: 'MSFT Dividends', amount: 120 },
-    ];
-    const sampleProperties = [
-      { tag: 'Parking Spot Rental', amount: 85 },
-    ];
+    const sampleInterests = [{ tag: 'MSFT Dividends', amount: 120 }];
+    const sampleProperties = [{ tag: 'Parking Spot Rental', amount: 85 }];
 
     // ── Expenses (monthly breakdown for cashflow) ──
     const sampleDailyExpenses = [
-      { tag: 'Groceries', amount: -188.00 },
+      { tag: 'Groceries', amount: -188.0 },
       { tag: 'Transport', amount: -12.99 },
       { tag: 'Utilities', amount: -114.99 },
     ];
     const sampleSplurgeExpenses = [
-      { tag: 'Dining', amount: -65.00 },
-      { tag: 'Entertainment', amount: -35.00 },
+      { tag: 'Dining', amount: -65.0 },
+      { tag: 'Entertainment', amount: -35.0 },
     ];
-    const sampleSmileExpenses = [
-      { tag: 'Summer Holiday', amount: -350.00 },
-    ];
-    const sampleFireExpenses = [
-      { tag: 'Car Repair Fund', amount: -175.00 },
-    ];
-    const sampleMojoExpenses = [
-      { tag: 'Mojo', amount: -250.00 },
-    ];
+    const sampleSmileExpenses = [{ tag: 'Summer Holiday', amount: -350.0 }];
+    const sampleFireExpenses = [{ tag: 'Car Repair Fund', amount: -175.0 }];
+    const sampleMojoExpenses = [{ tag: 'Mojo', amount: -250.0 }];
 
     // ── Balance Sheet: Assets, Shares, Investments, Liabilities ──
     const sampleAssets = [
@@ -90,12 +192,10 @@ export class DemoService {
       { tag: 'Car (2019 VW Golf)', amount: 12000 },
     ];
     const sampleShares = [
-      { tag: 'MSFT', quantity: 15, price: 420.50 },
-      { tag: 'AAPL', quantity: 10, price: 185.30 },
+      { tag: 'MSFT', quantity: 15, price: 420.5 },
+      { tag: 'AAPL', quantity: 10, price: 185.3 },
     ];
-    const sampleInvestments = [
-      { tag: 'Vanguard ETF Portfolio', deposit: 8000, amount: 9450 },
-    ];
+    const sampleInvestments = [{ tag: 'Vanguard ETF Portfolio', deposit: 8000, amount: 9450 }];
     const sampleLiabilities = [
       { tag: 'Car Loan', amount: 6500, investment: true, credit: 15000 },
       { tag: 'Credit Card', amount: 1200, investment: false, credit: 5000 },
@@ -112,8 +212,20 @@ export class DemoService {
         description: 'Two-week beach holiday in Portugal. Flights, hotel, and spending money.',
         targetDate: daysFromNow(120),
         buckets: [
-          { id: 'bucket_1', title: 'Flights', target: 600, amount: 200, notes: 'Looking at TAP or Ryanair' },
-          { id: 'bucket_2', title: 'Hotel', target: 800, amount: 150, notes: 'Airbnb near the coast' },
+          {
+            id: 'bucket_1',
+            title: 'Flights',
+            target: 600,
+            amount: 200,
+            notes: 'Looking at TAP or Ryanair',
+          },
+          {
+            id: 'bucket_2',
+            title: 'Hotel',
+            target: 800,
+            amount: 150,
+            notes: 'Airbnb near the coast',
+          },
           { id: 'bucket_3', title: 'Spending', target: 400, amount: 0 },
         ],
         links: [{ label: 'Skyscanner', url: 'https://skyscanner.com' }],
@@ -134,11 +246,24 @@ export class DemoService {
         title: 'Car Repair Fund',
         sub: 'Maintenance for the Golf',
         phase: 'saving',
-        description: 'Cover unexpected car repairs — tyres, service, brakes. Linked to car loan liability.',
+        description:
+          'Cover unexpected car repairs — tyres, service, brakes. Linked to car loan liability.',
         targetDate: daysFromNow(180),
         buckets: [
-          { id: 'bucket_f1', title: 'Tyres', target: 400, amount: 100, notes: 'Winter + summer set' },
-          { id: 'bucket_f2', title: 'Service', target: 300, amount: 75, notes: 'Annual service due in 3 months' },
+          {
+            id: 'bucket_f1',
+            title: 'Tyres',
+            target: 400,
+            amount: 100,
+            notes: 'Winter + summer set',
+          },
+          {
+            id: 'bucket_f2',
+            title: 'Service',
+            target: 300,
+            amount: 75,
+            notes: 'Annual service due in 3 months',
+          },
         ],
         links: [],
         actionItems: [
@@ -159,19 +284,26 @@ export class DemoService {
         sub: 'Passive income strategy',
         type: 'income-growth',
         phase: 'execute',
-        description: 'Build a dividend portfolio targeting €500/month in passive income within 3 years.',
-        strategy: 'Invest monthly into high-dividend ETFs and blue-chip stocks. Reinvest dividends.',
+        description:
+          'Build a dividend portfolio targeting €500/month in passive income within 3 years.',
+        strategy:
+          'Invest monthly into high-dividend ETFs and blue-chip stocks. Reinvest dividends.',
         riskScore: 35,
         risks: 'Market volatility, dividend cuts during recessions.',
         amount: 9450,
         cashflow: 120,
         isAsset: true,
-        share: { tag: 'MSFT', quantity: 15, price: 420.50 },
+        share: { tag: 'MSFT', quantity: 15, price: 420.5 },
         investment: { tag: 'Vanguard ETF Portfolio', deposit: 8000, amount: 9450 },
         liabilitie: null,
         actionItems: [
           { text: 'Set up monthly auto-invest', done: true, priority: 'high' },
-          { text: 'Review portfolio allocation quarterly', done: false, priority: 'medium', dueDate: daysFromNow(90) },
+          {
+            text: 'Review portfolio allocation quarterly',
+            done: false,
+            priority: 'medium',
+            dueDate: daysFromNow(90),
+          },
         ],
         links: [{ label: 'Vanguard', url: 'https://vanguard.com' }],
         notes: [{ text: 'Started with €8000 initial investment', createdAt: nowIso }],
@@ -194,8 +326,26 @@ export class DemoService {
 
     // ── Subscriptions ──
     const sampleSubscriptions = [
-      { title: 'Netflix', account: 'Splurge', amount: -13.99, startDate: daysAgo(90), endDate: '', category: 'Entertainment', comment: 'Standard plan', frequency: 'monthly' },
-      { title: 'Gym Membership', account: 'Daily', amount: -29.90, startDate: daysAgo(180), endDate: '', category: 'Health', comment: 'FitX monthly', frequency: 'monthly' },
+      {
+        title: 'Netflix',
+        account: 'Splurge',
+        amount: -13.99,
+        startDate: daysAgo(90),
+        endDate: '',
+        category: 'Entertainment',
+        comment: 'Standard plan',
+        frequency: 'monthly',
+      },
+      {
+        title: 'Gym Membership',
+        account: 'Daily',
+        amount: -29.9,
+        startDate: daysAgo(180),
+        endDate: '',
+        category: 'Health',
+        comment: 'FitX monthly',
+        frequency: 'monthly',
+      },
     ];
 
     // ── Save to localStorage ──
@@ -250,7 +400,7 @@ export class DemoService {
     AppStateService.instance.email = 'demo@moneyapp.local';
     ProfileComponent.username = 'Demo User';
     ProfileComponent.mail = 'demo@moneyapp.local';
-    ProfileComponent.isUser = false;  // false = logged in
+    ProfileComponent.isUser = false; // false = logged in
 
     this.router.navigate(['/home']);
   }

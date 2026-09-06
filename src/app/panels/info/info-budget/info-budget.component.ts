@@ -23,37 +23,85 @@ import { SettingsComponent } from '../../settings/settings.component';
 import { TrapFocusDirective } from 'src/app/shared/directives/trap-focus.directive';
 
 // Deferred imports — resolved after module init to break circular chains
-let AccountingComponent: any; setTimeout(() => import('../../../main/accounting/accounting.component').then(m => AccountingComponent = m.AccountingComponent));
-let SmileProjectsComponent: any; setTimeout(() => import('../../../main/smile/smile-projects/smile-projects.component').then(m => SmileProjectsComponent = m.SmileProjectsComponent));
-let FireEmergenciesComponent: any; setTimeout(() => import('../../../main/fire/fire-emergencies/fire-emergencies.component').then(m => FireEmergenciesComponent = m.FireEmergenciesComponent));
-let FireComponent: any; setTimeout(() => import('../../../main/fire/fire.component').then(m => FireComponent = m.FireComponent));
-let IncomeComponent: any; setTimeout(() => import('../../../main/cashflow/income/income.component').then(m => IncomeComponent = m.IncomeComponent));
-let BalanceComponent: any; setTimeout(() => import('../../../main/cashflow/balance/balance.component').then(m => BalanceComponent = m.BalanceComponent));
-let GrowComponent: any; setTimeout(() => import('../../../main/grow/grow.component').then(m => GrowComponent = m.GrowComponent));
-let DailyComponent: any; setTimeout(() => import('../../../main/daily/daily.component').then(m => DailyComponent = m.DailyComponent));
-let BudgetComponent: any; setTimeout(() => import('../../../main/budget/budget.component').then(m => BudgetComponent = m.BudgetComponent));
-let PlanComponent: any; setTimeout(() => import('../../../main/budget/plan/plan.component').then(m => PlanComponent = m.PlanComponent));
-let ProfileComponent: any; setTimeout(() => import('../../profile/profile.component').then(m => ProfileComponent = m.ProfileComponent));
-let MenuComponent: any; setTimeout(() => import('../../menu/menu.component').then(m => MenuComponent = m.MenuComponent));
-let AddComponent: any; setTimeout(() => import('../../add/add.component').then(m => AddComponent = m.AddComponent));
-let AppComponent: any; setTimeout(() => import('src/app/app.component').then(m => AppComponent = m.AppComponent));
+let AccountingComponent: any;
+setTimeout(() =>
+  import('../../../main/accounting/accounting.component').then(
+    (m) => (AccountingComponent = m.AccountingComponent),
+  ),
+);
+let SmileProjectsComponent: any;
+setTimeout(() =>
+  import('../../../main/smile/smile-projects/smile-projects.component').then(
+    (m) => (SmileProjectsComponent = m.SmileProjectsComponent),
+  ),
+);
+let FireEmergenciesComponent: any;
+setTimeout(() =>
+  import('../../../main/fire/fire-emergencies/fire-emergencies.component').then(
+    (m) => (FireEmergenciesComponent = m.FireEmergenciesComponent),
+  ),
+);
+let FireComponent: any;
+setTimeout(() =>
+  import('../../../main/fire/fire.component').then((m) => (FireComponent = m.FireComponent)),
+);
+let IncomeComponent: any;
+setTimeout(() =>
+  import('../../../main/cashflow/income/income.component').then(
+    (m) => (IncomeComponent = m.IncomeComponent),
+  ),
+);
+let BalanceComponent: any;
+setTimeout(() =>
+  import('../../../main/cashflow/balance/balance.component').then(
+    (m) => (BalanceComponent = m.BalanceComponent),
+  ),
+);
+let GrowComponent: any;
+setTimeout(() =>
+  import('../../../main/grow/grow.component').then((m) => (GrowComponent = m.GrowComponent)),
+);
+let DailyComponent: any;
+setTimeout(() =>
+  import('../../../main/daily/daily.component').then((m) => (DailyComponent = m.DailyComponent)),
+);
+let BudgetComponent: any;
+setTimeout(() =>
+  import('../../../main/budget/budget.component').then(
+    (m) => (BudgetComponent = m.BudgetComponent),
+  ),
+);
+let PlanComponent: any;
+setTimeout(() =>
+  import('../../../main/budget/plan/plan.component').then((m) => (PlanComponent = m.PlanComponent)),
+);
+let ProfileComponent: any;
+setTimeout(() =>
+  import('../../profile/profile.component').then((m) => (ProfileComponent = m.ProfileComponent)),
+);
+let MenuComponent: any;
+setTimeout(() =>
+  import('../../menu/menu.component').then((m) => (MenuComponent = m.MenuComponent)),
+);
+let AddComponent: any;
+setTimeout(() => import('../../add/add.component').then((m) => (AddComponent = m.AddComponent)));
+let AppComponent: any;
+setTimeout(() => import('src/app/app.component').then((m) => (AppComponent = m.AppComponent)));
 @Component({
   selector: 'app-info-budget',
   standalone: true,
   imports: [TrapFocusDirective, CommonModule, FormsModule, TranslateModule, AppNumberPipe],
   templateUrl: './info-budget.component.html',
-  styleUrls: ['../../../shared/styles/info-panel.css', './info-budget.component.css']
+  styleUrls: ['../../../shared/styles/info-panel.css', './info-budget.component.css'],
 })
 export class InfoBudgetComponent extends BaseInfoComponent implements OnInit {
-
   // Static properties
   static index = 1;
-  static date = "2025-10";
-  static tag = "car";
+  static date = '2025-10';
+  static tag = 'car';
   static amount = 145.3;
 
-
-  settingsReference = SettingsComponent
+  settingsReference = SettingsComponent;
 
   static setInfoComponent(id: number, date: string, tag: string, amount: number) {
     InfoBudgetComponent.index = id;
@@ -73,12 +121,19 @@ export class InfoBudgetComponent extends BaseInfoComponent implements OnInit {
   static isError;
   public classReference = InfoBudgetComponent;
 
-  constructor(router: Router, private localStorage: LocalService, private database: DatabaseService, private afAuth: AngularFireAuth, private authService: AuthService, private frontendLogger: FrontendLoggerService) {
+  constructor(
+    router: Router,
+    private localStorage: LocalService,
+    private database: DatabaseService,
+    private afAuth: AngularFireAuth,
+    private authService: AuthService,
+    private frontendLogger: FrontendLoggerService,
+  ) {
     super(router);
     this.initStatic(InfoBudgetComponent);
   }
 
-  getDate(){
+  getDate() {
     const [year, month] = this.dateTextField.split('-');
     const date = new Date(Number(year), Number(month) - 1);
     return date.toLocaleString('default', { month: 'long', year: 'numeric' });
@@ -99,30 +154,30 @@ export class InfoBudgetComponent extends BaseInfoComponent implements OnInit {
   populateCategoryOptions() {
     const categories = new Set<string>();
     for (let i = AppStateService.instance.allTransactions.length - 1; i >= 0; i--) {
-      if(AppStateService.instance.allTransactions[i].account != "Income"){
+      if (AppStateService.instance.allTransactions[i].account != 'Income') {
         categories.add(AppStateService.instance.allTransactions[i].category);
       }
     }
 
-    for(let i = 0; i < AppStateService.instance.allBudgets.length; i++){
-      const date = AppStateService.instance.allBudgets[i].date
-      const tag = AppStateService.instance.allBudgets[i].tag
+    for (let i = 0; i < AppStateService.instance.allBudgets.length; i++) {
+      const date = AppStateService.instance.allBudgets[i].date;
+      const tag = AppStateService.instance.allBudgets[i].tag;
 
       const selectedDate = PlanComponent.selectedMonthYear
-      ? `${PlanComponent.selectedMonthYear.split(' ')[1]}-${('0' + (new Date(`${PlanComponent.selectedMonthYear.split(' ')[0]} 1`).getMonth() + 1)).slice(-2)}`
-      : '';
+        ? `${PlanComponent.selectedMonthYear.split(' ')[1]}-${('0' + (new Date(`${PlanComponent.selectedMonthYear.split(' ')[0]} 1`).getMonth() + 1)).slice(-2)}`
+        : '';
       if (date === selectedDate) {
         categories.delete(tag);
       }
     }
 
-    this.categoryOptions = Array.from(categories).map(category => ({
+    this.categoryOptions = Array.from(categories).map((category) => ({
       value: category,
-      label: category.replace('@', '')
+      label: category.replace('@', ''),
     }));
   }
 
-  selectedCategory(){
+  selectedCategory() {
     const selectedCategory = this.categoryTextField;
     const [selectedYear, selectedMonth] = this.dateTextField.split('-').map(Number);
 
@@ -199,7 +254,11 @@ export class InfoBudgetComponent extends BaseInfoComponent implements OnInit {
    */
   copyBudget() {
     AppComponent.gotoTop();
-    AppComponent.copyBudget(InfoBudgetComponent.date, InfoBudgetComponent.tag, InfoBudgetComponent.amount)
+    AppComponent.copyBudget(
+      InfoBudgetComponent.date,
+      InfoBudgetComponent.tag,
+      InfoBudgetComponent.amount,
+    );
   }
 
   /**
@@ -219,22 +278,26 @@ export class InfoBudgetComponent extends BaseInfoComponent implements OnInit {
    * Handles the click event on the image.
    */
   // eslint-disable-next-line @typescript-eslint/no-empty-function -- bound in template via (click)/(keydown.enter); intentionally a no-op placeholder
-  clickImage() {
-  }
+  clickImage() {}
 
   /**
    * Updates the transaction with the new values.
    */
   updateBudget() {
     // Validation (check if Amount is not empty)
-    if (this.categoryTextField === "" || this.categoryTextField === "@" || this.dateTextField === "") {
-      this.showError("Please fill out all required fields.");
+    if (
+      this.categoryTextField === '' ||
+      this.categoryTextField === '@' ||
+      this.dateTextField === ''
+    ) {
+      this.showError('Please fill out all required fields.');
     } else {
-
       // Update budget values
       AppStateService.instance.allBudgets[InfoBudgetComponent.index].date = this.dateTextField;
       AppStateService.instance.allBudgets[InfoBudgetComponent.index].tag = this.categoryTextField;
-      AppStateService.instance.allBudgets[InfoBudgetComponent.index].amount = Math.abs(this.amountTextField);
+      AppStateService.instance.allBudgets[InfoBudgetComponent.index].amount = Math.abs(
+        this.amountTextField,
+      );
       PlanComponent.refreshDataSources();
 
       // Update InfoComponent values
@@ -246,7 +309,7 @@ export class InfoBudgetComponent extends BaseInfoComponent implements OnInit {
       this.frontendLogger.logActivity('update_budget', 'info', {
         category: this.categoryTextField,
         amount: this.amountTextField,
-        date: this.dateTextField
+        date: this.dateTextField,
       });
 
       // Write to DB
@@ -267,30 +330,29 @@ export class InfoBudgetComponent extends BaseInfoComponent implements OnInit {
     this.confirmService.confirm(this.translate.instant('Confirm.deleteBudget'), () => {
       // Save data before deleting
       const deletedTag = AppStateService.instance.allBudgets[index].tag;
-      
+
       // Delete now Transaction
       AppStateService.instance.allBudgets.splice(index, 1);
       PlanComponent.refreshDataSources();
       InfoBudgetComponent.isInfo = false;
-      
+
       // Log user activity
       this.frontendLogger.logActivity('delete_budget', 'info', {
         category: deletedTag,
-        index: index
+        index: index,
       });
-      
+
       // WRITE to Storage
       this.updateStorage('Budget deleted');
       this.isEdit = false;
     });
   }
 
-
   async updateStorage(successMessage?: string) {
     // Check authentication using the centralized service
     const authResult = await this.authService.checkAuthentication();
     if (!authResult.authenticated) {
-      this.showError(authResult.error || "Session expired. Please log in again.");
+      this.showError(authResult.error || 'Session expired. Please log in again.');
       if (this.authService.getMode() === 'firebase') {
         this.afAuth.signOut();
       }
@@ -306,30 +368,41 @@ export class InfoBudgetComponent extends BaseInfoComponent implements OnInit {
       // WRITE to Storage
       // In selfhosted mode, writeObject returns Observables that need to be subscribed
       if (environment.mode === 'selfhosted') {
-        const budgetWrite = this.database.writeObject("budget", AppStateService.instance.allBudgets) as Observable<any>;
+        const budgetWrite = this.database.writeObject(
+          'budget',
+          AppStateService.instance.allBudgets,
+        ) as Observable<any>;
         budgetWrite.subscribe({
           next: () => {
-            this.localStorage.saveData("budget", JSON.stringify(AppStateService.instance.allBudgets));
+            this.localStorage.saveData(
+              'budget',
+              JSON.stringify(AppStateService.instance.allBudgets),
+            );
             AppStateService.instance.isSaving = false;
             if (successMessage) {
-              this.toastService.show(successMessage, successMessage.includes('deleted') ? 'delete' : 'update');
+              this.toastService.show(
+                successMessage,
+                successMessage.includes('deleted') ? 'delete' : 'update',
+              );
             }
           },
           error: (error) => {
             AppStateService.instance.isSaving = false;
             this.toastService.show(error.message || 'Database write failed', 'error');
-          }
+          },
         });
       } else {
         // Firebase mode - writes complete synchronously
-        this.database.writeObject("budget", AppStateService.instance.allBudgets);
-        this.localStorage.saveData("budget", JSON.stringify(AppStateService.instance.allBudgets));
+        this.database.writeObject('budget', AppStateService.instance.allBudgets);
+        this.localStorage.saveData('budget', JSON.stringify(AppStateService.instance.allBudgets));
         AppStateService.instance.isSaving = false;
         if (successMessage) {
-          this.toastService.show(successMessage, successMessage.includes('deleted') ? 'delete' : 'update');
+          this.toastService.show(
+            successMessage,
+            successMessage.includes('deleted') ? 'delete' : 'update',
+          );
         }
       }
-
     } catch (error) {
       AppStateService.instance.isSaving = false;
       this.toastService.show(error.message || 'Database write failed', 'error');

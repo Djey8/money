@@ -35,7 +35,6 @@ interface GitHubCompare {
 
 @Injectable({ providedIn: 'root' })
 export class ChangelogService {
-
   private readonly repoApiUrl = 'https://api.github.com/repos/Djey8/money';
   private readonly repoUrl = 'https://github.com/Djey8/money';
   private readonly apiHeaders = { Accept: 'application/vnd.github.v3+json' };
@@ -51,16 +50,16 @@ export class ChangelogService {
     if (!this.cache$) {
       this.cache$ = this.http
         .get<{ content: string; encoding: string }>(`${this.repoApiUrl}/contents/CHANGELOG.md`, {
-          headers: this.apiHeaders
+          headers: this.apiHeaders,
         })
         .pipe(
-          map(response => {
+          map((response) => {
             const decoded = this.decodeBase64Utf8(response.content);
             return this.parseChangelog(decoded);
           }),
-          switchMap(versions => this.enrichVersions(versions)),
+          switchMap((versions) => this.enrichVersions(versions)),
           shareReplay(1),
-          catchError(() => of([]))
+          catchError(() => of([])),
         );
     }
     return this.cache$;
@@ -69,7 +68,7 @@ export class ChangelogService {
   /** Decode Base64 content with proper UTF-8 support. */
   private decodeBase64Utf8(base64: string): string {
     const binary = atob(base64.replace(/\n/g, ''));
-    const bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
+    const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0));
     return new TextDecoder('utf-8').decode(bytes);
   }
 
@@ -80,47 +79,62 @@ export class ChangelogService {
 
   /** Fetch tags, compare consecutive ones for authors and PR per version. */
   private enrichVersions(versions: ChangelogVersion[]): Observable<ChangelogVersion[]> {
-    return this.http.get<GitHubTag[]>(`${this.repoApiUrl}/tags?per_page=100`, { headers: this.apiHeaders }).pipe(
-      switchMap(tags => {
-        const tagMap = new Map<string, { name: string; sha: string }>();
-        for (const t of tags) {
-          tagMap.set(t.name.replace(/^v/, ''), { name: t.name, sha: t.commit.sha });
-        }
+    return this.http
+      .get<GitHubTag[]>(`${this.repoApiUrl}/tags?per_page=100`, { headers: this.apiHeaders })
+      .pipe(
+        switchMap((tags) => {
+          const tagMap = new Map<string, { name: string; sha: string }>();
+          for (const t of tags) {
+            tagMap.set(t.name.replace(/^v/, ''), { name: t.name, sha: t.commit.sha });
+          }
 
-        const enriched$: Observable<ChangelogVersion>[] = versions.map((version, i) => {
-          const currentTag = tagMap.get(version.version);
-          const prevVersion = versions[i + 1];
-          const prevTag = prevVersion ? tagMap.get(prevVersion.version) : null;
+          const enriched$: Observable<ChangelogVersion>[] = versions.map((version, i) => {
+            const currentTag = tagMap.get(version.version);
+            const prevVersion = versions[i + 1];
+            const prevTag = prevVersion ? tagMap.get(prevVersion.version) : null;
 
-          if (!currentTag || !prevTag) return of(version);
+            if (!currentTag || !prevTag) return of(version);
 
-          return this.http.get<GitHubCompare>(
-            `${this.repoApiUrl}/compare/${prevTag.name}...${currentTag.name}`,
-            { headers: this.apiHeaders }
-          ).pipe(
-            map(compare => this.matchCommitsToVersion(version, compare.commits)),
-            catchError(() => of(version))
-          );
-        });
+            return this.http
+              .get<GitHubCompare>(
+                `${this.repoApiUrl}/compare/${prevTag.name}...${currentTag.name}`,
+                { headers: this.apiHeaders },
+              )
+              .pipe(
+                map((compare) => this.matchCommitsToVersion(version, compare.commits)),
+                catchError(() => of(version)),
+              );
+          });
 
-        return forkJoin(enriched$);
-      }),
-      catchError(() => of(versions))
-    );
+          return forkJoin(enriched$);
+        }),
+        catchError(() => of(versions)),
+      );
   }
 
   /** Match commits to changelog items for authors, and find the version's PR from merge commit. */
-  private matchCommitsToVersion(version: ChangelogVersion, commits: GitHubCommit[]): ChangelogVersion {
+  private matchCommitsToVersion(
+    version: ChangelogVersion,
+    commits: GitHubCommit[],
+  ): ChangelogVersion {
     const authorMap = new Map<string, { login: string; avatarUrl: string; url: string }>();
 
     for (const section of version.sections) {
       for (const item of section.items) {
-        const normalize = (s: string) => s.replace(/\s*\(#\d+\)\s*$/, '').trim().toLowerCase();
+        const normalize = (s: string) =>
+          s
+            .replace(/\s*\(#\d+\)\s*$/, '')
+            .trim()
+            .toLowerCase();
         const itemNorm = normalize(item.text);
 
-        const match = commits.find(c => {
+        const match = commits.find((c) => {
           const firstLine = c.commit.message.split('\n')[0];
-          return normalize(firstLine) === itemNorm || normalize(firstLine).includes(itemNorm) || itemNorm.includes(normalize(firstLine));
+          return (
+            normalize(firstLine) === itemNorm ||
+            normalize(firstLine).includes(itemNorm) ||
+            itemNorm.includes(normalize(firstLine))
+          );
         });
 
         if (match?.author) {
@@ -130,7 +144,7 @@ export class ChangelogService {
           authorMap.set(match.author.login, {
             login: match.author.login,
             avatarUrl: match.author.avatar_url,
-            url: match.author.html_url
+            url: match.author.html_url,
           });
         }
       }

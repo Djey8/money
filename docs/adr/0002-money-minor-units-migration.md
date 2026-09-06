@@ -1,6 +1,7 @@
 # 0002. Money representation migration to integer minor units
 
 ## Status
+
 Accepted
 
 ## Context

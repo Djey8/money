@@ -1,4 +1,9 @@
-import { HttpInterceptorFn, HttpRequest, HttpHandlerFn, HttpErrorResponse } from '@angular/common/http';
+import {
+  HttpInterceptorFn,
+  HttpRequest,
+  HttpHandlerFn,
+  HttpErrorResponse,
+} from '@angular/common/http';
 import { inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, catchError, filter, switchMap, take, throwError, tap } from 'rxjs';
@@ -19,7 +24,10 @@ const refreshGate$ = new BehaviorSubject<boolean | null>(null);
  * 3. Queues parallel 401s while a refresh is in flight, then retries them once the refresh resolves
  * 4. On refresh failure, performs a clean logout
  */
-export const authInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, next: HttpHandlerFn) => {
+export const authInterceptor: HttpInterceptorFn = (
+  req: HttpRequest<unknown>,
+  next: HttpHandlerFn,
+) => {
   // Capture injected services HERE (within the injection context).
   // catchError runs async — inject() would fail with NG0203 there.
   const http = inject(HttpClient);
@@ -37,28 +45,40 @@ export const authInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, ne
 
   return next(credentialReq).pipe(
     catchError((error: HttpErrorResponse) => {
-      if (error.status === 401 && !req.url.includes('/auth/refresh') && !req.url.includes('/auth/login')) {
+      if (
+        error.status === 401 &&
+        !req.url.includes('/auth/refresh') &&
+        !req.url.includes('/auth/login')
+      ) {
         return handleTokenExpiry(credentialReq, next, http, router, cryptic);
       }
       return throwError(() => error);
-    })
+    }),
   );
 };
 
-function handleTokenExpiry(req: HttpRequest<unknown>, next: HttpHandlerFn, http: HttpClient, router: Router, cryptic: CrypticService) {
+function handleTokenExpiry(
+  req: HttpRequest<unknown>,
+  next: HttpHandlerFn,
+  http: HttpClient,
+  router: Router,
+  cryptic: CrypticService,
+) {
   // If a refresh is already in flight, wait for it to finish and then retry this request.
   // This prevents parallel cold-start requests from fighting over `isRefreshing` and
   // failing spuriously (which previously caused users to be logged out after a stale tab).
   if (isRefreshing) {
     return refreshGate$.pipe(
-      filter(state => state !== null),
+      filter((state) => state !== null),
       take(1),
-      switchMap(success => {
+      switchMap((success) => {
         if (success) {
           return next(req);
         }
-        return throwError(() => new HttpErrorResponse({ status: 401, statusText: 'Refresh failed' }));
-      })
+        return throwError(
+          () => new HttpErrorResponse({ status: 401, statusText: 'Refresh failed' }),
+        );
+      }),
     );
   }
 
@@ -99,6 +119,6 @@ function handleTokenExpiry(req: HttpRequest<unknown>, next: HttpHandlerFn, http:
         refreshGate$.next(false);
       }
       return throwError(() => refreshError);
-    })
+    }),
   );
 }

@@ -38,11 +38,33 @@ describe('Batch read integration', () => {
   // Seed test data
   skipIf(!dbAvailable, 'seeds test data for batch-read tests', async () => {
     const transactions = [
-      { account: 'Daily', amount: 42, date: '2026-03-29', time: '10:00', category: 'Food', comment: 'Lunch' },
-      { account: 'Income', amount: 3000, date: '2026-03-01', time: '09:00', category: 'Salary', comment: '' }
+      {
+        account: 'Daily',
+        amount: 42,
+        date: '2026-03-29',
+        time: '10:00',
+        category: 'Food',
+        comment: 'Lunch',
+      },
+      {
+        account: 'Income',
+        amount: 3000,
+        date: '2026-03-01',
+        time: '09:00',
+        category: 'Salary',
+        comment: '',
+      },
     ];
     const subscriptions = [
-      { title: 'Netflix', account: 'Splurge', amount: 15, startDate: '2026-01-01', endDate: '', category: 'Entertainment', comment: '' }
+      {
+        title: 'Netflix',
+        account: 'Splurge',
+        amount: 15,
+        startDate: '2026-01-01',
+        endDate: '',
+        category: 'Entertainment',
+        comment: '',
+      },
     ];
     const revenues = [{ tag: 'Salary', amount: 3000 }];
     const interests = [{ tag: 'Savings', amount: 10 }];
@@ -71,8 +93,8 @@ describe('Batch read integration', () => {
         { path: 'balance/asset/assets', data: [] },
         { path: 'balance/asset/shares', data: [] },
         { path: 'balance/asset/investments', data: [] },
-        { path: 'balance/liabilities', data: [] }
-      ]
+        { path: 'balance/liabilities', data: [] },
+      ],
     });
 
     expect(res.status).toBe(200);
@@ -89,7 +111,7 @@ describe('Batch read integration', () => {
       'income/revenue/interests',
       'income/expenses/daily',
       'smile',
-      'grow'
+      'grow',
     ];
 
     // Batch read
@@ -108,13 +130,25 @@ describe('Batch read integration', () => {
 
   skipIf(!dbAvailable, 'reads all 19 original paths in one batch request', async () => {
     const allPaths = [
-      'transactions', 'subscriptions',
-      'income/revenue/revenues', 'income/revenue/interests', 'income/revenue/properties',
-      'income/expenses/daily', 'income/expenses/splurge', 'income/expenses/smile',
-      'income/expenses/fire', 'income/expenses/mojo',
-      'balance/asset/assets', 'balance/asset/shares', 'balance/asset/investments',
+      'transactions',
+      'subscriptions',
+      'income/revenue/revenues',
+      'income/revenue/interests',
+      'income/revenue/properties',
+      'income/expenses/daily',
+      'income/expenses/splurge',
+      'income/expenses/smile',
+      'income/expenses/fire',
+      'income/expenses/mojo',
+      'balance/asset/assets',
+      'balance/asset/shares',
+      'balance/asset/investments',
       'balance/liabilities',
-      'smile', 'fire', 'mojo', 'budget', 'grow'
+      'smile',
+      'fire',
+      'mojo',
+      'budget',
+      'grow',
     ];
 
     const res = await authed('post', '/api/data/read/batch').send({ paths: allPaths });
@@ -133,8 +167,9 @@ describe('Batch read integration', () => {
   // ── Missing paths return null ───────────────────────────────────────────
 
   skipIf(!dbAvailable, 'returns null for non-existent paths in batch', async () => {
-    const res = await authed('post', '/api/data/read/batch')
-      .send({ paths: ['transactions', 'does/not/exist'] });
+    const res = await authed('post', '/api/data/read/batch').send({
+      paths: ['transactions', 'does/not/exist'],
+    });
 
     expect(res.status).toBe(200);
     expect(res.body.data.transactions).toHaveLength(2);
@@ -144,8 +179,7 @@ describe('Batch read integration', () => {
   // ── updatedAt is included and reflects writes ───────────────────────────
 
   skipIf(!dbAvailable, 'updatedAt is present in batch-read response', async () => {
-    const res = await authed('post', '/api/data/read/batch')
-      .send({ paths: ['transactions'] });
+    const res = await authed('post', '/api/data/read/batch').send({ paths: ['transactions'] });
 
     expect(res.status).toBe(200);
     expect(res.body.updatedAt).toBeTruthy();
@@ -155,19 +189,19 @@ describe('Batch read integration', () => {
 
   skipIf(!dbAvailable, 'updatedAt changes after a write', async () => {
     // Get current updatedAt
-    const before = await authed('post', '/api/data/read/batch')
-      .send({ paths: ['transactions'] });
+    const before = await authed('post', '/api/data/read/batch').send({ paths: ['transactions'] });
     const tsBefore = before.body.updatedAt;
 
     // Small delay to ensure timestamp differs
-    await new Promise(r => setTimeout(r, 50));
+    await new Promise((r) => setTimeout(r, 50));
 
     // Write something
-    await authed('post', '/api/data/write/budget').send([{ tag: 'Test', amount: 100, date: '2026-03' }]);
+    await authed('post', '/api/data/write/budget').send([
+      { tag: 'Test', amount: 100, date: '2026-03' },
+    ]);
 
     // Get new updatedAt
-    const after = await authed('post', '/api/data/read/batch')
-      .send({ paths: ['transactions'] });
+    const after = await authed('post', '/api/data/read/batch').send({ paths: ['transactions'] });
     const tsAfter = after.body.updatedAt;
 
     expect(new Date(tsAfter).getTime()).toBeGreaterThan(new Date(tsBefore).getTime());
@@ -188,7 +222,7 @@ describe('updatedAt endpoint integration', () => {
   skipIf(!dbAvailable, 'updatedAt matches batch-read updatedAt', async () => {
     const [endpointRes, batchRes] = await Promise.all([
       authed('get', '/api/data/updatedAt'),
-      authed('post', '/api/data/read/batch').send({ paths: ['transactions'] })
+      authed('post', '/api/data/read/batch').send({ paths: ['transactions'] }),
     ]);
 
     expect(endpointRes.body.updatedAt).toBe(batchRes.body.updatedAt);

@@ -32,16 +32,16 @@ import { TrapFocusDirective } from 'src/app/shared/directives/trap-focus.directi
   standalone: true,
   imports: [TrapFocusDirective, CommonModule, FormsModule, TranslateModule],
   templateUrl: './add-budget.component.html',
-  styleUrls: ['../../../shared/styles/add-form.css', './add-budget.component.css']
+  styleUrls: ['../../../shared/styles/add-form.css', './add-budget.component.css'],
 })
 export class AddBudgetComponent extends BaseAddComponent implements OnInit, AfterViewInit {
-  static amountTextField = "";
-  static categoryTextField = "@";
-  static dateTextField = "";
-  
+  static amountTextField = '';
+  static categoryTextField = '@';
+  static dateTextField = '';
+
   showCategoryOptions = false;
 
-  static url = "/plan";
+  static url = '/plan';
   static zIndex;
   static isAdd;
   static isError;
@@ -57,13 +57,19 @@ export class AddBudgetComponent extends BaseAddComponent implements OnInit, Afte
    * @param authService - The centralized authentication service.
    * @param frontendLogger - The frontend logging service.
    */
-  constructor(router: Router, private localStorage: LocalService, private database: DatabaseService, public afAuth: AngularFireAuth, private authService: AuthService, private frontendLogger: FrontendLoggerService) {
+  constructor(
+    router: Router,
+    private localStorage: LocalService,
+    private database: DatabaseService,
+    public afAuth: AngularFireAuth,
+    private authService: AuthService,
+    private frontendLogger: FrontendLoggerService,
+  ) {
     super(router);
     AddBudgetComponent.isAdd = false;
     this.initStatic(AddBudgetComponent);
   }
 
-  
   static categoryOptions = [
     { value: '@Food', label: 'Food' },
     { value: '@Transport', label: 'Transport' },
@@ -71,7 +77,6 @@ export class AddBudgetComponent extends BaseAddComponent implements OnInit, Afte
     // Add more options as needed
   ];
 
-  
   ngOnInit() {
     AddBudgetComponent.populateCategoryOptions();
   }
@@ -81,34 +86,32 @@ export class AddBudgetComponent extends BaseAddComponent implements OnInit, Afte
     // Add any additional logic you want to execute when the component is visible
   }
 
-
   static populateCategoryOptions() {
     const categories = new Set<string>();
     if (!Array.isArray(AppStateService.instance.allTransactions)) {
       AppStateService.instance.allTransactions = [];
     }
     for (let i = AppStateService.instance.allTransactions.length - 1; i >= 0; i--) {
-      if(AppStateService.instance.allTransactions[i].account != "Income"){
+      if (AppStateService.instance.allTransactions[i].account != 'Income') {
         categories.add(AppStateService.instance.allTransactions[i].category);
       }
     }
 
-    for(let i = 0; i < AppStateService.instance.allBudgets.length; i++){
-      const date = AppStateService.instance.allBudgets[i].date
-      const tag = AppStateService.instance.allBudgets[i].tag
+    for (let i = 0; i < AppStateService.instance.allBudgets.length; i++) {
+      const date = AppStateService.instance.allBudgets[i].date;
+      const tag = AppStateService.instance.allBudgets[i].tag;
 
       const selectedDate = PlanComponent.selectedMonthYear
-      ? `${PlanComponent.selectedMonthYear.split(' ')[1]}-${('0' + (new Date(`${PlanComponent.selectedMonthYear.split(' ')[0]} 1`).getMonth() + 1)).slice(-2)}`
-      : '';
+        ? `${PlanComponent.selectedMonthYear.split(' ')[1]}-${('0' + (new Date(`${PlanComponent.selectedMonthYear.split(' ')[0]} 1`).getMonth() + 1)).slice(-2)}`
+        : '';
       if (date === selectedDate) {
         categories.delete(tag);
       }
-
     }
 
-    AddBudgetComponent.categoryOptions = Array.from(categories).map(category => ({
+    AddBudgetComponent.categoryOptions = Array.from(categories).map((category) => ({
       value: category,
-      label: category.replace('@', '')
+      label: category.replace('@', ''),
     }));
   }
 
@@ -142,7 +145,6 @@ export class AddBudgetComponent extends BaseAddComponent implements OnInit, Afte
   toggleCategoryOptions() {
     this.showCategoryOptions = !this.showCategoryOptions;
   }
-  
 
   highlight() {
     AddBudgetComponent.zIndex = AddBudgetComponent.zIndex + 1;
@@ -153,8 +155,8 @@ export class AddBudgetComponent extends BaseAddComponent implements OnInit, Afte
 
   override closeWindow() {
     AddBudgetComponent.isAdd = false;
-    AddBudgetComponent.amountTextField = "";
-    AddBudgetComponent.categoryTextField = "@";
+    AddBudgetComponent.amountTextField = '';
+    AddBudgetComponent.categoryTextField = '@';
     super.closeWindow();
   }
 
@@ -164,7 +166,7 @@ export class AddBudgetComponent extends BaseAddComponent implements OnInit, Afte
     // Check authentication using the centralized service
     const authResult = await this.authService.checkAuthentication();
     if (!authResult.authenticated) {
-      this.showError(authResult.error || "Session expired. Please log in again.");
+      this.showError(authResult.error || 'Session expired. Please log in again.');
       if (this.authService.getMode() === 'firebase') {
         this.afAuth.signOut();
       }
@@ -173,77 +175,90 @@ export class AddBudgetComponent extends BaseAddComponent implements OnInit, Afte
 
     // User is authenticated
     //Validation (check if Amount is not empty)
-    if (!this.validateRequired([
-      { name: 'category', value: AddBudgetComponent.categoryTextField === '@' ? '' : AddBudgetComponent.categoryTextField, label: 'Category' },
-      { name: 'date', value: AddBudgetComponent.dateTextField, label: 'Date' }
-    ])) {
+    if (
+      !this.validateRequired([
+        {
+          name: 'category',
+          value:
+            AddBudgetComponent.categoryTextField === '@'
+              ? ''
+              : AddBudgetComponent.categoryTextField,
+          label: 'Category',
+        },
+        { name: 'date', value: AddBudgetComponent.dateTextField, label: 'Date' },
+      ])
+    ) {
       // field errors shown inline
     } else {
-          
-          const date = AddBudgetComponent.dateTextField;
-          const tag = AddBudgetComponent.categoryTextField;
-          const amount = Math.abs(isNaN(parseFloat(AddBudgetComponent.amountTextField)) ? 0 : parseFloat(AddBudgetComponent.amountTextField));
+      const date = AddBudgetComponent.dateTextField;
+      const tag = AddBudgetComponent.categoryTextField;
+      const amount = Math.abs(
+        isNaN(parseFloat(AddBudgetComponent.amountTextField))
+          ? 0
+          : parseFloat(AddBudgetComponent.amountTextField),
+      );
 
-          // Find if a budget for the same month and category already exists
-          const existingBudget = AppStateService.instance.allBudgets.find(
-            (b: any) => b.date === AddBudgetComponent.dateTextField && b.tag === tag
-          );
+      // Find if a budget for the same month and category already exists
+      const existingBudget = AppStateService.instance.allBudgets.find(
+        (b: any) => b.date === AddBudgetComponent.dateTextField && b.tag === tag,
+      );
 
-          if (existingBudget) {
-            // Update the amount
-            existingBudget.amount = amount;
-          } else {
-            // Create new budget entry
-            const newBudget = {
-              date,
-              tag,
-              amount
-            }
-            AppStateService.instance.allBudgets.push(newBudget);
-          }
-          PlanComponent.refreshDataSources();
+      if (existingBudget) {
+        // Update the amount
+        existingBudget.amount = amount;
+      } else {
+        // Create new budget entry
+        const newBudget = {
+          date,
+          tag,
+          amount,
+        };
+        AppStateService.instance.allBudgets.push(newBudget);
+      }
+      PlanComponent.refreshDataSources();
 
-          // Clean Up close Window
-          AddBudgetComponent.dateTextField = "";
-          AddBudgetComponent.amountTextField = "";
-          AddBudgetComponent.categoryTextField = "@";
-          this.clearError();
-          this.closeWindow();
-          AppStateService.instance.isSaving = true;
-
+      // Clean Up close Window
+      AddBudgetComponent.dateTextField = '';
+      AddBudgetComponent.amountTextField = '';
+      AddBudgetComponent.categoryTextField = '@';
+      this.clearError();
+      this.closeWindow();
+      AppStateService.instance.isSaving = true;
 
       try {
         //WRITE to Storage
         // In selfhosted mode, writeObject returns Observables that need to be subscribed
         if (environment.mode === 'selfhosted') {
-          const budgetWrite = this.database.writeObject("budget", AppStateService.instance.allBudgets) as Observable<any>;
+          const budgetWrite = this.database.writeObject(
+            'budget',
+            AppStateService.instance.allBudgets,
+          ) as Observable<any>;
           budgetWrite.subscribe({
             next: () => {
               // Log user activity
               this.frontendLogger.logActivity('add_budget', 'info', {
                 category: AddBudgetComponent.categoryTextField,
                 amount: AddBudgetComponent.amountTextField,
-                date: AddBudgetComponent.dateTextField
+                date: AddBudgetComponent.dateTextField,
               });
               this.finalizeAddBudget();
             },
             error: (error) => {
               AppStateService.instance.isSaving = false;
               this.toastService.show(error.message || 'Database write failed', 'error');
-            }
+            },
           });
         } else {
           // Log user activity
           this.frontendLogger.logActivity('add_budget', 'info', {
             category: AddBudgetComponent.categoryTextField,
             amount: AddBudgetComponent.amountTextField,
-            date: AddBudgetComponent.dateTextField
+            date: AddBudgetComponent.dateTextField,
           });
-          this.database.writeObject("budget", AppStateService.instance.allBudgets);
+          this.database.writeObject('budget', AppStateService.instance.allBudgets);
           // Firebase mode - writes complete synchronously
           this.finalizeAddBudget();
         }
-
       } catch (error) {
         AppStateService.instance.isSaving = false;
         this.toastService.show(error.message || 'Database write failed', 'error');
@@ -254,7 +269,7 @@ export class AddBudgetComponent extends BaseAddComponent implements OnInit, Afte
   finalizeAddBudget() {
     if (!AddBudgetComponent.isError) {
       this.showCategoryOptions = false;
-      this.localStorage.saveData("budget", JSON.stringify(AppStateService.instance.allBudgets));
+      this.localStorage.saveData('budget', JSON.stringify(AppStateService.instance.allBudgets));
       AppStateService.instance.isSaving = false;
       this.toastService.show('Budget added', 'success');
       gotoTop();

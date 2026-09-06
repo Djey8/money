@@ -13,7 +13,7 @@
 3. **€10k+/mo MRR target?** Realistic only on a **3–5 year horizon** at 5–15 h/week, and only if you (a) niche down hard, (b) ship banking integration in Germany within ~12 months, (c) build in public to get distribution from open-source flywheel. €1–3k/mo is realistic in 12–18 months; €10k+ requires either luck, going full-time, or a co-founder.
 4. **Banking integration is the make-or-break feature** for German mainstream adoption. It is also the single biggest cost, legal, and complexity risk. Detailed analysis in §6.
 5. **Legal structure:** start as **Kleinunternehmer / Gewerbe** while employed; convert to **UG (haftungsbeschränkt)** once MRR > ~€500–1000/mo or you process real customer financial data on infrastructure you control. Detailed in §8.
-6. **Passive income?** Software-as-a-service is **not** passive income — it is a job that pays well *if* it works. Re-frame your goal: this can become a **cash-flowing asset** that supplements/replaces salary, then later a sellable asset (SaaS exit multiples are 3–6× ARR for a profitable, slow-growing one-person SaaS). It will not be passive for years 1–3.
+6. **Passive income?** Software-as-a-service is **not** passive income — it is a job that pays well _if_ it works. Re-frame your goal: this can become a **cash-flowing asset** that supplements/replaces salary, then later a sellable asset (SaaS exit multiples are 3–6× ARR for a profitable, slow-growing one-person SaaS). It will not be passive for years 1–3.
 
 ---
 
@@ -38,6 +38,7 @@
 ---
 
 <a name="phase-0"></a>
+
 ## 1. Phase 0 — Validation before you spend a Euro
 
 **Do this in the next 4 weeks before anything else.** This is non-negotiable. You are about to spend money on a Gewerbeanmeldung, infrastructure, marketing, and possibly years of your life. Validate first.
@@ -68,21 +69,22 @@ You already have a working app. The bottleneck is not code — it is **distribut
 ---
 
 <a name="market-analysis"></a>
+
 ## 2. Market Analysis — is there a real problem here?
 
 ### 2.1 The blunt answer
 
 **Yes, there are real, documented, widespread problems.** **No, "people need a personal finance app" is not one of them** — that one is solved 50× over. The real problems are narrower:
 
-| Problem | Evidence (where users complain) | Who feels it |
-|---|---|---|
-| **Personal finance apps sell my data / send transactions to US servers** | r/privacy, r/selfhosted, Heise comments, Mastodon #privacy, EU "Schrems II" coverage | Privacy-conscious EU users |
-| **No good German-bank-supporting tool that isn't owned by a bank/insurance** | r/Finanzen recurring threads, Finanzguru critique (owned by Deutsche Bank), Outbank pricing | German mainstream users |
-| **YNAB-style methodology unaffordable / doesn't fit German banks** | YNAB Reddit threads complaining about EU support, FIRE forums | Budget-discipline crowd |
-| **Open-source self-host options (Firefly III, Actual) are powerful but UX is rough** | r/selfhosted issues, GitHub issue trackers, "I'd pay for a polished version" comments | Technical self-hosters |
-| **Investment + budgeting + FIRE in one app — almost nobody does all three well** | Frugalisten forum, Mr Money Mustache forum, FIRE subreddit | FIRE community |
-| **German tax-aware investment tracking (Vorabpauschale, FIFO, Teilfreistellung)** | r/Finanzen, r/Finanzen_Anlagen, dividenden forum | German investors |
-| **Couples/families: shared budgets without exposing all transactions to each other** | YNAB community, Reddit | Households |
+| Problem                                                                              | Evidence (where users complain)                                                             | Who feels it               |
+| ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------- | -------------------------- |
+| **Personal finance apps sell my data / send transactions to US servers**             | r/privacy, r/selfhosted, Heise comments, Mastodon #privacy, EU "Schrems II" coverage        | Privacy-conscious EU users |
+| **No good German-bank-supporting tool that isn't owned by a bank/insurance**         | r/Finanzen recurring threads, Finanzguru critique (owned by Deutsche Bank), Outbank pricing | German mainstream users    |
+| **YNAB-style methodology unaffordable / doesn't fit German banks**                   | YNAB Reddit threads complaining about EU support, FIRE forums                               | Budget-discipline crowd    |
+| **Open-source self-host options (Firefly III, Actual) are powerful but UX is rough** | r/selfhosted issues, GitHub issue trackers, "I'd pay for a polished version" comments       | Technical self-hosters     |
+| **Investment + budgeting + FIRE in one app — almost nobody does all three well**     | Frugalisten forum, Mr Money Mustache forum, FIRE subreddit                                  | FIRE community             |
+| **German tax-aware investment tracking (Vorabpauschale, FIFO, Teilfreistellung)**    | r/Finanzen, r/Finanzen_Anlagen, dividenden forum                                            | German investors           |
+| **Couples/families: shared budgets without exposing all transactions to each other** | YNAB community, Reddit                                                                      | Households                 |
 
 ### 2.2 What you are NOT going to solve
 
@@ -106,34 +108,38 @@ Don't fall for "10M Germans manage money therefore TAM is huge." That's vanity s
 ---
 
 <a name="competitors"></a>
+
 ## 3. Competitor landscape
 
 ### 3.1 Direct competitors (study these carefully)
 
 #### Self-hosted / open source
-| Tool | Strengths | Weaknesses you can exploit |
-|---|---|---|
-| **Firefly III** (PHP, open source, ~14k★) | Mature, tons of features, large community | UX is dense/old; mobile is poor; no built-in mobile app; no E2E encryption; no opinionated methodology |
-| **Actual Budget** (JS, open source, ~14k★) | Modern UX, envelope budgeting, good mobile | YNAB-clone (no investments, no FIRE); no German banking; mainly US-centric |
-| **Maybe Finance** (open source 2024+, fast-growing) | Modern stack, slick UX, includes investments | Very early; questionable long-term sustainability; Plaid-only (no European banks) |
-| **Ghostfolio** (open source, investment-only) | Excellent investment tracking, EU-aware | Investment-only, no budgeting |
-| **Wealthfolio** (open source, desktop-first) | Local-first, no servers needed | Investment-only, no budgeting/SaaS |
+
+| Tool                                                | Strengths                                    | Weaknesses you can exploit                                                                             |
+| --------------------------------------------------- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| **Firefly III** (PHP, open source, ~14k★)           | Mature, tons of features, large community    | UX is dense/old; mobile is poor; no built-in mobile app; no E2E encryption; no opinionated methodology |
+| **Actual Budget** (JS, open source, ~14k★)          | Modern UX, envelope budgeting, good mobile   | YNAB-clone (no investments, no FIRE); no German banking; mainly US-centric                             |
+| **Maybe Finance** (open source 2024+, fast-growing) | Modern stack, slick UX, includes investments | Very early; questionable long-term sustainability; Plaid-only (no European banks)                      |
+| **Ghostfolio** (open source, investment-only)       | Excellent investment tracking, EU-aware      | Investment-only, no budgeting                                                                          |
+| **Wealthfolio** (open source, desktop-first)        | Local-first, no servers needed               | Investment-only, no budgeting/SaaS                                                                     |
 
 #### German market (commercial)
-| Tool | Pricing | Notes |
-|---|---|---|
-| **Finanzguru** | Free + premium ~€4/mo | Owned by Deutsche Bank (since 2023). **Your privacy angle directly attacks this.** |
-| **Outbank** | ~€40/year iOS, expensive | Mature but old UX, declining mindshare |
-| **Bluecoins** | One-time ~€5 Android | Strong manual-entry tool, no banking sync |
-| **Lexoffice / sevDesk** | €10–30/mo | Business-focused; but many freelancers misuse it for personal |
+
+| Tool                    | Pricing                  | Notes                                                                              |
+| ----------------------- | ------------------------ | ---------------------------------------------------------------------------------- |
+| **Finanzguru**          | Free + premium ~€4/mo    | Owned by Deutsche Bank (since 2023). **Your privacy angle directly attacks this.** |
+| **Outbank**             | ~€40/year iOS, expensive | Mature but old UX, declining mindshare                                             |
+| **Bluecoins**           | One-time ~€5 Android     | Strong manual-entry tool, no banking sync                                          |
+| **Lexoffice / sevDesk** | €10–30/mo                | Business-focused; but many freelancers misuse it for personal                      |
 
 #### International commercial
-| Tool | Pricing | Notes |
-|---|---|---|
-| **YNAB** | ~$15/mo, $99/yr | Cult following, but limited German banking, US-centric |
-| **Monarch Money** | $15/mo | Replaced Mint after Intuit killed it; US-only |
-| **Lunchmoney** | $10/mo | Indie SaaS success story; US-only |
-| **Copilot Money** | $8/mo | iOS-only, US-only |
+
+| Tool              | Pricing         | Notes                                                  |
+| ----------------- | --------------- | ------------------------------------------------------ |
+| **YNAB**          | ~$15/mo, $99/yr | Cult following, but limited German banking, US-centric |
+| **Monarch Money** | $15/mo          | Replaced Mint after Intuit killed it; US-only          |
+| **Lunchmoney**    | $10/mo          | Indie SaaS success story; US-only                      |
+| **Copilot Money** | $8/mo           | iOS-only, US-only                                      |
 
 ### 3.2 Strategic positioning map
 
@@ -161,11 +167,13 @@ The upper-right quadrant is **almost empty**. Maybe Finance is closest but US-le
 ---
 
 <a name="differentiators"></a>
+
 ## 4. Your differentiators — honest assessment
 
 ### 4.1 What you actually have (verified from your codebase)
 
 ✅ **Real, working features:**
+
 - Self-host (Docker Compose + K3s manifests, monitoring, backups) — **rare and valuable**
 - Client-side AES encryption — **rare and valuable**
 - Dual-mode (Firebase OR self-host with the same UI) — **technically impressive, marketing gold**
@@ -178,6 +186,7 @@ The upper-right quadrant is **almost empty**. Maybe Finance is closest but US-le
 ### 4.2 What you don't have yet (and need)
 
 🚨 **Critical gaps for monetization:**
+
 - ❌ **Bank account sync** (FinTS or PSD2) — see §6, this is the #1 thing
 - ❌ **Mobile native apps** (iOS/Android) — PWA is acceptable but App Store presence is a major trust + discovery driver in DE/AT/CH
 - ❌ **Multi-currency at scale** (you have EUR, but FX, foreign assets, etc.)
@@ -191,6 +200,7 @@ The upper-right quadrant is **almost empty**. Maybe Finance is closest but US-le
 ### 4.3 Honest weakness assessment
 
 ⚠️ **Reality check:**
+
 - Single-developer projects in this space have a high failure rate. Burnout, life events, illness — any one ends the company. Build for solo-founder-burnout from day one.
 - Your tech stack (Angular + CouchDB + Firebase) is not what most modern SaaS founders pick. It's fine, but it limits hiring and OSS contributors. **Don't rewrite — build moats, not perfect stacks.**
 - "Opinionated based on Barefoot Investor" is a double-edged sword. It's differentiation. It's also a rejection of users who don't subscribe to that methodology. Lean in or make it optional.
@@ -198,6 +208,7 @@ The upper-right quadrant is **almost empty**. Maybe Finance is closest but US-le
 ---
 
 <a name="positioning"></a>
+
 ## 5. Positioning & target audience
 
 ### 5.1 The wedge audience (year 1–2)
@@ -205,12 +216,14 @@ The upper-right quadrant is **almost empty**. Maybe Finance is closest but US-le
 Pick ONE of these. Not all. **My strong recommendation: A.**
 
 #### A. **"Finanztool für Datenschutz-bewusste Deutsche / Europäer"** (RECOMMENDED)
+
 - **Who:** German-speaking, 25–45, tech-aware enough to care about privacy, frustrated with Finanzguru/Outbank/Excel
 - **Hook:** "Deine Finanzen gehören dir. Nicht der Deutschen Bank, nicht Mint, nicht uns. — Self-hostable. Ende-zu-Ende verschlüsselt. EU-gehostet."
 - **Channels:** r/Finanzen, r/de_EDV, Heise Forum, Mastodon DE, Privacy-podcasts (Logbuch:Netzpolitik etc.), Frugalisten, Steady-supported privacy creators
 - **Why this wins:** real differentiation, hostile to bigco copying, your stack already supports it, Schrems II tailwind, German privacy culture is unmatched in Europe
 
 #### B. **"FIRE App for Europe"**
+
 - **Who:** FIRE-curious 25–40, investing already, wants to track progress
 - **Hook:** "Track your path to financial independence. Investments, dividends, FI ratio, savings rate — all in one place. EU-hosted."
 - **Channels:** Frugalisten, Mr Money Mustache DACH, FIRE YouTube channels, ChooseFI EU
@@ -218,11 +231,13 @@ Pick ONE of these. Not all. **My strong recommendation: A.**
 - **Why it might not:** smaller TAM, Ghostfolio + spreadsheets are entrenched, often free-tier sufficient
 
 #### C. **"YNAB for Europe"** (NOT recommended)
+
 - Crowded, methodology-locked, your account model is Barefoot not envelope, doesn't lean on your moats. Skip.
 
 ### 5.2 Expansion audiences (year 2+)
 
 After validating with A, expand to:
+
 1. **Couples/families** — premium tier feature
 2. **Freelancers** (personal+business overlap, Steuer-Reports)
 3. **Investors** with German-tax-aware reports
@@ -237,6 +252,7 @@ After validating with A, expand to:
 ---
 
 <a name="banking"></a>
+
 ## 6. Banking integration in Germany — the deep dive
 
 This section is the most important in the document. **Go/no-go for the mainstream-DE audience hinges on this.**
@@ -244,6 +260,7 @@ This section is the most important in the document. **Go/no-go for the mainstrea
 ### 6.1 Three integration paths
 
 #### Path A: **FinTS / HBCI** (the open-banking-before-PSD2 thing)
+
 - **What:** A protocol German banks have supported for decades. Users provide their PIN/TAN and the app polls account/transactions.
 - **Cost:** Free (no aggregator). Libraries: `python-fints`, `hbci4java`, `gopher-fints`. Limited Node.js libraries.
 - **Pros:** No license, no aggregator fees, supports almost all DE banks, works for self-hosted users (data never leaves their box)
@@ -252,6 +269,7 @@ This section is the most important in the document. **Go/no-go for the mainstrea
 - **Verdict:** **Excellent for self-host mode, risky for SaaS mode.**
 
 #### Path B: **PSD2 via aggregator** (FinAPI, GoCardless/Nordigen, Tink, Klarna Kosma, finApi/finleap)
+
 - **What:** Use a licensed AISP (Account Information Service Provider) as a backend. They have the BaFin license; you consume their API.
 - **Cost (rough):**
   - **GoCardless (Nordigen)**: free tier exists, paid ~€0.10–0.30/account/month + per-call. **Cheapest option.**
@@ -263,19 +281,21 @@ This section is the most important in the document. **Go/no-go for the mainstrea
 - **Verdict:** **Probably your path for the SaaS hosted version.** Start with GoCardless (Nordigen). It's the only realistic option at your stage.
 
 #### Path C: **You become an AISP yourself**
+
 - **Cost:** €100k–500k+ in BaFin licensing, capital requirements, compliance, audit. Years.
 - **Verdict:** **Not now. Maybe never. Don't even think about this for years.**
 
 ### 6.2 Recommended path
 
-| Mode | Year 1 | Year 2 | Year 3+ |
-|---|---|---|---|
-| Self-host | Manual import + CSV | + FinTS (community-maintained or your code) | Stable |
-| SaaS hosted | Manual + CSV | + GoCardless (PSD2 EU) | Re-evaluate AISP if MRR >> €50k/mo |
+| Mode        | Year 1              | Year 2                                      | Year 3+                            |
+| ----------- | ------------------- | ------------------------------------------- | ---------------------------------- |
+| Self-host   | Manual import + CSV | + FinTS (community-maintained or your code) | Stable                             |
+| SaaS hosted | Manual + CSV        | + GoCardless (PSD2 EU)                      | Re-evaluate AISP if MRR >> €50k/mo |
 
 ### 6.3 Critical: data sensitivity & encryption story
 
 Once you sync banking data:
+
 - **Self-host:** user owns the keys, you have no liability. **Keep this story pristine.**
 - **SaaS:** even with client-side encryption, if you store the encrypted blob on your server, you have GDPR controller obligations. AVV with AISP. Subprocessor list public. Datenschutzerklärung detailed.
 - **Strong recommendation:** keep the SaaS version **client-side-encrypted at rest** — meaning even YOU cannot read user transactions without their key. Marketing gold ("we literally cannot read your finances"), legal gold (reduces breach exposure), engineering tax (no server-side queries, no BI on user data, no shared accounts without key exchange protocol).
@@ -283,6 +303,7 @@ Once you sync banking data:
 ---
 
 <a name="pricing"></a>
+
 ## 7. Pricing, packaging & business model
 
 ### 7.1 Recommended model: **Open-Core + Hosted SaaS**
@@ -335,9 +356,9 @@ Once you sync banking data:
 
 ### 7.3 Path to €10k/mo MRR
 
-| Tier | Price/mo | Customers needed for €10k/mo |
-|---|---|---|
-| All Pro @ €5 | €5 | 2,000 |
+| Tier                                     | Price/mo | Customers needed for €10k/mo            |
+| ---------------------------------------- | -------- | --------------------------------------- |
+| All Pro @ €5                             | €5       | 2,000                                   |
 | Mix (70% Pro, 20% Family, 10% self-host) | ~€6 ARPU | ~1,700 paying + ongoing self-host sales |
 
 **1,700 paying customers in a German privacy/FIRE niche** is realistic but **demanding**. It implies ~30,000–50,000 free signups assuming 3–5% conversion. That's a 3–5 year content marketing journey at 5–15 h/week.
@@ -352,9 +373,10 @@ Once you sync banking data:
 ---
 
 <a name="legal"></a>
+
 ## 8. German legal, tax & GDPR setup
 
-> **Disclaimer:** I am not a lawyer or tax advisor. This is high-level orientation. Get a Steuerberater (~€100–300 setup) and possibly a Fachanwalt für IT-Recht (~€200–500 for a templated Datenschutzerklärung review) before going live with paid customers.
+> **Disclaimer:** I am not a lawyer or tax advisor. This is high-level orientation. Get a Steuerberater (~~€100–300 setup) and possibly a Fachanwalt für IT-Recht (~~€200–500 for a templated Datenschutzerklärung review) before going live with paid customers.
 
 ### 8.1 As an Angestellter — what you need to do
 
@@ -366,12 +388,12 @@ Once you sync banking data:
 
 ### 8.2 When to switch to a UG / GmbH
 
-| Trigger | Why |
-|---|---|
-| MRR > €500–1000/mo | Personal liability for SaaS bugs, breaches, banking errors gets real |
-| Storing real user financial data on infra you control | Liability shield is worth UG cost |
-| First employee or freelancer | UG is cleaner |
-| Investors / co-founder | Required |
+| Trigger                                               | Why                                                                  |
+| ----------------------------------------------------- | -------------------------------------------------------------------- |
+| MRR > €500–1000/mo                                    | Personal liability for SaaS bugs, breaches, banking errors gets real |
+| Storing real user financial data on infra you control | Liability shield is worth UG cost                                    |
+| First employee or freelancer                          | UG is cleaner                                                        |
+| Investors / co-founder                                | Required                                                             |
 
 - **UG (haftungsbeschränkt)**: €1 minimum capital but realistic €1–5k. Setup ~€500–1500 (Notar, HR, Anwalt). Annual cost ~€1k (Steuerberater + HR + IHK).
 - **GmbH**: €25k stamm. Skip until you're well past €5k MRR.
@@ -382,6 +404,7 @@ Once you sync banking data:
 You will be a **Verantwortlicher (controller)** for the SaaS product. Self-hosters are their own controllers (you're a software vendor). For SaaS:
 
 **Must-haves before first paying customer:**
+
 - ✅ **Datenschutzerklärung** (privacy policy in DE + EN). Use a lawyer-vetted template (€200–500).
 - ✅ **Impressum** (TMG §5). Mandatory for any commercial German web presence.
 - ✅ **AVV (Auftragsverarbeitungsvertrag)** with every subprocessor: hosting (Hetzner/Cloud), email (Postmark), payments (Stripe), error tracking (Sentry — be careful, EU instance), banking AISP (Nordigen).
@@ -393,6 +416,7 @@ You will be a **Verantwortlicher (controller)** for the SaaS product. Self-hoste
 - ⚠️ **Datenschutzbeauftragter (DPO)**: not required at <20 employees usually, but financial data may trigger it. Check with lawyer.
 
 **EU hosting list (Schrems-II safe-ish):**
+
 - Hetzner (Falkenstein/Nuremberg) — your best friend for €4–50/mo dedicated/cloud
 - IONOS, OVH, Scaleway — alternatives
 - **Avoid for sensitive data:** AWS/GCP/Azure (US-controlled even on EU regions, post-Schrems-II concern), Firebase (you currently use this — fine for free tier, **not fine for SaaS at scale**)
@@ -419,17 +443,18 @@ Even with AISP partner: privacy policy must list them as subprocessor, AVV in pl
 ---
 
 <a name="license"></a>
+
 ## 9. Open-source license decision
 
 ### 9.1 Options
 
-| License | Effect | Pros | Cons |
-|---|---|---|---|
-| **MIT/Apache 2.0** | Anyone can fork & sell | Max community goodwill, contributors | AWS / a competitor can launch a hosted clone the day you launch yours |
-| **AGPLv3** | Forks must open-source modifications IF they offer the software as a network service | Blocks hosted clones from going closed-source. Used by Firefly III, Mastodon, MongoDB-pre-SSPL | Some companies refuse to use AGPL → fewer enterprise self-hosters |
-| **SSPL** (MongoDB) | Like AGPL but blocks managed-services clones too | Strongest hosted-clone protection | Not OSI-approved. Slight community PR cost. |
-| **Fair-source / BSL** | Source visible, commercial use restricted, converts to open after N years | Modern indie SaaS choice (Sentry, MariaDB) | Not "open source" in OSI sense → less community uptake |
-| **Closed source** | Source private | Max control | Loses your biggest moat (community + audit trust) |
+| License               | Effect                                                                               | Pros                                                                                           | Cons                                                                  |
+| --------------------- | ------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| **MIT/Apache 2.0**    | Anyone can fork & sell                                                               | Max community goodwill, contributors                                                           | AWS / a competitor can launch a hosted clone the day you launch yours |
+| **AGPLv3**            | Forks must open-source modifications IF they offer the software as a network service | Blocks hosted clones from going closed-source. Used by Firefly III, Mastodon, MongoDB-pre-SSPL | Some companies refuse to use AGPL → fewer enterprise self-hosters     |
+| **SSPL** (MongoDB)    | Like AGPL but blocks managed-services clones too                                     | Strongest hosted-clone protection                                                              | Not OSI-approved. Slight community PR cost.                           |
+| **Fair-source / BSL** | Source visible, commercial use restricted, converts to open after N years            | Modern indie SaaS choice (Sentry, MariaDB)                                                     | Not "open source" in OSI sense → less community uptake                |
+| **Closed source**     | Source private                                                                       | Max control                                                                                    | Loses your biggest moat (community + audit trust)                     |
 
 ### 9.2 Recommendation: **AGPLv3 + open core**
 
@@ -456,16 +481,17 @@ Even with AISP partner: privacy policy must list them as subprocessor, AVV in pl
 ---
 
 <a name="infra"></a>
+
 ## 10. Infrastructure economics & scaling
 
 ### 10.1 Cost model (Hetzner-based, EU)
 
-| Stage | Users | Infra cost/mo | Notes |
-|---|---|---|---|
-| **Now** (1 user, you) | 1 | ~€0 (Firebase free) | Fine |
-| Year 1 launch (early validation) | 0–50 paying | ~€10–25 | 1× Hetzner CX22 (€4) + S3 backups + monitoring |
-| Year 2 (~500 paying) | 500 | ~€80–150 | Dedicated AX41 (€40) + DB replica + Stripe fees ~3% |
-| Year 3 (~2000 paying) | 2000 | ~€400–700 | 2× app servers + DB cluster + AISP costs ~€200/mo + Stripe |
+| Stage                            | Users       | Infra cost/mo       | Notes                                                      |
+| -------------------------------- | ----------- | ------------------- | ---------------------------------------------------------- |
+| **Now** (1 user, you)            | 1           | ~€0 (Firebase free) | Fine                                                       |
+| Year 1 launch (early validation) | 0–50 paying | ~€10–25             | 1× Hetzner CX22 (€4) + S3 backups + monitoring             |
+| Year 2 (~500 paying)             | 500         | ~€80–150            | Dedicated AX41 (€40) + DB replica + Stripe fees ~3%        |
+| Year 3 (~2000 paying)            | 2000        | ~€400–700           | 2× app servers + DB cluster + AISP costs ~€200/mo + Stripe |
 
 **Stripe fees**: ~1.4% + €0.25 per EU card transaction. Real margin per €5 sub: ~€4.55. Annual sub of €48: ~€46.50 net.
 
@@ -482,6 +508,7 @@ You're currently on Firebase free tier. Before paid customers:
 ### 10.3 Operational cost reality
 
 You're running this on a single Ubuntu box right now. We just spent two hours debugging cgroup leaks. **Do not run a paid SaaS on hand-managed K3s on a single box.** Before paying customers:
+
 - Two-node Hetzner cluster for HA (~€80/mo)
 - Off-site automated backups (S3 / Backblaze EU / Hetzner Storage Box)
 - Status page (Statuspage.io free tier or self-host UptimeRobot/Kuma)
@@ -491,6 +518,7 @@ You're running this on a single Ubuntu box right now. We just spent two hours de
 ---
 
 <a name="gtm"></a>
+
 ## 11. Go-to-market strategy
 
 ### 11.1 Distribution flywheel (the only one that works at €0 budget)
@@ -526,6 +554,7 @@ You're running this on a single Ubuntu box right now. We just spent two hours de
 ### 11.3 Content marketing topics (low-hanging SEO fruit in DE)
 
 These are real Google queries with low competition + high intent:
+
 - "Finanzguru Alternative datenschutz"
 - "YNAB Deutschland Bank"
 - "Firefly III deutsche Bank Anleitung"
@@ -547,15 +576,18 @@ Each post = 800–1500 words, 1× per week, you'll cover the long tail in 6 mont
 ---
 
 <a name="roadmap"></a>
+
 ## 12. Roadmap by phase
 
 ### Phase 0 — Validation (4 weeks, ~30h total)
+
 - [ ] 10 problem interviews
 - [ ] Smoke-test landing page
 - [ ] Show HN / Reddit posts
 - [ ] 3 paid pre-orders or kill the project
 
 ### Phase 1 — Legal & Infra (4–6 weeks, ~40h)
+
 - [ ] Gewerbeanmeldung
 - [ ] Steuerberater hired
 - [ ] AGB + Datenschutzerklärung + Impressum (lawyer-vetted)
@@ -565,6 +597,7 @@ Each post = 800–1500 words, 1× per week, you'll cover the long tail in 6 mont
 - [ ] AVV templates with subprocessors
 
 ### Phase 2 — Public OSS Launch (1–2 months, ~50h)
+
 - [ ] Marketing website (separate from app, SEO-friendly)
 - [ ] Polished onboarding flow
 - [ ] Documentation site (you have docs/, expose them publicly)
@@ -572,23 +605,27 @@ Each post = 800–1500 words, 1× per week, you'll cover the long tail in 6 mont
 - [ ] First 100 stars target
 
 ### Phase 3 — Monetization (months 3–6, ~80h)
+
 - [ ] Stripe integration + subscription billing
 - [ ] Pro tier feature gating (start with: unlimited transactions, multi-account)
 - [ ] First paying customers (target: 10 paying by end of month 6)
 - [ ] Customer support workflow (Helpscout free tier, or Plain.com)
 
 ### Phase 4 — Banking Integration (months 6–9, ~120h)
+
 - [ ] Nordigen/GoCardless PSD2 integration for SaaS
 - [ ] FinTS integration for self-host (community-friendly)
 - [ ] Updated AVV / privacy policy for AISP subprocessor
 - [ ] Marketing push: "We just made the privacy-first finance app actually useful for German banks"
 
 ### Phase 5 — Couples / Family / Multi-user (months 9–12, ~100h)
+
 - [ ] Shared accounts with E2E encryption (key-exchange protocol)
 - [ ] Family pricing tier
 - [ ] Major marketing moment
 
 ### Phase 6 — Year 2: Scale & expand
+
 - Tax-reporting features (Vorabpauschale, FIFO, dividend reports)
 - Mobile native apps if PWA proves insufficient
 - EU expansion (NL, AT, CH, FR — your i18n is ready)
@@ -597,49 +634,56 @@ Each post = 800–1500 words, 1× per week, you'll cover the long tail in 6 mont
 ---
 
 <a name="risks"></a>
+
 ## 13. Risk register
 
-| Risk | Likelihood | Impact | Mitigation |
-|---|---|---|---|
-| Burnout / life events / illness | High (solo founder) | Critical | Document everything, keep day job, automate ruthlessly, <15h/wk discipline |
-| No traction after Phase 0 | Medium-high | Critical | Phase 0 is the kill-criterion. Don't sunk-cost. |
-| Finanzguru/competitor copies privacy positioning | Low (they're owned by DB) | High | Move fast, AGPL moat, community trust |
-| BaFin licensing creep (AISP) | Low if you stay with Nordigen | Critical | Always use licensed AISP, never store credentials |
-| Data breach | Low (E2E enc) but always present | Critical (financial data + reputation) | E2E encryption, no plaintext logs, security audit before launch, cyber insurance (~€500/yr) once revenue justifies |
-| Stripe / banking partner shuts you down | Low | High | Multiple payment providers (Paddle as backup), multiple AISPs |
-| AGPL deters self-host enterprise | Medium | Low | They can buy commercial license for €X/yr — convert risk to revenue |
-| Apple/Google reject PWA in App Store | Low | Medium | Native wrapper later |
-| Personal-finance category fatigue | Medium | High | Wedge audience makes it a sub-category — privacy/FIRE are growing not fatigued |
-| Scams targeting your users (phishing your branding) | Medium | High | DMARC, brand monitoring, clear "we'll never email you for credentials" |
+| Risk                                                | Likelihood                       | Impact                                 | Mitigation                                                                                                         |
+| --------------------------------------------------- | -------------------------------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Burnout / life events / illness                     | High (solo founder)              | Critical                               | Document everything, keep day job, automate ruthlessly, <15h/wk discipline                                         |
+| No traction after Phase 0                           | Medium-high                      | Critical                               | Phase 0 is the kill-criterion. Don't sunk-cost.                                                                    |
+| Finanzguru/competitor copies privacy positioning    | Low (they're owned by DB)        | High                                   | Move fast, AGPL moat, community trust                                                                              |
+| BaFin licensing creep (AISP)                        | Low if you stay with Nordigen    | Critical                               | Always use licensed AISP, never store credentials                                                                  |
+| Data breach                                         | Low (E2E enc) but always present | Critical (financial data + reputation) | E2E encryption, no plaintext logs, security audit before launch, cyber insurance (~€500/yr) once revenue justifies |
+| Stripe / banking partner shuts you down             | Low                              | High                                   | Multiple payment providers (Paddle as backup), multiple AISPs                                                      |
+| AGPL deters self-host enterprise                    | Medium                           | Low                                    | They can buy commercial license for €X/yr — convert risk to revenue                                                |
+| Apple/Google reject PWA in App Store                | Low                              | Medium                                 | Native wrapper later                                                                                               |
+| Personal-finance category fatigue                   | Medium                           | High                                   | Wedge audience makes it a sub-category — privacy/FIRE are growing not fatigued                                     |
+| Scams targeting your users (phishing your branding) | Medium                           | High                                   | DMARC, brand monitoring, clear "we'll never email you for credentials"                                             |
 
 ---
 
 <a name="kill-criteria"></a>
+
 ## 14. Decision points & kill criteria
 
 Set these in stone now. Re-read when emotional.
 
 ### After Phase 0 (week 4)
+
 - KILL if: <2 paid pre-orders, <20 email signups, no clear pain pattern from interviews
 - PIVOT if: signals exist but audience is wrong → re-target and re-run Phase 0
 - PROCEED if: ≥3 paid pre-orders, ≥30 signups, recurring pain pattern
 
 ### After 6 months
+
 - KILL if: <€100 MRR after 3 months of marketing
 - DOWNSCALE if: €100–500 MRR — keep as side hobby, don't quit job thinking
 - ACCELERATE if: €500+ MRR with growth → consider increasing time investment
 
 ### After 18 months
+
 - KILL if: <€1k MRR with declining growth
 - HOLD if: €1–3k MRR steady → fine as side income
 - GO FULL-TIME if: €5k+ MRR with retention >80% annual and growing
 
 ### Personal: when to quit
+
 You said "stable, growing passive income". Define your number now: at what MRR will you go full-time and quit your Angestellten-Stelle? **Recommendation: 2× current take-home for 6+ consecutive months.** Lower than that = financial stress = bad decisions.
 
 ---
 
 <a name="open-questions"></a>
+
 ## 15. Open questions for Jannis
 
 These need answers from you before this plan goes from draft to executable. Add answers below each.
@@ -665,28 +709,28 @@ These need answers from you before this plan goes from draft to executable. Add 
 
 ## Appendix A — Recommended reading
 
-- *The Mom Test* — Rob Fitzpatrick (interview methodology, free PDF online from author)
-- *Indie Hackers* podcast — episodes with Lunchmoney, Plausible, Fathom, Beeminder founders
-- *Stripe Atlas Guide to Pricing* (free)
-- DE-specific: *eRecht24* blog for legal templates
+- _The Mom Test_ — Rob Fitzpatrick (interview methodology, free PDF online from author)
+- _Indie Hackers_ podcast — episodes with Lunchmoney, Plausible, Fathom, Beeminder founders
+- _Stripe Atlas Guide to Pricing_ (free)
+- DE-specific: _eRecht24_ blog for legal templates
 - BaFin website on AISP/PISP licensing requirements (read the FAQ, not the law)
 - Plausible Analytics public revenue dashboard — your business model template
 
 ## Appendix B — Tools you'll need
 
-| Need | Free/cheap option | Notes |
-|---|---|---|
-| Email | Postmark / Resend EU | Transactional first |
-| Payments | Stripe | EU-compliant, accept SEPA + cards |
-| Bookkeeping | Lexoffice ~€10/mo | Auto-syncs Stripe, generates Steuerunterlagen |
-| Status page | Statuspage.io free or self-host Kuma | |
-| Analytics | Plausible.io / Umami (self-host) | Privacy-friendly, your brand demands it |
-| Customer support | Helpscout free / Plain.com / just Gmail with shared inbox | |
-| Error tracking | Sentry self-host (your stack supports it) or GlitchTip | |
-| Banking AISP | GoCardless (Nordigen) | Free tier exists |
-| Legal templates | eRecht24 + ~€500 lawyer review | |
-| Steuerberater | Local (DATEV-trained), ~€100–200/mo retainer | Worth every cent once MRR > €1k |
+| Need             | Free/cheap option                                         | Notes                                         |
+| ---------------- | --------------------------------------------------------- | --------------------------------------------- |
+| Email            | Postmark / Resend EU                                      | Transactional first                           |
+| Payments         | Stripe                                                    | EU-compliant, accept SEPA + cards             |
+| Bookkeeping      | Lexoffice ~€10/mo                                         | Auto-syncs Stripe, generates Steuerunterlagen |
+| Status page      | Statuspage.io free or self-host Kuma                      |                                               |
+| Analytics        | Plausible.io / Umami (self-host)                          | Privacy-friendly, your brand demands it       |
+| Customer support | Helpscout free / Plain.com / just Gmail with shared inbox |                                               |
+| Error tracking   | Sentry self-host (your stack supports it) or GlitchTip    |                                               |
+| Banking AISP     | GoCardless (Nordigen)                                     | Free tier exists                              |
+| Legal templates  | eRecht24 + ~€500 lawyer review                            |                                               |
+| Steuerberater    | Local (DATEV-trained), ~€100–200/mo retainer              | Worth every cent once MRR > €1k               |
 
 ---
 
-*End of analysis. Draft v1 — answer the open questions, then we'll iterate this into a concrete 12-week execution plan.*
+_End of analysis. Draft v1 — answer the open questions, then we'll iterate this into a concrete 12-week execution plan._

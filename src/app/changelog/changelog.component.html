@@ -1,24 +1,50 @@
 <!-- Toolbar -->
 <div class="toolbar" role="banner">
-  <img id="profile-pic" width="40" alt="Profile Logo" src="../assets/profile-blank.jpg"
-    role="button" tabindex="0" aria-label="Open profile" (click)="appReference.clickProfile()" (keydown.enter)="appReference.clickProfile()" />
+  <img
+    id="profile-pic"
+    width="40"
+    alt="Profile Logo"
+    src="../assets/profile-blank.jpg"
+    role="button"
+    tabindex="0"
+    aria-label="Open profile"
+    (click)="appReference.clickProfile()"
+    (keydown.enter)="appReference.clickProfile()"
+  />
   <a routerLink="/" class="logo">Money<span>App</span></a>
   <div class="spacer"></div>
-  <input type="checkbox" id="nav-toggle" class="nav-toggle" aria-label="Toggle navigation">
+  <input type="checkbox" id="nav-toggle" class="nav-toggle" aria-label="Toggle navigation" />
   <label for="nav-toggle" class="nav-toggle-label" aria-hidden="true"><span></span></label>
   <label for="nav-toggle" class="nav-backdrop" aria-hidden="true"></label>
   <ul class="nav-links">
-    <li><a routerLink="/" (click)="closeNav()">{{ 'Landing.nav.howItWorks' | translate }}</a></li>
-    <li><a routerLink="/changelog" class="active-nav" (click)="closeNav()">{{ 'Landing.nav.changelog' | translate }}</a></li>
-    <li><a routerLink="/docs" (click)="closeNav()">{{ 'Landing.nav.docs' | translate }}</a></li>
-    <li><a routerLink="/community" (click)="closeNav()">{{ 'Landing.nav.community' | translate }}</a></li>
-    <li><a href="javascript:void(0)" (click)="closeNav(); navigateToSection('get-started')">{{ 'Landing.nav.getStarted' | translate }}</a></li>
-    <li><button class="nav-demo-btn" (click)="closeNav(); launchDemo()">{{ 'Landing.nav.demo' | translate }}</button></li>
+    <li>
+      <a routerLink="/" (click)="closeNav()">{{ 'Landing.nav.howItWorks' | translate }}</a>
+    </li>
+    <li>
+      <a routerLink="/changelog" class="active-nav" (click)="closeNav()">{{
+        'Landing.nav.changelog' | translate
+      }}</a>
+    </li>
+    <li>
+      <a routerLink="/docs" (click)="closeNav()">{{ 'Landing.nav.docs' | translate }}</a>
+    </li>
+    <li>
+      <a routerLink="/community" (click)="closeNav()">{{ 'Landing.nav.community' | translate }}</a>
+    </li>
+    <li>
+      <a href="javascript:void(0)" (click)="closeNav(); navigateToSection('get-started')">{{
+        'Landing.nav.getStarted' | translate
+      }}</a>
+    </li>
+    <li>
+      <button class="nav-demo-btn" (click)="closeNav(); launchDemo()">
+        {{ 'Landing.nav.demo' | translate }}
+      </button>
+    </li>
   </ul>
 </div>
 
 <div class="changelog-page">
-
   <header class="changelog-header">
     <h1 class="changelog-title">{{ 'Changelog.title' | translate }}</h1>
     <p class="changelog-subtitle">{{ 'Changelog.subtitle' | translate }}</p>
@@ -44,23 +70,28 @@
 
   <!-- Content -->
   <div class="changelog-content" *ngIf="!loading && !error && selected">
-
     <!-- Version sidebar (desktop) -->
     <aside class="changelog-sidebar">
       <div class="sidebar-header">
         <h3 class="sidebar-title">{{ 'Changelog.versions' | translate }}</h3>
-        <button class="view-toggle" *ngIf="groupEntries.length > 0" (click)="toggleGroupMode()"
-                [attr.aria-label]="groupMode ? 'Switch to version view' : 'Switch to group view'">
+        <button
+          class="view-toggle"
+          *ngIf="groupEntries.length > 0"
+          (click)="toggleGroupMode()"
+          [attr.aria-label]="groupMode ? 'Switch to version view' : 'Switch to group view'"
+        >
           {{ groupMode ? 'v1.2.3' : 'x.x' }}
         </button>
       </div>
 
       <!-- Normal mode: individual versions -->
       <ul class="version-list" *ngIf="!groupMode">
-        <li *ngFor="let v of versions; let i = index"
-            class="version-item"
-            [ngClass]="{ active: i === selectedIndex, latest: i === 0 }"
-            (click)="selectVersion(i)">
+        <li
+          *ngFor="let v of versions; let i = index"
+          class="version-item"
+          [ngClass]="{ active: i === selectedIndex, latest: i === 0 }"
+          (click)="selectVersion(i)"
+        >
           <span class="version-tag">v{{ v.version }}</span>
           <span class="version-date">{{ v.date | appDate }}</span>
           <span class="latest-badge" *ngIf="i === 0">{{ 'Changelog.latest' | translate }}</span>
@@ -69,10 +100,12 @@
 
       <!-- Group mode: consolidated entries -->
       <ul class="version-list" *ngIf="groupMode">
-        <li *ngFor="let g of groupEntries; let i = index"
-            class="version-item is-group"
-            [ngClass]="{ active: i === selectedGroupIndex }"
-            (click)="selectGroup(i)">
+        <li
+          *ngFor="let g of groupEntries; let i = index"
+          class="version-item is-group"
+          [ngClass]="{ active: i === selectedGroupIndex }"
+          (click)="selectGroup(i)"
+        >
           <span class="version-tag">{{ g.label }}</span>
           <span class="group-count">{{ g.versions.length }} versions</span>
         </li>
@@ -81,7 +114,6 @@
 
     <!-- Main detail -->
     <main class="changelog-detail">
-
       <!-- Mobile version select -->
       <div class="mobile-version-select">
         <div class="mobile-toggle-row" *ngIf="groupEntries.length > 0">
@@ -90,17 +122,27 @@
           </button>
         </div>
 
-        <label class="mobile-select-label" for="version-select">{{ 'Changelog.jumpTo' | translate }}</label>
-        <select id="version-select" class="mobile-version-dropdown"
-                *ngIf="!groupMode"
-                [ngModel]="selectedIndex" (ngModelChange)="selectVersion($event)">
+        <label class="mobile-select-label" for="version-select">{{
+          'Changelog.jumpTo' | translate
+        }}</label>
+        <select
+          id="version-select"
+          class="mobile-version-dropdown"
+          *ngIf="!groupMode"
+          [ngModel]="selectedIndex"
+          (ngModelChange)="selectVersion($event)"
+        >
           <option *ngFor="let v of versions; let i = index" [ngValue]="i">
             v{{ v.version }} — {{ v.date | appDate }}
           </option>
         </select>
-        <select id="version-select" class="mobile-version-dropdown"
-                *ngIf="groupMode"
-                [ngModel]="selectedGroupIndex" (ngModelChange)="selectGroup($event)">
+        <select
+          id="version-select"
+          class="mobile-version-dropdown"
+          *ngIf="groupMode"
+          [ngModel]="selectedGroupIndex"
+          (ngModelChange)="selectGroup($event)"
+        >
           <option *ngFor="let g of groupEntries; let i = index" [ngValue]="i">
             {{ g.label }} ({{ g.versions.length }} versions)
           </option>
@@ -109,14 +151,24 @@
 
       <!-- Navigation arrows (normal mode only) -->
       <div class="version-nav" *ngIf="!groupMode">
-        <button class="nav-btn" [disabled]="isLatest" (click)="goNewer()" aria-label="Newer version">
+        <button
+          class="nav-btn"
+          [disabled]="isLatest"
+          (click)="goNewer()"
+          aria-label="Newer version"
+        >
           &larr; {{ 'Changelog.newer' | translate }}
         </button>
         <div class="version-indicator">
           <span class="version-current">v{{ selected.version }}</span>
           <span class="version-counter">{{ selectedIndex + 1 }} / {{ versions.length }}</span>
         </div>
-        <button class="nav-btn" [disabled]="isOldest" (click)="goOlder()" aria-label="Older version">
+        <button
+          class="nav-btn"
+          [disabled]="isOldest"
+          (click)="goOlder()"
+          aria-label="Older version"
+        >
           {{ 'Changelog.older' | translate }} &rarr;
         </button>
       </div>
@@ -133,18 +185,32 @@
           <div class="version-card-top">
             <h2 class="version-card-title">
               v{{ ver.version }}
-              <span class="latest-pill" *ngIf="!groupMode && isLatest">{{ 'Changelog.latest' | translate }}</span>
+              <span class="latest-pill" *ngIf="!groupMode && isLatest">{{
+                'Changelog.latest' | translate
+              }}</span>
             </h2>
             <time class="version-card-date">{{ ver.date | appDate }}</time>
           </div>
           <div class="version-header-meta">
             <div class="version-authors" *ngIf="ver.authors && ver.authors.length">
-              <a *ngFor="let a of ver.authors" [href]="a.url" target="_blank" rel="noopener"
-                 class="author-avatar-link" [title]="a.login">
+              <a
+                *ngFor="let a of ver.authors"
+                [href]="a.url"
+                target="_blank"
+                rel="noopener"
+                class="author-avatar-link"
+                [title]="a.login"
+              >
                 <img [src]="a.avatarUrl" [alt]="a.login" class="author-avatar" />
               </a>
             </div>
-            <a *ngIf="ver.prNumber" [href]="ver.prUrl" target="_blank" rel="noopener" class="version-pr-link">
+            <a
+              *ngIf="ver.prNumber"
+              [href]="ver.prUrl"
+              target="_blank"
+              rel="noopener"
+              class="version-pr-link"
+            >
               PR #{{ ver.prNumber }}
             </a>
           </div>
@@ -159,8 +225,14 @@
             <ul class="change-list">
               <li *ngFor="let item of section.items" class="change-item">
                 <span class="change-text">{{ item.text }}</span>
-                <a *ngIf="item.author" [href]="item.authorUrl" target="_blank" rel="noopener"
-                   class="commit-author-link" [title]="item.author">
+                <a
+                  *ngIf="item.author"
+                  [href]="item.authorUrl"
+                  target="_blank"
+                  rel="noopener"
+                  class="commit-author-link"
+                  [title]="item.author"
+                >
                   <img [src]="item.avatarUrl" [alt]="item.author" class="commit-author-avatar" />
                   {{ item.author }}
                 </a>
@@ -169,8 +241,6 @@
           </div>
         </div>
       </article>
-
     </main>
   </div>
-
 </div>

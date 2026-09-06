@@ -2,7 +2,6 @@ import { AddComponent } from './add.component';
 import { AppStateService } from '../../shared/services/app-state.service';
 
 describe('AddComponent', () => {
-
   beforeEach(() => {
     (AppStateService as any)._instance = undefined;
     AddComponent.selectedOption = 'Daily';

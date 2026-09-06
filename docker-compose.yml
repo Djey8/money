@@ -10,7 +10,7 @@ services:
     image: couchdb:3.3
     container_name: money-couchdb
     ports:
-      - "5984:5984"
+      - '5984:5984'
     environment:
       - COUCHDB_USER=admin
       - COUCHDB_PASSWORD=${COUCHDB_PASSWORD:?Set COUCHDB_PASSWORD in .env}
@@ -25,7 +25,7 @@ services:
     build: ./backend
     container_name: money-backend
     ports:
-      - "3000:3000"
+      - '3000:3000'
     environment:
       - PORT=3000
       - NODE_ENV=production
@@ -47,7 +47,7 @@ services:
     build: .
     container_name: money-frontend
     ports:
-      - "80:8080"
+      - '80:8080'
     depends_on:
       - backend
     networks:

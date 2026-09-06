@@ -27,30 +27,72 @@ import { SharedFilterComponent } from 'src/app/shared/components/shared-filter/s
 @Component({
   selector: 'app-income',
   standalone: true,
-  imports: [CommonModule, TranslateModule, AppDatePipe, AppNumberPipe, SharedFilterComponent, InfoInterestsComponent, InfoPropertiesComponent],
+  imports: [
+    CommonModule,
+    TranslateModule,
+    AppDatePipe,
+    AppNumberPipe,
+    SharedFilterComponent,
+    InfoInterestsComponent,
+    InfoPropertiesComponent,
+  ],
   templateUrl: './income.component.html',
-  styleUrls: ['./income.component.css', '../../../app.component.css', '../../../shared/styles/table.css']
+  styleUrls: [
+    './income.component.css',
+    '../../../app.component.css',
+    '../../../shared/styles/table.css',
+  ],
 })
 export class IncomeComponent implements OnDestroy {
+  static get allRevenues(): Revenue[] {
+    return AppStateService.instance.allRevenues;
+  }
+  static set allRevenues(v: Revenue[]) {
+    AppStateService.instance.allRevenues = v;
+  }
+  static get allIntrests(): Interest[] {
+    return AppStateService.instance.allIntrests;
+  }
+  static set allIntrests(v: Interest[]) {
+    AppStateService.instance.allIntrests = v;
+  }
+  static get allProperties(): Property[] {
+    return AppStateService.instance.allProperties;
+  }
+  static set allProperties(v: Property[]) {
+    AppStateService.instance.allProperties = v;
+  }
 
-  static get allRevenues(): Revenue[] { return AppStateService.instance.allRevenues; }
-  static set allRevenues(v: Revenue[]) { AppStateService.instance.allRevenues = v; }
-  static get allIntrests(): Interest[] { return AppStateService.instance.allIntrests; }
-  static set allIntrests(v: Interest[]) { AppStateService.instance.allIntrests = v; }
-  static get allProperties(): Property[] { return AppStateService.instance.allProperties; }
-  static set allProperties(v: Property[]) { AppStateService.instance.allProperties = v; }
-
-  static get dailyExpenses(): Expense[] { return AppStateService.instance.dailyExpenses; }
-  static set dailyExpenses(v: Expense[]) { AppStateService.instance.dailyExpenses = v; }
-  static get splurgeExpenses(): Expense[] { return AppStateService.instance.splurgeExpenses; }
-  static set splurgeExpenses(v: Expense[]) { AppStateService.instance.splurgeExpenses = v; }
-  static get smileExpenses(): Expense[] { return AppStateService.instance.smileExpenses; }
-  static set smileExpenses(v: Expense[]) { AppStateService.instance.smileExpenses = v; }
-  static get fireExpenses(): Expense[] { return AppStateService.instance.fireExpenses; }
-  static set fireExpenses(v: Expense[]) { AppStateService.instance.fireExpenses = v; }
-  static get mojoExpenses(): Expense[] { return AppStateService.instance.mojoExpenses; }
-  static set mojoExpenses(v: Expense[]) { AppStateService.instance.mojoExpenses = v; }
-
+  static get dailyExpenses(): Expense[] {
+    return AppStateService.instance.dailyExpenses;
+  }
+  static set dailyExpenses(v: Expense[]) {
+    AppStateService.instance.dailyExpenses = v;
+  }
+  static get splurgeExpenses(): Expense[] {
+    return AppStateService.instance.splurgeExpenses;
+  }
+  static set splurgeExpenses(v: Expense[]) {
+    AppStateService.instance.splurgeExpenses = v;
+  }
+  static get smileExpenses(): Expense[] {
+    return AppStateService.instance.smileExpenses;
+  }
+  static set smileExpenses(v: Expense[]) {
+    AppStateService.instance.smileExpenses = v;
+  }
+  static get fireExpenses(): Expense[] {
+    return AppStateService.instance.fireExpenses;
+  }
+  static set fireExpenses(v: Expense[]) {
+    AppStateService.instance.fireExpenses = v;
+  }
+  static get mojoExpenses(): Expense[] {
+    return AppStateService.instance.mojoExpenses;
+  }
+  static set mojoExpenses(v: Expense[]) {
+    AppStateService.instance.mojoExpenses = v;
+  }
 
   // Filtered Income
   static allRevenuesF: Revenue[];
@@ -75,7 +117,7 @@ export class IncomeComponent implements OnDestroy {
   isSmileExpenses = true;
   isFireExpenses = true;
   isMojoExpenses = true;
-  totalAmount = 0.0
+  totalAmount = 0.0;
 
   // New unified filter system
   static currentFilter: IncomeFilter = {
@@ -92,28 +134,28 @@ export class IncomeComponent implements OnDestroy {
       date: true,
       time: true,
       category: true,
-      comment: true
-    }
+      comment: true,
+    },
   };
-  
+
   static isFiltered = false;
   static isAdvancedFilterExpanded = false;
   static isSearchHelpVisible = false;
-  
+
   // Available accounts and tags for filtering
   static availableAccounts: string[] = ['Income', 'Daily', 'Splurge', 'Smile', 'Fire', 'Mojo'];
   static availableTags: string[] = [];
 
   // Individual table sort states for filtered results
   static tableSorts: {
-    revenues: { column: 'tag' | 'amount' | null, direction: 'asc' | 'desc' },
-    interests: { column: 'tag' | 'amount' | null, direction: 'asc' | 'desc' },
-    properties: { column: 'tag' | 'amount' | null, direction: 'asc' | 'desc' },
-    daily: { column: 'tag' | 'amount' | null, direction: 'asc' | 'desc' },
-    splurge: { column: 'tag' | 'amount' | null, direction: 'asc' | 'desc' },
-    smile: { column: 'tag' | 'amount' | null, direction: 'asc' | 'desc' },
-    fire: { column: 'tag' | 'amount' | null, direction: 'asc' | 'desc' },
-    mojo: { column: 'tag' | 'amount' | null, direction: 'asc' | 'desc' }
+    revenues: { column: 'tag' | 'amount' | null; direction: 'asc' | 'desc' };
+    interests: { column: 'tag' | 'amount' | null; direction: 'asc' | 'desc' };
+    properties: { column: 'tag' | 'amount' | null; direction: 'asc' | 'desc' };
+    daily: { column: 'tag' | 'amount' | null; direction: 'asc' | 'desc' };
+    splurge: { column: 'tag' | 'amount' | null; direction: 'asc' | 'desc' };
+    smile: { column: 'tag' | 'amount' | null; direction: 'asc' | 'desc' };
+    fire: { column: 'tag' | 'amount' | null; direction: 'asc' | 'desc' };
+    mojo: { column: 'tag' | 'amount' | null; direction: 'asc' | 'desc' };
   } = {
     revenues: { column: null, direction: 'asc' },
     interests: { column: null, direction: 'asc' },
@@ -122,14 +164,16 @@ export class IncomeComponent implements OnDestroy {
     splurge: { column: null, direction: 'asc' },
     smile: { column: null, direction: 'asc' },
     fire: { column: null, direction: 'asc' },
-    mojo: { column: null, direction: 'asc' }
+    mojo: { column: null, direction: 'asc' },
   };
 
   // Filtered Icnome
-  totalAmountF = 0.0
+  totalAmountF = 0.0;
 
   public classReference = IncomeComponent;
-  public get appReference() { return AppComponent; }
+  public get appReference() {
+    return AppComponent;
+  }
   public settingsReference = SettingsComponent;
 
   /**
@@ -137,26 +181,53 @@ export class IncomeComponent implements OnDestroy {
    * @param router - The router service.
    * @param localStorage - The local storage service.
    */
-  constructor(private router: Router, private localStorage: LocalService) {
+  constructor(
+    private router: Router,
+    private localStorage: LocalService,
+  ) {
     IncomeComponent.setDate();
 
-    AppStateService.instance.allRevenues = this.localStorage.getData("revenues") == "" ? [] : JSON.parse(this.localStorage.getData("revenues"));
-    AppStateService.instance.allIntrests = this.localStorage.getData("interests") == "" ? [] : JSON.parse(this.localStorage.getData("interests"));
-    AppStateService.instance.allProperties = this.localStorage.getData("properties") == "" ? [] : JSON.parse(this.localStorage.getData("properties"));
+    AppStateService.instance.allRevenues =
+      this.localStorage.getData('revenues') == ''
+        ? []
+        : JSON.parse(this.localStorage.getData('revenues'));
+    AppStateService.instance.allIntrests =
+      this.localStorage.getData('interests') == ''
+        ? []
+        : JSON.parse(this.localStorage.getData('interests'));
+    AppStateService.instance.allProperties =
+      this.localStorage.getData('properties') == ''
+        ? []
+        : JSON.parse(this.localStorage.getData('properties'));
 
-    AppStateService.instance.dailyExpenses = this.localStorage.getData("dailyEx") == "" ? [] : JSON.parse(this.localStorage.getData("dailyEx"));
-    AppStateService.instance.splurgeExpenses = this.localStorage.getData("splurgeEx") == "" ? [] : JSON.parse(this.localStorage.getData("splurgeEx"));
-    AppStateService.instance.smileExpenses = this.localStorage.getData("smileEx") == "" ? [] : JSON.parse(this.localStorage.getData("smileEx"));
-    AppStateService.instance.fireExpenses = this.localStorage.getData("fireEx") == "" ? [] : JSON.parse(this.localStorage.getData("fireEx"));
-    AppStateService.instance.mojoExpenses = this.localStorage.getData("mojoEx") == "" ? [] : JSON.parse(this.localStorage.getData("mojoEx"));
-    this.isInterests = this.localStorage.getData("isRevenues") == "false" ? false : true;
-    this.isInterests = this.localStorage.getData("isInterests") == "false" ? false : true;
-    this.isProperties = this.localStorage.getData("isProperties") == "false" ? false : true;
-    this.isDailyExpenses = this.localStorage.getData("isDailyEx") == "false" ? false : true;
-    this.isSplurgeExpenses = this.localStorage.getData("isSplurgeEx") == "false" ? false : true;
-    this.isSmileExpenses = this.localStorage.getData("isSmileEx") == "false" ? false : true;
-    this.isFireExpenses = this.localStorage.getData("isFireEx") == "false" ? false : true;
-    this.isMojoExpenses = this.localStorage.getData("isMojoEx") == "false" ? false : true;
+    AppStateService.instance.dailyExpenses =
+      this.localStorage.getData('dailyEx') == ''
+        ? []
+        : JSON.parse(this.localStorage.getData('dailyEx'));
+    AppStateService.instance.splurgeExpenses =
+      this.localStorage.getData('splurgeEx') == ''
+        ? []
+        : JSON.parse(this.localStorage.getData('splurgeEx'));
+    AppStateService.instance.smileExpenses =
+      this.localStorage.getData('smileEx') == ''
+        ? []
+        : JSON.parse(this.localStorage.getData('smileEx'));
+    AppStateService.instance.fireExpenses =
+      this.localStorage.getData('fireEx') == ''
+        ? []
+        : JSON.parse(this.localStorage.getData('fireEx'));
+    AppStateService.instance.mojoExpenses =
+      this.localStorage.getData('mojoEx') == ''
+        ? []
+        : JSON.parse(this.localStorage.getData('mojoEx'));
+    this.isInterests = this.localStorage.getData('isRevenues') == 'false' ? false : true;
+    this.isInterests = this.localStorage.getData('isInterests') == 'false' ? false : true;
+    this.isProperties = this.localStorage.getData('isProperties') == 'false' ? false : true;
+    this.isDailyExpenses = this.localStorage.getData('isDailyEx') == 'false' ? false : true;
+    this.isSplurgeExpenses = this.localStorage.getData('isSplurgeEx') == 'false' ? false : true;
+    this.isSmileExpenses = this.localStorage.getData('isSmileEx') == 'false' ? false : true;
+    this.isFireExpenses = this.localStorage.getData('isFireEx') == 'false' ? false : true;
+    this.isMojoExpenses = this.localStorage.getData('isMojoEx') == 'false' ? false : true;
 
     IncomeComponent.allRevenuesF = [];
     IncomeComponent.allIntrestsF = [];
@@ -170,7 +241,7 @@ export class IncomeComponent implements OnDestroy {
 
     IncomeComponent.isFiltered = false;
     IncomeComponent.isAdvancedFilterExpanded = false;
-    
+
     // Reset all filter settings
     IncomeComponent.setDate();
     IncomeComponent.currentFilter = {
@@ -187,10 +258,10 @@ export class IncomeComponent implements OnDestroy {
         date: true,
         time: true,
         category: true,
-        comment: true
-      }
+        comment: true,
+      },
     };
-    
+
     // Reset all table sort states
     IncomeComponent.tableSorts = {
       revenues: { column: null, direction: 'asc' },
@@ -200,9 +271,9 @@ export class IncomeComponent implements OnDestroy {
       splurge: { column: null, direction: 'asc' },
       smile: { column: null, direction: 'asc' },
       fire: { column: null, direction: 'asc' },
-      mojo: { column: null, direction: 'asc' }
+      mojo: { column: null, direction: 'asc' },
     };
-    
+
     this.updateAvailableTags();
   }
 
@@ -211,7 +282,7 @@ export class IncomeComponent implements OnDestroy {
    */
   updateAvailableTags() {
     const tagsSet = new Set<string>();
-    
+
     // Iterate in reverse to get most recent categories first
     for (let i = AppStateService.instance.allTransactions.length - 1; i >= 0; i--) {
       const transaction = AppStateService.instance.allTransactions[i];
@@ -219,20 +290,20 @@ export class IncomeComponent implements OnDestroy {
         tagsSet.add(transaction.category.replace('@', ''));
       }
     }
-    
+
     IncomeComponent.availableTags = Array.from(tagsSet);
   }
 
   /**
-     * Navigates to the stats page.
-     */
-    goToStats(){
-      this.router.navigate(['/stats']);
-      StatsComponent.resetBIStateIfNeeded("statement");
-      StatsComponent.modus = "statement"
-      MenuComponent.openStats = true;
-      AppComponent.gotoTop();
-    }
+   * Navigates to the stats page.
+   */
+  goToStats() {
+    this.router.navigate(['/stats']);
+    StatsComponent.resetBIStateIfNeeded('statement');
+    StatsComponent.modus = 'statement';
+    MenuComponent.openStats = true;
+    AppComponent.gotoTop();
+  }
 
   /**
    * Scrolls to the filter section at the bottom of the page
@@ -240,7 +311,7 @@ export class IncomeComponent implements OnDestroy {
   scrollToFilter() {
     window.scrollTo({
       top: document.body.scrollHeight,
-      behavior: 'smooth'
+      behavior: 'smooth',
     });
   }
 
@@ -255,9 +326,17 @@ export class IncomeComponent implements OnDestroy {
 
     const parseAsDate = (value: string): string | null => {
       let m = value.match(/^(\d{1,2})\.(\d{1,2})\.(\d{2,4})$/);
-      if (m) { let y = m[3]; if (y.length === 2) y = '20' + y; return `${y}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`; }
+      if (m) {
+        let y = m[3];
+        if (y.length === 2) y = '20' + y;
+        return `${y}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
+      }
       m = value.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
-      if (m) { let y = m[3]; if (y.length === 2) y = '20' + y; return `${y}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`; }
+      if (m) {
+        let y = m[3];
+        if (y.length === 2) y = '20' + y;
+        return `${y}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
+      }
       m = value.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
       if (m) return `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}`;
       return null;
@@ -267,9 +346,19 @@ export class IncomeComponent implements OnDestroy {
       let m = value.match(/^(\d{1,2}):(\d{2})$/);
       if (m) return m[1].padStart(2, '0') + ':' + m[2];
       m = value.match(/^(\d{1,2}):(\d{2})\s*(am|pm)$/i);
-      if (m) { let h = parseInt(m[1], 10); if (m[3].toLowerCase() === 'pm' && h !== 12) h += 12; if (m[3].toLowerCase() === 'am' && h === 12) h = 0; return h.toString().padStart(2, '0') + ':' + m[2]; }
+      if (m) {
+        let h = parseInt(m[1], 10);
+        if (m[3].toLowerCase() === 'pm' && h !== 12) h += 12;
+        if (m[3].toLowerCase() === 'am' && h === 12) h = 0;
+        return h.toString().padStart(2, '0') + ':' + m[2];
+      }
       m = value.match(/^(\d{1,2})\s*(am|pm)$/i);
-      if (m) { let h = parseInt(m[1], 10); if (m[2].toLowerCase() === 'pm' && h !== 12) h += 12; if (m[2].toLowerCase() === 'am' && h === 12) h = 0; return h.toString().padStart(2, '0') + ':00'; }
+      if (m) {
+        let h = parseInt(m[1], 10);
+        if (m[2].toLowerCase() === 'pm' && h !== 12) h += 12;
+        if (m[2].toLowerCase() === 'am' && h === 12) h = 0;
+        return h.toString().padStart(2, '0') + ':00';
+      }
       return null;
     };
 
@@ -283,10 +372,14 @@ export class IncomeComponent implements OnDestroy {
       if (!searchFields.date) return false;
       if (operatorMatch) {
         switch (operatorMatch[1]) {
-          case '>': return transaction.date > parsedDate;
-          case '<': return transaction.date < parsedDate;
-          case '>=': return transaction.date >= parsedDate;
-          case '<=': return transaction.date <= parsedDate;
+          case '>':
+            return transaction.date > parsedDate;
+          case '<':
+            return transaction.date < parsedDate;
+          case '>=':
+            return transaction.date >= parsedDate;
+          case '<=':
+            return transaction.date <= parsedDate;
         }
       }
       return transaction.date === parsedDate;
@@ -300,10 +393,14 @@ export class IncomeComponent implements OnDestroy {
       const normalizedTransaction = parseAsTime(transaction.time) || transaction.time;
       if (operatorMatch) {
         switch (operatorMatch[1]) {
-          case '>': return normalizedTransaction > parsedTime;
-          case '<': return normalizedTransaction < parsedTime;
-          case '>=': return normalizedTransaction >= parsedTime;
-          case '<=': return normalizedTransaction <= parsedTime;
+          case '>':
+            return normalizedTransaction > parsedTime;
+          case '<':
+            return normalizedTransaction < parsedTime;
+          case '>=':
+            return normalizedTransaction >= parsedTime;
+          case '<=':
+            return normalizedTransaction <= parsedTime;
         }
       }
       return normalizedTransaction.includes(parsedTime);
@@ -315,10 +412,14 @@ export class IncomeComponent implements OnDestroy {
       const value = parseFloat(valuePart);
       if (isNaN(value)) return false;
       switch (operatorMatch[1]) {
-        case '>': return transaction.amount > value;
-        case '<': return transaction.amount < value;
-        case '>=': return transaction.amount >= value;
-        case '<=': return transaction.amount <= value;
+        case '>':
+          return transaction.amount > value;
+        case '<':
+          return transaction.amount < value;
+        case '>=':
+          return transaction.amount >= value;
+        case '<=':
+          return transaction.amount <= value;
       }
       return false;
     }
@@ -327,7 +428,12 @@ export class IncomeComponent implements OnDestroy {
     if (searchFields.account && transaction.account.toLowerCase().includes(searchTerm)) return true;
     if (searchFields.amount && transaction.amount.toString().includes(searchTerm)) return true;
     if (searchFields.date && transaction.date.toLowerCase().includes(searchTerm)) return true;
-    if (searchFields.time && transaction.time && transaction.time.toLowerCase().includes(searchTerm)) return true;
+    if (
+      searchFields.time &&
+      transaction.time &&
+      transaction.time.toLowerCase().includes(searchTerm)
+    )
+      return true;
     if (searchFields.category) {
       const cleanCategory = transaction.category.replace('@', '');
       if (cleanCategory.toLowerCase().includes(searchTerm)) return true;
@@ -353,108 +459,116 @@ export class IncomeComponent implements OnDestroy {
     IncomeComponent.mojoExpensesF = [];
 
     // Filter transactions based on all criteria
-    const filteredTransactions = AppStateService.instance.allTransactions.filter((transaction: Transaction) => {
-      // Date range filter
-      if (IncomeComponent.currentFilter.startDate && transaction.date < IncomeComponent.currentFilter.startDate) {
-        return false;
-      }
-      if (IncomeComponent.currentFilter.endDate && transaction.date > IncomeComponent.currentFilter.endDate) {
-        return false;
-      }
-
-      // Account filter (if specific accounts are selected)
-      if (IncomeComponent.currentFilter.selectedAccounts.length > 0) {
-        if (!IncomeComponent.currentFilter.selectedAccounts.includes(transaction.account)) {
+    const filteredTransactions = AppStateService.instance.allTransactions.filter(
+      (transaction: Transaction) => {
+        // Date range filter
+        if (
+          IncomeComponent.currentFilter.startDate &&
+          transaction.date < IncomeComponent.currentFilter.startDate
+        ) {
           return false;
         }
-      }
-
-      // Tag filter (if specific tags are selected)
-      if (IncomeComponent.currentFilter.selectedTags.length > 0) {
-        const cleanCategory = transaction.category.replace('@', '');
-        if (!IncomeComponent.currentFilter.selectedTags.includes(cleanCategory)) {
+        if (
+          IncomeComponent.currentFilter.endDate &&
+          transaction.date > IncomeComponent.currentFilter.endDate
+        ) {
           return false;
         }
-      }
 
-      // Search text filter across selected fields (supports boolean logic: &&, ||, and, or, not)
-      if (IncomeComponent.currentFilter.searchText.trim()) {
-        // Replace word operators with symbols for easier parsing
-        const searchExpression = IncomeComponent.currentFilter.searchText
-          .replace(/\band\b/gi, '&&')
-          .replace(/\bor\b/gi, '||')
-          .replace(/\bnot\b/gi, '!');
-        
-        // Split by || (OR) to get OR groups
-        const orGroups = searchExpression.split('||').map(g => g.trim());
-        
-        // Check if any OR group matches
-        let matchFound = false;
-        
-        for (const orGroup of orGroups) {
-          // Split by && (AND) to get AND terms within this OR group
-          const andTerms = orGroup.split('&&').map(t => t.trim());
-          
-          // All AND terms must match for this OR group to match
-          let allAndTermsMatch = true;
-          
-          for (const andTerm of andTerms) {
-            // Check for NOT operator
-            const isNegated = andTerm.startsWith('!');
-            const searchTerm = (isNegated ? andTerm.substring(1).trim() : andTerm).toLowerCase();
-            
-            if (!searchTerm) continue;
-            
-            // Check if this term matches any field
-            let termMatches = IncomeComponent.checkSearchTermMatch(transaction, searchTerm);
-            
-            // Apply negation if needed
-            if (isNegated) {
-              termMatches = !termMatches;
+        // Account filter (if specific accounts are selected)
+        if (IncomeComponent.currentFilter.selectedAccounts.length > 0) {
+          if (!IncomeComponent.currentFilter.selectedAccounts.includes(transaction.account)) {
+            return false;
+          }
+        }
+
+        // Tag filter (if specific tags are selected)
+        if (IncomeComponent.currentFilter.selectedTags.length > 0) {
+          const cleanCategory = transaction.category.replace('@', '');
+          if (!IncomeComponent.currentFilter.selectedTags.includes(cleanCategory)) {
+            return false;
+          }
+        }
+
+        // Search text filter across selected fields (supports boolean logic: &&, ||, and, or, not)
+        if (IncomeComponent.currentFilter.searchText.trim()) {
+          // Replace word operators with symbols for easier parsing
+          const searchExpression = IncomeComponent.currentFilter.searchText
+            .replace(/\band\b/gi, '&&')
+            .replace(/\bor\b/gi, '||')
+            .replace(/\bnot\b/gi, '!');
+
+          // Split by || (OR) to get OR groups
+          const orGroups = searchExpression.split('||').map((g) => g.trim());
+
+          // Check if any OR group matches
+          let matchFound = false;
+
+          for (const orGroup of orGroups) {
+            // Split by && (AND) to get AND terms within this OR group
+            const andTerms = orGroup.split('&&').map((t) => t.trim());
+
+            // All AND terms must match for this OR group to match
+            let allAndTermsMatch = true;
+
+            for (const andTerm of andTerms) {
+              // Check for NOT operator
+              const isNegated = andTerm.startsWith('!');
+              const searchTerm = (isNegated ? andTerm.substring(1).trim() : andTerm).toLowerCase();
+
+              if (!searchTerm) continue;
+
+              // Check if this term matches any field
+              let termMatches = IncomeComponent.checkSearchTermMatch(transaction, searchTerm);
+
+              // Apply negation if needed
+              if (isNegated) {
+                termMatches = !termMatches;
+              }
+
+              // If this AND term doesn't match, this OR group fails
+              if (!termMatches) {
+                allAndTermsMatch = false;
+                break;
+              }
             }
-            
-            // If this AND term doesn't match, this OR group fails
-            if (!termMatches) {
-              allAndTermsMatch = false;
+
+            // If all AND terms matched in this OR group, we found a match
+            if (allAndTermsMatch && andTerms.length > 0) {
+              matchFound = true;
               break;
             }
           }
-          
-          // If all AND terms matched in this OR group, we found a match
-          if (allAndTermsMatch && andTerms.length > 0) {
-            matchFound = true;
-            break;
+
+          if (!matchFound) {
+            return false;
           }
         }
-        
-        if (!matchFound) {
-          return false;
-        }
-      }
 
-      return transaction.amount !== 0.0;
-    });
+        return transaction.amount !== 0.0;
+      },
+    );
 
     // Build filtered income/expense arrays from filtered transactions
     filteredTransactions.forEach((transaction: Transaction) => {
-      if (transaction.account === "Income") {
+      if (transaction.account === 'Income') {
         IncomeComponent.processIncomeTransaction(transaction);
-      } else if (transaction.account === "Daily") {
+      } else if (transaction.account === 'Daily') {
         IncomeComponent.processExpenseTransaction(transaction, IncomeComponent.dailyExpensesF);
-      } else if (transaction.account === "Splurge") {
+      } else if (transaction.account === 'Splurge') {
         IncomeComponent.processExpenseTransaction(transaction, IncomeComponent.splurgeExpensesF);
-      } else if (transaction.account === "Smile") {
+      } else if (transaction.account === 'Smile') {
         IncomeComponent.processExpenseTransaction(transaction, IncomeComponent.smileExpensesF);
-      } else if (transaction.account === "Fire") {
+      } else if (transaction.account === 'Fire') {
         IncomeComponent.processExpenseTransaction(transaction, IncomeComponent.fireExpensesF);
-      } else if (transaction.account === "Mojo") {
+      } else if (transaction.account === 'Mojo') {
         IncomeComponent.processExpenseTransaction(transaction, IncomeComponent.mojoExpensesF);
       }
     });
 
     // Apply sorting
     IncomeComponent.applySorting();
-    
+
     IncomeComponent.isFiltered = true;
   }
 
@@ -463,12 +577,12 @@ export class IncomeComponent implements OnDestroy {
    */
   static processIncomeTransaction(transaction: Transaction) {
     const cleanTag = transaction.category.replace('@', '');
-    
+
     // Check if it's an interest
     let found = false;
     for (let i = 0; i < AppStateService.instance.allIntrests.length; i++) {
       if (cleanTag === AppStateService.instance.allIntrests[i].tag) {
-        const existing = IncomeComponent.allIntrestsF.find(item => item.tag === cleanTag);
+        const existing = IncomeComponent.allIntrestsF.find((item) => item.tag === cleanTag);
         if (existing) {
           existing.amount += transaction.amount;
         } else {
@@ -478,12 +592,12 @@ export class IncomeComponent implements OnDestroy {
         break;
       }
     }
-    
+
     // Check if it's a property
     if (!found) {
       for (let i = 0; i < AppStateService.instance.allProperties.length; i++) {
         if (cleanTag === AppStateService.instance.allProperties[i].tag) {
-          const existing = IncomeComponent.allPropertiesF.find(item => item.tag === cleanTag);
+          const existing = IncomeComponent.allPropertiesF.find((item) => item.tag === cleanTag);
           if (existing) {
             existing.amount += transaction.amount;
           } else {
@@ -494,10 +608,10 @@ export class IncomeComponent implements OnDestroy {
         }
       }
     }
-    
+
     // Otherwise it's a revenue
     if (!found) {
-      const existing = IncomeComponent.allRevenuesF.find(item => item.tag === cleanTag);
+      const existing = IncomeComponent.allRevenuesF.find((item) => item.tag === cleanTag);
       if (existing) {
         existing.amount += transaction.amount;
       } else {
@@ -511,8 +625,8 @@ export class IncomeComponent implements OnDestroy {
    */
   static processExpenseTransaction(transaction: Transaction, expenseArray: Expense[]) {
     const cleanTag = transaction.category.replace('@', '');
-    const existing = expenseArray.find(item => item.tag === cleanTag);
-    
+    const existing = expenseArray.find((item) => item.tag === cleanTag);
+
     if (existing) {
       existing.amount += transaction.amount;
     } else {
@@ -526,9 +640,10 @@ export class IncomeComponent implements OnDestroy {
   static applySorting() {
     // If using advanced filter sort, apply it to all individual table sorts
     if (IncomeComponent.currentFilter.sortBy !== 'none') {
-      const column: 'tag' | 'amount' = IncomeComponent.currentFilter.sortBy === 'alphabetical' ? 'tag' : 'amount';
+      const column: 'tag' | 'amount' =
+        IncomeComponent.currentFilter.sortBy === 'alphabetical' ? 'tag' : 'amount';
       const direction: 'asc' | 'desc' = IncomeComponent.currentFilter.sortOrder;
-      
+
       // Set all tables to use the same sort
       IncomeComponent.tableSorts = {
         revenues: { column: column, direction: direction },
@@ -538,7 +653,7 @@ export class IncomeComponent implements OnDestroy {
         splurge: { column: column, direction: direction },
         smile: { column: column, direction: direction },
         fire: { column: column, direction: direction },
-        mojo: { column: column, direction: direction }
+        mojo: { column: column, direction: direction },
       };
     } else {
       // Reset all individual table sorts when "No Sorting" is selected
@@ -550,7 +665,7 @@ export class IncomeComponent implements OnDestroy {
         splurge: { column: null, direction: 'asc' },
         smile: { column: null, direction: 'asc' },
         fire: { column: null, direction: 'asc' },
-        mojo: { column: null, direction: 'asc' }
+        mojo: { column: null, direction: 'asc' },
       };
     }
 
@@ -562,12 +677,12 @@ export class IncomeComponent implements OnDestroy {
       IncomeComponent.splurgeExpensesF,
       IncomeComponent.smileExpensesF,
       IncomeComponent.fireExpensesF,
-      IncomeComponent.mojoExpensesF
+      IncomeComponent.mojoExpensesF,
     ];
 
     const sortFunction = IncomeComponent.getSortFunction();
     if (sortFunction) {
-      arrays.forEach(arr => arr.sort(sortFunction));
+      arrays.forEach((arr) => arr.sort(sortFunction));
     }
   }
 
@@ -622,10 +737,10 @@ export class IncomeComponent implements OnDestroy {
         date: true,
         time: true,
         category: true,
-        comment: true
-      }
+        comment: true,
+      },
     };
-    
+
     IncomeComponent.allRevenuesF = [];
     IncomeComponent.allIntrestsF = [];
     IncomeComponent.allPropertiesF = [];
@@ -644,7 +759,7 @@ export class IncomeComponent implements OnDestroy {
       splurge: { column: null, direction: 'asc' },
       smile: { column: null, direction: 'asc' },
       fire: { column: null, direction: 'asc' },
-      mojo: { column: null, direction: 'asc' }
+      mojo: { column: null, direction: 'asc' },
     };
 
     IncomeComponent.isFiltered = false;
@@ -654,9 +769,13 @@ export class IncomeComponent implements OnDestroy {
    * Sort a specific table by tag or amount with visual indicators
    * Cycles through: ascending -> descending -> no sort
    */
-  sortTable(tableType: 'revenues' | 'interests' | 'properties' | 'daily' | 'splurge' | 'smile' | 'fire' | 'mojo', column: 'tag' | 'amount') {
+  sortTable(
+    tableType:
+      'revenues' | 'interests' | 'properties' | 'daily' | 'splurge' | 'smile' | 'fire' | 'mojo',
+    column: 'tag' | 'amount',
+  ) {
     const sortState = IncomeComponent.tableSorts[tableType];
-    
+
     // Cycle through: asc -> desc -> none (original order)
     if (sortState.column === column) {
       if (sortState.direction === 'asc') {
@@ -665,7 +784,7 @@ export class IncomeComponent implements OnDestroy {
         // Reset to no sorting - reload data for this specific table
         sortState.column = null;
         sortState.direction = 'asc';
-        
+
         if (IncomeComponent.isFiltered) {
           // Reapply filters without sorting to get original filtered order
           this.reapplyFiltersForTable(tableType);
@@ -683,26 +802,58 @@ export class IncomeComponent implements OnDestroy {
     // Get the appropriate array
     let arrayToSort: any[];
     if (IncomeComponent.isFiltered) {
-      switch(tableType) {
-        case 'revenues': arrayToSort = IncomeComponent.allRevenuesF; break;
-        case 'interests': arrayToSort = IncomeComponent.allIntrestsF; break;
-        case 'properties': arrayToSort = IncomeComponent.allPropertiesF; break;
-        case 'daily': arrayToSort = IncomeComponent.dailyExpensesF; break;
-        case 'splurge': arrayToSort = IncomeComponent.splurgeExpensesF; break;
-        case 'smile': arrayToSort = IncomeComponent.smileExpensesF; break;
-        case 'fire': arrayToSort = IncomeComponent.fireExpensesF; break;
-        case 'mojo': arrayToSort = IncomeComponent.mojoExpensesF; break;
+      switch (tableType) {
+        case 'revenues':
+          arrayToSort = IncomeComponent.allRevenuesF;
+          break;
+        case 'interests':
+          arrayToSort = IncomeComponent.allIntrestsF;
+          break;
+        case 'properties':
+          arrayToSort = IncomeComponent.allPropertiesF;
+          break;
+        case 'daily':
+          arrayToSort = IncomeComponent.dailyExpensesF;
+          break;
+        case 'splurge':
+          arrayToSort = IncomeComponent.splurgeExpensesF;
+          break;
+        case 'smile':
+          arrayToSort = IncomeComponent.smileExpensesF;
+          break;
+        case 'fire':
+          arrayToSort = IncomeComponent.fireExpensesF;
+          break;
+        case 'mojo':
+          arrayToSort = IncomeComponent.mojoExpensesF;
+          break;
       }
     } else {
-      switch(tableType) {
-        case 'revenues': arrayToSort = AppStateService.instance.allRevenues; break;
-        case 'interests': arrayToSort = AppStateService.instance.allIntrests; break;
-        case 'properties': arrayToSort = AppStateService.instance.allProperties; break;
-        case 'daily': arrayToSort = AppStateService.instance.dailyExpenses; break;
-        case 'splurge': arrayToSort = AppStateService.instance.splurgeExpenses; break;
-        case 'smile': arrayToSort = AppStateService.instance.smileExpenses; break;
-        case 'fire': arrayToSort = AppStateService.instance.fireExpenses; break;
-        case 'mojo': arrayToSort = AppStateService.instance.mojoExpenses; break;
+      switch (tableType) {
+        case 'revenues':
+          arrayToSort = AppStateService.instance.allRevenues;
+          break;
+        case 'interests':
+          arrayToSort = AppStateService.instance.allIntrests;
+          break;
+        case 'properties':
+          arrayToSort = AppStateService.instance.allProperties;
+          break;
+        case 'daily':
+          arrayToSort = AppStateService.instance.dailyExpenses;
+          break;
+        case 'splurge':
+          arrayToSort = AppStateService.instance.splurgeExpenses;
+          break;
+        case 'smile':
+          arrayToSort = AppStateService.instance.smileExpenses;
+          break;
+        case 'fire':
+          arrayToSort = AppStateService.instance.fireExpenses;
+          break;
+        case 'mojo':
+          arrayToSort = AppStateService.instance.mojoExpenses;
+          break;
       }
     }
 
@@ -721,103 +872,129 @@ export class IncomeComponent implements OnDestroy {
   /**
    * Reapply filters for a specific table without affecting advanced filter sort
    */
-  reapplyFiltersForTable(tableType: 'revenues' | 'interests' | 'properties' | 'daily' | 'splurge' | 'smile' | 'fire' | 'mojo') {
+  reapplyFiltersForTable(
+    tableType:
+      'revenues' | 'interests' | 'properties' | 'daily' | 'splurge' | 'smile' | 'fire' | 'mojo',
+  ) {
     // Temporarily store current sort settings
     const tempTableSorts = { ...IncomeComponent.tableSorts };
     const tempSortBy = IncomeComponent.currentFilter.sortBy;
-    
+
     // Set to no sort to get original filtered order
     IncomeComponent.currentFilter.sortBy = 'none';
-    
+
     // Reapply filters
-    const filteredTransactions = AppStateService.instance.allTransactions.filter((transaction: Transaction) => {
-      // Date range filter
-      if (IncomeComponent.currentFilter.startDate && transaction.date < IncomeComponent.currentFilter.startDate) {
-        return false;
-      }
-      if (IncomeComponent.currentFilter.endDate && transaction.date > IncomeComponent.currentFilter.endDate) {
-        return false;
-      }
-
-      // Account filter
-      if (IncomeComponent.currentFilter.selectedAccounts.length > 0) {
-        if (!IncomeComponent.currentFilter.selectedAccounts.includes(transaction.account)) {
+    const filteredTransactions = AppStateService.instance.allTransactions.filter(
+      (transaction: Transaction) => {
+        // Date range filter
+        if (
+          IncomeComponent.currentFilter.startDate &&
+          transaction.date < IncomeComponent.currentFilter.startDate
+        ) {
           return false;
         }
-      }
-
-      // Tag filter
-      if (IncomeComponent.currentFilter.selectedTags.length > 0) {
-        const cleanCategory = transaction.category.replace('@', '');
-        if (!IncomeComponent.currentFilter.selectedTags.includes(cleanCategory)) {
+        if (
+          IncomeComponent.currentFilter.endDate &&
+          transaction.date > IncomeComponent.currentFilter.endDate
+        ) {
           return false;
         }
-      }
 
-      // Search text filter
-      if (IncomeComponent.currentFilter.searchText.trim()) {
-        const searchTerms = IncomeComponent.currentFilter.searchText
-          .split(/[;,]/)
-          .map(term => term.trim().toLowerCase())
-          .filter(term => term.length > 0);
-        
-        let matchFound = false;
-        for (const searchTerm of searchTerms) {
-          if (IncomeComponent.currentFilter.searchFields.account && transaction.account.toLowerCase().includes(searchTerm)) {
-            matchFound = true;
-            break;
+        // Account filter
+        if (IncomeComponent.currentFilter.selectedAccounts.length > 0) {
+          if (!IncomeComponent.currentFilter.selectedAccounts.includes(transaction.account)) {
+            return false;
           }
-          if (IncomeComponent.currentFilter.searchFields.amount && transaction.amount.toString().includes(searchTerm)) {
-            matchFound = true;
-            break;
+        }
+
+        // Tag filter
+        if (IncomeComponent.currentFilter.selectedTags.length > 0) {
+          const cleanCategory = transaction.category.replace('@', '');
+          if (!IncomeComponent.currentFilter.selectedTags.includes(cleanCategory)) {
+            return false;
           }
-          if (IncomeComponent.currentFilter.searchFields.date) {
-            if (transaction.date.toLowerCase().includes(searchTerm)) {
+        }
+
+        // Search text filter
+        if (IncomeComponent.currentFilter.searchText.trim()) {
+          const searchTerms = IncomeComponent.currentFilter.searchText
+            .split(/[;,]/)
+            .map((term) => term.trim().toLowerCase())
+            .filter((term) => term.length > 0);
+
+          let matchFound = false;
+          for (const searchTerm of searchTerms) {
+            if (
+              IncomeComponent.currentFilter.searchFields.account &&
+              transaction.account.toLowerCase().includes(searchTerm)
+            ) {
               matchFound = true;
               break;
             }
-            const dateMatch = searchTerm.match(/^(\d{1,2})\.(\d{1,2})\.(\d{2,4})$/);
-            if (dateMatch) {
-              const day = dateMatch[1].padStart(2, '0');
-              const month = dateMatch[2].padStart(2, '0');
-              let year = dateMatch[3];
-              if (year.length === 2) {
-                year = '20' + year;
-              }
-              const isoDate = `${year}-${month}-${day}`;
-              if (transaction.date === isoDate) {
+            if (
+              IncomeComponent.currentFilter.searchFields.amount &&
+              transaction.amount.toString().includes(searchTerm)
+            ) {
+              matchFound = true;
+              break;
+            }
+            if (IncomeComponent.currentFilter.searchFields.date) {
+              if (transaction.date.toLowerCase().includes(searchTerm)) {
                 matchFound = true;
                 break;
               }
+              const dateMatch = searchTerm.match(/^(\d{1,2})\.(\d{1,2})\.(\d{2,4})$/);
+              if (dateMatch) {
+                const day = dateMatch[1].padStart(2, '0');
+                const month = dateMatch[2].padStart(2, '0');
+                let year = dateMatch[3];
+                if (year.length === 2) {
+                  year = '20' + year;
+                }
+                const isoDate = `${year}-${month}-${day}`;
+                if (transaction.date === isoDate) {
+                  matchFound = true;
+                  break;
+                }
+              }
+            }
+            if (
+              IncomeComponent.currentFilter.searchFields.time &&
+              transaction.time.toLowerCase().includes(searchTerm)
+            ) {
+              matchFound = true;
+              break;
+            }
+            if (
+              IncomeComponent.currentFilter.searchFields.category &&
+              transaction.category.toLowerCase().includes(searchTerm)
+            ) {
+              matchFound = true;
+              break;
+            }
+            if (
+              IncomeComponent.currentFilter.searchFields.comment &&
+              transaction.comment.toLowerCase().includes(searchTerm)
+            ) {
+              matchFound = true;
+              break;
             }
           }
-          if (IncomeComponent.currentFilter.searchFields.time && transaction.time.toLowerCase().includes(searchTerm)) {
-            matchFound = true;
-            break;
-          }
-          if (IncomeComponent.currentFilter.searchFields.category && transaction.category.toLowerCase().includes(searchTerm)) {
-            matchFound = true;
-            break;
-          }
-          if (IncomeComponent.currentFilter.searchFields.comment && transaction.comment.toLowerCase().includes(searchTerm)) {
-            matchFound = true;
-            break;
+          if (!matchFound) {
+            return false;
           }
         }
-        if (!matchFound) {
-          return false;
-        }
-      }
 
-      return transaction.amount !== 0.0;
-    });
+        return transaction.amount !== 0.0;
+      },
+    );
 
     // Rebuild only the specified table
-    switch(tableType) {
+    switch (tableType) {
       case 'revenues':
         IncomeComponent.allRevenuesF = [];
         filteredTransactions.forEach((transaction: Transaction) => {
-          if (transaction.account === "Income") {
+          if (transaction.account === 'Income') {
             const cleanTag = transaction.category.replace('@', '');
             let found = false;
             for (let i = 0; i < AppStateService.instance.allIntrests.length; i++) {
@@ -835,7 +1012,7 @@ export class IncomeComponent implements OnDestroy {
               }
             }
             if (!found) {
-              const existing = IncomeComponent.allRevenuesF.find(item => item.tag === cleanTag);
+              const existing = IncomeComponent.allRevenuesF.find((item) => item.tag === cleanTag);
               if (existing) {
                 existing.amount += transaction.amount;
               } else {
@@ -848,11 +1025,11 @@ export class IncomeComponent implements OnDestroy {
       case 'interests':
         IncomeComponent.allIntrestsF = [];
         filteredTransactions.forEach((transaction: Transaction) => {
-          if (transaction.account === "Income") {
+          if (transaction.account === 'Income') {
             const cleanTag = transaction.category.replace('@', '');
             for (let i = 0; i < AppStateService.instance.allIntrests.length; i++) {
               if (cleanTag === AppStateService.instance.allIntrests[i].tag) {
-                const existing = IncomeComponent.allIntrestsF.find(item => item.tag === cleanTag);
+                const existing = IncomeComponent.allIntrestsF.find((item) => item.tag === cleanTag);
                 if (existing) {
                   existing.amount += transaction.amount;
                 } else {
@@ -867,15 +1044,20 @@ export class IncomeComponent implements OnDestroy {
       case 'properties':
         IncomeComponent.allPropertiesF = [];
         filteredTransactions.forEach((transaction: Transaction) => {
-          if (transaction.account === "Income") {
+          if (transaction.account === 'Income') {
             const cleanTag = transaction.category.replace('@', '');
             for (let i = 0; i < AppStateService.instance.allProperties.length; i++) {
               if (cleanTag === AppStateService.instance.allProperties[i].tag) {
-                const existing = IncomeComponent.allPropertiesF.find(item => item.tag === cleanTag);
+                const existing = IncomeComponent.allPropertiesF.find(
+                  (item) => item.tag === cleanTag,
+                );
                 if (existing) {
                   existing.amount += transaction.amount;
                 } else {
-                  IncomeComponent.allPropertiesF.push({ tag: cleanTag, amount: transaction.amount });
+                  IncomeComponent.allPropertiesF.push({
+                    tag: cleanTag,
+                    amount: transaction.amount,
+                  });
                 }
                 break;
               }
@@ -886,9 +1068,9 @@ export class IncomeComponent implements OnDestroy {
       case 'daily':
         IncomeComponent.dailyExpensesF = [];
         filteredTransactions.forEach((transaction: Transaction) => {
-          if (transaction.account === "Daily") {
+          if (transaction.account === 'Daily') {
             const cleanTag = transaction.category.replace('@', '');
-            const existing = IncomeComponent.dailyExpensesF.find(item => item.tag === cleanTag);
+            const existing = IncomeComponent.dailyExpensesF.find((item) => item.tag === cleanTag);
             if (existing) {
               existing.amount += transaction.amount;
             } else {
@@ -900,9 +1082,9 @@ export class IncomeComponent implements OnDestroy {
       case 'splurge':
         IncomeComponent.splurgeExpensesF = [];
         filteredTransactions.forEach((transaction: Transaction) => {
-          if (transaction.account === "Splurge") {
+          if (transaction.account === 'Splurge') {
             const cleanTag = transaction.category.replace('@', '');
-            const existing = IncomeComponent.splurgeExpensesF.find(item => item.tag === cleanTag);
+            const existing = IncomeComponent.splurgeExpensesF.find((item) => item.tag === cleanTag);
             if (existing) {
               existing.amount += transaction.amount;
             } else {
@@ -914,9 +1096,9 @@ export class IncomeComponent implements OnDestroy {
       case 'smile':
         IncomeComponent.smileExpensesF = [];
         filteredTransactions.forEach((transaction: Transaction) => {
-          if (transaction.account === "Smile") {
+          if (transaction.account === 'Smile') {
             const cleanTag = transaction.category.replace('@', '');
-            const existing = IncomeComponent.smileExpensesF.find(item => item.tag === cleanTag);
+            const existing = IncomeComponent.smileExpensesF.find((item) => item.tag === cleanTag);
             if (existing) {
               existing.amount += transaction.amount;
             } else {
@@ -928,9 +1110,9 @@ export class IncomeComponent implements OnDestroy {
       case 'fire':
         IncomeComponent.fireExpensesF = [];
         filteredTransactions.forEach((transaction: Transaction) => {
-          if (transaction.account === "Fire") {
+          if (transaction.account === 'Fire') {
             const cleanTag = transaction.category.replace('@', '');
-            const existing = IncomeComponent.fireExpensesF.find(item => item.tag === cleanTag);
+            const existing = IncomeComponent.fireExpensesF.find((item) => item.tag === cleanTag);
             if (existing) {
               existing.amount += transaction.amount;
             } else {
@@ -942,9 +1124,9 @@ export class IncomeComponent implements OnDestroy {
       case 'mojo':
         IncomeComponent.mojoExpensesF = [];
         filteredTransactions.forEach((transaction: Transaction) => {
-          if (transaction.account === "Mojo") {
+          if (transaction.account === 'Mojo') {
             const cleanTag = transaction.category.replace('@', '');
-            const existing = IncomeComponent.mojoExpensesF.find(item => item.tag === cleanTag);
+            const existing = IncomeComponent.mojoExpensesF.find((item) => item.tag === cleanTag);
             if (existing) {
               existing.amount += transaction.amount;
             } else {
@@ -954,7 +1136,7 @@ export class IncomeComponent implements OnDestroy {
         });
         break;
     }
-    
+
     // Restore sort settings
     IncomeComponent.tableSorts = tempTableSorts;
     IncomeComponent.currentFilter.sortBy = tempSortBy;
@@ -963,7 +1145,11 @@ export class IncomeComponent implements OnDestroy {
   /**
    * Get sort arrow for column header
    */
-  getSortArrow(tableType: 'revenues' | 'interests' | 'properties' | 'daily' | 'splurge' | 'smile' | 'fire' | 'mojo', column: 'tag' | 'amount'): string {
+  getSortArrow(
+    tableType:
+      'revenues' | 'interests' | 'properties' | 'daily' | 'splurge' | 'smile' | 'fire' | 'mojo',
+    column: 'tag' | 'amount',
+  ): string {
     const sortState = IncomeComponent.tableSorts[tableType];
     if (sortState.column !== column || sortState.column === null) return '';
     return sortState.direction === 'asc' ? ' ↑' : ' ↓';
@@ -973,27 +1159,56 @@ export class IncomeComponent implements OnDestroy {
    * Reload original data from localStorage to restore unsorted order
    */
   reloadOriginalData() {
-    AppStateService.instance.allRevenues = this.localStorage.getData("revenues") == "" ? [] : JSON.parse(this.localStorage.getData("revenues"));
-    AppStateService.instance.allIntrests = this.localStorage.getData("interests") == "" ? [] : JSON.parse(this.localStorage.getData("interests"));
-    AppStateService.instance.allProperties = this.localStorage.getData("properties") == "" ? [] : JSON.parse(this.localStorage.getData("properties"));
+    AppStateService.instance.allRevenues =
+      this.localStorage.getData('revenues') == ''
+        ? []
+        : JSON.parse(this.localStorage.getData('revenues'));
+    AppStateService.instance.allIntrests =
+      this.localStorage.getData('interests') == ''
+        ? []
+        : JSON.parse(this.localStorage.getData('interests'));
+    AppStateService.instance.allProperties =
+      this.localStorage.getData('properties') == ''
+        ? []
+        : JSON.parse(this.localStorage.getData('properties'));
 
-    AppStateService.instance.dailyExpenses = this.localStorage.getData("dailyEx") == "" ? [] : JSON.parse(this.localStorage.getData("dailyEx"));
-    AppStateService.instance.splurgeExpenses = this.localStorage.getData("splurgeEx") == "" ? [] : JSON.parse(this.localStorage.getData("splurgeEx"));
-    AppStateService.instance.smileExpenses = this.localStorage.getData("smileEx") == "" ? [] : JSON.parse(this.localStorage.getData("smileEx"));
-    AppStateService.instance.fireExpenses = this.localStorage.getData("fireEx") == "" ? [] : JSON.parse(this.localStorage.getData("fireEx"));
-    AppStateService.instance.mojoExpenses = this.localStorage.getData("mojoEx") == "" ? [] : JSON.parse(this.localStorage.getData("mojoEx"));
+    AppStateService.instance.dailyExpenses =
+      this.localStorage.getData('dailyEx') == ''
+        ? []
+        : JSON.parse(this.localStorage.getData('dailyEx'));
+    AppStateService.instance.splurgeExpenses =
+      this.localStorage.getData('splurgeEx') == ''
+        ? []
+        : JSON.parse(this.localStorage.getData('splurgeEx'));
+    AppStateService.instance.smileExpenses =
+      this.localStorage.getData('smileEx') == ''
+        ? []
+        : JSON.parse(this.localStorage.getData('smileEx'));
+    AppStateService.instance.fireExpenses =
+      this.localStorage.getData('fireEx') == ''
+        ? []
+        : JSON.parse(this.localStorage.getData('fireEx'));
+    AppStateService.instance.mojoExpenses =
+      this.localStorage.getData('mojoEx') == ''
+        ? []
+        : JSON.parse(this.localStorage.getData('mojoEx'));
   }
 
   static setDate() {
     IncomeComponent.d = new Date();
-    IncomeComponent.startDateTextField = "";
-    IncomeComponent.endDateTextField = IncomeComponent.d.getFullYear() + "-" + IncomeComponent.zeroPadded(IncomeComponent.d.getMonth() + 1) + "-" + IncomeComponent.zeroPadded(IncomeComponent.d.getDate());
-    IncomeComponent.currentFilter.startDate = "";
+    IncomeComponent.startDateTextField = '';
+    IncomeComponent.endDateTextField =
+      IncomeComponent.d.getFullYear() +
+      '-' +
+      IncomeComponent.zeroPadded(IncomeComponent.d.getMonth() + 1) +
+      '-' +
+      IncomeComponent.zeroPadded(IncomeComponent.d.getDate());
+    IncomeComponent.currentFilter.startDate = '';
     IncomeComponent.currentFilter.endDate = IncomeComponent.endDateTextField;
   }
 
   static clear() {
-    IncomeComponent.currentFilter.searchText = "";
+    IncomeComponent.currentFilter.searchText = '';
     IncomeComponent.allRevenuesF = [];
     IncomeComponent.allIntrestsF = [];
     IncomeComponent.allPropertiesF = [];
@@ -1013,67 +1228,101 @@ export class IncomeComponent implements OnDestroy {
   }
 
   clear() {
-    AppStateService.instance.allRevenues = this.localStorage.getData("revenues") == "" ? [] : JSON.parse(this.localStorage.getData("revenues"));
-    AppStateService.instance.allIntrests = this.localStorage.getData("interests") == "" ? [] : JSON.parse(this.localStorage.getData("interests"));
-    AppStateService.instance.allProperties = this.localStorage.getData("properties") == "" ? [] : JSON.parse(this.localStorage.getData("properties"));
+    AppStateService.instance.allRevenues =
+      this.localStorage.getData('revenues') == ''
+        ? []
+        : JSON.parse(this.localStorage.getData('revenues'));
+    AppStateService.instance.allIntrests =
+      this.localStorage.getData('interests') == ''
+        ? []
+        : JSON.parse(this.localStorage.getData('interests'));
+    AppStateService.instance.allProperties =
+      this.localStorage.getData('properties') == ''
+        ? []
+        : JSON.parse(this.localStorage.getData('properties'));
 
-    AppStateService.instance.dailyExpenses = this.localStorage.getData("dailyEx") == "" ? [] : JSON.parse(this.localStorage.getData("dailyEx"));
-    AppStateService.instance.splurgeExpenses = this.localStorage.getData("splurgeEx") == "" ? [] : JSON.parse(this.localStorage.getData("splurgeEx"));
-    AppStateService.instance.smileExpenses = this.localStorage.getData("smileEx") == "" ? [] : JSON.parse(this.localStorage.getData("smileEx"));
-    AppStateService.instance.fireExpenses = this.localStorage.getData("fireEx") == "" ? [] : JSON.parse(this.localStorage.getData("fireEx"));
-    AppStateService.instance.mojoExpenses = this.localStorage.getData("mojoEx") == "" ? [] : JSON.parse(this.localStorage.getData("mojoEx"));
+    AppStateService.instance.dailyExpenses =
+      this.localStorage.getData('dailyEx') == ''
+        ? []
+        : JSON.parse(this.localStorage.getData('dailyEx'));
+    AppStateService.instance.splurgeExpenses =
+      this.localStorage.getData('splurgeEx') == ''
+        ? []
+        : JSON.parse(this.localStorage.getData('splurgeEx'));
+    AppStateService.instance.smileExpenses =
+      this.localStorage.getData('smileEx') == ''
+        ? []
+        : JSON.parse(this.localStorage.getData('smileEx'));
+    AppStateService.instance.fireExpenses =
+      this.localStorage.getData('fireEx') == ''
+        ? []
+        : JSON.parse(this.localStorage.getData('fireEx'));
+    AppStateService.instance.mojoExpenses =
+      this.localStorage.getData('mojoEx') == ''
+        ? []
+        : JSON.parse(this.localStorage.getData('mojoEx'));
 
-    AppStateService.instance.allAssets = this.localStorage.getData("assets") == "" ? [] : JSON.parse(this.localStorage.getData("assets"));
-    AppStateService.instance.allShares = this.localStorage.getData("shares") == "" ? [] : JSON.parse(this.localStorage.getData("shares"));
-    AppStateService.instance.allInvestments = this.localStorage.getData("investments") == "" ? [] : JSON.parse(this.localStorage.getData("investments"));
-    AppStateService.instance.liabilities = this.localStorage.getData("liabilities") == "" ? [] : JSON.parse(this.localStorage.getData("liabilities"));
+    AppStateService.instance.allAssets =
+      this.localStorage.getData('assets') == ''
+        ? []
+        : JSON.parse(this.localStorage.getData('assets'));
+    AppStateService.instance.allShares =
+      this.localStorage.getData('shares') == ''
+        ? []
+        : JSON.parse(this.localStorage.getData('shares'));
+    AppStateService.instance.allInvestments =
+      this.localStorage.getData('investments') == ''
+        ? []
+        : JSON.parse(this.localStorage.getData('investments'));
+    AppStateService.instance.liabilities =
+      this.localStorage.getData('liabilities') == ''
+        ? []
+        : JSON.parse(this.localStorage.getData('liabilities'));
   }
 
   static zeroPadded(val) {
-    if (val >= 10)
-      return val;
-    else
-      return "0" + val;
+    if (val >= 10) return val;
+    else return '0' + val;
   }
 
   toggleRevenues() {
-    this.isRevenues= !this.isRevenues;
-    this.localStorage.saveData("isRevenues", this.isRevenues.toString());
+    this.isRevenues = !this.isRevenues;
+    this.localStorage.saveData('isRevenues', this.isRevenues.toString());
   }
 
   toggleInterests() {
     this.isInterests = !this.isInterests;
-    this.localStorage.saveData("isInterests", this.isInterests.toString());
+    this.localStorage.saveData('isInterests', this.isInterests.toString());
   }
 
   toggleProperties() {
     this.isProperties = !this.isProperties;
-    this.localStorage.saveData("isProperties", this.isProperties.toString());
+    this.localStorage.saveData('isProperties', this.isProperties.toString());
   }
 
   toggleDailyExpense() {
     this.isDailyExpenses = !this.isDailyExpenses;
-    this.localStorage.saveData("isDailyEx", this.isDailyExpenses.toString());
+    this.localStorage.saveData('isDailyEx', this.isDailyExpenses.toString());
   }
   toggleSplurgeExpense() {
     this.isSplurgeExpenses = !this.isSplurgeExpenses;
-    this.localStorage.saveData("isSplurgeEx", this.isSplurgeExpenses.toString());
+    this.localStorage.saveData('isSplurgeEx', this.isSplurgeExpenses.toString());
   }
   toggleSmileExpense() {
     this.isSmileExpenses = !this.isSmileExpenses;
-    this.localStorage.saveData("isSmileEx", this.isSmileExpenses.toString());
+    this.localStorage.saveData('isSmileEx', this.isSmileExpenses.toString());
   }
   toggleFireExpense() {
     this.isFireExpenses = !this.isFireExpenses;
-    this.localStorage.saveData("isFireEx", this.isFireExpenses.toString());
+    this.localStorage.saveData('isFireEx', this.isFireExpenses.toString());
   }
   toggleMojoExpense() {
     this.isMojoExpenses = !this.isMojoExpenses;
-    this.localStorage.saveData("isMojoEx", this.isMojoExpenses.toString());
+    this.localStorage.saveData('isMojoEx', this.isMojoExpenses.toString());
   }
 
   static getRevenues() {
-    if(!AppStateService.instance.allRevenues) return 0.0;
+    if (!AppStateService.instance.allRevenues) return 0.0;
     let result = 0.0;
     for (let i = 0; i < AppStateService.instance.allRevenues.length; i++) {
       result += AppStateService.instance.allRevenues[i].amount;
@@ -1082,7 +1331,7 @@ export class IncomeComponent implements OnDestroy {
   }
 
   static getRevenuesF() {
-    if(!IncomeComponent.allRevenuesF) return 0.0;
+    if (!IncomeComponent.allRevenuesF) return 0.0;
     let result = 0.0;
     for (let i = 0; i < IncomeComponent.allRevenuesF.length; i++) {
       result += IncomeComponent.allRevenuesF[i].amount;
@@ -1091,7 +1340,7 @@ export class IncomeComponent implements OnDestroy {
   }
 
   static getInterests() {
-    if(!AppStateService.instance.allIntrests) return 0.0;
+    if (!AppStateService.instance.allIntrests) return 0.0;
     let result = 0.0;
     for (let i = 0; i < AppStateService.instance.allIntrests.length; i++) {
       result += AppStateService.instance.allIntrests[i].amount;
@@ -1099,7 +1348,7 @@ export class IncomeComponent implements OnDestroy {
     return result;
   }
   static getInterestsF() {
-    if(!IncomeComponent.allIntrestsF) return 0.0;
+    if (!IncomeComponent.allIntrestsF) return 0.0;
     let result = 0.0;
     for (let i = 0; i < IncomeComponent.allIntrestsF.length; i++) {
       result += IncomeComponent.allIntrestsF[i].amount;
@@ -1108,7 +1357,7 @@ export class IncomeComponent implements OnDestroy {
   }
 
   static getProperties() {
-    if(!AppStateService.instance.allProperties) return 0.0;
+    if (!AppStateService.instance.allProperties) return 0.0;
     let result = 0.0;
     for (let i = 0; i < AppStateService.instance.allProperties.length; i++) {
       result += AppStateService.instance.allProperties[i].amount;
@@ -1116,7 +1365,7 @@ export class IncomeComponent implements OnDestroy {
     return result;
   }
   static getPropertiesF() {
-    if(!IncomeComponent.allPropertiesF) return 0.0;
+    if (!IncomeComponent.allPropertiesF) return 0.0;
     let result = 0.0;
     for (let i = 0; i < IncomeComponent.allPropertiesF.length; i++) {
       result += IncomeComponent.allPropertiesF[i].amount;
@@ -1125,7 +1374,7 @@ export class IncomeComponent implements OnDestroy {
   }
 
   static getDailyExpenses() {
-    if(!AppStateService.instance.dailyExpenses) return 0.0;
+    if (!AppStateService.instance.dailyExpenses) return 0.0;
     let result = 0.0;
     for (let i = 0; i < AppStateService.instance.dailyExpenses.length; i++) {
       result += AppStateService.instance.dailyExpenses[i].amount;
@@ -1133,7 +1382,7 @@ export class IncomeComponent implements OnDestroy {
     return result;
   }
   static getDailyExpensesF() {
-    if(!IncomeComponent.dailyExpensesF) return 0.0;
+    if (!IncomeComponent.dailyExpensesF) return 0.0;
     let result = 0.0;
     for (let i = 0; i < IncomeComponent.dailyExpensesF.length; i++) {
       result += IncomeComponent.dailyExpensesF[i].amount;
@@ -1142,7 +1391,7 @@ export class IncomeComponent implements OnDestroy {
   }
 
   static getSplurgeExpenses() {
-    if(!AppStateService.instance.splurgeExpenses) return 0.0;
+    if (!AppStateService.instance.splurgeExpenses) return 0.0;
     let result = 0.0;
     for (let i = 0; i < AppStateService.instance.splurgeExpenses.length; i++) {
       result += AppStateService.instance.splurgeExpenses[i].amount;
@@ -1150,7 +1399,7 @@ export class IncomeComponent implements OnDestroy {
     return result;
   }
   static getSplurgeExpensesF() {
-    if(!IncomeComponent.splurgeExpensesF) return 0.0;
+    if (!IncomeComponent.splurgeExpensesF) return 0.0;
     let result = 0.0;
     for (let i = 0; i < IncomeComponent.splurgeExpensesF.length; i++) {
       result += IncomeComponent.splurgeExpensesF[i].amount;
@@ -1159,7 +1408,7 @@ export class IncomeComponent implements OnDestroy {
   }
 
   static getSmileExpenses() {
-    if(!AppStateService.instance.smileExpenses) return 0.0;
+    if (!AppStateService.instance.smileExpenses) return 0.0;
     let result = 0.0;
     for (let i = 0; i < AppStateService.instance.smileExpenses.length; i++) {
       result += AppStateService.instance.smileExpenses[i].amount;
@@ -1167,7 +1416,7 @@ export class IncomeComponent implements OnDestroy {
     return result;
   }
   static getSmileExpensesF() {
-    if(!IncomeComponent.smileExpensesF) return 0.0;
+    if (!IncomeComponent.smileExpensesF) return 0.0;
     let result = 0.0;
     for (let i = 0; i < IncomeComponent.smileExpensesF.length; i++) {
       result += IncomeComponent.smileExpensesF[i].amount;
@@ -1176,7 +1425,7 @@ export class IncomeComponent implements OnDestroy {
   }
 
   static getFireExpenses() {
-    if(!AppStateService.instance.fireExpenses) return 0.0;
+    if (!AppStateService.instance.fireExpenses) return 0.0;
     let result = 0.0;
     for (let i = 0; i < AppStateService.instance.fireExpenses.length; i++) {
       result += AppStateService.instance.fireExpenses[i].amount;
@@ -1184,7 +1433,7 @@ export class IncomeComponent implements OnDestroy {
     return result;
   }
   static getFireExpensesF() {
-    if(!IncomeComponent.fireExpensesF) return 0.0;
+    if (!IncomeComponent.fireExpensesF) return 0.0;
     let result = 0.0;
     for (let i = 0; i < IncomeComponent.fireExpensesF.length; i++) {
       result += IncomeComponent.fireExpensesF[i].amount;
@@ -1193,7 +1442,7 @@ export class IncomeComponent implements OnDestroy {
   }
 
   static getMojoExpenses() {
-    if(!AppStateService.instance.mojoExpenses) return 0.0;
+    if (!AppStateService.instance.mojoExpenses) return 0.0;
     let result = 0.0;
     for (let i = 0; i < AppStateService.instance.mojoExpenses.length; i++) {
       result += AppStateService.instance.mojoExpenses[i].amount;
@@ -1201,7 +1450,7 @@ export class IncomeComponent implements OnDestroy {
     return result;
   }
   static getMojoExpensesF() {
-    if(!IncomeComponent.mojoExpensesF) return 0.0;
+    if (!IncomeComponent.mojoExpensesF) return 0.0;
     let result = 0.0;
     for (let i = 0; i < IncomeComponent.mojoExpensesF.length; i++) {
       result += IncomeComponent.mojoExpensesF[i].amount;
@@ -1224,8 +1473,8 @@ export class IncomeComponent implements OnDestroy {
     let result = 0.0;
     const cashflow = IncomeComponent.getTotalAmount();
     const credit = IncomeComponent.getCreditAmount();
-    if(credit > 0.0){
-      result = cashflow / credit * 100;
+    if (credit > 0.0) {
+      result = (cashflow / credit) * 100;
     }
     return result;
   }
@@ -1234,8 +1483,8 @@ export class IncomeComponent implements OnDestroy {
     let result = 0.0;
     const cashflow = IncomeComponent.getTotalAmount();
     const capital = BalanceComponent.getAssetsAmount();
-    if(capital > 0.0){
-      result = cashflow / capital * 100;
+    if (capital > 0.0) {
+      result = (cashflow / capital) * 100;
     }
     return result;
   }
@@ -1244,13 +1493,13 @@ export class IncomeComponent implements OnDestroy {
     let result = 0.0;
     const credit = BalanceComponent.getAssetsAmount();
     const liabilitie = BalanceComponent.getLiabilities();
-    if(credit > 0.0){
-      result = liabilitie / credit ;
+    if (credit > 0.0) {
+      result = liabilitie / credit;
     }
     return parseFloat(result.toFixed(2));
   }
 
-  static getGesamtkapital(){
+  static getGesamtkapital() {
     return BalanceComponent.getAssetsAmount() + BalanceComponent.getLiabilities();
   }
 
@@ -1258,8 +1507,8 @@ export class IncomeComponent implements OnDestroy {
     let result = 0.0;
     const credit = BalanceComponent.getAssetsAmount();
     const capital = BalanceComponent.getLiabilities() + credit;
-    if(capital > 0.0){
-      result = credit / capital * 100;
+    if (capital > 0.0) {
+      result = (credit / capital) * 100;
     }
     return result;
   }
@@ -1267,8 +1516,8 @@ export class IncomeComponent implements OnDestroy {
   static getZinsaufwendungen() {
     let result = 0.0;
     for (let i = 0; i < AppStateService.instance.allTransactions.length; i++) {
-      if(AppStateService.instance.allTransactions[i].comment.includes("Payback Liabilitie")){
-        const split = AppStateService.instance.allTransactions[i].comment.split(" ");
+      if (AppStateService.instance.allTransactions[i].comment.includes('Payback Liabilitie')) {
+        const split = AppStateService.instance.allTransactions[i].comment.split(' ');
         const credit = parseFloat(split[split.length - 1]);
         result += credit;
       }
@@ -1280,14 +1529,20 @@ export class IncomeComponent implements OnDestroy {
     let result = 0.0;
     const cashflow = IncomeComponent.getTotalAmount();
     const credit = IncomeComponent.getZinsaufwendungen();
-    if(credit > 0.0){
+    if (credit > 0.0) {
       result = cashflow / credit;
     }
     return parseFloat(result.toFixed(2));
   }
 
   static getDebitAmount() {
-    if(!AppStateService.instance.dailyExpenses || !AppStateService.instance.splurgeExpenses || !AppStateService.instance.smileExpenses || !AppStateService.instance.fireExpenses ) return 0.0;
+    if (
+      !AppStateService.instance.dailyExpenses ||
+      !AppStateService.instance.splurgeExpenses ||
+      !AppStateService.instance.smileExpenses ||
+      !AppStateService.instance.fireExpenses
+    )
+      return 0.0;
     let result = 0.0;
     for (let i = 0; i < AppStateService.instance.dailyExpenses.length; i++) {
       result += AppStateService.instance.dailyExpenses[i].amount;
@@ -1304,7 +1559,13 @@ export class IncomeComponent implements OnDestroy {
     return result;
   }
   static getDebitAmountF() {
-    if(!IncomeComponent.dailyExpensesF || !IncomeComponent.splurgeExpensesF || !IncomeComponent.smileExpensesF || !IncomeComponent.fireExpensesF ) return 0.0;
+    if (
+      !IncomeComponent.dailyExpensesF ||
+      !IncomeComponent.splurgeExpensesF ||
+      !IncomeComponent.smileExpensesF ||
+      !IncomeComponent.fireExpensesF
+    )
+      return 0.0;
     let result = 0.0;
     for (let i = 0; i < IncomeComponent.dailyExpensesF.length; i++) {
       result += IncomeComponent.dailyExpensesF[i].amount;
@@ -1322,7 +1583,12 @@ export class IncomeComponent implements OnDestroy {
   }
 
   static getCreditAmount() {
-    if (!AppStateService.instance.allRevenues || !AppStateService.instance.allIntrests || !AppStateService.instance.allProperties) return 0.0;
+    if (
+      !AppStateService.instance.allRevenues ||
+      !AppStateService.instance.allIntrests ||
+      !AppStateService.instance.allProperties
+    )
+      return 0.0;
     let result = 0.0;
     for (let i = 0; i < AppStateService.instance.allRevenues.length; i++) {
       result += AppStateService.instance.allRevenues[i].amount;
@@ -1336,7 +1602,12 @@ export class IncomeComponent implements OnDestroy {
     return result;
   }
   static getCreditAmountF() {
-    if(!IncomeComponent.allRevenuesF || !IncomeComponent.allIntrestsF || !IncomeComponent.allPropertiesF) return 0.0;
+    if (
+      !IncomeComponent.allRevenuesF ||
+      !IncomeComponent.allIntrestsF ||
+      !IncomeComponent.allPropertiesF
+    )
+      return 0.0;
     let result = 0.0;
     for (let i = 0; i < IncomeComponent.allRevenuesF.length; i++) {
       result += IncomeComponent.allRevenuesF[i].amount;
@@ -1351,7 +1622,7 @@ export class IncomeComponent implements OnDestroy {
   }
 
   goToBalance() {
-    this.router.navigate(['/balance'])
+    this.router.navigate(['/balance']);
     AppComponent.gotoTop();
   }
 
@@ -1361,8 +1632,7 @@ export class IncomeComponent implements OnDestroy {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-empty-function -- bound in template via (click)/(keydown.enter); intentionally a no-op placeholder
-  clickExpenses() {
-  }
+  clickExpenses() {}
 
   clickRow(index: number) {
     AppComponent.gotoTop();
@@ -1373,7 +1643,7 @@ export class IncomeComponent implements OnDestroy {
     InfoInterestsComponent.setInfoInterestsComponent(
       index,
       AppStateService.instance.allIntrests[index].tag,
-      AppStateService.instance.allIntrests[index].amount
+      AppStateService.instance.allIntrests[index].amount,
     );
   }
   clickRowInterestsF(index: number) {
@@ -1381,7 +1651,7 @@ export class IncomeComponent implements OnDestroy {
     InfoInterestsComponent.setInfoInterestsComponent(
       index,
       IncomeComponent.allIntrestsF[index].tag,
-      IncomeComponent.allIntrestsF[index].amount
+      IncomeComponent.allIntrestsF[index].amount,
     );
   }
 
@@ -1390,7 +1660,7 @@ export class IncomeComponent implements OnDestroy {
     InfoPropertiesComponent.setInfoPropertiesComponent(
       index,
       AppStateService.instance.allProperties[index].tag,
-      AppStateService.instance.allProperties[index].amount
+      AppStateService.instance.allProperties[index].amount,
     );
   }
   clickRowPropertiesF(index: number) {
@@ -1398,11 +1668,9 @@ export class IncomeComponent implements OnDestroy {
     InfoPropertiesComponent.setInfoPropertiesComponent(
       index,
       IncomeComponent.allPropertiesF[index].tag,
-      IncomeComponent.allPropertiesF[index].amount
+      IncomeComponent.allPropertiesF[index].amount,
     );
   }
-
-
 
   static getSalary() {
     if (AppStateService.instance.allRevenues) {

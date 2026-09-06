@@ -10,10 +10,18 @@ jest.mock('../../../environments/environment', () => ({
     return {
       production: false,
       mode: mockMode,
-      firebase: { apiKey: 'k', authDomain: 'd', databaseURL: 'u', projectId: 'p', storageBucket: 's', messagingSenderId: 'm', appId: 'a' },
-      selfhosted: { apiUrl: 'http://localhost:3000/api' }
+      firebase: {
+        apiKey: 'k',
+        authDomain: 'd',
+        databaseURL: 'u',
+        projectId: 'p',
+        storageBucket: 's',
+        messagingSenderId: 'm',
+        appId: 'a',
+      },
+      selfhosted: { apiUrl: 'http://localhost:3000/api' },
     };
-  }
+  },
 }));
 
 import { of, throwError } from 'rxjs';
@@ -28,7 +36,7 @@ function makeMockSelfhosted() {
     getData: jest.fn(),
     writeObject: jest.fn().mockReturnValue(of({ success: true })),
     writeBatch: jest.fn().mockReturnValue(of({ success: true })),
-    clearEtagCache: jest.fn()
+    clearEtagCache: jest.fn(),
   };
 }
 
@@ -37,21 +45,25 @@ function makeMockDb() {
   return {
     database: {
       goOnline: jest.fn(),
-      ref: jest.fn().mockReturnValue({ once: refOnce, set: jest.fn() })
+      ref: jest.fn().mockReturnValue({ once: refOnce, set: jest.fn() }),
     },
-    object: jest.fn().mockReturnValue({ set: jest.fn().mockResolvedValue(undefined) })
+    object: jest.fn().mockReturnValue({ set: jest.fn().mockResolvedValue(undefined) }),
   };
 }
 
 function makeMockCryptic() {
   return {
     encrypt: jest.fn((v: string) => `enc(${v})`),
-    decrypt: jest.fn((v: string) => v)
+    decrypt: jest.fn((v: string) => v),
   };
 }
 
 function makeMockLocal() {
-  return { getData: jest.fn().mockReturnValue('uid_123'), saveData: jest.fn(), removeData: jest.fn() };
+  return {
+    getData: jest.fn().mockReturnValue('uid_123'),
+    saveData: jest.fn(),
+    removeData: jest.fn(),
+  };
 }
 
 function makeMockDirtyTracker() {
@@ -63,7 +75,7 @@ function makeMockDirtyTracker() {
     isDirty: jest.fn().mockReturnValue(false),
     getDirtyTags: jest.fn().mockReturnValue([]),
     clearAll: jest.fn(),
-    clearAllSnapshots: jest.fn()
+    clearAllSnapshots: jest.fn(),
   };
 }
 
@@ -72,7 +84,7 @@ function makeMockCache() {
     get: jest.fn().mockReturnValue(null),
     set: jest.fn(),
     invalidate: jest.fn(),
-    clearAll: jest.fn()
+    clearAll: jest.fn(),
   };
 }
 
@@ -84,11 +96,15 @@ function createService(overrides: Record<string, any> = {}): DatabaseService {
     selfhosted: makeMockSelfhosted(),
     dirtyTracker: makeMockDirtyTracker(),
     cacheService: makeMockCache(),
-    ...overrides
+    ...overrides,
   };
   return new (DatabaseService as any)(
-    deps.db, deps.localStorage, deps.cryptic,
-    deps.selfhosted, deps.dirtyTracker, deps.cacheService
+    deps.db,
+    deps.localStorage,
+    deps.cryptic,
+    deps.selfhosted,
+    deps.dirtyTracker,
+    deps.cacheService,
   );
 }
 
@@ -204,7 +220,7 @@ describe('DatabaseService (selfhosted mode)', () => {
 
       const obs = service.batchWrite([
         { tag: 'transactions', data: [] },
-        { tag: 'budget', data: [] }
+        { tag: 'budget', data: [] },
       ]);
       obs.subscribe();
       expect(selfhosted.clearEtagCache).toHaveBeenCalled();
@@ -316,7 +332,8 @@ describe('DatabaseService (firebase mode)', () => {
 
   describe('getBatchData()', () => {
     it('falls back to individual getData calls', async () => {
-      const refOnce = jest.fn()
+      const refOnce = jest
+        .fn()
         .mockResolvedValueOnce({ val: () => [{ a: 1 }] })
         .mockResolvedValueOnce({ val: () => [{ b: 2 }] });
       db.database.ref.mockReturnValue({ once: refOnce, set: jest.fn() });
@@ -348,14 +365,14 @@ describe('DatabaseService (firebase mode)', () => {
     it('calls Firebase set with encrypted data', (done) => {
       const result = service.writeObject('transactions', [{ amount: 50 }]);
       expect(db.database.goOnline).toHaveBeenCalled();
-      
+
       // Subscribe to the Observable to complete the test
       result.subscribe({
         next: () => {
           expect(db.object).toHaveBeenCalledWith('users/uid_123/transactions');
           done();
         },
-        error: (err) => done(err)
+        error: (err) => done(err),
       });
     });
   });

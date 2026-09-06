@@ -2,7 +2,6 @@ import { InfoBudgetComponent } from './info-budget.component';
 import { AppStateService } from '../../../shared/services/app-state.service';
 
 describe('InfoBudgetComponent', () => {
-
   beforeEach(() => {
     (AppStateService as any)._instance = undefined;
     InfoBudgetComponent.index = 1;
@@ -39,10 +38,38 @@ describe('InfoBudgetComponent', () => {
 
   it('selectedCategory should sum previous month amounts for a category', () => {
     AppStateService.instance.allTransactions = [
-      { account: 'Daily', amount: -50, category: 'food', date: '2025-02-10', time: '', comment: '' },
-      { account: 'Daily', amount: -30, category: 'food', date: '2025-02-20', time: '', comment: '' },
-      { account: 'Daily', amount: -20, category: 'transport', date: '2025-02-15', time: '', comment: '' },
-      { account: 'Daily', amount: -10, category: 'food', date: '2025-03-01', time: '', comment: '' },
+      {
+        account: 'Daily',
+        amount: -50,
+        category: 'food',
+        date: '2025-02-10',
+        time: '',
+        comment: '',
+      },
+      {
+        account: 'Daily',
+        amount: -30,
+        category: 'food',
+        date: '2025-02-20',
+        time: '',
+        comment: '',
+      },
+      {
+        account: 'Daily',
+        amount: -20,
+        category: 'transport',
+        date: '2025-02-15',
+        time: '',
+        comment: '',
+      },
+      {
+        account: 'Daily',
+        amount: -10,
+        category: 'food',
+        date: '2025-03-01',
+        time: '',
+        comment: '',
+      },
     ];
 
     const proto = Object.create(InfoBudgetComponent.prototype);
@@ -58,7 +85,14 @@ describe('InfoBudgetComponent', () => {
 
   it('selectedCategory should handle year wrap (January looks at December)', () => {
     AppStateService.instance.allTransactions = [
-      { account: 'Daily', amount: -100, category: 'rent', date: '2024-12-01', time: '', comment: '' },
+      {
+        account: 'Daily',
+        amount: -100,
+        category: 'rent',
+        date: '2024-12-01',
+        time: '',
+        comment: '',
+      },
     ];
 
     const proto = Object.create(InfoBudgetComponent.prototype);

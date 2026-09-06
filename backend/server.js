@@ -23,10 +23,12 @@ app.use(helmet());
 
 // CORS configuration
 const corsOrigins = process.env.CORS_ORIGINS || 'http://localhost:4200';
-app.use(cors({
-  origin: corsOrigins.split(','),
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: corsOrigins.split(','),
+    credentials: true,
+  }),
+);
 
 // Rate limiting - generous for normal use, auth endpoints are strict separately
 const limiter = rateLimit({
@@ -36,7 +38,7 @@ const limiter = rateLimit({
   legacyHeaders: false,
   skip: () => {
     return process.env.SKIP_RATE_LIMIT === 'true';
-  }
+  },
 });
 app.use('/api/', limiter);
 
@@ -46,7 +48,7 @@ const authLimiter = rateLimit({
   max: 10, // max 10 login/register attempts per 15 min
   standardHeaders: true,
   legacyHeaders: false,
-  skip: () => process.env.SKIP_RATE_LIMIT === 'true'
+  skip: () => process.env.SKIP_RATE_LIMIT === 'true',
 });
 app.use('/api/auth/login', authLimiter);
 app.use('/api/auth/register', authLimiter);
@@ -69,7 +71,7 @@ if (process.env.DEBUG_REQUESTS === 'true') {
       contentType: req.headers['content-type'],
       bodyType: typeof req.body,
       body: req.body,
-      debugType: 'write_request'
+      debugType: 'write_request',
     });
     next();
   });
@@ -87,7 +89,7 @@ app.use('/api/data/write', (req, res, next) => {
 
 // Initialize database (only when run directly — tests handle their own init)
 if (require.main === module) {
-  initializeDatabase().catch(err => {
+  initializeDatabase().catch((err) => {
     logger.logError(err, { context: 'database_initialization' });
     process.exit(1);
   });
@@ -117,7 +119,7 @@ if (require.main === module) {
       port: PORT,
       environment: process.env.NODE_ENV,
       logLevel: logger.level,
-      startupType: 'server_start'
+      startupType: 'server_start',
     });
   });
 }

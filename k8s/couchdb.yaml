@@ -29,58 +29,58 @@ spec:
         app: couchdb
     spec:
       initContainers:
-      - name: copy-config
-        image: couchdb:3.3
-        command: ['sh', '-c', 'cp /config/custom.ini /opt/couchdb/etc/local.d/custom.ini']
-        volumeMounts:
-        - name: couchdb-config-src
-          mountPath: /config
-        - name: couchdb-local-config
-          mountPath: /opt/couchdb/etc/local.d
+        - name: copy-config
+          image: couchdb:3.3
+          command: ['sh', '-c', 'cp /config/custom.ini /opt/couchdb/etc/local.d/custom.ini']
+          volumeMounts:
+            - name: couchdb-config-src
+              mountPath: /config
+            - name: couchdb-local-config
+              mountPath: /opt/couchdb/etc/local.d
       containers:
-      - name: couchdb
-        image: couchdb:3.3
-        ports:
-        - containerPort: 5984
-          name: couchdb
-        env:
-        - name: COUCHDB_USER
-          valueFrom:
-            secretKeyRef:
-              name: couchdb-secret
-              key: username
-        - name: COUCHDB_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: couchdb-secret
-              key: password
-        volumeMounts:
-        - name: couchdb-data
-          mountPath: /opt/couchdb/data
+        - name: couchdb
+          image: couchdb:3.3
+          ports:
+            - containerPort: 5984
+              name: couchdb
+          env:
+            - name: COUCHDB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: couchdb-secret
+                  key: username
+            - name: COUCHDB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: couchdb-secret
+                  key: password
+          volumeMounts:
+            - name: couchdb-data
+              mountPath: /opt/couchdb/data
+            - name: couchdb-local-config
+              mountPath: /opt/couchdb/etc/local.d
+          resources:
+            requests:
+              memory: '256Mi'
+              cpu: '250m'
+            limits:
+              memory: '512Mi'
+              cpu: '500m'
+      volumes:
+        - name: couchdb-config-src
+          configMap:
+            name: couchdb-config
         - name: couchdb-local-config
-          mountPath: /opt/couchdb/etc/local.d
+          emptyDir: {}
+  volumeClaimTemplates:
+    - metadata:
+        name: couchdb-data
+      spec:
+        accessModes: ['ReadWriteOnce']
+        storageClassName: local-path
         resources:
           requests:
-            memory: "256Mi"
-            cpu: "250m"
-          limits:
-            memory: "512Mi"
-            cpu: "500m"
-      volumes:
-      - name: couchdb-config-src
-        configMap:
-          name: couchdb-config
-      - name: couchdb-local-config
-        emptyDir: {}
-  volumeClaimTemplates:
-  - metadata:
-      name: couchdb-data
-    spec:
-      accessModes: [ "ReadWriteOnce" ]
-      storageClassName: local-path
-      resources:
-        requests:
-          storage: 5Gi
+            storage: 5Gi
 ---
 # CouchDB performance config
 apiVersion: v1
@@ -96,5 +96,6 @@ data:
     [chttpd]
     bind_address = 0.0.0.0
     max_connections = 50
+
 # Secret "couchdb-secret" is defined in k8s/secrets.yaml (not committed to Git)
 # Apply separately: kubectl apply -f k8s/secrets.yaml

@@ -57,9 +57,24 @@ test.describe('Navigation', () => {
   });
 
   test('should deep-link to each route directly', async ({ page }) => {
-    const routes = ['home', 'transactions', 'daily', 'splurge', 'smile', 'fire',
-      'cashflow', 'income', 'balance', 'subscription', 'grow', 'budget', 'plan',
-      'smileprojects', 'fireemergencies', 'stats'];
+    const routes = [
+      'home',
+      'transactions',
+      'daily',
+      'splurge',
+      'smile',
+      'fire',
+      'cashflow',
+      'income',
+      'balance',
+      'subscription',
+      'grow',
+      'budget',
+      'plan',
+      'smileprojects',
+      'fireemergencies',
+      'stats',
+    ];
 
     for (const route of routes) {
       await page.goto(`/#/${route}`);

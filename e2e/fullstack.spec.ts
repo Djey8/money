@@ -40,7 +40,7 @@ test.describe('Selfhosted Full Stack', () => {
 
     // Grab the JWT from the access_token cookie
     const cookies = await page.context().cookies();
-    const accessCookie = cookies.find(c => c.name === 'access_token');
+    const accessCookie = cookies.find((c) => c.name === 'access_token');
     authToken = accessCookie?.value ?? '';
     expect(authToken).toBeTruthy();
 

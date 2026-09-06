@@ -7,23 +7,21 @@ import { CrypticService } from './cryptic.service';
 /**
  * Frontend logging service that sends user activity logs to backend/Loki
  * for monitoring and debugging purposes.
- * 
+ *
  * Logs important user actions like:
  * - Authentication (login, register, logout)
  * - Data operations (add, update, delete)
  * - Navigation and page views
  * - Errors and warnings
- * 
+ *
  * Sensitive data (amounts, accounts, categories, etc.) is encrypted
  * using the same encryption as database storage when encryption is enabled.
  */
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class FrontendLoggerService implements OnDestroy {
-  private apiUrl = environment.mode === 'selfhosted' 
-    ? environment.selfhosted.apiUrl 
-    : '';
+  private apiUrl = environment.mode === 'selfhosted' ? environment.selfhosted.apiUrl : '';
   private batchQueue: any[] = [];
   private batchInterval: any;
   private readonly BATCH_SIZE = 10;
@@ -31,16 +29,30 @@ export class FrontendLoggerService implements OnDestroy {
 
   // Fields to encrypt in log details (sensitive data)
   private readonly SENSITIVE_FIELDS = [
-    'amount', 'account', 'category', 'title', 'value', 
-    'balance', 'income', 'expense', 'savings', 'price',
-    'accountFrom', 'accountTo', 'description', 'note',
-    'date', 'dateFrom', 'dateTo', 'dueDate'
+    'amount',
+    'account',
+    'category',
+    'title',
+    'value',
+    'balance',
+    'income',
+    'expense',
+    'savings',
+    'price',
+    'accountFrom',
+    'accountTo',
+    'description',
+    'note',
+    'date',
+    'dateFrom',
+    'dateTo',
+    'dueDate',
   ];
 
   constructor(
     private http: HttpClient,
     private localStorage: LocalService,
-    private cryptic: CrypticService
+    private cryptic: CrypticService,
   ) {
     // Start batch processing
     this.startBatchProcessing();
@@ -65,7 +77,7 @@ export class FrontendLoggerService implements OnDestroy {
       details: encryptedDetails,
       userAgent: navigator.userAgent,
       url: window.location.pathname,
-      mode: environment.mode
+      mode: environment.mode,
     };
 
     // Also log to console for development
@@ -93,7 +105,7 @@ export class FrontendLoggerService implements OnDestroy {
   logAuth(action: 'login' | 'register' | 'logout', success: boolean, details?: any): void {
     this.logActivity(`auth_${action}`, success ? 'info' : 'warning', {
       success,
-      ...details
+      ...details,
     });
   }
 
@@ -104,12 +116,12 @@ export class FrontendLoggerService implements OnDestroy {
     operation: 'add' | 'update' | 'delete',
     entityType: string,
     entityId?: string,
-    details?: any
+    details?: any,
   ): void {
     this.logActivity(`${operation}_${entityType}`, 'info', {
       entityType,
       entityId,
-      ...details
+      ...details,
     });
   }
 
@@ -119,7 +131,7 @@ export class FrontendLoggerService implements OnDestroy {
   logNavigation(page: string, details?: any): void {
     this.logActivity('navigate', 'info', {
       page,
-      ...details
+      ...details,
     });
   }
 
@@ -131,7 +143,7 @@ export class FrontendLoggerService implements OnDestroy {
       error: error instanceof Error ? error.message : error,
       stack: error instanceof Error ? error.stack : undefined,
       context,
-      ...details
+      ...details,
     };
     this.logActivity('error', 'error', errorDetails);
   }
@@ -142,7 +154,7 @@ export class FrontendLoggerService implements OnDestroy {
   logWarning(message: string, details?: any): void {
     this.logActivity('warning', 'warning', {
       message,
-      ...details
+      ...details,
     });
   }
 
@@ -177,10 +189,11 @@ export class FrontendLoggerService implements OnDestroy {
     }
 
     const headers = new HttpHeaders({
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
     });
 
-    this.http.post(`${this.apiUrl}/logs/frontend`, { logs }, { headers, withCredentials: true })
+    this.http
+      .post(`${this.apiUrl}/logs/frontend`, { logs }, { headers, withCredentials: true })
       .subscribe({
         next: () => {
           console.log(`[FrontendLogger] Sent ${logs.length} logs to backend`);
@@ -188,7 +201,7 @@ export class FrontendLoggerService implements OnDestroy {
         error: (error) => {
           console.error('[FrontendLogger] Failed to send logs:', error);
           // Don't retry to avoid infinite loops
-        }
+        },
       });
   }
 

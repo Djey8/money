@@ -10,10 +10,9 @@ import { AppStateService } from '../../services/app-state.service';
   standalone: true,
   imports: [CommonModule, FormsModule, TranslateModule],
   templateUrl: './shared-filter.component.html',
-  styleUrls: ['../../styles/filter-styles.css']
+  styleUrls: ['../../styles/filter-styles.css'],
 })
 export class SharedFilterComponent {
-
   @Input() filter!: IncomeFilter;
   @Input() availableAccounts: string[] = [];
   @Input() availableTags: string[] = [];
@@ -68,8 +67,8 @@ export class SharedFilterComponent {
   }
 
   isFixedCost(tag: string): boolean {
-    return AppStateService.instance.allSubscriptions.some(sub =>
-      sub.category.replace('@', '') === tag
+    return AppStateService.instance.allSubscriptions.some(
+      (sub) => sub.category.replace('@', '') === tag,
     );
   }
 }

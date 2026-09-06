@@ -1,5 +1,5 @@
 export interface Share {
-    tag: string;
-    quantity: number;
-    price: number;
+  tag: string;
+  quantity: number;
+  price: number;
 }

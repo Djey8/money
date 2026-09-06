@@ -80,7 +80,7 @@ describe('Extended data routes', () => {
       const arr = Array.from({ length: 500 }, (_, i) => ({
         id: i,
         label: `item_${i}`,
-        value: Math.random()
+        value: Math.random(),
       }));
 
       const writeRes = await authed('post', '/api/data/write/types/largeArr').send(arr);
@@ -168,11 +168,13 @@ describe('Extended data routes', () => {
   describe('Large payload handling', () => {
     skipIf(!dbAvailable, 'writes payload near the 10 MB limit successfully', async () => {
       // ~ 1 MB payload — large enough to test, small enough to be fast
-      const bigData = { items: Array.from({ length: 10000 }, (_, i) => ({
-        id: i,
-        description: 'x'.repeat(80),
-        timestamp: new Date().toISOString()
-      }))};
+      const bigData = {
+        items: Array.from({ length: 10000 }, (_, i) => ({
+          id: i,
+          description: 'x'.repeat(80),
+          timestamp: new Date().toISOString(),
+        })),
+      };
 
       const res = await authed('post', '/api/data/write/bigpayload').send(bigData);
       expect(res.status).toBe(200);
@@ -199,9 +201,7 @@ describe('Extended data routes', () => {
 
   describe('Authentication required', () => {
     it('rejects write without token', async () => {
-      const res = await request(app)
-        .post('/api/data/write/test')
-        .send({ x: 1 });
+      const res = await request(app).post('/api/data/write/test').send({ x: 1 });
 
       expect(res.status).toBe(401);
     });

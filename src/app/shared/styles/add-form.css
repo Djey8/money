@@ -24,7 +24,8 @@
   border-color: transparent;
 }
 
-#addbtn, #subscriptionbtn {
+#addbtn,
+#subscriptionbtn {
   margin-left: 10%;
   width: 80%;
   margin-top: 4%;
@@ -107,9 +108,9 @@ label {
   margin-top: 10px;
 }
 
-input[type="text"],
-input[type="number"],
-input[type="month"],
+input[type='text'],
+input[type='number'],
+input[type='month'],
 textarea,
 select {
   background-color: var(--color-surface);
@@ -128,9 +129,9 @@ select {
   font-size: 16px; /* Prevent iOS zoom on focus */
 }
 
-input[type="date"],
-input[type="time"],
-input[type="datetime-local"] {
+input[type='date'],
+input[type='time'],
+input[type='datetime-local'] {
   background-color: var(--color-surface);
   padding: 10px;
   border: 1px solid var(--color-border);
@@ -146,14 +147,15 @@ input[type="datetime-local"] {
   appearance: none;
 }
 
-input[type="date"]::-webkit-calendar-picker-indicator,
-input[type="time"]::-webkit-calendar-picker-indicator,
-input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+input[type='date']::-webkit-calendar-picker-indicator,
+input[type='time']::-webkit-calendar-picker-indicator,
+input[type='datetime-local']::-webkit-calendar-picker-indicator {
   cursor: pointer;
   filter: var(--date-icon-filter, none);
 }
 
-textarea, select {
+textarea,
+select {
   padding: 10px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
@@ -178,7 +180,7 @@ textarea {
   margin-right: 2%;
 }
 
-input[type="checkbox"] {
+input[type='checkbox'] {
   vertical-align: middle;
   margin-right: 10px;
 }

@@ -8,14 +8,14 @@ services:
     image: couchdb:3.3
     container_name: money-couchdb-test
     ports:
-      - "5986:5984"
+      - '5986:5984'
     environment:
       - COUCHDB_USER=admin
       - COUCHDB_PASSWORD=password
     tmpfs:
       - /opt/couchdb/data
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:5984/_up || exit 1"]
+      test: ['CMD-SHELL', 'curl -sf http://localhost:5984/_up || exit 1']
       interval: 5s
       timeout: 3s
       retries: 10

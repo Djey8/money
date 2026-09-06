@@ -29,9 +29,9 @@ label {
   margin-bottom: 10px;
 }
 
-input[type="text"],
-input[type="email"],
-input[type="password"] {
+input[type='text'],
+input[type='email'],
+input[type='password'] {
   padding: 10px;
   padding-right: 45px;
   border: 1px solid var(--color-border);
@@ -46,8 +46,8 @@ input[type="password"] {
   margin-bottom: 15px;
 }
 
-.password-wrapper input[type="password"],
-.password-wrapper input[type="text"] {
+.password-wrapper input[type='password'],
+.password-wrapper input[type='text'] {
   margin-bottom: 0;
 }
 
@@ -146,18 +146,18 @@ input[type="password"] {
   border-color: var(--color-primary-hover);
 }
 
-#encryptionLable{
+#encryptionLable {
   text-align: center;
   margin-top: 40px;
 }
 
 .settingsbtn {
-  background-color: transparent; 
-  border: 2px solid var(--color-border); 
-  border-radius: var(--radius-sm); 
-  padding: 5px 10px; 
-  margin-top: 15px; 
-  width: 60%; 
+  background-color: transparent;
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 5px 10px;
+  margin-top: 15px;
+  width: 60%;
   margin-left: auto;
   margin-right: auto;
 }
@@ -181,5 +181,7 @@ input[type="password"] {
 }
 
 @keyframes reg-spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }

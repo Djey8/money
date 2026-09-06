@@ -9,18 +9,16 @@ import { ToastService } from '../services/toast.service';
  * Each child must set `classReference` to its own static class and override `highlight()`.
  */
 export abstract class BaseAddComponent {
-
-  errorTextLable = "";
-  borderColor = "var(--color-border)";
-  color = "black";
+  errorTextLable = '';
+  borderColor = 'var(--color-border)';
+  color = 'black';
   fieldErrors: Record<string, string> = {};
   protected toastService = inject(ToastService);
 
   /** Each child sets this to its own class so templates can access static props */
   abstract classReference: any;
 
-  constructor(protected router: Router) {
-  }
+  constructor(protected router: Router) {}
 
   /** Initializes the child's static flags. Call from child constructor. */
   protected initStatic(cls: any) {
@@ -39,16 +37,16 @@ export abstract class BaseAddComponent {
   closeWindow() {
     this.classReference.isError = false;
     this.classReference.zIndex = 0;
-    this.color = "black";
-    this.borderColor = "var(--color-border)";
+    this.color = 'black';
+    this.borderColor = 'var(--color-border)';
     this.fieldErrors = {};
   }
 
   /** Show a validation error */
   protected showError(message: string) {
     this.errorTextLable = message;
-    this.color = "red";
-    this.borderColor = "red";
+    this.color = 'red';
+    this.borderColor = 'red';
     this.classReference.isError = true;
   }
 
@@ -75,8 +73,8 @@ export abstract class BaseAddComponent {
 
   /** Reset error state and form colors */
   protected clearError() {
-    this.color = "black";
-    this.borderColor = "var(--color-border)";
+    this.color = 'black';
+    this.borderColor = 'var(--color-border)';
     this.classReference.isError = false;
     this.fieldErrors = {};
   }

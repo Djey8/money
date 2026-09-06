@@ -23,8 +23,8 @@ jest.mock('../../config/db', () => ({
       }
       return Promise.resolve(mockUserDoc);
     }),
-    insert: jest.fn()
-  })
+    insert: jest.fn(),
+  }),
 }));
 
 const request = require('supertest');
@@ -55,15 +55,15 @@ describe('POST /api/data/read/batch', () => {
           revenue: {
             revenues: [{ tag: 'Salary', amount: 5000 }],
             interests: [{ tag: 'Bank', amount: 20 }],
-            properties: []
+            properties: [],
           },
           expenses: {
             daily: [{ tag: 'Coffee', amount: 5 }],
             splurge: [],
             smile: [],
             fire: [],
-            mojo: []
-          }
+            mojo: [],
+          },
         },
         smile: [{ title: 'Vacation', target: 1000, amount: 200 }],
         fire: [],
@@ -72,15 +72,16 @@ describe('POST /api/data/read/batch', () => {
         grow: [],
         balance: {
           asset: { assets: [], shares: [], investments: [] },
-          liabilities: []
-        }
-      }
+          liabilities: [],
+        },
+      },
     };
   });
 
   it('returns requested paths from a single document read', async () => {
-    const res = await authed('post', '/api/data/read/batch')
-      .send({ paths: ['transactions', 'subscriptions'] });
+    const res = await authed('post', '/api/data/read/batch').send({
+      paths: ['transactions', 'subscriptions'],
+    });
 
     expect(res.status).toBe(200);
     expect(res.body.data.transactions).toEqual([{ account: 'Daily', amount: 50 }]);
@@ -89,8 +90,9 @@ describe('POST /api/data/read/batch', () => {
   });
 
   it('returns nested paths correctly', async () => {
-    const res = await authed('post', '/api/data/read/batch')
-      .send({ paths: ['income/revenue/revenues', 'income/expenses/daily', 'balance/asset/shares'] });
+    const res = await authed('post', '/api/data/read/batch').send({
+      paths: ['income/revenue/revenues', 'income/expenses/daily', 'balance/asset/shares'],
+    });
 
     expect(res.status).toBe(200);
     expect(res.body.data['income/revenue/revenues']).toEqual([{ tag: 'Salary', amount: 5000 }]);
@@ -99,8 +101,9 @@ describe('POST /api/data/read/batch', () => {
   });
 
   it('returns null for paths that do not exist', async () => {
-    const res = await authed('post', '/api/data/read/batch')
-      .send({ paths: ['transactions', 'nonexistent/path', 'also/missing'] });
+    const res = await authed('post', '/api/data/read/batch').send({
+      paths: ['transactions', 'nonexistent/path', 'also/missing'],
+    });
 
     expect(res.status).toBe(200);
     expect(res.body.data.transactions).toEqual([{ account: 'Daily', amount: 50 }]);
@@ -111,8 +114,9 @@ describe('POST /api/data/read/batch', () => {
   it('returns all nulls when user document does not exist', async () => {
     mockUserDoc = null; // triggers 404
 
-    const res = await authed('post', '/api/data/read/batch')
-      .send({ paths: ['transactions', 'subscriptions'] });
+    const res = await authed('post', '/api/data/read/batch').send({
+      paths: ['transactions', 'subscriptions'],
+    });
 
     expect(res.status).toBe(200);
     expect(res.body.data.transactions).toBeNull();
@@ -121,16 +125,14 @@ describe('POST /api/data/read/batch', () => {
   });
 
   it('returns 400 when paths is not an array', async () => {
-    const res = await authed('post', '/api/data/read/batch')
-      .send({ paths: 'transactions' });
+    const res = await authed('post', '/api/data/read/batch').send({ paths: 'transactions' });
 
     expect(res.status).toBe(400);
     expect(res.body.error).toMatch(/paths must be an array/);
   });
 
   it('returns 400 when paths array is empty', async () => {
-    const res = await authed('post', '/api/data/read/batch')
-      .send({ paths: [] });
+    const res = await authed('post', '/api/data/read/batch').send({ paths: [] });
 
     expect(res.status).toBe(400);
     expect(res.body.error).toMatch(/paths array cannot be empty/);
@@ -138,8 +140,7 @@ describe('POST /api/data/read/batch', () => {
 
   it('returns 400 when too many paths are requested', async () => {
     const tooMany = Array.from({ length: 51 }, (_, i) => `path${i}`);
-    const res = await authed('post', '/api/data/read/batch')
-      .send({ paths: tooMany });
+    const res = await authed('post', '/api/data/read/batch').send({ paths: tooMany });
 
     expect(res.status).toBe(400);
     expect(res.body.error).toMatch(/Too many paths/);
@@ -154,8 +155,9 @@ describe('POST /api/data/read/batch', () => {
   });
 
   it('skips non-string entries in paths array', async () => {
-    const res = await authed('post', '/api/data/read/batch')
-      .send({ paths: ['transactions', 123, null, 'subscriptions'] });
+    const res = await authed('post', '/api/data/read/batch').send({
+      paths: ['transactions', 123, null, 'subscriptions'],
+    });
 
     expect(res.status).toBe(200);
     expect(res.body.data).toHaveProperty('transactions');
@@ -175,11 +177,10 @@ describe('POST /api/data/read/batch', () => {
       'income/expenses/splurge',
       'income/expenses/smile',
       'income/expenses/fire',
-      'income/expenses/mojo'
+      'income/expenses/mojo',
     ];
 
-    const res = await authed('post', '/api/data/read/batch')
-      .send({ paths: tier1Paths });
+    const res = await authed('post', '/api/data/read/batch').send({ paths: tier1Paths });
 
     expect(res.status).toBe(200);
     expect(Object.keys(res.body.data)).toHaveLength(10);
@@ -198,7 +199,7 @@ describe('GET /api/data/updatedAt', () => {
       _id: 'user_test_123',
       _rev: '1-abc',
       updatedAt: '2026-03-29T10:00:00.000Z',
-      data: {}
+      data: {},
     };
   });
 
@@ -243,15 +244,14 @@ describe('ETag caching', () => {
       _rev: '3-etag123',
       updatedAt: '2026-03-29T12:00:00.000Z',
       data: {
-        transactions: [{ account: 'Daily', amount: 100 }]
-      }
+        transactions: [{ account: 'Daily', amount: 100 }],
+      },
     };
   });
 
   describe('POST /api/data/read/batch', () => {
     it('returns ETag header based on CouchDB _rev', async () => {
-      const res = await authed('post', '/api/data/read/batch')
-        .send({ paths: ['transactions'] });
+      const res = await authed('post', '/api/data/read/batch').send({ paths: ['transactions'] });
 
       expect(res.status).toBe(200);
       expect(res.headers.etag).toBe('"3-etag123"');
@@ -263,7 +263,7 @@ describe('ETag caching', () => {
         .send({ paths: ['transactions'] });
 
       expect(res.status).toBe(304);
-      expect(res.body).toEqual({});  // no body on 304
+      expect(res.body).toEqual({}); // no body on 304
     });
 
     it('returns 200 with data when If-None-Match does not match', async () => {
@@ -285,8 +285,7 @@ describe('ETag caching', () => {
     });
 
     it('returns 200 without If-None-Match header (first request)', async () => {
-      const res = await authed('post', '/api/data/read/batch')
-        .send({ paths: ['transactions'] });
+      const res = await authed('post', '/api/data/read/batch').send({ paths: ['transactions'] });
 
       expect(res.status).toBe(200);
       expect(res.headers.etag).toBeDefined();
@@ -302,15 +301,13 @@ describe('ETag caching', () => {
     });
 
     it('returns 304 when If-None-Match matches', async () => {
-      const res = await authed('get', '/api/data/updatedAt')
-        .set('If-None-Match', '"3-etag123"');
+      const res = await authed('get', '/api/data/updatedAt').set('If-None-Match', '"3-etag123"');
 
       expect(res.status).toBe(304);
     });
 
     it('returns 200 when If-None-Match is stale', async () => {
-      const res = await authed('get', '/api/data/updatedAt')
-        .set('If-None-Match', '"1-old"');
+      const res = await authed('get', '/api/data/updatedAt').set('If-None-Match', '"1-old"');
 
       expect(res.status).toBe(200);
       expect(res.body.updatedAt).toBe('2026-03-29T12:00:00.000Z');
@@ -322,13 +319,25 @@ describe('ETag caching', () => {
 
 describe('Performance: batch-read vs individual reads', () => {
   const ALL_PATHS = [
-    'transactions', 'subscriptions',
-    'income/revenue/revenues', 'income/revenue/interests', 'income/revenue/properties',
-    'income/expenses/daily', 'income/expenses/splurge', 'income/expenses/smile',
-    'income/expenses/fire', 'income/expenses/mojo',
-    'smile', 'fire', 'mojo', 'budget', 'grow',
-    'balance/asset/assets', 'balance/asset/shares', 'balance/asset/investments',
-    'balance/liabilities'
+    'transactions',
+    'subscriptions',
+    'income/revenue/revenues',
+    'income/revenue/interests',
+    'income/revenue/properties',
+    'income/expenses/daily',
+    'income/expenses/splurge',
+    'income/expenses/smile',
+    'income/expenses/fire',
+    'income/expenses/mojo',
+    'smile',
+    'fire',
+    'mojo',
+    'budget',
+    'grow',
+    'balance/asset/assets',
+    'balance/asset/shares',
+    'balance/asset/investments',
+    'balance/liabilities',
   ];
 
   beforeEach(() => {
@@ -337,23 +346,30 @@ describe('Performance: batch-read vs individual reads', () => {
       _rev: '1-abc',
       updatedAt: '2026-03-29T10:00:00.000Z',
       data: {
-        transactions: Array.from({ length: 500 }, (_, i) => ({ id: i, account: 'Daily', amount: i * 10 })),
+        transactions: Array.from({ length: 500 }, (_, i) => ({
+          id: i,
+          account: 'Daily',
+          amount: i * 10,
+        })),
         subscriptions: [{ title: 'Netflix', amount: 15 }],
         income: {
           revenue: { revenues: [{ tag: 'Salary', amount: 5000 }], interests: [], properties: [] },
-          expenses: { daily: [], splurge: [], smile: [], fire: [], mojo: [] }
+          expenses: { daily: [], splurge: [], smile: [], fire: [], mojo: [] },
         },
-        smile: [], fire: [], mojo: { target: 500, amount: 100 }, budget: [], grow: [],
-        balance: { asset: { assets: [], shares: [], investments: [] }, liabilities: [] }
-      }
+        smile: [],
+        fire: [],
+        mojo: { target: 500, amount: 100 },
+        budget: [],
+        grow: [],
+        balance: { asset: { assets: [], shares: [], investments: [] }, liabilities: [] },
+      },
     };
   });
 
   it('batch-read is faster than 19 individual reads', async () => {
     // Batch: 1 request for all 19 paths
     const batchStart = Date.now();
-    const batchRes = await authed('post', '/api/data/read/batch')
-      .send({ paths: ALL_PATHS });
+    const batchRes = await authed('post', '/api/data/read/batch').send({ paths: ALL_PATHS });
     const batchTime = Date.now() - batchStart;
     expect(batchRes.status).toBe(200);
 
@@ -372,8 +388,7 @@ describe('Performance: batch-read vs individual reads', () => {
   });
 
   it('batch-read returns same data as individual reads', async () => {
-    const batchRes = await authed('post', '/api/data/read/batch')
-      .send({ paths: ALL_PATHS });
+    const batchRes = await authed('post', '/api/data/read/batch').send({ paths: ALL_PATHS });
 
     for (const path of ALL_PATHS) {
       const individualRes = await authed('get', `/api/data/read/${path}`);

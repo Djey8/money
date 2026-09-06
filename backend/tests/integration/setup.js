@@ -42,12 +42,12 @@ async function registerTestUser(suffix = '') {
     .send({ email, password: 'TestPassword123!' });
 
   expect(res.status).toBe(201);
-  
+
   // Extract access_token from Set-Cookie header
   const cookies = res.headers['set-cookie'] || [];
-  const accessCookie = cookies.find(c => c.startsWith('access_token='));
+  const accessCookie = cookies.find((c) => c.startsWith('access_token='));
   const token = accessCookie ? accessCookie.split(';')[0].split('=')[1] : null;
-  
+
   return { token, userId: res.body.userId, email };
 }
 
@@ -61,7 +61,7 @@ async function guestLogin() {
   expect(res.status).toBe(200);
 
   const cookies = res.headers['set-cookie'] || [];
-  const accessCookie = cookies.find(c => c.startsWith('access_token='));
+  const accessCookie = cookies.find((c) => c.startsWith('access_token='));
   const token = accessCookie ? accessCookie.split(';')[0].split('=')[1] : null;
 
   return { token, userId: res.body.userId };

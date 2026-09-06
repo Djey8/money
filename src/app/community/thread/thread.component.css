@@ -87,7 +87,10 @@
   line-height: 1;
   cursor: pointer;
   color: var(--color-text-secondary);
-  transition: border-color 0.15s, color 0.15s, background 0.15s;
+  transition:
+    border-color 0.15s,
+    color 0.15s,
+    background 0.15s;
 }
 .thread-reaction-btn span {
   font-size: 0.75rem;

@@ -1,16 +1,14 @@
 import { Injectable } from '@angular/core';
 import { CrypticService } from './cryptic.service';
 
-
 /**
  * Service for interacting with the local storage.
  */
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class LocalService {
-  
-  constructor(private cryptic: CrypticService) { }
+  constructor(private cryptic: CrypticService) {}
 
   /**
    * Saves data to the local storage.
@@ -27,7 +25,7 @@ export class LocalService {
    * @returns The retrieved data.
    */
   public getData(key: string) {
-    const data = localStorage.getItem(key) || "";
+    const data = localStorage.getItem(key) || '';
     return this.cryptic.decrypt(data, 'local');
   }
 

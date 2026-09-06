@@ -7,10 +7,9 @@ import { IncomeFilter } from '../../interfaces/income-filter';
  * Used by accounting, daily, splurge, smile, and fire components
  */
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class TransactionFilterService {
-
   /**
    * Parse a value string as a date and return ISO format (yyyy-mm-dd), or null.
    * Supports: dd.mm.yyyy, dd.mm.yy, dd/mm/yyyy, dd/mm/yy, yyyy-mm-dd
@@ -70,7 +69,11 @@ export class TransactionFilterService {
    * Auto-detects the format of the search term (date, time, amount, text) and only
    * checks the corresponding field to avoid cross-field false positives.
    */
-  static checkSearchTermMatch(transaction: Transaction, searchTerm: string, searchFields: IncomeFilter['searchFields']): boolean {
+  static checkSearchTermMatch(
+    transaction: Transaction,
+    searchTerm: string,
+    searchFields: IncomeFilter['searchFields'],
+  ): boolean {
     // Detect format: strip operator to inspect the value part
     const operatorMatch = searchTerm.match(/^(>=|<=|>|<)(.+)$/);
     const valuePart = operatorMatch ? operatorMatch[2].trim() : searchTerm;
@@ -81,10 +84,14 @@ export class TransactionFilterService {
       if (!searchFields.date) return false;
       if (operatorMatch) {
         switch (operatorMatch[1]) {
-          case '>': return transaction.date > parsedDate;
-          case '<': return transaction.date < parsedDate;
-          case '>=': return transaction.date >= parsedDate;
-          case '<=': return transaction.date <= parsedDate;
+          case '>':
+            return transaction.date > parsedDate;
+          case '<':
+            return transaction.date < parsedDate;
+          case '>=':
+            return transaction.date >= parsedDate;
+          case '<=':
+            return transaction.date <= parsedDate;
         }
       }
       return transaction.date === parsedDate;
@@ -95,13 +102,18 @@ export class TransactionFilterService {
     if (parsedTime) {
       if (!searchFields.time) return false;
       if (!transaction.time || transaction.time.trim() === '') return false;
-      const normalizedTransaction = TransactionFilterService.parseAsTime(transaction.time) || transaction.time;
+      const normalizedTransaction =
+        TransactionFilterService.parseAsTime(transaction.time) || transaction.time;
       if (operatorMatch) {
         switch (operatorMatch[1]) {
-          case '>': return normalizedTransaction > parsedTime;
-          case '<': return normalizedTransaction < parsedTime;
-          case '>=': return normalizedTransaction >= parsedTime;
-          case '<=': return normalizedTransaction <= parsedTime;
+          case '>':
+            return normalizedTransaction > parsedTime;
+          case '<':
+            return normalizedTransaction < parsedTime;
+          case '>=':
+            return normalizedTransaction >= parsedTime;
+          case '<=':
+            return normalizedTransaction <= parsedTime;
         }
       }
       return normalizedTransaction.includes(parsedTime);
@@ -113,10 +125,14 @@ export class TransactionFilterService {
       const value = parseFloat(valuePart);
       if (isNaN(value)) return false;
       switch (operatorMatch[1]) {
-        case '>': return transaction.amount > value;
-        case '<': return transaction.amount < value;
-        case '>=': return transaction.amount >= value;
-        case '<=': return transaction.amount <= value;
+        case '>':
+          return transaction.amount > value;
+        case '<':
+          return transaction.amount < value;
+        case '>=':
+          return transaction.amount >= value;
+        case '<=':
+          return transaction.amount <= value;
       }
       return false;
     }
@@ -124,8 +140,18 @@ export class TransactionFilterService {
     // TEXT: no specific format — check all enabled fields as plain text contains
     if (searchFields.account && transaction.account.toLowerCase().includes(searchTerm)) return true;
     if (searchFields.amount && transaction.amount.toString().includes(searchTerm)) return true;
-    if (searchFields.date && transaction.date && transaction.date.toLowerCase().includes(searchTerm)) return true;
-    if (searchFields.time && transaction.time && transaction.time.toLowerCase().includes(searchTerm)) return true;
+    if (
+      searchFields.date &&
+      transaction.date &&
+      transaction.date.toLowerCase().includes(searchTerm)
+    )
+      return true;
+    if (
+      searchFields.time &&
+      transaction.time &&
+      transaction.time.toLowerCase().includes(searchTerm)
+    )
+      return true;
     if (searchFields.category) {
       const cleanCategory = transaction.category.replace('@', '');
       if (cleanCategory.toLowerCase().includes(searchTerm)) return true;
@@ -142,7 +168,11 @@ export class TransactionFilterService {
    * @param allowedAccounts - Optional array of allowed account names (e.g., ['Daily', 'Income'])
    * @returns Filtered transactions
    */
-  applyFilters(transactions: Transaction[], filter: IncomeFilter, allowedAccounts?: string[]): Transaction[] {
+  applyFilters(
+    transactions: Transaction[],
+    filter: IncomeFilter,
+    allowedAccounts?: string[],
+  ): Transaction[] {
     return transactions.filter((transaction: Transaction) => {
       // Filter by allowed accounts if specified
       if (allowedAccounts && allowedAccounts.length > 0) {
@@ -181,50 +211,54 @@ export class TransactionFilterService {
           .replace(/\band\b/gi, '&&')
           .replace(/\bor\b/gi, '||')
           .replace(/\bnot\b/gi, '!');
-        
+
         // Split by || (OR) to get OR groups
-        const orGroups = searchExpression.split('||').map(g => g.trim());
+        const orGroups = searchExpression.split('||').map((g) => g.trim());
         let matchFound = false;
-        
+
         for (const orGroup of orGroups) {
           // Split by && (AND) to get AND terms
-          const andTerms = orGroup.split('&&').map(t => t.trim());
+          const andTerms = orGroup.split('&&').map((t) => t.trim());
           let allAndTermsMatch = true;
-          
+
           for (const term of andTerms) {
             let isNegated = false;
             let searchTerm = term.toLowerCase().trim();
-            
+
             // Handle negation
             if (searchTerm.startsWith('!')) {
               isNegated = true;
               searchTerm = searchTerm.substring(1).trim();
             }
-            
+
             if (!searchTerm) continue;
-            
+
             // Check if this term matches any field
-            let termMatches = TransactionFilterService.checkSearchTermMatch(transaction, searchTerm, filter.searchFields);
-            
+            let termMatches = TransactionFilterService.checkSearchTermMatch(
+              transaction,
+              searchTerm,
+              filter.searchFields,
+            );
+
             // Apply negation if needed
             if (isNegated) {
               termMatches = !termMatches;
             }
-            
+
             // If this AND term doesn't match, this OR group fails
             if (!termMatches) {
               allAndTermsMatch = false;
               break;
             }
           }
-          
+
           // If all AND terms matched in this OR group, we found a match
           if (allAndTermsMatch && andTerms.length > 0) {
             matchFound = true;
             break;
           }
         }
-        
+
         if (!matchFound) {
           return false;
         }
@@ -254,7 +288,7 @@ export class TransactionFilterService {
    */
   getAvailableAccounts(transactions: Transaction[], allowedAccounts?: string[]): string[] {
     const accountsSet = new Set<string>();
-    transactions.forEach(transaction => {
+    transactions.forEach((transaction) => {
       if (transaction.account) {
         // Only add if in allowed accounts list (if specified)
         if (!allowedAccounts || allowedAccounts.includes(transaction.account)) {

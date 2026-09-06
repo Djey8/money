@@ -1,7 +1,6 @@
 import { ChooseComponent } from './choose.component';
 
 describe('ChooseComponent', () => {
-
   beforeEach(() => {
     ChooseComponent.isChoose = false;
     ChooseComponent.zIndex = 1;

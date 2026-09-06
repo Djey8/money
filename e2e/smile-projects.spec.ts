@@ -63,7 +63,7 @@ test.describe('Smile Projects', () => {
     await page.waitForTimeout(2000);
 
     // Project should appear on the page
-    const bodyText = await page.locator('body').textContent() ?? '';
+    const bodyText = (await page.locator('body').textContent()) ?? '';
     expect(bodyText).toContain(uniqueTitle);
   });
 
@@ -87,7 +87,7 @@ test.describe('Smile Projects', () => {
     const count = await progressLabels.count();
     expect(count).toBeGreaterThan(0);
     // At least one should show 50%
-    const allText = await page.locator('#smileProjectsTable').textContent() ?? '';
+    const allText = (await page.locator('#smileProjectsTable').textContent()) ?? '';
     expect(allText).toContain('50');
   });
 });

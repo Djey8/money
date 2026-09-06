@@ -10,19 +10,48 @@ import { TrapFocusDirective } from 'src/app/shared/directives/trap-focus.directi
  */
 
 // Deferred imports — resolved after module init to break circular chains
-let AddComponent: any; setTimeout(() => import('src/app/panels/add/add.component').then(m => AddComponent = m.AddComponent));
-let ProfileComponent: any; setTimeout(() => import('src/app/panels/profile/profile.component').then(m => ProfileComponent = m.ProfileComponent));
-let MenuComponent: any; setTimeout(() => import('../menu.component').then(m => MenuComponent = m.MenuComponent));
-let AddAssetComponent: any; setTimeout(() => import('src/app/panels/add/add-asset/add-asset.component').then(m => AddAssetComponent = m.AddAssetComponent));
-let AddShareComponent: any; setTimeout(() => import('src/app/panels/add/add-share/add-share.component').then(m => AddShareComponent = m.AddShareComponent));
-let AddInvestmentComponent: any; setTimeout(() => import('src/app/panels/add/add-investment/add-investment.component').then(m => AddInvestmentComponent = m.AddInvestmentComponent));
-let AddLiabilitieComponent: any; setTimeout(() => import('src/app/panels/add/add-liabilitie/add-liabilitie.component').then(m => AddLiabilitieComponent = m.AddLiabilitieComponent));
+let AddComponent: any;
+setTimeout(() =>
+  import('src/app/panels/add/add.component').then((m) => (AddComponent = m.AddComponent)),
+);
+let ProfileComponent: any;
+setTimeout(() =>
+  import('src/app/panels/profile/profile.component').then(
+    (m) => (ProfileComponent = m.ProfileComponent),
+  ),
+);
+let MenuComponent: any;
+setTimeout(() => import('../menu.component').then((m) => (MenuComponent = m.MenuComponent)));
+let AddAssetComponent: any;
+setTimeout(() =>
+  import('src/app/panels/add/add-asset/add-asset.component').then(
+    (m) => (AddAssetComponent = m.AddAssetComponent),
+  ),
+);
+let AddShareComponent: any;
+setTimeout(() =>
+  import('src/app/panels/add/add-share/add-share.component').then(
+    (m) => (AddShareComponent = m.AddShareComponent),
+  ),
+);
+let AddInvestmentComponent: any;
+setTimeout(() =>
+  import('src/app/panels/add/add-investment/add-investment.component').then(
+    (m) => (AddInvestmentComponent = m.AddInvestmentComponent),
+  ),
+);
+let AddLiabilitieComponent: any;
+setTimeout(() =>
+  import('src/app/panels/add/add-liabilitie/add-liabilitie.component').then(
+    (m) => (AddLiabilitieComponent = m.AddLiabilitieComponent),
+  ),
+);
 @Component({
   selector: 'app-choose',
   standalone: true,
   imports: [TrapFocusDirective, CommonModule, TranslateModule],
   templateUrl: './choose.component.html',
-  styleUrls: ['./choose.component.css']
+  styleUrls: ['./choose.component.css'],
 })
 export class ChooseComponent {
   static zIndex;

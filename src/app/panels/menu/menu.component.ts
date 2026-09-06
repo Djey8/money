@@ -11,21 +11,46 @@ import { TrapFocusDirective } from 'src/app/shared/directives/trap-focus.directi
  */
 
 // Deferred imports — resolved after module init to break circular chains
-let AddComponent: any; setTimeout(() => import('../add/add.component').then(m => AddComponent = m.AddComponent));
-let ProfileComponent: any; setTimeout(() => import('../profile/profile.component').then(m => ProfileComponent = m.ProfileComponent));
-let InfoComponent: any; setTimeout(() => import('../info/info.component').then(m => InfoComponent = m.InfoComponent));
-let AddSmileComponent: any; setTimeout(() => import('../add/add-smile/add-smile.component').then(m => AddSmileComponent = m.AddSmileComponent));
-let AddFireComponent: any; setTimeout(() => import('../add/add-fire/add-fire.component').then(m => AddFireComponent = m.AddFireComponent));
-let StatsComponent: any; setTimeout(() => import('src/app/stats/stats.component').then(m => StatsComponent = m.StatsComponent));
-let AccountingComponent: any; setTimeout(() => import('src/app/main/accounting/accounting.component').then(m => AccountingComponent = m.AccountingComponent));
-let GrowComponent: any; setTimeout(() => import('src/app/main/grow/grow.component').then(m => GrowComponent = m.GrowComponent));
-let AppComponent: any; setTimeout(() => import('src/app/app.component').then(m => AppComponent = m.AppComponent));
+let AddComponent: any;
+setTimeout(() => import('../add/add.component').then((m) => (AddComponent = m.AddComponent)));
+let ProfileComponent: any;
+setTimeout(() =>
+  import('../profile/profile.component').then((m) => (ProfileComponent = m.ProfileComponent)),
+);
+let InfoComponent: any;
+setTimeout(() => import('../info/info.component').then((m) => (InfoComponent = m.InfoComponent)));
+let AddSmileComponent: any;
+setTimeout(() =>
+  import('../add/add-smile/add-smile.component').then(
+    (m) => (AddSmileComponent = m.AddSmileComponent),
+  ),
+);
+let AddFireComponent: any;
+setTimeout(() =>
+  import('../add/add-fire/add-fire.component').then((m) => (AddFireComponent = m.AddFireComponent)),
+);
+let StatsComponent: any;
+setTimeout(() =>
+  import('src/app/stats/stats.component').then((m) => (StatsComponent = m.StatsComponent)),
+);
+let AccountingComponent: any;
+setTimeout(() =>
+  import('src/app/main/accounting/accounting.component').then(
+    (m) => (AccountingComponent = m.AccountingComponent),
+  ),
+);
+let GrowComponent: any;
+setTimeout(() =>
+  import('src/app/main/grow/grow.component').then((m) => (GrowComponent = m.GrowComponent)),
+);
+let AppComponent: any;
+setTimeout(() => import('src/app/app.component').then((m) => (AppComponent = m.AppComponent)));
 @Component({
   selector: 'app-menu',
   standalone: true,
   imports: [TrapFocusDirective, CommonModule, TranslateModule],
   templateUrl: './menu.component.html',
-  styleUrls: ['./menu.component.css']
+  styleUrls: ['./menu.component.css'],
 })
 export class MenuComponent {
   /**
@@ -129,14 +154,13 @@ export class MenuComponent {
     StatsComponent.isSwitch = false;
     StatsComponent.currentInstance?.cdr.detectChanges();
   }
-  
 
   /**
    * Handles the click event on the menu stats.
    */
   clickedPiechart() {
-    StatsComponent.resetBIStateIfNeeded("home");
-    StatsComponent.modus = "home";
+    StatsComponent.resetBIStateIfNeeded('home');
+    StatsComponent.modus = 'home';
     StatsComponent.isKPI = false;
     StatsComponent.createPieChart();
     MenuComponent.isMenu = false;
@@ -147,10 +171,10 @@ export class MenuComponent {
   }
 
   clickedCashflowStats() {
-    StatsComponent.resetBIStateIfNeeded("cashflow");
-    StatsComponent.modus = "cashflow";
+    StatsComponent.resetBIStateIfNeeded('cashflow');
+    StatsComponent.modus = 'cashflow';
     StatsComponent.isKPI = false;
-    StatsComponent.createCashflowBarChart("month");
+    StatsComponent.createCashflowBarChart('month');
     MenuComponent.isMenu = false;
     MenuComponent.isStats = false;
     StatsComponent.isSwitch = false;
@@ -159,8 +183,8 @@ export class MenuComponent {
   }
 
   clickedHistogram() {
-    StatsComponent.resetBIStateIfNeeded("histogram");
-    StatsComponent.modus = "histogram";
+    StatsComponent.resetBIStateIfNeeded('histogram');
+    StatsComponent.modus = 'histogram';
     StatsComponent.isKPI = false;
     StatsComponent.createHistogramChart();
     MenuComponent.isMenu = false;
@@ -170,8 +194,8 @@ export class MenuComponent {
     StatsComponent.isBIDashboard = false;
   }
   clickedKPI() {
-    StatsComponent.resetBIStateIfNeeded("kpi");
-    StatsComponent.modus = "kpi";
+    StatsComponent.resetBIStateIfNeeded('kpi');
+    StatsComponent.modus = 'kpi';
     StatsComponent.isKPI = true;
     StatsComponent.createKPI(StatsComponent.activeKPI);
     MenuComponent.isMenu = false;
@@ -180,9 +204,9 @@ export class MenuComponent {
     StatsComponent.isStatment = false;
     StatsComponent.isBIDashboard = false;
   }
-  
+
   clickedBusinessIntelligence() {
-    StatsComponent.modus = "bi";
+    StatsComponent.modus = 'bi';
     StatsComponent.isKPI = false;
     StatsComponent.isBIDashboard = true;
     StatsComponent.activeBIDashboard = 1;
@@ -196,8 +220,8 @@ export class MenuComponent {
     AppComponent.gotoTop();
   }
   clickedCategory() {
-    StatsComponent.resetBIStateIfNeeded("category");
-    StatsComponent.modus = "category";
+    StatsComponent.resetBIStateIfNeeded('category');
+    StatsComponent.modus = 'category';
     StatsComponent.isKPI = false;
     StatsComponent.createCategoryBubbleChart();
     MenuComponent.isMenu = false;
@@ -208,8 +232,8 @@ export class MenuComponent {
   }
 
   clickedZoomable() {
-    StatsComponent.resetBIStateIfNeeded("statement");
-    StatsComponent.modus = "statement";
+    StatsComponent.resetBIStateIfNeeded('statement');
+    StatsComponent.modus = 'statement';
     StatsComponent.isKPI = false;
     StatsComponent.createZoomableChart();
     MenuComponent.isMenu = false;
@@ -218,7 +242,6 @@ export class MenuComponent {
     StatsComponent.isStatment = false;
     StatsComponent.isBIDashboard = false;
   }
-
 
   /**
    * Handles the click event on the back button.
@@ -233,51 +256,51 @@ export class MenuComponent {
    * Handles the click event on the home button.
    */
   clickedHome() {
-    this.clickedAccount("Home");
+    this.clickedAccount('Home');
   }
 
   /**
    * Handles the click event on the transactions button.
    */
   clickedTransactions() {
-    this.clickedAccount("Transactions");
+    this.clickedAccount('Transactions');
   }
 
   /**
    * Handles the click event on the daily button.
    */
   clickedDaily() {
-    this.clickedAccount("Daily");
+    this.clickedAccount('Daily');
   }
 
   /**
    * Handles the click event on the splurge button.
    */
   clickedSplurge() {
-    this.clickedAccount("Splurge");
+    this.clickedAccount('Splurge');
   }
 
   /**
    * Handles the click event on the smile button.
    */
   clickedSmile() {
-    this.clickedAccount("Smile");
+    this.clickedAccount('Smile');
   }
 
   /**
    * Handles the click event on the fire button.
    */
   clickedFire() {
-    this.clickedAccount("Fire");
+    this.clickedAccount('Fire');
   }
 
   /**
    * Handles the click event on the add transaction button.
    */
   clickedAddTransaction() {
-    AddComponent.categoryTextField = "@";
-    AddComponent.selectedOption = "Daily";
-    AddComponent.url = "/transactions";
+    AddComponent.categoryTextField = '@';
+    AddComponent.selectedOption = 'Daily';
+    AddComponent.url = '/transactions';
     AppComponent.gotoTop();
     AddComponent.isAdd = true;
     MenuComponent.isMenu = false;
@@ -321,10 +344,14 @@ export class MenuComponent {
    */
   clickedGrow() {
     AccountingComponent.allTransactions = AppStateService.instance.allTransactions;
-    AccountingComponent.dataSource = new MatTableDataSource<any>(AccountingComponent.allTransactions);
-    AccountingComponent.dataSource.data = AccountingComponent.dataSource.data.map((transaction, index) => {
-      return { ...transaction, id: index };
-    });
+    AccountingComponent.dataSource = new MatTableDataSource<any>(
+      AccountingComponent.allTransactions,
+    );
+    AccountingComponent.dataSource.data = AccountingComponent.dataSource.data.map(
+      (transaction, index) => {
+        return { ...transaction, id: index };
+      },
+    );
     this.router.navigate([`/grow`]);
     MenuComponent.isMenu = false;
   }

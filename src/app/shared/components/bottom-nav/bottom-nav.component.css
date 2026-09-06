@@ -92,7 +92,9 @@
   justify-content: center;
   margin-top: -16px;
   box-shadow: 0 2px 8px rgba(25, 118, 210, 0.35);
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .add-btn:active {
@@ -125,8 +127,6 @@
   }
 }
 
-
-
 /* Medium desktop: hide Budget and Grow */
 @media (min-width: 650px) and (max-width: 1009px) {
   .hide-medium {
@@ -146,7 +146,9 @@
   font-size: var(--font-sm);
   white-space: nowrap;
   border-radius: var(--radius-sm);
-  transition: color 0.15s ease, background-color 0.15s ease;
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease;
 }
 
 .desktop-nav-item:hover {
@@ -202,31 +204,31 @@
 }
 
 /* ---- DARK MODE ---- */
-[data-theme="dark"] .bottom-nav--mobile {
+[data-theme='dark'] .bottom-nav--mobile {
   background-color: var(--color-surface);
   border-top-color: var(--color-border);
   box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.3);
 }
 
-[data-theme="dark"] .add-btn {
+[data-theme='dark'] .add-btn {
   box-shadow: 0 2px 8px rgba(122, 162, 212, 0.3);
 }
 
-[data-theme="dark"] .bottom-nav--desktop {
+[data-theme='dark'] .bottom-nav--desktop {
   background-color: var(--color-surface);
   border-top-color: var(--color-border);
   box-shadow: 0 -1px 6px rgba(0, 0, 0, 0.25);
 }
 
-[data-theme="dark"] .desktop-nav-item:hover {
+[data-theme='dark'] .desktop-nav-item:hover {
   background-color: rgba(255, 255, 255, 0.06);
 }
 
-[data-theme="dark"] .desktop-nav-item:active {
+[data-theme='dark'] .desktop-nav-item:active {
   background-color: rgba(255, 255, 255, 0.1);
 }
 
-[data-theme="dark"] .nav-sep {
+[data-theme='dark'] .nav-sep {
   background-color: var(--color-border);
 }
 

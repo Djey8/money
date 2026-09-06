@@ -35,13 +35,13 @@ export interface CashflowStatement {
   operating: IncomeStatementRow;
   investing: IncomeStatementRow; // transfers into Smile/Fire (savings buckets)
   financing: IncomeStatementRow; // liability paybacks (Payback Liabilitie comments)
-  mojo: IncomeStatementRow;       // contributions to Mojo (emergency/long-term)
+  mojo: IncomeStatementRow; // contributions to Mojo (emergency/long-term)
   netCashflow: IncomeStatementRow;
 }
 
 export interface BalanceSheet {
   assets: {
-    cash: number;        // current bank/cash accounts total
+    cash: number; // current bank/cash accounts total
     shares: number;
     investments: number;
     properties: number;
@@ -51,18 +51,18 @@ export interface BalanceSheet {
     debts: number;
     total: number;
   };
-  equity: number;          // total assets - total liabilities
-  netWorth: number;        // alias for equity
-  note: string;             // indicates snapshot is "current" (not historical)
+  equity: number; // total assets - total liabilities
+  netWorth: number; // alias for equity
+  note: string; // indicates snapshot is "current" (not historical)
 }
 
 export interface KeyRatios {
-  savingsRate: number;        // %
-  fixedCostRatio: number;     // %
-  netMargin: number;          // %
-  debtRatio: number;          // ratio (liabilities / assets)
-  equityRatio: number;        // %
-  interestCoverage: number;   // ratio (net result / interest expenses)
+  savingsRate: number; // %
+  fixedCostRatio: number; // %
+  netMargin: number; // %
+  debtRatio: number; // ratio (liabilities / assets)
+  equityRatio: number; // %
+  interestCoverage: number; // ratio (net result / interest expenses)
 }
 
 export interface CategoryAgg {
@@ -84,7 +84,7 @@ export interface FinancialStatement {
 }
 
 const EXPENSE_ACCOUNTS = ['Daily', 'Splurge', 'Smile', 'Fire'] as const;
-type ExpenseAccount = typeof EXPENSE_ACCOUNTS[number];
+type ExpenseAccount = (typeof EXPENSE_ACCOUNTS)[number];
 
 /** Categories that denote an inter-account transfer and must be excluded from P&L. */
 const TRANSFER_CATEGORIES = new Set(['Income', 'Daily', 'Splurge', 'Smile', 'Fire', 'Mojo']);
@@ -172,7 +172,8 @@ function isoWeek(d: Date): { week: number; year: number } {
   const firstThursday = new Date(Date.UTC(target.getUTCFullYear(), 0, 4));
   const firstThursdayDayNum = (firstThursday.getUTCDay() + 6) % 7;
   firstThursday.setUTCDate(firstThursday.getUTCDate() - firstThursdayDayNum + 3);
-  const week = 1 + Math.round((target.getTime() - firstThursday.getTime()) / (7 * 24 * 3600 * 1000));
+  const week =
+    1 + Math.round((target.getTime() - firstThursday.getTime()) / (7 * 24 * 3600 * 1000));
   return { week, year: target.getUTCFullYear() };
 }
 
@@ -200,12 +201,14 @@ function isTransfer(t: { category?: string }): boolean {
 function classifyIncome(tag: string): 'interest' | 'property' | 'revenue' {
   const lower = tag.toLowerCase();
   const interestTags = new Set(
-    AppStateService.instance.allIntrests.map(i => i.tag.toLowerCase())
-      .concat(AppStateService.instance.allShares.map(s => s.tag.toLowerCase()))
+    AppStateService.instance.allIntrests
+      .map((i) => i.tag.toLowerCase())
+      .concat(AppStateService.instance.allShares.map((s) => s.tag.toLowerCase())),
   );
   const propertyTags = new Set(
-    AppStateService.instance.allProperties.map(p => p.tag.toLowerCase())
-      .concat(AppStateService.instance.allInvestments.map(i => i.tag.toLowerCase()))
+    AppStateService.instance.allProperties
+      .map((p) => p.tag.toLowerCase())
+      .concat(AppStateService.instance.allInvestments.map((i) => i.tag.toLowerCase())),
   );
   if (interestTags.has(lower)) return 'interest';
   if (propertyTags.has(lower)) return 'property';
@@ -213,11 +216,18 @@ function classifyIncome(tag: string): 'interest' | 'property' | 'revenue' {
 }
 
 function computeIncomeSide(range: PeriodRange): {
-  revenues: number; interests: number; propertyIncome: number; otherIncome: number; total: number;
+  revenues: number;
+  interests: number;
+  propertyIncome: number;
+  otherIncome: number;
+  total: number;
 } {
-  let revenues = 0, interests = 0, propertyIncome = 0, otherIncome = 0;
-  const txs = AppStateService.instance.allTransactions.filter(t =>
-    t.account === 'Income' && Number(t.amount) > 0 && !isTransfer(t) && txInRange(t, range)
+  let revenues = 0,
+    interests = 0,
+    propertyIncome = 0,
+    otherIncome = 0;
+  const txs = AppStateService.instance.allTransactions.filter(
+    (t) => t.account === 'Income' && Number(t.amount) > 0 && !isTransfer(t) && txInRange(t, range),
   );
   for (const t of txs) {
     const amt = Number(t.amount);
@@ -232,18 +242,25 @@ function computeIncomeSide(range: PeriodRange): {
     else revenues += amt;
   }
   return {
-    revenues, interests, propertyIncome, otherIncome,
+    revenues,
+    interests,
+    propertyIncome,
+    otherIncome,
     total: revenues + interests + propertyIncome + otherIncome,
   };
 }
 
-function computeExpenseSide(range: PeriodRange): { byAccount: Record<ExpenseAccount, number>; total: number } {
+function computeExpenseSide(range: PeriodRange): {
+  byAccount: Record<ExpenseAccount, number>;
+  total: number;
+} {
   const byAccount: Record<ExpenseAccount, number> = { Daily: 0, Splurge: 0, Smile: 0, Fire: 0 };
-  const txs = AppStateService.instance.allTransactions.filter(t =>
-    (EXPENSE_ACCOUNTS as readonly string[]).includes(t.account) &&
-    Number(t.amount) < 0 &&
-    !isTransfer(t) &&
-    txInRange(t, range)
+  const txs = AppStateService.instance.allTransactions.filter(
+    (t) =>
+      (EXPENSE_ACCOUNTS as readonly string[]).includes(t.account) &&
+      Number(t.amount) < 0 &&
+      !isTransfer(t) &&
+      txInRange(t, range),
   );
   for (const t of txs) {
     byAccount[t.account as ExpenseAccount] += Math.abs(Number(t.amount));
@@ -257,7 +274,10 @@ function makeRow(label: string, current: number, previous: number): IncomeStatem
   return { label, current, previous, change };
 }
 
-export function computeIncomeStatement(current: PeriodRange, previous: PeriodRange): IncomeStatement {
+export function computeIncomeStatement(
+  current: PeriodRange,
+  previous: PeriodRange,
+): IncomeStatement {
   const curIn = computeIncomeSide(current);
   const prevIn = computeIncomeSide(previous);
   const curEx = computeExpenseSide(current);
@@ -265,13 +285,17 @@ export function computeIncomeStatement(current: PeriodRange, previous: PeriodRan
 
   const revenues = makeRow('Statement.revenues', curIn.revenues, prevIn.revenues);
   const interests = makeRow('Statement.interestIncome', curIn.interests, prevIn.interests);
-  const propertyIncome = makeRow('Statement.propertyIncome', curIn.propertyIncome, prevIn.propertyIncome);
+  const propertyIncome = makeRow(
+    'Statement.propertyIncome',
+    curIn.propertyIncome,
+    prevIn.propertyIncome,
+  );
   const otherIncome = makeRow('Statement.otherIncome', curIn.otherIncome, prevIn.otherIncome);
   const totalIncome = makeRow('Statement.totalIncome', curIn.total, prevIn.total);
 
-  const expensesByAccount: IncomeStatementRow[] = (EXPENSE_ACCOUNTS as readonly ExpenseAccount[]).map(acc =>
-    makeRow(`Menu.${acc.toLowerCase()}`, curEx.byAccount[acc], prevEx.byAccount[acc])
-  );
+  const expensesByAccount: IncomeStatementRow[] = (
+    EXPENSE_ACCOUNTS as readonly ExpenseAccount[]
+  ).map((acc) => makeRow(`Menu.${acc.toLowerCase()}`, curEx.byAccount[acc], prevEx.byAccount[acc]));
   const totalExpenses = makeRow('Statement.totalExpenses', curEx.total, prevEx.total);
 
   const netCurrent = curIn.total - curEx.total;
@@ -283,8 +307,15 @@ export function computeIncomeStatement(current: PeriodRange, previous: PeriodRan
   const savingsRate = makeRow('Statement.savingsRate', srCur, srPrev);
 
   return {
-    revenues, interests, propertyIncome, otherIncome, totalIncome,
-    expensesByAccount, totalExpenses, netResult, savingsRate,
+    revenues,
+    interests,
+    propertyIncome,
+    otherIncome,
+    totalIncome,
+    expensesByAccount,
+    totalExpenses,
+    netResult,
+    savingsRate,
   };
 }
 
@@ -293,9 +324,15 @@ export function computeIncomeStatement(current: PeriodRange, previous: PeriodRan
 // ===================================================================
 
 function computeCashflowOne(range: PeriodRange): {
-  operating: number; investing: number; financing: number; mojo: number;
+  operating: number;
+  investing: number;
+  financing: number;
+  mojo: number;
 } {
-  let operating = 0, investing = 0, financing = 0, mojo = 0;
+  let operating = 0,
+    investing = 0,
+    financing = 0,
+    mojo = 0;
   for (const t of AppStateService.instance.allTransactions) {
     if (!txInRange(t, range)) continue;
     if (Number(t.amount) === 0) continue;
@@ -328,7 +365,8 @@ function computeCashflowOne(range: PeriodRange): {
     // Operating: anything else that isn't an internal transfer
     if (isTransfer(t)) continue;
     if (t.account === 'Income' && amt > 0) operating += amt;
-    else if ((EXPENSE_ACCOUNTS as readonly string[]).includes(t.account) && amt < 0) operating -= Math.abs(amt);
+    else if ((EXPENSE_ACCOUNTS as readonly string[]).includes(t.account) && amt < 0)
+      operating -= Math.abs(amt);
   }
   return { operating, investing, financing, mojo };
 }
@@ -355,8 +393,14 @@ export function computeCashflow(current: PeriodRange, previous: PeriodRange): Ca
 export function computeBalanceSheet(): BalanceSheet {
   const s = AppStateService.instance;
   const cash = (s.allAssets || []).reduce((acc, a) => acc + Number(a.amount || 0), 0);
-  const shares = (s.allShares || []).reduce((acc, x) => acc + Number(x.quantity || 0) * Number(x.price || 0), 0);
-  const investments = (s.allInvestments || []).reduce((acc, i) => acc + Number(i.amount || 0) + Number(i.deposit || 0), 0);
+  const shares = (s.allShares || []).reduce(
+    (acc, x) => acc + Number(x.quantity || 0) * Number(x.price || 0),
+    0,
+  );
+  const investments = (s.allInvestments || []).reduce(
+    (acc, i) => acc + Number(i.amount || 0) + Number(i.deposit || 0),
+    0,
+  );
   const properties = (s.allProperties || []).reduce((acc, p) => acc + Number(p.amount || 0), 0);
   const assetsTotal = cash + shares + investments + properties;
   const debts = (s.liabilities || []).reduce((acc, l) => acc + Number(l.amount || 0), 0);
@@ -381,7 +425,7 @@ function computeRatiosForRange(range: PeriodRange, balance: BalanceSheet): KeyRa
 
   // Fixed cost ratio: fixed costs are expenses whose category matches an active subscription.
   const subs = AppStateService.instance.allSubscriptions || [];
-  const fixedCategories = new Set(subs.map(s => cleanCategory(s.category)));
+  const fixedCategories = new Set(subs.map((s) => cleanCategory(s.category)));
   let fixedTotal = 0;
   for (const t of AppStateService.instance.allTransactions) {
     if (!txInRange(t, range)) continue;
@@ -407,9 +451,10 @@ function computeRatiosForRange(range: PeriodRange, balance: BalanceSheet): KeyRa
     fixedCostRatio: expenses.total > 0 ? (fixedTotal / expenses.total) * 100 : 0,
     netMargin: income.total > 0 ? (net / income.total) * 100 : 0,
     debtRatio: balance.assets.total > 0 ? balance.liabilities.total / balance.assets.total : 0,
-    equityRatio: balance.assets.total + balance.liabilities.total > 0
-      ? (balance.equity / (balance.assets.total + balance.liabilities.total)) * 100
-      : 0,
+    equityRatio:
+      balance.assets.total + balance.liabilities.total > 0
+        ? (balance.equity / (balance.assets.total + balance.liabilities.total)) * 100
+        : 0,
     interestCoverage: interestExpenses > 0 ? net / interestExpenses : 0,
   };
 }

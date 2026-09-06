@@ -52,7 +52,7 @@
   color: var(--color-text);
 }
 
-.date-range-quick input[type="date"] {
+.date-range-quick input[type='date'] {
   padding: 8px;
   border: 2px solid var(--color-primary);
   border-radius: var(--radius-sm);
@@ -61,11 +61,11 @@
   color: var(--color-text);
 }
 
-.date-range-quick input[type="date"]::-webkit-calendar-picker-indicator {
+.date-range-quick input[type='date']::-webkit-calendar-picker-indicator {
   filter: var(--date-icon-filter, none);
 }
 
-.date-range-quick input[type="number"] {
+.date-range-quick input[type='number'] {
   padding: 8px;
   border: 2px solid var(--color-primary);
   border-radius: var(--radius-sm);
@@ -173,7 +173,7 @@
   color: var(--color-text);
 }
 
-.checkbox-label input[type="checkbox"] {
+.checkbox-label input[type='checkbox'] {
   cursor: pointer;
   width: 18px;
   height: 18px;
@@ -335,7 +335,9 @@
   font-size: 13px;
   color: var(--color-accent-pink);
   cursor: pointer;
-  transition: background-color 0.2s, color 0.2s;
+  transition:
+    background-color 0.2s,
+    color 0.2s;
 }
 
 .search-help-content code:hover {
@@ -420,71 +422,71 @@
     width: 90%;
     padding: 15px;
   }
-  
+
   .quick-filter-controls {
     padding: 10px;
   }
-  
+
   .advanced-filter-section {
     padding: 10px;
   }
-  
+
   .date-range-quick {
     grid-template-columns: 1fr;
   }
-  
+
   .quick-filter-buttons {
     flex-direction: column;
   }
-  
+
   .filter-btn {
     width: 100%;
     justify-content: center;
     padding: 8px 15px;
     font-size: 14px;
   }
-  
+
   .filter-group-title {
     font-size: 14px;
   }
-  
+
   .search-text-input {
     padding: 8px;
     font-size: 13px;
   }
-  
+
   .search-fields-checkboxes {
     grid-template-columns: 1fr;
     gap: 8px;
   }
-  
+
   .checkbox-label {
     font-size: 14px;
   }
-  
+
   .sort-options {
     flex-direction: column;
   }
-  
+
   .sort-select {
     min-width: 100%;
     padding: 8px;
     font-size: 13px;
   }
-  
+
   .tag-button {
     padding: 6px 12px;
     font-size: 13px;
   }
-  
+
   .search-help-content h4 {
     font-size: 14px;
   }
-  
+
   .search-help-content li {
     font-size: 12px;
   }
-  
+
   .search-help-content code {
     font-size: 11px;
   }
@@ -637,7 +639,7 @@
   color: var(--color-text);
 }
 
-.chart-filter-custom-dates input[type="date"] {
+.chart-filter-custom-dates input[type='date'] {
   padding: 8px;
   border: 2px solid var(--color-primary);
   border-radius: var(--radius-sm);
@@ -646,7 +648,7 @@
   color: var(--color-text);
 }
 
-.chart-filter-custom-dates input[type="date"]::-webkit-calendar-picker-indicator {
+.chart-filter-custom-dates input[type='date']::-webkit-calendar-picker-indicator {
   filter: var(--date-icon-filter, none);
 }
 

@@ -4,7 +4,7 @@ metadata:
   name: grafana-frontend-dashboard
   namespace: money-app
   labels:
-    grafana-dashboard: "true"
+    grafana-dashboard: 'true'
 data:
   frontend-activity-dashboard.json: |
     {

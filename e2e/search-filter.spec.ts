@@ -50,7 +50,7 @@ test.describe('Transaction Search & Filtering', () => {
     await page.locator('.search-input').press('Enter');
     await page.waitForTimeout(1500);
 
-    const tableText = await page.locator('table.account').textContent() ?? '';
+    const tableText = (await page.locator('table.account').textContent()) ?? '';
     expect(tableText).toContain('AlphaFood');
     expect(tableText).toContain('AlphaSnack');
     // Gamma should be filtered out
@@ -66,7 +66,7 @@ test.describe('Transaction Search & Filtering', () => {
     await page.locator('.search-input').press('Enter');
     await page.waitForTimeout(1500);
 
-    let tableText = await page.locator('table.account').textContent() ?? '';
+    let tableText = (await page.locator('table.account').textContent()) ?? '';
     expect(tableText).toContain('BetaElectronics');
 
     // Clear the search
@@ -74,7 +74,7 @@ test.describe('Transaction Search & Filtering', () => {
     await page.waitForTimeout(1500);
 
     // All transactions should be visible again
-    tableText = await page.locator('table.account').textContent() ?? '';
+    tableText = (await page.locator('table.account').textContent()) ?? '';
     expect(tableText).toContain('AlphaFood');
     expect(tableText).toContain('GammaShopping');
   });
@@ -89,7 +89,7 @@ test.describe('Transaction Search & Filtering', () => {
     await page.locator('.filter-btn-primary').first().click();
     await page.waitForTimeout(1500);
 
-    const tableText = await page.locator('table.account').textContent() ?? '';
+    const tableText = (await page.locator('table.account').textContent()) ?? '';
     // All transactions from today should still show
     expect(tableText).toContain('AlphaFood');
   });
@@ -105,7 +105,7 @@ test.describe('Transaction Search & Filtering', () => {
     await page.waitForTimeout(1500);
 
     // Check the transaction table specifically (body textContent includes hidden filter UI)
-    const tableText = await page.locator('table.account').textContent() ?? '';
+    const tableText = (await page.locator('table.account').textContent()) ?? '';
     expect(tableText).not.toContain('AlphaFood');
     expect(tableText).not.toContain('BetaElectronics');
   });
@@ -125,7 +125,7 @@ test.describe('Transaction Search & Filtering', () => {
     await page.waitForTimeout(1500);
 
     // Transactions should reappear
-    const tableText = await page.locator('table.account').textContent() ?? '';
+    const tableText = (await page.locator('table.account').textContent()) ?? '';
     expect(tableText).toContain('AlphaFood');
   });
 });

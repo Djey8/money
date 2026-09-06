@@ -27,14 +27,13 @@ import { TrapFocusDirective } from 'src/app/shared/directives/trap-focus.directi
   standalone: true,
   imports: [TrapFocusDirective, CommonModule, FormsModule, TranslateModule],
   templateUrl: './add-liabilitie.component.html',
-  styleUrls: ['../../../shared/styles/add-form.css', './add-liabilitie.component.css']
+  styleUrls: ['../../../shared/styles/add-form.css', './add-liabilitie.component.css'],
 })
 export class AddLiabilitieComponent extends BaseAddComponent implements DoCheck {
-
-  titleTextField = "";
-  amountTextField = "";
+  titleTextField = '';
+  amountTextField = '';
   isInvestment = false;
-  creditTextField = "";
+  creditTextField = '';
 
   AddToFire = false;
 
@@ -52,7 +51,10 @@ export class AddLiabilitieComponent extends BaseAddComponent implements DoCheck 
    * @param database - The database service.
    * @param frontendLogger - The frontend logging service.
    */
-  constructor(router: Router, private persistence: PersistenceService) {
+  constructor(
+    router: Router,
+    private persistence: PersistenceService,
+  ) {
     super(router);
     AddLiabilitieComponent.isAdd = false;
     this.initStatic(AddLiabilitieComponent);
@@ -80,8 +82,8 @@ export class AddLiabilitieComponent extends BaseAddComponent implements DoCheck 
 
   override closeWindow() {
     AddLiabilitieComponent.isAdd = false;
-    this.amountTextField = "";
-    this.titleTextField = "";
+    this.amountTextField = '';
+    this.titleTextField = '';
     this.isInvestment = false;
     this.AddToFire = false;
     super.closeWindow();
@@ -103,16 +105,23 @@ export class AddLiabilitieComponent extends BaseAddComponent implements DoCheck 
     // First trim string
     this.titleTextField = this.titleTextField.trim();
     // Validation (check if Amount is not empty)
-    if (!this.validateRequired([
-      { name: 'title', value: this.titleTextField, label: 'Title' },
-      { name: 'amount', value: this.amountTextField, label: 'Amount' }
-    ])) {
+    if (
+      !this.validateRequired([
+        { name: 'title', value: this.titleTextField, label: 'Title' },
+        { name: 'amount', value: this.amountTextField, label: 'Amount' },
+      ])
+    ) {
       // field errors shown inline
     } else if (this.invalidTitle(this.titleTextField)) {
-      this.showError("This liabilitie already exists.");
+      this.showError('This liabilitie already exists.');
     } else {
       // ready to write to Database new Transaction
-      const newLiabilitie: Liability = { tag: this.titleTextField, amount: this.amountTextField == "" ? 0.0 : parseFloat(this.amountTextField), investment: this.isInvestment, credit: this.creditTextField == "" ? 0.0 : parseFloat(this.creditTextField) };
+      const newLiabilitie: Liability = {
+        tag: this.titleTextField,
+        amount: this.amountTextField == '' ? 0.0 : parseFloat(this.amountTextField),
+        investment: this.isInvestment,
+        credit: this.creditTextField == '' ? 0.0 : parseFloat(this.creditTextField),
+      };
       AppStateService.instance.liabilities.push(newLiabilitie);
 
       this.closeWindow();
@@ -122,12 +131,25 @@ export class AddLiabilitieComponent extends BaseAddComponent implements DoCheck 
         data: AppStateService.instance.liabilities,
         localStorageKey: 'liabilities',
         logEvent: 'add_liability',
-        logMetadata: { title: this.titleTextField, amount: this.amountTextField, credit: this.creditTextField, isInvestment: this.isInvestment },
+        logMetadata: {
+          title: this.titleTextField,
+          amount: this.amountTextField,
+          credit: this.creditTextField,
+          isInvestment: this.isInvestment,
+        },
         onSuccess: () => {
           AppStateService.instance.isSaving = false;
           if (this.AddToFire) {
             gotoTop();
-            import('src/app/app.component').then(m => m.AppComponent.copyTransaction("Fire", parseFloat(this.amountTextField), `@${this.titleTextField}`, "funding", "balance"));
+            import('src/app/app.component').then((m) =>
+              m.AppComponent.copyTransaction(
+                'Fire',
+                parseFloat(this.amountTextField),
+                `@${this.titleTextField}`,
+                'funding',
+                'balance',
+              ),
+            );
             ProfileComponent.isProfile = false;
           }
           this.toastService.show('Liability added', 'success');
@@ -137,7 +159,7 @@ export class AddLiabilitieComponent extends BaseAddComponent implements DoCheck 
         onError: (error) => {
           AppStateService.instance.isSaving = false;
           this.toastService.show(error.message || 'Database write failed', 'error');
-        }
+        },
       });
     }
   }

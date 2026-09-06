@@ -18,7 +18,7 @@ services:
     image: grafana/loki:2.9.3
     container_name: money-loki
     ports:
-      - "3100:3100"
+      - '3100:3100'
     command: -config.file=/etc/loki/loki.yaml
     volumes:
       - ./config/loki-config.yaml:/etc/loki/loki.yaml:ro
@@ -45,7 +45,7 @@ services:
     image: grafana/grafana:10.2.0
     container_name: money-grafana
     ports:
-      - "3001:3000"
+      - '3001:3000'
     environment:
       - GF_AUTH_ANONYMOUS_ENABLED=false
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:?Set GRAFANA_ADMIN_PASSWORD in .env}

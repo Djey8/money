@@ -3,12 +3,12 @@ import { Injectable } from '@angular/core';
 /**
  * Service to track which data objects have been modified (dirty)
  * and need to be written to the database.
- * 
+ *
  * This is used to optimize selfhosted mode by only writing changed data,
  * reducing HTTP requests from 14+ per update to 1-3.
  */
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class DirtyTrackerService {
   private dirtyTags = new Set<string>();
@@ -78,7 +78,7 @@ export class DirtyTrackerService {
     if (!snapshot) {
       return true; // No snapshot = assume changed
     }
-    
+
     try {
       const current = JSON.stringify(data);
       const changed = snapshot !== current;
@@ -112,7 +112,7 @@ export class DirtyTrackerService {
     return {
       dirtyCount: this.dirtyTags.size,
       snapshotCount: this.lastSnapshots.size,
-      dirtyTags: this.getDirtyTags()
+      dirtyTags: this.getDirtyTags(),
     };
   }
 }

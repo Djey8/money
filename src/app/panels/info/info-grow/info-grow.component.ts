@@ -5,7 +5,14 @@ import { Share } from 'src/app/interfaces/share';
 import { Investment } from 'src/app/interfaces/investment';
 import { Liability } from 'src/app/interfaces/liability';
 import { Asset } from 'src/app/interfaces/asset';
-import { Grow, GrowPhase, GrowLink, GrowActionItem, GrowNote, GrowType } from 'src/app/interfaces/grow';
+import {
+  Grow,
+  GrowPhase,
+  GrowLink,
+  GrowActionItem,
+  GrowNote,
+  GrowType,
+} from 'src/app/interfaces/grow';
 import { isDuplicateTitle } from 'src/app/shared/validation.utils';
 import { BaseInfoComponent } from 'src/app/shared/base/base-info.component';
 import { AppStateService } from 'src/app/shared/services/app-state.service';
@@ -19,32 +26,69 @@ import { SettingsComponent } from 'src/app/panels/settings/settings.component';
 import { TrapFocusDirective } from 'src/app/shared/directives/trap-focus.directive';
 
 // Deferred imports — resolved after module init to break circular chains
-let AppComponent: any; setTimeout(() => import('src/app/app.component').then(m => AppComponent = m.AppComponent));
-let GrowComponent: any; setTimeout(() => import('../../../main/grow/grow.component').then(m => GrowComponent = m.GrowComponent));
-let BalanceComponent: any; setTimeout(() => import('../../../main/cashflow/balance/balance.component').then(m => BalanceComponent = m.BalanceComponent));
-let AddGrowComponent: any; setTimeout(() => import('src/app/panels/add/add-grow/add-grow.component').then(m => AddGrowComponent = m.AddGrowComponent));
-let AddComponent: any; setTimeout(() => import('src/app/panels/add/add.component').then(m => AddComponent = m.AddComponent));
-let MenuComponent: any; setTimeout(() => import('src/app/panels/menu/menu.component').then(m => MenuComponent = m.MenuComponent));
-let ProfileComponent: any; setTimeout(() => import('src/app/panels/profile/profile.component').then(m => ProfileComponent = m.ProfileComponent));
-let InfoComponent: any; setTimeout(() => import('../info.component').then(m => InfoComponent = m.InfoComponent));
+let AppComponent: any;
+setTimeout(() => import('src/app/app.component').then((m) => (AppComponent = m.AppComponent)));
+let GrowComponent: any;
+setTimeout(() =>
+  import('../../../main/grow/grow.component').then((m) => (GrowComponent = m.GrowComponent)),
+);
+let BalanceComponent: any;
+setTimeout(() =>
+  import('../../../main/cashflow/balance/balance.component').then(
+    (m) => (BalanceComponent = m.BalanceComponent),
+  ),
+);
+let AddGrowComponent: any;
+setTimeout(() =>
+  import('src/app/panels/add/add-grow/add-grow.component').then(
+    (m) => (AddGrowComponent = m.AddGrowComponent),
+  ),
+);
+let AddComponent: any;
+setTimeout(() =>
+  import('src/app/panels/add/add.component').then((m) => (AddComponent = m.AddComponent)),
+);
+let MenuComponent: any;
+setTimeout(() =>
+  import('src/app/panels/menu/menu.component').then((m) => (MenuComponent = m.MenuComponent)),
+);
+let ProfileComponent: any;
+setTimeout(() =>
+  import('src/app/panels/profile/profile.component').then(
+    (m) => (ProfileComponent = m.ProfileComponent),
+  ),
+);
+let InfoComponent: any;
+setTimeout(() => import('../info.component').then((m) => (InfoComponent = m.InfoComponent)));
 @Component({
   selector: 'app-info-grow',
   standalone: true,
-  imports: [TrapFocusDirective, CommonModule, FormsModule, TranslateModule, AppNumberPipe, AppDatePipe],
+  imports: [
+    TrapFocusDirective,
+    CommonModule,
+    FormsModule,
+    TranslateModule,
+    AppNumberPipe,
+    AppDatePipe,
+  ],
   templateUrl: './info-grow.component.html',
-  styleUrls: ['../../../shared/styles/info-panel.css', '../../../shared/styles/add-form.css', './info-grow.component.css']
+  styleUrls: [
+    '../../../shared/styles/info-panel.css',
+    '../../../shared/styles/add-form.css',
+    './info-grow.component.css',
+  ],
 })
 export class InfoGrowComponent extends BaseInfoComponent {
   static index = 1;
 
-  static title = "";
-  static sub = "";
+  static title = '';
+  static sub = '';
   static type: GrowType = 'income-growth';
   static phase: GrowPhase = 'idea';
-  static description = "";
-  static strategy = "";
+  static description = '';
+  static strategy = '';
   static riskScore = 0;
-  static risks = "";
+  static risks = '';
   static amount = 0.0;
   static cashflow = 0.0;
   static isAsset = false;
@@ -52,21 +96,21 @@ export class InfoGrowComponent extends BaseInfoComponent {
   static investment = null;
   static liabilitie = null;
   // Expense optimization fields
-  static category: string | string[] = "";
+  static category: string | string[] = '';
   static currentCost = 0.0;
   static targetCost = 0.0;
   static monthlySavings = 0.0;
   static annualSavings = 0.0;
-  static reasoning = "";
-  static alternative = "";
+  static reasoning = '';
+  static alternative = '';
   static alternativeCost = 0.0;
-  static pattern = "";
-  static insights = "";
+  static pattern = '';
+  static insights = '';
   static links: GrowLink[] = [];
   static actionItems: GrowActionItem[] = [];
   static notes: GrowNote[] = [];
-  static createdAt = "";
-  static updatedAt = "";
+  static createdAt = '';
+  static updatedAt = '';
 
   static isLoan = false;
   static isInvestment = false;
@@ -116,12 +160,10 @@ export class InfoGrowComponent extends BaseInfoComponent {
     InfoGrowComponent.isEdit = false;
     InfoGrowComponent.activeTab = 'overview';
     InfoGrowComponent.isInfo = true;
-    if(InfoComponent.isInfo){
+    if (InfoComponent.isInfo) {
       InfoGrowComponent.isInfo = false;
     }
   }
-
-  
 
   showCreditOptions = false;
 
@@ -137,7 +179,7 @@ export class InfoGrowComponent extends BaseInfoComponent {
   cashflowTextField = InfoGrowComponent.cashflow;
   // Expense optimization fields
   categoryArray: string[] = [];
-  newCategoryInput = "";
+  newCategoryInput = '';
   currentCostTextField = InfoGrowComponent.currentCost;
   targetCostTextField = InfoGrowComponent.targetCost;
   monthlySavingsTextField = InfoGrowComponent.monthlySavings;
@@ -165,13 +207,16 @@ export class InfoGrowComponent extends BaseInfoComponent {
   quantityTextField = InfoGrowComponent.share ? InfoGrowComponent.share.quantity : 0;
   priceTextField = InfoGrowComponent.share ? InfoGrowComponent.share.price : 0;
 
-
   static zIndex;
   static isInfo;
   static isError;
   public classReference = InfoGrowComponent;
   public settingsReference = SettingsComponent;
-  constructor(router: Router, private persistence: PersistenceService, private incomeStatement: IncomeStatementService) {
+  constructor(
+    router: Router,
+    private persistence: PersistenceService,
+    private incomeStatement: IncomeStatementService,
+  ) {
     super(router);
     this.initStatic(InfoGrowComponent);
   }
@@ -224,17 +269,25 @@ export class InfoGrowComponent extends BaseInfoComponent {
     // find liabilitie index
     let idx = -1;
     for (let i = 0; i < AppStateService.instance.liabilities.length; i++) {
-      if (AppStateService.instance.liabilities[i].tag === AppStateService.instance.allGrowProjects[index].title){
+      if (
+        AppStateService.instance.liabilities[i].tag ===
+        AppStateService.instance.allGrowProjects[index].title
+      ) {
         idx = i;
       }
     }
-    if (idx != -1){
+    if (idx != -1) {
       AppComponent.gotoTop();
       AddComponent.categoryTextField = `@${AppStateService.instance.liabilities[idx].tag}`;
-      AddComponent.url = "/grow";
-      AddComponent.commentTextField = "Payback Liabilitie " + AppStateService.instance.liabilities[idx].amount + " " + AppStateService.instance.liabilities[idx].credit + ";";
-      AddComponent.amountTextField = "-1";
-      AddComponent.selectedOption = "Fire";
+      AddComponent.url = '/grow';
+      AddComponent.commentTextField =
+        'Payback Liabilitie ' +
+        AppStateService.instance.liabilities[idx].amount +
+        ' ' +
+        AppStateService.instance.liabilities[idx].credit +
+        ';';
+      AddComponent.amountTextField = '-1';
+      AddComponent.selectedOption = 'Fire';
       AddComponent.isLiabilitie = false;
       InfoGrowComponent.isInfo = false;
       AddComponent.isAdd = true;
@@ -259,8 +312,12 @@ export class InfoGrowComponent extends BaseInfoComponent {
     this.cashflowTextField = InfoGrowComponent.cashflow;
     // Expense optimization fields - initialize category array
     const currentCat = InfoGrowComponent.category;
-    this.categoryArray = Array.isArray(currentCat) ? [...currentCat] : (currentCat ? [currentCat] : []);
-    this.newCategoryInput = "";
+    this.categoryArray = Array.isArray(currentCat)
+      ? [...currentCat]
+      : currentCat
+        ? [currentCat]
+        : [];
+    this.newCategoryInput = '';
     this.currentCostTextField = InfoGrowComponent.currentCost;
     this.targetCostTextField = InfoGrowComponent.targetCost;
     this.monthlySavingsTextField = InfoGrowComponent.monthlySavings;
@@ -293,53 +350,75 @@ export class InfoGrowComponent extends BaseInfoComponent {
 
   updateGrowProject() {
     //Validation (check if Amount is not empty)
-    if (this.titleTextField == "") {
-      this.showError("Please fill out all required fields.");
+    if (this.titleTextField == '') {
+      this.showError('Please fill out all required fields.');
     } else {
-      if (AppStateService.instance.allGrowProjects[InfoGrowComponent.index].title != this.titleTextField) {
+      if (
+        AppStateService.instance.allGrowProjects[InfoGrowComponent.index].title !=
+        this.titleTextField
+      ) {
         if (this.invalidTitle(this.titleTextField)) {
-          this.showError("This grow project already exists.");
+          this.showError('This grow project already exists.');
         }
       }
-      const isInvest = InfoGrowComponent.isAsset || InfoGrowComponent.isShare || InfoGrowComponent.isInvestment
+      const isInvest =
+        InfoGrowComponent.isAsset || InfoGrowComponent.isShare || InfoGrowComponent.isInvestment;
 
-      let liabilitie: Liability = null
-      if(InfoGrowComponent.isLoan){
-        if (this.loanTextField === "" || this.loanTextField === "0") {
-          this.showError("Please fill out all required field (Loan).");
+      let liabilitie: Liability = null;
+      if (InfoGrowComponent.isLoan) {
+        if (this.loanTextField === '' || this.loanTextField === '0') {
+          this.showError('Please fill out all required field (Loan).');
         } else {
-          if(this.showCreditOptions){
-              if (this.creditTextField === "") {
-                this.creditTextField = "0";
-              }
-              this.creditTextField = Math.round(parseFloat(this.loanTextField) * (parseFloat(this.creditTextField) / 100) * 100) / 100;
+          if (this.showCreditOptions) {
+            if (this.creditTextField === '') {
+              this.creditTextField = '0';
+            }
+            this.creditTextField =
+              Math.round(
+                parseFloat(this.loanTextField) * (parseFloat(this.creditTextField) / 100) * 100,
+              ) / 100;
           }
-          liabilitie = {tag: this.titleTextField, amount: this.loanTextField, credit: this.creditTextField, investment: isInvest}
+          liabilitie = {
+            tag: this.titleTextField,
+            amount: this.loanTextField,
+            credit: this.creditTextField,
+            investment: isInvest,
+          };
         }
       }
 
-      let share: Share = null
-      if(InfoGrowComponent.isShare){
-        if (this.quantityTextField === "" || this.priceTextField === "") {
-          this.showError("Please fill out all required fields (Quantity, Price).");
+      let share: Share = null;
+      if (InfoGrowComponent.isShare) {
+        if (this.quantityTextField === '' || this.priceTextField === '') {
+          this.showError('Please fill out all required fields (Quantity, Price).');
         } else {
-          share = {tag: this.titleTextField, quantity: this.quantityTextField, price: this.priceTextField}
-          this.amountTextField = parseFloat(this.quantityTextField) * parseFloat(this.priceTextField) - parseFloat(this.loanTextField);
-          for(let i = 0; i < AppStateService.instance.allShares.length; i++){
-            if(this.titleTextField == AppStateService.instance.allShares[i].tag){
+          share = {
+            tag: this.titleTextField,
+            quantity: this.quantityTextField,
+            price: this.priceTextField,
+          };
+          this.amountTextField =
+            parseFloat(this.quantityTextField) * parseFloat(this.priceTextField) -
+            parseFloat(this.loanTextField);
+          for (let i = 0; i < AppStateService.instance.allShares.length; i++) {
+            if (this.titleTextField == AppStateService.instance.allShares[i].tag) {
               AppStateService.instance.allShares[i].price = parseFloat(this.priceTextField);
             }
           }
         }
       }
 
-      let investment: Investment = null
-      if(InfoGrowComponent.isInvestment){
-        if (this.mortageTextField === "" || this.mortageTextField === "0") {
-          this.showError("Please fill out all required fields (Mortage).");
+      let investment: Investment = null;
+      if (InfoGrowComponent.isInvestment) {
+        if (this.mortageTextField === '' || this.mortageTextField === '0') {
+          this.showError('Please fill out all required fields (Mortage).');
         } else {
-            const deposit = Number(this.amountTextField) + parseFloat(this.loanTextField);
-            investment = {tag: this.titleTextField, deposit: deposit, amount: this.mortageTextField}
+          const deposit = Number(this.amountTextField) + parseFloat(this.loanTextField);
+          investment = {
+            tag: this.titleTextField,
+            deposit: deposit,
+            amount: this.mortageTextField,
+          };
         }
       }
       if (!InfoGrowComponent.isError) {
@@ -359,16 +438,50 @@ export class InfoGrowComponent extends BaseInfoComponent {
         project.investment = investment;
         project.liabilitie = liabilitie;
         // Expense optimization fields
-        project.category = this.isExpenseType() && this.categoryArray.length > 0 ? (this.categoryArray.length === 1 ? this.categoryArray[0] : this.categoryArray) : undefined;
-        project.currentCost = this.roundToTwo(this.isExpenseType() && this.currentCostTextField ? parseFloat(String(this.currentCostTextField)) : undefined);
-        project.targetCost = this.roundToTwo(this.isExpenseType() && this.targetCostTextField ? parseFloat(String(this.targetCostTextField)) : undefined);
-        project.monthlySavings = this.roundToTwo(this.isExpenseType() && this.monthlySavingsTextField ? parseFloat(String(this.monthlySavingsTextField)) : undefined);
-        project.annualSavings = this.roundToTwo(this.isExpenseType() && this.annualSavingsTextField ? parseFloat(String(this.annualSavingsTextField)) : undefined);
-        project.reasoning = this.isExpenseType() && this.reasoningTextField ? this.reasoningTextField : undefined;
-        project.alternative = this.typeField === 'subscription-action' && this.alternativeTextField ? this.alternativeTextField : undefined;
-        project.alternativeCost = this.typeField === 'subscription-action' && this.alternativeCostTextField ? parseFloat(String(this.alternativeCostTextField)) : undefined;
-        project.pattern = this.typeField === 'expense-insight' && this.patternTextField ? this.patternTextField : undefined;
-        project.insights = this.typeField === 'expense-insight' && this.insightsTextField ? this.insightsTextField : undefined;
+        project.category =
+          this.isExpenseType() && this.categoryArray.length > 0
+            ? this.categoryArray.length === 1
+              ? this.categoryArray[0]
+              : this.categoryArray
+            : undefined;
+        project.currentCost = this.roundToTwo(
+          this.isExpenseType() && this.currentCostTextField
+            ? parseFloat(String(this.currentCostTextField))
+            : undefined,
+        );
+        project.targetCost = this.roundToTwo(
+          this.isExpenseType() && this.targetCostTextField
+            ? parseFloat(String(this.targetCostTextField))
+            : undefined,
+        );
+        project.monthlySavings = this.roundToTwo(
+          this.isExpenseType() && this.monthlySavingsTextField
+            ? parseFloat(String(this.monthlySavingsTextField))
+            : undefined,
+        );
+        project.annualSavings = this.roundToTwo(
+          this.isExpenseType() && this.annualSavingsTextField
+            ? parseFloat(String(this.annualSavingsTextField))
+            : undefined,
+        );
+        project.reasoning =
+          this.isExpenseType() && this.reasoningTextField ? this.reasoningTextField : undefined;
+        project.alternative =
+          this.typeField === 'subscription-action' && this.alternativeTextField
+            ? this.alternativeTextField
+            : undefined;
+        project.alternativeCost =
+          this.typeField === 'subscription-action' && this.alternativeCostTextField
+            ? parseFloat(String(this.alternativeCostTextField))
+            : undefined;
+        project.pattern =
+          this.typeField === 'expense-insight' && this.patternTextField
+            ? this.patternTextField
+            : undefined;
+        project.insights =
+          this.typeField === 'expense-insight' && this.insightsTextField
+            ? this.insightsTextField
+            : undefined;
         // Save links and action items
         project.links = this.links;
         project.actionItems = this.actionItems;
@@ -400,7 +513,7 @@ export class InfoGrowComponent extends BaseInfoComponent {
             title: this.titleTextField,
             hasLoan: InfoGrowComponent.isLoan,
             hasShare: InfoGrowComponent.isShare,
-            hasInvestment: InfoGrowComponent.isInvestment
+            hasInvestment: InfoGrowComponent.isInvestment,
           },
           onSuccess: () => {
             AppStateService.instance.isSaving = false;
@@ -411,7 +524,7 @@ export class InfoGrowComponent extends BaseInfoComponent {
           onError: (error) => {
             AppStateService.instance.isSaving = false;
             this.toastService.show(error.message || 'Database write failed', 'error');
-          }
+          },
         });
       }
     }
@@ -421,60 +534,60 @@ export class InfoGrowComponent extends BaseInfoComponent {
     this.confirmService.confirm(this.translate.instant('Confirm.deleteGrow'), () => {
       // Save title before deleting
       const deletedTitle = AppStateService.instance.allGrowProjects[index].title;
-    
-    //remove all transactions
-    let found = true;
-    while (found) {
-      found = false;
-      for (let i = 0; i < AppStateService.instance.allTransactions.length; i++) {
-        if ("@" + deletedTitle === AppStateService.instance.allTransactions[i].category) {
-          AppStateService.instance.allTransactions.splice(i, 1);
-          found = true;
+
+      //remove all transactions
+      let found = true;
+      while (found) {
+        found = false;
+        for (let i = 0; i < AppStateService.instance.allTransactions.length; i++) {
+          if ('@' + deletedTitle === AppStateService.instance.allTransactions[i].category) {
+            AppStateService.instance.allTransactions.splice(i, 1);
+            found = true;
+          }
         }
       }
-    }
 
-    try {
-      //update database
-      //now delete grow project
-      AppStateService.instance.allGrowProjects.splice(index, 1);
+      try {
+        //update database
+        //now delete grow project
+        AppStateService.instance.allGrowProjects.splice(index, 1);
 
-      // Recalculate income statement after removing transactions
-      this.incomeStatement.recalculate();
+        // Recalculate income statement after removing transactions
+        this.incomeStatement.recalculate();
 
-      const writes = [
-        { tag: "transactions", data: AppStateService.instance.allTransactions },
-        { tag: "grow", data: AppStateService.instance.allGrowProjects },
-        ...this.incomeStatement.getWrites()
-      ];
+        const writes = [
+          { tag: 'transactions', data: AppStateService.instance.allTransactions },
+          { tag: 'grow', data: AppStateService.instance.allGrowProjects },
+          ...this.incomeStatement.getWrites(),
+        ];
 
-      InfoGrowComponent.isInfo = false;
-      InfoGrowComponent.isError = false;
-      AppStateService.instance.isSaving = true;
+        InfoGrowComponent.isInfo = false;
+        InfoGrowComponent.isError = false;
+        AppStateService.instance.isSaving = true;
 
-      this.persistence.batchWriteAndSync({
-        writes,
-        localStorageSaves: [
-          { key: 'transactions', data: JSON.stringify(AppStateService.instance.allTransactions) },
-          { key: 'grow', data: JSON.stringify(AppStateService.instance.allGrowProjects) }
-        ],
-        logEvent: 'delete_grow',
-        logMetadata: { title: deletedTitle, index: index },
-        onSuccess: () => {
-          AppStateService.instance.isSaving = false;
-          this.incomeStatement.saveToLocalStorage();
-          this.toastService.show('Grow project deleted', 'delete');
-          AppComponent.gotoTop();
-          this.router.navigate(['/grow']);
-        },
-        onError: (error) => {
-          AppStateService.instance.isSaving = false;
-          this.toastService.show(error.message || 'Database write failed', 'error');
-        }
-      });
-    } catch (error) {
-      this.showError(error.message || 'Error occurred');
-    }
+        this.persistence.batchWriteAndSync({
+          writes,
+          localStorageSaves: [
+            { key: 'transactions', data: JSON.stringify(AppStateService.instance.allTransactions) },
+            { key: 'grow', data: JSON.stringify(AppStateService.instance.allGrowProjects) },
+          ],
+          logEvent: 'delete_grow',
+          logMetadata: { title: deletedTitle, index: index },
+          onSuccess: () => {
+            AppStateService.instance.isSaving = false;
+            this.incomeStatement.saveToLocalStorage();
+            this.toastService.show('Grow project deleted', 'delete');
+            AppComponent.gotoTop();
+            this.router.navigate(['/grow']);
+          },
+          onError: (error) => {
+            AppStateService.instance.isSaving = false;
+            this.toastService.show(error.message || 'Database write failed', 'error');
+          },
+        });
+      } catch (error) {
+        this.showError(error.message || 'Error occurred');
+      }
     });
   }
 
@@ -574,11 +687,11 @@ export class InfoGrowComponent extends BaseInfoComponent {
         project.links[index].url = this.editingLinkUrl.trim();
         project.updatedAt = new Date().toISOString();
         InfoGrowComponent.links = project.links;
-        
+
         this.editingLinkIndex = -1;
         this.editingLinkLabel = '';
         this.editingLinkUrl = '';
-        
+
         this.persistProject();
       }
     }
@@ -644,7 +757,7 @@ export class InfoGrowComponent extends BaseInfoComponent {
     const cat = this.newCategoryInput.trim();
     if (cat && cat !== '' && !this.categoryArray.includes(cat)) {
       this.categoryArray.push(cat);
-      this.newCategoryInput = "";
+      this.newCategoryInput = '';
     }
   }
 
@@ -652,7 +765,7 @@ export class InfoGrowComponent extends BaseInfoComponent {
     const cat = this.newCategoryInput.trim();
     if (cat && !this.categoryArray.includes(cat)) {
       this.categoryArray.push(cat);
-      this.newCategoryInput = "";
+      this.newCategoryInput = '';
     }
   }
 
@@ -682,7 +795,7 @@ export class InfoGrowComponent extends BaseInfoComponent {
       onSuccess: () => {},
       onError: (error: any) => {
         this.showError(error.message || 'Save failed');
-      }
+      },
     });
   }
 
@@ -711,7 +824,7 @@ export class InfoGrowComponent extends BaseInfoComponent {
     const item: GrowActionItem = {
       text: this.newActionText.trim(),
       done: false,
-      priority: this.newActionPriority
+      priority: this.newActionPriority,
     };
     if (this.newActionDueDate) item.dueDate = this.newActionDueDate;
     project.actionItems.push(item);
@@ -788,7 +901,7 @@ export class InfoGrowComponent extends BaseInfoComponent {
     if (!title) return [];
     const category = '@' + title;
     return (AppStateService.instance.allTransactions || [])
-      .filter(tx => tx.category === category)
+      .filter((tx) => tx.category === category)
       .sort((a, b) => (b.date || '').localeCompare(a.date || ''));
   }
 
@@ -798,7 +911,13 @@ export class InfoGrowComponent extends BaseInfoComponent {
     if (index < 0) return;
     AppComponent?.gotoTop?.();
     InfoComponent.setInfoComponent(
-      index, tx.account, tx.amount, tx.date, tx.time, tx.category, tx.comment
+      index,
+      tx.account,
+      tx.amount,
+      tx.date,
+      tx.time,
+      tx.category,
+      tx.comment,
     );
   }
 }

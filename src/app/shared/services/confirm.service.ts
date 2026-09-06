@@ -13,12 +13,17 @@ export class ConfirmService {
   private confirmSubject = new Subject<ConfirmRequest>();
   confirm$ = this.confirmSubject.asObservable();
 
-  confirm(message: string, onConfirm: () => void, confirmButtonText?: string, confirmButtonClass?: 'delete' | 'primary') {
-    this.confirmSubject.next({ 
-      message, 
+  confirm(
+    message: string,
+    onConfirm: () => void,
+    confirmButtonText?: string,
+    confirmButtonClass?: 'delete' | 'primary',
+  ) {
+    this.confirmSubject.next({
+      message,
       onConfirm,
       confirmButtonText,
-      confirmButtonClass
+      confirmButtonClass,
     });
   }
 }

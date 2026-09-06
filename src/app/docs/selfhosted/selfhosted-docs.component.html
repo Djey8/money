@@ -1,24 +1,50 @@
 <!-- Toolbar -->
 <div class="toolbar" role="banner">
-  <img id="profile-pic" width="40" alt="Profile Logo" src="../../assets/profile-blank.jpg"
-    role="button" tabindex="0" aria-label="Open profile" (click)="appReference.clickProfile()" (keydown.enter)="appReference.clickProfile()" />
+  <img
+    id="profile-pic"
+    width="40"
+    alt="Profile Logo"
+    src="../../assets/profile-blank.jpg"
+    role="button"
+    tabindex="0"
+    aria-label="Open profile"
+    (click)="appReference.clickProfile()"
+    (keydown.enter)="appReference.clickProfile()"
+  />
   <a routerLink="/" class="logo">Money<span>App</span></a>
   <div class="spacer"></div>
-  <input type="checkbox" id="nav-toggle" class="nav-toggle" aria-label="Toggle navigation">
+  <input type="checkbox" id="nav-toggle" class="nav-toggle" aria-label="Toggle navigation" />
   <label for="nav-toggle" class="nav-toggle-label" aria-hidden="true"><span></span></label>
   <label for="nav-toggle" class="nav-backdrop" aria-hidden="true"></label>
   <ul class="nav-links">
-    <li><a routerLink="/" (click)="closeNav()">{{ 'Landing.nav.howItWorks' | translate }}</a></li>
-    <li><a routerLink="/changelog" (click)="closeNav()">{{ 'Landing.nav.changelog' | translate }}</a></li>
-    <li><a routerLink="/docs" class="active-nav" (click)="closeNav()">{{ 'Landing.nav.docs' | translate }}</a></li>
-    <li><a routerLink="/community" (click)="closeNav()">{{ 'Landing.nav.community' | translate }}</a></li>
-    <li><a href="javascript:void(0)" (click)="closeNav(); navigateToSection('get-started')">{{ 'Landing.nav.getStarted' | translate }}</a></li>
-    <li><button class="nav-demo-btn" (click)="closeNav(); launchDemo()">{{ 'Landing.nav.demo' | translate }}</button></li>
+    <li>
+      <a routerLink="/" (click)="closeNav()">{{ 'Landing.nav.howItWorks' | translate }}</a>
+    </li>
+    <li>
+      <a routerLink="/changelog" (click)="closeNav()">{{ 'Landing.nav.changelog' | translate }}</a>
+    </li>
+    <li>
+      <a routerLink="/docs" class="active-nav" (click)="closeNav()">{{
+        'Landing.nav.docs' | translate
+      }}</a>
+    </li>
+    <li>
+      <a routerLink="/community" (click)="closeNav()">{{ 'Landing.nav.community' | translate }}</a>
+    </li>
+    <li>
+      <a href="javascript:void(0)" (click)="closeNav(); navigateToSection('get-started')">{{
+        'Landing.nav.getStarted' | translate
+      }}</a>
+    </li>
+    <li>
+      <button class="nav-demo-btn" (click)="closeNav(); launchDemo()">
+        {{ 'Landing.nav.demo' | translate }}
+      </button>
+    </li>
   </ul>
 </div>
 
 <div class="selfhosted-page">
-
   <header class="selfhosted-header">
     <a routerLink="/docs" class="back-link">← {{ 'Docs.back' | translate }}</a>
     <h1 class="selfhosted-title">{{ 'Docs.selfhosted.title' | translate }}</h1>
@@ -26,15 +52,20 @@
   </header>
 
   <div class="selfhosted-content">
-
     <!-- Section sidebar (desktop) -->
     <aside class="selfhosted-sidebar">
       <h3 class="sidebar-title">{{ 'Docs.selfhosted.sections' | translate }}</h3>
       <ul class="section-list">
-        <li *ngFor="let s of sections; let i = index"
-            class="section-item"
-            [ngClass]="{ active: i === selectedIndex, 'level-1': s.level === 1, 'level-2': s.level === 2 }"
-            (click)="selectSection(i)">
+        <li
+          *ngFor="let s of sections; let i = index"
+          class="section-item"
+          [ngClass]="{
+            active: i === selectedIndex,
+            'level-1': s.level === 1,
+            'level-2': s.level === 2,
+          }"
+          (click)="selectSection(i)"
+        >
           <span class="section-number">{{ s.number }}</span>
           <span class="section-label">{{ 'Docs.selfhosted.' + s.id + '.nav' | translate }}</span>
         </li>
@@ -43,11 +74,14 @@
 
     <!-- Main detail -->
     <main class="selfhosted-detail">
-
       <!-- Mobile section select -->
       <div class="mobile-section-select">
         <label class="mobile-select-label">{{ 'Docs.selfhosted.jumpTo' | translate }}</label>
-        <select class="mobile-section-dropdown" [value]="selectedIndex" (change)="selectSection(+$any($event.target).value)">
+        <select
+          class="mobile-section-dropdown"
+          [value]="selectedIndex"
+          (change)="selectSection(+$any($event.target).value)"
+        >
           <option *ngFor="let s of sections; let i = index" [value]="i">
             {{ s.number }} {{ 'Docs.selfhosted.' + s.id + '.nav' | translate }}
           </option>
@@ -62,7 +96,9 @@
         <p class="doc-intro">{{ 'Docs.selfhosted.overview.intro' | translate }}</p>
 
         <div class="info-card">
-          <div class="info-card-header">{{ 'Docs.selfhosted.overview.whatYouGet' | translate }}</div>
+          <div class="info-card-header">
+            {{ 'Docs.selfhosted.overview.whatYouGet' | translate }}
+          </div>
           <ul class="feature-list">
             <li>{{ 'Docs.selfhosted.overview.feature1' | translate }}</li>
             <li>{{ 'Docs.selfhosted.overview.feature2' | translate }}</li>
@@ -156,7 +192,9 @@
         <div class="architecture-diagram">
           <h3 class="doc-subheading">{{ 'Docs.selfhosted.techstack.archTitle' | translate }}</h3>
           <div class="arch-flow">
-            <div class="arch-node arch-client">{{ 'Docs.selfhosted.techstack.archBrowser' | translate }}</div>
+            <div class="arch-node arch-client">
+              {{ 'Docs.selfhosted.techstack.archBrowser' | translate }}
+            </div>
             <div class="arch-arrow">→</div>
             <div class="arch-node arch-nginx">Nginx<small>:8080 / :8443</small></div>
             <div class="arch-arrow">→</div>
@@ -189,8 +227,16 @@
           <div class="code-block">
             <div class="code-header">
               <span>{{ 'Docs.selfhosted.prereqs.installPodman' | translate }}</span>
-              <button class="copy-btn" (click)="copyToClipboard('sudo apt update && sudo apt install -y podman podman-compose', 'podman-install')"
-                      [ngClass]="{ copied: copiedSnippet === 'podman-install' }">
+              <button
+                class="copy-btn"
+                (click)="
+                  copyToClipboard(
+                    'sudo apt update && sudo apt install -y podman podman-compose',
+                    'podman-install'
+                  )
+                "
+                [ngClass]="{ copied: copiedSnippet === 'podman-install' }"
+              >
                 {{ copiedSnippet === 'podman-install' ? '✓' : '⧉' }}
               </button>
             </div>
@@ -204,8 +250,16 @@
           <div class="code-block">
             <div class="code-header">
               <span>{{ 'Docs.selfhosted.prereqs.installK3s' | translate }}</span>
-              <button class="copy-btn" (click)="copyToClipboard('curl -sfL https://get.k3s.io | sh -\nsudo chmod 644 /etc/rancher/k3s/k3s.yaml\necho &quot;export KUBECONFIG=/etc/rancher/k3s/k3s.yaml&quot; >> ~/.bashrc\nsource ~/.bashrc', 'k3s-install')"
-                      [ngClass]="{ copied: copiedSnippet === 'k3s-install' }">
+              <button
+                class="copy-btn"
+                (click)="
+                  copyToClipboard(
+                    'curl -sfL https://get.k3s.io | sh -\nsudo chmod 644 /etc/rancher/k3s/k3s.yaml\necho &quot;export KUBECONFIG=/etc/rancher/k3s/k3s.yaml&quot; >> ~/.bashrc\nsource ~/.bashrc',
+                    'k3s-install'
+                  )
+                "
+                [ngClass]="{ copied: copiedSnippet === 'k3s-install' }"
+              >
                 {{ copiedSnippet === 'k3s-install' ? '✓' : '⧉' }}
               </button>
             </div>
@@ -221,8 +275,13 @@ source ~/.bashrc</code></pre>
           <div class="code-block">
             <div class="code-header">
               <span>{{ 'Docs.selfhosted.prereqs.installGit' | translate }}</span>
-              <button class="copy-btn" (click)="copyToClipboard('sudo apt update && sudo apt install -y git', 'git-install')"
-                      [ngClass]="{ copied: copiedSnippet === 'git-install' }">
+              <button
+                class="copy-btn"
+                (click)="
+                  copyToClipboard('sudo apt update && sudo apt install -y git', 'git-install')
+                "
+                [ngClass]="{ copied: copiedSnippet === 'git-install' }"
+              >
                 {{ copiedSnippet === 'git-install' ? '✓' : '⧉' }}
               </button>
             </div>
@@ -274,8 +333,16 @@ source ~/.bashrc</code></pre>
             <div class="code-block">
               <div class="code-header">
                 <span>Terminal</span>
-                <button class="copy-btn" (click)="copyToClipboard('git clone https://github.com/Djey8/money.git && cd money', 'docker-clone')"
-                        [ngClass]="{ copied: copiedSnippet === 'docker-clone' }">
+                <button
+                  class="copy-btn"
+                  (click)="
+                    copyToClipboard(
+                      'git clone https://github.com/Djey8/money.git && cd money',
+                      'docker-clone'
+                    )
+                  "
+                  [ngClass]="{ copied: copiedSnippet === 'docker-clone' }"
+                >
                   {{ copiedSnippet === 'docker-clone' ? '✓' : '⧉' }}
                 </button>
               </div>
@@ -292,8 +359,16 @@ source ~/.bashrc</code></pre>
             <div class="code-block">
               <div class="code-header">
                 <span>docker-compose.yml</span>
-                <button class="copy-btn" (click)="copyToClipboard('COUCHDB_PASSWORD=your-strong-password-here\nJWT_SECRET=your-random-string-32-chars-minimum', 'docker-secrets')"
-                        [ngClass]="{ copied: copiedSnippet === 'docker-secrets' }">
+                <button
+                  class="copy-btn"
+                  (click)="
+                    copyToClipboard(
+                      'COUCHDB_PASSWORD=your-strong-password-here\nJWT_SECRET=your-random-string-32-chars-minimum',
+                      'docker-secrets'
+                    )
+                  "
+                  [ngClass]="{ copied: copiedSnippet === 'docker-secrets' }"
+                >
                   {{ copiedSnippet === 'docker-secrets' ? '✓' : '⧉' }}
                 </button>
               </div>
@@ -315,8 +390,11 @@ JWT_SECRET=your-random-string-32-chars-minimum</code></pre>
             <div class="code-block">
               <div class="code-header">
                 <span>Terminal</span>
-                <button class="copy-btn" (click)="copyToClipboard('podman-compose up -d', 'docker-start')"
-                        [ngClass]="{ copied: copiedSnippet === 'docker-start' }">
+                <button
+                  class="copy-btn"
+                  (click)="copyToClipboard('podman-compose up -d', 'docker-start')"
+                  [ngClass]="{ copied: copiedSnippet === 'docker-start' }"
+                >
                   {{ copiedSnippet === 'docker-start' ? '✓' : '⧉' }}
                 </button>
               </div>
@@ -332,9 +410,18 @@ JWT_SECRET=your-random-string-32-chars-minimum</code></pre>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr><td>Frontend</td><td><code>http://&lt;server-ip&gt;</code></td></tr>
-                  <tr><td>Backend API</td><td><code>http://&lt;server-ip&gt;:3000</code></td></tr>
-                  <tr><td>CouchDB Admin</td><td><code>http://&lt;server-ip&gt;:5984/_utils</code></td></tr>
+                  <tr>
+                    <td>Frontend</td>
+                    <td><code>http://&lt;server-ip&gt;</code></td>
+                  </tr>
+                  <tr>
+                    <td>Backend API</td>
+                    <td><code>http://&lt;server-ip&gt;:3000</code></td>
+                  </tr>
+                  <tr>
+                    <td>CouchDB Admin</td>
+                    <td><code>http://&lt;server-ip&gt;:5984/_utils</code></td>
+                  </tr>
                 </tbody>
               </table>
             </div>
@@ -349,8 +436,16 @@ JWT_SECRET=your-random-string-32-chars-minimum</code></pre>
             <div class="code-block">
               <div class="code-header">
                 <span>{{ 'Docs.selfhosted.docker.loggingStart' | translate }}</span>
-                <button class="copy-btn" (click)="copyToClipboard('podman-compose -f docker-compose.yml -f docker-compose.logging.yml up -d', 'docker-logging')"
-                        [ngClass]="{ copied: copiedSnippet === 'docker-logging' }">
+                <button
+                  class="copy-btn"
+                  (click)="
+                    copyToClipboard(
+                      'podman-compose -f docker-compose.yml -f docker-compose.logging.yml up -d',
+                      'docker-logging'
+                    )
+                  "
+                  [ngClass]="{ copied: copiedSnippet === 'docker-logging' }"
+                >
                   {{ copiedSnippet === 'docker-logging' ? '✓' : '⧉' }}
                 </button>
               </div>
@@ -359,8 +454,16 @@ JWT_SECRET=your-random-string-32-chars-minimum</code></pre>
             <div class="code-block">
               <div class="code-header">
                 <span>{{ 'Docs.selfhosted.docker.loggingStop' | translate }}</span>
-                <button class="copy-btn" (click)="copyToClipboard('podman-compose -f docker-compose.yml -f docker-compose.logging.yml down\npodman-compose up -d', 'docker-logging-stop')"
-                        [ngClass]="{ copied: copiedSnippet === 'docker-logging-stop' }">
+                <button
+                  class="copy-btn"
+                  (click)="
+                    copyToClipboard(
+                      'podman-compose -f docker-compose.yml -f docker-compose.logging.yml down\npodman-compose up -d',
+                      'docker-logging-stop'
+                    )
+                  "
+                  [ngClass]="{ copied: copiedSnippet === 'docker-logging-stop' }"
+                >
                   {{ copiedSnippet === 'docker-logging-stop' ? '✓' : '⧉' }}
                 </button>
               </div>
@@ -377,8 +480,11 @@ podman-compose up -d</code></pre>
             <div class="code-block">
               <div class="code-header">
                 <span>{{ 'Docs.selfhosted.docker.stop' | translate }}</span>
-                <button class="copy-btn" (click)="copyToClipboard('podman-compose down', 'docker-stop')"
-                        [ngClass]="{ copied: copiedSnippet === 'docker-stop' }">
+                <button
+                  class="copy-btn"
+                  (click)="copyToClipboard('podman-compose down', 'docker-stop')"
+                  [ngClass]="{ copied: copiedSnippet === 'docker-stop' }"
+                >
                   {{ copiedSnippet === 'docker-stop' ? '✓' : '⧉' }}
                 </button>
               </div>
@@ -387,8 +493,11 @@ podman-compose up -d</code></pre>
             <div class="code-block">
               <div class="code-header">
                 <span>{{ 'Docs.selfhosted.docker.rebuild' | translate }}</span>
-                <button class="copy-btn" (click)="copyToClipboard('podman-compose up -d --build', 'docker-rebuild')"
-                        [ngClass]="{ copied: copiedSnippet === 'docker-rebuild' }">
+                <button
+                  class="copy-btn"
+                  (click)="copyToClipboard('podman-compose up -d --build', 'docker-rebuild')"
+                  [ngClass]="{ copied: copiedSnippet === 'docker-rebuild' }"
+                >
                   {{ copiedSnippet === 'docker-rebuild' ? '✓' : '⧉' }}
                 </button>
               </div>
@@ -408,9 +517,21 @@ podman-compose up -d</code></pre>
               </tr>
             </thead>
             <tbody>
-              <tr><td>{{ 'Docs.selfhosted.docker.minimal' | translate }}</td><td>CouchDB + Backend + Frontend</td><td>~640 MB</td></tr>
-              <tr><td>{{ 'Docs.selfhosted.docker.debug' | translate }}</td><td>+ Loki + Promtail + Grafana</td><td>~1.5 GB</td></tr>
-              <tr><td>{{ 'Docs.selfhosted.docker.osBaseline' | translate }}</td><td>—</td><td>~1.4 GB</td></tr>
+              <tr>
+                <td>{{ 'Docs.selfhosted.docker.minimal' | translate }}</td>
+                <td>CouchDB + Backend + Frontend</td>
+                <td>~640 MB</td>
+              </tr>
+              <tr>
+                <td>{{ 'Docs.selfhosted.docker.debug' | translate }}</td>
+                <td>+ Loki + Promtail + Grafana</td>
+                <td>~1.5 GB</td>
+              </tr>
+              <tr>
+                <td>{{ 'Docs.selfhosted.docker.osBaseline' | translate }}</td>
+                <td>—</td>
+                <td>~1.4 GB</td>
+              </tr>
             </tbody>
           </table>
         </div>
@@ -431,8 +552,16 @@ podman-compose up -d</code></pre>
             <div class="code-block">
               <div class="code-header">
                 <span>Terminal</span>
-                <button class="copy-btn" (click)="copyToClipboard('curl -sfL https://get.k3s.io | sh -\nsudo chmod 644 /etc/rancher/k3s/k3s.yaml\necho &quot;export KUBECONFIG=/etc/rancher/k3s/k3s.yaml&quot; >> ~/.bashrc\nsource ~/.bashrc', 'k3s-step1')"
-                        [ngClass]="{ copied: copiedSnippet === 'k3s-step1' }">
+                <button
+                  class="copy-btn"
+                  (click)="
+                    copyToClipboard(
+                      'curl -sfL https://get.k3s.io | sh -\nsudo chmod 644 /etc/rancher/k3s/k3s.yaml\necho &quot;export KUBECONFIG=/etc/rancher/k3s/k3s.yaml&quot; >> ~/.bashrc\nsource ~/.bashrc',
+                      'k3s-step1'
+                    )
+                  "
+                  [ngClass]="{ copied: copiedSnippet === 'k3s-step1' }"
+                >
                   {{ copiedSnippet === 'k3s-step1' ? '✓' : '⧉' }}
                 </button>
               </div>
@@ -452,8 +581,16 @@ source ~/.bashrc</code></pre>
             <div class="code-block">
               <div class="code-header">
                 <span>{{ 'Docs.selfhosted.k3s.buildLocal' | translate }}</span>
-                <button class="copy-btn" (click)="copyToClipboard('podman build -t money-frontend:latest .\npodman build -t money-backend:latest ./backend', 'k3s-build')"
-                        [ngClass]="{ copied: copiedSnippet === 'k3s-build' }">
+                <button
+                  class="copy-btn"
+                  (click)="
+                    copyToClipboard(
+                      'podman build -t money-frontend:latest .\npodman build -t money-backend:latest ./backend',
+                      'k3s-build'
+                    )
+                  "
+                  [ngClass]="{ copied: copiedSnippet === 'k3s-build' }"
+                >
                   {{ copiedSnippet === 'k3s-build' ? '✓' : '⧉' }}
                 </button>
               </div>
@@ -463,8 +600,16 @@ podman build -t money-backend:latest ./backend</code></pre>
             <div class="code-block">
               <div class="code-header">
                 <span>{{ 'Docs.selfhosted.k3s.buildTransfer' | translate }}</span>
-                <button class="copy-btn" (click)="copyToClipboard('# On build machine\npodman save money-frontend:latest | gzip > money-frontend.tar.gz\npodman save money-backend:latest | gzip > money-backend.tar.gz\n\n# On server\npodman load < money-frontend.tar.gz\npodman load < money-backend.tar.gz', 'k3s-transfer')"
-                        [ngClass]="{ copied: copiedSnippet === 'k3s-transfer' }">
+                <button
+                  class="copy-btn"
+                  (click)="
+                    copyToClipboard(
+                      '# On build machine\npodman save money-frontend:latest | gzip > money-frontend.tar.gz\npodman save money-backend:latest | gzip > money-backend.tar.gz\n\n# On server\npodman load < money-frontend.tar.gz\npodman load < money-backend.tar.gz',
+                      'k3s-transfer'
+                    )
+                  "
+                  [ngClass]="{ copied: copiedSnippet === 'k3s-transfer' }"
+                >
                   {{ copiedSnippet === 'k3s-transfer' ? '✓' : '⧉' }}
                 </button>
               </div>
@@ -487,8 +632,16 @@ podman load &lt; money-backend.tar.gz</code></pre>
             <div class="code-block">
               <div class="code-header">
                 <span>Terminal</span>
-                <button class="copy-btn" (click)="copyToClipboard('cp k8s/secrets.yaml.example k8s/secrets.yaml\nvi k8s/secrets.yaml    # JWT_SECRET, COUCHDB_PASSWORD, Grafana password', 'k3s-secrets')"
-                        [ngClass]="{ copied: copiedSnippet === 'k3s-secrets' }">
+                <button
+                  class="copy-btn"
+                  (click)="
+                    copyToClipboard(
+                      'cp k8s/secrets.yaml.example k8s/secrets.yaml\nvi k8s/secrets.yaml    # JWT_SECRET, COUCHDB_PASSWORD, Grafana password',
+                      'k3s-secrets'
+                    )
+                  "
+                  [ngClass]="{ copied: copiedSnippet === 'k3s-secrets' }"
+                >
                   {{ copiedSnippet === 'k3s-secrets' ? '✓' : '⧉' }}
                 </button>
               </div>
@@ -506,8 +659,16 @@ vi k8s/secrets.yaml    # JWT_SECRET, COUCHDB_PASSWORD, Grafana password</code></
             <div class="code-block">
               <div class="code-header">
                 <span>{{ 'Docs.selfhosted.k3s.manualDeploy' | translate }}</span>
-                <button class="copy-btn" (click)="copyToClipboard('kubectl apply -f k8s/namespace.yaml\nkubectl apply -f k8s/couchdb.yaml\nkubectl wait --for=condition=ready pod -l app=couchdb -n money-app --timeout=120s\nkubectl apply -f k8s/backend.yaml\nkubectl wait --for=condition=ready pod -l app=backend -n money-app --timeout=120s\nkubectl apply -f k8s/frontend.yaml\nkubectl apply -f k8s/ingress.yaml', 'k3s-deploy')"
-                        [ngClass]="{ copied: copiedSnippet === 'k3s-deploy' }">
+                <button
+                  class="copy-btn"
+                  (click)="
+                    copyToClipboard(
+                      'kubectl apply -f k8s/namespace.yaml\nkubectl apply -f k8s/couchdb.yaml\nkubectl wait --for=condition=ready pod -l app=couchdb -n money-app --timeout=120s\nkubectl apply -f k8s/backend.yaml\nkubectl wait --for=condition=ready pod -l app=backend -n money-app --timeout=120s\nkubectl apply -f k8s/frontend.yaml\nkubectl apply -f k8s/ingress.yaml',
+                      'k3s-deploy'
+                    )
+                  "
+                  [ngClass]="{ copied: copiedSnippet === 'k3s-deploy' }"
+                >
                   {{ copiedSnippet === 'k3s-deploy' ? '✓' : '⧉' }}
                 </button>
               </div>
@@ -522,8 +683,11 @@ kubectl apply -f k8s/ingress.yaml</code></pre>
             <div class="code-block">
               <div class="code-header">
                 <span>{{ 'Docs.selfhosted.k3s.scriptDeploy' | translate }}</span>
-                <button class="copy-btn" (click)="copyToClipboard('./scripts/deploy.sh', 'k3s-script')"
-                        [ngClass]="{ copied: copiedSnippet === 'k3s-script' }">
+                <button
+                  class="copy-btn"
+                  (click)="copyToClipboard('./scripts/deploy.sh', 'k3s-script')"
+                  [ngClass]="{ copied: copiedSnippet === 'k3s-script' }"
+                >
                   {{ copiedSnippet === 'k3s-script' ? '✓' : '⧉' }}
                 </button>
               </div>
@@ -539,8 +703,11 @@ kubectl apply -f k8s/ingress.yaml</code></pre>
             <div class="code-block">
               <div class="code-header">
                 <span>Terminal</span>
-                <button class="copy-btn" (click)="copyToClipboard('kubectl get pods -n money-app', 'k3s-verify')"
-                        [ngClass]="{ copied: copiedSnippet === 'k3s-verify' }">
+                <button
+                  class="copy-btn"
+                  (click)="copyToClipboard('kubectl get pods -n money-app', 'k3s-verify')"
+                  [ngClass]="{ copied: copiedSnippet === 'k3s-verify' }"
+                >
                   {{ copiedSnippet === 'k3s-verify' ? '✓' : '⧉' }}
                 </button>
               </div>
@@ -555,8 +722,16 @@ kubectl apply -f k8s/ingress.yaml</code></pre>
         <div class="code-block">
           <div class="code-header">
             <span>PowerShell</span>
-            <button class="copy-btn" (click)="copyToClipboard('.\\scripts\\deploy-local.ps1              # full build + deploy + port-forward + browser\n.\\scripts\\deploy-local.ps1 -SkipBuild   # redeploy without rebuilding images\n.\\scripts\\deploy-local.ps1 -NoCache     # rebuild from scratch\n.\\scripts\\cleanup-local.ps1             # tear down', 'k3s-windows')"
-                    [ngClass]="{ copied: copiedSnippet === 'k3s-windows' }">
+            <button
+              class="copy-btn"
+              (click)="
+                copyToClipboard(
+                  '.\\scripts\\deploy-local.ps1              # full build + deploy + port-forward + browser\n.\\scripts\\deploy-local.ps1 -SkipBuild   # redeploy without rebuilding images\n.\\scripts\\deploy-local.ps1 -NoCache     # rebuild from scratch\n.\\scripts\\cleanup-local.ps1             # tear down',
+                  'k3s-windows'
+                )
+              "
+              [ngClass]="{ copied: copiedSnippet === 'k3s-windows' }"
+            >
               {{ copiedSnippet === 'k3s-windows' ? '✓' : '⧉' }}
             </button>
           </div>
@@ -586,19 +761,58 @@ kubectl apply -f k8s/ingress.yaml</code></pre>
               </tr>
             </thead>
             <tbody>
-              <tr><td><code>--no-cache</code></td><td>{{ 'Docs.selfhosted.deploy.noCache' | translate }}</td></tr>
-              <tr><td><code>--skip-build</code></td><td>{{ 'Docs.selfhosted.deploy.skipBuild' | translate }}</td></tr>
-              <tr><td><code>--skip-frontend</code></td><td>{{ 'Docs.selfhosted.deploy.skipFrontend' | translate }}</td></tr>
-              <tr><td><code>--skip-backend</code></td><td>{{ 'Docs.selfhosted.deploy.skipBackend' | translate }}</td></tr>
-              <tr><td><code>--skip-tls</code></td><td>{{ 'Docs.selfhosted.deploy.skipTls' | translate }}</td></tr>
-              <tr><td><code>--no-ingress</code></td><td>{{ 'Docs.selfhosted.deploy.noIngress' | translate }}</td></tr>
-              <tr><td><code>--no-backup</code></td><td>{{ 'Docs.selfhosted.deploy.noBackup' | translate }}</td></tr>
-              <tr><td><code>--no-local-backup</code></td><td>{{ 'Docs.selfhosted.deploy.noLocalBackup' | translate }}</td></tr>
-              <tr><td><code>--no-nas-backup</code></td><td>{{ 'Docs.selfhosted.deploy.noNasBackup' | translate }}</td></tr>
-              <tr><td><code>--no-logging</code></td><td>{{ 'Docs.selfhosted.deploy.noLogging' | translate }}</td></tr>
-              <tr><td><code>--port-forward</code></td><td>{{ 'Docs.selfhosted.deploy.portForward' | translate }}</td></tr>
-              <tr><td><code>--prd</code></td><td>{{ 'Docs.selfhosted.deploy.prd' | translate }}</td></tr>
-              <tr><td><code>--dev</code></td><td>{{ 'Docs.selfhosted.deploy.dev' | translate }}</td></tr>
+              <tr>
+                <td><code>--no-cache</code></td>
+                <td>{{ 'Docs.selfhosted.deploy.noCache' | translate }}</td>
+              </tr>
+              <tr>
+                <td><code>--skip-build</code></td>
+                <td>{{ 'Docs.selfhosted.deploy.skipBuild' | translate }}</td>
+              </tr>
+              <tr>
+                <td><code>--skip-frontend</code></td>
+                <td>{{ 'Docs.selfhosted.deploy.skipFrontend' | translate }}</td>
+              </tr>
+              <tr>
+                <td><code>--skip-backend</code></td>
+                <td>{{ 'Docs.selfhosted.deploy.skipBackend' | translate }}</td>
+              </tr>
+              <tr>
+                <td><code>--skip-tls</code></td>
+                <td>{{ 'Docs.selfhosted.deploy.skipTls' | translate }}</td>
+              </tr>
+              <tr>
+                <td><code>--no-ingress</code></td>
+                <td>{{ 'Docs.selfhosted.deploy.noIngress' | translate }}</td>
+              </tr>
+              <tr>
+                <td><code>--no-backup</code></td>
+                <td>{{ 'Docs.selfhosted.deploy.noBackup' | translate }}</td>
+              </tr>
+              <tr>
+                <td><code>--no-local-backup</code></td>
+                <td>{{ 'Docs.selfhosted.deploy.noLocalBackup' | translate }}</td>
+              </tr>
+              <tr>
+                <td><code>--no-nas-backup</code></td>
+                <td>{{ 'Docs.selfhosted.deploy.noNasBackup' | translate }}</td>
+              </tr>
+              <tr>
+                <td><code>--no-logging</code></td>
+                <td>{{ 'Docs.selfhosted.deploy.noLogging' | translate }}</td>
+              </tr>
+              <tr>
+                <td><code>--port-forward</code></td>
+                <td>{{ 'Docs.selfhosted.deploy.portForward' | translate }}</td>
+              </tr>
+              <tr>
+                <td><code>--prd</code></td>
+                <td>{{ 'Docs.selfhosted.deploy.prd' | translate }}</td>
+              </tr>
+              <tr>
+                <td><code>--dev</code></td>
+                <td>{{ 'Docs.selfhosted.deploy.dev' | translate }}</td>
+              </tr>
             </tbody>
           </table>
         </div>
@@ -607,8 +821,16 @@ kubectl apply -f k8s/ingress.yaml</code></pre>
         <div class="code-block">
           <div class="code-header">
             <span>{{ 'Docs.selfhosted.deploy.commonExamples' | translate }}</span>
-            <button class="copy-btn" (click)="copyToClipboard('./scripts/deploy.sh --prd                  # Production: fresh build, no logging\n./scripts/deploy.sh --dev                  # Development: fresh build, with logging\n./scripts/deploy.sh --skip-build           # Redeploy without rebuilding\n./scripts/deploy.sh --no-nas-backup        # No NAS? Skip NAS CronJob\n./scripts/deploy.sh --no-backup            # No backups at all', 'deploy-examples')"
-                    [ngClass]="{ copied: copiedSnippet === 'deploy-examples' }">
+            <button
+              class="copy-btn"
+              (click)="
+                copyToClipboard(
+                  './scripts/deploy.sh --prd                  # Production: fresh build, no logging\n./scripts/deploy.sh --dev                  # Development: fresh build, with logging\n./scripts/deploy.sh --skip-build           # Redeploy without rebuilding\n./scripts/deploy.sh --no-nas-backup        # No NAS? Skip NAS CronJob\n./scripts/deploy.sh --no-backup            # No backups at all',
+                  'deploy-examples'
+                )
+              "
+              [ngClass]="{ copied: copiedSnippet === 'deploy-examples' }"
+            >
               {{ copiedSnippet === 'deploy-examples' ? '✓' : '⧉' }}
             </button>
           </div>
@@ -631,16 +853,46 @@ kubectl apply -f k8s/ingress.yaml</code></pre>
               </tr>
             </thead>
             <tbody>
-              <tr><td><code>-NoCache</code></td><td>{{ 'Docs.selfhosted.deploy.noCache' | translate }}</td></tr>
-              <tr><td><code>-SkipBuild</code></td><td>{{ 'Docs.selfhosted.deploy.skipBuild' | translate }}</td></tr>
-              <tr><td><code>-SkipFrontend</code></td><td>{{ 'Docs.selfhosted.deploy.skipFrontend' | translate }}</td></tr>
-              <tr><td><code>-SkipBackend</code></td><td>{{ 'Docs.selfhosted.deploy.skipBackend' | translate }}</td></tr>
-              <tr><td><code>-NoIngress</code></td><td>{{ 'Docs.selfhosted.deploy.noIngress' | translate }}</td></tr>
-              <tr><td><code>-NoBackup</code></td><td>{{ 'Docs.selfhosted.deploy.noBackup' | translate }}</td></tr>
-              <tr><td><code>-NoLogging</code></td><td>{{ 'Docs.selfhosted.deploy.noLogging' | translate }}</td></tr>
-              <tr><td><code>-Prd</code></td><td>{{ 'Docs.selfhosted.deploy.prd' | translate }}</td></tr>
-              <tr><td><code>-Dev</code></td><td>{{ 'Docs.selfhosted.deploy.dev' | translate }}</td></tr>
-              <tr><td><code>-CleanImages</code></td><td>{{ 'Docs.selfhosted.deploy.cleanImages' | translate }}</td></tr>
+              <tr>
+                <td><code>-NoCache</code></td>
+                <td>{{ 'Docs.selfhosted.deploy.noCache' | translate }}</td>
+              </tr>
+              <tr>
+                <td><code>-SkipBuild</code></td>
+                <td>{{ 'Docs.selfhosted.deploy.skipBuild' | translate }}</td>
+              </tr>
+              <tr>
+                <td><code>-SkipFrontend</code></td>
+                <td>{{ 'Docs.selfhosted.deploy.skipFrontend' | translate }}</td>
+              </tr>
+              <tr>
+                <td><code>-SkipBackend</code></td>
+                <td>{{ 'Docs.selfhosted.deploy.skipBackend' | translate }}</td>
+              </tr>
+              <tr>
+                <td><code>-NoIngress</code></td>
+                <td>{{ 'Docs.selfhosted.deploy.noIngress' | translate }}</td>
+              </tr>
+              <tr>
+                <td><code>-NoBackup</code></td>
+                <td>{{ 'Docs.selfhosted.deploy.noBackup' | translate }}</td>
+              </tr>
+              <tr>
+                <td><code>-NoLogging</code></td>
+                <td>{{ 'Docs.selfhosted.deploy.noLogging' | translate }}</td>
+              </tr>
+              <tr>
+                <td><code>-Prd</code></td>
+                <td>{{ 'Docs.selfhosted.deploy.prd' | translate }}</td>
+              </tr>
+              <tr>
+                <td><code>-Dev</code></td>
+                <td>{{ 'Docs.selfhosted.deploy.dev' | translate }}</td>
+              </tr>
+              <tr>
+                <td><code>-CleanImages</code></td>
+                <td>{{ 'Docs.selfhosted.deploy.cleanImages' | translate }}</td>
+              </tr>
             </tbody>
           </table>
         </div>
@@ -688,7 +940,9 @@ kubectl apply -f k8s/ingress.yaml</code></pre>
             <h3>{{ 'Docs.selfhosted.domain.step3Title' | translate }}</h3>
             <p>{{ 'Docs.selfhosted.domain.step3Desc' | translate }}</p>
             <div class="info-card">
-              <div class="info-card-header">{{ 'Docs.selfhosted.domain.dnsRecords' | translate }}</div>
+              <div class="info-card-header">
+                {{ 'Docs.selfhosted.domain.dnsRecords' | translate }}
+              </div>
               <div class="endpoint-table">
                 <table>
                   <thead>
@@ -700,8 +954,18 @@ kubectl apply -f k8s/ingress.yaml</code></pre>
                     </tr>
                   </thead>
                   <tbody>
-                    <tr><td>A</td><td>yourdomain.com</td><td>{{ 'Docs.selfhosted.domain.yourServerIp' | translate }}</td><td>{{ 'Docs.selfhosted.domain.proxied' | translate }}</td></tr>
-                    <tr><td>A</td><td>www</td><td>{{ 'Docs.selfhosted.domain.yourServerIp' | translate }}</td><td>{{ 'Docs.selfhosted.domain.proxied' | translate }}</td></tr>
+                    <tr>
+                      <td>A</td>
+                      <td>yourdomain.com</td>
+                      <td>{{ 'Docs.selfhosted.domain.yourServerIp' | translate }}</td>
+                      <td>{{ 'Docs.selfhosted.domain.proxied' | translate }}</td>
+                    </tr>
+                    <tr>
+                      <td>A</td>
+                      <td>www</td>
+                      <td>{{ 'Docs.selfhosted.domain.yourServerIp' | translate }}</td>
+                      <td>{{ 'Docs.selfhosted.domain.proxied' | translate }}</td>
+                    </tr>
                   </tbody>
                 </table>
               </div>
@@ -730,8 +994,16 @@ kubectl apply -f k8s/ingress.yaml</code></pre>
             <div class="code-block">
               <div class="code-header">
                 <span>nginx.conf</span>
-                <button class="copy-btn" (click)="copyToClipboard('server_name  localhost money.local yourdomain.com www.yourdomain.com;', 'domain-nginx')"
-                        [ngClass]="{ copied: copiedSnippet === 'domain-nginx' }">
+                <button
+                  class="copy-btn"
+                  (click)="
+                    copyToClipboard(
+                      'server_name  localhost money.local yourdomain.com www.yourdomain.com;',
+                      'domain-nginx'
+                    )
+                  "
+                  [ngClass]="{ copied: copiedSnippet === 'domain-nginx' }"
+                >
                   {{ copiedSnippet === 'domain-nginx' ? '✓' : '⧉' }}
                 </button>
               </div>
@@ -740,8 +1012,16 @@ kubectl apply -f k8s/ingress.yaml</code></pre>
             <div class="code-block">
               <div class="code-header">
                 <span>k8s/backend.yaml</span>
-                <button class="copy-btn" (click)="copyToClipboard('CORS_ORIGINS=https://yourdomain.com,https://www.yourdomain.com', 'domain-cors')"
-                        [ngClass]="{ copied: copiedSnippet === 'domain-cors' }">
+                <button
+                  class="copy-btn"
+                  (click)="
+                    copyToClipboard(
+                      'CORS_ORIGINS=https://yourdomain.com,https://www.yourdomain.com',
+                      'domain-cors'
+                    )
+                  "
+                  [ngClass]="{ copied: copiedSnippet === 'domain-cors' }"
+                >
                   {{ copiedSnippet === 'domain-cors' ? '✓' : '⧉' }}
                 </button>
               </div>
@@ -758,8 +1038,16 @@ kubectl apply -f k8s/ingress.yaml</code></pre>
             <div class="code-block">
               <div class="code-header">
                 <span>nginx.conf — Content-Security-Policy</span>
-                <button class="copy-btn" (click)="copyToClipboard('connect-src \'self\' https://yourdomain.com https://*.yourdomain.com ...', 'domain-csp')"
-                        [ngClass]="{ copied: copiedSnippet === 'domain-csp' }">
+                <button
+                  class="copy-btn"
+                  (click)="
+                    copyToClipboard(
+                      'connect-src \'self\' https://yourdomain.com https://*.yourdomain.com ...',
+                      'domain-csp'
+                    )
+                  "
+                  [ngClass]="{ copied: copiedSnippet === 'domain-csp' }"
+                >
                   {{ copiedSnippet === 'domain-csp' ? '✓' : '⧉' }}
                 </button>
               </div>
@@ -768,7 +1056,7 @@ kubectl apply -f k8s/ingress.yaml</code></pre>
           </div>
         </div>
 
-        <div class="warning-card" style="margin-top: 1.5rem;">
+        <div class="warning-card" style="margin-top: 1.5rem">
           <span class="warning-icon">💡</span>
           <span>{{ 'Docs.selfhosted.domain.tip' | translate }}</span>
         </div>
@@ -786,8 +1074,16 @@ kubectl apply -f k8s/ingress.yaml</code></pre>
         <div class="code-block">
           <div class="code-header">
             <span>{{ 'Docs.selfhosted.monitoring.enable' | translate }}</span>
-            <button class="copy-btn" (click)="copyToClipboard('kubectl apply -f k8s/loki.yaml\nkubectl apply -f k8s/promtail.yaml', 'mon-enable')"
-                    [ngClass]="{ copied: copiedSnippet === 'mon-enable' }">
+            <button
+              class="copy-btn"
+              (click)="
+                copyToClipboard(
+                  'kubectl apply -f k8s/loki.yaml\nkubectl apply -f k8s/promtail.yaml',
+                  'mon-enable'
+                )
+              "
+              [ngClass]="{ copied: copiedSnippet === 'mon-enable' }"
+            >
               {{ copiedSnippet === 'mon-enable' ? '✓' : '⧉' }}
             </button>
           </div>
@@ -798,8 +1094,16 @@ kubectl apply -f k8s/promtail.yaml</code></pre>
         <div class="code-block">
           <div class="code-header">
             <span>{{ 'Docs.selfhosted.monitoring.disable' | translate }}</span>
-            <button class="copy-btn" (click)="copyToClipboard('kubectl delete -f k8s/promtail.yaml\nkubectl delete -f k8s/loki.yaml', 'mon-disable')"
-                    [ngClass]="{ copied: copiedSnippet === 'mon-disable' }">
+            <button
+              class="copy-btn"
+              (click)="
+                copyToClipboard(
+                  'kubectl delete -f k8s/promtail.yaml\nkubectl delete -f k8s/loki.yaml',
+                  'mon-disable'
+                )
+              "
+              [ngClass]="{ copied: copiedSnippet === 'mon-disable' }"
+            >
               {{ copiedSnippet === 'mon-disable' ? '✓' : '⧉' }}
             </button>
           </div>
@@ -807,7 +1111,9 @@ kubectl apply -f k8s/promtail.yaml</code></pre>
 kubectl delete -f k8s/loki.yaml</code></pre>
         </div>
 
-        <h3 class="doc-subheading">{{ 'Docs.selfhosted.monitoring.dashboardsTitle' | translate }}</h3>
+        <h3 class="doc-subheading">
+          {{ 'Docs.selfhosted.monitoring.dashboardsTitle' | translate }}
+        </h3>
         <p>{{ 'Docs.selfhosted.monitoring.dashboardsDesc' | translate }}</p>
         <ul class="feature-list">
           <li>{{ 'Docs.selfhosted.monitoring.dash1' | translate }}</li>
@@ -823,11 +1129,25 @@ kubectl delete -f k8s/loki.yaml</code></pre>
           <div class="info-card-header">{{ 'Docs.selfhosted.monitoring.access' | translate }}</div>
           <div class="endpoint-table">
             <table>
-              <thead><tr><th>{{ 'Docs.selfhosted.monitoring.setting' | translate }}</th><th>{{ 'Docs.selfhosted.domain.value' | translate }}</th></tr></thead>
+              <thead>
+                <tr>
+                  <th>{{ 'Docs.selfhosted.monitoring.setting' | translate }}</th>
+                  <th>{{ 'Docs.selfhosted.domain.value' | translate }}</th>
+                </tr>
+              </thead>
               <tbody>
-                <tr><td>URL</td><td><code>http://&lt;server-ip&gt;:30300</code></td></tr>
-                <tr><td>{{ 'Docs.selfhosted.monitoring.user' | translate }}</td><td><code>admin</code></td></tr>
-                <tr><td>{{ 'Docs.selfhosted.monitoring.password' | translate }}</td><td><code>admin</code></td></tr>
+                <tr>
+                  <td>URL</td>
+                  <td><code>http://&lt;server-ip&gt;:30300</code></td>
+                </tr>
+                <tr>
+                  <td>{{ 'Docs.selfhosted.monitoring.user' | translate }}</td>
+                  <td><code>admin</code></td>
+                </tr>
+                <tr>
+                  <td>{{ 'Docs.selfhosted.monitoring.password' | translate }}</td>
+                  <td><code>admin</code></td>
+                </tr>
               </tbody>
             </table>
           </div>
@@ -852,13 +1172,41 @@ kubectl delete -f k8s/loki.yaml</code></pre>
               </tr>
             </thead>
             <tbody>
-              <tr><td>Local</td><td>Hourly</td><td>24 {{ 'Docs.selfhosted.backups.hours' | translate }}</td></tr>
-              <tr><td>Local</td><td>Daily</td><td>7 {{ 'Docs.selfhosted.backups.days' | translate }}</td></tr>
-              <tr><td>Local</td><td>Weekly</td><td>3 {{ 'Docs.selfhosted.backups.months' | translate }}</td></tr>
-              <tr><td>Local</td><td>Monthly</td><td>{{ 'Docs.selfhosted.backups.forever' | translate }}</td></tr>
-              <tr><td>NAS</td><td>Daily</td><td>3 {{ 'Docs.selfhosted.backups.weeks' | translate }}</td></tr>
-              <tr><td>NAS</td><td>Weekly</td><td>2 {{ 'Docs.selfhosted.backups.years' | translate }}</td></tr>
-              <tr><td>NAS</td><td>Monthly</td><td>{{ 'Docs.selfhosted.backups.forever' | translate }}</td></tr>
+              <tr>
+                <td>Local</td>
+                <td>Hourly</td>
+                <td>24 {{ 'Docs.selfhosted.backups.hours' | translate }}</td>
+              </tr>
+              <tr>
+                <td>Local</td>
+                <td>Daily</td>
+                <td>7 {{ 'Docs.selfhosted.backups.days' | translate }}</td>
+              </tr>
+              <tr>
+                <td>Local</td>
+                <td>Weekly</td>
+                <td>3 {{ 'Docs.selfhosted.backups.months' | translate }}</td>
+              </tr>
+              <tr>
+                <td>Local</td>
+                <td>Monthly</td>
+                <td>{{ 'Docs.selfhosted.backups.forever' | translate }}</td>
+              </tr>
+              <tr>
+                <td>NAS</td>
+                <td>Daily</td>
+                <td>3 {{ 'Docs.selfhosted.backups.weeks' | translate }}</td>
+              </tr>
+              <tr>
+                <td>NAS</td>
+                <td>Weekly</td>
+                <td>2 {{ 'Docs.selfhosted.backups.years' | translate }}</td>
+              </tr>
+              <tr>
+                <td>NAS</td>
+                <td>Monthly</td>
+                <td>{{ 'Docs.selfhosted.backups.forever' | translate }}</td>
+              </tr>
             </tbody>
           </table>
         </div>
@@ -867,8 +1215,16 @@ kubectl delete -f k8s/loki.yaml</code></pre>
         <div class="code-block">
           <div class="code-header">
             <span>Terminal</span>
-            <button class="copy-btn" (click)="copyToClipboard('./scripts/backup.sh                     # Backup now (local + NAS)\n./scripts/backup.sh --hourly              # Hourly backup (local only)\n./scripts/list-backups.sh                 # Show all backups + restore commands\n./scripts/restore-backup.sh /path/to/backup.tar.gz   # Restore', 'backup-manual')"
-                    [ngClass]="{ copied: copiedSnippet === 'backup-manual' }">
+            <button
+              class="copy-btn"
+              (click)="
+                copyToClipboard(
+                  './scripts/backup.sh                     # Backup now (local + NAS)\n./scripts/backup.sh --hourly              # Hourly backup (local only)\n./scripts/list-backups.sh                 # Show all backups + restore commands\n./scripts/restore-backup.sh /path/to/backup.tar.gz   # Restore',
+                  'backup-manual'
+                )
+              "
+              [ngClass]="{ copied: copiedSnippet === 'backup-manual' }"
+            >
               {{ copiedSnippet === 'backup-manual' ? '✓' : '⧉' }}
             </button>
           </div>
@@ -895,7 +1251,7 @@ kubectl delete -f k8s/loki.yaml</code></pre>
   monthly/  ← 1st of each month (kept forever)</code></pre>
         </div>
 
-        <div class="warning-card" style="margin-top: 1.5rem;">
+        <div class="warning-card" style="margin-top: 1.5rem">
           <span class="warning-icon">💡</span>
           <span>{{ 'Docs.selfhosted.backups.noNasTip' | translate }}</span>
         </div>
@@ -913,8 +1269,16 @@ kubectl delete -f k8s/loki.yaml</code></pre>
         <div class="code-block">
           <div class="code-header">
             <span>Terminal</span>
-            <button class="copy-btn" (click)="copyToClipboard('sudo fallocate -l 1G /swapfile\nsudo chmod 600 /swapfile\nsudo mkswap /swapfile\nsudo swapon /swapfile\necho \'/swapfile none swap sw 0 0\' | sudo tee -a /etc/fstab', 'raspi-swap')"
-                    [ngClass]="{ copied: copiedSnippet === 'raspi-swap' }">
+            <button
+              class="copy-btn"
+              (click)="
+                copyToClipboard(
+                  'sudo fallocate -l 1G /swapfile\nsudo chmod 600 /swapfile\nsudo mkswap /swapfile\nsudo swapon /swapfile\necho \'/swapfile none swap sw 0 0\' | sudo tee -a /etc/fstab',
+                  'raspi-swap'
+                )
+              "
+              [ngClass]="{ copied: copiedSnippet === 'raspi-swap' }"
+            >
               {{ copiedSnippet === 'raspi-swap' ? '✓' : '⧉' }}
             </button>
           </div>
@@ -941,8 +1305,16 @@ echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab</code></pre>
         <div class="code-block">
           <div class="code-header">
             <span>/etc/netplan/50-cloud-init.yaml</span>
-            <button class="copy-btn" (click)="copyToClipboard('network:\n  version: 2\n  ethernets:\n    eth0:\n      dhcp4: no\n      addresses: [192.168.0.100/24]\n      routes:\n        - to: default\n          via: 192.168.0.1\n      nameservers:\n        addresses: [192.168.0.1, 8.8.8.8]', 'raspi-ip')"
-                    [ngClass]="{ copied: copiedSnippet === 'raspi-ip' }">
+            <button
+              class="copy-btn"
+              (click)="
+                copyToClipboard(
+                  'network:\n  version: 2\n  ethernets:\n    eth0:\n      dhcp4: no\n      addresses: [192.168.0.100/24]\n      routes:\n        - to: default\n          via: 192.168.0.1\n      nameservers:\n        addresses: [192.168.0.1, 8.8.8.8]',
+                  'raspi-ip'
+                )
+              "
+              [ngClass]="{ copied: copiedSnippet === 'raspi-ip' }"
+            >
               {{ copiedSnippet === 'raspi-ip' ? '✓' : '⧉' }}
             </button>
           </div>
@@ -961,8 +1333,11 @@ echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab</code></pre>
         <div class="code-block">
           <div class="code-header">
             <span>Terminal</span>
-            <button class="copy-btn" (click)="copyToClipboard('sudo netplan apply', 'raspi-netplan')"
-                    [ngClass]="{ copied: copiedSnippet === 'raspi-netplan' }">
+            <button
+              class="copy-btn"
+              (click)="copyToClipboard('sudo netplan apply', 'raspi-netplan')"
+              [ngClass]="{ copied: copiedSnippet === 'raspi-netplan' }"
+            >
               {{ copiedSnippet === 'raspi-netplan' ? '✓' : '⧉' }}
             </button>
           </div>
@@ -988,9 +1363,21 @@ echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab</code></pre>
               </tr>
             </thead>
             <tbody>
-              <tr><td><code>environment.ts</code></td><td>firebase</td><td><code>npm start</code> (dev)</td></tr>
-              <tr><td><code>environment.production.ts</code></td><td>firebase</td><td><code>npm run build</code></td></tr>
-              <tr><td><code>environment.selfhosted.ts</code></td><td>selfhosted</td><td><code>npm run build:selfhosted</code></td></tr>
+              <tr>
+                <td><code>environment.ts</code></td>
+                <td>firebase</td>
+                <td><code>npm start</code> (dev)</td>
+              </tr>
+              <tr>
+                <td><code>environment.production.ts</code></td>
+                <td>firebase</td>
+                <td><code>npm run build</code></td>
+              </tr>
+              <tr>
+                <td><code>environment.selfhosted.ts</code></td>
+                <td>selfhosted</td>
+                <td><code>npm run build:selfhosted</code></td>
+              </tr>
             </tbody>
           </table>
         </div>
@@ -1005,14 +1392,38 @@ echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab</code></pre>
               </tr>
             </thead>
             <tbody>
-              <tr><td><code>COUCHDB_URL</code></td><td>{{ 'Docs.selfhosted.config.couchUrl' | translate }}</td></tr>
-              <tr><td><code>COUCHDB_USER</code></td><td>{{ 'Docs.selfhosted.config.couchUser' | translate }}</td></tr>
-              <tr><td><code>COUCHDB_PASSWORD</code></td><td>{{ 'Docs.selfhosted.config.couchPass' | translate }}</td></tr>
-              <tr><td><code>JWT_SECRET</code></td><td>{{ 'Docs.selfhosted.config.jwtSecret' | translate }}</td></tr>
-              <tr><td><code>PORT</code></td><td>{{ 'Docs.selfhosted.config.port' | translate }}</td></tr>
-              <tr><td><code>CORS_ORIGINS</code></td><td>{{ 'Docs.selfhosted.config.cors' | translate }}</td></tr>
-              <tr><td><code>LOG_LEVEL</code></td><td>{{ 'Docs.selfhosted.config.logLevel' | translate }}</td></tr>
-              <tr><td><code>SKIP_RATE_LIMIT</code></td><td>{{ 'Docs.selfhosted.config.rateLimit' | translate }}</td></tr>
+              <tr>
+                <td><code>COUCHDB_URL</code></td>
+                <td>{{ 'Docs.selfhosted.config.couchUrl' | translate }}</td>
+              </tr>
+              <tr>
+                <td><code>COUCHDB_USER</code></td>
+                <td>{{ 'Docs.selfhosted.config.couchUser' | translate }}</td>
+              </tr>
+              <tr>
+                <td><code>COUCHDB_PASSWORD</code></td>
+                <td>{{ 'Docs.selfhosted.config.couchPass' | translate }}</td>
+              </tr>
+              <tr>
+                <td><code>JWT_SECRET</code></td>
+                <td>{{ 'Docs.selfhosted.config.jwtSecret' | translate }}</td>
+              </tr>
+              <tr>
+                <td><code>PORT</code></td>
+                <td>{{ 'Docs.selfhosted.config.port' | translate }}</td>
+              </tr>
+              <tr>
+                <td><code>CORS_ORIGINS</code></td>
+                <td>{{ 'Docs.selfhosted.config.cors' | translate }}</td>
+              </tr>
+              <tr>
+                <td><code>LOG_LEVEL</code></td>
+                <td>{{ 'Docs.selfhosted.config.logLevel' | translate }}</td>
+              </tr>
+              <tr>
+                <td><code>SKIP_RATE_LIMIT</code></td>
+                <td>{{ 'Docs.selfhosted.config.rateLimit' | translate }}</td>
+              </tr>
             </tbody>
           </table>
         </div>
@@ -1022,8 +1433,11 @@ echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab</code></pre>
         <div class="code-block">
           <div class="code-header">
             <span>.env.example → .env</span>
-            <button class="copy-btn" (click)="copyToClipboard('cp .env.example .env', 'config-env-cp')"
-                    [ngClass]="{ copied: copiedSnippet === 'config-env-cp' }">
+            <button
+              class="copy-btn"
+              (click)="copyToClipboard('cp .env.example .env', 'config-env-cp')"
+              [ngClass]="{ copied: copiedSnippet === 'config-env-cp' }"
+            >
               {{ copiedSnippet === 'config-env-cp' ? '✓' : '⧉' }}
             </button>
           </div>
@@ -1032,8 +1446,16 @@ echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab</code></pre>
         <div class="code-block">
           <div class="code-header">
             <span>.env</span>
-            <button class="copy-btn" (click)="copyToClipboard('# Generate with: openssl rand -base64 64\nJWT_SECRET=change-me\n\n# Generate with: openssl rand -base64 30 | tr -d \'/+=\'\nCOUCHDB_PASSWORD=change-me\n\n# Generate with: openssl rand -base64 40\nGRAFANA_ADMIN_PASSWORD=change-me\n\n# Optional — leave empty to keep backups unencrypted\nBACKUP_ENCRYPTION_KEY=', 'config-env')"
-                    [ngClass]="{ copied: copiedSnippet === 'config-env' }">
+            <button
+              class="copy-btn"
+              (click)="
+                copyToClipboard(
+                  '# Generate with: openssl rand -base64 64\nJWT_SECRET=change-me\n\n# Generate with: openssl rand -base64 30 | tr -d \'/+=\'\nCOUCHDB_PASSWORD=change-me\n\n# Generate with: openssl rand -base64 40\nGRAFANA_ADMIN_PASSWORD=change-me\n\n# Optional — leave empty to keep backups unencrypted\nBACKUP_ENCRYPTION_KEY=',
+                  'config-env'
+                )
+              "
+              [ngClass]="{ copied: copiedSnippet === 'config-env' }"
+            >
               {{ copiedSnippet === 'config-env' ? '✓' : '⧉' }}
             </button>
           </div>
@@ -1054,12 +1476,17 @@ BACKUP_ENCRYPTION_KEY=</code></pre>
           <span>{{ 'Docs.selfhosted.config.envFileWarning' | translate }}</span>
         </div>
 
-        <p style="margin-top: 1rem;">{{ 'Docs.selfhosted.config.backendEnvDesc' | translate }}</p>
+        <p style="margin-top: 1rem">{{ 'Docs.selfhosted.config.backendEnvDesc' | translate }}</p>
         <div class="code-block">
           <div class="code-header">
             <span>backend/.env.example → backend/.env</span>
-            <button class="copy-btn" (click)="copyToClipboard('cp backend/.env.example backend/.env', 'config-backend-env-cp')"
-                    [ngClass]="{ copied: copiedSnippet === 'config-backend-env-cp' }">
+            <button
+              class="copy-btn"
+              (click)="
+                copyToClipboard('cp backend/.env.example backend/.env', 'config-backend-env-cp')
+              "
+              [ngClass]="{ copied: copiedSnippet === 'config-backend-env-cp' }"
+            >
               {{ copiedSnippet === 'config-backend-env-cp' ? '✓' : '⧉' }}
             </button>
           </div>
@@ -1068,8 +1495,16 @@ BACKUP_ENCRYPTION_KEY=</code></pre>
         <div class="code-block">
           <div class="code-header">
             <span>backend/.env</span>
-            <button class="copy-btn" (click)="copyToClipboard('COUCHDB_URL=http://couchdb:5984\nCOUCHDB_USER=admin\nCOUCHDB_PASSWORD=changeme\nPORT=3000\nNODE_ENV=production\nJWT_SECRET=your-super-secret-jwt-key-change-this\nCORS_ORIGINS=http://localhost:4200,http://localhost', 'config-backend-env')"
-                    [ngClass]="{ copied: copiedSnippet === 'config-backend-env' }">
+            <button
+              class="copy-btn"
+              (click)="
+                copyToClipboard(
+                  'COUCHDB_URL=http://couchdb:5984\nCOUCHDB_USER=admin\nCOUCHDB_PASSWORD=changeme\nPORT=3000\nNODE_ENV=production\nJWT_SECRET=your-super-secret-jwt-key-change-this\nCORS_ORIGINS=http://localhost:4200,http://localhost',
+                  'config-backend-env'
+                )
+              "
+              [ngClass]="{ copied: copiedSnippet === 'config-backend-env' }"
+            >
               {{ copiedSnippet === 'config-backend-env' ? '✓' : '⧉' }}
             </button>
           </div>
@@ -1087,8 +1522,13 @@ CORS_ORIGINS=http://localhost:4200,http://localhost</code></pre>
         <div class="code-block">
           <div class="code-header">
             <span>secrets.yaml.example → secrets.yaml</span>
-            <button class="copy-btn" (click)="copyToClipboard('cp k8s/secrets.yaml.example k8s/secrets.yaml', 'config-secrets-cp')"
-                    [ngClass]="{ copied: copiedSnippet === 'config-secrets-cp' }">
+            <button
+              class="copy-btn"
+              (click)="
+                copyToClipboard('cp k8s/secrets.yaml.example k8s/secrets.yaml', 'config-secrets-cp')
+              "
+              [ngClass]="{ copied: copiedSnippet === 'config-secrets-cp' }"
+            >
               {{ copiedSnippet === 'config-secrets-cp' ? '✓' : '⧉' }}
             </button>
           </div>
@@ -1105,18 +1545,42 @@ CORS_ORIGINS=http://localhost:4200,http://localhost</code></pre>
               </tr>
             </thead>
             <tbody>
-              <tr><td><code>backend-secret</code></td><td>JWT_SECRET, COUCHDB_PASSWORD</td><td>{{ 'Docs.selfhosted.config.secretsBackendUse' | translate }}</td></tr>
-              <tr><td><code>couchdb-secret</code></td><td>username, password</td><td>{{ 'Docs.selfhosted.config.secretsCouchUse' | translate }}</td></tr>
-              <tr><td><code>grafana-secret</code></td><td>admin-password</td><td>{{ 'Docs.selfhosted.config.secretsGrafanaUse' | translate }}</td></tr>
-              <tr><td><code>backup-encryption-secret</code></td><td>encryption-key</td><td>{{ 'Docs.selfhosted.config.secretsBackupUse' | translate }}</td></tr>
+              <tr>
+                <td><code>backend-secret</code></td>
+                <td>JWT_SECRET, COUCHDB_PASSWORD</td>
+                <td>{{ 'Docs.selfhosted.config.secretsBackendUse' | translate }}</td>
+              </tr>
+              <tr>
+                <td><code>couchdb-secret</code></td>
+                <td>username, password</td>
+                <td>{{ 'Docs.selfhosted.config.secretsCouchUse' | translate }}</td>
+              </tr>
+              <tr>
+                <td><code>grafana-secret</code></td>
+                <td>admin-password</td>
+                <td>{{ 'Docs.selfhosted.config.secretsGrafanaUse' | translate }}</td>
+              </tr>
+              <tr>
+                <td><code>backup-encryption-secret</code></td>
+                <td>encryption-key</td>
+                <td>{{ 'Docs.selfhosted.config.secretsBackupUse' | translate }}</td>
+              </tr>
             </tbody>
           </table>
         </div>
         <div class="code-block">
           <div class="code-header">
             <span>{{ 'Docs.selfhosted.config.secretsGenerate' | translate }}</span>
-            <button class="copy-btn" (click)="copyToClipboard('# JWT secret\nopenssl rand -base64 64\n\n# CouchDB password\nopenssl rand -base64 30 | tr -d \'/+=\'\n\n# Grafana password\nopenssl rand -base64 40\n\n# Backup encryption key (optional)\nopenssl rand -base64 32', 'config-secrets-gen')"
-                    [ngClass]="{ copied: copiedSnippet === 'config-secrets-gen' }">
+            <button
+              class="copy-btn"
+              (click)="
+                copyToClipboard(
+                  '# JWT secret\nopenssl rand -base64 64\n\n# CouchDB password\nopenssl rand -base64 30 | tr -d \'/+=\'\n\n# Grafana password\nopenssl rand -base64 40\n\n# Backup encryption key (optional)\nopenssl rand -base64 32',
+                  'config-secrets-gen'
+                )
+              "
+              [ngClass]="{ copied: copiedSnippet === 'config-secrets-gen' }"
+            >
               {{ copiedSnippet === 'config-secrets-gen' ? '✓' : '⧉' }}
             </button>
           </div>
@@ -1176,7 +1640,7 @@ openssl rand -base64 32</code></pre>
           </div>
         </div>
 
-        <div class="info-card" style="margin-top: 1.5rem;">
+        <div class="info-card" style="margin-top: 1.5rem">
           <div class="info-card-header">{{ 'Docs.selfhosted.migration.note' | translate }}</div>
           <p>{{ 'Docs.selfhosted.migration.noteDesc' | translate }}</p>
         </div>
@@ -1185,17 +1649,29 @@ openssl rand -base64 32</code></pre>
       <!-- Prev / Next navigation (branching: deployment splits into Podman / K3s paths) -->
       <div class="section-nav">
         <!-- Single prev button -->
-        <button class="nav-btn prev"
-                *ngIf="getNavPrev().length === 1"
-                (click)="navigateTo(getNavPrev()[0].id)">
+        <button
+          class="nav-btn prev"
+          *ngIf="getNavPrev().length === 1"
+          (click)="navigateTo(getNavPrev()[0].id)"
+        >
           <span class="nav-btn-label">← {{ 'Docs.selfhosted.nav.prev' | translate }}</span>
-          <span class="nav-btn-title">{{ sectionById(getNavPrev()[0].id)?.number }} {{ 'Docs.selfhosted.' + getNavPrev()[0].id + '.nav' | translate }}</span>
+          <span class="nav-btn-title"
+            >{{ sectionById(getNavPrev()[0].id)?.number }}
+            {{ 'Docs.selfhosted.' + getNavPrev()[0].id + '.nav' | translate }}</span
+          >
         </button>
         <!-- Two prev options (Custom Domain ← Podman Compose | Deploy Script) -->
         <div class="nav-btn-group prev" *ngIf="getNavPrev().length === 2">
-          <button class="nav-btn prev" *ngFor="let link of getNavPrev()" (click)="navigateTo(link.id)">
+          <button
+            class="nav-btn prev"
+            *ngFor="let link of getNavPrev()"
+            (click)="navigateTo(link.id)"
+          >
             <span class="nav-btn-label">← {{ 'Docs.selfhosted.nav.prev' | translate }}</span>
-            <span class="nav-btn-title">{{ sectionById(link.id)?.number }} {{ 'Docs.selfhosted.' + link.id + '.nav' | translate }}</span>
+            <span class="nav-btn-title"
+              >{{ sectionById(link.id)?.number }}
+              {{ 'Docs.selfhosted.' + link.id + '.nav' | translate }}</span
+            >
           </button>
         </div>
 
@@ -1203,22 +1679,32 @@ openssl rand -base64 32</code></pre>
         <div *ngIf="getNavPrev().length === 0"></div>
 
         <!-- Single next button -->
-        <button class="nav-btn next"
-                *ngIf="getNavNext().length === 1"
-                (click)="navigateTo(getNavNext()[0].id)">
+        <button
+          class="nav-btn next"
+          *ngIf="getNavNext().length === 1"
+          (click)="navigateTo(getNavNext()[0].id)"
+        >
           <span class="nav-btn-label">{{ 'Docs.selfhosted.nav.next' | translate }} →</span>
-          <span class="nav-btn-title">{{ sectionById(getNavNext()[0].id)?.number }} {{ 'Docs.selfhosted.' + getNavNext()[0].id + '.nav' | translate }}</span>
+          <span class="nav-btn-title"
+            >{{ sectionById(getNavNext()[0].id)?.number }}
+            {{ 'Docs.selfhosted.' + getNavNext()[0].id + '.nav' | translate }}</span
+          >
         </button>
         <!-- Two next options (Deployment → Podman Compose | K3s) -->
         <div class="nav-btn-group next" *ngIf="getNavNext().length === 2">
-          <button class="nav-btn next" *ngFor="let link of getNavNext()" (click)="navigateTo(link.id)">
+          <button
+            class="nav-btn next"
+            *ngFor="let link of getNavNext()"
+            (click)="navigateTo(link.id)"
+          >
             <span class="nav-btn-label">{{ 'Docs.selfhosted.nav.next' | translate }} →</span>
-            <span class="nav-btn-title">{{ sectionById(link.id)?.number }} {{ 'Docs.selfhosted.' + link.id + '.nav' | translate }}</span>
+            <span class="nav-btn-title"
+              >{{ sectionById(link.id)?.number }}
+              {{ 'Docs.selfhosted.' + link.id + '.nav' | translate }}</span
+            >
           </button>
         </div>
       </div>
-
     </main>
   </div>
-
 </div>

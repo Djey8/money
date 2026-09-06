@@ -34,10 +34,11 @@ function authed(method, path, token) {
 // before beforeAll executes. So the availability check must happen *inside*
 // the test body (at run time), not as an argument evaluated at registration
 // time, or it would always see the initial `false` and skip everything.
-const skipIf = (name, fn) => it(name, async () => {
-  if (!dbAvailable) return;
-  await fn();
-});
+const skipIf = (name, fn) =>
+  it(name, async () => {
+    if (!dbAvailable) return;
+    await fn();
+  });
 
 describe('Community routes', () => {
   it('should skip all tests if CouchDB is not available', () => {
@@ -59,14 +60,19 @@ describe('Community routes', () => {
   });
 
   skipIf('rejects a thread with an empty title', async () => {
-    const res = await authed('post', '/api/community/threads', userToken)
-      .send({ title: '', body: 'Body text' });
+    const res = await authed('post', '/api/community/threads', userToken).send({
+      title: '',
+      body: 'Body text',
+    });
     expect(res.status).toBe(400);
   });
 
   skipIf('lets a registered user create a thread', async () => {
-    const res = await authed('post', '/api/community/threads', userToken)
-      .send({ title: 'ETF Diskussion', body: 'Was haltet ihr von thesaurierenden ETFs?', authorName: 'Jannis' });
+    const res = await authed('post', '/api/community/threads', userToken).send({
+      title: 'ETF Diskussion',
+      body: 'Was haltet ihr von thesaurierenden ETFs?',
+      authorName: 'Jannis',
+    });
 
     expect(res.status).toBe(201);
     expect(res.body.thread.title).toBe('ETF Diskussion');
@@ -76,8 +82,10 @@ describe('Community routes', () => {
   });
 
   skipIf('lets a guest create a thread and defaults its display name', async () => {
-    const res = await authed('post', '/api/community/threads', guestToken)
-      .send({ title: 'Gastbeitrag', body: 'Anonyme Frage zum Notgroschen' });
+    const res = await authed('post', '/api/community/threads', guestToken).send({
+      title: 'Gastbeitrag',
+      body: 'Anonyme Frage zum Notgroschen',
+    });
 
     expect(res.status).toBe(201);
     expect(res.body.thread.authorName).toMatch(/^Gast-/);
@@ -88,8 +96,10 @@ describe('Community routes', () => {
 
     beforeAll(async () => {
       if (!dbAvailable) return;
-      const res = await authed('post', '/api/community/threads', userToken)
-        .send({ title: 'Listing test thread', body: 'Opening post body' });
+      const res = await authed('post', '/api/community/threads', userToken).send({
+        title: 'Listing test thread',
+        body: 'Opening post body',
+      });
       threadId = res.body.thread.id;
     });
 
@@ -97,7 +107,7 @@ describe('Community routes', () => {
       const res = await request(app).get('/api/community/threads');
       expect(res.status).toBe(200);
       expect(Array.isArray(res.body.threads)).toBe(true);
-      expect(res.body.threads.find(t => t.id === threadId)).toBeTruthy();
+      expect(res.body.threads.find((t) => t.id === threadId)).toBeTruthy();
     });
 
     skipIf('returns thread detail with the opening post as posts[0]', async () => {
@@ -117,8 +127,11 @@ describe('Community routes', () => {
       const before = await request(app).get(`/api/community/threads/${threadId}`);
       const beforeActivity = before.body.thread.lastActivityAt;
 
-      const replyRes = await authed('post', `/api/community/threads/${threadId}/posts`, guestToken)
-        .send({ body: 'Danke für den Thread!' });
+      const replyRes = await authed(
+        'post',
+        `/api/community/threads/${threadId}/posts`,
+        guestToken,
+      ).send({ body: 'Danke für den Thread!' });
       expect(replyRes.status).toBe(201);
 
       const after = await request(app).get(`/api/community/threads/${threadId}`);
@@ -131,12 +144,16 @@ describe('Community routes', () => {
       const detail = await request(app).get(`/api/community/threads/${threadId}`);
       const postId = detail.body.posts[0].id;
 
-      const reacted = await authed('post', `/api/community/posts/${postId}/react`, guestToken).send({ emoji: '👍' });
+      const reacted = await authed('post', `/api/community/posts/${postId}/react`, guestToken).send(
+        { emoji: '👍' },
+      );
       expect(reacted.status).toBe(200);
       expect(reacted.body.myReaction).toBe('👍');
       expect(reacted.body.reactions['👍'].length).toBe(1);
 
-      const cleared = await authed('post', `/api/community/posts/${postId}/react`, guestToken).send({ emoji: '👍' });
+      const cleared = await authed('post', `/api/community/posts/${postId}/react`, guestToken).send(
+        { emoji: '👍' },
+      );
       expect(cleared.status).toBe(200);
       expect(cleared.body.myReaction).toBe(null);
       expect(cleared.body.reactions['👍'].length).toBe(0);
@@ -146,8 +163,14 @@ describe('Community routes', () => {
       const detail = await request(app).get(`/api/community/threads/${threadId}`);
       const postId = detail.body.posts[0].id;
 
-      await authed('post', `/api/community/posts/${postId}/react`, guestToken).send({ emoji: '👍' });
-      const switched = await authed('post', `/api/community/posts/${postId}/react`, guestToken).send({ emoji: '❤️' });
+      await authed('post', `/api/community/posts/${postId}/react`, guestToken).send({
+        emoji: '👍',
+      });
+      const switched = await authed(
+        'post',
+        `/api/community/posts/${postId}/react`,
+        guestToken,
+      ).send({ emoji: '❤️' });
 
       expect(switched.status).toBe(200);
       expect(switched.body.myReaction).toBe('❤️');
@@ -155,28 +178,34 @@ describe('Community routes', () => {
       expect(switched.body.reactions['❤️'].length).toBe(1);
 
       // cleanup so later assertions on this post start from a clean slate
-      await authed('post', `/api/community/posts/${postId}/react`, guestToken).send({ emoji: '❤️' });
+      await authed('post', `/api/community/posts/${postId}/react`, guestToken).send({
+        emoji: '❤️',
+      });
     });
 
     skipIf('rejects a reaction with an unsupported emoji', async () => {
       const detail = await request(app).get(`/api/community/threads/${threadId}`);
       const postId = detail.body.posts[0].id;
 
-      const res = await authed('post', `/api/community/posts/${postId}/react`, guestToken).send({ emoji: '🐍' });
+      const res = await authed('post', `/api/community/posts/${postId}/react`, guestToken).send({
+        emoji: '🐍',
+      });
       expect(res.status).toBe(400);
     });
 
     skipIf('lets the author edit their own thread title', async () => {
-      const res = await authed('put', `/api/community/threads/${threadId}`, userToken)
-        .send({ title: 'Updated title' });
+      const res = await authed('put', `/api/community/threads/${threadId}`, userToken).send({
+        title: 'Updated title',
+      });
       expect(res.status).toBe(200);
       expect(res.body.thread.title).toBe('Updated title');
       expect(res.body.thread.editedAt).toBeTruthy();
     });
 
     skipIf("refuses to edit another author's thread", async () => {
-      const res = await authed('put', `/api/community/threads/${threadId}`, guestToken)
-        .send({ title: 'Hijacked title' });
+      const res = await authed('put', `/api/community/threads/${threadId}`, guestToken).send({
+        title: 'Hijacked title',
+      });
       expect(res.status).toBe(403);
     });
 
@@ -184,8 +213,9 @@ describe('Community routes', () => {
       const detail = await request(app).get(`/api/community/threads/${threadId}`);
       const openingPostId = detail.body.posts[0].id;
 
-      const res = await authed('put', `/api/community/posts/${openingPostId}`, userToken)
-        .send({ body: 'Updated opening post body' });
+      const res = await authed('put', `/api/community/posts/${openingPostId}`, userToken).send({
+        body: 'Updated opening post body',
+      });
       expect(res.status).toBe(200);
       expect(res.body.post.body).toBe('Updated opening post body');
       expect(res.body.post.editedAt).toBeTruthy();
@@ -195,8 +225,10 @@ describe('Community routes', () => {
       const detail = await request(app).get(`/api/community/threads/${threadId}`);
       const openingPostId = detail.body.posts[0].id;
 
-      const res = await authed('put', `/api/community/posts/${openingPostId}`, userToken)
-        .send({ body: 'Still the same body', authorName: 'Anonymous' });
+      const res = await authed('put', `/api/community/posts/${openingPostId}`, userToken).send({
+        body: 'Still the same body',
+        authorName: 'Anonymous',
+      });
       expect(res.status).toBe(200);
       expect(res.body.post.authorName).toBe('Anonymous');
     });
@@ -211,7 +243,7 @@ describe('Community routes', () => {
 
     skipIf("refuses to delete another author's reply", async () => {
       const detail = await request(app).get(`/api/community/threads/${threadId}`);
-      const reply = detail.body.posts.find(p => p.id !== detail.body.posts[0].id);
+      const reply = detail.body.posts.find((p) => p.id !== detail.body.posts[0].id);
 
       const res = await authed('delete', `/api/community/posts/${reply.id}`, userToken);
       expect(res.status).toBe(403);
@@ -219,7 +251,7 @@ describe('Community routes', () => {
 
     skipIf('lets the author delete their own reply', async () => {
       const detail = await request(app).get(`/api/community/threads/${threadId}`);
-      const reply = detail.body.posts.find(p => p.id !== detail.body.posts[0].id);
+      const reply = detail.body.posts.find((p) => p.id !== detail.body.posts[0].id);
 
       const res = await authed('delete', `/api/community/posts/${reply.id}`, guestToken);
       expect(res.status).toBe(200);
@@ -242,12 +274,17 @@ describe('Community routes', () => {
       adminToken = admin.token;
       process.env.ADMIN_EMAILS = admin.email;
 
-      const threadRes = await authed('post', '/api/community/threads', guestToken)
-        .send({ title: 'Spam thread', body: 'Spammy opening post' });
+      const threadRes = await authed('post', '/api/community/threads', guestToken).send({
+        title: 'Spam thread',
+        body: 'Spammy opening post',
+      });
       threadId = threadRes.body.thread.id;
 
-      const replyRes = await authed('post', `/api/community/threads/${threadId}/posts`, guestToken)
-        .send({ body: 'Spammy reply' });
+      const replyRes = await authed(
+        'post',
+        `/api/community/threads/${threadId}/posts`,
+        guestToken,
+      ).send({ body: 'Spammy reply' });
       replyId = replyRes.body.post.id;
     });
 
@@ -256,8 +293,9 @@ describe('Community routes', () => {
     });
 
     skipIf("lets an admin edit another author's post", async () => {
-      const res = await authed('put', `/api/community/posts/${replyId}`, adminToken)
-        .send({ body: 'Edited by moderation' });
+      const res = await authed('put', `/api/community/posts/${replyId}`, adminToken).send({
+        body: 'Edited by moderation',
+      });
       expect(res.status).toBe(200);
       expect(res.body.post.body).toBe('Edited by moderation');
     });

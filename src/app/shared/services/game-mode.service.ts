@@ -9,7 +9,7 @@ import { FrontendLoggerService } from './frontend-logger.service';
 import { SubscriptionProcessingService } from './subscription-processing.service';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 /**
  * Manages the cashflow game mode — detected by a special email pattern.
@@ -17,7 +17,6 @@ import { SubscriptionProcessingService } from './subscription-processing.service
  * and add/remove subscription-generated transactions accordingly.
  */
 export class GameModeService {
-
   static instance: GameModeService;
 
   constructor(private frontendLogger: FrontendLoggerService) {
@@ -51,7 +50,7 @@ export class GameModeService {
     const today = new Date();
     const subscriptionProcessing = SubscriptionProcessingService.instance;
     AppStateService.instance.allSubscriptions.forEach((subscription) => {
-      if (!subscription.endDate || subscription.endDate === "") {
+      if (!subscription.endDate || subscription.endDate === '') {
         const startDate = new Date(subscription.startDate);
         const year = startDate.getFullYear();
         const day = startDate.getDate();
@@ -66,8 +65,8 @@ export class GameModeService {
           subscription.account,
           subscription.category,
           currentDateString,
-          "",
-          subscription.comment
+          '',
+          subscription.comment,
         );
       }
     });
@@ -90,17 +89,20 @@ export class GameModeService {
       const maxDays = new Date(currentYear, currentMonth, 0).getDate();
       const adjustedDay = Math.min(day, maxDays);
       const currentDateString = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(adjustedDay).padStart(2, '0')}`;
-      const commentCompare = subscription.comment ? subscription.title + " + " + subscription.comment : subscription.title;
+      const commentCompare = subscription.comment
+        ? subscription.title + ' + ' + subscription.comment
+        : subscription.title;
 
       const beforeCount = AppStateService.instance.allTransactions.length;
-      AppStateService.instance.allTransactions = AppStateService.instance.allTransactions.filter(t =>
-        !(
-          t.date === currentDateString &&
-          t.account === subscription.account &&
-          t.amount === subscription.amount &&
-          t.category === subscription.category &&
-          t.comment === commentCompare
-        )
+      AppStateService.instance.allTransactions = AppStateService.instance.allTransactions.filter(
+        (t) =>
+          !(
+            t.date === currentDateString &&
+            t.account === subscription.account &&
+            t.amount === subscription.amount &&
+            t.category === subscription.category &&
+            t.comment === commentCompare
+          ),
       );
       const afterCount = AppStateService.instance.allTransactions.length;
       if (beforeCount !== afterCount) {
@@ -111,7 +113,7 @@ export class GameModeService {
           amount: subscription.amount,
           transactionsDeleted: beforeCount - afterCount,
           dateRemoved: currentDateString,
-          reason: 'month_rollover'
+          reason: 'month_rollover',
         });
       }
     });
@@ -134,9 +136,11 @@ export class GameModeService {
     AppDataService.instance.updateDatabase();
     AccountingComponent.allTransactions = AppStateService.instance.allTransactions;
     AccountingComponent.dataSource.data = AppStateService.instance.allTransactions;
-    AccountingComponent.dataSource.data = AccountingComponent.dataSource.data.map((transaction, index) => {
-      return { ...transaction, id: index };
-    });
+    AccountingComponent.dataSource.data = AccountingComponent.dataSource.data.map(
+      (transaction, index) => {
+        return { ...transaction, id: index };
+      },
+    );
     AppStateService.instance.transactionsUpdated$.next();
     setTimeout(() => {
       HomeComponent.getAmounts();

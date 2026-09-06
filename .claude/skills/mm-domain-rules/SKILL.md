@@ -11,12 +11,12 @@ Full detail, file paths, and line numbers: `docs/discovery/DOMAIN_MODEL.md`. Thi
 
 Every transaction posted to the virtual `Income` account is split across four buckets by a per-user ratio (default 60/10/10/20, must sum to 100%):
 
-| Account | Default % | Purpose |
-|---|---|---|
-| Daily | 60 | Everyday spending |
-| Splurge | 10 | Guilt-free discretionary spending |
-| Smile | 10 | Medium-term savings goals ("Smile Projects") |
-| Fire | 20 | Emergency fund ("Fire Emergencies") |
+| Account | Default % | Purpose                                      |
+| ------- | --------- | -------------------------------------------- |
+| Daily   | 60        | Everyday spending                            |
+| Splurge | 10        | Guilt-free discretionary spending            |
+| Smile   | 10        | Medium-term savings goals ("Smile Projects") |
+| Fire    | 20        | Emergency fund ("Fire Emergencies")          |
 
 **The entire mechanism is one function**: `AppStateService.getAmount(account, ratio)` — for a transaction posted directly to `account`, add its amount; for a transaction posted to `Income`, add `round(amount * ratio, 2)`. There is no automatic overflow-forwarding between buckets (e.g. a full Fire bucket does not automatically spill into Mojo) — don't assume Barefoot's book describes exactly what this code does; the code is the source of truth.
 
@@ -24,7 +24,7 @@ Every transaction posted to the virtual `Income` account is split across four bu
 
 ## Rich Dad Poor Dad / Grow
 
-The RDPD "cash-flow quadrant" concept named in earlier planning docs was **never implemented and is out of scope** — don't build it. What exists is the **Grow** feature: asset-vs-liability tracking with buy/sell/dividend/payback/cashflow actions and a profit/loss figure labeled "GV" (German *Gewinn/Verlust*).
+The RDPD "cash-flow quadrant" concept named in earlier planning docs was **never implemented and is out of scope** — don't build it. What exists is the **Grow** feature: asset-vs-liability tracking with buy/sell/dividend/payback/cashflow actions and a profit/loss figure labeled "GV" (German _Gewinn/Verlust_).
 
 - A Grow project embeds a **denormalized copy** of its underlying `Share`/`Investment`/`Liability` at creation time. The real, balance-affecting records live in separate top-level arrays (`allShares`, `allInvestments`, `liabilities`), linked to the Grow project only by matching `tag === title` strings. These two representations can drift — a renamed Grow project silently breaks the link. When building the API's typed Grow actions (`docs/adr/0003-api-ui-write-consistency.md`, D-16), keep both representations in sync explicitly; don't just update one.
 - **Never generate or hand-parse the `Transaction.comment` DSL** (`"Buy Share X 10 x 25;"`). It's a fragile, unvalidated mini-syntax that the API replaces with explicit typed actions. If you need to understand what it means, see `DOMAIN_MODEL.md` §2 "Greenfoot Investor calculations" — but write new code against the typed actions, not the string format.

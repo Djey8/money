@@ -24,34 +24,53 @@ export function migrateSmile(raw: any): Smile {
     // Already has buckets, just ensure they have all required fields
     buckets = raw.buckets.map((b: any) => ({
       id: b.id || generateBucketId(),
-      title: b.title || b.name || 'Goal',  // Support both old 'name' and new 'title'
-      target: typeof b.target === 'number' ? Math.round(b.target * 100) / 100 : (typeof b.targetAmount === 'number' ? Math.round(b.targetAmount * 100) / 100 : Math.round((parseFloat(b.targetAmount || b.target) || 0) * 100) / 100),
+      title: b.title || b.name || 'Goal', // Support both old 'name' and new 'title'
+      target:
+        typeof b.target === 'number'
+          ? Math.round(b.target * 100) / 100
+          : typeof b.targetAmount === 'number'
+            ? Math.round(b.targetAmount * 100) / 100
+            : Math.round((parseFloat(b.targetAmount || b.target) || 0) * 100) / 100,
       amount: typeof b.amount === 'number' ? Math.round(b.amount * 100) / 100 : 0,
       notes: b.notes || '',
       links: Array.isArray(b.links) ? b.links : [],
       targetDate: b.targetDate || undefined,
-      completionDate: b.completionDate || undefined
+      completionDate: b.completionDate || undefined,
     }));
   } else if (raw.target && raw.target > 0) {
     // Legacy project without buckets → create single bucket with project name
-    buckets = [{
-      id: generateBucketId(),
-      title: raw.title || 'Main Goal',
-      target: typeof raw.target === 'number' ? Math.round(raw.target * 100) / 100 : Math.round((parseFloat(raw.target) || 0) * 100) / 100,
-      amount: typeof raw.amount === 'number' ? Math.round(raw.amount * 100) / 100 : Math.round((parseFloat(raw.amount) || 0) * 100) / 100,
-      notes: '',
-      links: []
-    }];
+    buckets = [
+      {
+        id: generateBucketId(),
+        title: raw.title || 'Main Goal',
+        target:
+          typeof raw.target === 'number'
+            ? Math.round(raw.target * 100) / 100
+            : Math.round((parseFloat(raw.target) || 0) * 100) / 100,
+        amount:
+          typeof raw.amount === 'number'
+            ? Math.round(raw.amount * 100) / 100
+            : Math.round((parseFloat(raw.amount) || 0) * 100) / 100,
+        notes: '',
+        links: [],
+      },
+    ];
   }
 
   // Calculate totals for phase determination
-  const totalTarget = buckets.length > 0 
-    ? buckets.reduce((sum, b) => sum + (b.target || 0), 0)
-    : (typeof raw.target === 'number' ? raw.target : parseFloat(raw.target) || 0);
-  
-  const totalAmount = buckets.length > 0
-    ? buckets.reduce((sum, b) => sum + (b.amount || 0), 0)
-    : (typeof raw.amount === 'number' ? raw.amount : parseFloat(raw.amount) || 0);
+  const totalTarget =
+    buckets.length > 0
+      ? buckets.reduce((sum, b) => sum + (b.target || 0), 0)
+      : typeof raw.target === 'number'
+        ? raw.target
+        : parseFloat(raw.target) || 0;
+
+  const totalAmount =
+    buckets.length > 0
+      ? buckets.reduce((sum, b) => sum + (b.amount || 0), 0)
+      : typeof raw.amount === 'number'
+        ? raw.amount
+        : parseFloat(raw.amount) || 0;
 
   // Auto-determine phase if not set or if we should override
   // eslint-disable-next-line no-useless-assignment -- initial 'planning' is always overwritten below; pre-existing, out of scope for lint setup
@@ -67,7 +86,7 @@ export function migrateSmile(raw: any): Smile {
       phase = 'planning';
     } else if (totalAmount >= totalTarget && totalTarget > 0) {
       phase = 'completed';
-      
+
       // Find last transaction date for this project
       if (!completionDate) {
         const lastTransactionDate = getLastTransactionDate(raw.title);
@@ -87,21 +106,21 @@ export function migrateSmile(raw: any): Smile {
     description: raw.description || '',
     targetDate: raw.targetDate || undefined,
     completionDate,
-    
+
     // Bucket system (now required - target and amount removed)
     buckets,
-    
+
     // Planning & tracking
     links: Array.isArray(raw.links) ? raw.links : [],
     actionItems: Array.isArray(raw.actionItems) ? raw.actionItems : [],
     notes,
-    
+
     // Payment plans (preserve existing plans)
     plannedSubscriptions: Array.isArray(raw.plannedSubscriptions) ? raw.plannedSubscriptions : [],
-    
+
     // Metadata
     createdAt: raw.createdAt || now,
-    updatedAt: raw.updatedAt || now
+    updatedAt: raw.updatedAt || now,
   };
 
   return result;
@@ -120,8 +139,8 @@ function getLastTransactionDate(projectTitle: string): string | undefined {
     }
 
     // Find all transactions for this project (category matches @ProjectTitle)
-    const projectTransactions = allTransactions.filter(tx => 
-      tx.category === `@${projectTitle}` || tx.comment?.includes(projectTitle)
+    const projectTransactions = allTransactions.filter(
+      (tx) => tx.category === `@${projectTitle}` || tx.comment?.includes(projectTitle),
     );
 
     if (projectTransactions.length === 0) {

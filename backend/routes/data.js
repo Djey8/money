@@ -16,7 +16,7 @@ async function getUserDocument(usersDb, userId) {
         _id: userId,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        data: {}
+        data: {},
       };
       await usersDb.insert(newDoc);
       return newDoc;
@@ -27,9 +27,9 @@ async function getUserDocument(usersDb, userId) {
 
 // Helper function to set nested property in object
 function setNestedProperty(obj, path, value) {
-  const keys = path.split('/').filter(k => k); // Remove empty strings
+  const keys = path.split('/').filter((k) => k); // Remove empty strings
   let current = obj;
-  
+
   for (let i = 0; i < keys.length - 1; i++) {
     const key = keys[i];
     if (!(key in current) || typeof current[key] !== 'object' || current[key] === null) {
@@ -37,7 +37,7 @@ function setNestedProperty(obj, path, value) {
     }
     current = current[key];
   }
-  
+
   const lastKey = keys[keys.length - 1];
   current[lastKey] = value;
   return obj;
@@ -45,27 +45,27 @@ function setNestedProperty(obj, path, value) {
 
 // Helper function to get nested property from object
 function getNestedProperty(obj, path) {
-  const keys = path.split('/').filter(k => k);
+  const keys = path.split('/').filter((k) => k);
   let current = obj;
-  
+
   for (const key of keys) {
     if (current === null || current === undefined || typeof current !== 'object') {
       return null;
     }
     current = current[key];
   }
-  
+
   return current !== undefined ? current : null;
 }
 
 // Helper function to delete nested property from object
 function deleteNestedProperty(obj, path) {
-  const keys = path.split('/').filter(k => k);
+  const keys = path.split('/').filter((k) => k);
   if (keys.length === 0) return false;
-  
+
   let current = obj;
   const parents = [];
-  
+
   // Navigate to parent of target
   for (let i = 0; i < keys.length - 1; i++) {
     if (current === null || current === undefined || typeof current !== 'object') {
@@ -74,13 +74,13 @@ function deleteNestedProperty(obj, path) {
     parents.push({ obj: current, key: keys[i] });
     current = current[keys[i]];
   }
-  
+
   const lastKey = keys[keys.length - 1];
   if (current && typeof current === 'object' && lastKey in current) {
     delete current[lastKey];
     return true;
   }
-  
+
   return false;
 }
 
@@ -131,12 +131,12 @@ router.post('/read/batch', authenticateToken, async (req, res) => {
 
       logDatabaseOperation('batch_read', userId, {
         paths: paths.length,
-        operation: 'batch_read'
+        operation: 'batch_read',
       });
 
       res.json({
         data: result,
-        updatedAt: userDoc.updatedAt || null
+        updatedAt: userDoc.updatedAt || null,
       });
     } catch (err) {
       if (err.statusCode === 404) {
@@ -184,7 +184,7 @@ router.post('/write/batch', authenticateToken, async (req, res) => {
       try {
         // Get latest user document
         let userDoc = await getUserDocument(usersDb, userId);
-        
+
         if (!userDoc.data) {
           userDoc.data = {};
         }
@@ -192,7 +192,7 @@ router.post('/write/batch', authenticateToken, async (req, res) => {
         // Apply all writes to the document
         for (const write of writes) {
           const { path, data } = write;
-          
+
           if (!path) {
             return res.status(400).json({ error: 'Each write must have a path' });
           }
@@ -207,37 +207,37 @@ router.post('/write/batch', authenticateToken, async (req, res) => {
         }
 
         userDoc.updatedAt = new Date().toISOString();
-        
+
         const response = await usersDb.insert(userDoc);
-        
+
         logDatabaseOperation('batch_write', userId, {
           operations: writes.length,
           attempt: attempt + 1,
-          paths: writes.map(w => w.path).join(', ')
+          paths: writes.map((w) => w.path).join(', '),
         });
-        
+
         logUserActivity(userId, 'batch_write', {
           operations: writes.length,
-          paths: writes.map(w => w.path)
+          paths: writes.map((w) => w.path),
         });
-        
-        res.json({ 
-          success: true, 
-          id: response.id, 
-          rev: response.rev, 
+
+        res.json({
+          success: true,
+          id: response.id,
+          rev: response.rev,
           writesProcessed: writes.length,
-          operations: writes.length 
+          operations: writes.length,
         });
         return;
       } catch (error) {
         lastError = error;
-        
+
         if (error.statusCode === 409) {
           // Conflict - retry with exponential backoff
           attempt++;
           if (attempt < MAX_RETRIES) {
             const delay = RETRY_DELAY_MS * Math.pow(2, attempt - 1) + Math.random() * 20;
-            await new Promise(resolve => setTimeout(resolve, delay));
+            await new Promise((resolve) => setTimeout(resolve, delay));
             continue;
           }
         } else {
@@ -249,16 +249,16 @@ router.post('/write/batch', authenticateToken, async (req, res) => {
 
     // Max retries exceeded
     console.error(`Batch write failed after ${MAX_RETRIES} attempts:`, lastError);
-    res.status(503).json({ 
+    res.status(503).json({
       error: 'Batch write failed due to conflicts. Please try again.',
       details: lastError.message,
-      operations: writes.length 
+      operations: writes.length,
     });
   } catch (error) {
     console.error('Batch write error:', error);
-    res.status(500).json({ 
-      error: 'Batch write failed', 
-      details: error.message 
+    res.status(500).json({
+      error: 'Batch write failed',
+      details: error.message,
     });
   }
 });
@@ -269,7 +269,7 @@ router.post('/write/batch', authenticateToken, async (req, res) => {
 router.post('/write/*?', authenticateToken, async (req, res) => {
   const MAX_RETRIES = 10;
   const RETRY_DELAY_MS = 50;
-  
+
   try {
     const path = req.params[0] || '';
     let data = req.body;
@@ -289,14 +289,14 @@ router.post('/write/*?', authenticateToken, async (req, res) => {
         userId,
         path: path || '(root)',
         dataLength: data.length,
-        requestType: 'data_write'
+        requestType: 'data_write',
       });
     } else {
       logger.debug('Write request (JSON)', {
         userId,
         path: path || '(root)',
         dataType: typeof data,
-        requestType: 'data_write'
+        requestType: 'data_write',
       });
     }
 
@@ -320,24 +320,24 @@ router.post('/write/*?', authenticateToken, async (req, res) => {
         }
 
         userDoc.updatedAt = new Date().toISOString();
-        
+
         const response = await usersDb.insert(userDoc);
         logDatabaseOperation('write', userId, {
           path: path || '(root)',
           attempt: attempt + 1,
           dataType: typeof data,
-          dataSize: JSON.stringify(data).length
+          dataSize: JSON.stringify(data).length,
         });
         logUserActivity(userId, 'data_written', {
           path: path || '(root)',
           operation: 'write',
-          success: true
+          success: true,
         });
         res.json({ success: true, id: response.id, rev: response.rev });
         return;
       } catch (error) {
         lastError = error;
-        
+
         // Check if it's a CouchDB conflict error (409)
         if (error.statusCode === 409 || error.error === 'conflict') {
           attempt++;
@@ -346,13 +346,13 @@ router.post('/write/*?', authenticateToken, async (req, res) => {
             path: path || '(root)',
             attempt,
             maxRetries: MAX_RETRIES,
-            errorType: 'database_conflict'
+            errorType: 'database_conflict',
           });
-          
+
           if (attempt < MAX_RETRIES) {
             // Exponential backoff with jitter
             const delay = RETRY_DELAY_MS * Math.pow(2, attempt - 1) + Math.random() * 20;
-            await new Promise(resolve => setTimeout(resolve, delay));
+            await new Promise((resolve) => setTimeout(resolve, delay));
             continue;
           }
         } else {
@@ -361,12 +361,12 @@ router.post('/write/*?', authenticateToken, async (req, res) => {
         }
       }
     }
-    
+
     // Max retries exceeded
     console.error(`Write failed after ${MAX_RETRIES} attempts:`, lastError);
-    res.status(409).json({ 
+    res.status(409).json({
       error: 'Failed to write data due to conflicts. Please try again.',
-      details: lastError.message 
+      details: lastError.message,
     });
   } catch (error) {
     console.error('Write error:', error);
@@ -416,7 +416,7 @@ router.get('/read/*?', authenticateToken, async (req, res) => {
 
     try {
       const userDoc = await usersDb.get(userId);
-      
+
       if (!path || path === '') {
         // Return entire data object
         logDatabaseOperation('read', userId, { path: '(root)', operation: 'read_all' });
@@ -425,7 +425,11 @@ router.get('/read/*?', authenticateToken, async (req, res) => {
       } else {
         // Return nested property
         const data = getNestedProperty(userDoc.data, path);
-        logDatabaseOperation('read', userId, { path, operation: 'read_nested', found: data !== null });
+        logDatabaseOperation('read', userId, {
+          path,
+          operation: 'read_nested',
+          found: data !== null,
+        });
         logUserActivity(userId, 'data_read', { path, operation: 'read', found: data !== null });
         res.json({ data });
       }
@@ -478,7 +482,7 @@ router.delete('/delete/*?', authenticateToken, async (req, res) => {
 
     try {
       let userDoc = await usersDb.get(userId);
-      
+
       if (!path || path === '') {
         // Clear entire data object
         userDoc.data = {};
@@ -492,10 +496,10 @@ router.delete('/delete/*?', authenticateToken, async (req, res) => {
 
       userDoc.updatedAt = new Date().toISOString();
       await usersDb.insert(userDoc);
-      
+
       logDatabaseOperation('delete', userId, { path: path || '(root)', operation: 'delete' });
       logUserActivity(userId, 'data_deleted', { path: path || '(root)', operation: 'delete' });
-      
+
       res.json({ success: true });
     } catch (err) {
       if (err.statusCode === 404) {

@@ -25,12 +25,11 @@ import { TrapFocusDirective } from 'src/app/shared/directives/trap-focus.directi
   standalone: true,
   imports: [TrapFocusDirective, CommonModule, FormsModule, TranslateModule],
   templateUrl: './add-asset.component.html',
-  styleUrls: ['../../../shared/styles/add-form.css', './add-asset.component.css']
+  styleUrls: ['../../../shared/styles/add-form.css', './add-asset.component.css'],
 })
 export class AddAssetComponent extends BaseAddComponent {
-
-  titleTextField = "";
-  amountTextField = "";
+  titleTextField = '';
+  amountTextField = '';
 
   static zIndex;
   static isAddAsset;
@@ -45,7 +44,10 @@ export class AddAssetComponent extends BaseAddComponent {
    * @param database - The database service.
    * @param frontendLogger - The frontend logging service.
    */
-  constructor(router: Router, private persistence: PersistenceService) {
+  constructor(
+    router: Router,
+    private persistence: PersistenceService,
+  ) {
     super(router);
     AddAssetComponent.isAddAsset = false;
     this.initStatic(AddAssetComponent);
@@ -61,7 +63,7 @@ export class AddAssetComponent extends BaseAddComponent {
 
   override closeWindow() {
     AddAssetComponent.isAddAsset = false;
-    this.amountTextField = "";
+    this.amountTextField = '';
     super.closeWindow();
   }
 
@@ -71,29 +73,38 @@ export class AddAssetComponent extends BaseAddComponent {
    * @returns True if the title is invalid, false otherwise.
    */
   invalidTitle(title: string) {
-    return isDuplicateTitle(title, [AppStateService.instance.allAssets, AppStateService.instance.allShares, AppStateService.instance.allInvestments], 'tag');
+    return isDuplicateTitle(
+      title,
+      [
+        AppStateService.instance.allAssets,
+        AppStateService.instance.allShares,
+        AppStateService.instance.allInvestments,
+      ],
+      'tag',
+    );
   }
 
   /**
    * Adds an asset.
    */
-  addAsset(){
+  addAsset() {
     //First trim string
     this.titleTextField = this.titleTextField.trim();
     //Validation (check if Amount is not empty)
-    if (!this.validateRequired([
-      { name: 'title', value: this.titleTextField, label: 'Title' }
-    ])) {
+    if (!this.validateRequired([{ name: 'title', value: this.titleTextField, label: 'Title' }])) {
       // field errors shown inline
     } else if (this.invalidTitle(this.titleTextField)) {
-      this.showError("This fire asset already exists.");
+      this.showError('This fire asset already exists.');
     } else {
       // ready to write to Database new Transaction
-      const newAsset: Asset = {tag:this.titleTextField, amount: this.amountTextField == "" ? 0.0 : parseFloat(this.amountTextField)};
+      const newAsset: Asset = {
+        tag: this.titleTextField,
+        amount: this.amountTextField == '' ? 0.0 : parseFloat(this.amountTextField),
+      };
       AppStateService.instance.allAssets.push(newAsset);
       // Clean Up close Window
-      this.titleTextField = "";
-      this.amountTextField = "";
+      this.titleTextField = '';
+      this.amountTextField = '';
       this.clearError();
       this.closeWindow();
       AppStateService.instance.isSaving = true;
@@ -113,7 +124,7 @@ export class AddAssetComponent extends BaseAddComponent {
         onError: (error) => {
           AppStateService.instance.isSaving = false;
           this.toastService.show(error.message || 'Database write failed', 'error');
-        }
+        },
       });
     }
   }

@@ -5,18 +5,32 @@ import { Grow } from '../../../interfaces/grow';
 
 function makeGrow(overrides: Partial<Grow> = {}): Grow {
   return {
-    title: '', sub: '', phase: 'idea', description: '', strategy: '', riskScore: 0, risks: '',
-    cashflow: 0, amount: 0, isAsset: false, share: null, investment: null, liabilitie: null,
-    actionItems: [], links: [], notes: [], createdAt: '', updatedAt: '',
-    ...overrides
+    title: '',
+    sub: '',
+    phase: 'idea',
+    description: '',
+    strategy: '',
+    riskScore: 0,
+    risks: '',
+    cashflow: 0,
+    amount: 0,
+    isAsset: false,
+    share: null,
+    investment: null,
+    liabilitie: null,
+    actionItems: [],
+    links: [],
+    notes: [],
+    createdAt: '',
+    updatedAt: '',
+    ...overrides,
   };
 }
 
 describe('InfoGrowComponent', () => {
-
   // Allow the deferred setTimeout(() => import(...)) in info-grow.component.ts to resolve
   beforeAll(async () => {
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 100));
   });
 
   beforeEach(() => {
@@ -45,9 +59,16 @@ describe('InfoGrowComponent', () => {
   it('setInfoGrowComponent should set all static fields', () => {
     const share = { tag: 'AAPL', quantity: 10, price: 150 } as any;
     const project = makeGrow({
-      title: 'Project A', sub: 'sub1', phase: 'execute', description: 'desc',
-      strategy: 'strat', risks: 'risk', amount: 1000, cashflow: 50,
-      isAsset: true, share
+      title: 'Project A',
+      sub: 'sub1',
+      phase: 'execute',
+      description: 'desc',
+      strategy: 'strat',
+      risks: 'risk',
+      amount: 1000,
+      cashflow: 50,
+      isAsset: true,
+      share,
     });
     InfoGrowComponent.setInfoGrowComponent(2, project);
 

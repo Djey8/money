@@ -5,7 +5,15 @@ import { SettingsComponent } from 'src/app/panels/settings/settings.component';
 import { Transaction } from 'src/app/interfaces/transaction';
 import { Subscription } from 'src/app/interfaces/subscription';
 
-export type PromptType = 'grow-strategy' | 'budget-optimizer' | 'subscription-audit' | 'expense-pattern' | 'smile-create' | 'smile-improve' | 'fire-create' | 'fire-improve';
+export type PromptType =
+  | 'grow-strategy'
+  | 'budget-optimizer'
+  | 'subscription-audit'
+  | 'expense-pattern'
+  | 'smile-create'
+  | 'smile-improve'
+  | 'fire-create'
+  | 'fire-improve';
 
 export interface PromptOptions {
   includeAssets: boolean;
@@ -18,7 +26,8 @@ export interface PromptOptions {
   broker: string;
   country: string;
   // Goals
-  primaryGoal: '' | 'build-capital' | 'monthly-income' | 'financial-independence' | 'large-purchase';
+  primaryGoal:
+    '' | 'build-capital' | 'monthly-income' | 'financial-independence' | 'large-purchase';
   targetAmount: number;
   // Risk quantification
   maxDrawdown: '' | '10' | '20' | '30' | '50';
@@ -60,7 +69,8 @@ export interface PromptOptions {
   smileComplexity: '' | 'simple' | 'moderate' | 'complex'; // '' = not specified
   smileNumberOfSuggestions: number | undefined;
   // Phase 3 - Fire Settings
-  fireEmergencyType: 'appliance' | 'medical' | 'car' | 'debt' | 'job-loss' | 'family-loan' | 'other';
+  fireEmergencyType:
+    'appliance' | 'medical' | 'car' | 'debt' | 'job-loss' | 'family-loan' | 'other';
   fireTotalAmount: number;
   fireAlreadyBorrowed: boolean;
   fireLenderDetails: string;
@@ -90,7 +100,7 @@ export const BROKER_OPTIONS = [
   'Flatex / Degiro',
   'Interactive Brokers',
   'Smartbroker+',
-  'Other'
+  'Other',
 ];
 
 export const COUNTRY_OPTIONS = [
@@ -104,7 +114,7 @@ export const COUNTRY_OPTIONS = [
   'Belgium',
   'Ireland',
   'Other EU',
-  'Other'
+  'Other',
 ];
 
 interface MonthlyBucket {
@@ -116,18 +126,21 @@ interface MonthlyBucket {
 
 @Injectable({ providedIn: 'root' })
 export class PromptGeneratorService {
-
   private static readonly LANG_MAP: Record<string, string> = {
     en: 'English',
     de: 'German',
     es: 'Spanish',
     fr: 'French',
     cn: 'Chinese',
-    ar: 'Arabic'
+    ar: 'Arabic',
   };
 
-  private get state(): AppStateService { return AppStateService.instance; }
-  private get currency(): string { return SettingsComponent.currency || '€'; }
+  private get state(): AppStateService {
+    return AppStateService.instance;
+  }
+  private get currency(): string {
+    return SettingsComponent.currency || '€';
+  }
 
   constructor(private translate: TranslateService) {}
 
@@ -195,7 +208,7 @@ export class PromptGeneratorService {
       improveAreas: ['budget-realism', 'add-links', 'action-items', 'notes'],
       improveInformationFocus: ['shopping', 'reviews', 'tips'],
       improveCustomInformationFocus: undefined,
-      improveCustomInstructions: ''
+      improveCustomInstructions: '',
     };
   }
 
@@ -217,10 +230,12 @@ export class PromptGeneratorService {
 
     // --- Income & Expense Averages (from real transactions) ---
     if (months.length > 0) {
-      lines.push(`Data history: ${months.length} months (${months[0]} to ${months[months.length - 1]})`);
+      lines.push(
+        `Data history: ${months.length} months (${months[0]} to ${months[months.length - 1]})`,
+      );
 
-      const incomes = months.map(m => monthly[m].income);
-      const expenses = months.map(m => monthly[m].expenses);
+      const incomes = months.map((m) => monthly[m].income);
+      const expenses = months.map((m) => monthly[m].expenses);
       const avgIncome = incomes.reduce((a, b) => a + b, 0) / months.length;
       const avgExpense = expenses.reduce((a, b) => a + b, 0) / months.length;
       const avgSavings = avgIncome - avgExpense;
@@ -228,16 +243,26 @@ export class PromptGeneratorService {
 
       lines.push('');
       lines.push('--- Monthly Averages ---');
-      lines.push(`Avg monthly income: ${anon ? this.toRange(avgIncome) : this.currency + avgIncome.toFixed(0)}`);
-      lines.push(`Avg monthly expenses: ${anon ? this.toRange(avgExpense) : this.currency + avgExpense.toFixed(0)}`);
-      lines.push(`Avg monthly surplus: ${anon ? this.toRange(Math.abs(avgSavings)) + (avgSavings < 0 ? ' (deficit)' : '') : this.currency + avgSavings.toFixed(0)}`);
+      lines.push(
+        `Avg monthly income: ${anon ? this.toRange(avgIncome) : this.currency + avgIncome.toFixed(0)}`,
+      );
+      lines.push(
+        `Avg monthly expenses: ${anon ? this.toRange(avgExpense) : this.currency + avgExpense.toFixed(0)}`,
+      );
+      lines.push(
+        `Avg monthly surplus: ${anon ? this.toRange(Math.abs(avgSavings)) + (avgSavings < 0 ? ' (deficit)' : '') : this.currency + avgSavings.toFixed(0)}`,
+      );
       lines.push(`Savings rate: ~${savingsRate}%`);
 
       // --- Available Capital ---
       if (options.monthlyBudget > 0) {
-        lines.push(`Monthly investment budget (user-specified): ${anon ? this.toRange(options.monthlyBudget) : this.currency + options.monthlyBudget}`);
+        lines.push(
+          `Monthly investment budget (user-specified): ${anon ? this.toRange(options.monthlyBudget) : this.currency + options.monthlyBudget}`,
+        );
       } else if (avgSavings > 0) {
-        lines.push(`Estimated investable surplus: ${anon ? this.toRange(avgSavings) : this.currency + avgSavings.toFixed(0)}/mo`);
+        lines.push(
+          `Estimated investable surplus: ${anon ? this.toRange(avgSavings) : this.currency + avgSavings.toFixed(0)}/mo`,
+        );
       }
       if (options.willingToCutExpenses) {
         lines.push('Willing to reduce expenses to increase investment capacity: yes');
@@ -245,7 +270,7 @@ export class PromptGeneratorService {
 
       // --- Spending by account (actual distribution) ---
       const accountTotals: Record<string, number> = {};
-      months.forEach(m => {
+      months.forEach((m) => {
         Object.entries(monthly[m].byAccount).forEach(([acct, amt]) => {
           accountTotals[acct] = (accountTotals[acct] || 0) + amt;
         });
@@ -255,20 +280,24 @@ export class PromptGeneratorService {
         lines.push('');
         lines.push('--- Spending Distribution (actual) ---');
         const accountNames = ['Daily', 'Splurge', 'Smile', 'Fire'];
-        accountNames.forEach(acct => {
+        accountNames.forEach((acct) => {
           const total = accountTotals[acct] || 0;
           const pct = Math.round((total / totalExpenseAll) * 100);
           const avg = total / months.length;
           if (pct > 0) {
-            lines.push(`${acct}: ${pct}% of spending (avg ${anon ? this.toRange(avg) : this.currency + avg.toFixed(0)}/mo)`);
+            lines.push(
+              `${acct}: ${pct}% of spending (avg ${anon ? this.toRange(avg) : this.currency + avg.toFixed(0)}/mo)`,
+            );
           }
         });
-        lines.push(`Target allocation: Daily ${this.state.daily}% | Splurge ${this.state.splurge}% | Smile ${this.state.smile}% | Fire ${this.state.fire}%`);
+        lines.push(
+          `Target allocation: Daily ${this.state.daily}% | Splurge ${this.state.splurge}% | Smile ${this.state.smile}% | Fire ${this.state.fire}%`,
+        );
       }
 
       // --- Top 5 expense categories ---
       const categoryTotals: Record<string, number> = {};
-      months.forEach(m => {
+      months.forEach((m) => {
         Object.entries(monthly[m].byCategory).forEach(([cat, amt]) => {
           categoryTotals[cat] = (categoryTotals[cat] || 0) + amt;
         });
@@ -292,10 +321,12 @@ export class PromptGeneratorService {
 
         // Trend: compare last 3 months to overall average
         const last3 = months.slice(-3);
-        const recentAvgExp = last3.map(m => monthly[m].expenses).reduce((a, b) => a + b, 0) / 3;
-        const recentAvgInc = last3.map(m => monthly[m].income).reduce((a, b) => a + b, 0) / 3;
-        const expTrend = avgExpense > 0 ? Math.round(((recentAvgExp - avgExpense) / avgExpense) * 100) : 0;
-        const incTrend = avgIncome > 0 ? Math.round(((recentAvgInc - avgIncome) / avgIncome) * 100) : 0;
+        const recentAvgExp = last3.map((m) => monthly[m].expenses).reduce((a, b) => a + b, 0) / 3;
+        const recentAvgInc = last3.map((m) => monthly[m].income).reduce((a, b) => a + b, 0) / 3;
+        const expTrend =
+          avgExpense > 0 ? Math.round(((recentAvgExp - avgExpense) / avgExpense) * 100) : 0;
+        const incTrend =
+          avgIncome > 0 ? Math.round(((recentAvgInc - avgIncome) / avgIncome) * 100) : 0;
 
         if (Math.abs(incTrend) > 5) {
           lines.push(`Income trend (last 3 mo): ${incTrend > 0 ? '+' : ''}${incTrend}% vs average`);
@@ -303,22 +334,30 @@ export class PromptGeneratorService {
           lines.push('Income trend: stable');
         }
         if (Math.abs(expTrend) > 5) {
-          lines.push(`Spending trend (last 3 mo): ${expTrend > 0 ? '+' : ''}${expTrend}% vs average`);
+          lines.push(
+            `Spending trend (last 3 mo): ${expTrend > 0 ? '+' : ''}${expTrend}% vs average`,
+          );
         } else {
           lines.push('Spending trend: stable');
         }
 
         // Outlier months (expense >50% above average)
-        const outliers = months.filter(m => monthly[m].expenses > avgExpense * 1.5);
+        const outliers = months.filter((m) => monthly[m].expenses > avgExpense * 1.5);
         if (outliers.length > 0 && outliers.length <= 4) {
-          lines.push(`High-spending months: ${outliers.join(', ')} (>${anon ? '50% above avg' : this.currency + (avgExpense * 1.5).toFixed(0)})`);
+          lines.push(
+            `High-spending months: ${outliers.join(', ')} (>${anon ? '50% above avg' : this.currency + (avgExpense * 1.5).toFixed(0)})`,
+          );
         }
 
         // Income consistency
-        const incomeStdDev = Math.sqrt(incomes.reduce((s, v) => s + Math.pow(v - avgIncome, 2), 0) / months.length);
+        const incomeStdDev = Math.sqrt(
+          incomes.reduce((s, v) => s + Math.pow(v - avgIncome, 2), 0) / months.length,
+        );
         const incomeCV = avgIncome > 0 ? incomeStdDev / avgIncome : 0;
         if (incomeCV > 0.3) {
-          lines.push('Income stability: variable (>30% coefficient of variation) — may indicate freelance/irregular income');
+          lines.push(
+            'Income stability: variable (>30% coefficient of variation) — may indicate freelance/irregular income',
+          );
         } else if (incomeCV > 0.15) {
           lines.push('Income stability: somewhat variable — likely has bonuses or side income');
         } else {
@@ -330,10 +369,14 @@ export class PromptGeneratorService {
       if (this.state.allSubscriptions.length > 0) {
         const subTotal = this.state.allSubscriptions.reduce((s, sub) => s + (sub.amount || 0), 0);
         lines.push('');
-        lines.push(`Recurring subscriptions: ${this.state.allSubscriptions.length} active, total ${anon ? this.toRange(subTotal) : this.currency + subTotal.toFixed(0)}/mo`);
+        lines.push(
+          `Recurring subscriptions: ${this.state.allSubscriptions.length} active, total ${anon ? this.toRange(subTotal) : this.currency + subTotal.toFixed(0)}/mo`,
+        );
         if (!anon && this.state.allSubscriptions.length <= 10) {
-          this.state.allSubscriptions.forEach(sub => {
-            lines.push(`  - ${sub.title || sub.category}: ${this.currency}${(sub.amount || 0).toFixed(0)}/mo`);
+          this.state.allSubscriptions.forEach((sub) => {
+            lines.push(
+              `  - ${sub.title || sub.category}: ${this.currency}${(sub.amount || 0).toFixed(0)}/mo`,
+            );
           });
         }
       }
@@ -341,13 +384,19 @@ export class PromptGeneratorService {
       // Fallback: no transactions, use static balance-sheet data
       const totalIncome = this.sumRevenues();
       if (totalIncome > 0) {
-        lines.push(`Monthly income (static): ${anon ? this.toRange(totalIncome) : this.currency + totalIncome.toFixed(2)}`);
+        lines.push(
+          `Monthly income (static): ${anon ? this.toRange(totalIncome) : this.currency + totalIncome.toFixed(2)}`,
+        );
       }
       const totalExpenses = this.sumExpenses();
       if (totalExpenses > 0) {
-        lines.push(`Monthly expenses (static): ${anon ? this.toRange(totalExpenses) : this.currency + totalExpenses.toFixed(2)}`);
+        lines.push(
+          `Monthly expenses (static): ${anon ? this.toRange(totalExpenses) : this.currency + totalExpenses.toFixed(2)}`,
+        );
       }
-      lines.push(`Budget allocation: Daily ${this.state.daily}% | Splurge ${this.state.splurge}% | Smile ${this.state.smile}% | Fire ${this.state.fire}%`);
+      lines.push(
+        `Budget allocation: Daily ${this.state.daily}% | Splurge ${this.state.splurge}% | Smile ${this.state.smile}% | Fire ${this.state.fire}%`,
+      );
     }
 
     // --- Emergency Fund (Mojo) ---
@@ -376,7 +425,8 @@ export class PromptGeneratorService {
       const monthly = this.getMonthlyBreakdown();
       const mKeys = Object.keys(monthly).sort();
       if (mKeys.length > 0) {
-        const avgExp = mKeys.map(m => monthly[m].expenses).reduce((a, b) => a + b, 0) / mKeys.length;
+        const avgExp =
+          mKeys.map((m) => monthly[m].expenses).reduce((a, b) => a + b, 0) / mKeys.length;
         if (avgExp > 0) {
           const coverageMonths = Math.round((current / avgExp) * 10) / 10;
           lines.push(`Coverage: ~${coverageMonths} months of expenses`);
@@ -389,7 +439,20 @@ export class PromptGeneratorService {
     }
 
     // --- Investor Profile ---
-    const hasProfile = options.primaryGoal || options.taxSituation || options.weeklyHours > 0 || options.skills || options.creditScore || options.maxDrawdown || options.riskPreference || options.availableCapital > 0 || options.cashBuffer > 0 || options.leveragePreference || options.geoFocus || options.complexityTolerance || options.exitStrategy;
+    const hasProfile =
+      options.primaryGoal ||
+      options.taxSituation ||
+      options.weeklyHours > 0 ||
+      options.skills ||
+      options.creditScore ||
+      options.maxDrawdown ||
+      options.riskPreference ||
+      options.availableCapital > 0 ||
+      options.cashBuffer > 0 ||
+      options.leveragePreference ||
+      options.geoFocus ||
+      options.complexityTolerance ||
+      options.exitStrategy;
     if (hasProfile) {
       lines.push('');
       lines.push('--- Investor Profile ---');
@@ -398,12 +461,14 @@ export class PromptGeneratorService {
           'build-capital': 'Build capital / grow net worth',
           'monthly-income': 'Generate monthly passive income',
           'financial-independence': 'Achieve financial independence',
-          'large-purchase': 'Save for a large purchase'
+          'large-purchase': 'Save for a large purchase',
         };
         lines.push(`Primary goal: ${goalLabels[options.primaryGoal] || options.primaryGoal}`);
       }
       if (options.targetAmount > 0) {
-        lines.push(`Target in ${options.investmentHorizon} years: ${anon ? this.toRange(options.targetAmount) : this.currency + options.targetAmount}`);
+        lines.push(
+          `Target in ${options.investmentHorizon} years: ${anon ? this.toRange(options.targetAmount) : this.currency + options.targetAmount}`,
+        );
       }
       if (options.maxDrawdown) {
         lines.push(`Max acceptable portfolio drawdown: ${options.maxDrawdown}%`);
@@ -412,15 +477,21 @@ export class PromptGeneratorService {
         const weights: Record<string, string> = {
           growth: 'Growth 80% / Cashflow 20%',
           cashflow: 'Growth 20% / Cashflow 80%',
-          balanced: 'Growth 50% / Cashflow 50%'
+          balanced: 'Growth 50% / Cashflow 50%',
         };
-        lines.push(`Priority weighting: ${weights[options.riskPreference] || options.riskPreference}`);
+        lines.push(
+          `Priority weighting: ${weights[options.riskPreference] || options.riskPreference}`,
+        );
       }
       if (options.availableCapital > 0) {
-        lines.push(`Available capital to invest immediately: ${anon ? this.toRange(options.availableCapital) : this.currency + options.availableCapital}`);
+        lines.push(
+          `Available capital to invest immediately: ${anon ? this.toRange(options.availableCapital) : this.currency + options.availableCapital}`,
+        );
       }
       if (options.cashBuffer > 0) {
-        lines.push(`Minimum cash buffer to keep: ${anon ? this.toRange(options.cashBuffer) : this.currency + options.cashBuffer}`);
+        lines.push(
+          `Minimum cash buffer to keep: ${anon ? this.toRange(options.cashBuffer) : this.currency + options.cashBuffer}`,
+        );
       }
       if (options.taxSituation) {
         lines.push(`Employment / tax type: ${options.taxSituation}`);
@@ -429,7 +500,9 @@ export class PromptGeneratorService {
         lines.push('Church tax: yes (affects capital gains tax rate)');
       }
       if (options.weeklyHours > 0) {
-        lines.push(`Time available per week for investing activities: ${options.weeklyHours} hours`);
+        lines.push(
+          `Time available per week for investing activities: ${options.weeklyHours} hours`,
+        );
       }
       if (options.skills) {
         lines.push(`Skills / interests: ${options.skills}`);
@@ -438,22 +511,24 @@ export class PromptGeneratorService {
         const complexLabels: Record<string, string> = {
           low: 'Low (simple, passive strategies only)',
           medium: 'Medium (some active management acceptable)',
-          high: 'High (complex systems, multiple steps OK)'
+          high: 'High (complex systems, multiple steps OK)',
         };
-        lines.push(`Complexity tolerance: ${complexLabels[options.complexityTolerance] || options.complexityTolerance}`);
+        lines.push(
+          `Complexity tolerance: ${complexLabels[options.complexityTolerance] || options.complexityTolerance}`,
+        );
       }
       if (options.geoFocus) {
         const geoLabels: Record<string, string> = {
           local: 'Local / domestic market only',
           eu: 'EU / European markets',
-          global: 'Global (all markets)'
+          global: 'Global (all markets)',
         };
         lines.push(`Geographic focus: ${geoLabels[options.geoFocus] || options.geoFocus}`);
       }
       if (options.exitStrategy) {
         const exitLabels: Record<string, string> = {
           sell: `Sell / exit after ${options.investmentHorizon} years`,
-          hold: 'Hold long-term if performing well'
+          hold: 'Hold long-term if performing well',
         };
         lines.push(`Exit strategy: ${exitLabels[options.exitStrategy] || options.exitStrategy}`);
       }
@@ -461,15 +536,19 @@ export class PromptGeneratorService {
         const levLabels: Record<string, string> = {
           avoid: 'Avoid debt / no leverage',
           small: 'Open to small, manageable leverage',
-          active: 'Actively seeking leverage opportunities'
+          active: 'Actively seeking leverage opportunities',
         };
-        lines.push(`Leverage preference: ${levLabels[options.leveragePreference] || options.leveragePreference}`);
+        lines.push(
+          `Leverage preference: ${levLabels[options.leveragePreference] || options.leveragePreference}`,
+        );
       }
       if (options.creditScore) {
         lines.push(`Credit score (Schufa): ${options.creditScore}`);
       }
       if (options.maxLoanPayment > 0) {
-        lines.push(`Max acceptable monthly loan payment: ${anon ? this.toRange(options.maxLoanPayment) : this.currency + options.maxLoanPayment}`);
+        lines.push(
+          `Max acceptable monthly loan payment: ${anon ? this.toRange(options.maxLoanPayment) : this.currency + options.maxLoanPayment}`,
+        );
       }
     }
 
@@ -479,48 +558,72 @@ export class PromptGeneratorService {
 
     if (this.state.allAssets.length > 0) {
       const totalAssets = this.state.allAssets.reduce((s, a) => s + (a.amount || 0), 0);
-      lines.push(`Assets: ${anon ? `${this.state.allAssets.length} positions, total ${this.toRange(totalAssets)}` : `${this.state.allAssets.length} positions, total ${this.currency}${totalAssets.toFixed(2)}`}`);
+      lines.push(
+        `Assets: ${anon ? `${this.state.allAssets.length} positions, total ${this.toRange(totalAssets)}` : `${this.state.allAssets.length} positions, total ${this.currency}${totalAssets.toFixed(2)}`}`,
+      );
       if (!anon) {
-        this.state.allAssets.forEach(a => lines.push(`  - ${a.tag}: ${this.currency}${(a.amount || 0).toFixed(2)}`));
+        this.state.allAssets.forEach((a) =>
+          lines.push(`  - ${a.tag}: ${this.currency}${(a.amount || 0).toFixed(2)}`),
+        );
       }
     }
 
     if (this.state.allShares.length > 0) {
-      const totalShares = this.state.allShares.reduce((s, sh) => s + (sh.quantity * sh.price), 0);
-      lines.push(`Share portfolio: ${anon ? `${this.state.allShares.length} positions, total ${this.toRange(totalShares)}` : `${this.state.allShares.length} positions, total ${this.currency}${totalShares.toFixed(2)}`}`);
+      const totalShares = this.state.allShares.reduce((s, sh) => s + sh.quantity * sh.price, 0);
+      lines.push(
+        `Share portfolio: ${anon ? `${this.state.allShares.length} positions, total ${this.toRange(totalShares)}` : `${this.state.allShares.length} positions, total ${this.currency}${totalShares.toFixed(2)}`}`,
+      );
       if (!anon) {
-        this.state.allShares.forEach(sh => lines.push(`  - ${sh.tag}: ${sh.quantity} units @ ${this.currency}${sh.price}`));
+        this.state.allShares.forEach((sh) =>
+          lines.push(`  - ${sh.tag}: ${sh.quantity} units @ ${this.currency}${sh.price}`),
+        );
       }
     }
 
     if (this.state.allInvestments.length > 0) {
       const totalInv = this.state.allInvestments.reduce((s, inv) => s + (inv.amount || 0), 0);
-      lines.push(`Investments: ${anon ? `${this.state.allInvestments.length} positions, total ${this.toRange(totalInv)}` : `${this.state.allInvestments.length} positions, total ${this.currency}${totalInv.toFixed(2)}`}`);
+      lines.push(
+        `Investments: ${anon ? `${this.state.allInvestments.length} positions, total ${this.toRange(totalInv)}` : `${this.state.allInvestments.length} positions, total ${this.currency}${totalInv.toFixed(2)}`}`,
+      );
       if (!anon) {
-        this.state.allInvestments.forEach(inv => lines.push(`  - ${inv.tag}: value ${this.currency}${(inv.amount || 0).toFixed(2)}, deposit ${this.currency}${(inv.deposit || 0).toFixed(2)}`));
+        this.state.allInvestments.forEach((inv) =>
+          lines.push(
+            `  - ${inv.tag}: value ${this.currency}${(inv.amount || 0).toFixed(2)}, deposit ${this.currency}${(inv.deposit || 0).toFixed(2)}`,
+          ),
+        );
       }
     }
 
     if (this.state.liabilities.length > 0) {
       const totalLiab = this.state.liabilities.reduce((s, l) => s + (l.amount || 0), 0);
-      lines.push(`Liabilities: ${anon ? `${this.state.liabilities.length} obligations, total ${this.toRange(totalLiab)}` : `${this.state.liabilities.length} obligations, total ${this.currency}${totalLiab.toFixed(2)}`}`);
+      lines.push(
+        `Liabilities: ${anon ? `${this.state.liabilities.length} obligations, total ${this.toRange(totalLiab)}` : `${this.state.liabilities.length} obligations, total ${this.currency}${totalLiab.toFixed(2)}`}`,
+      );
       if (!anon) {
-        this.state.liabilities.forEach(l => lines.push(`  - ${l.tag}: ${this.currency}${(l.amount || 0).toFixed(2)}, monthly ${this.currency}${(l.credit || 0).toFixed(2)}`));
+        this.state.liabilities.forEach((l) =>
+          lines.push(
+            `  - ${l.tag}: ${this.currency}${(l.amount || 0).toFixed(2)}, monthly ${this.currency}${(l.credit || 0).toFixed(2)}`,
+          ),
+        );
       }
     }
 
     // Net worth
-    const nwAssets = this.state.allAssets.reduce((s, a) => s + (a.amount || 0), 0)
-      + this.state.allShares.reduce((s, sh) => s + (sh.quantity * sh.price), 0)
-      + this.state.allInvestments.reduce((s, inv) => s + (inv.amount || 0), 0);
+    const nwAssets =
+      this.state.allAssets.reduce((s, a) => s + (a.amount || 0), 0) +
+      this.state.allShares.reduce((s, sh) => s + sh.quantity * sh.price, 0) +
+      this.state.allInvestments.reduce((s, inv) => s + (inv.amount || 0), 0);
     const nwLiab = this.state.liabilities.reduce((s, l) => s + (l.amount || 0), 0);
     if (nwAssets > 0 || nwLiab > 0) {
       const netWorth = nwAssets - nwLiab;
-      lines.push(`Net worth: ${anon ? this.toRange(Math.abs(netWorth)) + (netWorth < 0 ? ' (negative)' : '') : this.currency + netWorth.toFixed(2)}`);
+      lines.push(
+        `Net worth: ${anon ? this.toRange(Math.abs(netWorth)) + (netWorth < 0 ? ' (negative)' : '') : this.currency + netWorth.toFixed(2)}`,
+      );
       const monthlyDebt = this.state.liabilities.reduce((s, l) => s + (l.credit || 0), 0);
-      const avgInc = months.length > 0
-        ? months.map(m => monthly[m].income).reduce((a, b) => a + b, 0) / months.length
-        : this.sumRevenues();
+      const avgInc =
+        months.length > 0
+          ? months.map((m) => monthly[m].income).reduce((a, b) => a + b, 0) / months.length
+          : this.sumRevenues();
       if (nwLiab > 0 && avgInc > 0) {
         const dti = Math.round((monthlyDebt / avgInc) * 100);
         lines.push(`Debt-to-income ratio: ~${dti}%`);
@@ -531,7 +634,9 @@ export class PromptGeneratorService {
     if (this.state.allGrowProjects.length > 0) {
       lines.push('');
       lines.push(`=== MY EXISTING GROW PROJECTS (${this.state.allGrowProjects.length}) ===`);
-      lines.push('These are strategies I am already pursuing or researching. Tailor your suggestions to complement (not duplicate) these:');
+      lines.push(
+        'These are strategies I am already pursuing or researching. Tailor your suggestions to complement (not duplicate) these:',
+      );
       this.state.allGrowProjects.forEach((gp, i) => {
         const parts = [`${i + 1}. "${gp.title}"`];
         if (gp.sub) parts.push(`(${gp.sub})`);
@@ -541,11 +646,24 @@ export class PromptGeneratorService {
         if (gp.strategy) lines.push(`   Strategy: ${gp.strategy}`);
         if (gp.risks) lines.push(`   Risks: ${gp.risks}`);
         if (gp.riskScore) lines.push(`   Risk score: ${gp.riskScore}/5`);
-        if (gp.amount > 0) lines.push(`   Capital: ${anon ? this.toRange(gp.amount) : this.currency + gp.amount}`);
-        if (gp.cashflow > 0) lines.push(`   Monthly cashflow: ${anon ? this.toRange(gp.cashflow) : this.currency + gp.cashflow}`);
-        if (gp.share) lines.push(`   Type: Share — ${gp.share.tag}, ${gp.share.quantity} units @ ${anon ? 'market price' : this.currency + gp.share.price}`);
-        if (gp.investment) lines.push(`   Type: Investment — ${gp.investment.tag}, deposit ${anon ? this.toRange(gp.investment.deposit || 0) : this.currency + (gp.investment.deposit || 0)}`);
-        if (gp.liabilitie) lines.push(`   Linked loan: ${gp.liabilitie.tag}, ${anon ? this.toRange(gp.liabilitie.amount || 0) : this.currency + (gp.liabilitie.amount || 0)}, monthly ${anon ? this.toRange(gp.liabilitie.credit || 0) : this.currency + (gp.liabilitie.credit || 0)}`);
+        if (gp.amount > 0)
+          lines.push(`   Capital: ${anon ? this.toRange(gp.amount) : this.currency + gp.amount}`);
+        if (gp.cashflow > 0)
+          lines.push(
+            `   Monthly cashflow: ${anon ? this.toRange(gp.cashflow) : this.currency + gp.cashflow}`,
+          );
+        if (gp.share)
+          lines.push(
+            `   Type: Share — ${gp.share.tag}, ${gp.share.quantity} units @ ${anon ? 'market price' : this.currency + gp.share.price}`,
+          );
+        if (gp.investment)
+          lines.push(
+            `   Type: Investment — ${gp.investment.tag}, deposit ${anon ? this.toRange(gp.investment.deposit || 0) : this.currency + (gp.investment.deposit || 0)}`,
+          );
+        if (gp.liabilitie)
+          lines.push(
+            `   Linked loan: ${gp.liabilitie.tag}, ${anon ? this.toRange(gp.liabilitie.amount || 0) : this.currency + (gp.liabilitie.amount || 0)}, monthly ${anon ? this.toRange(gp.liabilitie.credit || 0) : this.currency + (gp.liabilitie.credit || 0)}`,
+          );
         if (gp.isAsset) lines.push(`   Type: Asset`);
       });
     }
@@ -559,101 +677,159 @@ export class PromptGeneratorService {
   private buildInstructionBlock(options: PromptOptions): string {
     const lines: string[] = ['=== INSTRUCTIONS ==='];
 
-    lines.push('Act as a financial research analyst. I want you to research, evaluate, and present investment opportunities based on my financial situation.');
+    lines.push(
+      'Act as a financial research analyst. I want you to research, evaluate, and present investment opportunities based on my financial situation.',
+    );
     if (options.numberOfSuggestions) {
       lines.push(`Provide exactly ${options.numberOfSuggestions} investment suggestions.`);
     } else {
       lines.push('Provide investment suggestions (you decide how many based on my situation).');
     }
-    lines.push('For each suggestion, provide an EXHAUSTIVE deep dive — not a summary. After reading your output, I must fully understand the opportunity without needing to ask any follow-up questions. Every JSON field will be imported directly into my finance app, so each field must be rich, specific, and self-contained.');
+    lines.push(
+      'For each suggestion, provide an EXHAUSTIVE deep dive — not a summary. After reading your output, I must fully understand the opportunity without needing to ask any follow-up questions. Every JSON field will be imported directly into my finance app, so each field must be rich, specific, and self-contained.',
+    );
 
     const tracks: string[] = [];
-    if (options.includeAssets) tracks.push('Asset Trading (buy physical/digital assets to sell for profit)');
+    if (options.includeAssets)
+      tracks.push('Asset Trading (buy physical/digital assets to sell for profit)');
     if (options.includeShares) tracks.push('Shares & Dividends (ETFs, dividend stocks, REITs)');
-    if (options.includeInvestments) tracks.push('Leveraged Investments (real estate, business acquisitions)');
+    if (options.includeInvestments)
+      tracks.push('Leveraged Investments (real estate, business acquisitions)');
 
     if (tracks.length > 0) {
-      lines.push(`Consider these investment tracks:\n${tracks.map((t, i) => `${i + 1}. ${t}`).join('\n')}`);
+      lines.push(
+        `Consider these investment tracks:\n${tracks.map((t, i) => `${i + 1}. ${t}`).join('\n')}`,
+      );
     }
 
     lines.push(`Risk tolerance: ${options.riskTolerance}`);
     lines.push(`Investment horizon: ${options.investmentHorizon} years`);
 
     if (options.broker) {
-      lines.push(`My broker/platform: ${options.broker}. Suggest only instruments available on this platform where possible. Include fee/tax considerations specific to this broker.`);
+      lines.push(
+        `My broker/platform: ${options.broker}. Suggest only instruments available on this platform where possible. Include fee/tax considerations specific to this broker.`,
+      );
     }
     if (options.country) {
-      lines.push(`Tax residency: ${options.country}. Consider local tax rules (capital gains tax, withholding tax, tax-free allowances) in your analysis.`);
+      lines.push(
+        `Tax residency: ${options.country}. Consider local tax rules (capital gains tax, withholding tax, tax-free allowances) in your analysis.`,
+      );
       lines.push(`Use ${options.country} / European market context where relevant.`);
     }
 
     if (options.considerLoans) {
-      lines.push('For each recommendation, evaluate loan/leverage feasibility including debt-to-income impact and break-even timeline.');
+      lines.push(
+        'For each recommendation, evaluate loan/leverage feasibility including debt-to-income impact and break-even timeline.',
+      );
     }
 
     // Goal-aligned instructions
     if (options.primaryGoal) {
       const goalInstructions: Record<string, string> = {
-        'build-capital': 'My primary goal is to build capital and grow net worth. Prioritize strategies with strong long-term appreciation potential.',
-        'monthly-income': 'My primary goal is generating monthly passive income. Prioritize dividend stocks, REITs, rental income, and other cashflow-generating strategies.',
-        'financial-independence': 'My primary goal is achieving financial independence. Focus on building a self-sustaining portfolio that can eventually replace my active income.',
-        'large-purchase': 'My primary goal is saving for a large purchase. Focus on capital preservation and growth with manageable risk over my horizon.'
+        'build-capital':
+          'My primary goal is to build capital and grow net worth. Prioritize strategies with strong long-term appreciation potential.',
+        'monthly-income':
+          'My primary goal is generating monthly passive income. Prioritize dividend stocks, REITs, rental income, and other cashflow-generating strategies.',
+        'financial-independence':
+          'My primary goal is achieving financial independence. Focus on building a self-sustaining portfolio that can eventually replace my active income.',
+        'large-purchase':
+          'My primary goal is saving for a large purchase. Focus on capital preservation and growth with manageable risk over my horizon.',
       };
       lines.push(goalInstructions[options.primaryGoal] || '');
     }
 
     lines.push('');
     lines.push('=== FOR EACH SUGGESTION, INCLUDE ALL OF THE FOLLOWING ===');
-    lines.push('1. MARKET RESEARCH: Current market conditions, trends, and timing considerations. Reference real data, indices, or market reports where possible.');
-    lines.push('2. DEEP DIVE: Detailed explanation of the strategy, how it works, and why it fits my financial situation. Reference known strategies (DCA, Value Investing, BRRRR, etc.) where applicable.');
-    lines.push('3. COMMUNITY INSIGHTS: What are people saying in forums (Reddit, Bogleheads, local finance communities)? What are common pitfalls and success stories?');
-    lines.push('4. OPTIONS & ALTERNATIVES: Present concrete options (specific ETFs, specific asset classes, specific markets) with pros/cons for each.');
-    lines.push('5. SOURCES & LINKS: Provide real, verifiable links for further reading — broker product pages, fund factsheets, market analysis articles, financial calculators, comparison tools, and relevant forum threads. Focus especially on broker-specific links where the user can directly research or buy the suggested instrument.');
-    lines.push('6. RISK ASSESSMENT: Rate risk as a numeric score from 0-5 (use decimals like 2.5 if needed). Provide detailed justification. Include best-case, base-case, and worst-case scenarios with estimated returns.');
+    lines.push(
+      '1. MARKET RESEARCH: Current market conditions, trends, and timing considerations. Reference real data, indices, or market reports where possible.',
+    );
+    lines.push(
+      '2. DEEP DIVE: Detailed explanation of the strategy, how it works, and why it fits my financial situation. Reference known strategies (DCA, Value Investing, BRRRR, etc.) where applicable.',
+    );
+    lines.push(
+      '3. COMMUNITY INSIGHTS: What are people saying in forums (Reddit, Bogleheads, local finance communities)? What are common pitfalls and success stories?',
+    );
+    lines.push(
+      '4. OPTIONS & ALTERNATIVES: Present concrete options (specific ETFs, specific asset classes, specific markets) with pros/cons for each.',
+    );
+    lines.push(
+      '5. SOURCES & LINKS: Provide real, verifiable links for further reading — broker product pages, fund factsheets, market analysis articles, financial calculators, comparison tools, and relevant forum threads. Focus especially on broker-specific links where the user can directly research or buy the suggested instrument.',
+    );
+    lines.push(
+      '6. RISK ASSESSMENT: Rate risk as a numeric score from 0-5 (use decimals like 2.5 if needed). Provide detailed justification. Include best-case, base-case, and worst-case scenarios with estimated returns.',
+    );
     if (options.considerLoans) {
-      lines.push('7. LOAN ANALYSIS: Should I use leverage? Estimated monthly payment, break-even timeline, interest rate sensitivity (+2%).');
+      lines.push(
+        '7. LOAN ANALYSIS: Should I use leverage? Estimated monthly payment, break-even timeline, interest rate sensitivity (+2%).',
+      );
     }
-    lines.push(`${options.considerLoans ? '8' : '7'}. ACTIONABLE NEXT STEPS: Provide 3-5 concrete action items per suggestion. These will become checkable tasks in my app. Be specific — "Open account at X broker" not "Consider opening an account". Order by priority (high → medium → low). Include due date suggestions where useful (e.g. "within 1 week", "before next quarter end").`);
+    lines.push(
+      `${options.considerLoans ? '8' : '7'}. ACTIONABLE NEXT STEPS: Provide 3-5 concrete action items per suggestion. These will become checkable tasks in my app. Be specific — "Open account at X broker" not "Consider opening an account". Order by priority (high → medium → low). Include due date suggestions where useful (e.g. "within 1 week", "before next quarter end").`,
+    );
 
     // Quality directives
     lines.push('');
     lines.push('=== QUALITY REQUIREMENTS ===');
     lines.push('- Rank all suggestions from best to worst fit for my specific situation.');
-    lines.push('- Ensure suggestions work together as a coherent portfolio, not isolated standalone ideas.');
-    lines.push('- Evaluate whether current market timing is favorable or if waiting/DCA is better.');
+    lines.push(
+      '- Ensure suggestions work together as a coherent portfolio, not isolated standalone ideas.',
+    );
+    lines.push(
+      '- Evaluate whether current market timing is favorable or if waiting/DCA is better.',
+    );
     lines.push('- Prefer realistic, actionable strategies over theoretical or generic advice.');
     lines.push('- Highlight asymmetric opportunities (low downside, high upside potential).');
 
     lines.push('');
     lines.push('=== CRITICAL: JSON FIELD RICHNESS ===');
-    lines.push('The JSON fields are imported DIRECTLY into my finance app. Each field must be comprehensive so I never need to re-ask the LLM. Treat the JSON as a complete research dossier:');
-    lines.push('- "description" (min 3-5 sentences): Explain WHAT this investment is, WHY it fits my situation, what the expected outcome is, and how it compares to alternatives. A reader should understand the full pitch from this field alone.');
-    lines.push('- "strategy" (min 3-5 sentences): Provide a CONCRETE step-by-step execution plan. Name the specific strategy (DCA, BRRRR, dividend growth, etc.), specify exact amounts, frequencies, and milestones. Include entry criteria, rebalancing rules, and exit triggers.');
-    lines.push('- "risks" (min 3-5 sentences): Detail ALL key risk factors with severity. Include market risk, liquidity risk, currency risk, regulatory risk as applicable. State best-case/base-case/worst-case return scenarios with numbers. Explain mitigation strategies for each risk.');
-    lines.push('- "notes" (min 2-4 sentences): Provide additional context that does not fit in other fields — tax optimization tips, timing considerations, seasonal patterns, community sentiment, personal observations, or caveats. This is your space for everything else the user should know.');
-    lines.push('- "links" (3-5 per suggestion): Each link must have a descriptive label. Include: broker product/purchase page, official fund/asset factsheet, a market analysis or news article, a financial calculator or comparison tool, and a community discussion thread (Reddit, forum).');
-    lines.push('- "actionItems" (3-5 per suggestion): Each must be a specific, executable task — not vague. Include WHO to contact, WHAT to open/buy/research, and WHEN to do it. Use all three priority levels (high/medium/low).');
+    lines.push(
+      'The JSON fields are imported DIRECTLY into my finance app. Each field must be comprehensive so I never need to re-ask the LLM. Treat the JSON as a complete research dossier:',
+    );
+    lines.push(
+      '- "description" (min 3-5 sentences): Explain WHAT this investment is, WHY it fits my situation, what the expected outcome is, and how it compares to alternatives. A reader should understand the full pitch from this field alone.',
+    );
+    lines.push(
+      '- "strategy" (min 3-5 sentences): Provide a CONCRETE step-by-step execution plan. Name the specific strategy (DCA, BRRRR, dividend growth, etc.), specify exact amounts, frequencies, and milestones. Include entry criteria, rebalancing rules, and exit triggers.',
+    );
+    lines.push(
+      '- "risks" (min 3-5 sentences): Detail ALL key risk factors with severity. Include market risk, liquidity risk, currency risk, regulatory risk as applicable. State best-case/base-case/worst-case return scenarios with numbers. Explain mitigation strategies for each risk.',
+    );
+    lines.push(
+      '- "notes" (min 2-4 sentences): Provide additional context that does not fit in other fields — tax optimization tips, timing considerations, seasonal patterns, community sentiment, personal observations, or caveats. This is your space for everything else the user should know.',
+    );
+    lines.push(
+      '- "links" (3-5 per suggestion): Each link must have a descriptive label. Include: broker product/purchase page, official fund/asset factsheet, a market analysis or news article, a financial calculator or comparison tool, and a community discussion thread (Reddit, forum).',
+    );
+    lines.push(
+      '- "actionItems" (3-5 per suggestion): Each must be a specific, executable task — not vague. Include WHO to contact, WHAT to open/buy/research, and WHEN to do it. Use all three priority levels (high/medium/low).',
+    );
 
     if (options.complexityTolerance) {
       const complexInst: Record<string, string> = {
         low: '- Only suggest simple, passive strategies that require minimal ongoing management.',
-        medium: '- Balance between passive and active strategies. Some hands-on work is acceptable.',
-        high: '- Feel free to suggest complex, multi-step strategies if the risk/reward justifies it.'
+        medium:
+          '- Balance between passive and active strategies. Some hands-on work is acceptable.',
+        high: '- Feel free to suggest complex, multi-step strategies if the risk/reward justifies it.',
       };
       lines.push(complexInst[options.complexityTolerance] || '');
     }
     if (options.exitStrategy) {
       if (options.exitStrategy === 'sell') {
-        lines.push(`- I plan to exit/sell positions after ${options.investmentHorizon} years. Factor in liquidity and exit costs.`);
+        lines.push(
+          `- I plan to exit/sell positions after ${options.investmentHorizon} years. Factor in liquidity and exit costs.`,
+        );
       } else {
-        lines.push('- I am open to holding positions long-term if they perform well. Consider both short-term and long-term returns.');
+        lines.push(
+          '- I am open to holding positions long-term if they perform well. Consider both short-term and long-term returns.',
+        );
       }
     }
     if (options.geoFocus) {
       const geoInst: Record<string, string> = {
-        local: '- Focus suggestions on my local/domestic market. Avoid foreign-market-only strategies.',
+        local:
+          '- Focus suggestions on my local/domestic market. Avoid foreign-market-only strategies.',
         eu: '- Focus suggestions on European/EU markets. Include cross-border EU opportunities.',
-        global: '- Consider global markets and opportunities without geographic restrictions.'
+        global: '- Consider global markets and opportunities without geographic restrictions.',
       };
       lines.push(geoInst[options.geoFocus] || '');
     }
@@ -661,7 +837,8 @@ export class PromptGeneratorService {
       const levInst: Record<string, string> = {
         avoid: '- I want to avoid debt. Do not prioritize leverage-dependent strategies.',
         small: '- I am open to small, manageable leverage if the risk/reward is favorable.',
-        active: '- I actively seek leverage opportunities. Prioritize strategies where leverage amplifies returns.'
+        active:
+          '- I actively seek leverage opportunities. Prioritize strategies where leverage amplifies returns.',
       };
       lines.push(levInst[options.leveragePreference] || '');
     }
@@ -773,7 +950,7 @@ After ALL suggestions, end with:
 
 \`\`\`json
 [...all suggestion objects...]
-\`\`\``;  
+\`\`\``;
   }
 
   // --- Helpers ---
@@ -782,23 +959,23 @@ After ALL suggestions, end with:
     // Handle negative amounts (income subscriptions) by using absolute value
     const absAmount = Math.abs(amount);
     const isNegative = amount < 0;
-    
+
     if (absAmount === 0) return this.currency + '0';
-    
+
     // Use absolute value for range calculation
     const amt = options?.absolute ? absAmount : absAmount;
-    
+
     // More precise ranges for smaller amounts (common in budgets)
     if (amt < 50) return `under ${this.currency}50`;
     if (amt < 100) return `${this.currency}50–${this.currency}100`;
-    
+
     // €100-€250: nearest €50
     if (amt < 250) {
       const low = Math.floor(amt / 50) * 50;
       const high = low + 50;
       return `${this.currency}${low}–${this.currency}${high}`;
     }
-    
+
     // €250-€1,000: nearest €100, offset to avoid exact matches
     if (amt < 1000) {
       const low = Math.floor(amt / 100) * 100;
@@ -807,21 +984,21 @@ After ALL suggestions, end with:
       const offsetLow = low === 0 ? low : low + 1;
       return `${this.currency}${offsetLow}–${this.currency}${high}`;
     }
-    
+
     // €1,000-€5,000: nearest €500
     if (amt <= 5000) {
       const low = Math.floor(amt / 500) * 500;
       const high = low + 500;
       return `${this.currency}${low.toLocaleString()}–${this.currency}${high.toLocaleString()}`;
     }
-    
+
     // €5,000-€50,000: nearest €5,000
     if (amt <= 50000) {
       const low = Math.floor(amt / 5000) * 5000;
       const high = low + 5000;
       return `${this.currency}${low.toLocaleString()}–${this.currency}${high.toLocaleString()}`;
     }
-    
+
     // > €50,000: nearest €10,000
     const low = Math.floor(amount / 10000) * 10000;
     const high = low + 10000;
@@ -837,8 +1014,8 @@ After ALL suggestions, end with:
     const buckets: Record<string, MonthlyBucket> = {};
 
     this.state.allTransactions
-      .filter(t => t.amount !== 0 && t.date && t.date.length >= 7)
-      .forEach(t => {
+      .filter((t) => t.amount !== 0 && t.date && t.date.length >= 7)
+      .forEach((t) => {
         const month = t.date.substring(0, 7);
         if (month === currentMonth) return; // skip partial current month
 
@@ -874,20 +1051,24 @@ After ALL suggestions, end with:
   }
 
   private sumRevenues(): number {
-    return this.state.allRevenues.reduce((s, r) => s + (r.amount || 0), 0)
-      + this.state.allIntrests.reduce((s, r) => s + (r.amount || 0), 0)
-      + this.state.allProperties.reduce((s, r) => s + (r.amount || 0), 0);
+    return (
+      this.state.allRevenues.reduce((s, r) => s + (r.amount || 0), 0) +
+      this.state.allIntrests.reduce((s, r) => s + (r.amount || 0), 0) +
+      this.state.allProperties.reduce((s, r) => s + (r.amount || 0), 0)
+    );
   }
 
   private sumExpenses(): number {
-    return [
-      ...this.state.dailyExpenses,
-      ...this.state.splurgeExpenses,
-      ...this.state.smileExpenses,
-      ...this.state.fireExpenses,
-      ...this.state.mojoExpenses
-    ].reduce((s, e) => s + (e.amount || 0), 0)
-      + this.state.allSubscriptions.reduce((s, sub) => s + (sub.amount || 0), 0);
+    return (
+      [
+        ...this.state.dailyExpenses,
+        ...this.state.splurgeExpenses,
+        ...this.state.smileExpenses,
+        ...this.state.fireExpenses,
+        ...this.state.mojoExpenses,
+      ].reduce((s, e) => s + (e.amount || 0), 0) +
+      this.state.allSubscriptions.reduce((s, sub) => s + (sub.amount || 0), 0)
+    );
   }
 
   // ===================================================================
@@ -925,11 +1106,15 @@ After ALL suggestions, end with:
 
     // Show recurring subscriptions if any
     if (this.state.allSubscriptions.length > 0) {
-      const activeSub = this.state.allSubscriptions.filter(s => !s.endDate || new Date(s.endDate) >= new Date());
+      const activeSub = this.state.allSubscriptions.filter(
+        (s) => !s.endDate || new Date(s.endDate) >= new Date(),
+      );
       if (activeSub.length > 0) {
         const subTotal = activeSub.reduce((s, sub) => s + Math.abs(sub.amount || 0), 0);
         lines.push('--- Recurring Subscriptions ---');
-        lines.push(`${activeSub.length} active subscriptions, total ${anon ? this.toRange(subTotal) : this.currency + subTotal.toFixed(2)}/mo`);
+        lines.push(
+          `${activeSub.length} active subscriptions, total ${anon ? this.toRange(subTotal) : this.currency + subTotal.toFixed(2)}/mo`,
+        );
         lines.push('');
       }
     }
@@ -940,7 +1125,7 @@ After ALL suggestions, end with:
     if (!options.selectedBudgetCategories || options.selectedBudgetCategories.length === 0) {
       // Get all unique budget categories from last month
       const allBudgetCategories = new Set<string>();
-      this.state.allBudgets.forEach(budget => {
+      this.state.allBudgets.forEach((budget) => {
         if (budget.date === lastMonthKey && budget.tag) {
           const normalized = budget.tag.replace(/@/g, '').trim();
           if (normalized) {
@@ -956,12 +1141,16 @@ After ALL suggestions, end with:
     }
 
     // Get budgets for last month, filtered to selected/default categories
-    const selectedBudgets: { category: string, budget: number }[] = [];
-    const normalizedSelectedCategories = categoriesToAnalyze.map(c => c.replace(/@/g, '').trim());
-    
-    this.state.allBudgets.forEach(budget => {
+    const selectedBudgets: { category: string; budget: number }[] = [];
+    const normalizedSelectedCategories = categoriesToAnalyze.map((c) => c.replace(/@/g, '').trim());
+
+    this.state.allBudgets.forEach((budget) => {
       const trimmedTag = budget.tag ? budget.tag.replace(/@/g, '').trim() : '';
-      if (budget.date === lastMonthKey && trimmedTag && normalizedSelectedCategories.includes(trimmedTag)) {
+      if (
+        budget.date === lastMonthKey &&
+        trimmedTag &&
+        normalizedSelectedCategories.includes(trimmedTag)
+      ) {
         selectedBudgets.push({ category: trimmedTag, budget: budget.amount });
       }
     });
@@ -971,7 +1160,7 @@ After ALL suggestions, end with:
     let lastMonthData = monthly[lastMonthKey];
     // eslint-disable-next-line no-useless-assignment -- initial value only read after being overwritten in the fallback branch; pre-existing, out of scope for lint setup
     let actualMonthName = monthName;
-    
+
     // Fallback: if last month has no data, use the most recent month with data
     if (!lastMonthData) {
       const availableMonths = Object.keys(monthly).sort().reverse();
@@ -997,39 +1186,56 @@ After ALL suggestions, end with:
     const savingsRate = monthIncome > 0 ? Math.round((monthSavings / monthIncome) * 100) : 0;
 
     lines.push('--- Monthly Overview (' + monthName + ') ---');
-    lines.push('Total income: ' + (anon ? this.toRange(monthIncome) : this.currency + monthIncome.toFixed(0)));
-    lines.push('Total expenses: ' + (anon ? this.toRange(monthExpenses) : this.currency + monthExpenses.toFixed(0)));
-    lines.push('Surplus: ' + (anon ? this.toRange(Math.abs(monthSavings)) + (monthSavings < 0 ? ' (deficit)' : '') : this.currency + monthSavings.toFixed(0)));
+    lines.push(
+      'Total income: ' +
+        (anon ? this.toRange(monthIncome) : this.currency + monthIncome.toFixed(0)),
+    );
+    lines.push(
+      'Total expenses: ' +
+        (anon ? this.toRange(monthExpenses) : this.currency + monthExpenses.toFixed(0)),
+    );
+    lines.push(
+      'Surplus: ' +
+        (anon
+          ? this.toRange(Math.abs(monthSavings)) + (monthSavings < 0 ? ' (deficit)' : '')
+          : this.currency + monthSavings.toFixed(0)),
+    );
     lines.push('Savings rate: ~' + savingsRate + '%');
 
     // Budget vs Actual per Selected Category
     lines.push('');
     lines.push('--- BUDGET VS ACTUAL (Selected Categories) ---');
-    
-    const comparisons: { cat: string, budget: number, actual: number, diff: number, variance: number }[] = [];
+
+    const comparisons: {
+      cat: string;
+      budget: number;
+      actual: number;
+      diff: number;
+      variance: number;
+    }[] = [];
     selectedBudgets.forEach(({ category, budget }) => {
       // Normalize transaction category names for comparison (remove @ and trim)
       let actual = actualByCategory[category] || 0;
-      
+
       // Try to find matching category with different normalization if not found
       if (actual === 0) {
-        Object.keys(actualByCategory).forEach(key => {
+        Object.keys(actualByCategory).forEach((key) => {
           const normalizedKey = key.replace(/@/g, '').trim();
           if (normalizedKey === category) {
             actual = actualByCategory[key];
           }
         });
       }
-      
+
       const diff = actual - budget;
-      const variance = budget > 0 ? Math.round((diff / budget) * 100) : (actual > 0 ? 999 : 0);
+      const variance = budget > 0 ? Math.round((diff / budget) * 100) : actual > 0 ? 999 : 0;
       comparisons.push({ cat: category, budget, actual, diff, variance });
     });
 
     // Sort by absolute variance (biggest problems first)
     comparisons.sort((a, b) => Math.abs(b.variance) - Math.abs(a.variance));
 
-    comparisons.forEach(c => {
+    comparisons.forEach((c) => {
       const budgetStr = anon ? this.toRange(c.budget) : this.currency + c.budget.toFixed(0);
       const actualStr = anon ? this.toRange(c.actual) : this.currency + c.actual.toFixed(0);
       // eslint-disable-next-line no-useless-assignment -- initial '' is always overwritten below; pre-existing, out of scope for lint setup
@@ -1037,9 +1243,19 @@ After ALL suggestions, end with:
       if (Math.abs(c.variance) < 5) {
         status = ' ✓ on target';
       } else if (c.variance > 0) {
-        status = ' ⚠ ' + c.variance + '% OVER budget (' + (anon ? this.toRange(Math.abs(c.diff)) : this.currency + Math.abs(c.diff).toFixed(0)) + ' overspent)';
+        status =
+          ' ⚠ ' +
+          c.variance +
+          '% OVER budget (' +
+          (anon ? this.toRange(Math.abs(c.diff)) : this.currency + Math.abs(c.diff).toFixed(0)) +
+          ' overspent)';
       } else {
-        status = ' ✓ ' + Math.abs(c.variance) + '% under budget (' + (anon ? this.toRange(Math.abs(c.diff)) : this.currency + Math.abs(c.diff).toFixed(0)) + ' saved)';
+        status =
+          ' ✓ ' +
+          Math.abs(c.variance) +
+          '% under budget (' +
+          (anon ? this.toRange(Math.abs(c.diff)) : this.currency + Math.abs(c.diff).toFixed(0)) +
+          ' saved)';
       }
       lines.push('  ' + c.cat + ': Budget ' + budgetStr + ', Actual ' + actualStr + status);
     });
@@ -1052,12 +1268,32 @@ After ALL suggestions, end with:
 
     lines.push('');
     lines.push('--- Summary ---');
-    lines.push('Total budgeted (selected categories): ' + (anon ? this.toRange(totalBudget) : this.currency + totalBudget.toFixed(0)));
-    lines.push('Total actual (selected categories): ' + (anon ? this.toRange(totalActual) : this.currency + totalActual.toFixed(0)));
+    lines.push(
+      'Total budgeted (selected categories): ' +
+        (anon ? this.toRange(totalBudget) : this.currency + totalBudget.toFixed(0)),
+    );
+    lines.push(
+      'Total actual (selected categories): ' +
+        (anon ? this.toRange(totalActual) : this.currency + totalActual.toFixed(0)),
+    );
     if (totalDiff > 0) {
-      lines.push('Overall: ' + totalVariance + '% over budget (' + (anon ? this.toRange(totalDiff) : this.currency + totalDiff.toFixed(0)) + ' overspent)');
+      lines.push(
+        'Overall: ' +
+          totalVariance +
+          '% over budget (' +
+          (anon ? this.toRange(totalDiff) : this.currency + totalDiff.toFixed(0)) +
+          ' overspent)',
+      );
     } else {
-      lines.push('Overall: ' + Math.abs(totalVariance) + '% under budget (' + (anon ? this.toRange(Math.abs(totalDiff)) : this.currency + Math.abs(totalDiff).toFixed(0)) + ' saved)');
+      lines.push(
+        'Overall: ' +
+          Math.abs(totalVariance) +
+          '% under budget (' +
+          (anon
+            ? this.toRange(Math.abs(totalDiff))
+            : this.currency + Math.abs(totalDiff).toFixed(0)) +
+          ' saved)',
+      );
     }
 
     // Actual Spending Distribution (Daily/Splurge/Smile/Fire vs target)
@@ -1067,12 +1303,17 @@ After ALL suggestions, end with:
       lines.push('');
       lines.push('--- Actual Spending Distribution (actual vs target allocation) ---');
       const accountNames = ['Daily', 'Splurge', 'Smile', 'Fire'];
-      accountNames.forEach(acct => {
+      accountNames.forEach((acct) => {
         const spent = accountByCategory[acct] || 0;
         const pct = Math.round((spent / totalAccountSpending) * 100);
         const targetPct = (this.state as any)[acct.toLowerCase()] || 0;
         const diff = pct - targetPct;
-        const status = diff > 5 ? ` (${diff}% over target)` : diff < -5 ? ` (${Math.abs(diff)}% under target)` : ' (on target)';
+        const status =
+          diff > 5
+            ? ` (${diff}% over target)`
+            : diff < -5
+              ? ` (${Math.abs(diff)}% under target)`
+              : ' (on target)';
         lines.push(`${acct}: ${pct}% actual vs ${targetPct}% target${status}`);
       });
     }
@@ -1086,7 +1327,7 @@ After ALL suggestions, end with:
       lines.push('--- Top 10 Expense Categories (all categories, not just budgeted) ---');
       allCategories.forEach(([cat, amount]) => {
         const amountStr = anon ? this.toRange(amount) : this.currency + amount.toFixed(0);
-        const hasBudget = comparisons.some(c => c.cat === cat.replace(/@/g, '').trim());
+        const hasBudget = comparisons.some((c) => c.cat === cat.replace(/@/g, '').trim());
         const budgetStatus = hasBudget ? '' : ' (no budget set)';
         lines.push(`  ${cat}: ${amountStr}${budgetStatus}`);
       });
@@ -1098,9 +1339,9 @@ After ALL suggestions, end with:
       lines.push('');
       lines.push('--- Recent Trends ---');
       const recentMonths = sortedMonths.slice(0, 3);
-      const trends: { month: string, income: number, expenses: number, savings: number }[] = [];
-      
-      recentMonths.forEach(monthKey => {
+      const trends: { month: string; income: number; expenses: number; savings: number }[] = [];
+
+      recentMonths.forEach((monthKey) => {
         const data = monthly[monthKey];
         const date = new Date(monthKey + '-01');
         const monthLabel = date.toLocaleDateString('en', { year: 'numeric', month: 'short' });
@@ -1108,29 +1349,34 @@ After ALL suggestions, end with:
           month: monthLabel,
           income: data.income || 0,
           expenses: data.expenses || 0,
-          savings: (data.income || 0) - (data.expenses || 0)
+          savings: (data.income || 0) - (data.expenses || 0),
         });
       });
-      
+
       // Show each month's overview
       trends.forEach((t, idx) => {
         const incomeStr = anon ? this.toRange(t.income) : this.currency + t.income.toFixed(0);
         const expenseStr = anon ? this.toRange(t.expenses) : this.currency + t.expenses.toFixed(0);
         lines.push(`${t.month}: Income ${incomeStr}, Expenses ${expenseStr}`);
-        
+
         // Show trend direction if not the first (most recent) month
         if (idx > 0) {
           const prev = trends[idx - 1];
           const expenseChange = t.expenses - prev.expenses;
-          const pctChange = prev.expenses > 0 ? Math.round((expenseChange / prev.expenses) * 100) : 0;
+          const pctChange =
+            prev.expenses > 0 ? Math.round((expenseChange / prev.expenses) * 100) : 0;
           if (Math.abs(pctChange) >= 10) {
             const direction = expenseChange > 0 ? 'increased' : 'decreased';
-            const changeStr = anon ? this.toRange(Math.abs(expenseChange)) : this.currency + Math.abs(expenseChange).toFixed(0);
-            lines.push(`  ↳ Expenses ${direction} by ${Math.abs(pctChange)}%  (${changeStr}) vs previous month`);
+            const changeStr = anon
+              ? this.toRange(Math.abs(expenseChange))
+              : this.currency + Math.abs(expenseChange).toFixed(0);
+            lines.push(
+              `  ↳ Expenses ${direction} by ${Math.abs(pctChange)}%  (${changeStr}) vs previous month`,
+            );
           }
         }
       });
-      
+
       // Overall trend analysis
       if (trends.length >= 2) {
         const oldest = trends[trends.length - 1];
@@ -1155,32 +1401,52 @@ After ALL suggestions, end with:
 
   private buildBudgetInstructionBlock(options: PromptOptions): string {
     const lines: string[] = ['=== INSTRUCTIONS ==='];
-    
-    lines.push('Act as a personal finance advisor. Analyze my category-level budgets vs actual spending to recommend optimizations.');
+
+    lines.push(
+      'Act as a personal finance advisor. Analyze my category-level budgets vs actual spending to recommend optimizations.',
+    );
     lines.push('');
     lines.push('Focus on:');
     lines.push('1. Identifying categories where I significantly overspend (>10% over budget)');
-    lines.push('2. Suggesting realistic budget adjustments for categories where I consistently miss targets');
+    lines.push(
+      '2. Suggesting realistic budget adjustments for categories where I consistently miss targets',
+    );
     lines.push('3. Finding categories where I could reduce costs without major lifestyle impact');
-    lines.push('4. Recommending new budgets for categories that currently have none but show regular spending');
+    lines.push(
+      '4. Recommending new budgets for categories that currently have none but show regular spending',
+    );
     lines.push('5. Providing specific, actionable strategies with clear validation criteria');
     lines.push('');
-    lines.push('For RELATED categories (e.g., "food" and "backery"), you may bundle them into a single optimization if they share a common strategy.');
+    lines.push(
+      'For RELATED categories (e.g., "food" and "backery"), you may bundle them into a single optimization if they share a common strategy.',
+    );
     lines.push('');
     if (options.numberOfSuggestions) {
-      lines.push(`Provide exactly ${options.numberOfSuggestions} optimization recommendations, prioritized by potential impact.`);
+      lines.push(
+        `Provide exactly ${options.numberOfSuggestions} optimization recommendations, prioritized by potential impact.`,
+      );
     } else {
-      lines.push('Provide optimization recommendations (you decide how many based on the opportunities), prioritized by potential impact.');
+      lines.push(
+        'Provide optimization recommendations (you decide how many based on the opportunities), prioritized by potential impact.',
+      );
     }
     lines.push('');
     lines.push('Each recommendation MUST include:');
     lines.push('- A clear ACTION PLAN: Specific, measurable steps to implement the optimization');
-    lines.push('- A VALIDATION PLAN: How I can verify if it worked (e.g., "Track spending over next 4 weeks, target <€200/mo")');
-    lines.push('- Helpful LINKS to resources, tools, guides, or articles that make implementation easier');
+    lines.push(
+      '- A VALIDATION PLAN: How I can verify if it worked (e.g., "Track spending over next 4 weeks, target <€200/mo")',
+    );
+    lines.push(
+      '- Helpful LINKS to resources, tools, guides, or articles that make implementation easier',
+    );
     lines.push('- Realistic timeframes and milestones');
     lines.push('');
-    lines.push('DO NOT recommend changes to account allocations (Daily/Splurge/Smile/Fire) — focus only on category-level budgets.');
-    lines.push('Provide specific recommendations, not generic advice. Reference my actual categories and amounts.');
+    lines.push(
+      'DO NOT recommend changes to account allocations (Daily/Splurge/Smile/Fire) — focus only on category-level budgets.',
+    );
+    lines.push(
+      'Provide specific recommendations, not generic advice. Reference my actual categories and amounts.',
+    );
 
     const lang = this.translate?.currentLang || 'en';
     const langName = PromptGeneratorService.LANG_MAP[lang];
@@ -1285,8 +1551,12 @@ Then, at the END, include a JSON code block with an ARRAY of budget optimization
   }
 ]
 \`\`\`
-${options.numberOfSuggestions ? `
-IMPORTANT: The JSON array must contain EXACTLY ${options.numberOfSuggestions} items, no more, no less.` : ''}
+${
+  options.numberOfSuggestions
+    ? `
+IMPORTANT: The JSON array must contain EXACTLY ${options.numberOfSuggestions} items, no more, no less.`
+    : ''
+}
 
 ⚠️ CRITICAL REMINDER: 
 - The "category" field MUST match EXACTLY the category names from your "BUDGET VS ACTUAL" section
@@ -1323,16 +1593,16 @@ Each item represents a specific budget optimization with a clear action plan and
 
     // ONLY analyze active subscriptions (not cancelled)
     const today = new Date();
-    let subscriptionsToAnalyze = this.state.allSubscriptions.filter(sub => {
+    let subscriptionsToAnalyze = this.state.allSubscriptions.filter((sub) => {
       if (!sub.endDate) return true; // No end date = active
       const endDate = new Date(sub.endDate);
       return endDate >= today; // End date in future = active
     });
-    
+
     // Further filter by selected subscriptions if specified
     if (options.selectedSubscriptions && options.selectedSubscriptions.length > 0) {
-      subscriptionsToAnalyze = subscriptionsToAnalyze.filter(sub => 
-        options.selectedSubscriptions.includes(sub.title || 'Unnamed')
+      subscriptionsToAnalyze = subscriptionsToAnalyze.filter((sub) =>
+        options.selectedSubscriptions.includes(sub.title || 'Unnamed'),
       );
     }
 
@@ -1347,15 +1617,21 @@ Each item represents a specific budget optimization with a clear action plan and
     lines.push('');
     lines.push('--- Subscription Summary ---');
     lines.push('Total subscriptions to analyze: ' + subscriptionsToAnalyze.length);
-    lines.push('Total monthly cost: ' + (anon ? this.toRange(totalMonthly) : this.currency + totalMonthly.toFixed(2)));
-    lines.push('Total annual cost: ' + (anon ? this.toRange(totalAnnual) : this.currency + totalAnnual.toFixed(2)));
+    lines.push(
+      'Total monthly cost: ' +
+        (anon ? this.toRange(totalMonthly) : this.currency + totalMonthly.toFixed(2)),
+    );
+    lines.push(
+      'Total annual cost: ' +
+        (anon ? this.toRange(totalAnnual) : this.currency + totalAnnual.toFixed(2)),
+    );
 
     lines.push('');
     lines.push('--- Selected Subscriptions ---');
 
     // Group by category
     const byCategory: Record<string, Subscription[]> = {};
-    subscriptionsToAnalyze.forEach(sub => {
+    subscriptionsToAnalyze.forEach((sub) => {
       const cat = sub.category || 'Uncategorized';
       if (!byCategory[cat]) byCategory[cat] = [];
       byCategory[cat].push(sub);
@@ -1364,16 +1640,35 @@ Each item represents a specific budget optimization with a clear action plan and
     Object.entries(byCategory).forEach(([cat, subs], catIndex) => {
       const catTotal = subs.reduce((s, sub) => s + (sub.amount || 0), 0);
       const catAbsTotal = Math.abs(catTotal);
-      const hasIncome = subs.some(s => s.account === 'Income');
+      const hasIncome = subs.some((s) => s.account === 'Income');
       const catType = hasIncome ? ' [INCOME]' : ' [EXPENSE]';
-      lines.push('\n' + cat + ' (' + subs.length + ' subscriptions, ' + (anon ? this.toRange(catAbsTotal) : this.currency + catAbsTotal.toFixed(2)) + '/mo' + catType + '):');
+      lines.push(
+        '\n' +
+          cat +
+          ' (' +
+          subs.length +
+          ' subscriptions, ' +
+          (anon ? this.toRange(catAbsTotal) : this.currency + catAbsTotal.toFixed(2)) +
+          '/mo' +
+          catType +
+          '):',
+      );
       subs.forEach((sub, subIndex) => {
-        const title = anon ? 'Subscription ' + (catIndex + 1) + '-' + (subIndex + 1) : (sub.title || 'Unnamed');
+        const title = anon
+          ? 'Subscription ' + (catIndex + 1) + '-' + (subIndex + 1)
+          : sub.title || 'Unnamed';
         const amount = sub.amount || 0;
         const absAmount = Math.abs(amount);
         const isIncome = sub.account === 'Income';
         const type = isIncome ? ' [+income]' : ' [-expense]';
-        lines.push('  - ' + title + ': ' + (anon ? this.toRange(absAmount) : this.currency + absAmount.toFixed(2)) + '/mo' + type);
+        lines.push(
+          '  - ' +
+            title +
+            ': ' +
+            (anon ? this.toRange(absAmount) : this.currency + absAmount.toFixed(2)) +
+            '/mo' +
+            type,
+        );
       });
     });
 
@@ -1381,8 +1676,10 @@ Each item represents a specific budget optimization with a clear action plan and
     const monthly = this.getMonthlyBreakdown();
     const months = Object.keys(monthly).sort();
     if (months.length > 0) {
-      const avgIncome = months.map(m => monthly[m].income).reduce((a, b) => a + b, 0) / months.length;
-      const avgExpense = months.map(m => monthly[m].expenses).reduce((a, b) => a + b, 0) / months.length;
+      const avgIncome =
+        months.map((m) => monthly[m].income).reduce((a, b) => a + b, 0) / months.length;
+      const avgExpense =
+        months.map((m) => monthly[m].expenses).reduce((a, b) => a + b, 0) / months.length;
       const subPct = avgIncome > 0 ? Math.round((totalMonthly / avgIncome) * 100) : 0;
       const expPct = avgExpense > 0 ? Math.round((totalMonthly / avgExpense) * 100) : 0;
 
@@ -1390,8 +1687,12 @@ Each item represents a specific budget optimization with a clear action plan and
       lines.push('--- Financial Context ---');
       lines.push(`Subscriptions as % of income: ${subPct}%`);
       lines.push(`Subscriptions as % of total expenses: ${expPct}%`);
-      lines.push(`Avg monthly income: ${anon ? this.toRange(avgIncome) : this.currency + avgIncome.toFixed(0)}`);
-      lines.push(`Avg monthly expenses: ${anon ? this.toRange(avgExpense) : this.currency + avgExpense.toFixed(0)}`);
+      lines.push(
+        `Avg monthly income: ${anon ? this.toRange(avgIncome) : this.currency + avgIncome.toFixed(0)}`,
+      );
+      lines.push(
+        `Avg monthly expenses: ${anon ? this.toRange(avgExpense) : this.currency + avgExpense.toFixed(0)}`,
+      );
     }
 
     lines.push('');
@@ -1402,30 +1703,48 @@ Each item represents a specific budget optimization with a clear action plan and
 
   private buildSubscriptionInstructionBlock(options: PromptOptions): string {
     const lines: string[] = ['=== INSTRUCTIONS ==='];
-    
-    lines.push('Act as a subscription audit consultant specializing in cost elimination and service optimization.');
-    lines.push('Evaluate ONLY the active subscriptions listed above (cancelled subscriptions already excluded).');
+
+    lines.push(
+      'Act as a subscription audit consultant specializing in cost elimination and service optimization.',
+    );
+    lines.push(
+      'Evaluate ONLY the active subscriptions listed above (cancelled subscriptions already excluded).',
+    );
     lines.push('');
     lines.push('For each subscription, assess:');
     lines.push('1. VALUE ANALYSIS: Cost per use. Is the pricing justified by actual usage?');
     lines.push('2. USAGE PATTERNS: When do I use this? How frequently? Any periods of zero usage?');
-    lines.push('3. COMPLETE REMOVAL: Can I eliminate this cost entirely with free alternatives or lifestyle changes?');
-    lines.push('4. ALTERNATIVES: Cheaper paid alternatives with pricing comparisons and specific product names');
-    lines.push('5. OVERLAP DETECTION: Multiple subscriptions serving the same purpose (bundle or eliminate)');
-    lines.push('6. NEGOTIATION TACTICS: Specific scripts to call customer service and request discounts/retention offers');
-    lines.push('7. HIDDEN FEES: Annual fees, price increases, auto-renewals that could be cancelled');
+    lines.push(
+      '3. COMPLETE REMOVAL: Can I eliminate this cost entirely with free alternatives or lifestyle changes?',
+    );
+    lines.push(
+      '4. ALTERNATIVES: Cheaper paid alternatives with pricing comparisons and specific product names',
+    );
+    lines.push(
+      '5. OVERLAP DETECTION: Multiple subscriptions serving the same purpose (bundle or eliminate)',
+    );
+    lines.push(
+      '6. NEGOTIATION TACTICS: Specific scripts to call customer service and request discounts/retention offers',
+    );
+    lines.push(
+      '7. HIDDEN FEES: Annual fees, price increases, auto-renewals that could be cancelled',
+    );
     lines.push('8. SHARING OPPORTUNITIES: Can this be shared with family/friends to split costs?');
     lines.push('');
-    
+
     if (options.numberOfSuggestions) {
-      lines.push(`Provide exactly ${options.numberOfSuggestions} high-impact recommendations, prioritized by total annual savings.`);
+      lines.push(
+        `Provide exactly ${options.numberOfSuggestions} high-impact recommendations, prioritized by total annual savings.`,
+      );
     } else {
       lines.push('Prioritize recommendations by total annual impact (highest savings first).');
     }
-    
+
     lines.push('');
     lines.push('CRITICAL REQUIREMENTS:');
-    lines.push('- Include at least 2 "complete removal" options (free alternatives or lifestyle changes)');
+    lines.push(
+      '- Include at least 2 "complete removal" options (free alternatives or lifestyle changes)',
+    );
     lines.push('- Provide real alternative product names with actual pricing');
     lines.push('- Include specific cancellation links in the "links" array when known');
     lines.push('- Add negotiation scripts as action items');
@@ -1446,13 +1765,17 @@ Each item represents a specific budget optimization with a clear action plan and
     lines.push('');
     lines.push('Provide a detailed audit report with a brief summary of total savings potential.');
     lines.push('');
-    
+
     if (options.numberOfSuggestions) {
-      lines.push(`Then, at the END, include a JSON code block with an ARRAY of exactly ${options.numberOfSuggestions} subscription recommendations:`);
+      lines.push(
+        `Then, at the END, include a JSON code block with an ARRAY of exactly ${options.numberOfSuggestions} subscription recommendations:`,
+      );
     } else {
-      lines.push('Then, at the END, include a JSON code block with an ARRAY of your recommended subscription actions:');
+      lines.push(
+        'Then, at the END, include a JSON code block with an ARRAY of your recommended subscription actions:',
+      );
     }
-    
+
     const jsonExample = `
 
 \`\`\`json
@@ -1532,9 +1855,13 @@ Copy them exactly as they appear in the "Selected Subscriptions" section.
 This ensures the recommendations map correctly to the user's actual subscription categories.`;
 
     if (options.numberOfSuggestions) {
-      return lines.join('\n') + jsonExample + `\n\nIMPORTANT: The JSON array must contain EXACTLY ${options.numberOfSuggestions} items, no more, no less.`;
+      return (
+        lines.join('\n') +
+        jsonExample +
+        `\n\nIMPORTANT: The JSON array must contain EXACTLY ${options.numberOfSuggestions} items, no more, no less.`
+      );
     }
-    
+
     return lines.join('\n') + jsonExample;
   }
 
@@ -1561,11 +1888,13 @@ This ensures the recommendations map correctly to the user's actual subscription
       return lines.join('\n');
     }
 
-    lines.push(`Analysis period: ${months.length} months (${months[0]} to ${months[months.length - 1]})`);
+    lines.push(
+      `Analysis period: ${months.length} months (${months[0]} to ${months[months.length - 1]})`,
+    );
 
     // Overall stats
-    const incomes = months.map(m => monthly[m].income);
-    const expenses = months.map(m => monthly[m].expenses);
+    const incomes = months.map((m) => monthly[m].income);
+    const expenses = months.map((m) => monthly[m].expenses);
     const avgIncome = incomes.reduce((a, b) => a + b, 0) / months.length;
     const avgExpense = expenses.reduce((a, b) => a + b, 0) / months.length;
     const avgSavings = avgIncome - avgExpense;
@@ -1573,24 +1902,30 @@ This ensures the recommendations map correctly to the user's actual subscription
 
     lines.push('');
     lines.push('--- Overall Stats ---');
-    lines.push(`Avg monthly income: ${anon ? this.toRange(avgIncome) : this.currency + avgIncome.toFixed(0)}`);
-    lines.push(`Avg monthly expenses: ${anon ? this.toRange(avgExpense) : this.currency + avgExpense.toFixed(0)}`);
+    lines.push(
+      `Avg monthly income: ${anon ? this.toRange(avgIncome) : this.currency + avgIncome.toFixed(0)}`,
+    );
+    lines.push(
+      `Avg monthly expenses: ${anon ? this.toRange(avgExpense) : this.currency + avgExpense.toFixed(0)}`,
+    );
     lines.push(`Savings rate: ${savingsRate}%`);
 
     // Monthly breakdown
     lines.push('');
     lines.push('--- Month-by-Month Breakdown ---');
-    months.forEach(m => {
+    months.forEach((m) => {
       const inc = monthly[m].income;
       const exp = monthly[m].expenses;
       const sav = inc - exp;
       const rate = inc > 0 ? Math.round((sav / inc) * 100) : 0;
-      lines.push(`${m}: Income ${anon ? this.toRange(inc) : this.currency + inc.toFixed(0)}, Expenses ${anon ? this.toRange(exp) : this.currency + exp.toFixed(0)}, Savings ${rate}%`);
+      lines.push(
+        `${m}: Income ${anon ? this.toRange(inc) : this.currency + inc.toFixed(0)}, Expenses ${anon ? this.toRange(exp) : this.currency + exp.toFixed(0)}, Savings ${rate}%`,
+      );
     });
 
     // Category totals and trends
     const categoryTotals: Record<string, number> = {};
-    months.forEach(m => {
+    months.forEach((m) => {
       Object.entries(monthly[m].byCategory).forEach(([cat, amt]) => {
         categoryTotals[cat] = (categoryTotals[cat] || 0) + amt;
       });
@@ -1606,19 +1941,25 @@ This ensures the recommendations map correctly to the user's actual subscription
       sortedCats.forEach(([cat, total]) => {
         const avg = total / months.length;
         const pct = Math.round((total / (avgExpense * months.length)) * 100);
-        lines.push(`${cat}: ${anon ? this.toRange(avg) : this.currency + avg.toFixed(0)}/mo avg, ${pct}% of total`);
+        lines.push(
+          `${cat}: ${anon ? this.toRange(avg) : this.currency + avg.toFixed(0)}/mo avg, ${pct}% of total`,
+        );
       });
     }
 
     // Volatility and outliers
     if (months.length >= 3) {
-      const expStdDev = Math.sqrt(expenses.reduce((s, v) => s + Math.pow(v - avgExpense, 2), 0) / months.length);
+      const expStdDev = Math.sqrt(
+        expenses.reduce((s, v) => s + Math.pow(v - avgExpense, 2), 0) / months.length,
+      );
       const expCV = avgExpense > 0 ? expStdDev / avgExpense : 0;
 
       lines.push('');
       lines.push('--- Spending Volatility ---');
       if (expCV > 0.3) {
-        lines.push('Volatility: HIGH (>30% variation) — spending varies significantly month-to-month');
+        lines.push(
+          'Volatility: HIGH (>30% variation) — spending varies significantly month-to-month',
+        );
       } else if (expCV > 0.15) {
         lines.push('Volatility: MODERATE (15-30% variation) — some month-to-month fluctuation');
       } else {
@@ -1630,22 +1971,29 @@ This ensures the recommendations map correctly to the user's actual subscription
       const maxMonth = months[expenses.indexOf(maxExp)];
       const minMonth = months[expenses.indexOf(minExp)];
 
-      lines.push(`Highest expense month: ${maxMonth} (${anon ? this.toRange(maxExp) : this.currency + maxExp.toFixed(0)})`);
-      lines.push(`Lowest expense month: ${minMonth} (${anon ? this.toRange(minExp) : this.currency + minExp.toFixed(0)})`);
+      lines.push(
+        `Highest expense month: ${maxMonth} (${anon ? this.toRange(maxExp) : this.currency + maxExp.toFixed(0)})`,
+      );
+      lines.push(
+        `Lowest expense month: ${minMonth} (${anon ? this.toRange(minExp) : this.currency + minExp.toFixed(0)})`,
+      );
     }
 
     // Trends
     if (months.length >= 6) {
       const first3 = months.slice(0, 3);
       const last3 = months.slice(-3);
-      const firstAvgExp = first3.map(m => monthly[m].expenses).reduce((a, b) => a + b, 0) / 3;
-      const lastAvgExp = last3.map(m => monthly[m].expenses).reduce((a, b) => a + b, 0) / 3;
-      const trendPct = firstAvgExp > 0 ? Math.round(((lastAvgExp - firstAvgExp) / firstAvgExp) * 100) : 0;
+      const firstAvgExp = first3.map((m) => monthly[m].expenses).reduce((a, b) => a + b, 0) / 3;
+      const lastAvgExp = last3.map((m) => monthly[m].expenses).reduce((a, b) => a + b, 0) / 3;
+      const trendPct =
+        firstAvgExp > 0 ? Math.round(((lastAvgExp - firstAvgExp) / firstAvgExp) * 100) : 0;
 
       lines.push('');
       lines.push('--- Long-term Trend ---');
       if (Math.abs(trendPct) >= 10) {
-        lines.push(`Spending is ${trendPct > 0 ? 'INCREASING' : 'DECREASING'} by ${Math.abs(trendPct)}% (first 3 mo vs last 3 mo)`);
+        lines.push(
+          `Spending is ${trendPct > 0 ? 'INCREASING' : 'DECREASING'} by ${Math.abs(trendPct)}% (first 3 mo vs last 3 mo)`,
+        );
       } else {
         lines.push('Spending is STABLE (less than 10% change over time)');
       }
@@ -1660,28 +2008,42 @@ This ensures the recommendations map correctly to the user's actual subscription
   private buildExpensePatternInstructionBlock(): string {
     const lines: string[] = ['=== INSTRUCTIONS ==='];
     lines.push('');
-    lines.push('Act as a behavioral finance analyst specializing in spending forensics and money psychology.');
+    lines.push(
+      'Act as a behavioral finance analyst specializing in spending forensics and money psychology.',
+    );
     lines.push('');
-    lines.push('Analyze the transaction data above to identify money leaks, spending blind spots, triggers, and behavioral patterns.');
+    lines.push(
+      'Analyze the transaction data above to identify money leaks, spending blind spots, triggers, and behavioral patterns.',
+    );
     lines.push('');
-    lines.push('Go beyond basic category totals. Focus on the following key PATTERNS, ANOMALIES, CATEGORIES, HIDDEN WASTE, and OPPORTUNITIES:');
+    lines.push(
+      'Go beyond basic category totals. Focus on the following key PATTERNS, ANOMALIES, CATEGORIES, HIDDEN WASTE, and OPPORTUNITIES:',
+    );
     lines.push('');
     lines.push('**TIMING PATTERNS:**');
-    lines.push('1. Day-of-week analysis: Do I spend more on weekends? Fridays (payday)? Mondays (stress)?');
-    lines.push('2. Time-of-day patterns: Late-night impulse purchases? Lunch hour spending? After-work treats?');
+    lines.push(
+      '1. Day-of-week analysis: Do I spend more on weekends? Fridays (payday)? Mondays (stress)?',
+    );
+    lines.push(
+      '2. Time-of-day patterns: Late-night impulse purchases? Lunch hour spending? After-work treats?',
+    );
     lines.push('3. Seasonal patterns: Holiday spikes? Summer vacation spending? Back-to-school?');
     lines.push('4. Monthly cycles: Beginning vs end of month spending? Payday effect?');
     lines.push('');
     lines.push('**BEHAVIORAL TRIGGERS:**');
     lines.push('1. Emotional spending: Stress purchases? Boredom buying? Reward spending?');
     lines.push('2. Social spending: Going out because friends are? Peer pressure purchases?');
-    lines.push('3. Environmental triggers: Passing certain stores? Email promotions? Social media ads?');
+    lines.push(
+      '3. Environmental triggers: Passing certain stores? Email promotions? Social media ads?',
+    );
     lines.push('4. Habit loops: Daily coffee run? Weekend brunch ritual? Evening delivery orders?');
     lines.push('');
     lines.push('**TRANSACTION CLUSTERS:**');
     lines.push('1. Small frequent purchases that compound (€3-10 items adding to €100+/mo)');
     lines.push('2. Unexpected large purchases disrupting budgets');
-    lines.push('3. "Domino spending": One purchase leading to related purchases (new clothes → new shoes → alterations)');
+    lines.push(
+      '3. "Domino spending": One purchase leading to related purchases (new clothes → new shoes → alterations)',
+    );
     lines.push('4. Forgotten recurring charges (old subscriptions, auto-renewals)');
     lines.push('');
     lines.push('**COST-PER-USE ANALYSIS:**');
@@ -1702,7 +2064,9 @@ This ensures the recommendations map correctly to the user's actual subscription
     lines.push('4. Impulse returns (bought and returned, wasting time/shipping)');
     lines.push('');
     lines.push('Provide 3-5 high-impact insights that combine multiple dimensions.');
-    lines.push('Example: "Weekend restaurant spending (€300/mo) is 4x higher than weekdays. This correlates with Friday payday and social plans. Cost per outing: €75. Alternative: Host potluck dinners at home (€20/event, same social value)."');
+    lines.push(
+      'Example: "Weekend restaurant spending (€300/mo) is 4x higher than weekdays. This correlates with Friday payday and social plans. Cost per outing: €75. Alternative: Host potluck dinners at home (€20/event, same social value)."',
+    );
     lines.push('');
     lines.push('Be specific, actionable, and insightful — not just descriptive.');
 
@@ -1889,7 +2253,7 @@ Each item represents a distinct spending pattern with deep behavioral insights a
     // Output format
     prompt += `## OUTPUT FORMAT (JSON for direct import)\n\n`;
     prompt += `**CRITICAL: Return a single JSON object with this EXACT structure. Follow all field requirements precisely.**\n\n`;
-    
+
     prompt += `### Understanding Buckets\n`;
     prompt += `Buckets organize the project into logical cost categories. Each bucket represents a component of the dream:\n`;
     prompt += `- For a world tour: "Flights", "Accommodation", "Food & Activities", "Travel Insurance", "Emergency Fund"\n`;
@@ -2011,7 +2375,7 @@ Each item represents a distinct spending pattern with deep behavioral insights a
     prompt += `  ]
 `;
     prompt += `}\n\`\`\`\n\n`;
-    
+
     prompt += `### Field Requirements\n`;
     prompt += `- **phase**: MUST be exactly "idea" (system assigns other phases later)\n`;
     prompt += `- **targetDate**: Must be realistic based on my financial situation\n`;
@@ -2022,7 +2386,7 @@ Each item represents a distinct spending pattern with deep behavioral insights a
     prompt += `- **frequency**: EXACTLY one of "monthly", "weekly", "biweekly", "quarterly", "yearly", "once"\n`;
     prompt += `- **active**: ALWAYS false (user reviews before activating)\n`;
     prompt += `- **All dates**: YYYY-MM-DD format (e.g., "2026-12-25"), except note createdAt which uses ISO 8601 with time: YYYY-MM-DDTHH:mm:ssZ (e.g., "2026-04-08T14:30:00Z")\n\n`;
-    
+
     prompt += `### Tips for Quality Output\n`;
     prompt += `1. Create 2-4 payment plans: one for ["all"] and 1-3 for specific priority buckets\n`;
     prompt += `2. Early start dates for priority items (flights, deposits)\n`;
@@ -2091,13 +2455,13 @@ Each item represents a distinct spending pattern with deep behavioral insights a
     const monthlyIncome = this.calculateAverageMonthlyIncome();
     const smileAllocation = this.state.smile; // percentage
     const smileMonthlyBudget = (monthlyIncome * smileAllocation) / 100;
-    
+
     // Get Smile account balance
     const smileAccountBalance = this.state.getAmount('Smile', smileAllocation / 100);
-    
+
     // Calculate last month's contribution (simplified)
     const lastMonthContribution = smileMonthlyBudget; // Approximation
-    
+
     // Existing Smile projects
     const existingProjects = this.state.allSmileProjects || [];
     const totalSmileTarget = existingProjects.reduce((sum, p) => {
@@ -2108,9 +2472,9 @@ Each item represents a distinct spending pattern with deep behavioral insights a
       const bucketTotal = (p.buckets || []).reduce((s, b) => s + (b.amount || 0), 0);
       return sum + bucketTotal;
     }, 0);
-    
+
     const netWorth = this.calculateNetWorth();
-    
+
     if (anonymized) {
       return `- Monthly income range: ${this.toRange(monthlyIncome)}/mo
 - Smile allocation: ${smileAllocation}% (~${this.toRange(smileMonthlyBudget)}/mo)
@@ -2183,7 +2547,7 @@ Each item represents a distinct spending pattern with deep behavioral insights a
     // Output format (similar to Smile but Fire-specific)
     prompt += `## OUTPUT FORMAT (JSON for direct import)\n\n`;
     prompt += `**CRITICAL: Return a single JSON object with this EXACT structure. Follow all field requirements precisely.**\n\n`;
-    
+
     prompt += `### Understanding Buckets for Emergencies\n`;
     prompt += `Buckets organize the emergency into logical cost categories. Each bucket represents a component:\n`;
     prompt += `- For appliance replacement: "New Dishwasher", "Installation", "Disposal of Old Unit", "Extended Warranty"\n`;
@@ -2283,7 +2647,7 @@ Each item represents a distinct spending pattern with deep behavioral insights a
     prompt += `    }\n`;
     prompt += `  ]\n`;
     prompt += `}\n\`\`\`\n\n`;
-    
+
     prompt += `### Field Requirements\n`;
     prompt += `- **phase**: MUST be exactly "idea" (system manages phase progression)\n`;
     prompt += `- **targetDate**: Resolution deadline based on urgency\n`;
@@ -2294,7 +2658,7 @@ Each item represents a distinct spending pattern with deep behavioral insights a
     prompt += `- **frequency**: EXACTLY one of "monthly", "weekly", "biweekly", "quarterly", "yearly", "once"\n`;
     prompt += `- **active**: ALWAYS false\n`;
     prompt += `- **All dates**: YYYY-MM-DD format, except note createdAt which uses ISO 8601 with time: YYYY-MM-DDTHH:mm:ssZ (e.g., "2026-04-08T14:30:00Z")\n\n`;
-    
+
     prompt += `### Tips for Debt Payback Plans\n`;
     prompt += `1. For family loans: Create gentle payment plan (€100-150/month) respecting relationship\n`;
     prompt += `2. For high-interest debt: Aggressive payment plan targeting this bucket first\n`;
@@ -2372,13 +2736,13 @@ Each item represents a distinct spending pattern with deep behavioral insights a
     const monthlyIncome = this.calculateAverageMonthlyIncome();
     const fireAllocation = this.state.fire; // percentage
     const fireMonthlyBudget = (monthlyIncome * fireAllocation) / 100;
-    
+
     // Get Fire account balance
     const fireAccountBalance = this.state.getAmount('Fire', fireAllocation / 100);
-    
+
     // Last month contribution (approximation)
     const lastMonthContribution = fireMonthlyBudget;
-    
+
     // Existing Fire emergencies
     const existingEmergencies = this.state.allFireEmergencies || [];
     const totalFireTarget = existingEmergencies.reduce((sum, e) => {
@@ -2389,15 +2753,15 @@ Each item represents a distinct spending pattern with deep behavioral insights a
       const bucketTotal = (e.buckets || []).reduce((s, b) => s + (b.amount || 0), 0);
       return sum + bucketTotal;
     }, 0);
-    
+
     // Calculate debt-to-income ratio
     const monthlyDebtPayments = this.calculateMonthlyDebtPayments();
     const debtToIncomeRatio = monthlyIncome > 0 ? (monthlyDebtPayments / monthlyIncome) * 100 : 0;
-    
+
     // Calculate available surplus
     const totalExpenses = this.sumExpenses();
     const availableSurplus = monthlyIncome - totalExpenses;
-    
+
     if (anonymized) {
       return `- Monthly income range: ${this.toRange(monthlyIncome)}/mo
 - Fire allocation: ${fireAllocation}% (~${this.toRange(fireMonthlyBudget)}/mo)
@@ -2441,19 +2805,21 @@ Each item represents a distinct spending pattern with deep behavioral insights a
     // Try from transactions first
     const transactions = this.state.allTransactions || [];
     if (transactions.length > 0) {
-      const incomeTransactions = transactions.filter(t => t.account === 'Income' && t.amount > 0);
+      const incomeTransactions = transactions.filter((t) => t.account === 'Income' && t.amount > 0);
       if (incomeTransactions.length > 0) {
         const totalIncome = incomeTransactions.reduce((sum, t) => sum + t.amount, 0);
         // Get unique months
-        const months = new Set(incomeTransactions.map(t => {
-          const date = new Date(t.date);
-          return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-        }));
+        const months = new Set(
+          incomeTransactions.map((t) => {
+            const date = new Date(t.date);
+            return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+          }),
+        );
         const monthCount = Math.max(months.size, 1);
         return totalIncome / monthCount;
       }
     }
-    
+
     // Fallback to static data
     return this.sumRevenues();
   }
@@ -2463,24 +2829,33 @@ Each item represents a distinct spending pattern with deep behavioral insights a
    */
   private calculateNetWorth(): number {
     const assets = (this.state.allAssets || []).reduce((sum, a) => sum + (a.amount || 0), 0);
-    const shares = (this.state.allShares || []).reduce((sum, s) => sum + ((s.quantity || 0) * (s.price || 0)), 0);
-    const investments = (this.state.allInvestments || []).reduce((sum, i) => sum + (i.amount || 0), 0);
+    const shares = (this.state.allShares || []).reduce(
+      (sum, s) => sum + (s.quantity || 0) * (s.price || 0),
+      0,
+    );
+    const investments = (this.state.allInvestments || []).reduce(
+      (sum, i) => sum + (i.amount || 0),
+      0,
+    );
     const liabilities = (this.state.liabilities || []).reduce((sum, l) => sum + (l.amount || 0), 0);
-    
+
     return assets + shares + investments - liabilities;
   }
 
   /**
    * Generates a prompt for improving existing Smile projects
    */
-  generateSmileImprovePrompt(existingProjects: any[], config: {
-    userPlan: string;
-    improvementAreas: string[];
-    researchDepth: string;
-    informationFocus: string[];
-    customInstructions: string;
-    anonymized: boolean;
-  }): string {
+  generateSmileImprovePrompt(
+    existingProjects: any[],
+    config: {
+      userPlan: string;
+      improvementAreas: string[];
+      researchDepth: string;
+      informationFocus: string[];
+      customInstructions: string;
+      anonymized: boolean;
+    },
+  ): string {
     const anon = config.anonymized;
     const lang = this.getCurrentLanguage();
     const multi = existingProjects.length > 1;
@@ -2500,14 +2875,20 @@ Each item represents a distinct spending pattern with deep behavioral insights a
     for (const project of existingProjects) {
       prompt += `### ${project.title}\n`;
       prompt += `Phase: ${project.phase} | Target Date: ${project.targetDate || 'Not set'}\n`;
-      const totalTarget = (project.buckets || []).reduce((s: number, b: any) => s + (b.target || 0), 0);
-      const totalSaved = (project.buckets || []).reduce((s: number, b: any) => s + (b.amount || 0), 0);
+      const totalTarget = (project.buckets || []).reduce(
+        (s: number, b: any) => s + (b.target || 0),
+        0,
+      );
+      const totalSaved = (project.buckets || []).reduce(
+        (s: number, b: any) => s + (b.amount || 0),
+        0,
+      );
       prompt += `Total Target: ${this.currency}${totalTarget} | Saved: ${this.currency}${totalSaved}\n`;
       const lockedBuckets = (project.buckets || []).filter((b: any) => (b.amount || 0) > 0);
       if (lockedBuckets.length > 0) {
         prompt += `⚠ LOCKED buckets (have money): ${lockedBuckets.map((b: any) => `"${b.title}" (${this.currency}${b.amount}/${this.currency}${b.target})`).join(', ')}\n`;
       }
-      const existingPlans = (project.plannedSubscriptions || []);
+      const existingPlans = project.plannedSubscriptions || [];
       if (existingPlans.length > 0) {
         prompt += `⚠ Existing payment plans: ${existingPlans.map((p: any) => `"${p.title}" (${this.currency}${p.amount}/${p.frequency})`).join(', ')}\n`;
       }
@@ -2653,7 +3034,7 @@ Each item represents a distinct spending pattern with deep behavioral insights a
   private buildSmileJsonStructureExample(): string {
     let s = `## OUTPUT FORMAT (JSON for direct import)\n\n`;
     s += `**CRITICAL: Return the project(s) with this EXACT structure. Follow all field requirements precisely.**\n\n`;
-    
+
     s += `### Understanding Buckets\n`;
     s += `Buckets organize the project into logical cost categories. Each bucket represents a component of the dream:\n`;
     s += `- For a world tour: "Flights", "Accommodation", "Food & Activities", "Travel Insurance", "Emergency Fund"\n`;
@@ -2714,7 +3095,7 @@ Each item represents a distinct spending pattern with deep behavioral insights a
     s += `    }\n`;
     s += `  ]\n`;
     s += `}\n\`\`\`\n\n`;
-    
+
     s += `### Field Requirements\n`;
     s += `- **phase**: Keep existing unless asked to change\n`;
     s += `- **bucket.id**: Format "bucket-{name}" — keep existing IDs for locked buckets\n`;
@@ -2731,14 +3112,17 @@ Each item represents a distinct spending pattern with deep behavioral insights a
   /**
    * Generates a prompt for improving existing Fire emergencies
    */
-  generateFireImprovePrompt(existingEmergencies: any[], config: {
-    userPlan: string;
-    improvementAreas: string[];
-    researchDepth: string;
-    informationFocus: string[];
-    customInstructions: string;
-    anonymized: boolean;
-  }): string {
+  generateFireImprovePrompt(
+    existingEmergencies: any[],
+    config: {
+      userPlan: string;
+      improvementAreas: string[];
+      researchDepth: string;
+      informationFocus: string[];
+      customInstructions: string;
+      anonymized: boolean;
+    },
+  ): string {
     const anon = config.anonymized;
     const lang = this.getCurrentLanguage();
     const multi = existingEmergencies.length > 1;
@@ -2758,14 +3142,20 @@ Each item represents a distinct spending pattern with deep behavioral insights a
     for (const emergency of existingEmergencies) {
       prompt += `### ${emergency.title}\n`;
       prompt += `Phase: ${emergency.phase} | Target Date: ${emergency.targetDate || 'Not set'}\n`;
-      const totalTarget = (emergency.buckets || []).reduce((s: number, b: any) => s + (b.target || 0), 0);
-      const totalResolved = (emergency.buckets || []).reduce((s: number, b: any) => s + (b.amount || 0), 0);
+      const totalTarget = (emergency.buckets || []).reduce(
+        (s: number, b: any) => s + (b.target || 0),
+        0,
+      );
+      const totalResolved = (emergency.buckets || []).reduce(
+        (s: number, b: any) => s + (b.amount || 0),
+        0,
+      );
       prompt += `Total Target: ${this.currency}${totalTarget} | Resolved: ${this.currency}${totalResolved}\n`;
       const lockedBuckets = (emergency.buckets || []).filter((b: any) => (b.amount || 0) > 0);
       if (lockedBuckets.length > 0) {
         prompt += `⚠ LOCKED buckets (have money): ${lockedBuckets.map((b: any) => `"${b.title}" (${this.currency}${b.amount}/${this.currency}${b.target})`).join(', ')}\n`;
       }
-      const existingPlans = (emergency.plannedSubscriptions || []);
+      const existingPlans = emergency.plannedSubscriptions || [];
       if (existingPlans.length > 0) {
         prompt += `⚠ Existing payment plans: ${existingPlans.map((p: any) => `"${p.title}" (${this.currency}${p.amount}/${p.frequency})`).join(', ')}\n`;
       }
@@ -2907,7 +3297,7 @@ Each item represents a distinct spending pattern with deep behavioral insights a
   private buildFireJsonStructureExample(): string {
     let s = `## OUTPUT FORMAT (JSON for direct import)\n\n`;
     s += `**CRITICAL: Return the emergency plan(s) with this EXACT structure.**\n\n`;
-    
+
     s += `### Understanding Buckets for Emergencies\n`;
     s += `Buckets organize the emergency into logical cost categories:\n`;
     s += `- For appliance: "New Appliance", "Installation", "Disposal", "Extended Warranty"\n`;
@@ -2963,7 +3353,7 @@ Each item represents a distinct spending pattern with deep behavioral insights a
     s += `    }\n`;
     s += `  ]\n`;
     s += `}\n\`\`\`\n\n`;
-    
+
     s += `### Field Requirements\n`;
     s += `- **phase**: Keep existing unless asked to change\n`;
     s += `- **bucket.id**: Format "bucket-{name}" — keep existing IDs for locked buckets\n`;

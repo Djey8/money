@@ -93,54 +93,54 @@ spec:
         runAsUser: 10001
         runAsNonRoot: true
       containers:
-      - name: loki
-        image: grafana/loki:2.9.3
-        imagePullPolicy: IfNotPresent
-        args:
-          - -config.file=/etc/loki/loki.yaml
-        ports:
-        - containerPort: 3100
-          name: http
-        volumeMounts:
+        - name: loki
+          image: grafana/loki:2.9.3
+          imagePullPolicy: IfNotPresent
+          args:
+            - -config.file=/etc/loki/loki.yaml
+          ports:
+            - containerPort: 3100
+              name: http
+          volumeMounts:
+            - name: config
+              mountPath: /etc/loki
+            - name: storage
+              mountPath: /loki
+            - name: storage
+              mountPath: /wal
+              subPath: wal
+          resources:
+            requests:
+              memory: '256Mi'
+              cpu: '100m'
+            limits:
+              memory: '512Mi'
+              cpu: '500m'
+          livenessProbe:
+            httpGet:
+              path: /ready
+              port: 3100
+            initialDelaySeconds: 45
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 3100
+            initialDelaySeconds: 45
+            periodSeconds: 10
+      volumes:
         - name: config
-          mountPath: /etc/loki
-        - name: storage
-          mountPath: /loki
-        - name: storage
-          mountPath: /wal
-          subPath: wal
+          configMap:
+            name: loki-config
+  volumeClaimTemplates:
+    - metadata:
+        name: storage
+      spec:
+        accessModes: ['ReadWriteOnce']
+        storageClassName: local-path
         resources:
           requests:
-            memory: "256Mi"
-            cpu: "100m"
-          limits:
-            memory: "512Mi"
-            cpu: "500m"
-        livenessProbe:
-          httpGet:
-            path: /ready
-            port: 3100
-          initialDelaySeconds: 45
-          periodSeconds: 10
-        readinessProbe:
-          httpGet:
-            path: /ready
-            port: 3100
-          initialDelaySeconds: 45
-          periodSeconds: 10
-      volumes:
-      - name: config
-        configMap:
-          name: loki-config
-  volumeClaimTemplates:
-  - metadata:
-      name: storage
-    spec:
-      accessModes: ["ReadWriteOnce"]
-      storageClassName: local-path
-      resources:
-        requests:
-          storage: 2Gi  # 7 days retention
+            storage: 2Gi # 7 days retention
 
 ---
 # Secret "grafana-secret" is defined in k8s/secrets.yaml (not committed to Git)
@@ -180,53 +180,53 @@ spec:
         app: grafana
     spec:
       containers:
-      - name: grafana
-        image: grafana/grafana:10.2.0
-        imagePullPolicy: IfNotPresent
-        ports:
-        - containerPort: 3000
-          name: http
-        env:
-        - name: GF_AUTH_ANONYMOUS_ENABLED
-          value: "false"
-        - name: GF_SECURITY_ADMIN_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: grafana-secret
-              key: admin-password
-        volumeMounts:
-        - name: grafana-storage
-          mountPath: /var/lib/grafana
-        - name: datasources
-          mountPath: /etc/grafana/provisioning/datasources
-        - name: dashboard-provider
-          mountPath: /etc/grafana/provisioning/dashboards
-        - name: dashboards
-          mountPath: /var/lib/grafana/dashboards
-        - name: frontend-dashboard
-          mountPath: /var/lib/grafana/dashboards/frontend
-        resources:
-          requests:
-            memory: "128Mi"
-            cpu: "100m"
-          limits:
-            memory: "256Mi"
-            cpu: "200m"
+        - name: grafana
+          image: grafana/grafana:10.2.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+              name: http
+          env:
+            - name: GF_AUTH_ANONYMOUS_ENABLED
+              value: 'false'
+            - name: GF_SECURITY_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: grafana-secret
+                  key: admin-password
+          volumeMounts:
+            - name: grafana-storage
+              mountPath: /var/lib/grafana
+            - name: datasources
+              mountPath: /etc/grafana/provisioning/datasources
+            - name: dashboard-provider
+              mountPath: /etc/grafana/provisioning/dashboards
+            - name: dashboards
+              mountPath: /var/lib/grafana/dashboards
+            - name: frontend-dashboard
+              mountPath: /var/lib/grafana/dashboards/frontend
+          resources:
+            requests:
+              memory: '128Mi'
+              cpu: '100m'
+            limits:
+              memory: '256Mi'
+              cpu: '200m'
       volumes:
-      - name: grafana-storage
-        emptyDir: {}
-      - name: datasources
-        configMap:
-          name: grafana-datasources
-      - name: dashboard-provider
-        configMap:
-          name: grafana-dashboard-provider
-      - name: dashboards
-        configMap:
-          name: grafana-dashboards
-      - name: frontend-dashboard
-        configMap:
-          name: grafana-frontend-dashboard
+        - name: grafana-storage
+          emptyDir: {}
+        - name: datasources
+          configMap:
+            name: grafana-datasources
+        - name: dashboard-provider
+          configMap:
+            name: grafana-dashboard-provider
+        - name: dashboards
+          configMap:
+            name: grafana-dashboards
+        - name: frontend-dashboard
+          configMap:
+            name: grafana-frontend-dashboard
 
 ---
 # Grafana datasource configuration

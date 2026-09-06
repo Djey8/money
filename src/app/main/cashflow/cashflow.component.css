@@ -1,4 +1,6 @@
-#statsbtn, #balancebtn, #incomebtn {
+#statsbtn,
+#balancebtn,
+#incomebtn {
   border-radius: var(--radius-full);
   margin-right: 0;
 }
@@ -27,8 +29,6 @@
 
 /* date input styles now handled by shared/filter-styles.css */
 
-
-
 .balanceLable {
   text-align: center;
   font-size: 2em;
@@ -36,10 +36,6 @@
   margin-top: 0px;
   margin-bottom: 1%;
 }
-
-
-
-
 
 .searchDate {
   text-align: center;

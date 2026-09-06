@@ -1,24 +1,50 @@
 <!-- Toolbar -->
 <div class="toolbar" role="banner">
-  <img id="profile-pic" width="40" alt="Profile Logo" src="../../assets/profile-blank.jpg"
-    role="button" tabindex="0" aria-label="Open profile" (click)="appReference.clickProfile()" (keydown.enter)="appReference.clickProfile()" />
+  <img
+    id="profile-pic"
+    width="40"
+    alt="Profile Logo"
+    src="../../assets/profile-blank.jpg"
+    role="button"
+    tabindex="0"
+    aria-label="Open profile"
+    (click)="appReference.clickProfile()"
+    (keydown.enter)="appReference.clickProfile()"
+  />
   <a routerLink="/" class="logo">Money<span>App</span></a>
   <div class="spacer"></div>
-  <input type="checkbox" id="nav-toggle" class="nav-toggle" aria-label="Toggle navigation">
+  <input type="checkbox" id="nav-toggle" class="nav-toggle" aria-label="Toggle navigation" />
   <label for="nav-toggle" class="nav-toggle-label" aria-hidden="true"><span></span></label>
   <label for="nav-toggle" class="nav-backdrop" aria-hidden="true"></label>
   <ul class="nav-links">
-    <li><a routerLink="/" (click)="closeNav()">{{ 'Landing.nav.howItWorks' | translate }}</a></li>
-    <li><a routerLink="/changelog" (click)="closeNav()">{{ 'Landing.nav.changelog' | translate }}</a></li>
-    <li><a routerLink="/docs" (click)="closeNav()">{{ 'Landing.nav.docs' | translate }}</a></li>
-    <li><a routerLink="/community" class="active-nav" (click)="closeNav()">{{ 'Landing.nav.community' | translate }}</a></li>
-    <li><a href="javascript:void(0)" (click)="closeNav(); navigateToSection('get-started')">{{ 'Landing.nav.getStarted' | translate }}</a></li>
-    <li><button class="nav-demo-btn" (click)="closeNav(); launchDemo()">{{ 'Landing.nav.demo' | translate }}</button></li>
+    <li>
+      <a routerLink="/" (click)="closeNav()">{{ 'Landing.nav.howItWorks' | translate }}</a>
+    </li>
+    <li>
+      <a routerLink="/changelog" (click)="closeNav()">{{ 'Landing.nav.changelog' | translate }}</a>
+    </li>
+    <li>
+      <a routerLink="/docs" (click)="closeNav()">{{ 'Landing.nav.docs' | translate }}</a>
+    </li>
+    <li>
+      <a routerLink="/community" class="active-nav" (click)="closeNav()">{{
+        'Landing.nav.community' | translate
+      }}</a>
+    </li>
+    <li>
+      <a href="javascript:void(0)" (click)="closeNav(); navigateToSection('get-started')">{{
+        'Landing.nav.getStarted' | translate
+      }}</a>
+    </li>
+    <li>
+      <button class="nav-demo-btn" (click)="closeNav(); launchDemo()">
+        {{ 'Landing.nav.demo' | translate }}
+      </button>
+    </li>
   </ul>
 </div>
 
 <div class="community-page thread-page">
-
   <a routerLink="/community" class="thread-back">← {{ 'Community.thread.back' | translate }}</a>
 
   <ng-container *ngIf="loading">
@@ -37,54 +63,88 @@
     <article class="thread-post thread-post--opening">
       <ng-container *ngIf="!editingThread">
         <div class="thread-post-meta">
-          <span class="thread-post-badge">{{ 'Community.thread.openingPostBadge' | translate }}</span>
+          <span class="thread-post-badge">{{
+            'Community.thread.openingPostBadge' | translate
+          }}</span>
           <span class="thread-post-author">{{ openingPost.authorName }}</span>
           <span class="community-thread-dot">·</span>
-          <span class="thread-post-date">{{ openingPost.createdAt | date:'short' }}</span>
-          <span class="thread-post-edited" *ngIf="thread.editedAt || openingPost.editedAt">· {{ 'Community.edited' | translate }}</span>
+          <span class="thread-post-date">{{ openingPost.createdAt | date: 'short' }}</span>
+          <span class="thread-post-edited" *ngIf="thread.editedAt || openingPost.editedAt"
+            >· {{ 'Community.edited' | translate }}</span
+          >
         </div>
         <p class="thread-post-body">{{ openingPost.body }}</p>
 
         <div class="thread-reactions">
-          <button *ngFor="let emoji of emojis" class="thread-reaction-btn"
-            [ngClass]="{'is-mine': myReaction(openingPost) === emoji}"
-            [disabled]="reactingPostId === openingPost.id" (click)="reactWith(openingPost, emoji)">
-            {{ emoji }} <span *ngIf="reactionCount(openingPost, emoji) > 0">{{ reactionCount(openingPost, emoji) }}</span>
+          <button
+            *ngFor="let emoji of emojis"
+            class="thread-reaction-btn"
+            [ngClass]="{ 'is-mine': myReaction(openingPost) === emoji }"
+            [disabled]="reactingPostId === openingPost.id"
+            (click)="reactWith(openingPost, emoji)"
+          >
+            {{ emoji }}
+            <span *ngIf="reactionCount(openingPost, emoji) > 0">{{
+              reactionCount(openingPost, emoji)
+            }}</span>
           </button>
         </div>
 
         <div class="thread-post-actions">
           <ng-container *ngIf="canModify(openingPost)">
-            <button class="thread-edit-btn" (click)="startEditThread()">{{ 'Community.edit' | translate }}</button>
+            <button class="thread-edit-btn" (click)="startEditThread()">
+              {{ 'Community.edit' | translate }}
+            </button>
           </ng-container>
 
           <ng-container *ngIf="isAdmin">
-            <button *ngIf="!confirmingThreadDelete" class="thread-delete-btn"
-              (click)="askDeleteThreadConfirmation()">
+            <button
+              *ngIf="!confirmingThreadDelete"
+              class="thread-delete-btn"
+              (click)="askDeleteThreadConfirmation()"
+            >
               {{ 'Community.thread.deleteThread' | translate }}
             </button>
             <span *ngIf="confirmingThreadDelete" class="thread-delete-confirm">
               {{ 'Community.thread.deleteConfirm' | translate }}
-              <button class="thread-delete-confirm-yes" (click)="confirmDeleteThread()">{{ 'Community.thread.deleteThread' | translate }}</button>
-              <button class="thread-delete-confirm-no" (click)="askDeleteThreadConfirmation()">{{ 'Community.composer.cancel' | translate }}</button>
+              <button class="thread-delete-confirm-yes" (click)="confirmDeleteThread()">
+                {{ 'Community.thread.deleteThread' | translate }}
+              </button>
+              <button class="thread-delete-confirm-no" (click)="askDeleteThreadConfirmation()">
+                {{ 'Community.composer.cancel' | translate }}
+              </button>
             </span>
           </ng-container>
         </div>
       </ng-container>
 
-      <form class="community-composer thread-edit-form" *ngIf="editingThread" (ngSubmit)="saveEditThread()">
+      <form
+        class="community-composer thread-edit-form"
+        *ngIf="editingThread"
+        (ngSubmit)="saveEditThread()"
+      >
         <label class="community-field">
           <span>{{ 'Community.composer.titleLabel' | translate }}</span>
           <input type="text" name="editTitle" [(ngModel)]="editThreadTitle" maxlength="120" />
         </label>
         <label class="community-field">
           <span>{{ 'Community.composer.bodyLabel' | translate }}</span>
-          <textarea name="editBody" [(ngModel)]="editThreadBody" maxlength="5000" rows="5"></textarea>
+          <textarea
+            name="editBody"
+            [(ngModel)]="editThreadBody"
+            maxlength="5000"
+            rows="5"
+          ></textarea>
         </label>
         <label class="community-field" *ngIf="isGuestUser">
           <span>{{ 'Community.composer.nameLabel' | translate }}</span>
-          <input type="text" name="editDisplayName" [(ngModel)]="editDisplayName" maxlength="40"
-            placeholder="{{ 'Community.composer.namePlaceholder' | translate }}" />
+          <input
+            type="text"
+            name="editDisplayName"
+            [(ngModel)]="editDisplayName"
+            maxlength="40"
+            placeholder="{{ 'Community.composer.namePlaceholder' | translate }}"
+          />
         </label>
         <label class="community-field community-field--checkbox" *ngIf="!isGuestUser">
           <input type="checkbox" name="editAnonymous" [(ngModel)]="editAnonymous" />
@@ -94,8 +154,12 @@
         <p class="community-form-error" *ngIf="editError">{{ editError | translate }}</p>
 
         <div class="community-form-actions">
-          <button type="button" class="thread-delete-confirm-no" (click)="cancelEditThread()">{{ 'Community.composer.cancel' | translate }}</button>
-          <button type="submit" class="community-submit-btn" [disabled]="savingEdit">{{ 'Community.save' | translate }}</button>
+          <button type="button" class="thread-delete-confirm-no" (click)="cancelEditThread()">
+            {{ 'Community.composer.cancel' | translate }}
+          </button>
+          <button type="submit" class="community-submit-btn" [disabled]="savingEdit">
+            {{ 'Community.save' | translate }}
+          </button>
         </div>
       </form>
     </article>
@@ -108,45 +172,75 @@
           <div class="thread-post-meta">
             <span class="thread-post-author">{{ post.authorName }}</span>
             <span class="community-thread-dot">·</span>
-            <span class="thread-post-date">{{ post.createdAt | date:'short' }}</span>
-            <span class="thread-post-edited" *ngIf="post.editedAt">· {{ 'Community.edited' | translate }}</span>
+            <span class="thread-post-date">{{ post.createdAt | date: 'short' }}</span>
+            <span class="thread-post-edited" *ngIf="post.editedAt"
+              >· {{ 'Community.edited' | translate }}</span
+            >
           </div>
           <p class="thread-post-body">{{ post.body }}</p>
 
           <div class="thread-reactions">
-            <button *ngFor="let emoji of emojis" class="thread-reaction-btn"
-              [ngClass]="{'is-mine': myReaction(post) === emoji}"
-              [disabled]="reactingPostId === post.id" (click)="reactWith(post, emoji)">
-              {{ emoji }} <span *ngIf="reactionCount(post, emoji) > 0">{{ reactionCount(post, emoji) }}</span>
+            <button
+              *ngFor="let emoji of emojis"
+              class="thread-reaction-btn"
+              [ngClass]="{ 'is-mine': myReaction(post) === emoji }"
+              [disabled]="reactingPostId === post.id"
+              (click)="reactWith(post, emoji)"
+            >
+              {{ emoji }}
+              <span *ngIf="reactionCount(post, emoji) > 0">{{ reactionCount(post, emoji) }}</span>
             </button>
           </div>
 
           <div class="thread-post-actions">
             <ng-container *ngIf="canModify(post)">
-              <button class="thread-edit-btn" (click)="startEditReply(post)">{{ 'Community.edit' | translate }}</button>
+              <button class="thread-edit-btn" (click)="startEditReply(post)">
+                {{ 'Community.edit' | translate }}
+              </button>
 
-              <button *ngIf="confirmingDeleteId !== post.id" class="thread-delete-btn"
-                (click)="askDeleteConfirmation(post.id)">
+              <button
+                *ngIf="confirmingDeleteId !== post.id"
+                class="thread-delete-btn"
+                (click)="askDeleteConfirmation(post.id)"
+              >
                 {{ 'Community.thread.delete' | translate }}
               </button>
               <span *ngIf="confirmingDeleteId === post.id" class="thread-delete-confirm">
                 {{ 'Community.thread.deleteConfirm' | translate }}
-                <button class="thread-delete-confirm-yes" (click)="confirmDelete(post.id)">{{ 'Community.thread.delete' | translate }}</button>
-                <button class="thread-delete-confirm-no" (click)="askDeleteConfirmation(post.id)">{{ 'Community.composer.cancel' | translate }}</button>
+                <button class="thread-delete-confirm-yes" (click)="confirmDelete(post.id)">
+                  {{ 'Community.thread.delete' | translate }}
+                </button>
+                <button class="thread-delete-confirm-no" (click)="askDeleteConfirmation(post.id)">
+                  {{ 'Community.composer.cancel' | translate }}
+                </button>
               </span>
             </ng-container>
           </div>
         </ng-container>
 
-        <form class="community-composer thread-edit-form" *ngIf="editingPostId === post.id" (ngSubmit)="saveEditReply(post.id)">
+        <form
+          class="community-composer thread-edit-form"
+          *ngIf="editingPostId === post.id"
+          (ngSubmit)="saveEditReply(post.id)"
+        >
           <label class="community-field">
             <span>{{ 'Community.thread.replyLabel' | translate }}</span>
-            <textarea name="editReplyBody" [(ngModel)]="editReplyBody" maxlength="5000" rows="3"></textarea>
+            <textarea
+              name="editReplyBody"
+              [(ngModel)]="editReplyBody"
+              maxlength="5000"
+              rows="3"
+            ></textarea>
           </label>
           <label class="community-field" *ngIf="isGuestUser">
             <span>{{ 'Community.composer.nameLabel' | translate }}</span>
-            <input type="text" name="editReplyDisplayName" [(ngModel)]="editReplyDisplayName" maxlength="40"
-              placeholder="{{ 'Community.composer.namePlaceholder' | translate }}" />
+            <input
+              type="text"
+              name="editReplyDisplayName"
+              [(ngModel)]="editReplyDisplayName"
+              maxlength="40"
+              placeholder="{{ 'Community.composer.namePlaceholder' | translate }}"
+            />
           </label>
           <label class="community-field community-field--checkbox" *ngIf="!isGuestUser">
             <input type="checkbox" name="editReplyAnonymous" [(ngModel)]="editReplyAnonymous" />
@@ -156,25 +250,41 @@
           <p class="community-form-error" *ngIf="editError">{{ editError | translate }}</p>
 
           <div class="community-form-actions">
-            <button type="button" class="thread-delete-confirm-no" (click)="cancelEditReply()">{{ 'Community.composer.cancel' | translate }}</button>
-            <button type="submit" class="community-submit-btn" [disabled]="savingEdit">{{ 'Community.save' | translate }}</button>
+            <button type="button" class="thread-delete-confirm-no" (click)="cancelEditReply()">
+              {{ 'Community.composer.cancel' | translate }}
+            </button>
+            <button type="submit" class="community-submit-btn" [disabled]="savingEdit">
+              {{ 'Community.save' | translate }}
+            </button>
           </div>
         </form>
       </article>
 
-      <p class="community-empty" *ngIf="replies.length === 0">{{ 'Community.thread.noReplies' | translate }}</p>
+      <p class="community-empty" *ngIf="replies.length === 0">
+        {{ 'Community.thread.noReplies' | translate }}
+      </p>
     </section>
 
     <form class="community-composer thread-reply-form" (ngSubmit)="submitReply()">
       <label class="community-field">
         <span>{{ 'Community.thread.replyLabel' | translate }}</span>
-        <textarea name="replyBody" [(ngModel)]="replyBody" maxlength="5000" rows="3"
-          placeholder="{{ 'Community.thread.replyPlaceholder' | translate }}"></textarea>
+        <textarea
+          name="replyBody"
+          [(ngModel)]="replyBody"
+          maxlength="5000"
+          rows="3"
+          placeholder="{{ 'Community.thread.replyPlaceholder' | translate }}"
+        ></textarea>
       </label>
       <label class="community-field" *ngIf="isGuestUser">
         <span>{{ 'Community.composer.nameLabel' | translate }}</span>
-        <input type="text" name="displayName" [(ngModel)]="displayName" maxlength="40"
-          placeholder="{{ 'Community.composer.namePlaceholder' | translate }}" />
+        <input
+          type="text"
+          name="displayName"
+          [(ngModel)]="displayName"
+          maxlength="40"
+          placeholder="{{ 'Community.composer.namePlaceholder' | translate }}"
+        />
       </label>
       <label class="community-field community-field--checkbox" *ngIf="!isGuestUser">
         <input type="checkbox" name="anonymous" [(ngModel)]="anonymous" />
@@ -190,5 +300,4 @@
       </div>
     </form>
   </ng-container>
-
 </div>

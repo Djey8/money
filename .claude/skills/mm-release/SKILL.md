@@ -14,10 +14,10 @@ description: How to build and deploy each Money Manager edition (Firebase, self-
 
 ## Building each edition
 
-| Edition | Command | Config swapped in |
-|---|---|---|
-| Firebase | `npm run build` (= `ng build --configuration firebase`) | `src/environments/environment.production.ts` — `mode: 'firebase'`, live Firebase config |
-| Self-hosted | `npm run build:selfhosted` | `src/environments/environment.selfhosted.ts` — `mode: 'selfhosted'`, `apiUrl: '/api'` |
+| Edition     | Command                                                 | Config swapped in                                                                       |
+| ----------- | ------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| Firebase    | `npm run build` (= `ng build --configuration firebase`) | `src/environments/environment.production.ts` — `mode: 'firebase'`, live Firebase config |
+| Self-hosted | `npm run build:selfhosted`                              | `src/environments/environment.selfhosted.ts` — `mode: 'selfhosted'`, `apiUrl: '/api'`   |
 
 Both configurations are defined in `angular.json`; the only thing that differs today is the environment file via `fileReplacements` (see `docs/discovery/ARCHITECTURE.md` §2-3 for the full pipeline diagrams).
 

@@ -3,7 +3,7 @@
   left: 50%;
   transform: translate(-50%, 0%);
   width: min(92vw, 700px);
-  border: 1px solid var(--color-border, rgba(255,255,255,0.15));
+  border: 1px solid var(--color-border, rgba(255, 255, 255, 0.15));
   background-color: var(--color-primary);
   border-radius: var(--radius-lg);
   padding: 20px;
@@ -42,7 +42,7 @@
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.8px;
-  color: rgba(255,255,255,0.5);
+  color: rgba(255, 255, 255, 0.5);
   font-weight: 600;
 }
 
@@ -53,19 +53,19 @@
   width: 100%;
   background: none;
   border: none;
-  border-top: 1px solid rgba(255,255,255,0.1);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
   padding: 10px 4px;
   cursor: pointer;
   color: inherit;
 }
 
 .section-toggle:hover .form-section-title {
-  color: rgba(255,255,255,0.8);
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .toggle-chevron {
   font-size: 14px;
-  color: rgba(255,255,255,0.4);
+  color: rgba(255, 255, 255, 0.4);
   transition: transform 0.2s;
 }
 
@@ -76,7 +76,7 @@
 /* Form Footer */
 .form-footer {
   padding-top: 12px;
-  border-top: 1px solid rgba(255,255,255,0.1);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -182,8 +182,8 @@
 }
 
 /* Dark mode specific styles */
-[data-theme="dark"] #addFire-Container .input-sm,
-[data-theme="dark"] .input-sm {
+[data-theme='dark'] #addFire-Container .input-sm,
+[data-theme='dark'] .input-sm {
   border: 1px solid rgba(255, 255, 255, 0.15) !important;
   background: rgba(255, 255, 255, 0.05) !important;
   background-color: rgba(255, 255, 255, 0.05) !important;
@@ -191,25 +191,25 @@
   color-scheme: dark;
 }
 
-[data-theme="dark"] #addFire-Container .input-sm:focus,
-[data-theme="dark"] .input-sm:focus {
+[data-theme='dark'] #addFire-Container .input-sm:focus,
+[data-theme='dark'] .input-sm:focus {
   border-color: rgba(255, 165, 0, 0.6) !important;
   background: rgba(255, 255, 255, 0.08) !important;
   background-color: rgba(255, 255, 255, 0.08) !important;
 }
 
-[data-theme="dark"] #addFire-Container .input-sm::placeholder,
-[data-theme="dark"] .input-sm::placeholder {
+[data-theme='dark'] #addFire-Container .input-sm::placeholder,
+[data-theme='dark'] .input-sm::placeholder {
   color: rgba(255, 255, 255, 0.3) !important;
 }
 
 /* Override browser autofill styles - dark mode */
-[data-theme="dark"] #addFire-Container .input-sm:-webkit-autofill,
-[data-theme="dark"] #addFire-Container .input-sm:-webkit-autofill:hover,
-[data-theme="dark"] #addFire-Container .input-sm:-webkit-autofill:focus,
-[data-theme="dark"] .input-sm:-webkit-autofill,
-[data-theme="dark"] .input-sm:-webkit-autofill:hover,
-[data-theme="dark"] .input-sm:-webkit-autofill:focus {
+[data-theme='dark'] #addFire-Container .input-sm:-webkit-autofill,
+[data-theme='dark'] #addFire-Container .input-sm:-webkit-autofill:hover,
+[data-theme='dark'] #addFire-Container .input-sm:-webkit-autofill:focus,
+[data-theme='dark'] .input-sm:-webkit-autofill,
+[data-theme='dark'] .input-sm:-webkit-autofill:hover,
+[data-theme='dark'] .input-sm:-webkit-autofill:focus {
   -webkit-box-shadow: 0 0 0 1000px rgba(255, 255, 255, 0.05) inset !important;
   -webkit-text-fill-color: white !important;
   border: 1px solid rgba(255, 255, 255, 0.15) !important;
@@ -275,7 +275,7 @@
   gap: 8px;
   padding: 6px 8px;
   border-radius: var(--radius-sm);
-  background: rgba(255,255,255,0.05);
+  background: rgba(255, 255, 255, 0.05);
   transition: opacity 0.15s;
 }
 
@@ -334,7 +334,7 @@
   align-items: center;
   gap: 8px;
   padding: 6px 8px;
-  background: rgba(255,255,255,0.05);
+  background: rgba(255, 255, 255, 0.05);
   border-radius: var(--radius-sm);
   transition: background 0.2s;
 }
@@ -362,7 +362,7 @@
   flex-wrap: wrap;
 }
 
-.action-edit input[type="text"] {
+.action-edit input[type='text'] {
   flex: 1 1 60%;
   min-width: 150px;
 }
@@ -371,7 +371,7 @@
   flex: 0 0 auto;
 }
 
-.action-edit input[type="date"] {
+.action-edit input[type='date'] {
   flex: 1 1 auto;
 }
 
@@ -395,7 +395,7 @@
 }
 
 .link-item:hover {
-  background: rgba(255,255,255,0.08);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .link-item a {
@@ -635,10 +635,22 @@
   letter-spacing: 0.5px;
 }
 
-.phase-planning   { background: #fdcb6e; color: #222; }
-.phase-saving     { background: #00b894; color: #fff; }
-.phase-ready      { background: #0984e3; color: #fff; }
-.phase-completed  { background: #636e72; color: #fff; }
+.phase-planning {
+  background: #fdcb6e;
+  color: #222;
+}
+.phase-saving {
+  background: #00b894;
+  color: #fff;
+}
+.phase-ready {
+  background: #0984e3;
+  color: #fff;
+}
+.phase-completed {
+  background: #636e72;
+  color: #fff;
+}
 
 /* Payment Plans */
 .help-text-section {
@@ -738,4 +750,3 @@
   font-family: 'Courier New', monospace;
   font-size: 15px;
 }
-

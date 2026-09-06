@@ -18,18 +18,14 @@ const app = require('../../server');
 
 describe('CORS configuration', () => {
   it('includes CORS headers for allowed origin', async () => {
-    const res = await request(app)
-      .options('/health')
-      .set('Origin', 'http://localhost:4200');
+    const res = await request(app).options('/health').set('Origin', 'http://localhost:4200');
 
     // The server should respond with Access-Control-Allow-Origin
     expect(res.headers).toHaveProperty('access-control-allow-origin');
   });
 
   it('reflects the configured origin in the response', async () => {
-    const res = await request(app)
-      .get('/health')
-      .set('Origin', 'http://localhost:4200');
+    const res = await request(app).get('/health').set('Origin', 'http://localhost:4200');
 
     expect(res.headers['access-control-allow-origin']).toBe('http://localhost:4200');
   });

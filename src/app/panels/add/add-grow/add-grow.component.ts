@@ -22,31 +22,31 @@ import { TrapFocusDirective } from 'src/app/shared/directives/trap-focus.directi
   standalone: true,
   imports: [TrapFocusDirective, CommonModule, FormsModule, TranslateModule],
   templateUrl: './add-grow.component.html',
-  styleUrls: ['../../../shared/styles/add-form.css', './add-grow.component.css']
+  styleUrls: ['../../../shared/styles/add-form.css', './add-grow.component.css'],
 })
 export class AddGrowComponent extends BaseAddComponent {
-  titleTextField = "";
-  subTextField = "";
+  titleTextField = '';
+  subTextField = '';
   typeField: GrowType = 'income-growth';
   phaseField: GrowPhase = 'idea';
-  notesTextField = "";
-  descriptionTextField = "";
-  strategyTextField = "";
-  risksTextField = "";
+  notesTextField = '';
+  descriptionTextField = '';
+  strategyTextField = '';
+  risksTextField = '';
   riskScoreField = 0;
 
   // Expense optimization fields
   categoryArray: string[] = [];
-  newCategoryInput = "";
-  currentCostTextField = "";
-  targetCostTextField = "";
-  monthlySavingsTextField = "";
-  annualSavingsTextField = "";
-  reasoningTextField = "";
-  alternativeTextField = "";
-  alternativeCostTextField = "";
-  patternTextField = "";
-  insightsTextField = "";
+  newCategoryInput = '';
+  currentCostTextField = '';
+  targetCostTextField = '';
+  monthlySavingsTextField = '';
+  annualSavingsTextField = '';
+  reasoningTextField = '';
+  alternativeTextField = '';
+  alternativeCostTextField = '';
+  patternTextField = '';
+  insightsTextField = '';
 
   // Links and Actions
   links: GrowLink[] = [];
@@ -69,13 +69,13 @@ export class AddGrowComponent extends BaseAddComponent {
   showStrategySection = false;
   showFinancialsSection = false;
   showLinksActionsSection = false;
-  loanTextField = "";
-  creditTextField = "";
-  mortageTextField = "";
-  amountTextField = "";
-  cashflowTextField = "";
-  quantityTextField = "";
-  priceTextField = "";
+  loanTextField = '';
+  creditTextField = '';
+  mortageTextField = '';
+  amountTextField = '';
+  cashflowTextField = '';
+  quantityTextField = '';
+  priceTextField = '';
 
   showCreditOptions = false;
 
@@ -88,7 +88,6 @@ export class AddGrowComponent extends BaseAddComponent {
   static isShare = false;
   static isAsset = false;
 
-
   public classReference = AddGrowComponent;
   public settingsReference = SettingsComponent;
   /**
@@ -98,7 +97,10 @@ export class AddGrowComponent extends BaseAddComponent {
    * @param database - The database service.
    * @param frontendLogger - The frontend logging service.
    */
-  constructor(router: Router, private persistence: PersistenceService) {
+  constructor(
+    router: Router,
+    private persistence: PersistenceService,
+  ) {
     super(router);
     AddGrowComponent.isAddSmile = false;
     this.initStatic(AddGrowComponent);
@@ -113,7 +115,7 @@ export class AddGrowComponent extends BaseAddComponent {
 
   override closeWindow() {
     AddGrowComponent.isAddSmile = false;
-    this.amountTextField = "";
+    this.amountTextField = '';
     this.typeField = 'income-growth';
     super.closeWindow();
   }
@@ -141,7 +143,7 @@ export class AddGrowComponent extends BaseAddComponent {
     const cat = this.newCategoryInput.trim();
     if (cat && cat !== '' && !this.categoryArray.includes(cat)) {
       this.categoryArray.push(cat);
-      this.newCategoryInput = "";
+      this.newCategoryInput = '';
     }
   }
 
@@ -149,7 +151,7 @@ export class AddGrowComponent extends BaseAddComponent {
     const cat = this.newCategoryInput.trim();
     if (cat && !this.categoryArray.includes(cat)) {
       this.categoryArray.push(cat);
-      this.newCategoryInput = "";
+      this.newCategoryInput = '';
     }
   }
 
@@ -205,7 +207,7 @@ export class AddGrowComponent extends BaseAddComponent {
     const item: GrowActionItem = {
       text: text.trim(),
       done: false,
-      priority
+      priority,
     };
     if (dueDate) item.dueDate = dueDate;
     this.actionItems.push(item);
@@ -240,7 +242,11 @@ export class AddGrowComponent extends BaseAddComponent {
 
   submitActionItem() {
     if (!this.newActionText.trim()) return;
-    this.addActionItem(this.newActionText, this.newActionPriority, this.newActionDueDate || undefined);
+    this.addActionItem(
+      this.newActionText,
+      this.newActionPriority,
+      this.newActionDueDate || undefined,
+    );
     this.newActionText = '';
     this.newActionPriority = 'medium';
     this.newActionDueDate = '';
@@ -255,7 +261,7 @@ export class AddGrowComponent extends BaseAddComponent {
   invalidTitle(title: string) {
     return isDuplicateTitle(title, [AppStateService.instance.allGrowProjects]);
   }
-  
+
   toggleAsset() {
     AddGrowComponent.isAsset = !AddGrowComponent.isAsset;
     AddGrowComponent.isInvestment = false;
@@ -288,107 +294,184 @@ export class AddGrowComponent extends BaseAddComponent {
   /**
    * Adds a smile project.
    */
-  addGrowProject(){
+  addGrowProject() {
     //First trim string
     this.titleTextField = this.titleTextField.trim();
     //Validation (check if Amount is not empty)
     const requiredFields: { name: string; value: any; label: string }[] = [
-      { name: 'title', value: this.titleTextField, label: 'Title' }
+      { name: 'title', value: this.titleTextField, label: 'Title' },
     ];
     if (AddGrowComponent.isLoan) {
-      requiredFields.push({ name: 'loan', value: (this.loanTextField === '' || this.loanTextField === '0') ? '' : this.loanTextField, label: 'Loan' });
+      requiredFields.push({
+        name: 'loan',
+        value: this.loanTextField === '' || this.loanTextField === '0' ? '' : this.loanTextField,
+        label: 'Loan',
+      });
     }
     if (AddGrowComponent.isShare) {
       requiredFields.push(
-        { name: 'quantity', value: (this.quantityTextField === '' || this.quantityTextField === '0') ? '' : this.quantityTextField, label: 'Quantity' },
-        { name: 'price', value: (this.priceTextField === '' || this.priceTextField === '0') ? '' : this.priceTextField, label: 'Price' }
+        {
+          name: 'quantity',
+          value:
+            this.quantityTextField === '' || this.quantityTextField === '0'
+              ? ''
+              : this.quantityTextField,
+          label: 'Quantity',
+        },
+        {
+          name: 'price',
+          value:
+            this.priceTextField === '' || this.priceTextField === '0' ? '' : this.priceTextField,
+          label: 'Price',
+        },
       );
     }
     if (!this.validateRequired(requiredFields)) {
       // field errors shown inline
     } else if (this.invalidTitle(this.titleTextField)) {
-      this.showError("This grow project already exists.");
+      this.showError('This grow project already exists.');
     } else {
-
-      if(this.showCreditOptions){
-          if (this.creditTextField === "") {
-            this.creditTextField = "0";
-          }
-          this.creditTextField = String(Math.round(parseFloat(this.loanTextField) * (parseFloat(this.creditTextField) / 100) * 100) / 100);
+      if (this.showCreditOptions) {
+        if (this.creditTextField === '') {
+          this.creditTextField = '0';
+        }
+        this.creditTextField = String(
+          Math.round(
+            parseFloat(this.loanTextField) * (parseFloat(this.creditTextField) / 100) * 100,
+          ) / 100,
+        );
       } else {
-        if(this.creditTextField === "") {
-          this.creditTextField = "0";
-        } 
+        if (this.creditTextField === '') {
+          this.creditTextField = '0';
+        }
       }
       const loanAmount = AddGrowComponent.isLoan ? parseFloat(this.loanTextField) : 0;
-      if(AddGrowComponent.isShare){
-        this.amountTextField = String(parseFloat(this.quantityTextField) * parseFloat(this.priceTextField) - loanAmount);
+      if (AddGrowComponent.isShare) {
+        this.amountTextField = String(
+          parseFloat(this.quantityTextField) * parseFloat(this.priceTextField) - loanAmount,
+        );
       }
 
-      const isInvest = AddGrowComponent.isAsset || AddGrowComponent.isShare || AddGrowComponent.isInvestment
-      
+      const isInvest =
+        AddGrowComponent.isAsset || AddGrowComponent.isShare || AddGrowComponent.isInvestment;
+
       // ready to write to Database new Transaction
       const newGrow: Grow = {
         title: this.titleTextField,
-        sub: this.subTextField || "",
+        sub: this.subTextField || '',
         type: this.typeField,
         phase: this.phaseField,
-        description: this.descriptionTextField || "",
-        strategy: this.strategyTextField || "",
+        description: this.descriptionTextField || '',
+        strategy: this.strategyTextField || '',
         riskScore: this.riskScoreField || 0,
-        risks: this.risksTextField || "",
-        amount: this.amountTextField === "" ? 0 : parseFloat(this.amountTextField),
-        cashflow: this.cashflowTextField === "" ? 0 : parseFloat(this.cashflowTextField),
+        risks: this.risksTextField || '',
+        amount: this.amountTextField === '' ? 0 : parseFloat(this.amountTextField),
+        cashflow: this.cashflowTextField === '' ? 0 : parseFloat(this.cashflowTextField),
         isAsset: AddGrowComponent.isAsset,
-        share: AddGrowComponent.isShare ? {tag: this.titleTextField, quantity: parseFloat(this.quantityTextField), price: parseFloat(this.priceTextField)} : null,
-        investment: AddGrowComponent.isInvestment ? {tag: this.titleTextField, deposit: parseFloat(this.amountTextField)+parseFloat(this.loanTextField), amount: parseFloat(this.mortageTextField)} : null,
-        liabilitie: AddGrowComponent.isLoan ? {tag: this.titleTextField, amount: parseFloat(this.loanTextField), investment: isInvest, credit: parseFloat(this.creditTextField)} : null,
+        share: AddGrowComponent.isShare
+          ? {
+              tag: this.titleTextField,
+              quantity: parseFloat(this.quantityTextField),
+              price: parseFloat(this.priceTextField),
+            }
+          : null,
+        investment: AddGrowComponent.isInvestment
+          ? {
+              tag: this.titleTextField,
+              deposit: parseFloat(this.amountTextField) + parseFloat(this.loanTextField),
+              amount: parseFloat(this.mortageTextField),
+            }
+          : null,
+        liabilitie: AddGrowComponent.isLoan
+          ? {
+              tag: this.titleTextField,
+              amount: parseFloat(this.loanTextField),
+              investment: isInvest,
+              credit: parseFloat(this.creditTextField),
+            }
+          : null,
         // Expense optimization fields
-        category: this.isExpenseType() && this.categoryArray.length > 0 ? (this.categoryArray.length === 1 ? this.categoryArray[0] : this.categoryArray) : undefined,
-        currentCost: this.roundToTwo(this.isExpenseType() && this.currentCostTextField ? parseFloat(this.currentCostTextField) : undefined),
-        targetCost: this.roundToTwo(this.isExpenseType() && this.targetCostTextField ? parseFloat(this.targetCostTextField) : undefined),
-        monthlySavings: this.roundToTwo(this.isExpenseType() && this.monthlySavingsTextField ? parseFloat(this.monthlySavingsTextField) : undefined),
-        annualSavings: this.roundToTwo(this.isExpenseType() && this.annualSavingsTextField ? parseFloat(this.annualSavingsTextField) : undefined),
-        reasoning: this.isExpenseType() && this.reasoningTextField ? this.reasoningTextField : undefined,
-        alternative: this.typeField === 'subscription-action' && this.alternativeTextField ? this.alternativeTextField : undefined,
-        alternativeCost: this.typeField === 'subscription-action' && this.alternativeCostTextField ? parseFloat(this.alternativeCostTextField) : undefined,
-        pattern: this.typeField === 'expense-insight' && this.patternTextField ? this.patternTextField : undefined,
-        insights: this.typeField === 'expense-insight' && this.insightsTextField ? this.insightsTextField : undefined,
+        category:
+          this.isExpenseType() && this.categoryArray.length > 0
+            ? this.categoryArray.length === 1
+              ? this.categoryArray[0]
+              : this.categoryArray
+            : undefined,
+        currentCost: this.roundToTwo(
+          this.isExpenseType() && this.currentCostTextField
+            ? parseFloat(this.currentCostTextField)
+            : undefined,
+        ),
+        targetCost: this.roundToTwo(
+          this.isExpenseType() && this.targetCostTextField
+            ? parseFloat(this.targetCostTextField)
+            : undefined,
+        ),
+        monthlySavings: this.roundToTwo(
+          this.isExpenseType() && this.monthlySavingsTextField
+            ? parseFloat(this.monthlySavingsTextField)
+            : undefined,
+        ),
+        annualSavings: this.roundToTwo(
+          this.isExpenseType() && this.annualSavingsTextField
+            ? parseFloat(this.annualSavingsTextField)
+            : undefined,
+        ),
+        reasoning:
+          this.isExpenseType() && this.reasoningTextField ? this.reasoningTextField : undefined,
+        alternative:
+          this.typeField === 'subscription-action' && this.alternativeTextField
+            ? this.alternativeTextField
+            : undefined,
+        alternativeCost:
+          this.typeField === 'subscription-action' && this.alternativeCostTextField
+            ? parseFloat(this.alternativeCostTextField)
+            : undefined,
+        pattern:
+          this.typeField === 'expense-insight' && this.patternTextField
+            ? this.patternTextField
+            : undefined,
+        insights:
+          this.typeField === 'expense-insight' && this.insightsTextField
+            ? this.insightsTextField
+            : undefined,
         actionItems: this.actionItems.length > 0 ? this.actionItems : [],
         links: this.links.length > 0 ? this.links : [],
-        notes: this.notesTextField.trim() ? [{ text: this.notesTextField.trim(), createdAt: new Date().toISOString() }] : [],
+        notes: this.notesTextField.trim()
+          ? [{ text: this.notesTextField.trim(), createdAt: new Date().toISOString() }]
+          : [],
         createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
       };
       AppStateService.instance.allGrowProjects.push(newGrow);
       // Clean Up close Window
-      this.titleTextField = "";
-      this.subTextField = "";
+      this.titleTextField = '';
+      this.subTextField = '';
       this.typeField = 'income-growth';
       this.phaseField = 'idea';
-      this.notesTextField = "";
-      this.descriptionTextField = "";
-      this.strategyTextField = "";
-      this.risksTextField = "";
+      this.notesTextField = '';
+      this.descriptionTextField = '';
+      this.strategyTextField = '';
+      this.risksTextField = '';
       this.riskScoreField = 0;
-      this.loanTextField = "";
-      this.creditTextField = "";
-      this.mortageTextField = "";
-      this.cashflowTextField = "";
-      this.amountTextField = "";
-      this.quantityTextField = "";
-      this.priceTextField = "";
+      this.loanTextField = '';
+      this.creditTextField = '';
+      this.mortageTextField = '';
+      this.cashflowTextField = '';
+      this.amountTextField = '';
+      this.quantityTextField = '';
+      this.priceTextField = '';
       this.categoryArray = [];
-      this.newCategoryInput = "";
-      this.currentCostTextField = "";
-      this.targetCostTextField = "";
-      this.monthlySavingsTextField = "";
-      this.annualSavingsTextField = "";
-      this.reasoningTextField = "";
-      this.alternativeTextField = "";
-      this.alternativeCostTextField = "";
-      this.patternTextField = "";
-      this.insightsTextField = "";
+      this.newCategoryInput = '';
+      this.currentCostTextField = '';
+      this.targetCostTextField = '';
+      this.monthlySavingsTextField = '';
+      this.annualSavingsTextField = '';
+      this.reasoningTextField = '';
+      this.alternativeTextField = '';
+      this.alternativeCostTextField = '';
+      this.patternTextField = '';
+      this.insightsTextField = '';
       this.links = [];
       this.actionItems = [];
       this.showAddLink = false;
@@ -409,29 +492,36 @@ export class AddGrowComponent extends BaseAddComponent {
       // Writing before load would overwrite real DB data with empty arrays.
       this.persistence.batchWriteAndSync({
         writes: [
-          { tag: "grow", data: AppStateService.instance.allGrowProjects },
-          ...(AppStateService.instance.tier3BalanceLoaded ? [
-            { tag: "balance/liabilities", data: AppStateService.instance.liabilities },
-            { tag: "balance/asset/assets", data: AppStateService.instance.allAssets },
-            { tag: "balance/asset/shares", data: AppStateService.instance.allShares },
-            { tag: "balance/asset/investments", data: AppStateService.instance.allInvestments }
-          ] : [])
+          { tag: 'grow', data: AppStateService.instance.allGrowProjects },
+          ...(AppStateService.instance.tier3BalanceLoaded
+            ? [
+                { tag: 'balance/liabilities', data: AppStateService.instance.liabilities },
+                { tag: 'balance/asset/assets', data: AppStateService.instance.allAssets },
+                { tag: 'balance/asset/shares', data: AppStateService.instance.allShares },
+                { tag: 'balance/asset/investments', data: AppStateService.instance.allInvestments },
+              ]
+            : []),
         ],
         localStorageSaves: [
-          { key: "grow", data: JSON.stringify(AppStateService.instance.allGrowProjects) },
-          ...(AppStateService.instance.tier3BalanceLoaded ? [
-            { key: "liabilities", data: JSON.stringify(AppStateService.instance.liabilities) },
-            { key: "assets", data: JSON.stringify(AppStateService.instance.allAssets) },
-            { key: "shares", data: JSON.stringify(AppStateService.instance.allShares) },
-            { key: "investments", data: JSON.stringify(AppStateService.instance.allInvestments) }
-          ] : [])
+          { key: 'grow', data: JSON.stringify(AppStateService.instance.allGrowProjects) },
+          ...(AppStateService.instance.tier3BalanceLoaded
+            ? [
+                { key: 'liabilities', data: JSON.stringify(AppStateService.instance.liabilities) },
+                { key: 'assets', data: JSON.stringify(AppStateService.instance.allAssets) },
+                { key: 'shares', data: JSON.stringify(AppStateService.instance.allShares) },
+                {
+                  key: 'investments',
+                  data: JSON.stringify(AppStateService.instance.allInvestments),
+                },
+              ]
+            : []),
         ],
         logEvent: 'add_grow',
         logMetadata: {
           title: this.titleTextField,
           hasLoan: AddGrowComponent.isLoan,
           hasShare: AddGrowComponent.isShare,
-          hasInvestment: AddGrowComponent.isInvestment
+          hasInvestment: AddGrowComponent.isInvestment,
         },
         onSuccess: () => {
           AppStateService.instance.isSaving = false;
@@ -442,7 +532,7 @@ export class AddGrowComponent extends BaseAddComponent {
         onError: (error) => {
           AppStateService.instance.isSaving = false;
           this.toastService.show(error.message || 'Database write failed', 'error');
-        }
+        },
       });
     }
   }

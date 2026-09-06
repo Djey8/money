@@ -24,7 +24,7 @@ test.describe('Profile & User Info', () => {
     await page.locator('#profile-pic').first().click({ force: true });
     await page.waitForSelector('#profile-Container', { state: 'visible', timeout: 5_000 });
 
-    const profileName = await page.locator('#profileName').textContent() ?? '';
+    const profileName = (await page.locator('#profileName').textContent()) ?? '';
     expect(profileName).toContain(user.username);
   });
 
@@ -32,7 +32,7 @@ test.describe('Profile & User Info', () => {
     await page.locator('#profile-pic').first().click({ force: true });
     await page.waitForSelector('#profile-Container', { state: 'visible', timeout: 5_000 });
 
-    const profileEmail = await page.locator('#profileMail').textContent() ?? '';
+    const profileEmail = (await page.locator('#profileMail').textContent()) ?? '';
     expect(profileEmail).toContain(user.email);
   });
 

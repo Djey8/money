@@ -46,34 +46,38 @@ describe('Database API', () => {
 
   describe('Write operations', () => {
     skipIf(!dbAvailable, 'writes user info object', async () => {
-      const res = await authed('post', '/api/data/write/info')
-        .send({ username: 'test_user', email: 'jest@test.local' });
+      const res = await authed('post', '/api/data/write/info').send({
+        username: 'test_user',
+        email: 'jest@test.local',
+      });
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
     });
 
     skipIf(!dbAvailable, 'writes an array (transactions)', async () => {
-      const res = await authed('post', '/api/data/write/transactions')
-        .send([
-          { id: 'tx1', amount: 100.50, date: '2026-03-01', category: 'food' },
-          { id: 'tx2', amount: 250.00, date: '2026-03-05', category: 'transport' }
-        ]);
+      const res = await authed('post', '/api/data/write/transactions').send([
+        { id: 'tx1', amount: 100.5, date: '2026-03-01', category: 'food' },
+        { id: 'tx2', amount: 250.0, date: '2026-03-05', category: 'transport' },
+      ]);
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
     });
 
     skipIf(!dbAvailable, 'writes an array (smile)', async () => {
-      const res = await authed('post', '/api/data/write/smile')
-        .send([{ id: 'smile1', title: 'Vacation', target: 5000, current: 1200 }]);
+      const res = await authed('post', '/api/data/write/smile').send([
+        { id: 'smile1', title: 'Vacation', target: 5000, current: 1200 },
+      ]);
 
       expect(res.status).toBe(200);
     });
 
     skipIf(!dbAvailable, 'writes a nested object (mojo)', async () => {
-      const res = await authed('post', '/api/data/write/mojo')
-        .send({ target: 2000.0, amount: 1500.0 });
+      const res = await authed('post', '/api/data/write/mojo').send({
+        target: 2000.0,
+        amount: 1500.0,
+      });
 
       expect(res.status).toBe(200);
     });
@@ -194,14 +198,13 @@ describe('Database API', () => {
 
   describe('Batch write', () => {
     skipIf(!dbAvailable, 'writes multiple paths in a single request', async () => {
-      const res = await authed('post', '/api/data/write/batch')
-        .send({
-          writes: [
-            { path: 'batch_test/a', data: 1 },
-            { path: 'batch_test/b', data: 2 },
-            { path: 'batch_test/c', data: { nested: true } }
-          ]
-        });
+      const res = await authed('post', '/api/data/write/batch').send({
+        writes: [
+          { path: 'batch_test/a', data: 1 },
+          { path: 'batch_test/b', data: 2 },
+          { path: 'batch_test/c', data: { nested: true } },
+        ],
+      });
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -212,15 +215,13 @@ describe('Database API', () => {
     });
 
     skipIf(!dbAvailable, 'rejects empty writes array', async () => {
-      const res = await authed('post', '/api/data/write/batch')
-        .send({ writes: [] });
+      const res = await authed('post', '/api/data/write/batch').send({ writes: [] });
 
       expect(res.status).toBe(400);
     });
 
     skipIf(!dbAvailable, 'rejects non-array writes', async () => {
-      const res = await authed('post', '/api/data/write/batch')
-        .send({ writes: 'not-an-array' });
+      const res = await authed('post', '/api/data/write/batch').send({ writes: 'not-an-array' });
 
       expect(res.status).toBe(400);
     });

@@ -16,6 +16,7 @@ Follow every step, in order, for each endpoint. Don't skip docs/MCP mapping "for
 ## 1. OpenAPI contract
 
 Add the operation to `docs/api/openapi.yaml` first, before writing any code:
+
 - `operationId`, summary, description.
 - Request/response schemas using integer minor units + ISO-4217 currency code for money, ISO-8601 UTC timestamps, cursor pagination for lists.
 - At least one request and one response example, with realistic values (not `"string"`/`0`).
@@ -39,6 +40,7 @@ Write a schema (zod or valibot — whichever this project has already standardiz
 ## 4. Tests
 
 All of the following, not a subset:
+
 - **Unit** tests for the domain-package logic this endpoint calls (if not already covered).
 - **Integration** tests against a real CouchDB (`docker-compose.test.yml`), not mocks — this repo's working agreement explicitly requires real-database integration tests.
 - **Auth/scope tests**: request with no token, wrong scope, expired token, revoked token.

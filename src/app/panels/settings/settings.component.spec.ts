@@ -2,7 +2,6 @@ import { SettingsComponent } from './settings.component';
 import { AppStateService } from '../../shared/services/app-state.service';
 
 describe('SettingsComponent', () => {
-
   beforeEach(() => {
     (AppStateService as any)._instance = undefined;
     SettingsComponent.isSettings = true;
@@ -112,7 +111,11 @@ describe('SettingsComponent', () => {
 
       // Minimal mock to bypass constructor side effects
       const mockLocalService = { getData: jest.fn().mockReturnValue(''), saveData: jest.fn() };
-      const mockCryptic = { getKey: jest.fn().mockReturnValue(''), getEncryptionLocalEnabled: jest.fn().mockReturnValue(false), getEncryptionDatabaseEnabled: jest.fn().mockReturnValue(false) };
+      const mockCryptic = {
+        getKey: jest.fn().mockReturnValue(''),
+        getEncryptionLocalEnabled: jest.fn().mockReturnValue(false),
+        getEncryptionDatabaseEnabled: jest.fn().mockReturnValue(false),
+      };
       const mockTranslate = { setDefaultLang: jest.fn(), use: jest.fn() };
 
       // Create instance bypassing constructor
@@ -132,7 +135,9 @@ describe('SettingsComponent', () => {
         // eslint-disable-next-line @typescript-eslint/no-empty-function -- test mock; href setter is a no-op stub
         Object.defineProperty(el, 'href', { set: () => {}, get: () => '' });
         Object.defineProperty(el, 'download', {
-          set: (v: string) => { downloadFilename = v; },
+          set: (v: string) => {
+            downloadFilename = v;
+          },
           get: () => downloadFilename,
         });
         return el;
@@ -283,7 +288,9 @@ describe('SettingsComponent', () => {
 
       const mockLocalService = {
         getData: jest.fn((key: string) => savedData[key] || ''),
-        saveData: jest.fn((key: string, val: string) => { savedData[key] = val; }),
+        saveData: jest.fn((key: string, val: string) => {
+          savedData[key] = val;
+        }),
       };
       const mockCryptic = {
         updateConfig: jest.fn(),
@@ -293,7 +300,9 @@ describe('SettingsComponent', () => {
       };
       const mockDatabase = {
         batchWrite: jest.fn().mockReturnValue({
-          subscribe: (handlers: any) => { handlers.next(); },
+          subscribe: (handlers: any) => {
+            handlers.next();
+          },
         }),
       };
       const mockTranslate = { setDefaultLang: jest.fn(), use: jest.fn() };
@@ -401,5 +410,4 @@ describe('SettingsComponent', () => {
       expect(component.importStatus).toContain('successful');
     });
   });
-
 });

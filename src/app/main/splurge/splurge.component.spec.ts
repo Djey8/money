@@ -21,7 +21,10 @@ describe('SplurgeComponent', () => {
       ] as any;
 
       // Manually recalculate since static initializer already ran
-      const result = AppStateService.instance.getAmount('Splurge', AppStateService.instance.splurge / 100);
+      const result = AppStateService.instance.getAmount(
+        'Splurge',
+        AppStateService.instance.splurge / 100,
+      );
       // Income: round((1000 * 0.1 + eps) * 100) / 100 = 100, Splurge: -30, total = 70
       expect(result).toBe(70);
     });

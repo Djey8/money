@@ -3,20 +3,31 @@ import { NgIf, NgFor, NgClass, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, ActivatedRoute, Router } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
-import { CommunityService, CommunityThread, CommunityPost, COMMUNITY_EMOJIS } from '../../shared/services/community.service';
+import {
+  CommunityService,
+  CommunityThread,
+  CommunityPost,
+  COMMUNITY_EMOJIS,
+} from '../../shared/services/community.service';
 import { GuestIdentityService } from '../../shared/services/guest-identity.service';
 import { DemoService } from '../../shared/services/demo.service';
 
 // Deferred import to break circular chain
-let AppComponent: any; setTimeout(() => import('src/app/app.component').then(m => AppComponent = m.AppComponent));
+let AppComponent: any;
+setTimeout(() => import('src/app/app.component').then((m) => (AppComponent = m.AppComponent)));
 
 @Component({
   selector: 'app-community-thread',
   standalone: true,
   imports: [NgIf, NgFor, NgClass, DatePipe, FormsModule, RouterLink, TranslateModule],
   templateUrl: './thread.component.html',
-  styleUrls: ['./thread.component.css', '../community.component.css', '../../landing/landing-page.component.css', '../../app.component.css'],
-  encapsulation: ViewEncapsulation.None
+  styleUrls: [
+    './thread.component.css',
+    '../community.component.css',
+    '../../landing/landing-page.component.css',
+    '../../app.component.css',
+  ],
+  encapsulation: ViewEncapsulation.None,
 })
 export class CommunityThreadComponent implements OnInit {
   readonly emojis = COMMUNITY_EMOJIS;
@@ -58,14 +69,18 @@ export class CommunityThreadComponent implements OnInit {
     private router: Router,
     private communityService: CommunityService,
     private guestIdentity: GuestIdentityService,
-    private demoService: DemoService
+    private demoService: DemoService,
   ) {}
 
-  get appReference() { return AppComponent; }
+  get appReference() {
+    return AppComponent;
+  }
 
   closeNav(): void {
     const toggle = document.getElementById('nav-toggle') as HTMLInputElement;
-    if (toggle) { toggle.checked = false; }
+    if (toggle) {
+      toggle.checked = false;
+    }
   }
 
   launchDemo(): void {
@@ -84,12 +99,15 @@ export class CommunityThreadComponent implements OnInit {
     this.threadId = this.route.snapshot.paramMap.get('id')!;
     this.displayName = this.guestIdentity.getDisplayName();
     this.anonymous = this.guestIdentity.getAnonymousPreference();
-    this.guestIdentity.ensureIdentity()
+    this.guestIdentity
+      .ensureIdentity()
       .then(() => {
         this.isGuestUser = this.guestIdentity.isGuest();
         return this.guestIdentity.isAdmin();
       })
-      .then(isAdmin => { this.isAdmin = isAdmin; })
+      .then((isAdmin) => {
+        this.isAdmin = isAdmin;
+      })
       // eslint-disable-next-line @typescript-eslint/no-empty-function -- intentionally swallow identity-setup errors; not critical to page load
       .catch(() => {});
     this.load();
@@ -108,7 +126,7 @@ export class CommunityThreadComponent implements OnInit {
       error: () => {
         this.loading = false;
         this.notFound = true;
-      }
+      },
     });
   }
 
@@ -124,7 +142,7 @@ export class CommunityThreadComponent implements OnInit {
   myReaction(post: CommunityPost): string | null {
     const myId = this.guestIdentity.getAuthorId();
     if (!myId) return null;
-    return this.emojis.find(emoji => post.reactions[emoji]?.includes(myId)) || null;
+    return this.emojis.find((emoji) => post.reactions[emoji]?.includes(myId)) || null;
   }
 
   reactionCount(post: CommunityPost, emoji: string): number {
@@ -135,7 +153,11 @@ export class CommunityThreadComponent implements OnInit {
     if (this.reactingPostId) return;
     this.reactingPostId = post.id;
     try {
-      const { reactions } = await this.communityService.toggleReaction(this.threadId, post.id, emoji);
+      const { reactions } = await this.communityService.toggleReaction(
+        this.threadId,
+        post.id,
+        emoji,
+      );
       post.reactions = reactions;
     } catch {
       // Best-effort — silently ignore, the reaction just won't update
@@ -151,7 +173,7 @@ export class CommunityThreadComponent implements OnInit {
   async confirmDelete(postId: string): Promise<void> {
     try {
       await this.communityService.deleteReply(this.threadId, postId);
-      this.replies = this.replies.filter(p => p.id !== postId);
+      this.replies = this.replies.filter((p) => p.id !== postId);
       if (this.thread) {
         this.thread.replyCount = Math.max(0, this.thread.replyCount - 1);
       }
@@ -200,10 +222,13 @@ export class CommunityThreadComponent implements OnInit {
     this.savingEdit = true;
     this.editError = null;
     try {
-      const authorName = await this.guestIdentity.resolveAuthorName(this.editDisplayName, this.editAnonymous);
+      const authorName = await this.guestIdentity.resolveAuthorName(
+        this.editDisplayName,
+        this.editAnonymous,
+      );
       const [thread, post] = await Promise.all([
         this.communityService.updateThread(this.threadId, title, authorName),
-        this.communityService.updatePost(this.threadId, this.openingPost.id, body, authorName)
+        this.communityService.updatePost(this.threadId, this.openingPost.id, body, authorName),
       ]);
       this.thread = thread;
       this.openingPost = post;
@@ -237,9 +262,17 @@ export class CommunityThreadComponent implements OnInit {
     this.savingEdit = true;
     this.editError = null;
     try {
-      const authorName = await this.guestIdentity.resolveAuthorName(this.editReplyDisplayName, this.editReplyAnonymous);
-      const updated = await this.communityService.updatePost(this.threadId, postId, body, authorName);
-      this.replies = this.replies.map(p => p.id === postId ? updated : p);
+      const authorName = await this.guestIdentity.resolveAuthorName(
+        this.editReplyDisplayName,
+        this.editReplyAnonymous,
+      );
+      const updated = await this.communityService.updatePost(
+        this.threadId,
+        postId,
+        body,
+        authorName,
+      );
+      this.replies = this.replies.map((p) => (p.id === postId ? updated : p));
       this.editingPostId = null;
     } catch {
       this.editError = 'Community.errors.generic';
@@ -264,7 +297,10 @@ export class CommunityThreadComponent implements OnInit {
     }
 
     try {
-      const authorName = await this.guestIdentity.resolveAuthorName(this.displayName, this.anonymous);
+      const authorName = await this.guestIdentity.resolveAuthorName(
+        this.displayName,
+        this.anonymous,
+      );
       const post = await this.communityService.addReply(this.threadId, body, authorName);
       this.replies = [...this.replies, post];
       if (this.thread) {

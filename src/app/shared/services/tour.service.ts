@@ -65,9 +65,9 @@ export class TourService {
   /** Cancellable delay — resolves immediately if skip is signalled */
   cancellableDelay(ms: number): Promise<void> {
     if (this._skipAnimation) return Promise.resolve();
-    return new Promise<void>(resolve => {
+    return new Promise<void>((resolve) => {
       const timer = setTimeout(() => {
-        this._skipResolvers = this._skipResolvers.filter(r => r !== resolve);
+        this._skipResolvers = this._skipResolvers.filter((r) => r !== resolve);
         resolve();
       }, ms);
       this._skipResolvers.push(() => {
@@ -106,8 +106,10 @@ export class TourService {
   }
 
   get isLastStep(): boolean {
-    return this.currentSectionIndex === this.sections.length - 1
-      && this.currentStepIndex === this.currentSection.steps.length - 1;
+    return (
+      this.currentSectionIndex === this.sections.length - 1 &&
+      this.currentStepIndex === this.currentSection.steps.length - 1
+    );
   }
 
   get progress(): number {
@@ -232,8 +234,18 @@ export class TourService {
    */
   /** Routes that appear as items in the navigation menu */
   private static readonly MENU_ROUTES = new Set([
-    '/home', '/transactions', '/daily', '/splurge', '/smile', '/fire',
-    '/cashflow', '/income', '/balance', '/subscription', '/budget', '/grow'
+    '/home',
+    '/transactions',
+    '/daily',
+    '/splurge',
+    '/smile',
+    '/fire',
+    '/cashflow',
+    '/income',
+    '/balance',
+    '/subscription',
+    '/budget',
+    '/grow',
   ]);
 
   private async navigateViaMenu(route: string): Promise<void> {
@@ -297,13 +309,57 @@ export class TourService {
         titleKey: 'Tour.section.core',
         icon: '',
         steps: [
-          { target: null, titleKey: 'Tour.core.welcome.title', bodyKey: 'Tour.core.welcome.body', route: '/home', position: 'center', accent: 'var(--color-primary)', icon: '👋', action: 'closeAllPanels' },
-          { target: '.grid-container', titleKey: 'Tour.core.accounts.title', bodyKey: 'Tour.core.accounts.body', route: '/home', position: 'bottom', accent: 'var(--color-primary)' },
-          { target: '.grid-item[aria-label="Daily"]', titleKey: 'Tour.core.daily.title', bodyKey: 'Tour.core.daily.body', route: '/home', position: 'bottom', accent: 'var(--color-cat-daily)' },
-          { target: '.grid-item[aria-label="Splurge"]', titleKey: 'Tour.core.splurge.title', bodyKey: 'Tour.core.splurge.body', route: '/home', position: 'bottom', accent: 'var(--color-cat-splurge)' },
-          { target: '.grid-item[aria-label="Smile"]', titleKey: 'Tour.core.smile.title', bodyKey: 'Tour.core.smile.body', route: '/home', position: 'bottom', accent: 'var(--color-cat-smile)' },
-          { target: '.grid-item[aria-label="Fire"]', titleKey: 'Tour.core.fire.title', bodyKey: 'Tour.core.fire.body', route: '/home', position: 'bottom', accent: 'var(--color-cat-fire)' },
-        ]
+          {
+            target: null,
+            titleKey: 'Tour.core.welcome.title',
+            bodyKey: 'Tour.core.welcome.body',
+            route: '/home',
+            position: 'center',
+            accent: 'var(--color-primary)',
+            icon: '👋',
+            action: 'closeAllPanels',
+          },
+          {
+            target: '.grid-container',
+            titleKey: 'Tour.core.accounts.title',
+            bodyKey: 'Tour.core.accounts.body',
+            route: '/home',
+            position: 'bottom',
+            accent: 'var(--color-primary)',
+          },
+          {
+            target: '.grid-item[aria-label="Daily"]',
+            titleKey: 'Tour.core.daily.title',
+            bodyKey: 'Tour.core.daily.body',
+            route: '/home',
+            position: 'bottom',
+            accent: 'var(--color-cat-daily)',
+          },
+          {
+            target: '.grid-item[aria-label="Splurge"]',
+            titleKey: 'Tour.core.splurge.title',
+            bodyKey: 'Tour.core.splurge.body',
+            route: '/home',
+            position: 'bottom',
+            accent: 'var(--color-cat-splurge)',
+          },
+          {
+            target: '.grid-item[aria-label="Smile"]',
+            titleKey: 'Tour.core.smile.title',
+            bodyKey: 'Tour.core.smile.body',
+            route: '/home',
+            position: 'bottom',
+            accent: 'var(--color-cat-smile)',
+          },
+          {
+            target: '.grid-item[aria-label="Fire"]',
+            titleKey: 'Tour.core.fire.title',
+            bodyKey: 'Tour.core.fire.body',
+            route: '/home',
+            position: 'bottom',
+            accent: 'var(--color-cat-fire)',
+          },
+        ],
       },
       // ========== SECTION 2: FIRST TRANSACTION ==========
       {
@@ -311,13 +367,54 @@ export class TourService {
         titleKey: 'Tour.section.transaction',
         icon: '',
         steps: [
-          { target: null, titleKey: 'Tour.transaction.intro.title', bodyKey: 'Tour.transaction.intro.body', route: '/transactions', position: 'center', accent: 'var(--color-primary)' },
-          { target: '#addbtn', titleKey: 'Tour.transaction.addBtn.title', bodyKey: 'Tour.transaction.addBtn.body', route: '/transactions', position: 'left', accent: 'var(--color-primary)' },
-          { target: '#addTransaction-Container', titleKey: 'Tour.transaction.form.title', bodyKey: 'Tour.transaction.form.body', position: 'bottom', accent: 'var(--color-primary)', action: 'openAddTransaction' },
-          { target: 'select#account', titleKey: 'Tour.transaction.account.title', bodyKey: 'Tour.transaction.account.body', position: 'bottom', accent: 'var(--color-primary)' },
-          { target: 'input#category', titleKey: 'Tour.transaction.category.title', bodyKey: 'Tour.transaction.category.body', position: 'bottom', accent: 'var(--color-primary)' },
-          { target: null, titleKey: 'Tour.transaction.done.title', bodyKey: 'Tour.transaction.done.body', route: '/transactions', position: 'center', accent: 'var(--color-success)', action: 'closeAddPanel' },
-        ]
+          {
+            target: null,
+            titleKey: 'Tour.transaction.intro.title',
+            bodyKey: 'Tour.transaction.intro.body',
+            route: '/transactions',
+            position: 'center',
+            accent: 'var(--color-primary)',
+          },
+          {
+            target: '#addbtn',
+            titleKey: 'Tour.transaction.addBtn.title',
+            bodyKey: 'Tour.transaction.addBtn.body',
+            route: '/transactions',
+            position: 'left',
+            accent: 'var(--color-primary)',
+          },
+          {
+            target: '#addTransaction-Container',
+            titleKey: 'Tour.transaction.form.title',
+            bodyKey: 'Tour.transaction.form.body',
+            position: 'bottom',
+            accent: 'var(--color-primary)',
+            action: 'openAddTransaction',
+          },
+          {
+            target: 'select#account',
+            titleKey: 'Tour.transaction.account.title',
+            bodyKey: 'Tour.transaction.account.body',
+            position: 'bottom',
+            accent: 'var(--color-primary)',
+          },
+          {
+            target: 'input#category',
+            titleKey: 'Tour.transaction.category.title',
+            bodyKey: 'Tour.transaction.category.body',
+            position: 'bottom',
+            accent: 'var(--color-primary)',
+          },
+          {
+            target: null,
+            titleKey: 'Tour.transaction.done.title',
+            bodyKey: 'Tour.transaction.done.body',
+            route: '/transactions',
+            position: 'center',
+            accent: 'var(--color-success)',
+            action: 'closeAddPanel',
+          },
+        ],
       },
       // ========== SECTION 3: INCOME & CASHFLOW ==========
       {
@@ -325,9 +422,23 @@ export class TourService {
         titleKey: 'Tour.section.income',
         icon: '',
         steps: [
-          { target: '#incomeStatement', titleKey: 'Tour.income.statement.title', bodyKey: 'Tour.income.statement.body', route: '/income', position: 'bottom-fixed', accent: 'var(--color-success)' },
-          { target: '.cashflowBox', titleKey: 'Tour.income.cashflow.title', bodyKey: 'Tour.income.cashflow.body', route: '/cashflow', position: 'bottom', accent: 'var(--color-primary)' },
-        ]
+          {
+            target: '#incomeStatement',
+            titleKey: 'Tour.income.statement.title',
+            bodyKey: 'Tour.income.statement.body',
+            route: '/income',
+            position: 'bottom-fixed',
+            accent: 'var(--color-success)',
+          },
+          {
+            target: '.cashflowBox',
+            titleKey: 'Tour.income.cashflow.title',
+            bodyKey: 'Tour.income.cashflow.body',
+            route: '/cashflow',
+            position: 'bottom',
+            accent: 'var(--color-primary)',
+          },
+        ],
       },
       // ========== SECTION 4: SUBSCRIPTIONS ==========
       {
@@ -335,10 +446,31 @@ export class TourService {
         titleKey: 'Tour.section.subscriptions',
         icon: '',
         steps: [
-          { target: null, titleKey: 'Tour.sub.intro.title', bodyKey: 'Tour.sub.intro.body', route: '/subscription', position: 'center', accent: 'var(--color-warning)' },
-          { target: '#addbtn', titleKey: 'Tour.sub.addBtn.title', bodyKey: 'Tour.sub.addBtn.body', route: '/subscription', position: 'left', accent: 'var(--color-warning)' },
-          { target: '.cashflowBox', titleKey: 'Tour.sub.impact.title', bodyKey: 'Tour.sub.impact.body', route: '/subscription', position: 'bottom', accent: 'var(--color-warning)' },
-        ]
+          {
+            target: null,
+            titleKey: 'Tour.sub.intro.title',
+            bodyKey: 'Tour.sub.intro.body',
+            route: '/subscription',
+            position: 'center',
+            accent: 'var(--color-warning)',
+          },
+          {
+            target: '#addbtn',
+            titleKey: 'Tour.sub.addBtn.title',
+            bodyKey: 'Tour.sub.addBtn.body',
+            route: '/subscription',
+            position: 'left',
+            accent: 'var(--color-warning)',
+          },
+          {
+            target: '.cashflowBox',
+            titleKey: 'Tour.sub.impact.title',
+            bodyKey: 'Tour.sub.impact.body',
+            route: '/subscription',
+            position: 'bottom',
+            accent: 'var(--color-warning)',
+          },
+        ],
       },
       // ========== SECTION 5: BALANCE SHEET ==========
       {
@@ -346,11 +478,39 @@ export class TourService {
         titleKey: 'Tour.section.balance',
         icon: '',
         steps: [
-          { target: null, titleKey: 'Tour.balance.intro.title', bodyKey: 'Tour.balance.intro.body', route: '/balance', position: 'center', accent: 'var(--color-primary)' },
-          { target: '#assetsBox', titleKey: 'Tour.balance.assets.title', bodyKey: 'Tour.balance.assets.body', route: '/balance', position: 'bottom-fixed', accent: 'var(--color-success)' },
-          { target: null, titleKey: 'Tour.balance.types.title', bodyKey: 'Tour.balance.types.body', route: '/balance', position: 'center', accent: 'var(--color-primary)' },
-          { target: '#liabilitiesBox', titleKey: 'Tour.balance.liabilities.title', bodyKey: 'Tour.balance.liabilities.body', route: '/balance', position: 'bottom-fixed', accent: 'var(--color-error)' },
-        ]
+          {
+            target: null,
+            titleKey: 'Tour.balance.intro.title',
+            bodyKey: 'Tour.balance.intro.body',
+            route: '/balance',
+            position: 'center',
+            accent: 'var(--color-primary)',
+          },
+          {
+            target: '#assetsBox',
+            titleKey: 'Tour.balance.assets.title',
+            bodyKey: 'Tour.balance.assets.body',
+            route: '/balance',
+            position: 'bottom-fixed',
+            accent: 'var(--color-success)',
+          },
+          {
+            target: null,
+            titleKey: 'Tour.balance.types.title',
+            bodyKey: 'Tour.balance.types.body',
+            route: '/balance',
+            position: 'center',
+            accent: 'var(--color-primary)',
+          },
+          {
+            target: '#liabilitiesBox',
+            titleKey: 'Tour.balance.liabilities.title',
+            bodyKey: 'Tour.balance.liabilities.body',
+            route: '/balance',
+            position: 'bottom-fixed',
+            accent: 'var(--color-error)',
+          },
+        ],
       },
       // ========== SECTION 6: BUDGETS ==========
       {
@@ -358,12 +518,47 @@ export class TourService {
         titleKey: 'Tour.section.budgets',
         icon: '',
         steps: [
-          { target: null, titleKey: 'Tour.budget.intro.title', bodyKey: 'Tour.budget.intro.body', route: '/budget', position: 'center', accent: 'var(--color-primary)' },
-          { target: '#planbtn', titleKey: 'Tour.budget.plan.title', bodyKey: 'Tour.budget.plan.body', route: '/budget', position: 'bottom', accent: 'var(--color-primary)' },
-          { target: '.plan-navigation', titleKey: 'Tour.budget.planPage.title', bodyKey: 'Tour.budget.planPage.body', route: '/plan', position: 'bottom', accent: 'var(--color-primary)' },
-          { target: '#dotstn', titleKey: 'Tour.budget.options.title', bodyKey: 'Tour.budget.options.body', route: '/plan', position: 'bottom', accent: 'var(--color-primary)' },
-          { target: null, titleKey: 'Tour.budget.workflow.title', bodyKey: 'Tour.budget.workflow.body', route: '/plan', position: 'center', accent: 'var(--color-primary)' },
-        ]
+          {
+            target: null,
+            titleKey: 'Tour.budget.intro.title',
+            bodyKey: 'Tour.budget.intro.body',
+            route: '/budget',
+            position: 'center',
+            accent: 'var(--color-primary)',
+          },
+          {
+            target: '#planbtn',
+            titleKey: 'Tour.budget.plan.title',
+            bodyKey: 'Tour.budget.plan.body',
+            route: '/budget',
+            position: 'bottom',
+            accent: 'var(--color-primary)',
+          },
+          {
+            target: '.plan-navigation',
+            titleKey: 'Tour.budget.planPage.title',
+            bodyKey: 'Tour.budget.planPage.body',
+            route: '/plan',
+            position: 'bottom',
+            accent: 'var(--color-primary)',
+          },
+          {
+            target: '#dotstn',
+            titleKey: 'Tour.budget.options.title',
+            bodyKey: 'Tour.budget.options.body',
+            route: '/plan',
+            position: 'bottom',
+            accent: 'var(--color-primary)',
+          },
+          {
+            target: null,
+            titleKey: 'Tour.budget.workflow.title',
+            bodyKey: 'Tour.budget.workflow.body',
+            route: '/plan',
+            position: 'center',
+            accent: 'var(--color-primary)',
+          },
+        ],
       },
       // ========== SECTION 7: SMILE PROJECTS ==========
       {
@@ -371,15 +566,69 @@ export class TourService {
         titleKey: 'Tour.section.smile',
         icon: 'assets/icons/smile.jpg',
         steps: [
-          { target: null, titleKey: 'Tour.smile.intro.title', bodyKey: 'Tour.smile.intro.body', route: '/smile', position: 'center', accent: 'var(--color-cat-smile)', icon: 'assets/icons/smile.jpg' },
-          { target: '#smilebtn', titleKey: 'Tour.smile.button.title', bodyKey: 'Tour.smile.button.body', route: '/smile', position: 'left', accent: 'var(--color-cat-smile)' },
-          { target: null, titleKey: 'Tour.smile.overview.title', bodyKey: 'Tour.smile.overview.body', route: '/smileprojects', position: 'center', accent: 'var(--color-cat-smile)' },
-          { target: '#addbtn', titleKey: 'Tour.smile.addBtn.title', bodyKey: 'Tour.smile.addBtn.body', route: '/smileprojects', position: 'left', accent: 'var(--color-cat-smile)' },
-          { target: '#addSmile-Container', titleKey: 'Tour.smile.create.title', bodyKey: 'Tour.smile.create.body', position: 'bottom-fixed', accent: 'var(--color-cat-smile)', action: 'openAddSmile' },
-          { target: '#bucketsSection', titleKey: 'Tour.smile.buckets.title', bodyKey: 'Tour.smile.buckets.body', position: 'bottom-fixed', accent: 'var(--color-cat-smile)' },
-          { target: '#linksActionsSection', titleKey: 'Tour.smile.links.title', bodyKey: 'Tour.smile.links.body', position: 'bottom-fixed', accent: 'var(--color-cat-smile)' },
-          { target: '#paymentPlansSection', titleKey: 'Tour.smile.payments.title', bodyKey: 'Tour.smile.payments.body', position: 'bottom-fixed', accent: 'var(--color-cat-smile)' },
-        ]
+          {
+            target: null,
+            titleKey: 'Tour.smile.intro.title',
+            bodyKey: 'Tour.smile.intro.body',
+            route: '/smile',
+            position: 'center',
+            accent: 'var(--color-cat-smile)',
+            icon: 'assets/icons/smile.jpg',
+          },
+          {
+            target: '#smilebtn',
+            titleKey: 'Tour.smile.button.title',
+            bodyKey: 'Tour.smile.button.body',
+            route: '/smile',
+            position: 'left',
+            accent: 'var(--color-cat-smile)',
+          },
+          {
+            target: null,
+            titleKey: 'Tour.smile.overview.title',
+            bodyKey: 'Tour.smile.overview.body',
+            route: '/smileprojects',
+            position: 'center',
+            accent: 'var(--color-cat-smile)',
+          },
+          {
+            target: '#addbtn',
+            titleKey: 'Tour.smile.addBtn.title',
+            bodyKey: 'Tour.smile.addBtn.body',
+            route: '/smileprojects',
+            position: 'left',
+            accent: 'var(--color-cat-smile)',
+          },
+          {
+            target: '#addSmile-Container',
+            titleKey: 'Tour.smile.create.title',
+            bodyKey: 'Tour.smile.create.body',
+            position: 'bottom-fixed',
+            accent: 'var(--color-cat-smile)',
+            action: 'openAddSmile',
+          },
+          {
+            target: '#bucketsSection',
+            titleKey: 'Tour.smile.buckets.title',
+            bodyKey: 'Tour.smile.buckets.body',
+            position: 'bottom-fixed',
+            accent: 'var(--color-cat-smile)',
+          },
+          {
+            target: '#linksActionsSection',
+            titleKey: 'Tour.smile.links.title',
+            bodyKey: 'Tour.smile.links.body',
+            position: 'bottom-fixed',
+            accent: 'var(--color-cat-smile)',
+          },
+          {
+            target: '#paymentPlansSection',
+            titleKey: 'Tour.smile.payments.title',
+            bodyKey: 'Tour.smile.payments.body',
+            position: 'bottom-fixed',
+            accent: 'var(--color-cat-smile)',
+          },
+        ],
       },
       // ========== SECTION 8: FIRE & SAFETY ==========
       {
@@ -387,10 +636,32 @@ export class TourService {
         titleKey: 'Tour.section.fire',
         icon: 'assets/icons/fire.jpg',
         steps: [
-          { target: null, titleKey: 'Tour.fire.intro.title', bodyKey: 'Tour.fire.intro.body', route: '/fire', position: 'center', accent: 'var(--color-cat-fire)', icon: 'assets/icons/fire.jpg' },
-          { target: '#mojoBox', titleKey: 'Tour.fire.mojo.title', bodyKey: 'Tour.fire.mojo.body', route: '/fire', position: 'bottom', accent: 'var(--color-cat-fire)' },
-          { target: '#firebtn', titleKey: 'Tour.fire.emergencies.title', bodyKey: 'Tour.fire.emergencies.body', route: '/fire', position: 'left', accent: 'var(--color-cat-fire)' },
-        ]
+          {
+            target: null,
+            titleKey: 'Tour.fire.intro.title',
+            bodyKey: 'Tour.fire.intro.body',
+            route: '/fire',
+            position: 'center',
+            accent: 'var(--color-cat-fire)',
+            icon: 'assets/icons/fire.jpg',
+          },
+          {
+            target: '#mojoBox',
+            titleKey: 'Tour.fire.mojo.title',
+            bodyKey: 'Tour.fire.mojo.body',
+            route: '/fire',
+            position: 'bottom',
+            accent: 'var(--color-cat-fire)',
+          },
+          {
+            target: '#firebtn',
+            titleKey: 'Tour.fire.emergencies.title',
+            bodyKey: 'Tour.fire.emergencies.body',
+            route: '/fire',
+            position: 'left',
+            accent: 'var(--color-cat-fire)',
+          },
+        ],
       },
       // ========== SECTION 9: GROW & AI ==========
       {
@@ -398,11 +669,41 @@ export class TourService {
         titleKey: 'Tour.section.grow',
         icon: '🌱',
         steps: [
-          { target: null, titleKey: 'Tour.grow.intro.title', bodyKey: 'Tour.grow.intro.body', route: '/grow', position: 'center', accent: 'var(--color-success)', icon: '🌱' },
-          { target: '#ai-btn', titleKey: 'Tour.grow.ai.title', bodyKey: 'Tour.grow.ai.body', route: '/grow', position: 'left', accent: 'var(--color-primary)' },
-          { target: '#ai-assistant-container', titleKey: 'Tour.grow.strategy.title', bodyKey: 'Tour.grow.strategy.body', position: 'bottom-fixed', accent: 'var(--color-primary)', action: 'openAiAssistant' },
-          { target: '.phase-tabs', titleKey: 'Tour.grow.phases.title', bodyKey: 'Tour.grow.phases.body', route: '/grow', position: 'bottom', accent: 'var(--color-success)', action: 'closeAiAssistant' },
-        ]
+          {
+            target: null,
+            titleKey: 'Tour.grow.intro.title',
+            bodyKey: 'Tour.grow.intro.body',
+            route: '/grow',
+            position: 'center',
+            accent: 'var(--color-success)',
+            icon: '🌱',
+          },
+          {
+            target: '#ai-btn',
+            titleKey: 'Tour.grow.ai.title',
+            bodyKey: 'Tour.grow.ai.body',
+            route: '/grow',
+            position: 'left',
+            accent: 'var(--color-primary)',
+          },
+          {
+            target: '#ai-assistant-container',
+            titleKey: 'Tour.grow.strategy.title',
+            bodyKey: 'Tour.grow.strategy.body',
+            position: 'bottom-fixed',
+            accent: 'var(--color-primary)',
+            action: 'openAiAssistant',
+          },
+          {
+            target: '.phase-tabs',
+            titleKey: 'Tour.grow.phases.title',
+            bodyKey: 'Tour.grow.phases.body',
+            route: '/grow',
+            position: 'bottom',
+            accent: 'var(--color-success)',
+            action: 'closeAiAssistant',
+          },
+        ],
       },
       // ========== SECTION 10: FINISH ==========
       {
@@ -410,8 +711,15 @@ export class TourService {
         titleKey: 'Tour.section.finish',
         icon: '',
         steps: [
-          { target: null, titleKey: 'Tour.finish.title', bodyKey: 'Tour.finish.body', route: '/home', position: 'center', accent: 'var(--color-success)' },
-        ]
+          {
+            target: null,
+            titleKey: 'Tour.finish.title',
+            bodyKey: 'Tour.finish.body',
+            route: '/home',
+            position: 'center',
+            accent: 'var(--color-success)',
+          },
+        ],
       },
     ];
   }

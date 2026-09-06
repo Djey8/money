@@ -84,7 +84,9 @@
   padding: 0.6rem 0.75rem;
   border-radius: var(--radius-md);
   cursor: pointer;
-  transition: background 0.2s, color 0.2s;
+  transition:
+    background 0.2s,
+    color 0.2s;
   font-size: 0.88rem;
   font-weight: 500;
 }
@@ -152,8 +154,14 @@
   animation: fadeIn 0.3s ease;
 }
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 .doc-section-title {
   font-size: 1.8rem;
@@ -208,7 +216,7 @@
   content: '✓';
   position: absolute;
   left: 0;
-  color: var(--color-cat-success, #4CAF50);
+  color: var(--color-cat-success, #4caf50);
   font-weight: 700;
 }
 
@@ -266,7 +274,9 @@
   border-radius: var(--radius-lg);
   border: 1px solid var(--color-border);
   padding: 1.5rem;
-  transition: border-color 0.2s, transform 0.2s;
+  transition:
+    border-color 0.2s,
+    transform 0.2s;
 }
 .option-card:hover {
   border-color: var(--color-primary);
@@ -375,10 +385,26 @@
   margin-top: 0.2rem;
   opacity: 0.75;
 }
-.arch-client  { background: #e3f2fd; color: #1565C0; border: 1px solid #90CAF9; }
-.arch-nginx   { background: #e8f5e9; color: #2E7D32; border: 1px solid #A5D6A7; }
-.arch-backend { background: #fff3e0; color: #E65100; border: 1px solid #FFCC80; }
-.arch-db      { background: #fce4ec; color: #C62828; border: 1px solid #EF9A9A; }
+.arch-client {
+  background: #e3f2fd;
+  color: #1565c0;
+  border: 1px solid #90caf9;
+}
+.arch-nginx {
+  background: #e8f5e9;
+  color: #2e7d32;
+  border: 1px solid #a5d6a7;
+}
+.arch-backend {
+  background: #fff3e0;
+  color: #e65100;
+  border: 1px solid #ffcc80;
+}
+.arch-db {
+  background: #fce4ec;
+  color: #c62828;
+  border: 1px solid #ef9a9a;
+}
 .arch-arrow {
   font-size: 1.5rem;
   color: var(--color-text-muted);
@@ -452,7 +478,10 @@
   padding: 0.2rem 0.6rem;
   border-radius: var(--radius-sm, 6px);
   cursor: pointer;
-  transition: background 0.2s, color 0.2s, border-color 0.2s;
+  transition:
+    background 0.2s,
+    color 0.2s,
+    border-color 0.2s;
   line-height: 1;
 }
 .copy-btn:hover {
@@ -461,9 +490,9 @@
   border-color: var(--color-primary);
 }
 .copy-btn.copied {
-  background: var(--color-cat-success, #4CAF50);
+  background: var(--color-cat-success, #4caf50);
   color: #fff;
-  border-color: var(--color-cat-success, #4CAF50);
+  border-color: var(--color-cat-success, #4caf50);
 }
 .code-block pre {
   margin: 0;
@@ -531,7 +560,7 @@
 .endpoint-table tbody td code {
   font-family: 'SF Mono', 'Fira Code', monospace;
   font-size: 0.83rem;
-  background: var(--color-background-alt, rgba(0,0,0,0.05));
+  background: var(--color-background-alt, rgba(0, 0, 0, 0.05));
   padding: 0.15rem 0.4rem;
   border-radius: 4px;
 }
@@ -644,7 +673,9 @@
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   cursor: pointer;
-  transition: border-color 0.2s, transform 0.2s;
+  transition:
+    border-color 0.2s,
+    transform 0.2s;
   text-decoration: none;
   color: var(--color-text);
   min-width: 0;
@@ -682,8 +713,12 @@
   display: flex;
   gap: 0.75rem;
 }
-.nav-btn-group.prev { margin-right: auto; }
-.nav-btn-group.next { margin-left: auto; }
+.nav-btn-group.prev {
+  margin-right: auto;
+}
+.nav-btn-group.next {
+  margin-left: auto;
+}
 .nav-btn-group .nav-btn {
   max-width: none;
   flex: 1;
@@ -702,7 +737,9 @@
   border: 2px solid var(--color-border);
   padding: 1.5rem;
   cursor: pointer;
-  transition: border-color 0.2s, transform 0.2s;
+  transition:
+    border-color 0.2s,
+    transform 0.2s;
   text-align: center;
 }
 .deploy-choice-card:hover {
@@ -749,8 +786,20 @@
 
 /* ── Dark mode architecture nodes ── */
 @media (prefers-color-scheme: dark) {
-  .arch-client  { background: #1a3a5c; color: #90CAF9; }
-  .arch-nginx   { background: #1b3a1b; color: #A5D6A7; }
-  .arch-backend { background: #3e2200; color: #FFCC80; }
-  .arch-db      { background: #3c1010; color: #EF9A9A; }
+  .arch-client {
+    background: #1a3a5c;
+    color: #90caf9;
+  }
+  .arch-nginx {
+    background: #1b3a1b;
+    color: #a5d6a7;
+  }
+  .arch-backend {
+    background: #3e2200;
+    color: #ffcc80;
+  }
+  .arch-db {
+    background: #3c1010;
+    color: #ef9a9a;
+  }
 }

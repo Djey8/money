@@ -1,10 +1,11 @@
 import { Directive, ElementRef, AfterViewInit, OnDestroy } from '@angular/core';
 
-const FOCUSABLE = 'button:not([disabled]):not([hidden]), [href], input:not([disabled]):not([hidden]), select:not([disabled]):not([hidden]), textarea:not([disabled]):not([hidden]), [tabindex]:not([tabindex="-1"]):not([disabled]):not([hidden])';
+const FOCUSABLE =
+  'button:not([disabled]):not([hidden]), [href], input:not([disabled]):not([hidden]), select:not([disabled]):not([hidden]), textarea:not([disabled]):not([hidden]), [tabindex]:not([tabindex="-1"]):not([disabled]):not([hidden])';
 
 @Directive({
   selector: '[appTrapFocus]',
-  standalone: true
+  standalone: true,
 })
 export class TrapFocusDirective implements AfterViewInit, OnDestroy {
   private listener: ((e: KeyboardEvent) => void) | null = null;
@@ -24,8 +25,12 @@ export class TrapFocusDirective implements AfterViewInit, OnDestroy {
   ngAfterViewInit(): void {
     this.listener = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        const closeBtn = this.el.nativeElement.querySelector<HTMLElement>('#closebtn, [aria-label="Close"]');
-        if (closeBtn) { closeBtn.click(); }
+        const closeBtn = this.el.nativeElement.querySelector<HTMLElement>(
+          '#closebtn, [aria-label="Close"]',
+        );
+        if (closeBtn) {
+          closeBtn.click();
+        }
         return;
       }
       if (e.key !== 'Tab') return;

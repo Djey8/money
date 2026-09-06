@@ -10,11 +10,10 @@ import { TranslateService } from '@ngx-translate/core';
  * Each child must set `classReference` to its own static class and override `highlight()`.
  */
 export abstract class BaseInfoComponent {
-
-  errorTextLable = "";
-  borderColor = "var(--color-border)";
-  color = "black";
-  currency = "€";
+  errorTextLable = '';
+  borderColor = 'var(--color-border)';
+  color = 'black';
+  currency = '€';
   isEdit = false;
   protected toastService = inject(ToastService);
   protected confirmService = inject(ConfirmService);
@@ -23,8 +22,7 @@ export abstract class BaseInfoComponent {
   /** Each child sets this to its own class so templates can access static props */
   abstract classReference: any;
 
-  constructor(protected router: Router) {
-  }
+  constructor(protected router: Router) {}
 
   /** Initializes the child's static flags. Call from child constructor. */
   protected initStatic(cls: any) {
@@ -54,16 +52,16 @@ export abstract class BaseInfoComponent {
   /** Show a validation error */
   protected showError(message: string) {
     this.errorTextLable = message;
-    this.color = "red";
-    this.borderColor = "red";
+    this.color = 'red';
+    this.borderColor = 'red';
     this.classReference.isError = true;
   }
 
   /** Reset error state and form colors */
   protected clearError() {
-    this.errorTextLable = "";
-    this.color = "black";
-    this.borderColor = "var(--color-border)";
+    this.errorTextLable = '';
+    this.color = 'black';
+    this.borderColor = 'var(--color-border)';
     this.classReference.isError = false;
   }
 }

@@ -19,7 +19,8 @@
   margin: 3%;
 }
 
-#buyButton, #sellButton {
+#buyButton,
+#sellButton {
   width: 49%;
   max-width: 400px;
   padding: 10px;

@@ -9,20 +9,20 @@ spec:
     matchLabels:
       app: couchdb
   policyTypes:
-  - Ingress
+    - Ingress
   ingress:
-  - from:
-    - podSelector:
-        matchLabels:
-          app: backend
-    ports:
-    - protocol: TCP
-      port: 5984
-  # Also allow backup jobs to reach CouchDB
-  - from:
-    - podSelector:
-        matchLabels:
-          job-type: couchdb-backup
-    ports:
-    - protocol: TCP
-      port: 5984
+    - from:
+        - podSelector:
+            matchLabels:
+              app: backend
+      ports:
+        - protocol: TCP
+          port: 5984
+    # Also allow backup jobs to reach CouchDB
+    - from:
+        - podSelector:
+            matchLabels:
+              job-type: couchdb-backup
+      ports:
+        - protocol: TCP
+          port: 5984

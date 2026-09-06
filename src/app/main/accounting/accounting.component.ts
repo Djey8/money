@@ -8,12 +8,20 @@ import { SettingsComponent } from 'src/app/panels/settings/settings.component';
 import { CsvService } from 'src/app/shared/services/csv.service';
 import { AddComponent } from 'src/app/panels/add/add.component';
 import { MatDividerModule } from '@angular/material/divider';
-import {MatPaginator, MatPaginatorModule} from '@angular/material/paginator';
-import {LiveAnnouncer} from '@angular/cdk/a11y';
-import {AfterViewInit, Component, ViewChild, inject, OnDestroy, AfterViewChecked, OnInit} from '@angular/core';
-import {MatSort, Sort, MatSortModule} from '@angular/material/sort';
-import {MatTableDataSource, MatTableModule} from '@angular/material/table';
-import {MatFormFieldModule} from '@angular/material/form-field';
+import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
+import { LiveAnnouncer } from '@angular/cdk/a11y';
+import {
+  AfterViewInit,
+  Component,
+  ViewChild,
+  inject,
+  OnDestroy,
+  AfterViewChecked,
+  OnInit,
+} from '@angular/core';
+import { MatSort, Sort, MatSortModule } from '@angular/material/sort';
+import { MatTableDataSource, MatTableModule } from '@angular/material/table';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { Transaction } from 'src/app/interfaces/transaction';
 import { IncomeFilter } from 'src/app/interfaces/income-filter';
@@ -26,20 +34,34 @@ import { AppNumberPipe } from 'src/app/shared/pipes/app-number.pipe';
 import { RouterModule } from '@angular/router';
 import { SharedFilterComponent } from 'src/app/shared/components/shared-filter/shared-filter.component';
 
-
-
 /**
  * Represents the AccountingComponent class.
  */
 @Component({
   selector: 'app-accounting',
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslateModule, AppDatePipe, AppNumberPipe, MatTableModule, MatSortModule, MatPaginatorModule, MatFormFieldModule, MatInputModule, RouterModule, SharedFilterComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    TranslateModule,
+    AppDatePipe,
+    AppNumberPipe,
+    MatTableModule,
+    MatSortModule,
+    MatPaginatorModule,
+    MatFormFieldModule,
+    MatInputModule,
+    RouterModule,
+    SharedFilterComponent,
+  ],
   templateUrl: './accounting.component.html',
-  styleUrls: ['./accounting.component.css', '../../app.component.css', '../../shared/styles/table.css']
+  styleUrls: [
+    './accounting.component.css',
+    '../../app.component.css',
+    '../../shared/styles/table.css',
+  ],
 })
 export class AccountingComponent implements OnDestroy, AfterViewChecked, OnInit, AfterViewInit {
-
   private _liveAnnouncer = inject(LiveAnnouncer);
   private tableInitialized = false;
   private paginatorSynced = false;
@@ -48,10 +70,10 @@ export class AccountingComponent implements OnDestroy, AfterViewChecked, OnInit,
   static dataSource = new MatTableDataSource<any>([]);
 
   static isSearched = false;
-  static allTransactions = []
-  static allSearchedTransactions = []
+  static allTransactions = [];
+  static allSearchedTransactions = [];
 
-  searchTextField = "";
+  searchTextField = '';
 
   static roundCount = 0;
 
@@ -70,10 +92,10 @@ export class AccountingComponent implements OnDestroy, AfterViewChecked, OnInit,
       date: true,
       time: true,
       category: true,
-      comment: true
-    }
+      comment: true,
+    },
   };
-  
+
   static isAdvancedFilterExpanded = false;
   static isSearchHelpVisible = false;
   static availableAccounts: string[] = ['Income', 'Daily', 'Splurge', 'Smile', 'Fire', 'Mojo'];
@@ -82,7 +104,9 @@ export class AccountingComponent implements OnDestroy, AfterViewChecked, OnInit,
   static startDateTextField: string;
   static endDateTextField: string;
 
-  public get appReference() { return AppComponent; }
+  public get appReference() {
+    return AppComponent;
+  }
   public classReference = AccountingComponent;
   public settingsReference = SettingsComponent;
   public appState = AppStateService.instance;
@@ -91,14 +115,21 @@ export class AccountingComponent implements OnDestroy, AfterViewChecked, OnInit,
    * Constructs a new AccountingComponent.
    * @param router - The router service.
    */
-  constructor(private router: Router, private csvService: CsvService) {
+  constructor(
+    private router: Router,
+    private csvService: CsvService,
+  ) {
     AccountingComponent.allTransactions = AppStateService.instance.allTransactions;
-    AccountingComponent.dataSource = new MatTableDataSource<any>(AccountingComponent.allTransactions);
-    AccountingComponent.dataSource.data = AccountingComponent.dataSource.data.map((transaction, index) => {
-      return { ...transaction, id: index };
-    });
+    AccountingComponent.dataSource = new MatTableDataSource<any>(
+      AccountingComponent.allTransactions,
+    );
+    AccountingComponent.dataSource.data = AccountingComponent.dataSource.data.map(
+      (transaction, index) => {
+        return { ...transaction, id: index };
+      },
+    );
     AccountingComponent.calculateroundCount();
-    
+
     // Initialize advanced filter
     AccountingComponent.isAdvancedFilterExpanded = false;
     AccountingComponent.setDate();
@@ -116,10 +147,10 @@ export class AccountingComponent implements OnDestroy, AfterViewChecked, OnInit,
         date: true,
         time: true,
         category: true,
-        comment: true
-      }
+        comment: true,
+      },
     };
-    
+
     // Update available tags
     this.updateAvailableTags();
   }
@@ -131,15 +162,17 @@ export class AccountingComponent implements OnDestroy, AfterViewChecked, OnInit,
     if (AppStateService.instance.allTransactions) {
       // Calculate months between first and last transaction dates
       if (AppStateService.instance.allTransactions.length > 0) {
-        const dates = AppStateService.instance.allTransactions.map(tx => new Date(tx.date)).sort((a, b) => a.getTime() - b.getTime());
+        const dates = AppStateService.instance.allTransactions
+          .map((tx) => new Date(tx.date))
+          .sort((a, b) => a.getTime() - b.getTime());
         const firstDate = dates[0];
         const lastDate = dates[dates.length - 1];
-        
-        const monthsBetween = (lastDate.getFullYear() - firstDate.getFullYear()) * 12 + 
-                             (lastDate.getMonth() - firstDate.getMonth());
+
+        const monthsBetween =
+          (lastDate.getFullYear() - firstDate.getFullYear()) * 12 +
+          (lastDate.getMonth() - firstDate.getMonth());
         AccountingComponent.roundCount = Math.max(0, monthsBetween);
       }
-      
     } else {
       AccountingComponent.roundCount = 0;
     }
@@ -161,7 +194,6 @@ export class AccountingComponent implements OnDestroy, AfterViewChecked, OnInit,
   increaseRoundCount() {
     AccountingComponent.roundCount++;
     GameModeService.instance.moveTransactionsOneMonthBackAndAddCurrentSubscriptions();
-
   }
 
   /**
@@ -202,7 +234,6 @@ export class AccountingComponent implements OnDestroy, AfterViewChecked, OnInit,
     };
   }
 
-
   // eslint-disable-next-line @angular-eslint/no-empty-lifecycle-method -- required by `implements AfterViewInit`; actual work happens in ngAfterViewChecked
   ngAfterViewInit() {
     // Handled by ngAfterViewChecked to support *ngIf="!isLoading" timing
@@ -227,17 +258,21 @@ export class AccountingComponent implements OnDestroy, AfterViewChecked, OnInit,
       this.paginatorSynced = true;
 
       this.topPaginator.page.subscribe((pageEvent) => {
-        if (this.bottomPaginator.pageIndex !== pageEvent.pageIndex || 
-            this.bottomPaginator.pageSize !== pageEvent.pageSize) {
+        if (
+          this.bottomPaginator.pageIndex !== pageEvent.pageIndex ||
+          this.bottomPaginator.pageSize !== pageEvent.pageSize
+        ) {
           this.bottomPaginator.pageIndex = pageEvent.pageIndex;
           this.bottomPaginator.pageSize = pageEvent.pageSize;
           this.bottomPaginator.page.emit(pageEvent);
         }
       });
-      
+
       this.bottomPaginator.page.subscribe((pageEvent) => {
-        if (this.topPaginator.pageIndex !== pageEvent.pageIndex || 
-            this.topPaginator.pageSize !== pageEvent.pageSize) {
+        if (
+          this.topPaginator.pageIndex !== pageEvent.pageIndex ||
+          this.topPaginator.pageSize !== pageEvent.pageSize
+        ) {
           this.topPaginator.pageIndex = pageEvent.pageIndex;
           this.topPaginator.pageSize = pageEvent.pageSize;
         }
@@ -254,16 +289,18 @@ export class AccountingComponent implements OnDestroy, AfterViewChecked, OnInit,
     }
   }
 
-  ngOnInit() { 
+  ngOnInit() {
     // Apply custom sorting
     this.applyCustomSorting(AccountingComponent.dataSource);
 
     // Re-init when transactions are reloaded
     this.txSub = AppStateService.instance.transactionsUpdated$.subscribe(() => {
       AccountingComponent.allTransactions = AppStateService.instance.allTransactions;
-      AccountingComponent.dataSource.data = AppStateService.instance.allTransactions.map((transaction, index) => {
-        return { ...transaction, id: index };
-      });
+      AccountingComponent.dataSource.data = AppStateService.instance.allTransactions.map(
+        (transaction, index) => {
+          return { ...transaction, id: index };
+        },
+      );
       AccountingComponent.calculateroundCount();
       if (this.bottomPaginator) {
         AccountingComponent.dataSource.paginator = this.bottomPaginator;
@@ -282,7 +319,6 @@ export class AccountingComponent implements OnDestroy, AfterViewChecked, OnInit,
       this._liveAnnouncer.announce('Sorting cleared');
     }
   }
-
 
   /**
    * Set date range for filtering
@@ -320,9 +356,17 @@ export class AccountingComponent implements OnDestroy, AfterViewChecked, OnInit,
 
     const parseAsDate = (value: string): string | null => {
       let m = value.match(/^(\d{1,2})\.(\d{1,2})\.(\d{2,4})$/);
-      if (m) { let y = m[3]; if (y.length === 2) y = '20' + y; return `${y}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`; }
+      if (m) {
+        let y = m[3];
+        if (y.length === 2) y = '20' + y;
+        return `${y}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
+      }
       m = value.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
-      if (m) { let y = m[3]; if (y.length === 2) y = '20' + y; return `${y}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`; }
+      if (m) {
+        let y = m[3];
+        if (y.length === 2) y = '20' + y;
+        return `${y}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
+      }
       m = value.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
       if (m) return `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}`;
       return null;
@@ -332,9 +376,19 @@ export class AccountingComponent implements OnDestroy, AfterViewChecked, OnInit,
       let m = value.match(/^(\d{1,2}):(\d{2})$/);
       if (m) return m[1].padStart(2, '0') + ':' + m[2];
       m = value.match(/^(\d{1,2}):(\d{2})\s*(am|pm)$/i);
-      if (m) { let h = parseInt(m[1], 10); if (m[3].toLowerCase() === 'pm' && h !== 12) h += 12; if (m[3].toLowerCase() === 'am' && h === 12) h = 0; return h.toString().padStart(2, '0') + ':' + m[2]; }
+      if (m) {
+        let h = parseInt(m[1], 10);
+        if (m[3].toLowerCase() === 'pm' && h !== 12) h += 12;
+        if (m[3].toLowerCase() === 'am' && h === 12) h = 0;
+        return h.toString().padStart(2, '0') + ':' + m[2];
+      }
       m = value.match(/^(\d{1,2})\s*(am|pm)$/i);
-      if (m) { let h = parseInt(m[1], 10); if (m[2].toLowerCase() === 'pm' && h !== 12) h += 12; if (m[2].toLowerCase() === 'am' && h === 12) h = 0; return h.toString().padStart(2, '0') + ':00'; }
+      if (m) {
+        let h = parseInt(m[1], 10);
+        if (m[2].toLowerCase() === 'pm' && h !== 12) h += 12;
+        if (m[2].toLowerCase() === 'am' && h === 12) h = 0;
+        return h.toString().padStart(2, '0') + ':00';
+      }
       return null;
     };
 
@@ -348,10 +402,14 @@ export class AccountingComponent implements OnDestroy, AfterViewChecked, OnInit,
       if (!searchFields.date) return false;
       if (operatorMatch) {
         switch (operatorMatch[1]) {
-          case '>': return transaction.date > parsedDate;
-          case '<': return transaction.date < parsedDate;
-          case '>=': return transaction.date >= parsedDate;
-          case '<=': return transaction.date <= parsedDate;
+          case '>':
+            return transaction.date > parsedDate;
+          case '<':
+            return transaction.date < parsedDate;
+          case '>=':
+            return transaction.date >= parsedDate;
+          case '<=':
+            return transaction.date <= parsedDate;
         }
       }
       return transaction.date === parsedDate;
@@ -365,10 +423,14 @@ export class AccountingComponent implements OnDestroy, AfterViewChecked, OnInit,
       const normalizedTransaction = parseAsTime(transaction.time) || transaction.time;
       if (operatorMatch) {
         switch (operatorMatch[1]) {
-          case '>': return normalizedTransaction > parsedTime;
-          case '<': return normalizedTransaction < parsedTime;
-          case '>=': return normalizedTransaction >= parsedTime;
-          case '<=': return normalizedTransaction <= parsedTime;
+          case '>':
+            return normalizedTransaction > parsedTime;
+          case '<':
+            return normalizedTransaction < parsedTime;
+          case '>=':
+            return normalizedTransaction >= parsedTime;
+          case '<=':
+            return normalizedTransaction <= parsedTime;
         }
       }
       return normalizedTransaction.includes(parsedTime);
@@ -380,10 +442,14 @@ export class AccountingComponent implements OnDestroy, AfterViewChecked, OnInit,
       const value = parseFloat(valuePart);
       if (isNaN(value)) return false;
       switch (operatorMatch[1]) {
-        case '>': return transaction.amount > value;
-        case '<': return transaction.amount < value;
-        case '>=': return transaction.amount >= value;
-        case '<=': return transaction.amount <= value;
+        case '>':
+          return transaction.amount > value;
+        case '<':
+          return transaction.amount < value;
+        case '>=':
+          return transaction.amount >= value;
+        case '<=':
+          return transaction.amount <= value;
       }
       return false;
     }
@@ -392,7 +458,12 @@ export class AccountingComponent implements OnDestroy, AfterViewChecked, OnInit,
     if (searchFields.account && transaction.account.toLowerCase().includes(searchTerm)) return true;
     if (searchFields.amount && transaction.amount.toString().includes(searchTerm)) return true;
     if (searchFields.date && transaction.date.toLowerCase().includes(searchTerm)) return true;
-    if (searchFields.time && transaction.time && transaction.time.toLowerCase().includes(searchTerm)) return true;
+    if (
+      searchFields.time &&
+      transaction.time &&
+      transaction.time.toLowerCase().includes(searchTerm)
+    )
+      return true;
     if (searchFields.category) {
       const cleanCategory = transaction.category.replace('@', '');
       if (cleanCategory.toLowerCase().includes(searchTerm)) return true;
@@ -407,94 +478,105 @@ export class AccountingComponent implements OnDestroy, AfterViewChecked, OnInit,
    */
   applyAdvancedFilters() {
     AppComponent.gotoTop();
-    const filteredTransactions = AppStateService.instance.allTransactions.filter((transaction: Transaction) => {
-      // Date range filter
-      if (AccountingComponent.advancedFilter.startDate && transaction.date < AccountingComponent.advancedFilter.startDate) {
-        return false;
-      }
-      if (AccountingComponent.advancedFilter.endDate && transaction.date > AccountingComponent.advancedFilter.endDate) {
-        return false;
-      }
-
-      // Account filter
-      if (AccountingComponent.advancedFilter.selectedAccounts.length > 0) {
-        if (!AccountingComponent.advancedFilter.selectedAccounts.includes(transaction.account)) {
+    const filteredTransactions = AppStateService.instance.allTransactions.filter(
+      (transaction: Transaction) => {
+        // Date range filter
+        if (
+          AccountingComponent.advancedFilter.startDate &&
+          transaction.date < AccountingComponent.advancedFilter.startDate
+        ) {
           return false;
         }
-      }
-
-      // Tag filter
-      if (AccountingComponent.advancedFilter.selectedTags.length > 0) {
-        const cleanCategory = transaction.category.replace('@', '');
-        if (!AccountingComponent.advancedFilter.selectedTags.includes(cleanCategory)) {
+        if (
+          AccountingComponent.advancedFilter.endDate &&
+          transaction.date > AccountingComponent.advancedFilter.endDate
+        ) {
           return false;
         }
-      }
 
-      // Search text filter with boolean logic
-      if (AccountingComponent.advancedFilter.searchText.trim()) {
-        const searchExpression = AccountingComponent.advancedFilter.searchText
-          .replace(/\band\b/gi, '&&')
-          .replace(/\bor\b/gi, '||')
-          .replace(/\bnot\b/gi, '!');
-        
-        const orGroups = searchExpression.split('||').map(g => g.trim());
-        let matchFound = false;
-        
-        for (const orGroup of orGroups) {
-          const andTerms = orGroup.split('&&').map(t => t.trim());
-          let allAndTermsMatch = true;
-          
-          for (const andTerm of andTerms) {
-            const isNegated = andTerm.startsWith('!');
-            const searchTerm = (isNegated ? andTerm.substring(1).trim() : andTerm).toLowerCase();
-            
-            if (!searchTerm) continue;
-            
-            let termMatches = AccountingComponent.checkSearchTermMatch(transaction, searchTerm);
-            
-            if (isNegated) {
-              termMatches = !termMatches;
+        // Account filter
+        if (AccountingComponent.advancedFilter.selectedAccounts.length > 0) {
+          if (!AccountingComponent.advancedFilter.selectedAccounts.includes(transaction.account)) {
+            return false;
+          }
+        }
+
+        // Tag filter
+        if (AccountingComponent.advancedFilter.selectedTags.length > 0) {
+          const cleanCategory = transaction.category.replace('@', '');
+          if (!AccountingComponent.advancedFilter.selectedTags.includes(cleanCategory)) {
+            return false;
+          }
+        }
+
+        // Search text filter with boolean logic
+        if (AccountingComponent.advancedFilter.searchText.trim()) {
+          const searchExpression = AccountingComponent.advancedFilter.searchText
+            .replace(/\band\b/gi, '&&')
+            .replace(/\bor\b/gi, '||')
+            .replace(/\bnot\b/gi, '!');
+
+          const orGroups = searchExpression.split('||').map((g) => g.trim());
+          let matchFound = false;
+
+          for (const orGroup of orGroups) {
+            const andTerms = orGroup.split('&&').map((t) => t.trim());
+            let allAndTermsMatch = true;
+
+            for (const andTerm of andTerms) {
+              const isNegated = andTerm.startsWith('!');
+              const searchTerm = (isNegated ? andTerm.substring(1).trim() : andTerm).toLowerCase();
+
+              if (!searchTerm) continue;
+
+              let termMatches = AccountingComponent.checkSearchTermMatch(transaction, searchTerm);
+
+              if (isNegated) {
+                termMatches = !termMatches;
+              }
+
+              if (!termMatches) {
+                allAndTermsMatch = false;
+                break;
+              }
             }
-            
-            if (!termMatches) {
-              allAndTermsMatch = false;
+
+            if (allAndTermsMatch && andTerms.length > 0) {
+              matchFound = true;
               break;
             }
           }
-          
-          if (allAndTermsMatch && andTerms.length > 0) {
-            matchFound = true;
-            break;
+
+          if (!matchFound) {
+            return false;
           }
         }
-        
-        if (!matchFound) {
-          return false;
-        }
-      }
 
-      return transaction.amount !== 0.0;
-    });
+        return transaction.amount !== 0.0;
+      },
+    );
 
     // Mark transactions as visible/hidden instead of removing them
-    AccountingComponent.dataSource.data = AccountingComponent.allTransactions.map((transaction, index) => {
-      const isVisible = filteredTransactions.some(t => 
-        t.date === transaction.date && 
-        t.amount === transaction.amount &&
-        t.category === transaction.category &&
-        t.comment === transaction.comment &&
-        t.account === transaction.account
-      );
-      return { ...transaction, id: index, visible: isVisible };
-    });
-    
+    AccountingComponent.dataSource.data = AccountingComponent.allTransactions.map(
+      (transaction, index) => {
+        const isVisible = filteredTransactions.some(
+          (t) =>
+            t.date === transaction.date &&
+            t.amount === transaction.amount &&
+            t.category === transaction.category &&
+            t.comment === transaction.comment &&
+            t.account === transaction.account,
+        );
+        return { ...transaction, id: index, visible: isVisible };
+      },
+    );
+
     // Update filter predicate to only show visible transactions
     AccountingComponent.dataSource.filterPredicate = (data: any) => {
       return data.visible !== false;
     };
     AccountingComponent.dataSource.filter = 'apply';
-    
+
     // Update top paginator length to match filtered data and reset to page 1
     setTimeout(() => {
       if (this.topPaginator && this.bottomPaginator) {
@@ -523,18 +605,20 @@ export class AccountingComponent implements OnDestroy, AfterViewChecked, OnInit,
         date: true,
         time: true,
         category: true,
-        comment: true
-      }
+        comment: true,
+      },
     };
-    
+
     // Reset to all transactions - make all visible
-    AccountingComponent.dataSource.data = AccountingComponent.allTransactions.map((transaction, index) => {
-      return { ...transaction, id: index, visible: true };
-    });
-    
+    AccountingComponent.dataSource.data = AccountingComponent.allTransactions.map(
+      (transaction, index) => {
+        return { ...transaction, id: index, visible: true };
+      },
+    );
+
     // Reset filter
     AccountingComponent.dataSource.filter = '';
-    
+
     // Update top paginator length to match cleared data and reset to page 1
     setTimeout(() => {
       if (this.topPaginator && this.bottomPaginator) {
@@ -545,42 +629,43 @@ export class AccountingComponent implements OnDestroy, AfterViewChecked, OnInit,
     });
   }
 
-
   /**
-  * Performs a search based on the searchTextField value.
-  */
+   * Performs a search based on the searchTextField value.
+   */
   search() {
     const searchTerms = this.searchTextField.toLowerCase().split(',');
 
     AccountingComponent.dataSource.filterPredicate = (data, filter) => {
-      return searchTerms.some(term => {
+      return searchTerms.some((term) => {
         const trimmedTerm = term.trim();
-        
+
         // Handle date format conversions for search
         let dateMatches = data.date.toLowerCase().includes(trimmedTerm);
         if (!dateMatches && data.date) {
           const dateObj = new Date(data.date);
           if (!isNaN(dateObj.getTime())) {
-        const day = String(dateObj.getDate()).padStart(2, '0');
-        const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-        const year = dateObj.getFullYear();
-        const shortYear = String(year).slice(-2);
-        
-        // Check dd.mm.yyyy format
-        const ddmmyyyy = `${day}.${month}.${year}`;
-        // Check dd.mm.yy format
-        const ddmmyy = `${day}.${month}.${shortYear}`;
-        
-        dateMatches = ddmmyyyy.includes(trimmedTerm) || ddmmyy.includes(trimmedTerm);
+            const day = String(dateObj.getDate()).padStart(2, '0');
+            const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const year = dateObj.getFullYear();
+            const shortYear = String(year).slice(-2);
+
+            // Check dd.mm.yyyy format
+            const ddmmyyyy = `${day}.${month}.${year}`;
+            // Check dd.mm.yy format
+            const ddmmyy = `${day}.${month}.${shortYear}`;
+
+            dateMatches = ddmmyyyy.includes(trimmedTerm) || ddmmyy.includes(trimmedTerm);
           }
         }
-        
-        return data.account.toLowerCase().includes(trimmedTerm) ||
-           String(data.amount).includes(trimmedTerm) ||
-           dateMatches ||
-           data.time.toLowerCase().includes(trimmedTerm) ||
-           data.category.toLowerCase().includes(trimmedTerm) ||
-           data.comment.toLowerCase().includes(trimmedTerm);
+
+        return (
+          data.account.toLowerCase().includes(trimmedTerm) ||
+          String(data.amount).includes(trimmedTerm) ||
+          dateMatches ||
+          data.time.toLowerCase().includes(trimmedTerm) ||
+          data.category.toLowerCase().includes(trimmedTerm) ||
+          data.comment.toLowerCase().includes(trimmedTerm)
+        );
       });
     };
 
@@ -591,11 +676,10 @@ export class AccountingComponent implements OnDestroy, AfterViewChecked, OnInit,
    * Clears the search results.
    */
   clearSearch() {
-    this.searchTextField = "";
+    this.searchTextField = '';
     AccountingComponent.isSearched = false;
     AccountingComponent.dataSource.filter = '';
   }
-  
 
   /**
    * Downloads the transactions as a CSV file.
@@ -603,12 +687,12 @@ export class AccountingComponent implements OnDestroy, AfterViewChecked, OnInit,
   downloadTransactions() {
     this.csvService.downloadCsv(AppStateService.instance.allTransactions);
   }
-  
+
   /**
    * Handles the click event on a row in the accounting table.
    * @param index - The index of the clicked row.
    */
-  clickRow(index: number){
+  clickRow(index: number) {
     AppComponent.gotoTop();
     InfoComponent.setInfoComponent(
       index,
@@ -617,7 +701,7 @@ export class AccountingComponent implements OnDestroy, AfterViewChecked, OnInit,
       AppStateService.instance.allTransactions[index].date,
       AppStateService.instance.allTransactions[index].time,
       AppStateService.instance.allTransactions[index].category,
-      AppStateService.instance.allTransactions[index].comment
+      AppStateService.instance.allTransactions[index].comment,
     );
   }
 
@@ -625,16 +709,16 @@ export class AccountingComponent implements OnDestroy, AfterViewChecked, OnInit,
    * Adds a new transaction.
    */
   addTransaction() {
-    AppComponent.addTransaction("Daily", "@", "transactions");
+    AppComponent.addTransaction('Daily', '@', 'transactions');
   }
 
   /**
    * Navigates to the stats page.
    */
-  goToStats(){
+  goToStats() {
     this.router.navigate(['/stats']);
-    StatsComponent.resetBIStateIfNeeded("income");
-    StatsComponent.modus = "income";
+    StatsComponent.resetBIStateIfNeeded('income');
+    StatsComponent.modus = 'income';
     MenuComponent.openStats = true;
     StatsComponent.isSwitch = true;
     AppComponent.gotoTop();
@@ -643,7 +727,7 @@ export class AccountingComponent implements OnDestroy, AfterViewChecked, OnInit,
   /**
    * Navigates to the subription page.
    */
-  goToSubscription(){
+  goToSubscription() {
     this.router.navigate(['/subscription']);
 
     AppComponent.gotoTop();

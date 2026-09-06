@@ -25,7 +25,7 @@ export interface BatchWriteConfig {
 }
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 /**
  * Unified write service that handles firebase-vs-selfhosted persistence logic.
@@ -33,11 +33,10 @@ export interface BatchWriteConfig {
  * each handling local storage saves, database writes, and frontend logging.
  */
 export class PersistenceService {
-
   constructor(
     private database: DatabaseService,
     private localStorage: LocalService,
-    private frontendLogger: FrontendLoggerService
+    private frontendLogger: FrontendLoggerService,
   ) {}
 
   /**
@@ -62,7 +61,7 @@ export class PersistenceService {
       if (writeResult) {
         writeResult.subscribe({
           next: handleSuccess,
-          error: (error: any) => config.onError(error)
+          error: (error: any) => config.onError(error),
         });
       } else {
         // Fallback for safety (should never happen)
@@ -98,10 +97,10 @@ export class PersistenceService {
       if (environment.mode === 'selfhosted') {
         this.database.batchWrite(config.writes, config.forceWrite).subscribe({
           next: () => handleSuccess(),
-          error: (error: any) => config.onError?.(error)
+          error: (error: any) => config.onError?.(error),
         });
       } else {
-        config.writes.forEach(write => {
+        config.writes.forEach((write) => {
           this.database.writeObject(write.tag, write.data);
         });
         handleSuccess();

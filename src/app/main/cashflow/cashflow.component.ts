@@ -12,26 +12,26 @@ import { AppDatePipe } from 'src/app/shared/pipes/app-date.pipe';
 import { AppNumberPipe } from 'src/app/shared/pipes/app-number.pipe';
 import { SharedFilterComponent } from 'src/app/shared/components/shared-filter/shared-filter.component';
 
-
 @Component({
   selector: 'app-cashflow',
   standalone: true,
   imports: [CommonModule, TranslateModule, AppDatePipe, AppNumberPipe, SharedFilterComponent],
   templateUrl: './cashflow.component.html',
-  styleUrls: ['./cashflow.component.css', '../../app.component.css']
+  styleUrls: ['./cashflow.component.css', '../../app.component.css'],
 })
 export class CashflowComponent {
-
-  public get appReference() { return AppComponent; }
+  public get appReference() {
+    return AppComponent;
+  }
   public incomeReference = IncomeComponent;
   public classReference = CashflowComponent;
   public settingsReference = SettingsComponent;
-  
+
   /**
    * Creates an instance of the CashflowComponent.
    * @param {Router} router - The router service used for navigation.
    */
-  constructor(private router:Router){ 
+  constructor(private router: Router) {
     IncomeComponent.allRevenuesF = [];
     IncomeComponent.allIntrestsF = [];
     IncomeComponent.allPropertiesF = [];
@@ -44,7 +44,7 @@ export class CashflowComponent {
 
     IncomeComponent.isFiltered = false;
     IncomeComponent.isAdvancedFilterExpanded = false;
-    
+
     // Reset all filter settings
     IncomeComponent.setDate();
     IncomeComponent.currentFilter = {
@@ -61,10 +61,10 @@ export class CashflowComponent {
         date: true,
         time: true,
         category: true,
-        comment: true
-      }
+        comment: true,
+      },
     };
-    
+
     // Reset all table sort states
     IncomeComponent.tableSorts = {
       revenues: { column: null, direction: 'asc' },
@@ -74,9 +74,9 @@ export class CashflowComponent {
       splurge: { column: null, direction: 'asc' },
       smile: { column: null, direction: 'asc' },
       fire: { column: null, direction: 'asc' },
-      mojo: { column: null, direction: 'asc' }
+      mojo: { column: null, direction: 'asc' },
     };
-    
+
     this.updateAvailableTags();
   }
 
@@ -85,7 +85,7 @@ export class CashflowComponent {
    */
   updateAvailableTags() {
     const tagsSet = new Set<string>();
-    
+
     // Iterate in reverse to get most recent categories first
     for (let i = AppStateService.instance.allTransactions.length - 1; i >= 0; i--) {
       const transaction = AppStateService.instance.allTransactions[i];
@@ -93,7 +93,7 @@ export class CashflowComponent {
         tagsSet.add(transaction.category.replace('@', ''));
       }
     }
-    
+
     IncomeComponent.availableTags = Array.from(tagsSet);
   }
 
@@ -107,11 +107,11 @@ export class CashflowComponent {
     AppComponent.gotoTop();
   }
 
-  goToStats(){
+  goToStats() {
     this.router.navigate(['/stats']);
-    StatsComponent.resetBIStateIfNeeded("cashflow");
-    StatsComponent.modus = "cashflow"
-    StatsComponent.period = "month";
+    StatsComponent.resetBIStateIfNeeded('cashflow');
+    StatsComponent.modus = 'cashflow';
+    StatsComponent.period = 'month';
     MenuComponent.openStats = true;
     AppComponent.gotoTop();
   }
@@ -136,10 +136,10 @@ export class CashflowComponent {
         date: true,
         time: true,
         category: true,
-        comment: true
-      }
+        comment: true,
+      },
     };
-    
+
     IncomeComponent.allRevenuesF = [];
     IncomeComponent.allIntrestsF = [];
     IncomeComponent.allPropertiesF = [];
@@ -158,10 +158,9 @@ export class CashflowComponent {
       splurge: { column: null, direction: 'asc' },
       smile: { column: null, direction: 'asc' },
       fire: { column: null, direction: 'asc' },
-      mojo: { column: null, direction: 'asc' }
+      mojo: { column: null, direction: 'asc' },
     };
 
     IncomeComponent.isFiltered = false;
   }
-
 }

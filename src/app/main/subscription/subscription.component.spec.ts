@@ -27,18 +27,20 @@ describe('SubscriptionComponent', () => {
         category: '@Fitness',
         comment: '',
         frequency: 'weekly',
-        startDate: '2026-01-01'
+        startDate: '2026-01-01',
       };
 
       // Add transaction for current week
-      AppStateService.instance.allTransactions = [{
-        date: todayISO,
-        time: '',
-        account: 'Daily',
-        amount: -50,
-        category: '@Fitness',
-        comment: 'Gym'
-      }];
+      AppStateService.instance.allTransactions = [
+        {
+          date: todayISO,
+          time: '',
+          account: 'Daily',
+          amount: -50,
+          category: '@Fitness',
+          comment: 'Gym',
+        },
+      ];
 
       expect(component.isPeriodPaid(subscription)).toBe(true);
     });
@@ -51,7 +53,7 @@ describe('SubscriptionComponent', () => {
         category: '@Fitness',
         comment: '',
         frequency: 'weekly',
-        startDate: '2026-01-01'
+        startDate: '2026-01-01',
       };
 
       // No transactions
@@ -68,18 +70,20 @@ describe('SubscriptionComponent', () => {
         category: '@Entertainment',
         comment: '',
         frequency: 'monthly',
-        startDate: '2026-01-01'
+        startDate: '2026-01-01',
       };
 
       // Add transaction for current month
-      AppStateService.instance.allTransactions = [{
-        date: todayISO,
-        time: '',
-        account: 'Daily',
-        amount: -15,
-        category: '@Entertainment',
-        comment: 'Netflix'
-      }];
+      AppStateService.instance.allTransactions = [
+        {
+          date: todayISO,
+          time: '',
+          account: 'Daily',
+          amount: -15,
+          category: '@Entertainment',
+          comment: 'Netflix',
+        },
+      ];
 
       expect(component.isPeriodPaid(subscription)).toBe(true);
     });
@@ -92,7 +96,7 @@ describe('SubscriptionComponent', () => {
         category: '@Entertainment',
         comment: '',
         frequency: 'monthly',
-        startDate: '2026-01-01'
+        startDate: '2026-01-01',
       };
 
       // No transactions
@@ -109,18 +113,20 @@ describe('SubscriptionComponent', () => {
         category: '@Insurance',
         comment: '',
         frequency: 'quarterly',
-        startDate: '2026-01-01'
+        startDate: '2026-01-01',
       };
 
       // Add transaction for current quarter
-      AppStateService.instance.allTransactions = [{
-        date: todayISO,
-        time: '',
-        account: 'Daily',
-        amount: -300,
-        category: '@Insurance',
-        comment: 'Insurance'
-      }];
+      AppStateService.instance.allTransactions = [
+        {
+          date: todayISO,
+          time: '',
+          account: 'Daily',
+          amount: -300,
+          category: '@Insurance',
+          comment: 'Insurance',
+        },
+      ];
 
       expect(component.isPeriodPaid(subscription)).toBe(true);
     });
@@ -133,18 +139,20 @@ describe('SubscriptionComponent', () => {
         category: '@Fitness',
         comment: 'Premium',
         frequency: 'monthly',
-        startDate: '2026-01-01'
+        startDate: '2026-01-01',
       };
 
       // Transaction without comment match
-      AppStateService.instance.allTransactions = [{
-        date: todayISO,
-        time: '',
-        account: 'Daily',
-        amount: -50,
-        category: '@Fitness',
-        comment: 'Gym'  // Should be 'Gym + Premium'
-      }];
+      AppStateService.instance.allTransactions = [
+        {
+          date: todayISO,
+          time: '',
+          account: 'Daily',
+          amount: -50,
+          category: '@Fitness',
+          comment: 'Gym', // Should be 'Gym + Premium'
+        },
+      ];
 
       expect(component.isPeriodPaid(subscription)).toBe(false);
     });
@@ -157,18 +165,20 @@ describe('SubscriptionComponent', () => {
         category: '@Fitness',
         comment: 'Premium',
         frequency: 'monthly',
-        startDate: '2026-01-01'
+        startDate: '2026-01-01',
       };
 
       // Transaction with correct comment match
-      AppStateService.instance.allTransactions = [{
-        date: todayISO,
-        time: '',
-        account: 'Daily',
-        amount: -50,
-        category: '@Fitness',
-        comment: 'Gym + Premium'
-      }];
+      AppStateService.instance.allTransactions = [
+        {
+          date: todayISO,
+          time: '',
+          account: 'Daily',
+          amount: -50,
+          category: '@Fitness',
+          comment: 'Gym + Premium',
+        },
+      ];
 
       expect(component.isPeriodPaid(subscription)).toBe(true);
     });
@@ -203,14 +213,18 @@ describe('SubscriptionComponent', () => {
 
     it('should sort startDate by day-of-month when isChecked', () => {
       const accessor = dataSource.sortingDataAccessor;
-      expect(accessor({ startDate: '2024-03-15' }, 'startDate')).toBe(new Date('2024-03-15').getDate());
+      expect(accessor({ startDate: '2024-03-15' }, 'startDate')).toBe(
+        new Date('2024-03-15').getDate(),
+      );
     });
 
     it('should sort startDate by timestamp when not isChecked', () => {
       component.isChecked = false;
       component.applyCustomSorting(dataSource);
       const accessor = dataSource.sortingDataAccessor;
-      expect(accessor({ startDate: '2024-03-15' }, 'startDate')).toBe(new Date('2024-03-15').getTime());
+      expect(accessor({ startDate: '2024-03-15' }, 'startDate')).toBe(
+        new Date('2024-03-15').getTime(),
+      );
     });
   });
 });

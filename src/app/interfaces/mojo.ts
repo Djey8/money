@@ -1,4 +1,4 @@
 export interface Mojo {
-    target: number,
-    amount: number
+  target: number;
+  amount: number;
 }

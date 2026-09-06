@@ -9,43 +9,43 @@ jest.mock('../../main/accounting/accounting.component', () => ({
   AccountingComponent: class {
     static allTransactions: any[] = [];
     static dataSource = { data: [] as any[] };
-  }
+  },
 }));
 jest.mock('../../main/subscription/subscription.component', () => ({
   SubscriptionComponent: class {
     static allSubscriptions: any[] = [];
     static activeDataSource = { data: [] as any[] };
     static inactiveDataSource = { data: [] as any[] };
-  }
+  },
 }));
 jest.mock('../../main/fire/fire-emergencies/fire-emergencies.component', () => ({
   FireEmergenciesComponent: class {
     static allSearchedFireEmergencies: any[] = [];
-  }
+  },
 }));
 jest.mock('./database.service', () => ({
-  DatabaseService: jest.fn().mockImplementation(() => ({}))
+  DatabaseService: jest.fn().mockImplementation(() => ({})),
 }));
 jest.mock('./cryptic.service', () => ({
-  CrypticService: jest.fn().mockImplementation(() => ({}))
+  CrypticService: jest.fn().mockImplementation(() => ({})),
 }));
 jest.mock('./auth.service', () => ({
-  AuthService: jest.fn().mockImplementation(() => ({}))
+  AuthService: jest.fn().mockImplementation(() => ({})),
 }));
 jest.mock('./persistence.service', () => ({
-  PersistenceService: jest.fn().mockImplementation(() => ({}))
+  PersistenceService: jest.fn().mockImplementation(() => ({})),
 }));
 jest.mock('./income-statement.service', () => ({
-  IncomeStatementService: jest.fn().mockImplementation(() => ({}))
+  IncomeStatementService: jest.fn().mockImplementation(() => ({})),
 }));
 jest.mock('./local.service', () => ({
-  LocalService: jest.fn().mockImplementation(() => ({}))
+  LocalService: jest.fn().mockImplementation(() => ({})),
 }));
 jest.mock('./toast.service', () => ({
-  ToastService: jest.fn().mockImplementation(() => ({}))
+  ToastService: jest.fn().mockImplementation(() => ({})),
 }));
 jest.mock('./subscription-processing.service', () => ({
-  SubscriptionProcessingService: jest.fn().mockImplementation(() => ({}))
+  SubscriptionProcessingService: jest.fn().mockImplementation(() => ({})),
 }));
 
 import { AppDataService } from './app-data.service';
@@ -55,19 +55,19 @@ import { AppStateService } from './app-state.service';
 const mockLocalStorage = {
   saveData: jest.fn(),
   removeData: jest.fn(),
-  getData: jest.fn().mockReturnValue('')
+  getData: jest.fn().mockReturnValue(''),
 };
 
 const mockCryptic = {
   decrypt: jest.fn((val: string) => val),
-  encrypt: jest.fn((val: string) => val)
+  encrypt: jest.fn((val: string) => val),
 };
 
 const mockDatabase = {
   clearReadCache: jest.fn(),
   getBatchData: jest.fn(),
   getUpdatedAt: jest.fn(),
-  getData: jest.fn()
+  getData: jest.fn(),
 };
 
 const mockAfAuth = { authState: { subscribe: jest.fn() } };
@@ -87,12 +87,11 @@ function createService(): AppDataService {
     mockPersistence as any,
     mockIncomeStatement as any,
     mockToastService as any,
-    mockSubscriptionProcessing as any
+    mockSubscriptionProcessing as any,
   );
 }
 
 describe('AppDataService', () => {
-
   beforeEach(() => {
     (AppStateService as any)._instance = undefined;
     jest.clearAllMocks();
@@ -132,7 +131,7 @@ describe('AppDataService', () => {
         ...AppDataService.TIER1_PATHS,
         ...AppDataService.TIER2_PATHS,
         ...AppDataService.TIER3_GROW_PATHS,
-        ...AppDataService.TIER3_BALANCE_PATHS
+        ...AppDataService.TIER3_BALANCE_PATHS,
       ];
       expect(allPaths).toHaveLength(19);
       expect(new Set(allPaths).size).toBe(19);
@@ -172,11 +171,18 @@ describe('AppDataService', () => {
       const service = createService();
       mockDatabase.getBatchData.mockResolvedValue({
         data: {
-          'transactions': {
-            '0': { account: 'Daily', amount: '100', date: '2026-01-01', time: '12:00', category: 'Food', comment: 'Lunch' }
-          }
+          transactions: {
+            '0': {
+              account: 'Daily',
+              amount: '100',
+              date: '2026-01-01',
+              time: '12:00',
+              category: 'Food',
+              comment: 'Lunch',
+            },
+          },
         },
-        updatedAt: null
+        updatedAt: null,
       });
 
       await service.loadTier1();
@@ -191,10 +197,10 @@ describe('AppDataService', () => {
       mockDatabase.getBatchData.mockResolvedValue({
         data: {
           'income/expenses/daily': {
-            '0': { tag: 'Rent', amount: '500' }
-          }
+            '0': { tag: 'Rent', amount: '500' },
+          },
         },
-        updatedAt: null
+        updatedAt: null,
       });
 
       await service.loadTier1();
@@ -207,11 +213,11 @@ describe('AppDataService', () => {
       const service = createService();
       mockDatabase.getBatchData.mockResolvedValue({
         data: {
-          'transactions': null,
-          'subscriptions': null,
-          'income/revenue/revenues': null
+          transactions: null,
+          subscriptions: null,
+          'income/revenue/revenues': null,
         },
-        updatedAt: null
+        updatedAt: null,
       });
 
       await service.loadTier1();
@@ -246,9 +252,9 @@ describe('AppDataService', () => {
       const service = createService();
       mockDatabase.getBatchData.mockResolvedValue({
         data: {
-          'smile': { '0': { title: 'Vacation', target: '5000', amount: '2000' } }
+          smile: { '0': { title: 'Vacation', target: '5000', amount: '2000' } },
         },
-        updatedAt: null
+        updatedAt: null,
       });
 
       await service.loadTier2();
@@ -261,9 +267,9 @@ describe('AppDataService', () => {
       const service = createService();
       mockDatabase.getBatchData.mockResolvedValue({
         data: {
-          'budget': { '0': { date: '2026-01', tag: 'Food', amount: '300' } }
+          budget: { '0': { date: '2026-01', tag: 'Food', amount: '300' } },
         },
-        updatedAt: null
+        updatedAt: null,
       });
 
       await service.loadTier2();
@@ -276,9 +282,9 @@ describe('AppDataService', () => {
       const service = createService();
       mockDatabase.getBatchData.mockResolvedValue({
         data: {
-          'mojo': { target: '10000', amount: '3000' }
+          mojo: { target: '10000', amount: '3000' },
         },
-        updatedAt: null
+        updatedAt: null,
       });
 
       await service.loadTier2();
@@ -321,16 +327,24 @@ describe('AppDataService', () => {
       const service = createService();
       mockDatabase.getBatchData.mockResolvedValue({
         data: {
-          'grow': {
+          grow: {
             '0': {
-              title: 'Real Estate', sub: 'Condo', status: 'Active',
-              description: 'Rental', strategy: 'Buy/hold', risks: 'Market',
-              amount: '150000', cashflow: '1200', isAsset: 'true',
-              share: null, investment: null, liabilitie: null
-            }
-          }
+              title: 'Real Estate',
+              sub: 'Condo',
+              status: 'Active',
+              description: 'Rental',
+              strategy: 'Buy/hold',
+              risks: 'Market',
+              amount: '150000',
+              cashflow: '1200',
+              isAsset: 'true',
+              share: null,
+              investment: null,
+              liabilitie: null,
+            },
+          },
         },
-        updatedAt: null
+        updatedAt: null,
       });
 
       await service.loadGrowData();
@@ -375,10 +389,10 @@ describe('AppDataService', () => {
       mockDatabase.getBatchData.mockResolvedValue({
         data: {
           'balance/asset/shares': {
-            '0': { tag: 'AAPL', quantity: '10', price: '150' }
-          }
+            '0': { tag: 'AAPL', quantity: '10', price: '150' },
+          },
         },
-        updatedAt: null
+        updatedAt: null,
       });
 
       await service.loadBalanceData();
@@ -394,10 +408,10 @@ describe('AppDataService', () => {
       mockDatabase.getBatchData.mockResolvedValue({
         data: {
           'balance/liabilities': {
-            '0': { tag: 'Mortgage', amount: '200000', investment: 'true', credit: '250000' }
-          }
+            '0': { tag: 'Mortgage', amount: '200000', investment: 'true', credit: '250000' },
+          },
         },
-        updatedAt: null
+        updatedAt: null,
       });
 
       await service.loadBalanceData();
@@ -528,16 +542,25 @@ describe('AppDataService', () => {
       const service = createService();
       mockDatabase.getBatchData.mockResolvedValue({
         data: {
-          'transactions': { '0': { account: 'Daily', amount: '50', date: '2026-01-01', time: '10:00', category: 'Food', comment: '' } }
+          transactions: {
+            '0': {
+              account: 'Daily',
+              amount: '50',
+              date: '2026-01-01',
+              time: '10:00',
+              category: 'Food',
+              comment: '',
+            },
+          },
         },
-        updatedAt: null
+        updatedAt: null,
       });
 
       await service.loadTier1();
 
       expect(mockLocalStorage.saveData).toHaveBeenCalledWith(
         'transactions',
-        expect.stringContaining('Daily')
+        expect.stringContaining('Daily'),
       );
     });
 
@@ -545,7 +568,7 @@ describe('AppDataService', () => {
       const service = createService();
       mockDatabase.getBatchData.mockResolvedValue({
         data: { 'income/revenue/revenues': null },
-        updatedAt: null
+        updatedAt: null,
       });
 
       await service.loadTier1();
@@ -565,11 +588,19 @@ describe('AppDataService', () => {
     it('should parse subscriptions with all fields', async () => {
       mockDatabase.getBatchData.mockResolvedValue({
         data: {
-          'subscriptions': {
-            '0': { title: 'Netflix', account: 'Daily', amount: '15', startDate: '2026-01-01', endDate: '', category: 'Entertainment', comment: '' }
-          }
+          subscriptions: {
+            '0': {
+              title: 'Netflix',
+              account: 'Daily',
+              amount: '15',
+              startDate: '2026-01-01',
+              endDate: '',
+              category: 'Entertainment',
+              comment: '',
+            },
+          },
         },
-        updatedAt: null
+        updatedAt: null,
       });
 
       await service.loadTier1();
@@ -582,7 +613,7 @@ describe('AppDataService', () => {
     it('should parse interests (tag/amount)', async () => {
       mockDatabase.getBatchData.mockResolvedValue({
         data: { 'income/revenue/interests': { '0': { tag: 'Savings', amount: '200' } } },
-        updatedAt: null
+        updatedAt: null,
       });
       await service.loadTier1();
       expect(AppStateService.instance.allIntrests[0].tag).toBe('Savings');
@@ -591,7 +622,7 @@ describe('AppDataService', () => {
     it('should parse properties (tag/amount)', async () => {
       mockDatabase.getBatchData.mockResolvedValue({
         data: { 'income/revenue/properties': { '0': { tag: 'Rental', amount: '1000' } } },
-        updatedAt: null
+        updatedAt: null,
       });
       await service.loadTier1();
       expect(AppStateService.instance.allProperties[0].tag).toBe('Rental');
@@ -603,7 +634,7 @@ describe('AppDataService', () => {
         { path: 'income/expenses/splurge', field: 'splurgeExpenses' },
         { path: 'income/expenses/smile', field: 'smileExpenses' },
         { path: 'income/expenses/fire', field: 'fireExpenses' },
-        { path: 'income/expenses/mojo', field: 'mojoExpenses' }
+        { path: 'income/expenses/mojo', field: 'mojoExpenses' },
       ];
 
       for (const { path, field } of expenseTypes) {
@@ -612,7 +643,7 @@ describe('AppDataService', () => {
         const svc = createService();
         mockDatabase.getBatchData.mockResolvedValue({
           data: { [path]: { '0': { tag: 'Test', amount: '42' } } },
-          updatedAt: null
+          updatedAt: null,
         });
         await svc.loadTier1();
         expect((AppStateService.instance as any)[field]).toHaveLength(1);
@@ -622,8 +653,8 @@ describe('AppDataService', () => {
 
     it('should parse fire emergencies', async () => {
       mockDatabase.getBatchData.mockResolvedValue({
-        data: { 'fire': { '0': { title: 'Emergency Fund', target: '10000', amount: '5000' } } },
-        updatedAt: null
+        data: { fire: { '0': { title: 'Emergency Fund', target: '10000', amount: '5000' } } },
+        updatedAt: null,
       });
       await service.loadTier2();
       expect(AppStateService.instance.allFireEmergencies[0].title).toBe('Emergency Fund');
@@ -631,8 +662,10 @@ describe('AppDataService', () => {
 
     it('should parse investments (tag/deposit/amount)', async () => {
       mockDatabase.getBatchData.mockResolvedValue({
-        data: { 'balance/asset/investments': { '0': { tag: 'ETF', deposit: '500', amount: '10000' } } },
-        updatedAt: null
+        data: {
+          'balance/asset/investments': { '0': { tag: 'ETF', deposit: '500', amount: '10000' } },
+        },
+        updatedAt: null,
       });
       await service.loadBalanceData();
       expect(AppStateService.instance.allInvestments[0].deposit).toBe(500);
@@ -641,7 +674,7 @@ describe('AppDataService', () => {
     it('should parse assets (tag/amount)', async () => {
       mockDatabase.getBatchData.mockResolvedValue({
         data: { 'balance/asset/assets': { '0': { tag: 'Car', amount: '15000' } } },
-        updatedAt: null
+        updatedAt: null,
       });
       await service.loadBalanceData();
       expect(AppStateService.instance.allAssets[0].tag).toBe('Car');
@@ -650,17 +683,24 @@ describe('AppDataService', () => {
     it('should parse grow project with nested share', async () => {
       mockDatabase.getBatchData.mockResolvedValue({
         data: {
-          'grow': {
+          grow: {
             '0': {
-              title: 'Stock Portfolio', sub: 'Tech', status: 'Active',
-              description: 'Growth', strategy: 'DCA', risks: 'Volatility',
-              amount: '50000', cashflow: '0', isAsset: 'true',
+              title: 'Stock Portfolio',
+              sub: 'Tech',
+              status: 'Active',
+              description: 'Growth',
+              strategy: 'DCA',
+              risks: 'Volatility',
+              amount: '50000',
+              cashflow: '0',
+              isAsset: 'true',
               share: { tag: 'AAPL', price: '150', quantity: '10' },
-              investment: null, liabilitie: null
-            }
-          }
+              investment: null,
+              liabilitie: null,
+            },
+          },
         },
-        updatedAt: null
+        updatedAt: null,
       });
       await service.loadGrowData();
       expect(AppStateService.instance.allGrowProjects[0].share).toBeTruthy();

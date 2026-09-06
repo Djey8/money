@@ -19,8 +19,14 @@ function createMocks(authHeader, cookies) {
   const res = {
     _status: null,
     _json: null,
-    status(code) { this._status = code; return this; },
-    json(data) { this._json = data; return this; }
+    status(code) {
+      this._status = code;
+      return this;
+    },
+    json(data) {
+      this._json = data;
+      return this;
+    },
   };
 
   const next = jest.fn();
@@ -64,7 +70,7 @@ describe('authenticateToken middleware', () => {
     const expired = jwt.sign(
       { userId: 'u1', email: 'a@b.com' },
       secret,
-      { expiresIn: '-1s' }          // already expired
+      { expiresIn: '-1s' }, // already expired
     );
     const { req, res, next } = createMocks(`Bearer ${expired}`);
 
@@ -76,11 +82,9 @@ describe('authenticateToken middleware', () => {
   });
 
   it('returns 403 for a token signed with a different secret', () => {
-    const wrongSecret = jwt.sign(
-      { userId: 'u1', email: 'a@b.com' },
-      'wrong-secret',
-      { expiresIn: '1h' }
-    );
+    const wrongSecret = jwt.sign({ userId: 'u1', email: 'a@b.com' }, 'wrong-secret', {
+      expiresIn: '1h',
+    });
     const { req, res, next } = createMocks(`Bearer ${wrongSecret}`);
 
     authenticateToken(req, res, next);
@@ -90,11 +94,9 @@ describe('authenticateToken middleware', () => {
   });
 
   it('sets req.userId and req.userEmail and calls next() for a valid token', () => {
-    const token = jwt.sign(
-      { userId: 'user_123', email: 'valid@test.com' },
-      secret,
-      { expiresIn: '1h' }
-    );
+    const token = jwt.sign({ userId: 'user_123', email: 'valid@test.com' }, secret, {
+      expiresIn: '1h',
+    });
     const { req, res, next } = createMocks(`Bearer ${token}`);
 
     authenticateToken(req, res, next);
@@ -117,11 +119,9 @@ describe('authenticateToken middleware', () => {
   });
 
   it('accepts token from access_token cookie', () => {
-    const token = jwt.sign(
-      { userId: 'cookie_user', email: 'cookie@test.com' },
-      secret,
-      { expiresIn: '1h' }
-    );
+    const token = jwt.sign({ userId: 'cookie_user', email: 'cookie@test.com' }, secret, {
+      expiresIn: '1h',
+    });
     const { req, res, next } = createMocks(undefined, { access_token: token });
 
     authenticateToken(req, res, next);
@@ -132,16 +132,12 @@ describe('authenticateToken middleware', () => {
   });
 
   it('prefers cookie over Authorization header', () => {
-    const cookieToken = jwt.sign(
-      { userId: 'from_cookie', email: 'c@test.com' },
-      secret,
-      { expiresIn: '1h' }
-    );
-    const headerToken = jwt.sign(
-      { userId: 'from_header', email: 'h@test.com' },
-      secret,
-      { expiresIn: '1h' }
-    );
+    const cookieToken = jwt.sign({ userId: 'from_cookie', email: 'c@test.com' }, secret, {
+      expiresIn: '1h',
+    });
+    const headerToken = jwt.sign({ userId: 'from_header', email: 'h@test.com' }, secret, {
+      expiresIn: '1h',
+    });
     const { req, res, next } = createMocks(`Bearer ${headerToken}`, { access_token: cookieToken });
 
     authenticateToken(req, res, next);

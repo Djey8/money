@@ -6,7 +6,14 @@ import { MenuComponent } from 'src/app/panels/menu/menu.component';
 import { InfoComponent } from 'src/app/panels/info/info.component';
 import { SmileProjectsComponent } from 'src/app/main/smile/smile-projects/smile-projects.component';
 import { PersistenceService } from 'src/app/shared/services/persistence.service';
-import { Smile, SmilePhase, SmileBucket, SmileLink, SmileActionItem, SmileNote } from 'src/app/interfaces/smile';
+import {
+  Smile,
+  SmilePhase,
+  SmileBucket,
+  SmileLink,
+  SmileActionItem,
+  SmileNote,
+} from 'src/app/interfaces/smile';
 import { PlannedSubscription } from 'src/app/interfaces/planned-subscription';
 import { BaseAddComponent } from 'src/app/shared/base/base-add.component';
 import { generateBucketId } from 'src/app/shared/smile-migration.utils';
@@ -26,61 +33,67 @@ import { PaymentPlannerDialogComponent } from 'src/app/shared/components/payment
 @Component({
   selector: 'app-add-smile',
   standalone: true,
-  imports: [TrapFocusDirective, CommonModule, FormsModule, TranslateModule, AppNumberPipe, PaymentPlannerDialogComponent],
+  imports: [
+    TrapFocusDirective,
+    CommonModule,
+    FormsModule,
+    TranslateModule,
+    AppNumberPipe,
+    PaymentPlannerDialogComponent,
+  ],
   templateUrl: './add-smile.component.html',
-  styleUrls: ['../../../shared/styles/add-form.css', './add-smile.component.css']
+  styleUrls: ['../../../shared/styles/add-form.css', './add-smile.component.css'],
 })
 export class AddSmileComponent extends BaseAddComponent {
-
   // Basic fields
-  titleTextField = "";
-  subTextField = "";
+  titleTextField = '';
+  subTextField = '';
   phaseField: SmilePhase = 'idea';
-  descriptionTextField = "";
-  targetTextField = "";
-  amountTextField = "";
-  targetDateField = "";
+  descriptionTextField = '';
+  targetTextField = '';
+  amountTextField = '';
+  targetDateField = '';
 
   // Buckets
   buckets: SmileBucket[] = [];
-  newBucketTitle = "";
-  newBucketTarget = "";
-  newBucketNotes = "";
-  newBucketTargetDate = "";
+  newBucketTitle = '';
+  newBucketTarget = '';
+  newBucketNotes = '';
+  newBucketTargetDate = '';
   editingBucketIndex: number | null = null;
-  editBucketTitle = "";
-  editBucketTarget = "";
-  editBucketNotes = "";
-  editBucketTargetDate = "";
+  editBucketTitle = '';
+  editBucketTarget = '';
+  editBucketNotes = '';
+  editBucketTargetDate = '';
   editingBucketLinkBucketIndex: number | null = null;
   editingBucketLinkLinkIndex: number | null = null;
-  editBucketLinkLabel = "";
-  editBucketLinkUrl = "";
-  newBucketLinkLabel = "";
-  newBucketLinkUrl = "";
+  editBucketLinkLabel = '';
+  editBucketLinkUrl = '';
+  newBucketLinkLabel = '';
+  newBucketLinkUrl = '';
   showAddBucketLink: number | null = null;
 
   // Links
   links: SmileLink[] = [];
-  newLinkLabel = "";
-  newLinkUrl = "";
+  newLinkLabel = '';
+  newLinkUrl = '';
   editingLinkIndex = -1;
-  editingLinkLabel = "";
-  editingLinkUrl = "";
+  editingLinkLabel = '';
+  editingLinkUrl = '';
 
   // Action Items
   actionItems: SmileActionItem[] = [];
-  newActionItem = "";
+  newActionItem = '';
   newActionPriority: 'low' | 'medium' | 'high' = 'medium';
-  newActionTargetDate = "";
+  newActionTargetDate = '';
   editingActionIndex = -1;
-  editingActionText = "";
+  editingActionText = '';
   editingActionPriority: 'low' | 'medium' | 'high' = 'medium';
-  editingActionDueDate = "";
+  editingActionDueDate = '';
 
   // Notes (for info view only, not add)
   notes: SmileNote[] = [];
-  newNote = "";
+  newNote = '';
 
   // Payment Plans
   plannedSubscriptions: PlannedSubscription[] = [];
@@ -108,7 +121,11 @@ export class AddSmileComponent extends BaseAddComponent {
   /**
    * Initializes a new instance of the AddSmileComponent class.
    */
-  constructor(router: Router, private persistence: PersistenceService, private paymentPlannerService: PaymentPlannerService) {
+  constructor(
+    router: Router,
+    private persistence: PersistenceService,
+    private paymentPlannerService: PaymentPlannerService,
+  ) {
     super(router);
     AddSmileComponent.isAddSmile = false;
     this.initStatic(AddSmileComponent);
@@ -128,34 +145,34 @@ export class AddSmileComponent extends BaseAddComponent {
   }
 
   resetForm() {
-    this.titleTextField = "";
-    this.subTextField = "";
+    this.titleTextField = '';
+    this.subTextField = '';
     this.phaseField = 'idea';
-    this.descriptionTextField = "";
-    this.targetTextField = "";
-    this.amountTextField = "";
-    this.targetDateField = "";
+    this.descriptionTextField = '';
+    this.targetTextField = '';
+    this.amountTextField = '';
+    this.targetDateField = '';
     this.buckets = [];
     this.links = [];
     this.actionItems = [];
     this.notes = [];
     this.plannedSubscriptions = [];
-    this.newBucketTitle = "";
-    this.newBucketTarget = "";
-    this.newBucketNotes = "";
+    this.newBucketTitle = '';
+    this.newBucketTarget = '';
+    this.newBucketNotes = '';
     this.editingBucketIndex = null;
-    this.editBucketTitle = "";
-    this.editBucketTarget = "";
-    this.editBucketNotes = "";
-    this.newBucketLinkLabel = "";
-    this.newBucketLinkUrl = "";
+    this.editBucketTitle = '';
+    this.editBucketTarget = '';
+    this.editBucketNotes = '';
+    this.newBucketLinkLabel = '';
+    this.newBucketLinkUrl = '';
     this.showAddBucketLink = null;
-    this.newLinkLabel = "";
-    this.newLinkUrl = "";
-    this.newActionItem = "";
+    this.newLinkLabel = '';
+    this.newLinkUrl = '';
+    this.newActionItem = '';
     this.newActionPriority = 'medium';
-    this.newActionTargetDate = "";
-    this.newNote = "";
+    this.newActionTargetDate = '';
+    this.newNote = '';
   }
 
   /**
@@ -177,12 +194,12 @@ export class AddSmileComponent extends BaseAddComponent {
         amount: 0,
         notes: this.newBucketNotes.trim(),
         links: [],
-        targetDate: this.newBucketTargetDate || undefined
+        targetDate: this.newBucketTargetDate || undefined,
       });
-      this.newBucketTitle = "";
-      this.newBucketTarget = "";
-      this.newBucketNotes = "";
-      this.newBucketTargetDate = "";
+      this.newBucketTitle = '';
+      this.newBucketTarget = '';
+      this.newBucketNotes = '';
+      this.newBucketTargetDate = '';
       this.showAddBucket = false;
     }
   }
@@ -198,8 +215,8 @@ export class AddSmileComponent extends BaseAddComponent {
     this.editingBucketIndex = index;
     this.editBucketTitle = this.buckets[index].title;
     this.editBucketTarget = this.buckets[index].target.toString();
-    this.editBucketNotes = this.buckets[index].notes || "";
-    this.editBucketTargetDate = this.buckets[index].targetDate || "";
+    this.editBucketNotes = this.buckets[index].notes || '';
+    this.editBucketTargetDate = this.buckets[index].targetDate || '';
   }
 
   saveEditBucket(index: number) {
@@ -214,10 +231,10 @@ export class AddSmileComponent extends BaseAddComponent {
 
   cancelEditBucket() {
     this.editingBucketIndex = null;
-    this.editBucketTitle = "";
-    this.editBucketTarget = "";
-    this.editBucketNotes = "";
-    this.editBucketTargetDate = "";
+    this.editBucketTitle = '';
+    this.editBucketTarget = '';
+    this.editBucketNotes = '';
+    this.editBucketTargetDate = '';
   }
 
   // Bucket-specific link management
@@ -228,10 +245,10 @@ export class AddSmileComponent extends BaseAddComponent {
       }
       this.buckets[bucketIndex].links!.push({
         label: this.newBucketLinkLabel.trim(),
-        url: this.newBucketLinkUrl.trim()
+        url: this.newBucketLinkUrl.trim(),
       });
-      this.newBucketLinkLabel = "";
-      this.newBucketLinkUrl = "";
+      this.newBucketLinkLabel = '';
+      this.newBucketLinkUrl = '';
       this.showAddBucketLink = null;
     }
   }
@@ -251,11 +268,15 @@ export class AddSmileComponent extends BaseAddComponent {
   }
 
   saveEditBucketLink() {
-    if (this.editingBucketLinkBucketIndex !== null && this.editingBucketLinkLinkIndex !== null && 
-        this.editBucketLinkLabel.trim() && this.editBucketLinkUrl.trim()) {
+    if (
+      this.editingBucketLinkBucketIndex !== null &&
+      this.editingBucketLinkLinkIndex !== null &&
+      this.editBucketLinkLabel.trim() &&
+      this.editBucketLinkUrl.trim()
+    ) {
       this.buckets[this.editingBucketLinkBucketIndex].links![this.editingBucketLinkLinkIndex] = {
         label: this.editBucketLinkLabel.trim(),
-        url: this.editBucketLinkUrl.trim()
+        url: this.editBucketLinkUrl.trim(),
       };
       this.cancelEditBucketLink();
     }
@@ -264,8 +285,8 @@ export class AddSmileComponent extends BaseAddComponent {
   cancelEditBucketLink() {
     this.editingBucketLinkBucketIndex = null;
     this.editingBucketLinkLinkIndex = null;
-    this.editBucketLinkLabel = "";
-    this.editBucketLinkUrl = "";
+    this.editBucketLinkLabel = '';
+    this.editBucketLinkUrl = '';
   }
 
   /**
@@ -275,10 +296,10 @@ export class AddSmileComponent extends BaseAddComponent {
     if (this.newLinkLabel.trim() && this.newLinkUrl.trim()) {
       this.links.push({
         label: this.newLinkLabel.trim(),
-        url: this.newLinkUrl.trim()
+        url: this.newLinkUrl.trim(),
       });
-      this.newLinkLabel = "";
-      this.newLinkUrl = "";
+      this.newLinkLabel = '';
+      this.newLinkUrl = '';
     }
   }
 
@@ -302,8 +323,8 @@ export class AddSmileComponent extends BaseAddComponent {
 
   cancelEditLink() {
     this.editingLinkIndex = -1;
-    this.editingLinkLabel = "";
-    this.editingLinkUrl = "";
+    this.editingLinkLabel = '';
+    this.editingLinkUrl = '';
   }
 
   /**
@@ -314,15 +335,15 @@ export class AddSmileComponent extends BaseAddComponent {
       const actionItem: SmileActionItem = {
         text: this.newActionItem.trim(),
         done: false,
-        priority: this.newActionPriority
+        priority: this.newActionPriority,
       };
       if (this.newActionTargetDate) {
         actionItem.dueDate = this.newActionTargetDate;
       }
       this.actionItems.push(actionItem);
-      this.newActionItem = "";
+      this.newActionItem = '';
       this.newActionPriority = 'medium';
-      this.newActionTargetDate = "";
+      this.newActionTargetDate = '';
     }
   }
 
@@ -364,9 +385,9 @@ export class AddSmileComponent extends BaseAddComponent {
     if (this.newNote.trim()) {
       this.notes.push({
         text: this.newNote.trim(),
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
       });
-      this.newNote = "";
+      this.newNote = '';
     }
   }
 
@@ -431,7 +452,7 @@ export class AddSmileComponent extends BaseAddComponent {
    * Get bucket name by ID
    */
   getBucketNameById(bucketId: string): string {
-    const bucket = this.buckets.find(b => b.id === bucketId);
+    const bucket = this.buckets.find((b) => b.id === bucketId);
     return bucket ? bucket.title : 'Unknown';
   }
 
@@ -445,47 +466,47 @@ export class AddSmileComponent extends BaseAddComponent {
   /**
    * Adds a smile project.
    */
-  addSmileProject(){
+  addSmileProject() {
     // First trim string
     this.titleTextField = this.titleTextField.trim();
-    
+
     // Validation: either target OR at least one bucket required
     const hasTargetAmount = this.targetTextField && parseFloat(this.targetTextField) > 0;
     const hasBuckets = this.buckets.length > 0;
-    
+
     if (!this.titleTextField) {
-      this.showError("Title is required");
+      this.showError('Title is required');
       return;
     } else if (!hasBuckets && !hasTargetAmount) {
-      this.showError("Target Amount is required (or add at least one Bucket)");
+      this.showError('Target Amount is required (or add at least one Bucket)');
       return;
     } else if (this.invalidTitle(this.titleTextField)) {
-      this.showError("This smile project already exists.");
+      this.showError('This smile project already exists.');
       return;
     }
-    
+
     const now = new Date().toISOString();
-    
+
     // Build final bucket list
     let finalBuckets = [];
-    
+
     // 1. If target amount provided, always create a default bucket first
     if (hasTargetAmount) {
       finalBuckets.push({
         id: `bucket_${Date.now()}`,
         title: this.titleTextField,
         target: parseFloat(this.targetTextField),
-        amount: this.amountTextField === "" ? 0.0 : parseFloat(this.amountTextField),
-        notes: "",
-        links: []
+        amount: this.amountTextField === '' ? 0.0 : parseFloat(this.amountTextField),
+        notes: '',
+        links: [],
       });
     }
-    
+
     // 2. Then add any custom buckets the user created
     if (this.buckets.length > 0) {
       finalBuckets = [...finalBuckets, ...this.buckets];
     }
-    
+
     // Create new Smile project - ALL amounts now in buckets
     const newSmile: Smile = {
       title: this.titleTextField,
@@ -498,13 +519,13 @@ export class AddSmileComponent extends BaseAddComponent {
       links: this.links,
       actionItems: this.actionItems,
       notes: this.notes,
-      plannedSubscriptions: this.plannedSubscriptions,  // Include payment plans
+      plannedSubscriptions: this.plannedSubscriptions, // Include payment plans
       createdAt: now,
-      updatedAt: now
+      updatedAt: now,
     };
 
     AppStateService.instance.allSmileProjects.push(newSmile);
-    
+
     this.clearError();
     this.resetForm();
     this.closeWindow();
@@ -514,10 +535,10 @@ export class AddSmileComponent extends BaseAddComponent {
       data: AppStateService.instance.allSmileProjects,
       localStorageKey: 'smile',
       logEvent: 'add_smile',
-      logMetadata: { 
-        title: newSmile.title, 
-        target: finalBuckets.reduce((sum, b) => sum + b.target, 0), 
-        phase: this.phaseField 
+      logMetadata: {
+        title: newSmile.title,
+        target: finalBuckets.reduce((sum, b) => sum + b.target, 0),
+        phase: this.phaseField,
       },
       onSuccess: () => {
         AppStateService.instance.isSaving = false;
@@ -528,7 +549,7 @@ export class AddSmileComponent extends BaseAddComponent {
       onError: (error) => {
         AppStateService.instance.isSaving = false;
         this.toastService.show(error.message || 'Database write failed', 'error');
-      }
+      },
     });
   }
 }

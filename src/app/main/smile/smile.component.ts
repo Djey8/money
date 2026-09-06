@@ -29,19 +29,34 @@ import { SharedFilterComponent } from 'src/app/shared/components/shared-filter/s
 @Component({
   selector: 'app-smile',
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslateModule, AppDatePipe, AppNumberPipe, MatTableModule, MatSortModule, MatPaginatorModule, MatFormFieldModule, MatInputModule, RouterModule, SharedFilterComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    TranslateModule,
+    AppDatePipe,
+    AppNumberPipe,
+    MatTableModule,
+    MatSortModule,
+    MatPaginatorModule,
+    MatFormFieldModule,
+    MatInputModule,
+    RouterModule,
+    SharedFilterComponent,
+  ],
   templateUrl: './smile.component.html',
-  styleUrls: ['./smile.component.css', '../../app.component.css', '../../shared/styles/table.css']
+  styleUrls: ['./smile.component.css', '../../app.component.css', '../../shared/styles/table.css'],
 })
 export class SmileComponent extends BaseAccountComponent {
-
-  static smileAmount = AppStateService.instance.getAmount("Smile", AppStateService.instance.smile/100);
+  static smileAmount = AppStateService.instance.getAmount(
+    'Smile',
+    AppStateService.instance.smile / 100,
+  );
 
   static dataSource = new MatTableDataSource<any>([]);
 
   static isSearched = false;
-  static allTransactions = []
-  static allSearchedTransactions = []
+  static allTransactions = [];
+  static allSearchedTransactions = [];
 
   // Advanced filter system
   static advancedFilter: IncomeFilter = {
@@ -58,10 +73,10 @@ export class SmileComponent extends BaseAccountComponent {
       date: true,
       time: true,
       category: true,
-      comment: true
-    }
+      comment: true,
+    },
   };
-  
+
   static isAdvancedFilterExpanded = false;
   static isSearchHelpVisible = false;
   static availableAccounts: string[] = [];
@@ -72,7 +87,7 @@ export class SmileComponent extends BaseAccountComponent {
   static endDateTextField: string;
 
   public classReference = SmileComponent;
-  
+
   /**
    * Creates an instance of SmileComponent.
    * @param router - The router service.
@@ -80,23 +95,34 @@ export class SmileComponent extends BaseAccountComponent {
    */
   constructor(router: Router, filterService: TransactionFilterService) {
     super(router, filterService);
-    SmileComponent.smileAmount = AppStateService.instance.getAmount("Smile", AppStateService.instance.smile/100);
+    SmileComponent.smileAmount = AppStateService.instance.getAmount(
+      'Smile',
+      AppStateService.instance.smile / 100,
+    );
     this.initAccount(SmileComponent);
   }
 
   static updateDailyAmount() {
-    SmileComponent.smileAmount = AppStateService.instance.getAmount("Smile", AppStateService.instance.smile / 100);
+    SmileComponent.smileAmount = AppStateService.instance.getAmount(
+      'Smile',
+      AppStateService.instance.smile / 100,
+    );
   }
 
   addTransaction() {
-    AppComponent.addTransaction("Smile", "@", "smile");
+    AppComponent.addTransaction('Smile', '@', 'smile');
   }
 
   static setDate() {
     SmileComponent.d = new Date();
-    SmileComponent.startDateTextField = "";
-    SmileComponent.endDateTextField = SmileComponent.d.getFullYear() + "-" + SmileComponent.zeroPadded(SmileComponent.d.getMonth() + 1) + "-" + SmileComponent.zeroPadded(SmileComponent.d.getDate());
-    SmileComponent.advancedFilter.startDate = "";
+    SmileComponent.startDateTextField = '';
+    SmileComponent.endDateTextField =
+      SmileComponent.d.getFullYear() +
+      '-' +
+      SmileComponent.zeroPadded(SmileComponent.d.getMonth() + 1) +
+      '-' +
+      SmileComponent.zeroPadded(SmileComponent.d.getDate());
+    SmileComponent.advancedFilter.startDate = '';
     SmileComponent.advancedFilter.endDate = SmileComponent.endDateTextField;
   }
 
@@ -105,12 +131,12 @@ export class SmileComponent extends BaseAccountComponent {
   }
 
   goToSmileProjects() {
-    this.router.navigate(['/smileprojects'])
+    this.router.navigate(['/smileprojects']);
   }
 
   goToSmileStats() {
-    StatsComponent.resetBIStateIfNeeded("smile");
-    StatsComponent.modus = "smile";
+    StatsComponent.resetBIStateIfNeeded('smile');
+    StatsComponent.modus = 'smile';
     MenuComponent.openStats = !MenuComponent.openStats;
     StatsComponent.isSwitch = true;
     this.router.navigate(['/stats']);

@@ -7,7 +7,7 @@ const JWT_SECRET = process.env.JWT_SECRET;
 function getAdminEmails() {
   return (process.env.ADMIN_EMAILS || '')
     .split(',')
-    .map(e => e.trim().toLowerCase())
+    .map((e) => e.trim().toLowerCase())
     .filter(Boolean);
 }
 

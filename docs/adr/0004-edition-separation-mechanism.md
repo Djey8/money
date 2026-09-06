@@ -1,6 +1,7 @@
 # 0004. Edition separation mechanism
 
 ## Status
+
 Accepted — `edition-guard` implemented in Phase 1 ahead of any Pro module existing
 
 ## Context
@@ -18,6 +19,6 @@ The master prompt's hard constraint: the Firebase edition must contain **no** Pr
 
 ## Consequences
 
-- Every future Pro UI addition must go through the conditional route array, not a runtime `*ngIf`/service check alone — this is a convention Phase 1's `mm-conventions` skill and `CLAUDE.md` need to state explicitly, since the existing codebase's habit (service-level runtime branching) is exactly the pattern that must *not* be used for anything Pro-only.
+- Every future Pro UI addition must go through the conditional route array, not a runtime `*ngIf`/service check alone — this is a convention Phase 1's `mm-conventions` skill and `CLAUDE.md` need to state explicitly, since the existing codebase's habit (service-level runtime branching) is exactly the pattern that must _not_ be used for anything Pro-only.
 - `edition-guard`'s marker list needs to be updated every time a genuinely new class of Pro-only artifact is introduced (e.g. a new chunk naming scheme) — it's a maintained allowlist, not a one-time check.
-- This does not change how the *existing* Firebase/selfhosted runtime branching works for already-shared features (encryption config fetch, auth flow, etc.) — those continue to branch on `environment.mode` at runtime as they do today. Only genuinely Pro-exclusive surface area uses the new build-time route-exclusion mechanism.
+- This does not change how the _existing_ Firebase/selfhosted runtime branching works for already-shared features (encryption config fetch, auth flow, etc.) — those continue to branch on `environment.mode` at runtime as they do today. Only genuinely Pro-exclusive surface area uses the new build-time route-exclusion mechanism.

@@ -64,7 +64,7 @@ test.describe('Fire Emergencies', () => {
     await navigateTo(page, 'fireemergencies');
     await page.waitForTimeout(2000);
 
-    const bodyText = await page.locator('body').textContent() ?? '';
+    const bodyText = (await page.locator('body').textContent()) ?? '';
     expect(bodyText).toContain(uniqueTitle);
   });
 
@@ -85,7 +85,7 @@ test.describe('Fire Emergencies', () => {
     await page.waitForTimeout(2000);
 
     // Should show 25% progress
-    const allText = await page.locator('body').textContent() ?? '';
+    const allText = (await page.locator('body').textContent()) ?? '';
     expect(allText).toContain('25');
   });
 
@@ -95,42 +95,51 @@ test.describe('Fire Emergencies', () => {
     await page.waitForSelector('#addFire-Container', { state: 'visible' });
 
     const panel = page.locator('#addFire-Container');
-    
+
     // Fill basic info
     await panel.locator('#title').fill('Home Repairs');
     await panel.locator('#sub').fill('Major home maintenance');
-    
+
     // Expand buckets section
-    const bucketsToggle = panel.locator('.section-toggle').filter({ hasText: /buckets/i }).first();
+    const bucketsToggle = panel
+      .locator('.section-toggle')
+      .filter({ hasText: /buckets/i })
+      .first();
     await bucketsToggle.click();
     await page.waitForTimeout(300);
-    
+
     // Add first bucket
-    const addBucketBtn = panel.locator('button').filter({ hasText: /add bucket/i }).first();
+    const addBucketBtn = panel
+      .locator('button')
+      .filter({ hasText: /add bucket/i })
+      .first();
     await addBucketBtn.click();
     await page.waitForTimeout(200);
-    
+
     await panel.locator('input[placeholder*="bucket"]').first().fill('Roof');
     await panel.locator('input[placeholder*="target"]').first().fill('5000');
-    const submitBucketBtn = panel.locator('button').filter({ hasText: /add bucket/i }).last();
+    const submitBucketBtn = panel
+      .locator('button')
+      .filter({ hasText: /add bucket/i })
+      .last();
     await submitBucketBtn.click();
     await page.waitForTimeout(200);
-    
+
     // Add second bucket
     await addBucketBtn.click();
     await page.waitForTimeout(200);
     await panel.locator('input[placeholder*="bucket"]').first().fill('Plumbing');
     await panel.locator('input[placeholder*="target"]').first().fill('3000');
     await submitBucketBtn.click();
-    
+
     // Submit the form
     await panel.locator('#addbtn').click();
     await expect(page.locator('#addFire-Container')).toBeHidden({ timeout: 10_000 });
-    
+
     // Verify the fire emergency was created
     await navigateTo(page, 'fireemergencies');
     await page.waitForTimeout(2000);
-    const bodyText = await page.locator('body').textContent() ?? '';
+    const bodyText = (await page.locator('body').textContent()) ?? '';
     expect(bodyText).toContain('Home Repairs');
   });
 });

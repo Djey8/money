@@ -3,6 +3,7 @@
 ## Overview
 
 The application uses a **per-user document architecture** where:
+
 - ✅ **Each user has exactly ONE CouchDB document**
 - ✅ **Document ID = User ID** (from JWT authentication)
 - ✅ **All user data stored under the `data` key**
@@ -31,9 +32,10 @@ User Request → JWT Token → Middleware extracts userId → Operation uses use
 ```
 
 **Example:**
+
 - User "user_123" logs in, gets JWT with `userId: "user_123"`
 - User writes data: `POST /api/data/write/info/username` with JWT
-- Backend reads JWT, extracts `userId: "user_123"`  
+- Backend reads JWT, extracts `userId: "user_123"`
 - Backend writes to CouchDB document with `_id: "user_123"`
 - User "user_123" **cannot** access document `_id: "user_456"` (different userId in JWT)
 
@@ -43,9 +45,9 @@ User Request → JWT Token → Middleware extracts userId → Operation uses use
 
 ```javascript
 POST /api/auth/register
-Body: { 
-  "email": "user@example.com", 
-  "password": "securePassword123" 
+Body: {
+  "email": "user@example.com",
+  "password": "securePassword123"
 }
 
 Response: {
@@ -56,6 +58,7 @@ Response: {
 ```
 
 **What happens:**
+
 - Creates user in `auth` database with hashed password
 - Generates unique userId (e.g., `user_1710327600000_abc123`)
 - Returns JWT token containing the userId
@@ -68,10 +71,10 @@ All subsequent requests include the JWT token in the `Authorization` header:
 // Write user profile info
 POST /api/data/write/info
 Headers: { Authorization: "Bearer <token>" }
-Body: { 
+Body: {
   "username": "johndoe",
   "email": "john@example.com",
-  "avatar": "https://..." 
+  "avatar": "https://..."
 }
 
 // What happens internally:
@@ -160,7 +163,7 @@ Body: "Alice"
 
 // User A reads data
 GET /api/data/read/info/username
-Headers: { Authorization: "Bearer tokenA..." }  
+Headers: { Authorization: "Bearer tokenA..." }
 Response: { "data": "Alice" }
 // → Reads from document _id: "user_123"
 
@@ -183,7 +186,7 @@ Body: "Bob"
 
 ## Document Structure
 
-> **This section previously showed a simplified subset of the real schema** (`info`, `transactions`, `smile`, `fire`, `mojo` only). The example below is the actual complete top-level shape written by the frontend today. Full field-level definitions for every entity live in `docs/discovery/DOMAIN_MODEL.md` §1 — this file only documents storage *paths*, not entity schemas.
+> **This section previously showed a simplified subset of the real schema** (`info`, `transactions`, `smile`, `fire`, `mojo` only). The example below is the actual complete top-level shape written by the frontend today. Full field-level definitions for every entity live in `docs/discovery/DOMAIN_MODEL.md` §1 — this file only documents storage _paths_, not entity schemas.
 
 Each user document has the following structure:
 
@@ -195,34 +198,91 @@ Each user document has the following structure:
   "updatedAt": "2026-03-13T15:45:00.000Z",
   "data": {
     "info": { "username": "john_doe", "email": "john@example.com" },
-    "transactions": [ { "account": "Daily", "amount": -12.50, "date": "2026-03-01", "time": "14:32", "category": "@Groceries", "comment": "" } ],
-    "subscriptions": [ { "title": "Spotify", "account": "Daily", "amount": -9.99, "startDate": "2024-01-01", "endDate": "", "category": "@Entertainment", "comment": "", "frequency": "monthly" } ],
-    "budget": [ { "tag": "@Groceries", "amount": 300, "date": "2026-03-01" } ],
-    "smile": [ { "title": "Vacation", "sub": "", "phase": "saving", "description": "", "buckets": [ { "id": "b1", "title": "Flights", "target": 1500, "amount": 200 } ], "links": [], "actionItems": [], "notes": [], "createdAt": "...", "updatedAt": "..." } ],
-    "fire": [ { "title": "Emergency Fund", "phase": "planning", "buckets": [ { "id": "b1", "title": "Main", "target": 5000, "amount": 1200 } ], "links": [], "actionItems": [], "notes": [], "createdAt": "...", "updatedAt": "..." } ],
+    "transactions": [
+      {
+        "account": "Daily",
+        "amount": -12.5,
+        "date": "2026-03-01",
+        "time": "14:32",
+        "category": "@Groceries",
+        "comment": ""
+      }
+    ],
+    "subscriptions": [
+      {
+        "title": "Spotify",
+        "account": "Daily",
+        "amount": -9.99,
+        "startDate": "2024-01-01",
+        "endDate": "",
+        "category": "@Entertainment",
+        "comment": "",
+        "frequency": "monthly"
+      }
+    ],
+    "budget": [{ "tag": "@Groceries", "amount": 300, "date": "2026-03-01" }],
+    "smile": [
+      {
+        "title": "Vacation",
+        "sub": "",
+        "phase": "saving",
+        "description": "",
+        "buckets": [{ "id": "b1", "title": "Flights", "target": 1500, "amount": 200 }],
+        "links": [],
+        "actionItems": [],
+        "notes": [],
+        "createdAt": "...",
+        "updatedAt": "..."
+      }
+    ],
+    "fire": [
+      {
+        "title": "Emergency Fund",
+        "phase": "planning",
+        "buckets": [{ "id": "b1", "title": "Main", "target": 5000, "amount": 1200 }],
+        "links": [],
+        "actionItems": [],
+        "notes": [],
+        "createdAt": "...",
+        "updatedAt": "..."
+      }
+    ],
     "mojo": { "target": 2000.0, "amount": 1500.0 },
-    "grow": [ { "title": "MSFT position", "phase": "monitor", "isAsset": false, "share": { "tag": "MSFT", "quantity": 10, "price": 415 }, "investment": {}, "liabilitie": {}, "createdAt": "...", "updatedAt": "..." } ],
+    "grow": [
+      {
+        "title": "MSFT position",
+        "phase": "monitor",
+        "isAsset": false,
+        "share": { "tag": "MSFT", "quantity": 10, "price": 415 },
+        "investment": {},
+        "liabilitie": {},
+        "createdAt": "...",
+        "updatedAt": "..."
+      }
+    ],
     "income": {
       "revenue": {
-        "revenues": [ { "tag": "Salary", "amount": 3000 } ],
-        "interests": [ { "tag": "MSFT", "amount": 45 } ],
-        "properties": [ { "tag": "Rental Unit A", "amount": 800 } ]
+        "revenues": [{ "tag": "Salary", "amount": 3000 }],
+        "interests": [{ "tag": "MSFT", "amount": 45 }],
+        "properties": [{ "tag": "Rental Unit A", "amount": 800 }]
       },
       "expenses": {
-        "daily": [ { "tag": "@Groceries", "amount": 250 } ],
-        "splurge": [ { "tag": "@Fun", "amount": 80 } ],
-        "smile": [ { "tag": "Vacation", "amount": 200 } ],
-        "fire": [ { "tag": "Emergency Fund", "amount": 100 } ],
-        "mojo": [ { "tag": "@Mojo", "amount": 50 } ]
+        "daily": [{ "tag": "@Groceries", "amount": 250 }],
+        "splurge": [{ "tag": "@Fun", "amount": 80 }],
+        "smile": [{ "tag": "Vacation", "amount": 200 }],
+        "fire": [{ "tag": "Emergency Fund", "amount": 100 }],
+        "mojo": [{ "tag": "@Mojo", "amount": 50 }]
       }
     },
     "balance": {
       "asset": {
-        "assets": [ { "tag": "Car", "amount": 8000 } ],
-        "shares": [ { "tag": "MSFT", "quantity": 10, "price": 415 } ],
-        "investments": [ { "tag": "Rental Unit A", "amount": 180000, "deposit": 30000 } ]
+        "assets": [{ "tag": "Car", "amount": 8000 }],
+        "shares": [{ "tag": "MSFT", "quantity": 10, "price": 415 }],
+        "investments": [{ "tag": "Rental Unit A", "amount": 180000, "deposit": 30000 }]
       },
-      "liabilities": [ { "tag": "Rental Unit A Mortgage", "amount": 150000, "investment": true, "credit": 4200 } ]
+      "liabilities": [
+        { "tag": "Rental Unit A Mortgage", "amount": 150000, "investment": true, "credit": 4200 }
+      ]
     }
   }
 }
@@ -232,21 +292,23 @@ Each user document has the following structure:
 
 The frontend (`AppDataService`, `src/app/shared/services/app-data.service.ts`) does not load all of the above eagerly. It classifies paths into three tiers — worth knowing when reasoning about "is this data available yet" from an API/agent client, since **the API itself always returns current data regardless of tier** (tiers are a frontend rendering-performance optimization, not a backend concept):
 
-| Tier | Paths | Frontend loads it… |
-|---|---|---|
-| 1 | `transactions`, `subscriptions`, `income/revenue/*`, `income/expenses/*` | Eagerly, blocks initial UI render |
-| 2 | `smile`, `fire`, `mojo`, `budget` | Asynchronously, right after Tier 1 resolves |
-| 3 | `grow`, `balance/asset/*`, `balance/liabilities` | On-demand, only when the user navigates to the Grow or Balance page |
+| Tier | Paths                                                                    | Frontend loads it…                                                  |
+| ---- | ------------------------------------------------------------------------ | ------------------------------------------------------------------- |
+| 1    | `transactions`, `subscriptions`, `income/revenue/*`, `income/expenses/*` | Eagerly, blocks initial UI render                                   |
+| 2    | `smile`, `fire`, `mojo`, `budget`                                        | Asynchronously, right after Tier 1 resolves                         |
+| 3    | `grow`, `balance/asset/*`, `balance/liabilities`                         | On-demand, only when the user navigates to the Grow or Balance page |
 
 ## API Endpoints
 
 ### Write Data
+
 `POST /api/data/write/{path}`
 
 Writes data to a specific path in the user's document. If the path doesn't exist, it will be created.
 
 **Automatic Conflict Resolution:**
 The write endpoint includes automatic retry logic to handle concurrent writes gracefully:
+
 - Detects CouchDB document conflicts (HTTP 409)
 - Automatically retries up to 10 times with exponential backoff
 - Uses jitter to prevent thundering herd problems
@@ -287,6 +349,7 @@ Promise.all([
 ```
 
 ### Read Data
+
 `GET /api/data/read/{path}`
 
 Reads data from a specific path in the user's document.
@@ -316,6 +379,7 @@ Response: { data: null }
 ```
 
 ### Get Full Document
+
 `GET /api/data/document`
 
 Returns the entire user document (without CouchDB internal fields).
@@ -332,6 +396,7 @@ Response: {
 ```
 
 ### Delete Data
+
 `DELETE /api/data/delete/{path}`
 
 Deletes data at a specific path in the user's document.
@@ -367,6 +432,7 @@ Response: { error: "Path not found" }
 ## Path Convention
 
 Paths use forward slashes (`/`) to navigate nested structures:
+
 - `info/username` → `data.info.username`
 - `transactions` → `data.transactions`
 - `smile/0/title` → `data.smile[0].title`
@@ -383,6 +449,7 @@ Paths use forward slashes (`/`) to navigate nested structures:
 If you have existing data stored in the old flat structure (separate documents per field), you'll need to run a migration script to consolidate them into the new hierarchical format.
 
 Example migration:
+
 ```javascript
 // Old structure:
 // user_123_info_username: "john"
@@ -404,19 +471,19 @@ The frontend `writeObject` method automatically writes to the correct path:
 
 ```typescript
 // Write user info
-this.database.writeObject("info/username", "john_doe");
-this.database.writeObject("info/email", "john@example.com");
+this.database.writeObject('info/username', 'john_doe');
+this.database.writeObject('info/email', 'john@example.com');
 
 // Or write entire info object
-this.database.writeObject("info", {
-  username: "john_doe",
-  email: "john@example.com"
+this.database.writeObject('info', {
+  username: 'john_doe',
+  email: 'john@example.com',
 });
 
 // Write transactions array
-this.database.writeObject("transactions", [
-  { id: "tx1", amount: 100 },
-  { id: "tx2", amount: 250 }
+this.database.writeObject('transactions', [
+  { id: 'tx1', amount: 100 },
+  { id: 'tx2', amount: 250 },
 ]);
 ```
 
@@ -433,12 +500,17 @@ this.database.writeObject("transactions", [
 **Symptom:** User registers successfully and appears in Fauxton, but writing `info/username` or `info/email` doesn't seem to work.
 
 **Diagnosis:**
+
 1. Check that you're including the JWT token in requests:
+
    ```javascript
-   Headers: { Authorization: "Bearer <token_from_login>" }
+   Headers: {
+     Authorization: 'Bearer <token_from_login>';
+   }
    ```
 
 2. Verify the data is actually being written. In Fauxton, look for a document with `_id` matching your `userId`:
+
    ```json
    {
      "_id": "user_1710327600000_abc123",
@@ -459,26 +531,28 @@ this.database.writeObject("transactions", [
 
 **Common Issues:**
 
-| Issue | Cause | Solution |
-|-------|-------|----------|
-| Token not included | Missing Authorization header | Add `Authorization: Bearer <token>` to all data requests |
-| Wrong database | Looking in `auth` instead of `users` | User credentials are in `auth` DB, user data is in `users` DB |
-| Path confusion | Writing to wrong path | Use paths like `info/username`, not `username` alone |
-| Data in wrong place | Data not under `data` key | All user data must be under the `data` object in the document |
-| Incorrect userId | Looking at wrong document | userId comes from JWT, not from request. Check token payload |
+| Issue               | Cause                                | Solution                                                      |
+| ------------------- | ------------------------------------ | ------------------------------------------------------------- |
+| Token not included  | Missing Authorization header         | Add `Authorization: Bearer <token>` to all data requests      |
+| Wrong database      | Looking in `auth` instead of `users` | User credentials are in `auth` DB, user data is in `users` DB |
+| Path confusion      | Writing to wrong path                | Use paths like `info/username`, not `username` alone          |
+| Data in wrong place | Data not under `data` key            | All user data must be under the `data` object in the document |
+| Incorrect userId    | Looking at wrong document            | userId comes from JWT, not from request. Check token payload  |
 
 **Verification Steps:**
 
 1. **Register and get token:**
+
    ```bash
    curl -X POST http://localhost:3000/api/auth/register \
      -H "Content-Type: application/json" \
      -d '{"email":"test@example.com","password":"test123"}'
-   
+
    # Save the userId and token from response
    ```
 
 2. **Write data with token:**
+
    ```bash
    curl -X POST http://localhost:3000/api/data/write/info \
      -H "Authorization: Bearer <YOUR_TOKEN>" \
@@ -487,10 +561,11 @@ this.database.writeObject("transactions", [
    ```
 
 3. **Read data back:**
+
    ```bash
    curl -X GET http://localhost:3000/api/data/read/info \
      -H "Authorization: Bearer <YOUR_TOKEN>"
-   
+
    # Should return: {"data":{"username":"testuser","email":"test@example.com"}}
    ```
 
@@ -503,11 +578,13 @@ this.database.writeObject("transactions", [
 ### "Can other users see my data?"
 
 **Answer:** No, by design:
+
 - API Level: JWT authentication ensures each request only accesses the authenticated user's document
 - Database Level: CouchDB validation functions and security documents prevent unauthorized access
 - Document Level: Each user has a separate document with `_id` = their unique `userId`
 
 **Example:**
+
 - User Alice (userId: `user_123`) can only read/write document with `_id: "user_123"`
 - User Bob (userId: `user_456`) can only read/write document with `_id: "user_456"`
 - Alice's JWT token contains `userId: "user_123"`, so all her operations affect document `user_123`
@@ -531,6 +608,7 @@ curl -X GET http://localhost:3000/api/data/read/ \
 **Cause:** Token is missing, expired, or invalid.
 
 **Solution:**
+
 1. Check token is in Authorization header: `Authorization: Bearer <token>`
 2. Check token hasn't expired (tokens last 7 days by default)
 3. Re-login to get a fresh token
@@ -541,6 +619,7 @@ curl -X GET http://localhost:3000/api/data/read/ \
 **Cause:** Multiple concurrent writes tried to modify the document, and retry limit was exceeded.
 
 **Solution:**
+
 - This is very rare (< 0.01% of writes) because the backend auto-retries up to 10 times
 - If you see this, simply retry the request - it means there was heavy concurrent activity
 - The frontend should handle this automatically and retry
@@ -548,6 +627,7 @@ curl -X GET http://localhost:3000/api/data/read/ \
 ### "Data structure looks wrong in Fauxton"
 
 **Expected Structure:**
+
 ```json
 {
   "_id": "user_1710327600000_abc123",
@@ -565,6 +645,7 @@ curl -X GET http://localhost:3000/api/data/read/ \
 ```
 
 **If you see:**
+
 - Multiple documents per user → Old/incorrect structure, run migration
 - Data at root level instead of under `data` → Old/incorrect structure
 - No `_id` matching userId → Document created manually, should be created via API

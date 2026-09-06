@@ -19,31 +19,53 @@ import { MatInputModule } from '@angular/material/input';
 import { RouterModule } from '@angular/router';
 import { SharedFilterComponent } from 'src/app/shared/components/shared-filter/shared-filter.component';
 
-
 // Deferred imports — resolved after module init to break circular chains
-let AppComponent: any; setTimeout(() => import('src/app/app.component').then(m => AppComponent = m.AppComponent));
-let HomeComponent: any; setTimeout(() => import('../home/home.component').then(m => HomeComponent = m.HomeComponent));
-let StatsComponent: any; setTimeout(() => import('src/app/stats/stats.component').then(m => StatsComponent = m.StatsComponent));
-let MenuComponent: any; setTimeout(() => import('src/app/panels/menu/menu.component').then(m => MenuComponent = m.MenuComponent));
+let AppComponent: any;
+setTimeout(() => import('src/app/app.component').then((m) => (AppComponent = m.AppComponent)));
+let HomeComponent: any;
+setTimeout(() => import('../home/home.component').then((m) => (HomeComponent = m.HomeComponent)));
+let StatsComponent: any;
+setTimeout(() =>
+  import('src/app/stats/stats.component').then((m) => (StatsComponent = m.StatsComponent)),
+);
+let MenuComponent: any;
+setTimeout(() =>
+  import('src/app/panels/menu/menu.component').then((m) => (MenuComponent = m.MenuComponent)),
+);
 /**
  * Represents the DailyComponent class.
  */
 @Component({
   selector: 'app-daily',
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslateModule, AppDatePipe, AppNumberPipe, MatTableModule, MatSortModule, MatPaginatorModule, MatFormFieldModule, MatInputModule, RouterModule, SharedFilterComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    TranslateModule,
+    AppDatePipe,
+    AppNumberPipe,
+    MatTableModule,
+    MatSortModule,
+    MatPaginatorModule,
+    MatFormFieldModule,
+    MatInputModule,
+    RouterModule,
+    SharedFilterComponent,
+  ],
   templateUrl: './daily.component.html',
-  styleUrls: ['./daily.component.css', '../../app.component.css', '../../shared/styles/table.css']
+  styleUrls: ['./daily.component.css', '../../app.component.css', '../../shared/styles/table.css'],
 })
 export class DailyComponent extends BaseAccountComponent {
-
-  static dailyAmount = AppStateService.instance.getAmount("Daily", AppStateService.instance.daily / 100);
+  static dailyAmount = AppStateService.instance.getAmount(
+    'Daily',
+    AppStateService.instance.daily / 100,
+  );
 
   static dataSource = new MatTableDataSource<any>([]);
 
   static isSearched = false;
-  static allTransactions = []
-  static allSearchedTransactions = []
+  static allTransactions = [];
+  static allSearchedTransactions = [];
 
   // Advanced filter system
   static advancedFilter: IncomeFilter = {
@@ -60,10 +82,10 @@ export class DailyComponent extends BaseAccountComponent {
       date: true,
       time: true,
       category: true,
-      comment: true
-    }
+      comment: true,
+    },
   };
-  
+
   static isAdvancedFilterExpanded = false;
   static isSearchHelpVisible = false;
   static availableAccounts: string[] = [];
@@ -82,28 +104,37 @@ export class DailyComponent extends BaseAccountComponent {
    */
   constructor(router: Router, filterService: TransactionFilterService) {
     super(router, filterService);
-    DailyComponent.dailyAmount = AppStateService.instance.getAmount("Daily", AppStateService.instance.daily / 100);
+    DailyComponent.dailyAmount = AppStateService.instance.getAmount(
+      'Daily',
+      AppStateService.instance.daily / 100,
+    );
     this.initAccount(DailyComponent);
   }
-
-  
 
   /**
    * Updates the dailyAmount value.
    */
   static updateDailyAmount() {
-    DailyComponent.dailyAmount = AppStateService.instance.getAmount("Daily", AppStateService.instance.daily / 100);
+    DailyComponent.dailyAmount = AppStateService.instance.getAmount(
+      'Daily',
+      AppStateService.instance.daily / 100,
+    );
   }
 
   addTransaction() {
-    AppComponent.addTransaction("Daily", "@", "daily");
+    AppComponent.addTransaction('Daily', '@', 'daily');
   }
 
   static setDate() {
     DailyComponent.d = new Date();
-    DailyComponent.startDateTextField = "";
-    DailyComponent.endDateTextField = DailyComponent.d.getFullYear() + "-" + DailyComponent.zeroPadded(DailyComponent.d.getMonth() + 1) + "-" + DailyComponent.zeroPadded(DailyComponent.d.getDate());
-    DailyComponent.advancedFilter.startDate = "";
+    DailyComponent.startDateTextField = '';
+    DailyComponent.endDateTextField =
+      DailyComponent.d.getFullYear() +
+      '-' +
+      DailyComponent.zeroPadded(DailyComponent.d.getMonth() + 1) +
+      '-' +
+      DailyComponent.zeroPadded(DailyComponent.d.getDate());
+    DailyComponent.advancedFilter.startDate = '';
     DailyComponent.advancedFilter.endDate = DailyComponent.endDateTextField;
   }
 
@@ -112,8 +143,8 @@ export class DailyComponent extends BaseAccountComponent {
   }
 
   goToDailyStats() {
-    StatsComponent.resetBIStateIfNeeded("daily");
-    StatsComponent.modus = "daily";
+    StatsComponent.resetBIStateIfNeeded('daily');
+    StatsComponent.modus = 'daily';
     MenuComponent.openStats = true;
     StatsComponent.isSwitch = true;
     this.router.navigate(['/stats']);

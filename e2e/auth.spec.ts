@@ -4,7 +4,6 @@ import { freshUser } from './fixtures/test-data';
 import { registerAndRedirect, loginAndRedirect } from './helpers/auth.helper';
 
 test.describe('Authentication Flow', () => {
-
   test('should show login form by default', async ({ page }) => {
     const reg = new RegistrationPage(page);
     await reg.goto();

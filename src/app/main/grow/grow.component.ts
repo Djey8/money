@@ -7,12 +7,12 @@ import { InfoComponent } from 'src/app/panels/info/info.component';
 import { InfoAssetComponent } from 'src/app/panels/info/info-asset/info-asset.component';
 import { InfoShareComponent } from 'src/app/panels/info/info-share/info-share.component';
 import { InfoInvestmentComponent } from 'src/app/panels/info/info-investment/info-investment.component';
-import {MatPaginator, MatPaginatorModule} from '@angular/material/paginator';
-import {LiveAnnouncer} from '@angular/cdk/a11y';
-import {AfterViewInit, Component, ViewChild, inject, OnInit} from '@angular/core';
-import {MatSort, Sort, MatSortModule} from '@angular/material/sort';
-import {MatTableDataSource, MatTableModule} from '@angular/material/table';
-import {MatFormFieldModule} from '@angular/material/form-field';
+import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
+import { LiveAnnouncer } from '@angular/cdk/a11y';
+import { AfterViewInit, Component, ViewChild, inject, OnInit } from '@angular/core';
+import { MatSort, Sort, MatSortModule } from '@angular/material/sort';
+import { MatTableDataSource, MatTableModule } from '@angular/material/table';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { Transaction } from 'src/app/interfaces/transaction';
 import { AppStateService } from 'src/app/shared/services/app-state.service';
@@ -26,57 +26,115 @@ import { InfoLiabilitieComponent } from 'src/app/panels/info/info-liabilitie/inf
 import { SettingsComponent } from 'src/app/panels/settings/settings.component';
 import { AiAssistantComponent } from 'src/app/panels/ai-assistant/ai-assistant.component';
 
-
 // Deferred imports — resolved after module init to break circular chains
-let AppComponent: any; setTimeout(() => import('src/app/app.component').then(m => AppComponent = m.AppComponent));
-let BalanceComponent: any; setTimeout(() => import('../cashflow/balance/balance.component').then(m => BalanceComponent = m.BalanceComponent));
-let AccountingComponent: any; setTimeout(() => import('../accounting/accounting.component').then(m => AccountingComponent = m.AccountingComponent));
-let AddGrowComponent: any; setTimeout(() => import('src/app/panels/add/add-grow/add-grow.component').then(m => AddGrowComponent = m.AddGrowComponent));
-let AddComponent: any; setTimeout(() => import('src/app/panels/add/add.component').then(m => AddComponent = m.AddComponent));
-let IncomeComponent: any; setTimeout(() => import('../cashflow/income/income.component').then(m => IncomeComponent = m.IncomeComponent));
-let MenuComponent: any; setTimeout(() => import('src/app/panels/menu/menu.component').then(m => MenuComponent = m.MenuComponent));
-let InfoInterestsComponent: any; setTimeout(() => import('src/app/panels/info/info-interests/info-interests.component').then(m => InfoInterestsComponent = m.InfoInterestsComponent));
+let AppComponent: any;
+setTimeout(() => import('src/app/app.component').then((m) => (AppComponent = m.AppComponent)));
+let BalanceComponent: any;
+setTimeout(() =>
+  import('../cashflow/balance/balance.component').then(
+    (m) => (BalanceComponent = m.BalanceComponent),
+  ),
+);
+let AccountingComponent: any;
+setTimeout(() =>
+  import('../accounting/accounting.component').then(
+    (m) => (AccountingComponent = m.AccountingComponent),
+  ),
+);
+let AddGrowComponent: any;
+setTimeout(() =>
+  import('src/app/panels/add/add-grow/add-grow.component').then(
+    (m) => (AddGrowComponent = m.AddGrowComponent),
+  ),
+);
+let AddComponent: any;
+setTimeout(() =>
+  import('src/app/panels/add/add.component').then((m) => (AddComponent = m.AddComponent)),
+);
+let IncomeComponent: any;
+setTimeout(() =>
+  import('../cashflow/income/income.component').then((m) => (IncomeComponent = m.IncomeComponent)),
+);
+let MenuComponent: any;
+setTimeout(() =>
+  import('src/app/panels/menu/menu.component').then((m) => (MenuComponent = m.MenuComponent)),
+);
+let InfoInterestsComponent: any;
+setTimeout(() =>
+  import('src/app/panels/info/info-interests/info-interests.component').then(
+    (m) => (InfoInterestsComponent = m.InfoInterestsComponent),
+  ),
+);
 @Component({
   selector: 'app-grow',
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslateModule, AppNumberPipe, MatTableModule, MatSortModule, RouterModule, InfoAssetComponent, InfoShareComponent, InfoInvestmentComponent, InfoLiabilitieComponent, InfoGrowComponent, AiAssistantComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    TranslateModule,
+    AppNumberPipe,
+    MatTableModule,
+    MatSortModule,
+    RouterModule,
+    InfoAssetComponent,
+    InfoShareComponent,
+    InfoInvestmentComponent,
+    InfoLiabilitieComponent,
+    InfoGrowComponent,
+    AiAssistantComponent,
+  ],
   templateUrl: './grow.component.html',
-  styleUrls: ['./grow.component.css', '../../app.component.css', '../../shared/styles/table.css']
+  styleUrls: ['./grow.component.css', '../../app.component.css', '../../shared/styles/table.css'],
 })
 export class GrowComponent implements OnInit, AfterViewInit {
-
   static isSearched = false;
   static phaseFilter: GrowPhase | 'all' = 'all';
   static typeFilter: GrowType | 'all' = 'all';
-  static get allGrowProjects(): Grow[] { return AppStateService.instance.allGrowProjects; }
-  static set allGrowProjects(v: Grow[]) { AppStateService.instance.allGrowProjects = v; }
-  static allSearchedGrowProjects = []
+  static get allGrowProjects(): Grow[] {
+    return AppStateService.instance.allGrowProjects;
+  }
+  static set allGrowProjects(v: Grow[]) {
+    AppStateService.instance.allGrowProjects = v;
+  }
+  static allSearchedGrowProjects = [];
 
   private _liveAnnouncer = inject(LiveAnnouncer);
   displayedColumns: string[] = ['id', 'account', 'amount', 'date'];
 
-  searchTextField = "";
+  searchTextField = '';
   isSorting = false;
 
   public classReference = GrowComponent;
-  public get appReference() { return AppComponent; }
+  public get appReference() {
+    return AppComponent;
+  }
   public settingsReference = SettingsComponent;
   public appState = AppStateService.instance;
   public balanceRefference = BalanceComponent;
-  get accountingReference() { return AccountingComponent; }
+  get accountingReference() {
+    return AccountingComponent;
+  }
 
-   /**
+  /**
    * Constructs a new SmileProjectsComponent.
    * @param router - The router service.
    * @param localStorage - The local storage service.
    */
-   constructor(private router:Router, private localStorage: LocalService) {
-    AppStateService.instance.allGrowProjects = this.localStorage.getData("grow")=="" ? [] : migrateGrowArray(JSON.parse(this.localStorage.getData("grow")));
+  constructor(
+    private router: Router,
+    private localStorage: LocalService,
+  ) {
+    AppStateService.instance.allGrowProjects =
+      this.localStorage.getData('grow') == ''
+        ? []
+        : migrateGrowArray(JSON.parse(this.localStorage.getData('grow')));
     if (AccountingComponent?.dataSource) {
       AccountingComponent.dataSource.data = AppStateService.instance.allTransactions;
-      AccountingComponent.dataSource.data = AccountingComponent.dataSource.data.map((transaction, index) => {
-        return { ...transaction, id: index };
-      });
+      AccountingComponent.dataSource.data = AccountingComponent.dataSource.data.map(
+        (transaction, index) => {
+          return { ...transaction, id: index };
+        },
+      );
     }
     // Tier 3: Load fresh data from server if not yet loaded
     if (AppDataService.instance && !AppStateService.instance.tier3GrowLoaded) {
@@ -116,10 +174,9 @@ export class GrowComponent implements OnInit, AfterViewInit {
     } else {
       console.warn('MatSort is not initialized yet.');
     }
-    
   }
 
-  ngOnInit() { 
+  ngOnInit() {
     // Apply custom sorting
     if (AccountingComponent?.dataSource) {
       this.applyCustomSorting(AccountingComponent.dataSource);
@@ -135,10 +192,13 @@ export class GrowComponent implements OnInit, AfterViewInit {
     }
   }
 
-  getGrowTransactions(index: number){
+  getGrowTransactions(index: number) {
     let found = false;
-    for(let i = 0; i < AppStateService.instance.allTransactions.length; i++){
-      if(AppStateService.instance.allTransactions[i].category.replace("@", "") === AppStateService.instance.allGrowProjects[index].title){
+    for (let i = 0; i < AppStateService.instance.allTransactions.length; i++) {
+      if (
+        AppStateService.instance.allTransactions[i].category.replace('@', '') ===
+        AppStateService.instance.allGrowProjects[index].title
+      ) {
         found = true;
       }
     }
@@ -148,72 +208,85 @@ export class GrowComponent implements OnInit, AfterViewInit {
   search() {
     const searchTerms = this.searchTextField.toLowerCase().split(',');
 
-    GrowComponent.allSearchedGrowProjects = AppStateService.instance.allGrowProjects.map(grow => {
+    GrowComponent.allSearchedGrowProjects = AppStateService.instance.allGrowProjects.map((grow) => {
       // Perform case-insensitive search on account, category, comment, date, and amount fields
-      const title = grow.title ? grow.title.toLowerCase() : "";
-      const description = grow.description ? grow.description.toLowerCase() : "";
-      const strategy = grow.strategy ? grow.strategy.toLowerCase() : "";
-      const risks = grow.risks ? grow.risks.toLowerCase() : "";
-      const amount = grow.amount ? String(grow.amount) : "";
-      const liabilitie = grow.liabilitie ? String(grow.liabilitie) : "";
-      const credit = grow.liabilitie && grow.liabilitie.credit ? String(grow.liabilitie.credit) : "";
-      const status = grow.status ? grow.status.toLowerCase() : "";
-      const cashflow = grow.cashflow ? String(grow.cashflow) : "";
-      const mortage = grow.investment && grow.investment.amount ? String(grow.investment.amount) : "";
+      const title = grow.title ? grow.title.toLowerCase() : '';
+      const description = grow.description ? grow.description.toLowerCase() : '';
+      const strategy = grow.strategy ? grow.strategy.toLowerCase() : '';
+      const risks = grow.risks ? grow.risks.toLowerCase() : '';
+      const amount = grow.amount ? String(grow.amount) : '';
+      const liabilitie = grow.liabilitie ? String(grow.liabilitie) : '';
+      const credit =
+        grow.liabilitie && grow.liabilitie.credit ? String(grow.liabilitie.credit) : '';
+      const status = grow.status ? grow.status.toLowerCase() : '';
+      const cashflow = grow.cashflow ? String(grow.cashflow) : '';
+      const mortage =
+        grow.investment && grow.investment.amount ? String(grow.investment.amount) : '';
 
-      const isFiltered = searchTerms.some(term => 
-        title.includes(term.trim()) ||
-        status.includes(term.trim()) ||
-        description.includes(term.trim()) ||
-        strategy.includes(term.trim()) ||
-        risks.includes(term.trim()) || 
-        amount.includes(term.trim()) || 
-        liabilitie.includes(term.trim()) ||
-        credit.includes(term.trim()) ||
-        cashflow.includes(term.trim()) ||
-        mortage.includes(term.trim())
+      const isFiltered = searchTerms.some(
+        (term) =>
+          title.includes(term.trim()) ||
+          status.includes(term.trim()) ||
+          description.includes(term.trim()) ||
+          strategy.includes(term.trim()) ||
+          risks.includes(term.trim()) ||
+          amount.includes(term.trim()) ||
+          liabilitie.includes(term.trim()) ||
+          credit.includes(term.trim()) ||
+          cashflow.includes(term.trim()) ||
+          mortage.includes(term.trim()),
       );
 
       // Return a new object with the isFiltered field added
       return {
         ...grow,
-        isFiltered: isFiltered
+        isFiltered: isFiltered,
       };
     });
     GrowComponent.isSearched = true;
   }
 
   buyProject(index: number) {
-    AppComponent.gotoTop();    
+    AppComponent.gotoTop();
     AddComponent.categoryTextField = `@${AppStateService.instance.allGrowProjects[index].title}`;
-    AddComponent.selectedOption = "Fire";
-    AddComponent.loanTextField = "";
-    AddComponent.creditTextField = "";
-    if(AppStateService.instance.allGrowProjects[index].liabilitie){
+    AddComponent.selectedOption = 'Fire';
+    AddComponent.loanTextField = '';
+    AddComponent.creditTextField = '';
+    if (AppStateService.instance.allGrowProjects[index].liabilitie) {
       AddComponent.isLiabilitie = true;
-      AddComponent.creditTextField = String(AppStateService.instance.allGrowProjects[index].liabilitie.credit);
-      AddComponent.loanTextField = String(AppStateService.instance.allGrowProjects[index].liabilitie.amount);
+      AddComponent.creditTextField = String(
+        AppStateService.instance.allGrowProjects[index].liabilitie.credit,
+      );
+      AddComponent.loanTextField = String(
+        AppStateService.instance.allGrowProjects[index].liabilitie.amount,
+      );
     }
     let found = false;
-    if(AppStateService.instance.allGrowProjects[index].isAsset){
+    if (AppStateService.instance.allGrowProjects[index].isAsset) {
       found = true;
-      const totalAmount = (AppStateService.instance.allGrowProjects[index].amount ? Number(AppStateService.instance.allGrowProjects[index].amount) : 0) + 
-            (AppStateService.instance.allGrowProjects[index].liabilitie && AppStateService.instance.allGrowProjects[index].liabilitie.amount ? Number(AppStateService.instance.allGrowProjects[index].liabilitie.amount) : 0);
-      AddComponent.amountTextField = "-1";
+      const totalAmount =
+        (AppStateService.instance.allGrowProjects[index].amount
+          ? Number(AppStateService.instance.allGrowProjects[index].amount)
+          : 0) +
+        (AppStateService.instance.allGrowProjects[index].liabilitie &&
+        AppStateService.instance.allGrowProjects[index].liabilitie.amount
+          ? Number(AppStateService.instance.allGrowProjects[index].liabilitie.amount)
+          : 0);
+      AddComponent.amountTextField = '-1';
       AddComponent.commentTextField = `Buy Asset ${AppStateService.instance.allGrowProjects[index].title} 1 x ${totalAmount};`;
-    } else if (AppStateService.instance.allGrowProjects[index].share){
+    } else if (AppStateService.instance.allGrowProjects[index].share) {
       found = true;
       const quantity = AppStateService.instance.allGrowProjects[index].share.quantity;
       const price = AppStateService.instance.allGrowProjects[index].share.price;
-      
-      AddComponent.amountTextField = "-1";
+
+      AddComponent.amountTextField = '-1';
       AddComponent.commentTextField = `Buy Share ${AppStateService.instance.allGrowProjects[index].title} ${quantity} x ${price};`;
-    } else if (AppStateService.instance.allGrowProjects[index].investment){
+    } else if (AppStateService.instance.allGrowProjects[index].investment) {
       found = true;
-      AddComponent.amountTextField = "-1";
+      AddComponent.amountTextField = '-1';
       AddComponent.commentTextField = `Buy Investment ${AppStateService.instance.allGrowProjects[index].title} ${AppStateService.instance.allGrowProjects[index].investment.deposit} ${AppStateService.instance.allGrowProjects[index].investment.amount};`;
     }
-    AddComponent.url = "/grow";
+    AddComponent.url = '/grow';
     InfoGrowComponent.isInfo = false;
     AddComponent.isAdd = true;
     MenuComponent.isMenu = false;
@@ -222,59 +295,61 @@ export class GrowComponent implements OnInit, AfterViewInit {
   }
 
   sellProject(index: number) {
-    AppComponent.gotoTop();  
+    AppComponent.gotoTop();
     InfoGrowComponent.isInfo = false;
     AddComponent.categoryTextField = `@${AppStateService.instance.allGrowProjects[index].title}`;
-    AddComponent.selectedOption = "Income";
-    AddComponent.amountTextField = "1";
+    AddComponent.selectedOption = 'Income';
+    AddComponent.amountTextField = '1';
     let found = false;
-    if(AppStateService.instance.allGrowProjects[index].isAsset){
+    if (AppStateService.instance.allGrowProjects[index].isAsset) {
       found = true;
       AddComponent.commentTextField = `Sell Asset ${AppStateService.instance.allGrowProjects[index].title} 1 x ${this.getAssetAmount(index)};`;
-      
-    } else if (AppStateService.instance.allGrowProjects[index].share){
+    } else if (AppStateService.instance.allGrowProjects[index].share) {
       found = true;
       let quantity = 0;
-      let price = 0;  
-      for(let i = 0; i < AppStateService.instance.allShares.length; i++){
-        if(AppStateService.instance.allGrowProjects[index].title == AppStateService.instance.allShares[i].tag){
+      let price = 0;
+      for (let i = 0; i < AppStateService.instance.allShares.length; i++) {
+        if (
+          AppStateService.instance.allGrowProjects[index].title ==
+          AppStateService.instance.allShares[i].tag
+        ) {
           quantity = AppStateService.instance.allShares[i].quantity;
           price = AppStateService.instance.allShares[i].price;
         }
       }
       AddComponent.commentTextField = `Sell Share ${AppStateService.instance.allGrowProjects[index].title} ${quantity} x ${price};`;
-    
-    } else if (AppStateService.instance.allGrowProjects[index].investment){
+    } else if (AppStateService.instance.allGrowProjects[index].investment) {
       found = true;
       let deposit = 0;
       let mortage = 0;
-      for(let i =0; i < AppStateService.instance.allInvestments.length; i++){
-        if(AppStateService.instance.allGrowProjects[index].title == AppStateService.instance.allInvestments[i].tag){
+      for (let i = 0; i < AppStateService.instance.allInvestments.length; i++) {
+        if (
+          AppStateService.instance.allGrowProjects[index].title ==
+          AppStateService.instance.allInvestments[i].tag
+        ) {
           deposit = AppStateService.instance.allInvestments[i].deposit;
-          mortage = AppStateService.instance.allInvestments[i].amount; 
+          mortage = AppStateService.instance.allInvestments[i].amount;
         }
       }
-      if(AppStateService.instance.allGrowProjects[index].liabilitie){
+      if (AppStateService.instance.allGrowProjects[index].liabilitie) {
         AddComponent.commentTextField = `Payback Liabilitie ${AppStateService.instance.allGrowProjects[index].liabilitie.amount} ${AppStateService.instance.allGrowProjects[index].liabilitie.credit}; `;
       }
       AddComponent.commentTextField += `Sell Investment ${AppStateService.instance.allGrowProjects[index].title} ${deposit} ${mortage};`;
-      
     }
-    AddComponent.url = "/grow";
+    AddComponent.url = '/grow';
     AddComponent.isLiabilitie = false;
     InfoGrowComponent.isInfo = false;
     AddComponent.isAdd = true;
     MenuComponent.isMenu = false;
-    InfoComponent.isInfo = false
+    InfoComponent.isInfo = false;
     AddComponent.isAdd = true;
   }
 
-  
   /**
    * Clears the search results.
    */
   clearSearch() {
-    this.searchTextField = "";
+    this.searchTextField = '';
     GrowComponent.isSearched = false;
   }
 
@@ -282,10 +357,13 @@ export class GrowComponent implements OnInit, AfterViewInit {
    * Handles the click event on a row in the Smile Projects table.
    * @param index - The index of the clicked row.
    */
-  clickRow(index: number){
-    if(!AddComponent.isAdd && !this.isSorting){
+  clickRow(index: number) {
+    if (!AddComponent.isAdd && !this.isSorting) {
       AppComponent.gotoTop();
-      InfoGrowComponent.setInfoGrowComponent(index, AppStateService.instance.allGrowProjects[index]);
+      InfoGrowComponent.setInfoGrowComponent(
+        index,
+        AppStateService.instance.allGrowProjects[index],
+      );
     }
   }
 
@@ -298,7 +376,7 @@ export class GrowComponent implements OnInit, AfterViewInit {
       AppStateService.instance.allTransactions[index].date,
       AppStateService.instance.allTransactions[index].time,
       AppStateService.instance.allTransactions[index].category,
-      AppStateService.instance.allTransactions[index].comment
+      AppStateService.instance.allTransactions[index].comment,
     );
   }
 
@@ -309,31 +387,47 @@ export class GrowComponent implements OnInit, AfterViewInit {
     }, 1000);
   }
 
-  getGrowProjectsGV(index: number){
-    let amount = 0//Number(AppStateService.instance.allGrowProjects[index].cashflow);
-    for(let i = 0; i < AppStateService.instance.allTransactions.length; i++){
-      if(AppStateService.instance.allTransactions[i].category.replace("@", "") === AppStateService.instance.allGrowProjects[index].title){
+  getGrowProjectsGV(index: number) {
+    let amount = 0; //Number(AppStateService.instance.allGrowProjects[index].cashflow);
+    for (let i = 0; i < AppStateService.instance.allTransactions.length; i++) {
+      if (
+        AppStateService.instance.allTransactions[i].category.replace('@', '') ===
+        AppStateService.instance.allGrowProjects[index].title
+      ) {
         amount += AppStateService.instance.allTransactions[i].amount;
       }
     }
     return amount;
   }
 
-  getAssetAmount(index: number){
+  getAssetAmount(index: number) {
     let amount = 0;
-    for(let i = 0; i < AppStateService.instance.allAssets.length; i++){
-      if(AppStateService.instance.allAssets[i].tag === AppStateService.instance.allGrowProjects[index].title){
+    for (let i = 0; i < AppStateService.instance.allAssets.length; i++) {
+      if (
+        AppStateService.instance.allAssets[i].tag ===
+        AppStateService.instance.allGrowProjects[index].title
+      ) {
         amount = AppStateService.instance.allAssets[i].amount;
       }
     }
-    for(let i = 0; i < AppStateService.instance.allShares.length; i++){
-      if(AppStateService.instance.allShares[i].tag === AppStateService.instance.allGrowProjects[index].title){
-        amount = AppStateService.instance.allShares[i].quantity * AppStateService.instance.allShares[i].price;
+    for (let i = 0; i < AppStateService.instance.allShares.length; i++) {
+      if (
+        AppStateService.instance.allShares[i].tag ===
+        AppStateService.instance.allGrowProjects[index].title
+      ) {
+        amount =
+          AppStateService.instance.allShares[i].quantity *
+          AppStateService.instance.allShares[i].price;
       }
     }
-    for(let i=0; i < AppStateService.instance.allInvestments.length; i++){
-      if(AppStateService.instance.allInvestments[i].tag === AppStateService.instance.allGrowProjects[index].title){
-        amount = AppStateService.instance.allInvestments[i].amount + AppStateService.instance.allInvestments[i].deposit;
+    for (let i = 0; i < AppStateService.instance.allInvestments.length; i++) {
+      if (
+        AppStateService.instance.allInvestments[i].tag ===
+        AppStateService.instance.allGrowProjects[index].title
+      ) {
+        amount =
+          AppStateService.instance.allInvestments[i].amount +
+          AppStateService.instance.allInvestments[i].deposit;
       }
     }
     return amount;
@@ -354,19 +448,21 @@ export class GrowComponent implements OnInit, AfterViewInit {
     AiAssistantComponent.zIndex = 2;
   }
 
-  cashflowProject(index: number){
+  cashflowProject(index: number) {
     AppComponent.gotoTop();
     AddComponent.categoryTextField = `@${AppStateService.instance.allGrowProjects[index].title}`;
-    AddComponent.url = "/grow";
-    AddComponent.commentTextField = "CASHFLOW " + AppStateService.instance.allGrowProjects[index].cashflow;
+    AddComponent.url = '/grow';
+    AddComponent.commentTextField =
+      'CASHFLOW ' + AppStateService.instance.allGrowProjects[index].cashflow;
     let cashflow = AppStateService.instance.allGrowProjects[index].cashflow;
     if (AppStateService.instance.allGrowProjects[index].liabilitie) {
-      cashflow -= AppStateService.instance.allGrowProjects[index].liabilitie.credit
-      AddComponent.commentTextField += " - CREDIT " + AppStateService.instance.allGrowProjects[index].liabilitie.credit;
+      cashflow -= AppStateService.instance.allGrowProjects[index].liabilitie.credit;
+      AddComponent.commentTextField +=
+        ' - CREDIT ' + AppStateService.instance.allGrowProjects[index].liabilitie.credit;
     }
-    AddComponent.commentTextField += ";";
+    AddComponent.commentTextField += ';';
     AddComponent.amountTextField = String(cashflow);
-    AddComponent.selectedOption = "Income";
+    AddComponent.selectedOption = 'Income';
     AddComponent.isLiabilitie = false;
     InfoGrowComponent.isInfo = false;
     AddComponent.isAdd = true;
@@ -375,13 +471,15 @@ export class GrowComponent implements OnInit, AfterViewInit {
     AddComponent.isAdd = true;
   }
 
-  depositProject(index: number){
+  depositProject(index: number) {
     AppComponent.gotoTop();
     AddComponent.categoryTextField = `@${AppStateService.instance.allGrowProjects[index].title}`;
-    AddComponent.url = "/grow";
-    AddComponent.commentTextField = "Deposit " + AppStateService.instance.allGrowProjects[index].amount+";";
-    AddComponent.amountTextField = "-"+String(AppStateService.instance.allGrowProjects[index].amount);
-    AddComponent.selectedOption = "Fire";
+    AddComponent.url = '/grow';
+    AddComponent.commentTextField =
+      'Deposit ' + AppStateService.instance.allGrowProjects[index].amount + ';';
+    AddComponent.amountTextField =
+      '-' + String(AppStateService.instance.allGrowProjects[index].amount);
+    AddComponent.selectedOption = 'Fire';
     AddComponent.isLiabilitie = false;
     InfoGrowComponent.isInfo = false;
     AddComponent.isAdd = true;
@@ -390,39 +488,47 @@ export class GrowComponent implements OnInit, AfterViewInit {
     AddComponent.isAdd = true;
   }
 
-  dividende(index: number){
+  dividende(index: number) {
     AddComponent.categoryTextField = `@${AppStateService.instance.allGrowProjects[index].title}`;
-    AddComponent.selectedOption = "Income";
-    AddComponent.amountTextField = "1";
+    AddComponent.selectedOption = 'Income';
+    AddComponent.amountTextField = '1';
     AddComponent.commentTextField = `Dividende Share ${AppStateService.instance.allGrowProjects[index].title} ${AppStateService.instance.allGrowProjects[index].share.quantity} x ${AppStateService.instance.allGrowProjects[index].share.price};`;
     AddComponent.isLiabilitie = false;
-    AddComponent.creditTextField = "";
-    AddComponent.url = "/grow";
+    AddComponent.creditTextField = '';
+    AddComponent.url = '/grow';
     InfoShareComponent.isInfo = false;
     AddComponent.isAdd = true;
     MenuComponent.isMenu = false;
     InfoComponent.isInfo = false;
   }
 
-   /**
+  /**
    * Adds an amount to a Smile Project.
    * @param index - The index of the Smile Project.
    */
-   paybackProject(index: number) {
+  paybackProject(index: number) {
     // find liabilitie index
     let idx = -1;
     for (let i = 0; i < AppStateService.instance.liabilities.length; i++) {
-      if (AppStateService.instance.liabilities[i].tag === AppStateService.instance.allGrowProjects[index].title){
+      if (
+        AppStateService.instance.liabilities[i].tag ===
+        AppStateService.instance.allGrowProjects[index].title
+      ) {
         idx = i;
       }
     }
-    if (idx != -1){
+    if (idx != -1) {
       AppComponent.gotoTop();
       AddComponent.categoryTextField = `@${AppStateService.instance.liabilities[idx].tag}`;
-      AddComponent.url = "/grow";
-      AddComponent.commentTextField = "Payback Liabilitie " + AppStateService.instance.liabilities[idx].amount + " " + AppStateService.instance.liabilities[idx].credit + ";";
-      AddComponent.amountTextField = "-1";
-      AddComponent.selectedOption = "Fire";
+      AddComponent.url = '/grow';
+      AddComponent.commentTextField =
+        'Payback Liabilitie ' +
+        AppStateService.instance.liabilities[idx].amount +
+        ' ' +
+        AppStateService.instance.liabilities[idx].credit +
+        ';';
+      AddComponent.amountTextField = '-1';
+      AddComponent.selectedOption = 'Fire';
       AddComponent.isLiabilitie = false;
       InfoGrowComponent.isInfo = false;
       AddComponent.isAdd = true;
@@ -430,21 +536,27 @@ export class GrowComponent implements OnInit, AfterViewInit {
       InfoComponent.isInfo = false;
       AddComponent.isAdd = true;
     }
-    
   }
 
-  updateValueProject(index: number){
-    if(AppStateService.instance.allGrowProjects[index].isAsset){
+  updateValueProject(index: number) {
+    if (AppStateService.instance.allGrowProjects[index].isAsset) {
       let amount = 0;
       let id = -1;
-      for(let i = 0; i < AppStateService.instance.allAssets.length; i++){
-        if(AppStateService.instance.allAssets[i].tag === AppStateService.instance.allGrowProjects[index].title){
+      for (let i = 0; i < AppStateService.instance.allAssets.length; i++) {
+        if (
+          AppStateService.instance.allAssets[i].tag ===
+          AppStateService.instance.allGrowProjects[index].title
+        ) {
           amount = AppStateService.instance.allAssets[i].amount;
           id = i;
         }
       }
-      if(id != -1){
-        InfoAssetComponent.setInfoAssetComponent(id, AppStateService.instance.allGrowProjects[index].title, amount);
+      if (id != -1) {
+        InfoAssetComponent.setInfoAssetComponent(
+          id,
+          AppStateService.instance.allGrowProjects[index].title,
+          amount,
+        );
         AppComponent.gotoTop();
         AddGrowComponent.zIndex = 1;
         InfoGrowComponent.isInfo = false;
@@ -452,19 +564,27 @@ export class GrowComponent implements OnInit, AfterViewInit {
         MenuComponent.isMenu = false;
         InfoComponent.isInfo = false;
       }
-    } else if(AppStateService.instance.allGrowProjects[index].share){
+    } else if (AppStateService.instance.allGrowProjects[index].share) {
       let quantity = 0;
       let price = 0;
       let id = -1;
-      for(let i = 0; i < AppStateService.instance.allShares.length; i++){
-        if(AppStateService.instance.allShares[i].tag === AppStateService.instance.allGrowProjects[index].title){
+      for (let i = 0; i < AppStateService.instance.allShares.length; i++) {
+        if (
+          AppStateService.instance.allShares[i].tag ===
+          AppStateService.instance.allGrowProjects[index].title
+        ) {
           quantity = AppStateService.instance.allShares[i].quantity;
           price = AppStateService.instance.allShares[i].price;
           id = i;
         }
       }
-      if(id != -1){
-        InfoShareComponent.setInfoShareComponent(id, AppStateService.instance.allGrowProjects[index].title, quantity, price);
+      if (id != -1) {
+        InfoShareComponent.setInfoShareComponent(
+          id,
+          AppStateService.instance.allGrowProjects[index].title,
+          quantity,
+          price,
+        );
         AppComponent.gotoTop();
         AddGrowComponent.zIndex = 1;
         InfoGrowComponent.isInfo = false;
@@ -472,19 +592,27 @@ export class GrowComponent implements OnInit, AfterViewInit {
         MenuComponent.isMenu = false;
         InfoComponent.isInfo = false;
       }
-    } else if (AppStateService.instance.allGrowProjects[index].investment){
-      let deposit = 0
-      let mortage = 0
+    } else if (AppStateService.instance.allGrowProjects[index].investment) {
+      let deposit = 0;
+      let mortage = 0;
       let id = -1;
-      for(let i = 0; i < AppStateService.instance.allInvestments.length; i++){
-        if(AppStateService.instance.allInvestments[i].tag === AppStateService.instance.allGrowProjects[index].title){
+      for (let i = 0; i < AppStateService.instance.allInvestments.length; i++) {
+        if (
+          AppStateService.instance.allInvestments[i].tag ===
+          AppStateService.instance.allGrowProjects[index].title
+        ) {
           deposit = AppStateService.instance.allInvestments[i].deposit;
           mortage = AppStateService.instance.allInvestments[i].amount;
           id = i;
         }
       }
-      if(id != -1){
-        InfoInvestmentComponent.setInfoInvestmentComponent(id, AppStateService.instance.allGrowProjects[index].title, deposit, mortage);
+      if (id != -1) {
+        InfoInvestmentComponent.setInfoInvestmentComponent(
+          id,
+          AppStateService.instance.allGrowProjects[index].title,
+          deposit,
+          mortage,
+        );
         AppComponent.gotoTop();
         AddGrowComponent.zIndex = 1;
         InfoGrowComponent.isInfo = false;
@@ -492,9 +620,7 @@ export class GrowComponent implements OnInit, AfterViewInit {
         MenuComponent.isMenu = false;
         InfoComponent.isInfo = false;
       }
-
     }
-    
   }
 
   // --- Phase filtering ---
@@ -504,7 +630,13 @@ export class GrowComponent implements OnInit, AfterViewInit {
   }
 
   get types(): (GrowType | 'all')[] {
-    return ['all', 'income-growth', 'budget-optimization', 'subscription-action', 'expense-insight'];
+    return [
+      'all',
+      'income-growth',
+      'budget-optimization',
+      'subscription-action',
+      'expense-insight',
+    ];
   }
 
   setPhaseFilter(phase: GrowPhase | 'all') {
@@ -520,33 +652,37 @@ export class GrowComponent implements OnInit, AfterViewInit {
       ? GrowComponent.allSearchedGrowProjects.filter((p: any) => p.isFiltered)
       : [...AppStateService.instance.allGrowProjects];
     if (GrowComponent.phaseFilter !== 'all') {
-      projects = projects.filter(p => p.phase === GrowComponent.phaseFilter);
+      projects = projects.filter((p) => p.phase === GrowComponent.phaseFilter);
     }
     if (GrowComponent.typeFilter !== 'all') {
-      projects = projects.filter(p => (p.type || 'income-growth') === GrowComponent.typeFilter);
+      projects = projects.filter((p) => (p.type || 'income-growth') === GrowComponent.typeFilter);
     }
     return projects.reverse();
   }
 
   getPhaseCount(phase: GrowPhase): number {
-    return AppStateService.instance.allGrowProjects.filter(p => p.phase === phase).length;
+    return AppStateService.instance.allGrowProjects.filter((p) => p.phase === phase).length;
   }
 
   getTypeCount(type: GrowType): number {
-    return AppStateService.instance.allGrowProjects.filter(p => (p.type || 'income-growth') === type).length;
+    return AppStateService.instance.allGrowProjects.filter(
+      (p) => (p.type || 'income-growth') === type,
+    ).length;
   }
 
   // --- Action item helpers ---
 
   getActionProgress(project: Grow): string {
     if (!project.actionItems || project.actionItems.length === 0) return '';
-    const done = project.actionItems.filter(a => a.done).length;
+    const done = project.actionItems.filter((a) => a.done).length;
     return `${done}/${project.actionItems.length}`;
   }
 
   getActionPercent(project: Grow): number {
     if (!project.actionItems || project.actionItems.length === 0) return 0;
-    return Math.round((project.actionItems.filter(a => a.done).length / project.actionItems.length) * 100);
+    return Math.round(
+      (project.actionItems.filter((a) => a.done).length / project.actionItems.length) * 100,
+    );
   }
 
   // --- Project type label ---
@@ -595,7 +731,7 @@ export class GrowComponent implements OnInit, AfterViewInit {
   }
 
   // --- Category helpers ---
-  
+
   isCategoryArray(category: string | string[] | undefined): boolean {
     return Array.isArray(category);
   }
@@ -603,5 +739,4 @@ export class GrowComponent implements OnInit, AfterViewInit {
   getCategoryArray(category: string | string[] | undefined): string[] {
     return Array.isArray(category) ? category : [];
   }
-  
 }

@@ -105,6 +105,7 @@ This directly informs the master prompt's assumption of "what synced between tho
 **Firebase**: `AngularFireAuth` (compat API) directly. `checkAuthentication()` awaits `afAuth.authState`, force-refreshes the ID token, and treats a specific set of Firebase error codes (token expired, user disabled/not-found, invalid token, requires-recent-login) as a real logout while treating other errors (e.g. transient network failures) as "still authenticated" to avoid spurious sign-outs. A separate manual CLI tool, `scripts/set-firebase-admin.js`, grants/revokes the Firebase Auth `admin` custom claim (drives Realtime Database security-rule-based moderation access) — there's no route-level equivalent to the self-hosted `ADMIN_EMAILS` mechanism on the Firebase side.
 
 **Self-hosted** (`backend/routes/auth.js` / `middleware/auth.js`):
+
 - **Registration**: email regex, password policy (≥8 chars, upper/lower/digit), uniqueness check via Mango `find` on `auth`, `bcrypt.hash(cost 10)`, user id `user_<timestamp>_<uuid fragment>`, writes credentials to the **`auth`** database and a companion data doc to the **`users`** database.
 - **Login**: in-memory (per-process, not shared across replicas) account lockout — 10 consecutive failures locks 15 minutes, counters reset after 30 minutes of inactivity. `bcrypt.compare`.
 - **JWT**: `jsonwebtoken`, secret from required `JWT_SECRET` env (no default). Access token `{userId, email}`, 24h expiry. Refresh token `{userId, email, jti}`, 365d expiry, tracked server-side as a revocable `rt_<jti>` document in `auth`. Both delivered as httpOnly cookies (`access_token` path `/`; `refresh_token` path `/api/auth` only), `sameSite: strict`, `secure` only in production.
@@ -121,22 +122,23 @@ This directly informs the master prompt's assumption of "what synced between tho
 **Pre-commit hooks** (`.husky/`): `pre-commit` runs `lint-staged` (test-on-changed-files) then `gitleaks` secret scanning if gitleaks is installed locally (silently skipped otherwise — not a hard gate). `commit-msg` enforces Conventional Commits via regex, which is what makes the automated version-bump detection in `auto-release.yml` possible.
 
 **Test results, run live in this environment:**
+
 - **Frontend**: `npx jest --config jest.config.js --ci` → **73 test suites, 776 tests, all passing** (~6 min wall time). `jest.config.js` sets deliberately low coverage floors (branches 5%, functions 20%, lines/statements 15%) — these are minimum gates, not a coverage target.
 - **Backend unit**: `npx jest --forceExit -- tests/unit` → **7 test suites, 69 tests, all passing.**
 - Both suites required `npm install`/`npm ci` first — neither `node_modules` was pre-populated in this checkout. Frontend needs `--legacy-peer-deps`; backend does not.
 
 **What CI actually runs** (`.github/workflows/test.yml`, on PRs to `main`):
 
-| Job | What it does |
-|---|---|
-| `frontend-unit` | `npm ci --legacy-peer-deps` → Jest with coverage artifact upload |
-| `backend-unit` | Jest against `tests/unit` |
-| `backend-integration` | Jest against `tests/integration`, with a real `couchdb:3` service container |
-| `e2e` | **Disabled** (`if: false`, comment "Temporarily disabled") — Playwright is fully wired (`docker-compose.e2e.yml`, health-wait, `test:e2e` script, 27-file `e2e/` dir) but not a CI gate today, only runs locally/manually |
-| `security-audit` | `npm audit --omit=dev --audit-level=high`, both packages |
-| `container-scan` | Trivy scan of both Docker images, fails on CRITICAL/HIGH |
-| `secret-scan` | `gitleaks-action` over full git history |
-| `sbom` | SPDX SBOM generation for both packages |
+| Job                   | What it does                                                                                                                                                                                                              |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `frontend-unit`       | `npm ci --legacy-peer-deps` → Jest with coverage artifact upload                                                                                                                                                          |
+| `backend-unit`        | Jest against `tests/unit`                                                                                                                                                                                                 |
+| `backend-integration` | Jest against `tests/integration`, with a real `couchdb:3` service container                                                                                                                                               |
+| `e2e`                 | **Disabled** (`if: false`, comment "Temporarily disabled") — Playwright is fully wired (`docker-compose.e2e.yml`, health-wait, `test:e2e` script, 27-file `e2e/` dir) but not a CI gate today, only runs locally/manually |
+| `security-audit`      | `npm audit --omit=dev --audit-level=high`, both packages                                                                                                                                                                  |
+| `container-scan`      | Trivy scan of both Docker images, fails on CRITICAL/HIGH                                                                                                                                                                  |
+| `secret-scan`         | `gitleaks-action` over full git history                                                                                                                                                                                   |
+| `sbom`                | SPDX SBOM generation for both packages                                                                                                                                                                                    |
 
 No dedicated lint job exists — consistent with there being no linter configured. This CI setup is otherwise notably mature (audit, container scan, secret scan, SBOM all wired up) — see `RISKS_AND_QUESTIONS.md` for how this reconciles with the "no linter" and "no PLAN.md yet" gaps.
 

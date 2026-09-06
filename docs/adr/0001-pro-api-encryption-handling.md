@@ -1,13 +1,14 @@
 # 0001. Pro API encryption handling
 
 ## Status
+
 Accepted
 
 ## Context
 
 `CrypticService` (`src/app/shared/services/cryptic.service.ts`) lets a self-hosted user optionally enable `encryptDatabase`, in which case every value written to CouchDB is AES-256-CBC ciphertext (v2 format: PBKDF2-SHA256-derived key + HMAC-SHA256 authentication), opaque to the backend. In self-hosted mode the encryption key itself is already stored server-side (`auth.js /encryption-config`) and cached client-side only in `sessionStorage` — so self-hosted, encryption-enabled accounts are not zero-knowledge today; encryption protects data at rest (CouchDB, backups), not from the server process itself.
 
-The master prompt requires the Pro API to support server-side filtering, sorting, calculations, and an audit log recording *what* changed on every write (§4.2). None of that is possible against opaque ciphertext. `todo/monertarize.md` separately recommends a *hosted SaaS* offering be architected as genuinely zero-knowledge (server cannot read plaintext, ever) as a privacy/legal moat — a stronger property than what exists today, and one this decision must not foreclose.
+The master prompt requires the Pro API to support server-side filtering, sorting, calculations, and an audit log recording _what_ changed on every write (§4.2). None of that is possible against opaque ciphertext. `todo/monertarize.md` separately recommends a _hosted SaaS_ offering be architected as genuinely zero-knowledge (server cannot read plaintext, ever) as a privacy/legal moat — a stronger property than what exists today, and one this decision must not foreclose.
 
 ## Decision
 

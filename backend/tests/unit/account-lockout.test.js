@@ -15,18 +15,18 @@ jest.mock('../../config/db', () => {
   const mockAuthDb = {
     find: jest.fn(),
     insert: jest.fn(),
-    get: jest.fn()
+    get: jest.fn(),
   };
   const mockUsersDb = {
     insert: jest.fn(),
-    get: jest.fn()
+    get: jest.fn(),
   };
   return {
     initializeDatabase: jest.fn().mockResolvedValue(),
     getAuthDb: () => mockAuthDb,
     getUsersDb: () => mockUsersDb,
     __mockAuthDb: mockAuthDb,
-    __mockUsersDb: mockUsersDb
+    __mockUsersDb: mockUsersDb,
   };
 });
 
@@ -53,14 +53,12 @@ describe('Account Lockout (H5)', () => {
     // Fail 9 times
     __mockAuthDb.find.mockResolvedValue({ docs: [] });
     for (let i = 0; i < 9; i++) {
-      await request(app)
-        .post('/api/auth/login')
-        .send({ email, password: 'wrong' });
+      await request(app).post('/api/auth/login').send({ email, password: 'wrong' });
     }
 
     // 10th attempt with correct credentials should succeed
     __mockAuthDb.find.mockResolvedValue({
-      docs: [{ _id: 'u1', email, password: hashedPassword }]
+      docs: [{ _id: 'u1', email, password: hashedPassword }],
     });
     const res = await request(app)
       .post('/api/auth/login')
@@ -69,21 +67,19 @@ describe('Account Lockout (H5)', () => {
     expect(res.status).toBe(200);
     expect(res.body).toHaveProperty('userId');
     const cookies = res.headers['set-cookie'] || [];
-    expect(cookies.some(c => c.startsWith('access_token='))).toBe(true);
+    expect(cookies.some((c) => c.startsWith('access_token='))).toBe(true);
   });
 
   it('locks account after 10 consecutive failed attempts', async () => {
     const email = `lockout_lock_${Date.now()}@test.com`;
 
     __mockAuthDb.find.mockResolvedValue({
-      docs: [{ _id: 'u2', email, password: hashedPassword }]
+      docs: [{ _id: 'u2', email, password: hashedPassword }],
     });
 
     // Fail 10 times with wrong password
     for (let i = 0; i < 10; i++) {
-      await request(app)
-        .post('/api/auth/login')
-        .send({ email, password: 'WrongPassword1' });
+      await request(app).post('/api/auth/login').send({ email, password: 'WrongPassword1' });
     }
 
     // 11th attempt should be locked (even with correct password)
@@ -100,13 +96,11 @@ describe('Account Lockout (H5)', () => {
     const email = `lockout_retry_${Date.now()}@test.com`;
 
     __mockAuthDb.find.mockResolvedValue({
-      docs: [{ _id: 'u3', email, password: hashedPassword }]
+      docs: [{ _id: 'u3', email, password: hashedPassword }],
     });
 
     for (let i = 0; i < 10; i++) {
-      await request(app)
-        .post('/api/auth/login')
-        .send({ email, password: 'WrongPassword1' });
+      await request(app).post('/api/auth/login').send({ email, password: 'WrongPassword1' });
     }
 
     const res = await request(app)
@@ -124,12 +118,10 @@ describe('Account Lockout (H5)', () => {
 
     // Fail 5 times
     __mockAuthDb.find.mockResolvedValue({
-      docs: [{ _id: 'u4', email, password: hashedPassword }]
+      docs: [{ _id: 'u4', email, password: hashedPassword }],
     });
     for (let i = 0; i < 5; i++) {
-      await request(app)
-        .post('/api/auth/login')
-        .send({ email, password: 'WrongPassword1' });
+      await request(app).post('/api/auth/login').send({ email, password: 'WrongPassword1' });
     }
 
     // Succeed
@@ -140,9 +132,7 @@ describe('Account Lockout (H5)', () => {
 
     // Fail 9 more times — should NOT lock (counter was reset)
     for (let i = 0; i < 9; i++) {
-      await request(app)
-        .post('/api/auth/login')
-        .send({ email, password: 'WrongPassword1' });
+      await request(app).post('/api/auth/login').send({ email, password: 'WrongPassword1' });
     }
 
     // Should still be able to login (9 < 10)
@@ -159,15 +149,11 @@ describe('Account Lockout (H5)', () => {
 
     // Fail 10 times with non-existent user
     for (let i = 0; i < 10; i++) {
-      await request(app)
-        .post('/api/auth/login')
-        .send({ email, password: 'anything' });
+      await request(app).post('/api/auth/login').send({ email, password: 'anything' });
     }
 
     // 11th attempt should be locked
-    const res = await request(app)
-      .post('/api/auth/login')
-      .send({ email, password: 'anything' });
+    const res = await request(app).post('/api/auth/login').send({ email, password: 'anything' });
 
     expect(res.status).toBe(429);
     expect(res.body.error).toMatch(/locked/i);

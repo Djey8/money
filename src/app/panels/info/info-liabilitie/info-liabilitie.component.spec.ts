@@ -2,7 +2,6 @@ import { InfoLiabilitieComponent } from './info-liabilitie.component';
 import { AppStateService } from '../../../shared/services/app-state.service';
 
 describe('InfoLiabilitieComponent', () => {
-
   beforeEach(() => {
     (AppStateService as any)._instance = undefined;
     InfoLiabilitieComponent.index = 1;

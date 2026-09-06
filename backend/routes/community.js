@@ -27,7 +27,7 @@ const communityWriteLimiter = rateLimit({
   max: 20, // 20 posts/replies/reactions per IP per 5 minutes
   standardHeaders: true,
   legacyHeaders: false,
-  skip: () => process.env.SKIP_RATE_LIMIT === 'true'
+  skip: () => process.env.SKIP_RATE_LIMIT === 'true',
 });
 
 function makeId(prefix) {
@@ -53,7 +53,7 @@ function clampPageSize(rawLimit) {
 function toPublicReactions(reactions) {
   const result = {};
   for (const emoji of ALLOWED_EMOJIS) {
-    result[emoji] = (reactions && Array.isArray(reactions[emoji])) ? reactions[emoji] : [];
+    result[emoji] = reactions && Array.isArray(reactions[emoji]) ? reactions[emoji] : [];
   }
   return result;
 }
@@ -67,7 +67,7 @@ function toPublicPost(doc) {
     authorId: doc.authorId,
     createdAt: doc.createdAt,
     editedAt: doc.editedAt || null,
-    reactions: toPublicReactions(doc.reactions)
+    reactions: toPublicReactions(doc.reactions),
   };
 }
 
@@ -80,7 +80,7 @@ function toPublicThread(doc) {
     createdAt: doc.createdAt,
     lastActivityAt: doc.lastActivityAt,
     editedAt: doc.editedAt || null,
-    replyCount: doc.replyCount || 0
+    replyCount: doc.replyCount || 0,
   };
 }
 
@@ -93,15 +93,17 @@ router.get('/threads', async (req, res) => {
 
     const result = await communityDb.find({
       selector: { type: 'thread' },
-      limit: 200 // fetch a bounded working set, then sort+page in memory
+      limit: 200, // fetch a bounded working set, then sort+page in memory
     });
 
-    const sorted = result.docs.sort((a, b) => (b.lastActivityAt || '').localeCompare(a.lastActivityAt || ''));
+    const sorted = result.docs.sort((a, b) =>
+      (b.lastActivityAt || '').localeCompare(a.lastActivityAt || ''),
+    );
     const page = sorted.slice(skip, skip + limit);
 
     res.json({
       threads: page.map(toPublicThread),
-      total: sorted.length
+      total: sorted.length,
     });
   } catch (error) {
     logger.logError(error, { context: 'community_list_threads' });
@@ -115,10 +117,14 @@ router.post('/threads', authenticateToken, communityWriteLimiter, async (req, re
     const { title, body, authorName } = req.body || {};
 
     if (!isValidText(title, MAX_TITLE_LENGTH)) {
-      return res.status(400).json({ error: `Title is required (max ${MAX_TITLE_LENGTH} characters)` });
+      return res
+        .status(400)
+        .json({ error: `Title is required (max ${MAX_TITLE_LENGTH} characters)` });
     }
     if (!isValidText(body, MAX_BODY_LENGTH)) {
-      return res.status(400).json({ error: `Body is required (max ${MAX_BODY_LENGTH} characters)` });
+      return res
+        .status(400)
+        .json({ error: `Body is required (max ${MAX_BODY_LENGTH} characters)` });
     }
 
     const communityDb = getCommunityDb();
@@ -135,7 +141,7 @@ router.post('/threads', authenticateToken, communityWriteLimiter, async (req, re
       authorName: resolvedName,
       createdAt: now,
       lastActivityAt: now,
-      replyCount: 0
+      replyCount: 0,
     };
 
     const postDoc = {
@@ -146,7 +152,7 @@ router.post('/threads', authenticateToken, communityWriteLimiter, async (req, re
       authorId,
       authorName: resolvedName,
       createdAt: now,
-      reactions: {}
+      reactions: {},
     };
 
     await communityDb.insert(threadDoc);
@@ -184,14 +190,14 @@ router.get('/threads/:id', async (req, res) => {
 
     const result = await communityDb.find({
       selector: { type: 'post', threadId },
-      limit: MAX_PAGE_SIZE * 10
+      limit: MAX_PAGE_SIZE * 10,
     });
 
     const posts = result.docs.sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || ''));
 
     res.json({
       thread: toPublicThread(threadDoc),
-      posts: posts.map(toPublicPost)
+      posts: posts.map(toPublicPost),
     });
   } catch (error) {
     logger.logError(error, { context: 'community_get_thread', threadId: req.params.id });
@@ -206,7 +212,9 @@ router.post('/threads/:id/posts', authenticateToken, communityWriteLimiter, asyn
     const threadId = req.params.id;
 
     if (!isValidText(body, MAX_BODY_LENGTH)) {
-      return res.status(400).json({ error: `Body is required (max ${MAX_BODY_LENGTH} characters)` });
+      return res
+        .status(400)
+        .json({ error: `Body is required (max ${MAX_BODY_LENGTH} characters)` });
     }
 
     const communityDb = getCommunityDb();
@@ -237,7 +245,7 @@ router.post('/threads/:id/posts', authenticateToken, communityWriteLimiter, asyn
       authorId,
       authorName: resolvedName,
       createdAt: now,
-      reactions: {}
+      reactions: {},
     };
     await communityDb.insert(postDoc);
 
@@ -255,7 +263,9 @@ router.post('/threads/:id/posts', authenticateToken, communityWriteLimiter, asyn
         lastError = err;
         if (err.statusCode === 409) {
           attempt++;
-          await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS * Math.pow(2, attempt - 1) + Math.random() * 20));
+          await new Promise((resolve) =>
+            setTimeout(resolve, RETRY_DELAY_MS * Math.pow(2, attempt - 1) + Math.random() * 20),
+          );
           continue;
         }
         throw err;
@@ -270,7 +280,11 @@ router.post('/threads/:id/posts', authenticateToken, communityWriteLimiter, asyn
 
     res.status(201).json({ post: toPublicPost(postDoc) });
   } catch (error) {
-    logger.logError(error, { context: 'community_create_post', userId: req.userId, threadId: req.params.id });
+    logger.logError(error, {
+      context: 'community_create_post',
+      userId: req.userId,
+      threadId: req.params.id,
+    });
     res.status(500).json({ error: 'Failed to create post' });
   }
 });
@@ -298,12 +312,13 @@ router.post('/posts/:id/react', authenticateToken, communityWriteLimiter, async 
         }
         if (!postDoc.reactions) postDoc.reactions = {};
 
-        const hadThisEmoji = Array.isArray(postDoc.reactions[emoji]) && postDoc.reactions[emoji].includes(authorId);
+        const hadThisEmoji =
+          Array.isArray(postDoc.reactions[emoji]) && postDoc.reactions[emoji].includes(authorId);
 
         // Remove this author from every emoji bucket (only one reaction per person)
         for (const key of ALLOWED_EMOJIS) {
           if (Array.isArray(postDoc.reactions[key])) {
-            postDoc.reactions[key] = postDoc.reactions[key].filter(id => id !== authorId);
+            postDoc.reactions[key] = postDoc.reactions[key].filter((id) => id !== authorId);
           }
         }
         // Re-add under the requested emoji, unless they just cleared that same one
@@ -313,7 +328,10 @@ router.post('/posts/:id/react', authenticateToken, communityWriteLimiter, async 
 
         await communityDb.insert(postDoc);
 
-        return res.json({ reactions: toPublicReactions(postDoc.reactions), myReaction: hadThisEmoji ? null : emoji });
+        return res.json({
+          reactions: toPublicReactions(postDoc.reactions),
+          myReaction: hadThisEmoji ? null : emoji,
+        });
       } catch (err) {
         if (err.statusCode === 404) {
           return res.status(404).json({ error: 'Post not found' });
@@ -321,7 +339,9 @@ router.post('/posts/:id/react', authenticateToken, communityWriteLimiter, async 
         if (err.statusCode === 409) {
           lastError = err;
           attempt++;
-          await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS * Math.pow(2, attempt - 1) + Math.random() * 20));
+          await new Promise((resolve) =>
+            setTimeout(resolve, RETRY_DELAY_MS * Math.pow(2, attempt - 1) + Math.random() * 20),
+          );
           continue;
         }
         throw err;
@@ -329,9 +349,15 @@ router.post('/posts/:id/react', authenticateToken, communityWriteLimiter, async 
     }
 
     logger.logError(lastError, { context: 'community_react_conflict', postId });
-    res.status(409).json({ error: 'Failed to update reaction due to conflicts. Please try again.' });
+    res
+      .status(409)
+      .json({ error: 'Failed to update reaction due to conflicts. Please try again.' });
   } catch (error) {
-    logger.logError(error, { context: 'community_react', userId: req.userId, postId: req.params.id });
+    logger.logError(error, {
+      context: 'community_react',
+      userId: req.userId,
+      postId: req.params.id,
+    });
     res.status(500).json({ error: 'Failed to update reaction' });
   }
 });
@@ -341,7 +367,9 @@ router.put('/threads/:id', authenticateToken, communityWriteLimiter, async (req,
   try {
     const { title, authorName } = req.body || {};
     if (!isValidText(title, MAX_TITLE_LENGTH)) {
-      return res.status(400).json({ error: `Title is required (max ${MAX_TITLE_LENGTH} characters)` });
+      return res
+        .status(400)
+        .json({ error: `Title is required (max ${MAX_TITLE_LENGTH} characters)` });
     }
     if (authorName !== undefined && !isValidText(authorName, MAX_NAME_LENGTH)) {
       return res.status(400).json({ error: `authorName must be 1-${MAX_NAME_LENGTH} characters` });
@@ -367,7 +395,10 @@ router.put('/threads/:id', authenticateToken, communityWriteLimiter, async (req,
         threadDoc.editedAt = new Date().toISOString();
         await communityDb.insert(threadDoc);
 
-        logUserActivity(req.userId, 'community_thread_edited', { threadId, byAdmin: req.isAdmin && threadDoc.authorId !== req.userId });
+        logUserActivity(req.userId, 'community_thread_edited', {
+          threadId,
+          byAdmin: req.isAdmin && threadDoc.authorId !== req.userId,
+        });
         return res.json({ thread: toPublicThread(threadDoc) });
       } catch (err) {
         if (err.statusCode === 404) {
@@ -376,7 +407,9 @@ router.put('/threads/:id', authenticateToken, communityWriteLimiter, async (req,
         if (err.statusCode === 409) {
           lastError = err;
           attempt++;
-          await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS * Math.pow(2, attempt - 1) + Math.random() * 20));
+          await new Promise((resolve) =>
+            setTimeout(resolve, RETRY_DELAY_MS * Math.pow(2, attempt - 1) + Math.random() * 20),
+          );
           continue;
         }
         throw err;
@@ -386,7 +419,11 @@ router.put('/threads/:id', authenticateToken, communityWriteLimiter, async (req,
     logger.logError(lastError, { context: 'community_edit_thread_conflict', threadId });
     res.status(409).json({ error: 'Failed to save changes due to conflicts. Please try again.' });
   } catch (error) {
-    logger.logError(error, { context: 'community_edit_thread', userId: req.userId, threadId: req.params.id });
+    logger.logError(error, {
+      context: 'community_edit_thread',
+      userId: req.userId,
+      threadId: req.params.id,
+    });
     res.status(500).json({ error: 'Failed to edit thread' });
   }
 });
@@ -397,7 +434,9 @@ router.put('/posts/:id', authenticateToken, communityWriteLimiter, async (req, r
   try {
     const { body, authorName } = req.body || {};
     if (!isValidText(body, MAX_BODY_LENGTH)) {
-      return res.status(400).json({ error: `Body is required (max ${MAX_BODY_LENGTH} characters)` });
+      return res
+        .status(400)
+        .json({ error: `Body is required (max ${MAX_BODY_LENGTH} characters)` });
     }
     if (authorName !== undefined && !isValidText(authorName, MAX_NAME_LENGTH)) {
       return res.status(400).json({ error: `authorName must be 1-${MAX_NAME_LENGTH} characters` });
@@ -423,7 +462,11 @@ router.put('/posts/:id', authenticateToken, communityWriteLimiter, async (req, r
         postDoc.editedAt = new Date().toISOString();
         await communityDb.insert(postDoc);
 
-        logUserActivity(req.userId, 'community_post_edited', { postId, threadId: postDoc.threadId, byAdmin: req.isAdmin && postDoc.authorId !== req.userId });
+        logUserActivity(req.userId, 'community_post_edited', {
+          postId,
+          threadId: postDoc.threadId,
+          byAdmin: req.isAdmin && postDoc.authorId !== req.userId,
+        });
         return res.json({ post: toPublicPost(postDoc) });
       } catch (err) {
         if (err.statusCode === 404) {
@@ -432,7 +475,9 @@ router.put('/posts/:id', authenticateToken, communityWriteLimiter, async (req, r
         if (err.statusCode === 409) {
           lastError = err;
           attempt++;
-          await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS * Math.pow(2, attempt - 1) + Math.random() * 20));
+          await new Promise((resolve) =>
+            setTimeout(resolve, RETRY_DELAY_MS * Math.pow(2, attempt - 1) + Math.random() * 20),
+          );
           continue;
         }
         throw err;
@@ -442,7 +487,11 @@ router.put('/posts/:id', authenticateToken, communityWriteLimiter, async (req, r
     logger.logError(lastError, { context: 'community_edit_post_conflict', postId });
     res.status(409).json({ error: 'Failed to save changes due to conflicts. Please try again.' });
   } catch (error) {
-    logger.logError(error, { context: 'community_edit_post', userId: req.userId, postId: req.params.id });
+    logger.logError(error, {
+      context: 'community_edit_post',
+      userId: req.userId,
+      postId: req.params.id,
+    });
     res.status(500).json({ error: 'Failed to edit post' });
   }
 });
@@ -474,12 +523,15 @@ router.delete('/posts/:id', authenticateToken, async (req, res) => {
 
     const threadResult = await communityDb.find({
       selector: { type: 'post', threadId: postDoc.threadId },
-      limit: MAX_PAGE_SIZE * 10
+      limit: MAX_PAGE_SIZE * 10,
     });
-    const isOpeningPost = threadResult.docs
-      .sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || ''))[0]?._id === postDoc._id;
+    const isOpeningPost =
+      threadResult.docs.sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || ''))[0]
+        ?._id === postDoc._id;
     if (isOpeningPost) {
-      return res.status(400).json({ error: 'Cannot delete the opening post of a thread — delete the thread instead' });
+      return res
+        .status(400)
+        .json({ error: 'Cannot delete the opening post of a thread — delete the thread instead' });
     }
 
     await communityDb.destroy(postDoc._id, postDoc._rev);
@@ -490,13 +542,24 @@ router.delete('/posts/:id', authenticateToken, async (req, res) => {
       threadDoc.replyCount = Math.max(0, (threadDoc.replyCount || 1) - 1);
       await communityDb.insert(threadDoc);
     } catch (err) {
-      logger.logError(err, { context: 'community_delete_reply_count_decrement', threadId: postDoc.threadId });
+      logger.logError(err, {
+        context: 'community_delete_reply_count_decrement',
+        threadId: postDoc.threadId,
+      });
     }
 
-    logUserActivity(req.userId, 'community_post_deleted', { postId, threadId: postDoc.threadId, byAdmin: req.isAdmin && postDoc.authorId !== req.userId });
+    logUserActivity(req.userId, 'community_post_deleted', {
+      postId,
+      threadId: postDoc.threadId,
+      byAdmin: req.isAdmin && postDoc.authorId !== req.userId,
+    });
     res.json({ success: true });
   } catch (error) {
-    logger.logError(error, { context: 'community_delete_post', userId: req.userId, postId: req.params.id });
+    logger.logError(error, {
+      context: 'community_delete_post',
+      userId: req.userId,
+      postId: req.params.id,
+    });
     res.status(500).json({ error: 'Failed to delete post' });
   }
 });
@@ -527,19 +590,27 @@ router.delete('/threads/:id', authenticateToken, async (req, res) => {
 
     const postsResult = await communityDb.find({
       selector: { type: 'post', threadId },
-      limit: MAX_PAGE_SIZE * 10
+      limit: MAX_PAGE_SIZE * 10,
     });
 
     const docsToDelete = [
       { ...threadDoc, _deleted: true },
-      ...postsResult.docs.map(doc => ({ ...doc, _deleted: true }))
+      ...postsResult.docs.map((doc) => ({ ...doc, _deleted: true })),
     ];
     await communityDb.bulk({ docs: docsToDelete });
 
-    logUserActivity(req.userId, 'community_thread_deleted', { threadId, postsRemoved: postsResult.docs.length, byAdmin: true });
+    logUserActivity(req.userId, 'community_thread_deleted', {
+      threadId,
+      postsRemoved: postsResult.docs.length,
+      byAdmin: true,
+    });
     res.json({ success: true, postsRemoved: postsResult.docs.length });
   } catch (error) {
-    logger.logError(error, { context: 'community_delete_thread', userId: req.userId, threadId: req.params.id });
+    logger.logError(error, {
+      context: 'community_delete_thread',
+      userId: req.userId,
+      threadId: req.params.id,
+    });
     res.status(500).json({ error: 'Failed to delete thread' });
   }
 });

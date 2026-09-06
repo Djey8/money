@@ -1,4 +1,4 @@
 export interface TaggedAmount {
-    tag: string;
-    amount: number;
+  tag: string;
+  amount: number;
 }

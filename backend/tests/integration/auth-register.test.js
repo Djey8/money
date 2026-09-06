@@ -36,8 +36,8 @@ describe('POST /api/auth/register', () => {
     expect(res.body.userId).toMatch(/^user_/);
     // Auth cookies should be set
     const cookies = res.headers['set-cookie'] || [];
-    expect(cookies.some(c => c.startsWith('access_token='))).toBe(true);
-    expect(cookies.some(c => c.startsWith('refresh_token='))).toBe(true);
+    expect(cookies.some((c) => c.startsWith('access_token='))).toBe(true);
+    expect(cookies.some((c) => c.startsWith('refresh_token='))).toBe(true);
   });
 
   skipIf(!dbAvailable, 'access token cookie contains correct userId and email claims', async () => {
@@ -49,7 +49,7 @@ describe('POST /api/auth/register', () => {
     expect(res.status).toBe(201);
 
     const cookies = res.headers['set-cookie'] || [];
-    const accessCookie = cookies.find(c => c.startsWith('access_token='));
+    const accessCookie = cookies.find((c) => c.startsWith('access_token='));
     const token = accessCookie.split(';')[0].split('=')[1];
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     expect(decoded.userId).toBe(res.body.userId);
@@ -68,7 +68,7 @@ describe('POST /api/auth/register', () => {
 
     // Extract token from cookie for data read
     const cookies = res.headers['set-cookie'] || [];
-    const accessCookie = cookies.find(c => c.startsWith('access_token='));
+    const accessCookie = cookies.find((c) => c.startsWith('access_token='));
     const token = accessCookie.split(';')[0].split('=')[1];
 
     // Read the user data document to verify it was created
@@ -91,7 +91,7 @@ describe('POST /api/auth/register', () => {
     expect(res.status).toBe(201);
 
     const cookies = res.headers['set-cookie'] || [];
-    const accessCookie = cookies.find(c => c.startsWith('access_token='));
+    const accessCookie = cookies.find((c) => c.startsWith('access_token='));
     const token = accessCookie.split(';')[0].split('=')[1];
 
     const dataRes = await request(app)
@@ -124,36 +124,28 @@ describe('POST /api/auth/register', () => {
   // --- Missing fields --------------------------------------------------------
 
   it('returns 400 when email is missing', async () => {
-    const res = await request(app)
-      .post('/api/auth/register')
-      .send({ password: 'StrongPass123!' });
+    const res = await request(app).post('/api/auth/register').send({ password: 'StrongPass123!' });
 
     expect(res.status).toBe(400);
     expect(res.body).toHaveProperty('error', 'Email and password are required');
   });
 
   it('returns 400 when password is missing', async () => {
-    const res = await request(app)
-      .post('/api/auth/register')
-      .send({ email: 'nopass@test.local' });
+    const res = await request(app).post('/api/auth/register').send({ email: 'nopass@test.local' });
 
     expect(res.status).toBe(400);
     expect(res.body).toHaveProperty('error', 'Email and password are required');
   });
 
   it('returns 400 when both email and password are missing', async () => {
-    const res = await request(app)
-      .post('/api/auth/register')
-      .send({});
+    const res = await request(app).post('/api/auth/register').send({});
 
     expect(res.status).toBe(400);
     expect(res.body).toHaveProperty('error', 'Email and password are required');
   });
 
   it('returns 400 when body is empty', async () => {
-    const res = await request(app)
-      .post('/api/auth/register')
-      .send();
+    const res = await request(app).post('/api/auth/register').send();
 
     expect(res.status).toBe(400);
   });

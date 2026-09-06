@@ -6,7 +6,14 @@ import { IncomeStatementService } from 'src/app/shared/services/income-statement
 import { isDuplicateTitle } from 'src/app/shared/validation.utils';
 import { BaseInfoComponent } from 'src/app/shared/base/base-info.component';
 import { AppStateService } from 'src/app/shared/services/app-state.service';
-import { Smile, SmilePhase, SmileBucket, SmileLink, SmileActionItem, SmileNote } from 'src/app/interfaces/smile';
+import {
+  Smile,
+  SmilePhase,
+  SmileBucket,
+  SmileLink,
+  SmileActionItem,
+  SmileNote,
+} from 'src/app/interfaces/smile';
 import { PlannedSubscription } from 'src/app/interfaces/planned-subscription';
 import { generateBucketId } from 'src/app/shared/smile-migration.utils';
 import { PaymentPlannerService } from 'src/app/shared/services/payment-planner.service';
@@ -19,43 +26,73 @@ import { AppDatePipe } from 'src/app/shared/pipes/app-date.pipe';
 import { TrapFocusDirective } from 'src/app/shared/directives/trap-focus.directive';
 import { PaymentPlannerDialogComponent } from 'src/app/shared/components/payment-planner-dialog/payment-planner-dialog.component';
 
-
 // Deferred imports — resolved after module init to break circular chains
-let AppComponent: any; setTimeout(() => import('src/app/app.component').then(m => AppComponent = m.AppComponent));
-let InfoComponent: any; setTimeout(() => import('../info.component').then(m => InfoComponent = m.InfoComponent));
-let ProfileComponent: any; setTimeout(() => import('src/app/panels/profile/profile.component').then(m => ProfileComponent = m.ProfileComponent));
-let MenuComponent: any; setTimeout(() => import('src/app/panels/menu/menu.component').then(m => MenuComponent = m.MenuComponent));
-let AddComponent: any; setTimeout(() => import('src/app/panels/add/add.component').then(m => AddComponent = m.AddComponent));
-let AddSmileComponent: any; setTimeout(() => import('src/app/panels/add/add-smile/add-smile.component').then(m => AddSmileComponent = m.AddSmileComponent));
-let SmileProjectsComponent: any; setTimeout(() => import('src/app/main/smile/smile-projects/smile-projects.component').then(m => SmileProjectsComponent = m.SmileProjectsComponent));
+let AppComponent: any;
+setTimeout(() => import('src/app/app.component').then((m) => (AppComponent = m.AppComponent)));
+let InfoComponent: any;
+setTimeout(() => import('../info.component').then((m) => (InfoComponent = m.InfoComponent)));
+let ProfileComponent: any;
+setTimeout(() =>
+  import('src/app/panels/profile/profile.component').then(
+    (m) => (ProfileComponent = m.ProfileComponent),
+  ),
+);
+let MenuComponent: any;
+setTimeout(() =>
+  import('src/app/panels/menu/menu.component').then((m) => (MenuComponent = m.MenuComponent)),
+);
+let AddComponent: any;
+setTimeout(() =>
+  import('src/app/panels/add/add.component').then((m) => (AddComponent = m.AddComponent)),
+);
+let AddSmileComponent: any;
+setTimeout(() =>
+  import('src/app/panels/add/add-smile/add-smile.component').then(
+    (m) => (AddSmileComponent = m.AddSmileComponent),
+  ),
+);
+let SmileProjectsComponent: any;
+setTimeout(() =>
+  import('src/app/main/smile/smile-projects/smile-projects.component').then(
+    (m) => (SmileProjectsComponent = m.SmileProjectsComponent),
+  ),
+);
 @Component({
   selector: 'app-info-smile',
   standalone: true,
-  imports: [TrapFocusDirective, CommonModule, FormsModule, TranslateModule, AppNumberPipe, AppDatePipe, PaymentPlannerDialogComponent],
+  imports: [
+    TrapFocusDirective,
+    CommonModule,
+    FormsModule,
+    TranslateModule,
+    AppNumberPipe,
+    AppDatePipe,
+    PaymentPlannerDialogComponent,
+  ],
   templateUrl: './info-smile.component.html',
-  styleUrls: ['../../../shared/styles/info-panel.css', './info-smile.component.css']
+  styleUrls: ['../../../shared/styles/info-panel.css', './info-smile.component.css'],
 })
 export class InfoSmileComponent extends BaseInfoComponent {
   static index = 1;
 
-  static title = "Driver Licence";
-  static sub = "";
+  static title = 'Driver Licence';
+  static sub = '';
   static phase: SmilePhase = 'planning';
-  static description = "";
+  static description = '';
   static buckets: SmileBucket[] = [];
   static links: SmileLink[] = [];
   static actionItems: SmileActionItem[] = [];
   static notes: SmileNote[] = [];
   static plannedSubscriptions: PlannedSubscription[] = [];
-  static createdAt = "";
-  static updatedAt = "";
-  static targetDate = "";
-  static completionDate = "";
+  static createdAt = '';
+  static updatedAt = '';
+  static targetDate = '';
+  static completionDate = '';
   static isEdit = false;
-  
+
   // Sorting for related transactions
-  static sortColumn = 'id';  // 'id', 'account', 'amount', 'date'
-  static sortDirection: 'asc' | 'desc' = 'desc';  // Default: highest ID first
+  static sortColumn = 'id'; // 'id', 'account', 'amount', 'date'
+  static sortDirection: 'asc' | 'desc' = 'desc'; // Default: highest ID first
 
   // Current detail tab
   static activeTab: 'overview' | 'buckets' | 'actions' | 'notes' | 'paymentPlans' = 'overview';
@@ -63,9 +100,9 @@ export class InfoSmileComponent extends BaseInfoComponent {
   static setInfoSmileComponent(id: number, project: Smile) {
     InfoSmileComponent.index = id;
     InfoSmileComponent.title = project.title;
-    InfoSmileComponent.sub = project.sub || "";
+    InfoSmileComponent.sub = project.sub || '';
     InfoSmileComponent.phase = project.phase || 'planning';
-    InfoSmileComponent.description = project.description || "";
+    InfoSmileComponent.description = project.description || '';
     InfoSmileComponent.buckets = project.buckets;
     InfoSmileComponent.links = project.links || [];
     InfoSmileComponent.actionItems = project.actionItems || [];
@@ -78,7 +115,7 @@ export class InfoSmileComponent extends BaseInfoComponent {
     InfoSmileComponent.isEdit = false;
     InfoSmileComponent.activeTab = 'overview';
     InfoSmileComponent.isInfo = true;
-    if(InfoComponent?.isInfo){
+    if (InfoComponent?.isInfo) {
       InfoSmileComponent.isInfo = false;
     }
   }
@@ -91,7 +128,7 @@ export class InfoSmileComponent extends BaseInfoComponent {
   completionDateTextField = InfoSmileComponent.completionDate;
   buckets: SmileBucket[] = [];
   links: SmileLink[] = [];
-   actionItems: SmileActionItem[] = [];
+  actionItems: SmileActionItem[] = [];
   showBucketsSection = false;
   showLinksActionsSection = false;
   showNotesSection = false;
@@ -130,11 +167,11 @@ export class InfoSmileComponent extends BaseInfoComponent {
   editingActionText = '';
   editingActionPriority: 'low' | 'medium' | 'high' = 'medium';
   editingActionDueDate = '';
-  
+
   // Payment Plans
   isPaymentPlannerOpen = false;
   editingPlanIndex: number | null = null;
-  
+
   get notesList(): SmileNote[] {
     const project = AppStateService.instance.allSmileProjects[InfoSmileComponent.index];
     return project?.notes || [];
@@ -144,16 +181,18 @@ export class InfoSmileComponent extends BaseInfoComponent {
     // Find transactions that reference this smile project (by title or bucket comment tags)
     const project = AppStateService.instance.allSmileProjects[InfoSmileComponent.index];
     if (!project) return [];
-    
-    const transactions = AppStateService.instance.allTransactions.filter(tx => {
+
+    const transactions = AppStateService.instance.allTransactions.filter((tx) => {
       if (tx.category === `@${project.title}`) return true;
       // Check if transaction comment references any bucket by name
       if (tx.comment && project.buckets?.length) {
-        return project.buckets.some(bucket => tx.comment.match(new RegExp(`#bucket:${bucket.title}:[\\d.]+`)));
+        return project.buckets.some((bucket) =>
+          tx.comment.match(new RegExp(`#bucket:${bucket.title}:[\\d.]+`)),
+        );
       }
       return false;
     });
-    
+
     // Apply sorting
     return this.sortTransactions(transactions);
   }
@@ -165,18 +204,18 @@ export class InfoSmileComponent extends BaseInfoComponent {
   getTransactionsForBucket(bucketId: string) {
     const project = AppStateService.instance.allSmileProjects[InfoSmileComponent.index];
     if (!project) return [];
-    
+
     // Find bucket by ID to get its name
-    const bucket = project.buckets.find(b => b.id === bucketId);
+    const bucket = project.buckets.find((b) => b.id === bucketId);
     if (!bucket) return [];
-    
-    const transactions = AppStateService.instance.allTransactions.filter(tx => {
+
+    const transactions = AppStateService.instance.allTransactions.filter((tx) => {
       // MUST be for this project first
       if (tx.category !== `@${project.title}`) return false;
       // Check if transaction comment includes this bucket's name in allocation tag
       return tx.comment && tx.comment.match(new RegExp(`#bucket:${bucket.title}:[\\d.]+`));
     });
-    
+
     // Apply sorting
     return this.sortTransactions(transactions);
   }
@@ -188,18 +227,18 @@ export class InfoSmileComponent extends BaseInfoComponent {
   getAllocatedAmountForBucket(tx: any, bucketId: string): number {
     const project = AppStateService.instance.allSmileProjects[InfoSmileComponent.index];
     if (!project) return tx.amount;
-    
-    const bucket = project.buckets.find(b => b.id === bucketId);
+
+    const bucket = project.buckets.find((b) => b.id === bucketId);
     if (!bucket || !tx.comment) return tx.amount;
-    
+
     // Parse bucket allocation tag for this specific bucket
     const regex = new RegExp(`#bucket:${bucket.title}:([\\d.]+)`);
     const match = tx.comment.match(regex);
-    
+
     if (match) {
       return -parseFloat(match[1]); // Negative because it's an expense
     }
-    
+
     return tx.amount; // Fallback to full amount
   }
 
@@ -210,19 +249,19 @@ export class InfoSmileComponent extends BaseInfoComponent {
   getDistributedTransactions() {
     const project = AppStateService.instance.allSmileProjects[InfoSmileComponent.index];
     if (!project) return [];
-    
+
     // Migrate old transactions without allocation tags
     this.migrateTransactionAllocations();
-    
-    const transactions = AppStateService.instance.allTransactions.filter(tx => {
+
+    const transactions = AppStateService.instance.allTransactions.filter((tx) => {
       // Must be for this project
       if (tx.category !== `@${project.title}`) return false;
-      
+
       // Check if comment has multiple bucket allocation tags
       const bucketTagMatches = tx.comment?.match(/#bucket:[^:]+:[\d.]+/g);
       return bucketTagMatches && bucketTagMatches.length > 1;
     });
-    
+
     // Apply sorting
     return this.sortTransactions(transactions);
   }
@@ -234,24 +273,22 @@ export class InfoSmileComponent extends BaseInfoComponent {
   migrateTransactionAllocations() {
     const project = AppStateService.instance.allSmileProjects[InfoSmileComponent.index];
     if (!project?.buckets?.length) return;
-    
-    AppStateService.instance.allTransactions.forEach(tx => {
+
+    AppStateService.instance.allTransactions.forEach((tx) => {
       // Only migrate transactions for this project
       if (tx.category !== `@${project.title}`) return;
-      
+
       // Check if already has allocation tags
       const hasAllocationTags = tx.comment?.match(/#bucket:[^:]+:[\d.]+/);
       if (hasAllocationTags) return; // Already migrated
-      
+
       // Distribute amount equally across all current buckets and append tags
       const amountPerBucket = Math.abs(tx.amount) / project.buckets.length;
       const allocationTags = project.buckets
-        .map(bucket => `#bucket:${bucket.title}:${amountPerBucket.toFixed(2)}`)
+        .map((bucket) => `#bucket:${bucket.title}:${amountPerBucket.toFixed(2)}`)
         .join(' ');
-      
-      tx.comment = tx.comment
-        ? `${tx.comment}\n${allocationTags}`
-        : allocationTags;
+
+      tx.comment = tx.comment ? `${tx.comment}\n${allocationTags}` : allocationTags;
     });
   }
 
@@ -259,28 +296,28 @@ export class InfoSmileComponent extends BaseInfoComponent {
    * Get allocation details for a distributed transaction
    * Parses #bucket:Name:Amount tags from comment
    */
-  getTransactionAllocations(tx: any): {bucket: SmileBucket, amount: number}[] {
+  getTransactionAllocations(tx: any): { bucket: SmileBucket; amount: number }[] {
     const project = AppStateService.instance.allSmileProjects[InfoSmileComponent.index];
     if (!project || !tx.comment) return [];
-    
-    const allocations: {bucket: SmileBucket, amount: number}[] = [];
-    
+
+    const allocations: { bucket: SmileBucket; amount: number }[] = [];
+
     // Parse all #bucket:Name:Amount tags
     const bucketTagMatches = tx.comment.match(/#bucket:([^:]+):([\d.]+)/g);
     if (!bucketTagMatches) return [];
-    
-    bucketTagMatches.forEach(tag => {
+
+    bucketTagMatches.forEach((tag) => {
       const match = tag.match(/#bucket:([^:]+):([\d.]+)/);
       if (match) {
         const bucketName = match[1];
         const amount = parseFloat(match[2]);
-        const bucket = project.buckets.find(b => b.title === bucketName);
+        const bucket = project.buckets.find((b) => b.title === bucketName);
         if (bucket) {
           allocations.push({ bucket, amount });
         }
       }
     });
-    
+
     return allocations;
   }
 
@@ -332,17 +369,18 @@ export class InfoSmileComponent extends BaseInfoComponent {
    */
   getTransactionId(tx: any): number {
     const allTransactions = AppStateService.instance.allTransactions;
-    const txIndex = allTransactions.findIndex(t => 
-      t.account === tx.account && 
-      t.amount === tx.amount && 
-      t.date === tx.date && 
-      t.time === tx.time &&
-      t.category === tx.category &&
-      t.comment === tx.comment
+    const txIndex = allTransactions.findIndex(
+      (t) =>
+        t.account === tx.account &&
+        t.amount === tx.amount &&
+        t.date === tx.date &&
+        t.time === tx.time &&
+        t.category === tx.category &&
+        t.comment === tx.comment,
     );
-    
+
     if (txIndex === -1) return 0;
-    
+
     // Since array is oldest-first, add 1 to index for 1-based ID
     return txIndex + 1;
   }
@@ -354,7 +392,8 @@ export class InfoSmileComponent extends BaseInfoComponent {
   toggleSort(column: string) {
     if (InfoSmileComponent.sortColumn === column) {
       // Toggle direction
-      InfoSmileComponent.sortDirection = InfoSmileComponent.sortDirection === 'asc' ? 'desc' : 'asc';
+      InfoSmileComponent.sortDirection =
+        InfoSmileComponent.sortDirection === 'asc' ? 'desc' : 'asc';
     } else {
       // New column - default to descending
       InfoSmileComponent.sortColumn = column;
@@ -375,11 +414,11 @@ export class InfoSmileComponent extends BaseInfoComponent {
    */
   sortTransactions(transactions: any[]): any[] {
     const sorted = [...transactions];
-    
+
     sorted.sort((a, b) => {
       let aValue: any;
       let bValue: any;
-      
+
       switch (InfoSmileComponent.sortColumn) {
         case 'id':
           aValue = this.getTransactionId(a);
@@ -400,7 +439,7 @@ export class InfoSmileComponent extends BaseInfoComponent {
         default:
           return 0;
       }
-      
+
       if (aValue < bValue) {
         return InfoSmileComponent.sortDirection === 'asc' ? -1 : 1;
       }
@@ -409,7 +448,7 @@ export class InfoSmileComponent extends BaseInfoComponent {
       }
       return 0;
     });
-    
+
     return sorted;
   }
 
@@ -417,19 +456,25 @@ export class InfoSmileComponent extends BaseInfoComponent {
    * Get bucket segments for stacked progress bar
    * Returns array of {bucket, percentage, color}
    */
-  getBucketSegments(): {bucket: SmileBucket, percentage: number, colorClass: string}[] {
+  getBucketSegments(): { bucket: SmileBucket; percentage: number; colorClass: string }[] {
     const project = AppStateService.instance.allSmileProjects[InfoSmileComponent.index];
     if (!project?.buckets?.length) return [];
-    
+
     const totalTarget = this.getTotalTarget();
     if (totalTarget === 0) return [];
 
-    const colors = ['bucket-color-1', 'bucket-color-2', 'bucket-color-3', 'bucket-color-4', 'bucket-color-5'];
-    
+    const colors = [
+      'bucket-color-1',
+      'bucket-color-2',
+      'bucket-color-3',
+      'bucket-color-4',
+      'bucket-color-5',
+    ];
+
     return project.buckets.map((bucket, index) => ({
       bucket,
       percentage: (bucket.amount / totalTarget) * 100,
-      colorClass: colors[index % colors.length]
+      colorClass: colors[index % colors.length],
     }));
   }
 
@@ -440,12 +485,12 @@ export class InfoSmileComponent extends BaseInfoComponent {
   static isError;
   public classReference = InfoSmileComponent;
   constructor(
-    router: Router, 
-    private localStorage: LocalService, 
-    private persistence: PersistenceService, 
+    router: Router,
+    private localStorage: LocalService,
+    private persistence: PersistenceService,
     private incomeStatement: IncomeStatementService,
     private paymentPlannerService: PaymentPlannerService,
-    private subscriptionActivationService: SubscriptionActivationService
+    private subscriptionActivationService: SubscriptionActivationService,
   ) {
     super(router);
     this.initStatic(InfoSmileComponent);
@@ -465,12 +510,12 @@ export class InfoSmileComponent extends BaseInfoComponent {
     // General add without specific bucket - will distribute equally across all buckets
     const project = AppStateService.instance.allSmileProjects[InfoSmileComponent.index];
     const totalRemaining = this.getTotalTarget() - this.getTotalAmount();
-    
+
     AddComponent.categoryTextField = `@${InfoSmileComponent.title}`;
-    AddComponent.selectedOption = "Smile";
+    AddComponent.selectedOption = 'Smile';
     AddComponent.commentTextField = `${InfoSmileComponent.title} ${totalRemaining}`;
-    
-    AddComponent.url = "/smileprojects";
+
+    AddComponent.url = '/smileprojects';
     AddComponent.isAdd = true;
     MenuComponent.isMenu = false;
     InfoComponent.isInfo = false;
@@ -481,11 +526,11 @@ export class InfoSmileComponent extends BaseInfoComponent {
     // Add to specific bucket with pre-filled comment using bucket name and amount
     bucketRemaining = Math.round(bucketRemaining * 100) / 100;
     AddComponent.categoryTextField = `@${InfoSmileComponent.title}`;
-    AddComponent.selectedOption = "Smile";
+    AddComponent.selectedOption = 'Smile';
     AddComponent.amountTextField = (bucketRemaining * -1).toString();
     AddComponent.commentTextField = `${InfoSmileComponent.title} ${bucketRemaining.toFixed(0)}\n#bucket:${bucketTitle}:${bucketRemaining.toFixed(2)}`;
-    
-    AddComponent.url = "/smileprojects";
+
+    AddComponent.url = '/smileprojects';
     AddComponent.isAdd = true;
     MenuComponent.isMenu = false;
     InfoComponent.isInfo = false;
@@ -503,30 +548,45 @@ export class InfoSmileComponent extends BaseInfoComponent {
     if (!project?.buckets || project.buckets.length === 0) {
       return false; // No buckets means no restriction
     }
-    
+
     // Check if ALL buckets are full
-    return project.buckets.every(bucket => bucket.amount >= bucket.target);
+    return project.buckets.every((bucket) => bucket.amount >= bucket.target);
   }
 
   advancePhase() {
     const nextPhase = this.getNextPhase();
     if (nextPhase !== InfoSmileComponent.phase) {
       const project = AppStateService.instance.allSmileProjects[InfoSmileComponent.index];
-      console.log('[Advance Phase] Before update:', project.title, 'Current phase:', project.phase, 'Next phase:', nextPhase);
-      
+      console.log(
+        '[Advance Phase] Before update:',
+        project.title,
+        'Current phase:',
+        project.phase,
+        'Next phase:',
+        nextPhase,
+      );
+
       project.phase = nextPhase;
       project.updatedAt = new Date().toISOString();
-      
+
       // If advancing to completed, set completion date
       if (nextPhase === 'completed' && !project.completionDate) {
         project.completionDate = new Date().toISOString().split('T')[0];
       }
-      
+
       InfoSmileComponent.phase = nextPhase;
-      
-      console.log('[Advance Phase] After update in memory:', project.title, 'Phase:', project.phase);
-      console.log('[Advance Phase] Writing to persistence...', AppStateService.instance.allSmileProjects.map(p => ({ title: p.title, phase: p.phase })));
-      
+
+      console.log(
+        '[Advance Phase] After update in memory:',
+        project.title,
+        'Phase:',
+        project.phase,
+      );
+      console.log(
+        '[Advance Phase] Writing to persistence...',
+        AppStateService.instance.allSmileProjects.map((p) => ({ title: p.title, phase: p.phase })),
+      );
+
       this.persistence.writeAndSync({
         tag: 'smile',
         data: AppStateService.instance.allSmileProjects,
@@ -540,7 +600,7 @@ export class InfoSmileComponent extends BaseInfoComponent {
         onError: (error) => {
           console.error('[Advance Phase] Write failed:', error);
           this.showError(error.message || 'Failed to advance phase');
-        }
+        },
       });
     }
   }
@@ -551,19 +611,20 @@ export class InfoSmileComponent extends BaseInfoComponent {
    */
   openTransactionInfo(tx: any) {
     // Find the index of this transaction in the full allTransactions array
-    const txIndex = AppStateService.instance.allTransactions.findIndex(t => 
-      t.account === tx.account && 
-      t.amount === tx.amount && 
-      t.date === tx.date && 
-      t.category === tx.category &&
-      t.comment === tx.comment
+    const txIndex = AppStateService.instance.allTransactions.findIndex(
+      (t) =>
+        t.account === tx.account &&
+        t.amount === tx.amount &&
+        t.date === tx.date &&
+        t.category === tx.category &&
+        t.comment === tx.comment,
     );
-    
+
     if (txIndex !== -1) {
       // Set InfoComponent z-index much higher to appear on top of InfoSmileComponent
       // Use +10 instead of +1 to ensure it stays on top even if InfoSmileComponent is clicked
       InfoComponent.zIndex = InfoSmileComponent.zIndex + 10;
-      
+
       AppComponent.gotoTop();
       InfoComponent.setInfoComponent(
         txIndex,
@@ -572,7 +633,7 @@ export class InfoSmileComponent extends BaseInfoComponent {
         tx.date,
         tx.time,
         tx.category,
-        tx.comment
+        tx.comment,
       );
     }
   }
@@ -582,19 +643,19 @@ export class InfoSmileComponent extends BaseInfoComponent {
     if (this.newLinkLabel && this.newLinkUrl) {
       const project = AppStateService.instance.allSmileProjects[InfoSmileComponent.index];
       if (!project.links) project.links = [];
-      
+
       project.links.push({
         label: this.newLinkLabel,
-        url: this.newLinkUrl
+        url: this.newLinkUrl,
       });
       project.updatedAt = new Date().toISOString();
-      
+
       this.newLinkLabel = '';
       this.newLinkUrl = '';
       this.showAddLink = false;
-      
+
       InfoSmileComponent.links = project.links;
-      
+
       this.persistence.writeAndSync({
         tag: 'smile',
         data: AppStateService.instance.allSmileProjects,
@@ -606,7 +667,7 @@ export class InfoSmileComponent extends BaseInfoComponent {
         },
         onError: (error) => {
           this.showError(error.message || 'Failed to add link');
-        }
+        },
       });
     }
   }
@@ -616,9 +677,9 @@ export class InfoSmileComponent extends BaseInfoComponent {
     if (project.links) {
       project.links.splice(index, 1);
       project.updatedAt = new Date().toISOString();
-      
+
       InfoSmileComponent.links = project.links;
-      
+
       this.persistence.writeAndSync({
         tag: 'smile',
         data: AppStateService.instance.allSmileProjects,
@@ -630,7 +691,7 @@ export class InfoSmileComponent extends BaseInfoComponent {
         },
         onError: (error) => {
           this.showError(error.message || 'Failed to remove link');
-        }
+        },
       });
     }
   }
@@ -651,13 +712,13 @@ export class InfoSmileComponent extends BaseInfoComponent {
         project.links[index].label = this.editingLinkLabel.trim();
         project.links[index].url = this.editingLinkUrl.trim();
         project.updatedAt = new Date().toISOString();
-        
+
         InfoSmileComponent.links = project.links;
-        
+
         this.editingLinkIndex = -1;
         this.editingLinkLabel = '';
         this.editingLinkUrl = '';
-        
+
         this.persistence.writeAndSync({
           tag: 'smile',
           data: AppStateService.instance.allSmileProjects,
@@ -669,7 +730,7 @@ export class InfoSmileComponent extends BaseInfoComponent {
           },
           onError: (error) => {
             this.showError(error.message || 'Failed to update link');
-          }
+          },
         });
       }
     }
@@ -686,22 +747,22 @@ export class InfoSmileComponent extends BaseInfoComponent {
     if (this.newActionText) {
       const project = AppStateService.instance.allSmileProjects[InfoSmileComponent.index];
       if (!project.actionItems) project.actionItems = [];
-      
+
       project.actionItems.push({
         text: this.newActionText,
         done: false,
         priority: this.newActionPriority,
-        dueDate: this.newActionDueDate || undefined
+        dueDate: this.newActionDueDate || undefined,
       });
       project.updatedAt = new Date().toISOString();
-      
+
       this.newActionText = '';
       this.newActionPriority = 'medium';
       this.newActionDueDate = '';
       this.showAddAction = false;
-      
+
       InfoSmileComponent.actionItems = project.actionItems;
-      
+
       this.persistence.writeAndSync({
         tag: 'smile',
         data: AppStateService.instance.allSmileProjects,
@@ -713,7 +774,7 @@ export class InfoSmileComponent extends BaseInfoComponent {
         },
         onError: (error) => {
           this.showError(error.message || 'Failed to add action');
-        }
+        },
       });
     }
   }
@@ -723,9 +784,9 @@ export class InfoSmileComponent extends BaseInfoComponent {
     if (project.actionItems && project.actionItems[index]) {
       project.actionItems[index].done = !project.actionItems[index].done;
       project.updatedAt = new Date().toISOString();
-      
+
       InfoSmileComponent.actionItems = project.actionItems;
-      
+
       this.persistence.writeAndSync({
         tag: 'smile',
         data: AppStateService.instance.allSmileProjects,
@@ -737,7 +798,7 @@ export class InfoSmileComponent extends BaseInfoComponent {
         },
         onError: (error) => {
           this.showError(error.message || 'Failed to update action');
-        }
+        },
       });
     }
   }
@@ -747,9 +808,9 @@ export class InfoSmileComponent extends BaseInfoComponent {
     if (project.actionItems) {
       project.actionItems.splice(index, 1);
       project.updatedAt = new Date().toISOString();
-      
+
       InfoSmileComponent.actionItems = project.actionItems;
-      
+
       this.persistence.writeAndSync({
         tag: 'smile',
         data: AppStateService.instance.allSmileProjects,
@@ -761,7 +822,7 @@ export class InfoSmileComponent extends BaseInfoComponent {
         },
         onError: (error) => {
           this.showError(error.message || 'Failed to remove action');
-        }
+        },
       });
     }
   }
@@ -783,14 +844,14 @@ export class InfoSmileComponent extends BaseInfoComponent {
       project.actionItems[index].priority = this.editingActionPriority;
       project.actionItems[index].dueDate = this.editingActionDueDate || undefined;
       project.updatedAt = new Date().toISOString();
-      
+
       InfoSmileComponent.actionItems = project.actionItems;
-      
+
       this.editingActionIndex = -1;
       this.editingActionText = '';
       this.editingActionPriority = 'medium';
       this.editingActionDueDate = '';
-      
+
       this.persistence.writeAndSync({
         tag: 'smile',
         data: AppStateService.instance.allSmileProjects,
@@ -802,7 +863,7 @@ export class InfoSmileComponent extends BaseInfoComponent {
         },
         onError: (error) => {
           this.showError(error.message || 'Failed to update action');
-        }
+        },
       });
     }
   }
@@ -824,7 +885,7 @@ export class InfoSmileComponent extends BaseInfoComponent {
         amount: 0,
         notes: this.newBucketNotes || '',
         links: [],
-        targetDate: this.newBucketTargetDate || undefined
+        targetDate: this.newBucketTargetDate || undefined,
       });
       this.newBucketTitle = '';
       this.newBucketTarget = 0;
@@ -875,7 +936,7 @@ export class InfoSmileComponent extends BaseInfoComponent {
       }
       this.buckets[bucketIndex].links!.push({
         label: this.newBucketLinkLabel.trim(),
-        url: this.newBucketLinkUrl.trim()
+        url: this.newBucketLinkUrl.trim(),
       });
       this.newBucketLinkLabel = '';
       this.newBucketLinkUrl = '';
@@ -898,11 +959,15 @@ export class InfoSmileComponent extends BaseInfoComponent {
   }
 
   saveEditBucketLink() {
-    if (this.editingBucketLinkBucketIndex !== null && this.editingBucketLinkLinkIndex !== null && 
-        this.editBucketLinkLabel.trim() && this.editBucketLinkUrl.trim()) {
+    if (
+      this.editingBucketLinkBucketIndex !== null &&
+      this.editingBucketLinkLinkIndex !== null &&
+      this.editBucketLinkLabel.trim() &&
+      this.editBucketLinkUrl.trim()
+    ) {
       this.buckets[this.editingBucketLinkBucketIndex].links![this.editingBucketLinkLinkIndex] = {
         label: this.editBucketLinkLabel.trim(),
-        url: this.editBucketLinkUrl.trim()
+        url: this.editBucketLinkUrl.trim(),
       };
       this.cancelEditBucketLink();
     }
@@ -920,15 +985,15 @@ export class InfoSmileComponent extends BaseInfoComponent {
     if (this.newNoteText.trim()) {
       const project = AppStateService.instance.allSmileProjects[InfoSmileComponent.index];
       if (!project.notes) project.notes = [];
-      
+
       project.notes.push({
         text: this.newNoteText,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
       });
       project.updatedAt = new Date().toISOString();
-      
+
       this.newNoteText = '';
-      
+
       this.persistence.writeAndSync({
         tag: 'smile',
         data: AppStateService.instance.allSmileProjects,
@@ -941,7 +1006,7 @@ export class InfoSmileComponent extends BaseInfoComponent {
         },
         onError: (error) => {
           this.showError(error.message || 'Failed to add note');
-        }
+        },
       });
     }
   }
@@ -956,7 +1021,7 @@ export class InfoSmileComponent extends BaseInfoComponent {
     if (project.notes && project.notes[index]) {
       project.notes[index].text = this.editingNoteText;
       project.updatedAt = new Date().toISOString();
-      
+
       this.persistence.writeAndSync({
         tag: 'smile',
         data: AppStateService.instance.allSmileProjects,
@@ -970,7 +1035,7 @@ export class InfoSmileComponent extends BaseInfoComponent {
         },
         onError: (error) => {
           this.showError(error.message || 'Failed to update note');
-        }
+        },
       });
     }
   }
@@ -986,7 +1051,7 @@ export class InfoSmileComponent extends BaseInfoComponent {
       if (project.notes) {
         project.notes.splice(index, 1);
         project.updatedAt = new Date().toISOString();
-        
+
         this.persistence.writeAndSync({
           tag: 'smile',
           data: AppStateService.instance.allSmileProjects,
@@ -999,7 +1064,7 @@ export class InfoSmileComponent extends BaseInfoComponent {
           },
           onError: (error) => {
             this.showError(error.message || 'Failed to delete note');
-          }
+          },
         });
       }
     });
@@ -1024,7 +1089,7 @@ export class InfoSmileComponent extends BaseInfoComponent {
     this.descriptionTextField = InfoSmileComponent.description;
     this.targetDateTextField = InfoSmileComponent.targetDate;
     this.completionDateTextField = InfoSmileComponent.completionDate;
-    
+
     // Deep copy buckets, links, and action items for editing
     const project = AppStateService.instance.allSmileProjects[InfoSmileComponent.index];
     this.buckets = project.buckets ? JSON.parse(JSON.stringify(project.buckets)) : [];
@@ -1038,23 +1103,26 @@ export class InfoSmileComponent extends BaseInfoComponent {
 
   updateSmileProject() {
     // Validation
-    if (this.titleTextField === "") {
-      this.showError("Please enter a title.");
+    if (this.titleTextField === '') {
+      this.showError('Please enter a title.');
       return;
     }
-    
+
     if (this.buckets.length === 0) {
-      this.showError("Add at least one bucket to your Smile project.");
+      this.showError('Add at least one bucket to your Smile project.');
       return;
     }
-    
-    if (AppStateService.instance.allSmileProjects[InfoSmileComponent.index].title != this.titleTextField) {
+
+    if (
+      AppStateService.instance.allSmileProjects[InfoSmileComponent.index].title !=
+      this.titleTextField
+    ) {
       if (this.invalidTitle(this.titleTextField)) {
-        this.showError("This smile project already exists.");
+        this.showError('This smile project already exists.');
         return;
       }
     }
-    
+
     const project = AppStateService.instance.allSmileProjects[InfoSmileComponent.index];
     project.title = this.titleTextField;
     project.sub = this.subTextField;
@@ -1066,7 +1134,7 @@ export class InfoSmileComponent extends BaseInfoComponent {
     project.links = this.links;
     project.actionItems = this.actionItems;
     project.updatedAt = new Date().toISOString();
-    
+
     // Update static properties
     InfoSmileComponent.title = this.titleTextField;
     InfoSmileComponent.sub = this.subTextField;
@@ -1081,7 +1149,7 @@ export class InfoSmileComponent extends BaseInfoComponent {
     InfoSmileComponent.isEdit = false;
     InfoSmileComponent.isInfo = false;
     AppStateService.instance.isSaving = true;
-    
+
     this.persistence.writeAndSync({
       tag: 'smile',
       data: AppStateService.instance.allSmileProjects,
@@ -1090,7 +1158,7 @@ export class InfoSmileComponent extends BaseInfoComponent {
       logMetadata: {
         title: this.titleTextField,
         phase: this.phaseField,
-        bucketCount: this.buckets.length
+        bucketCount: this.buckets.length,
       },
       onSuccess: () => {
         AppStateService.instance.isSaving = false;
@@ -1101,7 +1169,7 @@ export class InfoSmileComponent extends BaseInfoComponent {
       onError: (error) => {
         AppStateService.instance.isSaving = false;
         this.toastService.show(error.message || 'Database write failed', 'error');
-      }
+      },
     });
   }
 
@@ -1109,17 +1177,17 @@ export class InfoSmileComponent extends BaseInfoComponent {
     this.confirmService.confirm(this.translate.instant('Confirm.deleteSmile'), () => {
       // Save title before deleting
       const deletedTitle = AppStateService.instance.allSmileProjects[index].title;
-      
+
       // Track if we actually deleted any transactions
       let deletedTransactionsCount = 0;
-      
+
       //remove all transactions
       if (this.deleteTransactionsChecked) {
         let found = true;
         while (found) {
           found = false;
           for (let i = 0; i < AppStateService.instance.allTransactions.length; i++) {
-            if ("@" + deletedTitle === AppStateService.instance.allTransactions[i].category) {
+            if ('@' + deletedTitle === AppStateService.instance.allTransactions[i].category) {
               AppStateService.instance.allTransactions.splice(i, 1);
               deletedTransactionsCount++;
               found = true;
@@ -1143,21 +1211,25 @@ export class InfoSmileComponent extends BaseInfoComponent {
       // Use batchWriteAndSync ONLY if transactions were actually deleted
       if (deletedTransactionsCount > 0) {
         // Note: Don't include 'smile' here as incomeStatement.getWrites() already includes it
-        const writes: { tag: string, data: any }[] = [
-          { tag: "transactions", data: AppStateService.instance.allTransactions },
-          ...this.incomeStatement.getWrites()
+        const writes: { tag: string; data: any }[] = [
+          { tag: 'transactions', data: AppStateService.instance.allTransactions },
+          ...this.incomeStatement.getWrites(),
         ];
 
         const localStorageSaves = [
           { key: 'smile', data: AppStateService.instance.allSmileProjects },
-          { key: 'transactions', data: AppStateService.instance.allTransactions }
+          { key: 'transactions', data: AppStateService.instance.allTransactions },
         ];
 
         this.persistence.batchWriteAndSync({
           writes,
           localStorageSaves,
           logEvent: 'delete_smile',
-          logMetadata: { title: deletedTitle, index: index, deletedTransactions: deletedTransactionsCount },
+          logMetadata: {
+            title: deletedTitle,
+            index: index,
+            deletedTransactions: deletedTransactionsCount,
+          },
           onSuccess: () => {
             AppStateService.instance.isSaving = false;
             this.incomeStatement.saveToLocalStorage();
@@ -1168,7 +1240,7 @@ export class InfoSmileComponent extends BaseInfoComponent {
           onError: (error) => {
             AppStateService.instance.isSaving = false;
             this.toastService.show(error.message || 'Database write failed', 'error');
-          }
+          },
         });
       } else {
         // Simple delete - just smile project (no transactions were deleted)
@@ -1187,7 +1259,7 @@ export class InfoSmileComponent extends BaseInfoComponent {
           onError: (error) => {
             AppStateService.instance.isSaving = false;
             this.toastService.show(error.message || 'Database write failed', 'error');
-          }
+          },
         });
       }
     });
@@ -1221,7 +1293,7 @@ export class InfoSmileComponent extends BaseInfoComponent {
     }
     project.plannedSubscriptions.push(plan);
     InfoSmileComponent.plannedSubscriptions = project.plannedSubscriptions;
-    
+
     this.isPaymentPlannerOpen = false;
     this.saveProject('Payment plan created');
   }
@@ -1256,9 +1328,9 @@ export class InfoSmileComponent extends BaseInfoComponent {
   activatePaymentPlan(planIndex: number): void {
     const project = AppStateService.instance.allSmileProjects[InfoSmileComponent.index];
     const plan = project.plannedSubscriptions?.[planIndex];
-    
+
     if (!plan || plan.status !== 'planned') return;
-    
+
     this.confirmService.confirm(
       `Activate payment plan "${plan.title}"? This will create a recurring subscription.`,
       () => {
@@ -1267,7 +1339,7 @@ export class InfoSmileComponent extends BaseInfoComponent {
         this.saveProject('Payment plan activated');
       },
       'Smile.paymentPlans.activate',
-      'primary'
+      'primary',
     );
   }
 
@@ -1277,9 +1349,9 @@ export class InfoSmileComponent extends BaseInfoComponent {
   deactivatePaymentPlan(planIndex: number): void {
     const project = AppStateService.instance.allSmileProjects[InfoSmileComponent.index];
     const plan = project.plannedSubscriptions?.[planIndex];
-    
+
     if (!plan || plan.status !== 'active') return;
-    
+
     this.confirmService.confirm(
       `Deactivate payment plan "${plan.title}"? The subscription will be removed.`,
       () => {
@@ -1288,7 +1360,7 @@ export class InfoSmileComponent extends BaseInfoComponent {
         this.saveProject('Payment plan deactivated');
       },
       'Smile.paymentPlans.deactivate',
-      'delete'
+      'delete',
     );
   }
 
@@ -1298,9 +1370,9 @@ export class InfoSmileComponent extends BaseInfoComponent {
   reactivatePaymentPlan(planIndex: number): void {
     const project = AppStateService.instance.allSmileProjects[InfoSmileComponent.index];
     const plan = project.plannedSubscriptions?.[planIndex];
-    
+
     if (!plan || plan.status !== 'inactive') return;
-    
+
     this.confirmService.confirm(
       `Reactivate payment plan "${plan.title}"?`,
       () => {
@@ -1309,7 +1381,7 @@ export class InfoSmileComponent extends BaseInfoComponent {
         this.saveProject('Payment plan reactivated');
       },
       'Smile.paymentPlans.reactivate',
-      'primary'
+      'primary',
     );
   }
 
@@ -1319,17 +1391,14 @@ export class InfoSmileComponent extends BaseInfoComponent {
   deletePaymentPlan(planIndex: number): void {
     const project = AppStateService.instance.allSmileProjects[InfoSmileComponent.index];
     const plan = project.plannedSubscriptions?.[planIndex];
-    
+
     if (!plan) return;
-    
-    this.confirmService.confirm(
-      `Delete payment plan "${plan.title}"?`,
-      () => {
-        this.subscriptionActivationService.deletePlannedSubscription(plan.id, project);
-        InfoSmileComponent.plannedSubscriptions = project.plannedSubscriptions || [];
-        this.saveProject('Payment plan deleted');
-      }
-    );
+
+    this.confirmService.confirm(`Delete payment plan "${plan.title}"?`, () => {
+      this.subscriptionActivationService.deletePlannedSubscription(plan.id, project);
+      InfoSmileComponent.plannedSubscriptions = project.plannedSubscriptions || [];
+      this.saveProject('Payment plan deleted');
+    });
   }
 
   /**
@@ -1338,9 +1407,9 @@ export class InfoSmileComponent extends BaseInfoComponent {
   duplicatePaymentPlan(planIndex: number): void {
     const project = AppStateService.instance.allSmileProjects[InfoSmileComponent.index];
     const plan = project.plannedSubscriptions?.[planIndex];
-    
+
     if (!plan) return;
-    
+
     // Create a copy with new ID and reset status
     const duplicate: PlannedSubscription = {
       ...plan,
@@ -1350,15 +1419,15 @@ export class InfoSmileComponent extends BaseInfoComponent {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       activatedAt: undefined,
-      deactivatedAt: undefined
+      deactivatedAt: undefined,
     };
-    
+
     if (!project.plannedSubscriptions) {
       project.plannedSubscriptions = [];
     }
     project.plannedSubscriptions.push(duplicate);
     InfoSmileComponent.plannedSubscriptions = project.plannedSubscriptions;
-    
+
     this.saveProject('Payment plan duplicated');
   }
 
@@ -1366,7 +1435,7 @@ export class InfoSmileComponent extends BaseInfoComponent {
    * Get bucket name by ID
    */
   getBucketNameById(bucketId: string): string {
-    const bucket = InfoSmileComponent.buckets.find(b => b.id === bucketId);
+    const bucket = InfoSmileComponent.buckets.find((b) => b.id === bucketId);
     return bucket ? bucket.title : 'Unknown';
   }
 
@@ -1375,7 +1444,7 @@ export class InfoSmileComponent extends BaseInfoComponent {
    */
   calculateTotalMonthlyCommitment(): number {
     return this.paymentPlannerService.calculateTotalMonthlyCommitment(
-      InfoSmileComponent.plannedSubscriptions
+      InfoSmileComponent.plannedSubscriptions,
     );
   }
 
@@ -1383,21 +1452,21 @@ export class InfoSmileComponent extends BaseInfoComponent {
    * Get planned subscriptions only
    */
   getPlannedSubscriptions(): PlannedSubscription[] {
-    return InfoSmileComponent.plannedSubscriptions.filter(p => p.status === 'planned');
+    return InfoSmileComponent.plannedSubscriptions.filter((p) => p.status === 'planned');
   }
 
   /**
    * Get active subscriptions only
    */
   getActiveSubscriptions(): PlannedSubscription[] {
-    return InfoSmileComponent.plannedSubscriptions.filter(p => p.status === 'active');
+    return InfoSmileComponent.plannedSubscriptions.filter((p) => p.status === 'active');
   }
 
   /**
    * Get inactive subscriptions only
    */
   getInactiveSubscriptions(): PlannedSubscription[] {
-    return InfoSmileComponent.plannedSubscriptions.filter(p => p.status === 'inactive');
+    return InfoSmileComponent.plannedSubscriptions.filter((p) => p.status === 'inactive');
   }
 
   /**
@@ -1413,12 +1482,17 @@ export class InfoSmileComponent extends BaseInfoComponent {
   private saveProject(message: string): void {
     // Determine toast type based on message
     let toastType: 'success' | 'update' | 'delete' = 'success';
-    if (message.includes('updated') || message.includes('activated') || message.includes('deactivated') || message.includes('reactivated')) {
+    if (
+      message.includes('updated') ||
+      message.includes('activated') ||
+      message.includes('deactivated') ||
+      message.includes('reactivated')
+    ) {
       toastType = 'update';
     } else if (message.includes('deleted')) {
       toastType = 'delete';
     }
-    
+
     this.persistence.writeAndSync({
       tag: 'smile',
       data: AppStateService.instance.allSmileProjects,
@@ -1430,7 +1504,7 @@ export class InfoSmileComponent extends BaseInfoComponent {
       },
       onError: (error) => {
         this.showError(error.message || 'Database write failed');
-      }
+      },
     });
   }
 }

@@ -7,7 +7,12 @@ import { AngularFireAuthModule } from '@angular/fire/compat/auth';
 import { environment } from '../environments/environment';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { TranslateHttpLoader } from '@ngx-translate/http-loader';
-import { TranslateModule, TranslateLoader, MissingTranslationHandler, MissingTranslationHandlerParams } from '@ngx-translate/core';
+import {
+  TranslateModule,
+  TranslateLoader,
+  MissingTranslationHandler,
+  MissingTranslationHandlerParams,
+} from '@ngx-translate/core';
 
 export class FallbackMissingTranslationHandler implements MissingTranslationHandler {
   handle(params: MissingTranslationHandlerParams) {
@@ -53,9 +58,7 @@ export function HttpLoaderFactory(http: HttpClient) {
 }
 
 @NgModule({
-  declarations: [
-    AppComponent
-  ],
+  declarations: [AppComponent],
   imports: [
     BrowserModule,
     AppRoutingModule,
@@ -69,12 +72,12 @@ export function HttpLoaderFactory(http: HttpClient) {
       loader: {
         provide: TranslateLoader,
         useFactory: HttpLoaderFactory,
-        deps: [HttpClient]
+        deps: [HttpClient],
       },
       missingTranslationHandler: {
         provide: MissingTranslationHandler,
-        useClass: FallbackMissingTranslationHandler
-      }
+        useClass: FallbackMissingTranslationHandler,
+      },
     }),
     BrowserAnimationsModule,
     AddComponent,
@@ -98,15 +101,17 @@ export function HttpLoaderFactory(http: HttpClient) {
     ToastComponent,
     ConfirmDialogComponent,
     BottomNavComponent,
-    OnboardingComponent
+    OnboardingComponent,
   ],
-  providers: [{
-    provide: LOCALE_ID,
-    useFactory: () => {
-      const isEuropeanFormat = localStorage.getItem('isEuropeanFormat');
-      return isEuropeanFormat === 'false' ? 'en-US' : 'de-DE';
-    }
-  }],
-  bootstrap: [AppComponent]
+  providers: [
+    {
+      provide: LOCALE_ID,
+      useFactory: () => {
+        const isEuropeanFormat = localStorage.getItem('isEuropeanFormat');
+        return isEuropeanFormat === 'false' ? 'en-US' : 'de-DE';
+      },
+    },
+  ],
+  bootstrap: [AppComponent],
 })
-export class AppModule { }
+export class AppModule {}

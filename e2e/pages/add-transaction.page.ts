@@ -29,7 +29,13 @@ export class AddTransactionPage {
     this.closeBtn = panel.locator('#closebtn');
   }
 
-  async fill(data: { account: string; amount: string; category: string; comment?: string; date?: string }) {
+  async fill(data: {
+    account: string;
+    amount: string;
+    category: string;
+    comment?: string;
+    date?: string;
+  }) {
     await this.accountSelect.selectOption(data.account);
     await this.amountInput.fill(data.amount);
     if (data.date) {
@@ -46,7 +52,9 @@ export class AddTransactionPage {
     const skipBtn = this.page.locator('.onboarding-skip');
     if (await skipBtn.isVisible({ timeout: 1_000 }).catch(() => false)) {
       await skipBtn.click();
-      await this.page.waitForSelector('.onboarding-backdrop', { state: 'hidden', timeout: 3_000 }).catch(() => {});
+      await this.page
+        .waitForSelector('.onboarding-backdrop', { state: 'hidden', timeout: 3_000 })
+        .catch(() => {});
     }
     await this.addBtn.click();
   }

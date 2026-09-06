@@ -10,7 +10,7 @@ import { LocalService } from '../../services/local.service';
   standalone: true,
   imports: [CommonModule, TranslateModule],
   templateUrl: './tour-overlay.component.html',
-  styleUrls: ['./tour-overlay.component.css']
+  styleUrls: ['./tour-overlay.component.css'],
 })
 export class TourOverlayComponent implements OnInit, OnDestroy {
   private sub!: Subscription;
@@ -44,7 +44,7 @@ export class TourOverlayComponent implements OnInit, OnDestroy {
     public tour: TourService,
     private cdr: ChangeDetectorRef,
     private translate: TranslateService,
-    private localStorage: LocalService
+    private localStorage: LocalService,
   ) {}
 
   get currentLang(): string {
@@ -55,7 +55,14 @@ export class TourOverlayComponent implements OnInit, OnDestroy {
     this.translate.use(lang);
     // Persist — mirror the SettingsComponent storage format
     const keys = ['isEng', 'isDe', 'isEs', 'isFr', 'isCn', 'isAr'];
-    const map: Record<string, string> = { en: 'isEng', de: 'isDe', es: 'isEs', fr: 'isFr', cn: 'isCn', ar: 'isAr' };
+    const map: Record<string, string> = {
+      en: 'isEng',
+      de: 'isDe',
+      es: 'isEs',
+      fr: 'isFr',
+      cn: 'isCn',
+      ar: 'isAr',
+    };
     for (const k of keys) {
       this.localStorage.saveData(k, k === map[lang] ? 'true' : 'false');
     }
@@ -79,7 +86,7 @@ export class TourOverlayComponent implements OnInit, OnDestroy {
       await this.tour.navigateIfNeeded();
       this.positionSpotlight();
     });
-    this.tour.action$.subscribe(action => {
+    this.tour.action$.subscribe((action) => {
       if (action === 'tourMenuOpen') {
         this.menuNavigating = true;
         this.cdr.detectChanges();
@@ -160,7 +167,10 @@ export class TourOverlayComponent implements OnInit, OnDestroy {
     await this.delay(220);
 
     await this.tour.next();
-    if (!this.tour.isActive) { this.close(); return; }
+    if (!this.tour.isActive) {
+      this.close();
+      return;
+    }
     await this.tour.navigateRoute();
     await this.tour.executeAction();
 
@@ -237,7 +247,7 @@ export class TourOverlayComponent implements OnInit, OnDestroy {
 
   /** Find and spotlight the target element, position tooltip */
   positionSpotlight(): Promise<void> {
-    return new Promise(resolve => {
+    return new Promise((resolve) => {
       const step = this.tour.currentStep;
       if (!step.target) {
         this.spotlightRect = null;
@@ -260,11 +270,12 @@ export class TourOverlayComponent implements OnInit, OnDestroy {
 
         const rect = el.getBoundingClientRect();
         const bottomBar = 72;
-        const isVisible = rect.top >= 0 && rect.bottom <= (window.innerHeight - bottomBar);
+        const isVisible = rect.top >= 0 && rect.bottom <= window.innerHeight - bottomBar;
 
         // For bottom tooltips, ensure there's room below the target for the info box
         const needsTooltipRoom = step.position === 'bottom';
-        const hasTooltipRoom = !needsTooltipRoom || rect.bottom < (window.innerHeight - bottomBar) / 2;
+        const hasTooltipRoom =
+          !needsTooltipRoom || rect.bottom < (window.innerHeight - bottomBar) / 2;
 
         // Fast path: target already visible and enough room for tooltip
         if (isVisible && hasTooltipRoom) {
@@ -331,20 +342,28 @@ export class TourOverlayComponent implements OnInit, OnDestroy {
 
     switch (position) {
       case 'bottom':
-        style['top'] = (rect.bottom + pad) + 'px';
-        style['left'] = Math.max(pad, Math.min(rect.left + rect.width / 2 - tooltipWidth / 2, vw - tooltipWidth - pad)) + 'px';
+        style['top'] = rect.bottom + pad + 'px';
+        style['left'] =
+          Math.max(
+            pad,
+            Math.min(rect.left + rect.width / 2 - tooltipWidth / 2, vw - tooltipWidth - pad),
+          ) + 'px';
         break;
       case 'top':
-        style['bottom'] = (vh - rect.top + pad) + 'px';
-        style['left'] = Math.max(pad, Math.min(rect.left + rect.width / 2 - tooltipWidth / 2, vw - tooltipWidth - pad)) + 'px';
+        style['bottom'] = vh - rect.top + pad + 'px';
+        style['left'] =
+          Math.max(
+            pad,
+            Math.min(rect.left + rect.width / 2 - tooltipWidth / 2, vw - tooltipWidth - pad),
+          ) + 'px';
         break;
       case 'left':
         style['top'] = Math.max(pad, rect.top + rect.height / 2 - 60) + 'px';
-        style['right'] = (vw - rect.left + pad) + 'px';
+        style['right'] = vw - rect.left + pad + 'px';
         break;
       case 'right':
         style['top'] = Math.max(pad, rect.top + rect.height / 2 - 60) + 'px';
-        style['left'] = (rect.right + pad) + 'px';
+        style['left'] = rect.right + pad + 'px';
         break;
       case 'bottom-fixed':
         style['bottom'] = '88px';
@@ -365,12 +384,14 @@ export class TourOverlayComponent implements OnInit, OnDestroy {
     const w = r.width + pad * 2;
     const h = r.height + pad * 2;
     const radius = 12;
-    return `M0,0 H${window.innerWidth} V${window.innerHeight} H0 Z ` +
+    return (
+      `M0,0 H${window.innerWidth} V${window.innerHeight} H0 Z ` +
       `M${x + radius},${y} ` +
       `H${x + w - radius} Q${x + w},${y} ${x + w},${y + radius} ` +
       `V${y + h - radius} Q${x + w},${y + h} ${x + w - radius},${y + h} ` +
       `H${x + radius} Q${x},${y + h} ${x},${y + h - radius} ` +
-      `V${y + radius} Q${x},${y} ${x + radius},${y} Z`;
+      `V${y + radius} Q${x},${y} ${x + radius},${y} Z`
+    );
   }
 
   isSectionCompleted(index: number): boolean {

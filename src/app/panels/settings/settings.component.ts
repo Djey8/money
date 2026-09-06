@@ -4,11 +4,16 @@ import { LocalService } from 'src/app/shared/services/local.service';
 import { DatabaseService } from 'src/app/shared/services/database.service';
 import { FrontendLoggerService } from 'src/app/shared/services/frontend-logger.service';
 import { AngularFireAuth } from '@angular/fire/compat/auth';
-import { TranslateService } from '@ngx-translate/core'
+import { TranslateService } from '@ngx-translate/core';
 import { Revenue } from 'src/app/interfaces/revenue';
 import { Expense } from 'src/app/interfaces/expense';
 import { CrypticService } from 'src/app/shared/services/cryptic.service';
-import { AuthCredential, EmailAuthProvider, getAuth, reauthenticateWithCredential } from "firebase/auth";
+import {
+  AuthCredential,
+  EmailAuthProvider,
+  getAuth,
+  reauthenticateWithCredential,
+} from 'firebase/auth';
 import { environment } from 'src/environments/environment';
 import { AuthService } from 'src/app/shared/services/auth.service';
 import { SelfhostedService } from 'src/app/shared/services/selfhosted.service';
@@ -25,35 +30,106 @@ import { TranslateModule } from '@ngx-translate/core';
 import { TrapFocusDirective } from 'src/app/shared/directives/trap-focus.directive';
 
 // Deferred imports — resolved after module init to break circular chains
-let ProfileComponent: any; setTimeout(() => import('src/app/panels/profile/profile.component').then(m => ProfileComponent = m.ProfileComponent));
-let MenuComponent: any; setTimeout(() => import('src/app/panels/menu/menu.component').then(m => MenuComponent = m.MenuComponent));
-let AddComponent: any; setTimeout(() => import('src/app/panels/add/add.component').then(m => AddComponent = m.AddComponent));
-let AddSmileComponent: any; setTimeout(() => import('src/app/panels/add/add-smile/add-smile.component').then(m => AddSmileComponent = m.AddSmileComponent));
-let AppComponent: any; setTimeout(() => import('src/app/app.component').then(m => AppComponent = m.AppComponent));
-let InfoComponent: any; setTimeout(() => import('src/app/panels/info/info.component').then(m => InfoComponent = m.InfoComponent));
-let IncomeComponent: any; setTimeout(() => import('src/app/main/cashflow/income/income.component').then(m => IncomeComponent = m.IncomeComponent));
-let BalanceComponent: any; setTimeout(() => import('src/app/main/cashflow/balance/balance.component').then(m => BalanceComponent = m.BalanceComponent));
-let SmileProjectsComponent: any; setTimeout(() => import('src/app/main/smile/smile-projects/smile-projects.component').then(m => SmileProjectsComponent = m.SmileProjectsComponent));
-let FireEmergenciesComponent: any; setTimeout(() => import('src/app/main/fire/fire-emergencies/fire-emergencies.component').then(m => FireEmergenciesComponent = m.FireEmergenciesComponent));
-let AccountingComponent: any; setTimeout(() => import('src/app/main/accounting/accounting.component').then(m => AccountingComponent = m.AccountingComponent));
-let FireComponent: any; setTimeout(() => import('src/app/main/fire/fire.component').then(m => FireComponent = m.FireComponent));
-let BudgetComponent: any; setTimeout(() => import('src/app/main/budget/budget.component').then(m => BudgetComponent = m.BudgetComponent));
-let GrowComponent: any; setTimeout(() => import('src/app/main/grow/grow.component').then(m => GrowComponent = m.GrowComponent));
-let SubscriptionComponent: any; setTimeout(() => import('src/app/main/subscription/subscription.component').then(m => SubscriptionComponent = m.SubscriptionComponent));
+let ProfileComponent: any;
+setTimeout(() =>
+  import('src/app/panels/profile/profile.component').then(
+    (m) => (ProfileComponent = m.ProfileComponent),
+  ),
+);
+let MenuComponent: any;
+setTimeout(() =>
+  import('src/app/panels/menu/menu.component').then((m) => (MenuComponent = m.MenuComponent)),
+);
+let AddComponent: any;
+setTimeout(() =>
+  import('src/app/panels/add/add.component').then((m) => (AddComponent = m.AddComponent)),
+);
+let AddSmileComponent: any;
+setTimeout(() =>
+  import('src/app/panels/add/add-smile/add-smile.component').then(
+    (m) => (AddSmileComponent = m.AddSmileComponent),
+  ),
+);
+let AppComponent: any;
+setTimeout(() => import('src/app/app.component').then((m) => (AppComponent = m.AppComponent)));
+let InfoComponent: any;
+setTimeout(() =>
+  import('src/app/panels/info/info.component').then((m) => (InfoComponent = m.InfoComponent)),
+);
+let IncomeComponent: any;
+setTimeout(() =>
+  import('src/app/main/cashflow/income/income.component').then(
+    (m) => (IncomeComponent = m.IncomeComponent),
+  ),
+);
+let BalanceComponent: any;
+setTimeout(() =>
+  import('src/app/main/cashflow/balance/balance.component').then(
+    (m) => (BalanceComponent = m.BalanceComponent),
+  ),
+);
+let SmileProjectsComponent: any;
+setTimeout(() =>
+  import('src/app/main/smile/smile-projects/smile-projects.component').then(
+    (m) => (SmileProjectsComponent = m.SmileProjectsComponent),
+  ),
+);
+let FireEmergenciesComponent: any;
+setTimeout(() =>
+  import('src/app/main/fire/fire-emergencies/fire-emergencies.component').then(
+    (m) => (FireEmergenciesComponent = m.FireEmergenciesComponent),
+  ),
+);
+let AccountingComponent: any;
+setTimeout(() =>
+  import('src/app/main/accounting/accounting.component').then(
+    (m) => (AccountingComponent = m.AccountingComponent),
+  ),
+);
+let FireComponent: any;
+setTimeout(() =>
+  import('src/app/main/fire/fire.component').then((m) => (FireComponent = m.FireComponent)),
+);
+let BudgetComponent: any;
+setTimeout(() =>
+  import('src/app/main/budget/budget.component').then((m) => (BudgetComponent = m.BudgetComponent)),
+);
+let GrowComponent: any;
+setTimeout(() =>
+  import('src/app/main/grow/grow.component').then((m) => (GrowComponent = m.GrowComponent)),
+);
+let SubscriptionComponent: any;
+setTimeout(() =>
+  import('src/app/main/subscription/subscription.component').then(
+    (m) => (SubscriptionComponent = m.SubscriptionComponent),
+  ),
+);
 @Component({
   selector: 'app-settings',
   standalone: true,
   imports: [TrapFocusDirective, CommonModule, FormsModule, TranslateModule],
   templateUrl: './settings.component.html',
-  styleUrls: ['./settings.component.css']
+  styleUrls: ['./settings.component.css'],
 })
 export class SettingsComponent implements DoCheck {
-  static get username() { return AppStateService.instance.username; }
-  static set username(v: string) { AppStateService.instance.username = v; }
-  static get email() { return AppStateService.instance.email; }
-  static set email(v: string) { AppStateService.instance.email = v; }
-  static get currency() { return AppStateService.instance.currency; }
-  static set currency(v: string) { AppStateService.instance.currency = v; }
+  static get username() {
+    return AppStateService.instance.username;
+  }
+  static set username(v: string) {
+    AppStateService.instance.username = v;
+  }
+  static get email() {
+    return AppStateService.instance.email;
+  }
+  static set email(v: string) {
+    AppStateService.instance.email = v;
+  }
+  static get currency() {
+    return AppStateService.instance.currency;
+  }
+  static set currency(v: string) {
+    AppStateService.instance.currency = v;
+  }
 
   appMode: 'firebase' | 'selfhosted' = environment.mode as 'firebase' | 'selfhosted';
   appVersion = environment.appVersion;
@@ -69,8 +145,12 @@ export class SettingsComponent implements DoCheck {
   static isRestore = false;
   static isTheme = false;
 
-  static get dateFormat() { return AppStateService.instance.dateFormat; }
-  static set dateFormat(v: string) { AppStateService.instance.dateFormat = v; }
+  static get dateFormat() {
+    return AppStateService.instance.dateFormat;
+  }
+  static set dateFormat(v: string) {
+    AppStateService.instance.dateFormat = v;
+  }
 
   static isEng = true;
   static isDe = false;
@@ -79,24 +159,56 @@ export class SettingsComponent implements DoCheck {
   static isCn = false;
   static isAr = false;
 
-  static get daily() { return AppStateService.instance.daily; }
-  static set daily(v: number) { AppStateService.instance.daily = v; }
-  static get splurge() { return AppStateService.instance.splurge; }
-  static set splurge(v: number) { AppStateService.instance.splurge = v; }
-  static get smile() { return AppStateService.instance.smile; }
-  static set smile(v: number) { AppStateService.instance.smile = v; }
-  static get fire() { return AppStateService.instance.fire; }
-  static set fire(v: number) { AppStateService.instance.fire = v; }
+  static get daily() {
+    return AppStateService.instance.daily;
+  }
+  static set daily(v: number) {
+    AppStateService.instance.daily = v;
+  }
+  static get splurge() {
+    return AppStateService.instance.splurge;
+  }
+  static set splurge(v: number) {
+    AppStateService.instance.splurge = v;
+  }
+  static get smile() {
+    return AppStateService.instance.smile;
+  }
+  static set smile(v: number) {
+    AppStateService.instance.smile = v;
+  }
+  static get fire() {
+    return AppStateService.instance.fire;
+  }
+  static set fire(v: number) {
+    AppStateService.instance.fire = v;
+  }
 
-  static get key() { return AppStateService.instance.key; }
-  static set key(v: string) { AppStateService.instance.key = v; }
-  keyTextField = "default";
-  static get isLocal() { return AppStateService.instance.isLocal; }
-  static set isLocal(v: boolean) { AppStateService.instance.isLocal = v; }
-  static get isDatabase() { return AppStateService.instance.isDatabase; }
-  static set isDatabase(v: boolean) { AppStateService.instance.isDatabase = v; }
-  static get isEuropeanFormat() { return AppStateService.instance.isEuropeanFormat; }
-  static set isEuropeanFormat(v: boolean) { AppStateService.instance.isEuropeanFormat = v; }
+  static get key() {
+    return AppStateService.instance.key;
+  }
+  static set key(v: string) {
+    AppStateService.instance.key = v;
+  }
+  keyTextField = 'default';
+  static get isLocal() {
+    return AppStateService.instance.isLocal;
+  }
+  static set isLocal(v: boolean) {
+    AppStateService.instance.isLocal = v;
+  }
+  static get isDatabase() {
+    return AppStateService.instance.isDatabase;
+  }
+  static set isDatabase(v: boolean) {
+    AppStateService.instance.isDatabase = v;
+  }
+  static get isEuropeanFormat() {
+    return AppStateService.instance.isEuropeanFormat;
+  }
+  static set isEuropeanFormat(v: boolean) {
+    AppStateService.instance.isEuropeanFormat = v;
+  }
 
   static setSettingsComponent(username: string, email: string) {
     AppStateService.instance.username = username;
@@ -142,25 +254,24 @@ export class SettingsComponent implements DoCheck {
   smileTextField = AppStateService.instance.smile;
   fireTextField = AppStateService.instance.fire;
 
-  errorTextLable = "";
+  errorTextLable = '';
 
-  borderColor = "var(--color-border)";
-  color = "black";
+  borderColor = 'var(--color-border)';
+  color = 'black';
 
   isAuth = false;
   isError = false;
-  passwordTextField = "";
-  errorMessageLable = "Error: Password is not correct!";
-  eyePic = "../../assets/symbols/eye.png";
+  passwordTextField = '';
+  errorMessageLable = 'Error: Password is not correct!';
+  eyePic = '../../assets/symbols/eye.png';
   showPassword = false;
 
   isDeleteAuth = false;
   isDeleteError = false;
-  deletePasswordTextField = "";
-  deleteErrorLabel = "";
-  deleteEyePic = "../../assets/symbols/eye.png";
+  deletePasswordTextField = '';
+  deleteErrorLabel = '';
+  deleteEyePic = '../../assets/symbols/eye.png';
   showDeletePassword = false;
-
 
   static zIndex;
   static isInfo;
@@ -184,56 +295,114 @@ export class SettingsComponent implements DoCheck {
   }
 
   public classReference = SettingsComponent;
-  public get profileReference() { return ProfileComponent; }
-  constructor(private translate: TranslateService, private router: Router, private localStorage: LocalService, private database: DatabaseService, private afAuth: AngularFireAuth, private cryptic: CrypticService, private authService: AuthService, private selfhosted: SelfhostedService, private frontendLogger: FrontendLoggerService, private persistence: PersistenceService, private incomeStatement: IncomeStatementService, private errorMapper: ErrorMapperService, private toastService: ToastService) {
+  public get profileReference() {
+    return ProfileComponent;
+  }
+  constructor(
+    private translate: TranslateService,
+    private router: Router,
+    private localStorage: LocalService,
+    private database: DatabaseService,
+    private afAuth: AngularFireAuth,
+    private cryptic: CrypticService,
+    private authService: AuthService,
+    private selfhosted: SelfhostedService,
+    private frontendLogger: FrontendLoggerService,
+    private persistence: PersistenceService,
+    private incomeStatement: IncomeStatementService,
+    private errorMapper: ErrorMapperService,
+    private toastService: ToastService,
+  ) {
     this.translate.setDefaultLang('en');
     SettingsComponent.isInfo = false;
     SettingsComponent.isError = false;
     SettingsComponent.zIndex = 0;
-    SettingsComponent.isEng = this.localStorage.getData("isEng") == "" ? true : this.localStorage.getData("isEng") == "true" ? true : false
-    SettingsComponent.isDe = this.localStorage.getData("isDe") == "" ? false : this.localStorage.getData("isDe") == "true" ? true : false
-    SettingsComponent.isEs = this.localStorage.getData("isEs") == "" ? false : this.localStorage.getData("isEs") == "true" ? true : false
-    SettingsComponent.isFr = this.localStorage.getData("isFr") == "" ? false : this.localStorage.getData("isFr") == "true" ? true : false
-    SettingsComponent.isCn = this.localStorage.getData("isCn") == "" ? false : this.localStorage.getData("isCn") == "true" ? true : false;
-    SettingsComponent.isAr = this.localStorage.getData("isAr") == "" ? false : this.localStorage.getData("isAr") == "true" ? true : false;
-    AppStateService.instance.isEuropeanFormat = window.localStorage.getItem("isEuropeanFormat") === "false" ? false : true;
-    AppStateService.instance.dateFormat = window.localStorage.getItem("dateFormat") || 'dd.MM.yyyy';
+    SettingsComponent.isEng =
+      this.localStorage.getData('isEng') == ''
+        ? true
+        : this.localStorage.getData('isEng') == 'true'
+          ? true
+          : false;
+    SettingsComponent.isDe =
+      this.localStorage.getData('isDe') == ''
+        ? false
+        : this.localStorage.getData('isDe') == 'true'
+          ? true
+          : false;
+    SettingsComponent.isEs =
+      this.localStorage.getData('isEs') == ''
+        ? false
+        : this.localStorage.getData('isEs') == 'true'
+          ? true
+          : false;
+    SettingsComponent.isFr =
+      this.localStorage.getData('isFr') == ''
+        ? false
+        : this.localStorage.getData('isFr') == 'true'
+          ? true
+          : false;
+    SettingsComponent.isCn =
+      this.localStorage.getData('isCn') == ''
+        ? false
+        : this.localStorage.getData('isCn') == 'true'
+          ? true
+          : false;
+    SettingsComponent.isAr =
+      this.localStorage.getData('isAr') == ''
+        ? false
+        : this.localStorage.getData('isAr') == 'true'
+          ? true
+          : false;
+    AppStateService.instance.isEuropeanFormat =
+      window.localStorage.getItem('isEuropeanFormat') === 'false' ? false : true;
+    AppStateService.instance.dateFormat = window.localStorage.getItem('dateFormat') || 'dd.MM.yyyy';
 
     // Apply saved theme
     const savedTheme = window.localStorage.getItem('theme') || 'light';
     document.documentElement.setAttribute('data-theme', savedTheme);
     this.applyDateIconTheme(savedTheme);
 
-    AppStateService.instance.daily = this.localStorage.getData("dailyR") == "" ? 60.0 : Number(this.localStorage.getData("dailyR"))
-    AppStateService.instance.splurge = this.localStorage.getData("splurgeR") == "" ? 10.0 : Number(this.localStorage.getData("splurgeR"))
-    AppStateService.instance.smile = this.localStorage.getData("smileR") == "" ? 10.0 : Number(this.localStorage.getData("smileR"))
-    AppStateService.instance.fire = this.localStorage.getData("fireR") == "" ? 20.0 : Number(this.localStorage.getData("fireR"))
-    AppStateService.instance.currency = this.localStorage.getData("currency") == "" ? "€" : this.localStorage.getData("currency")
-    this.dailyTextField = AppStateService.instance.daily
-    this.splurgeTextField = AppStateService.instance.splurge
-    this.smileTextField = AppStateService.instance.smile
-    this.fireTextField = AppStateService.instance.fire
-    this.currencyTextField = AppStateService.instance.currency
+    AppStateService.instance.daily =
+      this.localStorage.getData('dailyR') == ''
+        ? 60.0
+        : Number(this.localStorage.getData('dailyR'));
+    AppStateService.instance.splurge =
+      this.localStorage.getData('splurgeR') == ''
+        ? 10.0
+        : Number(this.localStorage.getData('splurgeR'));
+    AppStateService.instance.smile =
+      this.localStorage.getData('smileR') == ''
+        ? 10.0
+        : Number(this.localStorage.getData('smileR'));
+    AppStateService.instance.fire =
+      this.localStorage.getData('fireR') == '' ? 20.0 : Number(this.localStorage.getData('fireR'));
+    AppStateService.instance.currency =
+      this.localStorage.getData('currency') == '' ? '€' : this.localStorage.getData('currency');
+    this.dailyTextField = AppStateService.instance.daily;
+    this.splurgeTextField = AppStateService.instance.splurge;
+    this.smileTextField = AppStateService.instance.smile;
+    this.fireTextField = AppStateService.instance.fire;
+    this.currencyTextField = AppStateService.instance.currency;
     if (SettingsComponent.isAr) {
-      this.translate.use("ar");
+      this.translate.use('ar');
       document.body.classList.add('rtl-text');
     } else if (SettingsComponent.isCn) {
-      this.translate.use("cn");
+      this.translate.use('cn');
       document.body.classList.remove('rtl-text');
     } else if (SettingsComponent.isFr) {
-      this.translate.use("fr");
+      this.translate.use('fr');
       document.body.classList.remove('rtl-text');
     } else if (SettingsComponent.isEs) {
-      this.translate.use("es");
+      this.translate.use('es');
       document.body.classList.remove('rtl-text');
     } else if (SettingsComponent.isDe) {
-      this.translate.use("de");
+      this.translate.use('de');
       document.body.classList.remove('rtl-text');
     } else {
-      this.translate.use("en");
+      this.translate.use('en');
       document.body.classList.remove('rtl-text');
     }
-    AppStateService.instance.key = this.cryptic.getKey() || "";
+    AppStateService.instance.key = this.cryptic.getKey() || '';
     this.keyTextField = AppStateService.instance.key;
     AppStateService.instance.isLocal = this.cryptic.getEncryptionLocalEnabled();
     AppStateService.instance.isDatabase = this.cryptic.getEncryptionDatabaseEnabled();
@@ -250,7 +419,7 @@ export class SettingsComponent implements DoCheck {
     }
   }
 
-  toggleEye(){
+  toggleEye() {
     this.showPassword = !this.showPassword;
   }
 
@@ -263,9 +432,9 @@ export class SettingsComponent implements DoCheck {
   }
 
   async setDefault() {
-    this.cryptic.updateConfig("default", true, false);
-    AppStateService.instance.key = "default";
-    this.keyTextField = "default";
+    this.cryptic.updateConfig('default', true, false);
+    AppStateService.instance.key = 'default';
+    this.keyTextField = 'default';
     AppStateService.instance.isLocal = true;
     AppStateService.instance.isDatabase = false;
     // Persist encryption config to server (selfhosted mode)
@@ -304,16 +473,26 @@ export class SettingsComponent implements DoCheck {
   }
 
   async save() {
-    this.cryptic.updateConfig(this.keyTextField, AppStateService.instance.isLocal, AppStateService.instance.isDatabase);
+    this.cryptic.updateConfig(
+      this.keyTextField,
+      AppStateService.instance.isLocal,
+      AppStateService.instance.isDatabase,
+    );
     // Persist encryption config to server (selfhosted mode)
     if (environment.mode === 'selfhosted') {
-      this.selfhosted.saveEncryptionConfig(this.keyTextField, AppStateService.instance.isLocal, AppStateService.instance.isDatabase).subscribe();
+      this.selfhosted
+        .saveEncryptionConfig(
+          this.keyTextField,
+          AppStateService.instance.isLocal,
+          AppStateService.instance.isDatabase,
+        )
+        .subscribe();
     }
     await this.updateStorage();
     const data = {
       key: this.keyTextField,
       local: AppStateService.instance.isLocal,
-      database: AppStateService.instance.isDatabase
+      database: AppStateService.instance.isDatabase,
     };
 
     const json = JSON.stringify(data);
@@ -332,7 +511,7 @@ export class SettingsComponent implements DoCheck {
     // Check authentication using the centralized service
     const authResult = await this.authService.checkAuthentication();
     if (!authResult.authenticated) {
-      console.error("Authentication failed:", authResult.error);
+      console.error('Authentication failed:', authResult.error);
       SettingsComponent.isError = true;
       return;
     }
@@ -341,15 +520,16 @@ export class SettingsComponent implements DoCheck {
     if (this.authService.getMode() === 'firebase') {
       const user = await this.afAuth.currentUser;
       if (user) {
-        this.localStorage.saveData("uid", user.uid);
-        this.localStorage.saveData("email", user.email);
-        this.database.getData("info/username")
-          .then(snapshot => {
-            const username = snapshot.val();  // Username is NOT encrypted
+        this.localStorage.saveData('uid', user.uid);
+        this.localStorage.saveData('email', user.email);
+        this.database
+          .getData('info/username')
+          .then((snapshot) => {
+            const username = snapshot.val(); // Username is NOT encrypted
             ProfileComponent.username = username;
-            this.localStorage.saveData("username", username);
+            this.localStorage.saveData('username', username);
           })
-          .catch(err => {
+          .catch((err) => {
             //handle error
           });
       }
@@ -360,76 +540,86 @@ export class SettingsComponent implements DoCheck {
       // Only write balance/grow data if it has been loaded (Tier 3 on-demand).
       // Writing before load would overwrite real DB data with empty arrays.
       const writes = [
-        { tag: "income/revenue/interests", data: AppStateService.instance.allIntrests },
-        { tag: "income/revenue/properties", data: AppStateService.instance.allProperties },
-        { tag: "income/revenue/revenues", data: AppStateService.instance.allRevenues },
-        { tag: "income/expenses/daily", data: AppStateService.instance.dailyExpenses },
-        { tag: "income/expenses/splurge", data: AppStateService.instance.splurgeExpenses },
+        { tag: 'income/revenue/interests', data: AppStateService.instance.allIntrests },
+        { tag: 'income/revenue/properties', data: AppStateService.instance.allProperties },
+        { tag: 'income/revenue/revenues', data: AppStateService.instance.allRevenues },
+        { tag: 'income/expenses/daily', data: AppStateService.instance.dailyExpenses },
+        { tag: 'income/expenses/splurge', data: AppStateService.instance.splurgeExpenses },
         // Only write tier2 data (smile/fire/mojo) if tier2 has been loaded.
         // Writing before load would overwrite real DB data with empty defaults.
-        ...(AppStateService.instance.tier2Loaded ? [
-          { tag: "income/expenses/smile", data: AppStateService.instance.smileExpenses },
-          { tag: "income/expenses/fire", data: AppStateService.instance.fireExpenses },
-          { tag: "income/expenses/mojo", data: AppStateService.instance.mojoExpenses },
-          { tag: "smile", data: AppStateService.instance.allSmileProjects },
-          { tag: "fire", data: AppStateService.instance.allFireEmergencies },
-          { tag: "mojo", data: AppStateService.instance.mojo },
-          { tag: "budget", data: AppStateService.instance.allBudgets }
-        ] : []),
-        { tag: "transactions", data: AppStateService.instance.allTransactions },
-        { tag: "subscriptions", data: AppStateService.instance.allSubscriptions },
-        ...(AppStateService.instance.tier3BalanceLoaded ? [
-          { tag: "balance/liabilities", data: AppStateService.instance.liabilities },
-          { tag: "balance/asset/shares", data: AppStateService.instance.allShares },
-          { tag: "balance/asset/assets", data: AppStateService.instance.allAssets },
-          { tag: "balance/asset/investments", data: AppStateService.instance.allInvestments }
-        ] : []),
-        ...(AppStateService.instance.tier3GrowLoaded ? [
-          { tag: "grow", data: AppStateService.instance.allGrowProjects }
-        ] : [])
+        ...(AppStateService.instance.tier2Loaded
+          ? [
+              { tag: 'income/expenses/smile', data: AppStateService.instance.smileExpenses },
+              { tag: 'income/expenses/fire', data: AppStateService.instance.fireExpenses },
+              { tag: 'income/expenses/mojo', data: AppStateService.instance.mojoExpenses },
+              { tag: 'smile', data: AppStateService.instance.allSmileProjects },
+              { tag: 'fire', data: AppStateService.instance.allFireEmergencies },
+              { tag: 'mojo', data: AppStateService.instance.mojo },
+              { tag: 'budget', data: AppStateService.instance.allBudgets },
+            ]
+          : []),
+        { tag: 'transactions', data: AppStateService.instance.allTransactions },
+        { tag: 'subscriptions', data: AppStateService.instance.allSubscriptions },
+        ...(AppStateService.instance.tier3BalanceLoaded
+          ? [
+              { tag: 'balance/liabilities', data: AppStateService.instance.liabilities },
+              { tag: 'balance/asset/shares', data: AppStateService.instance.allShares },
+              { tag: 'balance/asset/assets', data: AppStateService.instance.allAssets },
+              { tag: 'balance/asset/investments', data: AppStateService.instance.allInvestments },
+            ]
+          : []),
+        ...(AppStateService.instance.tier3GrowLoaded
+          ? [{ tag: 'grow', data: AppStateService.instance.allGrowProjects }]
+          : []),
       ];
 
       this.persistence.batchWriteAndSync({
         writes,
         localStorageSaves: [
-          { key: "interests", data: JSON.stringify(AppStateService.instance.allIntrests) },
-          { key: "properties", data: JSON.stringify(AppStateService.instance.allProperties) },
-          { key: "revenues", data: JSON.stringify(AppStateService.instance.allRevenues) },
-          { key: "dailyEx", data: JSON.stringify(AppStateService.instance.dailyExpenses) },
-          { key: "splurgeEx", data: JSON.stringify(AppStateService.instance.splurgeExpenses) },
-          ...(AppStateService.instance.tier2Loaded ? [
-            { key: "smileEx", data: JSON.stringify(AppStateService.instance.smileExpenses) },
-            { key: "fireEx", data: JSON.stringify(AppStateService.instance.fireExpenses) },
-            { key: "mojoEx", data: JSON.stringify(AppStateService.instance.mojoExpenses) },
-            { key: "smile", data: JSON.stringify(AppStateService.instance.allSmileProjects) },
-            { key: "fire", data: JSON.stringify(AppStateService.instance.allFireEmergencies) },
-            { key: "mojo", data: JSON.stringify(AppStateService.instance.mojo) },
-            { key: "budget", data: JSON.stringify(AppStateService.instance.allBudgets) }
-          ] : []),
-          { key: "transactions", data: JSON.stringify(AppStateService.instance.allTransactions) },
-          { key: "subscriptions", data: JSON.stringify(AppStateService.instance.allSubscriptions) },
-          ...(AppStateService.instance.tier3BalanceLoaded ? [
-            { key: "liabilities", data: JSON.stringify(AppStateService.instance.liabilities) },
-            { key: "shares", data: JSON.stringify(AppStateService.instance.allShares) },
-            { key: "assets", data: JSON.stringify(AppStateService.instance.allAssets) },
-            { key: "investments", data: JSON.stringify(AppStateService.instance.allInvestments) }
-          ] : []),
-          ...(AppStateService.instance.tier3GrowLoaded ? [
-            { key: "grow", data: JSON.stringify(AppStateService.instance.allGrowProjects) }
-          ] : [])
+          { key: 'interests', data: JSON.stringify(AppStateService.instance.allIntrests) },
+          { key: 'properties', data: JSON.stringify(AppStateService.instance.allProperties) },
+          { key: 'revenues', data: JSON.stringify(AppStateService.instance.allRevenues) },
+          { key: 'dailyEx', data: JSON.stringify(AppStateService.instance.dailyExpenses) },
+          { key: 'splurgeEx', data: JSON.stringify(AppStateService.instance.splurgeExpenses) },
+          ...(AppStateService.instance.tier2Loaded
+            ? [
+                { key: 'smileEx', data: JSON.stringify(AppStateService.instance.smileExpenses) },
+                { key: 'fireEx', data: JSON.stringify(AppStateService.instance.fireExpenses) },
+                { key: 'mojoEx', data: JSON.stringify(AppStateService.instance.mojoExpenses) },
+                { key: 'smile', data: JSON.stringify(AppStateService.instance.allSmileProjects) },
+                { key: 'fire', data: JSON.stringify(AppStateService.instance.allFireEmergencies) },
+                { key: 'mojo', data: JSON.stringify(AppStateService.instance.mojo) },
+                { key: 'budget', data: JSON.stringify(AppStateService.instance.allBudgets) },
+              ]
+            : []),
+          { key: 'transactions', data: JSON.stringify(AppStateService.instance.allTransactions) },
+          { key: 'subscriptions', data: JSON.stringify(AppStateService.instance.allSubscriptions) },
+          ...(AppStateService.instance.tier3BalanceLoaded
+            ? [
+                { key: 'liabilities', data: JSON.stringify(AppStateService.instance.liabilities) },
+                { key: 'shares', data: JSON.stringify(AppStateService.instance.allShares) },
+                { key: 'assets', data: JSON.stringify(AppStateService.instance.allAssets) },
+                {
+                  key: 'investments',
+                  data: JSON.stringify(AppStateService.instance.allInvestments),
+                },
+              ]
+            : []),
+          ...(AppStateService.instance.tier3GrowLoaded
+            ? [{ key: 'grow', data: JSON.stringify(AppStateService.instance.allGrowProjects) }]
+            : []),
         ],
         forceWrite: true,
         logEvent: 'change_encryption',
         logMetadata: {
           databaseEncryption: AppStateService.instance.isDatabase,
-          localEncryption: AppStateService.instance.isLocal
+          localEncryption: AppStateService.instance.isLocal,
         },
         onError: (error) => {
-          console.error("Error writing to database:", error);
+          console.error('Error writing to database:', error);
           SettingsComponent.isError = true;
-        }
+        },
       });
-
     } catch (error) {
       console.error(error);
       SettingsComponent.isError = true;
@@ -449,9 +639,9 @@ export class SettingsComponent implements DoCheck {
   toggleDeleteAuth() {
     this.isDeleteAuth = !this.isDeleteAuth;
     this.isDeleteError = false;
-    this.deleteErrorLabel = "";
-    this.deletePasswordTextField = "";
-    this.deleteEyePic = "../../assets/symbols/eye.png";
+    this.deleteErrorLabel = '';
+    this.deletePasswordTextField = '';
+    this.deleteEyePic = '../../assets/symbols/eye.png';
     this.showDeletePassword = false;
   }
 
@@ -460,9 +650,9 @@ export class SettingsComponent implements DoCheck {
   }
 
   authenticateForDelete() {
-    if (this.deletePasswordTextField === "") {
+    if (this.deletePasswordTextField === '') {
       this.isDeleteError = true;
-      this.deleteErrorLabel = "Password is required.";
+      this.deleteErrorLabel = 'Password is required.';
       return;
     }
     if (this.appMode === 'selfhosted') {
@@ -471,36 +661,41 @@ export class SettingsComponent implements DoCheck {
           if (response.valid) {
             this.isDeleteAuth = false;
             this.isDeleteError = false;
-            this.deletePasswordTextField = "";
+            this.deletePasswordTextField = '';
             this.openConfirmation();
           } else {
             this.isDeleteError = true;
-            this.deleteErrorLabel = "Invalid password";
+            this.deleteErrorLabel = 'Invalid password';
           }
         },
         error: (error) => {
           this.isDeleteError = true;
-          this.deleteErrorLabel = this.errorMapper.toUserMessage(error, 'Password verification failed');
-        }
+          this.deleteErrorLabel = this.errorMapper.toUserMessage(
+            error,
+            'Password verification failed',
+          );
+        },
       });
     } else {
       const auth = getAuth();
       const user = auth.currentUser;
       if (!user || !user.email) {
         this.isDeleteError = true;
-        this.deleteErrorLabel = "No authenticated user found.";
+        this.deleteErrorLabel = 'No authenticated user found.';
         return;
       }
       const credential = EmailAuthProvider.credential(user.email, this.deletePasswordTextField);
-      reauthenticateWithCredential(user, credential).then(() => {
-        this.isDeleteAuth = false;
-        this.isDeleteError = false;
-        this.deletePasswordTextField = "";
-        this.openConfirmation();
-      }).catch((error) => {
-        this.isDeleteError = true;
-        this.deleteErrorLabel = this.errorMapper.toUserMessage(error);
-      });
+      reauthenticateWithCredential(user, credential)
+        .then(() => {
+          this.isDeleteAuth = false;
+          this.isDeleteError = false;
+          this.deletePasswordTextField = '';
+          this.openConfirmation();
+        })
+        .catch((error) => {
+          this.isDeleteError = true;
+          this.deleteErrorLabel = this.errorMapper.toUserMessage(error);
+        });
     }
   }
 
@@ -517,17 +712,15 @@ export class SettingsComponent implements DoCheck {
   }
 
   zeroPadded(val) {
-    if (val >= 10)
-      return val;
-    else
-      return '0' + val;
+    if (val >= 10) return val;
+    else return '0' + val;
   }
 
   async updateBasedOnTransaction() {
     // Check authentication using the centralized service
     const authResult = await this.authService.checkAuthentication();
     if (!authResult.authenticated) {
-      console.error("Authentication failed:", authResult.error);
+      console.error('Authentication failed:', authResult.error);
       AppStateService.instance.isSaving = false;
       return;
     }
@@ -535,58 +728,58 @@ export class SettingsComponent implements DoCheck {
     // AppState is already up-to-date from the calling code.
     // Do NOT re-read from localStorage — it may be stale if a prior
     // batchWriteAndSync hasn't returned yet.
-        
-        // Recalculate all income statement values from transactions
-        this.incomeStatement.recalculate();
 
-      try {
-        const writes = [
-          ...this.incomeStatement.getWrites(),
-          // Only write balance data if it has been loaded (Tier 3 on-demand).
-          // Writing before load would overwrite real DB data with empty arrays.
-          ...(AppStateService.instance.tier3BalanceLoaded ? [
-            { tag: "balance/liabilities", data: AppStateService.instance.liabilities }
-          ] : [])
-        ];
+    // Recalculate all income statement values from transactions
+    this.incomeStatement.recalculate();
 
-        this.persistence.batchWriteAndSync({
-          writes,
-          localStorageSaves: [
-            { key: "interests", data: JSON.stringify(AppStateService.instance.allIntrests) },
-            { key: "properties", data: JSON.stringify(AppStateService.instance.allProperties) },
-            { key: "revenues", data: JSON.stringify(AppStateService.instance.allRevenues) },
-            { key: "dailyEx", data: JSON.stringify(AppStateService.instance.dailyExpenses) },
-            { key: "splurgeEx", data: JSON.stringify(AppStateService.instance.splurgeExpenses) },
-            ...(AppStateService.instance.tier2Loaded ? [
-              { key: "smileEx", data: JSON.stringify(AppStateService.instance.smileExpenses) },
-              { key: "fireEx", data: JSON.stringify(AppStateService.instance.fireExpenses) },
-              { key: "mojoEx", data: JSON.stringify(AppStateService.instance.mojoExpenses) },
-              { key: "smile", data: JSON.stringify(AppStateService.instance.allSmileProjects) },
-              { key: "fire", data: JSON.stringify(AppStateService.instance.allFireEmergencies) },
-              { key: "mojo", data: JSON.stringify(AppStateService.instance.mojo) }
-            ] : []),
-            ...(AppStateService.instance.tier3BalanceLoaded ? [
-              { key: "liabilities", data: JSON.stringify(AppStateService.instance.liabilities) }
-            ] : [])
-          ],
-          forceWrite: true,
-          logEvent: 'recalculate_from_transactions',
-          onSuccess: () => {
-            AppStateService.instance.isSaving = false;
-            this.toastService.show('Accounting fixed successfully', 'success');
-          },
-          onError: (error: any) => {
-            AppStateService.instance.isSaving = false;
-            this.toastService.show(error.message || 'Fix accounting failed', 'error');
-          }
-        });
+    try {
+      const writes = [
+        ...this.incomeStatement.getWrites(),
+        // Only write balance data if it has been loaded (Tier 3 on-demand).
+        // Writing before load would overwrite real DB data with empty arrays.
+        ...(AppStateService.instance.tier3BalanceLoaded
+          ? [{ tag: 'balance/liabilities', data: AppStateService.instance.liabilities }]
+          : []),
+      ];
 
-      } catch (error) {
-        AppStateService.instance.isSaving = false;
-        this.toastService.show('Fix accounting failed', 'error');
-      }
+      this.persistence.batchWriteAndSync({
+        writes,
+        localStorageSaves: [
+          { key: 'interests', data: JSON.stringify(AppStateService.instance.allIntrests) },
+          { key: 'properties', data: JSON.stringify(AppStateService.instance.allProperties) },
+          { key: 'revenues', data: JSON.stringify(AppStateService.instance.allRevenues) },
+          { key: 'dailyEx', data: JSON.stringify(AppStateService.instance.dailyExpenses) },
+          { key: 'splurgeEx', data: JSON.stringify(AppStateService.instance.splurgeExpenses) },
+          ...(AppStateService.instance.tier2Loaded
+            ? [
+                { key: 'smileEx', data: JSON.stringify(AppStateService.instance.smileExpenses) },
+                { key: 'fireEx', data: JSON.stringify(AppStateService.instance.fireExpenses) },
+                { key: 'mojoEx', data: JSON.stringify(AppStateService.instance.mojoExpenses) },
+                { key: 'smile', data: JSON.stringify(AppStateService.instance.allSmileProjects) },
+                { key: 'fire', data: JSON.stringify(AppStateService.instance.allFireEmergencies) },
+                { key: 'mojo', data: JSON.stringify(AppStateService.instance.mojo) },
+              ]
+            : []),
+          ...(AppStateService.instance.tier3BalanceLoaded
+            ? [{ key: 'liabilities', data: JSON.stringify(AppStateService.instance.liabilities) }]
+            : []),
+        ],
+        forceWrite: true,
+        logEvent: 'recalculate_from_transactions',
+        onSuccess: () => {
+          AppStateService.instance.isSaving = false;
+          this.toastService.show('Accounting fixed successfully', 'success');
+        },
+        onError: (error: any) => {
+          AppStateService.instance.isSaving = false;
+          this.toastService.show(error.message || 'Fix accounting failed', 'error');
+        },
+      });
+    } catch (error) {
+      AppStateService.instance.isSaving = false;
+      this.toastService.show('Fix accounting failed', 'error');
+    }
   }
-
 
   highlight() {
     SettingsComponent.zIndex = SettingsComponent.zIndex + 1;
@@ -604,13 +797,13 @@ export class SettingsComponent implements DoCheck {
     this.classReference.isEs = false;
     this.classReference.isCn = false;
     this.classReference.isAr = false;
-    this.localStorage.saveData("isEs", "false")
-    this.localStorage.saveData("isFr", "false") 
-    this.localStorage.saveData("isEng", "true")
-    this.localStorage.saveData("isDe", "false")
-    this.localStorage.saveData("isCn", "false")
-    this.localStorage.saveData("isAr", "false")
-    this.switchLanguage("en");
+    this.localStorage.saveData('isEs', 'false');
+    this.localStorage.saveData('isFr', 'false');
+    this.localStorage.saveData('isEng', 'true');
+    this.localStorage.saveData('isDe', 'false');
+    this.localStorage.saveData('isCn', 'false');
+    this.localStorage.saveData('isAr', 'false');
+    this.switchLanguage('en');
     document.body.classList.remove('rtl-text');
   }
 
@@ -621,13 +814,13 @@ export class SettingsComponent implements DoCheck {
     this.classReference.isFr = false;
     this.classReference.isCn = false;
     this.classReference.isAr = false;
-    this.localStorage.saveData("isEs", "true")
-    this.localStorage.saveData("isFr", "false") 
-    this.localStorage.saveData("isEng", "false")
-    this.localStorage.saveData("isDe", "false")
-    this.localStorage.saveData("isCn", "false")
-    this.localStorage.saveData("isAr", "false")
-    this.switchLanguage("es");
+    this.localStorage.saveData('isEs', 'true');
+    this.localStorage.saveData('isFr', 'false');
+    this.localStorage.saveData('isEng', 'false');
+    this.localStorage.saveData('isDe', 'false');
+    this.localStorage.saveData('isCn', 'false');
+    this.localStorage.saveData('isAr', 'false');
+    this.switchLanguage('es');
     document.body.classList.remove('rtl-text');
   }
 
@@ -638,13 +831,13 @@ export class SettingsComponent implements DoCheck {
     this.classReference.isFr = true;
     this.classReference.isCn = false;
     this.classReference.isAr = false;
-    this.localStorage.saveData("isEs", "false")
-    this.localStorage.saveData("isFr", "true") 
-    this.localStorage.saveData("isEng", "false")
-    this.localStorage.saveData("isDe", "false")
-    this.localStorage.saveData("isCn", "false")
-    this.localStorage.saveData("isAr", "false")
-    this.switchLanguage("fr");
+    this.localStorage.saveData('isEs', 'false');
+    this.localStorage.saveData('isFr', 'true');
+    this.localStorage.saveData('isEng', 'false');
+    this.localStorage.saveData('isDe', 'false');
+    this.localStorage.saveData('isCn', 'false');
+    this.localStorage.saveData('isAr', 'false');
+    this.switchLanguage('fr');
     document.body.classList.remove('rtl-text');
   }
 
@@ -655,13 +848,13 @@ export class SettingsComponent implements DoCheck {
     this.classReference.isEs = false;
     this.classReference.isCn = false;
     this.classReference.isAr = false;
-    this.localStorage.saveData("isEs", "false")
-    this.localStorage.saveData("isFr", "false") 
-    this.localStorage.saveData("isEng", "false")
-    this.localStorage.saveData("isDe", "true")
-    this.localStorage.saveData("isCn", "false")
-    this.localStorage.saveData("isAr", "false")
-    this.switchLanguage("de");
+    this.localStorage.saveData('isEs', 'false');
+    this.localStorage.saveData('isFr', 'false');
+    this.localStorage.saveData('isEng', 'false');
+    this.localStorage.saveData('isDe', 'true');
+    this.localStorage.saveData('isCn', 'false');
+    this.localStorage.saveData('isAr', 'false');
+    this.switchLanguage('de');
     document.body.classList.remove('rtl-text');
   }
 
@@ -672,13 +865,13 @@ export class SettingsComponent implements DoCheck {
     this.classReference.isEs = false;
     this.classReference.isCn = true;
     this.classReference.isAr = false;
-    this.localStorage.saveData("isEs", "false")
-    this.localStorage.saveData("isFr", "false") 
-    this.localStorage.saveData("isEng", "false")
-    this.localStorage.saveData("isDe", "false")
-    this.localStorage.saveData("isCn", "true")
-    this.localStorage.saveData("isAr", "false")
-    this.switchLanguage("cn");
+    this.localStorage.saveData('isEs', 'false');
+    this.localStorage.saveData('isFr', 'false');
+    this.localStorage.saveData('isEng', 'false');
+    this.localStorage.saveData('isDe', 'false');
+    this.localStorage.saveData('isCn', 'true');
+    this.localStorage.saveData('isAr', 'false');
+    this.switchLanguage('cn');
     document.body.classList.remove('rtl-text');
   }
 
@@ -689,24 +882,24 @@ export class SettingsComponent implements DoCheck {
     this.classReference.isEs = false;
     this.classReference.isCn = false;
     this.classReference.isAr = true;
-    this.localStorage.saveData("isEs", "false")
-    this.localStorage.saveData("isFr", "false")
-    this.localStorage.saveData("isEng", "false")
-    this.localStorage.saveData("isDe", "false")
-    this.localStorage.saveData("isCn", "false")
-    this.localStorage.saveData("isAr", "true")
-    this.switchLanguage("ar");
+    this.localStorage.saveData('isEs', 'false');
+    this.localStorage.saveData('isFr', 'false');
+    this.localStorage.saveData('isEng', 'false');
+    this.localStorage.saveData('isDe', 'false');
+    this.localStorage.saveData('isCn', 'false');
+    this.localStorage.saveData('isAr', 'true');
+    this.switchLanguage('ar');
     document.body.classList.add('rtl-text');
   }
 
   chooseEuropeanFormat() {
     AppStateService.instance.isEuropeanFormat = true;
-    localStorage.setItem("isEuropeanFormat", "true");
+    localStorage.setItem('isEuropeanFormat', 'true');
   }
 
   chooseUSFormat() {
     AppStateService.instance.isEuropeanFormat = false;
-    localStorage.setItem("isEuropeanFormat", "false");
+    localStorage.setItem('isEuropeanFormat', 'false');
   }
 
   changeTheme() {
@@ -777,9 +970,9 @@ export class SettingsComponent implements DoCheck {
     SettingsComponent.isDateFormat = false;
     SettingsComponent.isTheme = false;
     SettingsComponent.isError = false;
-    this.errorTextLable = "";
-    this.color = "black";
-    this.borderColor = "var(--color-border)";
+    this.errorTextLable = '';
+    this.color = 'black';
+    this.borderColor = 'var(--color-border)';
     this.isAuth = false;
   }
 
@@ -794,16 +987,16 @@ export class SettingsComponent implements DoCheck {
       this.splurgeTextField = AppStateService.instance.splurge;
       this.smileTextField = AppStateService.instance.smile;
       this.fireTextField = AppStateService.instance.fire;
-      this.errorTextLable = "";
-      this.color = "black";
-      this.borderColor = "var(--color-border)";
+      this.errorTextLable = '';
+      this.color = 'black';
+      this.borderColor = 'var(--color-border)';
       return;
     }
-    if (ProfileComponent.username == "Username" && ProfileComponent.mail == "example@traiber.com") {
+    if (ProfileComponent.username == 'Username' && ProfileComponent.mail == 'example@traiber.com') {
       SettingsComponent.isError = true;
-      this.errorTextLable = "No authenticated user.";
-      this.color = "red";
-      this.borderColor = "red";
+      this.errorTextLable = 'No authenticated user.';
+      this.color = 'red';
+      this.borderColor = 'red';
     } else {
       AppComponent.gotoTop();
       //Validation (check if Amount is not empty)
@@ -812,34 +1005,35 @@ export class SettingsComponent implements DoCheck {
       this.usernameTextField = AppStateService.instance.username;
       this.emailTextField = AppStateService.instance.email;
       SettingsComponent.isError = false;
-      this.errorTextLable = "";
-      this.color = "black";
-      this.borderColor = "var(--color-border)";
+      this.errorTextLable = '';
+      this.color = 'black';
+      this.borderColor = 'var(--color-border)';
     }
   }
 
   cancel() {
-    SettingsComponent.isError = false
+    SettingsComponent.isError = false;
     this.isEdit = false;
-    this.errorTextLable = "";
-    this.color = "black";
-    this.borderColor = "var(--color-border)";
+    this.errorTextLable = '';
+    this.color = 'black';
+    this.borderColor = 'var(--color-border)';
   }
 
   validateEmail = (email) => {
     return String(email)
       .toLowerCase()
       .match(
-        /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+        /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,
       );
   };
 
   logoutFirebase() {
-    this.afAuth.signOut()
+    this.afAuth
+      .signOut()
       .then(() => {
         // User successfully logged out
       })
-      .catch(error => {
+      .catch((error) => {
         // An error occurred while logging out
         console.error(error);
       });
@@ -853,7 +1047,7 @@ export class SettingsComponent implements DoCheck {
         await new Promise<void>((resolve, reject) => {
           this.selfhosted.deleteAccount().subscribe({
             next: () => resolve(),
-            error: (err) => reject(err)
+            error: (err) => reject(err),
           });
         });
       } else {
@@ -862,7 +1056,7 @@ export class SettingsComponent implements DoCheck {
         if (!user) {
           throw new Error('No authenticated user.');
         }
-        const uid = this.localStorage.getData("uid");
+        const uid = this.localStorage.getData('uid');
         if (uid) {
           // Delete all user data from Firebase Realtime Database
           await this.database.deleteUserNode(uid);
@@ -871,35 +1065,34 @@ export class SettingsComponent implements DoCheck {
       }
 
       // Clear all local storage
-      this.localStorage.removeData("uid");
-      this.localStorage.removeData("email");
-      this.localStorage.removeData("username");
-      this.localStorage.removeData("transactions");
-      this.localStorage.removeData("smile");
-      this.localStorage.removeData("fire");
-      this.localStorage.removeData("mojo");
-      this.localStorage.removeData("revenues");
-      this.localStorage.removeData("interests");
-      this.localStorage.removeData("properties");
-      this.localStorage.removeData("dailyEx");
-      this.localStorage.removeData("splurgeEx");
-      this.localStorage.removeData("smileEx");
-      this.localStorage.removeData("fireEx");
-      this.localStorage.removeData("mojoEx");
-      this.localStorage.removeData("liabilitiesEx");
+      this.localStorage.removeData('uid');
+      this.localStorage.removeData('email');
+      this.localStorage.removeData('username');
+      this.localStorage.removeData('transactions');
+      this.localStorage.removeData('smile');
+      this.localStorage.removeData('fire');
+      this.localStorage.removeData('mojo');
+      this.localStorage.removeData('revenues');
+      this.localStorage.removeData('interests');
+      this.localStorage.removeData('properties');
+      this.localStorage.removeData('dailyEx');
+      this.localStorage.removeData('splurgeEx');
+      this.localStorage.removeData('smileEx');
+      this.localStorage.removeData('fireEx');
+      this.localStorage.removeData('mojoEx');
+      this.localStorage.removeData('liabilitiesEx');
 
       ProfileComponent.isUser = false;
-      ProfileComponent.username = "Username";
-      ProfileComponent.mail = "example@traiber.com";
-      
+      ProfileComponent.username = 'Username';
+      ProfileComponent.mail = 'example@traiber.com';
+
       if (this.authService.getMode() === 'firebase') {
         this.logoutFirebase();
       } else {
         await this.authService.signOut();
       }
       this.closeWindow();
-      window.location.href = "/authentication";
-
+      window.location.href = '/authentication';
     } catch (error) {
       const errorCode = error.code;
       const errorMessage = error.message;
@@ -934,23 +1127,27 @@ export class SettingsComponent implements DoCheck {
   }
 
   sendPasswordResetEmail(email: string): void {
-    this.afAuth.sendPasswordResetEmail(email)
+    this.afAuth
+      .sendPasswordResetEmail(email)
       .then(() => {
         // Handle success, e.g., display a success message to the user
         this.errorTextLable = 'Password reset email sent successfully!';
-        this.color = "green";
-        this.borderColor = "green";
-        SettingsComponent.isError = true
+        this.color = 'green';
+        this.borderColor = 'green';
+        SettingsComponent.isError = true;
       })
       .catch((error) => {
         const errorCode = error.code;
         const errorMessage = error.message;
         console.error('Error sending password reset email:', errorCode, errorMessage);
         // Handle the error appropriately, e.g., display an error message to the user
-        this.errorTextLable = this.errorMapper.toUserMessage(error, 'Failed to send password reset email. Please try again.');
-        this.color = "red";
-        this.borderColor = "red";
-        SettingsComponent.isError = true
+        this.errorTextLable = this.errorMapper.toUserMessage(
+          error,
+          'Failed to send password reset email. Please try again.',
+        );
+        this.color = 'red';
+        this.borderColor = 'red';
+        SettingsComponent.isError = true;
       });
   }
 
@@ -964,15 +1161,18 @@ export class SettingsComponent implements DoCheck {
 
     try {
       //update database
-      const writeResult1 = this.database.writeObject("info/username", AppStateService.instance.username);
-      const writeResult2 = this.database.writeObject("info/email", AppStateService.instance.email);
-      this.localStorage.saveData("currency", AppStateService.instance.currency);
+      const writeResult1 = this.database.writeObject(
+        'info/username',
+        AppStateService.instance.username,
+      );
+      const writeResult2 = this.database.writeObject('info/email', AppStateService.instance.email);
+      this.localStorage.saveData('currency', AppStateService.instance.currency);
 
       if (environment.mode === 'selfhosted' && (writeResult1 || writeResult2)) {
         const observables = [];
         if (writeResult1) observables.push(writeResult1);
         if (writeResult2) observables.push(writeResult2);
-        
+
         let completed = 0;
         const handleComplete = () => {
           completed++;
@@ -980,28 +1180,28 @@ export class SettingsComponent implements DoCheck {
             // Log profile update
             this.frontendLogger.logActivity('update_profile', 'info', {
               username: AppStateService.instance.username,
-              email: AppStateService.instance.email
+              email: AppStateService.instance.email,
             });
             //write to local Storage
-            this.localStorage.saveData("username", AppStateService.instance.username);
-            this.localStorage.saveData("email", AppStateService.instance.email);
+            this.localStorage.saveData('username', AppStateService.instance.username);
+            this.localStorage.saveData('email', AppStateService.instance.email);
             // Clean Up close Window
-            this.color = "black";
-            this.borderColor = "var(--color-border)";
+            this.color = 'black';
+            this.borderColor = 'var(--color-border)';
             this.isEdit = false;
             AppComponent.gotoTop();
           }
         };
-        
-        observables.forEach(obs => {
+
+        observables.forEach((obs) => {
           obs.subscribe({
             next: handleComplete,
             error: (error) => {
               this.errorTextLable = this.errorMapper.toUserMessage(error, 'Database write failed');
-              this.color = "red";
-              this.borderColor = "red";
+              this.color = 'red';
+              this.borderColor = 'red';
               SettingsComponent.isError = true;
-            }
+            },
           });
         });
       } else {
@@ -1009,21 +1209,21 @@ export class SettingsComponent implements DoCheck {
         // Log profile update
         this.frontendLogger.logActivity('update_profile', 'info', {
           username: AppStateService.instance.username,
-          email: AppStateService.instance.email
+          email: AppStateService.instance.email,
         });
         //write to local Storage
-        this.localStorage.saveData("username", AppStateService.instance.username);
-        this.localStorage.saveData("email", AppStateService.instance.email);
+        this.localStorage.saveData('username', AppStateService.instance.username);
+        this.localStorage.saveData('email', AppStateService.instance.email);
         // Clean Up close Window
-        this.color = "black";
-        this.borderColor = "var(--color-border)";
+        this.color = 'black';
+        this.borderColor = 'var(--color-border)';
         this.isEdit = false;
         AppComponent.gotoTop();
       }
     } catch (error) {
       this.errorTextLable = this.errorMapper.toUserMessage(error);
-      this.color = "red";
-      this.borderColor = "red";
+      this.color = 'red';
+      this.borderColor = 'red';
       SettingsComponent.isError = true;
     }
   }
@@ -1060,24 +1260,23 @@ export class SettingsComponent implements DoCheck {
       this.isAuth = false;
     }
     AppComponent.gotoTop();
-
   }
 
   changeEncryption() {
     // Always require password authentication for encryption settings (sensitive)
     this.isAuth = !this.isAuth;
     this.isError = false;
-    this.errorTextLable = "";
-    this.passwordTextField = "";
-    this.eyePic = "../../assets/symbols/eye.png";
-    document.getElementById("password")?.setAttribute("type", "password");
+    this.errorTextLable = '';
+    this.passwordTextField = '';
+    this.eyePic = '../../assets/symbols/eye.png';
+    document.getElementById('password')?.setAttribute('type', 'password');
   }
-  
+
   authenticate() {
     // Validate password is provided
-    if(this.passwordTextField == ""){
+    if (this.passwordTextField == '') {
       this.isError = true;
-      this.errorTextLable = "Password is required.";
+      this.errorTextLable = 'Password is required.';
       return;
     }
 
@@ -1091,13 +1290,16 @@ export class SettingsComponent implements DoCheck {
             this.handleSuccessfulAuth();
           } else {
             this.isError = true;
-            this.errorTextLable = "Invalid password";
+            this.errorTextLable = 'Invalid password';
           }
         },
         error: (error) => {
           this.isError = true;
-          this.errorTextLable = this.errorMapper.toUserMessage(error, 'Password verification failed');
-        }
+          this.errorTextLable = this.errorMapper.toUserMessage(
+            error,
+            'Password verification failed',
+          );
+        },
       });
     } else {
       // Firebase mode - use Firebase reauthentication
@@ -1105,29 +1307,31 @@ export class SettingsComponent implements DoCheck {
       const user = auth.currentUser;
       if (!user || !user.email) {
         this.isError = true;
-        this.errorTextLable = "No authenticated user or email.";
+        this.errorTextLable = 'No authenticated user or email.';
         return;
       }
-      
+
       const credential = EmailAuthProvider.credential(user.email, this.passwordTextField);
 
-      reauthenticateWithCredential(user, credential).then(() => {
-        // User re-authenticated successfully
-        this.handleSuccessfulAuth();
-        AppComponent.gotoTop();
-      }).catch((error) => {
-        this.isError = true;
-        this.errorTextLable = this.errorMapper.toUserMessage(error);
-      });
+      reauthenticateWithCredential(user, credential)
+        .then(() => {
+          // User re-authenticated successfully
+          this.handleSuccessfulAuth();
+          AppComponent.gotoTop();
+        })
+        .catch((error) => {
+          this.isError = true;
+          this.errorTextLable = this.errorMapper.toUserMessage(error);
+        });
     }
   }
 
   private handleSuccessfulAuth() {
     this.isAuth = false;
     this.isError = false;
-    this.errorMessageLable = "";
-    this.passwordTextField = "";
-    
+    this.errorMessageLable = '';
+    this.passwordTextField = '';
+
     if (this.classReference.isEncryption) {
       this.classReference.isSettings = true;
       this.classReference.isEncryption = false;
@@ -1227,7 +1431,7 @@ export class SettingsComponent implements DoCheck {
   chooseCurrency(symbol: string) {
     AppStateService.instance.currency = symbol;
     this.currencyTextField = symbol;
-    this.localStorage.saveData("currency", symbol);
+    this.localStorage.saveData('currency', symbol);
   }
 
   changeDateFormat() {
@@ -1252,11 +1456,11 @@ export class SettingsComponent implements DoCheck {
 
   chooseDateFormat(format: string) {
     AppStateService.instance.dateFormat = format;
-    localStorage.setItem("dateFormat", format);
+    localStorage.setItem('dateFormat', format);
   }
 
   changePassword() {
-    this.sendPasswordResetEmail(ProfileComponent.mail)
+    this.sendPasswordResetEmail(ProfileComponent.mail);
     this.isAuth = false;
   }
 
@@ -1316,14 +1520,14 @@ export class SettingsComponent implements DoCheck {
     const csvRows = [
       headers.join(','),
       ...transactions.map((t: any) =>
-      headers.map(h => {
-        let val = t[h] !== undefined && t[h] !== null ? t[h] : '';
-        val = String(val)
-        .replace(/\r?\n/g, ' ')
-        .replace(/"/g, '""');
-        return /[",\n]/.test(val) ? `"${val}"` : val;
-      }).join(',')
-      )
+        headers
+          .map((h) => {
+            let val = t[h] !== undefined && t[h] !== null ? t[h] : '';
+            val = String(val).replace(/\r?\n/g, ' ').replace(/"/g, '""');
+            return /[",\n]/.test(val) ? `"${val}"` : val;
+          })
+          .join(','),
+      ),
     ];
 
     const csvContent = '\uFEFF' + csvRows.join('\r\n');
@@ -1350,14 +1554,14 @@ export class SettingsComponent implements DoCheck {
     const csvRows = [
       headers.join(','),
       ...subscriptions.map((s: any) =>
-        headers.map(h => {
-          let val = s[h] !== undefined && s[h] !== null ? s[h] : '';
-          val = String(val)
-            .replace(/\r?\n/g, ' ')
-            .replace(/"/g, '""');
-          return /[",\n]/.test(val) ? `"${val}"` : val;
-        }).join(',')
-      )
+        headers
+          .map((h) => {
+            let val = s[h] !== undefined && s[h] !== null ? s[h] : '';
+            val = String(val).replace(/\r?\n/g, ' ').replace(/"/g, '""');
+            return /[",\n]/.test(val) ? `"${val}"` : val;
+          })
+          .join(','),
+      ),
     ];
 
     const csvContent = '\uFEFF' + csvRows.join('\r\n');
@@ -1383,13 +1587,13 @@ export class SettingsComponent implements DoCheck {
     const headers = ['amount', 'target'];
     const csvRows = [
       headers.join(','),
-      headers.map(h => {
-        let val = mojo[h] !== undefined && mojo[h] !== null ? mojo[h] : '';
-        val = String(val)
-          .replace(/\r?\n/g, ' ')
-          .replace(/"/g, '""');
-        return /[",\n]/.test(val) ? `"${val}"` : val;
-      }).join(',')
+      headers
+        .map((h) => {
+          let val = mojo[h] !== undefined && mojo[h] !== null ? mojo[h] : '';
+          val = String(val).replace(/\r?\n/g, ' ').replace(/"/g, '""');
+          return /[",\n]/.test(val) ? `"${val}"` : val;
+        })
+        .join(','),
     ];
 
     const csvContent = '\uFEFF' + csvRows.join('\r\n');
@@ -1477,10 +1681,10 @@ export class SettingsComponent implements DoCheck {
           encryption: {
             encryptKey: encryptKey || 'default',
             encryptLocal: encryptLocal || 'false',
-            encryptDatabase: encryptDatabase || 'false'
-          }
-        }
-      }
+            encryptDatabase: encryptDatabase || 'false',
+          },
+        },
+      },
     };
 
     const now = new Date();
@@ -1557,13 +1761,19 @@ export class SettingsComponent implements DoCheck {
       this.cryptic.updateConfig(
         keyData.encryptKey || 'default',
         keyData.encryptLocal === 'true',
-        keyData.encryptDatabase === 'true'
+        keyData.encryptDatabase === 'true',
       );
     }
 
-    if (currentUid) { this.localStorage.saveData('uid', currentUid); }
-    if (currentEmail) { this.localStorage.saveData('email', currentEmail); }
-    if (currentUsername) { this.localStorage.saveData('username', currentUsername); }
+    if (currentUid) {
+      this.localStorage.saveData('uid', currentUid);
+    }
+    if (currentEmail) {
+      this.localStorage.saveData('email', currentEmail);
+    }
+    if (currentUsername) {
+      this.localStorage.saveData('username', currentUsername);
+    }
 
     const writes: { tag: string; data: any }[] = [];
     if (data.transactions) writes.push({ tag: 'transactions', data: data.transactions });
@@ -1577,7 +1787,8 @@ export class SettingsComponent implements DoCheck {
     if (data.interests) writes.push({ tag: 'income/revenue/interests', data: data.interests });
     if (data.properties) writes.push({ tag: 'income/revenue/properties', data: data.properties });
     if (data.dailyExpenses) writes.push({ tag: 'income/expenses/daily', data: data.dailyExpenses });
-    if (data.splurgeExpenses) writes.push({ tag: 'income/expenses/splurge', data: data.splurgeExpenses });
+    if (data.splurgeExpenses)
+      writes.push({ tag: 'income/expenses/splurge', data: data.splurgeExpenses });
     if (data.smileExpenses) writes.push({ tag: 'income/expenses/smile', data: data.smileExpenses });
     if (data.fireExpenses) writes.push({ tag: 'income/expenses/fire', data: data.fireExpenses });
     if (data.mojoExpenses) writes.push({ tag: 'income/expenses/mojo', data: data.mojoExpenses });
@@ -1591,7 +1802,8 @@ export class SettingsComponent implements DoCheck {
         AppStateService.instance.allTransactions = data.transactions || [];
         AppStateService.instance.allSubscriptions = data.subscriptions || [];
         if (AccountingComponent) AccountingComponent.allTransactions = data.transactions || [];
-        if (SubscriptionComponent) SubscriptionComponent.allSubscriptions = data.subscriptions || [];
+        if (SubscriptionComponent)
+          SubscriptionComponent.allSubscriptions = data.subscriptions || [];
         AppStateService.instance.allBudgets = data.budget || [];
         AppStateService.instance.allSmileProjects = data.smile ? migrateSmileArray(data.smile) : [];
         AppStateService.instance.allFireEmergencies = data.fire || [];
@@ -1653,7 +1865,14 @@ export class SettingsComponent implements DoCheck {
           }
           if (data.settings.language) {
             const lang = data.settings.language;
-            const langFlags = { isEng: 'false', isDe: 'false', isEs: 'false', isFr: 'false', isCn: 'false', isAr: 'false' };
+            const langFlags = {
+              isEng: 'false',
+              isDe: 'false',
+              isEs: 'false',
+              isFr: 'false',
+              isCn: 'false',
+              isAr: 'false',
+            };
             if (lang === 'en') langFlags.isEng = 'true';
             else if (lang === 'de') langFlags.isDe = 'true';
             else if (lang === 'es') langFlags.isEs = 'true';
@@ -1689,29 +1908,29 @@ export class SettingsComponent implements DoCheck {
         console.error('Migration import failed:', err);
         this.importStatus = 'Migration import failed. Please try again.';
         this.isImporting = false;
-      }
+      },
     });
   }
 
   updatePersonalSettings() {
     SettingsComponent.isError = false;
-    this.errorTextLable = "";
-    this.color = "black";
-    this.borderColor = "var(--color-border)";
+    this.errorTextLable = '';
+    this.color = 'black';
+    this.borderColor = 'var(--color-border)';
     //Validation (check if Amount is not empty)
     if (SettingsComponent.isSettings) {
-      if (this.usernameTextField == "") {
-        this.errorTextLable = "Please fill out all required fields.";
-        this.color = "red";
-        this.borderColor = "red";
+      if (this.usernameTextField == '') {
+        this.errorTextLable = 'Please fill out all required fields.';
+        this.color = 'red';
+        this.borderColor = 'red';
         SettingsComponent.isError = true;
       } else {
         if (!this.validateEmail(this.emailTextField)) {
           // 3. Error: check email is valid
           SettingsComponent.isError = true;
-          this.errorTextLable = "Invalid email format"
-          this.color = "red";
-          this.borderColor = "red";
+          this.errorTextLable = 'Invalid email format';
+          this.color = 'red';
+          this.borderColor = 'red';
         } else {
           if (ProfileComponent.mail != this.emailTextField) {
             // Email has changed - need to update authentication
@@ -1725,9 +1944,12 @@ export class SettingsComponent implements DoCheck {
                 .catch((error) => {
                   console.error('Error updating Firebase email:', error.message);
                   // Handle the error appropriately
-                  this.errorTextLable = this.errorMapper.toUserMessage(error, 'Failed to update email');
-                  this.color = "red";
-                  this.borderColor = "red";
+                  this.errorTextLable = this.errorMapper.toUserMessage(
+                    error,
+                    'Failed to update email',
+                  );
+                  this.color = 'red';
+                  this.borderColor = 'red';
                   SettingsComponent.isError = true;
                 });
             } else {
@@ -1739,11 +1961,14 @@ export class SettingsComponent implements DoCheck {
                 },
                 error: (error) => {
                   console.error('Error updating selfhosted email:', error);
-                  this.errorTextLable = this.errorMapper.toUserMessage(error, 'Failed to update email');
-                  this.color = "red";
-                  this.borderColor = "red";
+                  this.errorTextLable = this.errorMapper.toUserMessage(
+                    error,
+                    'Failed to update email',
+                  );
+                  this.color = 'red';
+                  this.borderColor = 'red';
                   SettingsComponent.isError = true;
-                }
+                },
               });
             }
           } else {
@@ -1757,27 +1982,39 @@ export class SettingsComponent implements DoCheck {
     }
     if (SettingsComponent.isAllocation) {
       //Validate input (= 100%)
-      if (this.dailyTextField != AppStateService.instance.daily || this.splurgeTextField != AppStateService.instance.splurge || this.smileTextField != AppStateService.instance.smile || this.fireTextField != AppStateService.instance.fire) {
-        if (Number(this.dailyTextField) + Number(this.splurgeTextField) + Number(this.smileTextField) + Number(this.fireTextField) == 100) {
+      if (
+        this.dailyTextField != AppStateService.instance.daily ||
+        this.splurgeTextField != AppStateService.instance.splurge ||
+        this.smileTextField != AppStateService.instance.smile ||
+        this.fireTextField != AppStateService.instance.fire
+      ) {
+        if (
+          Number(this.dailyTextField) +
+            Number(this.splurgeTextField) +
+            Number(this.smileTextField) +
+            Number(this.fireTextField) ==
+          100
+        ) {
           SettingsComponent.isError = false;
-          this.errorTextLable = "";
-          this.color = "black";
-          this.borderColor = "var(--color-border)";
-          this.localStorage.saveData("dailyR", String(this.dailyTextField))
-          AppStateService.instance.daily = this.dailyTextField
-          this.localStorage.saveData("splurgeR", String(this.splurgeTextField))
-          AppStateService.instance.splurge = this.splurgeTextField
-          this.localStorage.saveData("smileR", String(this.smileTextField))
-          AppStateService.instance.smile = this.smileTextField
-          this.localStorage.saveData("fireR", String(this.fireTextField))
-          AppStateService.instance.fire = this.fireTextField
+          this.errorTextLable = '';
+          this.color = 'black';
+          this.borderColor = 'var(--color-border)';
+          this.localStorage.saveData('dailyR', String(this.dailyTextField));
+          AppStateService.instance.daily = this.dailyTextField;
+          this.localStorage.saveData('splurgeR', String(this.splurgeTextField));
+          AppStateService.instance.splurge = this.splurgeTextField;
+          this.localStorage.saveData('smileR', String(this.smileTextField));
+          AppStateService.instance.smile = this.smileTextField;
+          this.localStorage.saveData('fireR', String(this.fireTextField));
+          AppStateService.instance.fire = this.fireTextField;
           this.isEdit = false;
           // Reload the current page
           window.location.reload();
         } else {
-          this.errorTextLable = "Error: Invalid input! The values for Daily, Splurge, Smile, and Fire must add up to 100%. Please ensure that the allocation percentages are correct and try again.";
-          this.color = "red";
-          this.borderColor = "red";
+          this.errorTextLable =
+            'Error: Invalid input! The values for Daily, Splurge, Smile, and Fire must add up to 100%. Please ensure that the allocation percentages are correct and try again.';
+          this.color = 'red';
+          this.borderColor = 'red';
           SettingsComponent.isError = true;
         }
       }

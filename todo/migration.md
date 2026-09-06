@@ -33,52 +33,52 @@
 
 ### Frontend (`package.json`)
 
-| Package | Current Version | Notes |
-|---------|----------------|-------|
-| `@angular/core` | `^15.2.0` | 4 majors behind |
-| `@angular/material` | `~15.2.9` | Must match Angular version |
-| `@angular/cdk` | `~15.2.9` | Must match Angular version |
-| `@angular/fire` | `^7.6.1` | Uses **compat** API (deprecated) |
-| `@angular/cli` | `~15.2.7` | Must match Angular version |
-| `@angular-devkit/build-angular` | `^15.2.7` | Must match Angular version |
-| `@angular-builders/jest` | `^15.0.0` | Must match Angular version |
-| `typescript` | `~4.9.4` | Angular 19 needs `>=5.5 <5.9` |
-| `zone.js` | `~0.12.0` | Angular 19 needs `~0.15.0` |
-| `rxjs` | `~7.8.0` | ✅ Compatible, no change needed |
-| `@ngx-translate/core` | `^14.0.0` | Needs update to `^15.0.0` or `^16.0.0` |
-| `@ngx-translate/http-loader` | `^7.0.0` | Needs update to `^8.0.0` or `^9.0.0` |
-| `jest-preset-angular` | `^13.1.6` | Needs update to `^14.x` |
-| `d3` | `^7.8.5` | ✅ No change needed |
-| `crypto-js` | `^4.1.1` | ✅ No change needed |
-| `tesseract.js` | `^7.0.0` | ✅ No change needed |
-| `@capacitor/core` | `^6.0.0` | ✅ Compatible |
+| Package                         | Current Version | Notes                                  |
+| ------------------------------- | --------------- | -------------------------------------- |
+| `@angular/core`                 | `^15.2.0`       | 4 majors behind                        |
+| `@angular/material`             | `~15.2.9`       | Must match Angular version             |
+| `@angular/cdk`                  | `~15.2.9`       | Must match Angular version             |
+| `@angular/fire`                 | `^7.6.1`        | Uses **compat** API (deprecated)       |
+| `@angular/cli`                  | `~15.2.7`       | Must match Angular version             |
+| `@angular-devkit/build-angular` | `^15.2.7`       | Must match Angular version             |
+| `@angular-builders/jest`        | `^15.0.0`       | Must match Angular version             |
+| `typescript`                    | `~4.9.4`        | Angular 19 needs `>=5.5 <5.9`          |
+| `zone.js`                       | `~0.12.0`       | Angular 19 needs `~0.15.0`             |
+| `rxjs`                          | `~7.8.0`        | ✅ Compatible, no change needed        |
+| `@ngx-translate/core`           | `^14.0.0`       | Needs update to `^15.0.0` or `^16.0.0` |
+| `@ngx-translate/http-loader`    | `^7.0.0`        | Needs update to `^8.0.0` or `^9.0.0`   |
+| `jest-preset-angular`           | `^13.1.6`       | Needs update to `^14.x`                |
+| `d3`                            | `^7.8.5`        | ✅ No change needed                    |
+| `crypto-js`                     | `^4.1.1`        | ✅ No change needed                    |
+| `tesseract.js`                  | `^7.0.0`        | ✅ No change needed                    |
+| `@capacitor/core`               | `^6.0.0`        | ✅ Compatible                          |
 
 ### Backend (`backend/package.json`)
 
-| Package | Current Version | Notes |
-|---------|----------------|-------|
-| `express` | `^4.18.2` | Update to `^4.21.x` (security patches) |
-| `helmet` | `^7.0.0` | ✅ Compatible with Node 22 |
-| `jsonwebtoken` | `^9.0.2` | ✅ Compatible |
-| `nano` (CouchDB) | `^10.1.2` | ✅ Compatible |
-| `bcryptjs` | `^2.4.3` | ✅ Pure JS, no native deps |
-| `winston` | `^3.11.0` | ✅ Compatible |
-| `jest` (backend) | `^30.3.0` | ✅ Already latest |
-| `supertest` | `^7.2.2` | ✅ Compatible |
+| Package          | Current Version | Notes                                  |
+| ---------------- | --------------- | -------------------------------------- |
+| `express`        | `^4.18.2`       | Update to `^4.21.x` (security patches) |
+| `helmet`         | `^7.0.0`        | ✅ Compatible with Node 22             |
+| `jsonwebtoken`   | `^9.0.2`        | ✅ Compatible                          |
+| `nano` (CouchDB) | `^10.1.2`       | ✅ Compatible                          |
+| `bcryptjs`       | `^2.4.3`        | ✅ Pure JS, no native deps             |
+| `winston`        | `^3.11.0`       | ✅ Compatible                          |
+| `jest` (backend) | `^30.3.0`       | ✅ Already latest                      |
+| `supertest`      | `^7.2.2`        | ✅ Compatible                          |
 
 ### Architecture Facts
 
-| Aspect | Current State | Impact |
-|--------|---------------|--------|
-| Bootstrap method | `platformBrowserDynamic().bootstrapModule(AppModule)` | Must migrate to `bootstrapApplication()` |
-| `AppComponent` | **NOT standalone** (declared in `AppModule`) | Must make standalone |
-| Route components | All use `loadComponent` (standalone) ✅ | Already modern pattern |
-| Panel/shared components | Standalone, imported into `AppModule.imports[]` | Remove from module, import where needed |
-| `@angular/fire` API | Compat layer (`@angular/fire/compat/*`) | Must migrate to modular API |
-| Docker base image | `node:18-alpine` | Update to `node:22-alpine` |
-| CouchDB | `3.3` | ✅ No change needed |
-| `tsconfig.json` | `target: ES2022`, `module: ES2022` | ✅ Already compatible |
-| `useDefineForClassFields` | `false` | Review — Angular 19 defaults to `true` |
+| Aspect                    | Current State                                         | Impact                                   |
+| ------------------------- | ----------------------------------------------------- | ---------------------------------------- |
+| Bootstrap method          | `platformBrowserDynamic().bootstrapModule(AppModule)` | Must migrate to `bootstrapApplication()` |
+| `AppComponent`            | **NOT standalone** (declared in `AppModule`)          | Must make standalone                     |
+| Route components          | All use `loadComponent` (standalone) ✅               | Already modern pattern                   |
+| Panel/shared components   | Standalone, imported into `AppModule.imports[]`       | Remove from module, import where needed  |
+| `@angular/fire` API       | Compat layer (`@angular/fire/compat/*`)               | Must migrate to modular API              |
+| Docker base image         | `node:18-alpine`                                      | Update to `node:22-alpine`               |
+| CouchDB                   | `3.3`                                                 | ✅ No change needed                      |
+| `tsconfig.json`           | `target: ES2022`, `module: ES2022`                    | ✅ Already compatible                    |
+| `useDefineForClassFields` | `false`                                               | Review — Angular 19 defaults to `true`   |
 
 ---
 
@@ -86,28 +86,28 @@
 
 ### Why Angular 19 (not 20 or 21)?
 
-| Factor | Angular 19 | Angular 20/21 |
-|--------|-----------|---------------|
-| Stability | Mature, 6+ months of patches | 20 is newer, 21 is very new |
-| `@angular/fire` support | Compat layer still works (deprecated) | May be removed |
-| Migration tooling | `ng update` schematics are battle-tested | Less community migration experience |
-| Node.js requirement | `^18.19.1 \|\| ^20.11.1 \|\| ^22.0.0` | `^20.19.0 \|\| ^22.12.0 \|\| ^24.0.0` (drops Node 18) |
-| TypeScript | `>=5.5.0 <5.9.0` | `>=5.8.0 <6.0.0` |
-| Risk | Lower | Higher |
-| Future upgrade to 20 | Incremental, 1 step | — |
+| Factor                  | Angular 19                               | Angular 20/21                                         |
+| ----------------------- | ---------------------------------------- | ----------------------------------------------------- |
+| Stability               | Mature, 6+ months of patches             | 20 is newer, 21 is very new                           |
+| `@angular/fire` support | Compat layer still works (deprecated)    | May be removed                                        |
+| Migration tooling       | `ng update` schematics are battle-tested | Less community migration experience                   |
+| Node.js requirement     | `^18.19.1 \|\| ^20.11.1 \|\| ^22.0.0`    | `^20.19.0 \|\| ^22.12.0 \|\| ^24.0.0` (drops Node 18) |
+| TypeScript              | `>=5.5.0 <5.9.0`                         | `>=5.8.0 <6.0.0`                                      |
+| Risk                    | Lower                                    | Higher                                                |
+| Future upgrade to 20    | Incremental, 1 step                      | —                                                     |
 
 **Recommendation:** Migrate to **Angular 19.2.x** now. Upgrade to 20+ later as a small incremental step.
 
 ### Why Node 22 LTS (not 24)?
 
-| Factor | Node 22 LTS | Node 24 LTS |
-|--------|------------|------------|
-| LTS end date | April 2027 | ~April 2028 |
-| Angular 19 support | ✅ Yes | ❌ Not listed |
-| Express 4.x support | ✅ Fully tested | ✅ Works but less tested |
-| npm compatibility | ✅ npm 10.x | npm 11.x (breaking changes possible) |
-| Docker `node:22-alpine` | ✅ Mature images | Newer images |
-| CouchDB `nano` driver | ✅ Tested | ✅ Should work |
+| Factor                  | Node 22 LTS      | Node 24 LTS                          |
+| ----------------------- | ---------------- | ------------------------------------ |
+| LTS end date            | April 2027       | ~April 2028                          |
+| Angular 19 support      | ✅ Yes           | ❌ Not listed                        |
+| Express 4.x support     | ✅ Fully tested  | ✅ Works but less tested             |
+| npm compatibility       | ✅ npm 10.x      | npm 11.x (breaking changes possible) |
+| Docker `node:22-alpine` | ✅ Mature images | Newer images                         |
+| CouchDB `nano` driver   | ✅ Tested        | ✅ Should work                       |
 
 **Recommendation:** Use **Node 22 LTS** for Docker images and CI. Your local dev already runs 22.14.0.
 
@@ -136,6 +136,7 @@ rxjs                        → ~7.8.0 (no change)
 ### ✅ YES — With Conditions
 
 **Safe because:**
+
 1. Your routes already use standalone `loadComponent()` — the hardest migration step is already done
 2. Backend is fully independent (CommonJS Node.js) — zero Angular coupling
 3. CouchDB and the `nano` driver have no Angular dependency
@@ -145,6 +146,7 @@ rxjs                        → ~7.8.0 (no change)
 7. You're already on ES2022 target — no old polyfill dependencies
 
 **Risks that require attention:**
+
 1. `@angular/fire` compat → modular API migration (the biggest single change)
 2. `AppModule` → standalone bootstrap (mechanical but touches many files)
 3. `zone.js` version bump (0.12 → 0.15, minor behavioral differences)
@@ -157,40 +159,40 @@ rxjs                        → ~7.8.0 (no change)
 
 ### 🔴 HIGH RISK
 
-| Area | What Breaks | Why | Mitigation |
-|------|-------------|-----|------------|
-| **`@angular/fire` compat API** | `AngularFireAuth`, `AngularFireDatabase` imports may be removed or broken in `@angular/fire@18+` | Firebase SDK shifted to modular tree-shakeable API | Migrate `auth.service.ts` and `database.service.ts` to modular API |
-| **`AppModule` bootstrap** | Angular 19 deprecates `platformBrowserDynamic().bootstrapModule()` | New standard is `bootstrapApplication()` with `app.config.ts` | Refactor `main.ts` + create `app.config.ts` |
-| **`AppComponent` not standalone** | Only non-standalone component — blocks standalone bootstrap | Must be declared standalone to use `bootstrapApplication()` | Add `standalone: true`, move imports to component |
-| **TypeScript strict mode changes** | TS 5.x may flag errors invisible in 4.9 | Stricter template checking, null safety improvements | Fix incrementally per `ng update` step |
+| Area                               | What Breaks                                                                                      | Why                                                           | Mitigation                                                         |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------- | ------------------------------------------------------------------ |
+| **`@angular/fire` compat API**     | `AngularFireAuth`, `AngularFireDatabase` imports may be removed or broken in `@angular/fire@18+` | Firebase SDK shifted to modular tree-shakeable API            | Migrate `auth.service.ts` and `database.service.ts` to modular API |
+| **`AppModule` bootstrap**          | Angular 19 deprecates `platformBrowserDynamic().bootstrapModule()`                               | New standard is `bootstrapApplication()` with `app.config.ts` | Refactor `main.ts` + create `app.config.ts`                        |
+| **`AppComponent` not standalone**  | Only non-standalone component — blocks standalone bootstrap                                      | Must be declared standalone to use `bootstrapApplication()`   | Add `standalone: true`, move imports to component                  |
+| **TypeScript strict mode changes** | TS 5.x may flag errors invisible in 4.9                                                          | Stricter template checking, null safety improvements          | Fix incrementally per `ng update` step                             |
 
 ### 🟡 MEDIUM RISK
 
-| Area | What Breaks | Why | Mitigation |
-|------|-------------|-----|------------|
-| **`@angular/material` theming** | Material 16+ moved to M3 (Material Design 3) theming | CSS custom properties replace `@angular/material/theming` mixins | You use `prebuilt-themes/indigo-pink.css` — check if the theme name changes |
-| **`HttpClientModule`** | Deprecated in Angular 18+ in favor of `provideHttpClient()` | Module-based API replaced by functional provider | Move to `provideHttpClient()` in `app.config.ts` |
-| **`BrowserModule` / `BrowserAnimationsModule`** | Not needed with standalone bootstrap | Replaced by `provideAnimations()` | Use functional providers |
-| **`@angular-builders/jest`** | Major version must match Angular major | Builder API changes between Angular versions | Update to `^19.0.0` |
-| **`jest-preset-angular`** | Transform config changes | Angular compiler changes between versions | Update to `^14.x`, adjust `jest.config.js` if needed |
-| **`zone.js` 0.12 → 0.15** | Minor patching behavior changes | Some async operations may behave slightly differently | Run full test suite after update |
-| **`useDefineForClassFields: false`** | Angular 19 defaults to `true` | Class field initialization order changes | Keep `false` initially, test with `true` later |
-| **Deferred component imports (setTimeout pattern)** | Your `app.component.ts` uses `setTimeout(() => import(...))` for lazy panel loading | This pattern works but may interact differently with Angular's new defer blocks | Test all panels open/close after migration |
+| Area                                                | What Breaks                                                                         | Why                                                                             | Mitigation                                                                  |
+| --------------------------------------------------- | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| **`@angular/material` theming**                     | Material 16+ moved to M3 (Material Design 3) theming                                | CSS custom properties replace `@angular/material/theming` mixins                | You use `prebuilt-themes/indigo-pink.css` — check if the theme name changes |
+| **`HttpClientModule`**                              | Deprecated in Angular 18+ in favor of `provideHttpClient()`                         | Module-based API replaced by functional provider                                | Move to `provideHttpClient()` in `app.config.ts`                            |
+| **`BrowserModule` / `BrowserAnimationsModule`**     | Not needed with standalone bootstrap                                                | Replaced by `provideAnimations()`                                               | Use functional providers                                                    |
+| **`@angular-builders/jest`**                        | Major version must match Angular major                                              | Builder API changes between Angular versions                                    | Update to `^19.0.0`                                                         |
+| **`jest-preset-angular`**                           | Transform config changes                                                            | Angular compiler changes between versions                                       | Update to `^14.x`, adjust `jest.config.js` if needed                        |
+| **`zone.js` 0.12 → 0.15**                           | Minor patching behavior changes                                                     | Some async operations may behave slightly differently                           | Run full test suite after update                                            |
+| **`useDefineForClassFields: false`**                | Angular 19 defaults to `true`                                                       | Class field initialization order changes                                        | Keep `false` initially, test with `true` later                              |
+| **Deferred component imports (setTimeout pattern)** | Your `app.component.ts` uses `setTimeout(() => import(...))` for lazy panel loading | This pattern works but may interact differently with Angular's new defer blocks | Test all panels open/close after migration                                  |
 
 ### 🟢 LOW RISK
 
-| Area | Notes |
-|------|-------|
-| **`rxjs` 7.8** | Fully compatible with Angular 19 |
-| **`d3` 7.x** | No Angular dependency |
-| **`crypto-js` 4.x** | Pure JS, no framework coupling |
-| **`tesseract.js` 7.x** | WASM-based, no Angular coupling |
-| **`@capacitor/core` 6.x** | Independent of Angular version |
-| **Backend Express 4.x** | Zero Angular coupling, CommonJS, independent process |
-| **CouchDB 3.3** | Database layer, no change needed |
-| **Nginx config** | Static file serving, no change |
-| **Kubernetes manifests** | Only Docker image tag changes |
-| **Playwright E2E tests** | Framework-agnostic, test the browser |
+| Area                      | Notes                                                |
+| ------------------------- | ---------------------------------------------------- |
+| **`rxjs` 7.8**            | Fully compatible with Angular 19                     |
+| **`d3` 7.x**              | No Angular dependency                                |
+| **`crypto-js` 4.x**       | Pure JS, no framework coupling                       |
+| **`tesseract.js` 7.x**    | WASM-based, no Angular coupling                      |
+| **`@capacitor/core` 6.x** | Independent of Angular version                       |
+| **Backend Express 4.x**   | Zero Angular coupling, CommonJS, independent process |
+| **CouchDB 3.3**           | Database layer, no change needed                     |
+| **Nginx config**          | Static file serving, no change                       |
+| **Kubernetes manifests**  | Only Docker image tag changes                        |
+| **Playwright E2E tests**  | Framework-agnostic, test the browser                 |
 
 ---
 
@@ -282,16 +284,16 @@ docker-compose down
 
 ### Backend Compatibility Notes
 
-| Component | Status | Notes |
-|-----------|--------|-------|
-| `nano` (CouchDB driver) | ✅ | v10.x works on Node 18–24 |
-| `express` 4.x | ✅ | Fully supported on Node 22 |
-| `bcryptjs` | ✅ | Pure JavaScript, no native bindings |
-| `jsonwebtoken` | ✅ | No native deps |
-| `winston` | ✅ | v3.x compatible |
-| `helmet` | ✅ | v7.x compatible |
-| CouchDB 3.3 | ✅ | No change — database is external |
-| `require()` / CommonJS | ✅ | Still fully supported in Node 22 |
+| Component               | Status | Notes                               |
+| ----------------------- | ------ | ----------------------------------- |
+| `nano` (CouchDB driver) | ✅     | v10.x works on Node 18–24           |
+| `express` 4.x           | ✅     | Fully supported on Node 22          |
+| `bcryptjs`              | ✅     | Pure JavaScript, no native bindings |
+| `jsonwebtoken`          | ✅     | No native deps                      |
+| `winston`               | ✅     | v3.x compatible                     |
+| `helmet`                | ✅     | v7.x compatible                     |
+| CouchDB 3.3             | ✅     | No change — database is external    |
+| `require()` / CommonJS  | ✅     | Still fully supported in Node 22    |
 
 **No code changes required in the backend.** Only the Docker base image and dependency versions change.
 
@@ -314,6 +316,7 @@ ng update @angular/core@16 @angular/cli@16
 ```
 
 This will:
+
 - Update `@angular/core`, `@angular/compiler`, `@angular/router`, etc. to 16.x
 - Update `typescript` to `~5.1.0`
 - Run automatic code migration schematics
@@ -356,13 +359,13 @@ npm start                   # Dev server starts without errors
 
 ### Angular 16 Breaking Changes to Watch For
 
-| Change | Impact on This Project |
-|--------|----------------------|
-| `DestroyRef` introduced | No action needed — `OnDestroy` still works |
-| `takeUntilDestroyed()` available | Optional improvement, not required |
-| Required inputs (experimental) | Won't affect existing code |
-| `esbuild` builder available (opt-in) | Don't switch yet — stay on Webpack |
-| Node 16 dropped | You're on Node 22 ✅ |
+| Change                               | Impact on This Project                     |
+| ------------------------------------ | ------------------------------------------ |
+| `DestroyRef` introduced              | No action needed — `OnDestroy` still works |
+| `takeUntilDestroyed()` available     | Optional improvement, not required         |
+| Required inputs (experimental)       | Won't affect existing code                 |
+| `esbuild` builder available (opt-in) | Don't switch yet — stay on Webpack         |
+| Node 16 dropped                      | You're on Node 22 ✅                       |
 
 ---
 
@@ -392,6 +395,7 @@ Angular 17 requires `typescript >=5.2.0 <5.5.0`. The `ng update` schematic will 
 ### Step 3.4: Automatic Migrations
 
 Angular 17 schematics will:
+
 - Suggest migrating `*ngIf` → `@if`, `*ngFor` → `@for` in templates (optional but recommended)
 - These are **automatic** — the CLI asks during `ng update`
 - **Accept the migrations** — they work reliably
@@ -405,13 +409,13 @@ npm start
 
 ### Angular 17 Breaking Changes to Watch For
 
-| Change | Impact on This Project |
-|--------|----------------------|
-| New control flow (`@if`, `@for`, `@switch`) | Automatic migration available — accept it |
-| `@defer` blocks | New feature, does not break existing code |
-| Vite/esbuild as default for new projects | Existing projects stay on Webpack unless you opt in |
-| `@angular/material` M3 theming | Prebuilt themes still work but names may change |
-| Application builder changes | Your `"builder": "@angular-devkit/build-angular:browser"` still works |
+| Change                                      | Impact on This Project                                                |
+| ------------------------------------------- | --------------------------------------------------------------------- |
+| New control flow (`@if`, `@for`, `@switch`) | Automatic migration available — accept it                             |
+| `@defer` blocks                             | New feature, does not break existing code                             |
+| Vite/esbuild as default for new projects    | Existing projects stay on Webpack unless you opt in                   |
+| `@angular/material` M3 theming              | Prebuilt themes still work but names may change                       |
+| Application builder changes                 | Your `"builder": "@angular-devkit/build-angular:browser"` still works |
 
 ### ⚠️ Material Theme Check
 
@@ -465,13 +469,13 @@ npm start
 
 ### Angular 18 Breaking Changes to Watch For
 
-| Change | Impact on This Project |
-|--------|----------------------|
-| `HttpClientModule` deprecated | Still works — migrate to `provideHttpClient()` in Phase 5 |
-| Standalone default for `ng generate` | Existing code unaffected |
-| Signal inputs/outputs stable | Optional — existing decorators still work |
-| Zoneless change detection (experimental) | Don't enable yet — requires `zone.js` removal |
-| `@angular/fire@18` compat deprecation warnings | Expected — plan modular migration for Phase 6 |
+| Change                                         | Impact on This Project                                    |
+| ---------------------------------------------- | --------------------------------------------------------- |
+| `HttpClientModule` deprecated                  | Still works — migrate to `provideHttpClient()` in Phase 5 |
+| Standalone default for `ng generate`           | Existing code unaffected                                  |
+| Signal inputs/outputs stable                   | Optional — existing decorators still work                 |
+| Zoneless change detection (experimental)       | Don't enable yet — requires `zone.js` removal             |
+| `@angular/fire@18` compat deprecation warnings | Expected — plan modular migration for Phase 6             |
 
 ---
 
@@ -580,7 +584,12 @@ import { AngularFireModule } from '@angular/fire/compat';
 import { AngularFireAuthModule } from '@angular/fire/compat/auth';
 
 // Translate
-import { TranslateModule, TranslateLoader, MissingTranslationHandler, MissingTranslationHandlerParams } from '@ngx-translate/core';
+import {
+  TranslateModule,
+  TranslateLoader,
+  MissingTranslationHandler,
+  MissingTranslationHandlerParams,
+} from '@ngx-translate/core';
 import { TranslateHttpLoader } from '@ngx-translate/http-loader';
 import { HttpClient } from '@angular/common/http';
 
@@ -606,7 +615,7 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes),
     provideAnimations(),
     provideHttpClient(),
-    
+
     // Firebase compat providers (until modular migration)
     importProvidersFrom(
       AngularFireModule.initializeApp(environment.firebase),
@@ -616,28 +625,28 @@ export const appConfig: ApplicationConfig = {
         loader: {
           provide: TranslateLoader,
           useFactory: HttpLoaderFactory,
-          deps: [HttpClient]
+          deps: [HttpClient],
         },
         missingTranslationHandler: {
           provide: MissingTranslationHandler,
-          useClass: FallbackMissingTranslationHandler
-        }
-      })
+          useClass: FallbackMissingTranslationHandler,
+        },
+      }),
     ),
-    
+
     // Firebase modular providers
     provideFirebaseApp(() => initializeApp(environment.firebase)),
     provideAuth(() => getAuth()),
-    
+
     // Locale
     {
       provide: LOCALE_ID,
       useFactory: () => {
         const isEuropeanFormat = localStorage.getItem('isEuropeanFormat');
         return isEuropeanFormat === 'false' ? 'en-US' : 'de-DE';
-      }
-    }
-  ]
+      },
+    },
+  ],
 };
 ```
 
@@ -651,29 +660,93 @@ export const appConfig: ApplicationConfig = {
 import { Routes } from '@angular/router';
 
 export const routes: Routes = [
-  { path: 'authentication', loadComponent: () => import('./registration/registration.component').then(m => m.RegistrationComponent) },
-  { path: 'home', loadComponent: () => import('./main/home/home.component').then(m => m.HomeComponent) },
-  { path: 'transactions', loadComponent: () => import('./main/accounting/accounting.component').then(m => m.AccountingComponent) },
-  { path: 'daily', loadComponent: () => import('./main/daily/daily.component').then(m => m.DailyComponent) },
-  { path: 'splurge', loadComponent: () => import('./main/splurge/splurge.component').then(m => m.SplurgeComponent) },
-  { path: 'smile', loadComponent: () => import('./main/smile/smile.component').then(m => m.SmileComponent) },
-  { path: 'fire', loadComponent: () => import('./main/fire/fire.component').then(m => m.FireComponent) },
-  { path: 'smileprojects', loadComponent: () => import('./main/smile/smile-projects/smile-projects.component').then(m => m.SmileProjectsComponent) },
-  { path: 'fireemergencies', loadComponent: () => import('./main/fire/fire-emergencies/fire-emergencies.component').then(m => m.FireEmergenciesComponent) },
-  { path: 'cashflow', loadComponent: () => import('./main/cashflow/cashflow.component').then(m => m.CashflowComponent) },
-  { path: 'income', loadComponent: () => import('./main/cashflow/income/income.component').then(m => m.IncomeComponent) },
-  { path: 'balance', loadComponent: () => import('./main/cashflow/balance/balance.component').then(m => m.BalanceComponent) },
-  { path: 'stats', loadComponent: () => import('./stats/stats.component').then(m => m.StatsComponent) },
-  { path: 'subscription', loadComponent: () => import('./main/subscription/subscription.component').then(m => m.SubscriptionComponent) },
-  { path: 'grow', loadComponent: () => import('./main/grow/grow.component').then(m => m.GrowComponent) },
-  { path: 'budget', loadComponent: () => import('./main/budget/budget.component').then(m => m.BudgetComponent) },
-  { path: 'plan', loadComponent: () => import('./main/budget/plan/plan.component').then(m => m.PlanComponent) }
+  {
+    path: 'authentication',
+    loadComponent: () =>
+      import('./registration/registration.component').then((m) => m.RegistrationComponent),
+  },
+  {
+    path: 'home',
+    loadComponent: () => import('./main/home/home.component').then((m) => m.HomeComponent),
+  },
+  {
+    path: 'transactions',
+    loadComponent: () =>
+      import('./main/accounting/accounting.component').then((m) => m.AccountingComponent),
+  },
+  {
+    path: 'daily',
+    loadComponent: () => import('./main/daily/daily.component').then((m) => m.DailyComponent),
+  },
+  {
+    path: 'splurge',
+    loadComponent: () => import('./main/splurge/splurge.component').then((m) => m.SplurgeComponent),
+  },
+  {
+    path: 'smile',
+    loadComponent: () => import('./main/smile/smile.component').then((m) => m.SmileComponent),
+  },
+  {
+    path: 'fire',
+    loadComponent: () => import('./main/fire/fire.component').then((m) => m.FireComponent),
+  },
+  {
+    path: 'smileprojects',
+    loadComponent: () =>
+      import('./main/smile/smile-projects/smile-projects.component').then(
+        (m) => m.SmileProjectsComponent,
+      ),
+  },
+  {
+    path: 'fireemergencies',
+    loadComponent: () =>
+      import('./main/fire/fire-emergencies/fire-emergencies.component').then(
+        (m) => m.FireEmergenciesComponent,
+      ),
+  },
+  {
+    path: 'cashflow',
+    loadComponent: () =>
+      import('./main/cashflow/cashflow.component').then((m) => m.CashflowComponent),
+  },
+  {
+    path: 'income',
+    loadComponent: () =>
+      import('./main/cashflow/income/income.component').then((m) => m.IncomeComponent),
+  },
+  {
+    path: 'balance',
+    loadComponent: () =>
+      import('./main/cashflow/balance/balance.component').then((m) => m.BalanceComponent),
+  },
+  {
+    path: 'stats',
+    loadComponent: () => import('./stats/stats.component').then((m) => m.StatsComponent),
+  },
+  {
+    path: 'subscription',
+    loadComponent: () =>
+      import('./main/subscription/subscription.component').then((m) => m.SubscriptionComponent),
+  },
+  {
+    path: 'grow',
+    loadComponent: () => import('./main/grow/grow.component').then((m) => m.GrowComponent),
+  },
+  {
+    path: 'budget',
+    loadComponent: () => import('./main/budget/budget.component').then((m) => m.BudgetComponent),
+  },
+  {
+    path: 'plan',
+    loadComponent: () => import('./main/budget/plan/plan.component').then((m) => m.PlanComponent),
+  },
 ];
 ```
 
 > **Note:** Keep `{ useHash: true }` if you need hash routing. Pass it via `provideRouter(routes, withHashLocation())` in `app.config.ts`. You will need: `import { withHashLocation } from '@angular/router';`
 
 Update `app.config.ts` router line:
+
 ```typescript
 provideRouter(routes, withHashLocation()),
 ```
@@ -690,8 +763,9 @@ import { AppModule } from './app/app.module';
 const savedTheme = localStorage.getItem('theme') || 'light';
 document.documentElement.setAttribute('data-theme', savedTheme);
 
-platformBrowserDynamic().bootstrapModule(AppModule)
-  .catch(err => console.error(err));
+platformBrowserDynamic()
+  .bootstrapModule(AppModule)
+  .catch((err) => console.error(err));
 
 import { defineCustomElements } from '@ionic/pwa-elements/loader';
 defineCustomElements(window);
@@ -704,8 +778,7 @@ import { appConfig } from './app/app.config';
 const savedTheme = localStorage.getItem('theme') || 'light';
 document.documentElement.setAttribute('data-theme', savedTheme);
 
-bootstrapApplication(AppComponent, appConfig)
-  .catch(err => console.error(err));
+bootstrapApplication(AppComponent, appConfig).catch((err) => console.error(err));
 
 import { defineCustomElements } from '@ionic/pwa-elements/loader';
 defineCustomElements(window);
@@ -729,8 +802,8 @@ The `files` array currently points to `src/main.ts` — this is fine. No change 
 
 ```javascript
 transformIgnorePatterns: [
-  'node_modules/(?!(@angular|@ngx-translate|rxjs|d3|d3-.*|internmap|delaunator|robust-predicates|@angular/fire|firebase|@firebase)/)'
-]
+  'node_modules/(?!(@angular|@ngx-translate|rxjs|d3|d3-.*|internmap|delaunator|robust-predicates|@angular/fire|firebase|@firebase)/)',
+];
 ```
 
 This pattern should still work. If you see transform errors, add any new ESM-only packages to the pattern.
@@ -768,6 +841,7 @@ npm run test:e2e              # Playwright E2E tests
 This is the biggest post-migration task. The compat layer works on Angular 19 but is deprecated and may be removed in future `@angular/fire` versions.
 
 **Files to change:**
+
 - `src/app/shared/services/auth.service.ts`
 - `src/app/shared/services/database.service.ts`
 - `src/app/app.config.ts` (remove compat imports)
@@ -840,7 +914,7 @@ In `tsconfig.json`, the setting is currently `false`. Angular 19 works with `tru
 "useDefineForClassFields": true
 ```
 
-If anything breaks, revert to `false`. The most common issue is class properties that depend on constructor parameters — with `true`, class fields are initialized *before* the constructor body runs.
+If anything breaks, revert to `false`. The most common issue is class properties that depend on constructor parameters — with `true`, class fields are initialized _before_ the constructor body runs.
 
 ### 6.4: Evaluate `esbuild` Application Builder
 
@@ -901,11 +975,13 @@ firebase deploy --only hosting  # Verify deployment works
 Only the Node.js base image version changes:
 
 **`Dockerfile` (frontend build stage):**
+
 ```dockerfile
 FROM node:22-alpine as build
 ```
 
 **`backend/Dockerfile`:**
+
 ```dockerfile
 FROM node:22-alpine
 ```
@@ -950,6 +1026,7 @@ docker-compose down
 ### Raspberry Pi Considerations
 
 Node 22 LTS on ARM64 (Raspberry Pi 4/5):
+
 - `node:22-alpine` images are available for `linux/arm64` ✅
 - Build times will be slower on Pi — build on a faster machine and push images
 - Memory footprint is similar between Node 18 and Node 22 (~640 MB total stack)
@@ -1001,6 +1078,7 @@ After the final migration (Phase 5), manually verify these flows in both Firebas
 ### Test File Updates
 
 Some test files may need updates if they:
+
 - Import `AppModule` directly → Replace with component-specific test setup
 - Mock `AngularFireAuth` → Mock pattern may change with modular API
 - Use `FIREBASE_OPTIONS` token → May need `provideFirebaseApp()` in test config
@@ -1107,22 +1185,22 @@ kubectl rollout undo deployment/backend -n money
 
 ### Version Cheat Sheet
 
-| Package | Before | After |
-|---------|--------|-------|
-| `@angular/*` | 15.2.x | 19.2.x |
-| `@angular/material` | 15.2.9 | 19.2.x |
-| `@angular/fire` | 7.6.1 | 18.x or 19.x |
-| `typescript` | 4.9.4 | 5.7.x |
-| `zone.js` | 0.12.0 | 0.15.x |
-| `@ngx-translate/core` | 14.0.0 | 16.x |
-| `jest-preset-angular` | 13.1.6 | 14.x |
-| `@angular-builders/jest` | 15.0.0 | 19.x |
-| Node.js (Docker) | 18-alpine | 22-alpine |
-| Node.js (local) | 22.14.0 | 22.14.0 (no change) |
-| Express | 4.18.2 | 4.21.x |
-| CouchDB | 3.3 | 3.3 (no change) |
-| nginx | alpine | alpine (no change) |
+| Package                  | Before    | After               |
+| ------------------------ | --------- | ------------------- |
+| `@angular/*`             | 15.2.x    | 19.2.x              |
+| `@angular/material`      | 15.2.9    | 19.2.x              |
+| `@angular/fire`          | 7.6.1     | 18.x or 19.x        |
+| `typescript`             | 4.9.4     | 5.7.x               |
+| `zone.js`                | 0.12.0    | 0.15.x              |
+| `@ngx-translate/core`    | 14.0.0    | 16.x                |
+| `jest-preset-angular`    | 13.1.6    | 14.x                |
+| `@angular-builders/jest` | 15.0.0    | 19.x                |
+| Node.js (Docker)         | 18-alpine | 22-alpine           |
+| Node.js (local)          | 22.14.0   | 22.14.0 (no change) |
+| Express                  | 4.18.2    | 4.21.x              |
+| CouchDB                  | 3.3       | 3.3 (no change)     |
+| nginx                    | alpine    | alpine (no change)  |
 
 ---
 
-*End of Migration Guide — Angular 15 → 19 + Node.js 18 → 22 LTS*
+_End of Migration Guide — Angular 15 → 19 + Node.js 18 → 22 LTS_

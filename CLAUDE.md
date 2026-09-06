@@ -24,18 +24,18 @@ todo/                Internal planning docs — several are historical/completed
 
 ## How to run / build / test
 
-| Task | Command |
-|---|---|
-| Dev server (Firebase mode) | `npm start` |
-| Build Firebase edition | `npm run build` |
-| Build self-hosted edition | `npm run build:selfhosted` |
-| Frontend unit tests | `npm test` |
-| Backend unit tests | `npm run test:backend:unit` |
-| Backend integration tests (needs CouchDB) | `cd backend && npx jest -- tests/integration` |
-| E2E (Playwright) | `npm run test:e2e` |
-| Everything frontend+backend unit | `npm run test:all` |
-| One-shot quality gate | `npm run verify` (see `mm-conventions` skill for what it runs) |
-| Self-hosted stack locally | `docker-compose up -d` (see `docs/SELFHOSTED.md`) |
+| Task                                      | Command                                                        |
+| ----------------------------------------- | -------------------------------------------------------------- |
+| Dev server (Firebase mode)                | `npm start`                                                    |
+| Build Firebase edition                    | `npm run build`                                                |
+| Build self-hosted edition                 | `npm run build:selfhosted`                                     |
+| Frontend unit tests                       | `npm test`                                                     |
+| Backend unit tests                        | `npm run test:backend:unit`                                    |
+| Backend integration tests (needs CouchDB) | `cd backend && npx jest -- tests/integration`                  |
+| E2E (Playwright)                          | `npm run test:e2e`                                             |
+| Everything frontend+backend unit          | `npm run test:all`                                             |
+| One-shot quality gate                     | `npm run verify` (see `mm-conventions` skill for what it runs) |
+| Self-hosted stack locally                 | `docker-compose up -d` (see `docs/SELFHOSTED.md`)              |
 
 Install deps first if `node_modules` is missing: `npm ci --legacy-peer-deps` (root, needs the flag) and `cd backend && npm ci` (no flag needed).
 

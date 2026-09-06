@@ -44,7 +44,7 @@ test.describe('Account-Specific Views', () => {
   test('should show Daily transactions only on daily page', async ({ page }) => {
     await navigateTo(page, 'daily');
     await page.waitForTimeout(2000);
-    const tableText = await page.locator('table.account').textContent() ?? '';
+    const tableText = (await page.locator('table.account').textContent()) ?? '';
     expect(tableText).toContain('DailyGroceries');
     // Splurge-only category should NOT appear
     expect(tableText).not.toContain('SplurgeShoes');
@@ -53,7 +53,7 @@ test.describe('Account-Specific Views', () => {
   test('should show Splurge transactions only on splurge page', async ({ page }) => {
     await navigateTo(page, 'splurge');
     await page.waitForTimeout(2000);
-    const tableText = await page.locator('table.account').textContent() ?? '';
+    const tableText = (await page.locator('table.account').textContent()) ?? '';
     expect(tableText).toContain('SplurgeShoes');
     expect(tableText).not.toContain('DailyGroceries');
   });
@@ -61,7 +61,7 @@ test.describe('Account-Specific Views', () => {
   test('should show Smile transactions only on smile page', async ({ page }) => {
     await navigateTo(page, 'smile');
     await page.waitForTimeout(2000);
-    const tableText = await page.locator('table.account').textContent() ?? '';
+    const tableText = (await page.locator('table.account').textContent()) ?? '';
     expect(tableText).toContain('SmileFun');
     expect(tableText).not.toContain('DailyGroceries');
   });
@@ -69,7 +69,7 @@ test.describe('Account-Specific Views', () => {
   test('should show Fire transactions only on fire page', async ({ page }) => {
     await navigateTo(page, 'fire');
     await page.waitForTimeout(2000);
-    const tableText = await page.locator('table.account').textContent() ?? '';
+    const tableText = (await page.locator('table.account').textContent()) ?? '';
     expect(tableText).toContain('FireSave');
     expect(tableText).not.toContain('DailyGroceries');
   });
@@ -79,7 +79,7 @@ test.describe('Account-Specific Views', () => {
     await page.waitForTimeout(2000);
     const amountLabel = page.locator('#amountLable');
     await expect(amountLabel).toBeVisible();
-    const text = await amountLabel.textContent() ?? '';
+    const text = (await amountLabel.textContent()) ?? '';
     // Should show a non-zero amount
     expect(text.trim()).not.toBe('');
   });
@@ -87,7 +87,7 @@ test.describe('Account-Specific Views', () => {
   test('should show all transactions on the main transactions page', async ({ page }) => {
     await navigateTo(page, 'transactions');
     await page.waitForTimeout(2000);
-    const tableText = await page.locator('table.account').textContent() ?? '';
+    const tableText = (await page.locator('table.account').textContent()) ?? '';
     // All account categories should appear in the combined view
     expect(tableText).toContain('DailyGroceries');
     expect(tableText).toContain('SplurgeShoes');

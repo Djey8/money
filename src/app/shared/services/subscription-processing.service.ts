@@ -11,20 +11,19 @@ import { Expense } from '../../interfaces/expense';
 import { Subscription, SubscriptionFrequency } from '../../interfaces/subscription';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 /**
  * Generates transactions from active subscriptions and manages
  * fund allocations (Mojo, Smile projects, Fire emergencies).
  */
 export class SubscriptionProcessingService {
-
   static instance: SubscriptionProcessingService;
   private isProcessing = false;
 
   constructor(
     private authService: AuthService,
-    private frontendLogger: FrontendLoggerService
+    private frontendLogger: FrontendLoggerService,
   ) {
     SubscriptionProcessingService.instance = this;
   }
@@ -35,7 +34,7 @@ export class SubscriptionProcessingService {
    */
   private transactionExistsForDate(subscription: any, date: string): boolean {
     const commentCompare = subscription.comment
-      ? subscription.title + " + " + subscription.comment
+      ? subscription.title + ' + ' + subscription.comment
       : subscription.title;
 
     for (let i = 0; i < AppStateService.instance.allTransactions.length; i++) {
@@ -56,7 +55,7 @@ export class SubscriptionProcessingService {
   /**
    * Calculates all occurrence dates for a subscription based on its frequency,
    * from its start date up to the boundary date (end date or today).
-   * 
+   *
    * @param startDateString - Start date in ISO format (YYYY-MM-DD)
    * @param boundaryDate - End boundary (subscription end date or today)
    * @param frequency - Subscription frequency ('weekly', 'biweekly', 'monthly', 'quarterly', 'yearly')
@@ -65,13 +64,13 @@ export class SubscriptionProcessingService {
   private getOccurrenceDates(
     startDateString: string,
     boundaryDate: Date,
-    frequency: SubscriptionFrequency = 'monthly'
+    frequency: SubscriptionFrequency = 'monthly',
   ): string[] {
     // Use FrequencyCalculatorService to get appropriate strategy and calculate dates
     return FrequencyCalculatorService.instance.calculateOccurrences(
       frequency,
       startDateString,
-      boundaryDate
+      boundaryDate,
     );
   }
 
@@ -103,8 +102,8 @@ export class SubscriptionProcessingService {
         subscriptionsProcessed++;
 
         // Determine boundary: use end date if set and in the past, otherwise today
-        const boundary = (endDateString !== "" && endDate < today) ? endDate : today;
-        
+        const boundary = endDateString !== '' && endDate < today ? endDate : today;
+
         // Get subscription frequency (default to 'monthly' for backward compatibility)
         const frequency = subscription.frequency || 'monthly';
         const dates = this.getOccurrenceDates(startDateString, boundary, frequency);
@@ -119,14 +118,14 @@ export class SubscriptionProcessingService {
               subscription.account,
               subscription.category,
               date,
-              "",
-              subscription.comment
+              '',
+              subscription.comment,
             );
             transactionsCreated++;
           }
         }
       }
-      
+
       return { transactionsCreated, subscriptionsProcessed };
     } finally {
       this.isProcessing = false;
@@ -140,18 +139,18 @@ export class SubscriptionProcessingService {
       return;
     }
 
-    if (amount === "" || selectedOption === "" || category === "" || category === "@") {
+    if (amount === '' || selectedOption === '' || category === '' || category === '@') {
       return;
     }
 
     // Check if target project is already full
-    if (category === "@Mojo") {
+    if (category === '@Mojo') {
       if (AppStateService.instance.mojo.amount >= AppStateService.instance.mojo.target) {
         return;
       }
     } else {
       for (let i = 0; i < AppStateService.instance.allSmileProjects.length; i++) {
-        if ("@" + AppStateService.instance.allSmileProjects[i].title === category) {
+        if ('@' + AppStateService.instance.allSmileProjects[i].title === category) {
           const project = AppStateService.instance.allSmileProjects[i];
           const totalTarget = project.buckets.reduce((sum, b) => sum + (b.target || 0), 0);
           const totalAmount = project.buckets.reduce((sum, b) => sum + (b.amount || 0), 0);
@@ -164,7 +163,7 @@ export class SubscriptionProcessingService {
       // Bucket targets are informational; contributions are tracked per transaction
     }
 
-    if (category === "@Mojo") {
+    if (category === '@Mojo') {
       amount = String(this.returnCorrectMojo(amount));
       this.addToMojo(amount);
     }
@@ -175,37 +174,71 @@ export class SubscriptionProcessingService {
     amount = String(this.returnCorrectFireAmount(amount, category));
     this.addToFireEmergency(category, amount);
 
-    if (selectedOption === "Mojo") {
+    if (selectedOption === 'Mojo') {
       this.removeFromMojo(amount);
     }
 
-    if (selectedOption === "Income") {
+    if (selectedOption === 'Income') {
       this.updateIncomeStatement(category, amount);
     }
 
-    if (selectedOption === "Daily") {
-      this.updateExpenseCategory(AppStateService.instance.dailyExpenses, 'dailyExpense', category, amount);
+    if (selectedOption === 'Daily') {
+      this.updateExpenseCategory(
+        AppStateService.instance.dailyExpenses,
+        'dailyExpense',
+        category,
+        amount,
+      );
     }
-    if (selectedOption === "Splurge") {
-      this.updateExpenseCategory(AppStateService.instance.splurgeExpenses, 'splurgeExpense', category, amount);
+    if (selectedOption === 'Splurge') {
+      this.updateExpenseCategory(
+        AppStateService.instance.splurgeExpenses,
+        'splurgeExpense',
+        category,
+        amount,
+      );
     }
-    if (selectedOption === "Smile") {
-      this.updateExpenseCategory(AppStateService.instance.smileExpenses, 'smileExpense', category, amount);
+    if (selectedOption === 'Smile') {
+      this.updateExpenseCategory(
+        AppStateService.instance.smileExpenses,
+        'smileExpense',
+        category,
+        amount,
+      );
     }
-    if (selectedOption === "Fire") {
-      this.updateExpenseCategory(AppStateService.instance.fireExpenses, 'fireExpense', category, amount);
+    if (selectedOption === 'Fire') {
+      this.updateExpenseCategory(
+        AppStateService.instance.fireExpenses,
+        'fireExpense',
+        category,
+        amount,
+      );
     }
-    if (selectedOption === "Mojo") {
-      this.updateExpenseCategory(AppStateService.instance.mojoExpenses, 'mojoExpense', category, amount);
+    if (selectedOption === 'Mojo') {
+      this.updateExpenseCategory(
+        AppStateService.instance.mojoExpenses,
+        'mojoExpense',
+        category,
+        amount,
+      );
     }
 
-    const newTransaction: Transaction = { account: selectedOption, amount: parseFloat(amount), date: date, time: time, category: category, comment: comment ? title + " + " + comment : title }
+    const newTransaction: Transaction = {
+      account: selectedOption,
+      amount: parseFloat(amount),
+      date: date,
+      time: time,
+      category: category,
+      comment: comment ? title + ' + ' + comment : title,
+    };
     AppStateService.instance.allTransactions.push(newTransaction);
     AccountingComponent.allTransactions = AppStateService.instance.allTransactions;
     AccountingComponent.dataSource.data = AppStateService.instance.allTransactions;
-    AccountingComponent.dataSource.data = AccountingComponent.dataSource.data.map((transaction, index) => {
-      return { ...transaction, id: index };
-    });
+    AccountingComponent.dataSource.data = AccountingComponent.dataSource.data.map(
+      (transaction, index) => {
+        return { ...transaction, id: index };
+      },
+    );
     AppStateService.instance.transactionsUpdated$.next();
 
     this.frontendLogger.logActivity('subscription_generated_transaction', 'info', {
@@ -214,7 +247,7 @@ export class SubscriptionProcessingService {
       amount: parseFloat(amount),
       category: category,
       date: date,
-      comment: comment || ''
+      comment: comment || '',
     });
 
     AppDataService.instance.updateDatabase();
@@ -226,49 +259,70 @@ export class SubscriptionProcessingService {
     let itemType = '';
     while (!found) {
       for (let i = 0; i < AppStateService.instance.allIntrests.length; i++) {
-        if (category.toLocaleLowerCase() === "@" + AppStateService.instance.allIntrests[i].tag.toLocaleLowerCase()) {
+        if (
+          category.toLocaleLowerCase() ===
+          '@' + AppStateService.instance.allIntrests[i].tag.toLocaleLowerCase()
+        ) {
           found = true;
           itemType = 'interest';
           AppStateService.instance.allIntrests[i].amount += parseFloat(amount);
           this.frontendLogger.logActivity('update_income_statement_item', 'info', {
-            itemType, itemTag: AppStateService.instance.allIntrests[i].tag,
-            amount: parseFloat(amount), newTotal: AppStateService.instance.allIntrests[i].amount,
-            operation: 'update', source: 'subscription_transaction'
+            itemType,
+            itemTag: AppStateService.instance.allIntrests[i].tag,
+            amount: parseFloat(amount),
+            newTotal: AppStateService.instance.allIntrests[i].amount,
+            operation: 'update',
+            source: 'subscription_transaction',
           });
         }
       }
       for (let i = 0; i < AppStateService.instance.allProperties.length; i++) {
-        if (category.toLocaleLowerCase() === "@" + AppStateService.instance.allProperties[i].tag.toLocaleLowerCase()) {
+        if (
+          category.toLocaleLowerCase() ===
+          '@' + AppStateService.instance.allProperties[i].tag.toLocaleLowerCase()
+        ) {
           found = true;
           itemType = 'property';
           AppStateService.instance.allProperties[i].amount += parseFloat(amount);
           this.frontendLogger.logActivity('update_income_statement_item', 'info', {
-            itemType, itemTag: AppStateService.instance.allProperties[i].tag,
-            amount: parseFloat(amount), newTotal: AppStateService.instance.allProperties[i].amount,
-            operation: 'update', source: 'subscription_transaction'
+            itemType,
+            itemTag: AppStateService.instance.allProperties[i].tag,
+            amount: parseFloat(amount),
+            newTotal: AppStateService.instance.allProperties[i].amount,
+            operation: 'update',
+            source: 'subscription_transaction',
           });
         }
       }
       for (let i = 0; i < AppStateService.instance.allRevenues.length; i++) {
-        if (category.toLocaleLowerCase() === "@" + AppStateService.instance.allRevenues[i].tag.toLocaleLowerCase()) {
+        if (
+          category.toLocaleLowerCase() ===
+          '@' + AppStateService.instance.allRevenues[i].tag.toLocaleLowerCase()
+        ) {
           found = true;
           itemType = 'revenue';
           AppStateService.instance.allRevenues[i].amount += parseFloat(amount);
           this.frontendLogger.logActivity('update_income_statement_item', 'info', {
-            itemType, itemTag: AppStateService.instance.allRevenues[i].tag,
-            amount: parseFloat(amount), newTotal: AppStateService.instance.allRevenues[i].amount,
-            operation: 'update', source: 'subscription_transaction'
+            itemType,
+            itemTag: AppStateService.instance.allRevenues[i].tag,
+            amount: parseFloat(amount),
+            newTotal: AppStateService.instance.allRevenues[i].amount,
+            operation: 'update',
+            source: 'subscription_transaction',
           });
         }
       }
       if (!found) {
-        const new_revenue: Revenue = { tag: category.replace("@", ""), amount: parseFloat(amount) }
+        const new_revenue: Revenue = { tag: category.replace('@', ''), amount: parseFloat(amount) };
         AppStateService.instance.allRevenues.push(new_revenue);
         found = true;
         this.frontendLogger.logActivity('update_income_statement_item', 'info', {
-          itemType: 'revenue', itemTag: new_revenue.tag,
-          amount: parseFloat(amount), newTotal: new_revenue.amount,
-          operation: 'create', source: 'subscription_transaction'
+          itemType: 'revenue',
+          itemTag: new_revenue.tag,
+          amount: parseFloat(amount),
+          newTotal: new_revenue.amount,
+          operation: 'create',
+          source: 'subscription_transaction',
         });
       }
     }
@@ -278,24 +332,30 @@ export class SubscriptionProcessingService {
     let found = false;
     while (!found) {
       for (let i = 0; i < expenses.length; i++) {
-        if (category.toLocaleLowerCase() === "@" + expenses[i].tag.toLocaleLowerCase()) {
+        if (category.toLocaleLowerCase() === '@' + expenses[i].tag.toLocaleLowerCase()) {
           found = true;
           expenses[i].amount += parseFloat(amount);
           this.frontendLogger.logActivity('update_income_statement_item', 'info', {
-            itemType, itemTag: expenses[i].tag,
-            amount: parseFloat(amount), newTotal: expenses[i].amount,
-            operation: 'update', source: 'subscription_transaction'
+            itemType,
+            itemTag: expenses[i].tag,
+            amount: parseFloat(amount),
+            newTotal: expenses[i].amount,
+            operation: 'update',
+            source: 'subscription_transaction',
           });
         }
       }
       if (!found) {
-        const new_expense: Expense = { tag: category.replace("@", ""), amount: parseFloat(amount) }
+        const new_expense: Expense = { tag: category.replace('@', ''), amount: parseFloat(amount) };
         expenses.push(new_expense);
         found = true;
         this.frontendLogger.logActivity('update_income_statement_item', 'info', {
-          itemType, itemTag: new_expense.tag,
-          amount: parseFloat(amount), newTotal: new_expense.amount,
-          operation: 'create', source: 'subscription_transaction'
+          itemType,
+          itemTag: new_expense.tag,
+          amount: parseFloat(amount),
+          newTotal: new_expense.amount,
+          operation: 'create',
+          source: 'subscription_transaction',
         });
       }
     }
@@ -311,7 +371,7 @@ export class SubscriptionProcessingService {
       projectType: 'mojo',
       amount: parseFloat(amount),
       newBalance: AppStateService.instance.mojo.amount,
-      target: AppStateService.instance.mojo.target
+      target: AppStateService.instance.mojo.target,
     });
   }
 
@@ -328,97 +388,103 @@ export class SubscriptionProcessingService {
    * Distribute amount across buckets based on their remaining capacity
    * Returns array of allocations: {bucketName, amount}
    */
-  distributeAmountToBuckets(buckets: any[], transactionAmount: number): {bucketName: string, amount: number}[] {
+  distributeAmountToBuckets(
+    buckets: any[],
+    transactionAmount: number,
+  ): { bucketName: string; amount: number }[] {
     // Amount is negative for contributions
     const amountToDistribute = Math.abs(transactionAmount);
-    const allocations: {bucketName: string, amount: number}[] = [];
-    
+    const allocations: { bucketName: string; amount: number }[] = [];
+
     // Get buckets with remaining capacity
     const bucketsWithSpace = buckets
-      .map(bucket => ({
+      .map((bucket) => ({
         bucket,
-        remaining: Math.max(0, bucket.target - bucket.amount)
+        remaining: Math.max(0, bucket.target - bucket.amount),
       }))
-      .filter(b => b.remaining > 0);
-    
+      .filter((b) => b.remaining > 0);
+
     if (bucketsWithSpace.length === 0) {
       // All buckets full - distribute equally anyway
       const perBucket = amountToDistribute / buckets.length;
-      buckets.forEach(bucket => {
+      buckets.forEach((bucket) => {
         allocations.push({
           bucketName: bucket.title,
-          amount: perBucket
+          amount: perBucket,
         });
       });
       return allocations;
     }
-    
+
     // Calculate total remaining capacity
     const totalRemaining = bucketsWithSpace.reduce((sum, b) => sum + b.remaining, 0);
-    
+
     if (amountToDistribute <= totalRemaining) {
       // We can fit the amount - distribute proportionally to remaining capacity
-      bucketsWithSpace.forEach(({bucket, remaining}) => {
+      bucketsWithSpace.forEach(({ bucket, remaining }) => {
         const proportion = remaining / totalRemaining;
         const allocated = amountToDistribute * proportion;
         allocations.push({
           bucketName: bucket.title,
-          amount: allocated
+          amount: allocated,
         });
       });
     } else {
       // Amount exceeds total capacity - fill each bucket to target, distribute overflow equally
       const overflow = amountToDistribute - totalRemaining;
-      
-      bucketsWithSpace.forEach(({bucket, remaining}) => {
+
+      bucketsWithSpace.forEach(({ bucket, remaining }) => {
         allocations.push({
           bucketName: bucket.title,
-          amount: remaining + (overflow / bucketsWithSpace.length)
+          amount: remaining + overflow / bucketsWithSpace.length,
         });
       });
     }
-    
+
     return allocations;
   }
 
   addToSmileProject(category: string, amount) {
     for (let i = 0; i < AppStateService.instance.allSmileProjects.length; i++) {
-      if (category === ("@" + AppStateService.instance.allSmileProjects[i].title)) {
+      if (category === '@' + AppStateService.instance.allSmileProjects[i].title) {
         const project = AppStateService.instance.allSmileProjects[i];
         const amt = parseFloat(amount);
-        
+
         // Find the most recent transaction for this subscription
-        const latestTransaction = AppStateService.instance.allTransactions[AppStateService.instance.allTransactions.length - 1];
-        
+        const latestTransaction =
+          AppStateService.instance.allTransactions[
+            AppStateService.instance.allTransactions.length - 1
+          ];
+
         // Distribute amount based on capacity and append to comment
         if (project.buckets?.length > 0) {
           const allocations = this.distributeAmountToBuckets(project.buckets, amt);
-          
+
           // Update bucket amounts
-          allocations.forEach(allocation => {
-            const bucket = project.buckets.find(b => b.title === allocation.bucketName);
+          allocations.forEach((allocation) => {
+            const bucket = project.buckets.find((b) => b.title === allocation.bucketName);
             if (bucket) {
               bucket.amount += allocation.amount;
             }
           });
-          
+
           // Append allocation tags to comment
           if (latestTransaction) {
             const allocationTags = allocations
-              .map(a => `#bucket:${a.bucketName}:${a.amount.toFixed(2)}`)
+              .map((a) => `#bucket:${a.bucketName}:${a.amount.toFixed(2)}`)
               .join(' ');
-            
+
             latestTransaction.comment = latestTransaction.comment
               ? `${latestTransaction.comment}\n${allocationTags}`
               : allocationTags;
           }
         }
-        
+
         this.frontendLogger.logActivity('update_smile_project_from_transaction', 'info', {
           projectType: 'smile',
           projectTitle: project.title,
           amount: amt,
-          category: category
+          category: category,
         });
       }
     }
@@ -432,7 +498,7 @@ export class SubscriptionProcessingService {
   returnCorrectSmileAmount(category, amount) {
     let result = parseFloat(amount);
     for (let i = 0; i < AppStateService.instance.allSmileProjects.length; i++) {
-      if ("@" + AppStateService.instance.allSmileProjects[i].title === category) {
+      if ('@' + AppStateService.instance.allSmileProjects[i].title === category) {
         const project = AppStateService.instance.allSmileProjects[i];
         const totalTarget = project.buckets.reduce((sum, b) => sum + (b.target || 0), 0);
         const totalAmount = project.buckets.reduce((sum, b) => sum + (b.amount || 0), 0);

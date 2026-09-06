@@ -12,21 +12,33 @@ import { TrapFocusDirective } from 'src/app/shared/directives/trap-focus.directi
 import { SettingsComponent } from 'src/app/panels/settings/settings.component';
 
 // Deferred imports — resolved after module init to break circular chains
-let AppComponent: any; setTimeout(() => import('src/app/app.component').then(m => AppComponent = m.AppComponent));
-let MenuComponent: any; setTimeout(() => import('src/app/panels/menu/menu.component').then(m => MenuComponent = m.MenuComponent));
-let ProfileComponent: any; setTimeout(() => import('src/app/panels/profile/profile.component').then(m => ProfileComponent = m.ProfileComponent));
-let InfoComponent: any; setTimeout(() => import('../info.component').then(m => InfoComponent = m.InfoComponent));
-let InfoFireComponent: any; setTimeout(() => import('../info-fire/info-fire.component').then(m => InfoFireComponent = m.InfoFireComponent));
+let AppComponent: any;
+setTimeout(() => import('src/app/app.component').then((m) => (AppComponent = m.AppComponent)));
+let MenuComponent: any;
+setTimeout(() =>
+  import('src/app/panels/menu/menu.component').then((m) => (MenuComponent = m.MenuComponent)),
+);
+let ProfileComponent: any;
+setTimeout(() =>
+  import('src/app/panels/profile/profile.component').then(
+    (m) => (ProfileComponent = m.ProfileComponent),
+  ),
+);
+let InfoComponent: any;
+setTimeout(() => import('../info.component').then((m) => (InfoComponent = m.InfoComponent)));
+let InfoFireComponent: any;
+setTimeout(() =>
+  import('../info-fire/info-fire.component').then((m) => (InfoFireComponent = m.InfoFireComponent)),
+);
 
 @Component({
   selector: 'app-info-mojo',
   standalone: true,
   imports: [TrapFocusDirective, CommonModule, FormsModule, TranslateModule, AppNumberPipe],
   templateUrl: './info-mojo.component.html',
-  styleUrls: ['../../../shared/styles/info-panel.css', './info-mojo.component.css']
+  styleUrls: ['../../../shared/styles/info-panel.css', './info-mojo.component.css'],
 })
 export class InfoMojoComponent extends BaseInfoComponent {
-
   static isInfo = false;
   static isError = false;
   static zIndex = 0;
@@ -39,7 +51,7 @@ export class InfoMojoComponent extends BaseInfoComponent {
   constructor(
     router: Router,
     private localStorage: LocalService,
-    private persistence: PersistenceService
+    private persistence: PersistenceService,
   ) {
     super(router);
     this.initStatic(InfoMojoComponent);
@@ -86,7 +98,7 @@ export class InfoMojoComponent extends BaseInfoComponent {
       },
       onError: (error) => {
         this.showError(error.message || 'Save failed');
-      }
+      },
     });
   }
 }

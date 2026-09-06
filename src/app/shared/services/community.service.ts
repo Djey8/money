@@ -46,59 +46,67 @@ export interface CommunityPost {
  * first, so anonymous visitors can participate without registering.
  */
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class CommunityService {
-  private mode: 'firebase' | 'selfhosted' = (environment.mode as 'firebase' | 'selfhosted') || 'firebase';
+  private mode: 'firebase' | 'selfhosted' =
+    (environment.mode as 'firebase' | 'selfhosted') || 'firebase';
   private apiUrl = environment.selfhosted.apiUrl;
 
   constructor(
     private db: AngularFireDatabase,
     private http: HttpClient,
-    private guestIdentity: GuestIdentityService
+    private guestIdentity: GuestIdentityService,
   ) {}
 
   listThreads(limit = 20): Observable<CommunityThread[]> {
     if (this.mode === 'firebase') {
       return from(this.listThreadsFirebase(limit));
     }
-    return this.http.get<{ threads: CommunityThread[] }>(`${this.apiUrl}/community/threads?limit=${limit}`)
-      .pipe(map(res => res.threads));
+    return this.http
+      .get<{ threads: CommunityThread[] }>(`${this.apiUrl}/community/threads?limit=${limit}`)
+      .pipe(map((res) => res.threads));
   }
 
   getThread(threadId: string): Observable<{ thread: CommunityThread; posts: CommunityPost[] }> {
     if (this.mode === 'firebase') {
       return from(this.getThreadFirebase(threadId));
     }
-    return this.http.get<{ thread: CommunityThread; posts: CommunityPost[] }>(`${this.apiUrl}/community/threads/${threadId}`);
+    return this.http.get<{ thread: CommunityThread; posts: CommunityPost[] }>(
+      `${this.apiUrl}/community/threads/${threadId}`,
+    );
   }
 
   private async listThreadsFirebase(limit: number): Promise<CommunityThread[]> {
-    const snap = await this.db.database.ref('community/threads')
+    const snap = await this.db.database
+      .ref('community/threads')
       .orderByChild('lastActivityAt')
       .limitToLast(limit)
       .once('value');
 
     const threads: CommunityThread[] = [];
-    snap.forEach(child => {
+    snap.forEach((child) => {
       threads.push(this.fromFirebaseThread(child.key!, child.val()));
       return false;
     });
     return threads.reverse();
   }
 
-  private async getThreadFirebase(threadId: string): Promise<{ thread: CommunityThread; posts: CommunityPost[] }> {
+  private async getThreadFirebase(
+    threadId: string,
+  ): Promise<{ thread: CommunityThread; posts: CommunityPost[] }> {
     const threadSnap = await this.db.database.ref(`community/threads/${threadId}`).once('value');
     if (!threadSnap.exists()) {
       throw new Error('Thread not found');
     }
 
-    const postsSnap = await this.db.database.ref(`community/posts/${threadId}`)
+    const postsSnap = await this.db.database
+      .ref(`community/posts/${threadId}`)
       .orderByChild('createdAt')
       .once('value');
 
     const posts: CommunityPost[] = [];
-    postsSnap.forEach(child => {
+    postsSnap.forEach((child) => {
       posts.push(this.fromFirebasePost(child.key!, threadId, child.val()));
       return false;
     });
@@ -115,7 +123,7 @@ export class CommunityService {
       createdAt: val.createdAt,
       lastActivityAt: val.lastActivityAt,
       editedAt: val.editedAt || null,
-      replyCount: val.replyCount || 0
+      replyCount: val.replyCount || 0,
     };
   }
 
@@ -132,11 +140,15 @@ export class CommunityService {
       authorId: val.authorId,
       createdAt: val.createdAt,
       editedAt: val.editedAt || null,
-      reactions
+      reactions,
     };
   }
 
-  async createThread(title: string, body: string, authorName: string): Promise<{ thread: CommunityThread; post: CommunityPost }> {
+  async createThread(
+    title: string,
+    body: string,
+    authorName: string,
+  ): Promise<{ thread: CommunityThread; post: CommunityPost }> {
     const authorId = await this.guestIdentity.ensureIdentity();
     const now = new Date().toISOString();
 
@@ -145,7 +157,14 @@ export class CommunityService {
 
       const threadRef = this.db.database.ref('community/threads').push();
       const threadId = threadRef.key!;
-      const threadData = { title, authorName, authorId, createdAt: now, lastActivityAt: now, replyCount: 0 };
+      const threadData = {
+        title,
+        authorName,
+        authorId,
+        createdAt: now,
+        lastActivityAt: now,
+        replyCount: 0,
+      };
       await threadRef.set(threadData);
 
       const postRef = this.db.database.ref(`community/posts/${threadId}`).push();
@@ -158,7 +177,8 @@ export class CommunityService {
     }
 
     return await this.postJson<{ thread: CommunityThread; post: CommunityPost }>(
-      `${this.apiUrl}/community/threads`, { title, body, authorName }
+      `${this.apiUrl}/community/threads`,
+      { title, body, authorName },
     );
   }
 
@@ -175,18 +195,23 @@ export class CommunityService {
 
       const threadRef = this.db.database.ref(`community/threads/${threadId}`);
       const current = (await threadRef.once('value')).val();
-      await threadRef.update({ lastActivityAt: now, replyCount: ((current?.replyCount) || 0) + 1 });
+      await threadRef.update({ lastActivityAt: now, replyCount: (current?.replyCount || 0) + 1 });
 
       return this.fromFirebasePost(postRef.key!, threadId, postData);
     }
 
     const res = await this.postJson<{ post: CommunityPost }>(
-      `${this.apiUrl}/community/threads/${threadId}/posts`, { body, authorName }
+      `${this.apiUrl}/community/threads/${threadId}/posts`,
+      { body, authorName },
     );
     return res.post;
   }
 
-  async updateThread(threadId: string, title: string, authorName?: string): Promise<CommunityThread> {
+  async updateThread(
+    threadId: string,
+    title: string,
+    authorName?: string,
+  ): Promise<CommunityThread> {
     if (this.mode === 'firebase') {
       this.db.database.goOnline();
       const now = new Date().toISOString();
@@ -199,12 +224,18 @@ export class CommunityService {
     }
 
     const res = await this.putJson<{ thread: CommunityThread }>(
-      `${this.apiUrl}/community/threads/${threadId}`, { title, authorName }
+      `${this.apiUrl}/community/threads/${threadId}`,
+      { title, authorName },
     );
     return res.thread;
   }
 
-  async updatePost(threadId: string, postId: string, body: string, authorName?: string): Promise<CommunityPost> {
+  async updatePost(
+    threadId: string,
+    postId: string,
+    body: string,
+    authorName?: string,
+  ): Promise<CommunityPost> {
     if (this.mode === 'firebase') {
       this.db.database.goOnline();
       const now = new Date().toISOString();
@@ -217,7 +248,8 @@ export class CommunityService {
     }
 
     const res = await this.putJson<{ post: CommunityPost }>(
-      `${this.apiUrl}/community/posts/${postId}`, { body, authorName }
+      `${this.apiUrl}/community/posts/${postId}`,
+      { body, authorName },
     );
     return res.post;
   }
@@ -226,7 +258,11 @@ export class CommunityService {
    * Toggles a reaction — one emoji per identity per post. Picking a different
    * emoji than the current one replaces it; picking the same one clears it.
    */
-  async toggleReaction(threadId: string, postId: string, emoji: string): Promise<{ myReaction: string | null; reactions: Record<string, string[]> }> {
+  async toggleReaction(
+    threadId: string,
+    postId: string,
+    emoji: string,
+  ): Promise<{ myReaction: string | null; reactions: Record<string, string[]> }> {
     const authorId = await this.guestIdentity.ensureIdentity();
 
     if (this.mode === 'firebase') {
@@ -258,7 +294,8 @@ export class CommunityService {
     }
 
     return this.postJson<{ myReaction: string | null; reactions: Record<string, string[]> }>(
-      `${this.apiUrl}/community/posts/${postId}/react`, { emoji }
+      `${this.apiUrl}/community/posts/${postId}/react`,
+      { emoji },
     );
   }
 
@@ -270,11 +307,13 @@ export class CommunityService {
 
       const threadRef = this.db.database.ref(`community/threads/${threadId}`);
       const current = (await threadRef.once('value')).val();
-      await threadRef.update({ replyCount: Math.max(0, ((current?.replyCount) || 1) - 1) });
+      await threadRef.update({ replyCount: Math.max(0, (current?.replyCount || 1) - 1) });
       return;
     }
 
-    await firstValueFrom(this.http.delete(`${this.apiUrl}/community/posts/${postId}`, { withCredentials: true }));
+    await firstValueFrom(
+      this.http.delete(`${this.apiUrl}/community/posts/${postId}`, { withCredentials: true }),
+    );
   }
 
   /** Admin-only moderation: removes an entire thread, including its opening post. */
@@ -286,7 +325,9 @@ export class CommunityService {
       return;
     }
 
-    await firstValueFrom(this.http.delete(`${this.apiUrl}/community/threads/${threadId}`, { withCredentials: true }));
+    await firstValueFrom(
+      this.http.delete(`${this.apiUrl}/community/threads/${threadId}`, { withCredentials: true }),
+    );
   }
 
   private async postJson<T>(url: string, body: any): Promise<T> {

@@ -44,12 +44,18 @@ test.describe('CSV Export & Data Backup', () => {
     await page.waitForSelector('#infoTransaction-Container', { state: 'visible', timeout: 5_000 });
 
     // Click backup/export menu item
-    await page.locator('.settings-menu-item').filter({ hasText: /backup|export/i }).click();
+    await page
+      .locator('.settings-menu-item')
+      .filter({ hasText: /backup|export/i })
+      .click();
     await page.waitForTimeout(500);
 
     // Listen for download event when clicking CSV export
     const downloadPromise = page.waitForEvent('download', { timeout: 10_000 });
-    await page.locator('.backup-option').filter({ hasText: /CSV|statistic/i }).click();
+    await page
+      .locator('.backup-option')
+      .filter({ hasText: /CSV|statistic/i })
+      .click();
 
     const download = await downloadPromise;
     // Verify a file was downloaded
@@ -73,12 +79,18 @@ test.describe('CSV Export & Data Backup', () => {
     await page.waitForSelector('#infoTransaction-Container', { state: 'visible', timeout: 5_000 });
 
     // Click backup/export menu
-    await page.locator('.settings-menu-item').filter({ hasText: /backup|export/i }).click();
+    await page
+      .locator('.settings-menu-item')
+      .filter({ hasText: /backup|export/i })
+      .click();
     await page.waitForTimeout(500);
 
     // Click JSON backup option
     const downloadPromise = page.waitForEvent('download', { timeout: 10_000 });
-    await page.locator('.backup-option').filter({ hasText: /JSON|backup/i }).click();
+    await page
+      .locator('.backup-option')
+      .filter({ hasText: /JSON|backup/i })
+      .click();
 
     const download = await downloadPromise;
     const filename = download.suggestedFilename();

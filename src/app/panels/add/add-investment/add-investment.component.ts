@@ -27,13 +27,12 @@ import { TrapFocusDirective } from 'src/app/shared/directives/trap-focus.directi
   standalone: true,
   imports: [TrapFocusDirective, CommonModule, FormsModule, TranslateModule],
   templateUrl: './add-investment.component.html',
-  styleUrls: ['../../../shared/styles/add-form.css', './add-investment.component.css']
+  styleUrls: ['../../../shared/styles/add-form.css', './add-investment.component.css'],
 })
 export class AddInvestmentComponent extends BaseAddComponent {
-
-  titleTextField = "";
-  depositTextField = "";
-  amountTextField = "";
+  titleTextField = '';
+  depositTextField = '';
+  amountTextField = '';
 
   static zIndex;
   static isAddInvestment;
@@ -48,7 +47,10 @@ export class AddInvestmentComponent extends BaseAddComponent {
    * @param database - The database service.
    * @param frontendLogger - The frontend logging service.
    */
-  constructor(router: Router, private persistence: PersistenceService) {
+  constructor(
+    router: Router,
+    private persistence: PersistenceService,
+  ) {
     super(router);
     AddInvestmentComponent.isAddInvestment = false;
     this.initStatic(AddInvestmentComponent);
@@ -64,9 +66,9 @@ export class AddInvestmentComponent extends BaseAddComponent {
 
   override closeWindow() {
     AddInvestmentComponent.isAddInvestment = false;
-    this.titleTextField = "";
-    this.depositTextField = "";
-    this.amountTextField = "";
+    this.titleTextField = '';
+    this.depositTextField = '';
+    this.amountTextField = '';
     super.closeWindow();
   }
 
@@ -76,31 +78,41 @@ export class AddInvestmentComponent extends BaseAddComponent {
    * @returns True if the title is invalid, false otherwise.
    */
   invalidTitle(title: string) {
-    return isDuplicateTitle(title, [AppStateService.instance.allAssets, AppStateService.instance.allShares, AppStateService.instance.allInvestments], 'tag');
+    return isDuplicateTitle(
+      title,
+      [
+        AppStateService.instance.allAssets,
+        AppStateService.instance.allShares,
+        AppStateService.instance.allInvestments,
+      ],
+      'tag',
+    );
   }
 
   /**
    * Adds an asset.
    */
-  addAsset(){
+  addAsset() {
     //First trim string
     this.titleTextField = this.titleTextField.trim();
     //Validation (check if Amount is not empty)
-    if (!this.validateRequired([
-      { name: 'title', value: this.titleTextField, label: 'Title' }
-    ])) {
+    if (!this.validateRequired([{ name: 'title', value: this.titleTextField, label: 'Title' }])) {
       // field errors shown inline
     } else if (this.invalidTitle(this.titleTextField)) {
-      this.showError("This investment already exists.");
+      this.showError('This investment already exists.');
     } else {
       // ready to write to Database new Transaction
-      const newInvestment: Investment = {tag:this.titleTextField, deposit: this.depositTextField == "" ? 0.0 : parseFloat(this.depositTextField), amount: this.amountTextField == "" ? 0.0 : parseFloat(this.amountTextField)};
+      const newInvestment: Investment = {
+        tag: this.titleTextField,
+        deposit: this.depositTextField == '' ? 0.0 : parseFloat(this.depositTextField),
+        amount: this.amountTextField == '' ? 0.0 : parseFloat(this.amountTextField),
+      };
       AppStateService.instance.allInvestments.push(newInvestment);
 
       // Clean Up close Window
-      this.titleTextField = "";
-      this.depositTextField = "";
-      this.amountTextField = "";
+      this.titleTextField = '';
+      this.depositTextField = '';
+      this.amountTextField = '';
       this.clearError();
       this.closeWindow();
       AppStateService.instance.isSaving = true;
@@ -109,7 +121,11 @@ export class AddInvestmentComponent extends BaseAddComponent {
         data: AppStateService.instance.allInvestments,
         localStorageKey: 'investments',
         logEvent: 'add_investment',
-        logMetadata: { title: this.titleTextField, deposit: this.depositTextField, amount: this.amountTextField },
+        logMetadata: {
+          title: this.titleTextField,
+          deposit: this.depositTextField,
+          amount: this.amountTextField,
+        },
         onSuccess: () => {
           AppStateService.instance.isSaving = false;
           this.toastService.show('Investment added', 'success');
@@ -119,7 +135,7 @@ export class AddInvestmentComponent extends BaseAddComponent {
         onError: (error) => {
           AppStateService.instance.isSaving = false;
           this.toastService.show(error.message || 'Database write failed', 'error');
-        }
+        },
       });
     }
   }

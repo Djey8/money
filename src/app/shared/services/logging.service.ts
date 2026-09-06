@@ -9,7 +9,7 @@ export enum LogLevel {
   DEBUG = 'debug',
   INFO = 'info',
   WARN = 'warn',
-  ERROR = 'error'
+  ERROR = 'error',
 }
 
 interface LogEntry {
@@ -19,7 +19,7 @@ interface LogEntry {
 }
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 /**
  * Backend logging service for selfhosted mode.
@@ -27,9 +27,10 @@ interface LogEntry {
  * Also captures global unhandled errors and unhandled promise rejections.
  */
 export class LoggingService {
-  private apiUrl = environment.mode === 'selfhosted' && environment.selfhosted?.apiUrl 
-    ? environment.selfhosted.apiUrl 
-    : 'http://localhost:3000/api';
+  private apiUrl =
+    environment.mode === 'selfhosted' && environment.selfhosted?.apiUrl
+      ? environment.selfhosted.apiUrl
+      : 'http://localhost:3000/api';
   private logQueue: LogEntry[] = [];
   private isProcessing = false;
   private batchSize = 10;
@@ -37,7 +38,7 @@ export class LoggingService {
 
   constructor(
     private http: HttpClient,
-    private localStorage: LocalService
+    private localStorage: LocalService,
   ) {
     // Only enable backend logging in selfhosted mode
     if (environment.mode === 'selfhosted') {
@@ -73,7 +74,7 @@ export class LoggingService {
   error(message: string, error?: any, context?: any): void {
     const errorContext = {
       ...context,
-      error: this.serializeError(error)
+      error: this.serializeError(error),
     };
     this.log(LogLevel.ERROR, message, errorContext);
   }
@@ -87,7 +88,7 @@ export class LoggingService {
       action,
       ...details,
       timestamp: new Date().toISOString(),
-      page: window.location.pathname
+      page: window.location.pathname,
     });
   }
 
@@ -101,7 +102,7 @@ export class LoggingService {
       method,
       url,
       duration: `${duration}ms`,
-      status
+      status,
     };
 
     if (error) {
@@ -123,7 +124,7 @@ export class LoggingService {
     // Only send to backend in selfhosted mode
     if (environment.mode === 'selfhosted') {
       const userId = this.localStorage.getData('uid') || 'anonymous';
-      
+
       this.logQueue.push({
         level,
         message,
@@ -131,8 +132,8 @@ export class LoggingService {
           ...context,
           userId,
           userAgent: navigator.userAgent,
-          url: window.location.href
-        }
+          url: window.location.href,
+        },
       });
 
       // Flush immediately for errors
@@ -177,7 +178,7 @@ export class LoggingService {
         status: error.status,
         statusText: error.statusText,
         message: error.message,
-        url: error.url
+        url: error.url,
       };
     }
 
@@ -185,7 +186,7 @@ export class LoggingService {
       return {
         type: error.name,
         message: error.message,
-        stack: error.stack
+        stack: error.stack,
       };
     }
 
@@ -204,14 +205,15 @@ export class LoggingService {
     const logsToSend = this.logQueue.splice(0, this.batchSize);
 
     // Send each log entry (backend expects one log per request)
-    logsToSend.forEach(log => {
-      this.http.post(`${this.apiUrl}/api/logs`, log)
+    logsToSend.forEach((log) => {
+      this.http
+        .post(`${this.apiUrl}/api/logs`, log)
         .pipe(
-          catchError(err => {
+          catchError((err) => {
             // Silently fail - don't create infinite logging loop
             console.error('Failed to send log to backend:', err);
             return of(null);
-          })
+          }),
         )
         .subscribe();
     });
@@ -237,13 +239,13 @@ export class LoggingService {
         filename: event.filename,
         lineno: event.lineno,
         colno: event.colno,
-        errorType: 'uncaught_error'
+        errorType: 'uncaught_error',
       });
     });
 
     window.addEventListener('unhandledrejection', (event) => {
       this.error('Unhandled promise rejection', event.reason, {
-        errorType: 'unhandled_rejection'
+        errorType: 'unhandled_rejection',
       });
     });
   }

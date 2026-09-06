@@ -10,24 +10,47 @@ import { AppNumberPipe } from 'src/app/shared/pipes/app-number.pipe';
 import { TrapFocusDirective } from 'src/app/shared/directives/trap-focus.directive';
 
 // Deferred imports — resolved after module init to break circular chains
-let AppComponent: any; setTimeout(() => import('src/app/app.component').then(m => AppComponent = m.AppComponent));
-let IncomeComponent: any; setTimeout(() => import('../../../main/cashflow/income/income.component').then(m => IncomeComponent = m.IncomeComponent));
-let InfoComponent: any; setTimeout(() => import('../info.component').then(m => InfoComponent = m.InfoComponent));
-let ProfileComponent: any; setTimeout(() => import('src/app/panels/profile/profile.component').then(m => ProfileComponent = m.ProfileComponent));
-let MenuComponent: any; setTimeout(() => import('src/app/panels/menu/menu.component').then(m => MenuComponent = m.MenuComponent));
-let AddComponent: any; setTimeout(() => import('src/app/panels/add/add.component').then(m => AddComponent = m.AddComponent));
-let AddSmileComponent: any; setTimeout(() => import('src/app/panels/add/add-smile/add-smile.component').then(m => AddSmileComponent = m.AddSmileComponent));
+let AppComponent: any;
+setTimeout(() => import('src/app/app.component').then((m) => (AppComponent = m.AppComponent)));
+let IncomeComponent: any;
+setTimeout(() =>
+  import('../../../main/cashflow/income/income.component').then(
+    (m) => (IncomeComponent = m.IncomeComponent),
+  ),
+);
+let InfoComponent: any;
+setTimeout(() => import('../info.component').then((m) => (InfoComponent = m.InfoComponent)));
+let ProfileComponent: any;
+setTimeout(() =>
+  import('src/app/panels/profile/profile.component').then(
+    (m) => (ProfileComponent = m.ProfileComponent),
+  ),
+);
+let MenuComponent: any;
+setTimeout(() =>
+  import('src/app/panels/menu/menu.component').then((m) => (MenuComponent = m.MenuComponent)),
+);
+let AddComponent: any;
+setTimeout(() =>
+  import('src/app/panels/add/add.component').then((m) => (AddComponent = m.AddComponent)),
+);
+let AddSmileComponent: any;
+setTimeout(() =>
+  import('src/app/panels/add/add-smile/add-smile.component').then(
+    (m) => (AddSmileComponent = m.AddSmileComponent),
+  ),
+);
 @Component({
   selector: 'app-info-interests',
   standalone: true,
   imports: [TrapFocusDirective, CommonModule, FormsModule, TranslateModule, AppNumberPipe],
   templateUrl: './info-interests.component.html',
-  styleUrls: ['../../../shared/styles/info-panel.css', './info-interests.component.css']
+  styleUrls: ['../../../shared/styles/info-panel.css', './info-interests.component.css'],
 })
 export class InfoInterestsComponent extends BaseInfoComponent {
   static index = 1;
 
-  static title = "Driver Licence";
+  static title = 'Driver Licence';
   static amount = 0.0;
 
   static setInfoInterestsComponent(id: number, title: string, amount: number) {
@@ -44,7 +67,10 @@ export class InfoInterestsComponent extends BaseInfoComponent {
   static isInfo;
   static isError;
   public classReference = InfoInterestsComponent;
-  constructor(router: Router, private persistence: PersistenceService) {
+  constructor(
+    router: Router,
+    private persistence: PersistenceService,
+  ) {
     super(router);
     this.initStatic(InfoInterestsComponent);
   }
@@ -72,13 +98,14 @@ export class InfoInterestsComponent extends BaseInfoComponent {
   }
   updateInterests() {
     //Validation (check if Amount is not empty)
-    if (this.titleTextField == "") {
-      this.showError("Please fill out all required fields.");
+    if (this.titleTextField == '') {
+      this.showError('Please fill out all required fields.');
     } else {
       // update existing transaction (PATCH)
       //AppStateService.instance.allSmileProjects[InfoComponent.index].tit
       AppStateService.instance.allIntrests[InfoInterestsComponent.index].tag = this.titleTextField;
-      AppStateService.instance.allIntrests[InfoInterestsComponent.index].amount = this.amountTextField;
+      AppStateService.instance.allIntrests[InfoInterestsComponent.index].amount =
+        this.amountTextField;
 
       InfoInterestsComponent.title = this.titleTextField;
       InfoInterestsComponent.amount = this.amountTextField;
@@ -97,7 +124,7 @@ export class InfoInterestsComponent extends BaseInfoComponent {
         },
         onError: (error) => {
           this.showError(error.message || 'Database write failed');
-        }
+        },
       });
     }
   }
@@ -123,7 +150,7 @@ export class InfoInterestsComponent extends BaseInfoComponent {
         },
         onError: (error) => {
           this.showError(error.message || 'Database write failed');
-        }
+        },
       });
     });
   }

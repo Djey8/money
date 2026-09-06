@@ -55,23 +55,92 @@ import { PullToRefreshComponent } from './shared/components/pull-to-refresh/pull
 import { SwUpdateComponent } from './shared/components/sw-update/sw-update.component';
 
 // Deferred imports — resolved after module init to break circular chains
-let ProfileComponent: any; setTimeout(() => import('./panels/profile/profile.component').then(m => ProfileComponent = m.ProfileComponent));
-let MenuComponent: any; setTimeout(() => import('./panels/menu/menu.component').then(m => MenuComponent = m.MenuComponent));
-let AddComponent: any; setTimeout(() => import('src/app/panels/add/add.component').then(m => AddComponent = m.AddComponent));
-let InfoComponent: any; setTimeout(() => import('src/app/panels/info/info.component').then(m => InfoComponent = m.InfoComponent));
-let AddSmileComponent: any; setTimeout(() => import('src/app/panels/add/add-smile/add-smile.component').then(m => AddSmileComponent = m.AddSmileComponent));
-let ImpressumComponent: any; setTimeout(() => import('src/app/panels/impressum/impressum.component').then(m => ImpressumComponent = m.ImpressumComponent));
-let PolicyComponent: any; setTimeout(() => import('src/app/panels/policy/policy.component').then(m => PolicyComponent = m.PolicyComponent));
-let SettingsComponent: any; setTimeout(() => import('src/app/panels/settings/settings.component').then(m => SettingsComponent = m.SettingsComponent));
-let InstructionsComponent: any; setTimeout(() => import('src/app/panels/instructions/instructions.component').then(m => InstructionsComponent = m.InstructionsComponent));
-let InfoSubscriptionComponent: any; setTimeout(() => import('src/app/panels/info/info-subscription/info-subscription.component').then(m => InfoSubscriptionComponent = m.InfoSubscriptionComponent));
-let AddSubscriptionComponent: any; setTimeout(() => import('src/app/panels/add/add-subscription/add-subscription.component').then(m => AddSubscriptionComponent = m.AddSubscriptionComponent));
-let AddBudgetComponent: any; setTimeout(() => import('src/app/panels/add/add-budget/add-budget.component').then(m => AddBudgetComponent = m.AddBudgetComponent));
-let InfoBudgetComponent: any; setTimeout(() => import('src/app/panels/info/info-budget/info-budget.component').then(m => InfoBudgetComponent = m.InfoBudgetComponent));
-let HomeComponent: any; setTimeout(() => import('src/app/main/home/home.component').then(m => HomeComponent = m.HomeComponent));
-let AiAssistantComponent: any; setTimeout(() => import('src/app/panels/ai-assistant/ai-assistant.component').then(m => AiAssistantComponent = m.AiAssistantComponent));
-let AddGrowComponent: any; setTimeout(() => import('src/app/panels/add/add-grow/add-grow.component').then(m => AddGrowComponent = m.AddGrowComponent));
-
+let ProfileComponent: any;
+setTimeout(() =>
+  import('./panels/profile/profile.component').then((m) => (ProfileComponent = m.ProfileComponent)),
+);
+let MenuComponent: any;
+setTimeout(() =>
+  import('./panels/menu/menu.component').then((m) => (MenuComponent = m.MenuComponent)),
+);
+let AddComponent: any;
+setTimeout(() =>
+  import('src/app/panels/add/add.component').then((m) => (AddComponent = m.AddComponent)),
+);
+let InfoComponent: any;
+setTimeout(() =>
+  import('src/app/panels/info/info.component').then((m) => (InfoComponent = m.InfoComponent)),
+);
+let AddSmileComponent: any;
+setTimeout(() =>
+  import('src/app/panels/add/add-smile/add-smile.component').then(
+    (m) => (AddSmileComponent = m.AddSmileComponent),
+  ),
+);
+let ImpressumComponent: any;
+setTimeout(() =>
+  import('src/app/panels/impressum/impressum.component').then(
+    (m) => (ImpressumComponent = m.ImpressumComponent),
+  ),
+);
+let PolicyComponent: any;
+setTimeout(() =>
+  import('src/app/panels/policy/policy.component').then(
+    (m) => (PolicyComponent = m.PolicyComponent),
+  ),
+);
+let SettingsComponent: any;
+setTimeout(() =>
+  import('src/app/panels/settings/settings.component').then(
+    (m) => (SettingsComponent = m.SettingsComponent),
+  ),
+);
+let InstructionsComponent: any;
+setTimeout(() =>
+  import('src/app/panels/instructions/instructions.component').then(
+    (m) => (InstructionsComponent = m.InstructionsComponent),
+  ),
+);
+let InfoSubscriptionComponent: any;
+setTimeout(() =>
+  import('src/app/panels/info/info-subscription/info-subscription.component').then(
+    (m) => (InfoSubscriptionComponent = m.InfoSubscriptionComponent),
+  ),
+);
+let AddSubscriptionComponent: any;
+setTimeout(() =>
+  import('src/app/panels/add/add-subscription/add-subscription.component').then(
+    (m) => (AddSubscriptionComponent = m.AddSubscriptionComponent),
+  ),
+);
+let AddBudgetComponent: any;
+setTimeout(() =>
+  import('src/app/panels/add/add-budget/add-budget.component').then(
+    (m) => (AddBudgetComponent = m.AddBudgetComponent),
+  ),
+);
+let InfoBudgetComponent: any;
+setTimeout(() =>
+  import('src/app/panels/info/info-budget/info-budget.component').then(
+    (m) => (InfoBudgetComponent = m.InfoBudgetComponent),
+  ),
+);
+let HomeComponent: any;
+setTimeout(() =>
+  import('src/app/main/home/home.component').then((m) => (HomeComponent = m.HomeComponent)),
+);
+let AiAssistantComponent: any;
+setTimeout(() =>
+  import('src/app/panels/ai-assistant/ai-assistant.component').then(
+    (m) => (AiAssistantComponent = m.AiAssistantComponent),
+  ),
+);
+let AddGrowComponent: any;
+setTimeout(() =>
+  import('src/app/panels/add/add-grow/add-grow.component').then(
+    (m) => (AddGrowComponent = m.AddGrowComponent),
+  ),
+);
 
 @Component({
   selector: 'app-root',
@@ -108,10 +177,9 @@ let AddGrowComponent: any; setTimeout(() => import('src/app/panels/add/add-grow/
     SwUpdateComponent,
   ],
   templateUrl: './app.component.html',
-  styleUrls: ['./app.component.css']
+  styleUrls: ['./app.component.css'],
 })
 export class AppComponent {
-  
   static instance: AppComponent;
   appMode: 'firebase' | 'selfhosted' = environment.mode as 'firebase' | 'selfhosted';
 
@@ -131,18 +199,36 @@ export class AppComponent {
    * @param localStorage - The local storage service.
    * @param database - The database service.
    */
-  constructor(public router: Router, private localStorage: LocalService, private database: DatabaseService, public afAuth: AngularFireAuth, private cryptic: CrypticService, private authService: AuthService, private frontendLogger: FrontendLoggerService, private persistence: PersistenceService, private incomeStatement: IncomeStatementService, public appState: AppStateService, private appData: AppDataService, private gameMode: GameModeService, private subscriptionProcessing: SubscriptionProcessingService, private onboardingService: OnboardingService, private toastService: ToastService, private tourService: TourService, private selfhosted: SelfhostedService) {
+  constructor(
+    public router: Router,
+    private localStorage: LocalService,
+    private database: DatabaseService,
+    public afAuth: AngularFireAuth,
+    private cryptic: CrypticService,
+    private authService: AuthService,
+    private frontendLogger: FrontendLoggerService,
+    private persistence: PersistenceService,
+    private incomeStatement: IncomeStatementService,
+    public appState: AppStateService,
+    private appData: AppDataService,
+    private gameMode: GameModeService,
+    private subscriptionProcessing: SubscriptionProcessingService,
+    private onboardingService: OnboardingService,
+    private toastService: ToastService,
+    private tourService: TourService,
+    private selfhosted: SelfhostedService,
+  ) {
     AppComponent.instance = this;
 
     // Subscribe to tour actions for panel management
-    this.tourService.action$.subscribe(action => this.handleTourAction(action));
+    this.tourService.action$.subscribe((action) => this.handleTourAction(action));
 
     // Parse each localStorage key individually so one corrupt entry
     // doesn't wipe all data via a single catch block
     const safeParse = (key: string, fallback: any = []): any => {
       try {
         const raw = this.localStorage.getData(key);
-        if (raw == null || raw === "") return fallback;
+        if (raw == null || raw === '') return fallback;
         return JSON.parse(raw);
       } catch (e) {
         console.error(`[App Init] Corrupt localStorage key "${key}", using fallback:`, e);
@@ -151,46 +237,49 @@ export class AppComponent {
       }
     };
 
-    AppStateService.instance.allTransactions = safeParse("transactions");
-    AppStateService.instance.allSubscriptions = migrateSubscriptionArray(safeParse("subscriptions"));
+    AppStateService.instance.allTransactions = safeParse('transactions');
+    AppStateService.instance.allSubscriptions = migrateSubscriptionArray(
+      safeParse('subscriptions'),
+    );
     //Income Statement
-    AppStateService.instance.allRevenues = safeParse("revenues");
-    AppStateService.instance.allIntrests = safeParse("interests");
-    AppStateService.instance.allProperties = safeParse("properties");
+    AppStateService.instance.allRevenues = safeParse('revenues');
+    AppStateService.instance.allIntrests = safeParse('interests');
+    AppStateService.instance.allProperties = safeParse('properties');
 
-    AppStateService.instance.dailyExpenses = safeParse("dailyEx");
-    AppStateService.instance.splurgeExpenses = safeParse("splurgeEx");
-    AppStateService.instance.smileExpenses = safeParse("smileEx");
-    AppStateService.instance.fireExpenses = safeParse("fireEx");
-    AppStateService.instance.mojoExpenses = safeParse("mojoEx");
+    AppStateService.instance.dailyExpenses = safeParse('dailyEx');
+    AppStateService.instance.splurgeExpenses = safeParse('splurgeEx');
+    AppStateService.instance.smileExpenses = safeParse('smileEx');
+    AppStateService.instance.fireExpenses = safeParse('fireEx');
+    AppStateService.instance.mojoExpenses = safeParse('mojoEx');
 
-    AppStateService.instance.allAssets = safeParse("assets");
-    AppStateService.instance.allShares = safeParse("shares");
-    AppStateService.instance.allInvestments = safeParse("investments");
-    AppStateService.instance.liabilities = safeParse("liabilities");
-    
-    const growParsed = safeParse("grow");
+    AppStateService.instance.allAssets = safeParse('assets');
+    AppStateService.instance.allShares = safeParse('shares');
+    AppStateService.instance.allInvestments = safeParse('investments');
+    AppStateService.instance.liabilities = safeParse('liabilities');
+
+    const growParsed = safeParse('grow');
     AppStateService.instance.allGrowProjects = migrateGrowArray(growParsed);
 
-    AppStateService.instance.allSmileProjects = migrateSmileArray(safeParse("smile"));
-    AppStateService.instance.allFireEmergencies = migrateFireArray(safeParse("fire"));
-    AppStateService.instance.mojo = safeParse("mojo", { amount: 0, target: 0 });
-    AppStateService.instance.allBudgets = safeParse("budget");
+    AppStateService.instance.allSmileProjects = migrateSmileArray(safeParse('smile'));
+    AppStateService.instance.allFireEmergencies = migrateFireArray(safeParse('fire'));
+    AppStateService.instance.mojo = safeParse('mojo', { amount: 0, target: 0 });
+    AppStateService.instance.allBudgets = safeParse('budget');
 
     // Optimistic early navigate: if we have evidence of a prior session,
     // go to /home immediately so the landing page never flashes
     const hash = window.location.hash;
     if (hash === '' || hash === '#/') {
-      const hasSession = DemoService.isDemoMode()
-        || window.localStorage.getItem('selfhosted_userId')
-        || this.localStorage.getData('uid');
+      const hasSession =
+        DemoService.isDemoMode() ||
+        window.localStorage.getItem('selfhosted_userId') ||
+        this.localStorage.getData('uid');
       if (hasSession) {
         this.router.navigate(['/home']);
       }
     }
 
     // Check authentication before loading data
-    AppDataService.instance.checkAuthentication().then(async isAuthenticated => {
+    AppDataService.instance.checkAuthentication().then(async (isAuthenticated) => {
       if (isAuthenticated) {
         const hash = window.location.hash;
 
@@ -217,8 +306,8 @@ export class AppComponent {
           const hasPendingMigration = !!this.cryptic._pendingMigrationKey;
           if (hasCachedKey && !hasPendingMigration) {
             // Key already loaded from sessionStorage — fetch in background to keep in sync
-            firstValueFrom(this.selfhosted.fetchEncryptionConfig()).catch(
-              err => console.error('Background encryption config fetch failed:', err)
+            firstValueFrom(this.selfhosted.fetchEncryptionConfig()).catch((err) =>
+              console.error('Background encryption config fetch failed:', err),
             );
           } else {
             // No cached key or migration pending — must wait for server
@@ -227,28 +316,39 @@ export class AppComponent {
             // push the old key + flags to the server so it persists across reloads.
             if (this.cryptic._pendingMigrationKey) {
               const migratedKey = this.cryptic._pendingMigrationKey;
-              const migratedEncryptLocal = this.cryptic._pendingMigrationEncryptLocal ?? this.cryptic.getEncryptionLocalEnabled();
-              const migratedEncryptDatabase = this.cryptic._pendingMigrationEncryptDatabase ?? this.cryptic.getEncryptionDatabaseEnabled();
+              const migratedEncryptLocal =
+                this.cryptic._pendingMigrationEncryptLocal ??
+                this.cryptic.getEncryptionLocalEnabled();
+              const migratedEncryptDatabase =
+                this.cryptic._pendingMigrationEncryptDatabase ??
+                this.cryptic.getEncryptionDatabaseEnabled();
               this.cryptic._pendingMigrationKey = null;
               this.cryptic._pendingMigrationEncryptLocal = null;
               this.cryptic._pendingMigrationEncryptDatabase = null;
               await firstValueFrom(
-                this.selfhosted.saveEncryptionConfig(migratedKey, migratedEncryptLocal, migratedEncryptDatabase)
-              ).catch(err => console.error('Failed to migrate encryption key to server:', err));
+                this.selfhosted.saveEncryptionConfig(
+                  migratedKey,
+                  migratedEncryptLocal,
+                  migratedEncryptDatabase,
+                ),
+              ).catch((err) => console.error('Failed to migrate encryption key to server:', err));
             }
           }
         }
         // Tier 1: Load critical data, block UI until ready
         AppDataService.instance.loadTier1().then(() => {
           if (AppDataService.instance.decryptionFailed) {
-            this.toastService.show('Login failed: wrong encryption settings. Please check your encryption key.', 'error');
+            this.toastService.show(
+              'Login failed: wrong encryption settings. Please check your encryption key.',
+              'error',
+            );
             this.logOut();
             return;
           }
           AppStateService.instance.isLoading = false;
           // Recalculate home amounts now that data is loaded
           if (HomeComponent) HomeComponent.getAmounts();
-          if(!GameModeService.isCashflowGame()){
+          if (!GameModeService.isCashflowGame()) {
             // Auto-generate subscription transactions on load
             this.autoGenerateSubscriptionTransactions();
           }
@@ -258,7 +358,9 @@ export class AppComponent {
             setTimeout(() => this.tourService.startTour(), 600);
           }
           // Tier 2: Load deferred data in background (non-blocking)
-          AppDataService.instance.loadTier2().catch(err => console.error('Tier 2 load error:', err));
+          AppDataService.instance
+            .loadTier2()
+            .catch((err) => console.error('Tier 2 load error:', err));
         });
       } else {
         AppStateService.instance.isLoading = false;
@@ -271,7 +373,7 @@ export class AppComponent {
         }
       }
     });
-    
+
     document.addEventListener('visibilitychange', async () => {
       if (document.visibilityState === 'visible') {
         // Skip auth checks for demo mode and landing page
@@ -294,7 +396,10 @@ export class AppComponent {
             AppStateService.instance.tier3GrowLoaded = false;
             await AppDataService.instance.loadTier1();
             if (AppDataService.instance.decryptionFailed) {
-              this.toastService.show('Login failed: wrong encryption settings. Please check your encryption key.', 'error');
+              this.toastService.show(
+                'Login failed: wrong encryption settings. Please check your encryption key.',
+                'error',
+              );
               this.logOut();
               return;
             }
@@ -315,11 +420,11 @@ export class AppComponent {
   private async autoGenerateSubscriptionTransactions(): Promise<void> {
     try {
       const result = await SubscriptionProcessingService.instance.setTransactionsForSubscriptions();
-      
+
       if (result.transactionsCreated > 0) {
         this.toastService.show(
           `${result.transactionsCreated} subscription transaction${result.transactionsCreated === 1 ? '' : 's'} loaded`,
-          'info'
+          'info',
         );
       }
     } catch (error) {
@@ -334,7 +439,10 @@ export class AppComponent {
     switch (action) {
       case 'closeAllPanels':
         if (AddComponent) AddComponent.isAdd = false;
-        if (AddSmileComponent) { AddSmileComponent.isAddSmile = false; AddSmileComponent.expandAllSections = false; }
+        if (AddSmileComponent) {
+          AddSmileComponent.isAddSmile = false;
+          AddSmileComponent.expandAllSections = false;
+        }
         if (MenuComponent) MenuComponent.isMenu = false;
         if (ProfileComponent) ProfileComponent.isProfile = false;
         if (SettingsComponent) SettingsComponent.zIndex = 0;
@@ -381,42 +489,43 @@ export class AppComponent {
   }
 
   logoutFirebase() {
-    this.afAuth.signOut()
+    this.afAuth
+      .signOut()
       .then(() => {
         // User successfully logged out
       })
-      .catch(error => {
+      .catch((error) => {
         // An error occurred while logging out
         console.error(error);
       });
   }
 
   logOut() {
-    this.localStorage.removeData("uid");
-    this.localStorage.removeData("email");
-    this.localStorage.removeData("username");
-    this.localStorage.removeData("transactions");
-    this.localStorage.removeData("subscriptions");
-    this.localStorage.removeData("smile");
-    this.localStorage.removeData("fire");
-    this.localStorage.removeData("mojo");
-    this.localStorage.removeData("revenues");
-    this.localStorage.removeData("interests");
-    this.localStorage.removeData("properties");
+    this.localStorage.removeData('uid');
+    this.localStorage.removeData('email');
+    this.localStorage.removeData('username');
+    this.localStorage.removeData('transactions');
+    this.localStorage.removeData('subscriptions');
+    this.localStorage.removeData('smile');
+    this.localStorage.removeData('fire');
+    this.localStorage.removeData('mojo');
+    this.localStorage.removeData('revenues');
+    this.localStorage.removeData('interests');
+    this.localStorage.removeData('properties');
 
-    this.localStorage.removeData("dailyEx");
-    this.localStorage.removeData("splurgeEx");
-    this.localStorage.removeData("smileEx");
-    this.localStorage.removeData("fireEx");
-    this.localStorage.removeData("mojoEx");
-    this.localStorage.removeData("liabilitiesEx");
+    this.localStorage.removeData('dailyEx');
+    this.localStorage.removeData('splurgeEx');
+    this.localStorage.removeData('smileEx');
+    this.localStorage.removeData('fireEx');
+    this.localStorage.removeData('mojoEx');
+    this.localStorage.removeData('liabilitiesEx');
 
-    this.localStorage.removeData("assets");
-    this.localStorage.removeData("shares");
-    this.localStorage.removeData("investments");
-    this.localStorage.removeData("liabilities");
-    this.localStorage.removeData("grow");
-    this.localStorage.removeData("budget");
+    this.localStorage.removeData('assets');
+    this.localStorage.removeData('shares');
+    this.localStorage.removeData('investments');
+    this.localStorage.removeData('liabilities');
+    this.localStorage.removeData('grow');
+    this.localStorage.removeData('budget');
 
     AppStateService.instance.allTransactions = [];
     AppStateService.instance.allSubscriptions = [];
@@ -454,9 +563,9 @@ export class AppComponent {
     this.cryptic.clearConfig();
 
     ProfileComponent.isUser = true;
-    ProfileComponent.username = "Username";
-    ProfileComponent.mail = "example@traiber.com";
-    
+    ProfileComponent.username = 'Username';
+    ProfileComponent.mail = 'example@traiber.com';
+
     // Clear all in-memory caches (read cache, ETags, dirty-tracker)
     this.database.clearAllCaches();
 
@@ -469,22 +578,21 @@ export class AppComponent {
       // eslint-disable-next-line @typescript-eslint/no-empty-function -- intentionally swallow logout errors; local state is cleared regardless
       this.selfhosted.logout().subscribe({ error: () => {} });
     }
-    
+
     this.router.navigate(['/']);
   }
 
-
   isMenu = true;
-  title = "Welcome";
+  title = 'Welcome';
   public goToRegistration() {
-    this.router.navigate(['/authentication'])
-    this.title = "Authentication";
+    this.router.navigate(['/authentication']);
+    this.title = 'Authentication';
   }
   public goToAccounting() {
-    this.router.navigate(['/transactions'])
+    this.router.navigate(['/transactions']);
   }
   public goToMain() {
-    this.router.navigate(['/home'])
+    this.router.navigate(['/home']);
   }
 
   static openNavBar() {
@@ -522,31 +630,37 @@ export class AppComponent {
     AddComponent.isShare = false;
     AddComponent.isTaxExpense = false;
     AddComponent.isLiabilitie = false;
-    AddComponent.url = "/" + url;
+    AddComponent.url = '/' + url;
     AddComponent.isAdd = true;
     MenuComponent.isMenu = false;
     InfoComponent.isInfo = false;
-    AddComponent.creditTextField = "";
-    AddComponent.loanTextField = "";
+    AddComponent.creditTextField = '';
+    AddComponent.loanTextField = '';
   }
 
   static addSubscription(account: string, category: string, url: string) {
-    AddSubscriptionComponent.titleTextField = "";
+    AddSubscriptionComponent.titleTextField = '';
     AddSubscriptionComponent.categoryTextField = category;
     AddSubscriptionComponent.selectedOption = account;
-    AddSubscriptionComponent.url = "/" + url;
+    AddSubscriptionComponent.url = '/' + url;
     AddSubscriptionComponent.isAdd = true;
     MenuComponent.isMenu = false;
     InfoComponent.isInfo = false;
   }
 
-  static copyTransaction(account: string, amount: number, category: string, comment: string, url: string) {
+  static copyTransaction(
+    account: string,
+    amount: number,
+    category: string,
+    comment: string,
+    url: string,
+  ) {
     AddComponent.categoryTextField = category;
     AddComponent.selectedOption = account;
     AddComponent.amountTextField = String(amount);
     AddComponent.commentTextField = comment;
     AddComponent.isLiabilitie = false;
-    AddComponent.url = "/" + url;
+    AddComponent.url = '/' + url;
     AddComponent.isAdd = true;
     MenuComponent.isMenu = false;
     InfoComponent.isInfo = false;
@@ -563,13 +677,20 @@ export class AppComponent {
     InfoBudgetComponent.isInfo = false;
   }
 
-  static copySubcription(title: string, account: string, amount: number, category: string, comment: string, url: string) {
+  static copySubcription(
+    title: string,
+    account: string,
+    amount: number,
+    category: string,
+    comment: string,
+    url: string,
+  ) {
     AddSubscriptionComponent.titleTextField = title;
     AddSubscriptionComponent.selectedOption = account;
     AddSubscriptionComponent.amountTextField = String(amount);
     AddSubscriptionComponent.categoryTextField = category;
     AddSubscriptionComponent.commentTextField = comment;
-    AddSubscriptionComponent.url = "/" + url;
+    AddSubscriptionComponent.url = '/' + url;
     AddSubscriptionComponent.isAdd = true;
     MenuComponent.isMenu = false;
     InfoSubscriptionComponent.isInfo = false;
@@ -587,12 +708,12 @@ export class AppComponent {
         MenuComponent.isMenu = false;
       }
       this.clickCount = 0;
-    }, 250)
+    }, 250);
   }
 
   static getPageSizeOptions(): number[] {
     const totalTransactions = AppStateService.instance.allTransactions.length;
-    
+
     if (totalTransactions <= 50) {
       return [5, 10, 25, totalTransactions];
     } else if (totalTransactions <= 200) {
@@ -601,5 +722,4 @@ export class AppComponent {
       return [25, 50, 100, 250, 500, totalTransactions];
     }
   }
-
 }

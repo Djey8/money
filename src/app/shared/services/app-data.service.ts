@@ -34,32 +34,39 @@ import { environment } from '../../../environments/environment';
 import { DemoService } from './demo.service';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 /**
  * Handles data loading from the database, syncing after mutations,
  * persistence to local storage, and authentication checks.
  */
 export class AppDataService {
-
   static instance: AppDataService;
   private appMode: 'firebase' | 'selfhosted' = environment.mode as 'firebase' | 'selfhosted';
   decryptionFailed = false;
 
   // Tier 1: Critical path — blocks UI, loaded on startup
   static readonly TIER1_PATHS = [
-    'transactions', 'subscriptions',
-    'income/revenue/revenues', 'income/revenue/interests', 'income/revenue/properties',
-    'income/expenses/daily', 'income/expenses/splurge', 'income/expenses/smile',
-    'income/expenses/fire', 'income/expenses/mojo'
+    'transactions',
+    'subscriptions',
+    'income/revenue/revenues',
+    'income/revenue/interests',
+    'income/revenue/properties',
+    'income/expenses/daily',
+    'income/expenses/splurge',
+    'income/expenses/smile',
+    'income/expenses/fire',
+    'income/expenses/mojo',
   ];
   // Tier 2: Deferred — loaded async after UI renders
   static readonly TIER2_PATHS = ['smile', 'fire', 'mojo', 'budget'];
   // Tier 3: On-demand — loaded when user navigates to the page
   static readonly TIER3_GROW_PATHS = ['grow'];
   static readonly TIER3_BALANCE_PATHS = [
-    'balance/asset/assets', 'balance/asset/shares',
-    'balance/asset/investments', 'balance/liabilities'
+    'balance/asset/assets',
+    'balance/asset/shares',
+    'balance/asset/investments',
+    'balance/liabilities',
   ];
 
   constructor(
@@ -71,7 +78,7 @@ export class AppDataService {
     private persistence: PersistenceService,
     private incomeStatement: IncomeStatementService,
     private toastService: ToastService,
-    private subscriptionProcessing: SubscriptionProcessingService
+    private subscriptionProcessing: SubscriptionProcessingService,
   ) {
     AppDataService.instance = this;
   }
@@ -126,33 +133,75 @@ export class AppDataService {
     this.saveAllToLocalStorage();
 
     try {
-      const write1 = this.database.writeObject("income/revenue/interests", AppStateService.instance.allIntrests);
-      const write2 = this.database.writeObject("income/revenue/properties", AppStateService.instance.allProperties);
-      const write3 = this.database.writeObject("income/revenue/revenues", AppStateService.instance.allRevenues);
-      const write4 = this.database.writeObject("income/expenses/daily", AppStateService.instance.dailyExpenses);
-      const write5 = this.database.writeObject("income/expenses/splurge", AppStateService.instance.splurgeExpenses);
+      const write1 = this.database.writeObject(
+        'income/revenue/interests',
+        AppStateService.instance.allIntrests,
+      );
+      const write2 = this.database.writeObject(
+        'income/revenue/properties',
+        AppStateService.instance.allProperties,
+      );
+      const write3 = this.database.writeObject(
+        'income/revenue/revenues',
+        AppStateService.instance.allRevenues,
+      );
+      const write4 = this.database.writeObject(
+        'income/expenses/daily',
+        AppStateService.instance.dailyExpenses,
+      );
+      const write5 = this.database.writeObject(
+        'income/expenses/splurge',
+        AppStateService.instance.splurgeExpenses,
+      );
 
       // Only write tier2 data (smile/fire/mojo) if tier2 has been loaded.
       // Writing before load would overwrite real DB data with empty defaults.
-      const write6 = AppStateService.instance.tier2Loaded ? this.database.writeObject("income/expenses/smile", AppStateService.instance.smileExpenses) : null;
-      const write7 = AppStateService.instance.tier2Loaded ? this.database.writeObject("income/expenses/fire", AppStateService.instance.fireExpenses) : null;
-      const write8 = AppStateService.instance.tier2Loaded ? this.database.writeObject("income/expenses/mojo", AppStateService.instance.mojoExpenses) : null;
-      const write9 = AppStateService.instance.tier2Loaded ? this.database.writeObject("smile", AppStateService.instance.allSmileProjects) : null;
-      const write10 = AppStateService.instance.tier2Loaded ? this.database.writeObject("fire", AppStateService.instance.allFireEmergencies) : null;
-      const write11 = AppStateService.instance.tier2Loaded ? this.database.writeObject("mojo", AppStateService.instance.mojo) : null;
+      const write6 = AppStateService.instance.tier2Loaded
+        ? this.database.writeObject('income/expenses/smile', AppStateService.instance.smileExpenses)
+        : null;
+      const write7 = AppStateService.instance.tier2Loaded
+        ? this.database.writeObject('income/expenses/fire', AppStateService.instance.fireExpenses)
+        : null;
+      const write8 = AppStateService.instance.tier2Loaded
+        ? this.database.writeObject('income/expenses/mojo', AppStateService.instance.mojoExpenses)
+        : null;
+      const write9 = AppStateService.instance.tier2Loaded
+        ? this.database.writeObject('smile', AppStateService.instance.allSmileProjects)
+        : null;
+      const write10 = AppStateService.instance.tier2Loaded
+        ? this.database.writeObject('fire', AppStateService.instance.allFireEmergencies)
+        : null;
+      const write11 = AppStateService.instance.tier2Loaded
+        ? this.database.writeObject('mojo', AppStateService.instance.mojo)
+        : null;
 
       // Only write balance/liabilities if tier3Balance has been loaded.
-      const write12 = AppStateService.instance.tier3BalanceLoaded ? this.database.writeObject("balance/liabilities", AppStateService.instance.liabilities) : null;
+      const write12 = AppStateService.instance.tier3BalanceLoaded
+        ? this.database.writeObject('balance/liabilities', AppStateService.instance.liabilities)
+        : null;
 
       if (environment.mode === 'selfhosted') {
-        const observables = [write1, write2, write3, write4, write5, write6, write7, write8, write9, write10, write11, write12].filter(w => w != null);
+        const observables = [
+          write1,
+          write2,
+          write3,
+          write4,
+          write5,
+          write6,
+          write7,
+          write8,
+          write9,
+          write10,
+          write11,
+          write12,
+        ].filter((w) => w != null);
 
         if (observables.length > 0) {
-          observables.forEach(obs => {
+          observables.forEach((obs) => {
             obs.subscribe({
               error: (error) => {
                 console.error(error);
-              }
+              },
             });
           });
         }
@@ -163,23 +212,38 @@ export class AppDataService {
   }
 
   private saveAllToLocalStorage() {
-    this.localStorage.saveData("interests", JSON.stringify(AppStateService.instance.allIntrests));
-    this.localStorage.saveData("properties", JSON.stringify(AppStateService.instance.allProperties));
-    this.localStorage.saveData("revenues", JSON.stringify(AppStateService.instance.allRevenues));
-    this.localStorage.saveData("dailyEx", JSON.stringify(AppStateService.instance.dailyExpenses));
-    this.localStorage.saveData("splurgeEx", JSON.stringify(AppStateService.instance.splurgeExpenses));
+    this.localStorage.saveData('interests', JSON.stringify(AppStateService.instance.allIntrests));
+    this.localStorage.saveData(
+      'properties',
+      JSON.stringify(AppStateService.instance.allProperties),
+    );
+    this.localStorage.saveData('revenues', JSON.stringify(AppStateService.instance.allRevenues));
+    this.localStorage.saveData('dailyEx', JSON.stringify(AppStateService.instance.dailyExpenses));
+    this.localStorage.saveData(
+      'splurgeEx',
+      JSON.stringify(AppStateService.instance.splurgeExpenses),
+    );
     // Only save tier2 data if loaded
     if (AppStateService.instance.tier2Loaded) {
-      this.localStorage.saveData("smileEx", JSON.stringify(AppStateService.instance.smileExpenses));
-      this.localStorage.saveData("fireEx", JSON.stringify(AppStateService.instance.fireExpenses));
-      this.localStorage.saveData("mojoEx", JSON.stringify(AppStateService.instance.mojoExpenses));
-      this.localStorage.saveData("smile", JSON.stringify(AppStateService.instance.allSmileProjects));
-      this.localStorage.saveData("fire", JSON.stringify(AppStateService.instance.allFireEmergencies));
-      this.localStorage.saveData("mojo", JSON.stringify(AppStateService.instance.mojo));
+      this.localStorage.saveData('smileEx', JSON.stringify(AppStateService.instance.smileExpenses));
+      this.localStorage.saveData('fireEx', JSON.stringify(AppStateService.instance.fireExpenses));
+      this.localStorage.saveData('mojoEx', JSON.stringify(AppStateService.instance.mojoExpenses));
+      this.localStorage.saveData(
+        'smile',
+        JSON.stringify(AppStateService.instance.allSmileProjects),
+      );
+      this.localStorage.saveData(
+        'fire',
+        JSON.stringify(AppStateService.instance.allFireEmergencies),
+      );
+      this.localStorage.saveData('mojo', JSON.stringify(AppStateService.instance.mojo));
     }
     // Only save balance/liabilities if tier3Balance loaded
     if (AppStateService.instance.tier3BalanceLoaded) {
-      this.localStorage.saveData("liabilities", JSON.stringify(AppStateService.instance.liabilities));
+      this.localStorage.saveData(
+        'liabilities',
+        JSON.stringify(AppStateService.instance.liabilities),
+      );
     }
   }
 
@@ -192,45 +256,49 @@ export class AppDataService {
 
     this.persistence.batchWriteAndSync({
       writes: [
-        { tag: "income/revenue/interests", data: AppStateService.instance.allIntrests },
-        { tag: "income/revenue/properties", data: AppStateService.instance.allProperties },
-        { tag: "income/revenue/revenues", data: AppStateService.instance.allRevenues },
-        { tag: "income/expenses/daily", data: AppStateService.instance.dailyExpenses },
-        { tag: "income/expenses/splurge", data: AppStateService.instance.splurgeExpenses },
+        { tag: 'income/revenue/interests', data: AppStateService.instance.allIntrests },
+        { tag: 'income/revenue/properties', data: AppStateService.instance.allProperties },
+        { tag: 'income/revenue/revenues', data: AppStateService.instance.allRevenues },
+        { tag: 'income/expenses/daily', data: AppStateService.instance.dailyExpenses },
+        { tag: 'income/expenses/splurge', data: AppStateService.instance.splurgeExpenses },
         // Only write tier2 data (smile/fire/mojo) if tier2 has been loaded
-        ...(AppStateService.instance.tier2Loaded ? [
-          { tag: "income/expenses/smile", data: AppStateService.instance.smileExpenses },
-          { tag: "income/expenses/fire", data: AppStateService.instance.fireExpenses },
-          { tag: "income/expenses/mojo", data: AppStateService.instance.mojoExpenses },
-          { tag: "smile", data: AppStateService.instance.allSmileProjects },
-          { tag: "fire", data: AppStateService.instance.allFireEmergencies },
-          { tag: "mojo", data: AppStateService.instance.mojo },
-        ] : []),
+        ...(AppStateService.instance.tier2Loaded
+          ? [
+              { tag: 'income/expenses/smile', data: AppStateService.instance.smileExpenses },
+              { tag: 'income/expenses/fire', data: AppStateService.instance.fireExpenses },
+              { tag: 'income/expenses/mojo', data: AppStateService.instance.mojoExpenses },
+              { tag: 'smile', data: AppStateService.instance.allSmileProjects },
+              { tag: 'fire', data: AppStateService.instance.allFireEmergencies },
+              { tag: 'mojo', data: AppStateService.instance.mojo },
+            ]
+          : []),
         // Only write balance/liabilities if tier3Balance has been loaded
-        ...(AppStateService.instance.tier3BalanceLoaded ? [
-          { tag: "balance/liabilities", data: AppStateService.instance.liabilities },
-        ] : []),
-        { tag: "transactions", data: AppStateService.instance.allTransactions }
+        ...(AppStateService.instance.tier3BalanceLoaded
+          ? [{ tag: 'balance/liabilities', data: AppStateService.instance.liabilities }]
+          : []),
+        { tag: 'transactions', data: AppStateService.instance.allTransactions },
       ],
       localStorageSaves: [
-        { key: "interests", data: JSON.stringify(AppStateService.instance.allIntrests) },
-        { key: "properties", data: JSON.stringify(AppStateService.instance.allProperties) },
-        { key: "revenues", data: JSON.stringify(AppStateService.instance.allRevenues) },
-        { key: "dailyEx", data: JSON.stringify(AppStateService.instance.dailyExpenses) },
-        { key: "splurgeEx", data: JSON.stringify(AppStateService.instance.splurgeExpenses) },
-        ...(AppStateService.instance.tier2Loaded ? [
-          { key: "smileEx", data: JSON.stringify(AppStateService.instance.smileExpenses) },
-          { key: "fireEx", data: JSON.stringify(AppStateService.instance.fireExpenses) },
-          { key: "mojoEx", data: JSON.stringify(AppStateService.instance.mojoExpenses) },
-          { key: "smile", data: JSON.stringify(AppStateService.instance.allSmileProjects) },
-          { key: "fire", data: JSON.stringify(AppStateService.instance.allFireEmergencies) },
-          { key: "mojo", data: JSON.stringify(AppStateService.instance.mojo) },
-        ] : []),
-        ...(AppStateService.instance.tier3BalanceLoaded ? [
-          { key: "liabilities", data: JSON.stringify(AppStateService.instance.liabilities) },
-        ] : []),
-        { key: "transactions", data: JSON.stringify(AppStateService.instance.allTransactions) }
-      ]
+        { key: 'interests', data: JSON.stringify(AppStateService.instance.allIntrests) },
+        { key: 'properties', data: JSON.stringify(AppStateService.instance.allProperties) },
+        { key: 'revenues', data: JSON.stringify(AppStateService.instance.allRevenues) },
+        { key: 'dailyEx', data: JSON.stringify(AppStateService.instance.dailyExpenses) },
+        { key: 'splurgeEx', data: JSON.stringify(AppStateService.instance.splurgeExpenses) },
+        ...(AppStateService.instance.tier2Loaded
+          ? [
+              { key: 'smileEx', data: JSON.stringify(AppStateService.instance.smileExpenses) },
+              { key: 'fireEx', data: JSON.stringify(AppStateService.instance.fireExpenses) },
+              { key: 'mojoEx', data: JSON.stringify(AppStateService.instance.mojoExpenses) },
+              { key: 'smile', data: JSON.stringify(AppStateService.instance.allSmileProjects) },
+              { key: 'fire', data: JSON.stringify(AppStateService.instance.allFireEmergencies) },
+              { key: 'mojo', data: JSON.stringify(AppStateService.instance.mojo) },
+            ]
+          : []),
+        ...(AppStateService.instance.tier3BalanceLoaded
+          ? [{ key: 'liabilities', data: JSON.stringify(AppStateService.instance.liabilities) }]
+          : []),
+        { key: 'transactions', data: JSON.stringify(AppStateService.instance.allTransactions) },
+      ],
     });
   }
 
@@ -244,7 +312,7 @@ export class AppDataService {
     this.decryptionFailed = false;
     try {
       const response = await this.database.getBatchData(AppDataService.TIER1_PATHS);
-      if (response === null) return;  // 304 Not Modified — data unchanged
+      if (response === null) return; // 304 Not Modified — data unchanged
       this.applyBatchData(response.data);
       AppStateService.instance.lastUpdatedAt = response.updatedAt;
     } catch (err) {
@@ -255,7 +323,8 @@ export class AppDataService {
   async loadTier2(): Promise<void> {
     try {
       const response = await this.database.getBatchData(AppDataService.TIER2_PATHS);
-      if (response === null) {        // 304 Not Modified
+      if (response === null) {
+        // 304 Not Modified
         AppStateService.instance.tier2Loaded = true;
         return;
       }
@@ -272,7 +341,8 @@ export class AppDataService {
     if (AppStateService.instance.tier3GrowLoaded) return;
     try {
       const response = await this.database.getBatchData(AppDataService.TIER3_GROW_PATHS);
-      if (response === null) {        // 304 Not Modified
+      if (response === null) {
+        // 304 Not Modified
         AppStateService.instance.tier3GrowLoaded = true;
         return;
       }
@@ -288,7 +358,8 @@ export class AppDataService {
     if (AppStateService.instance.tier3BalanceLoaded) return;
     try {
       const response = await this.database.getBatchData(AppDataService.TIER3_BALANCE_PATHS);
-      if (response === null) {        // 304 Not Modified
+      if (response === null) {
+        // 304 Not Modified
         AppStateService.instance.tier3BalanceLoaded = true;
         return;
       }
@@ -322,12 +393,12 @@ export class AppDataService {
         if (raw == null) {
           AccountingComponent.allTransactions = [];
           AppStateService.instance.allTransactions = [];
-          this.localStorage.saveData("transactions", JSON.stringify([]));
+          this.localStorage.saveData('transactions', JSON.stringify([]));
         } else {
           const myTransactions: Transaction[] = [];
           let invalidCount = 0;
           const totalCount = Object.keys(raw).length;
-          
+
           for (const k in raw) {
             try {
               // Decrypt all fields
@@ -345,18 +416,18 @@ export class AppDataService {
                   key: k,
                   dateStr,
                   account: account?.substring(0, 20),
-                  category: category?.substring(0, 20)
+                  category: category?.substring(0, 20),
                 });
                 continue; // Skip this transaction
               }
 
-              const newT: Transaction = { 
-                account, 
-                amount: parseFloat(amount) || 0, 
-                date: dateStr, 
-                time, 
-                category, 
-                comment
+              const newT: Transaction = {
+                account,
+                amount: parseFloat(amount) || 0,
+                date: dateStr,
+                time,
+                category,
+                comment,
               };
               myTransactions.push(newT);
             } catch (error) {
@@ -365,23 +436,27 @@ export class AppDataService {
               continue; // Skip corrupted transactions
             }
           }
-          
+
           // If more than 50% of transactions failed to decrypt, likely wrong key
           if (totalCount > 0 && invalidCount / totalCount > 0.5) {
-            console.error(`❌ DECRYPTION ERROR: ${invalidCount}/${totalCount} transactions failed to decrypt.`);
+            console.error(
+              `❌ DECRYPTION ERROR: ${invalidCount}/${totalCount} transactions failed to decrypt.`,
+            );
             this.decryptionFailed = true;
           } else if (invalidCount > 0) {
             console.warn(`⚠️  Skipped ${invalidCount}/${totalCount} corrupted transactions.`);
           }
-          
-          this.localStorage.removeData("transactions");
+
+          this.localStorage.removeData('transactions');
           AppStateService.instance.allTransactions = myTransactions;
           AccountingComponent.allTransactions = AppStateService.instance.allTransactions;
           AccountingComponent.dataSource.data = [...AppStateService.instance.allTransactions];
-          AccountingComponent.dataSource.data = AccountingComponent.dataSource.data.map((transaction, index) => {
-            return { ...transaction, id: index };
-          });
-          this.localStorage.saveData("transactions", JSON.stringify(myTransactions));
+          AccountingComponent.dataSource.data = AccountingComponent.dataSource.data.map(
+            (transaction, index) => {
+              return { ...transaction, id: index };
+            },
+          );
+          this.localStorage.saveData('transactions', JSON.stringify(myTransactions));
         }
         break;
       }
@@ -389,7 +464,7 @@ export class AppDataService {
         if (raw == null) {
           SubscriptionComponent.allSubscriptions = [];
           AppStateService.instance.allSubscriptions = [];
-          this.localStorage.saveData("subscriptions", JSON.stringify([]));
+          this.localStorage.saveData('subscriptions', JSON.stringify([]));
         } else {
           // Decrypt subscription data
           const rawSubscriptions: any[] = [];
@@ -402,173 +477,212 @@ export class AppDataService {
               endDate: this.cryptic.decrypt(raw[k].endDate, 'database'),
               category: this.cryptic.decrypt(raw[k].category, 'database'),
               comment: this.cryptic.decrypt(raw[k].comment, 'database'),
-              frequency: raw[k].frequency ? this.cryptic.decrypt(raw[k].frequency, 'database') : undefined,
-              changeHistory: raw[k].changeHistory ? this.decryptChangeHistory(raw[k].changeHistory) : undefined
+              frequency: raw[k].frequency
+                ? this.cryptic.decrypt(raw[k].frequency, 'database')
+                : undefined,
+              changeHistory: raw[k].changeHistory
+                ? this.decryptChangeHistory(raw[k].changeHistory)
+                : undefined,
             };
             rawSubscriptions.push(decrypted);
           }
-          
+
           // Apply migration to ensure all fields are present with defaults
           const mySubscriptions = migrateSubscriptionArray(rawSubscriptions);
-          
+
           AppStateService.instance.allSubscriptions = mySubscriptions;
           SubscriptionComponent.allSubscriptions = AppStateService.instance.allSubscriptions;
           SubscriptionComponent.activeDataSource.data = [...SubscriptionComponent.allSubscriptions];
-          SubscriptionComponent.activeDataSource.data = SubscriptionComponent.activeDataSource.data.map((subscription, index) => {
-            return { ...subscription, id: index };
-          });
-          SubscriptionComponent.inactiveDataSource.data = [...SubscriptionComponent.allSubscriptions];
-          SubscriptionComponent.inactiveDataSource.data = SubscriptionComponent.inactiveDataSource.data.map((subscription, index) => {
-            return { ...subscription, id: index };
-          });
-          this.localStorage.saveData("subscriptions", JSON.stringify(mySubscriptions));
+          SubscriptionComponent.activeDataSource.data =
+            SubscriptionComponent.activeDataSource.data.map((subscription, index) => {
+              return { ...subscription, id: index };
+            });
+          SubscriptionComponent.inactiveDataSource.data = [
+            ...SubscriptionComponent.allSubscriptions,
+          ];
+          SubscriptionComponent.inactiveDataSource.data =
+            SubscriptionComponent.inactiveDataSource.data.map((subscription, index) => {
+              return { ...subscription, id: index };
+            });
+          this.localStorage.saveData('subscriptions', JSON.stringify(mySubscriptions));
         }
         break;
       }
       case 'income/revenue/interests': {
         if (raw == null) {
           AppStateService.instance.allIntrests = [];
-          this.localStorage.saveData("interests", JSON.stringify([]));
+          this.localStorage.saveData('interests', JSON.stringify([]));
         } else {
           const myInterests: Interest[] = [];
           for (const k in raw) {
-            const newR: Interest = { tag: this.cryptic.decrypt(raw[k].tag, 'database'), amount: parseFloat(this.cryptic.decrypt(raw[k].amount, 'database')) };
+            const newR: Interest = {
+              tag: this.cryptic.decrypt(raw[k].tag, 'database'),
+              amount: parseFloat(this.cryptic.decrypt(raw[k].amount, 'database')),
+            };
             myInterests.push(newR);
           }
           AppStateService.instance.allIntrests = myInterests;
-          this.localStorage.saveData("interests", JSON.stringify(myInterests));
+          this.localStorage.saveData('interests', JSON.stringify(myInterests));
         }
         break;
       }
       case 'income/revenue/properties': {
         if (raw == null) {
           AppStateService.instance.allProperties = [];
-          this.localStorage.saveData("properties", JSON.stringify([]));
+          this.localStorage.saveData('properties', JSON.stringify([]));
         } else {
           const myProperties: Property[] = [];
           for (const k in raw) {
-            const newP: Property = { tag: this.cryptic.decrypt(raw[k].tag, 'database'), amount: parseFloat(this.cryptic.decrypt(raw[k].amount, 'database')) };
+            const newP: Property = {
+              tag: this.cryptic.decrypt(raw[k].tag, 'database'),
+              amount: parseFloat(this.cryptic.decrypt(raw[k].amount, 'database')),
+            };
             myProperties.push(newP);
           }
           AppStateService.instance.allProperties = myProperties;
-          this.localStorage.saveData("properties", JSON.stringify(myProperties));
+          this.localStorage.saveData('properties', JSON.stringify(myProperties));
         }
         break;
       }
       case 'income/revenue/revenues': {
         if (raw == null) {
           AppStateService.instance.allRevenues = [];
-          this.localStorage.saveData("revenues", JSON.stringify([]));
+          this.localStorage.saveData('revenues', JSON.stringify([]));
         } else {
           const myRevenues: Revenue[] = [];
           for (const k in raw) {
-            const newR: Revenue = { tag: this.cryptic.decrypt(raw[k].tag, 'database'), amount: parseFloat(this.cryptic.decrypt(raw[k].amount, 'database')) };
+            const newR: Revenue = {
+              tag: this.cryptic.decrypt(raw[k].tag, 'database'),
+              amount: parseFloat(this.cryptic.decrypt(raw[k].amount, 'database')),
+            };
             myRevenues.push(newR);
           }
           AppStateService.instance.allRevenues = myRevenues;
-          this.localStorage.saveData("revenues", JSON.stringify(myRevenues));
+          this.localStorage.saveData('revenues', JSON.stringify(myRevenues));
         }
         break;
       }
       case 'income/expenses/daily': {
         if (raw == null) {
           AppStateService.instance.dailyExpenses = [];
-          this.localStorage.saveData("dailyEx", JSON.stringify([]));
+          this.localStorage.saveData('dailyEx', JSON.stringify([]));
         } else {
           const myExpenses: Expense[] = [];
           for (const k in raw) {
-            const newR: Expense = { tag: this.cryptic.decrypt(raw[k].tag, 'database'), amount: parseFloat(this.cryptic.decrypt(raw[k].amount, 'database')) };
+            const newR: Expense = {
+              tag: this.cryptic.decrypt(raw[k].tag, 'database'),
+              amount: parseFloat(this.cryptic.decrypt(raw[k].amount, 'database')),
+            };
             myExpenses.push(newR);
           }
           AppStateService.instance.dailyExpenses = myExpenses;
-          this.localStorage.saveData("dailyEx", JSON.stringify(myExpenses));
+          this.localStorage.saveData('dailyEx', JSON.stringify(myExpenses));
         }
         break;
       }
       case 'income/expenses/splurge': {
         if (raw == null) {
           AppStateService.instance.splurgeExpenses = [];
-          this.localStorage.saveData("splurgeEx", JSON.stringify([]));
+          this.localStorage.saveData('splurgeEx', JSON.stringify([]));
         } else {
           const myExpenses: Expense[] = [];
           for (const k in raw) {
-            const newR: Expense = { tag: this.cryptic.decrypt(raw[k].tag, 'database'), amount: parseFloat(this.cryptic.decrypt(raw[k].amount, 'database')) };
+            const newR: Expense = {
+              tag: this.cryptic.decrypt(raw[k].tag, 'database'),
+              amount: parseFloat(this.cryptic.decrypt(raw[k].amount, 'database')),
+            };
             myExpenses.push(newR);
           }
           AppStateService.instance.splurgeExpenses = myExpenses;
-          this.localStorage.saveData("splurgeEx", JSON.stringify(myExpenses));
+          this.localStorage.saveData('splurgeEx', JSON.stringify(myExpenses));
         }
         break;
       }
       case 'income/expenses/smile': {
         if (raw == null) {
           AppStateService.instance.smileExpenses = [];
-          this.localStorage.saveData("smileEx", JSON.stringify([]));
+          this.localStorage.saveData('smileEx', JSON.stringify([]));
         } else {
           const myExpenses: Expense[] = [];
           for (const k in raw) {
-            const newR: Expense = { tag: this.cryptic.decrypt(raw[k].tag, 'database'), amount: parseFloat(this.cryptic.decrypt(raw[k].amount, 'database')) };
+            const newR: Expense = {
+              tag: this.cryptic.decrypt(raw[k].tag, 'database'),
+              amount: parseFloat(this.cryptic.decrypt(raw[k].amount, 'database')),
+            };
             myExpenses.push(newR);
           }
           AppStateService.instance.smileExpenses = myExpenses;
-          this.localStorage.saveData("smileEx", JSON.stringify(myExpenses));
+          this.localStorage.saveData('smileEx', JSON.stringify(myExpenses));
         }
         break;
       }
       case 'income/expenses/fire': {
         if (raw == null) {
           AppStateService.instance.fireExpenses = [];
-          this.localStorage.saveData("fireEx", JSON.stringify([]));
+          this.localStorage.saveData('fireEx', JSON.stringify([]));
         } else {
           const myExpenses: Expense[] = [];
           for (const k in raw) {
-            const newR: Expense = { tag: this.cryptic.decrypt(raw[k].tag, 'database'), amount: parseFloat(this.cryptic.decrypt(raw[k].amount, 'database')) };
+            const newR: Expense = {
+              tag: this.cryptic.decrypt(raw[k].tag, 'database'),
+              amount: parseFloat(this.cryptic.decrypt(raw[k].amount, 'database')),
+            };
             myExpenses.push(newR);
           }
           AppStateService.instance.fireExpenses = myExpenses;
-          this.localStorage.saveData("fireEx", JSON.stringify(myExpenses));
+          this.localStorage.saveData('fireEx', JSON.stringify(myExpenses));
         }
         break;
       }
       case 'income/expenses/mojo': {
         if (raw == null) {
           AppStateService.instance.mojoExpenses = [];
-          this.localStorage.saveData("mojoEx", JSON.stringify([]));
+          this.localStorage.saveData('mojoEx', JSON.stringify([]));
         } else {
           const myExpenses: Expense[] = [];
           for (const k in raw) {
-            const newR: Expense = { tag: this.cryptic.decrypt(raw[k].tag, 'database'), amount: parseFloat(this.cryptic.decrypt(raw[k].amount, 'database')) };
+            const newR: Expense = {
+              tag: this.cryptic.decrypt(raw[k].tag, 'database'),
+              amount: parseFloat(this.cryptic.decrypt(raw[k].amount, 'database')),
+            };
             myExpenses.push(newR);
           }
           AppStateService.instance.mojoExpenses = myExpenses;
-          this.localStorage.saveData("mojoEx", JSON.stringify(myExpenses));
+          this.localStorage.saveData('mojoEx', JSON.stringify(myExpenses));
         }
         break;
       }
       case 'smile': {
         if (raw == null) {
           AppStateService.instance.allSmileProjects = [];
-          this.localStorage.saveData("smile", JSON.stringify([]));
+          this.localStorage.saveData('smile', JSON.stringify([]));
         } else {
           const mySmile: any[] = [];
           for (const k in raw) {
             // Decrypt all Smile fields
-            const rawSmile: any = { 
-              title: this.cryptic.decrypt(raw[k].title, 'database')
+            const rawSmile: any = {
+              title: this.cryptic.decrypt(raw[k].title, 'database'),
             };
 
             // Decrypt legacy fields if they exist (for migration)
-            if (raw[k].target) rawSmile.target = parseFloat(this.cryptic.decrypt(raw[k].target, 'database'));
-            if (raw[k].amount) rawSmile.amount = parseFloat(this.cryptic.decrypt(raw[k].amount, 'database'));
+            if (raw[k].target)
+              rawSmile.target = parseFloat(this.cryptic.decrypt(raw[k].target, 'database'));
+            if (raw[k].amount)
+              rawSmile.amount = parseFloat(this.cryptic.decrypt(raw[k].amount, 'database'));
 
             // Decrypt optional fields if they exist
             if (raw[k].sub) rawSmile.sub = this.cryptic.decrypt(raw[k].sub, 'database');
             if (raw[k].phase) rawSmile.phase = this.cryptic.decrypt(raw[k].phase, 'database');
-            if (raw[k].description) rawSmile.description = this.cryptic.decrypt(raw[k].description, 'database');
-            if (raw[k].targetDate) rawSmile.targetDate = this.cryptic.decrypt(raw[k].targetDate, 'database');
-            if (raw[k].completionDate) rawSmile.completionDate = this.cryptic.decrypt(raw[k].completionDate, 'database');
-            if (raw[k].createdAt) rawSmile.createdAt = this.cryptic.decrypt(raw[k].createdAt, 'database');
-            if (raw[k].updatedAt) rawSmile.updatedAt = this.cryptic.decrypt(raw[k].updatedAt, 'database');
+            if (raw[k].description)
+              rawSmile.description = this.cryptic.decrypt(raw[k].description, 'database');
+            if (raw[k].targetDate)
+              rawSmile.targetDate = this.cryptic.decrypt(raw[k].targetDate, 'database');
+            if (raw[k].completionDate)
+              rawSmile.completionDate = this.cryptic.decrypt(raw[k].completionDate, 'database');
+            if (raw[k].createdAt)
+              rawSmile.createdAt = this.cryptic.decrypt(raw[k].createdAt, 'database');
+            if (raw[k].updatedAt)
+              rawSmile.updatedAt = this.cryptic.decrypt(raw[k].updatedAt, 'database');
 
             // Decrypt buckets array
             if (raw[k].buckets && Array.isArray(raw[k].buckets)) {
@@ -578,12 +692,19 @@ export class AppDataService {
                 target: parseFloat(this.cryptic.decrypt(bucket.target, 'database')),
                 amount: parseFloat(this.cryptic.decrypt(bucket.amount, 'database')),
                 notes: bucket.notes ? this.cryptic.decrypt(bucket.notes, 'database') : '',
-                links: bucket.links && Array.isArray(bucket.links) ? bucket.links.map((link: any) => ({
-                  label: this.cryptic.decrypt(link.label, 'database'),
-                  url: this.cryptic.decrypt(link.url, 'database')
-                })) : [],
-                targetDate: bucket.targetDate ? this.cryptic.decrypt(bucket.targetDate, 'database') : undefined,
-                completionDate: bucket.completionDate ? this.cryptic.decrypt(bucket.completionDate, 'database') : undefined
+                links:
+                  bucket.links && Array.isArray(bucket.links)
+                    ? bucket.links.map((link: any) => ({
+                        label: this.cryptic.decrypt(link.label, 'database'),
+                        url: this.cryptic.decrypt(link.url, 'database'),
+                      }))
+                    : [],
+                targetDate: bucket.targetDate
+                  ? this.cryptic.decrypt(bucket.targetDate, 'database')
+                  : undefined,
+                completionDate: bucket.completionDate
+                  ? this.cryptic.decrypt(bucket.completionDate, 'database')
+                  : undefined,
               }));
             }
 
@@ -591,7 +712,7 @@ export class AppDataService {
             if (raw[k].links && Array.isArray(raw[k].links)) {
               rawSmile.links = raw[k].links.map((link: any) => ({
                 label: this.cryptic.decrypt(link.label, 'database'),
-                url: this.cryptic.decrypt(link.url, 'database')
+                url: this.cryptic.decrypt(link.url, 'database'),
               }));
             }
 
@@ -600,8 +721,9 @@ export class AppDataService {
               rawSmile.actionItems = raw[k].actionItems.map((item: any) => ({
                 text: this.cryptic.decrypt(item.text, 'database'),
                 done: this.cryptic.decrypt(item.done, 'database') === 'true',
-                priority: this.cryptic.decrypt(item.priority, 'database') as 'low' | 'medium' | 'high',
-                dueDate: item.dueDate ? this.cryptic.decrypt(item.dueDate, 'database') : undefined
+                priority: this.cryptic.decrypt(item.priority, 'database') as
+                  'low' | 'medium' | 'high',
+                dueDate: item.dueDate ? this.cryptic.decrypt(item.dueDate, 'database') : undefined,
               }));
             }
 
@@ -609,7 +731,7 @@ export class AppDataService {
             if (raw[k].notes && Array.isArray(raw[k].notes)) {
               rawSmile.notes = raw[k].notes.map((note: any) => ({
                 text: this.cryptic.decrypt(note.text, 'database'),
-                createdAt: this.cryptic.decrypt(note.createdAt, 'database')
+                createdAt: this.cryptic.decrypt(note.createdAt, 'database'),
               }));
             }
 
@@ -629,16 +751,26 @@ export class AppDataService {
                 comment: this.cryptic.decrypt(plan.comment, 'database'),
                 frequency: this.cryptic.decrypt(plan.frequency, 'database'),
                 targetDate: this.cryptic.decrypt(plan.targetDate, 'database'),
-                targetBucketIds: plan.targetBucketIds && Array.isArray(plan.targetBucketIds) 
-                  ? plan.targetBucketIds.map((id: any) => this.cryptic.decrypt(id, 'database'))
-                  : [],
-                originalCalculatedAmount: parseFloat(this.cryptic.decrypt(plan.originalCalculatedAmount, 'database')),
-                manuallyAdjusted: this.cryptic.decrypt(plan.manuallyAdjusted, 'database') === 'true',
+                targetBucketIds:
+                  plan.targetBucketIds && Array.isArray(plan.targetBucketIds)
+                    ? plan.targetBucketIds.map((id: any) => this.cryptic.decrypt(id, 'database'))
+                    : [],
+                originalCalculatedAmount: parseFloat(
+                  this.cryptic.decrypt(plan.originalCalculatedAmount, 'database'),
+                ),
+                manuallyAdjusted:
+                  this.cryptic.decrypt(plan.manuallyAdjusted, 'database') === 'true',
                 createdAt: this.cryptic.decrypt(plan.createdAt, 'database'),
                 updatedAt: this.cryptic.decrypt(plan.updatedAt, 'database'),
-                activatedAt: plan.activatedAt ? this.cryptic.decrypt(plan.activatedAt, 'database') : undefined,
-                deactivatedAt: plan.deactivatedAt ? this.cryptic.decrypt(plan.deactivatedAt, 'database') : undefined,
-                activeSubscriptionId: plan.activeSubscriptionId ? this.cryptic.decrypt(plan.activeSubscriptionId, 'database') : undefined
+                activatedAt: plan.activatedAt
+                  ? this.cryptic.decrypt(plan.activatedAt, 'database')
+                  : undefined,
+                deactivatedAt: plan.deactivatedAt
+                  ? this.cryptic.decrypt(plan.deactivatedAt, 'database')
+                  : undefined,
+                activeSubscriptionId: plan.activeSubscriptionId
+                  ? this.cryptic.decrypt(plan.activeSubscriptionId, 'database')
+                  : undefined,
               }));
             }
 
@@ -647,22 +779,22 @@ export class AppDataService {
           // Apply migration to convert legacy format to new format
           const migrated = migrateSmileArray(mySmile);
           AppStateService.instance.allSmileProjects = migrated;
-          this.localStorage.saveData("smile", JSON.stringify(migrated));
+          this.localStorage.saveData('smile', JSON.stringify(migrated));
         }
         break;
       }
       case 'fire': {
         if (raw == null) {
           AppStateService.instance.allFireEmergencies = [];
-          this.localStorage.saveData("fire", JSON.stringify([]));
+          this.localStorage.saveData('fire', JSON.stringify([]));
         } else {
           const myFire: Fire[] = [];
           for (const k in raw) {
             // Decrypt and create raw object with all fields
-            const rawFire: any = { 
-              title: this.cryptic.decrypt(raw[k].title, 'database')
+            const rawFire: any = {
+              title: this.cryptic.decrypt(raw[k].title, 'database'),
             };
-            
+
             // Decrypt legacy fields if they exist (for migration)
             if (raw[k].target) {
               rawFire.target = parseFloat(this.cryptic.decrypt(raw[k].target, 'database'));
@@ -670,7 +802,7 @@ export class AppDataService {
             if (raw[k].amount) {
               rawFire.amount = parseFloat(this.cryptic.decrypt(raw[k].amount, 'database'));
             }
-            
+
             // Decrypt buckets array - each field is individually encrypted
             if (raw[k].buckets && Array.isArray(raw[k].buckets)) {
               rawFire.buckets = raw[k].buckets.map((bucket: any) => ({
@@ -679,12 +811,19 @@ export class AppDataService {
                 target: parseFloat(this.cryptic.decrypt(bucket.target, 'database')),
                 amount: parseFloat(this.cryptic.decrypt(bucket.amount, 'database')),
                 notes: bucket.notes ? this.cryptic.decrypt(bucket.notes, 'database') : '',
-                links: bucket.links && Array.isArray(bucket.links) ? bucket.links.map((link: any) => ({
-                  label: this.cryptic.decrypt(link.label, 'database'),
-                  url: this.cryptic.decrypt(link.url, 'database')
-                })) : [],
-                targetDate: bucket.targetDate ? this.cryptic.decrypt(bucket.targetDate, 'database') : undefined,
-                completionDate: bucket.completionDate ? this.cryptic.decrypt(bucket.completionDate, 'database') : undefined
+                links:
+                  bucket.links && Array.isArray(bucket.links)
+                    ? bucket.links.map((link: any) => ({
+                        label: this.cryptic.decrypt(link.label, 'database'),
+                        url: this.cryptic.decrypt(link.url, 'database'),
+                      }))
+                    : [],
+                targetDate: bucket.targetDate
+                  ? this.cryptic.decrypt(bucket.targetDate, 'database')
+                  : undefined,
+                completionDate: bucket.completionDate
+                  ? this.cryptic.decrypt(bucket.completionDate, 'database')
+                  : undefined,
               }));
             }
             if (raw[k].sub) {
@@ -699,21 +838,22 @@ export class AppDataService {
             if (raw[k].links && Array.isArray(raw[k].links)) {
               rawFire.links = raw[k].links.map((link: any) => ({
                 label: this.cryptic.decrypt(link.label, 'database'),
-                url: this.cryptic.decrypt(link.url, 'database')
+                url: this.cryptic.decrypt(link.url, 'database'),
               }));
             }
             if (raw[k].actionItems && Array.isArray(raw[k].actionItems)) {
               rawFire.actionItems = raw[k].actionItems.map((item: any) => ({
                 text: this.cryptic.decrypt(item.text, 'database'),
                 done: this.cryptic.decrypt(item.done, 'database') === 'true',
-                priority: this.cryptic.decrypt(item.priority, 'database') as 'low' | 'medium' | 'high',
-                dueDate: item.dueDate ? this.cryptic.decrypt(item.dueDate, 'database') : undefined
+                priority: this.cryptic.decrypt(item.priority, 'database') as
+                  'low' | 'medium' | 'high',
+                dueDate: item.dueDate ? this.cryptic.decrypt(item.dueDate, 'database') : undefined,
               }));
             }
             if (raw[k].notes && Array.isArray(raw[k].notes)) {
               rawFire.notes = raw[k].notes.map((note: any) => ({
                 text: this.cryptic.decrypt(note.text, 'database'),
-                createdAt: this.cryptic.decrypt(note.createdAt, 'database')
+                createdAt: this.cryptic.decrypt(note.createdAt, 'database'),
               }));
             }
             if (raw[k].createdAt) {
@@ -728,7 +868,7 @@ export class AppDataService {
             if (raw[k].completionDate) {
               rawFire.completionDate = this.cryptic.decrypt(raw[k].completionDate, 'database');
             }
-            
+
             // Decrypt plannedSubscriptions array - each field is individually encrypted
             if (raw[k].plannedSubscriptions && Array.isArray(raw[k].plannedSubscriptions)) {
               rawFire.plannedSubscriptions = raw[k].plannedSubscriptions.map((plan: any) => ({
@@ -745,81 +885,101 @@ export class AppDataService {
                 comment: this.cryptic.decrypt(plan.comment, 'database'),
                 frequency: this.cryptic.decrypt(plan.frequency, 'database'),
                 targetDate: this.cryptic.decrypt(plan.targetDate, 'database'),
-                targetBucketIds: plan.targetBucketIds && Array.isArray(plan.targetBucketIds) 
-                  ? plan.targetBucketIds.map((id: any) => this.cryptic.decrypt(id, 'database'))
-                  : [],
-                originalCalculatedAmount: parseFloat(this.cryptic.decrypt(plan.originalCalculatedAmount, 'database')),
-                manuallyAdjusted: this.cryptic.decrypt(plan.manuallyAdjusted, 'database') === 'true',
+                targetBucketIds:
+                  plan.targetBucketIds && Array.isArray(plan.targetBucketIds)
+                    ? plan.targetBucketIds.map((id: any) => this.cryptic.decrypt(id, 'database'))
+                    : [],
+                originalCalculatedAmount: parseFloat(
+                  this.cryptic.decrypt(plan.originalCalculatedAmount, 'database'),
+                ),
+                manuallyAdjusted:
+                  this.cryptic.decrypt(plan.manuallyAdjusted, 'database') === 'true',
                 createdAt: this.cryptic.decrypt(plan.createdAt, 'database'),
                 updatedAt: this.cryptic.decrypt(plan.updatedAt, 'database'),
-                activatedAt: plan.activatedAt ? this.cryptic.decrypt(plan.activatedAt, 'database') : undefined,
-                deactivatedAt: plan.deactivatedAt ? this.cryptic.decrypt(plan.deactivatedAt, 'database') : undefined,
-                activeSubscriptionId: plan.activeSubscriptionId ? this.cryptic.decrypt(plan.activeSubscriptionId, 'database') : undefined
+                activatedAt: plan.activatedAt
+                  ? this.cryptic.decrypt(plan.activatedAt, 'database')
+                  : undefined,
+                deactivatedAt: plan.deactivatedAt
+                  ? this.cryptic.decrypt(plan.deactivatedAt, 'database')
+                  : undefined,
+                activeSubscriptionId: plan.activeSubscriptionId
+                  ? this.cryptic.decrypt(plan.activeSubscriptionId, 'database')
+                  : undefined,
               }));
             }
-            
+
             // Migrate to current schema
             const fire: Fire = migrateFire(rawFire);
             myFire.push(fire);
           }
           AppStateService.instance.allFireEmergencies = myFire;
-          this.localStorage.saveData("fire", JSON.stringify(AppStateService.instance.allFireEmergencies));
+          this.localStorage.saveData(
+            'fire',
+            JSON.stringify(AppStateService.instance.allFireEmergencies),
+          );
         }
         break;
       }
       case 'mojo': {
         if (raw != null) {
-          const newm: Mojo = { target: parseFloat(this.cryptic.decrypt(raw['target'], 'database')), amount: parseFloat(this.cryptic.decrypt(raw['amount'], 'database')) };
+          const newm: Mojo = {
+            target: parseFloat(this.cryptic.decrypt(raw['target'], 'database')),
+            amount: parseFloat(this.cryptic.decrypt(raw['amount'], 'database')),
+          };
           AppStateService.instance.mojo = newm;
-          this.localStorage.saveData("mojo", JSON.stringify(newm));
+          this.localStorage.saveData('mojo', JSON.stringify(newm));
         }
         break;
       }
       case 'budget': {
         if (raw == null) {
           AppStateService.instance.allBudgets = [];
-          this.localStorage.saveData("budget", JSON.stringify([]));
+          this.localStorage.saveData('budget', JSON.stringify([]));
         } else {
           const myBudgets: Budget[] = [];
           for (const k in raw) {
-            const newBudget: Budget = { date: this.cryptic.decrypt(raw[k].date, 'database'), tag: this.cryptic.decrypt(raw[k].tag, 'database'), amount: parseFloat(this.cryptic.decrypt(raw[k].amount, 'database')) };
+            const newBudget: Budget = {
+              date: this.cryptic.decrypt(raw[k].date, 'database'),
+              tag: this.cryptic.decrypt(raw[k].tag, 'database'),
+              amount: parseFloat(this.cryptic.decrypt(raw[k].amount, 'database')),
+            };
             myBudgets.push(newBudget);
           }
           AppStateService.instance.allBudgets = myBudgets;
-          this.localStorage.saveData("budget", JSON.stringify(myBudgets));
+          this.localStorage.saveData('budget', JSON.stringify(myBudgets));
         }
         break;
       }
       case 'grow': {
         if (raw == null) {
           AppStateService.instance.allGrowProjects = [];
-          this.localStorage.saveData("grow", JSON.stringify([]));
+          this.localStorage.saveData('grow', JSON.stringify([]));
         } else {
           const myGrowProjects = [];
           for (const k in raw) {
             let share = null;
             if (raw[k].share) {
               share = {
-                tag: this.cryptic.decrypt(raw[k].share["tag"], 'database'),
-                price: this.cryptic.decrypt(raw[k].share["price"], 'database'),
-                quantity: this.cryptic.decrypt(raw[k].share["quantity"], 'database')
+                tag: this.cryptic.decrypt(raw[k].share['tag'], 'database'),
+                price: this.cryptic.decrypt(raw[k].share['price'], 'database'),
+                quantity: this.cryptic.decrypt(raw[k].share['quantity'], 'database'),
               };
             }
             let investment = null;
             if (raw[k].investment) {
               investment = {
-                tag: this.cryptic.decrypt(raw[k].investment["tag"], 'database'),
-                deposit: this.cryptic.decrypt(raw[k].investment["deposit"], 'database'),
-                amount: this.cryptic.decrypt(raw[k].investment["amount"], 'database')
+                tag: this.cryptic.decrypt(raw[k].investment['tag'], 'database'),
+                deposit: this.cryptic.decrypt(raw[k].investment['deposit'], 'database'),
+                amount: this.cryptic.decrypt(raw[k].investment['amount'], 'database'),
               };
             }
             let liabilitie = null;
             if (raw[k].liabilitie) {
               liabilitie = {
-                tag: this.cryptic.decrypt(raw[k].liabilitie["tag"], 'database'),
-                credit: this.cryptic.decrypt(raw[k].liabilitie["credit"], 'database'),
-                amount: this.cryptic.decrypt(raw[k].liabilitie["amount"], 'database'),
-                investment: this.cryptic.decrypt(raw[k].liabilitie["investment"], 'database')
+                tag: this.cryptic.decrypt(raw[k].liabilitie['tag'], 'database'),
+                credit: this.cryptic.decrypt(raw[k].liabilitie['credit'], 'database'),
+                amount: this.cryptic.decrypt(raw[k].liabilitie['amount'], 'database'),
+                investment: this.cryptic.decrypt(raw[k].liabilitie['investment'], 'database'),
               };
             }
             // Decrypt nested arrays
@@ -828,7 +988,7 @@ export class AppDataService {
               for (const li in raw[k].links) {
                 links.push({
                   label: this.cryptic.decrypt(raw[k].links[li].label, 'database'),
-                  url: this.cryptic.decrypt(raw[k].links[li].url, 'database')
+                  url: this.cryptic.decrypt(raw[k].links[li].url, 'database'),
                 });
               }
             }
@@ -838,7 +998,7 @@ export class AppDataService {
                 const item: any = {
                   text: this.cryptic.decrypt(raw[k].actionItems[ai].text, 'database'),
                   done: this.cryptic.decrypt(raw[k].actionItems[ai].done, 'database') === 'true',
-                  priority: this.cryptic.decrypt(raw[k].actionItems[ai].priority, 'database')
+                  priority: this.cryptic.decrypt(raw[k].actionItems[ai].priority, 'database'),
                 };
                 if (raw[k].actionItems[ai].dueDate) {
                   item.dueDate = this.cryptic.decrypt(raw[k].actionItems[ai].dueDate, 'database');
@@ -851,7 +1011,7 @@ export class AppDataService {
               for (const ni in raw[k].notes) {
                 notes.push({
                   text: this.cryptic.decrypt(raw[k].notes[ni].text, 'database'),
-                  createdAt: this.cryptic.decrypt(raw[k].notes[ni].createdAt, 'database')
+                  createdAt: this.cryptic.decrypt(raw[k].notes[ni].createdAt, 'database'),
                 });
               }
             }
@@ -866,7 +1026,7 @@ export class AppDataService {
               riskScore: parseFloat(this.cryptic.decrypt(raw[k].riskScore, 'database')) || 0,
               amount: this.cryptic.decrypt(raw[k].amount, 'database'),
               cashflow: this.cryptic.decrypt(raw[k].cashflow, 'database'),
-              isAsset: this.cryptic.decrypt(raw[k].isAsset, 'database') == "true",
+              isAsset: this.cryptic.decrypt(raw[k].isAsset, 'database') == 'true',
               notes: notes,
               links: links,
               actionItems: actionItems,
@@ -877,87 +1037,120 @@ export class AppDataService {
               liabilitie: liabilitie,
               // Phase 2 fields - decrypt expense optimization fields if present
               type: raw[k].type ? this.cryptic.decrypt(raw[k].type, 'database') : 'income-growth',
-              category: raw[k].category ? (
-                Array.isArray(raw[k].category)
+              category: raw[k].category
+                ? Array.isArray(raw[k].category)
                   ? raw[k].category.map((cat: string) => this.cryptic.decrypt(cat, 'database'))
                   : this.cryptic.decrypt(raw[k].category, 'database')
-              ) : undefined,
-              currentCost: raw[k].currentCost ? parseFloat(this.cryptic.decrypt(raw[k].currentCost, 'database')) : undefined,
-              targetCost: raw[k].targetCost ? parseFloat(this.cryptic.decrypt(raw[k].targetCost, 'database')) : undefined,
-              monthlySavings: raw[k].monthlySavings ? parseFloat(this.cryptic.decrypt(raw[k].monthlySavings, 'database')) : undefined,
-              annualSavings: raw[k].annualSavings ? parseFloat(this.cryptic.decrypt(raw[k].annualSavings, 'database')) : undefined,
-              reasoning: raw[k].reasoning ? this.cryptic.decrypt(raw[k].reasoning, 'database') : undefined,
-              alternative: raw[k].alternative ? this.cryptic.decrypt(raw[k].alternative, 'database') : undefined,
-              alternativeCost: raw[k].alternativeCost ? parseFloat(this.cryptic.decrypt(raw[k].alternativeCost, 'database')) : undefined,
-              pattern: raw[k].pattern ? this.cryptic.decrypt(raw[k].pattern, 'database') : undefined,
-              insights: raw[k].insights ? this.cryptic.decrypt(raw[k].insights, 'database') : undefined,
-
+                : undefined,
+              currentCost: raw[k].currentCost
+                ? parseFloat(this.cryptic.decrypt(raw[k].currentCost, 'database'))
+                : undefined,
+              targetCost: raw[k].targetCost
+                ? parseFloat(this.cryptic.decrypt(raw[k].targetCost, 'database'))
+                : undefined,
+              monthlySavings: raw[k].monthlySavings
+                ? parseFloat(this.cryptic.decrypt(raw[k].monthlySavings, 'database'))
+                : undefined,
+              annualSavings: raw[k].annualSavings
+                ? parseFloat(this.cryptic.decrypt(raw[k].annualSavings, 'database'))
+                : undefined,
+              reasoning: raw[k].reasoning
+                ? this.cryptic.decrypt(raw[k].reasoning, 'database')
+                : undefined,
+              alternative: raw[k].alternative
+                ? this.cryptic.decrypt(raw[k].alternative, 'database')
+                : undefined,
+              alternativeCost: raw[k].alternativeCost
+                ? parseFloat(this.cryptic.decrypt(raw[k].alternativeCost, 'database'))
+                : undefined,
+              pattern: raw[k].pattern
+                ? this.cryptic.decrypt(raw[k].pattern, 'database')
+                : undefined,
+              insights: raw[k].insights
+                ? this.cryptic.decrypt(raw[k].insights, 'database')
+                : undefined,
             };
             myGrowProjects.push(newG);
           }
           const migrated = migrateGrowArray(myGrowProjects);
           AppStateService.instance.allGrowProjects = migrated;
-          this.localStorage.saveData("grow", JSON.stringify(migrated));
+          this.localStorage.saveData('grow', JSON.stringify(migrated));
         }
         break;
       }
       case 'balance/asset/assets': {
         if (raw == null) {
           AppStateService.instance.allAssets = [];
-          this.localStorage.saveData("assets", JSON.stringify([]));
+          this.localStorage.saveData('assets', JSON.stringify([]));
         } else {
           const myAssets: Expense[] = [];
           for (const k in raw) {
-            const newR: Expense = { tag: this.cryptic.decrypt(raw[k].tag, 'database'), amount: parseFloat(this.cryptic.decrypt(raw[k].amount, 'database')) };
+            const newR: Expense = {
+              tag: this.cryptic.decrypt(raw[k].tag, 'database'),
+              amount: parseFloat(this.cryptic.decrypt(raw[k].amount, 'database')),
+            };
             myAssets.push(newR);
           }
           AppStateService.instance.allAssets = myAssets;
-          this.localStorage.saveData("assets", JSON.stringify(myAssets));
+          this.localStorage.saveData('assets', JSON.stringify(myAssets));
         }
         break;
       }
       case 'balance/asset/shares': {
         if (raw == null) {
           AppStateService.instance.allShares = [];
-          this.localStorage.saveData("shares", JSON.stringify([]));
+          this.localStorage.saveData('shares', JSON.stringify([]));
         } else {
           const myShares: Share[] = [];
           for (const k in raw) {
-            const newR: Share = { tag: this.cryptic.decrypt(raw[k].tag, 'database'), quantity: parseFloat(this.cryptic.decrypt(raw[k].quantity, 'database')), price: parseFloat(this.cryptic.decrypt(raw[k].price, 'database')) };
+            const newR: Share = {
+              tag: this.cryptic.decrypt(raw[k].tag, 'database'),
+              quantity: parseFloat(this.cryptic.decrypt(raw[k].quantity, 'database')),
+              price: parseFloat(this.cryptic.decrypt(raw[k].price, 'database')),
+            };
             myShares.push(newR);
           }
           AppStateService.instance.allShares = myShares;
-          this.localStorage.saveData("shares", JSON.stringify(myShares));
+          this.localStorage.saveData('shares', JSON.stringify(myShares));
         }
         break;
       }
       case 'balance/asset/investments': {
         if (raw == null) {
           AppStateService.instance.allInvestments = [];
-          this.localStorage.saveData("investments", JSON.stringify([]));
+          this.localStorage.saveData('investments', JSON.stringify([]));
         } else {
           const myInvestments: Investment[] = [];
           for (const k in raw) {
-            const newR: Investment = { tag: this.cryptic.decrypt(raw[k].tag, 'database'), deposit: parseFloat(this.cryptic.decrypt(raw[k].deposit, 'database')), amount: parseFloat(this.cryptic.decrypt(raw[k].amount, 'database')) };
+            const newR: Investment = {
+              tag: this.cryptic.decrypt(raw[k].tag, 'database'),
+              deposit: parseFloat(this.cryptic.decrypt(raw[k].deposit, 'database')),
+              amount: parseFloat(this.cryptic.decrypt(raw[k].amount, 'database')),
+            };
             myInvestments.push(newR);
           }
           AppStateService.instance.allInvestments = myInvestments;
-          this.localStorage.saveData("investments", JSON.stringify(myInvestments));
+          this.localStorage.saveData('investments', JSON.stringify(myInvestments));
         }
         break;
       }
       case 'balance/liabilities': {
         if (raw == null) {
           AppStateService.instance.liabilities = [];
-          this.localStorage.saveData("liabilities", JSON.stringify([]));
+          this.localStorage.saveData('liabilities', JSON.stringify([]));
         } else {
           const myLiabilities: Liability[] = [];
           for (const k in raw) {
-            const newR: Liability = { tag: this.cryptic.decrypt(raw[k].tag, 'database'), amount: parseFloat(this.cryptic.decrypt(raw[k].amount, 'database')), investment: this.cryptic.decrypt(raw[k].investment, 'database')=="true", credit: parseFloat(this.cryptic.decrypt(raw[k].credit, 'database')) };
+            const newR: Liability = {
+              tag: this.cryptic.decrypt(raw[k].tag, 'database'),
+              amount: parseFloat(this.cryptic.decrypt(raw[k].amount, 'database')),
+              investment: this.cryptic.decrypt(raw[k].investment, 'database') == 'true',
+              credit: parseFloat(this.cryptic.decrypt(raw[k].credit, 'database')),
+            };
             myLiabilities.push(newR);
           }
           AppStateService.instance.liabilities = myLiabilities;
-          this.localStorage.saveData("liabilities", JSON.stringify(myLiabilities));
+          this.localStorage.saveData('liabilities', JSON.stringify(myLiabilities));
         }
         break;
       }
@@ -973,13 +1166,13 @@ export class AppDataService {
     if (!Array.isArray(encryptedHistory)) {
       return [];
     }
-    
+
     return encryptedHistory.map((change: any) => ({
       effectiveDate: this.cryptic.decrypt(change.effectiveDate, 'database'),
       field: this.cryptic.decrypt(change.field, 'database'),
       oldValue: this.decryptValue(change.oldValue),
       newValue: this.decryptValue(change.newValue),
-      reason: change.reason ? this.cryptic.decrypt(change.reason, 'database') : undefined
+      reason: change.reason ? this.cryptic.decrypt(change.reason, 'database') : undefined,
     }));
   }
 

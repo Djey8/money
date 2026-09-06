@@ -26,13 +26,16 @@ describe('AddGrowComponent', () => {
         AddGrowComponent,
         TranslateModule.forRoot(),
         HttpClientTestingModule,
-        RouterTestingModule
+        RouterTestingModule,
       ],
       providers: [
         { provide: DatabaseService, useValue: {} },
         { provide: PersistenceService, useValue: mockPersistence },
-        { provide: FIREBASE_OPTIONS, useValue: { projectId: 'test', appId: 'test', apiKey: 'test' } }
-      ]
+        {
+          provide: FIREBASE_OPTIONS,
+          useValue: { projectId: 'test', appId: 'test', apiKey: 'test' },
+        },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(AddGrowComponent);
@@ -49,9 +52,7 @@ describe('AddGrowComponent', () => {
     });
 
     it('should return true for duplicate title', () => {
-      AppStateService.instance.allGrowProjects = [
-        { title: 'Real Estate' } as any
-      ];
+      AppStateService.instance.allGrowProjects = [{ title: 'Real Estate' } as any];
       expect(component.invalidTitle('Real Estate')).toBe(true);
     });
   });

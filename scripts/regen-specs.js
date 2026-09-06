@@ -12,7 +12,7 @@ const passingFiles = new Set([
   'src/app/shared/services/cryptic.service.spec.ts',
   'src/app/shared/services/csv.service.spec.ts',
   'src/app/shared/services/local.service.spec.ts',
-  'src/app/panels/menu/menu.component.spec.ts'
+  'src/app/panels/menu/menu.component.spec.ts',
 ]);
 
 function findSpecFiles(dir) {
@@ -39,41 +39,41 @@ function makeStub(componentName, componentPath, specFilePath) {
 
   return [
     "import { ComponentFixture, TestBed } from '@angular/core/testing';",
-    "import { " + componentName + " } from '" + componentPath + "';",
+    'import { ' + componentName + " } from '" + componentPath + "';",
     "import { TranslateModule } from '@ngx-translate/core';",
     "import { HttpClientTestingModule } from '@angular/common/http/testing';",
     "import { RouterTestingModule } from '@angular/router/testing';",
     "import { DatabaseService } from '" + relToServices + "/database.service';",
     "import { FIREBASE_OPTIONS } from '@angular/fire/compat';",
-    "",
-    "// TODO: Phase 4 — add real behavioral tests for " + componentName,
+    '',
+    '// TODO: Phase 4 — add real behavioral tests for ' + componentName,
     "describe('" + componentName + "', () => {",
-    "  let component: " + componentName + ";",
-    "  let fixture: ComponentFixture<" + componentName + ">;",
-    "",
-    "  beforeEach(async () => {",
-    "    await TestBed.configureTestingModule({",
-    "      imports: [",
-    "        " + componentName + ",",
-    "        TranslateModule.forRoot(),",
-    "        HttpClientTestingModule,",
-    "        RouterTestingModule",
-    "      ],",
-    "      providers: [",
-    "        { provide: DatabaseService, useValue: {} },",
+    '  let component: ' + componentName + ';',
+    '  let fixture: ComponentFixture<' + componentName + '>;',
+    '',
+    '  beforeEach(async () => {',
+    '    await TestBed.configureTestingModule({',
+    '      imports: [',
+    '        ' + componentName + ',',
+    '        TranslateModule.forRoot(),',
+    '        HttpClientTestingModule,',
+    '        RouterTestingModule',
+    '      ],',
+    '      providers: [',
+    '        { provide: DatabaseService, useValue: {} },',
     "        { provide: FIREBASE_OPTIONS, useValue: { projectId: 'test', appId: 'test', apiKey: 'test' } }",
-    "      ]",
-    "    }).compileComponents();",
-    "",
-    "    fixture = TestBed.createComponent(" + componentName + ");",
-    "    component = fixture.componentInstance;",
-    "  });",
-    "",
+    '      ]',
+    '    }).compileComponents();',
+    '',
+    '    fixture = TestBed.createComponent(' + componentName + ');',
+    '    component = fixture.componentInstance;',
+    '  });',
+    '',
     "  it('should create', () => {",
-    "    expect(component).toBeTruthy();",
-    "  });",
-    "});",
-    ""
+    '    expect(component).toBeTruthy();',
+    '  });',
+    '});',
+    '',
   ].join('\n');
 }
 
@@ -89,7 +89,9 @@ for (const file of specFiles) {
 
   if (!basename.endsWith('.component')) continue;
 
-  const importMatch = content.match(/import\s*\{[^}]*?\b(\w+Component)\b[^}]*?\}\s*from\s*'([^']+)'/);
+  const importMatch = content.match(
+    /import\s*\{[^}]*?\b(\w+Component)\b[^}]*?\}\s*from\s*'([^']+)'/,
+  );
   if (!importMatch) {
     console.log('SKIP (no component import): ' + relPath);
     continue;

@@ -24,18 +24,18 @@ const COOKIE_OPTIONS = {
   httpOnly: true,
   secure: IS_PRODUCTION,
   sameSite: 'strict',
-  path: '/'
+  path: '/',
 };
 
 function setAuthCookies(res, accessToken, refreshToken) {
   res.cookie('access_token', accessToken, {
     ...COOKIE_OPTIONS,
-    maxAge: ACCESS_TOKEN_MAX_AGE_MS
+    maxAge: ACCESS_TOKEN_MAX_AGE_MS,
   });
   res.cookie('refresh_token', refreshToken, {
     ...COOKIE_OPTIONS,
     path: '/api/auth',
-    maxAge: REFRESH_TOKEN_MAX_AGE_MS
+    maxAge: REFRESH_TOKEN_MAX_AGE_MS,
   });
 }
 
@@ -46,8 +46,10 @@ function clearAuthCookies(res) {
 
 async function createRefreshToken(userId, email) {
   const jti = crypto.randomUUID();
-  const refreshToken = jwt.sign({ userId, email, jti }, JWT_SECRET, { expiresIn: REFRESH_TOKEN_EXPIRES_IN });
-  
+  const refreshToken = jwt.sign({ userId, email, jti }, JWT_SECRET, {
+    expiresIn: REFRESH_TOKEN_EXPIRES_IN,
+  });
+
   // Store refresh token reference in auth database for revocation
   const authDb = getAuthDb();
   await authDb.insert({
@@ -55,9 +57,9 @@ async function createRefreshToken(userId, email) {
     type: 'refresh_token',
     userId,
     createdAt: new Date().toISOString(),
-    expiresAt: new Date(Date.now() + REFRESH_TOKEN_MAX_AGE_MS).toISOString()
+    expiresAt: new Date(Date.now() + REFRESH_TOKEN_MAX_AGE_MS).toISOString(),
   });
-  
+
   return refreshToken;
 }
 
@@ -138,7 +140,9 @@ async function getEncryptionConfig(userId) {
   try {
     const authDb = getAuthDb();
     const userDoc = await authDb.get(userId);
-    return userDoc.encryptionConfig || { key: 'default', encryptLocal: true, encryptDatabase: false };
+    return (
+      userDoc.encryptionConfig || { key: 'default', encryptLocal: true, encryptDatabase: false }
+    );
   } catch {
     return { key: 'default', encryptLocal: true, encryptDatabase: false };
   }
@@ -150,7 +154,7 @@ async function setEncryptionConfig(userId, config) {
   userDoc.encryptionConfig = {
     key: config.key || 'default',
     encryptLocal: !!config.encryptLocal,
-    encryptDatabase: !!config.encryptDatabase
+    encryptDatabase: !!config.encryptDatabase,
   };
   userDoc.updatedAt = new Date().toISOString();
   await authDb.insert(userDoc);
@@ -175,11 +179,13 @@ router.post('/guest', (req, res) => {
   }
 
   const guestId = `guest_${Date.now()}_${crypto.randomUUID().replace(/-/g, '').substring(0, 9)}`;
-  const accessToken = jwt.sign({ userId: guestId, role: 'guest' }, JWT_SECRET, { expiresIn: GUEST_TOKEN_EXPIRES_IN });
+  const accessToken = jwt.sign({ userId: guestId, role: 'guest' }, JWT_SECRET, {
+    expiresIn: GUEST_TOKEN_EXPIRES_IN,
+  });
 
   res.cookie('access_token', accessToken, {
     ...COOKIE_OPTIONS,
-    maxAge: GUEST_TOKEN_MAX_AGE_MS
+    maxAge: GUEST_TOKEN_MAX_AGE_MS,
   });
 
   logAuthEvent('guest_login', guestId, true, {});
@@ -207,7 +213,9 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ error: 'Password must be at least 8 characters' });
     }
     if (!/[A-Z]/.test(password) || !/[a-z]/.test(password) || !/[0-9]/.test(password)) {
-      return res.status(400).json({ error: 'Password must contain uppercase, lowercase, and a number' });
+      return res
+        .status(400)
+        .json({ error: 'Password must contain uppercase, lowercase, and a number' });
     }
 
     const authDb = getAuthDb();
@@ -217,7 +225,7 @@ router.post('/register', async (req, res) => {
     try {
       const result = await authDb.find({
         selector: { email },
-        limit: 1
+        limit: 1,
       });
 
       if (result.docs.length > 0) {
@@ -236,7 +244,7 @@ router.post('/register', async (req, res) => {
       _id: userId,
       email,
       password: hashedPassword,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
     };
 
     await authDb.insert(user);
@@ -250,16 +258,16 @@ router.post('/register', async (req, res) => {
       data: {
         info: {
           email: email,
-          username: username || email.split('@')[0] // Use provided username or email prefix as default
-        }
-      }
+          username: username || email.split('@')[0], // Use provided username or email prefix as default
+        },
+      },
     };
 
     try {
       await usersDb.insert(userDataDoc);
       logger.logUserActivity(userId, 'user_registered', {
         username: username || email.split('@')[0],
-        hasCustomUsername: !!username
+        hasCustomUsername: !!username,
       });
     } catch (err) {
       logger.logError(err, { context: 'user_data_document_creation', userId });
@@ -272,7 +280,9 @@ router.post('/register', async (req, res) => {
     logUserActivity(userId, 'account_created', { email, registrationMethod: 'email' });
 
     // Generate tokens and set cookies
-    const accessToken = jwt.sign({ userId, email }, JWT_SECRET, { expiresIn: ACCESS_TOKEN_EXPIRES_IN });
+    const accessToken = jwt.sign({ userId, email }, JWT_SECRET, {
+      expiresIn: ACCESS_TOKEN_EXPIRES_IN,
+    });
     const refreshToken = await createRefreshToken(userId, email);
     setAuthCookies(res, accessToken, refreshToken);
 
@@ -282,7 +292,7 @@ router.post('/register', async (req, res) => {
     res.status(201).json({
       userId,
       email,
-      encryptionConfig
+      encryptionConfig,
     });
   } catch (error) {
     console.error('Registration error:', error);
@@ -305,7 +315,11 @@ router.post('/login', async (req, res) => {
       const retryAfter = Math.ceil((record.lockedUntil - Date.now()) / 1000);
       logSecurityEvent('account_locked', { email, attempts: record.count });
       res.set('Retry-After', String(retryAfter));
-      return res.status(429).json({ error: 'Account temporarily locked due to too many failed attempts. Try again later.' });
+      return res
+        .status(429)
+        .json({
+          error: 'Account temporarily locked due to too many failed attempts. Try again later.',
+        });
     }
 
     const authDb = getAuthDb();
@@ -313,7 +327,7 @@ router.post('/login', async (req, res) => {
     // Find user
     const result = await authDb.find({
       selector: { email },
-      limit: 1
+      limit: 1,
     });
 
     if (result.docs.length === 0) {
@@ -328,7 +342,11 @@ router.post('/login', async (req, res) => {
     const isValidPassword = await bcrypt.compare(password, user.password);
     if (!isValidPassword) {
       const record = recordFailedAttempt(email);
-      logAuthEvent('login', user._id, false, { email, reason: 'invalid_password', failedAttempts: record.count });
+      logAuthEvent('login', user._id, false, {
+        email,
+        reason: 'invalid_password',
+        failedAttempts: record.count,
+      });
       if (record.count >= LOCKOUT_THRESHOLD) {
         logSecurityEvent('account_locked', { email, userId: user._id, attempts: record.count });
       }
@@ -343,7 +361,9 @@ router.post('/login', async (req, res) => {
     logUserActivity(user._id, 'user_login', { email, loginMethod: 'password' });
 
     // Generate tokens and set cookies
-    const accessToken = jwt.sign({ userId: user._id, email: user.email }, JWT_SECRET, { expiresIn: ACCESS_TOKEN_EXPIRES_IN });
+    const accessToken = jwt.sign({ userId: user._id, email: user.email }, JWT_SECRET, {
+      expiresIn: ACCESS_TOKEN_EXPIRES_IN,
+    });
     const refreshToken = await createRefreshToken(user._id, user.email);
     setAuthCookies(res, accessToken, refreshToken);
 
@@ -353,7 +373,7 @@ router.post('/login', async (req, res) => {
     res.json({
       userId: user._id,
       email: user.email,
-      encryptionConfig
+      encryptionConfig,
     });
   } catch (error) {
     console.error('Login error:', error);
@@ -377,34 +397,34 @@ router.post('/verify-password', authenticateToken, async (req, res) => {
     }
 
     const authDb = getAuthDb();
-    
+
     // Get user from auth database
     let userDoc;
     try {
       userDoc = await authDb.get(userId);
     } catch {
       logger.logSecurity('password_verification_failed', {
-        userId, 
-        reason: 'user_not_found' 
+        userId,
+        reason: 'user_not_found',
       });
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
     // Verify password
     const isValidPassword = await bcrypt.compare(password, userDoc.password);
-    
+
     if (!isValidPassword) {
-      logSecurityEvent('password_verification_failed', 'medium', { 
-        userId, 
-        reason: 'incorrect_password' 
+      logSecurityEvent('password_verification_failed', 'medium', {
+        userId,
+        reason: 'incorrect_password',
       });
       return res.status(401).json({ error: 'Invalid password' });
     }
 
-    logger.logUserActivity(userId, 'password_verified', { 
-      reason: 'sensitive_operation_access' 
+    logger.logUserActivity(userId, 'password_verified', {
+      reason: 'sensitive_operation_access',
     });
-    
+
     res.json({ valid: true });
   } catch (error) {
     logger.logError(error, { context: 'password_verification', userId: req.userId });
@@ -434,7 +454,7 @@ router.put('/update-email', authenticateToken, async (req, res) => {
     try {
       const result = await authDb.find({
         selector: { email: newEmail },
-        limit: 1
+        limit: 1,
       });
 
       if (result.docs.length > 0 && result.docs[0]._id !== userId) {
@@ -462,20 +482,22 @@ router.put('/update-email', authenticateToken, async (req, res) => {
     await authDb.insert(userDoc);
 
     // Generate new access token with updated email and set cookie
-    const accessToken = jwt.sign({ userId, email: newEmail }, JWT_SECRET, { expiresIn: ACCESS_TOKEN_EXPIRES_IN });
+    const accessToken = jwt.sign({ userId, email: newEmail }, JWT_SECRET, {
+      expiresIn: ACCESS_TOKEN_EXPIRES_IN,
+    });
     res.cookie('access_token', accessToken, {
       ...COOKIE_OPTIONS,
-      maxAge: 15 * 60 * 1000
+      maxAge: 15 * 60 * 1000,
     });
 
     logger.logUserActivity(userId, 'email_updated', {
       previousEmail: req.userEmail,
-      newEmail: newEmail
+      newEmail: newEmail,
     });
 
     res.json({
       success: true,
-      email: newEmail
+      email: newEmail,
     });
   } catch (error) {
     logger.logError(error, { context: 'email_update', userId: req.userId });
@@ -525,7 +547,7 @@ router.delete('/delete-account', authenticateToken, async (req, res) => {
 router.post('/refresh', async (req, res) => {
   try {
     const refreshToken = req.cookies?.refresh_token;
-    
+
     if (!refreshToken) {
       return res.status(401).json({ error: 'No refresh token' });
     }
@@ -549,11 +571,9 @@ router.post('/refresh', async (req, res) => {
     // Rotate: revoke old refresh token, issue new pair
     await revokeRefreshToken(decoded.jti);
 
-    const accessToken = jwt.sign(
-      { userId: decoded.userId, email: decoded.email },
-      JWT_SECRET,
-      { expiresIn: ACCESS_TOKEN_EXPIRES_IN }
-    );
+    const accessToken = jwt.sign({ userId: decoded.userId, email: decoded.email }, JWT_SECRET, {
+      expiresIn: ACCESS_TOKEN_EXPIRES_IN,
+    });
     const newRefreshToken = await createRefreshToken(decoded.userId, decoded.email);
     setAuthCookies(res, accessToken, newRefreshToken);
 
@@ -587,7 +607,10 @@ router.put('/encryption-config', authenticateToken, async (req, res) => {
       return res.status(400).json({ error: 'Encryption key is required' });
     }
     await setEncryptionConfig(req.userId, { key, encryptLocal, encryptDatabase });
-    logUserActivity(req.userId, 'encryption_config_updated', { encryptLocal: !!encryptLocal, encryptDatabase: !!encryptDatabase });
+    logUserActivity(req.userId, 'encryption_config_updated', {
+      encryptLocal: !!encryptLocal,
+      encryptDatabase: !!encryptDatabase,
+    });
     res.json({ success: true });
   } catch (error) {
     logger.logError(error, { context: 'update_encryption_config', userId: req.userId });
@@ -599,7 +622,7 @@ router.put('/encryption-config', authenticateToken, async (req, res) => {
 router.post('/logout', async (req, res) => {
   try {
     const refreshToken = req.cookies?.refresh_token;
-    
+
     if (refreshToken) {
       try {
         const decoded = jwt.verify(refreshToken, JWT_SECRET);

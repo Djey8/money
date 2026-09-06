@@ -8,24 +8,28 @@ import { DemoService } from '../shared/services/demo.service';
 import { AppDatePipe } from '../shared/pipes/app-date.pipe';
 
 interface SidebarEntry {
-  label: string;       // e.g. "v1.2.1" or "1.2.x"
-  isGroup: boolean;    // true for consolidated entries
+  label: string; // e.g. "v1.2.1" or "1.2.x"
+  isGroup: boolean; // true for consolidated entries
   versions: ChangelogVersion[];
 }
 
 // Deferred import to break circular chain
-let AppComponent: any; setTimeout(() => import('src/app/app.component').then(m => AppComponent = m.AppComponent));
+let AppComponent: any;
+setTimeout(() => import('src/app/app.component').then((m) => (AppComponent = m.AppComponent)));
 
 @Component({
   selector: 'app-changelog',
   standalone: true,
   imports: [NgIf, NgFor, NgClass, FormsModule, RouterLink, TranslateModule, AppDatePipe],
   templateUrl: './changelog.component.html',
-  styleUrls: ['./changelog.component.css', '../landing/landing-page.component.css', '../app.component.css'],
-  encapsulation: ViewEncapsulation.None
+  styleUrls: [
+    './changelog.component.css',
+    '../landing/landing-page.component.css',
+    '../app.component.css',
+  ],
+  encapsulation: ViewEncapsulation.None,
 })
 export class ChangelogComponent implements OnInit {
-
   versions: ChangelogVersion[] = [];
   loading = true;
   error = false;
@@ -38,13 +42,21 @@ export class ChangelogComponent implements OnInit {
   groupEntries: SidebarEntry[] = [];
   selectedGroupIndex = 0;
 
-  constructor(private changelogService: ChangelogService, private demoService: DemoService, private router: Router) {}
+  constructor(
+    private changelogService: ChangelogService,
+    private demoService: DemoService,
+    private router: Router,
+  ) {}
 
-  get appReference() { return AppComponent; }
+  get appReference() {
+    return AppComponent;
+  }
 
   closeNav(): void {
     const toggle = document.getElementById('nav-toggle') as HTMLInputElement;
-    if (toggle) { toggle.checked = false; }
+    if (toggle) {
+      toggle.checked = false;
+    }
   }
 
   launchDemo(): void {
@@ -61,7 +73,7 @@ export class ChangelogComponent implements OnInit {
 
   ngOnInit(): void {
     this.changelogService.getVersions().subscribe({
-      next: versions => {
+      next: (versions) => {
         this.versions = versions;
         this.loading = false;
         this.error = versions.length === 0;
@@ -70,7 +82,7 @@ export class ChangelogComponent implements OnInit {
       error: () => {
         this.loading = false;
         this.error = true;
-      }
+      },
     });
   }
 

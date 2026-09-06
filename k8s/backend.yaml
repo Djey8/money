@@ -5,19 +5,19 @@ metadata:
   name: backend-config
   namespace: money-app
 data:
-  PORT: "3000"
-  NODE_ENV: "production"
-  COUCHDB_URL: "http://couchdb:5984"
-  COUCHDB_USER: "admin"
+  PORT: '3000'
+  NODE_ENV: 'production'
+  COUCHDB_URL: 'http://couchdb:5984'
+  COUCHDB_USER: 'admin'
   # CORS: Using wildcard since frontend IP is dynamic via Ingress
   # Ingress serves both on same domain, so same-origin in most cases
-  CORS_ORIGINS: "https://cashflowhero.uk,https://www.cashflowhero.uk"
+  CORS_ORIGINS: 'https://cashflowhero.uk,https://www.cashflowhero.uk'
   # Skip IP-based rate limiting in Kubernetes (trust ingress/service mesh)
-  SKIP_RATE_LIMIT: "false"
+  SKIP_RATE_LIMIT: 'false'
   # Reduce logging in production for Pi performance (set to "info" when debugging)
-  LOG_LEVEL: "warn"
+  LOG_LEVEL: 'warn'
   # Enable debug logging for all requests
-  DEBUG_REQUESTS: "false"
+  DEBUG_REQUESTS: 'false'
 # Secret "backend-secret" is defined in k8s/secrets.yaml (not committed to Git)
 # Apply separately: kubectl apply -f k8s/secrets.yaml
 ---
@@ -54,89 +54,89 @@ spec:
         runAsNonRoot: true
         runAsUser: 1000
       containers:
-      - name: backend
-        image: localhost/money-backend:latest
-        securityContext:
-          allowPrivilegeEscalation: false
-          readOnlyRootFilesystem: true
-          capabilities:
-            drop: ["ALL"]
-        imagePullPolicy: Never
-        ports:
-        - containerPort: 3000
-        env:
-        - name: PORT
-          valueFrom:
-            configMapKeyRef:
-              name: backend-config
-              key: PORT
-        - name: NODE_ENV
-          valueFrom:
-            configMapKeyRef:
-              name: backend-config
-              key: NODE_ENV
-        - name: COUCHDB_URL
-          valueFrom:
-            configMapKeyRef:
-              name: backend-config
-              key: COUCHDB_URL
-        - name: COUCHDB_USER
-          valueFrom:
-            configMapKeyRef:
-              name: backend-config
-              key: COUCHDB_USER
-        - name: CORS_ORIGINS
-          valueFrom:
-            configMapKeyRef:
-              name: backend-config
-              key: CORS_ORIGINS
-        - name: SKIP_RATE_LIMIT
-          valueFrom:
-            configMapKeyRef:
-              name: backend-config
-              key: SKIP_RATE_LIMIT
-        - name: DEBUG_REQUESTS
-          valueFrom:
-            configMapKeyRef:
-              name: backend-config
-              key: DEBUG_REQUESTS
-        - name: LOG_LEVEL
-          valueFrom:
-            configMapKeyRef:
-              name: backend-config
-              key: LOG_LEVEL
-        - name: JWT_SECRET
-          valueFrom:
-            secretKeyRef:
-              name: backend-secret
-              key: JWT_SECRET
-        - name: COUCHDB_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: backend-secret
-              key: COUCHDB_PASSWORD
-        - name: ADMIN_EMAILS
-          valueFrom:
-            secretKeyRef:
-              name: backend-secret
-              key: ADMIN_EMAILS
-              optional: true
-        resources:
-          requests:
-            memory: "128Mi"
-            cpu: "100m"
-          limits:
-            memory: "192Mi"
-            cpu: "200m"
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: 3000
-          initialDelaySeconds: 30
-          periodSeconds: 10
-        readinessProbe:
-          httpGet:
-            path: /health
-            port: 3000
-          initialDelaySeconds: 5
-          periodSeconds: 5
+        - name: backend
+          image: localhost/money-backend:latest
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ['ALL']
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 3000
+          env:
+            - name: PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: backend-config
+                  key: PORT
+            - name: NODE_ENV
+              valueFrom:
+                configMapKeyRef:
+                  name: backend-config
+                  key: NODE_ENV
+            - name: COUCHDB_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: backend-config
+                  key: COUCHDB_URL
+            - name: COUCHDB_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: backend-config
+                  key: COUCHDB_USER
+            - name: CORS_ORIGINS
+              valueFrom:
+                configMapKeyRef:
+                  name: backend-config
+                  key: CORS_ORIGINS
+            - name: SKIP_RATE_LIMIT
+              valueFrom:
+                configMapKeyRef:
+                  name: backend-config
+                  key: SKIP_RATE_LIMIT
+            - name: DEBUG_REQUESTS
+              valueFrom:
+                configMapKeyRef:
+                  name: backend-config
+                  key: DEBUG_REQUESTS
+            - name: LOG_LEVEL
+              valueFrom:
+                configMapKeyRef:
+                  name: backend-config
+                  key: LOG_LEVEL
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: backend-secret
+                  key: JWT_SECRET
+            - name: COUCHDB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: backend-secret
+                  key: COUCHDB_PASSWORD
+            - name: ADMIN_EMAILS
+              valueFrom:
+                secretKeyRef:
+                  name: backend-secret
+                  key: ADMIN_EMAILS
+                  optional: true
+          resources:
+            requests:
+              memory: '128Mi'
+              cpu: '100m'
+            limits:
+              memory: '192Mi'
+              cpu: '200m'
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 5

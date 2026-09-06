@@ -14,12 +14,12 @@ jest.mock('./stats.component', () => ({
     showAverageView: false,
     selectedMonth: 'all',
     filterType: 'all',
-  }
+  },
 }));
 
 // Mock ChartFilterService (imported but not directly used in the functions we test)
 jest.mock('../shared/services/chart-filter.service', () => ({
-  ChartFilterService: {}
+  ChartFilterService: {},
 }));
 
 import {
@@ -86,16 +86,12 @@ describe('stats-calculations', () => {
     });
 
     it('returns 0 when income is 0', () => {
-      AppStateService.instance.allTransactions = [
-        tx('Daily', -100, '2026-01-15', 'Food'),
-      ];
+      AppStateService.instance.allTransactions = [tx('Daily', -100, '2026-01-15', 'Food')];
       expect(calculateSavingsRate()).toBe(0);
     });
 
     it('calculates 100% when no expenses', () => {
-      AppStateService.instance.allTransactions = [
-        tx('Income', 1000, '2026-01-01', '@Salary'),
-      ];
+      AppStateService.instance.allTransactions = [tx('Income', 1000, '2026-01-01', '@Salary')];
       expect(calculateSavingsRate()).toBe(100);
     });
 
@@ -112,8 +108,8 @@ describe('stats-calculations', () => {
     it('excludes inter-account transfers (@ categories)', () => {
       AppStateService.instance.allTransactions = [
         tx('Income', 1000, '2026-01-01', '@Salary'),
-        tx('Daily', -200, '2026-01-10', '@Splurge'),     // transfer → excluded
-        tx('Daily', -100, '2026-01-15', 'Groceries'),    // real expense
+        tx('Daily', -200, '2026-01-10', '@Splurge'), // transfer → excluded
+        tx('Daily', -100, '2026-01-15', 'Groceries'), // real expense
       ];
       // Only -100 counts. (1000 - 100) / 1000 * 100 = 90
       expect(calculateSavingsRate()).toBe(90);
@@ -132,8 +128,8 @@ describe('stats-calculations', () => {
       AppStateService.instance.allTransactions = [
         tx('Income', 1000, '2026-01-01', '@Salary'),
         tx('Daily', -400, '2026-01-15', 'Rent'),
-        tx('Income', 2000, '2026-02-01', '@Salary'),    // different month
-        tx('Daily', -100, '2026-02-15', 'Food'),        // different month
+        tx('Income', 2000, '2026-02-01', '@Salary'), // different month
+        tx('Daily', -100, '2026-02-15', 'Food'), // different month
       ];
       // January only: (1000 - 400) / 1000 * 100 = 60
       expect(calculateSavingsRate('2026-01')).toBe(60);
@@ -151,9 +147,9 @@ describe('stats-calculations', () => {
 
     it('filters by quarter (YYYY-Qn)', () => {
       AppStateService.instance.allTransactions = [
-        tx('Income', 3000, '2026-01-15', '@Salary'),   // Q1
-        tx('Daily', -300, '2026-02-01', 'Food'),        // Q1
-        tx('Income', 5000, '2026-04-01', '@Salary'),    // Q2 - excluded
+        tx('Income', 3000, '2026-01-15', '@Salary'), // Q1
+        tx('Daily', -300, '2026-02-01', 'Food'), // Q1
+        tx('Income', 5000, '2026-04-01', '@Salary'), // Q2 - excluded
       ];
       // Q1: (3000 - 300) / 3000 * 100 = 90
       expect(calculateSavingsRate('2026-Q1')).toBe(90);
@@ -161,9 +157,9 @@ describe('stats-calculations', () => {
 
     it('filters by half-year (YYYY-Hn)', () => {
       AppStateService.instance.allTransactions = [
-        tx('Income', 2000, '2026-01-01', '@Salary'),   // H1
-        tx('Daily', -500, '2026-03-15', 'Bills'),       // H1
-        tx('Income', 4000, '2026-07-01', '@Salary'),    // H2 - excluded
+        tx('Income', 2000, '2026-01-01', '@Salary'), // H1
+        tx('Daily', -500, '2026-03-15', 'Bills'), // H1
+        tx('Income', 4000, '2026-07-01', '@Salary'), // H2 - excluded
       ];
       // H1: (2000 - 500) / 2000 * 100 = 75
       expect(calculateSavingsRate('2026-H1')).toBe(75);
@@ -173,10 +169,10 @@ describe('stats-calculations', () => {
       AppStateService.instance.allTransactions = [
         tx('Income', 1500, '2026-01-15', '@Salary'),
         tx('Daily', -500, '2026-01-20', 'Rent'),
-        tx('Income', 2000, '2026-02-15', '@Salary'),    // out of range
+        tx('Income', 2000, '2026-02-15', '@Salary'), // out of range
       ];
       expect(calculateSavingsRate('custom:2026-01-01:2026-01-31')).toBe(
-        ((1500 - 500) / 1500) * 100
+        ((1500 - 500) / 1500) * 100,
       );
     });
   });
@@ -224,15 +220,22 @@ describe('stats-calculations', () => {
     });
 
     it('returns 0 when no subscriptions (nothing is fixed)', () => {
-      AppStateService.instance.allTransactions = [
-        tx('Daily', -100, '2026-01-10', 'Food'),
-      ];
+      AppStateService.instance.allTransactions = [tx('Daily', -100, '2026-01-10', 'Food')];
       expect(calculateFixedCostsRatio()).toBe(0);
     });
 
     it('identifies subscription categories as fixed costs', () => {
       AppStateService.instance.allSubscriptions = [
-        { title: 'Netflix', account: 'Splurge', amount: -15, startDate: '2026-01-01', endDate: '', category: 'Streaming', comment: '', frequency: 'monthly' },
+        {
+          title: 'Netflix',
+          account: 'Splurge',
+          amount: -15,
+          startDate: '2026-01-01',
+          endDate: '',
+          category: 'Streaming',
+          comment: '',
+          frequency: 'monthly',
+        },
       ];
       AppStateService.instance.allTransactions = [
         tx('Daily', -100, '2026-01-10', 'Food'),
@@ -245,12 +248,21 @@ describe('stats-calculations', () => {
 
     it('filters by month', () => {
       AppStateService.instance.allSubscriptions = [
-        { title: 'Gym', account: 'Daily', amount: -40, startDate: '2026-01-01', endDate: '', category: 'Health', comment: '', frequency: 'monthly' },
+        {
+          title: 'Gym',
+          account: 'Daily',
+          amount: -40,
+          startDate: '2026-01-01',
+          endDate: '',
+          category: 'Health',
+          comment: '',
+          frequency: 'monthly',
+        },
       ];
       AppStateService.instance.allTransactions = [
         tx('Daily', -40, '2026-01-05', 'Health'),
         tx('Daily', -60, '2026-01-15', 'Food'),
-        tx('Daily', -200, '2026-02-01', 'Food'),     // excluded
+        tx('Daily', -200, '2026-02-01', 'Food'), // excluded
       ];
       // Fixed = 40, Total = 100. 40%
       expect(calculateFixedCostsRatio('2026-01')).toBe(40);
@@ -296,12 +308,12 @@ describe('stats-calculations', () => {
     it('excludes inter-account transfers', () => {
       AppStateService.instance.allTransactions = [
         tx('Income', 1000, '2025-01-01', '@Salary'),
-        tx('Daily', -200, '2025-01-10', '@Splurge'),  // transfer → excluded
-        tx('Daily', -300, '2025-01-15', 'Food'),       // real expense
+        tx('Daily', -200, '2025-01-10', '@Splurge'), // transfer → excluded
+        tx('Daily', -300, '2025-01-15', 'Food'), // real expense
       ];
 
       const data = getMonthlyData();
-      expect(data[0].expenses).toBe(300);  // only real expense
+      expect(data[0].expenses).toBe(300); // only real expense
     });
   });
 });

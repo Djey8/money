@@ -12,7 +12,12 @@ import { AngularFireDatabaseModule } from '@angular/fire/compat/database';
 import { environment } from '../environments/environment';
 
 // Translate
-import { TranslateModule, TranslateLoader, MissingTranslationHandler, MissingTranslationHandlerParams } from '@ngx-translate/core';
+import {
+  TranslateModule,
+  TranslateLoader,
+  MissingTranslationHandler,
+  MissingTranslationHandlerParams,
+} from '@ngx-translate/core';
 import { TranslateHttpLoader } from '@ngx-translate/http-loader';
 import { HttpClient } from '@angular/common/http';
 
@@ -50,12 +55,12 @@ export const appConfig: ApplicationConfig = {
         loader: {
           provide: TranslateLoader,
           useFactory: HttpLoaderFactory,
-          deps: [HttpClient]
+          deps: [HttpClient],
         },
         missingTranslationHandler: {
           provide: MissingTranslationHandler,
-          useClass: FallbackMissingTranslationHandler
-        }
+          useClass: FallbackMissingTranslationHandler,
+        },
       }),
     ),
 
@@ -65,10 +70,11 @@ export const appConfig: ApplicationConfig = {
       useFactory: () => {
         const isEuropeanFormat = localStorage.getItem('isEuropeanFormat');
         return isEuropeanFormat === 'false' ? 'en-US' : 'de-DE';
-      }
-    }, provideServiceWorker('ngsw-worker.js', {
-            enabled: !isDevMode(),
-            registrationStrategy: 'registerWhenStable:30000'
-          })
-  ]
+      },
+    },
+    provideServiceWorker('ngsw-worker.js', {
+      enabled: !isDevMode(),
+      registrationStrategy: 'registerWhenStable:30000',
+    }),
+  ],
 };

@@ -5,7 +5,8 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { DemoService } from '../shared/services/demo.service';
 
 // Deferred import to break circular chain
-let AppComponent: any; setTimeout(() => import('src/app/app.component').then(m => AppComponent = m.AppComponent));
+let AppComponent: any;
+setTimeout(() => import('src/app/app.component').then((m) => (AppComponent = m.AppComponent)));
 
 export interface DocTopic {
   id: string;
@@ -18,25 +19,36 @@ export interface DocTopic {
   standalone: true,
   imports: [NgFor, RouterLink, TranslateModule],
   templateUrl: './docs.component.html',
-  styleUrls: ['./docs.component.css', '../landing/landing-page.component.css', '../app.component.css'],
-  encapsulation: ViewEncapsulation.None
+  styleUrls: [
+    './docs.component.css',
+    '../landing/landing-page.component.css',
+    '../app.component.css',
+  ],
+  encapsulation: ViewEncapsulation.None,
 })
 export class DocsComponent {
+  topics: DocTopic[] = [{ id: 'selfhosted', icon: '🖥️', route: '/docs/selfhosted' }];
 
-  topics: DocTopic[] = [
-    { id: 'selfhosted', icon: '🖥️', route: '/docs/selfhosted' }
-  ];
-
-  constructor(private demoService: DemoService, private translate: TranslateService, private router: Router) {
+  constructor(
+    private demoService: DemoService,
+    private translate: TranslateService,
+    private router: Router,
+  ) {
     const saved = localStorage.getItem('landingLang');
-    if (saved) { this.translate.use(saved); }
+    if (saved) {
+      this.translate.use(saved);
+    }
   }
 
-  get appReference() { return AppComponent; }
+  get appReference() {
+    return AppComponent;
+  }
 
   closeNav(): void {
     const toggle = document.getElementById('nav-toggle') as HTMLInputElement;
-    if (toggle) { toggle.checked = false; }
+    if (toggle) {
+      toggle.checked = false;
+    }
   }
 
   launchDemo(): void {

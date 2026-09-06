@@ -1,4 +1,12 @@
-import { Component, EventEmitter, Input, OnInit, OnChanges, SimpleChanges, Output } from '@angular/core';
+import {
+  Component,
+  EventEmitter,
+  Input,
+  OnInit,
+  OnChanges,
+  SimpleChanges,
+  Output,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
@@ -24,20 +32,20 @@ type BucketSelectionMode = 'all' | 'subset' | 'single';
   standalone: true,
   imports: [CommonModule, FormsModule, TranslateModule, AppNumberPipe],
   templateUrl: './payment-planner-dialog.component.html',
-  styleUrls: ['./payment-planner-dialog.component.css']
+  styleUrls: ['./payment-planner-dialog.component.css'],
 })
 export class PaymentPlannerDialogComponent implements OnInit, OnChanges {
   @Input() isOpen = false;
   @Input() projectType: 'smile' | 'fire' = 'smile';
   @Input() projectTitle = '';
-  @Input() projectTargetDate = '';  // Project target date to prefill
+  @Input() projectTargetDate = ''; // Project target date to prefill
   @Input() buckets: (SmileBucket | FireBucket)[] = [];
-  @Input() existingPlan?: PlannedSubscription;  // For editing
-  
+  @Input() existingPlan?: PlannedSubscription; // For editing
+
   @Output() planCreated = new EventEmitter<PlannedSubscription>();
   @Output() planUpdated = new EventEmitter<PlannedSubscription>();
   @Output() cancelled = new EventEmitter<void>();
-  
+
   // Error handling
   errorMessage = '';
   showErrorMessage = false;
@@ -52,20 +60,20 @@ export class PaymentPlannerDialogComponent implements OnInit, OnChanges {
   frequency: SubscriptionFrequency = 'monthly';
   account = '';
   manualAmount: number | null = null;
-  
+
   // Calculated values
   totalMissing = 0;
   numberOfPeriods = 0;
   calculatedAmount = 0;
   allocations: BucketAllocation[] = [];
-  
+
   // Available options
   frequencies: SubscriptionFrequency[] = ['weekly', 'biweekly', 'monthly', 'quarterly', 'yearly'];
   accounts: string[] = [];
 
   // UI state
   showAdvanced = false;
-  
+
   constructor(private paymentPlannerService: PaymentPlannerService) {}
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -93,7 +101,7 @@ export class PaymentPlannerDialogComponent implements OnInit, OnChanges {
     if (this.accounts.length > 0 && !this.account) {
       this.account = this.accounts[0];
     }
-    
+
     this.initializeForm();
   }
 
@@ -104,7 +112,7 @@ export class PaymentPlannerDialogComponent implements OnInit, OnChanges {
     // Clear error message
     this.errorMessage = '';
     this.showErrorMessage = false;
-    
+
     // If editing existing plan, populate fields
     if (this.existingPlan) {
       this.loadExistingPlan();
@@ -114,26 +122,26 @@ export class PaymentPlannerDialogComponent implements OnInit, OnChanges {
       this.bucketSelectionMode = 'all';
       this.selectedBucketIds = [];
       this.selectedSingleBucketId = '';
-      
+
       // Set start date to today
       const today = new Date();
       this.startDate = today.toISOString().split('T')[0];
-      
+
       // Prefill target date from project if available
       if (this.projectTargetDate && this.projectTargetDate.trim() !== '') {
         // Handle both ISO format and date-only format
-        const dateStr = this.projectTargetDate.includes('T') 
-          ? this.projectTargetDate.split('T')[0] 
+        const dateStr = this.projectTargetDate.includes('T')
+          ? this.projectTargetDate.split('T')[0]
           : this.projectTargetDate;
         this.targetDate = dateStr;
       } else {
         this.targetDate = '';
       }
-      
+
       this.frequency = 'monthly';
       this.manualAmount = null;
     }
-    
+
     this.recalculate();
   }
 
@@ -142,13 +150,13 @@ export class PaymentPlannerDialogComponent implements OnInit, OnChanges {
    */
   loadExistingPlan(): void {
     if (!this.existingPlan) return;
-    
+
     this.planTitle = this.existingPlan.title;
     this.startDate = this.existingPlan.startDate.split('T')[0];
     this.targetDate = this.existingPlan.targetDate.split('T')[0];
     this.frequency = this.existingPlan.frequency;
     this.account = this.existingPlan.account;
-    
+
     // Determine bucket selection mode
     if (this.existingPlan.targetBucketIds.length === 0) {
       this.bucketSelectionMode = 'all';
@@ -159,7 +167,7 @@ export class PaymentPlannerDialogComponent implements OnInit, OnChanges {
       this.bucketSelectionMode = 'subset';
       this.selectedBucketIds = [...this.existingPlan.targetBucketIds];
     }
-    
+
     // If manually adjusted, use that amount
     if (this.existingPlan.manuallyAdjusted) {
       this.manualAmount = this.existingPlan.amount;
@@ -172,36 +180,35 @@ export class PaymentPlannerDialogComponent implements OnInit, OnChanges {
   recalculate(): void {
     // Determine which buckets to include
     const bucketsToFund = this.getSelectedBucketIds();
-    
+
     // Calculate total missing amount
     this.totalMissing = this.paymentPlannerService.calculateMissingAmount(
       this.buckets,
-      bucketsToFund
+      bucketsToFund,
     );
-    
+
     // Calculate number of periods
     if (this.startDate && this.targetDate) {
       this.numberOfPeriods = this.paymentPlannerService.calculateNumberOfPeriods(
         this.startDate,
         this.targetDate,
-        this.frequency
+        this.frequency,
       );
     }
-    
+
     // Calculate suggested payment amount
-    this.calculatedAmount = this.numberOfPeriods > 0 
-      ? this.totalMissing / this.numberOfPeriods 
-      : this.totalMissing;
+    this.calculatedAmount =
+      this.numberOfPeriods > 0 ? this.totalMissing / this.numberOfPeriods : this.totalMissing;
     this.calculatedAmount = Math.round(this.calculatedAmount * 100) / 100;
-    
+
     // Use manual amount if provided, otherwise use calculated
     const paymentAmount = this.manualAmount !== null ? this.manualAmount : this.calculatedAmount;
-    
+
     // Calculate bucket allocations
     this.allocations = this.paymentPlannerService.calculateProportionalDistribution(
       this.buckets,
       bucketsToFund,
-      paymentAmount
+      paymentAmount,
     );
   }
 
@@ -280,7 +287,7 @@ export class PaymentPlannerDialogComponent implements OnInit, OnChanges {
   savePlan(): void {
     const bucketsToFund = this.getSelectedBucketIds();
     const finalAmount = this.manualAmount !== null ? this.manualAmount : this.calculatedAmount;
-    
+
     const plan = this.paymentPlannerService.calculatePaymentPlan({
       projectType: this.projectType,
       projectTitle: this.projectTitle,
@@ -291,16 +298,16 @@ export class PaymentPlannerDialogComponent implements OnInit, OnChanges {
       targetDate: this.targetDate,
       frequency: this.frequency,
       account: this.account,
-      manualAmount: this.manualAmount !== null ? this.manualAmount : undefined
+      manualAmount: this.manualAmount !== null ? this.manualAmount : undefined,
     });
-    
+
     // Validate plan
     const validation = this.paymentPlannerService.validatePaymentPlan(plan);
     if (!validation.valid) {
       this.showError('Validation failed: ' + validation.errors.join(', '));
       return;
     }
-    
+
     if (this.existingPlan) {
       // Update existing plan (keep the same ID)
       plan.id = this.existingPlan.id;
@@ -312,7 +319,7 @@ export class PaymentPlannerDialogComponent implements OnInit, OnChanges {
       // Create new plan
       this.planCreated.emit(plan);
     }
-    
+
     this.close();
   }
 
@@ -344,15 +351,15 @@ export class PaymentPlannerDialogComponent implements OnInit, OnChanges {
     this.selectedSingleBucketId = '';
     this.frequency = 'monthly';
     this.manualAmount = null;
-    
+
     const today = new Date();
     this.startDate = today.toISOString().split('T')[0];
     this.targetDate = '';
-    
+
     if (this.accounts.length > 0) {
       this.account = this.accounts[0];
     }
-    
+
     this.clearError();
   }
 
@@ -360,10 +367,10 @@ export class PaymentPlannerDialogComponent implements OnInit, OnChanges {
    * Get bucket name by ID
    */
   getBucketName(bucketId: string): string {
-    const bucket = this.buckets.find(b => b.id === bucketId);
+    const bucket = this.buckets.find((b) => b.id === bucketId);
     return bucket ? bucket.title : 'Unknown';
   }
-  
+
   /**
    * Show error message
    */
@@ -375,7 +382,7 @@ export class PaymentPlannerDialogComponent implements OnInit, OnChanges {
       this.clearError();
     }, 5000);
   }
-  
+
   /**
    * Clear error message
    */

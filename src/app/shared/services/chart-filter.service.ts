@@ -29,7 +29,6 @@ export interface ChartFilterState {
  * for all chart/KPI views using a shared `ChartFilterState`.
  */
 export class ChartFilterService {
-
   private static translateService: TranslateService;
 
   constructor(translate: TranslateService) {
@@ -52,8 +51,8 @@ export class ChartFilterService {
         date: true,
         time: true,
         category: true,
-        comment: true
-      }
+        comment: true,
+      },
     };
   }
 
@@ -61,7 +60,10 @@ export class ChartFilterService {
    * Calculate the date range for a given period type and index offset.
    * Returns { startDate, endDate } or null for 'all'.
    */
-  static getDateRange(filterType: string, selectedIndex: number): { startDate: Date; endDate: Date } | null {
+  static getDateRange(
+    filterType: string,
+    selectedIndex: number,
+  ): { startDate: Date; endDate: Date } | null {
     if (filterType === 'all') return null;
 
     const now = new Date();
@@ -71,7 +73,7 @@ export class ChartFilterService {
     if (filterType === 'week') {
       const dayOffset = now.getDay() === 0 ? -6 : 1 - now.getDay();
       const tempDate = new Date(now);
-      tempDate.setDate(now.getDate() + dayOffset + (selectedIndex * 7));
+      tempDate.setDate(now.getDate() + dayOffset + selectedIndex * 7);
       startDate = new Date(tempDate.getFullYear(), tempDate.getMonth(), tempDate.getDate());
       endDate = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate() + 6);
     } else if (filterType === 'month') {
@@ -81,7 +83,7 @@ export class ChartFilterService {
       const currentQuarter = Math.floor(now.getMonth() / 3);
       const targetQuarter = currentQuarter + selectedIndex;
       const targetYear = now.getFullYear() + Math.floor(targetQuarter / 4);
-      const quarterStartMonth = ((targetQuarter % 4 + 4) % 4) * 3;
+      const quarterStartMonth = (((targetQuarter % 4) + 4) % 4) * 3;
       startDate = new Date(targetYear, quarterStartMonth, 1);
       endDate = new Date(targetYear, quarterStartMonth + 3, 0);
     } else if (filterType === 'year') {
@@ -99,7 +101,20 @@ export class ChartFilterService {
    * Format a date range for display.
    */
   static formatDateRange(filterType: string, startDate: Date, endDate: Date): string {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
 
     if (filterType === 'week') {
       return `${startDate.getDate()} ${months[startDate.getMonth()]} - ${endDate.getDate()} ${months[endDate.getMonth()]} ${endDate.getFullYear()}`;
@@ -124,21 +139,21 @@ export class ChartFilterService {
     let transactions = AppStateService.instance.allTransactions;
 
     if (excludeMojo) {
-      transactions = transactions.filter(t => t.account !== 'Mojo');
+      transactions = transactions.filter((t) => t.account !== 'Mojo');
     }
 
     // Time range filter
     if (state.filterType === 'custom') {
       if (state.customDateStart) {
-        transactions = transactions.filter(t => t.date >= state.customDateStart);
+        transactions = transactions.filter((t) => t.date >= state.customDateStart);
       }
       if (state.customDateEnd) {
-        transactions = transactions.filter(t => t.date <= state.customDateEnd);
+        transactions = transactions.filter((t) => t.date <= state.customDateEnd);
       }
     } else if (state.filterType !== 'all') {
       const range = this.getDateRange(state.filterType, state.selectedIndex);
       if (range) {
-        transactions = transactions.filter(t => {
+        transactions = transactions.filter((t) => {
           const d = new Date(t.date);
           return d >= range.startDate && d <= range.endDate;
         });
@@ -147,14 +162,12 @@ export class ChartFilterService {
 
     // Account filter
     if (state.selectedAccounts.length > 0) {
-      transactions = transactions.filter(t =>
-        state.selectedAccounts.includes(t.account)
-      );
+      transactions = transactions.filter((t) => state.selectedAccounts.includes(t.account));
     }
 
     // Category filter
     if (state.selectedCategories.length > 0) {
-      transactions = transactions.filter(t => {
+      transactions = transactions.filter((t) => {
         const clean = (t.category || '').replace('@', '');
         return state.selectedCategories.includes(clean);
       });
@@ -162,16 +175,16 @@ export class ChartFilterService {
 
     // Search text filter with boolean logic (delegates to TransactionFilterService for operator-aware matching)
     if (state.searchText.trim()) {
-      transactions = transactions.filter(t => {
+      transactions = transactions.filter((t) => {
         const expr = state.searchText
           .replace(/\band\b/gi, '&&')
           .replace(/\bor\b/gi, '||')
           .replace(/\bnot\b/gi, '!');
 
-        const orGroups = expr.split('||').map(g => g.trim());
+        const orGroups = expr.split('||').map((g) => g.trim());
 
         for (const orGroup of orGroups) {
-          const andTerms = orGroup.split('&&').map(term => term.trim());
+          const andTerms = orGroup.split('&&').map((term) => term.trim());
           let allMatch = true;
 
           for (const andTerm of andTerms) {
@@ -179,10 +192,17 @@ export class ChartFilterService {
             const searchTerm = (isNegated ? andTerm.substring(1).trim() : andTerm).toLowerCase();
             if (!searchTerm) continue;
 
-            let termMatches = TransactionFilterService.checkSearchTermMatch(t, searchTerm, state.searchFields);
+            let termMatches = TransactionFilterService.checkSearchTermMatch(
+              t,
+              searchTerm,
+              state.searchFields,
+            );
 
             if (isNegated) termMatches = !termMatches;
-            if (!termMatches) { allMatch = false; break; }
+            if (!termMatches) {
+              allMatch = false;
+              break;
+            }
           }
 
           if (allMatch && andTerms.length > 0) return true;

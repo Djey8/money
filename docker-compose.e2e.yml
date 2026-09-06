@@ -9,14 +9,14 @@ services:
     image: couchdb:3.3
     container_name: money-couchdb-e2e
     ports:
-      - "5984:5984"
+      - '5984:5984'
     environment:
       - COUCHDB_USER=admin
       - COUCHDB_PASSWORD=password
     tmpfs:
       - /opt/couchdb/data
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:5984/_up || exit 1"]
+      test: ['CMD-SHELL', 'curl -sf http://localhost:5984/_up || exit 1']
       interval: 5s
       timeout: 3s
       retries: 10
@@ -26,7 +26,7 @@ services:
     build: ./backend
     container_name: money-backend-e2e
     ports:
-      - "3000:3000"
+      - '3000:3000'
     environment:
       - PORT=3000
       - NODE_ENV=test

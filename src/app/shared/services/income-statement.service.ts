@@ -10,7 +10,7 @@ import { Expense } from '../../interfaces/expense';
 import { AppStateService } from './app-state.service';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 /**
  * Recalculates the income statement, balance sheet, and fund allocations
@@ -18,7 +18,6 @@ import { AppStateService } from './app-state.service';
  * for writing income data to the database and local storage.
  */
 export class IncomeStatementService {
-
   constructor(private localStorage: LocalService) {}
 
   /**
@@ -26,13 +25,16 @@ export class IncomeStatementService {
    * Returns array of {bucket, amount} for allocations found in comment.
    * Format: #bucket:BucketName:Amount
    */
-  private parseTransactionBucketAllocations(transaction: any, project: any): {bucket: any, amount: number}[] {
+  private parseTransactionBucketAllocations(
+    transaction: any,
+    project: any,
+  ): { bucket: any; amount: number }[] {
     if (!transaction.comment || !project.buckets) return [];
-    
+
     const bucketTagMatches = transaction.comment.match(/#bucket:([^:]+):([\d.]+)/g);
     if (!bucketTagMatches) return [];
-    
-    const allocations: {bucket: any, amount: number}[] = [];
+
+    const allocations: { bucket: any; amount: number }[] = [];
     bucketTagMatches.forEach((tag: string) => {
       const match = tag.match(/#bucket:([^:]+):([\d.]+)/);
       if (match) {
@@ -44,7 +46,7 @@ export class IncomeStatementService {
         }
       }
     });
-    
+
     return allocations;
   }
 
@@ -70,27 +72,30 @@ export class IncomeStatementService {
     AppStateService.instance.mojoExpenses = [];
 
     // Reset project amounts - reset all bucket amounts to 0
-    AppStateService.instance.allSmileProjects.forEach(project => 
-      project.buckets?.forEach(bucket => bucket.amount = 0)
+    AppStateService.instance.allSmileProjects.forEach((project) =>
+      project.buckets?.forEach((bucket) => (bucket.amount = 0)),
     );
-    AppStateService.instance.allFireEmergencies.forEach(emergency => 
-      emergency.buckets?.forEach(bucket => bucket.amount = 0)
+    AppStateService.instance.allFireEmergencies.forEach((emergency) =>
+      emergency.buckets?.forEach((bucket) => (bucket.amount = 0)),
     );
     AppStateService.instance.mojo.amount = 0;
 
     // Rebuild from remaining transactions
-    AppStateService.instance.allTransactions.forEach(transaction => {
+    AppStateService.instance.allTransactions.forEach((transaction) => {
       const { amount, account, category } = transaction;
       if (amount != 0) {
         const amountStr = String(amount);
 
         // Handle @Mojo
-        if (category === "@Mojo") {
+        if (category === '@Mojo') {
           if (AppStateService.instance.mojo.amount >= AppStateService.instance.mojo.target) {
-            console.warn("Mojo full, skipping transaction:", category, amountStr);
+            console.warn('Mojo full, skipping transaction:', category, amountStr);
           } else {
             let result = parseFloat(amountStr);
-            if (AppStateService.instance.mojo.amount - result > AppStateService.instance.mojo.target) {
+            if (
+              AppStateService.instance.mojo.amount - result >
+              AppStateService.instance.mojo.target
+            ) {
               result = AppStateService.instance.mojo.target - AppStateService.instance.mojo.amount;
               result = result * -1;
             }
@@ -99,48 +104,61 @@ export class IncomeStatementService {
         }
 
         // Handle Smile projects - use bucket allocations from comment tags
-        if (category !== "@Mojo") {
+        if (category !== '@Mojo') {
           for (let i = 0; i < AppStateService.instance.allSmileProjects.length; i++) {
-            if ("@" + AppStateService.instance.allSmileProjects[i].title === category) {
+            if ('@' + AppStateService.instance.allSmileProjects[i].title === category) {
               const project = AppStateService.instance.allSmileProjects[i];
-              
+
               // Parse bucket allocation tags from comment: #bucket:BucketName:Amount
-              const bucketAllocations = this.parseTransactionBucketAllocations(transaction, project);
-              
+              const bucketAllocations = this.parseTransactionBucketAllocations(
+                transaction,
+                project,
+              );
+
               if (bucketAllocations.length > 0) {
                 // Use stored allocations from comment tags (amounts are positive, so add them)
                 // BUT cap each bucket at its target to prevent overflow
-                const actualAllocations: {bucketName: string, requestedAmount: number, appliedAmount: number}[] = [];
-                
-                bucketAllocations.forEach(allocation => {
+                const actualAllocations: {
+                  bucketName: string;
+                  requestedAmount: number;
+                  appliedAmount: number;
+                }[] = [];
+
+                bucketAllocations.forEach((allocation) => {
                   if (allocation.bucket) {
                     // Calculate remaining capacity in the bucket
-                    const remaining = Math.max(0, allocation.bucket.target - allocation.bucket.amount);
+                    const remaining = Math.max(
+                      0,
+                      allocation.bucket.target - allocation.bucket.amount,
+                    );
                     // Cap the allocation amount at the remaining capacity
                     const cappedAmount = Math.min(allocation.amount, remaining);
-                    
+
                     actualAllocations.push({
                       bucketName: allocation.bucket.title,
                       requestedAmount: allocation.amount,
-                      appliedAmount: cappedAmount
+                      appliedAmount: cappedAmount,
                     });
-                    
+
                     if (cappedAmount > 0) {
-                      allocation.bucket.amount = Math.round((allocation.bucket.amount + cappedAmount) * 100) / 100;
+                      allocation.bucket.amount =
+                        Math.round((allocation.bucket.amount + cappedAmount) * 100) / 100;
                     }
-                    
+
                     // Log if we had to cap the amount
                     if (cappedAmount < allocation.amount) {
                       console.warn(
                         `Bucket '${allocation.bucket.title}' in project '${project.title}' capped at target. ` +
-                        `Requested: ${allocation.amount}, Applied: ${cappedAmount}, Overflow: ${allocation.amount - cappedAmount}`
+                          `Requested: ${allocation.amount}, Applied: ${cappedAmount}, Overflow: ${allocation.amount - cappedAmount}`,
                       );
                     }
                   }
                 });
-                
+
                 // Update transaction comment to reflect actual applied amounts
-                const needsCommentUpdate = actualAllocations.some(a => a.appliedAmount !== a.requestedAmount);
+                const needsCommentUpdate = actualAllocations.some(
+                  (a) => a.appliedAmount !== a.requestedAmount,
+                );
                 if (needsCommentUpdate && transaction.comment) {
                   // Remove old bucket tags
                   let cleanComment = transaction.comment;
@@ -150,19 +168,20 @@ export class IncomeStatementService {
                       cleanComment = cleanComment.replace(tag, '').trim();
                     });
                   }
-                  
+
                   // Add new tags with actual applied amounts
                   const newTags = actualAllocations
-                    .filter(a => a.appliedAmount > 0)
-                    .map(a => `#bucket:${a.bucketName}:${a.appliedAmount.toFixed(2)}`)
+                    .filter((a) => a.appliedAmount > 0)
+                    .map((a) => `#bucket:${a.bucketName}:${a.appliedAmount.toFixed(2)}`)
                     .join(' ');
-                  
-                  transaction.comment = cleanComment
-                    ? `${cleanComment}\n${newTags}`
-                    : newTags;
-                  
+
+                  transaction.comment = cleanComment ? `${cleanComment}\n${newTags}` : newTags;
+
                   // Also adjust transaction amount to match total applied
-                  const totalApplied = actualAllocations.reduce((sum, a) => sum + a.appliedAmount, 0);
+                  const totalApplied = actualAllocations.reduce(
+                    (sum, a) => sum + a.appliedAmount,
+                    0,
+                  );
                   transaction.amount = transaction.amount < 0 ? -totalApplied : totalApplied;
                 }
               } else {
@@ -170,9 +189,13 @@ export class IncomeStatementService {
                 let result = parseFloat(amountStr);
                 const totalTarget = project.buckets.reduce((sum, b) => sum + (b.target || 0), 0);
                 const totalAmount = project.buckets.reduce((sum, b) => sum + (b.amount || 0), 0);
-                
+
                 if (totalAmount >= totalTarget) {
-                  console.warn("Smile project '" + project.title + "' full, skipping transaction:", category, amountStr);
+                  console.warn(
+                    "Smile project '" + project.title + "' full, skipping transaction:",
+                    category,
+                    amountStr,
+                  );
                 } else {
                   if (totalAmount - result > totalTarget) {
                     result = totalTarget - totalAmount;
@@ -181,7 +204,7 @@ export class IncomeStatementService {
                   // Distribute result equally across all buckets
                   if (project.buckets?.length > 0) {
                     const amountPerBucket = result / project.buckets.length;
-                    project.buckets.forEach(bucket => { 
+                    project.buckets.forEach((bucket) => {
                       bucket.amount = Math.round((bucket.amount - amountPerBucket) * 100) / 100;
                     });
                   }
@@ -192,32 +215,32 @@ export class IncomeStatementService {
         }
 
         // Handle Fire emergencies
-        if (category !== "@Mojo") {
+        if (category !== '@Mojo') {
           const result = parseFloat(amountStr);
           for (let i = 0; i < AppStateService.instance.allFireEmergencies.length; i++) {
             const emergency = AppStateService.instance.allFireEmergencies[i];
-            
+
             // Check if transaction matches emergency title or any bucket
             let matchedBucket = null;
-            
+
             // First check for exact bucket match
             for (let b = 0; b < emergency.buckets.length; b++) {
-              if ("@" + emergency.buckets[b].title === category) {
+              if ('@' + emergency.buckets[b].title === category) {
                 matchedBucket = emergency.buckets[b];
                 break;
               }
             }
-            
+
             // If no bucket match, check emergency title (backwards compatibility)
-            if (!matchedBucket && "@" + emergency.title === category) {
+            if (!matchedBucket && '@' + emergency.title === category) {
               // Use first bucket as default
               matchedBucket = emergency.buckets[0];
             }
-            
+
             if (matchedBucket) {
               // Check if bucket has explicit allocation in comment
               const allocations = this.parseTransactionBucketAllocations(transaction, emergency);
-              
+
               if (allocations.length > 0) {
                 // Distribute to specified buckets
                 allocations.forEach(({ bucket, amount }) => {
@@ -228,16 +251,21 @@ export class IncomeStatementService {
               } else {
                 // Allocate to matched bucket
                 const bucketRemaining = matchedBucket.target - matchedBucket.amount;
-                
+
                 if (bucketRemaining <= 0) {
-                  console.warn(`Fire bucket '${matchedBucket.title}' in '${emergency.title}' is full, skipping transaction:`, category, amountStr);
+                  console.warn(
+                    `Fire bucket '${matchedBucket.title}' in '${emergency.title}' is full, skipping transaction:`,
+                    category,
+                    amountStr,
+                  );
                 } else {
                   // Cap contribution to remaining bucket target
                   const contribution = Math.min(Math.abs(result), bucketRemaining);
-                  matchedBucket.amount = Math.round((matchedBucket.amount + contribution) * 100) / 100;
+                  matchedBucket.amount =
+                    Math.round((matchedBucket.amount + contribution) * 100) / 100;
                 }
               }
-              
+
               // Check if all buckets are now full and auto-complete
               const allBucketsFull = emergency.buckets.every((b: any) => b.amount >= b.target);
               if (allBucketsFull && emergency.phase !== 'completed') {
@@ -247,59 +275,83 @@ export class IncomeStatementService {
                   emergency.completionDate = transaction.date;
                 }
               }
-              
+
               break;
             }
           }
         }
 
         // Spending FROM Mojo account
-        if (account === "Mojo") {
+        if (account === 'Mojo') {
           AppStateService.instance.mojo.amount += parseFloat(amountStr);
         }
 
         // Calculating Revenue
-        if (account === "Income") {
+        if (account === 'Income') {
           let found = false;
           while (!found) {
             for (let i = 0; i < AppStateService.instance.allIntrests.length; i++) {
-              if (category.toLocaleLowerCase() === "@" + AppStateService.instance.allIntrests[i].tag.toLocaleLowerCase()) {
+              if (
+                category.toLocaleLowerCase() ===
+                '@' + AppStateService.instance.allIntrests[i].tag.toLocaleLowerCase()
+              ) {
                 found = true;
                 AppStateService.instance.allIntrests[i].amount += parseFloat(amountStr);
               }
             }
             if (!found) {
               for (let i = 0; i < AppStateService.instance.allShares.length; i++) {
-                if (category.toLocaleLowerCase() === "@" + AppStateService.instance.allShares[i].tag.toLocaleLowerCase()) {
+                if (
+                  category.toLocaleLowerCase() ===
+                  '@' + AppStateService.instance.allShares[i].tag.toLocaleLowerCase()
+                ) {
                   found = true;
-                  const new_interest: Revenue = { tag: category.replace("@", ""), amount: parseFloat(amountStr) };
+                  const new_interest: Revenue = {
+                    tag: category.replace('@', ''),
+                    amount: parseFloat(amountStr),
+                  };
                   AppStateService.instance.allIntrests.push(new_interest);
                 }
               }
             }
             for (let i = 0; i < AppStateService.instance.allProperties.length; i++) {
-              if (category.toLocaleLowerCase() === "@" + AppStateService.instance.allProperties[i].tag.toLocaleLowerCase()) {
+              if (
+                category.toLocaleLowerCase() ===
+                '@' + AppStateService.instance.allProperties[i].tag.toLocaleLowerCase()
+              ) {
                 found = true;
                 AppStateService.instance.allProperties[i].amount += parseFloat(amountStr);
               }
             }
             if (!found) {
               for (let i = 0; i < AppStateService.instance.allInvestments.length; i++) {
-                if (category.toLocaleLowerCase() === "@" + AppStateService.instance.allInvestments[i].tag.toLocaleLowerCase()) {
+                if (
+                  category.toLocaleLowerCase() ===
+                  '@' + AppStateService.instance.allInvestments[i].tag.toLocaleLowerCase()
+                ) {
                   found = true;
-                  const new_property: Revenue = { tag: category.replace("@", ""), amount: parseFloat(amountStr) };
+                  const new_property: Revenue = {
+                    tag: category.replace('@', ''),
+                    amount: parseFloat(amountStr),
+                  };
                   AppStateService.instance.allProperties.push(new_property);
                 }
               }
             }
             for (let i = 0; i < AppStateService.instance.allRevenues.length; i++) {
-              if (category.toLocaleLowerCase() === "@" + AppStateService.instance.allRevenues[i].tag.toLocaleLowerCase()) {
+              if (
+                category.toLocaleLowerCase() ===
+                '@' + AppStateService.instance.allRevenues[i].tag.toLocaleLowerCase()
+              ) {
                 found = true;
                 AppStateService.instance.allRevenues[i].amount += parseFloat(amountStr);
               }
             }
             if (!found) {
-              const new_revenue: Revenue = { tag: category.replace("@", ""), amount: parseFloat(amountStr) };
+              const new_revenue: Revenue = {
+                tag: category.replace('@', ''),
+                amount: parseFloat(amountStr),
+              };
               AppStateService.instance.allRevenues.push(new_revenue);
               found = true;
             }
@@ -308,23 +360,23 @@ export class IncomeStatementService {
 
         // Calculating account expenses
         const expenseMap: Record<string, Expense[]> = {
-          "Daily": AppStateService.instance.dailyExpenses,
-          "Splurge": AppStateService.instance.splurgeExpenses,
-          "Smile": AppStateService.instance.smileExpenses,
-          "Fire": AppStateService.instance.fireExpenses,
-          "Mojo": AppStateService.instance.mojoExpenses
+          Daily: AppStateService.instance.dailyExpenses,
+          Splurge: AppStateService.instance.splurgeExpenses,
+          Smile: AppStateService.instance.smileExpenses,
+          Fire: AppStateService.instance.fireExpenses,
+          Mojo: AppStateService.instance.mojoExpenses,
         };
         const expenseArray = expenseMap[account];
         if (expenseArray) {
           let found = false;
           for (let i = 0; i < expenseArray.length; i++) {
-            if (category.toLocaleLowerCase() === "@" + expenseArray[i].tag.toLocaleLowerCase()) {
+            if (category.toLocaleLowerCase() === '@' + expenseArray[i].tag.toLocaleLowerCase()) {
               found = true;
               expenseArray[i].amount += parseFloat(amountStr);
             }
           }
           if (!found) {
-            expenseArray.push({ tag: category.replace("@", ""), amount: parseFloat(amountStr) });
+            expenseArray.push({ tag: category.replace('@', ''), amount: parseFloat(amountStr) });
           }
         }
       }
@@ -334,23 +386,25 @@ export class IncomeStatementService {
   /**
    * Returns the income statement write operations for database persistence.
    */
-  getWrites(): { tag: string, data: any }[] {
+  getWrites(): { tag: string; data: any }[] {
     return [
-      { tag: "income/revenue/interests", data: AppStateService.instance.allIntrests },
-      { tag: "income/revenue/properties", data: AppStateService.instance.allProperties },
-      { tag: "income/revenue/revenues", data: AppStateService.instance.allRevenues },
-      { tag: "income/expenses/daily", data: AppStateService.instance.dailyExpenses },
-      { tag: "income/expenses/splurge", data: AppStateService.instance.splurgeExpenses },
+      { tag: 'income/revenue/interests', data: AppStateService.instance.allIntrests },
+      { tag: 'income/revenue/properties', data: AppStateService.instance.allProperties },
+      { tag: 'income/revenue/revenues', data: AppStateService.instance.allRevenues },
+      { tag: 'income/expenses/daily', data: AppStateService.instance.dailyExpenses },
+      { tag: 'income/expenses/splurge', data: AppStateService.instance.splurgeExpenses },
       // Only include tier2 data (smile/fire/mojo) if tier2 has been loaded.
       // Writing before load would overwrite real DB data with empty defaults.
-      ...(AppStateService.instance.tier2Loaded ? [
-        { tag: "income/expenses/smile", data: AppStateService.instance.smileExpenses },
-        { tag: "income/expenses/fire", data: AppStateService.instance.fireExpenses },
-        { tag: "income/expenses/mojo", data: AppStateService.instance.mojoExpenses },
-        { tag: "smile", data: AppStateService.instance.allSmileProjects },
-        { tag: "fire", data: AppStateService.instance.allFireEmergencies },
-        { tag: "mojo", data: AppStateService.instance.mojo }
-      ] : [])
+      ...(AppStateService.instance.tier2Loaded
+        ? [
+            { tag: 'income/expenses/smile', data: AppStateService.instance.smileExpenses },
+            { tag: 'income/expenses/fire', data: AppStateService.instance.fireExpenses },
+            { tag: 'income/expenses/mojo', data: AppStateService.instance.mojoExpenses },
+            { tag: 'smile', data: AppStateService.instance.allSmileProjects },
+            { tag: 'fire', data: AppStateService.instance.allFireEmergencies },
+            { tag: 'mojo', data: AppStateService.instance.mojo },
+          ]
+        : []),
     ];
   }
 
@@ -358,17 +412,23 @@ export class IncomeStatementService {
    * Saves all income statement data to localStorage.
    */
   saveToLocalStorage() {
-    this.localStorage.saveData("interests", JSON.stringify(AppStateService.instance.allIntrests));
-    this.localStorage.saveData("properties", JSON.stringify(AppStateService.instance.allProperties));
-    this.localStorage.saveData("revenues", JSON.stringify(AppStateService.instance.allRevenues));
-    this.localStorage.saveData("dailyEx", JSON.stringify(AppStateService.instance.dailyExpenses));
-    this.localStorage.saveData("splurgeEx", JSON.stringify(AppStateService.instance.splurgeExpenses));
-    this.localStorage.saveData("smileEx", JSON.stringify(AppStateService.instance.smileExpenses));
-    this.localStorage.saveData("fireEx", JSON.stringify(AppStateService.instance.fireExpenses));
-    this.localStorage.saveData("mojoEx", JSON.stringify(AppStateService.instance.mojoExpenses));
-    this.localStorage.saveData("smile", JSON.stringify(AppStateService.instance.allSmileProjects));
-    this.localStorage.saveData("fire", JSON.stringify(AppStateService.instance.allFireEmergencies));
-    this.localStorage.saveData("mojo", JSON.stringify(AppStateService.instance.mojo));
+    this.localStorage.saveData('interests', JSON.stringify(AppStateService.instance.allIntrests));
+    this.localStorage.saveData(
+      'properties',
+      JSON.stringify(AppStateService.instance.allProperties),
+    );
+    this.localStorage.saveData('revenues', JSON.stringify(AppStateService.instance.allRevenues));
+    this.localStorage.saveData('dailyEx', JSON.stringify(AppStateService.instance.dailyExpenses));
+    this.localStorage.saveData(
+      'splurgeEx',
+      JSON.stringify(AppStateService.instance.splurgeExpenses),
+    );
+    this.localStorage.saveData('smileEx', JSON.stringify(AppStateService.instance.smileExpenses));
+    this.localStorage.saveData('fireEx', JSON.stringify(AppStateService.instance.fireExpenses));
+    this.localStorage.saveData('mojoEx', JSON.stringify(AppStateService.instance.mojoExpenses));
+    this.localStorage.saveData('smile', JSON.stringify(AppStateService.instance.allSmileProjects));
+    this.localStorage.saveData('fire', JSON.stringify(AppStateService.instance.allFireEmergencies));
+    this.localStorage.saveData('mojo', JSON.stringify(AppStateService.instance.mojo));
   }
 
   /**
@@ -398,11 +458,13 @@ export class IncomeStatementService {
    * Helper method to add or update an expense entry in the array
    */
   private addOrUpdateExpense(expenseArray: Expense[], category: string, amount: number): void {
-    const existing = expenseArray.find(e => e.tag.toLowerCase() === category.replace("@", "").toLowerCase());
+    const existing = expenseArray.find(
+      (e) => e.tag.toLowerCase() === category.replace('@', '').toLowerCase(),
+    );
     if (existing) {
       existing.amount += amount;
     } else {
-      expenseArray.push({ tag: category.replace("@", ""), amount });
+      expenseArray.push({ tag: category.replace('@', ''), amount });
     }
   }
 

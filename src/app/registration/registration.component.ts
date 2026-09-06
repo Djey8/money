@@ -1,4 +1,4 @@
-import { Component } from '@angular/core'
+import { Component } from '@angular/core';
 import { Injectable, OnInit, OnDestroy } from '@angular/core';
 import { AngularFireAuth } from '@angular/fire/compat/auth';
 import { ProfileComponent } from '../panels/profile/profile.component';
@@ -23,7 +23,7 @@ import { TranslateModule } from '@ngx-translate/core';
  * Represents the Registration Component.
  */
 @Injectable({
-  providedIn:'root',
+  providedIn: 'root',
 })
 @Component({
   selector: 'app-registration',
@@ -32,12 +32,12 @@ import { TranslateModule } from '@ngx-translate/core';
   templateUrl: './registration.component.html',
   styleUrls: ['./registration.component.css', '../app.component.css'],
 })
-export class RegistrationComponent implements OnInit, OnDestroy { 
+export class RegistrationComponent implements OnInit, OnDestroy {
   //Variables
   isRegister = false;
 
   isError = false;
-  errorMessageLable = "Error";
+  errorMessageLable = 'Error';
   isLoading = false;
 
   //Textfield Variables
@@ -45,13 +45,15 @@ export class RegistrationComponent implements OnInit, OnDestroy {
   emailTextField = '';
   passwordTextField = '';
 
-  eyePic = "../../assets/symbols/eye.png";
+  eyePic = '../../assets/symbols/eye.png';
   showPassword = false;
 
   isUploaded = false;
-  filename = "";
-  
-  public get appReference() { return AppComponent; }
+  filename = '';
+
+  public get appReference() {
+    return AppComponent;
+  }
   private mode: 'firebase' | 'selfhosted' = environment.mode as 'firebase' | 'selfhosted';
 
   /**
@@ -63,22 +65,22 @@ export class RegistrationComponent implements OnInit, OnDestroy {
    * @param frontendLogger - The FrontendLoggerService instance for logging user activities.
    */
   constructor(
-    public afAuth: AngularFireAuth, 
-    private localStorage: LocalService, 
-    private database: DatabaseService, 
+    public afAuth: AngularFireAuth,
+    private localStorage: LocalService,
+    private database: DatabaseService,
     private cryptic: CrypticService,
     private selfhosted: SelfhostedService,
     private frontendLogger: FrontendLoggerService,
-    private errorMapper: ErrorMapperService
-  ){
+    private errorMapper: ErrorMapperService,
+  ) {
     //delete storage when loaded to then set from db
-    this.localStorage.removeData("transactions");
-    this.localStorage.removeData("smile");
-    this.localStorage.removeData("fire");
-    this.localStorage.removeData("mojo");
-    this.localStorage.removeData("username");
-    this.localStorage.removeData("uid");
-    this.localStorage.removeData("email");
+    this.localStorage.removeData('transactions');
+    this.localStorage.removeData('smile');
+    this.localStorage.removeData('fire');
+    this.localStorage.removeData('mojo');
+    this.localStorage.removeData('username');
+    this.localStorage.removeData('uid');
+    this.localStorage.removeData('email');
     AppStateService.instance.allTransactions = [];
     AppStateService.instance.allSmileProjects = [];
   }
@@ -87,18 +89,15 @@ export class RegistrationComponent implements OnInit, OnDestroy {
    * Called when the component becomes visible (inserted into the DOM).
    */
   // eslint-disable-next-line @angular-eslint/contextual-lifecycle, @angular-eslint/no-empty-lifecycle-method, @typescript-eslint/no-empty-function -- required by `implements OnInit`; the stray @Injectable() decorator above is pre-existing and out of scope for lint setup (Angular still invokes this hook since the class is also a routed @Component)
-  ngOnInit(): void {
-  }
+  ngOnInit(): void {}
 
   /**
    * Called when the component is destroyed (removed from the DOM).
    */
   // eslint-disable-next-line @angular-eslint/no-empty-lifecycle-method, @typescript-eslint/no-empty-function -- required by `implements OnDestroy`; nothing to clean up here
-  ngOnDestroy(): void {
-  }
+  ngOnDestroy(): void {}
 
-
-  upload(){
+  upload() {
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
     fileInput.accept = '.json';
@@ -139,31 +138,32 @@ export class RegistrationComponent implements OnInit, OnDestroy {
    * @param password - The password of the user.
    * @returns A promise that resolves when the user is registered successfully.
    */
-  SignUp(email:string,password:string){
+  SignUp(email: string, password: string) {
     if (this.mode === 'selfhosted') {
       // Selfhosted mode - use backend API
-      return this.selfhosted.register(this.emailTextField, this.passwordTextField, this.usernameTextField)
+      return this.selfhosted
+        .register(this.emailTextField, this.passwordTextField, this.usernameTextField)
         .toPromise()
         .then((result) => {
           // Log successful registration
           this.frontendLogger.logAuth('register', true, {
             username: this.usernameTextField,
             email: this.emailTextField,
-            mode: 'selfhosted'
+            mode: 'selfhosted',
           });
-          
-          this.localStorage.removeData("transactions");
-          this.localStorage.removeData("smile");
-          this.localStorage.removeData("fire");
-          
-          this.localStorage.saveData("username", this.usernameTextField);
-          this.localStorage.saveData("uid", result.userId);
-          this.localStorage.saveData("email", this.emailTextField);
-          
+
+          this.localStorage.removeData('transactions');
+          this.localStorage.removeData('smile');
+          this.localStorage.removeData('fire');
+
+          this.localStorage.saveData('username', this.usernameTextField);
+          this.localStorage.saveData('uid', result.userId);
+          this.localStorage.saveData('email', this.emailTextField);
+
           // Write initial data structure to user's hierarchical JSON document sequentially
           // All data is stored in a single document with nested paths
           // MUST be sequential to avoid CouchDB revision conflicts
-          
+
           // Helper function that wraps writeObject to always return an Observable
           const writeObservable = (tag: string, data: any) => {
             const result = this.database.writeObject(tag, data);
@@ -173,77 +173,78 @@ export class RegistrationComponent implements OnInit, OnDestroy {
 
           // Define all writes to be executed sequentially
           const writes = [
-            { tag: "info/username", data: this.usernameTextField },
-            { tag: "info/email", data: this.emailTextField },
-            { tag: "transactions", data: [] },
-            { tag: "smile", data: [] },
-            { tag: "fire", data: [] },
-            { tag: "mojo", data: { target: 2000.0, amount: 0 } }
+            { tag: 'info/username', data: this.usernameTextField },
+            { tag: 'info/email', data: this.emailTextField },
+            { tag: 'transactions', data: [] },
+            { tag: 'smile', data: [] },
+            { tag: 'fire', data: [] },
+            { tag: 'mojo', data: { target: 2000.0, amount: 0 } },
           ];
 
           // Execute writes sequentially using concatMap
-          from(writes).pipe(
-            concatMap(write => writeObservable(write.tag, write.data))
-          ).subscribe({
-            next: () => {
-              // Each write completes
-            },
-            error: (error) => {
-              console.error("Error writing initial data:", error);
-              this.isError = true;
-              this.errorMessageLable = "Failed to initialize user data";
-              this.isLoading = false;
-            },
-            complete: () => {
-              ProfileComponent.username = this.usernameTextField;
-              ProfileComponent.mail = this.emailTextField;
-              ProfileComponent.isUser = true;
-              
-              // Save encryption config to server after registration
-              const key = this.cryptic.getKey() || 'default';
-              const encryptLocal = this.cryptic.getEncryptionLocalEnabled();
-              const encryptDatabase = this.cryptic.getEncryptionDatabaseEnabled();
-              this.selfhosted.saveEncryptionConfig(key, encryptLocal, encryptDatabase).subscribe({
-                complete: () => {
-                  // Trigger onboarding tour for new user
-                  localStorage.setItem('onboarding_pending', 'true');
-                  // Redirect only after all writes are complete
-                  window.location.href = "/";
-                },
-                error: () => {
-                  // Still redirect even if config save fails — it can be set later
-                  localStorage.setItem('onboarding_pending', 'true');
-                  window.location.href = "/";
-                }
-              });
-            }
-          });
+          from(writes)
+            .pipe(concatMap((write) => writeObservable(write.tag, write.data)))
+            .subscribe({
+              next: () => {
+                // Each write completes
+              },
+              error: (error) => {
+                console.error('Error writing initial data:', error);
+                this.isError = true;
+                this.errorMessageLable = 'Failed to initialize user data';
+                this.isLoading = false;
+              },
+              complete: () => {
+                ProfileComponent.username = this.usernameTextField;
+                ProfileComponent.mail = this.emailTextField;
+                ProfileComponent.isUser = true;
+
+                // Save encryption config to server after registration
+                const key = this.cryptic.getKey() || 'default';
+                const encryptLocal = this.cryptic.getEncryptionLocalEnabled();
+                const encryptDatabase = this.cryptic.getEncryptionDatabaseEnabled();
+                this.selfhosted.saveEncryptionConfig(key, encryptLocal, encryptDatabase).subscribe({
+                  complete: () => {
+                    // Trigger onboarding tour for new user
+                    localStorage.setItem('onboarding_pending', 'true');
+                    // Redirect only after all writes are complete
+                    window.location.href = '/';
+                  },
+                  error: () => {
+                    // Still redirect even if config save fails — it can be set later
+                    localStorage.setItem('onboarding_pending', 'true');
+                    window.location.href = '/';
+                  },
+                });
+              },
+            });
         })
         .catch((error) => {
           this.isError = true;
           this.errorMessageLable = this.errorMapper.toUserMessage(error, 'Registration failed');
           this.isLoading = false;
           console.error('Selfhosted registration error:', error);
-          
+
           // Log failed registration
           this.frontendLogger.logAuth('register', false, {
             email: this.emailTextField,
             error: error.message || error.error?.error || 'Registration failed',
-            mode: 'selfhosted'
+            mode: 'selfhosted',
           });
         });
     } else {
       // Firebase mode
-      return this.afAuth.createUserWithEmailAndPassword(this.emailTextField, this.passwordTextField)
+      return this.afAuth
+        .createUserWithEmailAndPassword(this.emailTextField, this.passwordTextField)
         .then((result) => {
           // You can redirect the user to a new page, display a success message, etc.
-          this.localStorage.removeData("transactions");
-          this.localStorage.removeData("smile");
-          this.localStorage.removeData("fire");
-          
-          this.localStorage.saveData("username", this.usernameTextField);
-          this.localStorage.saveData("uid", result.user.uid);
-          this.localStorage.saveData("email", result.user.email);
+          this.localStorage.removeData('transactions');
+          this.localStorage.removeData('smile');
+          this.localStorage.removeData('fire');
+
+          this.localStorage.saveData('username', this.usernameTextField);
+          this.localStorage.saveData('uid', result.user.uid);
+          this.localStorage.saveData('email', result.user.email);
           const profile: Profile = {
             info: {
               username: this.usernameTextField,
@@ -254,10 +255,10 @@ export class RegistrationComponent implements OnInit, OnDestroy {
             fire: [],
             mojo: {
               target: 2000.0,
-              amount: 0
-            }
+              amount: 0,
+            },
           };
-          this.database.writeObject("", profile);
+          this.database.writeObject('', profile);
           ProfileComponent.username = profile.info.username;
           ProfileComponent.mail = profile.info.email;
           ProfileComponent.isUser = true;
@@ -265,7 +266,7 @@ export class RegistrationComponent implements OnInit, OnDestroy {
           // Trigger onboarding tour for new user
           localStorage.setItem('onboarding_pending', 'true');
           //window.location.href = "/home";
-          window.location.href = "/";
+          window.location.href = '/';
         })
         .catch((error) => {
           this.isError = true;
@@ -274,11 +275,11 @@ export class RegistrationComponent implements OnInit, OnDestroy {
           // Handle the error, display an error message, etc.
         });
     }
-    }
+  }
 
-    toggleEye(){
-      this.showPassword = !this.showPassword;
-    }
+  toggleEye() {
+    this.showPassword = !this.showPassword;
+  }
 
   /**
    * Signs in a user with the provided email and password.
@@ -290,70 +291,77 @@ export class RegistrationComponent implements OnInit, OnDestroy {
     if (this.mode === 'selfhosted') {
       // Capture uploaded encryption settings before login (login will overwrite with server config)
       const uploadedKey = this.isUploaded ? this.cryptic.getKey() : null;
-      const uploadedEncryptLocal = this.isUploaded ? this.cryptic.getEncryptionLocalEnabled() : false;
-      const uploadedEncryptDatabase = this.isUploaded ? this.cryptic.getEncryptionDatabaseEnabled() : false;
+      const uploadedEncryptLocal = this.isUploaded
+        ? this.cryptic.getEncryptionLocalEnabled()
+        : false;
+      const uploadedEncryptDatabase = this.isUploaded
+        ? this.cryptic.getEncryptionDatabaseEnabled()
+        : false;
 
       // Selfhosted mode - use backend API
-      return this.selfhosted.login(this.emailTextField, this.passwordTextField)
+      return this.selfhosted
+        .login(this.emailTextField, this.passwordTextField)
         .toPromise()
         .then(async (result) => {
           // Log successful login
           this.frontendLogger.logAuth('login', true, {
             email: this.emailTextField,
-            mode: 'selfhosted'
+            mode: 'selfhosted',
           });
 
           // If user uploaded encryption settings, restore them and push to server
           // (login's loadFromServer overwrote them with the server's stale config)
           if (uploadedKey) {
             this.cryptic.updateConfig(uploadedKey, uploadedEncryptLocal, uploadedEncryptDatabase);
-            await this.selfhosted.saveEncryptionConfig(uploadedKey, uploadedEncryptLocal, uploadedEncryptDatabase)
+            await this.selfhosted
+              .saveEncryptionConfig(uploadedKey, uploadedEncryptLocal, uploadedEncryptDatabase)
               .toPromise()
-              .catch(err => console.error('Failed to save uploaded encryption config:', err));
+              .catch((err) => console.error('Failed to save uploaded encryption config:', err));
           }
-          
-          // Clear local storage
-          this.localStorage.removeData("username");
-          this.localStorage.removeData("mojo");
-          this.localStorage.removeData("liabilities");
-          this.localStorage.removeData("grow");
-          this.localStorage.removeData("subscriptions");
-          this.localStorage.removeData("interests");
-          this.localStorage.removeData("properties");
-          this.localStorage.removeData("revenues");
-          this.localStorage.removeData("dailyEx");
-          this.localStorage.removeData("splurgeEx");
-          this.localStorage.removeData("smileEx");
-          this.localStorage.removeData("fireEx");
-          this.localStorage.removeData("mojoEx");
-          this.localStorage.removeData("assets");
-          this.localStorage.removeData("shares");
-          this.localStorage.removeData("investments");
-          this.localStorage.removeData("transactions");
-          this.localStorage.removeData("smile");
-          this.localStorage.removeData("fire");
 
-          this.localStorage.saveData("uid", result.userId);
-          this.localStorage.saveData("email", this.emailTextField);
+          // Clear local storage
+          this.localStorage.removeData('username');
+          this.localStorage.removeData('mojo');
+          this.localStorage.removeData('liabilities');
+          this.localStorage.removeData('grow');
+          this.localStorage.removeData('subscriptions');
+          this.localStorage.removeData('interests');
+          this.localStorage.removeData('properties');
+          this.localStorage.removeData('revenues');
+          this.localStorage.removeData('dailyEx');
+          this.localStorage.removeData('splurgeEx');
+          this.localStorage.removeData('smileEx');
+          this.localStorage.removeData('fireEx');
+          this.localStorage.removeData('mojoEx');
+          this.localStorage.removeData('assets');
+          this.localStorage.removeData('shares');
+          this.localStorage.removeData('investments');
+          this.localStorage.removeData('transactions');
+          this.localStorage.removeData('smile');
+          this.localStorage.removeData('fire');
+
+          this.localStorage.saveData('uid', result.userId);
+          this.localStorage.saveData('email', this.emailTextField);
           ProfileComponent.mail = this.emailTextField;
-          
+
           // Get username from database - getData returns a snapshot-like object
-          const profileSnapshot = await this.database.getData("info/username");
-          const username = this.cryptic.decrypt(profileSnapshot.val(), 'database') || this.emailTextField; // Fallback to email if no username
+          const profileSnapshot = await this.database.getData('info/username');
+          const username =
+            this.cryptic.decrypt(profileSnapshot.val(), 'database') || this.emailTextField; // Fallback to email if no username
           ProfileComponent.username = username;
-          this.localStorage.saveData("username", username);
-          ProfileComponent.isUser = false;  // false = logged in (show sign out button)
-          
-          window.location.href = "/";
+          this.localStorage.saveData('username', username);
+          ProfileComponent.isUser = false; // false = logged in (show sign out button)
+
+          window.location.href = '/';
         })
         .catch((error) => {
           // Log failed login
           this.frontendLogger.logAuth('login', false, {
             email: this.emailTextField,
             error: error.message || error.error?.error || 'Login failed',
-            mode: 'selfhosted'
+            mode: 'selfhosted',
           });
-          
+
           this.isError = true;
           this.errorMessageLable = this.errorMapper.toUserMessage(error, 'Login failed');
           this.isLoading = false;
@@ -362,12 +370,11 @@ export class RegistrationComponent implements OnInit, OnDestroy {
     } else {
       // Firebase mode
       // Set Firebase Auth persistence to SESSION
-      await this.afAuth.setPersistence('local')
-        .catch((error) => {
-          console.error("Error setting persistence: ", error);
-          this.isError = true;
-          this.errorMessageLable = this.errorMapper.toUserMessage(error);
-        });
+      await this.afAuth.setPersistence('local').catch((error) => {
+        console.error('Error setting persistence: ', error);
+        this.isError = true;
+        this.errorMessageLable = this.errorMapper.toUserMessage(error);
+      });
 
       return this.afAuth
         .signInWithEmailAndPassword(this.emailTextField, this.passwordTextField)
@@ -375,41 +382,42 @@ export class RegistrationComponent implements OnInit, OnDestroy {
           // Log successful login
           this.frontendLogger.logAuth('login', true, {
             email: this.emailTextField,
-            mode: 'firebase'
+            mode: 'firebase',
           });
-          
-          this.localStorage.removeData("username");
-          this.localStorage.removeData("mojo");
-          this.localStorage.removeData("liabilities");
-          this.localStorage.removeData("grow");
-          this.localStorage.removeData("subscriptions");
-          this.localStorage.removeData("interests");
-          this.localStorage.removeData("properties");
-          this.localStorage.removeData("revenues");
-          this.localStorage.removeData("dailyEx");
-          this.localStorage.removeData("splurgeEx");
-          this.localStorage.removeData("smileEx");
-          this.localStorage.removeData("fireEx");
-          this.localStorage.removeData("mojoEx");
-          this.localStorage.removeData("assets");
-          this.localStorage.removeData("shares");
-          this.localStorage.removeData("investments");
-          this.localStorage.removeData("transactions");
-          this.localStorage.removeData("smile");
-          this.localStorage.removeData("fire");
 
-          this.localStorage.saveData("uid", result.user.uid);
-          this.localStorage.saveData("email", result.user.email);
+          this.localStorage.removeData('username');
+          this.localStorage.removeData('mojo');
+          this.localStorage.removeData('liabilities');
+          this.localStorage.removeData('grow');
+          this.localStorage.removeData('subscriptions');
+          this.localStorage.removeData('interests');
+          this.localStorage.removeData('properties');
+          this.localStorage.removeData('revenues');
+          this.localStorage.removeData('dailyEx');
+          this.localStorage.removeData('splurgeEx');
+          this.localStorage.removeData('smileEx');
+          this.localStorage.removeData('fireEx');
+          this.localStorage.removeData('mojoEx');
+          this.localStorage.removeData('assets');
+          this.localStorage.removeData('shares');
+          this.localStorage.removeData('investments');
+          this.localStorage.removeData('transactions');
+          this.localStorage.removeData('smile');
+          this.localStorage.removeData('fire');
+
+          this.localStorage.saveData('uid', result.user.uid);
+          this.localStorage.saveData('email', result.user.email);
           ProfileComponent.mail = result.user.email;
-          this.database.getData("info/username")
-            .then(snapshot => {
+          this.database
+            .getData('info/username')
+            .then((snapshot) => {
               const username = this.cryptic.decrypt(snapshot.val(), 'database');
               ProfileComponent.username = username;
-              this.localStorage.saveData("username", username);
-              ProfileComponent.isUser = false;  // false = logged in (show sign out button)
-              window.location.href = "/";
+              this.localStorage.saveData('username', username);
+              ProfileComponent.isUser = false; // false = logged in (show sign out button)
+              window.location.href = '/';
             })
-            .catch(_ => {
+            .catch((_) => {
               //handle error
             });
         })
@@ -418,9 +426,9 @@ export class RegistrationComponent implements OnInit, OnDestroy {
           this.frontendLogger.logAuth('login', false, {
             email: this.emailTextField,
             error: error.message,
-            mode: 'firebase'
+            mode: 'firebase',
           });
-          
+
           this.isError = true;
           this.errorMessageLable = this.errorMapper.toUserMessage(error, 'Login failed');
           this.isLoading = false;
@@ -436,7 +444,7 @@ export class RegistrationComponent implements OnInit, OnDestroy {
     return String(email)
       .toLowerCase()
       .match(
-        /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+        /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,
       );
   };
 
@@ -444,25 +452,35 @@ export class RegistrationComponent implements OnInit, OnDestroy {
    * Registers a new user.
    * Performs error handling and validation before calling the SignUp method.
    */
-  get hasMinLength(): boolean { return this.passwordTextField.length >= 8; }
-  get hasUppercase(): boolean { return /[A-Z]/.test(this.passwordTextField); }
-  get hasLowercase(): boolean { return /[a-z]/.test(this.passwordTextField); }
-  get hasNumber(): boolean { return /[0-9]/.test(this.passwordTextField); }
-  get isPasswordValid(): boolean { return this.hasMinLength && this.hasUppercase && this.hasLowercase && this.hasNumber; }
+  get hasMinLength(): boolean {
+    return this.passwordTextField.length >= 8;
+  }
+  get hasUppercase(): boolean {
+    return /[A-Z]/.test(this.passwordTextField);
+  }
+  get hasLowercase(): boolean {
+    return /[a-z]/.test(this.passwordTextField);
+  }
+  get hasNumber(): boolean {
+    return /[0-9]/.test(this.passwordTextField);
+  }
+  get isPasswordValid(): boolean {
+    return this.hasMinLength && this.hasUppercase && this.hasLowercase && this.hasNumber;
+  }
 
   public register(): void {
-    if (this.emailTextField == "" || this.passwordTextField == "" || this.usernameTextField == "") {
+    if (this.emailTextField == '' || this.passwordTextField == '' || this.usernameTextField == '') {
       this.isError = true;
-      this.errorMessageLable = "Please fill out all fields";
+      this.errorMessageLable = 'Please fill out all fields';
     } else if (!this.validateEmail(this.emailTextField)) {
       this.isError = true;
-      this.errorMessageLable = "Invalid email format";
+      this.errorMessageLable = 'Invalid email format';
     } else if (!this.isPasswordValid) {
       this.isError = true;
-      this.errorMessageLable = "Please meet all password requirements";
+      this.errorMessageLable = 'Please meet all password requirements';
     } else {
       this.isError = false;
-      this.errorMessageLable = "";
+      this.errorMessageLable = '';
       this.isLoading = true;
       this.SignUp(this.emailTextField, this.passwordTextField);
     }
@@ -475,28 +493,27 @@ export class RegistrationComponent implements OnInit, OnDestroy {
   public login(): void {
     // Error Handling
     // 1. Error: check fields are empty
-    if (this.emailTextField == "" || this.passwordTextField == "") {
+    if (this.emailTextField == '' || this.passwordTextField == '') {
       this.isError = true;
-      this.errorMessageLable = "Please fill out all fields";
+      this.errorMessageLable = 'Please fill out all fields';
     } else {
       // Keine Fehler -> Try to Login User
       this.isError = false;
-      this.errorMessageLable = "";
+      this.errorMessageLable = '';
       this.isLoading = true;
       this.SignIn();
-    }  
+    }
   }
-    
+
   public goToLogin(): void {
     this.isRegister = false;
-    this.errorMessageLable = "";
+    this.errorMessageLable = '';
     this.isError = false;
   }
 
   public goToRegister(): void {
     this.isRegister = true;
-    this.errorMessageLable = "";
+    this.errorMessageLable = '';
     this.isError = false;
   }
-
 }

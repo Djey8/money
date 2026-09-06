@@ -44,10 +44,10 @@ The default `docker-compose.yml` runs only the 3 essential services (~640 MB RAM
 docker-compose up -d          # CouchDB + Backend + Frontend only
 ```
 
-| Service | URL |
-|---------|-----|
-| Frontend | http://\<server-ip\> |
-| Backend API | http://\<server-ip\>:3000 |
+| Service       | URL                              |
+| ------------- | -------------------------------- |
+| Frontend      | http://\<server-ip\>             |
+| Backend API   | http://\<server-ip\>:3000        |
 | CouchDB Admin | http://\<server-ip\>:5984/_utils |
 
 ### 3. Enable debug/logging stack (optional)
@@ -76,11 +76,11 @@ docker-compose up -d --build # rebuild after code changes
 
 ### Memory budget (Raspberry Pi 4, 4 GB)
 
-| Mode | Containers | Approx. RAM |
-|------|-----------|-------------|
-| Minimal (default) | CouchDB + Backend + Frontend | ~640 MB |
-| Debug | + Loki + Promtail + Grafana | ~1.5 GB |
-| OS baseline | — | ~1.4 GB |
+| Mode              | Containers                   | Approx. RAM |
+| ----------------- | ---------------------------- | ----------- |
+| Minimal (default) | CouchDB + Backend + Frontend | ~640 MB     |
+| Debug             | + Loki + Promtail + Grafana  | ~1.5 GB     |
+| OS baseline       | —                            | ~1.4 GB     |
 
 With the minimal stack you get ~1.7 GB headroom. A 1 GB swap file is recommended as a safety net (see Raspberry Pi section below).
 
@@ -247,15 +247,15 @@ kubectl apply -f k8s/backup-cronjob-daily.yaml     # daily local + NAS
 
 ### Retention policy
 
-| Location | Tier | Kept | Promoted when |
-|----------|------|------|---------------|
-| Local | Hourly | 24 hours | Every hour |
-| Local | Daily | 7 days | Every day (2 AM) |
-| Local | Weekly | 3 months (13 weeks) | Sundays |
-| Local | Monthly | Forever | 1st of month |
-| NAS | Daily | 3 weeks (21 days) | Every day (2 AM) |
-| NAS | Weekly | 2 years (104 weeks) | Sundays |
-| NAS | Monthly | Forever | 1st of month |
+| Location | Tier    | Kept                | Promoted when    |
+| -------- | ------- | ------------------- | ---------------- |
+| Local    | Hourly  | 24 hours            | Every hour       |
+| Local    | Daily   | 7 days              | Every day (2 AM) |
+| Local    | Weekly  | 3 months (13 weeks) | Sundays          |
+| Local    | Monthly | Forever             | 1st of month     |
+| NAS      | Daily   | 3 weeks (21 days)   | Every day (2 AM) |
+| NAS      | Weekly  | 2 years (104 weeks) | Sundays          |
+| NAS      | Monthly | Forever             | 1st of month     |
 
 > **No NAS?** Use `--no-nas-backup` (or `-NoNasBackup` on Windows) and only the hourly local CronJob deploys. The daily CronJob also gracefully skips NAS writes if the mount is unavailable at runtime.
 
@@ -346,26 +346,26 @@ sudo netplan apply
 
 The frontend build mode is controlled by Angular environment files:
 
-| File | Mode | Usage |
-|------|------|-------|
-| `environment.ts` | firebase | `npm start` (dev) |
-| `environment.production.ts` | firebase | `npm run build` |
+| File                        | Mode       | Usage                      |
+| --------------------------- | ---------- | -------------------------- |
+| `environment.ts`            | firebase   | `npm start` (dev)          |
+| `environment.production.ts` | firebase   | `npm run build`            |
 | `environment.selfhosted.ts` | selfhosted | `npm run build:selfhosted` |
 
 The Dockerfile builds with `build:selfhosted` by default.
 
 Backend environment variables (`docker-compose.yml` or `k8s/backend.yaml`):
 
-| Variable | Description |
-|----------|-------------|
-| `COUCHDB_URL` | CouchDB connection URL |
-| `COUCHDB_USER` | CouchDB admin username |
-| `COUCHDB_PASSWORD` | CouchDB admin password |
-| `JWT_SECRET` | JWT signing secret (min 32 chars) |
-| `PORT` | Backend listen port (default: 3000) |
-| `CORS_ORIGINS` | Allowed CORS origins |
-| `LOG_LEVEL` | Logging verbosity: `error`, `warn` (default), `info`, `debug` |
-| `SKIP_RATE_LIMIT` | Set `true` to disable IP-based rate limiting (recommended for single-user Pi) |
+| Variable           | Description                                                                   |
+| ------------------ | ----------------------------------------------------------------------------- |
+| `COUCHDB_URL`      | CouchDB connection URL                                                        |
+| `COUCHDB_USER`     | CouchDB admin username                                                        |
+| `COUCHDB_PASSWORD` | CouchDB admin password                                                        |
+| `JWT_SECRET`       | JWT signing secret (min 32 chars)                                             |
+| `PORT`             | Backend listen port (default: 3000)                                           |
+| `CORS_ORIGINS`     | Allowed CORS origins                                                          |
+| `LOG_LEVEL`        | Logging verbosity: `error`, `warn` (default), `info`, `debug`                 |
+| `SKIP_RATE_LIMIT`  | Set `true` to disable IP-based rate limiting (recommended for single-user Pi) |
 
 ## Migrating from Firebase
 

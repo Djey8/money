@@ -9,7 +9,15 @@ describe('CsvService', () => {
   });
 
   function tx(overrides: Partial<Transaction> = {}): Transaction {
-    return { account: 'Daily', amount: -50, date: '2026-01-15', time: '10:30', category: 'Food', comment: '', ...overrides };
+    return {
+      account: 'Daily',
+      amount: -50,
+      date: '2026-01-15',
+      time: '10:30',
+      category: 'Food',
+      comment: '',
+      ...overrides,
+    };
   }
 
   // --- convertToCsv (private — tested via accessor) -----------------------
@@ -44,7 +52,10 @@ describe('CsvService', () => {
     it('creates a downloadable link and clicks it', () => {
       const clickSpy = jest.fn();
       const setAttrSpy = jest.fn();
-      const fakeLink = { setAttribute: setAttrSpy, click: clickSpy } as unknown as HTMLAnchorElement;
+      const fakeLink = {
+        setAttribute: setAttrSpy,
+        click: clickSpy,
+      } as unknown as HTMLAnchorElement;
       jest.spyOn(document, 'createElement').mockReturnValue(fakeLink as any);
       jest.spyOn(document.body, 'appendChild').mockImplementation((n) => n as any);
       jest.spyOn(document.body, 'removeChild').mockImplementation((n) => n as any);

@@ -3,11 +3,20 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
 import { TrapFocusDirective } from 'src/app/shared/directives/trap-focus.directive';
-import { PromptGeneratorService, PromptOptions, PromptType, BROKER_OPTIONS, COUNTRY_OPTIONS } from 'src/app/shared/services/prompt-generator.service';
+import {
+  PromptGeneratorService,
+  PromptOptions,
+  PromptType,
+  BROKER_OPTIONS,
+  COUNTRY_OPTIONS,
+} from 'src/app/shared/services/prompt-generator.service';
 import { Grow } from 'src/app/interfaces/grow';
 import { Smile } from 'src/app/interfaces/smile';
 import { Fire } from 'src/app/interfaces/fire';
-import { PlannedSubscription, PlannedSubscriptionStatus } from 'src/app/interfaces/planned-subscription';
+import {
+  PlannedSubscription,
+  PlannedSubscriptionStatus,
+} from 'src/app/interfaces/planned-subscription';
 import { AppStateService } from 'src/app/shared/services/app-state.service';
 import { PersistenceService } from 'src/app/shared/services/persistence.service';
 import { ToastService } from 'src/app/shared/services/toast.service';
@@ -19,7 +28,11 @@ import { isDuplicateTitle } from 'src/app/shared/validation.utils';
   standalone: true,
   imports: [CommonModule, FormsModule, TranslateModule, TrapFocusDirective],
   templateUrl: './ai-assistant.component.html',
-  styleUrls: ['./ai-assistant.component.css', '../../shared/styles/add-form.css', '../../shared/styles/filter-styles.css']
+  styleUrls: [
+    './ai-assistant.component.css',
+    '../../shared/styles/add-form.css',
+    '../../shared/styles/filter-styles.css',
+  ],
 })
 export class AiAssistantComponent implements DoCheck {
   static isOpen = false;
@@ -62,7 +75,13 @@ export class AiAssistantComponent implements DoCheck {
   importError = '';
   importedProjects: Grow[] = [];
   importSuccess = false;
-  importType: 'income-growth' | 'budget-optimization' | 'subscription-action' | 'expense-insight' | 'smile-project' | 'fire-emergency' = 'income-growth';
+  importType:
+    | 'income-growth'
+    | 'budget-optimization'
+    | 'subscription-action'
+    | 'expense-insight'
+    | 'smile-project'
+    | 'fire-emergency' = 'income-growth';
 
   // Improve mode - update preview
   importedSmileUpdates: Smile[] = [];
@@ -73,7 +92,7 @@ export class AiAssistantComponent implements DoCheck {
     private promptService: PromptGeneratorService,
     private persistence: PersistenceService,
     private toast: ToastService,
-    private confirmService: ConfirmService
+    private confirmService: ConfirmService,
   ) {
     this.options = this.promptService.getDefaultOptions();
     this.currentStep = AiAssistantComponent.initialStep;
@@ -140,7 +159,7 @@ export class AiAssistantComponent implements DoCheck {
           this.options.anonymized = false;
         },
         'Confirm.continue',
-        'primary'
+        'primary',
       );
     } else {
       // User wants to turn anonymization back ON (safe)
@@ -152,7 +171,12 @@ export class AiAssistantComponent implements DoCheck {
   isPromptTypeVisible(promptType: PromptType): boolean {
     if (this.context === 'all') return true;
     if (this.context === 'grow') {
-      return ['grow-strategy', 'budget-optimizer', 'subscription-audit', 'expense-pattern'].includes(promptType);
+      return [
+        'grow-strategy',
+        'budget-optimizer',
+        'subscription-audit',
+        'expense-pattern',
+      ].includes(promptType);
     }
     if (this.context === 'smile') {
       return ['smile-create', 'smile-improve'].includes(promptType);
@@ -167,7 +191,12 @@ export class AiAssistantComponent implements DoCheck {
   isImportTypeVisible(importType: string): boolean {
     if (this.context === 'all') return true;
     if (this.context === 'grow') {
-      return ['income-growth', 'budget-optimization', 'subscription-action', 'expense-insight'].includes(importType);
+      return [
+        'income-growth',
+        'budget-optimization',
+        'subscription-action',
+        'expense-insight',
+      ].includes(importType);
     }
     if (this.context === 'smile') {
       return importType === 'smile-project';
@@ -198,7 +227,11 @@ export class AiAssistantComponent implements DoCheck {
     if ((opts.country === 'Other' || opts.country === 'Other EU') && this.customCountry.trim()) {
       opts.country = this.customCountry.trim();
     }
-    if (opts.numberOfSuggestions === -1 && this.customNumberOfSuggestions && this.customNumberOfSuggestions > 0) {
+    if (
+      opts.numberOfSuggestions === -1 &&
+      this.customNumberOfSuggestions &&
+      this.customNumberOfSuggestions > 0
+    ) {
       opts.numberOfSuggestions = this.customNumberOfSuggestions;
     }
     // Resolve custom information focus for Smile
@@ -226,7 +259,11 @@ export class AiAssistantComponent implements DoCheck {
         break;
       case 'smile-create': {
         const smileOpts = { ...opts };
-        if (smileOpts.smileNumberOfSuggestions === -1 && this.customNumberOfSuggestions && this.customNumberOfSuggestions > 0) {
+        if (
+          smileOpts.smileNumberOfSuggestions === -1 &&
+          this.customNumberOfSuggestions &&
+          this.customNumberOfSuggestions > 0
+        ) {
           smileOpts.smileNumberOfSuggestions = this.customNumberOfSuggestions;
         }
         this.generatedPrompt = this.promptService.generateSmileCreatePrompt({
@@ -237,7 +274,7 @@ export class AiAssistantComponent implements DoCheck {
           budgetFlexibility: smileOpts.smileBudgetFlexibility,
           complexity: smileOpts.smileComplexity,
           numberOfSuggestions: smileOpts.smileNumberOfSuggestions,
-          anonymized: smileOpts.anonymized
+          anonymized: smileOpts.anonymized,
         });
         break;
       }
@@ -248,24 +285,34 @@ export class AiAssistantComponent implements DoCheck {
           return;
         }
         // Resolve custom info focus
-        if (opts.improveInformationFocus.includes('custom') && this.customImproveInformationFocus.trim()) {
-          opts.improveInformationFocus = opts.improveInformationFocus.filter(f => f !== 'custom');
+        if (
+          opts.improveInformationFocus.includes('custom') &&
+          this.customImproveInformationFocus.trim()
+        ) {
+          opts.improveInformationFocus = opts.improveInformationFocus.filter((f) => f !== 'custom');
           opts.improveInformationFocus.push(this.customImproveInformationFocus.trim());
         }
         const selectedSmileProjects = this.getSelectedSmileProjectObjects();
-        this.generatedPrompt = this.promptService.generateSmileImprovePrompt(selectedSmileProjects, {
-          userPlan: opts.improveUserPlan,
-          improvementAreas: opts.improveAreas,
-          researchDepth: opts.improveDetailLevel,
-          informationFocus: opts.improveInformationFocus,
-          customInstructions: opts.improveCustomInstructions,
-          anonymized: opts.anonymized
-        });
+        this.generatedPrompt = this.promptService.generateSmileImprovePrompt(
+          selectedSmileProjects,
+          {
+            userPlan: opts.improveUserPlan,
+            improvementAreas: opts.improveAreas,
+            researchDepth: opts.improveDetailLevel,
+            informationFocus: opts.improveInformationFocus,
+            customInstructions: opts.improveCustomInstructions,
+            anonymized: opts.anonymized,
+          },
+        );
         break;
       }
       case 'fire-create': {
         const fireOpts = { ...opts };
-        if (fireOpts.fireNumberOfSuggestions === -1 && this.customNumberOfSuggestions && this.customNumberOfSuggestions > 0) {
+        if (
+          fireOpts.fireNumberOfSuggestions === -1 &&
+          this.customNumberOfSuggestions &&
+          this.customNumberOfSuggestions > 0
+        ) {
           fireOpts.fireNumberOfSuggestions = this.customNumberOfSuggestions;
         }
         this.generatedPrompt = this.promptService.generateFireCreatePrompt({
@@ -277,7 +324,7 @@ export class AiAssistantComponent implements DoCheck {
           paybackStrategy: fireOpts.firePaybackStrategy,
           researchNeeds: fireOpts.fireResearchNeeds,
           numberOfSuggestions: fireOpts.fireNumberOfSuggestions,
-          anonymized: fireOpts.anonymized
+          anonymized: fireOpts.anonymized,
         });
         break;
       }
@@ -288,19 +335,25 @@ export class AiAssistantComponent implements DoCheck {
           return;
         }
         // Resolve custom info focus
-        if (opts.improveInformationFocus.includes('custom') && this.customImproveInformationFocus.trim()) {
-          opts.improveInformationFocus = opts.improveInformationFocus.filter(f => f !== 'custom');
+        if (
+          opts.improveInformationFocus.includes('custom') &&
+          this.customImproveInformationFocus.trim()
+        ) {
+          opts.improveInformationFocus = opts.improveInformationFocus.filter((f) => f !== 'custom');
           opts.improveInformationFocus.push(this.customImproveInformationFocus.trim());
         }
         const selectedFireEmergencies = this.getSelectedFireEmergencyObjects();
-        this.generatedPrompt = this.promptService.generateFireImprovePrompt(selectedFireEmergencies, {
-          userPlan: opts.improveUserPlan,
-          improvementAreas: opts.improveAreas,
-          researchDepth: opts.improveDetailLevel,
-          informationFocus: opts.improveInformationFocus,
-          customInstructions: opts.improveCustomInstructions,
-          anonymized: opts.anonymized
-        });
+        this.generatedPrompt = this.promptService.generateFireImprovePrompt(
+          selectedFireEmergencies,
+          {
+            userPlan: opts.improveUserPlan,
+            improvementAreas: opts.improveAreas,
+            researchDepth: opts.improveDetailLevel,
+            informationFocus: opts.improveInformationFocus,
+            customInstructions: opts.improveCustomInstructions,
+            anonymized: opts.anonymized,
+          },
+        );
         break;
       }
       default:
@@ -313,7 +366,7 @@ export class AiAssistantComponent implements DoCheck {
   copyToClipboard() {
     navigator.clipboard.writeText(this.generatedPrompt).then(() => {
       this.copySuccess = true;
-      setTimeout(() => this.copySuccess = false, 2000);
+      setTimeout(() => (this.copySuccess = false), 2000);
     });
   }
 
@@ -440,16 +493,26 @@ export class AiAssistantComponent implements DoCheck {
         for (const block of codeBlocks) {
           try {
             const blockParsed = JSON.parse(block);
-            if (Array.isArray(blockParsed) && (!bestArray || blockParsed.length > bestArray.length)) {
+            if (
+              Array.isArray(blockParsed) &&
+              (!bestArray || blockParsed.length > bestArray.length)
+            ) {
               bestArray = blockParsed;
-            } else if (typeof blockParsed === 'object' && !Array.isArray(blockParsed) && blockParsed.title) {
+            } else if (
+              typeof blockParsed === 'object' &&
+              !Array.isArray(blockParsed) &&
+              blockParsed.title
+            ) {
               individualObjects.push(blockParsed);
             }
-          } catch { /* skip invalid blocks */ }
+          } catch {
+            /* skip invalid blocks */
+          }
         }
 
         // Prefer the combined array if it has all items, otherwise use individual objects
-        parsed = (bestArray && bestArray.length >= individualObjects.length) ? bestArray : individualObjects;
+        parsed =
+          bestArray && bestArray.length >= individualObjects.length ? bestArray : individualObjects;
       }
 
       // Handle if LLM wrapped it in an object
@@ -482,34 +545,55 @@ export class AiAssistantComponent implements DoCheck {
         const growType = this.importType;
 
         // For budget optimization: recalculate using real budget amounts
-        let actualCurrentCost = typeof item.currentCost === 'number' ? item.currentCost : (item.currentCost ? parseFloat(item.currentCost) : undefined);
-        let actualTargetCost = typeof item.targetCost === 'number' ? item.targetCost : (item.targetCost ? parseFloat(item.targetCost) : undefined);
-        let actualMonthlySavings = typeof item.monthlySavings === 'number' ? item.monthlySavings : (item.monthlySavings ? parseFloat(item.monthlySavings) : undefined);
-        let actualAnnualSavings = typeof item.annualSavings === 'number' ? item.annualSavings : (item.annualSavings ? parseFloat(item.annualSavings) : undefined);
+        let actualCurrentCost =
+          typeof item.currentCost === 'number'
+            ? item.currentCost
+            : item.currentCost
+              ? parseFloat(item.currentCost)
+              : undefined;
+        let actualTargetCost =
+          typeof item.targetCost === 'number'
+            ? item.targetCost
+            : item.targetCost
+              ? parseFloat(item.targetCost)
+              : undefined;
+        let actualMonthlySavings =
+          typeof item.monthlySavings === 'number'
+            ? item.monthlySavings
+            : item.monthlySavings
+              ? parseFloat(item.monthlySavings)
+              : undefined;
+        let actualAnnualSavings =
+          typeof item.annualSavings === 'number'
+            ? item.annualSavings
+            : item.annualSavings
+              ? parseFloat(item.annualSavings)
+              : undefined;
 
         if (growType === 'budget-optimization' && item.category) {
           // Handle category as string or array (bundled categories)
           const categories = Array.isArray(item.category) ? item.category : [item.category];
-          
+
           // Sum up budget amounts from all categories
           let totalRealBudgetAmount = 0;
           const foundCategories: string[] = [];
-          
-          categories.forEach(cat => {
+
+          categories.forEach((cat) => {
             const realAmount = this.getActualBudgetAmount(cat);
             if (realAmount !== undefined && realAmount > 0) {
               totalRealBudgetAmount += realAmount;
               foundCategories.push(cat);
             }
           });
-          
+
           if (totalRealBudgetAmount > 0) {
             // Calculate AI's recommended reduction percentage
             let reductionPercentage = 0;
-            
+
             if (actualCurrentCost && actualCurrentCost > 0 && actualTargetCost !== undefined) {
               // Calculate percentage from AI's currentCost -> targetCost reduction
-              reductionPercentage = ((actualCurrentCost - actualTargetCost) / actualCurrentCost) * 100;
+              reductionPercentage =
+                ((actualCurrentCost - actualTargetCost) / actualCurrentCost) * 100;
             } else if (item.percentage !== undefined) {
               // Use explicit percentage if provided
               reductionPercentage = parseFloat(item.percentage);
@@ -522,17 +606,27 @@ export class AiAssistantComponent implements DoCheck {
               actualMonthlySavings = actualCurrentCost - actualTargetCost;
               actualAnnualSavings = actualMonthlySavings * 12;
 
-              console.log('[Budget Optimizer] Recalculated for bundled categories', foundCategories, ':', {
-                realBudgetTotal: totalRealBudgetAmount,
-                aiReduction: reductionPercentage.toFixed(1) + '%',
-                newTarget: actualTargetCost.toFixed(2),
-                monthlySavings: actualMonthlySavings.toFixed(2),
-                annualSavings: actualAnnualSavings.toFixed(2)
-              });
+              console.log(
+                '[Budget Optimizer] Recalculated for bundled categories',
+                foundCategories,
+                ':',
+                {
+                  realBudgetTotal: totalRealBudgetAmount,
+                  aiReduction: reductionPercentage.toFixed(1) + '%',
+                  newTarget: actualTargetCost.toFixed(2),
+                  monthlySavings: actualMonthlySavings.toFixed(2),
+                  annualSavings: actualAnnualSavings.toFixed(2),
+                },
+              );
             } else {
               // No reduction percentage available, just use real budget as currentCost
               actualCurrentCost = totalRealBudgetAmount;
-              console.log('[Budget Optimizer] Using real budget total for', foundCategories, ':', totalRealBudgetAmount);
+              console.log(
+                '[Budget Optimizer] Using real budget total for',
+                foundCategories,
+                ':',
+                totalRealBudgetAmount,
+              );
             }
           }
         }
@@ -540,63 +634,105 @@ export class AiAssistantComponent implements DoCheck {
         const grow: Grow = {
           title: sanitize(item.title).substring(0, 100),
           sub: sanitize(item.sub || item.category || ''),
-          phase: (['idea','research','plan','execute','monitor','completed'].includes(item.phase)) ? item.phase : 'idea',
+          phase: ['idea', 'research', 'plan', 'execute', 'monitor', 'completed'].includes(
+            item.phase,
+          )
+            ? item.phase
+            : 'idea',
           description: sanitize(item.description || item.reasoning || ''),
           strategy: sanitize(item.strategy || ''),
-          riskScore: typeof item.riskScore === 'number' ? Math.min(5, Math.max(0, item.riskScore)) : parseFloat(item.riskScore) || 0,
+          riskScore:
+            typeof item.riskScore === 'number'
+              ? Math.min(5, Math.max(0, item.riskScore))
+              : parseFloat(item.riskScore) || 0,
           risks: sanitize(item.risks || ''),
-          cashflow: typeof item.cashflow === 'number' ? item.cashflow : parseFloat(item.cashflow) || 0,
+          cashflow:
+            typeof item.cashflow === 'number' ? item.cashflow : parseFloat(item.cashflow) || 0,
           amount: typeof item.amount === 'number' ? item.amount : parseFloat(item.amount) || 0,
           isAsset: !!item.isAsset,
-          share: item.share && ('quantity' in item.share) && ('price' in item.share) ? {
-            tag: sanitize(item.share.tag || item.title).substring(0, 100),
-            quantity: parseFloat(item.share.quantity) || 0,
-            price: parseFloat(item.share.price) || 0
-          } : null,
-          investment: item.investment && ('amount' in item.investment) ? {
-            tag: sanitize(item.investment.tag || item.title).substring(0, 100),
-            deposit: parseFloat(item.investment.deposit) || 0,
-            amount: parseFloat(item.investment.amount) || 0
-          } : null,
-          liabilitie: item.liabilitie && ('amount' in item.liabilitie) ? {
-            tag: sanitize(item.liabilitie.tag || item.title).substring(0, 100),
-            amount: parseFloat(item.liabilitie.amount) || 0,
-            investment: !!item.liabilitie.investment,
-            credit: parseFloat(item.liabilitie.credit) || 0
-          } : null,
-          actionItems: Array.isArray(item.actionItems) ? item.actionItems.map((a: any) => ({
-            text: sanitize(a.text).substring(0, 500),
-            done: !!a.done,
-            priority: (['low','medium','high'].includes(a.priority)) ? a.priority : 'medium',
-            ...(a.dueDate ? { dueDate: sanitize(a.dueDate) } : {})
-          })) : [],
-          links: Array.isArray(item.links) ? item.links.filter((l: any) => l.label && l.url).map((l: any) => ({
-            label: sanitize(l.label).substring(0, 200),
-            url: sanitize(l.url).substring(0, 500)
-          })) : [],
-          notes: item.notes ? [{ text: sanitize(typeof item.notes === 'string' ? item.notes : ''), createdAt: new Date().toISOString() }] : [],
+          share:
+            item.share && 'quantity' in item.share && 'price' in item.share
+              ? {
+                  tag: sanitize(item.share.tag || item.title).substring(0, 100),
+                  quantity: parseFloat(item.share.quantity) || 0,
+                  price: parseFloat(item.share.price) || 0,
+                }
+              : null,
+          investment:
+            item.investment && 'amount' in item.investment
+              ? {
+                  tag: sanitize(item.investment.tag || item.title).substring(0, 100),
+                  deposit: parseFloat(item.investment.deposit) || 0,
+                  amount: parseFloat(item.investment.amount) || 0,
+                }
+              : null,
+          liabilitie:
+            item.liabilitie && 'amount' in item.liabilitie
+              ? {
+                  tag: sanitize(item.liabilitie.tag || item.title).substring(0, 100),
+                  amount: parseFloat(item.liabilitie.amount) || 0,
+                  investment: !!item.liabilitie.investment,
+                  credit: parseFloat(item.liabilitie.credit) || 0,
+                }
+              : null,
+          actionItems: Array.isArray(item.actionItems)
+            ? item.actionItems.map((a: any) => ({
+                text: sanitize(a.text).substring(0, 500),
+                done: !!a.done,
+                priority: ['low', 'medium', 'high'].includes(a.priority) ? a.priority : 'medium',
+                ...(a.dueDate ? { dueDate: sanitize(a.dueDate) } : {}),
+              }))
+            : [],
+          links: Array.isArray(item.links)
+            ? item.links
+                .filter((l: any) => l.label && l.url)
+                .map((l: any) => ({
+                  label: sanitize(l.label).substring(0, 200),
+                  url: sanitize(l.url).substring(0, 500),
+                }))
+            : [],
+          notes: item.notes
+            ? [
+                {
+                  text: sanitize(typeof item.notes === 'string' ? item.notes : ''),
+                  createdAt: new Date().toISOString(),
+                },
+              ]
+            : [],
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
-          
+
           // NEW: Set type and expense optimization fields
           type: growType,
-          category: item.category ? (
-            Array.isArray(item.category) 
-              ? item.category.map(cat => sanitize(String(cat))).filter(cat => cat.length > 0)
+          category: item.category
+            ? Array.isArray(item.category)
+              ? item.category.map((cat) => sanitize(String(cat))).filter((cat) => cat.length > 0)
               : sanitize(String(item.category))
-          ) : undefined,
+            : undefined,
           currentCost: actualCurrentCost,
           targetCost: actualTargetCost,
           monthlySavings: actualMonthlySavings,
           annualSavings: actualAnnualSavings,
           reasoning: item.reasoning ? sanitize(item.reasoning) : undefined,
           alternative: item.alternative ? sanitize(item.alternative) : undefined,
-          alternativeCost: typeof item.alternativeCost === 'number' ? item.alternativeCost : (item.alternativeCost ? parseFloat(item.alternativeCost) : undefined),
+          alternativeCost:
+            typeof item.alternativeCost === 'number'
+              ? item.alternativeCost
+              : item.alternativeCost
+                ? parseFloat(item.alternativeCost)
+                : undefined,
           pattern: item.pattern ? sanitize(item.pattern) : undefined,
           insights: item.insights ? sanitize(item.insights) : undefined,
-
         };
-        console.log('[AI Import] Created grow object:', grow.title, 'with type:', grow.type, '(promptType:', this.promptType, ')');
+        console.log(
+          '[AI Import] Created grow object:',
+          grow.title,
+          'with type:',
+          grow.type,
+          '(promptType:',
+          this.promptType,
+          ')',
+        );
         validated.push(grow);
       }
 
@@ -610,7 +746,8 @@ export class AiAssistantComponent implements DoCheck {
         this.importError = `${errors.length} item(s) skipped due to errors. ${validated.length} ready to import.`;
       }
     } catch (e: any) {
-      this.importError = 'No valid JSON found. Copy the JSON code blocks from the AI response, or the entire response.';
+      this.importError =
+        'No valid JSON found. Copy the JSON code blocks from the AI response, or the entire response.';
     }
   }
 
@@ -658,31 +795,44 @@ export class AiAssistantComponent implements DoCheck {
             target: typeof b.target === 'number' ? b.target : parseFloat(b.target) || 0,
             amount: typeof b.amount === 'number' ? b.amount : parseFloat(b.amount) || 0,
             notes: this.sanitize(b.notes || ''),
-            links: Array.isArray(b.links) ? b.links.map((l: any) => ({
-              label: this.sanitize(l.label || ''),
-              url: this.sanitize(l.url || '')
-            })) : [],
+            links: Array.isArray(b.links)
+              ? b.links.map((l: any) => ({
+                  label: this.sanitize(l.label || ''),
+                  url: this.sanitize(l.url || ''),
+                }))
+              : [],
             targetDate: b.targetDate || undefined,
-            completionDate: b.completionDate || undefined
+            completionDate: b.completionDate || undefined,
           })),
-          links: Array.isArray(item.links) ? item.links.map((l: any) => ({
-            label: this.sanitize(l.label || ''),
-            url: this.sanitize(l.url || '')
-          })) : [],
-          actionItems: Array.isArray(item.actionItems) ? item.actionItems.map((a: any) => ({
-            text: this.sanitize(a.text || ''),
-            done: a.done === true,
-            priority: a.priority || 'medium',
-            dueDate: a.dueDate || undefined
-          })) : [],
-          notes: Array.isArray(item.notes) ? item.notes.map((n: any) => ({
-            text: this.sanitize(n.text || ''),
-            createdAt: n.createdAt || new Date().toISOString()
-          })) : [],
+          links: Array.isArray(item.links)
+            ? item.links.map((l: any) => ({
+                label: this.sanitize(l.label || ''),
+                url: this.sanitize(l.url || ''),
+              }))
+            : [],
+          actionItems: Array.isArray(item.actionItems)
+            ? item.actionItems.map((a: any) => ({
+                text: this.sanitize(a.text || ''),
+                done: a.done === true,
+                priority: a.priority || 'medium',
+                dueDate: a.dueDate || undefined,
+              }))
+            : [],
+          notes: Array.isArray(item.notes)
+            ? item.notes.map((n: any) => ({
+                text: this.sanitize(n.text || ''),
+                createdAt: n.createdAt || new Date().toISOString(),
+              }))
+            : [],
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           // Support both field names for backwards compatibility and transform to proper PlannedSubscription format
-          plannedSubscriptions: this.transformPaymentPlans(item.plannedSubscriptions || item.plannedPayments || [], item.title, 'smile', item.buckets)
+          plannedSubscriptions: this.transformPaymentPlans(
+            item.plannedSubscriptions || item.plannedPayments || [],
+            item.title,
+            'smile',
+            item.buckets,
+          ),
         };
 
         validated.push(smile);
@@ -741,31 +891,44 @@ export class AiAssistantComponent implements DoCheck {
             target: typeof b.target === 'number' ? b.target : parseFloat(b.target) || 0,
             amount: typeof b.amount === 'number' ? b.amount : parseFloat(b.amount) || 0,
             notes: this.sanitize(b.notes || ''),
-            links: Array.isArray(b.links) ? b.links.map((l: any) => ({
-              label: this.sanitize(l.label || ''),
-              url: this.sanitize(l.url || '')
-            })) : [],
+            links: Array.isArray(b.links)
+              ? b.links.map((l: any) => ({
+                  label: this.sanitize(l.label || ''),
+                  url: this.sanitize(l.url || ''),
+                }))
+              : [],
             targetDate: b.targetDate || undefined,
-            completionDate: b.completionDate || undefined
+            completionDate: b.completionDate || undefined,
           })),
-          links: Array.isArray(item.links) ? item.links.map((l: any) => ({
-            label: this.sanitize(l.label || ''),
-            url: this.sanitize(l.url || '')
-          })) : [],
-          actionItems: Array.isArray(item.actionItems) ? item.actionItems.map((a: any) => ({
-            text: this.sanitize(a.text || ''),
-            done: a.done === true,
-            priority: a.priority || 'medium',
-            dueDate: a.dueDate || undefined
-          })) : [],
-          notes: Array.isArray(item.notes) ? item.notes.map((n: any) => ({
-            text: this.sanitize(n.text || ''),
-            createdAt: n.createdAt || new Date().toISOString()
-          })) : [],
+          links: Array.isArray(item.links)
+            ? item.links.map((l: any) => ({
+                label: this.sanitize(l.label || ''),
+                url: this.sanitize(l.url || ''),
+              }))
+            : [],
+          actionItems: Array.isArray(item.actionItems)
+            ? item.actionItems.map((a: any) => ({
+                text: this.sanitize(a.text || ''),
+                done: a.done === true,
+                priority: a.priority || 'medium',
+                dueDate: a.dueDate || undefined,
+              }))
+            : [],
+          notes: Array.isArray(item.notes)
+            ? item.notes.map((n: any) => ({
+                text: this.sanitize(n.text || ''),
+                createdAt: n.createdAt || new Date().toISOString(),
+              }))
+            : [],
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           // Support both field names for backwards compatibility and transform to proper PlannedSubscription format
-          plannedSubscriptions: this.transformPaymentPlans(item.plannedSubscriptions || item.plannedPayments || [], item.title, 'fire', item.buckets)
+          plannedSubscriptions: this.transformPaymentPlans(
+            item.plannedSubscriptions || item.plannedPayments || [],
+            item.title,
+            'fire',
+            item.buckets,
+          ),
         };
 
         validated.push(fire);
@@ -799,13 +962,21 @@ export class AiAssistantComponent implements DoCheck {
           const blockParsed = JSON.parse(block);
           if (Array.isArray(blockParsed) && (!bestArray || blockParsed.length > bestArray.length)) {
             bestArray = blockParsed;
-          } else if (typeof blockParsed === 'object' && !Array.isArray(blockParsed) && blockParsed.title) {
+          } else if (
+            typeof blockParsed === 'object' &&
+            !Array.isArray(blockParsed) &&
+            blockParsed.title
+          ) {
             individualObjects.push(blockParsed);
           }
-        } catch { /* skip invalid blocks */ }
+        } catch {
+          /* skip invalid blocks */
+        }
       }
 
-      return (bestArray && bestArray.length >= individualObjects.length) ? bestArray : individualObjects;
+      return bestArray && bestArray.length >= individualObjects.length
+        ? bestArray
+        : individualObjects;
     }
   }
 
@@ -817,10 +988,15 @@ export class AiAssistantComponent implements DoCheck {
   /**
    * Transform simplified AI payment plan format to proper PlannedSubscription objects
    */
-  private transformPaymentPlans(plans: any[], projectTitle: string, projectType: 'smile' | 'fire', buckets: any[]): PlannedSubscription[] {
+  private transformPaymentPlans(
+    plans: any[],
+    projectTitle: string,
+    projectType: 'smile' | 'fire',
+    buckets: any[],
+  ): PlannedSubscription[] {
     if (!Array.isArray(plans)) return [];
-    
-    return plans.map(plan => {
+
+    return plans.map((plan) => {
       // Handle both 'targetBuckets' and 'targetBucketIds' field names
       let targetBucketIds: string[] = [];
       if (Array.isArray(plan.targetBucketIds)) {
@@ -828,12 +1004,12 @@ export class AiAssistantComponent implements DoCheck {
       } else if (Array.isArray(plan.targetBuckets)) {
         targetBucketIds = plan.targetBuckets;
       }
-      
+
       // Transform 'all' string to empty array (means all buckets)
       if (targetBucketIds.length === 1 && targetBucketIds[0] === 'all') {
         targetBucketIds = [];
       }
-      
+
       // Handle 'active' boolean vs 'status' field
       let status: PlannedSubscriptionStatus = 'planned';
       if (plan.status) {
@@ -843,25 +1019,27 @@ export class AiAssistantComponent implements DoCheck {
       } else if (plan.active === false) {
         status = 'planned';
       }
-      
+
       // Generate title from description or id if not provided
       const title = plan.title || plan.description || plan.id || 'Payment Plan';
-      
+
       // Use Smile or Fire account based on project type
       const account = projectType === 'smile' ? 'Smile' : 'Fire';
-      
+
       // Generate comment with bucket allocation tags
       let comment = plan.description || '';
       if (targetBucketIds.length > 0) {
-        const bucketNames = targetBucketIds.map(id => {
-          const bucket = buckets.find(b => b.id === id);
-          return bucket ? bucket.title : id;
-        }).join(', ');
+        const bucketNames = targetBucketIds
+          .map((id) => {
+            const bucket = buckets.find((b) => b.id === id);
+            return bucket ? bucket.title : id;
+          })
+          .join(', ');
         comment += ` [Buckets: ${bucketNames}]`;
       } else {
         comment += ' [All buckets]';
       }
-      
+
       return {
         id: plan.id || `plan-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         title: this.sanitize(title),
@@ -877,12 +1055,14 @@ export class AiAssistantComponent implements DoCheck {
         frequency: plan.frequency || 'monthly',
         targetDate: plan.targetDate || plan.endDate || new Date().toISOString().split('T')[0],
         targetBucketIds: targetBucketIds,
-        originalCalculatedAmount: typeof plan.amount === 'number' ? plan.amount : parseFloat(plan.amount) || 0,
+        originalCalculatedAmount:
+          typeof plan.amount === 'number' ? plan.amount : parseFloat(plan.amount) || 0,
         manuallyAdjusted: false,
         createdAt: plan.createdAt || new Date().toISOString(),
         updatedAt: plan.updatedAt || new Date().toISOString(),
-        activatedAt: status === 'active' ? (plan.activatedAt || new Date().toISOString()) : undefined,
-        deactivatedAt: status === 'inactive' ? (plan.deactivatedAt || new Date().toISOString()) : undefined
+        activatedAt: status === 'active' ? plan.activatedAt || new Date().toISOString() : undefined,
+        deactivatedAt:
+          status === 'inactive' ? plan.deactivatedAt || new Date().toISOString() : undefined,
       };
     });
   }
@@ -944,30 +1124,38 @@ export class AiAssistantComponent implements DoCheck {
       return;
     }
 
-    console.log('[AI Import] Saving to localStorage. Sample project types:', existing.slice(-3).map((g: Grow) => ({ title: g.title, type: g.type })));
-    console.log('[AI Import] Saving', existing.length, 'projects. Last 3 types:', existing.slice(-3).map((g: Grow) => ({ title: g.title, type: g.type })));
+    console.log(
+      '[AI Import] Saving to localStorage. Sample project types:',
+      existing.slice(-3).map((g: Grow) => ({ title: g.title, type: g.type })),
+    );
+    console.log(
+      '[AI Import] Saving',
+      existing.length,
+      'projects. Last 3 types:',
+      existing.slice(-3).map((g: Grow) => ({ title: g.title, type: g.type })),
+    );
     const jsonString = JSON.stringify(existing);
     const reparsed = JSON.parse(jsonString);
-    console.log('[AI Import] After JSON.stringify/parse, last 3 types:', reparsed.slice(-3).map((g: any) => ({ title: g.title, type: g.type })));
+    console.log(
+      '[AI Import] After JSON.stringify/parse, last 3 types:',
+      reparsed.slice(-3).map((g: any) => ({ title: g.title, type: g.type })),
+    );
     this.persistence.batchWriteAndSync({
-      writes: [
-        { tag: 'grow', data: existing }
-      ],
-      localStorageSaves: [
-        { key: 'grow', data: jsonString }
-      ],
+      writes: [{ tag: 'grow', data: existing }],
+      localStorageSaves: [{ key: 'grow', data: jsonString }],
       logEvent: 'ai_import_grow',
       logMetadata: { count: imported },
       onSuccess: () => {
         this.importSuccess = true;
-        const msg = skipped > 0
-          ? `${imported} project(s) imported, ${skipped} skipped (duplicates).`
-          : `${imported} project(s) imported successfully.`;
+        const msg =
+          skipped > 0
+            ? `${imported} project(s) imported, ${skipped} skipped (duplicates).`
+            : `${imported} project(s) imported successfully.`;
         this.toast.show(msg, 'success');
       },
       onError: (error: any) => {
         this.importError = error.message || 'Import failed.';
-      }
+      },
     });
   }
 
@@ -993,24 +1181,21 @@ export class AiAssistantComponent implements DoCheck {
 
     const jsonString = JSON.stringify(existing);
     this.persistence.batchWriteAndSync({
-      writes: [
-        { tag: 'smile', data: existing }
-      ],
-      localStorageSaves: [
-        { key: 'smile', data: jsonString }
-      ],
+      writes: [{ tag: 'smile', data: existing }],
+      localStorageSaves: [{ key: 'smile', data: jsonString }],
       logEvent: 'ai_import_smile',
       logMetadata: { count: imported },
       onSuccess: () => {
         this.importSuccess = true;
-        const msg = skipped > 0
-          ? `${imported} Smile project(s) imported, ${skipped} skipped (duplicates).`
-          : `${imported} Smile project(s) imported successfully.`;
+        const msg =
+          skipped > 0
+            ? `${imported} Smile project(s) imported, ${skipped} skipped (duplicates).`
+            : `${imported} Smile project(s) imported successfully.`;
         this.toast.show(msg, 'success');
       },
       onError: (error: any) => {
         this.importError = error.message || 'Import failed.';
-      }
+      },
     });
   }
 
@@ -1036,24 +1221,21 @@ export class AiAssistantComponent implements DoCheck {
 
     const jsonString = JSON.stringify(existing);
     this.persistence.batchWriteAndSync({
-      writes: [
-        { tag: 'fire', data: existing }
-      ],
-      localStorageSaves: [
-        { key: 'fire', data: jsonString }
-      ],
+      writes: [{ tag: 'fire', data: existing }],
+      localStorageSaves: [{ key: 'fire', data: jsonString }],
       logEvent: 'ai_import_fire',
       logMetadata: { count: imported },
       onSuccess: () => {
         this.importSuccess = true;
-        const msg = skipped > 0
-          ? `${imported} Fire emergency(ies) imported, ${skipped} skipped (duplicates).`
-          : `${imported} Fire emergency(ies) imported successfully.`;
+        const msg =
+          skipped > 0
+            ? `${imported} Fire emergency(ies) imported, ${skipped} skipped (duplicates).`
+            : `${imported} Fire emergency(ies) imported successfully.`;
         this.toast.show(msg, 'success');
       },
       onError: (error: any) => {
         this.importError = error.message || 'Import failed.';
-      }
+      },
     });
   }
 
@@ -1093,7 +1275,7 @@ export class AiAssistantComponent implements DoCheck {
   }
 
   selectAllSmileProjects() {
-    this.options.selectedSmileProjects = this.getAvailableSmileProjects().map(p => p.title);
+    this.options.selectedSmileProjects = this.getAvailableSmileProjects().map((p) => p.title);
   }
 
   deselectAllSmileProjects() {
@@ -1101,7 +1283,7 @@ export class AiAssistantComponent implements DoCheck {
   }
 
   selectAllFireEmergencies() {
-    this.options.selectedFireEmergencies = this.getAvailableFireEmergencies().map(e => e.title);
+    this.options.selectedFireEmergencies = this.getAvailableFireEmergencies().map((e) => e.title);
   }
 
   deselectAllFireEmergencies() {
@@ -1110,12 +1292,12 @@ export class AiAssistantComponent implements DoCheck {
 
   private getSelectedSmileProjectObjects(): Smile[] {
     const all = AppStateService.instance.allSmileProjects || [];
-    return all.filter(p => this.options.selectedSmileProjects.includes(p.title));
+    return all.filter((p) => this.options.selectedSmileProjects.includes(p.title));
   }
 
   private getSelectedFireEmergencyObjects(): Fire[] {
     const all = AppStateService.instance.allFireEmergencies || [];
-    return all.filter(e => this.options.selectedFireEmergencies.includes(e.title));
+    return all.filter((e) => this.options.selectedFireEmergencies.includes(e.title));
   }
 
   // --- Improve Mode: Check if we're in improve mode ---
@@ -1156,7 +1338,7 @@ export class AiAssistantComponent implements DoCheck {
         }
 
         // Find existing project by title
-        const existingProject = existing.find(p => p.title === item.title);
+        const existingProject = existing.find((p) => p.title === item.title);
         if (!existingProject) {
           warnings.push(`"${item.title}": No existing project found — will be added as new.`);
         }
@@ -1167,18 +1349,24 @@ export class AiAssistantComponent implements DoCheck {
             if ((existBucket.amount || 0) > 0) {
               const updatedBucket = item.buckets.find((b: any) => b.id === existBucket.id);
               if (!updatedBucket) {
-                warnings.push(`"${item.title}": Locked bucket "${existBucket.title}" (${existBucket.amount} saved) was removed by AI — will be restored.`);
+                warnings.push(
+                  `"${item.title}": Locked bucket "${existBucket.title}" (${existBucket.amount} saved) was removed by AI — will be restored.`,
+                );
                 // Re-add the locked bucket
                 item.buckets.push(existBucket);
               } else {
                 // Enforce: keep title, keep amount, keep target >= amount
                 if (updatedBucket.title !== existBucket.title) {
-                  warnings.push(`"${item.title}": Bucket "${existBucket.title}" was renamed to "${updatedBucket.title}" — reverting (has money).`);
+                  warnings.push(
+                    `"${item.title}": Bucket "${existBucket.title}" was renamed to "${updatedBucket.title}" — reverting (has money).`,
+                  );
                   updatedBucket.title = existBucket.title;
                 }
                 updatedBucket.amount = existBucket.amount;
                 if ((updatedBucket.target || 0) < existBucket.amount) {
-                  warnings.push(`"${item.title}": Bucket "${existBucket.title}" target was reduced below saved amount — adjusted to ${existBucket.amount}.`);
+                  warnings.push(
+                    `"${item.title}": Bucket "${existBucket.title}" target was reduced below saved amount — adjusted to ${existBucket.amount}.`,
+                  );
                   updatedBucket.target = existBucket.amount;
                 }
               }
@@ -1191,7 +1379,9 @@ export class AiAssistantComponent implements DoCheck {
           for (const existPlan of existingPlans) {
             const found = updatedPlans.find((p: any) => p.id === existPlan.id);
             if (!found) {
-              warnings.push(`"${item.title}": Payment plan "${existPlan.title}" was removed — restoring.`);
+              warnings.push(
+                `"${item.title}": Payment plan "${existPlan.title}" was removed — restoring.`,
+              );
               updatedPlans.push(existPlan);
             }
           }
@@ -1205,40 +1395,51 @@ export class AiAssistantComponent implements DoCheck {
           phase: item.phase || (existingProject ? existingProject.phase : 'idea'),
           description: this.sanitize(item.description || ''),
           targetDate: item.targetDate || '',
-          completionDate: item.completionDate || (existingProject ? existingProject.completionDate : undefined),
+          completionDate:
+            item.completionDate || (existingProject ? existingProject.completionDate : undefined),
           buckets: item.buckets.map((b: any, idx: number) => ({
             id: b.id || `bucket-${idx + 1}`,
             title: this.sanitize(b.title || `Bucket ${idx + 1}`),
             target: typeof b.target === 'number' ? b.target : parseFloat(b.target) || 0,
             amount: typeof b.amount === 'number' ? b.amount : parseFloat(b.amount) || 0,
             notes: this.sanitize(b.notes || ''),
-            links: Array.isArray(b.links) ? b.links.map((l: any) => ({
-              label: this.sanitize(l.label || ''),
-              url: this.sanitize(l.url || '')
-            })) : [],
+            links: Array.isArray(b.links)
+              ? b.links.map((l: any) => ({
+                  label: this.sanitize(l.label || ''),
+                  url: this.sanitize(l.url || ''),
+                }))
+              : [],
             targetDate: b.targetDate || undefined,
-            completionDate: b.completionDate || undefined
+            completionDate: b.completionDate || undefined,
           })),
-          links: Array.isArray(item.links) ? item.links.map((l: any) => ({
-            label: this.sanitize(l.label || ''),
-            url: this.sanitize(l.url || '')
-          })) : [],
-          actionItems: Array.isArray(item.actionItems) ? item.actionItems.map((a: any) => ({
-            text: this.sanitize(a.text || ''),
-            done: a.done === true,
-            priority: a.priority || 'medium',
-            dueDate: a.dueDate || undefined
-          })) : [],
-          notes: Array.isArray(item.notes) ? item.notes.map((n: any) => ({
-            text: this.sanitize(n.text || ''),
-            createdAt: n.createdAt || new Date().toISOString()
-          })) : [],
+          links: Array.isArray(item.links)
+            ? item.links.map((l: any) => ({
+                label: this.sanitize(l.label || ''),
+                url: this.sanitize(l.url || ''),
+              }))
+            : [],
+          actionItems: Array.isArray(item.actionItems)
+            ? item.actionItems.map((a: any) => ({
+                text: this.sanitize(a.text || ''),
+                done: a.done === true,
+                priority: a.priority || 'medium',
+                dueDate: a.dueDate || undefined,
+              }))
+            : [],
+          notes: Array.isArray(item.notes)
+            ? item.notes.map((n: any) => ({
+                text: this.sanitize(n.text || ''),
+                createdAt: n.createdAt || new Date().toISOString(),
+              }))
+            : [],
           createdAt: existingProject ? existingProject.createdAt : new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           plannedSubscriptions: this.transformPaymentPlans(
             item.plannedSubscriptions || item.plannedPayments || [],
-            item.title, 'smile', item.buckets
-          )
+            item.title,
+            'smile',
+            item.buckets,
+          ),
         };
 
         validated.push(smile);
@@ -1292,7 +1493,7 @@ export class AiAssistantComponent implements DoCheck {
           continue;
         }
 
-        const existingEmergency = existing.find(e => e.title === item.title);
+        const existingEmergency = existing.find((e) => e.title === item.title);
         if (!existingEmergency) {
           warnings.push(`"${item.title}": No existing emergency found — will be added as new.`);
         }
@@ -1303,16 +1504,22 @@ export class AiAssistantComponent implements DoCheck {
             if ((existBucket.amount || 0) > 0) {
               const updatedBucket = item.buckets.find((b: any) => b.id === existBucket.id);
               if (!updatedBucket) {
-                warnings.push(`"${item.title}": Locked bucket "${existBucket.title}" (${existBucket.amount} saved) was removed by AI — will be restored.`);
+                warnings.push(
+                  `"${item.title}": Locked bucket "${existBucket.title}" (${existBucket.amount} saved) was removed by AI — will be restored.`,
+                );
                 item.buckets.push(existBucket);
               } else {
                 if (updatedBucket.title !== existBucket.title) {
-                  warnings.push(`"${item.title}": Bucket "${existBucket.title}" was renamed — reverting (has money).`);
+                  warnings.push(
+                    `"${item.title}": Bucket "${existBucket.title}" was renamed — reverting (has money).`,
+                  );
                   updatedBucket.title = existBucket.title;
                 }
                 updatedBucket.amount = existBucket.amount;
                 if ((updatedBucket.target || 0) < existBucket.amount) {
-                  warnings.push(`"${item.title}": Bucket "${existBucket.title}" target adjusted to ${existBucket.amount} (can't be less than saved).`);
+                  warnings.push(
+                    `"${item.title}": Bucket "${existBucket.title}" target adjusted to ${existBucket.amount} (can't be less than saved).`,
+                  );
                   updatedBucket.target = existBucket.amount;
                 }
               }
@@ -1324,7 +1531,9 @@ export class AiAssistantComponent implements DoCheck {
           const updatedPlans = item.plannedSubscriptions || item.plannedPayments || [];
           for (const existPlan of existingPlans) {
             if (!updatedPlans.find((p: any) => p.id === existPlan.id)) {
-              warnings.push(`"${item.title}": Payment plan "${existPlan.title}" was removed — restoring.`);
+              warnings.push(
+                `"${item.title}": Payment plan "${existPlan.title}" was removed — restoring.`,
+              );
               updatedPlans.push(existPlan);
             }
           }
@@ -1337,40 +1546,52 @@ export class AiAssistantComponent implements DoCheck {
           phase: item.phase || (existingEmergency ? existingEmergency.phase : 'idea'),
           description: this.sanitize(item.description || ''),
           targetDate: item.targetDate || '',
-          completionDate: item.completionDate || (existingEmergency ? existingEmergency.completionDate : undefined),
+          completionDate:
+            item.completionDate ||
+            (existingEmergency ? existingEmergency.completionDate : undefined),
           buckets: item.buckets.map((b: any, idx: number) => ({
             id: b.id || `bucket-${idx + 1}`,
             title: this.sanitize(b.title || `Bucket ${idx + 1}`),
             target: typeof b.target === 'number' ? b.target : parseFloat(b.target) || 0,
             amount: typeof b.amount === 'number' ? b.amount : parseFloat(b.amount) || 0,
             notes: this.sanitize(b.notes || ''),
-            links: Array.isArray(b.links) ? b.links.map((l: any) => ({
-              label: this.sanitize(l.label || ''),
-              url: this.sanitize(l.url || '')
-            })) : [],
+            links: Array.isArray(b.links)
+              ? b.links.map((l: any) => ({
+                  label: this.sanitize(l.label || ''),
+                  url: this.sanitize(l.url || ''),
+                }))
+              : [],
             targetDate: b.targetDate || undefined,
-            completionDate: b.completionDate || undefined
+            completionDate: b.completionDate || undefined,
           })),
-          links: Array.isArray(item.links) ? item.links.map((l: any) => ({
-            label: this.sanitize(l.label || ''),
-            url: this.sanitize(l.url || '')
-          })) : [],
-          actionItems: Array.isArray(item.actionItems) ? item.actionItems.map((a: any) => ({
-            text: this.sanitize(a.text || ''),
-            done: a.done === true,
-            priority: a.priority || 'medium',
-            dueDate: a.dueDate || undefined
-          })) : [],
-          notes: Array.isArray(item.notes) ? item.notes.map((n: any) => ({
-            text: this.sanitize(n.text || ''),
-            createdAt: n.createdAt || new Date().toISOString()
-          })) : [],
+          links: Array.isArray(item.links)
+            ? item.links.map((l: any) => ({
+                label: this.sanitize(l.label || ''),
+                url: this.sanitize(l.url || ''),
+              }))
+            : [],
+          actionItems: Array.isArray(item.actionItems)
+            ? item.actionItems.map((a: any) => ({
+                text: this.sanitize(a.text || ''),
+                done: a.done === true,
+                priority: a.priority || 'medium',
+                dueDate: a.dueDate || undefined,
+              }))
+            : [],
+          notes: Array.isArray(item.notes)
+            ? item.notes.map((n: any) => ({
+                text: this.sanitize(n.text || ''),
+                createdAt: n.createdAt || new Date().toISOString(),
+              }))
+            : [],
           createdAt: existingEmergency ? existingEmergency.createdAt : new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           plannedSubscriptions: this.transformPaymentPlans(
             item.plannedSubscriptions || item.plannedPayments || [],
-            item.title, 'fire', item.buckets
-          )
+            item.title,
+            'fire',
+            item.buckets,
+          ),
         };
 
         validated.push(fire);
@@ -1401,7 +1622,7 @@ export class AiAssistantComponent implements DoCheck {
     let added = 0;
 
     for (const updatedProject of this.importedSmileUpdates) {
-      const existIdx = existing.findIndex(p => p.title === updatedProject.title);
+      const existIdx = existing.findIndex((p) => p.title === updatedProject.title);
       if (existIdx > -1) {
         existing[existIdx] = updatedProject;
         updated++;
@@ -1426,7 +1647,7 @@ export class AiAssistantComponent implements DoCheck {
       },
       onError: (error: any) => {
         this.importError = error.message || 'Import failed.';
-      }
+      },
     });
   }
 
@@ -1438,7 +1659,7 @@ export class AiAssistantComponent implements DoCheck {
     let added = 0;
 
     for (const updatedEmergency of this.importedFireUpdates) {
-      const existIdx = existing.findIndex(e => e.title === updatedEmergency.title);
+      const existIdx = existing.findIndex((e) => e.title === updatedEmergency.title);
       if (existIdx > -1) {
         existing[existIdx] = updatedEmergency;
         updated++;
@@ -1463,7 +1684,7 @@ export class AiAssistantComponent implements DoCheck {
       },
       onError: (error: any) => {
         this.importError = error.message || 'Import failed.';
-      }
+      },
     });
   }
 
@@ -1481,7 +1702,7 @@ export class AiAssistantComponent implements DoCheck {
     const normalized = this.normalizeCategory(category);
 
     const budget = AppStateService.instance.allBudgets.find(
-      b => b.date === lastMonthKey && this.normalizeCategory(b.tag) === normalized
+      (b) => b.date === lastMonthKey && this.normalizeCategory(b.tag) === normalized,
     );
 
     return budget ? budget.amount : undefined;
@@ -1495,7 +1716,7 @@ export class AiAssistantComponent implements DoCheck {
 
     // Get all budget categories from last month
     const categories = new Set<string>();
-    AppStateService.instance.allBudgets.forEach(budget => {
+    AppStateService.instance.allBudgets.forEach((budget) => {
       if (budget.date === lastMonthKey && budget.tag) {
         const normalized = this.normalizeCategory(budget.tag);
         if (normalized) {
@@ -1519,9 +1740,9 @@ export class AiAssistantComponent implements DoCheck {
     // Get all transaction categories from last month
     const monthly = (this.promptService as any).getMonthlyBreakdown();
     const lastMonthData = monthly[lastMonthKey];
-    
+
     if (lastMonthData && lastMonthData.byCategory) {
-      Object.keys(lastMonthData.byCategory).forEach(cat => {
+      Object.keys(lastMonthData.byCategory).forEach((cat) => {
         const normalized = this.normalizeCategory(cat);
         // Only add if this category doesn't have a budget and is not empty
         // Use explicit check to ensure no duplicates
@@ -1538,19 +1759,21 @@ export class AiAssistantComponent implements DoCheck {
     // Check if this category is used by any subscription
     const normalized = this.normalizeCategory(category);
     return AppStateService.instance.allSubscriptions.some(
-      sub => sub.category && this.normalizeCategory(sub.category) === normalized
+      (sub) => sub.category && this.normalizeCategory(sub.category) === normalized,
     );
   }
 
   isBudgetCategorySelected(category: string): boolean {
     const normalized = this.normalizeCategory(category);
-    return this.options.selectedBudgetCategories.some(c => this.normalizeCategory(c) === normalized);
+    return this.options.selectedBudgetCategories.some(
+      (c) => this.normalizeCategory(c) === normalized,
+    );
   }
 
   toggleBudgetCategory(category: string): void {
     const arr = this.options.selectedBudgetCategories;
     const normalized = this.normalizeCategory(category);
-    const index = arr.findIndex(c => this.normalizeCategory(c) === normalized);
+    const index = arr.findIndex((c) => this.normalizeCategory(c) === normalized);
     if (index === -1) {
       arr.push(normalized);
     } else {
@@ -1561,7 +1784,7 @@ export class AiAssistantComponent implements DoCheck {
   selectAllBudgetCategories(): void {
     this.options.selectedBudgetCategories = [
       ...this.getAvailableBudgetCategories(),
-      ...this.getOtherCategories()
+      ...this.getOtherCategories(),
     ];
   }
 
@@ -1574,7 +1797,7 @@ export class AiAssistantComponent implements DoCheck {
     // Filter to only active subscriptions (endDate is empty or in the future)
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    return AppStateService.instance.allSubscriptions.filter(sub => {
+    return AppStateService.instance.allSubscriptions.filter((sub) => {
       if (!sub.endDate) return true; // No end date = active
       const endDate = new Date(sub.endDate);
       endDate.setHours(0, 0, 0, 0);
@@ -1584,13 +1807,13 @@ export class AiAssistantComponent implements DoCheck {
 
   isSubscriptionSelected(subscription: any): boolean {
     const title = subscription.title || 'Unnamed';
-    return this.options.selectedSubscriptions.some(t => t === title);
+    return this.options.selectedSubscriptions.some((t) => t === title);
   }
 
   toggleSubscription(subscription: any): void {
     const arr = this.options.selectedSubscriptions;
     const title = subscription.title || 'Unnamed';
-    const index = arr.findIndex(t => t === title);
+    const index = arr.findIndex((t) => t === title);
     if (index === -1) {
       arr.push(title);
     } else {
@@ -1599,8 +1822,9 @@ export class AiAssistantComponent implements DoCheck {
   }
 
   selectAllSubscriptions(): void {
-    this.options.selectedSubscriptions = this.getAvailableSubscriptions()
-      .map(sub => sub.title || 'Unnamed');
+    this.options.selectedSubscriptions = this.getAvailableSubscriptions().map(
+      (sub) => sub.title || 'Unnamed',
+    );
   }
 
   deselectAllSubscriptions(): void {

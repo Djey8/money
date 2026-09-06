@@ -13,72 +13,113 @@ import { RouterModule } from '@angular/router';
 import { SettingsComponent } from 'src/app/panels/settings/settings.component';
 import { AiAssistantComponent } from 'src/app/panels/ai-assistant/ai-assistant.component';
 
-
 // Deferred imports — resolved after module init to break circular chains
-let AppComponent: any; setTimeout(() => import('src/app/app.component').then(m => AppComponent = m.AppComponent));
-let AddFireComponent: any; setTimeout(() => import('src/app/panels/add/add-fire/add-fire.component').then(m => AddFireComponent = m.AddFireComponent));
-let AddComponent: any; setTimeout(() => import('src/app/panels/add/add.component').then(m => AddComponent = m.AddComponent));
-let InfoSmileComponent: any; setTimeout(() => import('src/app/panels/info/info-smile/info-smile.component').then(m => InfoSmileComponent = m.InfoSmileComponent));
-let HomeComponent: any; setTimeout(() => import('../../home/home.component').then(m => HomeComponent = m.HomeComponent));
-let MenuComponent: any; setTimeout(() => import('src/app/panels/menu/menu.component').then(m => MenuComponent = m.MenuComponent));
+let AppComponent: any;
+setTimeout(() => import('src/app/app.component').then((m) => (AppComponent = m.AppComponent)));
+let AddFireComponent: any;
+setTimeout(() =>
+  import('src/app/panels/add/add-fire/add-fire.component').then(
+    (m) => (AddFireComponent = m.AddFireComponent),
+  ),
+);
+let AddComponent: any;
+setTimeout(() =>
+  import('src/app/panels/add/add.component').then((m) => (AddComponent = m.AddComponent)),
+);
+let InfoSmileComponent: any;
+setTimeout(() =>
+  import('src/app/panels/info/info-smile/info-smile.component').then(
+    (m) => (InfoSmileComponent = m.InfoSmileComponent),
+  ),
+);
+let HomeComponent: any;
+setTimeout(() =>
+  import('../../home/home.component').then((m) => (HomeComponent = m.HomeComponent)),
+);
+let MenuComponent: any;
+setTimeout(() =>
+  import('src/app/panels/menu/menu.component').then((m) => (MenuComponent = m.MenuComponent)),
+);
 @Component({
   selector: 'app-fire-emergencies',
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslateModule, AppNumberPipe, AppDatePipe, RouterModule, InfoFireComponent, AiAssistantComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    TranslateModule,
+    AppNumberPipe,
+    AppDatePipe,
+    RouterModule,
+    InfoFireComponent,
+    AiAssistantComponent,
+  ],
   templateUrl: './fire-emergencies.component.html',
-  styleUrls: ['./fire-emergencies.component.css', '../../../app.component.css', '../../../shared/styles/table.css']
+  styleUrls: [
+    './fire-emergencies.component.css',
+    '../../../app.component.css',
+    '../../../shared/styles/table.css',
+  ],
 })
 export class FireEmergenciesComponent {
-
-  fireAmount = AppStateService.instance.getAmount("Fire", AppStateService.instance.fire/100);
+  fireAmount = AppStateService.instance.getAmount('Fire', AppStateService.instance.fire / 100);
 
   static isSearched = false;
   static phaseFilter: 'all' | FirePhase = 'all';
-  static get allFireEmergencies(): Fire[] { return AppStateService.instance.allFireEmergencies; }
-  static set allFireEmergencies(v: Fire[]) { AppStateService.instance.allFireEmergencies = v; }
-  static allSearchedFireEmergencies = []
+  static get allFireEmergencies(): Fire[] {
+    return AppStateService.instance.allFireEmergencies;
+  }
+  static set allFireEmergencies(v: Fire[]) {
+    AppStateService.instance.allFireEmergencies = v;
+  }
+  static allSearchedFireEmergencies = [];
 
-  searchTextField = "";
+  searchTextField = '';
   phases: ('all' | FirePhase)[] = ['all', 'idea', 'planning', 'saving', 'ready', 'completed'];
 
   public classReference = FireEmergenciesComponent;
-  public get appReference() { return AppComponent; }
+  public get appReference() {
+    return AppComponent;
+  }
   public settingsReference = SettingsComponent;
   public appState = AppStateService.instance;
-
 
   /**
    * Constructs a new instance of the FireEmergenciesComponent class.
    * @param localStorage - The LocalService instance used for accessing local storage.
    */
   constructor(private localStorage: LocalService) {
-    this.fireAmount = AppStateService.instance.getAmount("Fire", AppStateService.instance.fire/100);
+    this.fireAmount = AppStateService.instance.getAmount(
+      'Fire',
+      AppStateService.instance.fire / 100,
+    );
   }
 
   search() {
     const searchTerms = this.searchTextField.toLowerCase().split(',');
 
-    FireEmergenciesComponent.allSearchedFireEmergencies = AppStateService.instance.allFireEmergencies.map(fire => {
-      const title = fire.title.toLowerCase();
-      const totalAmount = this.getTotalAmount(fire);
-      const totalTarget = this.getTotalTarget(fire);
-      const bucketTitles = fire.buckets?.map(b => b.title.toLowerCase()).join(' ') || '';
+    FireEmergenciesComponent.allSearchedFireEmergencies =
+      AppStateService.instance.allFireEmergencies.map((fire) => {
+        const title = fire.title.toLowerCase();
+        const totalAmount = this.getTotalAmount(fire);
+        const totalTarget = this.getTotalTarget(fire);
+        const bucketTitles = fire.buckets?.map((b) => b.title.toLowerCase()).join(' ') || '';
 
-      const isFiltered = searchTerms.some(term => 
-        title.includes(term.trim()) || 
-        String(totalAmount).includes(term.trim()) || 
-        String(totalTarget).includes(term.trim()) ||
-        bucketTitles.includes(term.trim())
-      );
+        const isFiltered = searchTerms.some(
+          (term) =>
+            title.includes(term.trim()) ||
+            String(totalAmount).includes(term.trim()) ||
+            String(totalTarget).includes(term.trim()) ||
+            bucketTitles.includes(term.trim()),
+        );
 
-      return {
-        ...fire,
-        isFiltered: isFiltered
-      };
-    });
+        return {
+          ...fire,
+          isFiltered: isFiltered,
+        };
+      });
     FireEmergenciesComponent.isSearched = true;
   }
-  
+
   getTotalTarget(fire: any): number {
     return fire.buckets?.reduce((sum: number, b: any) => sum + (b.target || 0), 0) || 0;
   }
@@ -93,7 +134,7 @@ export class FireEmergenciesComponent {
   }
 
   getCompletedBucketCount(fire: Fire): number {
-    return fire.buckets?.filter(b => b.amount >= b.target).length || 0;
+    return fire.buckets?.filter((b) => b.amount >= b.target).length || 0;
   }
 
   getTotalBucketCount(fire: Fire): number {
@@ -102,7 +143,7 @@ export class FireEmergenciesComponent {
 
   areAllBucketsFull(fire: Fire): boolean {
     if (!fire.buckets || fire.buckets.length === 0) return true;
-    return fire.buckets.every(b => b.amount >= b.target);
+    return fire.buckets.every((b) => b.amount >= b.target);
   }
 
   setPhaseFilter(phase: 'all' | FirePhase) {
@@ -110,37 +151,37 @@ export class FireEmergenciesComponent {
   }
 
   getPhaseCount(phase: FirePhase): number {
-    return AppStateService.instance.allFireEmergencies.filter(f => f.phase === phase).length;
+    return AppStateService.instance.allFireEmergencies.filter((f) => f.phase === phase).length;
   }
 
   getFilteredEmergencies(): Fire[] {
-    const emergencies = FireEmergenciesComponent.isSearched 
+    const emergencies = FireEmergenciesComponent.isSearched
       ? FireEmergenciesComponent.allSearchedFireEmergencies.filter((f: any) => f.isFiltered)
       : AppStateService.instance.allFireEmergencies;
 
     if (FireEmergenciesComponent.phaseFilter === 'all') {
       return [...emergencies].reverse();
     }
-    return emergencies.filter(f => f.phase === FireEmergenciesComponent.phaseFilter).reverse();
+    return emergencies.filter((f) => f.phase === FireEmergenciesComponent.phaseFilter).reverse();
   }
 
   getOriginalIndex(emergency: Fire): number {
     return AppStateService.instance.allFireEmergencies.indexOf(emergency);
   }
-  
+
   /**
    * Clears the search results.
    */
   clearSearch() {
-    this.searchTextField = "";
+    this.searchTextField = '';
     FireEmergenciesComponent.isSearched = false;
   }
 
-  clickRow(index: number){
+  clickRow(index: number) {
     AppComponent.gotoTop();
     InfoFireComponent.setInfoFireComponent(
-      index, 
-      AppStateService.instance.allFireEmergencies[index]
+      index,
+      AppStateService.instance.allFireEmergencies[index],
     );
   }
 
@@ -155,7 +196,11 @@ export class FireEmergenciesComponent {
 
   addToFire(index: number) {
     AppComponent.gotoTop();
-    AppComponent.addTransaction("Fire", `@${AppStateService.instance.allFireEmergencies[index].title}`, "fireemergencies");
+    AppComponent.addTransaction(
+      'Fire',
+      `@${AppStateService.instance.allFireEmergencies[index].title}`,
+      'fireemergencies',
+    );
     const fire = AppStateService.instance.allFireEmergencies[index];
     const totalTarget = IncomeStatementService.getTotalFireTarget(fire);
     const totalAmount = IncomeStatementService.getTotalFireAmount(fire);

@@ -17,7 +17,10 @@ describe('SmileComponent', () => {
       { account: 'Smile', amount: -75, category: '@Vacation', date: '2024-01-10', comment: '' },
     ] as any;
 
-    const result = AppStateService.instance.getAmount('Smile', AppStateService.instance.smile / 100);
+    const result = AppStateService.instance.getAmount(
+      'Smile',
+      AppStateService.instance.smile / 100,
+    );
     // Income: round((2000 * 0.1 + eps) * 100) / 100 = 200, Smile: -75, total = 125
     expect(result).toBe(125);
   });

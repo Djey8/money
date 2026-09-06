@@ -3,7 +3,6 @@ import { AppStateService } from './shared/services/app-state.service';
 
 // AppComponent has massive constructor with deferred imports — test static methods only
 describe('AppComponent', () => {
-
   beforeEach(() => {
     (AppStateService as any)._instance = undefined;
   });

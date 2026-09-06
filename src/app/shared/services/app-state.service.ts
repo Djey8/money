@@ -95,7 +95,7 @@ export class AppStateService {
         if (this.allTransactions[i].account == account) {
           result += this.allTransactions[i].amount;
         } else if (this.allTransactions[i].account == 'Income') {
-          result += Math.round(((this.allTransactions[i].amount * p) + Number.EPSILON) * 100) / 100;
+          result += Math.round((this.allTransactions[i].amount * p + Number.EPSILON) * 100) / 100;
         }
       }
       return result;
