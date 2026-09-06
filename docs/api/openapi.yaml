@@ -47,6 +47,41 @@ paths:
           $ref: '#/components/responses/AuthenticationRequired'
         '403':
           $ref: '#/components/responses/InsufficientScope'
+  /transactions/{transactionId}:
+    get:
+      operationId: getTransaction
+      summary: Get one transaction
+      description: Returns a single transaction owned by the caller in integer minor units.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: transactionId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Transaction owned by the caller
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiTransaction'
+              example:
+                id: tx_01234567-89ab-cdef-0123-456789abcdef
+                account: Daily
+                amountMinor: -1250
+                currency: EUR
+                date: '2026-09-06'
+                time: '09:30'
+                category: '@Groceries'
+                comment: Weekly shop
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
   /me:
     get:
       operationId: getCurrentIdentity

@@ -4,7 +4,7 @@ const express = require('express');
 const { getAuditDb } = require('../config/db');
 const { recordAuditEntry } = require('../config/audit');
 const { createToken, listTokens, revokeToken } = require('../cli/commands/token');
-const { listTransactions } = require('../repositories/transaction-repository');
+const { getTransaction, listTransactions } = require('../repositories/transaction-repository');
 const { getUsersDb, getAuthDb } = require('../config/db');
 const {
   authenticateApiToken,
@@ -48,6 +48,32 @@ router.get('/transactions', requireScope('transactions:r'), async (req, res, nex
     return next(error);
   }
 });
+
+router.get(
+  '/transactions/:transactionId',
+  requireScope('transactions:r'),
+  async (req, res, next) => {
+    try {
+      const transaction = await getTransaction(
+        { usersDb: getUsersDb(), authDb: getAuthDb() },
+        req.userId,
+        req.params.transactionId,
+      );
+      if (!transaction) {
+        return problem(
+          res,
+          404,
+          'not_found',
+          'Transaction not found',
+          'No matching transaction exists.',
+        );
+      }
+      return res.json(transaction);
+    } catch (error) {
+      return next(error);
+    }
+  },
+);
 
 router.post('/auth/tokens', requireSession, async (req, res) => {
   try {

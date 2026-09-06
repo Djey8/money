@@ -57,4 +57,9 @@ async function listTransactions({ usersDb, authDb }, userId, { cursor, limit = 5
   };
 }
 
-module.exports = { listTransactions, decryptTransaction, decodeCursor };
+async function getTransaction(deps, userId, transactionId) {
+  const result = await listTransactions(deps, userId, { limit: Number.MAX_SAFE_INTEGER });
+  return result.transactions.find((transaction) => transaction.id === transactionId) || null;
+}
+
+module.exports = { listTransactions, getTransaction, decryptTransaction, decodeCursor };

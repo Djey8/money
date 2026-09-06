@@ -55,6 +55,14 @@ describe('v1 API authentication and PAT management', () => {
     expect(response.body.transactions).toEqual([
       expect.objectContaining({ id: 'tx_integration_1', amountMinor: -1250, currency: 'EUR' }),
     ]);
+
+    const individual = await sessionRequest('get', '/api/v1/transactions/tx_integration_1');
+    expect(individual.status).toBe(200);
+    expect(individual.body).toMatchObject({ id: 'tx_integration_1', amountMinor: -1250 });
+
+    const missing = await sessionRequest('get', '/api/v1/transactions/not_found');
+    expect(missing.status).toBe(404);
+    expect(missing.body.code).toBe('not_found');
   });
 
   it('rejects a PAT without transactions:r scope', async () => {

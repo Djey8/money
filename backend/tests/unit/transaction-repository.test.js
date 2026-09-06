@@ -1,7 +1,7 @@
 'use strict';
 
 const { EncryptionSession } = require('@money/domain');
-const { listTransactions } = require('../../repositories/transaction-repository');
+const { getTransaction, listTransactions } = require('../../repositories/transaction-repository');
 
 function dependencies(data, encryptionConfig) {
   return {
@@ -63,5 +63,36 @@ describe('transaction repository', () => {
       amountMinor: -1250,
       comment: 'Shop',
     });
+  });
+
+  it('finds one transaction without exposing another record', async () => {
+    const deps = dependencies({
+      transactions: [
+        {
+          id: 'tx_1',
+          account: 'Daily',
+          amount: -1,
+          date: '2026-09-06',
+          time: '09:30',
+          category: '@Food',
+          comment: 'One',
+        },
+        {
+          id: 'tx_2',
+          account: 'Daily',
+          amount: -2,
+          date: '2026-09-06',
+          time: '09:31',
+          category: '@Food',
+          comment: 'Two',
+        },
+      ],
+    });
+    await expect(getTransaction(deps, 'user_1', 'tx_2')).resolves.toMatchObject({
+      id: 'tx_2',
+      amountMinor: -200,
+      comment: 'Two',
+    });
+    await expect(getTransaction(deps, 'user_1', 'tx_missing')).resolves.toBeNull();
   });
 });
