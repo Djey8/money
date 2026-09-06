@@ -1,3 +1,5 @@
+> **HISTORICAL — this migration is complete.** The app has since moved past this plan's own target: it now runs Angular 20.3.x (this document targeted 19.2.x) and Node 22 LTS in both Docker images. Kept for historical reference only; do not follow it as current guidance. See `docs/discovery/ARCHITECTURE.md` §1 for the current toolchain.
+
 # Migration Guide: Angular 15 → 19 + Node.js 18 → 22 LTS
 
 > **Prepared:** April 9, 2026  
