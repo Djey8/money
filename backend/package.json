@@ -8,7 +8,12 @@
     "dev": "nodemon server.js",
     "test": "jest --forceExit --detectOpenHandles",
     "test:unit": "jest --forceExit -- tests/unit",
-    "test:integration": "jest --forceExit --detectOpenHandles -- tests/integration"
+    "test:integration": "jest --forceExit --detectOpenHandles -- tests/integration",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --check . --config ../.prettierrc.json --ignore-path ../.prettierignore",
+    "format:fix": "prettier --write . --config ../.prettierrc.json --ignore-path ../.prettierignore",
+    "verify": "npm run lint && npm run format && npm run test:unit"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -23,8 +28,14 @@
     "winston": "^3.11.0"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.10.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-security": "^4.0.1",
+    "globals": "^17.12.0",
     "jest": "^30.3.0",
     "nodemon": "^3.0.1",
+    "prettier": "^3.9.6",
     "supertest": "^7.2.2"
   }
 }
