@@ -7,7 +7,14 @@ export interface TaggedAmount {
 
 export interface TransactionAccountingSummary {
   revenues: TaggedAmount[];
+  interests: TaggedAmount[];
+  properties: TaggedAmount[];
   expenses: Record<'Daily' | 'Splurge' | 'Smile' | 'Fire' | 'Mojo', TaggedAmount[]>;
+}
+
+export interface TransactionAccountingContext {
+  shareTags?: string[];
+  investmentTags?: string[];
 }
 
 const EXPENSE_ACCOUNTS = ['Daily', 'Splurge', 'Smile', 'Fire', 'Mojo'] as const;
@@ -27,18 +34,34 @@ function addAmount(entries: TaggedAmount[], tag: string, amountMinor: number): v
  */
 export function summarizeTransactionAccounting(
   transactions: ApiTransaction[],
+  { shareTags = [], investmentTags = [] }: TransactionAccountingContext = {},
 ): TransactionAccountingSummary {
   const expenses = { Daily: [], Splurge: [], Smile: [], Fire: [], Mojo: [] } as Record<
     (typeof EXPENSE_ACCOUNTS)[number],
     TaggedAmount[]
   >;
-  const summary: TransactionAccountingSummary = { revenues: [], expenses };
+  const summary: TransactionAccountingSummary = {
+    revenues: [],
+    interests: [],
+    properties: [],
+    expenses,
+  };
 
   for (const transaction of transactions) {
     if (transaction.amountMinor === 0) continue;
     const tag = transaction.category.replace('@', '');
     if (transaction.account === 'Income') {
-      addAmount(summary.revenues, tag, transaction.amountMinor);
+      if (shareTags.some((shareTag) => shareTag.toLocaleLowerCase() === tag.toLocaleLowerCase())) {
+        addAmount(summary.interests, tag, transaction.amountMinor);
+      } else if (
+        investmentTags.some(
+          (investmentTag) => investmentTag.toLocaleLowerCase() === tag.toLocaleLowerCase(),
+        )
+      ) {
+        addAmount(summary.properties, tag, transaction.amountMinor);
+      } else {
+        addAmount(summary.revenues, tag, transaction.amountMinor);
+      }
     } else if (
       EXPENSE_ACCOUNTS.includes(transaction.account as (typeof EXPENSE_ACCOUNTS)[number])
     ) {
