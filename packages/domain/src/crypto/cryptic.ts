@@ -78,8 +78,29 @@ function encryptWithKey(
 }
 
 /** True if `value` is in the v2 wire format (as opposed to the legacy passphrase format or plaintext). */
-export function isV2Ciphertext(value: string): boolean {
+export function isV2Ciphertext(value: unknown): value is string {
   return typeof value === 'string' && value.startsWith(V2_PREFIX);
+}
+
+// crypto-js's OpenSSL-compatible passphrase format always base64-encodes to
+// this exact prefix (the ASCII bytes "Salted__" as base64) — a reliable,
+// well-known signature for "this is a legacy-format ciphertext" without
+// attempting to decrypt it first.
+const LEGACY_CIPHERTEXT_PREFIX = 'U2FsdGVkX1';
+
+/**
+ * True if `value` is a v2 or legacy ciphertext produced by this codebase's
+ * encryption — as opposed to a plain, never-encrypted string. Use this to
+ * decide whether a given stored value needs `decrypt()` at all before
+ * inspecting it, since calling `decrypt()` on an already-plain string is
+ * undefined behavior (the legacy path in particular does not reliably throw
+ * on non-ciphertext input).
+ */
+export function isEncryptedValue(value: unknown): value is string {
+  return (
+    isV2Ciphertext(value) ||
+    (typeof value === 'string' && value.startsWith(LEGACY_CIPHERTEXT_PREFIX))
+  );
 }
 
 function decryptV2WithDeriveFn(

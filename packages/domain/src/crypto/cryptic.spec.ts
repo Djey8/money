@@ -1,5 +1,12 @@
 import * as CryptoJS from 'crypto-js';
-import { decrypt, DecryptionError, encrypt, EncryptionSession, isV2Ciphertext } from './cryptic';
+import {
+  decrypt,
+  DecryptionError,
+  encrypt,
+  EncryptionSession,
+  isEncryptedValue,
+  isV2Ciphertext,
+} from './cryptic';
 
 describe('cryptic (CrypticService v2 port)', () => {
   describe('golden vectors — locked format compatibility', () => {
@@ -86,6 +93,25 @@ describe('cryptic (CrypticService v2 port)', () => {
       expect(isV2Ciphertext('v2:abc')).toBe(true);
       expect(isV2Ciphertext('U2FsdGVkX1...')).toBe(false);
       expect(isV2Ciphertext('plain text')).toBe(false);
+    });
+  });
+
+  describe('isEncryptedValue', () => {
+    it('identifies v2 ciphertext', () => {
+      expect(isEncryptedValue(encrypt('x', 'k'))).toBe(true);
+    });
+
+    it('identifies legacy ciphertext', () => {
+      const legacy = CryptoJS.AES.encrypt('x', 'k').toString();
+      expect(isEncryptedValue(legacy)).toBe(true);
+    });
+
+    it('rejects plain strings, numbers, and other non-ciphertext values', () => {
+      expect(isEncryptedValue('amount')).toBe(false);
+      expect(isEncryptedValue('42.50')).toBe(false);
+      expect(isEncryptedValue(42.5)).toBe(false);
+      expect(isEncryptedValue(null)).toBe(false);
+      expect(isEncryptedValue(undefined)).toBe(false);
     });
   });
 
