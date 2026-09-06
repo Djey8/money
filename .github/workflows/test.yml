@@ -77,7 +77,9 @@ jobs:
 
   e2e:
     name: E2E Tests (Playwright)
-    if: false # Temporarily disabled
+    # Non-blocking per PLAN.md D-8: re-enabled for signal after being dormant;
+    # promote to blocking (remove continue-on-error) once green for a week.
+    continue-on-error: true
     runs-on: ubuntu-latest
     needs: [frontend-unit, backend-unit, backend-integration]
     steps:
@@ -85,10 +87,10 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 22
           cache: npm
 
-      - run: npm ci
+      - run: npm ci --legacy-peer-deps
       - run: npx playwright install --with-deps chromium
 
       - name: Start E2E stack
