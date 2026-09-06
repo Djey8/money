@@ -55,9 +55,23 @@ Discovery docs are at `docs/discovery/`: `ARCHITECTURE.md`, `DOMAIN_MODEL.md`, `
 | Phase                                | Status                                                                                                    |
 | ------------------------------------ | --------------------------------------------------------------------------------------------------------- |
 | Phase 0 — Discovery                  | Approved                                                                                                  |
-| Phase 1 — Repository agent-readiness | In progress                                                                                               |
+| Phase 1 — Repository agent-readiness | Complete, awaiting approval (see summary below)                                                           |
 | Phase 2 — Architecture & plan        | Design started early (ADRs 0001-0004) per JFK's Phase 0 approval; full endpoint matrix/plan still pending |
 | Phase 3 — Implementation             | Not started                                                                                               |
 | Phase 4 — Documentation              | Not started                                                                                               |
 | Phase 5 — MCP server                 | Not started                                                                                               |
 | Phase 6 — Verification & handoff     | Not started                                                                                               |
+
+## Phase 1 — Repository agent-readiness: summary
+
+**Status: complete, awaiting approval.**
+
+- **`CLAUDE.md`** (repo root): edition model, repo map, run/build/test commands, conventions, ask-before list.
+- **5 skills** under `.claude/skills/`: `mm-conventions`, `mm-add-api-endpoint`, `mm-domain-rules`, `mm-release`, `mm-code-review`.
+- **4 subagents** under `.claude/agents/`: `code-reviewer` (read-only), `test-runner` (runs suites, proposes fixes without applying), `api-doc-auditor` (checks OpenAPI/AGENTS.md/FEATURE_CATALOG.md consistency — has nothing to audit yet since no Pro API exists), `edition-guard` (verifies a Firebase build contains no Pro markers — passes trivially today per `docs/adr/0004`, since there's nothing to find yet).
+- **Quality gates**: ESLint (flat config) + `angular-eslint` + Prettier added for the frontend; ESLint + `eslint-plugin-security` + Prettier for `backend/`. New scripts: `lint`, `lint:fix`, `format`, `format:fix`, `typecheck`, and a combined `verify` (frontend lint+format+typecheck+test, then backend lint+format+test) — confirmed passing end to end in this environment. Wired into `lint-staged` (kept alongside the pre-existing test-on-changed-files behavior) and added as a new `lint` CI job.
+- **Lint violation counts** (D-18): frontend 3,885 → 0 (531 auto-fixed, 41 fixed by hand, 39 disabled inline with per-line reasons, 3,274 disabled at the config level across 9 rules — see next bullet); backend 773 → 0 (726 were a missing-Jest-globals config gap, not real violations; 14 fixed by hand; 33 `security/detect-object-injection` disabled repo-wide with a documented rationale, since this backend is by design a generic blob store doing `obj[key]` access — see `backend/eslint.config.js`).
+- **Known gap, flagged not hidden**: 9 frontend rules are disabled at the config level rather than fixed, each with violation counts and rationale recorded directly in `eslint.config.js` — `@typescript-eslint/no-explicit-any` (1,155), `@angular-eslint/template/prefer-control-flow` (1,185, the `*ngIf`/`*ngFor` → `@if`/`@for` migration), `@angular-eslint/prefer-inject` (268), `@typescript-eslint/prefer-for-of` (180), `@typescript-eslint/no-unused-vars` (284), plus 4 template a11y rules (202 combined). These are real, defensible rules that would each require a dedicated whole-app migration or refactor to enable — not something a lint-setup pass should do as a side effect. Recommend a separate, explicitly-scoped "lint hardening" project later, tackled one rule at a time.
+- **Bonus fixes surfaced by wiring up `format`**: a genuine broken CSS declaration in `landing-page.component.css` (a splice artifact from an old commit, invalid CSS, silently broken since nothing ever validated it) and a one-time repo-wide Prettier reformat (whitespace only, both test suites verified green before/after).
+- **Also done in this phase**: the Splurge ratio bug fix (D-9), `backend/DATABASE_STRUCTURE.md` rewritten to the real schema (D-21), `todo/migration.md` marked historical (D-21), E2E CI re-enabled non-blocking (D-8).
+- **Not pushed**: all work is local commits on `main`; nothing has been pushed to the remote, given `auto-release.yml` would auto-deploy Firebase on a push containing a `feat`/`fix` commit.
