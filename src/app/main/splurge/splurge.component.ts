@@ -88,7 +88,7 @@ export class SplurgeComponent extends BaseAccountComponent {
    * Updates the dailyAmount value.
    */
   static updateDailyAmount() {
-    SplurgeComponent.splurgeAmount = AppStateService.instance.getAmount("Splurge", AppStateService.instance.daily / 100);
+    SplurgeComponent.splurgeAmount = AppStateService.instance.getAmount("Splurge", AppStateService.instance.splurge / 100);
   }
 
   addTransaction() {
