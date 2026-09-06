@@ -52,15 +52,15 @@ Discovery docs are at `docs/discovery/`: `ARCHITECTURE.md`, `DOMAIN_MODEL.md`, `
 
 ## Phase status
 
-| Phase                                | Status                                                                                                    |
-| ------------------------------------ | --------------------------------------------------------------------------------------------------------- |
-| Phase 0 — Discovery                  | Approved                                                                                                  |
-| Phase 1 — Repository agent-readiness | Complete, awaiting approval (see summary below)                                                           |
-| Phase 2 — Architecture & plan        | Design started early (ADRs 0001-0004) per JFK's Phase 0 approval; full endpoint matrix/plan still pending |
-| Phase 3 — Implementation             | Not started                                                                                               |
-| Phase 4 — Documentation              | Not started                                                                                               |
-| Phase 5 — MCP server                 | Not started                                                                                               |
-| Phase 6 — Verification & handoff     | Not started                                                                                               |
+| Phase                                | Status                                                                            |
+| ------------------------------------ | --------------------------------------------------------------------------------- |
+| Phase 0 — Discovery                  | Approved                                                                          |
+| Phase 1 — Repository agent-readiness | Complete, awaiting approval (see summary below)                                   |
+| Phase 2 — Architecture & plan        | Complete, awaiting approval (ADRs 0001-0008, endpoint matrix, rollout plan below) |
+| Phase 3 — Implementation             | Not started                                                                       |
+| Phase 4 — Documentation              | Not started                                                                       |
+| Phase 5 — MCP server                 | Not started                                                                       |
+| Phase 6 — Verification & handoff     | Not started                                                                       |
 
 ## Phase 1 — Repository agent-readiness: summary
 
@@ -75,3 +75,85 @@ Discovery docs are at `docs/discovery/`: `ARCHITECTURE.md`, `DOMAIN_MODEL.md`, `
 - **Bonus fixes surfaced by wiring up `format`**: a genuine broken CSS declaration in `landing-page.component.css` (a splice artifact from an old commit, invalid CSS, silently broken since nothing ever validated it) and a one-time repo-wide Prettier reformat (whitespace only, both test suites verified green before/after).
 - **Also done in this phase**: the Splurge ratio bug fix (D-9), `backend/DATABASE_STRUCTURE.md` rewritten to the real schema (D-21), `todo/migration.md` marked historical (D-21), E2E CI re-enabled non-blocking (D-8).
 - **Not pushed**: all work is local commits on `main`; nothing has been pushed to the remote, given `auto-release.yml` would auto-deploy Firebase on a push containing a `feat`/`fix` commit.
+
+---
+
+## Phase 2 — Architecture & plan: summary
+
+**Status: complete, awaiting approval.**
+
+Eight ADRs now cover every item in `docs/MASTER_PROMPT.md` §4:
+
+| ADR                                                    | Decision                                                                                                                                                                   |
+| ------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [0001](docs/adr/0001-pro-api-encryption-handling.md)   | Pro API decrypts/encrypts server-side per request using the existing self-hosted key; CouchDB never stores plaintext                                                       |
+| [0002](docs/adr/0002-money-minor-units-migration.md)   | Money migrates to integer minor units now, self-hosted only, per-user, via `meta/schemaVersion`, fully reversible                                                          |
+| [0003](docs/adr/0003-api-ui-write-consistency.md)      | Blob-clobber prevented via `updatedAt`-checked re-read-before-write; derived state kept consistent via shared domain-package logic or a Fix-Accounting-equivalent fallback |
+| [0004](docs/adr/0004-edition-separation-mechanism.md)  | Pro UI behind a build-time-excluded conditional route array; `edition-guard` verifies the Firebase build artifact                                                          |
+| [0005](docs/adr/0005-domain-package-structure.md)      | `packages/domain`, TypeScript compiled to CommonJS, npm workspaces — no backend rewrite to TypeScript needed                                                               |
+| [0006](docs/adr/0006-api-scopes-and-access-control.md) | `<resource>:<r/w>` + `:bulk` + `admin` scopes; PATs can never manage tokens (closes the self-escalation path); per-token rate limits; encrypted audit log                  |
+| [0007](docs/adr/0007-documentation-architecture.md)    | Spec-first: `docs/api/openapi.yaml` is hand-authored source of truth; `api-doc-auditor` + a CI job enforce sync                                                            |
+| [0008](docs/adr/0008-mcp-server-design.md)             | `apps/mcp`, tools grouped by operation (not 1:1 with endpoints), schemas derived from the OpenAPI spec, stdio first then streamable HTTP, token via env var only           |
+
+### API conventions (§4.2, not already covered by an ADR above)
+
+- Base path `/api/v1`, JSON, UTF-8, ISO-8601 UTC timestamps, cursor pagination (`?cursor=`, `?limit=`) on every list endpoint, filtering/sorting query params documented per-endpoint in the spec.
+- Optimistic concurrency: every update accepts `If-Match` (preferred) or a body `version` field, checked against the entity's stored `updatedAt`/revision; mismatch → `409` Problem Details.
+- Errors: [RFC 9457](https://www.rfc-editor.org/rfc/rfc9457) Problem Details (`type`, `title`, `status`, `detail`, plus a stable `code`). Error code categories to be enumerated in full in `docs/api/ERRORS.md` (Phase 4): `auth_*` (invalid/expired/revoked token), `scope_*` (missing/insufficient scope), `validation_*` (schema failures), `conflict_*` (optimistic concurrency, idempotency replay mismatch), `not_found_*`, `rate_limit_*`, `encryption_*` (missing/invalid key for a request that needs one).
+- Idempotency: every `:bulk` endpoint requires an `Idempotency-Key` header; replaying the same key returns the original result without reapplying the write (test required per `mm-add-api-endpoint`).
+
+### Endpoint matrix
+
+FEATURE_CATALOG.md ID → `/api/v1` endpoint → required scope. Grouped by resource; entities sharing a CRUD shape are listed together rather than one row per catalog ID. Every catalog ID is accounted for — either mapped to an endpoint or given an explicit reason it has none.
+
+| Resource                                        | Endpoints                                                                                                                                                     | Scope                                     | Feature Catalog IDs                                         |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- | ----------------------------------------------------------- |
+| Auth/tokens                                     | `GET /me` · `POST/GET /auth/tokens` · `DELETE /auth/tokens/{id}`                                                                                              | none / session-only (never PAT, ADR-0006) | New — supports AUTH-1..9 (existing `/api/auth/*` unchanged) |
+| Transactions                                    | `GET/POST /transactions` · `GET/PATCH/DELETE /transactions/{id}` · `POST /transactions/{id}/copy` · `POST /transactions/batch` · `GET export` / `POST import` | `transactions:r/w/bulk`                   | TXN-1,3,4,5,6,7; DAILY-1,2; SPLURGE-1,2; SMILE-1; FIRE-1    |
+| Mojo                                            | `GET/PUT /mojo`                                                                                                                                               | `mojo:r/w`                                | MOJO-1, SMILE-2                                             |
+| Smile                                           | `GET/POST /smile` · `GET/PATCH/DELETE /smile/{id}` · `POST /smile/{id}/payment-plan`                                                                          | `smile:r/w`                               | SMILE-3,4,5,6,7                                             |
+| Fire                                            | `GET/POST /fire` · `GET/PATCH/DELETE /fire/{id}` · `GET /reports/fire-coverage`                                                                               | `fire:r/w`, `reports:r`                   | FIRE-3,4,5,6; FIRE-2                                        |
+| Reports                                         | `GET /reports/{cashflow,income-statement,balance-sheet,kpis}`                                                                                                 | `reports:r`                               | CASH-1,2,3; STATS-1,7                                       |
+| Balance (assets/shares/investments/liabilities) | `GET/POST /balance/{assets,shares,investments,liabilities}` · `GET/PATCH/DELETE .../{id}`                                                                     | `balance:r/w`                             | ASSET-1,2,3; SHARE-1,2,3; INV-1,2,3; LIAB-1,2,3             |
+| Income (revenues/interests/properties)          | `GET/POST/PATCH/DELETE /income/{revenues,interests,properties}`                                                                                               | `income:r/w`                              | REV-1; INT-1; PROP-1                                        |
+| Grow                                            | `GET/POST /grow` · `GET/PATCH /grow/{id}` · `POST /grow/{id}/{buy,sell,dividend,payback,cashflow,deposit}` · `GET /reports/grow/{id}/pnl`                     | `grow:r/w`, `reports:r`                   | GROW-1,2,3,4,5,6,7                                          |
+| Subscriptions                                   | `GET/POST /subscriptions` · `PATCH/DELETE /subscriptions/{id}` · `POST /subscriptions/refresh` · `POST batch` / export / import                               | `subscriptions:r/w/bulk`                  | SUB-1,2,3,4                                                 |
+| Budget                                          | `GET/POST /budget` · `PATCH/DELETE /budget/{id}` · `POST /budget/{fill-forward,copy,from-subscriptions}` · `DELETE /budget?month=`                            | `budget:r/w`                              | BUD-1,2,3,4,5,6,7                                           |
+| Settings                                        | `GET/PATCH /settings`                                                                                                                                         | `settings:r/w`                            | SET-1,2,3,4,5,10                                            |
+| Encryption config                               | `GET/PUT /encryption-config`                                                                                                                                  | `encryption:r/w`                          | SET-6                                                       |
+| Data (export/import/recalculate)                | `GET /data/export` · `POST /data/import` (requires `confirm: true`) · `POST /data/recalculate`                                                                | `data:bulk`                               | SET-8,9,11                                                  |
+| Account                                         | `GET/PATCH /account` · `POST /account/verify-password` · `DELETE /account` (requires `confirm: true`)                                                         | `account:r/w`                             | AUTH-6,7,8; PROF-1                                          |
+
+**Explicitly out of scope, with reason** (nothing missing without one, per master prompt §2.3):
+
+| Catalog IDs                                                                 | Reason                                                                                                                                                                                                                                          |
+| --------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| NAV-1, MENU-1, DOC-1, CHANGE-1, LAND-1, ONBOARD-1, PWA-1                    | Pure client-side navigation/presentation, no server data involved                                                                                                                                                                               |
+| TXN-2 (OCR)                                                                 | Third-party client-side OCR call, not app data                                                                                                                                                                                                  |
+| SMILE-8, FIRE-7, GROW-8 (AI Assistant)                                      | Existing client-side-only prompt generator (`todo/ai.md`), unrelated to the Pro API/MCP surface — see `RISKS_AND_QUESTIONS.md` R-4/D-6. Agents get equivalent capability directly through the typed write endpoints instead                     |
+| STATS-2                                                                     | Presentation-only chart rendering; underlying data already covered by `transactions`/`reports` endpoints                                                                                                                                        |
+| STATS-3,4,5,6 (BI dashboard, explorative/predictive/prescriptive analytics) | ~9,000 lines of untested calculation/rendering code explicitly excluded from domain-package extraction in this project (`PLAN.md` D-9, ADR-0005) — revisit only if a concrete agent use case needs forecasting data                             |
+| STATS-8                                                                     | UI-only chart search/filter interaction helper                                                                                                                                                                                                  |
+| SET-7 (CSV export)                                                          | Superseded by `transactions/export` (JSON Lines) for API/agent use; the UI's CSV export is unaffected and unchanged                                                                                                                             |
+| SET-12 (clear local cache)                                                  | Purely client-side `localStorage` action, no server state                                                                                                                                                                                       |
+| AUTH-5 (password reset email)                                               | Pre-existing gap: no self-hosted backend route exists today (Firebase-only). Not introduced or worsened by this project; flagged as a pre-existing product gap, not part of this scope                                                          |
+| COM-1..7 (Community)                                                        | Already has a working, tested REST API (`backend/routes/community.js`) with its own auth model; not financial data and not part of the master prompt's core ask. **Deferred**, not dropped — revisit if an agent use case for Community emerges |
+
+### Rollout plan (§4.7) — vertical slices, estimated in sessions
+
+| Slice | Scope                                                                                                                                                                                                                                                                                                         | Depends on                                    | Est. |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- | ---- |
+| 0     | `packages/domain` workspace scaffold; `CrypticService` v2 port + golden vectors (ADR-0001); money minor-units conversion + `mm-admin migrate` tool (ADR-0002); Grow comment-DSL rewrite with real validation (ADR-0003/D-16); blob-clobber `updatedAt`-checked write mechanism (ADR-0003); audit log database | —                                             | 4–5  |
+| 1     | Transactions CRUD + bulk; `/me`; PAT token management + `mm-admin token`; per-token rate limiting; audit logging wired into every write                                                                                                                                                                       | 0                                             | 3    |
+| 2     | Calculation read endpoints: cashflow, income statement, balance sheet, KPIs (both savings-rate values, distinctly named per D-7), fire coverage                                                                                                                                                               | 0, 1                                          | 2    |
+| 3     | Smile/Fire/Mojo CRUD; consolidate bucket-total and Mojo-cap duplication into `packages/domain` (D-9)                                                                                                                                                                                                          | 0                                             | 2–3  |
+| 4     | Balance-sheet entities (assets/shares/investments/liabilities); Grow typed actions (buy/sell/dividend/payback/cashflow/deposit) keeping the two Grow representations in sync; Grow P&L report                                                                                                                 | 0, 1                                          | 3    |
+| 5     | Subscriptions + Budget CRUD and bulk                                                                                                                                                                                                                                                                          | 0                                             | 2    |
+| 6     | Full data export/import; `/data/recalculate`; `/settings`; `/encryption-config`; `/account`                                                                                                                                                                                                                   | 0, 1                                          | 2    |
+| 7     | MCP server: tool grouping, schema generation from the spec, stdio transport, smoke test (`docs/api/MCP.md`)                                                                                                                                                                                                   | 1–6 (needs a reasonably complete API surface) | 2–3  |
+
+**Total: ~20–23 sessions.** Slice 0 is the highest-risk, highest-leverage slice — everything else depends on it, and it's where the money migration and encryption port (both explicitly required to be safe/reversible per JFK) live. Recommend not parallelizing past slice 0 until its own tests (including the migration tool's dry-run/verify/rollback cycle against a restored real backup) are green.
+
+Phase 4 (docs) and Phase 6 (verification) are not separate blocks at the end — `mm-add-api-endpoint`'s per-slice steps 5–7 (docs, MCP mapping, verify) mean documentation and verification happen continuously alongside each slice above, per the master prompt's "docs are part of the definition of done for every slice" instruction.
+
+**Open item carried into Phase 3**: `docs/api/ERRORS.md`'s full code list, the exact request-validation library choice (zod vs. valibot), and the OpenAPI viewer choice (Redoc vs. Swagger UI) are implementation-time decisions within the boundaries these ADRs already set — not blocking Phase 2 approval, called out here so they don't get silently decided without a record. They'll be logged here as they're made.
