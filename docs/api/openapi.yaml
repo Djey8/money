@@ -1,0 +1,245 @@
+openapi: 3.1.0
+info:
+  title: Money Manager Pro API
+  version: 1.0.0-draft
+servers:
+  - url: /api/v1
+paths:
+  /me:
+    get:
+      operationId: getCurrentIdentity
+      summary: Get the current API identity
+      description: Returns the current user's ID, authentication type, and effective scopes.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Current identity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Identity'
+              example:
+                userId: user_123
+                authenticationType: token
+                tokenName: household-agent
+                scopes: [transactions:rw, reports:r]
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+  /auth/tokens:
+    get:
+      operationId: listPersonalAccessTokens
+      summary: List personal access tokens
+      description: Requires an authenticated account session. PATs cannot manage tokens.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Tokens owned by the current user
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [tokens]
+                properties:
+                  tokens:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TokenMetadata'
+              example:
+                tokens:
+                  - tokenId: pat_0123456789abcdef0123456789abcdef
+                    name: household-agent
+                    scopes: [transactions:rw]
+                    createdAt: '2026-09-06T20:00:00.000Z'
+                    expiresAt: null
+                    revoked: false
+        '403':
+          $ref: '#/components/responses/SessionRequired'
+    post:
+      operationId: createPersonalAccessToken
+      summary: Create a personal access token
+      description: Requires an authenticated account session. The plaintext token is returned exactly once; browser-issued tokens cannot receive the admin scope.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTokenRequest'
+            example:
+              name: household-agent
+              scopes: [transactions:rw, reports:r]
+              expiresInDays: 90
+      responses:
+        '201':
+          description: Newly created token. Store token securely; it cannot be retrieved again.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/TokenMetadata'
+                  - type: object
+                    required: [token, userId]
+                    properties:
+                      token:
+                        type: string
+                        pattern: '^mmpat_[a-f0-9]{64}$'
+                      userId:
+                        type: string
+              example:
+                tokenId: pat_0123456789abcdef0123456789abcdef
+                token: mmpat_0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+                userId: user_123
+                name: household-agent
+                scopes: [transactions:rw, reports:r]
+                expiresAt: '2026-12-05T20:00:00.000Z'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '403':
+          $ref: '#/components/responses/SessionRequired'
+  /auth/tokens/{tokenId}:
+    delete:
+      operationId: revokePersonalAccessToken
+      summary: Revoke a personal access token
+      description: Requires an authenticated account session and only revokes a token owned by that user.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: tokenId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Token revoked
+          content:
+            application/json:
+              example:
+                tokenId: pat_0123456789abcdef0123456789abcdef
+                revoked: true
+        '403':
+          $ref: '#/components/responses/SessionRequired'
+        '404':
+          $ref: '#/components/responses/NotFound'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+  schemas:
+    Identity:
+      type: object
+      required: [userId, authenticationType, scopes]
+      properties:
+        userId:
+          type: string
+        authenticationType:
+          type: string
+          enum: [session, token]
+        tokenName:
+          type: string
+        scopes:
+          type: array
+          items:
+            type: string
+    TokenMetadata:
+      type: object
+      required: [tokenId, name, scopes, createdAt, expiresAt, revoked]
+      properties:
+        tokenId:
+          type: string
+        name:
+          type: string
+        scopes:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type: [string, 'null']
+          format: date-time
+        revoked:
+          type: boolean
+    CreateTokenRequest:
+      type: object
+      required: [name, scopes]
+      properties:
+        name:
+          type: string
+        scopes:
+          type: array
+          minItems: 1
+          items:
+            type: string
+        expiresInDays:
+          type: integer
+          minimum: 1
+    Problem:
+      type: object
+      required: [type, title, status, detail, code]
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        code:
+          type: string
+  responses:
+    AuthenticationRequired:
+      description: Authentication required
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://money-manager.dev/problems/auth_required
+            title: Authentication required
+            status: 401
+            detail: Provide a session or PAT.
+            code: auth_required
+    SessionRequired:
+      description: An authenticated account session is required
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://money-manager.dev/problems/auth_session_required
+            title: Session authentication required
+            status: 403
+            detail: An authenticated account session is required for this operation.
+            code: auth_session_required
+    ValidationError:
+      description: Request validation failed
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://money-manager.dev/problems/validation_invalid
+            title: Invalid token request
+            status: 400
+            detail: At least one scope is required.
+            code: validation_invalid
+    NotFound:
+      description: Requested resource was not found
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://money-manager.dev/problems/not_found
+            title: Token not found
+            status: 404
+            detail: No matching token exists.
+            code: not_found

@@ -12,7 +12,7 @@ Procedure:
 1. Build the Firebase edition: `npm run build` (equivalent to `ng build --configuration firebase`). If `node_modules` is missing, run `npm ci --legacy-peer-deps` first.
 2. Grep the build output (`dist/money/`, including the compiled JS bundles, not just `index.html`) for the documented Pro markers:
    - The Pro route path string(s) registered in `app.routes.ts` behind the `environment.edition === 'selfhosted'` conditional (read the current route config to get the exact path segment(s) — don't hardcode a guess, the route names can change).
-   - The literal string `/api/v1`.
+   - The literal string `/api/v1`, excluding the known external OCR endpoint `https://ocr.asprise.com/api/v1/receipt`. It is a third-party Firebase-era OCR URL, not a Money Manager Pro API reference.
    - Any Pro module/chunk filename pattern documented in `docs/adr/0004-edition-separation-mechanism.md` (check that file for the current marker list — it's a maintained allowlist, not fixed forever).
 3. Report PASS if none of the markers are found, or FAIL with the exact grep matches (file + line/offset) if any are.
 4. If this is the first time you're running this (no Pro module exists yet in the codebase), say so explicitly — a pass with "nothing to find yet" is expected and fine, not a sign the check is broken.

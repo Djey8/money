@@ -142,13 +142,18 @@ async function listTokens(deps, { userId }) {
  * consistent with the audit log's philosophy of a durable record over a
  * disappearing one.
  */
-async function revokeToken(deps, { tokenId }) {
+async function revokeToken(deps, { tokenId, userId }) {
   const { authDb } = deps;
   if (!tokenId) throw new Error('revokeToken: tokenId is required');
 
   const doc = await authDb.get(tokenId);
   if (doc.type !== 'pat') {
     throw new Error(`${tokenId} is not a PAT`);
+  }
+  if (userId && doc.userId !== userId) {
+    const error = new Error('Token not found');
+    error.code = 'TOKEN_NOT_FOUND';
+    throw error;
   }
   doc.revoked = true;
   doc.revokedAt = new Date().toISOString();

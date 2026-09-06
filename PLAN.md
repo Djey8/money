@@ -195,6 +195,10 @@ Rewriting this correctly needs: characterization tests against all 12 (likely mo
 
 ## Slice 1 — started early (mock-testable groundwork only)
 
+**Podman validation unblocked (2026-09-06):** the ephemeral `couchdb:3.3` stack in `docker-compose.test.yml` runs successfully through Podman on `localhost:5986`. The Slice 0 migration CLI completed dry-run, live migration, and idempotence checks against a disposable live account; a restored real-data backup is still required before production use because the disposable account contained no monetary fields. Full repository validation now passes when frontend Jest runs serially (`--runInBand`) to avoid Windows' transform-cache rename race. The Firebase edition guard also passes after excluding only the pre-existing third-party OCR URL `https://ocr.asprise.com/api/v1/receipt` from its `/api/v1` marker scan.
+
+**Slice 1 v1 API foundation complete:** mounted `/api/v1` with RFC 9457 Problem Details; session/PAT authentication; token-keyed rate limiting; `GET /me`; and session-only `POST/GET/DELETE /auth/tokens`. Browser-issued PATs cannot have `admin` scope, guest JWTs cannot manage tokens, revocation is owner-scoped, and token lifecycle writes have durable audit records. The real-CouchDB integration suite covers session/PAT identity, no-auth rejection, PAT and guest token-management denial, admin-scope denial, and cross-user revocation isolation. OpenAPI and agent/operator guidance are in `docs/api/`.
+
 While the slice 0 live-database validation above is blocked on environment access, moved ahead on the pieces of slice 1 that are equally mock-testable and don't depend on slice 0's Grow-DSL/live-DB items being finished first:
 
 - **`mm-admin user create/list`** — direct account creation mirroring `/api/auth/register`'s validation and document shape, for scripted self-hosted setup.

@@ -1,5 +1,6 @@
 require('dotenv').config();
 const express = require('express');
+const crypto = require('crypto');
 const cors = require('cors');
 const helmet = require('helmet');
 const cookieParser = require('cookie-parser');
@@ -8,6 +9,7 @@ const authRoutes = require('./routes/auth');
 const dataRoutes = require('./routes/data');
 const logsRoutes = require('./routes/logs');
 const communityRoutes = require('./routes/community');
+const apiRoutes = require('./routes/api');
 const { initializeDatabase } = require('./config/db');
 const logger = require('./config/logger');
 const { requestLoggingMiddleware, errorLoggingMiddleware } = require('./middleware/logging');
@@ -41,6 +43,18 @@ const limiter = rateLimit({
   },
 });
 app.use('/api/', limiter);
+
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 1000,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => {
+    const credential = req.headers.authorization || req.cookies?.access_token || req.ip;
+    return crypto.createHash('sha256').update(credential).digest('hex');
+  },
+  skip: () => process.env.SKIP_RATE_LIMIT === 'true',
+});
 
 // Strict rate limiting for auth endpoints (brute-force protection)
 const authLimiter = rateLimit({
@@ -105,6 +119,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/data', dataRoutes);
 app.use('/api/logs', logsRoutes);
 app.use('/api/community', communityRoutes);
+app.use('/api/v1', apiLimiter, apiRoutes);
 
 // Enhanced error handler
 app.use(errorLoggingMiddleware);

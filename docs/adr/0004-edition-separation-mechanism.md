@@ -16,6 +16,7 @@ The master prompt's hard constraint: the Firebase edition must contain **no** Pr
 - The backend/API is already a separate deployable (Express, only ever deployed in the self-hosted stack) — nothing changes there; Firebase never gets a backend, consistent with today.
 - `edition-guard` (Phase 1 subagent) runs `ng build --configuration firebase`, then inspects the output artifact (`dist/money`) for a documented set of Pro markers: the Pro route path string, the Pro module/chunk filename pattern, and the literal string `/api/v1`. It fails the build (and `verify`) if any marker is found.
 - Because no Pro module exists yet, `edition-guard` is wired into Phase 1's `verify` script and CI now, and passes trivially (there is nothing to find) until the first Pro route is added in Phase 3. This is intentional: the guard needs to exist and be exercised (even trivially) before there's anything real to protect, so its own correctness isn't first tested under pressure.
+- The existing external OCR endpoint `https://ocr.asprise.com/api/v1/receipt` is excluded from the guard's literal `/api/v1` scan. This exact URL predates Pro and targets a third-party service; it is not a Money Manager endpoint or a Pro artifact.
 
 ## Consequences
 
