@@ -183,6 +183,8 @@ Body: "Bob"
 
 ## Document Structure
 
+> **This section previously showed a simplified subset of the real schema** (`info`, `transactions`, `smile`, `fire`, `mojo` only). The example below is the actual complete top-level shape written by the frontend today. Full field-level definitions for every entity live in `docs/discovery/DOMAIN_MODEL.md` §1 — this file only documents storage *paths*, not entity schemas.
+
 Each user document has the following structure:
 
 ```json
@@ -192,46 +194,49 @@ Each user document has the following structure:
   "createdAt": "2026-03-13T10:30:00.000Z",
   "updatedAt": "2026-03-13T15:45:00.000Z",
   "data": {
-    "info": {
-      "username": "john_doe",
-      "email": "john@example.com"
-    },
-    "transactions": [
-      {
-        "id": "tx1",
-        "amount": 100.50,
-        "date": "2026-03-01",
-        "category": "food"
+    "info": { "username": "john_doe", "email": "john@example.com" },
+    "transactions": [ { "account": "Daily", "amount": -12.50, "date": "2026-03-01", "time": "14:32", "category": "@Groceries", "comment": "" } ],
+    "subscriptions": [ { "title": "Spotify", "account": "Daily", "amount": -9.99, "startDate": "2024-01-01", "endDate": "", "category": "@Entertainment", "comment": "", "frequency": "monthly" } ],
+    "budget": [ { "tag": "@Groceries", "amount": 300, "date": "2026-03-01" } ],
+    "smile": [ { "title": "Vacation", "sub": "", "phase": "saving", "description": "", "buckets": [ { "id": "b1", "title": "Flights", "target": 1500, "amount": 200 } ], "links": [], "actionItems": [], "notes": [], "createdAt": "...", "updatedAt": "..." } ],
+    "fire": [ { "title": "Emergency Fund", "phase": "planning", "buckets": [ { "id": "b1", "title": "Main", "target": 5000, "amount": 1200 } ], "links": [], "actionItems": [], "notes": [], "createdAt": "...", "updatedAt": "..." } ],
+    "mojo": { "target": 2000.0, "amount": 1500.0 },
+    "grow": [ { "title": "MSFT position", "phase": "monitor", "isAsset": false, "share": { "tag": "MSFT", "quantity": 10, "price": 415 }, "investment": {}, "liabilitie": {}, "createdAt": "...", "updatedAt": "..." } ],
+    "income": {
+      "revenue": {
+        "revenues": [ { "tag": "Salary", "amount": 3000 } ],
+        "interests": [ { "tag": "MSFT", "amount": 45 } ],
+        "properties": [ { "tag": "Rental Unit A", "amount": 800 } ]
       },
-      {
-        "id": "tx2",
-        "amount": 250.00,
-        "date": "2026-03-05",
-        "category": "transport"
+      "expenses": {
+        "daily": [ { "tag": "@Groceries", "amount": 250 } ],
+        "splurge": [ { "tag": "@Fun", "amount": 80 } ],
+        "smile": [ { "tag": "Vacation", "amount": 200 } ],
+        "fire": [ { "tag": "Emergency Fund", "amount": 100 } ],
+        "mojo": [ { "tag": "@Mojo", "amount": 50 } ]
       }
-    ],
-    "smile": [
-      {
-        "id": "smile1",
-        "title": "Vacation",
-        "target": 5000,
-        "current": 1200
-      }
-    ],
-    "fire": [
-      {
-        "year": 2026,
-        "savings": 50000,
-        "target": 1000000
-      }
-    ],
-    "mojo": {
-      "target": 2000.0,
-      "amount": 1500.0
+    },
+    "balance": {
+      "asset": {
+        "assets": [ { "tag": "Car", "amount": 8000 } ],
+        "shares": [ { "tag": "MSFT", "quantity": 10, "price": 415 } ],
+        "investments": [ { "tag": "Rental Unit A", "amount": 180000, "deposit": 30000 } ]
+      },
+      "liabilities": [ { "tag": "Rental Unit A Mortgage", "amount": 150000, "investment": true, "credit": 4200 } ]
     }
   }
 }
 ```
+
+### Data loading tiers (frontend behavior, not a storage concept)
+
+The frontend (`AppDataService`, `src/app/shared/services/app-data.service.ts`) does not load all of the above eagerly. It classifies paths into three tiers — worth knowing when reasoning about "is this data available yet" from an API/agent client, since **the API itself always returns current data regardless of tier** (tiers are a frontend rendering-performance optimization, not a backend concept):
+
+| Tier | Paths | Frontend loads it… |
+|---|---|---|
+| 1 | `transactions`, `subscriptions`, `income/revenue/*`, `income/expenses/*` | Eagerly, blocks initial UI render |
+| 2 | `smile`, `fire`, `mojo`, `budget` | Asynchronously, right after Tier 1 resolves |
+| 3 | `grow`, `balance/asset/*`, `balance/liabilities` | On-demand, only when the user navigates to the Grow or Balance page |
 
 ## API Endpoints
 
