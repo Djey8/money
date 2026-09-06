@@ -6,6 +6,7 @@
 /out-tsc
 /bazel-out
 /packages/*/dist
+/backend/migration-backups
 
 # Node
 /node_modules

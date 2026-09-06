@@ -44,6 +44,19 @@ module.exports = [
       },
     },
   },
+  {
+    // mm-admin (backend/cli/) is a local, operator-run admin tool with
+    // direct CouchDB access — already fully privileged, not a network-
+    // facing handler. Its file paths (backup files) are built from
+    // operator-supplied CLI args, not untrusted request input, so
+    // detect-non-literal-fs-filename's threat model doesn't apply here.
+    // Scoped to cli/ (and this rule's tests) rather than disabled
+    // backend-wide, since routes/ handlers should keep the warning.
+    files: ['cli/**/*.js', 'tests/unit/mm-admin-*.test.js'],
+    rules: {
+      'security/detect-non-literal-fs-filename': 'off',
+    },
+  },
   // Must stay last: turns off stylistic ESLint rules that would conflict with Prettier.
   eslintConfigPrettier,
 ];
