@@ -57,7 +57,7 @@ Discovery docs are at `docs/discovery/`: `ARCHITECTURE.md`, `DOMAIN_MODEL.md`, `
 | Phase 0 — Discovery                  | Approved                                                                          |
 | Phase 1 — Repository agent-readiness | Complete, awaiting approval (see summary below)                                   |
 | Phase 2 — Architecture & plan        | Complete, awaiting approval (ADRs 0001-0008, endpoint matrix, rollout plan below) |
-| Phase 3 — Implementation             | Not started                                                                       |
+| Phase 3 — Implementation             | In progress — slice 0: 4/5 done, 1 deferred (see summary below)                   |
 | Phase 4 — Documentation              | Not started                                                                       |
 | Phase 5 — MCP server                 | Not started                                                                       |
 | Phase 6 — Verification & handoff     | Not started                                                                       |
@@ -157,3 +157,21 @@ FEATURE_CATALOG.md ID → `/api/v1` endpoint → required scope. Grouped by reso
 Phase 4 (docs) and Phase 6 (verification) are not separate blocks at the end — `mm-add-api-endpoint`'s per-slice steps 5–7 (docs, MCP mapping, verify) mean documentation and verification happen continuously alongside each slice above, per the master prompt's "docs are part of the definition of done for every slice" instruction.
 
 **Open item carried into Phase 3**: `docs/api/ERRORS.md`'s full code list, the exact request-validation library choice (zod vs. valibot), and the OpenAPI viewer choice (Redoc vs. Swagger UI) are implementation-time decisions within the boundaries these ADRs already set — not blocking Phase 2 approval, called out here so they don't get silently decided without a record. They'll be logged here as they're made.
+
+---
+
+## Phase 3 — Implementation: Slice 0 status
+
+**Status: 4 of 5 originally-scoped prerequisites done and unit-tested; 1 deferred; production validation still outstanding.**
+
+Done, each its own commit, `npm run verify` green after every one:
+
+1. **`packages/domain` workspace + `CrypticService` v2 crypto port** (ADR-0001/0005) — byte-identical wire format (locked with a golden vector), plus `EncryptionSession` to preserve the frontend's per-session derived-key caching (avoiding what would otherwise have been a real performance regression for any multi-field backend operation). 15 tests.
+2. **Money minor-units conversion** (ADR-0002) — `toMinorUnits`/`fromMinorUnits` (round-half-away-from-zero) and a field-name-driven recursive document converter covering every documented money field regardless of nesting depth, including the context-dependent `SubscriptionChange.field` case. 22 tests.
+3. **`mm-admin migrate` CLI** (ADR-0002) — dry-run, per-user JSON backup, convert, independent post-write re-verification with automatic rollback on mismatch, retry-on-CouchDB-conflict. 11 tests (mocked CouchDB).
+4. **Blob-clobber write-safety mechanism** (ADR-0003) — `DatabaseService.batchWrite()` (the single funnel nearly every write goes through) now refuses a write when the server's `updatedAt` has moved on since the last read, reusing the existing `checkUpdatedAt()`/`GET /api/data/updatedAt` mechanism rather than inventing a new one. Detect-and-refuse, not full automatic merge — refusing is itself loss-safe, which is what the ADR requires to unblock v1; automatic merge remains a tracked future improvement. 39 new/updated tests across `database.service.spec.ts`, the previously-nonexistent `persistence.service.spec.ts`, and `app-data.service.spec.ts`.
+5. **Audit log database** (ADR-0006) — new `audit` CouchDB database (locked down like `users`/`auth`/`community`) plus `recordAuditEntry`/`queryAuditEntries` helpers, ready for slice 1's write endpoints to call. 18 tests (mocked).
+
+**Deferred, not silently dropped: the Grow comment-DSL rewrite.** Investigating the actual generation/parsing code (`grow.component.ts`, `add.component.ts`, `info.component.ts`) surfaced 10+ distinct comment formats (`Buy Share`, `Buy Investment`, `Sell Asset`, `Payback Liabilitie`, `CASHFLOW ... - CREDIT ...`, `Dividende Share`, `Deposit`, some concatenated together) spanning 1000+ lines of branching parse logic — materially larger and riskier than originally scoped. Rewriting this correctly needs its own focused pass with characterization tests against the exact current behavior, not to be squeezed in alongside four other changes. Recommend tackling it as its own slice-0.5, before or alongside slice 4 (where the typed Grow actions that actually replace it get built) — see D-9's characterization-tests-first cycle.
+
+**Not yet done, and required before any production use** (per JFK's explicit "nothing breaks, must be reversible" requirement and `CLAUDE.md`'s ask-before list): every test above runs against mocks — there is no live CouchDB in this development environment. The `mm-admin migrate` tool in particular has not been run against real or restored data, and ADR-0002 requires exactly that (end-to-end validation against `docker-compose.test.yml` with a restored copy of real backup data) before it ever touches production. This is the next concrete step, and needs a live CouchDB available to do properly.
