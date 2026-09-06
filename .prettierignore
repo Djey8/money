@@ -1,0 +1,7 @@
+dist/
+coverage/
+node_modules/
+backend/node_modules/
+*.min.js
+package-lock.json
+e2e/visual-regression.spec.ts-snapshots/
