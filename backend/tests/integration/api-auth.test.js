@@ -2090,6 +2090,149 @@ describe('v1 API authentication and PAT management', () => {
     });
   });
 
+  describe('POST /smile/:id/payment-plan', () => {
+    async function smileToken(scopes) {
+      const created = await sessionRequest('post', '/api/v1/auth/tokens').send({
+        name: `smile-plan-agent-${Date.now()}-${Math.random()}`,
+        scopes,
+      });
+      return created.body;
+    }
+
+    async function createProject(token, overrides = {}) {
+      const response = await request(app)
+        .post('/api/v1/smile')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ title: `Smile Plan Test ${Date.now()}-${Math.random()}`, targetMinor: 300000, ...overrides });
+      expect(response.status).toBe(201);
+      return response.body;
+    }
+
+    const planBody = {
+      planTitle: 'Flight Fund',
+      startDate: '2026-01-01',
+      targetDate: '2026-04-01',
+      frequency: 'monthly',
+      account: 'Daily',
+    };
+
+    it('calculates and persists a new payment plan, and audit logs the write', async () => {
+      const { token, tokenId } = await smileToken(['smile:r', 'smile:w']);
+      const created = await createProject(token);
+      const response = await request(app)
+        .post(`/api/v1/smile/${created.id}/payment-plan`)
+        .set('Authorization', `Bearer ${token}`)
+        .send(planBody);
+      expect(response.status).toBe(201);
+      expect(response.body).toMatchObject({
+        status: 'planned',
+        projectType: 'smile',
+        projectTitle: created.title,
+        amountMinor: 100000, // 300000 missing / 3 monthly periods
+        category: `@${created.title}`,
+      });
+      expect(response.body.id).toMatch(/^plan_/);
+
+      const project = await request(app)
+        .get(`/api/v1/smile/${created.id}`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(project.body.plannedSubscriptions).toHaveLength(1);
+      expect(project.body.plannedSubscriptions[0].id).toBe(response.body.id);
+
+      const auditEntries = await queryAuditEntries(getAuditDb(), firstUser.userId, { resource: 'smile' });
+      expect(auditEntries).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            actor: { type: 'token', tokenId },
+            method: 'POST',
+            resourceId: created.id,
+          }),
+        ]),
+      );
+    });
+
+    it('uses the manual amount when provided', async () => {
+      const { token } = await smileToken(['smile:r', 'smile:w']);
+      const created = await createProject(token);
+      const response = await request(app)
+        .post(`/api/v1/smile/${created.id}/payment-plan`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ ...planBody, manualAmountMinor: 50000 });
+      expect(response.status).toBe(201);
+      expect(response.body.amountMinor).toBe(50000);
+      expect(response.body.manuallyAdjusted).toBe(true);
+    });
+
+    it('returns 404 for a project that does not exist', async () => {
+      const { token } = await smileToken(['smile:w']);
+      const response = await request(app)
+        .post('/api/v1/smile/smile_does_not_exist/payment-plan')
+        .set('Authorization', `Bearer ${token}`)
+        .send(planBody);
+      expect(response.status).toBe(404);
+      expect(response.body.code).toBe('not_found');
+    });
+
+    it('rejects a plan whose target date is not after its start date', async () => {
+      const { token } = await smileToken(['smile:r', 'smile:w']);
+      const created = await createProject(token);
+      const response = await request(app)
+        .post(`/api/v1/smile/${created.id}/payment-plan`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ ...planBody, startDate: '2026-04-01', targetDate: '2026-01-01' });
+      expect(response.status).toBe(400);
+      expect(response.body.code).toBe('validation_invalid');
+    });
+
+    it('rejects a selectedBucketIds entry that does not match any bucket on the project', async () => {
+      const { token } = await smileToken(['smile:r', 'smile:w']);
+      const created = await createProject(token);
+      const response = await request(app)
+        .post(`/api/v1/smile/${created.id}/payment-plan`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ ...planBody, selectedBucketIds: ['not-a-real-bucket'] });
+      expect(response.status).toBe(400);
+      expect(response.body.code).toBe('validation_invalid');
+    });
+
+    it('rejects an invalid frequency', async () => {
+      const { token } = await smileToken(['smile:r', 'smile:w']);
+      const created = await createProject(token);
+      const response = await request(app)
+        .post(`/api/v1/smile/${created.id}/payment-plan`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ ...planBody, frequency: 'daily' });
+      expect(response.status).toBe(400);
+      expect(response.body.code).toBe('validation_invalid');
+    });
+
+    it('rejects requests without the smile:w scope', async () => {
+      const { token } = await smileToken(['smile:r', 'smile:w']);
+      const created = await createProject(token);
+      const { token: readOnly } = await smileToken(['smile:r']);
+      const response = await request(app)
+        .post(`/api/v1/smile/${created.id}/payment-plan`)
+        .set('Authorization', `Bearer ${readOnly}`)
+        .send(planBody);
+      expect(response.status).toBe(403);
+      expect(response.body.code).toBe('scope_insufficient');
+    });
+
+    it("keeps payment plan creation isolated to the caller's own project", async () => {
+      const { token } = await smileToken(['smile:r', 'smile:w']);
+      const created = await createProject(token);
+      const otherCreated = await sessionRequest('post', '/api/v1/auth/tokens', secondUser.token).send({
+        name: `smile-plan-other-${Date.now()}`,
+        scopes: ['smile:w'],
+      });
+      const response = await request(app)
+        .post(`/api/v1/smile/${created.id}/payment-plan`)
+        .set('Authorization', `Bearer ${otherCreated.body.token}`)
+        .send(planBody);
+      expect(response.status).toBe(404);
+    });
+  });
+
   describe('GET/POST /fire', () => {
     async function fireToken(scopes) {
       const created = await sessionRequest('post', '/api/v1/auth/tokens').send({
@@ -2510,6 +2653,149 @@ describe('v1 API authentication and PAT management', () => {
         .delete(`/api/v1/fire/${created.id}`)
         .set('Authorization', `Bearer ${otherToken}`);
       expect(deleteResponse.status).toBe(404);
+    });
+  });
+
+  describe('POST /fire/:id/payment-plan', () => {
+    async function fireToken(scopes) {
+      const created = await sessionRequest('post', '/api/v1/auth/tokens').send({
+        name: `fire-plan-agent-${Date.now()}-${Math.random()}`,
+        scopes,
+      });
+      return created.body;
+    }
+
+    async function createProject(token, overrides = {}) {
+      const response = await request(app)
+        .post('/api/v1/fire')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ title: `Fire Plan Test ${Date.now()}-${Math.random()}`, targetMinor: 300000, ...overrides });
+      expect(response.status).toBe(201);
+      return response.body;
+    }
+
+    const planBody = {
+      planTitle: 'Flight Fund',
+      startDate: '2026-01-01',
+      targetDate: '2026-04-01',
+      frequency: 'monthly',
+      account: 'Daily',
+    };
+
+    it('calculates and persists a new payment plan, and audit logs the write', async () => {
+      const { token, tokenId } = await fireToken(['fire:r', 'fire:w']);
+      const created = await createProject(token);
+      const response = await request(app)
+        .post(`/api/v1/fire/${created.id}/payment-plan`)
+        .set('Authorization', `Bearer ${token}`)
+        .send(planBody);
+      expect(response.status).toBe(201);
+      expect(response.body).toMatchObject({
+        status: 'planned',
+        projectType: 'fire',
+        projectTitle: created.title,
+        amountMinor: 100000, // 300000 missing / 3 monthly periods
+        category: `@${created.title}`,
+      });
+      expect(response.body.id).toMatch(/^plan_/);
+
+      const project = await request(app)
+        .get(`/api/v1/fire/${created.id}`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(project.body.plannedSubscriptions).toHaveLength(1);
+      expect(project.body.plannedSubscriptions[0].id).toBe(response.body.id);
+
+      const auditEntries = await queryAuditEntries(getAuditDb(), firstUser.userId, { resource: 'fire' });
+      expect(auditEntries).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            actor: { type: 'token', tokenId },
+            method: 'POST',
+            resourceId: created.id,
+          }),
+        ]),
+      );
+    });
+
+    it('uses the manual amount when provided', async () => {
+      const { token } = await fireToken(['fire:r', 'fire:w']);
+      const created = await createProject(token);
+      const response = await request(app)
+        .post(`/api/v1/fire/${created.id}/payment-plan`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ ...planBody, manualAmountMinor: 50000 });
+      expect(response.status).toBe(201);
+      expect(response.body.amountMinor).toBe(50000);
+      expect(response.body.manuallyAdjusted).toBe(true);
+    });
+
+    it('returns 404 for a project that does not exist', async () => {
+      const { token } = await fireToken(['fire:w']);
+      const response = await request(app)
+        .post('/api/v1/fire/fire_does_not_exist/payment-plan')
+        .set('Authorization', `Bearer ${token}`)
+        .send(planBody);
+      expect(response.status).toBe(404);
+      expect(response.body.code).toBe('not_found');
+    });
+
+    it('rejects a plan whose target date is not after its start date', async () => {
+      const { token } = await fireToken(['fire:r', 'fire:w']);
+      const created = await createProject(token);
+      const response = await request(app)
+        .post(`/api/v1/fire/${created.id}/payment-plan`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ ...planBody, startDate: '2026-04-01', targetDate: '2026-01-01' });
+      expect(response.status).toBe(400);
+      expect(response.body.code).toBe('validation_invalid');
+    });
+
+    it('rejects a selectedBucketIds entry that does not match any bucket on the project', async () => {
+      const { token } = await fireToken(['fire:r', 'fire:w']);
+      const created = await createProject(token);
+      const response = await request(app)
+        .post(`/api/v1/fire/${created.id}/payment-plan`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ ...planBody, selectedBucketIds: ['not-a-real-bucket'] });
+      expect(response.status).toBe(400);
+      expect(response.body.code).toBe('validation_invalid');
+    });
+
+    it('rejects an invalid frequency', async () => {
+      const { token } = await fireToken(['fire:r', 'fire:w']);
+      const created = await createProject(token);
+      const response = await request(app)
+        .post(`/api/v1/fire/${created.id}/payment-plan`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ ...planBody, frequency: 'daily' });
+      expect(response.status).toBe(400);
+      expect(response.body.code).toBe('validation_invalid');
+    });
+
+    it('rejects requests without the fire:w scope', async () => {
+      const { token } = await fireToken(['fire:r', 'fire:w']);
+      const created = await createProject(token);
+      const { token: readOnly } = await fireToken(['fire:r']);
+      const response = await request(app)
+        .post(`/api/v1/fire/${created.id}/payment-plan`)
+        .set('Authorization', `Bearer ${readOnly}`)
+        .send(planBody);
+      expect(response.status).toBe(403);
+      expect(response.body.code).toBe('scope_insufficient');
+    });
+
+    it("keeps payment plan creation isolated to the caller's own project", async () => {
+      const { token } = await fireToken(['fire:r', 'fire:w']);
+      const created = await createProject(token);
+      const otherCreated = await sessionRequest('post', '/api/v1/auth/tokens', secondUser.token).send({
+        name: `fire-plan-other-${Date.now()}`,
+        scopes: ['fire:w'],
+      });
+      const response = await request(app)
+        .post(`/api/v1/fire/${created.id}/payment-plan`)
+        .set('Authorization', `Bearer ${otherCreated.body.token}`)
+        .send(planBody);
+      expect(response.status).toBe(404);
     });
   });
 

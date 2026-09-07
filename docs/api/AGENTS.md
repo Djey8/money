@@ -131,3 +131,14 @@ Every Pro API write is audit logged. Prefer narrowly scoped, expiring tokens and
 3. One deliberate divergence from the UI: the Fire edit form's `updateFireEmergencie()` also auto-*clears* `completionDate` back to `''` on save when its local date field is empty and `phase` isn't `completed` — a side effect of that form always resubmitting the whole record. This API does **not** replicate that clear, since `PATCH` is a partial update: omitting `completionDate` from a request never touches it, matching every other omitted field. There is currently no way to explicitly clear an already-set `completionDate` through this endpoint, only to overwrite it with a new value.
 4. `DELETE` is not reversible through the API.
 5. `PATCH`/`DELETE` are audit logged.
+
+## Create a payment plan for a Smile or Fire project's buckets
+
+1. `POST /api/v1/smile/{id}/payment-plan` and `POST /api/v1/fire/{id}/payment-plan` require `smile:w`/`fire:w` respectively and behave identically (SMILE-7 is shared by both project types). Required fields: `planTitle`, `startDate`, `targetDate`, `frequency` (`weekly|biweekly|monthly|quarterly|yearly`), `account`. Optional: `selectedBucketIds` (which buckets to fund — omit or send `[]` to fund every bucket with smart proportional allocation) and `manualAmountMinor` (override the calculated per-period amount).
+2. The calculated amount is `sum(max(0, bucket.targetMinor - bucket.amountMinor))` across the funded buckets, divided by the number of payment periods between `startDate` and `targetDate` at the given `frequency`. See `docs/domain/PAYMENT_PLAN_FORMULA.md` for the exact period-counting rules and a worked example.
+3. Every `selectedBucketIds` entry must name a bucket that actually exists on the project — an unrecognized id is rejected with `400 validation_invalid`, not silently ignored (unlike the original UI, which never needs to validate this since its bucket checkboxes are already scoped to real buckets).
+4. Only **creation** is exposed. The response's `status` is always `"planned"` — activating a plan into a real recurring subscription, or editing/deleting an existing plan, isn't part of this API.
+5. `comment` on the created plan carries `#bucket:Title:Amount` tags — the same allocation DSL a transaction's own comment uses (see "Add a transaction" above). This plan is not itself a transaction; nothing is posted to `/transactions` by this endpoint.
+6. The plan is appended to the target project's `plannedSubscriptions` array — fetch the project again (`GET /smile/{id}` or `GET /fire/{id}`) to see it alongside any others.
+7. Returns `404` uniformly for a project id that doesn't exist or belongs to another user.
+8. `POST` is audit logged.

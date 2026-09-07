@@ -919,6 +919,51 @@ paths:
           $ref: '#/components/responses/InsufficientScope'
         '404':
           $ref: '#/components/responses/NotFound'
+  /smile/{projectId}/payment-plan:
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      operationId: createSmilePaymentPlan
+      summary: Create a payment plan for a Smile project's buckets
+      description: >-
+        Ports SMILE-7 (the Payment Planner, shared by Smile and Fire) — computes a suggested per-period contribution
+        to fund the project's buckets by `targetDate`, then persists it (`status: "planned"`) onto the project's
+        `plannedSubscriptions` array. Only creation is exposed; activating a plan into a real recurring subscription
+        isn't part of this API. See `docs/domain/PAYMENT_PLAN_FORMULA.md` for the exact formula, including the four
+        deliberate corrections made while porting this calculation for the first time.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePaymentPlanRequest'
+            example:
+              planTitle: Flight Fund
+              startDate: '2026-01-01'
+              targetDate: '2026-04-01'
+              frequency: monthly
+              account: Daily
+      responses:
+        '201':
+          description: Created payment plan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentPlan'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
   /fire:
     get:
       operationId: listFireProjects
@@ -1063,6 +1108,51 @@ paths:
             application/json:
               example:
                 id: fire_01234567-89ab-cdef-0123-456789abcdef
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /fire/{projectId}/payment-plan:
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      operationId: createFirePaymentPlan
+      summary: Create a payment plan for a Fire project's buckets
+      description: >-
+        Ports SMILE-7 (the Payment Planner, shared by Smile and Fire) — computes a suggested per-period contribution
+        to fund the project's buckets by `targetDate`, then persists it (`status: "planned"`) onto the project's
+        `plannedSubscriptions` array. Only creation is exposed; activating a plan into a real recurring subscription
+        isn't part of this API. See `docs/domain/PAYMENT_PLAN_FORMULA.md` for the exact formula, including the four
+        deliberate corrections made while porting this calculation for the first time.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePaymentPlanRequest'
+            example:
+              planTitle: Emergency Top-up
+              startDate: '2026-01-01'
+              targetDate: '2026-04-01'
+              frequency: monthly
+              account: Daily
+      responses:
+        '201':
+          description: Created payment plan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentPlan'
+        '400':
+          $ref: '#/components/responses/ValidationError'
         '401':
           $ref: '#/components/responses/AuthenticationRequired'
         '403':
@@ -1572,6 +1662,7 @@ components:
         - links
         - actionItems
         - notes
+        - plannedSubscriptions
         - createdAt
         - updatedAt
       properties:
@@ -1610,6 +1701,11 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FundNote'
+        plannedSubscriptions:
+          type: array
+          description: Payment plans created via POST /smile/{id}/payment-plan.
+          items:
+            $ref: '#/components/schemas/PaymentPlan'
         createdAt:
           type: string
           format: date-time
@@ -1811,6 +1907,7 @@ components:
         - links
         - actionItems
         - notes
+        - plannedSubscriptions
         - createdAt
         - updatedAt
       properties:
@@ -1849,6 +1946,11 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FundNote'
+        plannedSubscriptions:
+          type: array
+          description: Payment plans created via POST /fire/{id}/payment-plan.
+          items:
+            $ref: '#/components/schemas/PaymentPlan'
         createdAt:
           type: string
           format: date-time
@@ -1948,6 +2050,106 @@ components:
           description: Replaces the entire notes array.
           items:
             $ref: '#/components/schemas/UpdateFundNote'
+    CreatePaymentPlanRequest:
+      type: object
+      required: [planTitle, startDate, targetDate, frequency, account]
+      properties:
+        planTitle:
+          type: string
+        selectedBucketIds:
+          type: array
+          items:
+            type: string
+          description: Bucket ids to fund; omit or send an empty array to fund every bucket (smart proportional allocation across all of them). Every id must reference an existing bucket on this project.
+        startDate:
+          type: string
+          format: date
+        targetDate:
+          type: string
+          format: date
+          description: The date by which the buckets should be fully funded — used to compute the number of payment periods.
+        frequency:
+          type: string
+          enum: [weekly, biweekly, monthly, quarterly, yearly]
+        account:
+          type: string
+        manualAmountMinor:
+          type: integer
+          description: Overrides the calculated per-period amount when provided. The calculated amount is still returned as originalCalculatedAmountMinor.
+    PaymentPlan:
+      type: object
+      required:
+        - id
+        - title
+        - status
+        - projectType
+        - projectTitle
+        - account
+        - amountMinor
+        - startDate
+        - endDate
+        - category
+        - comment
+        - frequency
+        - targetDate
+        - targetBucketIds
+        - originalCalculatedAmountMinor
+        - manuallyAdjusted
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        status:
+          type: string
+          enum: [planned]
+          description: Always "planned" for a freshly-created plan — activating a plan into a real recurring subscription isn't exposed by this API.
+        projectType:
+          type: string
+          enum: [smile, fire]
+        projectTitle:
+          type: string
+        account:
+          type: string
+        amountMinor:
+          type: integer
+          description: The per-period payment amount actually used — either the calculated amount, or manualAmountMinor if one was sent.
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        category:
+          type: string
+          description: '`@<projectTitle>` — matches this project''s transactions by category, same convention as every other entity.'
+        comment:
+          type: string
+          description: '`#bucket:Title:Amount` tags describing how amountMinor is allocated across the funded buckets — the same DSL a transaction''s comment uses.'
+        frequency:
+          type: string
+          enum: [weekly, biweekly, monthly, quarterly, yearly]
+        targetDate:
+          type: string
+          format: date
+        targetBucketIds:
+          type: array
+          items:
+            type: string
+        originalCalculatedAmountMinor:
+          type: integer
+          description: The calculated amount before any manual override — always present, even when manuallyAdjusted is true.
+        manuallyAdjusted:
+          type: boolean
+          description: True only when manualAmountMinor was sent and differed from originalCalculatedAmountMinor.
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
     CreateTransactionRequest:
       type: object
       required: [account, amountMinor, date, time, category, comment]

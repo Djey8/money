@@ -15,3 +15,4 @@ export * from './reports/cashflow';
 export * from './reports/balance-sheet';
 export * from './reports/kpis';
 export * from './reports/fire-coverage';
+export * from './transactions/payment-plan';

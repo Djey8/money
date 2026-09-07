@@ -218,3 +218,14 @@ curl -X PATCH "http://localhost:3000/api/v1/fire/fire_<id>" \
 curl -X DELETE "http://localhost:3000/api/v1/fire/fire_<id>" \
   -H "Authorization: Bearer $MONEY_MANAGER_TOKEN"
 ```
+
+## Create a payment plan for a Smile or Fire project's buckets
+
+Requires a PAT with `smile:w` or `fire:w` (both endpoints behave identically — see `docs/domain/PAYMENT_PLAN_FORMULA.md` for the formula). Only creation is exposed; the plan is appended to the project's `plannedSubscriptions` array with `status: "planned"`.
+
+```bash
+curl -X POST "http://localhost:3000/api/v1/smile/smile_<id>/payment-plan" \
+  -H "Authorization: Bearer $MONEY_MANAGER_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"planTitle": "Flight Fund", "startDate": "2026-01-01", "targetDate": "2026-04-01", "frequency": "monthly", "account": "Daily"}'
+```

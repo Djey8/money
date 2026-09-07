@@ -16,7 +16,12 @@
  */
 
 const crypto = require('crypto');
-const { computeProjectTotals, toMinorUnits } = require('@money/domain');
+const {
+  computeProjectTotals,
+  toMinorUnits,
+  calculatePaymentPlan,
+  validatePaymentPlan,
+} = require('@money/domain');
 const { getEncryptionSession } = require('../services/encryption-session');
 const { decryptValue } = require('./transaction-repository');
 const { writeValue, toStoredMoney } = require('../services/transaction-derived-state');
@@ -62,6 +67,48 @@ function decryptBucket(raw, session, schemaVersion) {
   return bucket;
 }
 
+function decryptBoolean(value, session) {
+  const decrypted = decryptValue(value, session);
+  return typeof decrypted === 'boolean' ? decrypted : decrypted === 'true';
+}
+
+/**
+ * Decrypts one stored payment plan (`PlannedSubscription` in the original
+ * app's `plannedSubscriptions` array). Only `status: 'planned'` entries are
+ * ever produced by this API today (`POST /fire/{id}/payment-plan` — see
+ * `docs/domain/PAYMENT_PLAN_FORMULA.md`); `activatedAt`/`deactivatedAt`/
+ * `activeSubscriptionId` are decrypted defensively if present (e.g. a plan
+ * the original UI itself activated/deactivated) but this API never sets them.
+ */
+function decryptPlan(raw, session, schemaVersion) {
+  const plan = {
+    id: decryptValue(raw.id, session),
+    title: decryptValue(raw.title, session),
+    status: decryptValue(raw.status, session),
+    projectType: decryptValue(raw.projectType, session),
+    projectTitle: decryptValue(raw.projectTitle, session),
+    account: decryptValue(raw.account, session),
+    amountMinor: decryptMoney(raw.amount, session, schemaVersion),
+    startDate: decryptValue(raw.startDate, session),
+    endDate: decryptValue(raw.endDate, session),
+    category: decryptValue(raw.category, session),
+    comment: decryptValue(raw.comment, session),
+    frequency: decryptValue(raw.frequency, session),
+    targetDate: decryptValue(raw.targetDate, session),
+    targetBucketIds: (raw.targetBucketIds || []).map((id) => decryptValue(id, session)),
+    originalCalculatedAmountMinor: decryptMoney(raw.originalCalculatedAmount, session, schemaVersion),
+    manuallyAdjusted: decryptBoolean(raw.manuallyAdjusted, session),
+    createdAt: decryptValue(raw.createdAt, session),
+    updatedAt: decryptValue(raw.updatedAt, session),
+  };
+  if (raw.activatedAt !== undefined) plan.activatedAt = decryptValue(raw.activatedAt, session);
+  if (raw.deactivatedAt !== undefined) plan.deactivatedAt = decryptValue(raw.deactivatedAt, session);
+  if (raw.activeSubscriptionId !== undefined) {
+    plan.activeSubscriptionId = decryptValue(raw.activeSubscriptionId, session);
+  }
+  return plan;
+}
+
 /** Decrypts every field of one stored Fire project and computes its read-side bucket totals. */
 function decryptProject(raw, session, schemaVersion) {
   const buckets = (raw.buckets || []).map((bucket) => decryptBucket(bucket, session, schemaVersion));
@@ -76,6 +123,9 @@ function decryptProject(raw, session, schemaVersion) {
     links: (raw.links || []).map((link) => decryptLink(link, session)),
     actionItems: (raw.actionItems || []).map((item) => decryptActionItem(item, session)),
     notes: (raw.notes || []).map((note) => decryptNote(note, session)),
+    plannedSubscriptions: (raw.plannedSubscriptions || []).map((plan) =>
+      decryptPlan(plan, session, schemaVersion),
+    ),
     createdAt: decryptValue(raw.createdAt, session),
     updatedAt: decryptValue(raw.updatedAt, session),
   };
@@ -118,6 +168,40 @@ function encryptBucket(bucket, session, schemaVersion) {
   return encrypted;
 }
 
+function encryptPlan(plan, session, schemaVersion) {
+  const encrypted = {
+    id: writeValue(plan.id, session),
+    title: writeValue(plan.title, session),
+    status: writeValue(plan.status, session),
+    projectType: writeValue(plan.projectType, session),
+    projectTitle: writeValue(plan.projectTitle, session),
+    account: writeValue(plan.account, session),
+    amount: writeValue(toStoredMoney(plan.amountMinor, schemaVersion), session),
+    startDate: writeValue(plan.startDate, session),
+    endDate: writeValue(plan.endDate, session),
+    category: writeValue(plan.category, session),
+    comment: writeValue(plan.comment, session),
+    frequency: writeValue(plan.frequency, session),
+    targetDate: writeValue(plan.targetDate, session),
+    targetBucketIds: plan.targetBucketIds.map((id) => writeValue(id, session)),
+    originalCalculatedAmount: writeValue(
+      toStoredMoney(plan.originalCalculatedAmountMinor, schemaVersion),
+      session,
+    ),
+    manuallyAdjusted: writeValue(plan.manuallyAdjusted, session),
+    createdAt: writeValue(plan.createdAt, session),
+    updatedAt: writeValue(plan.updatedAt, session),
+  };
+  if (plan.activatedAt !== undefined) encrypted.activatedAt = writeValue(plan.activatedAt, session);
+  if (plan.deactivatedAt !== undefined) {
+    encrypted.deactivatedAt = writeValue(plan.deactivatedAt, session);
+  }
+  if (plan.activeSubscriptionId !== undefined) {
+    encrypted.activeSubscriptionId = writeValue(plan.activeSubscriptionId, session);
+  }
+  return encrypted;
+}
+
 /** Encrypts a fully-built API-shape project back into the stored representation. */
 function encryptProject(project, session, schemaVersion) {
   const encrypted = {
@@ -130,6 +214,9 @@ function encryptProject(project, session, schemaVersion) {
     links: project.links.map((link) => encryptLink(link, session)),
     actionItems: project.actionItems.map((item) => encryptActionItem(item, session)),
     notes: project.notes.map((note) => encryptNote(note, session)),
+    plannedSubscriptions: (project.plannedSubscriptions || []).map((plan) =>
+      encryptPlan(plan, session, schemaVersion),
+    ),
     createdAt: writeValue(project.createdAt, session),
     updatedAt: writeValue(project.updatedAt, session),
   };
@@ -362,6 +449,70 @@ async function updateFireProject(deps, userId, projectId, patch) {
   });
 }
 
+/**
+ * Computes and persists a new payment plan (`status: 'planned'`) onto a
+ * Fire project's `plannedSubscriptions` array, matching `savePlan()`'s own
+ * create path in `payment-planner-dialog.component.ts` — see
+ * `docs/domain/PAYMENT_PLAN_FORMULA.md`. Only creation is in scope
+ * (SMILE-7's own catalog entry, shared by Smile and Fire); activating/
+ * deactivating/editing a plan afterwards isn't exposed by this API.
+ */
+async function createFirePaymentPlan(deps, userId, projectId, input) {
+  return withFireWrite(deps, userId, ({ rawProjects, session, schemaVersion }) => {
+    const existingProjects = decryptAllProjects(rawProjects, session, schemaVersion);
+    const index = existingProjects.findIndex((project) => project.id === projectId);
+    if (index === -1) return null;
+    const project = existingProjects[index];
+
+    const selectedBucketIds = input.selectedBucketIds || [];
+    const knownBucketIds = new Set(project.buckets.map((bucket) => bucket.id));
+    if (selectedBucketIds.some((id) => !knownBucketIds.has(id))) {
+      const error = new Error('selectedBucketIds must reference existing buckets on this project.');
+      error.code = 'PAYMENT_PLAN_INVALID';
+      throw error;
+    }
+
+    const plan = calculatePaymentPlan({
+      projectType: 'fire',
+      projectTitle: project.title,
+      planTitle: input.planTitle,
+      buckets: project.buckets.map((bucket) => ({
+        id: bucket.id,
+        title: bucket.title,
+        targetMinor: bucket.targetMinor,
+        amountMinor: bucket.amountMinor,
+      })),
+      selectedBucketIds,
+      startDate: input.startDate,
+      targetDate: input.targetDate,
+      frequency: input.frequency,
+      account: input.account,
+      manualAmountMinor: input.manualAmountMinor,
+    });
+
+    const validation = validatePaymentPlan(plan);
+    if (!validation.valid) {
+      const error = new Error(validation.errors.join(', '));
+      error.code = 'PAYMENT_PLAN_INVALID';
+      throw error;
+    }
+
+    const now = new Date().toISOString();
+    const newPlan = { ...plan, id: `plan_${crypto.randomUUID()}`, createdAt: now, updatedAt: now };
+
+    const updatedProject = {
+      ...project,
+      plannedSubscriptions: [...(project.plannedSubscriptions || []), newPlan],
+      updatedAt: now,
+    };
+
+    const updatedRawProjects = rawProjects.map((raw, i) =>
+      i === index ? encryptProject(updatedProject, session, schemaVersion) : raw,
+    );
+    return { updatedRawProjects, result: newPlan };
+  });
+}
+
 async function deleteFireProject(deps, userId, projectId) {
   return withFireWrite(deps, userId, ({ rawProjects, session, schemaVersion }) => {
     const existingProjects = decryptAllProjects(rawProjects, session, schemaVersion);
@@ -381,4 +532,5 @@ module.exports = {
   createFireProject,
   updateFireProject,
   deleteFireProject,
+  createFirePaymentPlan,
 };

@@ -7,6 +7,7 @@ const {
   createFireProject,
   updateFireProject,
   deleteFireProject,
+  createFirePaymentPlan,
 } = require('../../repositories/fire-repository');
 
 function dependencies(data, encryptionConfig) {
@@ -603,5 +604,144 @@ describe('deleteFireProject', () => {
     const { deps, current } = writableDeps(document);
     await deleteFireProject(deps, 'user_1', 'fire_1');
     expect(current().data.fire.map((p) => p.id)).toEqual(['fire_2']);
+  });
+});
+
+describe('createFirePaymentPlan', () => {
+  const planInput = {
+    planTitle: 'Flight Fund',
+    startDate: '2026-01-01',
+    targetDate: '2026-04-01',
+    frequency: 'monthly',
+    account: 'Daily',
+  };
+
+  it('calculates and persists a new planned payment plan onto the project', async () => {
+    const { deps, current } = writableDeps(existingProjectDocument());
+    const plan = await createFirePaymentPlan(deps, 'user_1', 'fire_1', planInput);
+    // Bucket target 1500, amount 200 -> missing 1300 minor units (130000), over 3 monthly periods.
+    expect(plan.amountMinor).toBe(Math.round(130000 / 3));
+    expect(plan.status).toBe('planned');
+    expect(plan.projectType).toBe('fire');
+    expect(plan.projectTitle).toBe('Vacation');
+    expect(plan.category).toBe('@Vacation');
+    expect(plan.id).toMatch(/^plan_/);
+    expect(plan.comment).toContain('#bucket:Flights:');
+    const stored = current().data.fire[0];
+    expect(stored.plannedSubscriptions).toHaveLength(1);
+    expect(stored.plannedSubscriptions[0].id).toBe(plan.id);
+  });
+
+  it('uses the manual amount when provided', async () => {
+    const { deps } = writableDeps(existingProjectDocument());
+    const plan = await createFirePaymentPlan(deps, 'user_1', 'fire_1', {
+      ...planInput,
+      manualAmountMinor: 50000,
+    });
+    expect(plan.amountMinor).toBe(50000);
+    expect(plan.manuallyAdjusted).toBe(true);
+  });
+
+  it('returns null for a project that does not exist', async () => {
+    const { deps } = writableDeps(existingProjectDocument());
+    const plan = await createFirePaymentPlan(deps, 'user_1', 'fire_missing', planInput);
+    expect(plan).toBeNull();
+  });
+
+  it('rejects a plan whose target date is not after its start date', async () => {
+    const { deps } = writableDeps(existingProjectDocument());
+    await expect(
+      createFirePaymentPlan(deps, 'user_1', 'fire_1', {
+        ...planInput,
+        startDate: '2026-04-01',
+        targetDate: '2026-01-01',
+      }),
+    ).rejects.toMatchObject({ code: 'PAYMENT_PLAN_INVALID' });
+  });
+
+  it('rejects a selectedBucketIds entry that does not match any bucket on the project', async () => {
+    const { deps } = writableDeps(existingProjectDocument());
+    await expect(
+      createFirePaymentPlan(deps, 'user_1', 'fire_1', {
+        ...planInput,
+        selectedBucketIds: ['not-a-real-bucket'],
+      }),
+    ).rejects.toMatchObject({ code: 'PAYMENT_PLAN_INVALID' });
+  });
+
+  it('appends to existing planned subscriptions rather than replacing them', async () => {
+    const document = existingProjectDocument();
+    document.data.fire[0].plannedSubscriptions = [
+      {
+        id: 'plan_existing',
+        title: 'Existing Plan',
+        status: 'planned',
+        projectType: 'fire',
+        projectTitle: 'Vacation',
+        account: 'Daily',
+        amount: 10,
+        startDate: '2026-01-01',
+        endDate: '2026-02-01',
+        category: '@Vacation',
+        comment: '',
+        frequency: 'monthly',
+        targetDate: '2026-02-01',
+        targetBucketIds: [],
+        originalCalculatedAmount: 10,
+        manuallyAdjusted: false,
+        createdAt: '2026-01-01T00:00:00.000Z',
+        updatedAt: '2026-01-01T00:00:00.000Z',
+      },
+    ];
+    const { deps, current } = writableDeps(document);
+    await createFirePaymentPlan(deps, 'user_1', 'fire_1', planInput);
+    expect(current().data.fire[0].plannedSubscriptions).toHaveLength(2);
+    expect(current().data.fire[0].plannedSubscriptions[0].id).toBe('plan_existing');
+  });
+
+  it('decrypts and re-encrypts every field when database encryption is enabled', async () => {
+    const session = new EncryptionSession('secret');
+    const encryptField = (value) => session.encrypt(String(value));
+    const document = {
+      _id: 'user_1',
+      _rev: '1-a',
+      data: {
+        fire: [
+          {
+            id: encryptField('fire_1'),
+            title: encryptField('Vacation'),
+            sub: encryptField(''),
+            phase: encryptField('saving'),
+            description: encryptField(''),
+            buckets: [
+              {
+                id: encryptField('b1'),
+                title: encryptField('Flights'),
+                target: encryptField('1500'),
+                amount: encryptField('200'),
+              },
+            ],
+            links: [],
+            actionItems: [],
+            notes: [],
+            createdAt: encryptField('2026-01-01T00:00:00.000Z'),
+            updatedAt: encryptField('2026-01-01T00:00:00.000Z'),
+          },
+        ],
+      },
+    };
+    let stored = document;
+    const deps = {
+      usersDb: {
+        get: jest.fn(async () => structuredClone(stored)),
+        insert: jest.fn(async (next) => {
+          stored = { ...next, _rev: '2-b' };
+        }),
+      },
+      authDb: { get: jest.fn(async () => ({ encryptionConfig: { key: 'secret', encryptDatabase: true } })) },
+    };
+    const plan = await createFirePaymentPlan(deps, 'user_1', 'fire_1', planInput);
+    expect(plan.amountMinor).toBe(Math.round(130000 / 3));
+    expect(stored.data.fire[0].plannedSubscriptions[0].id).not.toBe(plan.id); // stored encrypted
   });
 });

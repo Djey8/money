@@ -30,6 +30,7 @@ const {
   createSmileProject,
   updateSmileProject,
   deleteSmileProject,
+  createSmilePaymentPlan,
 } = require('../repositories/smile-repository');
 const {
   FIRE_PHASES,
@@ -38,6 +39,7 @@ const {
   createFireProject,
   updateFireProject,
   deleteFireProject,
+  createFirePaymentPlan,
 } = require('../repositories/fire-repository');
 const { getUsersDb, getAuthDb } = require('../config/db');
 const { getEncryptionSession } = require('../services/encryption-session');
@@ -464,6 +466,36 @@ function validatePatchFireProjectInput(input) {
     if (!Array.isArray(input.notes) || !input.notes.every(validateUpdateFundNote)) {
       return 'notes must be an array of {text, createdAt?} objects.';
     }
+  }
+  return null;
+}
+
+const PAYMENT_PLAN_FREQUENCIES = ['weekly', 'biweekly', 'monthly', 'quarterly', 'yearly'];
+
+/** Shared by `POST /smile/{id}/payment-plan` and `POST /fire/{id}/payment-plan` — the request shape is identical for both. */
+function validateCreatePaymentPlanInput(input) {
+  if (!input || typeof input !== 'object') return 'A payment plan object is required.';
+  if (!isNonEmptyString(input.planTitle)) return 'planTitle must be a non-empty string.';
+  if (!isNonEmptyString(input.startDate) || !/^\d{4}-\d{2}-\d{2}$/.test(input.startDate)) {
+    return 'startDate must use YYYY-MM-DD format.';
+  }
+  if (!isNonEmptyString(input.targetDate) || !/^\d{4}-\d{2}-\d{2}$/.test(input.targetDate)) {
+    return 'targetDate must use YYYY-MM-DD format.';
+  }
+  if (!PAYMENT_PLAN_FREQUENCIES.includes(input.frequency)) {
+    return `frequency must be one of ${PAYMENT_PLAN_FREQUENCIES.join(', ')}.`;
+  }
+  if (!isNonEmptyString(input.account)) return 'account must be a non-empty string.';
+  if (input.selectedBucketIds !== undefined) {
+    if (!Array.isArray(input.selectedBucketIds) || !input.selectedBucketIds.every(isNonEmptyString)) {
+      return 'selectedBucketIds must be an array of non-empty strings.';
+    }
+  }
+  if (
+    input.manualAmountMinor !== undefined &&
+    (!Number.isInteger(input.manualAmountMinor) || input.manualAmountMinor <= 0)
+  ) {
+    return 'manualAmountMinor must be a positive integer.';
   }
   return null;
 }
@@ -1047,6 +1079,38 @@ router.delete('/smile/:projectId', requireScope('smile:w'), async (req, res, nex
   }
 });
 
+router.post('/smile/:projectId/payment-plan', requireScope('smile:w'), async (req, res, next) => {
+  const validationError = validateCreatePaymentPlanInput(req.body);
+  if (validationError) {
+    return problem(res, 400, 'validation_invalid', 'Invalid payment plan request', validationError);
+  }
+  try {
+    const plan = await createSmilePaymentPlan(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+      req.params.projectId,
+      req.body,
+    );
+    if (!plan) {
+      return problem(res, 404, 'not_found', 'Smile project not found', 'No matching Smile project exists.');
+    }
+    await recordAuditEntry(getAuditDb(), {
+      userId: req.userId,
+      actor: auditActor(req.auth),
+      method: req.method,
+      path: req.baseUrl + req.path,
+      resource: 'smile',
+      resourceId: req.params.projectId,
+    });
+    return res.status(201).json(plan);
+  } catch (error) {
+    if (error.code === 'PAYMENT_PLAN_INVALID') {
+      return problem(res, 400, 'validation_invalid', 'Invalid payment plan request', error.message);
+    }
+    return next(error);
+  }
+});
+
 router.get('/fire', requireScope('fire:r'), async (req, res, next) => {
   try {
     const projects = await listFireProjects({ usersDb: getUsersDb(), authDb: getAuthDb() }, req.userId);
@@ -1152,6 +1216,38 @@ router.delete('/fire/:projectId', requireScope('fire:w'), async (req, res, next)
     });
     return res.json({ id: req.params.projectId });
   } catch (error) {
+    return next(error);
+  }
+});
+
+router.post('/fire/:projectId/payment-plan', requireScope('fire:w'), async (req, res, next) => {
+  const validationError = validateCreatePaymentPlanInput(req.body);
+  if (validationError) {
+    return problem(res, 400, 'validation_invalid', 'Invalid payment plan request', validationError);
+  }
+  try {
+    const plan = await createFirePaymentPlan(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+      req.params.projectId,
+      req.body,
+    );
+    if (!plan) {
+      return problem(res, 404, 'not_found', 'Fire project not found', 'No matching Fire project exists.');
+    }
+    await recordAuditEntry(getAuditDb(), {
+      userId: req.userId,
+      actor: auditActor(req.auth),
+      method: req.method,
+      path: req.baseUrl + req.path,
+      resource: 'fire',
+      resourceId: req.params.projectId,
+    });
+    return res.status(201).json(plan);
+  } catch (error) {
+    if (error.code === 'PAYMENT_PLAN_INVALID') {
+      return problem(res, 400, 'validation_invalid', 'Invalid payment plan request', error.message);
+    }
     return next(error);
   }
 });
