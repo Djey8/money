@@ -41,7 +41,17 @@ export class DecryptionError extends Error {
   }
 }
 
-/** Test-only injection points. Never pass these outside a test — production callers should omit both so a fresh random salt/IV is used, unless deliberately pinning a session salt (see `EncryptionSession`). */
+/**
+ * `ivHex` is a test-only injection point (golden vectors need a fixed IV) —
+ * never pass it outside a test; every call always gets its own random IV
+ * otherwise. `saltHex` behaves differently depending on which API you're
+ * using: the one-shot `encrypt()`/`decrypt()` functions below always use a
+ * fresh random salt when it's omitted (each call is its own session); on
+ * `EncryptionSession.encrypt()`, omitting it reuses that session's own
+ * pinned default salt (see the class doc) — pass `saltHex` there only to
+ * pin a *specific* salt instead (e.g. a golden vector), not to force
+ * per-call freshness.
+ */
 export interface EncryptOptions {
   saltHex?: string;
   ivHex?: string;
@@ -154,9 +164,23 @@ function decryptLegacy(ciphertext: string, key: string): string {
  * rather than once per value — the same amortization `CrypticService` gets
  * from its per-session salt. Use one `EncryptionSession` per request (or
  * per migration run) that touches more than a handful of fields.
+ *
+ * `encrypt()` defaults to this session's own pinned salt (generated once,
+ * at construction) rather than a fresh random salt per call — every current
+ * backend call site (transaction read/write, derived-state, migration,
+ * idempotency payloads) calls `encrypt()` without `saltHex`, so this default
+ * is load-bearing: without it, every field of every value gets its own
+ * PBKDF2 derivation (10,000 iterations each), which measured 162x slower
+ * (17.7s vs 109ms for 210 values) than sharing one salt per session. This
+ * is safe — CBC-mode security depends on IV uniqueness, not salt/key
+ * uniqueness, and each `encrypt()` call still gets its own random IV — and
+ * matches `CrypticService`'s own per-session-salt behavior on the frontend.
+ * Pass `saltHex` explicitly only to pin a *specific* salt (e.g. reproducing
+ * a golden test vector), not to force per-call freshness.
  */
 export class EncryptionSession {
   private readonly derivedKeyCache = new Map<string, CryptoJS.lib.WordArray>();
+  private readonly sessionSalt = CryptoJS.lib.WordArray.random(SALT_BYTES);
 
   constructor(private readonly password: string) {}
 
@@ -170,16 +194,11 @@ export class EncryptionSession {
   }
 
   /**
-   * Encrypts one value. Pass `saltHex` to pin every call in this session to
-   * one salt (matching `CrypticService`'s per-session-salt pattern exactly,
-   * including its performance characteristics) — omit it to generate a
-   * fresh random salt per value (more conservative, and still benefits
-   * from this session's derived-key cache if the same salt recurs).
+   * Encrypts one value, using this session's pinned salt by default (see
+   * class doc) or the given `saltHex` to pin a specific one instead.
    */
   encrypt(plaintext: string, options: EncryptOptions = {}): string {
-    const salt = options.saltHex
-      ? CryptoJS.enc.Hex.parse(options.saltHex)
-      : CryptoJS.lib.WordArray.random(SALT_BYTES);
+    const salt = options.saltHex ? CryptoJS.enc.Hex.parse(options.saltHex) : this.sessionSalt;
     return encryptWithKey(plaintext, salt, this.getDerivedKey(salt), options.ivHex);
   }
 

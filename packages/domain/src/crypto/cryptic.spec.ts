@@ -115,7 +115,35 @@ describe('cryptic (CrypticService v2 port)', () => {
     });
   });
 
+  function saltHexOf(v2Ciphertext: string): string {
+    const bytes = CryptoJS.enc.Base64.parse(v2Ciphertext.slice('v2:'.length));
+    const salt = CryptoJS.lib.WordArray.create(bytes.words.slice(0, 4), 16);
+    return CryptoJS.enc.Hex.stringify(salt);
+  }
+
   describe('EncryptionSession', () => {
+    it('shares one salt across default (unpinned) calls in the same session — the amortization this class exists for', () => {
+      // Without this, every field's PBKDF2 (10,000 iterations) runs independently;
+      // a request encrypting/decrypting many fields would be orders of magnitude
+      // slower. This is the behavior that actually makes EncryptionSession worth
+      // using over the one-shot encrypt()/decrypt() functions.
+      const session = new EncryptionSession('session-key');
+      const a = session.encrypt('field one');
+      const b = session.encrypt('field two');
+
+      expect(saltHexOf(a)).toBe(saltHexOf(b));
+      expect(a).not.toBe(b); // still distinct ciphertexts (independent random IVs)
+      expect(session.decrypt(a)).toBe('field one');
+      expect(session.decrypt(b)).toBe('field two');
+    });
+
+    it('gives two different sessions two different default salts', () => {
+      const sessionA = new EncryptionSession('key');
+      const sessionB = new EncryptionSession('key');
+
+      expect(saltHexOf(sessionA.encrypt('x'))).not.toBe(saltHexOf(sessionB.encrypt('x')));
+    });
+
     it('round-trips multiple values under one session, matching the one-shot API', () => {
       const session = new EncryptionSession('session-key');
       const values = ['Daily -12.50', '@Groceries', 'Splurge -30.00', ''];
