@@ -4,7 +4,11 @@ const express = require('express');
 const { getAuditDb } = require('../config/db');
 const { recordAuditEntry } = require('../config/audit');
 const { createToken, listTokens, revokeToken } = require('../cli/commands/token');
-const { getTransaction, listTransactions } = require('../repositories/transaction-repository');
+const {
+  createTransaction,
+  getTransaction,
+  listTransactions,
+} = require('../repositories/transaction-repository');
 const { getUsersDb, getAuthDb } = require('../config/db');
 const {
   authenticateApiToken,
@@ -14,6 +18,23 @@ const {
 } = require('../middleware/api-auth');
 
 const router = express.Router();
+
+function validateTransactionInput(input) {
+  if (!input || typeof input !== 'object') return 'A transaction object is required.';
+  if (!Number.isInteger(input.amountMinor)) return 'amountMinor must be an integer.';
+  if (input.amountMinor === 0) return 'amountMinor cannot be zero.';
+  for (const field of ['account', 'date', 'time', 'category', 'comment']) {
+    if (typeof input[field] !== 'string' || (field !== 'comment' && input[field].trim() === '')) {
+      return `${field} must be a string${field === 'comment' ? '' : ' and cannot be empty'}.`;
+    }
+  }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(input.date)) return 'date must use YYYY-MM-DD format.';
+  return null;
+}
+
+function auditActor(auth) {
+  return auth.type === 'token' ? { type: 'token', tokenId: auth.tokenId } : { type: 'session' };
+}
 
 router.use(authenticateApiToken);
 
@@ -61,6 +82,31 @@ router.get('/transactions', requireScope('transactions:r'), async (req, res, nex
         order,
       }),
     );
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.post('/transactions', requireScope('transactions:w'), async (req, res, next) => {
+  const validationError = validateTransactionInput(req.body);
+  if (validationError) {
+    return problem(res, 400, 'validation_invalid', 'Invalid transaction request', validationError);
+  }
+  try {
+    const transaction = await createTransaction(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+      req.body,
+    );
+    await recordAuditEntry(getAuditDb(), {
+      userId: req.userId,
+      actor: auditActor(req.auth),
+      method: req.method,
+      path: req.baseUrl + req.path,
+      resource: 'transactions',
+      resourceId: transaction.id,
+    });
+    return res.status(201).json(transaction);
   } catch (error) {
     return next(error);
   }

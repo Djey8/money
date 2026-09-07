@@ -77,6 +77,47 @@ paths:
           $ref: '#/components/responses/AuthenticationRequired'
         '403':
           $ref: '#/components/responses/InsufficientScope'
+    post:
+      operationId: createTransaction
+      summary: Create a transaction
+      description: Adds a transaction and atomically rebuilds its derived income, expense, Smile, Fire, and Mojo state.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTransactionRequest'
+            example:
+              account: Daily
+              amountMinor: -1250
+              date: '2026-09-06'
+              time: '09:30'
+              category: '@Groceries'
+              comment: Weekly shop
+      responses:
+        '201':
+          description: Created transaction
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiTransaction'
+              example:
+                id: tx_01234567-89ab-cdef-0123-456789abcdef
+                account: Daily
+                amountMinor: -1250
+                currency: EUR
+                date: '2026-09-06'
+                time: '09:30'
+                category: '@Groceries'
+                comment: Weekly shop
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
   /transactions/{transactionId}:
     get:
       operationId: getTransaction
@@ -299,6 +340,26 @@ components:
         currency:
           type: string
           pattern: '^[A-Z]{3}$'
+        date:
+          type: string
+          format: date
+        time:
+          type: string
+        category:
+          type: string
+        comment:
+          type: string
+    CreateTransactionRequest:
+      type: object
+      required: [account, amountMinor, date, time, category, comment]
+      properties:
+        account:
+          type: string
+        amountMinor:
+          type: integer
+          not:
+            enum: [0]
+          description: Integer minor units. Must not be zero.
         date:
           type: string
           format: date

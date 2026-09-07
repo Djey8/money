@@ -7,6 +7,7 @@ import { FundState, recalculateFundState } from './fund-state';
 import { ApiTransaction } from './transaction';
 
 export interface TransactionDerivedState {
+  transactions: ApiTransaction[];
   accounting: TransactionAccountingSummary;
   funds: FundState;
 }
@@ -24,8 +25,10 @@ export function recalculateTransactionDerivedState(
   transactions: ApiTransaction[],
   context: TransactionDerivedStateContext,
 ): TransactionDerivedState {
+  const recalculatedFunds = recalculateFundState(transactions, context.funds);
   return {
-    accounting: summarizeTransactionAccounting(transactions, context),
-    funds: recalculateFundState(transactions, context.funds),
+    transactions: recalculatedFunds.transactions,
+    accounting: summarizeTransactionAccounting(recalculatedFunds.transactions, context),
+    funds: recalculatedFunds,
   };
 }

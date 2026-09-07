@@ -53,4 +53,75 @@ describe('recalculateFundState', () => {
     expect(result.fire[0]).toMatchObject({ phase: 'completed', completionDate: '2026-09-07' });
     expect(result.fire[0].buckets[0].amountMinor).toBe(5000);
   });
+
+  it('adjusts a capped Smile transaction before derived accounting consumes it', () => {
+    const result = recalculateFundState(
+      [transaction({ amountMinor: -12000, comment: 'Fund #bucket:Flights:120' })],
+      state,
+    );
+    expect(result.transactions[0]).toMatchObject({
+      amountMinor: -10000,
+      comment: 'Fund\n#bucket:Flights:100.00',
+    });
+  });
+
+  it('adjusts a capped Fire transaction before derived accounting consumes it', () => {
+    const result = recalculateFundState(
+      [transaction({ account: 'Fire', category: '@Emergency', amountMinor: -6000 })],
+      state,
+    );
+    expect(result.transactions[0].amountMinor).toBe(-5000);
+    expect(result.fire[0].buckets[0].amountMinor).toBe(5000);
+  });
+
+  it('adjusts an untagged Smile transaction when equal allocation fills all buckets', () => {
+    const result = recalculateFundState([transaction({ amountMinor: -12000 })], state);
+    expect(result.transactions[0].amountMinor).toBe(-10000);
+    expect(result.smile[0].buckets[0].amountMinor).toBe(10000);
+  });
+
+  it('redistributes an untagged Smile transaction to buckets with room instead of dropping the shortfall', () => {
+    const multiBucketState: FundState = {
+      mojo: { amountMinor: 0, targetMinor: 100000 },
+      smile: [
+        {
+          title: 'Holiday',
+          buckets: [
+            { id: 'flights', title: 'Flights', targetMinor: 10000, amountMinor: 0 },
+            { id: 'hotel', title: 'Hotel', targetMinor: 10000, amountMinor: 0 },
+          ],
+        },
+      ],
+      fire: [],
+    };
+    const result = recalculateFundState(
+      [
+        transaction({ id: 'tx1', amountMinor: -9000, comment: '#bucket:Flights:90' }),
+        transaction({ id: 'tx2', amountMinor: -6000 }),
+      ],
+      multiBucketState,
+    );
+    expect(result.smile[0].buckets[0].amountMinor).toBe(10000);
+    expect(result.smile[0].buckets[1].amountMinor).toBe(5000);
+    expect(result.transactions[1].amountMinor).toBe(-6000);
+  });
+
+  it('leaves a transaction untouched when it matches a legacy project with no buckets yet', () => {
+    const legacyState: FundState = {
+      mojo: { amountMinor: 0, targetMinor: 0 },
+      smile: [{ title: 'Holiday', buckets: [] }],
+      fire: [{ title: 'Emergency', buckets: [] }],
+    };
+    const result = recalculateFundState(
+      [
+        transaction({ id: 'tx1', category: '@Holiday', amountMinor: -5000 }),
+        transaction({ id: 'tx2', account: 'Fire', category: '@Emergency', amountMinor: -3000 }),
+      ],
+      legacyState,
+    );
+    expect(result.transactions[0].amountMinor).toBe(-5000);
+    expect(result.transactions[1].amountMinor).toBe(-3000);
+    expect(result.smile[0].buckets).toEqual([]);
+    expect(result.fire[0].buckets).toEqual([]);
+  });
 });

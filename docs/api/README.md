@@ -14,3 +14,16 @@ curl -X POST http://localhost:3000/api/v1/auth/tokens \
 ```
 
 Store the returned `mmpat_...` value in a secret manager. Revoke it through `DELETE /api/v1/auth/tokens/{tokenId}` when no longer needed.
+
+## Create a transaction
+
+Use a PAT with `transactions:w`. Money is always supplied as an integer minor-unit amount; negative values are expenses.
+
+```bash
+curl -X POST http://localhost:3000/api/v1/transactions \
+  -H "Authorization: Bearer $MONEY_MANAGER_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"account":"Daily","amountMinor":-1250,"date":"2026-09-06","time":"09:30","category":"@Groceries","comment":"Weekly shop"}'
+```
+
+The server assigns the transaction ID, retries a CouchDB conflict safely, and rebuilds the linked derived account and fund state in the same user-document write.

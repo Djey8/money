@@ -101,30 +101,33 @@ function applyDerivedState(data, transactions, session, schemaVersion) {
   const income = data.income || {};
   const expenses = income.expenses || {};
   return {
-    ...data,
-    income: {
-      ...income,
-      revenue: {
-        ...(income.revenue || {}),
-        revenues: writeTaggedAmounts(derived.accounting.revenues, session, schemaVersion),
-        interests: writeTaggedAmounts(derived.accounting.interests, session, schemaVersion),
-        properties: writeTaggedAmounts(derived.accounting.properties, session, schemaVersion),
+    transactions: derived.transactions,
+    data: {
+      ...data,
+      income: {
+        ...income,
+        revenue: {
+          ...(income.revenue || {}),
+          revenues: writeTaggedAmounts(derived.accounting.revenues, session, schemaVersion),
+          interests: writeTaggedAmounts(derived.accounting.interests, session, schemaVersion),
+          properties: writeTaggedAmounts(derived.accounting.properties, session, schemaVersion),
+        },
+        expenses: {
+          ...expenses,
+          daily: writeTaggedAmounts(derived.accounting.expenses.Daily, session, schemaVersion),
+          splurge: writeTaggedAmounts(derived.accounting.expenses.Splurge, session, schemaVersion),
+          smile: writeTaggedAmounts(derived.accounting.expenses.Smile, session, schemaVersion),
+          fire: writeTaggedAmounts(derived.accounting.expenses.Fire, session, schemaVersion),
+          mojo: writeTaggedAmounts(derived.accounting.expenses.Mojo, session, schemaVersion),
+        },
       },
-      expenses: {
-        ...expenses,
-        daily: writeTaggedAmounts(derived.accounting.expenses.Daily, session, schemaVersion),
-        splurge: writeTaggedAmounts(derived.accounting.expenses.Splurge, session, schemaVersion),
-        smile: writeTaggedAmounts(derived.accounting.expenses.Smile, session, schemaVersion),
-        fire: writeTaggedAmounts(derived.accounting.expenses.Fire, session, schemaVersion),
-        mojo: writeTaggedAmounts(derived.accounting.expenses.Mojo, session, schemaVersion),
+      mojo: {
+        ...(data.mojo || {}),
+        amount: writeValue(toStoredMoney(derived.funds.mojo.amountMinor, schemaVersion), session),
       },
+      smile: applyFundProjects(data.smile, derived.funds.smile, session, schemaVersion),
+      fire: applyFundProjects(data.fire, derived.funds.fire, session, schemaVersion),
     },
-    mojo: {
-      ...(data.mojo || {}),
-      amount: writeValue(toStoredMoney(derived.funds.mojo.amountMinor, schemaVersion), session),
-    },
-    smile: applyFundProjects(data.smile, derived.funds.smile, session, schemaVersion),
-    fire: applyFundProjects(data.fire, derived.funds.fire, session, schemaVersion),
   };
 }
 

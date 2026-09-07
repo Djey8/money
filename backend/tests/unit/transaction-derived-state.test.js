@@ -27,8 +27,8 @@ describe('transaction derived-state adapter', () => {
       null,
       1,
     );
-    expect(result.income.revenue.revenues).toEqual([{ tag: 'Salary', amount: 1000 }]);
-    expect(result.mojo.amount).toBe(50);
+    expect(result.data.income.revenue.revenues).toEqual([{ tag: 'Salary', amount: 1000 }]);
+    expect(result.data.mojo.amount).toBe(50);
     expect(data).toEqual({ mojo: { amount: 100, target: 200 }, smile: [], fire: [] });
   });
 
@@ -39,7 +39,7 @@ describe('transaction derived-state adapter', () => {
       null,
       2,
     );
-    expect(result.income.revenue.revenues[0].amount).toBe(12345);
+    expect(result.data.income.revenue.revenues[0].amount).toBe(12345);
   });
 
   it('preserves per-field encryption while rebuilding derived values', () => {
@@ -54,8 +54,8 @@ describe('transaction derived-state adapter', () => {
       session,
       1,
     );
-    expect(session.decrypt(result.income.revenue.revenues[0].tag)).toBe('Salary');
-    expect(session.decrypt(result.income.revenue.revenues[0].amount)).toBe('12');
-    expect(session.decrypt(result.mojo.amount)).toBe('0');
+    expect(session.decrypt(result.data.income.revenue.revenues[0].tag)).toBe('Salary');
+    expect(session.decrypt(result.data.income.revenue.revenues[0].amount)).toBe('12');
+    expect(session.decrypt(result.data.mojo.amount)).toBe('0');
   });
 });

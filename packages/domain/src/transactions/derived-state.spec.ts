@@ -25,6 +25,7 @@ describe('recalculateTransactionDerivedState', () => {
       },
     );
     expect(result.accounting.revenues).toEqual([{ tag: 'Salary', amountMinor: 100000 }]);
+    expect(result.transactions).toHaveLength(2);
     expect(result.funds.mojo).toEqual({ amountMinor: 5000, targetMinor: 10000 });
   });
 });

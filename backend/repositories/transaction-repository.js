@@ -1,7 +1,11 @@
 'use strict';
 
-const { isEncryptedValue, transactionToApi } = require('@money/domain');
+const crypto = require('crypto');
+const { isEncryptedValue, transactionFromApi, transactionToApi } = require('@money/domain');
 const { getEncryptionSession } = require('../services/encryption-session');
+const { applyDerivedState } = require('../services/transaction-derived-state');
+
+const MAX_WRITE_RETRIES = 10;
 
 function decryptValue(value, session) {
   if (!isEncryptedValue(value)) return value;
@@ -16,6 +20,23 @@ function decryptTransaction(transaction, session) {
   }
   if (typeof decrypted.amount === 'string') decrypted.amount = Number(decrypted.amount);
   return decrypted;
+}
+
+function encryptTransaction(transaction, session) {
+  if (!session) return transaction;
+  return Object.fromEntries(
+    Object.entries(transaction).map(([key, value]) => [key, session.encrypt(String(value))]),
+  );
+}
+
+function toApiTransactions(transactions, session, schemaVersion, currency) {
+  return transactions.map((transaction) =>
+    transactionToApi(decryptTransaction(transaction, session), schemaVersion, currency, () => {
+      throw new Error(
+        'Transaction is missing a stable ID; run mm-admin migrate-transaction-ids first',
+      );
+    }),
+  );
 }
 
 function decodeCursor(cursor) {
@@ -60,13 +81,7 @@ async function listTransactions({ usersDb, authDb }, userId, options = {}) {
   const session = await getEncryptionSession(authDb, userId);
   const schemaVersion = userDoc.data?.meta?.schemaVersion || 1;
   const currency = userDoc.data?.meta?.currency || 'EUR';
-  const apiTransactions = transactions.map((transaction) =>
-    transactionToApi(decryptTransaction(transaction, session), schemaVersion, currency, () => {
-      throw new Error(
-        'Transaction is missing a stable ID; run mm-admin migrate-transaction-ids first',
-      );
-    }),
-  );
+  const apiTransactions = toApiTransactions(transactions, session, schemaVersion, currency);
   const matchingTransactions = filterAndSortTransactions(apiTransactions, options);
   const offset = decodeCursor(cursor);
   const page = matchingTransactions.slice(offset, offset + limit);
@@ -85,9 +100,57 @@ async function getTransaction(deps, userId, transactionId) {
   return result.transactions.find((transaction) => transaction.id === transactionId) || null;
 }
 
+async function createTransaction({ usersDb, authDb }, userId, input) {
+  let attempt = 0;
+  while (attempt < MAX_WRITE_RETRIES) {
+    let userDoc;
+    try {
+      userDoc = await usersDb.get(userId);
+    } catch (error) {
+      if (error.statusCode !== 404) throw error;
+      userDoc = {
+        _id: userId,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        data: {},
+      };
+    }
+    const session = await getEncryptionSession(authDb, userId);
+    const schemaVersion = userDoc.data?.meta?.schemaVersion || 1;
+    const currency = userDoc.data?.meta?.currency || 'EUR';
+    const existingRawTransactions = userDoc.data?.transactions || [];
+    if (!Array.isArray(existingRawTransactions))
+      throw new Error('Stored transactions must be an array');
+    const transaction = { ...input, id: `tx_${crypto.randomUUID()}`, currency };
+    const existingTransactions = toApiTransactions(
+      existingRawTransactions,
+      session,
+      schemaVersion,
+      currency,
+    );
+    const allTransactions = [...existingTransactions, transaction];
+    const derived = applyDerivedState(userDoc.data || {}, allTransactions, session, schemaVersion);
+    const data = derived.data;
+    data.transactions = derived.transactions.map((effectiveTransaction) =>
+      encryptTransaction(transactionFromApi(effectiveTransaction, schemaVersion), session),
+    );
+    try {
+      await usersDb.insert({ ...userDoc, data, updatedAt: new Date().toISOString() });
+      return derived.transactions.find(
+        (effectiveTransaction) => effectiveTransaction.id === transaction.id,
+      );
+    } catch (error) {
+      if (error.statusCode !== 409) throw error;
+      attempt += 1;
+    }
+  }
+  throw new Error(`Could not create transaction for ${userId}: CouchDB conflict`);
+}
+
 module.exports = {
   listTransactions,
   getTransaction,
+  createTransaction,
   decryptTransaction,
   decodeCursor,
   filterAndSortTransactions,
