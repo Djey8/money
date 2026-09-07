@@ -17,3 +17,4 @@ export * from './reports/kpis';
 export * from './reports/fire-coverage';
 export * from './transactions/payment-plan';
 export * from './grow/dsl';
+export * from './grow/actions';
