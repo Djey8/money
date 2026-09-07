@@ -56,6 +56,22 @@ const apiLimiter = rateLimit({
   skip: () => process.env.SKIP_RATE_LIMIT === 'true',
 });
 
+// Bulk endpoints (larger blast radius per call) get a stricter limit on top
+// of the general per-token apiLimiter below — docs/adr/0006, "Bulk/:bulk-scoped
+// endpoints get a stricter, separate limit given their larger blast radius."
+const bulkLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => {
+    const credential = req.headers.authorization || req.cookies?.access_token || req.ip;
+    return crypto.createHash('sha256').update(credential).digest('hex');
+  },
+  skip: () => process.env.SKIP_RATE_LIMIT === 'true',
+});
+app.use('/api/v1/transactions/batch', bulkLimiter);
+
 // Strict rate limiting for auth endpoints (brute-force protection)
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes

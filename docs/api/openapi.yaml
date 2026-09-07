@@ -118,6 +118,86 @@ paths:
           $ref: '#/components/responses/AuthenticationRequired'
         '403':
           $ref: '#/components/responses/InsufficientScope'
+  /transactions/batch:
+    post:
+      operationId: batchTransactions
+      summary: Create, update, or delete many transactions in one request
+      description: >-
+        Applies a mix of create/update/delete operations atomically at the storage level (one document write) and
+        rebuilds derived income/expense/Smile/Fire/Mojo state once. Requires the `transactions:bulk` scope and an
+        `Idempotency-Key` header — replaying the same key with the same body returns the original result without
+        reapplying it; replaying it with a different body is rejected. The write and the idempotency record are not
+        one atomic transaction: a crash between them (rare) can make a same-key retry reapply the batch — see
+        docs/api/AGENTS.md. Setting `atomic` to true makes the whole batch all-or-nothing (if any operation fails,
+        none are applied, and a would-have-succeeded `create`'s `id` in the response was never persisted); the
+        default, false, applies what succeeds and reports failures per item.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BatchTransactionsRequest'
+            example:
+              atomic: false
+              operations:
+                - op: create
+                  account: Daily
+                  amountMinor: -850
+                  date: '2026-09-07'
+                  time: '08:15'
+                  category: '@Coffee'
+                  comment: ''
+                - op: update
+                  id: tx_01234567-89ab-cdef-0123-456789abcdef
+                  amountMinor: -1500
+                - op: delete
+                  id: tx_11111111-89ab-cdef-0123-456789abcdef
+      responses:
+        '200':
+          description: Per-item results (some items may report `error` even on a 200, in non-atomic mode)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchTransactionsResponse'
+              example:
+                idempotencyKey: 2026-09-07-morning-batch
+                atomic: false
+                results:
+                  - op: create
+                    status: created
+                    id: tx_22222222-89ab-cdef-0123-456789abcdef
+                    transaction:
+                      id: tx_22222222-89ab-cdef-0123-456789abcdef
+                      account: Daily
+                      amountMinor: -850
+                      currency: EUR
+                      date: '2026-09-07'
+                      time: '08:15'
+                      category: '@Coffee'
+                      comment: ''
+                  - op: update
+                    status: error
+                    id: tx_01234567-89ab-cdef-0123-456789abcdef
+                    error: No matching transaction exists.
+                  - op: delete
+                    status: deleted
+                    id: tx_11111111-89ab-cdef-0123-456789abcdef
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '409':
+          $ref: '#/components/responses/IdempotencyConflict'
   /transactions/{transactionId}/copy:
     post:
       operationId: copyTransaction
@@ -524,6 +604,75 @@ components:
           type: string
         comment:
           type: string
+    BatchTransactionOperation:
+      type: object
+      required: [op]
+      description: |
+        A `create` operation takes the same fields as `CreateTransactionRequest` plus `op`.
+        An `update` operation takes `id` plus one or more of `CreateTransactionRequest`'s fields (partial, like PATCH).
+        A `delete` operation takes only `op` and `id`.
+      properties:
+        op:
+          type: string
+          enum: [create, update, delete]
+        id:
+          type: string
+          description: Required for update and delete; not accepted for create.
+        account:
+          type: string
+        amountMinor:
+          type: integer
+        date:
+          type: string
+          format: date
+        time:
+          type: string
+        category:
+          type: string
+        comment:
+          type: string
+    BatchTransactionsRequest:
+      type: object
+      required: [operations]
+      properties:
+        operations:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/BatchTransactionOperation'
+        atomic:
+          type: boolean
+          default: false
+          description: When true, no operation is applied if any operation in the batch fails.
+    BatchTransactionResult:
+      type: object
+      required: [op, status]
+      properties:
+        op:
+          type: string
+          enum: [create, update, delete]
+        status:
+          type: string
+          enum: [created, updated, deleted, error, not_applied]
+        id:
+          type: string
+        transaction:
+          $ref: '#/components/schemas/ApiTransaction'
+        error:
+          type: string
+    BatchTransactionsResponse:
+      type: object
+      required: [idempotencyKey, atomic, results]
+      properties:
+        idempotencyKey:
+          type: string
+        atomic:
+          type: boolean
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/BatchTransactionResult'
     Problem:
       type: object
       required: [type, title, status, detail, code]
@@ -600,3 +749,15 @@ components:
             status: 404
             detail: No matching token exists.
             code: not_found
+    IdempotencyConflict:
+      description: The Idempotency-Key was already used for a request with a different body
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://money-manager.dev/problems/conflict_idempotency_mismatch
+            title: Idempotency key reused with a different request
+            status: 409
+            detail: This Idempotency-Key was already used for a request with a different body.
+            code: conflict_idempotency_mismatch

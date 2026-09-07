@@ -55,6 +55,8 @@ function validateEntry(entry) {
  * @param {string} entry.resource - resource name, e.g. 'transactions'
  * @param {string} [entry.resourceId] - the specific record affected, if singular
  * @param {number} [entry.itemCount] - for bulk operations, how many records were affected
+ * @param {string} [entry.idempotencyKey] - the caller's Idempotency-Key, for bulk endpoints
+ * @param {string} [entry.requestHash] - hash of the original request body, to detect a replay with a different body
  * @param {any} [entry.payload] - JSON-serializable diff/data to record, encrypted via `encryptPayload` if given
  * @param {(value: string) => string} [encryptPayload]
  * @returns {Promise<object>} the written document
@@ -73,6 +75,8 @@ async function recordAuditEntry(auditDb, entry, encryptPayload) {
   };
   if (entry.resourceId !== undefined) doc.resourceId = entry.resourceId;
   if (entry.itemCount !== undefined) doc.itemCount = entry.itemCount;
+  if (entry.idempotencyKey !== undefined) doc.idempotencyKey = entry.idempotencyKey;
+  if (entry.requestHash !== undefined) doc.requestHash = entry.requestHash;
 
   if (entry.payload !== undefined) {
     const serialized = JSON.stringify(entry.payload);
@@ -82,6 +86,22 @@ async function recordAuditEntry(auditDb, entry, encryptPayload) {
 
   await auditDb.insert(doc);
   return doc;
+}
+
+/**
+ * Looks up a prior audit entry recorded for this exact Idempotency-Key, for
+ * detecting a bulk-endpoint replay (docs/MASTER_PROMPT.md's "Bulk writes
+ * require an Idempotency-Key header" / PLAN.md's API conventions). Returns
+ * `null` when no such entry exists yet. Does not decrypt `payload` — the
+ * caller does that with the same session used to encrypt it originally.
+ */
+async function findAuditEntryByIdempotencyKey(auditDb, userId, resource, idempotencyKey) {
+  if (!idempotencyKey) return null;
+  const result = await auditDb.find({
+    selector: { userId, resource, idempotencyKey },
+    limit: 1,
+  });
+  return result.docs[0] || null;
 }
 
 /**
@@ -113,4 +133,9 @@ async function queryAuditEntries(auditDb, userId, { resource, limit = 50 } = {})
     .slice(0, limit);
 }
 
-module.exports = { recordAuditEntry, queryAuditEntries, generateAuditId };
+module.exports = {
+  recordAuditEntry,
+  queryAuditEntries,
+  findAuditEntryByIdempotencyKey,
+  generateAuditId,
+};

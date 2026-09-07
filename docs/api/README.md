@@ -52,3 +52,24 @@ curl -X POST http://localhost:3000/api/v1/transactions/tx_01234567-89ab-cdef-012
 ```
 
 Duplicates the source transaction's account, amount, category, and comment into a new transaction dated today (send a body with any of `account`/`amountMinor`/`date`/`time`/`category`/`comment` to override).
+
+## Batch create/update/delete transactions
+
+Requires a PAT with `transactions:bulk` (a separate grant from `transactions:w`) and a unique `Idempotency-Key` per logical batch — reusing the same key with the same body replays the original result; reusing it with a different body is rejected.
+
+```bash
+curl -X POST http://localhost:3000/api/v1/transactions/batch \
+  -H "Authorization: Bearer $MONEY_MANAGER_TOKEN" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: $(uuidgen)" \
+  -d '{
+        "atomic": false,
+        "operations": [
+          {"op":"create","account":"Daily","amountMinor":-850,"date":"2026-09-07","time":"08:15","category":"@Coffee","comment":""},
+          {"op":"update","id":"tx_01234567-89ab-cdef-0123-456789abcdef","amountMinor":-1500},
+          {"op":"delete","id":"tx_11111111-89ab-cdef-0123-456789abcdef"}
+        ]
+      }'
+```
+
+The response is always `200` once the request itself is well-formed; check each item's own `status` (`created`/`updated`/`deleted`/`error`, or `not_applied` when `atomic: true` rolled the whole batch back) rather than assuming success from the HTTP status alone.

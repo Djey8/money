@@ -454,6 +454,286 @@ describe('v1 API authentication and PAT management', () => {
       .send({});
     expect(copyResponse.status).toBe(403);
     expect(copyResponse.body.code).toBe('scope_insufficient');
+    const writeOnly = await sessionRequest('post', '/api/v1/auth/tokens').send({
+      name: 'write-not-bulk-agent',
+      scopes: ['transactions:w'],
+    });
+    const batchResponse = await request(app)
+      .post('/api/v1/transactions/batch')
+      .set('Authorization', `Bearer ${writeOnly.body.token}`)
+      .set('Idempotency-Key', 'scope-test-key')
+      .send({ operations: [{ op: 'delete', id: created.body.id }] });
+    expect(batchResponse.status).toBe(403);
+    expect(batchResponse.body.code).toBe('scope_insufficient');
+    const readWrite = await sessionRequest('post', '/api/v1/auth/tokens').send({
+      name: 'rw-not-bulk-agent',
+      scopes: ['transactions:rw'],
+    });
+    const rwBatchResponse = await request(app)
+      .post('/api/v1/transactions/batch')
+      .set('Authorization', `Bearer ${readWrite.body.token}`)
+      .set('Idempotency-Key', 'scope-test-key-rw')
+      .send({ operations: [{ op: 'delete', id: created.body.id }] });
+    expect(rwBatchResponse.status).toBe(403);
+    expect(rwBatchResponse.body.code).toBe('scope_insufficient');
+  });
+
+  describe('POST /transactions/batch', () => {
+    async function bulkToken() {
+      const created = await sessionRequest('post', '/api/v1/auth/tokens').send({
+        name: `bulk-agent-${Date.now()}-${Math.random()}`,
+        scopes: ['transactions:bulk'],
+      });
+      return created.body.token;
+    }
+
+    it('creates, updates, and reports a failing delete in one non-atomic batch', async () => {
+      const token = await bulkToken();
+      const existing = await sessionRequest('post', '/api/v1/transactions').send({
+        account: 'Daily',
+        amountMinor: -100,
+        date: '2026-09-06',
+        time: '14:00',
+        category: '@Batch existing',
+        comment: '',
+      });
+      const response = await request(app)
+        .post('/api/v1/transactions/batch')
+        .set('Authorization', `Bearer ${token}`)
+        .set('Idempotency-Key', `batch-${Date.now()}-1`)
+        .send({
+          operations: [
+            {
+              op: 'create',
+              account: 'Income',
+              amountMinor: 5000,
+              date: '2026-09-06',
+              time: '14:01',
+              category: '@Batch salary',
+              comment: '',
+            },
+            { op: 'update', id: existing.body.id, amountMinor: -200 },
+            { op: 'delete', id: 'tx_does_not_exist' },
+          ],
+        });
+      expect(response.status).toBe(200);
+      expect(response.body.atomic).toBe(false);
+      expect(response.body.results[0]).toMatchObject({ op: 'create', status: 'created' });
+      expect(response.body.results[1]).toMatchObject({
+        op: 'update',
+        status: 'updated',
+        id: existing.body.id,
+      });
+      expect(response.body.results[1].transaction.amountMinor).toBe(-200);
+      expect(response.body.results[2]).toMatchObject({ op: 'delete', status: 'error' });
+    });
+
+    it('rolls back the whole batch atomically when one operation fails', async () => {
+      const token = await bulkToken();
+      const existing = await sessionRequest('post', '/api/v1/transactions').send({
+        account: 'Daily',
+        amountMinor: -300,
+        date: '2026-09-06',
+        time: '14:02',
+        category: '@Batch atomic',
+        comment: '',
+      });
+      const response = await request(app)
+        .post('/api/v1/transactions/batch')
+        .set('Authorization', `Bearer ${token}`)
+        .set('Idempotency-Key', `batch-${Date.now()}-2`)
+        .send({
+          atomic: true,
+          operations: [
+            { op: 'delete', id: existing.body.id },
+            { op: 'delete', id: 'tx_does_not_exist' },
+          ],
+        });
+      expect(response.status).toBe(200);
+      expect(response.body.results[0]).toMatchObject({ status: 'not_applied' });
+      expect(response.body.results[1]).toMatchObject({ status: 'error' });
+      const stillThere = await sessionRequest('get', `/api/v1/transactions/${existing.body.id}`);
+      expect(stillThere.status).toBe(200);
+    });
+
+    it('replays the same result for a repeated Idempotency-Key without reapplying the write', async () => {
+      const token = await bulkToken();
+      const key = `batch-${Date.now()}-3`;
+      const body = {
+        operations: [
+          {
+            op: 'create',
+            account: 'Daily',
+            amountMinor: -400,
+            date: '2026-09-06',
+            time: '14:03',
+            category: '@Batch idempotent',
+            comment: '',
+          },
+        ],
+      };
+      const first = await request(app)
+        .post('/api/v1/transactions/batch')
+        .set('Authorization', `Bearer ${token}`)
+        .set('Idempotency-Key', key)
+        .send(body);
+      expect(first.status).toBe(200);
+      const createdId = first.body.results[0].id;
+
+      const replay = await request(app)
+        .post('/api/v1/transactions/batch')
+        .set('Authorization', `Bearer ${token}`)
+        .set('Idempotency-Key', key)
+        .send(body);
+      expect(replay.status).toBe(200);
+      expect(replay.body).toEqual(first.body);
+
+      const list = await sessionRequest('get', '/api/v1/transactions');
+      expect(
+        list.body.transactions.filter((transaction) => transaction.id === createdId),
+      ).toHaveLength(1);
+    });
+
+    it('rejects a reused Idempotency-Key sent with a different body', async () => {
+      const token = await bulkToken();
+      const key = `batch-${Date.now()}-4`;
+      await request(app)
+        .post('/api/v1/transactions/batch')
+        .set('Authorization', `Bearer ${token}`)
+        .set('Idempotency-Key', key)
+        .send({
+          operations: [
+            {
+              op: 'create',
+              account: 'Daily',
+              amountMinor: -1,
+              date: '2026-09-06',
+              time: '14:04',
+              category: '@A',
+              comment: '',
+            },
+          ],
+        });
+
+      const mismatched = await request(app)
+        .post('/api/v1/transactions/batch')
+        .set('Authorization', `Bearer ${token}`)
+        .set('Idempotency-Key', key)
+        .send({
+          operations: [
+            {
+              op: 'create',
+              account: 'Daily',
+              amountMinor: -2,
+              date: '2026-09-06',
+              time: '14:05',
+              category: '@B',
+              comment: '',
+            },
+          ],
+        });
+      expect(mismatched.status).toBe(409);
+      expect(mismatched.body.code).toBe('conflict_idempotency_mismatch');
+    });
+
+    it('requires an Idempotency-Key header', async () => {
+      const token = await bulkToken();
+      const response = await request(app)
+        .post('/api/v1/transactions/batch')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ operations: [{ op: 'delete', id: 'tx_x' }] });
+      expect(response.status).toBe(400);
+      expect(response.body.code).toBe('validation_invalid');
+    });
+
+    it('rejects more than 100 operations', async () => {
+      const token = await bulkToken();
+      const response = await request(app)
+        .post('/api/v1/transactions/batch')
+        .set('Authorization', `Bearer ${token}`)
+        .set('Idempotency-Key', `batch-${Date.now()}-5`)
+        .send({ operations: Array.from({ length: 101 }, () => ({ op: 'delete', id: 'tx_x' })) });
+      expect(response.status).toBe(400);
+      expect(response.body.code).toBe('validation_invalid');
+    });
+
+    it('keeps batch operations isolated to the authenticated user document', async () => {
+      const token = await bulkToken();
+      const other = await sessionRequest('post', '/api/v1/transactions', secondUser.token).send({
+        account: 'Daily',
+        amountMinor: -50,
+        date: '2026-09-06',
+        time: '14:06',
+        category: '@Not yours',
+        comment: '',
+      });
+      const response = await request(app)
+        .post('/api/v1/transactions/batch')
+        .set('Authorization', `Bearer ${token}`)
+        .set('Idempotency-Key', `batch-${Date.now()}-6`)
+        .send({ operations: [{ op: 'delete', id: other.body.id }] });
+      expect(response.status).toBe(200);
+      expect(response.body.results[0]).toMatchObject({ status: 'error' });
+      const stillThere = await sessionRequest(
+        'get',
+        `/api/v1/transactions/${other.body.id}`,
+        secondUser.token,
+      );
+      expect(stillThere.status).toBe(200);
+    });
+
+    it('does not let two different users collide on the same literal Idempotency-Key', async () => {
+      const firstToken = await bulkToken();
+      const secondTokenCreate = await sessionRequest(
+        'post',
+        '/api/v1/auth/tokens',
+        secondUser.token,
+      ).send({
+        name: `bulk-agent-second-${Date.now()}`,
+        scopes: ['transactions:bulk'],
+      });
+      const secondToken = secondTokenCreate.body.token;
+      const sharedKey = 'shared-idempotency-key-across-users';
+
+      const firstResponse = await request(app)
+        .post('/api/v1/transactions/batch')
+        .set('Authorization', `Bearer ${firstToken}`)
+        .set('Idempotency-Key', sharedKey)
+        .send({
+          operations: [
+            {
+              op: 'create',
+              account: 'Daily',
+              amountMinor: -111,
+              date: '2026-09-06',
+              time: '14:07',
+              category: '@First user shared key',
+              comment: '',
+            },
+          ],
+        });
+      const secondResponse = await request(app)
+        .post('/api/v1/transactions/batch')
+        .set('Authorization', `Bearer ${secondToken}`)
+        .set('Idempotency-Key', sharedKey)
+        .send({
+          operations: [
+            {
+              op: 'create',
+              account: 'Daily',
+              amountMinor: -222,
+              date: '2026-09-06',
+              time: '14:08',
+              category: '@Second user shared key',
+              comment: '',
+            },
+          ],
+        });
+      expect(firstResponse.status).toBe(200);
+      expect(secondResponse.status).toBe(200);
+      expect(firstResponse.body.results[0].transaction.amountMinor).toBe(-111);
+      expect(secondResponse.body.results[0].transaction.amountMinor).toBe(-222);
+    });
   });
 
   it('creates a PAT once and exposes its identity to /me', async () => {

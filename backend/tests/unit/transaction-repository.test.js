@@ -3,6 +3,7 @@
 const { EncryptionSession } = require('@money/domain');
 const {
   filterAndSortTransactions,
+  batchTransactions,
   copyTransaction,
   createTransaction,
   deleteTransaction,
@@ -658,5 +659,196 @@ describe('transaction repository', () => {
       ),
     ).toEqual(['tx_1', 'tx_2']);
     expect(transactions.map((transaction) => transaction.id)).toEqual(['tx_1', 'tx_2']);
+  });
+});
+
+describe('batchTransactions', () => {
+  function batchDeps(document) {
+    let current = document;
+    return {
+      deps: {
+        usersDb: {
+          get: jest.fn(async () => structuredClone(current)),
+          insert: jest.fn(async (next) => {
+            current = { ...next, _rev: '2-b' };
+          }),
+        },
+        authDb: {
+          get: jest.fn(async () => ({
+            encryptionConfig: { key: 'default', encryptDatabase: false },
+          })),
+        },
+      },
+      getDocument: () => current,
+    };
+  }
+
+  const baseDocument = () => ({
+    _id: 'user_1',
+    _rev: '1-a',
+    createdAt: 't',
+    updatedAt: 't',
+    data: {
+      transactions: [
+        {
+          id: 'tx_existing',
+          account: 'Daily',
+          amount: -10,
+          date: '2026-09-06',
+          time: '09:00',
+          category: '@Food',
+          comment: '',
+        },
+      ],
+      mojo: { amount: 0, target: 100 },
+      smile: [],
+      fire: [],
+    },
+  });
+
+  it('applies a mix of create/update/delete in one document write', async () => {
+    const { deps, getDocument } = batchDeps(baseDocument());
+    const results = await batchTransactions(deps, 'user_1', [
+      {
+        op: 'create',
+        fields: {
+          account: 'Income',
+          amountMinor: 100000,
+          date: '2026-09-06',
+          time: '10:00',
+          category: '@Salary',
+          comment: '',
+        },
+      },
+      { op: 'update', id: 'tx_existing', fields: { amountMinor: -2000 } },
+      { op: 'delete', id: 'tx_existing_never_mind' },
+    ]);
+    expect(results[0]).toMatchObject({ op: 'create', status: 'created' });
+    expect(results[0].transaction).toMatchObject({ amountMinor: 100000 });
+    expect(results[1]).toMatchObject({ op: 'update', id: 'tx_existing', status: 'updated' });
+    expect(results[1].transaction).toMatchObject({ amountMinor: -2000 });
+    expect(results[2]).toMatchObject({
+      op: 'delete',
+      id: 'tx_existing_never_mind',
+      status: 'error',
+    });
+    expect(deps.usersDb.insert).toHaveBeenCalledTimes(1);
+    expect(getDocument().data.transactions).toHaveLength(2);
+  });
+
+  it('applies successful items and reports failures independently in non-atomic mode', async () => {
+    const { deps } = batchDeps(baseDocument());
+    const results = await batchTransactions(deps, 'user_1', [
+      { op: 'update', id: 'tx_missing', fields: { amountMinor: -500 } },
+      { op: 'delete', id: 'tx_existing' },
+    ]);
+    expect(results[0]).toMatchObject({ status: 'error' });
+    expect(results[1]).toMatchObject({ status: 'deleted' });
+    expect(deps.usersDb.insert).toHaveBeenCalledTimes(1);
+  });
+
+  it('rolls back everything in atomic mode when any operation fails', async () => {
+    const { deps, getDocument } = batchDeps(baseDocument());
+    const results = await batchTransactions(
+      deps,
+      'user_1',
+      [
+        { op: 'delete', id: 'tx_existing' },
+        { op: 'update', id: 'tx_missing', fields: { amountMinor: -500 } },
+      ],
+      { atomic: true },
+    );
+    expect(results[0]).toMatchObject({ status: 'not_applied' });
+    expect(results[1]).toMatchObject({ status: 'error' });
+    expect(deps.usersDb.insert).not.toHaveBeenCalled();
+    expect(getDocument().data.transactions).toHaveLength(1);
+  });
+
+  it('rolls back everything in atomic mode when a bucket-tag coupling violation is the failure', async () => {
+    const document = baseDocument();
+    document.data.smile = [
+      {
+        title: 'Holiday',
+        buckets: [{ id: 'flight', title: 'Flights', target: 10000, amount: 0 }],
+      },
+    ];
+    document.data.transactions.push({
+      id: 'tx_bucket',
+      account: 'Smile',
+      amount: -50,
+      date: '2026-09-06',
+      time: '09:00',
+      category: '@Holiday',
+      comment: '#bucket:Flights:50.00',
+    });
+    const { deps, getDocument } = batchDeps(document);
+    const results = await batchTransactions(
+      deps,
+      'user_1',
+      [
+        { op: 'delete', id: 'tx_existing' },
+        { op: 'update', id: 'tx_bucket', fields: { amountMinor: -7000 } },
+      ],
+      { atomic: true },
+    );
+    expect(results[0]).toMatchObject({ status: 'not_applied' });
+    expect(results[1]).toMatchObject({ status: 'error' });
+    expect(results[1].error).toMatch(/must be updated together/);
+    expect(deps.usersDb.insert).not.toHaveBeenCalled();
+    expect(getDocument().data.transactions).toHaveLength(2);
+  });
+
+  it('never writes when every operation is a pre-existing validation error', async () => {
+    const { deps } = batchDeps(baseDocument());
+    const results = await batchTransactions(deps, 'user_1', [
+      { op: 'create', error: 'amountMinor must be an integer.' },
+    ]);
+    expect(results[0]).toMatchObject({ status: 'error' });
+    expect(deps.usersDb.insert).not.toHaveBeenCalled();
+  });
+
+  it('reports a bucket-tag coupling violation as a per-item error without aborting the batch', async () => {
+    const document = baseDocument();
+    document.data.smile = [
+      {
+        title: 'Holiday',
+        buckets: [{ id: 'flight', title: 'Flights', target: 10000, amount: 0 }],
+      },
+    ];
+    document.data.transactions.push({
+      id: 'tx_bucket',
+      account: 'Smile',
+      amount: -50,
+      date: '2026-09-06',
+      time: '09:00',
+      category: '@Holiday',
+      comment: '#bucket:Flights:50.00',
+    });
+    const { deps } = batchDeps(document);
+    const results = await batchTransactions(deps, 'user_1', [
+      { op: 'update', id: 'tx_bucket', fields: { amountMinor: -7000 } },
+      { op: 'delete', id: 'tx_existing' },
+    ]);
+    expect(results[0]).toMatchObject({ status: 'error' });
+    expect(results[0].error).toMatch(/must be updated together/);
+    expect(results[1]).toMatchObject({ status: 'deleted' });
+  });
+
+  it('retries a CouchDB conflict on batch using a fresh document read', async () => {
+    const { deps } = batchDeps(baseDocument());
+    let writes = 0;
+    const originalInsert = deps.usersDb.insert;
+    deps.usersDb.insert = jest.fn(async (next) => {
+      writes += 1;
+      if (writes === 1) {
+        const error = new Error('conflict');
+        error.statusCode = 409;
+        throw error;
+      }
+      return originalInsert(next);
+    });
+    const results = await batchTransactions(deps, 'user_1', [{ op: 'delete', id: 'tx_existing' }]);
+    expect(results[0]).toMatchObject({ status: 'deleted' });
+    expect(writes).toBe(2);
   });
 });

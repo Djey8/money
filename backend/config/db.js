@@ -79,6 +79,16 @@ async function createIndexes() {
       name: 'email-index',
     });
 
+    // Serves verifyToken's per-request PAT lookup (cli/commands/token.js) —
+    // without this, every PAT-authenticated request does an unindexed scan
+    // of the whole auth database, which gets slower as more tokens exist.
+    await authDb.createIndex({
+      index: {
+        fields: ['type', 'tokenHash'],
+      },
+      name: 'auth-pat-token-hash-index',
+    });
+
     // Index for users database
     await usersDb.createIndex({
       index: {
@@ -104,6 +114,16 @@ async function createIndexes() {
         fields: ['userId', 'resource'],
       },
       name: 'audit-user-resource-index',
+    });
+
+    // Serves the Idempotency-Key replay lookup for bulk endpoints
+    // (findAuditEntryByIdempotencyKey, config/audit.js) — without this, that
+    // query falls back to an unindexed scan of the whole audit database.
+    await auditDb.createIndex({
+      index: {
+        fields: ['userId', 'resource', 'idempotencyKey'],
+      },
+      name: 'audit-idempotency-key-index',
     });
 
     console.log('Indexes created successfully');

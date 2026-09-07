@@ -4,7 +4,12 @@
  */
 'use strict';
 
-const { recordAuditEntry, queryAuditEntries, generateAuditId } = require('../../config/audit');
+const {
+  recordAuditEntry,
+  queryAuditEntries,
+  findAuditEntryByIdempotencyKey,
+  generateAuditId,
+} = require('../../config/audit');
 
 function makeMockAuditDb(docs = []) {
   const inserted = [];
@@ -160,6 +165,57 @@ describe('recordAuditEntry', () => {
         resource: 'transactions',
       }),
     ).rejects.toThrow(/tokenId is required/);
+  });
+
+  it('records idempotencyKey and requestHash when given', async () => {
+    const auditDb = makeMockAuditDb();
+    const doc = await recordAuditEntry(auditDb, {
+      userId: 'user1',
+      actor: { type: 'token', tokenId: 'pat_abc123' },
+      method: 'POST',
+      path: '/api/v1/transactions/batch',
+      resource: 'transactions',
+      itemCount: 2,
+      idempotencyKey: 'key-1',
+      requestHash: 'hash-1',
+    });
+
+    expect(doc.idempotencyKey).toBe('key-1');
+    expect(doc.requestHash).toBe('hash-1');
+  });
+});
+
+describe('findAuditEntryByIdempotencyKey', () => {
+  it('returns null when no idempotencyKey is given', async () => {
+    const auditDb = makeMockAuditDb([{ _id: 'a' }]);
+    await expect(
+      findAuditEntryByIdempotencyKey(auditDb, 'user1', 'transactions', undefined),
+    ).resolves.toBeNull();
+    expect(auditDb.find).not.toHaveBeenCalled();
+  });
+
+  it('returns null when no matching entry exists', async () => {
+    const auditDb = makeMockAuditDb([]);
+    await expect(
+      findAuditEntryByIdempotencyKey(auditDb, 'user1', 'transactions', 'key-1'),
+    ).resolves.toBeNull();
+  });
+
+  it('finds the matching entry by userId, resource, and idempotencyKey', async () => {
+    const match = {
+      _id: 'audit_1',
+      userId: 'user1',
+      resource: 'transactions',
+      idempotencyKey: 'key-1',
+    };
+    const auditDb = makeMockAuditDb([match]);
+    const found = await findAuditEntryByIdempotencyKey(auditDb, 'user1', 'transactions', 'key-1');
+    expect(found).toEqual(match);
+    expect(auditDb.find).toHaveBeenCalledWith(
+      expect.objectContaining({
+        selector: { userId: 'user1', resource: 'transactions', idempotencyKey: 'key-1' },
+      }),
+    );
   });
 });
 

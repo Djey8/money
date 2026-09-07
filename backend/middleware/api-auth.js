@@ -25,13 +25,17 @@ function getBearerToken(req) {
   return authorization.slice('Bearer '.length).trim() || null;
 }
 
+// `rw` is shorthand for the union of `r` and `w` only — it must never satisfy
+// `:bulk` or any other explicitly-granted level (docs/adr/0006's whole point
+// is that bulk/import/export need a separate, deliberate grant).
 function hasScope(scopes, requiredScope) {
   if (scopes.includes('admin')) return true;
   const [resource, level] = requiredScope.split(':');
   return scopes.some((scope) => {
     const [grantedResource, grantedLevel] = scope.split(':');
     if (grantedResource !== resource) return false;
-    return grantedLevel === level || grantedLevel === 'rw';
+    if (grantedLevel === level) return true;
+    return grantedLevel === 'rw' && (level === 'r' || level === 'w');
   });
 }
 
