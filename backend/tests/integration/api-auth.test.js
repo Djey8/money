@@ -1234,7 +1234,7 @@ describe('v1 API authentication and PAT management', () => {
         firstUser.userId,
         {
           asset: {
-            assets: [{ tag: 'Car', amount: 8000 }],
+            assets: [{ id: 'assets_fixture_car', tag: 'Car', amount: 8000 }],
             shares: [{ tag: 'MSFT', quantity: 10, price: 415 }],
             investments: [{ tag: 'Rental Unit A', amount: 180000, deposit: 30000 }],
           },
@@ -1272,12 +1272,12 @@ describe('v1 API authentication and PAT management', () => {
       const token = await reportsToken();
       await setBalanceSheetData(
         firstUser.userId,
-        { asset: { assets: [{ tag: 'Own asset', amount: 1000 }] } },
+        { asset: { assets: [{ id: 'assets_fixture_own', tag: 'Own asset', amount: 1000 }] } },
         {},
       );
       await setBalanceSheetData(
         secondUser.userId,
-        { asset: { assets: [{ tag: 'Only second user asset', amount: 999900 }] } },
+        { asset: { assets: [{ id: 'assets_fixture_other', tag: 'Only second user asset', amount: 999900 }] } },
         {},
       );
       const response = await request(app)
@@ -2796,6 +2796,200 @@ describe('v1 API authentication and PAT management', () => {
         .set('Authorization', `Bearer ${otherCreated.body.token}`)
         .send(planBody);
       expect(response.status).toBe(404);
+    });
+  });
+
+  describe('GET/POST /balance/assets and GET/PATCH/DELETE /balance/assets/:id', () => {
+    async function balanceToken(scopes) {
+      const created = await sessionRequest('post', '/api/v1/auth/tokens').send({
+        name: `balance-agent-${Date.now()}-${Math.random()}`,
+        scopes,
+      });
+      return created.body;
+    }
+
+    async function seedShare(userId, share) {
+      const usersDb = getUsersDb();
+      const doc = await usersDb.get(userId);
+      doc.data = doc.data || {};
+      doc.data.balance = doc.data.balance || {};
+      doc.data.balance.asset = doc.data.balance.asset || {};
+      doc.data.balance.asset.shares = [...(doc.data.balance.asset.shares || []), share];
+      await usersDb.insert(doc);
+    }
+
+    it('creates an asset and lists it, and audit logs the write', async () => {
+      const { token, tokenId } = await balanceToken(['balance:r', 'balance:w']);
+      const created = await request(app)
+        .post('/api/v1/balance/assets')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ tag: `Car ${Date.now()}`, amountMinor: 800000 });
+      expect(created.status).toBe(201);
+      expect(created.body.amountMinor).toBe(800000);
+      expect(created.body.id).toMatch(/^assets_/);
+
+      const list = await request(app).get('/api/v1/balance/assets').set('Authorization', `Bearer ${token}`);
+      expect(list.status).toBe(200);
+      expect(list.body.assets).toEqual(
+        expect.arrayContaining([expect.objectContaining({ id: created.body.id })]),
+      );
+
+      const auditEntries = await queryAuditEntries(getAuditDb(), firstUser.userId, {
+        resource: 'balance_assets',
+      });
+      expect(auditEntries).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ actor: { type: 'token', tokenId }, method: 'POST', resourceId: created.body.id }),
+        ]),
+      );
+    });
+
+    it('defaults amountMinor to 0 when omitted', async () => {
+      const { token } = await balanceToken(['balance:w']);
+      const response = await request(app)
+        .post('/api/v1/balance/assets')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ tag: `No Amount ${Date.now()}` });
+      expect(response.status).toBe(201);
+      expect(response.body.amountMinor).toBe(0);
+    });
+
+    it('gets a single asset by id and returns 404 for one that does not exist', async () => {
+      const { token } = await balanceToken(['balance:r', 'balance:w']);
+      const created = await request(app)
+        .post('/api/v1/balance/assets')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ tag: `Get Test ${Date.now()}`, amountMinor: 100 });
+      const found = await request(app)
+        .get(`/api/v1/balance/assets/${created.body.id}`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(found.status).toBe(200);
+      expect(found.body.id).toBe(created.body.id);
+
+      const missing = await request(app)
+        .get('/api/v1/balance/assets/assets_does_not_exist')
+        .set('Authorization', `Bearer ${token}`);
+      expect(missing.status).toBe(404);
+      expect(missing.body.code).toBe('not_found');
+    });
+
+    it('updates only the fields provided and audit logs the write', async () => {
+      const { token, tokenId } = await balanceToken(['balance:r', 'balance:w']);
+      const created = await request(app)
+        .post('/api/v1/balance/assets')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ tag: `Patch Test ${Date.now()}`, amountMinor: 100 });
+      const response = await request(app)
+        .patch(`/api/v1/balance/assets/${created.body.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ amountMinor: 500 });
+      expect(response.status).toBe(200);
+      expect(response.body.amountMinor).toBe(500);
+      expect(response.body.tag).toBe(created.body.tag);
+
+      const auditEntries = await queryAuditEntries(getAuditDb(), firstUser.userId, {
+        resource: 'balance_assets',
+      });
+      expect(auditEntries).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ actor: { type: 'token', tokenId }, method: 'PATCH', resourceId: created.body.id }),
+        ]),
+      );
+    });
+
+    it('deletes an asset, and audit logs the write', async () => {
+      const { token, tokenId } = await balanceToken(['balance:r', 'balance:w']);
+      const created = await request(app)
+        .post('/api/v1/balance/assets')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ tag: `Delete Test ${Date.now()}`, amountMinor: 100 });
+      const response = await request(app)
+        .delete(`/api/v1/balance/assets/${created.body.id}`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({ id: created.body.id });
+
+      const getResponse = await request(app)
+        .get(`/api/v1/balance/assets/${created.body.id}`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(getResponse.status).toBe(404);
+
+      const auditEntries = await queryAuditEntries(getAuditDb(), firstUser.userId, {
+        resource: 'balance_assets',
+      });
+      expect(auditEntries).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ actor: { type: 'token', tokenId }, method: 'DELETE', resourceId: created.body.id }),
+        ]),
+      );
+    });
+
+    it('rejects a tag that collides with an existing asset', async () => {
+      const { token } = await balanceToken(['balance:w']);
+      const tag = `Duplicate ${Date.now()}`;
+      const first = await request(app)
+        .post('/api/v1/balance/assets')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ tag, amountMinor: 100 });
+      expect(first.status).toBe(201);
+      const second = await request(app)
+        .post('/api/v1/balance/assets')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ tag, amountMinor: 200 });
+      expect(second.status).toBe(400);
+      expect(second.body.code).toBe('validation_invalid');
+    });
+
+    it('rejects a tag that collides with an existing share', async () => {
+      const { token } = await balanceToken(['balance:w']);
+      const tag = `Shared Tag ${Date.now()}`;
+      await seedShare(firstUser.userId, { tag, quantity: 10, price: 415 });
+      const response = await request(app)
+        .post('/api/v1/balance/assets')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ tag, amountMinor: 100 });
+      expect(response.status).toBe(400);
+      expect(response.body.code).toBe('validation_invalid');
+    });
+
+    it('rejects requests without the balance:r/balance:w scopes', async () => {
+      const { token: writeOnly } = await balanceToken(['balance:w']);
+      const getResponse = await request(app)
+        .get('/api/v1/balance/assets')
+        .set('Authorization', `Bearer ${writeOnly}`);
+      expect(getResponse.status).toBe(403);
+      expect(getResponse.body.code).toBe('scope_insufficient');
+
+      const { token: readOnly } = await balanceToken(['balance:r']);
+      const postResponse = await request(app)
+        .post('/api/v1/balance/assets')
+        .set('Authorization', `Bearer ${readOnly}`)
+        .send({ tag: 'Should Not Save', amountMinor: 1 });
+      expect(postResponse.status).toBe(403);
+      expect(postResponse.body.code).toBe('scope_insufficient');
+    });
+
+    it('keeps assets isolated to the authenticated user document', async () => {
+      const { token } = await balanceToken(['balance:r', 'balance:w']);
+      const otherCreated = await sessionRequest('post', '/api/v1/auth/tokens', secondUser.token).send({
+        name: `balance-other-${Date.now()}`,
+        scopes: ['balance:w'],
+      });
+      const otherAsset = await request(app)
+        .post('/api/v1/balance/assets')
+        .set('Authorization', `Bearer ${otherCreated.body.token}`)
+        .send({ tag: `Only Other User Asset ${Date.now()}`, amountMinor: 999900 });
+      expect(otherAsset.status).toBe(201);
+
+      const list = await request(app).get('/api/v1/balance/assets').set('Authorization', `Bearer ${token}`);
+      expect(list.body.assets).not.toEqual(
+        expect.arrayContaining([expect.objectContaining({ id: otherAsset.body.id })]),
+      );
+
+      const getResponse = await request(app)
+        .get(`/api/v1/balance/assets/${otherAsset.body.id}`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(getResponse.status).toBe(404);
     });
   });
 

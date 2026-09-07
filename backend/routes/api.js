@@ -41,6 +41,13 @@ const {
   deleteFireProject,
   createFirePaymentPlan,
 } = require('../repositories/fire-repository');
+const {
+  listAssets,
+  getAsset,
+  createAsset,
+  updateAsset,
+  deleteAsset,
+} = require('../repositories/asset-repository');
 const { getUsersDb, getAuthDb } = require('../config/db');
 const { getEncryptionSession } = require('../services/encryption-session');
 const {
@@ -496,6 +503,32 @@ function validateCreatePaymentPlanInput(input) {
     (!Number.isInteger(input.manualAmountMinor) || input.manualAmountMinor <= 0)
   ) {
     return 'manualAmountMinor must be a positive integer.';
+  }
+  return null;
+}
+
+function validateCreateAssetInput(input) {
+  if (!input || typeof input !== 'object') return 'An asset object is required.';
+  if (!isNonEmptyString(input.tag)) return 'tag must be a non-empty string.';
+  if (input.amountMinor !== undefined && !Number.isInteger(input.amountMinor)) {
+    return 'amountMinor must be an integer.';
+  }
+  return null;
+}
+
+const EDITABLE_ASSET_FIELDS = ['tag', 'amountMinor'];
+
+function validatePatchAssetInput(input) {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) {
+    return 'An asset object is required.';
+  }
+  const unknownField = Object.keys(input).find((key) => !EDITABLE_ASSET_FIELDS.includes(key));
+  if (unknownField) return `${unknownField} is not an editable field.`;
+  if (input.tag !== undefined && !isNonEmptyString(input.tag)) {
+    return 'tag must be a non-empty string.';
+  }
+  if (input.amountMinor !== undefined && !Number.isInteger(input.amountMinor)) {
+    return 'amountMinor must be an integer.';
   }
   return null;
 }
@@ -1248,6 +1281,115 @@ router.post('/fire/:projectId/payment-plan', requireScope('fire:w'), async (req,
     if (error.code === 'PAYMENT_PLAN_INVALID') {
       return problem(res, 400, 'validation_invalid', 'Invalid payment plan request', error.message);
     }
+    return next(error);
+  }
+});
+
+router.get('/balance/assets', requireScope('balance:r'), async (req, res, next) => {
+  try {
+    const assets = await listAssets({ usersDb: getUsersDb(), authDb: getAuthDb() }, req.userId);
+    return res.json({ assets });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.post('/balance/assets', requireScope('balance:w'), async (req, res, next) => {
+  const validationError = validateCreateAssetInput(req.body);
+  if (validationError) {
+    return problem(res, 400, 'validation_invalid', 'Invalid asset request', validationError);
+  }
+  try {
+    const asset = await createAsset(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+      req.body,
+    );
+    await recordAuditEntry(getAuditDb(), {
+      userId: req.userId,
+      actor: auditActor(req.auth),
+      method: req.method,
+      path: req.baseUrl + req.path,
+      resource: 'balance_assets',
+      resourceId: asset.id,
+    });
+    return res.status(201).json(asset);
+  } catch (error) {
+    if (error.code === 'ASSET_DUPLICATE_TAG') {
+      return problem(res, 400, 'validation_invalid', 'Invalid asset request', error.message);
+    }
+    return next(error);
+  }
+});
+
+router.get('/balance/assets/:assetId', requireScope('balance:r'), async (req, res, next) => {
+  try {
+    const asset = await getAsset(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+      req.params.assetId,
+    );
+    if (!asset) {
+      return problem(res, 404, 'not_found', 'Asset not found', 'No matching asset exists.');
+    }
+    return res.json(asset);
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.patch('/balance/assets/:assetId', requireScope('balance:w'), async (req, res, next) => {
+  const validationError = validatePatchAssetInput(req.body);
+  if (validationError) {
+    return problem(res, 400, 'validation_invalid', 'Invalid asset request', validationError);
+  }
+  try {
+    const asset = await updateAsset(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+      req.params.assetId,
+      req.body,
+    );
+    if (!asset) {
+      return problem(res, 404, 'not_found', 'Asset not found', 'No matching asset exists.');
+    }
+    await recordAuditEntry(getAuditDb(), {
+      userId: req.userId,
+      actor: auditActor(req.auth),
+      method: req.method,
+      path: req.baseUrl + req.path,
+      resource: 'balance_assets',
+      resourceId: asset.id,
+    });
+    return res.json(asset);
+  } catch (error) {
+    if (error.code === 'ASSET_DUPLICATE_TAG') {
+      return problem(res, 400, 'validation_invalid', 'Invalid asset request', error.message);
+    }
+    return next(error);
+  }
+});
+
+router.delete('/balance/assets/:assetId', requireScope('balance:w'), async (req, res, next) => {
+  try {
+    const deleted = await deleteAsset(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+      req.params.assetId,
+    );
+    if (!deleted) {
+      return problem(res, 404, 'not_found', 'Asset not found', 'No matching asset exists.');
+    }
+    await recordAuditEntry(getAuditDb(), {
+      userId: req.userId,
+      actor: auditActor(req.auth),
+      method: req.method,
+      path: req.baseUrl + req.path,
+      resource: 'balance_assets',
+      resourceId: req.params.assetId,
+    });
+    return res.json({ id: req.params.assetId });
+  } catch (error) {
     return next(error);
   }
 });

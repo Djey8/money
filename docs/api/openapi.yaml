@@ -1159,6 +1159,137 @@ paths:
           $ref: '#/components/responses/InsufficientScope'
         '404':
           $ref: '#/components/responses/NotFound'
+  /balance/assets:
+    get:
+      operationId: listAssets
+      summary: List assets
+      description: >-
+        Returns every asset owned by the caller (ASSET-1/2/3). Existing assets must first receive stable IDs through
+        `mm-admin migrate-balance-entity-ids --collection assets` (the legacy storage shape has no id, only `tag`).
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Assets owned by the caller
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [assets]
+                properties:
+                  assets:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Asset'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+    post:
+      operationId: createAsset
+      summary: Create an asset
+      description: >-
+        `tag` must not collide (case-sensitive exact match) with an existing Asset, Share, or Investment tag —
+        these three entity types share one tag namespace in the original app, since a `Transaction.category` like
+        `@Car` must unambiguously resolve to one balance-sheet entry. Liabilities have their own separate tag
+        namespace and are not part of this check.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAssetRequest'
+            example:
+              tag: Car
+              amountMinor: 800000
+      responses:
+        '201':
+          description: Created asset
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Asset'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+  /balance/assets/{assetId}:
+    parameters:
+      - name: assetId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getAsset
+      summary: Get a single asset
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The asset
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Asset'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      operationId: updateAsset
+      summary: Update an asset
+      description: Accepts a partial body — only the fields you send are changed. A changed `tag` is checked for the same cross-entity collision `POST /balance/assets` checks, against the caller's other assets/shares/investments (not against itself).
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchAssetRequest'
+            example:
+              amountMinor: 900000
+      responses:
+        '200':
+          description: Updated asset
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Asset'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      operationId: deleteAsset
+      summary: Delete an asset
+      description: Not reversible through the API.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Asset deleted
+          content:
+            application/json:
+              example:
+                id: assets_01234567-89ab-cdef-0123-456789abcdef
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
   /me:
     get:
       operationId: getCurrentIdentity
@@ -2150,6 +2281,33 @@ components:
         updatedAt:
           type: string
           format: date-time
+    Asset:
+      type: object
+      required: [id, tag, amountMinor]
+      properties:
+        id:
+          type: string
+        tag:
+          type: string
+        amountMinor:
+          type: integer
+    CreateAssetRequest:
+      type: object
+      required: [tag]
+      properties:
+        tag:
+          type: string
+        amountMinor:
+          type: integer
+          description: Defaults to 0 when omitted.
+    PatchAssetRequest:
+      type: object
+      description: All fields optional — send only what you want to change. Unrecognized fields are rejected.
+      properties:
+        tag:
+          type: string
+        amountMinor:
+          type: integer
     CreateTransactionRequest:
       type: object
       required: [account, amountMinor, date, time, category, comment]

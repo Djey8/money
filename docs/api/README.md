@@ -229,3 +229,25 @@ curl -X POST "http://localhost:3000/api/v1/smile/smile_<id>/payment-plan" \
   -H "Content-Type: application/json" \
   -d '{"planTitle": "Flight Fund", "startDate": "2026-01-01", "targetDate": "2026-04-01", "frequency": "monthly", "account": "Daily"}'
 ```
+
+## List, create, get, update, or delete assets
+
+Requires a PAT with `balance:r` (list/get) or `balance:w` (create/update/delete). `tag` must not collide with an existing Asset, Share, or Investment tag — see `docs/api/AGENTS.md` for the full cross-entity uniqueness rule.
+
+```bash
+curl "http://localhost:3000/api/v1/balance/assets" \
+  -H "Authorization: Bearer $MONEY_MANAGER_TOKEN"
+
+curl -X POST "http://localhost:3000/api/v1/balance/assets" \
+  -H "Authorization: Bearer $MONEY_MANAGER_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"tag": "Car", "amountMinor": 800000}'
+
+curl -X PATCH "http://localhost:3000/api/v1/balance/assets/assets_<id>" \
+  -H "Authorization: Bearer $MONEY_MANAGER_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"amountMinor": 900000}'
+
+curl -X DELETE "http://localhost:3000/api/v1/balance/assets/assets_<id>" \
+  -H "Authorization: Bearer $MONEY_MANAGER_TOKEN"
+```

@@ -142,3 +142,12 @@ Every Pro API write is audit logged. Prefer narrowly scoped, expiring tokens and
 6. The plan is appended to the target project's `plannedSubscriptions` array — fetch the project again (`GET /smile/{id}` or `GET /fire/{id}`) to see it alongside any others.
 7. Returns `404` uniformly for a project id that doesn't exist or belongs to another user.
 8. `POST` is audit logged.
+
+## List, create, get, update, or delete assets
+
+1. `GET/POST /api/v1/balance/assets` and `GET/PATCH/DELETE /api/v1/balance/assets/{id}` require `balance:r`/`balance:w`. An asset is just a `{tag, amountMinor}` pair — a simple named value (ASSET-1/2/3), no linked Grow project or bucket structure.
+2. `tag` must not collide (case-sensitive exact match) with an existing Asset, Share, *or* Investment tag — these three entity types share one tag namespace in the original app, since a `Transaction.category` like `@Car` must unambiguously resolve to one balance-sheet entry. This applies on both `POST` and a `PATCH` that changes `tag` (checked against the caller's other assets/shares/investments, not against itself). Liabilities have their own separate tag namespace and are never part of this check.
+3. Existing assets need `mm-admin migrate-balance-entity-ids --collection assets` run first (the legacy storage shape has no id, only `tag`) — same pattern as Smile/Fire's own migration tool, just a different CLI command since assets live at a nested storage path (`data.balance.asset.assets`) rather than a top-level array.
+4. `PATCH` is partial — send only the fields you want to change (`tag` and/or `amountMinor`).
+5. `DELETE` is not reversible through the API.
+6. `POST`/`PATCH`/`DELETE` are audit logged.
