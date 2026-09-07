@@ -109,3 +109,18 @@ Every Pro API write is audit logged. Prefer narrowly scoped, expiring tokens and
 7. Moving `phase` to `completed` stamps `completionDate` automatically if one isn't already set (matching the UI's quick "advance phase" action) — but never overwrites an explicit `completionDate` sent in the same request, and moving away from `completed` never clears a previously-set `completionDate`.
 8. `DELETE` is not reversible through the API.
 9. `PATCH`/`DELETE` are audit logged.
+
+## List or create Fire projects
+
+1. `GET /api/v1/fire` requires `fire:r` and returns every Fire project owned by the caller, with the same computed `totals` field as Smile. `POST /api/v1/fire` requires `fire:w` and follows the exact same rules as `POST /api/v1/smile` — either `targetMinor` (optionally with `amountMinor`) or a non-empty `buckets` array, a case-sensitive exact-match title-collision check, server-generated `notes[].createdAt`.
+2. Fire and Smile projects are stored, validated, and shaped identically — the only difference between the two APIs is which CouchDB array they read/write (`data.fire` vs `data.smile`). If you've integrated one, the other needs no new logic beyond swapping the path and scope.
+3. Existing Fire projects created before this endpoint shipped need `mm-admin migrate-fund-project-ids --collection fire` run first, same as Smile.
+4. `POST` is audit logged.
+
+## Get, update, or delete a single Fire project
+
+1. `GET /api/v1/fire/{id}` requires `fire:r`. `PATCH`/`DELETE` require `fire:w`. All three return `404` uniformly for an id that doesn't exist or belongs to another user.
+2. Every rule from "Get, update, or delete a single Smile project" above applies unchanged: partial body with full-array-replace for `buckets`/`links`/`actionItems`/`notes`, echo-back-`id`/`createdAt` to preserve identity, required non-defaulted `done` on `actionItems`, duplicate-bucket-id rejection, case-sensitive title-collision check against the caller's other Fire projects, and the `completionDate` auto-stamp on `phase` → `completed`.
+3. One deliberate divergence from the UI: the Fire edit form's `updateFireEmergencie()` also auto-*clears* `completionDate` back to `''` on save when its local date field is empty and `phase` isn't `completed` — a side effect of that form always resubmitting the whole record. This API does **not** replicate that clear, since `PATCH` is a partial update: omitting `completionDate` from a request never touches it, matching every other omitted field. There is currently no way to explicitly clear an already-set `completionDate` through this endpoint, only to overwrite it with a new value.
+4. `DELETE` is not reversible through the API.
+5. `PATCH`/`DELETE` are audit logged.

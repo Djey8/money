@@ -1924,6 +1924,429 @@ describe('v1 API authentication and PAT management', () => {
     });
   });
 
+  describe('GET/POST /fire', () => {
+    async function fireToken(scopes) {
+      const created = await sessionRequest('post', '/api/v1/auth/tokens').send({
+        name: `fire-agent-${Date.now()}-${Math.random()}`,
+        scopes,
+      });
+      return created.body;
+    }
+
+    // Appends rather than overwrites data.fire, so this stays safe to call
+    // from more than one test in this block regardless of execution order —
+    // it never clobbers a project another test already created via POST.
+    async function addFireProjects(userId, projects) {
+      const usersDb = getUsersDb();
+      const doc = await usersDb.get(userId);
+      doc.data = doc.data || {};
+      doc.data.fire = [...(doc.data.fire || []), ...projects];
+      await usersDb.insert(doc);
+    }
+
+    it('lists Fire projects with computed bucket totals', async () => {
+      const { token } = await fireToken(['fire:r']);
+      await addFireProjects(firstUser.userId, [
+        {
+          id: 'fire_list_1',
+          title: 'Vacation',
+          sub: '',
+          phase: 'saving',
+          description: '',
+          buckets: [{ id: 'b1', title: 'Flights', target: 1500, amount: 200 }],
+          links: [],
+          actionItems: [],
+          notes: [],
+          createdAt: '2026-01-01T00:00:00.000Z',
+          updatedAt: '2026-01-01T00:00:00.000Z',
+        },
+      ]);
+      const response = await request(app).get('/api/v1/fire').set('Authorization', `Bearer ${token}`);
+      expect(response.status).toBe(200);
+      const project = response.body.projects.find((p) => p.id === 'fire_list_1');
+      expect(project.buckets[0]).toMatchObject({ targetMinor: 150000, amountMinor: 20000 });
+      expect(project.totals).toMatchObject({ targetMinor: 150000, amountMinor: 20000 });
+    });
+
+    it('creates a project with a default bucket from targetMinor and audit logs the write', async () => {
+      const { token, tokenId } = await fireToken(['fire:w']);
+      const response = await request(app)
+        .post('/api/v1/fire')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ title: `Integration Vacation ${Date.now()}`, targetMinor: 150000 });
+      expect(response.status).toBe(201);
+      expect(response.body.buckets).toHaveLength(1);
+      expect(response.body.totals.targetMinor).toBe(150000);
+      const auditEntries = await queryAuditEntries(getAuditDb(), firstUser.userId, { resource: 'fire' });
+      expect(auditEntries).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            actor: { type: 'token', tokenId },
+            method: 'POST',
+            resourceId: response.body.id,
+          }),
+        ]),
+      );
+    });
+
+    it('creates a project with custom buckets, links, action items, and notes', async () => {
+      const { token } = await fireToken(['fire:w']);
+      const response = await request(app)
+        .post('/api/v1/fire')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          title: `Integration Custom ${Date.now()}`,
+          buckets: [{ title: 'Flights', targetMinor: 150000 }, { title: 'Hotel', targetMinor: 80000 }],
+          links: [{ label: 'Trip site', url: 'https://example.com' }],
+          actionItems: [{ text: 'Book flights', priority: 'high' }],
+          notes: [{ text: 'Remember passports' }],
+        });
+      expect(response.status).toBe(201);
+      expect(response.body.buckets.map((b) => b.title)).toEqual(['Flights', 'Hotel']);
+      expect(response.body.totals.targetMinor).toBe(230000);
+      expect(response.body.links).toEqual([{ label: 'Trip site', url: 'https://example.com' }]);
+      expect(response.body.actionItems).toEqual([{ text: 'Book flights', done: false, priority: 'high' }]);
+      expect(response.body.notes).toEqual([
+        { text: 'Remember passports', createdAt: expect.any(String) },
+      ]);
+    });
+
+    it('rejects a project with neither targetMinor nor buckets', async () => {
+      const { token } = await fireToken(['fire:w']);
+      const response = await request(app)
+        .post('/api/v1/fire')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ title: `Integration No Target ${Date.now()}` });
+      expect(response.status).toBe(400);
+      expect(response.body.code).toBe('validation_invalid');
+    });
+
+    it('rejects a bucket whose title collides with the default target bucket', async () => {
+      const { token } = await fireToken(['fire:w']);
+      const title = `Integration Collision ${Date.now()}`;
+      const response = await request(app)
+        .post('/api/v1/fire')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ title, targetMinor: 100000, buckets: [{ title, targetMinor: 50000 }] });
+      expect(response.status).toBe(400);
+      expect(response.body.code).toBe('validation_invalid');
+    });
+
+    it('rejects two explicit buckets sharing a title (case-insensitively)', async () => {
+      const { token } = await fireToken(['fire:w']);
+      const response = await request(app)
+        .post('/api/v1/fire')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          title: `Integration Bucket Collision ${Date.now()}`,
+          buckets: [
+            { title: 'Flights', targetMinor: 50000 },
+            { title: 'FLIGHTS', targetMinor: 30000 },
+          ],
+        });
+      expect(response.status).toBe(400);
+      expect(response.body.code).toBe('validation_invalid');
+    });
+
+    it('rejects a title that exactly matches an existing project', async () => {
+      const { token } = await fireToken(['fire:w']);
+      const title = `Integration Dup ${Date.now()}`;
+      const first = await request(app)
+        .post('/api/v1/fire')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ title, targetMinor: 100000 });
+      expect(first.status).toBe(201);
+      const second = await request(app)
+        .post('/api/v1/fire')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ title, targetMinor: 50000 });
+      expect(second.status).toBe(400);
+      expect(second.body.code).toBe('validation_invalid');
+    });
+
+    it('rejects GET without fire:r and POST without fire:w', async () => {
+      const { token: readOnly } = await fireToken(['fire:r']);
+      const postResponse = await request(app)
+        .post('/api/v1/fire')
+        .set('Authorization', `Bearer ${readOnly}`)
+        .send({ title: 'Should be rejected', targetMinor: 1000 });
+      expect(postResponse.status).toBe(403);
+      expect(postResponse.body.code).toBe('scope_insufficient');
+
+      const { token: writeOnly } = await fireToken(['fire:w']);
+      const getResponse = await request(app).get('/api/v1/fire').set('Authorization', `Bearer ${writeOnly}`);
+      expect(getResponse.status).toBe(403);
+      expect(getResponse.body.code).toBe('scope_insufficient');
+    });
+
+    it('keeps Fire projects isolated to the authenticated user document', async () => {
+      const { token } = await fireToken(['fire:r']);
+      await addFireProjects(secondUser.userId, [
+        {
+          id: 'fire_second_user',
+          title: 'Only second user project',
+          sub: '',
+          phase: 'idea',
+          description: '',
+          buckets: [{ id: 'b1', title: 'Goal', target: 999900, amount: 0 }],
+          links: [],
+          actionItems: [],
+          notes: [],
+          createdAt: '2026-01-01T00:00:00.000Z',
+          updatedAt: '2026-01-01T00:00:00.000Z',
+        },
+      ]);
+      const response = await request(app).get('/api/v1/fire').set('Authorization', `Bearer ${token}`);
+      expect(response.status).toBe(200);
+      expect(response.body.projects).not.toEqual(
+        expect.arrayContaining([expect.objectContaining({ id: 'fire_second_user' })]),
+      );
+    });
+  });
+
+  describe('GET/PATCH/DELETE /fire/:id', () => {
+    async function fireToken(scopes) {
+      const created = await sessionRequest('post', '/api/v1/auth/tokens').send({
+        name: `fire-id-agent-${Date.now()}-${Math.random()}`,
+        scopes,
+      });
+      return created.body;
+    }
+
+    async function createProject(token, overrides = {}) {
+      const response = await request(app)
+        .post('/api/v1/fire')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ title: `Fire Id Test ${Date.now()}-${Math.random()}`, targetMinor: 100000, ...overrides });
+      expect(response.status).toBe(201);
+      return response.body;
+    }
+
+    it('gets a single project by id', async () => {
+      const { token } = await fireToken(['fire:r', 'fire:w']);
+      const created = await createProject(token);
+      const response = await request(app)
+        .get(`/api/v1/fire/${created.id}`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(response.status).toBe(200);
+      expect(response.body.id).toBe(created.id);
+    });
+
+    it('returns 404 for an id that does not exist', async () => {
+      const { token } = await fireToken(['fire:r']);
+      const response = await request(app)
+        .get('/api/v1/fire/fire_does_not_exist')
+        .set('Authorization', `Bearer ${token}`);
+      expect(response.status).toBe(404);
+      expect(response.body.code).toBe('not_found');
+    });
+
+    it('updates only the fields provided and audit logs the write', async () => {
+      const { token, tokenId } = await fireToken(['fire:r', 'fire:w']);
+      const created = await createProject(token);
+      const response = await request(app)
+        .patch(`/api/v1/fire/${created.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ phase: 'ready' });
+      expect(response.status).toBe(200);
+      expect(response.body.phase).toBe('ready');
+      expect(response.body.title).toBe(created.title);
+      const auditEntries = await queryAuditEntries(getAuditDb(), firstUser.userId, { resource: 'fire' });
+      expect(auditEntries).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ actor: { type: 'token', tokenId }, method: 'PATCH', resourceId: created.id }),
+        ]),
+      );
+    });
+
+    it('replaces buckets wholesale, preserving an echoed-back id and minting one for a new bucket', async () => {
+      const { token } = await fireToken(['fire:r', 'fire:w']);
+      const created = await createProject(token, { title: `Fire Bucket Patch ${Date.now()}` });
+      const existingBucketId = created.buckets[0].id;
+      const response = await request(app)
+        .patch(`/api/v1/fire/${created.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          buckets: [
+            { id: existingBucketId, title: created.buckets[0].title, targetMinor: 200000, amountMinor: 50000 },
+            { title: 'New Bucket', targetMinor: 30000 },
+          ],
+        });
+      expect(response.status).toBe(200);
+      expect(response.body.buckets[0]).toMatchObject({ id: existingBucketId, targetMinor: 200000, amountMinor: 50000 });
+      expect(response.body.buckets[1].id).not.toBe(existingBucketId);
+      expect(response.body.totals.targetMinor).toBe(230000);
+    });
+
+    it('rejects an unrecognized field', async () => {
+      const { token } = await fireToken(['fire:w']);
+      const created = await createProject(token);
+      const response = await request(app)
+        .patch(`/api/v1/fire/${created.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ notAField: true });
+      expect(response.status).toBe(400);
+      expect(response.body.code).toBe('validation_invalid');
+    });
+
+    it('rejects a title change that collides with another existing project', async () => {
+      const { token } = await fireToken(['fire:w']);
+      const first = await createProject(token, { title: `Fire Collision A ${Date.now()}` });
+      const second = await createProject(token, { title: `Fire Collision B ${Date.now()}` });
+      const response = await request(app)
+        .patch(`/api/v1/fire/${second.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ title: first.title });
+      expect(response.status).toBe(400);
+      expect(response.body.code).toBe('validation_invalid');
+    });
+
+    it('rejects a bucket patch with two buckets sharing a title', async () => {
+      const { token } = await fireToken(['fire:w']);
+      const created = await createProject(token);
+      const response = await request(app)
+        .patch(`/api/v1/fire/${created.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          buckets: [
+            { title: 'Flights', targetMinor: 100000 },
+            { title: 'FLIGHTS', targetMinor: 50000 },
+          ],
+        });
+      expect(response.status).toBe(400);
+      expect(response.body.code).toBe('validation_invalid');
+    });
+
+    it('rejects an actionItems patch where an item omits done', async () => {
+      const { token } = await fireToken(['fire:w']);
+      const created = await createProject(token);
+      const response = await request(app)
+        .patch(`/api/v1/fire/${created.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ actionItems: [{ text: 'Book flights' }] });
+      expect(response.status).toBe(400);
+      expect(response.body.code).toBe('validation_invalid');
+    });
+
+    it('rejects a bucket patch requesting the same existing id twice', async () => {
+      const { token } = await fireToken(['fire:w']);
+      const created = await createProject(token);
+      const existingBucketId = created.buckets[0].id;
+      const response = await request(app)
+        .patch(`/api/v1/fire/${created.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          buckets: [
+            { id: existingBucketId, title: 'Flights', targetMinor: 100000 },
+            { id: existingBucketId, title: 'Other', targetMinor: 50000 },
+          ],
+        });
+      expect(response.status).toBe(400);
+      expect(response.body.code).toBe('validation_invalid');
+    });
+
+    it('stamps a completion date when a patch moves phase to completed without one already set', async () => {
+      const { token } = await fireToken(['fire:w']);
+      const created = await createProject(token);
+      const response = await request(app)
+        .patch(`/api/v1/fire/${created.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ phase: 'completed' });
+      expect(response.status).toBe(200);
+      expect(response.body.completionDate).toEqual(expect.any(String));
+    });
+
+    it('returns 404 when patching an id that does not exist', async () => {
+      const { token } = await fireToken(['fire:w']);
+      const response = await request(app)
+        .patch('/api/v1/fire/fire_does_not_exist')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ phase: 'ready' });
+      expect(response.status).toBe(404);
+      expect(response.body.code).toBe('not_found');
+    });
+
+    it('deletes a project and subsequently 404s on it, audit logging the write', async () => {
+      const { token, tokenId } = await fireToken(['fire:r', 'fire:w']);
+      const created = await createProject(token);
+      const deleteResponse = await request(app)
+        .delete(`/api/v1/fire/${created.id}`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(deleteResponse.status).toBe(200);
+      expect(deleteResponse.body).toEqual({ id: created.id });
+      const getResponse = await request(app)
+        .get(`/api/v1/fire/${created.id}`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(getResponse.status).toBe(404);
+      const auditEntries = await queryAuditEntries(getAuditDb(), firstUser.userId, { resource: 'fire' });
+      expect(auditEntries).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ actor: { type: 'token', tokenId }, method: 'DELETE', resourceId: created.id }),
+        ]),
+      );
+    });
+
+    it('returns 404 when deleting an id that does not exist', async () => {
+      const { token } = await fireToken(['fire:w']);
+      const response = await request(app)
+        .delete('/api/v1/fire/fire_does_not_exist')
+        .set('Authorization', `Bearer ${token}`);
+      expect(response.status).toBe(404);
+      expect(response.body.code).toBe('not_found');
+    });
+
+    it('rejects GET without fire:r, PATCH/DELETE without fire:w', async () => {
+      const { token: writeOnly } = await fireToken(['fire:w']);
+      const created = await createProject(writeOnly);
+
+      const { token: readOnly } = await fireToken(['fire:r']);
+      const getResponse = await request(app)
+        .get(`/api/v1/fire/${created.id}`)
+        .set('Authorization', `Bearer ${readOnly}`);
+      expect(getResponse.status).toBe(200);
+
+      const patchResponse = await request(app)
+        .patch(`/api/v1/fire/${created.id}`)
+        .set('Authorization', `Bearer ${readOnly}`)
+        .send({ phase: 'ready' });
+      expect(patchResponse.status).toBe(403);
+      expect(patchResponse.body.code).toBe('scope_insufficient');
+
+      const deleteResponse = await request(app)
+        .delete(`/api/v1/fire/${created.id}`)
+        .set('Authorization', `Bearer ${readOnly}`);
+      expect(deleteResponse.status).toBe(403);
+      expect(deleteResponse.body.code).toBe('scope_insufficient');
+    });
+
+    it('does not let one user read, patch, or delete another user\'s Fire project', async () => {
+      const { token: ownerToken } = await fireToken(['fire:w']);
+      const created = await createProject(ownerToken);
+
+      const otherUserFireToken = await sessionRequest('post', '/api/v1/auth/tokens', secondUser.token).send({
+        name: `fire-cross-user-${Date.now()}`,
+        scopes: ['fire:r', 'fire:w'],
+      });
+      const otherToken = otherUserFireToken.body.token;
+
+      const getResponse = await request(app)
+        .get(`/api/v1/fire/${created.id}`)
+        .set('Authorization', `Bearer ${otherToken}`);
+      expect(getResponse.status).toBe(404);
+
+      const patchResponse = await request(app)
+        .patch(`/api/v1/fire/${created.id}`)
+        .set('Authorization', `Bearer ${otherToken}`)
+        .send({ phase: 'ready' });
+      expect(patchResponse.status).toBe(404);
+
+      const deleteResponse = await request(app)
+        .delete(`/api/v1/fire/${created.id}`)
+        .set('Authorization', `Bearer ${otherToken}`);
+      expect(deleteResponse.status).toBe(404);
+    });
+  });
+
   it('creates a PAT once and exposes its identity to /me', async () => {
     const create = await sessionRequest('post', '/api/v1/auth/tokens').send({
       name: 'integration-agent',

@@ -839,7 +839,9 @@ paths:
         one that doesn't match) to add a new bucket — any existing bucket whose `id` isn't present in the new array
         is dropped. For `notes`, echo back an existing note's `createdAt` to preserve it; omit it on a new note to
         get a fresh server timestamp. A changed `title` is checked for an exact-match collision against the
-        caller's other Smile projects (not against itself).
+        caller's other Smile projects (not against itself). Moving `phase` to `completed` stamps `completionDate`
+        automatically if one isn't already set; it never overwrites an explicit `completionDate` sent in the same
+        request, and moving away from `completed` never clears a previously-set `completionDate`.
       security:
         - bearerAuth: []
       requestBody:
@@ -878,6 +880,156 @@ paths:
             application/json:
               example:
                 id: smile_01234567-89ab-cdef-0123-456789abcdef
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /fire:
+    get:
+      operationId: listFireProjects
+      summary: List Fire projects
+      description: >-
+        Returns every Fire project owned by the caller. Existing projects must first receive stable IDs through
+        `mm-admin migrate-fund-project-ids --collection fire` (the legacy storage shape has no project-level id,
+        only bucket-level ids). `totals` is a read-side aggregate (`packages/domain`'s `computeProjectTotals`) summed
+        across all of a project's buckets — not stored, computed on every read.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Fire projects owned by the caller
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [projects]
+                properties:
+                  projects:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FireProject'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+    post:
+      operationId: createFireProject
+      summary: Create a Fire project
+      description: >-
+        Either `targetMinor` (optionally with `amountMinor`, becoming a single default bucket named after the
+        project's title) or a non-empty `buckets` array is required — matching the UI's own Add Fire form, which
+        accepts either a flat target or custom buckets and merges both if given. `title` must not exactly match
+        (case-sensitively — the UI's own duplicate check is exact-match, not case-insensitive) an existing Fire
+        project's title.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateFireProjectRequest'
+            example:
+              title: Summer Vacation
+              phase: saving
+              buckets:
+                - title: Flights
+                  targetMinor: 150000
+                - title: Hotel
+                  targetMinor: 80000
+      responses:
+        '201':
+          description: Created Fire project
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FireProject'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+  /fire/{projectId}:
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getFireProject
+      summary: Get a single Fire project
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The Fire project
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FireProject'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      operationId: updateFireProject
+      summary: Update a Fire project
+      description: >-
+        Accepts a partial body — only the fields you send are changed. `buckets`/`links`/`actionItems`/`notes`, when
+        sent, each REPLACE the entire array (not a per-item merge) — send the complete list you want, including
+        unchanged entries. For `buckets`, echo back an existing bucket's `id` to edit it in place; omit `id` (or use
+        one that doesn't match) to add a new bucket — any existing bucket whose `id` isn't present in the new array
+        is dropped. For `notes`, echo back an existing note's `createdAt` to preserve it; omit it on a new note to
+        get a fresh server timestamp. A changed `title` is checked for an exact-match collision against the
+        caller's other Fire projects (not against itself). Moving `phase` to `completed` stamps `completionDate`
+        automatically if one isn't already set; it never overwrites an explicit `completionDate` sent in the same
+        request, and moving away from `completed` never clears a previously-set `completionDate`. Unlike the
+        original UI's edit form, an omitted `completionDate` is never auto-cleared — see `docs/api/AGENTS.md` for
+        this deliberate divergence.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchFireProjectRequest'
+            example:
+              phase: ready
+      responses:
+        '200':
+          description: Updated Fire project
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FireProject'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      operationId: deleteFireProject
+      summary: Delete a Fire project
+      description: Not reversible through the API.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Project deleted
+          content:
+            application/json:
+              example:
+                id: fire_01234567-89ab-cdef-0123-456789abcdef
         '401':
           $ref: '#/components/responses/AuthenticationRequired'
         '403':
@@ -1534,6 +1686,180 @@ components:
           type: string
           format: date
     PatchSmileProjectRequest:
+      type: object
+      description: All fields optional — send only what you want to change. Unrecognized fields are rejected.
+      properties:
+        title:
+          type: string
+        sub:
+          type: string
+        phase:
+          type: string
+          enum: [idea, planning, saving, ready, completed]
+        description:
+          type: string
+        targetDate:
+          type: string
+          format: date
+        completionDate:
+          type: string
+          format: date
+        buckets:
+          type: array
+          minItems: 1
+          description: Replaces the entire buckets array.
+          items:
+            $ref: '#/components/schemas/UpdateFundBucket'
+        links:
+          type: array
+          description: Replaces the entire links array.
+          items:
+            $ref: '#/components/schemas/FundLink'
+        actionItems:
+          type: array
+          description: Replaces the entire actionItems array. `done` is required on every item — see UpdateFundActionItem.
+          items:
+            $ref: '#/components/schemas/UpdateFundActionItem'
+        notes:
+          type: array
+          description: Replaces the entire notes array.
+          items:
+            $ref: '#/components/schemas/UpdateFundNote'
+    FireBucket:
+      type: object
+      required: [id, title, targetMinor, amountMinor]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        targetMinor:
+          type: integer
+        amountMinor:
+          type: integer
+        notes:
+          type: string
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/FundLink'
+        targetDate:
+          type: string
+          format: date
+        completionDate:
+          type: string
+          format: date
+    FireProject:
+      type: object
+      required:
+        - id
+        - title
+        - sub
+        - phase
+        - description
+        - buckets
+        - totals
+        - links
+        - actionItems
+        - notes
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        sub:
+          type: string
+        phase:
+          type: string
+          enum: [idea, planning, saving, ready, completed]
+        description:
+          type: string
+        targetDate:
+          type: string
+          format: date
+        completionDate:
+          type: string
+          format: date
+        buckets:
+          type: array
+          items:
+            $ref: '#/components/schemas/FireBucket'
+        totals:
+          $ref: '#/components/schemas/FundProjectTotals'
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/FundLink'
+        actionItems:
+          type: array
+          items:
+            $ref: '#/components/schemas/FundActionItem'
+        notes:
+          type: array
+          items:
+            $ref: '#/components/schemas/FundNote'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    CreateFireProjectRequest:
+      type: object
+      required: [title]
+      properties:
+        title:
+          type: string
+        sub:
+          type: string
+        phase:
+          type: string
+          enum: [idea, planning, saving, ready, completed]
+          default: idea
+        description:
+          type: string
+        targetDate:
+          type: string
+          format: date
+        targetMinor:
+          type: integer
+          description: Creates a single default bucket named after `title`. Either this or a non-empty `buckets` is required.
+        amountMinor:
+          type: integer
+          description: Only used together with `targetMinor`; defaults to 0.
+        buckets:
+          type: array
+          items:
+            type: object
+            required: [title, targetMinor]
+            properties:
+              title:
+                type: string
+              targetMinor:
+                type: integer
+              amountMinor:
+                type: integer
+                default: 0
+              notes:
+                type: string
+              targetDate:
+                type: string
+                format: date
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/FundLink'
+        actionItems:
+          type: array
+          items:
+            $ref: '#/components/schemas/CreateFundActionItem'
+        notes:
+          type: array
+          items:
+            $ref: '#/components/schemas/CreateFundNote'
+    PatchFireProjectRequest:
       type: object
       description: All fields optional — send only what you want to change. Unrecognized fields are rejected.
       properties:

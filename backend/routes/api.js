@@ -30,6 +30,14 @@ const {
   updateSmileProject,
   deleteSmileProject,
 } = require('../repositories/smile-repository');
+const {
+  FIRE_PHASES,
+  listFireProjects,
+  getFireProject,
+  createFireProject,
+  updateFireProject,
+  deleteFireProject,
+} = require('../repositories/fire-repository');
 const { getUsersDb, getAuthDb } = require('../config/db');
 const { getEncryptionSession } = require('../services/encryption-session');
 const {
@@ -310,6 +318,120 @@ function validatePatchSmileProjectInput(input) {
   }
   if (input.phase !== undefined && !SMILE_PHASES.includes(input.phase)) {
     return `phase must be one of ${SMILE_PHASES.join(', ')}.`;
+  }
+  if (input.buckets !== undefined) {
+    if (!Array.isArray(input.buckets) || input.buckets.length === 0) {
+      return 'buckets must be a non-empty array.';
+    }
+    for (const bucket of input.buckets) {
+      const bucketError = validateFundBucketInput(bucket);
+      if (bucketError) return bucketError;
+    }
+    if (findDuplicateBucketTitle(input.buckets.map((bucket) => bucket.title))) {
+      return 'Bucket titles must be unique within a project (case-insensitive).';
+    }
+    const requestedIds = input.buckets.map((bucket) => bucket.id).filter((id) => id !== undefined);
+    if (new Set(requestedIds).size !== requestedIds.length) {
+      return 'Two buckets in the same patch cannot request the same id.';
+    }
+  }
+  if (input.links !== undefined) {
+    if (!Array.isArray(input.links) || !input.links.every(validateFundLink)) {
+      return 'links must be an array of {label, url} objects.';
+    }
+  }
+  if (input.actionItems !== undefined) {
+    if (!Array.isArray(input.actionItems) || !input.actionItems.every(validateUpdateFundActionItem)) {
+      return 'actionItems must be an array of {text, done, priority?} objects — done is required here since this replaces the whole array.';
+    }
+  }
+  if (input.notes !== undefined) {
+    if (!Array.isArray(input.notes) || !input.notes.every(validateUpdateFundNote)) {
+      return 'notes must be an array of {text, createdAt?} objects.';
+    }
+  }
+  return null;
+}
+
+function validateCreateFireProjectInput(input) {
+  if (!input || typeof input !== 'object') return 'A Fire project object is required.';
+  if (!isNonEmptyString(input.title)) return 'title must be a non-empty string.';
+  const hasTarget = input.targetMinor !== undefined;
+  const hasBuckets = Array.isArray(input.buckets) && input.buckets.length > 0;
+  if (!hasTarget && !hasBuckets) {
+    return 'Either targetMinor or a non-empty buckets array is required.';
+  }
+  if (hasTarget) {
+    if (!Number.isInteger(input.targetMinor) || input.targetMinor <= 0) {
+      return 'targetMinor must be a positive integer.';
+    }
+    if (input.amountMinor !== undefined && (!Number.isInteger(input.amountMinor) || input.amountMinor < 0)) {
+      return 'amountMinor must be a non-negative integer.';
+    }
+  }
+  if (input.buckets !== undefined) {
+    if (!Array.isArray(input.buckets)) return 'buckets must be an array.';
+    for (const bucket of input.buckets) {
+      const bucketError = validateFundBucketInput(bucket);
+      if (bucketError) return bucketError;
+    }
+  }
+  const allBucketTitles = [];
+  if (hasTarget) allBucketTitles.push(input.title);
+  if (Array.isArray(input.buckets)) {
+    for (const bucket of input.buckets) allBucketTitles.push(bucket.title);
+  }
+  const duplicateTitle = findDuplicateBucketTitle(allBucketTitles);
+  if (duplicateTitle) {
+    return hasTarget && duplicateTitle === input.title.trim().toLowerCase()
+      ? 'A bucket cannot share a title with the project itself (targetMinor already creates a default bucket named after title).'
+      : 'Bucket titles must be unique within a project (case-insensitive).';
+  }
+  if (input.phase !== undefined && !FIRE_PHASES.includes(input.phase)) {
+    return `phase must be one of ${FIRE_PHASES.join(', ')}.`;
+  }
+  if (input.links !== undefined) {
+    if (!Array.isArray(input.links) || !input.links.every(validateFundLink)) {
+      return 'links must be an array of {label, url} objects.';
+    }
+  }
+  if (input.actionItems !== undefined) {
+    if (!Array.isArray(input.actionItems) || !input.actionItems.every(validateFundActionItem)) {
+      return 'actionItems must be an array of {text, done?, priority?} objects.';
+    }
+  }
+  if (input.notes !== undefined) {
+    if (!Array.isArray(input.notes) || !input.notes.every(validateFundNote)) {
+      return 'notes must be an array of {text} objects.';
+    }
+  }
+  return null;
+}
+
+const EDITABLE_FIRE_FIELDS = [
+  'title',
+  'sub',
+  'phase',
+  'description',
+  'targetDate',
+  'completionDate',
+  'buckets',
+  'links',
+  'actionItems',
+  'notes',
+];
+
+function validatePatchFireProjectInput(input) {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) {
+    return 'A Fire project object is required.';
+  }
+  const unknownField = Object.keys(input).find((key) => !EDITABLE_FIRE_FIELDS.includes(key));
+  if (unknownField) return `${unknownField} is not an editable field.`;
+  if (input.title !== undefined && !isNonEmptyString(input.title)) {
+    return 'title must be a non-empty string.';
+  }
+  if (input.phase !== undefined && !FIRE_PHASES.includes(input.phase)) {
+    return `phase must be one of ${FIRE_PHASES.join(', ')}.`;
   }
   if (input.buckets !== undefined) {
     if (!Array.isArray(input.buckets) || input.buckets.length === 0) {
@@ -916,6 +1038,115 @@ router.delete('/smile/:projectId', requireScope('smile:w'), async (req, res, nex
       method: req.method,
       path: req.baseUrl + req.path,
       resource: 'smile',
+      resourceId: req.params.projectId,
+    });
+    return res.json({ id: req.params.projectId });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.get('/fire', requireScope('fire:r'), async (req, res, next) => {
+  try {
+    const projects = await listFireProjects({ usersDb: getUsersDb(), authDb: getAuthDb() }, req.userId);
+    return res.json({ projects });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.post('/fire', requireScope('fire:w'), async (req, res, next) => {
+  const validationError = validateCreateFireProjectInput(req.body);
+  if (validationError) {
+    return problem(res, 400, 'validation_invalid', 'Invalid Fire project request', validationError);
+  }
+  try {
+    const project = await createFireProject(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+      req.body,
+    );
+    await recordAuditEntry(getAuditDb(), {
+      userId: req.userId,
+      actor: auditActor(req.auth),
+      method: req.method,
+      path: req.baseUrl + req.path,
+      resource: 'fire',
+      resourceId: project.id,
+    });
+    return res.status(201).json(project);
+  } catch (error) {
+    if (error.code === 'FIRE_DUPLICATE_TITLE') {
+      return problem(res, 400, 'validation_invalid', 'Invalid Fire project request', error.message);
+    }
+    return next(error);
+  }
+});
+
+router.get('/fire/:projectId', requireScope('fire:r'), async (req, res, next) => {
+  try {
+    const project = await getFireProject(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+      req.params.projectId,
+    );
+    if (!project) {
+      return problem(res, 404, 'not_found', 'Fire project not found', 'No matching Fire project exists.');
+    }
+    return res.json(project);
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.patch('/fire/:projectId', requireScope('fire:w'), async (req, res, next) => {
+  const validationError = validatePatchFireProjectInput(req.body);
+  if (validationError) {
+    return problem(res, 400, 'validation_invalid', 'Invalid Fire project request', validationError);
+  }
+  try {
+    const project = await updateFireProject(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+      req.params.projectId,
+      req.body,
+    );
+    if (!project) {
+      return problem(res, 404, 'not_found', 'Fire project not found', 'No matching Fire project exists.');
+    }
+    await recordAuditEntry(getAuditDb(), {
+      userId: req.userId,
+      actor: auditActor(req.auth),
+      method: req.method,
+      path: req.baseUrl + req.path,
+      resource: 'fire',
+      resourceId: project.id,
+    });
+    return res.json(project);
+  } catch (error) {
+    if (error.code === 'FIRE_DUPLICATE_TITLE') {
+      return problem(res, 400, 'validation_invalid', 'Invalid Fire project request', error.message);
+    }
+    return next(error);
+  }
+});
+
+router.delete('/fire/:projectId', requireScope('fire:w'), async (req, res, next) => {
+  try {
+    const deleted = await deleteFireProject(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+      req.params.projectId,
+    );
+    if (!deleted) {
+      return problem(res, 404, 'not_found', 'Fire project not found', 'No matching Fire project exists.');
+    }
+    await recordAuditEntry(getAuditDb(), {
+      userId: req.userId,
+      actor: auditActor(req.auth),
+      method: req.method,
+      path: req.baseUrl + req.path,
+      resource: 'fire',
       resourceId: req.params.projectId,
     });
     return res.json({ id: req.params.projectId });

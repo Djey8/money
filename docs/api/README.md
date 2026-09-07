@@ -178,3 +178,34 @@ curl -X PATCH "http://localhost:3000/api/v1/smile/smile_<id>" \
 curl -X DELETE "http://localhost:3000/api/v1/smile/smile_<id>" \
   -H "Authorization: Bearer $MONEY_MANAGER_TOKEN"
 ```
+
+## List or create Fire projects
+
+Requires a PAT with `fire:r` (list) or `fire:w` (create). Fire projects are shaped identically to Smile projects — see above for the create rules (either `targetMinor` or a non-empty `buckets` array).
+
+```bash
+curl "http://localhost:3000/api/v1/fire" \
+  -H "Authorization: Bearer $MONEY_MANAGER_TOKEN"
+
+curl -X POST "http://localhost:3000/api/v1/fire" \
+  -H "Authorization: Bearer $MONEY_MANAGER_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"title": "6-Month Emergency Fund", "targetMinor": 1200000}'
+```
+
+## Get, update, or delete a single Fire project
+
+Requires a PAT with `fire:r` (get) or `fire:w` (update/delete). Same partial-update / full-array-replace rules as Smile — see `docs/api/AGENTS.md` for the echo-back rules and the one deliberate divergence (no `completionDate` auto-clear).
+
+```bash
+curl "http://localhost:3000/api/v1/fire/fire_<id>" \
+  -H "Authorization: Bearer $MONEY_MANAGER_TOKEN"
+
+curl -X PATCH "http://localhost:3000/api/v1/fire/fire_<id>" \
+  -H "Authorization: Bearer $MONEY_MANAGER_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"phase": "completed"}'
+
+curl -X DELETE "http://localhost:3000/api/v1/fire/fire_<id>" \
+  -H "Authorization: Bearer $MONEY_MANAGER_TOKEN"
+```
