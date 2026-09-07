@@ -55,6 +55,13 @@ const {
   updateLiability,
   deleteLiability,
 } = require('../repositories/liability-repository');
+const {
+  listInvestments,
+  getInvestment,
+  createInvestment,
+  updateInvestment,
+  deleteInvestment,
+} = require('../repositories/investment-repository');
 const { getUsersDb, getAuthDb } = require('../config/db');
 const { getEncryptionSession } = require('../services/encryption-session');
 const {
@@ -574,6 +581,38 @@ function validatePatchLiabilityInput(input) {
   }
   if (input.investment !== undefined && typeof input.investment !== 'boolean') {
     return 'investment must be a boolean.';
+  }
+  return null;
+}
+
+function validateCreateInvestmentInput(input) {
+  if (!input || typeof input !== 'object') return 'An investment object is required.';
+  if (!isNonEmptyString(input.tag)) return 'tag must be a non-empty string.';
+  if (input.amountMinor !== undefined && !Number.isInteger(input.amountMinor)) {
+    return 'amountMinor must be an integer.';
+  }
+  if (input.depositMinor !== undefined && !Number.isInteger(input.depositMinor)) {
+    return 'depositMinor must be an integer.';
+  }
+  return null;
+}
+
+const EDITABLE_INVESTMENT_FIELDS = ['tag', 'amountMinor', 'depositMinor'];
+
+function validatePatchInvestmentInput(input) {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) {
+    return 'An investment object is required.';
+  }
+  const unknownField = Object.keys(input).find((key) => !EDITABLE_INVESTMENT_FIELDS.includes(key));
+  if (unknownField) return `${unknownField} is not an editable field.`;
+  if (input.tag !== undefined && !isNonEmptyString(input.tag)) {
+    return 'tag must be a non-empty string.';
+  }
+  if (input.amountMinor !== undefined && !Number.isInteger(input.amountMinor)) {
+    return 'amountMinor must be an integer.';
+  }
+  if (input.depositMinor !== undefined && !Number.isInteger(input.depositMinor)) {
+    return 'depositMinor must be an integer.';
   }
   return null;
 }
@@ -1575,6 +1614,148 @@ router.delete(
         resourceId: req.params.liabilityId,
       });
       return res.json({ id: req.params.liabilityId });
+    } catch (error) {
+      return next(error);
+    }
+  },
+);
+
+router.get('/balance/investments', requireScope('balance:r'), async (req, res, next) => {
+  try {
+    const investments = await listInvestments(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+    );
+    return res.json({ investments });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.post('/balance/investments', requireScope('balance:w'), async (req, res, next) => {
+  const validationError = validateCreateInvestmentInput(req.body);
+  if (validationError) {
+    return problem(res, 400, 'validation_invalid', 'Invalid investment request', validationError);
+  }
+  try {
+    const investment = await createInvestment(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+      req.body,
+    );
+    await recordAuditEntry(getAuditDb(), {
+      userId: req.userId,
+      actor: auditActor(req.auth),
+      method: req.method,
+      path: req.baseUrl + req.path,
+      resource: 'balance_investments',
+      resourceId: investment.id,
+    });
+    return res.status(201).json(investment);
+  } catch (error) {
+    if (error.code === 'INVESTMENT_DUPLICATE_TAG') {
+      return problem(res, 400, 'validation_invalid', 'Invalid investment request', error.message);
+    }
+    return next(error);
+  }
+});
+
+router.get(
+  '/balance/investments/:investmentId',
+  requireScope('balance:r'),
+  async (req, res, next) => {
+    try {
+      const investment = await getInvestment(
+        { usersDb: getUsersDb(), authDb: getAuthDb() },
+        req.userId,
+        req.params.investmentId,
+      );
+      if (!investment) {
+        return problem(
+          res,
+          404,
+          'not_found',
+          'Investment not found',
+          'No matching investment exists.',
+        );
+      }
+      return res.json(investment);
+    } catch (error) {
+      return next(error);
+    }
+  },
+);
+
+router.patch(
+  '/balance/investments/:investmentId',
+  requireScope('balance:w'),
+  async (req, res, next) => {
+    const validationError = validatePatchInvestmentInput(req.body);
+    if (validationError) {
+      return problem(res, 400, 'validation_invalid', 'Invalid investment request', validationError);
+    }
+    try {
+      const investment = await updateInvestment(
+        { usersDb: getUsersDb(), authDb: getAuthDb() },
+        req.userId,
+        req.params.investmentId,
+        req.body,
+      );
+      if (!investment) {
+        return problem(
+          res,
+          404,
+          'not_found',
+          'Investment not found',
+          'No matching investment exists.',
+        );
+      }
+      await recordAuditEntry(getAuditDb(), {
+        userId: req.userId,
+        actor: auditActor(req.auth),
+        method: req.method,
+        path: req.baseUrl + req.path,
+        resource: 'balance_investments',
+        resourceId: investment.id,
+      });
+      return res.json(investment);
+    } catch (error) {
+      if (error.code === 'INVESTMENT_DUPLICATE_TAG') {
+        return problem(res, 400, 'validation_invalid', 'Invalid investment request', error.message);
+      }
+      return next(error);
+    }
+  },
+);
+
+router.delete(
+  '/balance/investments/:investmentId',
+  requireScope('balance:w'),
+  async (req, res, next) => {
+    try {
+      const deleted = await deleteInvestment(
+        { usersDb: getUsersDb(), authDb: getAuthDb() },
+        req.userId,
+        req.params.investmentId,
+      );
+      if (!deleted) {
+        return problem(
+          res,
+          404,
+          'not_found',
+          'Investment not found',
+          'No matching investment exists.',
+        );
+      }
+      await recordAuditEntry(getAuditDb(), {
+        userId: req.userId,
+        actor: auditActor(req.auth),
+        method: req.method,
+        path: req.baseUrl + req.path,
+        resource: 'balance_investments',
+        resourceId: req.params.investmentId,
+      });
+      return res.json({ id: req.params.investmentId });
     } catch (error) {
       return next(error);
     }

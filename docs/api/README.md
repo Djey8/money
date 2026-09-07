@@ -273,3 +273,25 @@ curl -X PATCH "http://localhost:3000/api/v1/balance/liabilities/liabilities_<id>
 curl -X DELETE "http://localhost:3000/api/v1/balance/liabilities/liabilities_<id>" \
   -H "Authorization: Bearer $MONEY_MANAGER_TOKEN"
 ```
+
+## List, create, get, update, or delete investments
+
+Requires a PAT with `balance:r` (list/get) or `balance:w` (create/update/delete). `tag` shares the same cross-entity namespace as Assets/Shares — see `docs/api/AGENTS.md` for the full rule. Renaming an investment's `tag` also renames any matching `income.revenue.properties` entry, atomically.
+
+```bash
+curl "http://localhost:3000/api/v1/balance/investments" \
+  -H "Authorization: Bearer $MONEY_MANAGER_TOKEN"
+
+curl -X POST "http://localhost:3000/api/v1/balance/investments" \
+  -H "Authorization: Bearer $MONEY_MANAGER_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"tag": "Rental Unit A", "amountMinor": 18000000, "depositMinor": 3000000}'
+
+curl -X PATCH "http://localhost:3000/api/v1/balance/investments/investments_<id>" \
+  -H "Authorization: Bearer $MONEY_MANAGER_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"depositMinor": 4000000}'
+
+curl -X DELETE "http://localhost:3000/api/v1/balance/investments/investments_<id>" \
+  -H "Authorization: Bearer $MONEY_MANAGER_TOKEN"
+```

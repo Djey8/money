@@ -161,3 +161,13 @@ Every Pro API write is audit logged. Prefer narrowly scoped, expiring tokens and
 5. `PATCH` is partial — send only the fields you want to change.
 6. `DELETE` is not reversible through the API.
 7. `POST`/`PATCH`/`DELETE` are audit logged.
+
+## List, create, get, update, or delete investments
+
+1. `GET/POST /api/v1/balance/investments` and `GET/PATCH/DELETE /api/v1/balance/investments/{id}` require `balance:r`/`balance:w`. An investment is `{tag, amountMinor, depositMinor}` (INV-1/2/3). `tag` shares the same cross-entity namespace as Assets/Shares (see "List, create, get, update, or delete assets" above) — it must not collide with an existing Asset, Share, or another Investment's tag. Confirmed by reading `add-investment.component.ts`/`info-investment.component.ts` directly.
+2. **Renaming an investment's `tag` (via `PATCH`) also renames any `income.revenue.properties` entry whose `tag` matched the old value** — a Property income record is matched to its Investment by tag string, not a foreign key, same convention as everywhere else in this domain. This mirrors `info-investment.component.ts`'s own "update Income properties" cascade, done atomically in the same document write here (the original does it as two separate, non-atomic writes — a partial failure there can leave the two collections disagreeing about a renamed tag, which can't happen through this endpoint).
+3. Unlike Share (not yet built — see `PLAN.md`), editing an Investment never touches a linked Grow project. `Grow.investment` exists on the interface, but the original edit form never writes to `data.grow`.
+4. Existing investments need `mm-admin migrate-balance-entity-ids --collection investments` run first (same migration tool as Assets/Liabilities).
+5. `PATCH` is partial — send only the fields you want to change.
+6. `DELETE` is not reversible through the API.
+7. `POST`/`PATCH`/`DELETE` are audit logged.
