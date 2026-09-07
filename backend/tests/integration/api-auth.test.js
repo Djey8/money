@@ -1681,6 +1681,249 @@ describe('v1 API authentication and PAT management', () => {
     });
   });
 
+  describe('GET/PATCH/DELETE /smile/:id', () => {
+    async function smileToken(scopes) {
+      const created = await sessionRequest('post', '/api/v1/auth/tokens').send({
+        name: `smile-id-agent-${Date.now()}-${Math.random()}`,
+        scopes,
+      });
+      return created.body;
+    }
+
+    async function createProject(token, overrides = {}) {
+      const response = await request(app)
+        .post('/api/v1/smile')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ title: `Smile Id Test ${Date.now()}-${Math.random()}`, targetMinor: 100000, ...overrides });
+      expect(response.status).toBe(201);
+      return response.body;
+    }
+
+    it('gets a single project by id', async () => {
+      const { token } = await smileToken(['smile:r', 'smile:w']);
+      const created = await createProject(token);
+      const response = await request(app)
+        .get(`/api/v1/smile/${created.id}`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(response.status).toBe(200);
+      expect(response.body.id).toBe(created.id);
+    });
+
+    it('returns 404 for an id that does not exist', async () => {
+      const { token } = await smileToken(['smile:r']);
+      const response = await request(app)
+        .get('/api/v1/smile/smile_does_not_exist')
+        .set('Authorization', `Bearer ${token}`);
+      expect(response.status).toBe(404);
+      expect(response.body.code).toBe('not_found');
+    });
+
+    it('updates only the fields provided and audit logs the write', async () => {
+      const { token, tokenId } = await smileToken(['smile:r', 'smile:w']);
+      const created = await createProject(token);
+      const response = await request(app)
+        .patch(`/api/v1/smile/${created.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ phase: 'ready' });
+      expect(response.status).toBe(200);
+      expect(response.body.phase).toBe('ready');
+      expect(response.body.title).toBe(created.title);
+      const auditEntries = await queryAuditEntries(getAuditDb(), firstUser.userId, { resource: 'smile' });
+      expect(auditEntries).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ actor: { type: 'token', tokenId }, method: 'PATCH', resourceId: created.id }),
+        ]),
+      );
+    });
+
+    it('replaces buckets wholesale, preserving an echoed-back id and minting one for a new bucket', async () => {
+      const { token } = await smileToken(['smile:r', 'smile:w']);
+      const created = await createProject(token, { title: `Smile Bucket Patch ${Date.now()}` });
+      const existingBucketId = created.buckets[0].id;
+      const response = await request(app)
+        .patch(`/api/v1/smile/${created.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          buckets: [
+            { id: existingBucketId, title: created.buckets[0].title, targetMinor: 200000, amountMinor: 50000 },
+            { title: 'New Bucket', targetMinor: 30000 },
+          ],
+        });
+      expect(response.status).toBe(200);
+      expect(response.body.buckets[0]).toMatchObject({ id: existingBucketId, targetMinor: 200000, amountMinor: 50000 });
+      expect(response.body.buckets[1].id).not.toBe(existingBucketId);
+      expect(response.body.totals.targetMinor).toBe(230000);
+    });
+
+    it('rejects an unrecognized field', async () => {
+      const { token } = await smileToken(['smile:w']);
+      const created = await createProject(token);
+      const response = await request(app)
+        .patch(`/api/v1/smile/${created.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ notAField: true });
+      expect(response.status).toBe(400);
+      expect(response.body.code).toBe('validation_invalid');
+    });
+
+    it('rejects a title change that collides with another existing project', async () => {
+      const { token } = await smileToken(['smile:w']);
+      const first = await createProject(token, { title: `Smile Collision A ${Date.now()}` });
+      const second = await createProject(token, { title: `Smile Collision B ${Date.now()}` });
+      const response = await request(app)
+        .patch(`/api/v1/smile/${second.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ title: first.title });
+      expect(response.status).toBe(400);
+      expect(response.body.code).toBe('validation_invalid');
+    });
+
+    it('rejects a bucket patch with two buckets sharing a title', async () => {
+      const { token } = await smileToken(['smile:w']);
+      const created = await createProject(token);
+      const response = await request(app)
+        .patch(`/api/v1/smile/${created.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          buckets: [
+            { title: 'Flights', targetMinor: 100000 },
+            { title: 'FLIGHTS', targetMinor: 50000 },
+          ],
+        });
+      expect(response.status).toBe(400);
+      expect(response.body.code).toBe('validation_invalid');
+    });
+
+    it('rejects an actionItems patch where an item omits done', async () => {
+      const { token } = await smileToken(['smile:w']);
+      const created = await createProject(token);
+      const response = await request(app)
+        .patch(`/api/v1/smile/${created.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ actionItems: [{ text: 'Book flights' }] });
+      expect(response.status).toBe(400);
+      expect(response.body.code).toBe('validation_invalid');
+    });
+
+    it('rejects a bucket patch requesting the same existing id twice', async () => {
+      const { token } = await smileToken(['smile:w']);
+      const created = await createProject(token);
+      const existingBucketId = created.buckets[0].id;
+      const response = await request(app)
+        .patch(`/api/v1/smile/${created.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          buckets: [
+            { id: existingBucketId, title: 'Flights', targetMinor: 100000 },
+            { id: existingBucketId, title: 'Other', targetMinor: 50000 },
+          ],
+        });
+      expect(response.status).toBe(400);
+      expect(response.body.code).toBe('validation_invalid');
+    });
+
+    it('stamps a completion date when a patch moves phase to completed without one already set', async () => {
+      const { token } = await smileToken(['smile:w']);
+      const created = await createProject(token);
+      const response = await request(app)
+        .patch(`/api/v1/smile/${created.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ phase: 'completed' });
+      expect(response.status).toBe(200);
+      expect(response.body.completionDate).toEqual(expect.any(String));
+    });
+
+    it('returns 404 when patching an id that does not exist', async () => {
+      const { token } = await smileToken(['smile:w']);
+      const response = await request(app)
+        .patch('/api/v1/smile/smile_does_not_exist')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ phase: 'ready' });
+      expect(response.status).toBe(404);
+      expect(response.body.code).toBe('not_found');
+    });
+
+    it('deletes a project and subsequently 404s on it, audit logging the write', async () => {
+      const { token, tokenId } = await smileToken(['smile:r', 'smile:w']);
+      const created = await createProject(token);
+      const deleteResponse = await request(app)
+        .delete(`/api/v1/smile/${created.id}`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(deleteResponse.status).toBe(200);
+      expect(deleteResponse.body).toEqual({ id: created.id });
+      const getResponse = await request(app)
+        .get(`/api/v1/smile/${created.id}`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(getResponse.status).toBe(404);
+      const auditEntries = await queryAuditEntries(getAuditDb(), firstUser.userId, { resource: 'smile' });
+      expect(auditEntries).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ actor: { type: 'token', tokenId }, method: 'DELETE', resourceId: created.id }),
+        ]),
+      );
+    });
+
+    it('returns 404 when deleting an id that does not exist', async () => {
+      const { token } = await smileToken(['smile:w']);
+      const response = await request(app)
+        .delete('/api/v1/smile/smile_does_not_exist')
+        .set('Authorization', `Bearer ${token}`);
+      expect(response.status).toBe(404);
+      expect(response.body.code).toBe('not_found');
+    });
+
+    it('rejects GET without smile:r, PATCH/DELETE without smile:w', async () => {
+      const { token: writeOnly } = await smileToken(['smile:w']);
+      const created = await createProject(writeOnly);
+
+      const { token: readOnly } = await smileToken(['smile:r']);
+      const getResponse = await request(app)
+        .get(`/api/v1/smile/${created.id}`)
+        .set('Authorization', `Bearer ${readOnly}`);
+      expect(getResponse.status).toBe(200);
+
+      const patchResponse = await request(app)
+        .patch(`/api/v1/smile/${created.id}`)
+        .set('Authorization', `Bearer ${readOnly}`)
+        .send({ phase: 'ready' });
+      expect(patchResponse.status).toBe(403);
+      expect(patchResponse.body.code).toBe('scope_insufficient');
+
+      const deleteResponse = await request(app)
+        .delete(`/api/v1/smile/${created.id}`)
+        .set('Authorization', `Bearer ${readOnly}`);
+      expect(deleteResponse.status).toBe(403);
+      expect(deleteResponse.body.code).toBe('scope_insufficient');
+    });
+
+    it('does not let one user read, patch, or delete another user\'s Smile project', async () => {
+      const { token: ownerToken } = await smileToken(['smile:w']);
+      const created = await createProject(ownerToken);
+
+      const otherUserSmileToken = await sessionRequest('post', '/api/v1/auth/tokens', secondUser.token).send({
+        name: `smile-cross-user-${Date.now()}`,
+        scopes: ['smile:r', 'smile:w'],
+      });
+      const otherToken = otherUserSmileToken.body.token;
+
+      const getResponse = await request(app)
+        .get(`/api/v1/smile/${created.id}`)
+        .set('Authorization', `Bearer ${otherToken}`);
+      expect(getResponse.status).toBe(404);
+
+      const patchResponse = await request(app)
+        .patch(`/api/v1/smile/${created.id}`)
+        .set('Authorization', `Bearer ${otherToken}`)
+        .send({ phase: 'ready' });
+      expect(patchResponse.status).toBe(404);
+
+      const deleteResponse = await request(app)
+        .delete(`/api/v1/smile/${created.id}`)
+        .set('Authorization', `Bearer ${otherToken}`);
+      expect(deleteResponse.status).toBe(404);
+    });
+  });
+
   it('creates a PAT once and exposes its identity to /me', async () => {
     const create = await sessionRequest('post', '/api/v1/auth/tokens').send({
       name: 'integration-agent',

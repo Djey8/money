@@ -161,3 +161,20 @@ curl -X POST "http://localhost:3000/api/v1/smile" \
   -H "Content-Type: application/json" \
   -d '{"title": "Summer Vacation", "buckets": [{"title": "Flights", "targetMinor": 150000}]}'
 ```
+
+## Get, update, or delete a single Smile project
+
+Requires a PAT with `smile:r` (get) or `smile:w` (update/delete). `PATCH` is partial for scalar fields, but array fields (`buckets`/`links`/`actionItems`/`notes`) replace the whole array — see `docs/api/AGENTS.md` for the echo-back rules that preserve bucket/note identity across an update.
+
+```bash
+curl "http://localhost:3000/api/v1/smile/smile_<id>" \
+  -H "Authorization: Bearer $MONEY_MANAGER_TOKEN"
+
+curl -X PATCH "http://localhost:3000/api/v1/smile/smile_<id>" \
+  -H "Authorization: Bearer $MONEY_MANAGER_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"phase": "ready"}'
+
+curl -X DELETE "http://localhost:3000/api/v1/smile/smile_<id>" \
+  -H "Authorization: Bearer $MONEY_MANAGER_TOKEN"
+```

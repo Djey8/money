@@ -25,7 +25,10 @@ const { getMojoStatus, updateMojoTarget } = require('../repositories/mojo-reposi
 const {
   SMILE_PHASES,
   listSmileProjects,
+  getSmileProject,
   createSmileProject,
+  updateSmileProject,
+  deleteSmileProject,
 } = require('../repositories/smile-repository');
 const { getUsersDb, getAuthDb } = require('../config/db');
 const { getEncryptionSession } = require('../services/encryption-session');
@@ -174,6 +177,20 @@ function validateFundActionItem(item) {
   return true;
 }
 
+/**
+ * Stricter than `validateFundActionItem`: `done` must be given explicitly.
+ * `actionItems` on PATCH replaces the whole array (see `updateSmileProject`),
+ * so an omitted `done` can't default to `false` the way it safely can at
+ * creation — that would silently un-complete an already-done item the
+ * caller forgot to echo back with its current state.
+ */
+function validateUpdateFundActionItem(item) {
+  if (!item || typeof item !== 'object' || !isNonEmptyString(item.text)) return false;
+  if (typeof item.done !== 'boolean') return false;
+  if (item.priority !== undefined && !FUND_ACTION_PRIORITIES.includes(item.priority)) return false;
+  return true;
+}
+
 function validateFundBucketInput(bucket) {
   if (!bucket || typeof bucket !== 'object') return 'Each bucket must be an object.';
   if (!isNonEmptyString(bucket.title)) return 'Each bucket requires a non-empty title.';
@@ -182,6 +199,34 @@ function validateFundBucketInput(bucket) {
   }
   if (bucket.amountMinor !== undefined && (!Number.isInteger(bucket.amountMinor) || bucket.amountMinor < 0)) {
     return "Each bucket's amountMinor must be a non-negative integer.";
+  }
+  // `id` is only meaningful on PATCH (preserves an existing bucket's identity
+  // across the update); create always mints a fresh one regardless, so this
+  // is validated here once for both callers rather than in two places.
+  if (bucket.id !== undefined && !isNonEmptyString(bucket.id)) {
+    return "Each bucket's id, if given, must be a non-empty string.";
+  }
+  return null;
+}
+
+function validateUpdateFundNote(note) {
+  if (!note || typeof note !== 'object' || !isNonEmptyString(note.text)) return false;
+  if (note.createdAt !== undefined && typeof note.createdAt !== 'string') return false;
+  return true;
+}
+
+// Bucket titles are matched case-insensitively by applyBucketAllocations
+// (packages/domain/src/transactions/bucket-allocations.ts) when a `#bucket:`
+// tag routes a contribution — two buckets sharing a title would silently
+// misdirect every tagged contribution meant for the second one to whichever
+// bucket .find() reaches first. Reject rather than guess. Returns the
+// colliding normalized title, or null if every title is unique.
+function findDuplicateBucketTitle(titles) {
+  const seen = new Set();
+  for (const title of titles) {
+    const normalized = title.trim().toLowerCase();
+    if (seen.has(normalized)) return normalized;
+    seen.add(normalized);
   }
   return null;
 }
@@ -209,26 +254,16 @@ function validateCreateSmileProjectInput(input) {
       if (bucketError) return bucketError;
     }
   }
-  // Bucket titles are matched case-insensitively by applyBucketAllocations
-  // (packages/domain/src/transactions/bucket-allocations.ts) when a `#bucket:`
-  // tag routes a contribution — two buckets sharing a title (including the
-  // default bucket targetMinor creates, named after the project's own title)
-  // would silently misdirect every tagged contribution meant for the second
-  // one to whichever bucket .find() reaches first. Reject rather than guess.
   const allBucketTitles = [];
   if (hasTarget) allBucketTitles.push(input.title);
   if (Array.isArray(input.buckets)) {
     for (const bucket of input.buckets) allBucketTitles.push(bucket.title);
   }
-  const seenBucketTitles = new Set();
-  for (const title of allBucketTitles) {
-    const normalized = title.trim().toLowerCase();
-    if (seenBucketTitles.has(normalized)) {
-      return hasTarget && normalized === input.title.trim().toLowerCase()
-        ? 'A bucket cannot share a title with the project itself (targetMinor already creates a default bucket named after title).'
-        : 'Bucket titles must be unique within a project (case-insensitive).';
-    }
-    seenBucketTitles.add(normalized);
+  const duplicateTitle = findDuplicateBucketTitle(allBucketTitles);
+  if (duplicateTitle) {
+    return hasTarget && duplicateTitle === input.title.trim().toLowerCase()
+      ? 'A bucket cannot share a title with the project itself (targetMinor already creates a default bucket named after title).'
+      : 'Bucket titles must be unique within a project (case-insensitive).';
   }
   if (input.phase !== undefined && !SMILE_PHASES.includes(input.phase)) {
     return `phase must be one of ${SMILE_PHASES.join(', ')}.`;
@@ -246,6 +281,65 @@ function validateCreateSmileProjectInput(input) {
   if (input.notes !== undefined) {
     if (!Array.isArray(input.notes) || !input.notes.every(validateFundNote)) {
       return 'notes must be an array of {text} objects.';
+    }
+  }
+  return null;
+}
+
+const EDITABLE_SMILE_FIELDS = [
+  'title',
+  'sub',
+  'phase',
+  'description',
+  'targetDate',
+  'completionDate',
+  'buckets',
+  'links',
+  'actionItems',
+  'notes',
+];
+
+function validatePatchSmileProjectInput(input) {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) {
+    return 'A Smile project object is required.';
+  }
+  const unknownField = Object.keys(input).find((key) => !EDITABLE_SMILE_FIELDS.includes(key));
+  if (unknownField) return `${unknownField} is not an editable field.`;
+  if (input.title !== undefined && !isNonEmptyString(input.title)) {
+    return 'title must be a non-empty string.';
+  }
+  if (input.phase !== undefined && !SMILE_PHASES.includes(input.phase)) {
+    return `phase must be one of ${SMILE_PHASES.join(', ')}.`;
+  }
+  if (input.buckets !== undefined) {
+    if (!Array.isArray(input.buckets) || input.buckets.length === 0) {
+      return 'buckets must be a non-empty array.';
+    }
+    for (const bucket of input.buckets) {
+      const bucketError = validateFundBucketInput(bucket);
+      if (bucketError) return bucketError;
+    }
+    if (findDuplicateBucketTitle(input.buckets.map((bucket) => bucket.title))) {
+      return 'Bucket titles must be unique within a project (case-insensitive).';
+    }
+    const requestedIds = input.buckets.map((bucket) => bucket.id).filter((id) => id !== undefined);
+    if (new Set(requestedIds).size !== requestedIds.length) {
+      return 'Two buckets in the same patch cannot request the same id.';
+    }
+  }
+  if (input.links !== undefined) {
+    if (!Array.isArray(input.links) || !input.links.every(validateFundLink)) {
+      return 'links must be an array of {label, url} objects.';
+    }
+  }
+  if (input.actionItems !== undefined) {
+    if (!Array.isArray(input.actionItems) || !input.actionItems.every(validateUpdateFundActionItem)) {
+      return 'actionItems must be an array of {text, done, priority?} objects — done is required here since this replaces the whole array.';
+    }
+  }
+  if (input.notes !== undefined) {
+    if (!Array.isArray(input.notes) || !input.notes.every(validateUpdateFundNote)) {
+      return 'notes must be an array of {text, createdAt?} objects.';
     }
   }
   return null;
@@ -754,6 +848,78 @@ router.post('/smile', requireScope('smile:w'), async (req, res, next) => {
     if (error.code === 'SMILE_DUPLICATE_TITLE') {
       return problem(res, 400, 'validation_invalid', 'Invalid Smile project request', error.message);
     }
+    return next(error);
+  }
+});
+
+router.get('/smile/:projectId', requireScope('smile:r'), async (req, res, next) => {
+  try {
+    const project = await getSmileProject(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+      req.params.projectId,
+    );
+    if (!project) {
+      return problem(res, 404, 'not_found', 'Smile project not found', 'No matching Smile project exists.');
+    }
+    return res.json(project);
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.patch('/smile/:projectId', requireScope('smile:w'), async (req, res, next) => {
+  const validationError = validatePatchSmileProjectInput(req.body);
+  if (validationError) {
+    return problem(res, 400, 'validation_invalid', 'Invalid Smile project request', validationError);
+  }
+  try {
+    const project = await updateSmileProject(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+      req.params.projectId,
+      req.body,
+    );
+    if (!project) {
+      return problem(res, 404, 'not_found', 'Smile project not found', 'No matching Smile project exists.');
+    }
+    await recordAuditEntry(getAuditDb(), {
+      userId: req.userId,
+      actor: auditActor(req.auth),
+      method: req.method,
+      path: req.baseUrl + req.path,
+      resource: 'smile',
+      resourceId: project.id,
+    });
+    return res.json(project);
+  } catch (error) {
+    if (error.code === 'SMILE_DUPLICATE_TITLE') {
+      return problem(res, 400, 'validation_invalid', 'Invalid Smile project request', error.message);
+    }
+    return next(error);
+  }
+});
+
+router.delete('/smile/:projectId', requireScope('smile:w'), async (req, res, next) => {
+  try {
+    const deleted = await deleteSmileProject(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+      req.params.projectId,
+    );
+    if (!deleted) {
+      return problem(res, 404, 'not_found', 'Smile project not found', 'No matching Smile project exists.');
+    }
+    await recordAuditEntry(getAuditDb(), {
+      userId: req.userId,
+      actor: auditActor(req.auth),
+      method: req.method,
+      path: req.baseUrl + req.path,
+      resource: 'smile',
+      resourceId: req.params.projectId,
+    });
+    return res.json({ id: req.params.projectId });
+  } catch (error) {
     return next(error);
   }
 });

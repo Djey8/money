@@ -162,10 +162,36 @@ async function getSmileProject(deps, userId, projectId) {
   return projects.find((project) => project.id === projectId) || null;
 }
 
-/** Intentionally doesn't accept `links`/`completionDate` — matching `CreateSmileProjectRequest`'s bucket schema, a bucket's read-side shape (decryptBucket) supports more than creation exposes on purpose; add a bucket's links via a future PATCH once that endpoint exists. */
-function buildBucket(bucketInput) {
+function decryptAllProjects(rawProjects, session, schemaVersion) {
+  return rawProjects.map((raw) => {
+    assertStableId(raw);
+    return decryptProject(raw, session, schemaVersion);
+  });
+}
+
+/**
+ * `existingBucketIds`, when given, lets `buildBucket` preserve an incoming
+ * bucket's own `id` if it names an existing bucket of the project being
+ * patched (an in-place edit); omitted or unrecognized ids always mint a
+ * fresh one (a new bucket). Create never passes this — every bucket at
+ * creation time is new. Intentionally doesn't accept `links`/`completionDate`
+ * at creation — matching `CreateSmileProjectRequest`'s bucket schema, a
+ * bucket's read-side shape (decryptBucket) supports more than creation
+ * exposes on purpose.
+ */
+function buildBucket(bucketInput, existingBucketIds) {
+  const requestedId = bucketInput.id;
+  // Consume the id once claimed, so a patch requesting the same existing id
+  // twice can't produce two buckets sharing one id — the second request
+  // falls through to minting a fresh one instead (route-layer validation
+  // rejects this case outright, but the repository stays safe either way).
+  let id = `bucket_${crypto.randomUUID()}`;
+  if (requestedId && existingBucketIds && existingBucketIds.has(requestedId)) {
+    id = requestedId;
+    existingBucketIds.delete(requestedId);
+  }
   const bucket = {
-    id: `bucket_${crypto.randomUUID()}`,
+    id,
     title: bucketInput.title.trim(),
     targetMinor: bucketInput.targetMinor,
     amountMinor: bucketInput.amountMinor || 0,
@@ -175,7 +201,16 @@ function buildBucket(bucketInput) {
   return bucket;
 }
 
-async function createSmileProject({ usersDb, authDb }, userId, input) {
+/**
+ * Shared read → mutate → write-with-retry-on-409 loop for every Smile write
+ * (create/update/delete), mirroring `transaction-repository.js`'s
+ * `withTransactionsWrite`. `mutate` receives the still-encrypted
+ * `rawProjects` array (decrypting is each caller's own responsibility, since
+ * create/update/delete each need a different subset decrypted) and returns
+ * either `null` (nothing to do — e.g. the target id doesn't exist, no write
+ * happens) or `{ updatedRawProjects, result }`.
+ */
+async function withSmileWrite({ usersDb, authDb }, userId, mutate) {
   let attempt = 0;
   while (attempt < MAX_WRITE_RETRIES) {
     let userDoc;
@@ -195,10 +230,26 @@ async function createSmileProject({ usersDb, authDb }, userId, input) {
     const schemaVersion = data.meta?.schemaVersion || 1;
     const rawProjects = data.smile || [];
     if (!Array.isArray(rawProjects)) throw new Error('Stored smile projects must be an array');
-    const existingProjects = rawProjects.map((raw) => {
-      assertStableId(raw);
-      return decryptProject(raw, session, schemaVersion);
-    });
+
+    const mutation = mutate({ rawProjects, session, schemaVersion });
+    if (mutation === null) return null;
+    const { updatedRawProjects, result } = mutation;
+    const updatedData = { ...data, smile: updatedRawProjects };
+    const now = new Date().toISOString();
+    try {
+      await usersDb.insert({ ...userDoc, data: updatedData, updatedAt: now });
+      return result;
+    } catch (error) {
+      if (error.statusCode !== 409) throw error;
+      attempt += 1;
+    }
+  }
+  throw new Error('Failed to write Smile projects after maximum retries due to write conflicts');
+}
+
+async function createSmileProject(deps, userId, input) {
+  return withSmileWrite(deps, userId, ({ rawProjects, session, schemaVersion }) => {
+    const existingProjects = decryptAllProjects(rawProjects, session, schemaVersion);
 
     const title = input.title.trim();
     if (existingProjects.some((project) => project.title === title)) {
@@ -234,17 +285,87 @@ async function createSmileProject({ usersDb, authDb }, userId, input) {
     if (input.targetDate !== undefined) newProject.targetDate = input.targetDate;
     if (phase === 'completed') newProject.completionDate = now;
 
-    const updatedRawProjects = [...rawProjects, encryptProject(newProject, session, schemaVersion)];
-    const updatedData = { ...data, smile: updatedRawProjects };
-    try {
-      await usersDb.insert({ ...userDoc, data: updatedData, updatedAt: now });
-      return newProject;
-    } catch (error) {
-      if (error.statusCode !== 409) throw error;
-      attempt += 1;
+    return {
+      updatedRawProjects: [...rawProjects, encryptProject(newProject, session, schemaVersion)],
+      result: newProject,
+    };
+  });
+}
+
+async function updateSmileProject(deps, userId, projectId, patch) {
+  return withSmileWrite(deps, userId, ({ rawProjects, session, schemaVersion }) => {
+    const existingProjects = decryptAllProjects(rawProjects, session, schemaVersion);
+    const index = existingProjects.findIndex((project) => project.id === projectId);
+    if (index === -1) return null;
+    const current = existingProjects[index];
+    const now = new Date().toISOString();
+
+    let title = current.title;
+    if (patch.title !== undefined) {
+      title = patch.title.trim();
+      if (
+        title !== current.title &&
+        existingProjects.some((project, i) => i !== index && project.title === title)
+      ) {
+        const error = new Error('A Smile project with this title already exists.');
+        error.code = 'SMILE_DUPLICATE_TITLE';
+        throw error;
+      }
     }
-  }
-  throw new Error('Failed to create Smile project after maximum retries due to write conflicts');
+
+    let buckets = current.buckets;
+    if (patch.buckets !== undefined) {
+      const existingBucketIds = new Set(current.buckets.map((bucket) => bucket.id));
+      buckets = patch.buckets.map((bucketInput) => buildBucket(bucketInput, existingBucketIds));
+    }
+
+    const updatedProject = {
+      ...current,
+      title,
+      sub: patch.sub !== undefined ? patch.sub : current.sub,
+      phase: patch.phase !== undefined ? patch.phase : current.phase,
+      description: patch.description !== undefined ? patch.description : current.description,
+      buckets,
+      totals: computeProjectTotals(buckets),
+      links: patch.links !== undefined ? patch.links : current.links,
+      // `done` is required (not defaulted) here by validatePatchSmileProjectInput
+      // — this replaces the whole array, so a missing `done` on an
+      // already-done item the caller forgot to echo back must never
+      // silently un-complete it the way defaulting to false would.
+      actionItems: patch.actionItems !== undefined ? patch.actionItems : current.actionItems,
+      notes:
+        patch.notes !== undefined
+          ? patch.notes.map((note) => ({ text: note.text, createdAt: note.createdAt || now }))
+          : current.notes,
+      updatedAt: now,
+    };
+    if (patch.targetDate !== undefined) updatedProject.targetDate = patch.targetDate;
+    if (patch.completionDate !== undefined) updatedProject.completionDate = patch.completionDate;
+    // Mirrors info-smile.component.ts's advancePhase(): moving to 'completed'
+    // stamps a completion date if one isn't already set (by this same patch
+    // or previously) — but never overwrites an explicit completionDate the
+    // caller sent, and never auto-clears one when moving away from 'completed'.
+    if (patch.phase === 'completed' && !updatedProject.completionDate) {
+      updatedProject.completionDate = now;
+    }
+
+    const updatedRawProjects = rawProjects.map((raw, i) =>
+      i === index ? encryptProject(updatedProject, session, schemaVersion) : raw,
+    );
+    return { updatedRawProjects, result: updatedProject };
+  });
+}
+
+async function deleteSmileProject(deps, userId, projectId) {
+  return withSmileWrite(deps, userId, ({ rawProjects, session, schemaVersion }) => {
+    const existingProjects = decryptAllProjects(rawProjects, session, schemaVersion);
+    const index = existingProjects.findIndex((project) => project.id === projectId);
+    if (index === -1) return null;
+    return {
+      updatedRawProjects: rawProjects.filter((_, i) => i !== index),
+      result: { id: projectId },
+    };
+  });
 }
 
 module.exports = {
@@ -252,4 +373,6 @@ module.exports = {
   listSmileProjects,
   getSmileProject,
   createSmileProject,
+  updateSmileProject,
+  deleteSmileProject,
 };

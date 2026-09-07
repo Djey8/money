@@ -97,3 +97,15 @@ Every Pro API write is audit logged. Prefer narrowly scoped, expiring tokens and
 4. `notes[].createdAt` is always server-generated at creation time — a value you send for it is ignored, don't rely on round-tripping a client-supplied timestamp there.
 5. Every project has a stable `id` — existing Smile projects created before this endpoint shipped need `mm-admin migrate-fund-project-ids --collection smile` run first (the legacy storage shape has no project-level id, only bucket-level ids); this endpoint fails clearly rather than silently if it isn't.
 6. `POST` is audit logged.
+
+## Get, update, or delete a single Smile project
+
+1. `GET /api/v1/smile/{id}` requires `smile:r`. `PATCH`/`DELETE` require `smile:w`. All three return `404` uniformly for an id that doesn't exist or belongs to another user.
+2. `PATCH` accepts a **partial** body — only the fields you send are changed — but `buckets`/`links`/`actionItems`/`notes`, when sent, each **replace the entire array**, not a per-item merge. Send the complete list you want, including entries you aren't changing, or they'll be dropped.
+3. For `buckets`: echo back an existing bucket's `id` to edit it in place (any field you include on that entry — `title`, `targetMinor`, `amountMinor`, etc. — replaces the stored value); omit `id` to add a new bucket; any existing bucket whose `id` isn't present in the new array is removed. Unlike Mojo, a Smile bucket's `amountMinor` **is** directly settable — matching the UI's own bucket editor, it is not exclusively transaction-derived. Two entries cannot request the same `id` in one patch — rejected with `400`, not silently resolved.
+4. For `actionItems`: **`done` is required on every item, with no default** — since this replaces the whole array, an omitted `done` cannot safely default to `false` the way it does at creation (that would silently un-complete an already-done item you forgot to echo back). Always resend every item's current `done` state, not just the one you're changing.
+5. For `notes`: echo back an existing note's `createdAt` to preserve it; omit it on a genuinely new note to get a fresh server timestamp.
+6. A changed `title` is checked for an exact-match collision against the caller's *other* Smile projects (never against itself), using the same case-sensitive rule as `POST`.
+7. Moving `phase` to `completed` stamps `completionDate` automatically if one isn't already set (matching the UI's quick "advance phase" action) — but never overwrites an explicit `completionDate` sent in the same request, and moving away from `completed` never clears a previously-set `completionDate`.
+8. `DELETE` is not reversible through the API.
+9. `PATCH`/`DELETE` are audit logged.
