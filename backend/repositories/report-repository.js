@@ -1,6 +1,6 @@
 'use strict';
 
-const { computeIncomeStatement, getPeriodRange } = require('@money/domain');
+const { computeIncomeStatement, computeCashflow, getPeriodRange } = require('@money/domain');
 const { getEncryptionSession } = require('../services/encryption-session');
 const { decryptValue, toApiTransactions } = require('./transaction-repository');
 
@@ -21,11 +21,13 @@ function loadIncomeClassificationTags(data, session) {
 }
 
 /**
- * @param {{period: string, offset: number, now?: Date}} options `now` is an
- *   injectable "today" for tests — production callers omit it so
- *   `getPeriodRange` defaults to the real current time.
+ * Shared load step for every report endpoint: the caller's decrypted
+ * transactions plus the current/previous period boundaries. `now` is an
+ * injectable "today" for tests — production callers omit it so
+ * `getPeriodRange` defaults to the real current time.
+ * @param {{period: string, offset: number, now?: Date}} options
  */
-async function getIncomeStatement({ usersDb, authDb }, userId, { period, offset, now }) {
+async function loadPeriodTransactions({ usersDb, authDb }, userId, { period, offset, now }) {
   let userDoc;
   try {
     userDoc = await usersDb.get(userId);
@@ -41,12 +43,30 @@ async function getIncomeStatement({ usersDb, authDb }, userId, { period, offset,
   if (!Array.isArray(rawTransactions)) throw new Error('Stored transactions must be an array');
 
   const transactions = toApiTransactions(rawTransactions, session, schemaVersion, currency);
-  const tags = loadIncomeClassificationTags(data, session);
   const currentRange = getPeriodRange(period, offset, now);
   const previousRange = getPeriodRange(period, offset - 1, now);
-  const statement = computeIncomeStatement(transactions, currentRange, previousRange, tags);
+  return { data, session, transactions, currentRange, previousRange };
+}
 
+async function getIncomeStatement(deps, userId, options) {
+  const { data, session, transactions, currentRange, previousRange } = await loadPeriodTransactions(
+    deps,
+    userId,
+    options,
+  );
+  const tags = loadIncomeClassificationTags(data, session);
+  const statement = computeIncomeStatement(transactions, currentRange, previousRange, tags);
   return { period: currentRange, previousPeriod: previousRange, ...statement };
 }
 
-module.exports = { getIncomeStatement, loadIncomeClassificationTags };
+async function getCashflow(deps, userId, options) {
+  const { transactions, currentRange, previousRange } = await loadPeriodTransactions(
+    deps,
+    userId,
+    options,
+  );
+  const statement = computeCashflow(transactions, currentRange, previousRange);
+  return { period: currentRange, previousPeriod: previousRange, ...statement };
+}
+
+module.exports = { getIncomeStatement, getCashflow, loadIncomeClassificationTags };

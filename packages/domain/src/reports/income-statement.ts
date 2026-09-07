@@ -1,5 +1,6 @@
 import { ApiTransaction } from '../transactions/transaction';
 import { PeriodRange } from './period-range';
+import { StatementRow, makeRow, EXPENSE_ACCOUNTS, ExpenseAccount, cleanCategory, isTransfer, inRange } from './statement-shared';
 
 /**
  * Ports `computeIncomeStatement`/`computeIncomeSide`/`computeExpenseSide`/
@@ -28,17 +29,6 @@ export interface IncomeClassificationTags {
   investmentTags?: string[];
 }
 
-export interface StatementRow {
-  /** Money rows: integer minor units. The `savingsRatePercent` row: a percentage point value. */
-  current: number;
-  previous: number;
-  /** Relative percent change vs. `previous` — `((current - previous) / abs(previous)) * 100`, or 0 if `previous` is 0. Note this is a relative change, not a percentage-point difference, even for the `savingsRatePercent` row (a move from 20% to 25% is a +25% change, not +5). */
-  changePercent: number;
-}
-
-const EXPENSE_ACCOUNTS = ['Daily', 'Splurge', 'Smile', 'Fire'] as const;
-type ExpenseAccount = (typeof EXPENSE_ACCOUNTS)[number];
-
 export interface IncomeStatement {
   revenues: StatementRow;
   interests: StatementRow;
@@ -49,21 +39,6 @@ export interface IncomeStatement {
   totalExpenses: StatementRow;
   netResult: StatementRow;
   savingsRatePercent: StatementRow;
-}
-
-/** Categories that denote an inter-account transfer and must be excluded from P&L. */
-const TRANSFER_CATEGORIES = new Set(['Income', 'Daily', 'Splurge', 'Smile', 'Fire', 'Mojo']);
-
-function cleanCategory(category: string): string {
-  return category.replace('@', '');
-}
-
-function isTransfer(category: string): boolean {
-  return TRANSFER_CATEGORIES.has(cleanCategory(category));
-}
-
-function inRange(transaction: ApiTransaction, range: PeriodRange): boolean {
-  return transaction.date >= range.startDate && transaction.date <= range.endDate;
 }
 
 interface ClassificationSets {
@@ -133,11 +108,6 @@ function computeExpenseSide(
   }
   const total = EXPENSE_ACCOUNTS.reduce((sum, account) => sum + byAccount[account], 0);
   return { byAccount, total };
-}
-
-function makeRow(current: number, previous: number): StatementRow {
-  const changePercent = previous !== 0 ? ((current - previous) / Math.abs(previous)) * 100 : 0;
-  return { current, previous, changePercent };
 }
 
 export function computeIncomeStatement(

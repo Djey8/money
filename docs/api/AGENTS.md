@@ -56,3 +56,11 @@ Every Pro API write is audit logged. Prefer narrowly scoped, expiring tokens and
 4. Inter-account transfers (`Income` → `Daily`/`Splurge`/`Smile`/`Fire`/`Mojo`) are excluded from both income and expenses, same as the UI's own statement page. This is a different, and more correct, calculation than the `src/app/main/cashflow/*` frontend components use internally — see `PLAN.md` D-22 — so numbers from this endpoint will not always match those specific screens.
 5. `interests`/`propertyIncome` classification depends on tags the user has assigned to their shares/investments/interest/property entries elsewhere in the app; an otherwise-uncategorized `Income`-account transaction falls into `otherIncome`, not `revenues`.
 6. This is a read; it is not audit logged and does not require `transactions:r`.
+
+## Read the cashflow statement for a period
+
+1. `GET /api/v1/reports/cashflow` requires `reports:r`, takes the same `period`/`offset` query parameters as `/reports/income-statement`, and returns the same `period`/`previousPeriod`/`{current, previous, changePercent}` shape.
+2. Unlike the income statement (which only looks at the `Income` account and the four expense accounts), this classifies **every** transaction: `operating` is ordinary Income/expense-account activity, `investing` is a transfer from `Income` into `Smile` or `Fire`, `financing` is any transaction whose `comment` contains `payback liabilitie` (case-insensitive, regardless of account), and `mojo` is a Mojo contribution (a direct inflow on the `Mojo` account, or a transfer from `Income` tagged `@Mojo`).
+3. A transfer that doesn't match any of those four buckets (e.g. `Income` → `Daily`/`Splurge`) is dropped entirely — it is not double-counted as operating.
+4. `netCashflow` is `operating - investing - financing - mojo`.
+5. This is a read; it is not audit logged.

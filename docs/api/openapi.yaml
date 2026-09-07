@@ -489,7 +489,7 @@ paths:
                   endDate: '2026-08-31'
                   label: Aug 2026
                 revenues: { current: 250000, previous: 250000, changePercent: 0 }
-                interests: { current: 500, previous: 0, changePercent: 100 }
+                interests: { current: 500, previous: 0, changePercent: 0 }
                 propertyIncome: { current: 0, previous: 0, changePercent: 0 }
                 otherIncome: { current: 0, previous: 0, changePercent: 0 }
                 totalIncome: { current: 250500, previous: 250000, changePercent: 0.2 }
@@ -501,6 +501,59 @@ paths:
                 totalExpenses: { current: 40000, previous: 38000, changePercent: 5.26 }
                 netResult: { current: 210500, previous: 212000, changePercent: -0.71 }
                 savingsRatePercent: { current: 84.03, previous: 84.8, changePercent: -0.91 }
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+  /reports/cashflow:
+    get:
+      operationId: getCashflow
+      summary: Get the cashflow statement for a period
+      description: >-
+        Splits all activity in one period into operating, investing (transfers into Smile/Fire), financing
+        (liability paybacks, detected via a `payback liabilitie` comment substring), and mojo (Mojo contributions),
+        plus net cashflow, for the requested period and the one before it. Matches
+        `src/app/stats/statement/statement-calculations.ts`'s `computeCashflow` — see PLAN.md D-22. Unlike
+        `/reports/income-statement`, this classifies every transaction regardless of account, not only
+        Income/expense-account activity.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [week, month, quarter, halfyear, year]
+            default: month
+        - name: offset
+          in: query
+          description: Periods before the current one; 0 is the period containing today, -1 the one before it, and so on.
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Cashflow statement for the requested period and the one before it
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CashflowStatement'
+              example:
+                period:
+                  startDate: '2026-09-01'
+                  endDate: '2026-09-30'
+                  label: Sep 2026
+                previousPeriod:
+                  startDate: '2026-08-01'
+                  endDate: '2026-08-31'
+                  label: Aug 2026
+                operating: { current: 210500, previous: 212000, changePercent: -0.71 }
+                investing: { current: 30000, previous: 20000, changePercent: 50 }
+                financing: { current: 15000, previous: 0, changePercent: 0 }
+                mojo: { current: 5000, previous: 5000, changePercent: 0 }
+                netCashflow: { current: 160500, previous: 187000, changePercent: -14.17 }
         '400':
           $ref: '#/components/responses/ValidationError'
         '401':
@@ -773,6 +826,24 @@ components:
           format: date
         label:
           type: string
+    CashflowStatement:
+      type: object
+      required: [period, previousPeriod, operating, investing, financing, mojo, netCashflow]
+      properties:
+        period:
+          $ref: '#/components/schemas/PeriodRange'
+        previousPeriod:
+          $ref: '#/components/schemas/PeriodRange'
+        operating:
+          $ref: '#/components/schemas/StatementRow'
+        investing:
+          $ref: '#/components/schemas/StatementRow'
+        financing:
+          $ref: '#/components/schemas/StatementRow'
+        mojo:
+          $ref: '#/components/schemas/StatementRow'
+        netCashflow:
+          $ref: '#/components/schemas/StatementRow'
     CreateTransactionRequest:
       type: object
       required: [account, amountMinor, date, time, category, comment]

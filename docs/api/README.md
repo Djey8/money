@@ -102,3 +102,14 @@ curl "http://localhost:3000/api/v1/reports/income-statement?period=month&offset=
 ```
 
 `period` is one of `week`, `month`, `quarter`, `halfyear`, `year` (default `month`); `offset` counts periods back from the current one (default `0`).
+
+## Read the cashflow statement for a period
+
+Requires a PAT with `reports:r`. Splits every transaction into operating, investing, financing, and mojo cashflow, plus a net total, for the requested period plus the one before it.
+
+```bash
+curl "http://localhost:3000/api/v1/reports/cashflow?period=month&offset=0" \
+  -H "Authorization: Bearer $MONEY_MANAGER_TOKEN"
+```
+
+Same `period`/`offset` parameters as `/reports/income-statement`.

@@ -1,7 +1,7 @@
 'use strict';
 
 const { EncryptionSession } = require('@money/domain');
-const { getIncomeStatement } = require('../../repositories/report-repository');
+const { getIncomeStatement, getCashflow } = require('../../repositories/report-repository');
 
 // Fixed reference date so period boundaries are deterministic regardless of
 // the actual day this suite runs — transactions below are dated inside
@@ -161,6 +161,102 @@ describe('getIncomeStatement', () => {
   it('defaults now to the real current time when omitted', async () => {
     const deps = dependencies({ transactions: [] });
     const statement = await getIncomeStatement(deps, 'user_1', { period: 'year', offset: 0 });
+    expect(statement.period.label).toBe(String(new Date().getFullYear()));
+  });
+});
+
+describe('getCashflow', () => {
+  it('computes operating, investing, financing, and mojo totals for the given period', async () => {
+    const deps = dependencies({
+      transactions: [
+        {
+          id: 'tx_1',
+          account: 'Income',
+          amount: 1000,
+          date: '2026-09-10',
+          time: '09:00',
+          category: '@Salary',
+          comment: '',
+        },
+        {
+          id: 'tx_2',
+          account: 'Income',
+          amount: -200,
+          date: '2026-09-11',
+          time: '09:00',
+          category: '@Fire',
+          comment: '',
+        },
+        {
+          id: 'tx_3',
+          account: 'Daily',
+          amount: -150,
+          date: '2026-09-12',
+          time: '09:00',
+          category: '@Loan',
+          comment: 'Payback Liabilitie Mortgage;',
+        },
+        {
+          id: 'tx_4',
+          account: 'Mojo',
+          amount: 50,
+          date: '2026-09-13',
+          time: '09:00',
+          category: '',
+          comment: '',
+        },
+      ],
+    });
+    const statement = await getCashflow(deps, 'user_1', { period: 'month', offset: 0, now: NOW });
+    expect(statement.period).toEqual({
+      startDate: '2026-09-01',
+      endDate: '2026-09-30',
+      label: 'Sep 2026',
+    });
+    expect(statement.operating.current).toBe(100000);
+    expect(statement.investing.current).toBe(20000);
+    expect(statement.financing.current).toBe(15000);
+    expect(statement.mojo.current).toBe(5000);
+    expect(statement.netCashflow.current).toBe(100000 - 20000 - 15000 - 5000);
+  });
+
+  it('decrypts transactions and comments when database encryption is enabled', async () => {
+    const session = new EncryptionSession('secret');
+    const encryptField = (value) => session.encrypt(String(value));
+    const deps = dependencies(
+      {
+        transactions: [
+          {
+            id: encryptField('tx_1'),
+            account: encryptField('Daily'),
+            amount: encryptField('-150'),
+            date: encryptField('2026-09-10'),
+            time: encryptField('09:00'),
+            category: encryptField('@Loan'),
+            comment: encryptField('Payback Liabilitie Mortgage;'),
+          },
+        ],
+      },
+      { key: 'secret', encryptDatabase: true },
+    );
+    const statement = await getCashflow(deps, 'user_1', { period: 'month', offset: 0, now: NOW });
+    expect(statement.financing.current).toBe(15000);
+  });
+
+  it('returns an all-zero statement for a user with no data document', async () => {
+    const error = new Error('not_found');
+    error.statusCode = 404;
+    const deps = {
+      usersDb: { get: jest.fn(async () => Promise.reject(error)) },
+      authDb: { get: jest.fn(async () => Promise.reject(error)) },
+    };
+    const statement = await getCashflow(deps, 'user_1', { period: 'month', offset: 0, now: NOW });
+    expect(statement.netCashflow.current).toBe(0);
+  });
+
+  it('defaults now to the real current time when omitted', async () => {
+    const deps = dependencies({ transactions: [] });
+    const statement = await getCashflow(deps, 'user_1', { period: 'year', offset: 0 });
     expect(statement.period.label).toBe(String(new Date().getFullYear()));
   });
 });

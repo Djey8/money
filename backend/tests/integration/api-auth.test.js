@@ -1097,6 +1097,113 @@ describe('v1 API authentication and PAT management', () => {
     });
   });
 
+  describe('GET /reports/cashflow', () => {
+    async function reportsToken() {
+      const created = await sessionRequest('post', '/api/v1/auth/tokens').send({
+        name: `reports-agent-${Date.now()}-${Math.random()}`,
+        scopes: ['reports:r'],
+      });
+      return created.body.token;
+    }
+
+    it('computes operating cashflow from ordinary Income and expense-account activity', async () => {
+      const token = await reportsToken();
+      const before = await request(app)
+        .get('/api/v1/reports/cashflow?period=year&offset=0')
+        .set('Authorization', `Bearer ${token}`);
+      await sessionRequest('post', '/api/v1/transactions').send({
+        account: 'Income',
+        amountMinor: 200000,
+        date: '2026-09-05',
+        time: '09:00',
+        category: '@Cashflow salary',
+        comment: '',
+      });
+      const after = await request(app)
+        .get('/api/v1/reports/cashflow?period=year&offset=0')
+        .set('Authorization', `Bearer ${token}`);
+      expect(after.status).toBe(200);
+      expect(after.body.operating.current).toBe(before.body.operating.current + 200000);
+    });
+
+    it('classifies a transfer from Income into Fire as investing, not operating', async () => {
+      const token = await reportsToken();
+      const before = await request(app)
+        .get('/api/v1/reports/cashflow?period=year&offset=0')
+        .set('Authorization', `Bearer ${token}`);
+      await sessionRequest('post', '/api/v1/transactions').send({
+        account: 'Income',
+        amountMinor: -30000,
+        date: '2026-09-06',
+        time: '09:00',
+        category: '@Fire',
+        comment: '',
+      });
+      const after = await request(app)
+        .get('/api/v1/reports/cashflow?period=year&offset=0')
+        .set('Authorization', `Bearer ${token}`);
+      expect(after.body.investing.current).toBe(before.body.investing.current + 30000);
+      expect(after.body.operating.current).toBe(before.body.operating.current);
+    });
+
+    it('classifies a "payback liabilitie" comment as financing regardless of account', async () => {
+      const token = await reportsToken();
+      const before = await request(app)
+        .get('/api/v1/reports/cashflow?period=year&offset=0')
+        .set('Authorization', `Bearer ${token}`);
+      await sessionRequest('post', '/api/v1/transactions').send({
+        account: 'Daily',
+        amountMinor: -15000,
+        date: '2026-09-06',
+        time: '09:00',
+        category: '@Loan',
+        comment: 'Payback Liabilitie Mortgage;',
+      });
+      const after = await request(app)
+        .get('/api/v1/reports/cashflow?period=year&offset=0')
+        .set('Authorization', `Bearer ${token}`);
+      expect(after.body.financing.current).toBe(before.body.financing.current + 15000);
+    });
+
+    it('rejects an invalid period value', async () => {
+      const token = await reportsToken();
+      const response = await request(app)
+        .get('/api/v1/reports/cashflow?period=fortnight')
+        .set('Authorization', `Bearer ${token}`);
+      expect(response.status).toBe(400);
+      expect(response.body.code).toBe('validation_invalid');
+    });
+
+    it('rejects requests without the reports:r scope', async () => {
+      const writeOnly = await sessionRequest('post', '/api/v1/auth/tokens').send({
+        name: `write-not-reports-cashflow-${Date.now()}`,
+        scopes: ['transactions:w'],
+      });
+      const response = await request(app)
+        .get('/api/v1/reports/cashflow')
+        .set('Authorization', `Bearer ${writeOnly.body.token}`);
+      expect(response.status).toBe(403);
+      expect(response.body.code).toBe('scope_insufficient');
+    });
+
+    it('keeps cashflow totals isolated to the authenticated user document', async () => {
+      const token = await reportsToken();
+      await sessionRequest('post', '/api/v1/transactions', secondUser.token).send({
+        account: 'Income',
+        amountMinor: 999900,
+        date: '2026-09-06',
+        time: '09:00',
+        category: '@Only second user cashflow',
+        comment: '',
+      });
+      const response = await request(app)
+        .get('/api/v1/reports/cashflow?period=year&offset=0')
+        .set('Authorization', `Bearer ${token}`);
+      expect(response.status).toBe(200);
+      expect(response.body.operating.current).toBeLessThan(999900);
+    });
+  });
+
   it('creates a PAT once and exposes its identity to /me', async () => {
     const create = await sessionRequest('post', '/api/v1/auth/tokens').send({
       name: 'integration-agent',

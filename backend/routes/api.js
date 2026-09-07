@@ -15,7 +15,7 @@ const {
   updateTransaction,
   MAX_BATCH_OPERATIONS,
 } = require('../repositories/transaction-repository');
-const { getIncomeStatement } = require('../repositories/report-repository');
+const { getIncomeStatement, getCashflow } = require('../repositories/report-repository');
 const { getUsersDb, getAuthDb } = require('../config/db');
 const { getEncryptionSession } = require('../services/encryption-session');
 const {
@@ -623,6 +623,22 @@ router.get('/reports/income-statement', requireScope('reports:r'), async (req, r
       req.userId,
       { period: validation.period, offset: validation.offset },
     );
+    return res.json(statement);
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.get('/reports/cashflow', requireScope('reports:r'), async (req, res, next) => {
+  const validation = validateReportPeriodQuery(req.query);
+  if (validation.error) {
+    return problem(res, 400, 'validation_invalid', 'Invalid report request', validation.error);
+  }
+  try {
+    const statement = await getCashflow({ usersDb: getUsersDb(), authDb: getAuthDb() }, req.userId, {
+      period: validation.period,
+      offset: validation.offset,
+    });
     return res.json(statement);
   } catch (error) {
     return next(error);
