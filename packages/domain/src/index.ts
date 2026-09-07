@@ -7,3 +7,5 @@ export * from './transactions/bucket-allocations';
 export * from './transactions/mojo';
 export * from './transactions/fund-state';
 export * from './transactions/derived-state';
+export * from './reports/period-range';
+export * from './reports/income-statement';

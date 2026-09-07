@@ -41,7 +41,7 @@ export function normalizeTransaction(
   assertNonEmptyString(transaction.account, 'account');
   assertNonEmptyString(transaction.date, 'date');
   assertNonEmptyString(transaction.time, 'time');
-  assertNonEmptyString(transaction.category, 'category');
+  assertString(transaction.category, 'category');
   assertString(transaction.comment, 'comment');
   if (typeof transaction.amount !== 'number' || !Number.isFinite(transaction.amount)) {
     throw new Error('Transaction amount must be a finite number');

@@ -91,3 +91,14 @@ curl -X POST http://localhost:3000/api/v1/transactions/import \
 ```
 
 Import is additive only (every line is a create) and accepts up to 10,000 lines per call. Add `?atomic=true` to the import URL to make the whole call all-or-nothing instead of applying what parses and reporting the rest per line.
+
+## Read the income statement for a period
+
+Requires a PAT with `reports:r`. Returns revenues, interest/property/other income, per-account expenses, net result, and savings rate for the requested period plus the one before it.
+
+```bash
+curl "http://localhost:3000/api/v1/reports/income-statement?period=month&offset=0" \
+  -H "Authorization: Bearer $MONEY_MANAGER_TOKEN"
+```
+
+`period` is one of `week`, `month`, `quarter`, `halfyear`, `year` (default `month`); `offset` counts periods back from the current one (default `0`).

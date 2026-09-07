@@ -447,6 +447,66 @@ paths:
           $ref: '#/components/responses/InsufficientScope'
         '404':
           $ref: '#/components/responses/NotFound'
+  /reports/income-statement:
+    get:
+      operationId: getIncomeStatement
+      summary: Get the income statement for a period
+      description: >-
+        Computes revenues, interest/property/other income, per-account expenses, net result, and savings rate for one
+        period, plus the same figures for the immediately preceding period of the same length. Inter-account
+        transfers (Income→Daily/Splurge/Smile/Fire/Mojo) are excluded from both sides, matching
+        `src/app/stats/statement/statement-calculations.ts` — see PLAN.md D-22 for why this differs from the
+        `src/app/main/cashflow/*` components' own (buggy, out-of-scope) calculation.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [week, month, quarter, halfyear, year]
+            default: month
+        - name: offset
+          in: query
+          description: Periods before the current one; 0 is the period containing today, -1 the one before it, and so on.
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Income statement for the requested period and the one before it
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IncomeStatement'
+              example:
+                period:
+                  startDate: '2026-09-01'
+                  endDate: '2026-09-30'
+                  label: Sep 2026
+                previousPeriod:
+                  startDate: '2026-08-01'
+                  endDate: '2026-08-31'
+                  label: Aug 2026
+                revenues: { current: 250000, previous: 250000, changePercent: 0 }
+                interests: { current: 500, previous: 0, changePercent: 100 }
+                propertyIncome: { current: 0, previous: 0, changePercent: 0 }
+                otherIncome: { current: 0, previous: 0, changePercent: 0 }
+                totalIncome: { current: 250500, previous: 250000, changePercent: 0.2 }
+                expensesByAccount:
+                  Daily: { current: 40000, previous: 38000, changePercent: 5.26 }
+                  Splurge: { current: 0, previous: 0, changePercent: 0 }
+                  Smile: { current: 0, previous: 0, changePercent: 0 }
+                  Fire: { current: 0, previous: 0, changePercent: 0 }
+                totalExpenses: { current: 40000, previous: 38000, changePercent: 5.26 }
+                netResult: { current: 210500, previous: 212000, changePercent: -0.71 }
+                savingsRatePercent: { current: 84.03, previous: 84.8, changePercent: -0.91 }
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
   /me:
     get:
       operationId: getCurrentIdentity
@@ -642,6 +702,76 @@ components:
         category:
           type: string
         comment:
+          type: string
+    StatementRow:
+      type: object
+      required: [current, previous, changePercent]
+      description: Amounts are integer minor units. `changePercent` is the relative change of `current` vs `previous` (e.g. 20 → 25 is `25`, not `5`); it is `0` when `previous` is `0`.
+      properties:
+        current:
+          type: integer
+        previous:
+          type: integer
+        changePercent:
+          type: number
+    IncomeStatement:
+      type: object
+      required:
+        - period
+        - previousPeriod
+        - revenues
+        - interests
+        - propertyIncome
+        - otherIncome
+        - totalIncome
+        - expensesByAccount
+        - totalExpenses
+        - netResult
+        - savingsRatePercent
+      properties:
+        period:
+          $ref: '#/components/schemas/PeriodRange'
+        previousPeriod:
+          $ref: '#/components/schemas/PeriodRange'
+        revenues:
+          $ref: '#/components/schemas/StatementRow'
+        interests:
+          $ref: '#/components/schemas/StatementRow'
+        propertyIncome:
+          $ref: '#/components/schemas/StatementRow'
+        otherIncome:
+          $ref: '#/components/schemas/StatementRow'
+        totalIncome:
+          $ref: '#/components/schemas/StatementRow'
+        expensesByAccount:
+          type: object
+          required: [Daily, Splurge, Smile, Fire]
+          properties:
+            Daily:
+              $ref: '#/components/schemas/StatementRow'
+            Splurge:
+              $ref: '#/components/schemas/StatementRow'
+            Smile:
+              $ref: '#/components/schemas/StatementRow'
+            Fire:
+              $ref: '#/components/schemas/StatementRow'
+        totalExpenses:
+          $ref: '#/components/schemas/StatementRow'
+        netResult:
+          $ref: '#/components/schemas/StatementRow'
+        savingsRatePercent:
+          $ref: '#/components/schemas/StatementRow'
+    PeriodRange:
+      type: object
+      required: [startDate, endDate, label]
+      properties:
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        label:
           type: string
     CreateTransactionRequest:
       type: object

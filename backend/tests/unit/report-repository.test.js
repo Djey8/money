@@ -1,0 +1,166 @@
+'use strict';
+
+const { EncryptionSession } = require('@money/domain');
+const { getIncomeStatement } = require('../../repositories/report-repository');
+
+// Fixed reference date so period boundaries are deterministic regardless of
+// the actual day this suite runs — transactions below are dated inside
+// September 2026, "the current month" as of this fixture.
+const NOW = new Date(2026, 8, 15);
+
+function dependencies(data, encryptionConfig) {
+  return {
+    usersDb: { get: jest.fn(async () => ({ data })) },
+    authDb: { get: jest.fn(async () => ({ encryptionConfig })) },
+  };
+}
+
+describe('getIncomeStatement', () => {
+  it('computes totals from the caller-owned transaction list for the given period', async () => {
+    const deps = dependencies({
+      transactions: [
+        {
+          id: 'tx_1',
+          account: 'Income',
+          amount: 1000,
+          date: '2026-09-10',
+          time: '09:00',
+          category: '@Salary',
+          comment: '',
+        },
+        {
+          id: 'tx_2',
+          account: 'Daily',
+          amount: -400,
+          date: '2026-09-11',
+          time: '09:00',
+          category: '@Food',
+          comment: '',
+        },
+      ],
+    });
+    const statement = await getIncomeStatement(deps, 'user_1', {
+      period: 'month',
+      offset: 0,
+      now: NOW,
+    });
+    expect(statement.period).toEqual({
+      startDate: '2026-09-01',
+      endDate: '2026-09-30',
+      label: 'Sep 2026',
+    });
+    expect(statement.revenues.current).toBe(100000);
+    expect(statement.expensesByAccount.Daily.current).toBe(40000);
+    expect(statement.netResult.current).toBe(60000);
+  });
+
+  it('classifies income using tags from balance/shares and income/revenue entries', async () => {
+    const deps = dependencies({
+      transactions: [
+        {
+          id: 'tx_1',
+          account: 'Income',
+          amount: 5,
+          date: '2026-09-10',
+          time: '09:00',
+          category: '@AAPL',
+          comment: '',
+        },
+      ],
+      balance: { asset: { shares: [{ tag: 'AAPL', quantity: 1, price: 100 }] } },
+    });
+    const statement = await getIncomeStatement(deps, 'user_1', {
+      period: 'month',
+      offset: 0,
+      now: NOW,
+    });
+    expect(statement.interests.current).toBe(500);
+    expect(statement.revenues.current).toBe(0);
+  });
+
+  it('decrypts transactions and tag fields when database encryption is enabled', async () => {
+    const session = new EncryptionSession('secret');
+    const encryptField = (value) => session.encrypt(String(value));
+    const deps = dependencies(
+      {
+        transactions: [
+          {
+            id: encryptField('tx_1'),
+            account: encryptField('Income'),
+            amount: encryptField('250'),
+            date: encryptField('2026-09-10'),
+            time: encryptField('09:00'),
+            category: encryptField('@Rental'),
+            comment: encryptField(''),
+          },
+        ],
+        income: { revenue: { properties: [{ tag: encryptField('Rental') }] } },
+      },
+      { key: 'secret', encryptDatabase: true },
+    );
+    const statement = await getIncomeStatement(deps, 'user_1', {
+      period: 'month',
+      offset: 0,
+      now: NOW,
+    });
+    expect(statement.propertyIncome.current).toBe(25000);
+  });
+
+  it('returns an all-zero statement for a user with no data document', async () => {
+    const error = new Error('not_found');
+    error.statusCode = 404;
+    const deps = {
+      usersDb: { get: jest.fn(async () => Promise.reject(error)) },
+      authDb: { get: jest.fn(async () => Promise.reject(error)) },
+    };
+    const statement = await getIncomeStatement(deps, 'user_1', {
+      period: 'month',
+      offset: 0,
+      now: NOW,
+    });
+    expect(statement.totalIncome.current).toBe(0);
+    expect(statement.totalExpenses.current).toBe(0);
+  });
+
+  it('computes the previous period as one period before the requested offset', async () => {
+    const deps = dependencies({ transactions: [] });
+    const statement = await getIncomeStatement(deps, 'user_1', {
+      period: 'month',
+      offset: 0,
+      now: NOW,
+    });
+    expect(statement.previousPeriod).toEqual({
+      startDate: '2026-08-01',
+      endDate: '2026-08-31',
+      label: 'Aug 2026',
+    });
+  });
+
+  it('does not crash on a legacy transaction with an empty category', async () => {
+    const deps = dependencies({
+      transactions: [
+        {
+          id: 'tx_1',
+          account: 'Daily',
+          amount: -300,
+          date: '2026-09-10',
+          time: '09:00',
+          category: '',
+          comment: '',
+        },
+      ],
+    });
+    const statement = await getIncomeStatement(deps, 'user_1', {
+      period: 'month',
+      offset: 0,
+      now: NOW,
+    });
+    expect(statement.expensesByAccount.Daily.current).toBe(30000);
+  });
+
+  it('defaults now to the real current time when omitted', async () => {
+    const deps = dependencies({ transactions: [] });
+    const statement = await getIncomeStatement(deps, 'user_1', { period: 'year', offset: 0 });
+    expect(statement.period.label).toBe(String(new Date().getFullYear()));
+  });
+});

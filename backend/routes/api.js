@@ -15,6 +15,7 @@ const {
   updateTransaction,
   MAX_BATCH_OPERATIONS,
 } = require('../repositories/transaction-repository');
+const { getIncomeStatement } = require('../repositories/report-repository');
 const { getUsersDb, getAuthDb } = require('../config/db');
 const { getEncryptionSession } = require('../services/encryption-session');
 const {
@@ -126,6 +127,19 @@ function validateBatchRequest(body) {
     return { error: `operations cannot exceed ${MAX_BATCH_OPERATIONS} items.` };
   }
   return { items: body.operations.map(validateBatchOperationItem) };
+}
+
+const REPORT_PERIODS = ['week', 'month', 'quarter', 'halfyear', 'year'];
+
+function validateReportPeriodQuery(query) {
+  const period = query.period || 'month';
+  if (!REPORT_PERIODS.includes(period)) {
+    return { error: `period must be one of ${REPORT_PERIODS.join(', ')}.` };
+  }
+  if (query.offset === undefined) return { period, offset: 0 };
+  const offset = Number(query.offset);
+  if (!Number.isInteger(offset)) return { error: 'offset must be an integer.' };
+  return { period, offset };
 }
 
 const MAX_IMPORT_LINES = 10000;
@@ -597,6 +611,23 @@ router.delete(
     }
   },
 );
+
+router.get('/reports/income-statement', requireScope('reports:r'), async (req, res, next) => {
+  const validation = validateReportPeriodQuery(req.query);
+  if (validation.error) {
+    return problem(res, 400, 'validation_invalid', 'Invalid report request', validation.error);
+  }
+  try {
+    const statement = await getIncomeStatement(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+      { period: validation.period, offset: validation.offset },
+    );
+    return res.json(statement);
+  } catch (error) {
+    return next(error);
+  }
+});
 
 router.post('/auth/tokens', requireSession, async (req, res) => {
   try {

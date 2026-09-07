@@ -994,6 +994,109 @@ describe('v1 API authentication and PAT management', () => {
     });
   });
 
+  describe('GET /reports/income-statement', () => {
+    async function reportsToken() {
+      const created = await sessionRequest('post', '/api/v1/auth/tokens').send({
+        name: `reports-agent-${Date.now()}-${Math.random()}`,
+        scopes: ['reports:r'],
+      });
+      return created.body.token;
+    }
+
+    it('computes revenues, expenses, and net result for the requested period', async () => {
+      const token = await reportsToken();
+      await sessionRequest('post', '/api/v1/transactions').send({
+        account: 'Income',
+        amountMinor: 200000,
+        date: '2026-09-05',
+        time: '09:00',
+        category: '@Report salary',
+        comment: '',
+      });
+      await sessionRequest('post', '/api/v1/transactions').send({
+        account: 'Daily',
+        amountMinor: -50000,
+        date: '2026-09-06',
+        time: '09:00',
+        category: '@Report groceries',
+        comment: '',
+      });
+      const response = await request(app)
+        .get('/api/v1/reports/income-statement?period=month&offset=0')
+        .set('Authorization', `Bearer ${token}`);
+      expect(response.status).toBe(200);
+      expect(response.body.revenues.current).toBeGreaterThanOrEqual(200000);
+      expect(response.body.expensesByAccount.Daily.current).toBeGreaterThanOrEqual(50000);
+      expect(response.body.period.label).toMatch(/\d{4}$/);
+    });
+
+    it('excludes inter-account transfers from the computed totals', async () => {
+      const token = await reportsToken();
+      const before = await request(app)
+        .get('/api/v1/reports/income-statement?period=year&offset=0')
+        .set('Authorization', `Bearer ${token}`);
+      await sessionRequest('post', '/api/v1/transactions').send({
+        account: 'Income',
+        amountMinor: 30000,
+        date: '2026-09-06',
+        time: '09:00',
+        category: '@Smile',
+        comment: '',
+      });
+      const after = await request(app)
+        .get('/api/v1/reports/income-statement?period=year&offset=0')
+        .set('Authorization', `Bearer ${token}`);
+      expect(after.body.totalIncome.current).toBe(before.body.totalIncome.current);
+    });
+
+    it('rejects an invalid period value', async () => {
+      const token = await reportsToken();
+      const response = await request(app)
+        .get('/api/v1/reports/income-statement?period=fortnight')
+        .set('Authorization', `Bearer ${token}`);
+      expect(response.status).toBe(400);
+      expect(response.body.code).toBe('validation_invalid');
+    });
+
+    it('rejects a non-integer offset', async () => {
+      const token = await reportsToken();
+      const response = await request(app)
+        .get('/api/v1/reports/income-statement?offset=abc')
+        .set('Authorization', `Bearer ${token}`);
+      expect(response.status).toBe(400);
+      expect(response.body.code).toBe('validation_invalid');
+    });
+
+    it('rejects requests without the reports:r scope', async () => {
+      const writeOnly = await sessionRequest('post', '/api/v1/auth/tokens').send({
+        name: `write-not-reports-${Date.now()}`,
+        scopes: ['transactions:w'],
+      });
+      const response = await request(app)
+        .get('/api/v1/reports/income-statement')
+        .set('Authorization', `Bearer ${writeOnly.body.token}`);
+      expect(response.status).toBe(403);
+      expect(response.body.code).toBe('scope_insufficient');
+    });
+
+    it('keeps report totals isolated to the authenticated user document', async () => {
+      const token = await reportsToken();
+      await sessionRequest('post', '/api/v1/transactions', secondUser.token).send({
+        account: 'Income',
+        amountMinor: 999900,
+        date: '2026-09-06',
+        time: '09:00',
+        category: '@Only second user',
+        comment: '',
+      });
+      const response = await request(app)
+        .get('/api/v1/reports/income-statement?period=year&offset=0')
+        .set('Authorization', `Bearer ${token}`);
+      expect(response.status).toBe(200);
+      expect(response.body.revenues.current).toBeLessThan(999900);
+    });
+  });
+
   it('creates a PAT once and exposes its identity to /me', async () => {
     const create = await sessionRequest('post', '/api/v1/auth/tokens').send({
       name: 'integration-agent',

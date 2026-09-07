@@ -34,6 +34,14 @@ describe('normalizeTransaction', () => {
     });
   });
 
+  it('preserves an empty legacy category', () => {
+    expect(
+      normalizeTransaction({ ...legacyTransaction, category: '' }, () => 'tx_new'),
+    ).toMatchObject({
+      category: '',
+    });
+  });
+
   it.each([
     [{ ...legacyTransaction, account: '' }, 'account'],
     [{ ...legacyTransaction, date: '' }, 'date'],

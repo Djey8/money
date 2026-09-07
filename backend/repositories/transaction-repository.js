@@ -378,6 +378,8 @@ module.exports = {
   batchTransactions,
   MAX_BATCH_OPERATIONS,
   decryptTransaction,
+  decryptValue,
+  toApiTransactions,
   decodeCursor,
   filterAndSortTransactions,
 };
