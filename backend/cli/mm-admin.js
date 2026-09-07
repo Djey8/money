@@ -15,6 +15,8 @@
  *   node cli/mm-admin.js token create --user <id> --name "<name>" --scopes transactions:rw,reports:r [--expires-in-days 90]
  *   node cli/mm-admin.js token list --user <id>
  *   node cli/mm-admin.js token revoke --token-id <id>
+ *   node cli/mm-admin.js migrate-transaction-ids --user <id> [--dry-run]
+ *   node cli/mm-admin.js migrate-fund-project-ids --user <id> --collection smile|fire [--dry-run]
  *
  * See docs/adr/0002-money-minor-units-migration.md (migrate) and
  * docs/adr/0006-api-scopes-and-access-control.md (user/token).
@@ -25,6 +27,7 @@ const { runMigration } = require('./commands/migrate');
 const { createUser, listUsers } = require('./commands/user');
 const { createToken, listTokens, revokeToken } = require('./commands/token');
 const { backfillTransactionIds } = require('./commands/backfill-transaction-ids');
+const { backfillFundProjectIds } = require('./commands/backfill-fund-project-ids');
 
 function parseArgs(argv) {
   const options = {};
@@ -56,6 +59,7 @@ function printUsage() {
   console.error('  mm-admin token list --user <id>');
   console.error('  mm-admin token revoke --token-id <id>');
   console.error('  mm-admin migrate-transaction-ids --user <id> [--dry-run]');
+  console.error('  mm-admin migrate-fund-project-ids --user <id> --collection smile|fire [--dry-run]');
 }
 
 function print(result) {
@@ -143,6 +147,17 @@ async function main() {
     const args = parseArgs([second, ...rest].filter((arg) => arg !== undefined));
     print(
       await backfillTransactionIds(deps, { userId: args.user, dryRun: Boolean(args['dry-run']) }),
+    );
+    return;
+  }
+  if (command === 'migrate-fund-project-ids') {
+    const args = parseArgs([second, ...rest].filter((arg) => arg !== undefined));
+    print(
+      await backfillFundProjectIds(deps, {
+        userId: args.user,
+        collection: args.collection,
+        dryRun: Boolean(args['dry-run']),
+      }),
     );
     return;
   }

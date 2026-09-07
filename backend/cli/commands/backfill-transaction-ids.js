@@ -19,7 +19,7 @@ function writeBackup(backupDir, userId, userDoc) {
 function addMissingIds(transactions, session) {
   let count = 0;
   const updated = transactions.map((transaction) => {
-    if (transaction.id !== undefined) return transaction;
+    if (typeof transaction.id === 'string' && transaction.id.length > 0) return transaction;
     count += 1;
     const id = `tx_${crypto.randomUUID()}`;
     return { ...transaction, id: session ? session.encrypt(id) : id };
