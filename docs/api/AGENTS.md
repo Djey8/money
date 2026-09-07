@@ -81,3 +81,10 @@ Every Pro API write is audit logged. Prefer narrowly scoped, expiring tokens and
 4. `ratios.debtRatio` and `ratios.interestCoverage` are plain ratios, not percentages, despite sitting next to fields that are.
 5. `topExpenses`/`topIncomes` each cap at 5 entries sorted by amount descending; an untagged transaction's category shows as `—` rather than being dropped.
 6. This is a read; it is not audit logged.
+
+## Read or update the Mojo emergency/long-term reserve
+
+1. `GET /api/v1/mojo` requires `mojo:r`. There is exactly one Mojo balance per user — this is not a list endpoint. The response adds `remainingMinor` (`max(0, targetMinor - amountMinor)`) and `percentFilled` (not clamped to 100 — see below) as read-side conveniences on top of the raw balance.
+2. `PUT /api/v1/mojo` requires `mojo:w` and accepts only `{ "targetMinor": <integer >= 1> }`. **`amountMinor` cannot be set directly** — it's derived from transaction history (a `@Mojo`-tagged contribution, or a transaction posted directly on the `Mojo` account) and is recalculated by every transaction write, matching the UI's own Mojo editor which only ever lets you change the target.
+3. `percentFilled` can exceed 100: only `@Mojo`-category contributions are capped at the target on write; a transaction posted directly on the `Mojo` account is not. Don't assume `amountMinor <= targetMinor`.
+4. Every `PUT` is audit logged.

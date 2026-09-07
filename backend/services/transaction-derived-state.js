@@ -131,4 +131,4 @@ function applyDerivedState(data, transactions, session, schemaVersion) {
   };
 }
 
-module.exports = { applyDerivedState, buildDerivedStateContext };
+module.exports = { applyDerivedState, buildDerivedStateContext, writeValue, toStoredMoney };

@@ -133,3 +133,17 @@ curl "http://localhost:3000/api/v1/reports/kpis?period=month&offset=0" \
 ```
 
 Same `period`/`offset` parameters as `/reports/income-statement`.
+
+## Read or update the Mojo reserve
+
+Requires a PAT with `mojo:r` (read) or `mojo:w` (update). There is one Mojo balance per user; `PUT` only accepts `targetMinor` — the current amount is derived from transaction history.
+
+```bash
+curl "http://localhost:3000/api/v1/mojo" \
+  -H "Authorization: Bearer $MONEY_MANAGER_TOKEN"
+
+curl -X PUT "http://localhost:3000/api/v1/mojo" \
+  -H "Authorization: Bearer $MONEY_MANAGER_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"targetMinor": 200000}'
+```

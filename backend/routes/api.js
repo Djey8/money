@@ -21,6 +21,7 @@ const {
   getBalanceSheet,
   getKpis,
 } = require('../repositories/report-repository');
+const { getMojoStatus, updateMojoTarget } = require('../repositories/mojo-repository');
 const { getUsersDb, getAuthDb } = require('../config/db');
 const { getEncryptionSession } = require('../services/encryption-session');
 const {
@@ -616,6 +617,45 @@ router.delete(
     }
   },
 );
+
+router.get('/mojo', requireScope('mojo:r'), async (req, res, next) => {
+  try {
+    const status = await getMojoStatus({ usersDb: getUsersDb(), authDb: getAuthDb() }, req.userId);
+    return res.json(status);
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.put('/mojo', requireScope('mojo:w'), async (req, res, next) => {
+  const targetMinor = req.body?.targetMinor;
+  if (!Number.isInteger(targetMinor) || targetMinor < 1) {
+    return problem(
+      res,
+      400,
+      'validation_invalid',
+      'Invalid Mojo request',
+      'targetMinor must be an integer of at least 1.',
+    );
+  }
+  try {
+    const status = await updateMojoTarget(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+      targetMinor,
+    );
+    await recordAuditEntry(getAuditDb(), {
+      userId: req.userId,
+      actor: auditActor(req.auth),
+      method: req.method,
+      path: req.baseUrl + req.path,
+      resource: 'mojo',
+    });
+    return res.json(status);
+  } catch (error) {
+    return next(error);
+  }
+});
 
 router.get('/reports/income-statement', requireScope('reports:r'), async (req, res, next) => {
   const validation = validateReportPeriodQuery(req.query);

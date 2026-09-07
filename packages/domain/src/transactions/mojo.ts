@@ -18,3 +18,17 @@ export function applyMojoTransaction(mojo: MojoBalance, transaction: ApiTransact
   if (transaction.account === 'Mojo') amountMinor += transaction.amountMinor;
   return { ...mojo, amountMinor };
 }
+
+export interface MojoStatus extends MojoBalance {
+  /** `max(0, targetMinor - amountMinor)` — 0 once the target is reached or exceeded. */
+  remainingMinor: number;
+  /** `amountMinor / targetMinor * 100`, or 0 when `targetMinor` is 0. Not clamped to 100 — `amountMinor` can exceed `targetMinor` for a direct deposit made on the `Mojo` account itself (only `@Mojo`-category contributions are capped, per `applyMojoTransaction`). */
+  percentFilled: number;
+}
+
+/** Read-side aggregate for `GET /mojo` — the "how full is Mojo" view a UI/agent needs, on top of the raw balance `applyMojoTransaction` maintains. */
+export function computeMojoStatus(mojo: MojoBalance): MojoStatus {
+  const remainingMinor = Math.max(0, mojo.targetMinor - mojo.amountMinor);
+  const percentFilled = mojo.targetMinor > 0 ? (mojo.amountMinor / mojo.targetMinor) * 100 : 0;
+  return { ...mojo, remainingMinor, percentFilled };
+}

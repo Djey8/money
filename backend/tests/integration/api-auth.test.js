@@ -1406,6 +1406,98 @@ describe('v1 API authentication and PAT management', () => {
     });
   });
 
+  describe('GET/PUT /mojo', () => {
+    async function mojoToken(scopes) {
+      const created = await sessionRequest('post', '/api/v1/auth/tokens').send({
+        name: `mojo-agent-${Date.now()}-${Math.random()}`,
+        scopes,
+      });
+      return created.body;
+    }
+
+    async function setMojo(userId, mojo) {
+      const usersDb = getUsersDb();
+      const doc = await usersDb.get(userId);
+      doc.data = doc.data || {};
+      doc.data.mojo = mojo;
+      await usersDb.insert(doc);
+    }
+
+    it('computes status from the stored Mojo balance', async () => {
+      const { token } = await mojoToken(['mojo:r']);
+      await setMojo(firstUser.userId, { amount: 1500, target: 2000 });
+      const response = await request(app).get('/api/v1/mojo').set('Authorization', `Bearer ${token}`);
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({
+        amountMinor: 150000,
+        targetMinor: 200000,
+        remainingMinor: 50000,
+        percentFilled: 75,
+      });
+    });
+
+    it('updates only the target, leaving the derived amount untouched, and audit logs the write', async () => {
+      const { token, tokenId } = await mojoToken(['mojo:r', 'mojo:w']);
+      await setMojo(firstUser.userId, { amount: 1500, target: 2000 });
+      const response = await request(app)
+        .put('/api/v1/mojo')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ targetMinor: 300000 });
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({
+        amountMinor: 150000,
+        targetMinor: 300000,
+        remainingMinor: 150000,
+        percentFilled: 50,
+      });
+      const stored = await getUsersDb().get(firstUser.userId);
+      expect(stored.data.mojo.amount).toBe(1500);
+      expect(stored.data.mojo.target).toBe(3000);
+      const auditEntries = await queryAuditEntries(getAuditDb(), firstUser.userId, { resource: 'mojo' });
+      expect(auditEntries).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ actor: { type: 'token', tokenId }, method: 'PUT' }),
+        ]),
+      );
+    });
+
+    it('rejects a non-positive or non-integer targetMinor', async () => {
+      const { token } = await mojoToken(['mojo:w']);
+      for (const targetMinor of [0, -100, 1.5, 'a lot']) {
+        const response = await request(app)
+          .put('/api/v1/mojo')
+          .set('Authorization', `Bearer ${token}`)
+          .send({ targetMinor });
+        expect(response.status).toBe(400);
+        expect(response.body.code).toBe('validation_invalid');
+      }
+    });
+
+    it('rejects GET without mojo:r and PUT without mojo:w', async () => {
+      const { token: readOnly } = await mojoToken(['mojo:r']);
+      const putResponse = await request(app)
+        .put('/api/v1/mojo')
+        .set('Authorization', `Bearer ${readOnly}`)
+        .send({ targetMinor: 100000 });
+      expect(putResponse.status).toBe(403);
+      expect(putResponse.body.code).toBe('scope_insufficient');
+
+      const { token: writeOnly } = await mojoToken(['mojo:w']);
+      const getResponse = await request(app).get('/api/v1/mojo').set('Authorization', `Bearer ${writeOnly}`);
+      expect(getResponse.status).toBe(403);
+      expect(getResponse.body.code).toBe('scope_insufficient');
+    });
+
+    it('keeps Mojo status isolated to the authenticated user document', async () => {
+      const { token } = await mojoToken(['mojo:r']);
+      await setMojo(firstUser.userId, { amount: 1000, target: 2000 });
+      await setMojo(secondUser.userId, { amount: 999900, target: 999900 });
+      const response = await request(app).get('/api/v1/mojo').set('Authorization', `Bearer ${token}`);
+      expect(response.status).toBe(200);
+      expect(response.body.amountMinor).toBe(100000);
+    });
+  });
+
   it('creates a PAT once and exposes its identity to /me', async () => {
     const create = await sessionRequest('post', '/api/v1/auth/tokens').send({
       name: 'integration-agent',

@@ -672,6 +672,72 @@ paths:
           $ref: '#/components/responses/AuthenticationRequired'
         '403':
           $ref: '#/components/responses/InsufficientScope'
+  /mojo:
+    get:
+      operationId: getMojo
+      summary: Get the current Mojo status
+      description: >-
+        Mojo is a single shared emergency/long-term reserve, not a list — there is one Mojo balance per user.
+        `remainingMinor` and `percentFilled` are read-side conveniences on top of the raw `amountMinor`/`targetMinor`
+        pair; `amountMinor` is derived from transaction history (see `PUT /mojo`) and is not itself writable.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Current Mojo status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MojoStatus'
+              example:
+                amountMinor: 150000
+                targetMinor: 200000
+                remainingMinor: 50000
+                percentFilled: 75
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+    put:
+      operationId: updateMojoTarget
+      summary: Update the Mojo target
+      description: >-
+        Updates only `targetMinor` — `amountMinor` is owned by transaction-derived state (a `@Mojo`-tagged
+        contribution or a direct transaction on the `Mojo` account) and cannot be set directly here, matching the
+        UI's own Mojo editor (only the target is user-editable).
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [targetMinor]
+              properties:
+                targetMinor:
+                  type: integer
+                  minimum: 1
+            example:
+              targetMinor: 200000
+      responses:
+        '200':
+          description: Updated Mojo status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MojoStatus'
+              example:
+                amountMinor: 150000
+                targetMinor: 200000
+                remainingMinor: 50000
+                percentFilled: 75
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
   /me:
     get:
       operationId: getCurrentIdentity
@@ -1062,6 +1128,21 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/CategoryAggregate'
+    MojoStatus:
+      type: object
+      required: [amountMinor, targetMinor, remainingMinor, percentFilled]
+      properties:
+        amountMinor:
+          type: integer
+          description: Derived from transaction history — not directly writable.
+        targetMinor:
+          type: integer
+        remainingMinor:
+          type: integer
+          description: max(0, targetMinor - amountMinor).
+        percentFilled:
+          type: number
+          description: amountMinor / targetMinor * 100, or 0 when targetMinor is 0. Not clamped to 100.
     CreateTransactionRequest:
       type: object
       required: [account, amountMinor, date, time, category, comment]
