@@ -295,3 +295,25 @@ curl -X PATCH "http://localhost:3000/api/v1/balance/investments/investments_<id>
 curl -X DELETE "http://localhost:3000/api/v1/balance/investments/investments_<id>" \
   -H "Authorization: Bearer $MONEY_MANAGER_TOKEN"
 ```
+
+## List, create, get, update, or delete shares
+
+Requires a PAT with `balance:r` (list/get) or `balance:w` (create/update/delete). `tag` shares the same cross-entity namespace as Assets/Investments and has every space stripped. Renaming a share's `tag`, or just updating `quantity`/`priceMinor`, also syncs any linked Grow project and Interest entry — see `docs/api/AGENTS.md` for the full rule.
+
+```bash
+curl "http://localhost:3000/api/v1/balance/shares" \
+  -H "Authorization: Bearer $MONEY_MANAGER_TOKEN"
+
+curl -X POST "http://localhost:3000/api/v1/balance/shares" \
+  -H "Authorization: Bearer $MONEY_MANAGER_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"tag": "MSFT", "quantity": 10, "priceMinor": 41500}'
+
+curl -X PATCH "http://localhost:3000/api/v1/balance/shares/shares_<id>" \
+  -H "Authorization: Bearer $MONEY_MANAGER_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"quantity": 20, "priceMinor": 42000}'
+
+curl -X DELETE "http://localhost:3000/api/v1/balance/shares/shares_<id>" \
+  -H "Authorization: Bearer $MONEY_MANAGER_TOKEN"
+```

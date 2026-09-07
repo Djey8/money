@@ -1235,7 +1235,7 @@ describe('v1 API authentication and PAT management', () => {
         {
           asset: {
             assets: [{ id: 'assets_fixture_car', tag: 'Car', amount: 8000 }],
-            shares: [{ tag: 'MSFT', quantity: 10, price: 415 }],
+            shares: [{ id: 'shares_fixture_msft', tag: 'MSFT', quantity: 10, price: 415 }],
             investments: [
               {
                 id: 'investments_fixture_rental_unit_a',
@@ -2950,7 +2950,12 @@ describe('v1 API authentication and PAT management', () => {
     it('rejects a tag that collides with an existing share', async () => {
       const { token } = await balanceToken(['balance:w']);
       const tag = `Shared Tag ${Date.now()}`;
-      await seedShare(firstUser.userId, { tag, quantity: 10, price: 415 });
+      await seedShare(firstUser.userId, {
+        id: `shares_fixture_${Date.now()}`,
+        tag,
+        quantity: 10,
+        price: 415,
+      });
       const response = await request(app)
         .post('/api/v1/balance/assets')
         .set('Authorization', `Bearer ${token}`)
@@ -3466,6 +3471,294 @@ describe('v1 API authentication and PAT management', () => {
       expect(getResponse.status).toBe(404);
     });
   });
+
+  describe('GET/POST /balance/shares and GET/PATCH/DELETE /balance/shares/:id', () => {
+    async function balanceToken(scopes) {
+      const created = await sessionRequest('post', '/api/v1/auth/tokens').send({
+        name: `balance-share-agent-${Date.now()}-${Math.random()}`,
+        scopes,
+      });
+      return created.body;
+    }
+
+    async function seedInterest(userId, interest) {
+      const usersDb = getUsersDb();
+      const doc = await usersDb.get(userId);
+      doc.data = doc.data || {};
+      doc.data.income = doc.data.income || {};
+      doc.data.income.revenue = doc.data.income.revenue || {};
+      doc.data.income.revenue.interests = [...(doc.data.income.revenue.interests || []), interest];
+      await usersDb.insert(doc);
+    }
+
+    async function seedGrowProject(userId, growProject) {
+      const usersDb = getUsersDb();
+      const doc = await usersDb.get(userId);
+      doc.data = doc.data || {};
+      doc.data.grow = [...(doc.data.grow || []), growProject];
+      await usersDb.insert(doc);
+    }
+
+    it('creates a share and lists it, and audit logs the write', async () => {
+      const { token, tokenId } = await balanceToken(['balance:r', 'balance:w']);
+      const created = await request(app)
+        .post('/api/v1/balance/shares')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ tag: `MSFT${Date.now()}`, quantity: 10, priceMinor: 41500 });
+      expect(created.status).toBe(201);
+      expect(created.body.quantity).toBe(10);
+      expect(created.body.priceMinor).toBe(41500);
+      expect(created.body.id).toMatch(/^shares_/);
+
+      const list = await request(app)
+        .get('/api/v1/balance/shares')
+        .set('Authorization', `Bearer ${token}`);
+      expect(list.status).toBe(200);
+      expect(list.body.shares).toEqual(
+        expect.arrayContaining([expect.objectContaining({ id: created.body.id })]),
+      );
+
+      const auditEntries = await queryAuditEntries(getAuditDb(), firstUser.userId, {
+        resource: 'balance_shares',
+      });
+      expect(auditEntries).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            actor: { type: 'token', tokenId },
+            method: 'POST',
+            resourceId: created.body.id,
+          }),
+        ]),
+      );
+    });
+
+    it('defaults quantity/priceMinor to 0 when omitted', async () => {
+      const { token } = await balanceToken(['balance:w']);
+      const response = await request(app)
+        .post('/api/v1/balance/shares')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ tag: `NoAmount${Date.now()}` });
+      expect(response.status).toBe(201);
+      expect(response.body.quantity).toBe(0);
+      expect(response.body.priceMinor).toBe(0);
+    });
+
+    it('strips every space from the tag on create', async () => {
+      const { token } = await balanceToken(['balance:w']);
+      const response = await request(app)
+        .post('/api/v1/balance/shares')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ tag: `  Rental Property Fund ${Date.now()}  ` });
+      expect(response.status).toBe(201);
+      expect(response.body.tag).not.toMatch(/\s/);
+    });
+
+    it('gets a single share by id and returns 404 for one that does not exist', async () => {
+      const { token } = await balanceToken(['balance:r', 'balance:w']);
+      const created = await request(app)
+        .post('/api/v1/balance/shares')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ tag: `GetTest${Date.now()}`, quantity: 1 });
+      const found = await request(app)
+        .get(`/api/v1/balance/shares/${created.body.id}`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(found.status).toBe(200);
+      expect(found.body.id).toBe(created.body.id);
+
+      const missing = await request(app)
+        .get('/api/v1/balance/shares/shares_does_not_exist')
+        .set('Authorization', `Bearer ${token}`);
+      expect(missing.status).toBe(404);
+      expect(missing.body.code).toBe('not_found');
+    });
+
+    it('updates only the fields provided and audit logs the write', async () => {
+      const { token, tokenId } = await balanceToken(['balance:r', 'balance:w']);
+      const created = await request(app)
+        .post('/api/v1/balance/shares')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ tag: `PatchTest${Date.now()}`, quantity: 10, priceMinor: 100 });
+      const response = await request(app)
+        .patch(`/api/v1/balance/shares/${created.body.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ quantity: 20 });
+      expect(response.status).toBe(200);
+      expect(response.body.quantity).toBe(20);
+      expect(response.body.priceMinor).toBe(100);
+      expect(response.body.tag).toBe(created.body.tag);
+
+      const auditEntries = await queryAuditEntries(getAuditDb(), firstUser.userId, {
+        resource: 'balance_shares',
+      });
+      expect(auditEntries).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            actor: { type: 'token', tokenId },
+            method: 'PATCH',
+            resourceId: created.body.id,
+          }),
+        ]),
+      );
+    });
+
+    it('cascades a tag rename into matching income.revenue.interests entries atomically', async () => {
+      const { token } = await balanceToken(['balance:r', 'balance:w']);
+      const originalTag = `MSFT${Date.now()}${Math.random()}`;
+      const uniqueAmount = Date.now() + Math.random();
+      const created = await request(app)
+        .post('/api/v1/balance/shares')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ tag: originalTag, quantity: 10 });
+      await seedInterest(firstUser.userId, { tag: originalTag, amount: uniqueAmount });
+
+      const newTag = `${originalTag}Renamed`;
+      const response = await request(app)
+        .patch(`/api/v1/balance/shares/${created.body.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ tag: newTag });
+      expect(response.status).toBe(200);
+      expect(response.body.tag).toBe(newTag);
+
+      const doc = await getUsersDb().get(firstUser.userId);
+      const interest = doc.data.income.revenue.interests.find((i) => i.amount === uniqueAmount);
+      expect(interest.tag).toBe(newTag);
+    });
+
+    it("syncs quantity/price into a Grow project whose title matches the share's tag", async () => {
+      const { token } = await balanceToken(['balance:r', 'balance:w']);
+      const tag = `MSFT${Date.now()}${Math.random()}`;
+      const created = await request(app)
+        .post('/api/v1/balance/shares')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ tag, quantity: 10, priceMinor: 41500 });
+      await seedGrowProject(firstUser.userId, {
+        title: tag,
+        isAsset: true,
+        share: { tag, quantity: 10, price: 415 },
+      });
+
+      const response = await request(app)
+        .patch(`/api/v1/balance/shares/${created.body.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ quantity: 25, priceMinor: 50000 });
+      expect(response.status).toBe(200);
+
+      const doc = await getUsersDb().get(firstUser.userId);
+      const growProject = doc.data.grow.find((g) => g.title === tag);
+      expect(growProject.share.quantity).toBe(25);
+      expect(growProject.share.price).toBe(500);
+    });
+
+    it('deletes a share, and audit logs the write', async () => {
+      const { token, tokenId } = await balanceToken(['balance:r', 'balance:w']);
+      const created = await request(app)
+        .post('/api/v1/balance/shares')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ tag: `DeleteTest${Date.now()}`, quantity: 1 });
+      const response = await request(app)
+        .delete(`/api/v1/balance/shares/${created.body.id}`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({ id: created.body.id });
+
+      const getResponse = await request(app)
+        .get(`/api/v1/balance/shares/${created.body.id}`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(getResponse.status).toBe(404);
+
+      const auditEntries = await queryAuditEntries(getAuditDb(), firstUser.userId, {
+        resource: 'balance_shares',
+      });
+      expect(auditEntries).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            actor: { type: 'token', tokenId },
+            method: 'DELETE',
+            resourceId: created.body.id,
+          }),
+        ]),
+      );
+    });
+
+    it('rejects a tag that collides with an existing share', async () => {
+      const { token } = await balanceToken(['balance:w']);
+      const tag = `Duplicate${Date.now()}`;
+      const first = await request(app)
+        .post('/api/v1/balance/shares')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ tag, quantity: 1 });
+      expect(first.status).toBe(201);
+      const second = await request(app)
+        .post('/api/v1/balance/shares')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ tag, quantity: 2 });
+      expect(second.status).toBe(400);
+      expect(second.body.code).toBe('validation_invalid');
+    });
+
+    it('rejects a tag that collides with an existing asset', async () => {
+      const { token } = await balanceToken(['balance:r', 'balance:w']);
+      const tag = `SharedWithAsset${Date.now()}`;
+      const asset = await request(app)
+        .post('/api/v1/balance/assets')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ tag, amountMinor: 100 });
+      expect(asset.status).toBe(201);
+      const share = await request(app)
+        .post('/api/v1/balance/shares')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ tag, quantity: 1 });
+      expect(share.status).toBe(400);
+      expect(share.body.code).toBe('validation_invalid');
+    });
+
+    it('rejects requests without the balance:r/balance:w scopes', async () => {
+      const { token: writeOnly } = await balanceToken(['balance:w']);
+      const getResponse = await request(app)
+        .get('/api/v1/balance/shares')
+        .set('Authorization', `Bearer ${writeOnly}`);
+      expect(getResponse.status).toBe(403);
+      expect(getResponse.body.code).toBe('scope_insufficient');
+
+      const { token: readOnly } = await balanceToken(['balance:r']);
+      const postResponse = await request(app)
+        .post('/api/v1/balance/shares')
+        .set('Authorization', `Bearer ${readOnly}`)
+        .send({ tag: 'ShouldNotSave', quantity: 1 });
+      expect(postResponse.status).toBe(403);
+      expect(postResponse.body.code).toBe('scope_insufficient');
+    });
+
+    it('keeps shares isolated to the authenticated user document', async () => {
+      const { token } = await balanceToken(['balance:r', 'balance:w']);
+      const otherCreated = await sessionRequest(
+        'post',
+        '/api/v1/auth/tokens',
+        secondUser.token,
+      ).send({
+        name: `balance-share-other-${Date.now()}`,
+        scopes: ['balance:w'],
+      });
+      const otherShare = await request(app)
+        .post('/api/v1/balance/shares')
+        .set('Authorization', `Bearer ${otherCreated.body.token}`)
+        .send({ tag: `OnlyOtherUserShare${Date.now()}`, quantity: 1 });
+      expect(otherShare.status).toBe(201);
+
+      const list = await request(app)
+        .get('/api/v1/balance/shares')
+        .set('Authorization', `Bearer ${token}`);
+      expect(list.body.shares).not.toEqual(
+        expect.arrayContaining([expect.objectContaining({ id: otherShare.body.id })]),
+      );
+
+      const getResponse = await request(app)
+        .get(`/api/v1/balance/shares/${otherShare.body.id}`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(getResponse.status).toBe(404);
+    });
+  });
+
   it('creates a PAT once and exposes its identity to /me', async () => {
     const create = await sessionRequest('post', '/api/v1/auth/tokens').send({
       name: 'integration-agent',

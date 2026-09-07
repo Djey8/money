@@ -62,6 +62,13 @@ const {
   updateInvestment,
   deleteInvestment,
 } = require('../repositories/investment-repository');
+const {
+  listShares,
+  getShare,
+  createShare,
+  updateShare,
+  deleteShare,
+} = require('../repositories/share-repository');
 const { getUsersDb, getAuthDb } = require('../config/db');
 const { getEncryptionSession } = require('../services/encryption-session');
 const {
@@ -613,6 +620,38 @@ function validatePatchInvestmentInput(input) {
   }
   if (input.depositMinor !== undefined && !Number.isInteger(input.depositMinor)) {
     return 'depositMinor must be an integer.';
+  }
+  return null;
+}
+
+function validateCreateShareInput(input) {
+  if (!input || typeof input !== 'object') return 'A share object is required.';
+  if (!isNonEmptyString(input.tag)) return 'tag must be a non-empty string.';
+  if (input.quantity !== undefined && !Number.isFinite(input.quantity)) {
+    return 'quantity must be a number.';
+  }
+  if (input.priceMinor !== undefined && !Number.isInteger(input.priceMinor)) {
+    return 'priceMinor must be an integer.';
+  }
+  return null;
+}
+
+const EDITABLE_SHARE_FIELDS = ['tag', 'quantity', 'priceMinor'];
+
+function validatePatchShareInput(input) {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) {
+    return 'A share object is required.';
+  }
+  const unknownField = Object.keys(input).find((key) => !EDITABLE_SHARE_FIELDS.includes(key));
+  if (unknownField) return `${unknownField} is not an editable field.`;
+  if (input.tag !== undefined && !isNonEmptyString(input.tag)) {
+    return 'tag must be a non-empty string.';
+  }
+  if (input.quantity !== undefined && !Number.isFinite(input.quantity)) {
+    return 'quantity must be a number.';
+  }
+  if (input.priceMinor !== undefined && !Number.isInteger(input.priceMinor)) {
+    return 'priceMinor must be an integer.';
   }
   return null;
 }
@@ -1761,6 +1800,115 @@ router.delete(
     }
   },
 );
+
+router.get('/balance/shares', requireScope('balance:r'), async (req, res, next) => {
+  try {
+    const shares = await listShares({ usersDb: getUsersDb(), authDb: getAuthDb() }, req.userId);
+    return res.json({ shares });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.post('/balance/shares', requireScope('balance:w'), async (req, res, next) => {
+  const validationError = validateCreateShareInput(req.body);
+  if (validationError) {
+    return problem(res, 400, 'validation_invalid', 'Invalid share request', validationError);
+  }
+  try {
+    const share = await createShare(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+      req.body,
+    );
+    await recordAuditEntry(getAuditDb(), {
+      userId: req.userId,
+      actor: auditActor(req.auth),
+      method: req.method,
+      path: req.baseUrl + req.path,
+      resource: 'balance_shares',
+      resourceId: share.id,
+    });
+    return res.status(201).json(share);
+  } catch (error) {
+    if (error.code === 'SHARE_DUPLICATE_TAG') {
+      return problem(res, 400, 'validation_invalid', 'Invalid share request', error.message);
+    }
+    return next(error);
+  }
+});
+
+router.get('/balance/shares/:shareId', requireScope('balance:r'), async (req, res, next) => {
+  try {
+    const share = await getShare(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+      req.params.shareId,
+    );
+    if (!share) {
+      return problem(res, 404, 'not_found', 'Share not found', 'No matching share exists.');
+    }
+    return res.json(share);
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.patch('/balance/shares/:shareId', requireScope('balance:w'), async (req, res, next) => {
+  const validationError = validatePatchShareInput(req.body);
+  if (validationError) {
+    return problem(res, 400, 'validation_invalid', 'Invalid share request', validationError);
+  }
+  try {
+    const share = await updateShare(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+      req.params.shareId,
+      req.body,
+    );
+    if (!share) {
+      return problem(res, 404, 'not_found', 'Share not found', 'No matching share exists.');
+    }
+    await recordAuditEntry(getAuditDb(), {
+      userId: req.userId,
+      actor: auditActor(req.auth),
+      method: req.method,
+      path: req.baseUrl + req.path,
+      resource: 'balance_shares',
+      resourceId: share.id,
+    });
+    return res.json(share);
+  } catch (error) {
+    if (error.code === 'SHARE_DUPLICATE_TAG') {
+      return problem(res, 400, 'validation_invalid', 'Invalid share request', error.message);
+    }
+    return next(error);
+  }
+});
+
+router.delete('/balance/shares/:shareId', requireScope('balance:w'), async (req, res, next) => {
+  try {
+    const deleted = await deleteShare(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+      req.params.shareId,
+    );
+    if (!deleted) {
+      return problem(res, 404, 'not_found', 'Share not found', 'No matching share exists.');
+    }
+    await recordAuditEntry(getAuditDb(), {
+      userId: req.userId,
+      actor: auditActor(req.auth),
+      method: req.method,
+      path: req.baseUrl + req.path,
+      resource: 'balance_shares',
+      resourceId: req.params.shareId,
+    });
+    return res.json({ id: req.params.shareId });
+  } catch (error) {
+    return next(error);
+  }
+});
 
 router.get('/mojo', requireScope('mojo:r'), async (req, res, next) => {
   try {

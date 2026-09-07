@@ -166,8 +166,19 @@ Every Pro API write is audit logged. Prefer narrowly scoped, expiring tokens and
 
 1. `GET/POST /api/v1/balance/investments` and `GET/PATCH/DELETE /api/v1/balance/investments/{id}` require `balance:r`/`balance:w`. An investment is `{tag, amountMinor, depositMinor}` (INV-1/2/3). `tag` shares the same cross-entity namespace as Assets/Shares (see "List, create, get, update, or delete assets" above) — it must not collide with an existing Asset, Share, or another Investment's tag. Confirmed by reading `add-investment.component.ts`/`info-investment.component.ts` directly.
 2. **Renaming an investment's `tag` (via `PATCH`) also renames any `income.revenue.properties` entry whose `tag` matched the old value** — a Property income record is matched to its Investment by tag string, not a foreign key, same convention as everywhere else in this domain. This mirrors `info-investment.component.ts`'s own "update Income properties" cascade, done atomically in the same document write here (the original does it as two separate, non-atomic writes — a partial failure there can leave the two collections disagreeing about a renamed tag, which can't happen through this endpoint).
-3. Unlike Share (not yet built — see `PLAN.md`), editing an Investment never touches a linked Grow project. `Grow.investment` exists on the interface, but the original edit form never writes to `data.grow`.
+3. Unlike Share (see below), editing an Investment never touches a linked Grow project. `Grow.investment` exists on the interface, but the original edit form never writes to `data.grow`.
 4. Existing investments need `mm-admin migrate-balance-entity-ids --collection investments` run first (same migration tool as Assets/Liabilities).
 5. `PATCH` is partial — send only the fields you want to change.
 6. `DELETE` is not reversible through the API.
 7. `POST`/`PATCH`/`DELETE` are audit logged.
+
+## List, create, get, update, or delete shares
+
+1. `GET/POST /api/v1/balance/shares` and `GET/PATCH/DELETE /api/v1/balance/shares/{id}` require `balance:r`/`balance:w`. A share is `{tag, quantity, priceMinor}` (SHARE-1/2/3). `quantity` is a plain share count, not money. `tag` shares the same cross-entity namespace as Assets/Investments — it must not collide with an existing Asset, Investment, or another Share's tag.
+2. **Every space is stripped from `tag`**, on both create and a `PATCH` that changes it — a corrected version of the original `add-share.component.ts`'s own space-stripping (`title.replace(' ', '')` only removes the *first* space, so "Rental Property Fund" became "RentalProperty Fund" there; this API strips every space, matching the evident ticker-like intent).
+3. **Renaming a share's `tag` also renames any `income.revenue.interests` entry whose `tag` matched the old value** — same convention as Investment's Property-rename cascade, done in the same atomic write.
+4. **Independently of any rename, saving `quantity`/`priceMinor` also syncs the embedded `share.quantity`/`share.price` on any Grow project whose `title` equals the (possibly just-renamed) tag** — `Grow.share: Share` is a second, embedded copy of the same data the original UI keeps in sync by title match, not a foreign key (confirmed by reading `info-share.component.ts`'s `updateShare()` directly). This sync runs on every successful `PATCH`, not only when the tag changes — mirroring the original's own unconditional "update Grow Projects" loop. Only `share.quantity`/`share.price` are overwritten; the embedded copy's own `share.tag` is left untouched, matching the original exactly. All of this (Share update, Interest rename, Grow sync) happens in one atomic CouchDB write, unlike the original's up to three separate, non-atomic writes.
+5. `DELETE` does not clean up any Interest entry or Grow-project reference that pointed at the deleted share's tag — matching the original, which doesn't either.
+6. Existing shares need `mm-admin migrate-balance-entity-ids --collection shares` run first (same migration tool as Assets/Liabilities/Investments).
+7. `PATCH` is partial — send only the fields you want to change.
+8. `POST`/`PATCH`/`DELETE` are audit logged.
