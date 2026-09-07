@@ -1695,6 +1695,90 @@ paths:
           $ref: '#/components/responses/InsufficientScope'
         '404':
           $ref: '#/components/responses/NotFound'
+  /income/revenues:
+    get:
+      operationId: listRevenues
+      summary: List revenue sources
+      description: >-
+        Returns every revenue source owned by the caller (REV-1), read-only. A revenue entry is fully derived from
+        transaction history — `POST/PATCH/DELETE /transactions` fully recomputes `revenues`/`interests`/`properties`
+        from the *entire* transaction history on every write, with no merge against prior state, so there is no
+        durable create/update/delete operation for a revenue entry independent of the transactions that produce it.
+        A new tag appears automatically the first time an `@`-tagged transaction posts against it on the `Income`
+        account; editing/deleting the underlying transaction is the only way to change or remove one.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Revenue sources owned by the caller
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [revenues]
+                properties:
+                  revenues:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TaggedAmount'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+  /income/interests:
+    get:
+      operationId: listInterests
+      summary: List interest income sources
+      description: >-
+        Returns every interest income source owned by the caller (INT-1), read-only — same fully-derived,
+        no-durable-direct-edit shape as `GET /income/revenues`. An `@`-tagged Income-account transaction is
+        classified as interest income rather than plain revenue when its tag matches an existing Share's tag.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Interest income sources owned by the caller
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [interests]
+                properties:
+                  interests:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TaggedAmount'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+  /income/properties:
+    get:
+      operationId: listProperties
+      summary: List rental property income sources
+      description: >-
+        Returns every rental property income source owned by the caller (PROP-1), read-only — same fully-derived,
+        no-durable-direct-edit shape as `GET /income/revenues`. An `@`-tagged Income-account transaction is
+        classified as property income rather than plain revenue when its tag matches an existing Investment's tag.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Property income sources owned by the caller
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [properties]
+                properties:
+                  properties:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TaggedAmount'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
   /me:
     get:
       operationId: getCurrentIdentity
@@ -2825,6 +2909,15 @@ components:
           type: number
         priceMinor:
           type: integer
+    TaggedAmount:
+      type: object
+      required: [tag, amountMinor]
+      properties:
+        tag:
+          type: string
+        amountMinor:
+          type: integer
+      description: No `id` — this is a read-only, fully-derived aggregate (see the parent endpoint's own description).
     CreateTransactionRequest:
       type: object
       required: [account, amountMinor, date, time, category, comment]

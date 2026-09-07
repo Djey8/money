@@ -69,6 +69,11 @@ const {
   updateShare,
   deleteShare,
 } = require('../repositories/share-repository');
+const {
+  listRevenues,
+  listInterests,
+  listProperties,
+} = require('../repositories/income-entity-repository');
 const { getUsersDb, getAuthDb } = require('../config/db');
 const { getEncryptionSession } = require('../services/encryption-session');
 const {
@@ -1905,6 +1910,39 @@ router.delete('/balance/shares/:shareId', requireScope('balance:w'), async (req,
       resourceId: req.params.shareId,
     });
     return res.json({ id: req.params.shareId });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.get('/income/revenues', requireScope('income:r'), async (req, res, next) => {
+  try {
+    const revenues = await listRevenues({ usersDb: getUsersDb(), authDb: getAuthDb() }, req.userId);
+    return res.json({ revenues });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.get('/income/interests', requireScope('income:r'), async (req, res, next) => {
+  try {
+    const interests = await listInterests(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+    );
+    return res.json({ interests });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.get('/income/properties', requireScope('income:r'), async (req, res, next) => {
+  try {
+    const properties = await listProperties(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+    );
+    return res.json({ properties });
   } catch (error) {
     return next(error);
   }

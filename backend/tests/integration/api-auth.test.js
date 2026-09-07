@@ -3759,6 +3759,193 @@ describe('v1 API authentication and PAT management', () => {
     });
   });
 
+  describe('GET /income/revenues, /income/interests, /income/properties', () => {
+    // A dedicated, freshly-registered user per test — these three endpoints reflect the FULL
+    // cumulative transaction history (rebuilt from scratch on every transaction write), so using
+    // the shared firstUser/secondUser fixtures would make exact-value assertions fragile against
+    // every other describe block's own Income-account fixtures in this same file.
+    async function freshIncomeUser() {
+      const user = await registerTestUser(`_income_entity_${Date.now()}_${Math.random()}`);
+      const created = await request(app)
+        .post('/api/v1/auth/tokens')
+        .set('Authorization', `Bearer ${user.token}`)
+        .send({ name: `income-agent-${Date.now()}-${Math.random()}`, scopes: ['income:r'] });
+      return { ...user, patToken: created.body.token };
+    }
+
+    it('reflects a new revenue tag the first time a transaction posts it', async () => {
+      const user = await freshIncomeUser();
+      const tag = `Salary${Date.now()}`;
+      await request(app)
+        .post('/api/v1/transactions')
+        .set('Authorization', `Bearer ${user.token}`)
+        .send({
+          account: 'Income',
+          amountMinor: 250000,
+          date: '2026-09-05',
+          time: '09:00',
+          category: `@${tag}`,
+          comment: '',
+        });
+      const response = await request(app)
+        .get('/api/v1/income/revenues')
+        .set('Authorization', `Bearer ${user.patToken}`);
+      expect(response.status).toBe(200);
+      expect(response.body.revenues).toEqual(
+        expect.arrayContaining([{ tag, amountMinor: 250000 }]),
+      );
+    });
+
+    it('classifies a transaction as interest income when its tag matches an existing share', async () => {
+      const user = await freshIncomeUser();
+      const tag = `MSFT${Date.now()}`;
+      await request(app)
+        .post('/api/v1/balance/shares')
+        .set('Authorization', `Bearer ${user.token}`)
+        .send({ tag, quantity: 10, priceMinor: 41500 });
+      await request(app)
+        .post('/api/v1/transactions')
+        .set('Authorization', `Bearer ${user.token}`)
+        .send({
+          account: 'Income',
+          amountMinor: 8000,
+          date: '2026-09-05',
+          time: '09:00',
+          category: `@${tag}`,
+          comment: '',
+        });
+      const interests = await request(app)
+        .get('/api/v1/income/interests')
+        .set('Authorization', `Bearer ${user.patToken}`);
+      expect(interests.status).toBe(200);
+      expect(interests.body.interests).toEqual(
+        expect.arrayContaining([{ tag, amountMinor: 8000 }]),
+      );
+
+      const revenues = await request(app)
+        .get('/api/v1/income/revenues')
+        .set('Authorization', `Bearer ${user.patToken}`);
+      expect(revenues.body.revenues).not.toEqual(
+        expect.arrayContaining([expect.objectContaining({ tag })]),
+      );
+    });
+
+    it('classifies a transaction as property income when its tag matches an existing investment', async () => {
+      const user = await freshIncomeUser();
+      const tag = `RentalUnit${Date.now()}`;
+      await request(app)
+        .post('/api/v1/balance/investments')
+        .set('Authorization', `Bearer ${user.token}`)
+        .send({ tag, amountMinor: 18000000 });
+      await request(app)
+        .post('/api/v1/transactions')
+        .set('Authorization', `Bearer ${user.token}`)
+        .send({
+          account: 'Income',
+          amountMinor: 8000,
+          date: '2026-09-05',
+          time: '09:00',
+          category: `@${tag}`,
+          comment: '',
+        });
+      const properties = await request(app)
+        .get('/api/v1/income/properties')
+        .set('Authorization', `Bearer ${user.patToken}`);
+      expect(properties.status).toBe(200);
+      expect(properties.body.properties).toEqual(
+        expect.arrayContaining([{ tag, amountMinor: 8000 }]),
+      );
+    });
+
+    it('reflects an edited transaction amount', async () => {
+      const user = await freshIncomeUser();
+      const tag = `Salary${Date.now()}`;
+      const created = await request(app)
+        .post('/api/v1/transactions')
+        .set('Authorization', `Bearer ${user.token}`)
+        .send({
+          account: 'Income',
+          amountMinor: 100000,
+          date: '2026-09-05',
+          time: '09:00',
+          category: `@${tag}`,
+          comment: '',
+        });
+      await request(app)
+        .patch(`/api/v1/transactions/${created.body.id}`)
+        .set('Authorization', `Bearer ${user.token}`)
+        .send({ amountMinor: 150000 });
+      const response = await request(app)
+        .get('/api/v1/income/revenues')
+        .set('Authorization', `Bearer ${user.patToken}`);
+      expect(response.body.revenues).toEqual(
+        expect.arrayContaining([{ tag, amountMinor: 150000 }]),
+      );
+    });
+
+    it('removes a revenue tag once its only transaction is deleted', async () => {
+      const user = await freshIncomeUser();
+      const tag = `Salary${Date.now()}`;
+      const created = await request(app)
+        .post('/api/v1/transactions')
+        .set('Authorization', `Bearer ${user.token}`)
+        .send({
+          account: 'Income',
+          amountMinor: 100000,
+          date: '2026-09-05',
+          time: '09:00',
+          category: `@${tag}`,
+          comment: '',
+        });
+      await request(app)
+        .delete(`/api/v1/transactions/${created.body.id}`)
+        .set('Authorization', `Bearer ${user.token}`);
+      const response = await request(app)
+        .get('/api/v1/income/revenues')
+        .set('Authorization', `Bearer ${user.patToken}`);
+      expect(response.body.revenues).not.toEqual(
+        expect.arrayContaining([expect.objectContaining({ tag })]),
+      );
+    });
+
+    it('rejects requests without the income:r scope', async () => {
+      const user = await freshIncomeUser();
+      const writeOnly = await request(app)
+        .post('/api/v1/auth/tokens')
+        .set('Authorization', `Bearer ${user.token}`)
+        .send({ name: `write-not-income-${Date.now()}`, scopes: ['transactions:w'] });
+      const response = await request(app)
+        .get('/api/v1/income/revenues')
+        .set('Authorization', `Bearer ${writeOnly.body.token}`);
+      expect(response.status).toBe(403);
+      expect(response.body.code).toBe('scope_insufficient');
+    });
+
+    it('keeps revenues isolated to the authenticated user document', async () => {
+      const user = await freshIncomeUser();
+      const other = await freshIncomeUser();
+      const tag = `OnlyOtherUserRevenue${Date.now()}`;
+      await request(app)
+        .post('/api/v1/transactions')
+        .set('Authorization', `Bearer ${other.token}`)
+        .send({
+          account: 'Income',
+          amountMinor: 999900,
+          date: '2026-09-05',
+          time: '09:00',
+          category: `@${tag}`,
+          comment: '',
+        });
+      const response = await request(app)
+        .get('/api/v1/income/revenues')
+        .set('Authorization', `Bearer ${user.patToken}`);
+      expect(response.status).toBe(200);
+      expect(response.body.revenues).not.toEqual(
+        expect.arrayContaining([expect.objectContaining({ tag })]),
+      );
+    });
+  });
+
   it('creates a PAT once and exposes its identity to /me', async () => {
     const create = await sessionRequest('post', '/api/v1/auth/tokens').send({
       name: 'integration-agent',

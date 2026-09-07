@@ -182,3 +182,11 @@ Every Pro API write is audit logged. Prefer narrowly scoped, expiring tokens and
 6. Existing shares need `mm-admin migrate-balance-entity-ids --collection shares` run first (same migration tool as Assets/Liabilities/Investments).
 7. `PATCH` is partial — send only the fields you want to change.
 8. `POST`/`PATCH`/`DELETE` are audit logged.
+
+## Read revenue, interest, and property income sources
+
+1. `GET /api/v1/income/revenues`, `GET /api/v1/income/interests`, and `GET /api/v1/income/properties` require `income:r` — all three are **read-only** (REV-1/INT-1/PROP-1). Each entry is `{tag, amountMinor}`, with no `id` — there's nothing to address or migrate here.
+2. **These three are fully derived from transaction history, recomputed from scratch on every `POST/PATCH/DELETE /transactions` write, with no merge against whatever was previously stored** — confirmed by reading `transaction-derived-state.js`'s `applyDerivedState` and `packages/domain/src/transactions/accounting.ts`'s `summarizeTransactionAccounting` directly. A `PATCH`/`DELETE` endpoint for one of these entries would have its effect silently discarded the next time *any* transaction anywhere in the account changes — so none is exposed. This mirrors the original app's own equivalent (`IncomeStatementService.recalculate()`, the all-time cumulative engine flagged in `PLAN.md` D-22), which has the identical characteristic; it isn't a gap introduced by this API.
+3. A new tag appears automatically the first time an `@`-tagged transaction posts against the `Income` account with that category — no dedicated "add" endpoint exists (or ever existed in the original UI: there's no `add-revenue`/`add-interest`/`add-property` component). Editing or deleting that transaction is the only way to change or remove an entry — use `PATCH/DELETE /transactions/{id}` directly.
+4. A transaction is classified as **interest** income rather than plain revenue when its tag matches an existing Share's tag, and as **property** income when it matches an existing Investment's tag — everything else on the `Income` account is plain revenue.
+5. This is a read; none of the three are audit logged.

@@ -317,3 +317,18 @@ curl -X PATCH "http://localhost:3000/api/v1/balance/shares/shares_<id>" \
 curl -X DELETE "http://localhost:3000/api/v1/balance/shares/shares_<id>" \
   -H "Authorization: Bearer $MONEY_MANAGER_TOKEN"
 ```
+
+## Read revenue, interest, and property income sources
+
+Requires a PAT with `income:r`. All three are read-only — they're fully derived from transaction history and get recomputed on every transaction write, so editing/deleting the underlying transaction (`PATCH/DELETE /transactions/{id}`) is the only durable way to change one. See `docs/api/AGENTS.md` for the full explanation.
+
+```bash
+curl "http://localhost:3000/api/v1/income/revenues" \
+  -H "Authorization: Bearer $MONEY_MANAGER_TOKEN"
+
+curl "http://localhost:3000/api/v1/income/interests" \
+  -H "Authorization: Bearer $MONEY_MANAGER_TOKEN"
+
+curl "http://localhost:3000/api/v1/income/properties" \
+  -H "Authorization: Bearer $MONEY_MANAGER_TOKEN"
+```
