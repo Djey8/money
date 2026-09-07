@@ -128,8 +128,124 @@ function validateBatchRequest(body) {
   return { items: body.operations.map(validateBatchOperationItem) };
 }
 
+const MAX_IMPORT_LINES = 10000;
+// A single transaction line has no legitimate reason to be this large — this
+// bounds JSON.parse's per-line cost so one oversized "line" (no newlines at
+// all) can't turn a line-count cap into a CPU/memory amplification vector.
+const MAX_IMPORT_LINE_LENGTH = 16384;
+
+function parseImportLines(rawBody) {
+  if (typeof rawBody !== 'string' || rawBody.trim() === '') {
+    return { error: 'A newline-delimited JSON (NDJSON) body is required.' };
+  }
+  const lines = rawBody
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+  if (lines.length === 0) {
+    return { error: 'A newline-delimited JSON (NDJSON) body is required.' };
+  }
+  if (lines.length > MAX_IMPORT_LINES) {
+    return { error: `Import cannot exceed ${MAX_IMPORT_LINES} lines.` };
+  }
+  const items = lines.map((line, index) => {
+    if (line.length > MAX_IMPORT_LINE_LENGTH) {
+      return {
+        op: 'create',
+        error: `Line ${index + 1} exceeds ${MAX_IMPORT_LINE_LENGTH} characters.`,
+      };
+    }
+    let parsed;
+    try {
+      parsed = JSON.parse(line);
+    } catch {
+      return { op: 'create', error: `Line ${index + 1} is not valid JSON.` };
+    }
+    const fieldsError = validateTransactionInput(parsed);
+    return fieldsError
+      ? { op: 'create', error: `Line ${index + 1}: ${fieldsError}` }
+      : { op: 'create', fields: parsed };
+  });
+  return { items };
+}
+
 function auditActor(auth) {
   return auth.type === 'token' ? { type: 'token', tokenId: auth.tokenId } : { type: 'session' };
+}
+
+function validateIdempotencyKeyPresence(req) {
+  const idempotencyKey = req.get('Idempotency-Key');
+  return !idempotencyKey || !idempotencyKey.trim()
+    ? 'The Idempotency-Key header is required.'
+    : null;
+}
+
+/**
+ * Wraps a bulk transactions write with the shared Idempotency-Key contract:
+ * requires the header, replays a prior result for the same key + body,
+ * rejects the same key reused with a different body, and otherwise runs
+ * `run()` once and records its result on the audit entry so a later replay
+ * can find it. See the "known gap" note where this is called: the write
+ * `run()` performs and this audit record are not one atomic transaction.
+ */
+async function handleIdempotentBulkWrite(req, res, next, { requestBodyForHash, itemCount, run }) {
+  const idempotencyKey = req.get('Idempotency-Key');
+  if (!idempotencyKey || !idempotencyKey.trim()) {
+    return problem(
+      res,
+      400,
+      'validation_invalid',
+      'Invalid request',
+      'The Idempotency-Key header is required.',
+    );
+  }
+  const requestHash = crypto.createHash('sha256').update(requestBodyForHash).digest('hex');
+  try {
+    const auditDb = getAuditDb();
+    const existingReplay = await findAuditEntryByIdempotencyKey(
+      auditDb,
+      req.userId,
+      'transactions',
+      idempotencyKey,
+    );
+    const session = await getEncryptionSession(getAuthDb(), req.userId);
+    if (existingReplay) {
+      if (existingReplay.requestHash !== requestHash) {
+        return problem(
+          res,
+          409,
+          'conflict_idempotency_mismatch',
+          'Idempotency key reused with a different request',
+          'This Idempotency-Key was already used for a request with a different body.',
+        );
+      }
+      const serialized =
+        existingReplay.payloadEncrypted && session
+          ? session.decrypt(existingReplay.payload)
+          : existingReplay.payload;
+      return res.status(200).json(JSON.parse(serialized));
+    }
+
+    const response = await run();
+    await recordAuditEntry(
+      auditDb,
+      {
+        userId: req.userId,
+        actor: auditActor(req.auth),
+        method: req.method,
+        path: req.baseUrl + req.path,
+        resource: 'transactions',
+        itemCount,
+        idempotencyKey,
+        requestHash,
+        payload: response,
+      },
+      session ? (value) => session.encrypt(value) : undefined,
+    );
+    return res.status(200).json(response);
+  } catch (error) {
+    return next(error);
+  }
 }
 
 router.use(authenticateApiToken);
@@ -183,6 +299,28 @@ router.get('/transactions', requireScope('transactions:r'), async (req, res, nex
   }
 });
 
+router.get('/transactions/export', requireScope('transactions:bulk'), async (req, res, next) => {
+  try {
+    const { transactions } = await listTransactions(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+      { limit: Number.MAX_SAFE_INTEGER },
+    );
+    await recordAuditEntry(getAuditDb(), {
+      userId: req.userId,
+      actor: auditActor(req.auth),
+      method: req.method,
+      path: req.baseUrl + req.path,
+      resource: 'transactions',
+      itemCount: transactions.length,
+    });
+    res.type('application/x-ndjson');
+    return res.send(transactions.map((transaction) => JSON.stringify(transaction)).join('\n'));
+  } catch (error) {
+    return next(error);
+  }
+});
+
 router.post('/transactions', requireScope('transactions:w'), async (req, res, next) => {
   const validationError = validateTransactionInput(req.body);
   if (validationError) {
@@ -209,14 +347,14 @@ router.post('/transactions', requireScope('transactions:w'), async (req, res, ne
 });
 
 router.post('/transactions/batch', requireScope('transactions:bulk'), async (req, res, next) => {
-  const idempotencyKey = req.get('Idempotency-Key');
-  if (!idempotencyKey || !idempotencyKey.trim()) {
+  const idempotencyKeyError = validateIdempotencyKeyPresence(req);
+  if (idempotencyKeyError) {
     return problem(
       res,
       400,
       'validation_invalid',
       'Invalid transaction batch request',
-      'The Idempotency-Key header is required.',
+      idempotencyKeyError,
     );
   }
   const validation = validateBatchRequest(req.body);
@@ -229,68 +367,67 @@ router.post('/transactions/batch', requireScope('transactions:bulk'), async (req
       validation.error,
     );
   }
-  const requestHash = crypto.createHash('sha256').update(JSON.stringify(req.body)).digest('hex');
-  try {
-    const auditDb = getAuditDb();
-    const existingReplay = await findAuditEntryByIdempotencyKey(
-      auditDb,
-      req.userId,
-      'transactions',
-      idempotencyKey,
-    );
-    const session = await getEncryptionSession(getAuthDb(), req.userId);
-    if (existingReplay) {
-      if (existingReplay.requestHash !== requestHash) {
-        return problem(
-          res,
-          409,
-          'conflict_idempotency_mismatch',
-          'Idempotency key reused with a different request',
-          'This Idempotency-Key was already used for a request with a different body.',
-        );
-      }
-      const serialized =
-        existingReplay.payloadEncrypted && session
-          ? session.decrypt(existingReplay.payload)
-          : existingReplay.payload;
-      return res.status(200).json(JSON.parse(serialized));
-    }
-
-    const atomic = Boolean(req.body.atomic);
-    const results = await batchTransactions(
-      { usersDb: getUsersDb(), authDb: getAuthDb() },
-      req.userId,
-      validation.items,
-      { atomic },
-    );
-    const response = { idempotencyKey, atomic, results };
-    // Known gap, flagged not hidden (see docs/api/AGENTS.md and PLAN.md): the
-    // mutating write above and this idempotency record aren't one atomic
-    // transaction. A crash or audit-db failure in the narrow window between
-    // them leaves no replay record for a write that already happened, so a
-    // client's well-intentioned retry with the same key would reapply it.
-    // Not fixed now — a real fix needs a two-phase pending/complete record,
-    // which is more new, untested machinery than this narrow crash-window
-    // risk currently justifies; documented instead of silently shipped.
-    await recordAuditEntry(
-      auditDb,
-      {
-        userId: req.userId,
-        actor: auditActor(req.auth),
-        method: req.method,
-        path: req.baseUrl + req.path,
-        resource: 'transactions',
+  const atomic = Boolean(req.body.atomic);
+  return handleIdempotentBulkWrite(req, res, next, {
+    requestBodyForHash: JSON.stringify(req.body),
+    itemCount: validation.items.length,
+    run: async () => {
+      const results = await batchTransactions(
+        { usersDb: getUsersDb(), authDb: getAuthDb() },
+        req.userId,
+        validation.items,
+        { atomic },
+      );
+      return {
+        idempotencyKey: req.get('Idempotency-Key'),
+        atomic,
         itemCount: validation.items.length,
-        idempotencyKey,
-        requestHash,
-        payload: response,
-      },
-      session ? (value) => session.encrypt(value) : undefined,
+        results,
+      };
+    },
+  });
+});
+
+router.post('/transactions/import', requireScope('transactions:bulk'), async (req, res, next) => {
+  const idempotencyKeyError = validateIdempotencyKeyPresence(req);
+  if (idempotencyKeyError) {
+    return problem(
+      res,
+      400,
+      'validation_invalid',
+      'Invalid transaction import request',
+      idempotencyKeyError,
     );
-    return res.status(200).json(response);
-  } catch (error) {
-    return next(error);
   }
+  const validation = parseImportLines(req.body);
+  if (validation.error) {
+    return problem(
+      res,
+      400,
+      'validation_invalid',
+      'Invalid transaction import request',
+      validation.error,
+    );
+  }
+  const atomic = req.query.atomic === 'true';
+  return handleIdempotentBulkWrite(req, res, next, {
+    requestBodyForHash: req.body,
+    itemCount: validation.items.length,
+    run: async () => {
+      const results = await batchTransactions(
+        { usersDb: getUsersDb(), authDb: getAuthDb() },
+        req.userId,
+        validation.items,
+        { atomic },
+      );
+      return {
+        idempotencyKey: req.get('Idempotency-Key'),
+        atomic,
+        itemCount: validation.items.length,
+        results,
+      };
+    },
+  });
 });
 
 router.post(
@@ -523,3 +660,8 @@ router.delete('/auth/tokens/:tokenId', requireSession, async (req, res, next) =>
 });
 
 module.exports = router;
+// Attached for direct unit testing (parseImportLines has enough
+// dependency-free edge cases — empty body, per-line JSON/field errors, the
+// line-count and line-length caps — to be worth testing without a live
+// server, unlike this file's simpler validators).
+module.exports.parseImportLines = parseImportLines;

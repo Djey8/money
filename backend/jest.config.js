@@ -6,11 +6,15 @@ module.exports = {
   // encrypt/decrypt on every transaction read/write); by the time later
   // tests run against that user with an accumulated transaction list, a
   // single request measured 10-20s+ under Podman on this machine — a real,
-  // pre-existing cost (not introduced by any one endpoint; confirmed by
-  // instrumentation showing individual write/read calls this slow, and
-  // request handling itself otherwise fast). 30s was too tight against it.
-  // Revisit if this grows into a real problem — see PLAN.md.
-  testTimeout: 60000,
+  // pre-existing cost (not introduced by any one endpoint; confirmed twice
+  // now, by instrumentation and by a second, later test independently
+  // hitting the same wall as the file grew further, that individual
+  // write/read calls are the slow part while request handling itself stays
+  // fast). Raised from 30s -> 60s -> 90s as the file kept growing; this is a
+  // recurring pattern, not a one-off — revisit properly (e.g. a lighter
+  // per-test fixture instead of two shared, ever-more-loaded users) rather
+  // than keep bumping this reactively. See PLAN.md.
+  testTimeout: 90000,
   // Run test files sequentially (integration tests share CouchDB state)
   maxWorkers: 1,
   verbose: true,

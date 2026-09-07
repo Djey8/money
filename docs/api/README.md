@@ -73,3 +73,21 @@ curl -X POST http://localhost:3000/api/v1/transactions/batch \
 ```
 
 The response is always `200` once the request itself is well-formed; check each item's own `status` (`created`/`updated`/`deleted`/`error`, or `not_applied` when `atomic: true` rolled the whole batch back) rather than assuming success from the HTTP status alone.
+
+## Export or import a full set of transactions
+
+Requires a PAT with `transactions:bulk`. Export streams every transaction as newline-delimited JSON (no pagination); import bulk-creates from the same format and needs an `Idempotency-Key` like batch does.
+
+```bash
+curl http://localhost:3000/api/v1/transactions/export \
+  -H "Authorization: Bearer $MONEY_MANAGER_TOKEN" \
+  -o transactions.ndjson
+
+curl -X POST http://localhost:3000/api/v1/transactions/import \
+  -H "Authorization: Bearer $MONEY_MANAGER_TOKEN" \
+  -H "Content-Type: application/x-ndjson" \
+  -H "Idempotency-Key: $(uuidgen)" \
+  --data-binary @transactions.ndjson
+```
+
+Import is additive only (every line is a create) and accepts up to 10,000 lines per call. Add `?atomic=true` to the import URL to make the whole call all-or-nothing instead of applying what parses and reporting the rest per line.

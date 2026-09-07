@@ -736,6 +736,264 @@ describe('v1 API authentication and PAT management', () => {
     });
   });
 
+  describe('GET /transactions/export and POST /transactions/import', () => {
+    async function bulkToken() {
+      const created = await sessionRequest('post', '/api/v1/auth/tokens').send({
+        name: `bulk-agent-${Date.now()}-${Math.random()}`,
+        scopes: ['transactions:bulk'],
+      });
+      return created.body.token;
+    }
+
+    it('exports transactions as newline-delimited JSON', async () => {
+      const token = await bulkToken();
+      await sessionRequest('post', '/api/v1/transactions').send({
+        account: 'Daily',
+        amountMinor: -321,
+        date: '2026-09-06',
+        time: '15:00',
+        category: '@Export test',
+        comment: '',
+      });
+      const response = await request(app)
+        .get('/api/v1/transactions/export')
+        .set('Authorization', `Bearer ${token}`);
+      expect(response.status).toBe(200);
+      expect(response.headers['content-type']).toContain('application/x-ndjson');
+      const lines = response.text.split('\n').filter((line) => line.length > 0);
+      const parsed = lines.map((line) => JSON.parse(line));
+      expect(parsed).toEqual(
+        expect.arrayContaining([expect.objectContaining({ category: '@Export test' })]),
+      );
+    });
+
+    it('rejects export without the transactions:bulk scope', async () => {
+      const readOnly = await sessionRequest('post', '/api/v1/auth/tokens').send({
+        name: `read-only-not-bulk-${Date.now()}`,
+        scopes: ['transactions:r'],
+      });
+      const response = await request(app)
+        .get('/api/v1/transactions/export')
+        .set('Authorization', `Bearer ${readOnly.body.token}`);
+      expect(response.status).toBe(403);
+      expect(response.body.code).toBe('scope_insufficient');
+    });
+
+    it('imports newline-delimited JSON transactions', async () => {
+      const token = await bulkToken();
+      const ndjson = [
+        JSON.stringify({
+          account: 'Daily',
+          amountMinor: -400,
+          date: '2026-09-06',
+          time: '15:01',
+          category: '@Import A',
+          comment: '',
+        }),
+        JSON.stringify({
+          account: 'Income',
+          amountMinor: 50000,
+          date: '2026-09-06',
+          time: '15:02',
+          category: '@Import B',
+          comment: '',
+        }),
+      ].join('\n');
+      const response = await request(app)
+        .post('/api/v1/transactions/import')
+        .set('Authorization', `Bearer ${token}`)
+        .set('Content-Type', 'application/x-ndjson')
+        .set('Idempotency-Key', `import-${Date.now()}-1`)
+        .send(ndjson);
+      expect(response.status).toBe(200);
+      expect(response.body.itemCount).toBe(2);
+      expect(response.body.results).toHaveLength(2);
+      expect(response.body.results.every((result) => result.status === 'created')).toBe(true);
+    });
+
+    it('reports a per-line error for an invalid line without failing the whole import', async () => {
+      const token = await bulkToken();
+      const ndjson = [
+        JSON.stringify({
+          account: 'Daily',
+          amountMinor: -50,
+          date: '2026-09-06',
+          time: '15:03',
+          category: '@Valid import line',
+          comment: '',
+        }),
+        'not valid json',
+      ].join('\n');
+      const response = await request(app)
+        .post('/api/v1/transactions/import')
+        .set('Authorization', `Bearer ${token}`)
+        .set('Content-Type', 'application/x-ndjson')
+        .set('Idempotency-Key', `import-${Date.now()}-2`)
+        .send(ndjson);
+      expect(response.status).toBe(200);
+      expect(response.body.results[0]).toMatchObject({ status: 'created' });
+      expect(response.body.results[1]).toMatchObject({ status: 'error' });
+    });
+
+    it('rolls back the whole import atomically when any line fails and atomic=true', async () => {
+      const token = await bulkToken();
+      const ndjson = [
+        JSON.stringify({
+          account: 'Daily',
+          amountMinor: -60,
+          date: '2026-09-06',
+          time: '15:04',
+          category: '@Atomic import valid',
+          comment: '',
+        }),
+        JSON.stringify({ account: 'Daily' }),
+      ].join('\n');
+      const response = await request(app)
+        .post('/api/v1/transactions/import?atomic=true')
+        .set('Authorization', `Bearer ${token}`)
+        .set('Content-Type', 'application/x-ndjson')
+        .set('Idempotency-Key', `import-${Date.now()}-3`)
+        .send(ndjson);
+      expect(response.status).toBe(200);
+      expect(response.body.atomic).toBe(true);
+      expect(response.body.results[0]).toMatchObject({ status: 'not_applied' });
+      expect(response.body.results[1]).toMatchObject({ status: 'error' });
+    });
+
+    it('replays the same import result for a repeated Idempotency-Key without reapplying', async () => {
+      const token = await bulkToken();
+      const ndjson = JSON.stringify({
+        account: 'Daily',
+        amountMinor: -70,
+        date: '2026-09-06',
+        time: '15:05',
+        category: '@Idempotent import',
+        comment: '',
+      });
+      const key = `import-${Date.now()}-4`;
+      const first = await request(app)
+        .post('/api/v1/transactions/import')
+        .set('Authorization', `Bearer ${token}`)
+        .set('Content-Type', 'application/x-ndjson')
+        .set('Idempotency-Key', key)
+        .send(ndjson);
+      const replay = await request(app)
+        .post('/api/v1/transactions/import')
+        .set('Authorization', `Bearer ${token}`)
+        .set('Content-Type', 'application/x-ndjson')
+        .set('Idempotency-Key', key)
+        .send(ndjson);
+      expect(first.status).toBe(200);
+      expect(replay.status).toBe(200);
+      expect(replay.body).toEqual(first.body);
+      const list = await sessionRequest('get', '/api/v1/transactions');
+      expect(
+        list.body.transactions.filter((transaction) => transaction.id === first.body.results[0].id),
+      ).toHaveLength(1);
+    });
+
+    it('requires the Idempotency-Key header and rejects an empty body', async () => {
+      const token = await bulkToken();
+      const missingKey = await request(app)
+        .post('/api/v1/transactions/import')
+        .set('Authorization', `Bearer ${token}`)
+        .set('Content-Type', 'application/x-ndjson')
+        .send(
+          JSON.stringify({
+            account: 'Daily',
+            amountMinor: -1,
+            date: '2026-09-06',
+            time: '15:06',
+            category: '@No key',
+            comment: '',
+          }),
+        );
+      expect(missingKey.status).toBe(400);
+
+      const emptyBody = await request(app)
+        .post('/api/v1/transactions/import')
+        .set('Authorization', `Bearer ${token}`)
+        .set('Content-Type', 'application/x-ndjson')
+        .set('Idempotency-Key', `import-${Date.now()}-5`)
+        .send('');
+      expect(emptyBody.status).toBe(400);
+      expect(emptyBody.body.code).toBe('validation_invalid');
+    });
+
+    it('rejects import without the transactions:bulk scope', async () => {
+      const writeOnly = await sessionRequest('post', '/api/v1/auth/tokens').send({
+        name: `write-not-bulk-import-${Date.now()}`,
+        scopes: ['transactions:w'],
+      });
+      const response = await request(app)
+        .post('/api/v1/transactions/import')
+        .set('Authorization', `Bearer ${writeOnly.body.token}`)
+        .set('Content-Type', 'application/x-ndjson')
+        .set('Idempotency-Key', `import-${Date.now()}-6`)
+        .send(
+          JSON.stringify({
+            account: 'Daily',
+            amountMinor: -1,
+            date: '2026-09-06',
+            time: '15:07',
+            category: '@Scope test',
+            comment: '',
+          }),
+        );
+      expect(response.status).toBe(403);
+      expect(response.body.code).toBe('scope_insufficient');
+    });
+
+    it('keeps export and import isolated to the authenticated user document', async () => {
+      const firstToken = await bulkToken();
+      const secondTokenCreate = await sessionRequest(
+        'post',
+        '/api/v1/auth/tokens',
+        secondUser.token,
+      ).send({
+        name: `bulk-agent-isolation-${Date.now()}`,
+        scopes: ['transactions:bulk'],
+      });
+      const secondToken = secondTokenCreate.body.token;
+
+      await sessionRequest('post', '/api/v1/transactions', secondUser.token).send({
+        account: 'Daily',
+        amountMinor: -999,
+        date: '2026-09-06',
+        time: '15:08',
+        category: '@Second user export',
+        comment: '',
+      });
+      const firstExport = await request(app)
+        .get('/api/v1/transactions/export')
+        .set('Authorization', `Bearer ${firstToken}`);
+      expect(firstExport.text).not.toContain('@Second user export');
+
+      const importResponse = await request(app)
+        .post('/api/v1/transactions/import')
+        .set('Authorization', `Bearer ${secondToken}`)
+        .set('Content-Type', 'application/x-ndjson')
+        .set('Idempotency-Key', `import-isolation-${Date.now()}`)
+        .send(
+          JSON.stringify({
+            account: 'Daily',
+            amountMinor: -1,
+            date: '2026-09-06',
+            time: '15:09',
+            category: '@Second user import',
+            comment: '',
+          }),
+        );
+      expect(importResponse.status).toBe(200);
+      const firstListAfter = await sessionRequest('get', '/api/v1/transactions');
+      expect(
+        firstListAfter.body.transactions.some(
+          (transaction) => transaction.category === '@Second user import',
+        ),
+      ).toBe(false);
+    });
+  });
+
   it('creates a PAT once and exposes its identity to /me', async () => {
     const create = await sessionRequest('post', '/api/v1/auth/tokens').send({
       name: 'integration-agent',

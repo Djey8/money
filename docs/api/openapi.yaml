@@ -118,6 +118,105 @@ paths:
           $ref: '#/components/responses/AuthenticationRequired'
         '403':
           $ref: '#/components/responses/InsufficientScope'
+  /transactions/export:
+    get:
+      operationId: exportTransactions
+      summary: Export all transactions as newline-delimited JSON
+      description: Returns every transaction owned by the caller, one JSON object per line (no pagination, no filters), for full-account moves. Requires `transactions:bulk`.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Newline-delimited JSON, one ApiTransaction per line
+          content:
+            application/x-ndjson:
+              schema:
+                type: string
+              example: |-
+                {"id":"tx_01234567-89ab-cdef-0123-456789abcdef","account":"Daily","amountMinor":-1250,"currency":"EUR","date":"2026-09-06","time":"09:30","category":"@Groceries","comment":"Weekly shop"}
+                {"id":"tx_11111111-89ab-cdef-0123-456789abcdef","account":"Income","amountMinor":250000,"currency":"EUR","date":"2026-09-01","time":"08:00","category":"@Salary","comment":""}
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+  /transactions/import:
+    post:
+      operationId: importTransactions
+      summary: Bulk-create transactions from newline-delimited JSON
+      description: >-
+        Creates one transaction per line of the request body (each line the same shape as CreateTransactionRequest).
+        Requires `transactions:bulk` and an `Idempotency-Key` header — hashed from the raw request body, not a
+        re-serialized JSON value like batch, so byte-identical replay is required (see docs/api/AGENTS.md) — with
+        the same replay/mismatch contract and the same known write-then-record ordering gap as
+        `POST /transactions/batch`. Up to 10,000 lines of at most 16KB each per call. `?atomic=true` makes the whole
+        import all-or-nothing, same as batch's `atomic` flag; the default applies what parses and validates,
+        reporting the rest per line as `error`.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: atomic
+          in: query
+          schema:
+            type: boolean
+            default: false
+      requestBody:
+        required: true
+        content:
+          application/x-ndjson:
+            schema:
+              type: string
+            example: |-
+              {"account":"Daily","amountMinor":-850,"date":"2026-09-07","time":"08:15","category":"@Coffee","comment":""}
+              {"account":"Income","amountMinor":250000,"date":"2026-09-01","time":"08:00","category":"@Salary","comment":""}
+      responses:
+        '200':
+          description: Per-line results, in the same shape as a batch response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchTransactionsResponse'
+              example:
+                idempotencyKey: 2026-09-07-restore
+                atomic: false
+                itemCount: 2
+                results:
+                  - op: create
+                    status: created
+                    id: tx_22222222-89ab-cdef-0123-456789abcdef
+                    transaction:
+                      id: tx_22222222-89ab-cdef-0123-456789abcdef
+                      account: Daily
+                      amountMinor: -850
+                      currency: EUR
+                      date: '2026-09-07'
+                      time: '08:15'
+                      category: '@Coffee'
+                      comment: ''
+                  - op: create
+                    status: created
+                    id: tx_33333333-89ab-cdef-0123-456789abcdef
+                    transaction:
+                      id: tx_33333333-89ab-cdef-0123-456789abcdef
+                      account: Income
+                      amountMinor: 250000
+                      currency: EUR
+                      date: '2026-09-01'
+                      time: '08:00'
+                      category: '@Salary'
+                      comment: ''
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '409':
+          $ref: '#/components/responses/IdempotencyConflict'
   /transactions/batch:
     post:
       operationId: batchTransactions
@@ -170,6 +269,7 @@ paths:
               example:
                 idempotencyKey: 2026-09-07-morning-batch
                 atomic: false
+                itemCount: 3
                 results:
                   - op: create
                     status: created
@@ -663,12 +763,14 @@ components:
           type: string
     BatchTransactionsResponse:
       type: object
-      required: [idempotencyKey, atomic, results]
+      required: [idempotencyKey, atomic, itemCount, results]
       properties:
         idempotencyKey:
           type: string
         atomic:
           type: boolean
+        itemCount:
+          type: integer
         results:
           type: array
           items:

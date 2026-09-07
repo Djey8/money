@@ -70,7 +70,10 @@ const bulkLimiter = rateLimit({
   },
   skip: () => process.env.SKIP_RATE_LIMIT === 'true',
 });
-app.use('/api/v1/transactions/batch', bulkLimiter);
+app.use(
+  ['/api/v1/transactions/batch', '/api/v1/transactions/export', '/api/v1/transactions/import'],
+  bulkLimiter,
+);
 
 // Strict rate limiting for auth endpoints (brute-force protection)
 const authLimiter = rateLimit({
@@ -84,9 +87,10 @@ app.use('/api/auth/login', authLimiter);
 app.use('/api/auth/register', authLimiter);
 app.use('/api/auth/guest', authLimiter);
 
-// Body parser — 100mb to support large encrypted batch writes and restore imports
+// Body parser — 100mb to support large encrypted batch writes and restore imports.
+// application/x-ndjson is the newline-delimited-JSON body POST /transactions/import expects.
 app.use(express.json({ limit: '100mb' }));
-app.use(express.text({ limit: '1000mb', type: 'text/plain' }));
+app.use(express.text({ limit: '1000mb', type: ['text/plain', 'application/x-ndjson'] }));
 
 // Cookie parser (for httpOnly auth cookies)
 app.use(cookieParser());
