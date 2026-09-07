@@ -20,6 +20,7 @@ const {
   getCashflow,
   getBalanceSheet,
   getKpis,
+  getFireCoverage,
 } = require('../repositories/report-repository');
 const { getMojoStatus, updateMojoTarget } = require('../repositories/mojo-repository');
 const {
@@ -1246,6 +1247,15 @@ router.get('/reports/kpis', requireScope('reports:r'), async (req, res, next) =>
       period: validation.period,
       offset: validation.offset,
     });
+    return res.json(report);
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.get('/reports/fire-coverage', requireScope('reports:r'), async (req, res, next) => {
+  try {
+    const report = await getFireCoverage({ usersDb: getUsersDb(), authDb: getAuthDb() }, req.userId);
     return res.json(report);
   } catch (error) {
     return next(error);

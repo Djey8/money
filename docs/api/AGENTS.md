@@ -82,6 +82,13 @@ Every Pro API write is audit logged. Prefer narrowly scoped, expiring tokens and
 5. `topExpenses`/`topIncomes` each cap at 5 entries sorted by amount descending; an untagged transaction's category shows as `—` rather than being dropped.
 6. This is a read; it is not audit logged.
 
+## Read the Fire emergency-fund coverage ratio
+
+1. `GET /api/v1/reports/fire-coverage` requires `reports:r`. Like `/reports/balance-sheet`, it's a current snapshot with no `period`/`offset` — the endpoint itself picks which historical calendar months to average expenses over (every month with qualifying expense-account spending, excluding the current, necessarily incomplete month).
+2. `coverageRatio` is `mojoAmountMinor / averageMonthlyExpensesMinor` — "how many months of average expenses the Mojo reserve would cover." **It can be `null`** when `monthsConsidered` is 0 (no expense history yet) — treat that as "not enough data," not as zero coverage.
+3. Unlike the original UI gauge this is ported from: expense-account transfers (e.g. an `Income → Smile` contribution posted from `Smile`) and `Mojo`-account transactions are excluded from the average; a refund (a positive amount on an expense account) is excluded rather than netted against that month's spending; and an empty history returns `null` rather than a fabricated ratio. See `docs/domain/FIRE_COVERAGE_FORMULA.md` for the full rationale, formula, and a worked example of where the corrected value diverges from the original.
+4. This is a read; it is not audit logged.
+
 ## Read or update the Mojo emergency/long-term reserve
 
 1. `GET /api/v1/mojo` requires `mojo:r`. There is exactly one Mojo balance per user — this is not a list endpoint. The response adds `remainingMinor` (`max(0, targetMinor - amountMinor)`) and `percentFilled` (not clamped to 100 — see below) as read-side conveniences on top of the raw balance.

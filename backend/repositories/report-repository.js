@@ -5,6 +5,7 @@ const {
   computeCashflow,
   computeBalanceSheet,
   computeKpiReport,
+  computeFireCoverage,
   getPeriodRange,
   toMinorUnits,
   MONEY_FIELD_NAMES,
@@ -172,10 +173,32 @@ async function getKpis(deps, userId, options) {
   return { period: currentRange, previousPeriod: previousRange, ...report };
 }
 
+/** Decrypts the stored Mojo singleton's money fields into `{amountMinor, targetMinor}` — same per-field decrypt as `mojo-repository.js`'s `decryptMojoEntry`, kept as a separate small copy here rather than importing across repository files (matching this codebase's existing per-repository-file independence). */
+function decryptMojoBalance(data, session, schemaVersion) {
+  const decrypted = decryptEntry(data.mojo || {}, session, schemaVersion);
+  return { amountMinor: decrypted.amount || 0, targetMinor: decrypted.target || 0 };
+}
+
+/**
+ * All-time report (not period-scoped, like `getBalanceSheet`) — `computeFireCoverage`
+ * itself decides which historical months to average over, excluding the current one.
+ * `now` is injectable for tests; production callers omit it.
+ */
+async function getFireCoverage(deps, userId, { now } = {}) {
+  const { data, session, schemaVersion } = await loadUserData(deps, userId);
+  const currency = data.meta?.currency || 'EUR';
+  const rawTransactions = data.transactions || [];
+  if (!Array.isArray(rawTransactions)) throw new Error('Stored transactions must be an array');
+  const transactions = toApiTransactions(rawTransactions, session, schemaVersion, currency);
+  const mojo = decryptMojoBalance(data, session, schemaVersion);
+  return computeFireCoverage(transactions, mojo.amountMinor, now);
+}
+
 module.exports = {
   getIncomeStatement,
   getCashflow,
   getBalanceSheet,
   getKpis,
+  getFireCoverage,
   loadIncomeClassificationTags,
 };

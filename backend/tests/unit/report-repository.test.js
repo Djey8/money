@@ -6,6 +6,7 @@ const {
   getCashflow,
   getBalanceSheet,
   getKpis,
+  getFireCoverage,
 } = require('../../repositories/report-repository');
 
 // Fixed reference date so period boundaries are deterministic regardless of
@@ -452,5 +453,140 @@ describe('getKpis', () => {
     const deps = dependencies({ transactions: [] });
     const report = await getKpis(deps, 'user_1', { period: 'year', offset: 0 });
     expect(report.period.label).toBe(String(new Date().getFullYear()));
+  });
+});
+
+describe('getFireCoverage', () => {
+  it('divides the Mojo reserve by the average of historical months with expense-account spending', async () => {
+    const deps = dependencies({
+      mojo: { amount: 450, target: 2000 },
+      transactions: [
+        {
+          id: 'tx_1',
+          account: 'Daily',
+          amount: -100,
+          date: '2026-07-10',
+          time: '09:00',
+          category: '@Food',
+          comment: '',
+        },
+        {
+          id: 'tx_2',
+          account: 'Splurge',
+          amount: -200,
+          date: '2026-08-05',
+          time: '09:00',
+          category: '@Hobby',
+          comment: '',
+        },
+        {
+          id: 'tx_3',
+          account: 'Daily',
+          amount: -999,
+          date: '2026-09-01',
+          time: '09:00',
+          category: '@Food',
+          comment: '',
+        },
+      ],
+    });
+    const report = await getFireCoverage(deps, 'user_1', { now: NOW });
+    expect(report.monthsConsidered).toBe(2);
+    expect(report.averageMonthlyExpensesMinor).toBe(15000);
+    expect(report.mojoAmountMinor).toBe(45000);
+    expect(report.coverageRatio).toBe(3);
+  });
+
+  it('excludes an inter-account transfer, unlike the original UI gauge', async () => {
+    const deps = dependencies({
+      mojo: { amount: 100, target: 2000 },
+      transactions: [
+        {
+          id: 'tx_1',
+          account: 'Daily',
+          amount: -100,
+          date: '2026-07-10',
+          time: '09:00',
+          category: '@Food',
+          comment: '',
+        },
+        {
+          id: 'tx_2',
+          account: 'Smile',
+          amount: -200,
+          date: '2026-07-11',
+          time: '09:00',
+          category: 'Smile',
+          comment: '',
+        },
+      ],
+    });
+    const report = await getFireCoverage(deps, 'user_1', { now: NOW });
+    expect(report.averageMonthlyExpensesMinor).toBe(10000);
+  });
+
+  it('decrypts every field when database encryption is enabled', async () => {
+    const session = new EncryptionSession('secret');
+    const encryptField = (value) => session.encrypt(String(value));
+    const deps = dependencies(
+      {
+        mojo: { amount: encryptField('450'), target: encryptField('2000') },
+        transactions: [
+          {
+            id: 'tx_1',
+            account: encryptField('Daily'),
+            amount: encryptField('-100'),
+            date: encryptField('2026-07-10'),
+            time: encryptField('09:00'),
+            category: encryptField('@Food'),
+            comment: encryptField(''),
+          },
+        ],
+      },
+      { key: 'secret', encryptDatabase: true },
+    );
+    const report = await getFireCoverage(deps, 'user_1', { now: NOW });
+    expect(report.mojoAmountMinor).toBe(45000);
+    expect(report.averageMonthlyExpensesMinor).toBe(10000);
+  });
+
+  it('leaves already-minor-unit values (schema version 2) unconverted', async () => {
+    const deps = dependencies({
+      meta: { schemaVersion: 2 },
+      mojo: { amount: 45000, target: 200000 },
+      transactions: [
+        {
+          id: 'tx_1',
+          account: 'Daily',
+          amount: -10000,
+          date: '2026-07-10',
+          time: '09:00',
+          category: '@Food',
+          comment: '',
+        },
+      ],
+    });
+    const report = await getFireCoverage(deps, 'user_1', { now: NOW });
+    expect(report.mojoAmountMinor).toBe(45000);
+    expect(report.averageMonthlyExpensesMinor).toBe(10000);
+  });
+
+  it('returns a null coverageRatio and zero balances for a user with no data document', async () => {
+    const error = new Error('not_found');
+    error.statusCode = 404;
+    const deps = {
+      usersDb: { get: jest.fn(async () => Promise.reject(error)) },
+      authDb: { get: jest.fn(async () => Promise.reject(error)) },
+    };
+    const report = await getFireCoverage(deps, 'user_1', { now: NOW });
+    expect(report.mojoAmountMinor).toBe(0);
+    expect(report.monthsConsidered).toBe(0);
+    expect(report.coverageRatio).toBeNull();
+  });
+
+  it('defaults now to the real current time when omitted', async () => {
+    const deps = dependencies({ transactions: [] });
+    const report = await getFireCoverage(deps, 'user_1', {});
+    expect(report.monthsConsidered).toBe(0);
   });
 });

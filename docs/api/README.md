@@ -134,6 +134,15 @@ curl "http://localhost:3000/api/v1/reports/kpis?period=month&offset=0" \
 
 Same `period`/`offset` parameters as `/reports/income-statement`.
 
+## Read the Fire emergency-fund coverage ratio
+
+Requires a PAT with `reports:r`. A current snapshot (no `period`/`offset`, like `/reports/balance-sheet`) of how many months of average expenses the Mojo reserve would cover — see `docs/domain/FIRE_COVERAGE_FORMULA.md` for the formula and its four deliberate corrections versus the original UI gauge. `coverageRatio` is `null`, not a fabricated number, when there's no expense history yet.
+
+```bash
+curl "http://localhost:3000/api/v1/reports/fire-coverage" \
+  -H "Authorization: Bearer $MONEY_MANAGER_TOKEN"
+```
+
 ## Read or update the Mojo reserve
 
 Requires a PAT with `mojo:r` (read) or `mojo:w` (update). There is one Mojo balance per user; `PUT` only accepts `targetMinor` — the current amount is derived from transaction history.

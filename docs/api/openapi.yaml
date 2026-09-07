@@ -672,6 +672,39 @@ paths:
           $ref: '#/components/responses/AuthenticationRequired'
         '403':
           $ref: '#/components/responses/InsufficientScope'
+  /reports/fire-coverage:
+    get:
+      operationId: getFireCoverage
+      summary: Get the Fire emergency-fund coverage ratio
+      description: >-
+        Ports `getEmergencyCoverage`/`getAverageMonthlyExpenses` from `src/app/main/fire/fire.component.ts` (FIRE-2's
+        gauge: how many months of average expenses the Mojo reserve covers). A current snapshot, not period-scoped,
+        like `/reports/balance-sheet` — the endpoint itself decides which historical months to average over
+        (every calendar month with qualifying expense-account spending, excluding the current, necessarily
+        incomplete month). Four deliberate corrections versus the original UI gauge, made because this is the first
+        time this calculation has been ported into the API/domain package (see `docs/domain/FIRE_COVERAGE_FORMULA.md`
+        for the full rationale and a worked example): expense-account transfers (e.g. an `Income → Smile`
+        contribution) and `Mojo`-account transactions are excluded from the average, refunds (positive amounts on an
+        expense account) are excluded rather than netted, and `coverageRatio` is `null` rather than a fabricated number
+        when there's no expense history yet to average.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Fire coverage ratio and its inputs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FireCoverageReport'
+              example:
+                coverageRatio: 3.2
+                mojoAmountMinor: 480000
+                averageMonthlyExpensesMinor: 150000
+                monthsConsidered: 8
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
   /mojo:
     get:
       operationId: getMojo
@@ -1441,6 +1474,22 @@ components:
         percentFilled:
           type: number
           description: amountMinor / targetMinor * 100, or 0 when targetMinor is 0. Not clamped to 100.
+    FireCoverageReport:
+      type: object
+      required: [coverageRatio, mojoAmountMinor, averageMonthlyExpensesMinor, monthsConsidered]
+      properties:
+        coverageRatio:
+          type: number
+          nullable: true
+          description: mojoAmountMinor / averageMonthlyExpensesMinor. null when monthsConsidered is 0 — there's no expense baseline to divide by, not a fabricated ratio.
+        mojoAmountMinor:
+          type: integer
+        averageMonthlyExpensesMinor:
+          type: integer
+          description: Average Daily/Splurge/Smile/Fire expense-account spending per historical calendar month, excluding transfers and the current (incomplete) month.
+        monthsConsidered:
+          type: integer
+          description: Distinct calendar months, excluding the current one, with at least one qualifying expense — the denominator's sample size.
     FundProjectTotals:
       type: object
       required: [targetMinor, amountMinor, remainingMinor, percentFilled]

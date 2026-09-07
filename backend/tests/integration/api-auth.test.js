@@ -1409,6 +1409,172 @@ describe('v1 API authentication and PAT management', () => {
     });
   });
 
+  describe('GET /reports/fire-coverage', () => {
+    // A dedicated, freshly-registered user per test (rather than firstUser/secondUser) — this
+    // report averages over ALL historical months with no period/offset scoping, so it's uniquely
+    // sensitive to fixture pollution from every other describe block in this file that posts
+    // Daily/Splurge/Smile/Fire-account transactions against firstUser/secondUser.
+    async function freshReportsUser() {
+      const user = await registerTestUser(`_fire_coverage_${Date.now()}_${Math.random()}`);
+      const created = await request(app)
+        .post('/api/v1/auth/tokens')
+        .set('Authorization', `Bearer ${user.token}`)
+        .send({ name: `fire-coverage-agent-${Date.now()}-${Math.random()}`, scopes: ['reports:r'] });
+      return { ...user, patToken: created.body.token };
+    }
+
+    async function setMojoAmount(userId, amountMinor) {
+      const usersDb = getUsersDb();
+      const doc = await usersDb.get(userId);
+      doc.data = doc.data || {};
+      doc.data.mojo = { ...(doc.data.mojo || {}), amount: amountMinor / 100 };
+      await usersDb.insert(doc);
+    }
+
+    function monthsAgoDate(months, day = 15) {
+      const d = new Date();
+      d.setDate(1); // avoid month-end rollover (e.g. day 31 -> a shorter month)
+      d.setMonth(d.getMonth() - months);
+      d.setDate(day);
+      return d.toISOString().slice(0, 10);
+    }
+
+    it('divides the Mojo reserve by the average of historical months with expense-account spending, excluding the current month', async () => {
+      const user = await freshReportsUser();
+      await request(app)
+        .post('/api/v1/transactions')
+        .set('Authorization', `Bearer ${user.token}`)
+        .send({
+          account: 'Daily',
+          amountMinor: -10000,
+          date: monthsAgoDate(1),
+          time: '09:00',
+          category: '@Food',
+          comment: '',
+        });
+      await request(app)
+        .post('/api/v1/transactions')
+        .set('Authorization', `Bearer ${user.token}`)
+        .send({
+          account: 'Splurge',
+          amountMinor: -20000,
+          date: monthsAgoDate(2),
+          time: '09:00',
+          category: '@Hobby',
+          comment: '',
+        });
+      await request(app)
+        .post('/api/v1/transactions')
+        .set('Authorization', `Bearer ${user.token}`)
+        .send({
+          account: 'Daily',
+          amountMinor: -99999,
+          date: monthsAgoDate(0),
+          time: '09:00',
+          category: '@Food',
+          comment: '',
+        });
+      // Set after every transaction write — `data.mojo.amount` is fully derived from
+      // transaction history on each POST (transaction-derived-state.js), so setting it
+      // beforehand would just get overwritten back to 0 (no @Mojo-tagged transactions here).
+      await setMojoAmount(user.userId, 45000);
+      const response = await request(app)
+        .get('/api/v1/reports/fire-coverage')
+        .set('Authorization', `Bearer ${user.patToken}`);
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({
+        coverageRatio: 3,
+        mojoAmountMinor: 45000,
+        averageMonthlyExpensesMinor: 15000,
+        monthsConsidered: 2,
+      });
+    });
+
+    it('excludes an inter-account transfer, unlike the original UI gauge', async () => {
+      const user = await freshReportsUser();
+      await request(app)
+        .post('/api/v1/transactions')
+        .set('Authorization', `Bearer ${user.token}`)
+        .send({
+          account: 'Daily',
+          amountMinor: -10000,
+          date: monthsAgoDate(1),
+          time: '09:00',
+          category: '@Food',
+          comment: '',
+        });
+      await request(app)
+        .post('/api/v1/transactions')
+        .set('Authorization', `Bearer ${user.token}`)
+        .send({
+          account: 'Smile',
+          amountMinor: -20000,
+          date: monthsAgoDate(1),
+          time: '09:00',
+          category: 'Smile',
+          comment: '',
+        });
+      await setMojoAmount(user.userId, 10000);
+      const response = await request(app)
+        .get('/api/v1/reports/fire-coverage')
+        .set('Authorization', `Bearer ${user.patToken}`);
+      expect(response.status).toBe(200);
+      expect(response.body.averageMonthlyExpensesMinor).toBe(10000);
+    });
+
+    it('returns a null coverageRatio, not a fabricated ratio, for a user with no expense history', async () => {
+      const user = await freshReportsUser();
+      await setMojoAmount(user.userId, 50000);
+      const response = await request(app)
+        .get('/api/v1/reports/fire-coverage')
+        .set('Authorization', `Bearer ${user.patToken}`);
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({
+        coverageRatio: null,
+        mojoAmountMinor: 50000,
+        averageMonthlyExpensesMinor: 0,
+        monthsConsidered: 0,
+      });
+    });
+
+    it('rejects requests without the reports:r scope', async () => {
+      const user = await freshReportsUser();
+      const writeOnly = await request(app)
+        .post('/api/v1/auth/tokens')
+        .set('Authorization', `Bearer ${user.token}`)
+        .send({ name: `write-not-reports-fire-coverage-${Date.now()}`, scopes: ['transactions:w'] });
+      const response = await request(app)
+        .get('/api/v1/reports/fire-coverage')
+        .set('Authorization', `Bearer ${writeOnly.body.token}`);
+      expect(response.status).toBe(403);
+      expect(response.body.code).toBe('scope_insufficient');
+    });
+
+    it('keeps fire-coverage figures isolated to the authenticated user document', async () => {
+      const user = await freshReportsUser();
+      const other = await freshReportsUser();
+      await request(app)
+        .post('/api/v1/transactions')
+        .set('Authorization', `Bearer ${other.token}`)
+        .send({
+          account: 'Daily',
+          amountMinor: -50000,
+          date: monthsAgoDate(1),
+          time: '09:00',
+          category: '@Only other user expense',
+          comment: '',
+        });
+      await setMojoAmount(user.userId, 10000);
+      await setMojoAmount(other.userId, 999900);
+      const response = await request(app)
+        .get('/api/v1/reports/fire-coverage')
+        .set('Authorization', `Bearer ${user.patToken}`);
+      expect(response.status).toBe(200);
+      expect(response.body.mojoAmountMinor).toBe(10000);
+      expect(response.body.monthsConsidered).toBe(0);
+    });
+  });
+
   describe('GET/PUT /mojo', () => {
     async function mojoToken(scopes) {
       const created = await sessionRequest('post', '/api/v1/auth/tokens').send({
