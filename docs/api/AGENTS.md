@@ -22,3 +22,10 @@ Every Pro API write is audit logged. Prefer narrowly scoped, expiring tokens and
 3. There is no per-transaction `If-Match`/version check yet: a concurrent edit to the same transaction can be silently overwritten (last write wins). Re-read the transaction immediately before an edit if another writer might be active.
 4. As with create, read the response body rather than assuming your edit applied exactly as sent — Smile/Fire capping can still adjust the amount and comment.
 5. `DELETE /api/v1/transactions/{id}` is not reversible through the API. Both PATCH and DELETE return `404` for an id that doesn't exist or belongs to another user — the two cases are indistinguishable by design.
+
+## Copy a transaction
+
+1. `POST /api/v1/transactions/{id}/copy` duplicates an existing transaction's account, amount, category, and comment into a new transaction. Date and time default to now — the same as the UI's copy action — unless overridden in the request body. "Now" is the server's local clock, not the caller's; pass explicit `date`/`time` if that distinction matters for your use case.
+2. Any field may be overridden the same way as `PATCH`, and the same coupling rule applies: if the source (or an override) comment carries a `#bucket:` tag, `amountMinor` and `comment` must be overridden together.
+3. This is a write — it requires `transactions:w`, is audit logged, and its response is the newly created transaction (with its own new id), not the source.
+4. Copying a bucket-tagged transaction does not remove the source's own allocation — both now compete for the same bucket capacity. A full-value copy of an already-fully-allocated transaction will itself get capped; this is expected, not a bug.

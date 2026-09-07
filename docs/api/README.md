@@ -41,3 +41,14 @@ curl -X DELETE http://localhost:3000/api/v1/transactions/tx_01234567-89ab-cdef-0
 ```
 
 Both require `transactions:w` and rebuild the derived account and fund state the same way `POST /transactions` does. `PATCH` accepts a partial body — send only the fields you want to change.
+
+## Copy a transaction
+
+```bash
+curl -X POST http://localhost:3000/api/v1/transactions/tx_01234567-89ab-cdef-0123-456789abcdef/copy \
+  -H "Authorization: Bearer $MONEY_MANAGER_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{}'
+```
+
+Duplicates the source transaction's account, amount, category, and comment into a new transaction dated today (send a body with any of `account`/`amountMinor`/`date`/`time`/`category`/`comment` to override).

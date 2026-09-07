@@ -5,6 +5,7 @@ const { getAuditDb } = require('../config/db');
 const { recordAuditEntry } = require('../config/audit');
 const { createToken, listTokens, revokeToken } = require('../cli/commands/token');
 const {
+  copyTransaction,
   createTransaction,
   deleteTransaction,
   getTransaction,
@@ -43,11 +44,11 @@ const EDITABLE_TRANSACTION_FIELDS = [
   'comment',
 ];
 
-function validateTransactionPatch(input) {
-  if (!input || typeof input !== 'object') return 'A transaction object is required.';
-  const keys = Object.keys(input);
-  if (keys.length === 0) return 'At least one field must be provided.';
-  const unknownField = keys.find((key) => !EDITABLE_TRANSACTION_FIELDS.includes(key));
+function validatePartialTransactionFields(input) {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) {
+    return 'A transaction object is required.';
+  }
+  const unknownField = Object.keys(input).find((key) => !EDITABLE_TRANSACTION_FIELDS.includes(key));
   if (unknownField) return `${unknownField} is not an editable field.`;
   if (input.amountMinor !== undefined) {
     if (!Number.isInteger(input.amountMinor)) return 'amountMinor must be an integer.';
@@ -63,6 +64,17 @@ function validateTransactionPatch(input) {
     return 'date must use YYYY-MM-DD format.';
   }
   return null;
+}
+
+function validateTransactionPatch(input) {
+  if (!input || typeof input !== 'object') return 'A transaction object is required.';
+  if (Object.keys(input).length === 0) return 'At least one field must be provided.';
+  return validatePartialTransactionFields(input);
+}
+
+function validateTransactionCopyOverrides(input) {
+  if (input === undefined || input === null) return null;
+  return validatePartialTransactionFields(input);
 }
 
 function auditActor(auth) {
@@ -144,6 +156,60 @@ router.post('/transactions', requireScope('transactions:w'), async (req, res, ne
     return next(error);
   }
 });
+
+router.post(
+  '/transactions/:transactionId/copy',
+  requireScope('transactions:w'),
+  async (req, res, next) => {
+    const validationError = validateTransactionCopyOverrides(req.body);
+    if (validationError) {
+      return problem(
+        res,
+        400,
+        'validation_invalid',
+        'Invalid transaction request',
+        validationError,
+      );
+    }
+    try {
+      const transaction = await copyTransaction(
+        { usersDb: getUsersDb(), authDb: getAuthDb() },
+        req.userId,
+        req.params.transactionId,
+        req.body || {},
+      );
+      if (!transaction) {
+        return problem(
+          res,
+          404,
+          'not_found',
+          'Transaction not found',
+          'No matching transaction exists.',
+        );
+      }
+      await recordAuditEntry(getAuditDb(), {
+        userId: req.userId,
+        actor: auditActor(req.auth),
+        method: req.method,
+        path: req.baseUrl + req.path,
+        resource: 'transactions',
+        resourceId: transaction.id,
+      });
+      return res.status(201).json(transaction);
+    } catch (error) {
+      if (error.code === 'BUCKET_PATCH_REQUIRES_BOTH_FIELDS') {
+        return problem(
+          res,
+          400,
+          'validation_invalid',
+          'Invalid transaction request',
+          error.message,
+        );
+      }
+      return next(error);
+    }
+  },
+);
 
 router.get(
   '/transactions/:transactionId',

@@ -180,6 +180,69 @@ async function createTransaction({ usersDb, authDb }, userId, input) {
   throw new Error(`Could not create transaction for ${userId}: CouchDB conflict`);
 }
 
+function copyDefaults() {
+  const now = new Date();
+  const pad = (value) => String(value).padStart(2, '0');
+  return {
+    date: `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`,
+    time: `${pad(now.getHours())}:${pad(now.getMinutes())}`,
+  };
+}
+
+async function copyTransaction({ usersDb, authDb }, userId, transactionId, overrides = {}) {
+  let attempt = 0;
+  while (attempt < MAX_WRITE_RETRIES) {
+    let userDoc;
+    try {
+      userDoc = await usersDb.get(userId);
+    } catch (error) {
+      if (error.statusCode === 404) return null;
+      throw error;
+    }
+    const session = await getEncryptionSession(authDb, userId);
+    const schemaVersion = userDoc.data?.meta?.schemaVersion || 1;
+    const currency = userDoc.data?.meta?.currency || 'EUR';
+    const existingRawTransactions = userDoc.data?.transactions || [];
+    if (!Array.isArray(existingRawTransactions))
+      throw new Error('Stored transactions must be an array');
+    const existingTransactions = toApiTransactions(
+      existingRawTransactions,
+      session,
+      schemaVersion,
+      currency,
+    );
+    const source = existingTransactions.find((transaction) => transaction.id === transactionId);
+    if (!source) return null;
+    assertBucketPatchIsConsistent(source, overrides);
+    const newTransaction = {
+      account: source.account,
+      amountMinor: source.amountMinor,
+      category: source.category,
+      comment: source.comment,
+      ...copyDefaults(),
+      ...overrides,
+      id: `tx_${crypto.randomUUID()}`,
+      currency,
+    };
+    const allTransactions = [...existingTransactions, newTransaction];
+    const derived = applyDerivedState(userDoc.data || {}, allTransactions, session, schemaVersion);
+    const data = derived.data;
+    data.transactions = derived.transactions.map((effectiveTransaction) =>
+      encryptTransaction(transactionFromApi(effectiveTransaction, schemaVersion), session),
+    );
+    try {
+      await usersDb.insert({ ...userDoc, data, updatedAt: new Date().toISOString() });
+      return derived.transactions.find(
+        (effectiveTransaction) => effectiveTransaction.id === newTransaction.id,
+      );
+    } catch (error) {
+      if (error.statusCode !== 409) throw error;
+      attempt += 1;
+    }
+  }
+  throw new Error(`Could not copy transaction ${transactionId} for ${userId}: CouchDB conflict`);
+}
+
 async function updateTransaction({ usersDb, authDb }, userId, transactionId, patch) {
   let attempt = 0;
   while (attempt < MAX_WRITE_RETRIES) {
@@ -272,6 +335,7 @@ module.exports = {
   listTransactions,
   getTransaction,
   createTransaction,
+  copyTransaction,
   updateTransaction,
   deleteTransaction,
   decryptTransaction,

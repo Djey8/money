@@ -346,6 +346,84 @@ describe('v1 API authentication and PAT management', () => {
     );
   });
 
+  it('copies a transaction with a new id, defaulting date/time to now', async () => {
+    const created = await sessionRequest('post', '/api/v1/transactions').send({
+      account: 'Daily',
+      amountMinor: -333,
+      date: '2020-01-01',
+      time: '08:00',
+      category: '@Copy source',
+      comment: 'Original',
+    });
+    const response = await sessionRequest(
+      'post',
+      `/api/v1/transactions/${created.body.id}/copy`,
+    ).send({});
+    expect(response.status).toBe(201);
+    expect(response.body).toMatchObject({
+      account: 'Daily',
+      amountMinor: -333,
+      category: '@Copy source',
+      comment: 'Original',
+    });
+    expect(response.body.id).not.toBe(created.body.id);
+    expect(response.body.date).not.toBe('2020-01-01');
+  });
+
+  it('applies overrides when copying and rejects a coupled bucket-tag override', async () => {
+    const projects = [
+      {
+        title: 'Copy Bucket Test',
+        buckets: [{ id: 'goal', title: 'Goal', target: 300, amount: 0 }],
+      },
+    ];
+    await sessionRequest('post', '/api/data/write/smile').send(projects);
+    const created = await sessionRequest('post', '/api/v1/transactions').send({
+      account: 'Smile',
+      amountMinor: -5000,
+      date: '2026-09-06',
+      time: '13:05',
+      category: '@Copy Bucket Test',
+      comment: '#bucket:Goal:50.00',
+    });
+    const rejected = await sessionRequest(
+      'post',
+      `/api/v1/transactions/${created.body.id}/copy`,
+    ).send({ amountMinor: -7000 });
+    expect(rejected.status).toBe(400);
+    expect(rejected.body.code).toBe('validation_invalid');
+
+    const copied = await sessionRequest(
+      'post',
+      `/api/v1/transactions/${created.body.id}/copy`,
+    ).send({ amountMinor: -7000, comment: '#bucket:Goal:70.00' });
+    expect(copied.status).toBe(201);
+    expect(copied.body.amountMinor).toBe(-7000);
+  });
+
+  it('returns 404 copying a transaction id that does not exist or belongs to another user', async () => {
+    const missing = await sessionRequest('post', '/api/v1/transactions/tx_missing/copy').send({});
+    expect(missing.status).toBe(404);
+
+    const secondUserTransaction = await sessionRequest(
+      'post',
+      '/api/v1/transactions',
+      secondUser.token,
+    ).send({
+      account: 'Daily',
+      amountMinor: -444,
+      date: '2026-09-06',
+      time: '13:06',
+      category: '@Not yours',
+      comment: '',
+    });
+    const crossUser = await sessionRequest(
+      'post',
+      `/api/v1/transactions/${secondUserTransaction.body.id}/copy`,
+    ).send({});
+    expect(crossUser.status).toBe(404);
+  });
+
   it('rejects transaction writes without transactions:w scope', async () => {
     const readOnly = await sessionRequest('post', '/api/v1/auth/tokens').send({
       name: 'read-only-agent',
@@ -370,6 +448,12 @@ describe('v1 API authentication and PAT management', () => {
       .set('Authorization', `Bearer ${readOnly.body.token}`);
     expect(deleteResponse.status).toBe(403);
     expect(deleteResponse.body.code).toBe('scope_insufficient');
+    const copyResponse = await request(app)
+      .post(`/api/v1/transactions/${created.body.id}/copy`)
+      .set('Authorization', `Bearer ${readOnly.body.token}`)
+      .send({});
+    expect(copyResponse.status).toBe(403);
+    expect(copyResponse.body.code).toBe('scope_insufficient');
   });
 
   it('creates a PAT once and exposes its identity to /me', async () => {

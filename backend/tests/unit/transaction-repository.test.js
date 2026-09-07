@@ -3,6 +3,7 @@
 const { EncryptionSession } = require('@money/domain');
 const {
   filterAndSortTransactions,
+  copyTransaction,
   createTransaction,
   deleteTransaction,
   getTransaction,
@@ -174,6 +175,131 @@ describe('transaction repository', () => {
     ).resolves.toMatchObject({ id: expect.stringMatching(/^tx_/) });
     expect(writes).toBe(2);
     expect(deps.usersDb.get).toHaveBeenCalledTimes(2);
+  });
+
+  it('copies a transaction with a new id and today as the default date/time', async () => {
+    let document = {
+      _id: 'user_1',
+      _rev: '1-a',
+      createdAt: 't',
+      updatedAt: 't',
+      data: { mojo: { amount: 0, target: 100 }, smile: [], fire: [] },
+    };
+    const deps = {
+      usersDb: {
+        get: jest.fn(async () => structuredClone(document)),
+        insert: jest.fn(async (next) => {
+          document = { ...next, _rev: '2-b' };
+        }),
+      },
+      authDb: {
+        get: jest.fn(async () => ({
+          encryptionConfig: { key: 'default', encryptDatabase: false },
+        })),
+      },
+    };
+    const source = await createTransaction(deps, 'user_1', {
+      account: 'Daily',
+      amountMinor: -1500,
+      date: '2020-01-01',
+      time: '08:00',
+      category: '@Food',
+      comment: 'Original',
+    });
+    const copy = await copyTransaction(deps, 'user_1', source.id);
+    expect(copy.id).not.toBe(source.id);
+    expect(copy).toMatchObject({
+      account: 'Daily',
+      amountMinor: -1500,
+      category: '@Food',
+      comment: 'Original',
+    });
+    expect(copy.date).not.toBe('2020-01-01');
+    expect(document.data.transactions).toHaveLength(2);
+  });
+
+  it('applies overrides on top of the copied source transaction', async () => {
+    let document = {
+      _id: 'user_1',
+      _rev: '1-a',
+      createdAt: 't',
+      updatedAt: 't',
+      data: { mojo: { amount: 0, target: 100 }, smile: [], fire: [] },
+    };
+    const deps = {
+      usersDb: {
+        get: jest.fn(async () => structuredClone(document)),
+        insert: jest.fn(async (next) => {
+          document = { ...next, _rev: '2-b' };
+        }),
+      },
+      authDb: {
+        get: jest.fn(async () => ({
+          encryptionConfig: { key: 'default', encryptDatabase: false },
+        })),
+      },
+    };
+    const source = await createTransaction(deps, 'user_1', {
+      account: 'Daily',
+      amountMinor: -1500,
+      date: '2026-09-06',
+      time: '08:00',
+      category: '@Food',
+      comment: 'Original',
+    });
+    const copy = await copyTransaction(deps, 'user_1', source.id, {
+      amountMinor: -900,
+      comment: 'Overridden',
+    });
+    expect(copy).toMatchObject({ amountMinor: -900, comment: 'Overridden', category: '@Food' });
+  });
+
+  it('rejects a copy override that touches only one of a coupled bucket-tagged pair', async () => {
+    let document = {
+      _id: 'user_1',
+      _rev: '1-a',
+      createdAt: 't',
+      updatedAt: 't',
+      data: {
+        mojo: { amount: 0, target: 100 },
+        smile: [
+          {
+            title: 'Holiday',
+            buckets: [{ id: 'flight', title: 'Flights', target: 10000, amount: 0 }],
+          },
+        ],
+        fire: [],
+      },
+    };
+    const deps = {
+      usersDb: {
+        get: jest.fn(async () => structuredClone(document)),
+        insert: jest.fn(async (next) => {
+          document = { ...next, _rev: '2-b' };
+        }),
+      },
+      authDb: {
+        get: jest.fn(async () => ({
+          encryptionConfig: { key: 'default', encryptDatabase: false },
+        })),
+      },
+    };
+    const source = await createTransaction(deps, 'user_1', {
+      account: 'Smile',
+      amountMinor: -5000,
+      date: '2026-09-06',
+      time: '09:00',
+      category: '@Holiday',
+      comment: '#bucket:Flights:50.00',
+    });
+    await expect(
+      copyTransaction(deps, 'user_1', source.id, { amountMinor: -7000 }),
+    ).rejects.toMatchObject({ code: 'BUCKET_PATCH_REQUIRES_BOTH_FIELDS' });
+  });
+
+  it('returns null copying a transaction id that does not exist', async () => {
+    const deps = dependencies({ transactions: [] });
+    await expect(copyTransaction(deps, 'user_1', 'tx_missing')).resolves.toBeNull();
   });
 
   it('updates a transaction field and rebuilds derived state from the merged record', async () => {

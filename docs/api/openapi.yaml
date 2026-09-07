@@ -118,6 +118,51 @@ paths:
           $ref: '#/components/responses/AuthenticationRequired'
         '403':
           $ref: '#/components/responses/InsufficientScope'
+  /transactions/{transactionId}/copy:
+    post:
+      operationId: copyTransaction
+      summary: Copy a transaction
+      description: Creates a new transaction from an existing one's account, amount, category, and comment. Date and time default to now, matching the UI's copy behavior; any field may be overridden in the request body. Atomically rebuilds derived income, expense, Smile, Fire, and Mojo state.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: transactionId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CopyTransactionRequest'
+            example:
+              date: '2026-09-07'
+      responses:
+        '201':
+          description: The newly created copy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiTransaction'
+              example:
+                id: tx_11111111-89ab-cdef-0123-456789abcdef
+                account: Daily
+                amountMinor: -1250
+                currency: EUR
+                date: '2026-09-07'
+                time: '09:30'
+                category: '@Groceries'
+                comment: Weekly shop
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
   /transactions/{transactionId}:
     get:
       operationId: getTransaction
@@ -442,6 +487,26 @@ components:
       type: object
       minProperties: 1
       description: At least one field must be provided. Unrecognized fields are rejected.
+      properties:
+        account:
+          type: string
+        amountMinor:
+          type: integer
+          not:
+            enum: [0]
+          description: Integer minor units. Must not be zero.
+        date:
+          type: string
+          format: date
+        time:
+          type: string
+        category:
+          type: string
+        comment:
+          type: string
+    CopyTransactionRequest:
+      type: object
+      description: All fields are optional overrides applied on top of the source transaction. Unrecognized fields are rejected.
       properties:
         account:
           type: string
