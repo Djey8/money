@@ -6,8 +6,10 @@ const { recordAuditEntry } = require('../config/audit');
 const { createToken, listTokens, revokeToken } = require('../cli/commands/token');
 const {
   createTransaction,
+  deleteTransaction,
   getTransaction,
   listTransactions,
+  updateTransaction,
 } = require('../repositories/transaction-repository');
 const { getUsersDb, getAuthDb } = require('../config/db');
 const {
@@ -29,6 +31,37 @@ function validateTransactionInput(input) {
     }
   }
   if (!/^\d{4}-\d{2}-\d{2}$/.test(input.date)) return 'date must use YYYY-MM-DD format.';
+  return null;
+}
+
+const EDITABLE_TRANSACTION_FIELDS = [
+  'account',
+  'amountMinor',
+  'date',
+  'time',
+  'category',
+  'comment',
+];
+
+function validateTransactionPatch(input) {
+  if (!input || typeof input !== 'object') return 'A transaction object is required.';
+  const keys = Object.keys(input);
+  if (keys.length === 0) return 'At least one field must be provided.';
+  const unknownField = keys.find((key) => !EDITABLE_TRANSACTION_FIELDS.includes(key));
+  if (unknownField) return `${unknownField} is not an editable field.`;
+  if (input.amountMinor !== undefined) {
+    if (!Number.isInteger(input.amountMinor)) return 'amountMinor must be an integer.';
+    if (input.amountMinor === 0) return 'amountMinor cannot be zero.';
+  }
+  for (const field of ['account', 'date', 'time', 'category', 'comment']) {
+    if (input[field] === undefined) continue;
+    if (typeof input[field] !== 'string' || (field !== 'comment' && input[field].trim() === '')) {
+      return `${field} must be a string${field === 'comment' ? '' : ' and cannot be empty'}.`;
+    }
+  }
+  if (input.date !== undefined && !/^\d{4}-\d{2}-\d{2}$/.test(input.date)) {
+    return 'date must use YYYY-MM-DD format.';
+  }
   return null;
 }
 
@@ -132,6 +165,94 @@ router.get(
         );
       }
       return res.json(transaction);
+    } catch (error) {
+      return next(error);
+    }
+  },
+);
+
+router.patch(
+  '/transactions/:transactionId',
+  requireScope('transactions:w'),
+  async (req, res, next) => {
+    const validationError = validateTransactionPatch(req.body);
+    if (validationError) {
+      return problem(
+        res,
+        400,
+        'validation_invalid',
+        'Invalid transaction request',
+        validationError,
+      );
+    }
+    try {
+      const transaction = await updateTransaction(
+        { usersDb: getUsersDb(), authDb: getAuthDb() },
+        req.userId,
+        req.params.transactionId,
+        req.body,
+      );
+      if (!transaction) {
+        return problem(
+          res,
+          404,
+          'not_found',
+          'Transaction not found',
+          'No matching transaction exists.',
+        );
+      }
+      await recordAuditEntry(getAuditDb(), {
+        userId: req.userId,
+        actor: auditActor(req.auth),
+        method: req.method,
+        path: req.baseUrl + req.path,
+        resource: 'transactions',
+        resourceId: transaction.id,
+      });
+      return res.json(transaction);
+    } catch (error) {
+      if (error.code === 'BUCKET_PATCH_REQUIRES_BOTH_FIELDS') {
+        return problem(
+          res,
+          400,
+          'validation_invalid',
+          'Invalid transaction request',
+          error.message,
+        );
+      }
+      return next(error);
+    }
+  },
+);
+
+router.delete(
+  '/transactions/:transactionId',
+  requireScope('transactions:w'),
+  async (req, res, next) => {
+    try {
+      const deleted = await deleteTransaction(
+        { usersDb: getUsersDb(), authDb: getAuthDb() },
+        req.userId,
+        req.params.transactionId,
+      );
+      if (!deleted) {
+        return problem(
+          res,
+          404,
+          'not_found',
+          'Transaction not found',
+          'No matching transaction exists.',
+        );
+      }
+      await recordAuditEntry(getAuditDb(), {
+        userId: req.userId,
+        actor: auditActor(req.auth),
+        method: req.method,
+        path: req.baseUrl + req.path,
+        resource: 'transactions',
+        resourceId: req.params.transactionId,
+      });
+      return res.json({ id: req.params.transactionId });
     } catch (error) {
       return next(error);
     }

@@ -27,3 +27,17 @@ curl -X POST http://localhost:3000/api/v1/transactions \
 ```
 
 The server assigns the transaction ID, retries a CouchDB conflict safely, and rebuilds the linked derived account and fund state in the same user-document write.
+
+## Edit or delete a transaction
+
+```bash
+curl -X PATCH http://localhost:3000/api/v1/transactions/tx_01234567-89ab-cdef-0123-456789abcdef \
+  -H "Authorization: Bearer $MONEY_MANAGER_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"amountMinor":-1500}'
+
+curl -X DELETE http://localhost:3000/api/v1/transactions/tx_01234567-89ab-cdef-0123-456789abcdef \
+  -H "Authorization: Bearer $MONEY_MANAGER_TOKEN"
+```
+
+Both require `transactions:w` and rebuild the derived account and fund state the same way `POST /transactions` does. `PATCH` accepts a partial body — send only the fields you want to change.

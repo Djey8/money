@@ -216,6 +216,162 @@ describe('v1 API authentication and PAT management', () => {
     expect(after.body.transactions).toHaveLength(before.body.transactions.length);
   });
 
+  it('edits a transaction and rebuilds its derived ledger', async () => {
+    const created = await sessionRequest('post', '/api/v1/transactions').send({
+      account: 'Income',
+      amountMinor: 20000,
+      date: '2026-09-06',
+      time: '13:00',
+      category: '@Freelance',
+      comment: '',
+    });
+    const response = await sessionRequest('patch', `/api/v1/transactions/${created.body.id}`).send({
+      amountMinor: 30000,
+    });
+    expect(response.status).toBe(200);
+    expect(response.body).toMatchObject({ id: created.body.id, amountMinor: 30000 });
+    const ledger = await sessionRequest('get', '/api/data/read/income/revenue/revenues');
+    expect(ledger.body.data).toEqual(
+      expect.arrayContaining([expect.objectContaining({ tag: 'Freelance', amount: 300 })]),
+    );
+  });
+
+  it('rejects an amountMinor-only edit that would revert to a stale bucket allocation tag', async () => {
+    const projects = [
+      {
+        title: 'Bucket Edit Test',
+        buckets: [{ id: 'goal', title: 'Goal', target: 100, amount: 0 }],
+      },
+    ];
+    await sessionRequest('post', '/api/data/write/smile').send(projects);
+    const created = await sessionRequest('post', '/api/v1/transactions').send({
+      account: 'Smile',
+      amountMinor: -5000,
+      date: '2026-09-06',
+      time: '13:00',
+      category: '@Bucket Edit Test',
+      comment: '#bucket:Goal:50.00',
+    });
+    const amountOnly = await sessionRequest(
+      'patch',
+      `/api/v1/transactions/${created.body.id}`,
+    ).send({ amountMinor: -7000 });
+    expect(amountOnly.status).toBe(400);
+    expect(amountOnly.body.code).toBe('validation_invalid');
+
+    const commentOnly = await sessionRequest(
+      'patch',
+      `/api/v1/transactions/${created.body.id}`,
+    ).send({ comment: 'no tags anymore' });
+    expect(commentOnly.status).toBe(400);
+    expect(commentOnly.body.code).toBe('validation_invalid');
+
+    const together = await sessionRequest('patch', `/api/v1/transactions/${created.body.id}`).send({
+      amountMinor: -7000,
+      comment: '#bucket:Goal:70.00',
+    });
+    expect(together.status).toBe(200);
+    expect(together.body.amountMinor).toBe(-7000);
+  });
+
+  it('rejects an edit to a non-editable field', async () => {
+    const created = await sessionRequest('post', '/api/v1/transactions').send({
+      account: 'Daily',
+      amountMinor: -100,
+      date: '2026-09-06',
+      time: '13:01',
+      category: '@Edit test',
+      comment: '',
+    });
+    const response = await sessionRequest('patch', `/api/v1/transactions/${created.body.id}`).send({
+      id: 'tx_hijacked',
+    });
+    expect(response.status).toBe(400);
+    expect(response.body.code).toBe('validation_invalid');
+  });
+
+  it('returns 404 editing or deleting a transaction id that does not exist', async () => {
+    const patchResponse = await sessionRequest('patch', '/api/v1/transactions/tx_missing').send({
+      comment: 'x',
+    });
+    expect(patchResponse.status).toBe(404);
+    const deleteResponse = await sessionRequest('delete', '/api/v1/transactions/tx_missing');
+    expect(deleteResponse.status).toBe(404);
+  });
+
+  it('does not let a session edit or delete another user’s transaction', async () => {
+    const created = await sessionRequest('post', '/api/v1/transactions', secondUser.token).send({
+      account: 'Daily',
+      amountMinor: -500,
+      date: '2026-09-06',
+      time: '13:02',
+      category: '@Owned by second user',
+      comment: '',
+    });
+    const patchResponse = await sessionRequest(
+      'patch',
+      `/api/v1/transactions/${created.body.id}`,
+    ).send({ comment: 'hijacked' });
+    expect(patchResponse.status).toBe(404);
+    const deleteResponse = await sessionRequest(
+      'delete',
+      `/api/v1/transactions/${created.body.id}`,
+    );
+    expect(deleteResponse.status).toBe(404);
+    const stillThere = await sessionRequest(
+      'get',
+      `/api/v1/transactions/${created.body.id}`,
+      secondUser.token,
+    );
+    expect(stillThere.status).toBe(200);
+  });
+
+  it('deletes a transaction and removes it from the derived ledger', async () => {
+    const created = await sessionRequest('post', '/api/v1/transactions').send({
+      account: 'Income',
+      amountMinor: 40000,
+      date: '2026-09-06',
+      time: '13:03',
+      category: '@ToDelete',
+      comment: '',
+    });
+    const response = await sessionRequest('delete', `/api/v1/transactions/${created.body.id}`);
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ id: created.body.id });
+    const missing = await sessionRequest('get', `/api/v1/transactions/${created.body.id}`);
+    expect(missing.status).toBe(404);
+    const ledger = await sessionRequest('get', '/api/data/read/income/revenue/revenues');
+    expect(ledger.body.data).not.toEqual(
+      expect.arrayContaining([expect.objectContaining({ tag: 'ToDelete' })]),
+    );
+  });
+
+  it('rejects transaction writes without transactions:w scope', async () => {
+    const readOnly = await sessionRequest('post', '/api/v1/auth/tokens').send({
+      name: 'read-only-agent',
+      scopes: ['transactions:r'],
+    });
+    const created = await sessionRequest('post', '/api/v1/transactions').send({
+      account: 'Daily',
+      amountMinor: -100,
+      date: '2026-09-06',
+      time: '13:04',
+      category: '@Scope test',
+      comment: '',
+    });
+    const patchResponse = await request(app)
+      .patch(`/api/v1/transactions/${created.body.id}`)
+      .set('Authorization', `Bearer ${readOnly.body.token}`)
+      .send({ comment: 'nope' });
+    expect(patchResponse.status).toBe(403);
+    expect(patchResponse.body.code).toBe('scope_insufficient');
+    const deleteResponse = await request(app)
+      .delete(`/api/v1/transactions/${created.body.id}`)
+      .set('Authorization', `Bearer ${readOnly.body.token}`);
+    expect(deleteResponse.status).toBe(403);
+    expect(deleteResponse.body.code).toBe('scope_insufficient');
+  });
+
   it('creates a PAT once and exposes its identity to /me', async () => {
     const create = await sessionRequest('post', '/api/v1/auth/tokens').send({
       name: 'integration-agent',

@@ -1,7 +1,12 @@
 'use strict';
 
 const crypto = require('crypto');
-const { isEncryptedValue, transactionFromApi, transactionToApi } = require('@money/domain');
+const {
+  isEncryptedValue,
+  parseBucketAllocations,
+  transactionFromApi,
+  transactionToApi,
+} = require('@money/domain');
 const { getEncryptionSession } = require('../services/encryption-session');
 const { applyDerivedState } = require('../services/transaction-derived-state');
 
@@ -37,6 +42,34 @@ function toApiTransactions(transactions, session, schemaVersion, currency) {
       );
     }),
   );
+}
+
+function hasBucketTags(comment) {
+  return parseBucketAllocations(comment || '').length > 0;
+}
+
+/**
+ * amountMinor and a comment's `#bucket:` tags are one coupled value to the
+ * fund-allocation engine (packages/domain/src/transactions/fund-state.ts):
+ * when tags are present they win over amountMinor entirely. A PATCH that
+ * touches only one of the two against a tagged transaction would otherwise
+ * silently revert the caller's amount change or silently reallocate funds
+ * neither field's edit asked for.
+ */
+function assertBucketPatchIsConsistent(existingTransaction, patch) {
+  const touchesAmount = Object.prototype.hasOwnProperty.call(patch, 'amountMinor');
+  const touchesComment = Object.prototype.hasOwnProperty.call(patch, 'comment');
+  if (touchesAmount === touchesComment) return;
+  const commentsToCheck = touchesComment
+    ? [existingTransaction.comment, patch.comment]
+    : [existingTransaction.comment];
+  if (commentsToCheck.some(hasBucketTags)) {
+    const error = new Error(
+      'amountMinor and comment must be updated together when the transaction has #bucket: allocation tags.',
+    );
+    error.code = 'BUCKET_PATCH_REQUIRES_BOTH_FIELDS';
+    throw error;
+  }
 }
 
 function decodeCursor(cursor) {
@@ -147,10 +180,100 @@ async function createTransaction({ usersDb, authDb }, userId, input) {
   throw new Error(`Could not create transaction for ${userId}: CouchDB conflict`);
 }
 
+async function updateTransaction({ usersDb, authDb }, userId, transactionId, patch) {
+  let attempt = 0;
+  while (attempt < MAX_WRITE_RETRIES) {
+    let userDoc;
+    try {
+      userDoc = await usersDb.get(userId);
+    } catch (error) {
+      if (error.statusCode === 404) return null;
+      throw error;
+    }
+    const session = await getEncryptionSession(authDb, userId);
+    const schemaVersion = userDoc.data?.meta?.schemaVersion || 1;
+    const currency = userDoc.data?.meta?.currency || 'EUR';
+    const existingRawTransactions = userDoc.data?.transactions || [];
+    if (!Array.isArray(existingRawTransactions))
+      throw new Error('Stored transactions must be an array');
+    const existingTransactions = toApiTransactions(
+      existingRawTransactions,
+      session,
+      schemaVersion,
+      currency,
+    );
+    const index = existingTransactions.findIndex((transaction) => transaction.id === transactionId);
+    if (index === -1) return null;
+    assertBucketPatchIsConsistent(existingTransactions[index], patch);
+    const allTransactions = existingTransactions.map((transaction, candidateIndex) =>
+      candidateIndex === index ? { ...transaction, ...patch } : transaction,
+    );
+    const derived = applyDerivedState(userDoc.data || {}, allTransactions, session, schemaVersion);
+    const data = derived.data;
+    data.transactions = derived.transactions.map((effectiveTransaction) =>
+      encryptTransaction(transactionFromApi(effectiveTransaction, schemaVersion), session),
+    );
+    try {
+      await usersDb.insert({ ...userDoc, data, updatedAt: new Date().toISOString() });
+      return derived.transactions.find(
+        (effectiveTransaction) => effectiveTransaction.id === transactionId,
+      );
+    } catch (error) {
+      if (error.statusCode !== 409) throw error;
+      attempt += 1;
+    }
+  }
+  throw new Error(`Could not update transaction ${transactionId} for ${userId}: CouchDB conflict`);
+}
+
+async function deleteTransaction({ usersDb, authDb }, userId, transactionId) {
+  let attempt = 0;
+  while (attempt < MAX_WRITE_RETRIES) {
+    let userDoc;
+    try {
+      userDoc = await usersDb.get(userId);
+    } catch (error) {
+      if (error.statusCode === 404) return false;
+      throw error;
+    }
+    const session = await getEncryptionSession(authDb, userId);
+    const schemaVersion = userDoc.data?.meta?.schemaVersion || 1;
+    const currency = userDoc.data?.meta?.currency || 'EUR';
+    const existingRawTransactions = userDoc.data?.transactions || [];
+    if (!Array.isArray(existingRawTransactions))
+      throw new Error('Stored transactions must be an array');
+    const existingTransactions = toApiTransactions(
+      existingRawTransactions,
+      session,
+      schemaVersion,
+      currency,
+    );
+    if (!existingTransactions.some((transaction) => transaction.id === transactionId)) return false;
+    const allTransactions = existingTransactions.filter(
+      (transaction) => transaction.id !== transactionId,
+    );
+    const derived = applyDerivedState(userDoc.data || {}, allTransactions, session, schemaVersion);
+    const data = derived.data;
+    data.transactions = derived.transactions.map((effectiveTransaction) =>
+      encryptTransaction(transactionFromApi(effectiveTransaction, schemaVersion), session),
+    );
+    try {
+      await usersDb.insert({ ...userDoc, data, updatedAt: new Date().toISOString() });
+      return true;
+    } catch (error) {
+      if (error.statusCode !== 409) throw error;
+      attempt += 1;
+    }
+  }
+  throw new Error(`Could not delete transaction ${transactionId} for ${userId}: CouchDB conflict`);
+}
+
 module.exports = {
   listTransactions,
   getTransaction,
   createTransaction,
+  updateTransaction,
+  deleteTransaction,
   decryptTransaction,
   decodeCursor,
   filterAndSortTransactions,

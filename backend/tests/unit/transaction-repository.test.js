@@ -4,8 +4,10 @@ const { EncryptionSession } = require('@money/domain');
 const {
   filterAndSortTransactions,
   createTransaction,
+  deleteTransaction,
   getTransaction,
   listTransactions,
+  updateTransaction,
 } = require('../../repositories/transaction-repository');
 
 function dependencies(data, encryptionConfig) {
@@ -173,6 +175,250 @@ describe('transaction repository', () => {
     expect(writes).toBe(2);
     expect(deps.usersDb.get).toHaveBeenCalledTimes(2);
   });
+
+  it('updates a transaction field and rebuilds derived state from the merged record', async () => {
+    let document = {
+      _id: 'user_1',
+      _rev: '1-a',
+      createdAt: 't',
+      updatedAt: 't',
+      data: {
+        transactions: [
+          {
+            id: 'tx_1',
+            account: 'Income',
+            amount: 1000,
+            date: '2026-09-06',
+            time: '09:00',
+            category: '@Salary',
+            comment: '',
+          },
+        ],
+        mojo: { amount: 0, target: 100 },
+        smile: [],
+        fire: [],
+      },
+    };
+    const deps = {
+      usersDb: {
+        get: jest.fn(async () => structuredClone(document)),
+        insert: jest.fn(async (next) => {
+          document = { ...next, _rev: '2-b' };
+        }),
+      },
+      authDb: {
+        get: jest.fn(async () => ({
+          encryptionConfig: { key: 'default', encryptDatabase: false },
+        })),
+      },
+    };
+    const updated = await updateTransaction(deps, 'user_1', 'tx_1', { amountMinor: 150000 });
+    expect(updated).toMatchObject({ id: 'tx_1', amountMinor: 150000 });
+    expect(document.data.transactions[0]).toMatchObject({ id: 'tx_1', amount: 1500 });
+    expect(document.data.income.revenue.revenues).toEqual([{ tag: 'Salary', amount: 1500 }]);
+  });
+
+  it('returns null when updating a transaction id that does not exist', async () => {
+    const deps = dependencies({ transactions: [] });
+    await expect(
+      updateTransaction(deps, 'user_1', 'tx_missing', { comment: 'x' }),
+    ).resolves.toBeNull();
+  });
+
+  it('rejects an amountMinor-only patch that would silently revert to stale bucket tags', async () => {
+    let document = {
+      _id: 'user_1',
+      _rev: '1-a',
+      createdAt: 't',
+      updatedAt: 't',
+      data: {
+        mojo: { amount: 0, target: 100 },
+        smile: [
+          {
+            title: 'Holiday',
+            buckets: [{ id: 'flight', title: 'Flights', target: 10000, amount: 0 }],
+          },
+        ],
+        fire: [],
+      },
+    };
+    const deps = {
+      usersDb: {
+        get: jest.fn(async () => structuredClone(document)),
+        insert: jest.fn(async (next) => {
+          document = { ...next, _rev: '2-b' };
+        }),
+      },
+      authDb: {
+        get: jest.fn(async () => ({
+          encryptionConfig: { key: 'default', encryptDatabase: false },
+        })),
+      },
+    };
+    const created = await createTransaction(deps, 'user_1', {
+      account: 'Smile',
+      amountMinor: -5000,
+      date: '2026-09-06',
+      time: '09:00',
+      category: '@Holiday',
+      comment: '#bucket:Flights:50.00',
+    });
+    await expect(
+      updateTransaction(deps, 'user_1', created.id, { amountMinor: -7000 }),
+    ).rejects.toMatchObject({ code: 'BUCKET_PATCH_REQUIRES_BOTH_FIELDS' });
+    await expect(
+      updateTransaction(deps, 'user_1', created.id, { comment: 'no more tags' }),
+    ).rejects.toMatchObject({ code: 'BUCKET_PATCH_REQUIRES_BOTH_FIELDS' });
+    const updated = await updateTransaction(deps, 'user_1', created.id, {
+      amountMinor: -7000,
+      comment: '#bucket:Flights:70.00',
+    });
+    expect(updated).toMatchObject({ amountMinor: -7000 });
+  });
+
+  it('retries a CouchDB conflict on update using a fresh document read', async () => {
+    let document = {
+      _id: 'user_1',
+      _rev: '1-a',
+      createdAt: 't',
+      updatedAt: 't',
+      data: {
+        transactions: [
+          {
+            id: 'tx_1',
+            account: 'Daily',
+            amount: -1,
+            date: '2026-09-06',
+            time: '09:00',
+            category: '@Food',
+            comment: '',
+          },
+        ],
+        mojo: { amount: 0, target: 100 },
+        smile: [],
+        fire: [],
+      },
+    };
+    let writes = 0;
+    const deps = {
+      usersDb: {
+        get: jest.fn(async () => structuredClone(document)),
+        insert: jest.fn(async (next) => {
+          writes += 1;
+          if (writes === 1) {
+            const error = new Error('conflict');
+            error.statusCode = 409;
+            throw error;
+          }
+          document = { ...next, _rev: '2-b' };
+        }),
+      },
+      authDb: {
+        get: jest.fn(async () => ({
+          encryptionConfig: { key: 'default', encryptDatabase: false },
+        })),
+      },
+    };
+    await expect(
+      updateTransaction(deps, 'user_1', 'tx_1', { amountMinor: -200 }),
+    ).resolves.toMatchObject({ amountMinor: -200 });
+    expect(writes).toBe(2);
+  });
+
+  it('deletes a transaction and rebuilds derived state without it', async () => {
+    let document = {
+      _id: 'user_1',
+      _rev: '1-a',
+      createdAt: 't',
+      updatedAt: 't',
+      data: {
+        transactions: [
+          {
+            id: 'tx_1',
+            account: 'Income',
+            amount: 1000,
+            date: '2026-09-06',
+            time: '09:00',
+            category: '@Salary',
+            comment: '',
+          },
+        ],
+        mojo: { amount: 0, target: 100 },
+        smile: [],
+        fire: [],
+      },
+    };
+    const deps = {
+      usersDb: {
+        get: jest.fn(async () => structuredClone(document)),
+        insert: jest.fn(async (next) => {
+          document = { ...next, _rev: '2-b' };
+        }),
+      },
+      authDb: {
+        get: jest.fn(async () => ({
+          encryptionConfig: { key: 'default', encryptDatabase: false },
+        })),
+      },
+    };
+    await expect(deleteTransaction(deps, 'user_1', 'tx_1')).resolves.toBe(true);
+    expect(document.data.transactions).toEqual([]);
+    expect(document.data.income.revenue.revenues).toEqual([]);
+  });
+
+  it('retries a CouchDB conflict on delete using a fresh document read', async () => {
+    let document = {
+      _id: 'user_1',
+      _rev: '1-a',
+      createdAt: 't',
+      updatedAt: 't',
+      data: {
+        transactions: [
+          {
+            id: 'tx_1',
+            account: 'Daily',
+            amount: -1,
+            date: '2026-09-06',
+            time: '09:00',
+            category: '@Food',
+            comment: '',
+          },
+        ],
+        mojo: { amount: 0, target: 100 },
+        smile: [],
+        fire: [],
+      },
+    };
+    let writes = 0;
+    const deps = {
+      usersDb: {
+        get: jest.fn(async () => structuredClone(document)),
+        insert: jest.fn(async (next) => {
+          writes += 1;
+          if (writes === 1) {
+            const error = new Error('conflict');
+            error.statusCode = 409;
+            throw error;
+          }
+          document = { ...next, _rev: '2-b' };
+        }),
+      },
+      authDb: {
+        get: jest.fn(async () => ({
+          encryptionConfig: { key: 'default', encryptDatabase: false },
+        })),
+      },
+    };
+    await expect(deleteTransaction(deps, 'user_1', 'tx_1')).resolves.toBe(true);
+    expect(writes).toBe(2);
+    expect(document.data.transactions).toEqual([]);
+  });
+
+  it('returns false when deleting a transaction id that does not exist', async () => {
+    const deps = dependencies({ transactions: [] });
+    await expect(deleteTransaction(deps, 'user_1', 'tx_missing')).resolves.toBe(false);
+  });
+
   it('returns an empty paginated result when the user has no data document', async () => {
     const error = new Error('not_found');
     error.statusCode = 404;

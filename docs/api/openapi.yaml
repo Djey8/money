@@ -153,6 +153,75 @@ paths:
           $ref: '#/components/responses/InsufficientScope'
         '404':
           $ref: '#/components/responses/NotFound'
+    patch:
+      operationId: updateTransaction
+      summary: Edit a transaction
+      description: Updates one or more fields on an existing transaction and atomically rebuilds its derived income, expense, Smile, Fire, and Mojo state. If the transaction's comment carries a `#bucket:` allocation tag (current or incoming), `amountMinor` and `comment` must be provided together — sending only one is rejected rather than silently applied against the other field's stale value.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: transactionId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTransactionRequest'
+            example:
+              amountMinor: -1500
+      responses:
+        '200':
+          description: Updated transaction
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiTransaction'
+              example:
+                id: tx_01234567-89ab-cdef-0123-456789abcdef
+                account: Daily
+                amountMinor: -1500
+                currency: EUR
+                date: '2026-09-06'
+                time: '09:30'
+                category: '@Groceries'
+                comment: Weekly shop
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      operationId: deleteTransaction
+      summary: Delete a transaction
+      description: Removes a transaction and atomically rebuilds its derived income, expense, Smile, Fire, and Mojo state.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: transactionId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Transaction deleted
+          content:
+            application/json:
+              example:
+                id: tx_01234567-89ab-cdef-0123-456789abcdef
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
   /me:
     get:
       operationId: getCurrentIdentity
@@ -352,6 +421,27 @@ components:
     CreateTransactionRequest:
       type: object
       required: [account, amountMinor, date, time, category, comment]
+      properties:
+        account:
+          type: string
+        amountMinor:
+          type: integer
+          not:
+            enum: [0]
+          description: Integer minor units. Must not be zero.
+        date:
+          type: string
+          format: date
+        time:
+          type: string
+        category:
+          type: string
+        comment:
+          type: string
+    UpdateTransactionRequest:
+      type: object
+      minProperties: 1
+      description: At least one field must be provided. Unrecognized fields are rejected.
       properties:
         account:
           type: string
