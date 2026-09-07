@@ -147,3 +147,17 @@ curl -X PUT "http://localhost:3000/api/v1/mojo" \
   -H "Content-Type: application/json" \
   -d '{"targetMinor": 200000}'
 ```
+
+## List or create Smile projects
+
+Requires a PAT with `smile:r` (list) or `smile:w` (create). Provide either `targetMinor` or a non-empty `buckets` array when creating.
+
+```bash
+curl "http://localhost:3000/api/v1/smile" \
+  -H "Authorization: Bearer $MONEY_MANAGER_TOKEN"
+
+curl -X POST "http://localhost:3000/api/v1/smile" \
+  -H "Authorization: Bearer $MONEY_MANAGER_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Summer Vacation", "buckets": [{"title": "Flights", "targetMinor": 150000}]}'
+```

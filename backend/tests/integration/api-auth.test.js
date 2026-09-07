@@ -117,6 +117,7 @@ describe('v1 API authentication and PAT management', () => {
   it('caps a Smile transaction and persists matching bucket state', async () => {
     const projects = [
       {
+        id: 'smile_fixture_holiday',
         title: 'Holiday',
         buckets: [{ id: 'flight', title: 'Flights', target: 100, amount: 0 }],
       },
@@ -239,6 +240,7 @@ describe('v1 API authentication and PAT management', () => {
   it('rejects an amountMinor-only edit that would revert to a stale bucket allocation tag', async () => {
     const projects = [
       {
+        id: 'smile_fixture_bucket_edit_test',
         title: 'Bucket Edit Test',
         buckets: [{ id: 'goal', title: 'Goal', target: 100, amount: 0 }],
       },
@@ -373,6 +375,7 @@ describe('v1 API authentication and PAT management', () => {
   it('applies overrides when copying and rejects a coupled bucket-tag override', async () => {
     const projects = [
       {
+        id: 'smile_fixture_copy_bucket_test',
         title: 'Copy Bucket Test',
         buckets: [{ id: 'goal', title: 'Goal', target: 300, amount: 0 }],
       },
@@ -1495,6 +1498,186 @@ describe('v1 API authentication and PAT management', () => {
       const response = await request(app).get('/api/v1/mojo').set('Authorization', `Bearer ${token}`);
       expect(response.status).toBe(200);
       expect(response.body.amountMinor).toBe(100000);
+    });
+  });
+
+  describe('GET/POST /smile', () => {
+    async function smileToken(scopes) {
+      const created = await sessionRequest('post', '/api/v1/auth/tokens').send({
+        name: `smile-agent-${Date.now()}-${Math.random()}`,
+        scopes,
+      });
+      return created.body;
+    }
+
+    // Appends rather than overwrites data.smile, so this stays safe to call
+    // from more than one test in this block regardless of execution order —
+    // it never clobbers a project another test already created via POST.
+    async function addSmileProjects(userId, projects) {
+      const usersDb = getUsersDb();
+      const doc = await usersDb.get(userId);
+      doc.data = doc.data || {};
+      doc.data.smile = [...(doc.data.smile || []), ...projects];
+      await usersDb.insert(doc);
+    }
+
+    it('lists Smile projects with computed bucket totals', async () => {
+      const { token } = await smileToken(['smile:r']);
+      await addSmileProjects(firstUser.userId, [
+        {
+          id: 'smile_list_1',
+          title: 'Vacation',
+          sub: '',
+          phase: 'saving',
+          description: '',
+          buckets: [{ id: 'b1', title: 'Flights', target: 1500, amount: 200 }],
+          links: [],
+          actionItems: [],
+          notes: [],
+          createdAt: '2026-01-01T00:00:00.000Z',
+          updatedAt: '2026-01-01T00:00:00.000Z',
+        },
+      ]);
+      const response = await request(app).get('/api/v1/smile').set('Authorization', `Bearer ${token}`);
+      expect(response.status).toBe(200);
+      const project = response.body.projects.find((p) => p.id === 'smile_list_1');
+      expect(project.buckets[0]).toMatchObject({ targetMinor: 150000, amountMinor: 20000 });
+      expect(project.totals).toMatchObject({ targetMinor: 150000, amountMinor: 20000 });
+    });
+
+    it('creates a project with a default bucket from targetMinor and audit logs the write', async () => {
+      const { token, tokenId } = await smileToken(['smile:w']);
+      const response = await request(app)
+        .post('/api/v1/smile')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ title: `Integration Vacation ${Date.now()}`, targetMinor: 150000 });
+      expect(response.status).toBe(201);
+      expect(response.body.buckets).toHaveLength(1);
+      expect(response.body.totals.targetMinor).toBe(150000);
+      const auditEntries = await queryAuditEntries(getAuditDb(), firstUser.userId, { resource: 'smile' });
+      expect(auditEntries).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            actor: { type: 'token', tokenId },
+            method: 'POST',
+            resourceId: response.body.id,
+          }),
+        ]),
+      );
+    });
+
+    it('creates a project with custom buckets, links, action items, and notes', async () => {
+      const { token } = await smileToken(['smile:w']);
+      const response = await request(app)
+        .post('/api/v1/smile')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          title: `Integration Custom ${Date.now()}`,
+          buckets: [{ title: 'Flights', targetMinor: 150000 }, { title: 'Hotel', targetMinor: 80000 }],
+          links: [{ label: 'Trip site', url: 'https://example.com' }],
+          actionItems: [{ text: 'Book flights', priority: 'high' }],
+          notes: [{ text: 'Remember passports' }],
+        });
+      expect(response.status).toBe(201);
+      expect(response.body.buckets.map((b) => b.title)).toEqual(['Flights', 'Hotel']);
+      expect(response.body.totals.targetMinor).toBe(230000);
+      expect(response.body.links).toEqual([{ label: 'Trip site', url: 'https://example.com' }]);
+      expect(response.body.actionItems).toEqual([{ text: 'Book flights', done: false, priority: 'high' }]);
+      expect(response.body.notes).toEqual([
+        { text: 'Remember passports', createdAt: expect.any(String) },
+      ]);
+    });
+
+    it('rejects a project with neither targetMinor nor buckets', async () => {
+      const { token } = await smileToken(['smile:w']);
+      const response = await request(app)
+        .post('/api/v1/smile')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ title: `Integration No Target ${Date.now()}` });
+      expect(response.status).toBe(400);
+      expect(response.body.code).toBe('validation_invalid');
+    });
+
+    it('rejects a bucket whose title collides with the default target bucket', async () => {
+      const { token } = await smileToken(['smile:w']);
+      const title = `Integration Collision ${Date.now()}`;
+      const response = await request(app)
+        .post('/api/v1/smile')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ title, targetMinor: 100000, buckets: [{ title, targetMinor: 50000 }] });
+      expect(response.status).toBe(400);
+      expect(response.body.code).toBe('validation_invalid');
+    });
+
+    it('rejects two explicit buckets sharing a title (case-insensitively)', async () => {
+      const { token } = await smileToken(['smile:w']);
+      const response = await request(app)
+        .post('/api/v1/smile')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          title: `Integration Bucket Collision ${Date.now()}`,
+          buckets: [
+            { title: 'Flights', targetMinor: 50000 },
+            { title: 'FLIGHTS', targetMinor: 30000 },
+          ],
+        });
+      expect(response.status).toBe(400);
+      expect(response.body.code).toBe('validation_invalid');
+    });
+
+    it('rejects a title that exactly matches an existing project', async () => {
+      const { token } = await smileToken(['smile:w']);
+      const title = `Integration Dup ${Date.now()}`;
+      const first = await request(app)
+        .post('/api/v1/smile')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ title, targetMinor: 100000 });
+      expect(first.status).toBe(201);
+      const second = await request(app)
+        .post('/api/v1/smile')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ title, targetMinor: 50000 });
+      expect(second.status).toBe(400);
+      expect(second.body.code).toBe('validation_invalid');
+    });
+
+    it('rejects GET without smile:r and POST without smile:w', async () => {
+      const { token: readOnly } = await smileToken(['smile:r']);
+      const postResponse = await request(app)
+        .post('/api/v1/smile')
+        .set('Authorization', `Bearer ${readOnly}`)
+        .send({ title: 'Should be rejected', targetMinor: 1000 });
+      expect(postResponse.status).toBe(403);
+      expect(postResponse.body.code).toBe('scope_insufficient');
+
+      const { token: writeOnly } = await smileToken(['smile:w']);
+      const getResponse = await request(app).get('/api/v1/smile').set('Authorization', `Bearer ${writeOnly}`);
+      expect(getResponse.status).toBe(403);
+      expect(getResponse.body.code).toBe('scope_insufficient');
+    });
+
+    it('keeps Smile projects isolated to the authenticated user document', async () => {
+      const { token } = await smileToken(['smile:r']);
+      await addSmileProjects(secondUser.userId, [
+        {
+          id: 'smile_second_user',
+          title: 'Only second user project',
+          sub: '',
+          phase: 'idea',
+          description: '',
+          buckets: [{ id: 'b1', title: 'Goal', target: 999900, amount: 0 }],
+          links: [],
+          actionItems: [],
+          notes: [],
+          createdAt: '2026-01-01T00:00:00.000Z',
+          updatedAt: '2026-01-01T00:00:00.000Z',
+        },
+      ]);
+      const response = await request(app).get('/api/v1/smile').set('Authorization', `Bearer ${token}`);
+      expect(response.status).toBe(200);
+      expect(response.body.projects).not.toEqual(
+        expect.arrayContaining([expect.objectContaining({ id: 'smile_second_user' })]),
+      );
     });
   });
 

@@ -22,6 +22,11 @@ const {
   getKpis,
 } = require('../repositories/report-repository');
 const { getMojoStatus, updateMojoTarget } = require('../repositories/mojo-repository');
+const {
+  SMILE_PHASES,
+  listSmileProjects,
+  createSmileProject,
+} = require('../repositories/smile-repository');
 const { getUsersDb, getAuthDb } = require('../config/db');
 const { getEncryptionSession } = require('../services/encryption-session');
 const {
@@ -146,6 +151,104 @@ function validateReportPeriodQuery(query) {
   const offset = Number(query.offset);
   if (!Number.isInteger(offset)) return { error: 'offset must be an integer.' };
   return { period, offset };
+}
+
+function isNonEmptyString(value) {
+  return typeof value === 'string' && value.trim() !== '';
+}
+
+function validateFundLink(link) {
+  return link && typeof link === 'object' && isNonEmptyString(link.label) && isNonEmptyString(link.url);
+}
+
+function validateFundNote(note) {
+  return note && typeof note === 'object' && isNonEmptyString(note.text);
+}
+
+const FUND_ACTION_PRIORITIES = ['low', 'medium', 'high'];
+
+function validateFundActionItem(item) {
+  if (!item || typeof item !== 'object' || !isNonEmptyString(item.text)) return false;
+  if (item.priority !== undefined && !FUND_ACTION_PRIORITIES.includes(item.priority)) return false;
+  if (item.done !== undefined && typeof item.done !== 'boolean') return false;
+  return true;
+}
+
+function validateFundBucketInput(bucket) {
+  if (!bucket || typeof bucket !== 'object') return 'Each bucket must be an object.';
+  if (!isNonEmptyString(bucket.title)) return 'Each bucket requires a non-empty title.';
+  if (!Number.isInteger(bucket.targetMinor) || bucket.targetMinor <= 0) {
+    return 'Each bucket requires a positive integer targetMinor.';
+  }
+  if (bucket.amountMinor !== undefined && (!Number.isInteger(bucket.amountMinor) || bucket.amountMinor < 0)) {
+    return "Each bucket's amountMinor must be a non-negative integer.";
+  }
+  return null;
+}
+
+function validateCreateSmileProjectInput(input) {
+  if (!input || typeof input !== 'object') return 'A Smile project object is required.';
+  if (!isNonEmptyString(input.title)) return 'title must be a non-empty string.';
+  const hasTarget = input.targetMinor !== undefined;
+  const hasBuckets = Array.isArray(input.buckets) && input.buckets.length > 0;
+  if (!hasTarget && !hasBuckets) {
+    return 'Either targetMinor or a non-empty buckets array is required.';
+  }
+  if (hasTarget) {
+    if (!Number.isInteger(input.targetMinor) || input.targetMinor <= 0) {
+      return 'targetMinor must be a positive integer.';
+    }
+    if (input.amountMinor !== undefined && (!Number.isInteger(input.amountMinor) || input.amountMinor < 0)) {
+      return 'amountMinor must be a non-negative integer.';
+    }
+  }
+  if (input.buckets !== undefined) {
+    if (!Array.isArray(input.buckets)) return 'buckets must be an array.';
+    for (const bucket of input.buckets) {
+      const bucketError = validateFundBucketInput(bucket);
+      if (bucketError) return bucketError;
+    }
+  }
+  // Bucket titles are matched case-insensitively by applyBucketAllocations
+  // (packages/domain/src/transactions/bucket-allocations.ts) when a `#bucket:`
+  // tag routes a contribution — two buckets sharing a title (including the
+  // default bucket targetMinor creates, named after the project's own title)
+  // would silently misdirect every tagged contribution meant for the second
+  // one to whichever bucket .find() reaches first. Reject rather than guess.
+  const allBucketTitles = [];
+  if (hasTarget) allBucketTitles.push(input.title);
+  if (Array.isArray(input.buckets)) {
+    for (const bucket of input.buckets) allBucketTitles.push(bucket.title);
+  }
+  const seenBucketTitles = new Set();
+  for (const title of allBucketTitles) {
+    const normalized = title.trim().toLowerCase();
+    if (seenBucketTitles.has(normalized)) {
+      return hasTarget && normalized === input.title.trim().toLowerCase()
+        ? 'A bucket cannot share a title with the project itself (targetMinor already creates a default bucket named after title).'
+        : 'Bucket titles must be unique within a project (case-insensitive).';
+    }
+    seenBucketTitles.add(normalized);
+  }
+  if (input.phase !== undefined && !SMILE_PHASES.includes(input.phase)) {
+    return `phase must be one of ${SMILE_PHASES.join(', ')}.`;
+  }
+  if (input.links !== undefined) {
+    if (!Array.isArray(input.links) || !input.links.every(validateFundLink)) {
+      return 'links must be an array of {label, url} objects.';
+    }
+  }
+  if (input.actionItems !== undefined) {
+    if (!Array.isArray(input.actionItems) || !input.actionItems.every(validateFundActionItem)) {
+      return 'actionItems must be an array of {text, done?, priority?} objects.';
+    }
+  }
+  if (input.notes !== undefined) {
+    if (!Array.isArray(input.notes) || !input.notes.every(validateFundNote)) {
+      return 'notes must be an array of {text} objects.';
+    }
+  }
+  return null;
 }
 
 const MAX_IMPORT_LINES = 10000;
@@ -617,6 +720,43 @@ router.delete(
     }
   },
 );
+
+router.get('/smile', requireScope('smile:r'), async (req, res, next) => {
+  try {
+    const projects = await listSmileProjects({ usersDb: getUsersDb(), authDb: getAuthDb() }, req.userId);
+    return res.json({ projects });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.post('/smile', requireScope('smile:w'), async (req, res, next) => {
+  const validationError = validateCreateSmileProjectInput(req.body);
+  if (validationError) {
+    return problem(res, 400, 'validation_invalid', 'Invalid Smile project request', validationError);
+  }
+  try {
+    const project = await createSmileProject(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+      req.body,
+    );
+    await recordAuditEntry(getAuditDb(), {
+      userId: req.userId,
+      actor: auditActor(req.auth),
+      method: req.method,
+      path: req.baseUrl + req.path,
+      resource: 'smile',
+      resourceId: project.id,
+    });
+    return res.status(201).json(project);
+  } catch (error) {
+    if (error.code === 'SMILE_DUPLICATE_TITLE') {
+      return problem(res, 400, 'validation_invalid', 'Invalid Smile project request', error.message);
+    }
+    return next(error);
+  }
+});
 
 router.get('/mojo', requireScope('mojo:r'), async (req, res, next) => {
   try {

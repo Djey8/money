@@ -88,3 +88,12 @@ Every Pro API write is audit logged. Prefer narrowly scoped, expiring tokens and
 2. `PUT /api/v1/mojo` requires `mojo:w` and accepts only `{ "targetMinor": <integer >= 1> }`. **`amountMinor` cannot be set directly** — it's derived from transaction history (a `@Mojo`-tagged contribution, or a transaction posted directly on the `Mojo` account) and is recalculated by every transaction write, matching the UI's own Mojo editor which only ever lets you change the target.
 3. `percentFilled` can exceed 100: only `@Mojo`-category contributions are capped at the target on write; a transaction posted directly on the `Mojo` account is not. Don't assume `amountMinor <= targetMinor`.
 4. Every `PUT` is audit logged.
+
+## List or create Smile projects
+
+1. `GET /api/v1/smile` requires `smile:r` and returns every Smile project owned by the caller, each with a `totals` field (`{targetMinor, amountMinor, remainingMinor, percentFilled}`) computed by summing all of that project's buckets — not stored, computed on every read.
+2. `POST /api/v1/smile` requires `smile:w`. Provide **either** `targetMinor` (optionally with `amountMinor`) **or** a non-empty `buckets` array — matching the UI's own Add Smile form, which accepts either a flat target or custom buckets and merges both if both are given (a `targetMinor` bucket is always created first, named after the project's own `title`, before any explicit `buckets`).
+3. `title` must not exactly match an existing Smile project's title. This check is **case-sensitive** — the original app's own duplicate check is exact-match, not case-insensitive, despite this codebase's usual case-insensitive category/title matching elsewhere. Don't assume "Vacation" and "vacation" collide.
+4. `notes[].createdAt` is always server-generated at creation time — a value you send for it is ignored, don't rely on round-tripping a client-supplied timestamp there.
+5. Every project has a stable `id` — existing Smile projects created before this endpoint shipped need `mm-admin migrate-fund-project-ids --collection smile` run first (the legacy storage shape has no project-level id, only bucket-level ids); this endpoint fails clearly rather than silently if it isn't.
+6. `POST` is audit logged.

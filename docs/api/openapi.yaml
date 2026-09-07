@@ -738,6 +738,72 @@ paths:
           $ref: '#/components/responses/AuthenticationRequired'
         '403':
           $ref: '#/components/responses/InsufficientScope'
+  /smile:
+    get:
+      operationId: listSmileProjects
+      summary: List Smile projects
+      description: >-
+        Returns every Smile project owned by the caller. Existing projects must first receive stable IDs through
+        `mm-admin migrate-fund-project-ids --collection smile` (the legacy storage shape has no project-level id,
+        only bucket-level ids). `totals` is a read-side aggregate (`packages/domain`'s `computeProjectTotals`) summed
+        across all of a project's buckets — not stored, computed on every read.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Smile projects owned by the caller
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [projects]
+                properties:
+                  projects:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SmileProject'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+    post:
+      operationId: createSmileProject
+      summary: Create a Smile project
+      description: >-
+        Either `targetMinor` (optionally with `amountMinor`, becoming a single default bucket named after the
+        project's title) or a non-empty `buckets` array is required — matching the UI's own Add Smile form, which
+        accepts either a flat target or custom buckets and merges both if given. `title` must not exactly match
+        (case-sensitively — the UI's own duplicate check is exact-match, not case-insensitive) an existing Smile
+        project's title.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSmileProjectRequest'
+            example:
+              title: Summer Vacation
+              phase: saving
+              buckets:
+                - title: Flights
+                  targetMinor: 150000
+                - title: Hotel
+                  targetMinor: 80000
+      responses:
+        '201':
+          description: Created Smile project
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SmileProject'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
   /me:
     get:
       operationId: getCurrentIdentity
@@ -1143,6 +1209,206 @@ components:
         percentFilled:
           type: number
           description: amountMinor / targetMinor * 100, or 0 when targetMinor is 0. Not clamped to 100.
+    FundProjectTotals:
+      type: object
+      required: [targetMinor, amountMinor, remainingMinor, percentFilled]
+      properties:
+        targetMinor:
+          type: integer
+        amountMinor:
+          type: integer
+        remainingMinor:
+          type: integer
+          description: max(0, targetMinor - amountMinor).
+        percentFilled:
+          type: number
+          description: amountMinor / targetMinor * 100, or 0 when targetMinor is 0.
+    FundLink:
+      type: object
+      required: [label, url]
+      properties:
+        label:
+          type: string
+        url:
+          type: string
+    FundNote:
+      type: object
+      required: [text, createdAt]
+      properties:
+        text:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    FundActionItem:
+      type: object
+      required: [text, done, priority]
+      properties:
+        text:
+          type: string
+        done:
+          type: boolean
+        priority:
+          type: string
+          enum: [low, medium, high]
+        dueDate:
+          type: string
+          format: date
+    SmileBucket:
+      type: object
+      required: [id, title, targetMinor, amountMinor]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        targetMinor:
+          type: integer
+        amountMinor:
+          type: integer
+        notes:
+          type: string
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/FundLink'
+        targetDate:
+          type: string
+          format: date
+        completionDate:
+          type: string
+          format: date
+    SmileProject:
+      type: object
+      required:
+        - id
+        - title
+        - sub
+        - phase
+        - description
+        - buckets
+        - totals
+        - links
+        - actionItems
+        - notes
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        sub:
+          type: string
+        phase:
+          type: string
+          enum: [idea, planning, saving, ready, completed]
+        description:
+          type: string
+        targetDate:
+          type: string
+          format: date
+        completionDate:
+          type: string
+          format: date
+        buckets:
+          type: array
+          items:
+            $ref: '#/components/schemas/SmileBucket'
+        totals:
+          $ref: '#/components/schemas/FundProjectTotals'
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/FundLink'
+        actionItems:
+          type: array
+          items:
+            $ref: '#/components/schemas/FundActionItem'
+        notes:
+          type: array
+          items:
+            $ref: '#/components/schemas/FundNote'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    CreateSmileProjectRequest:
+      type: object
+      required: [title]
+      properties:
+        title:
+          type: string
+        sub:
+          type: string
+        phase:
+          type: string
+          enum: [idea, planning, saving, ready, completed]
+          default: idea
+        description:
+          type: string
+        targetDate:
+          type: string
+          format: date
+        targetMinor:
+          type: integer
+          description: Creates a single default bucket named after `title`. Either this or a non-empty `buckets` is required.
+        amountMinor:
+          type: integer
+          description: Only used together with `targetMinor`; defaults to 0.
+        buckets:
+          type: array
+          items:
+            type: object
+            required: [title, targetMinor]
+            properties:
+              title:
+                type: string
+              targetMinor:
+                type: integer
+              amountMinor:
+                type: integer
+                default: 0
+              notes:
+                type: string
+              targetDate:
+                type: string
+                format: date
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/FundLink'
+        actionItems:
+          type: array
+          items:
+            $ref: '#/components/schemas/CreateFundActionItem'
+        notes:
+          type: array
+          items:
+            $ref: '#/components/schemas/CreateFundNote'
+    CreateFundActionItem:
+      type: object
+      required: [text]
+      properties:
+        text:
+          type: string
+        priority:
+          type: string
+          enum: [low, medium, high]
+          default: medium
+        dueDate:
+          type: string
+          format: date
+      description: '`done` is not accepted here — a newly created action item always starts undone.'
+    CreateFundNote:
+      type: object
+      required: [text]
+      properties:
+        text:
+          type: string
+      description: '`createdAt` is not accepted here — always server-stamped at creation time, ignoring any client-supplied value.'
     CreateTransactionRequest:
       type: object
       required: [account, amountMinor, date, time, category, comment]
