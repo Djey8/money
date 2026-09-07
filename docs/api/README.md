@@ -251,3 +251,25 @@ curl -X PATCH "http://localhost:3000/api/v1/balance/assets/assets_<id>" \
 curl -X DELETE "http://localhost:3000/api/v1/balance/assets/assets_<id>" \
   -H "Authorization: Bearer $MONEY_MANAGER_TOKEN"
 ```
+
+## List, create, get, update, or delete liabilities
+
+Requires a PAT with `balance:r` (list/get) or `balance:w` (create/update/delete). Unlike Assets, a liability's `tag` has its own independent namespace — it never collides with an Asset/Share/Investment tag.
+
+```bash
+curl "http://localhost:3000/api/v1/balance/liabilities" \
+  -H "Authorization: Bearer $MONEY_MANAGER_TOKEN"
+
+curl -X POST "http://localhost:3000/api/v1/balance/liabilities" \
+  -H "Authorization: Bearer $MONEY_MANAGER_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"tag": "Mortgage", "amountMinor": 15000000, "investment": true, "creditMinor": 5000000}'
+
+curl -X PATCH "http://localhost:3000/api/v1/balance/liabilities/liabilities_<id>" \
+  -H "Authorization: Bearer $MONEY_MANAGER_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"creditMinor": 4000000}'
+
+curl -X DELETE "http://localhost:3000/api/v1/balance/liabilities/liabilities_<id>" \
+  -H "Authorization: Bearer $MONEY_MANAGER_TOKEN"
+```

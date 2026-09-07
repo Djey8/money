@@ -48,6 +48,13 @@ const {
   updateAsset,
   deleteAsset,
 } = require('../repositories/asset-repository');
+const {
+  listLiabilities,
+  getLiability,
+  createLiability,
+  updateLiability,
+  deleteLiability,
+} = require('../repositories/liability-repository');
 const { getUsersDb, getAuthDb } = require('../config/db');
 const { getEncryptionSession } = require('../services/encryption-session');
 const {
@@ -529,6 +536,44 @@ function validatePatchAssetInput(input) {
   }
   if (input.amountMinor !== undefined && !Number.isInteger(input.amountMinor)) {
     return 'amountMinor must be an integer.';
+  }
+  return null;
+}
+
+function validateCreateLiabilityInput(input) {
+  if (!input || typeof input !== 'object') return 'A liability object is required.';
+  if (!isNonEmptyString(input.tag)) return 'tag must be a non-empty string.';
+  if (input.amountMinor !== undefined && !Number.isInteger(input.amountMinor)) {
+    return 'amountMinor must be an integer.';
+  }
+  if (input.creditMinor !== undefined && !Number.isInteger(input.creditMinor)) {
+    return 'creditMinor must be an integer.';
+  }
+  if (input.investment !== undefined && typeof input.investment !== 'boolean') {
+    return 'investment must be a boolean.';
+  }
+  return null;
+}
+
+const EDITABLE_LIABILITY_FIELDS = ['tag', 'amountMinor', 'investment', 'creditMinor'];
+
+function validatePatchLiabilityInput(input) {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) {
+    return 'A liability object is required.';
+  }
+  const unknownField = Object.keys(input).find((key) => !EDITABLE_LIABILITY_FIELDS.includes(key));
+  if (unknownField) return `${unknownField} is not an editable field.`;
+  if (input.tag !== undefined && !isNonEmptyString(input.tag)) {
+    return 'tag must be a non-empty string.';
+  }
+  if (input.amountMinor !== undefined && !Number.isInteger(input.amountMinor)) {
+    return 'amountMinor must be an integer.';
+  }
+  if (input.creditMinor !== undefined && !Number.isInteger(input.creditMinor)) {
+    return 'creditMinor must be an integer.';
+  }
+  if (input.investment !== undefined && typeof input.investment !== 'boolean') {
+    return 'investment must be a boolean.';
   }
   return null;
 }
@@ -1393,6 +1438,148 @@ router.delete('/balance/assets/:assetId', requireScope('balance:w'), async (req,
     return next(error);
   }
 });
+
+router.get('/balance/liabilities', requireScope('balance:r'), async (req, res, next) => {
+  try {
+    const liabilities = await listLiabilities(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+    );
+    return res.json({ liabilities });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.post('/balance/liabilities', requireScope('balance:w'), async (req, res, next) => {
+  const validationError = validateCreateLiabilityInput(req.body);
+  if (validationError) {
+    return problem(res, 400, 'validation_invalid', 'Invalid liability request', validationError);
+  }
+  try {
+    const liability = await createLiability(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+      req.body,
+    );
+    await recordAuditEntry(getAuditDb(), {
+      userId: req.userId,
+      actor: auditActor(req.auth),
+      method: req.method,
+      path: req.baseUrl + req.path,
+      resource: 'balance_liabilities',
+      resourceId: liability.id,
+    });
+    return res.status(201).json(liability);
+  } catch (error) {
+    if (error.code === 'LIABILITY_DUPLICATE_TAG') {
+      return problem(res, 400, 'validation_invalid', 'Invalid liability request', error.message);
+    }
+    return next(error);
+  }
+});
+
+router.get(
+  '/balance/liabilities/:liabilityId',
+  requireScope('balance:r'),
+  async (req, res, next) => {
+    try {
+      const liability = await getLiability(
+        { usersDb: getUsersDb(), authDb: getAuthDb() },
+        req.userId,
+        req.params.liabilityId,
+      );
+      if (!liability) {
+        return problem(
+          res,
+          404,
+          'not_found',
+          'Liability not found',
+          'No matching liability exists.',
+        );
+      }
+      return res.json(liability);
+    } catch (error) {
+      return next(error);
+    }
+  },
+);
+
+router.patch(
+  '/balance/liabilities/:liabilityId',
+  requireScope('balance:w'),
+  async (req, res, next) => {
+    const validationError = validatePatchLiabilityInput(req.body);
+    if (validationError) {
+      return problem(res, 400, 'validation_invalid', 'Invalid liability request', validationError);
+    }
+    try {
+      const liability = await updateLiability(
+        { usersDb: getUsersDb(), authDb: getAuthDb() },
+        req.userId,
+        req.params.liabilityId,
+        req.body,
+      );
+      if (!liability) {
+        return problem(
+          res,
+          404,
+          'not_found',
+          'Liability not found',
+          'No matching liability exists.',
+        );
+      }
+      await recordAuditEntry(getAuditDb(), {
+        userId: req.userId,
+        actor: auditActor(req.auth),
+        method: req.method,
+        path: req.baseUrl + req.path,
+        resource: 'balance_liabilities',
+        resourceId: liability.id,
+      });
+      return res.json(liability);
+    } catch (error) {
+      if (error.code === 'LIABILITY_DUPLICATE_TAG') {
+        return problem(res, 400, 'validation_invalid', 'Invalid liability request', error.message);
+      }
+      return next(error);
+    }
+  },
+);
+
+router.delete(
+  '/balance/liabilities/:liabilityId',
+  requireScope('balance:w'),
+  async (req, res, next) => {
+    try {
+      const deleted = await deleteLiability(
+        { usersDb: getUsersDb(), authDb: getAuthDb() },
+        req.userId,
+        req.params.liabilityId,
+      );
+      if (!deleted) {
+        return problem(
+          res,
+          404,
+          'not_found',
+          'Liability not found',
+          'No matching liability exists.',
+        );
+      }
+      await recordAuditEntry(getAuditDb(), {
+        userId: req.userId,
+        actor: auditActor(req.auth),
+        method: req.method,
+        path: req.baseUrl + req.path,
+        resource: 'balance_liabilities',
+        resourceId: req.params.liabilityId,
+      });
+      return res.json({ id: req.params.liabilityId });
+    } catch (error) {
+      return next(error);
+    }
+  },
+);
 
 router.get('/mojo', requireScope('mojo:r'), async (req, res, next) => {
   try {

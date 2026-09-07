@@ -1238,7 +1238,7 @@ describe('v1 API authentication and PAT management', () => {
             shares: [{ tag: 'MSFT', quantity: 10, price: 415 }],
             investments: [{ tag: 'Rental Unit A', amount: 180000, deposit: 30000 }],
           },
-          liabilities: [{ tag: 'Mortgage', amount: 150000 }],
+          liabilities: [{ id: 'liabilities_fixture_mortgage', tag: 'Mortgage', amount: 150000 }],
         },
         { properties: [{ tag: 'Rental Unit A', amount: 800 }] },
       );
@@ -2988,6 +2988,223 @@ describe('v1 API authentication and PAT management', () => {
 
       const getResponse = await request(app)
         .get(`/api/v1/balance/assets/${otherAsset.body.id}`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(getResponse.status).toBe(404);
+    });
+  });
+
+  describe('GET/POST /balance/liabilities and GET/PATCH/DELETE /balance/liabilities/:id', () => {
+    async function balanceToken(scopes) {
+      const created = await sessionRequest('post', '/api/v1/auth/tokens').send({
+        name: `balance-liability-agent-${Date.now()}-${Math.random()}`,
+        scopes,
+      });
+      return created.body;
+    }
+
+    it('creates a liability and lists it, and audit logs the write', async () => {
+      const { token, tokenId } = await balanceToken(['balance:r', 'balance:w']);
+      const created = await request(app)
+        .post('/api/v1/balance/liabilities')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          tag: `Mortgage ${Date.now()}`,
+          amountMinor: 15000000,
+          investment: true,
+          creditMinor: 5000000,
+        });
+      expect(created.status).toBe(201);
+      expect(created.body.amountMinor).toBe(15000000);
+      expect(created.body.investment).toBe(true);
+      expect(created.body.creditMinor).toBe(5000000);
+      expect(created.body.id).toMatch(/^liabilities_/);
+
+      const list = await request(app)
+        .get('/api/v1/balance/liabilities')
+        .set('Authorization', `Bearer ${token}`);
+      expect(list.status).toBe(200);
+      expect(list.body.liabilities).toEqual(
+        expect.arrayContaining([expect.objectContaining({ id: created.body.id })]),
+      );
+
+      const auditEntries = await queryAuditEntries(getAuditDb(), firstUser.userId, {
+        resource: 'balance_liabilities',
+      });
+      expect(auditEntries).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            actor: { type: 'token', tokenId },
+            method: 'POST',
+            resourceId: created.body.id,
+          }),
+        ]),
+      );
+    });
+
+    it('defaults amountMinor/creditMinor to 0 and investment to false when omitted', async () => {
+      const { token } = await balanceToken(['balance:w']);
+      const response = await request(app)
+        .post('/api/v1/balance/liabilities')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ tag: `No Amount ${Date.now()}` });
+      expect(response.status).toBe(201);
+      expect(response.body.amountMinor).toBe(0);
+      expect(response.body.creditMinor).toBe(0);
+      expect(response.body.investment).toBe(false);
+    });
+
+    it('gets a single liability by id and returns 404 for one that does not exist', async () => {
+      const { token } = await balanceToken(['balance:r', 'balance:w']);
+      const created = await request(app)
+        .post('/api/v1/balance/liabilities')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ tag: `Get Test ${Date.now()}`, amountMinor: 100 });
+      const found = await request(app)
+        .get(`/api/v1/balance/liabilities/${created.body.id}`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(found.status).toBe(200);
+      expect(found.body.id).toBe(created.body.id);
+
+      const missing = await request(app)
+        .get('/api/v1/balance/liabilities/liabilities_does_not_exist')
+        .set('Authorization', `Bearer ${token}`);
+      expect(missing.status).toBe(404);
+      expect(missing.body.code).toBe('not_found');
+    });
+
+    it('updates only the fields provided and audit logs the write', async () => {
+      const { token, tokenId } = await balanceToken(['balance:r', 'balance:w']);
+      const created = await request(app)
+        .post('/api/v1/balance/liabilities')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ tag: `Patch Test ${Date.now()}`, amountMinor: 100, creditMinor: 50 });
+      const response = await request(app)
+        .patch(`/api/v1/balance/liabilities/${created.body.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ creditMinor: 25 });
+      expect(response.status).toBe(200);
+      expect(response.body.creditMinor).toBe(25);
+      expect(response.body.amountMinor).toBe(100);
+      expect(response.body.tag).toBe(created.body.tag);
+
+      const auditEntries = await queryAuditEntries(getAuditDb(), firstUser.userId, {
+        resource: 'balance_liabilities',
+      });
+      expect(auditEntries).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            actor: { type: 'token', tokenId },
+            method: 'PATCH',
+            resourceId: created.body.id,
+          }),
+        ]),
+      );
+    });
+
+    it('deletes a liability, and audit logs the write', async () => {
+      const { token, tokenId } = await balanceToken(['balance:r', 'balance:w']);
+      const created = await request(app)
+        .post('/api/v1/balance/liabilities')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ tag: `Delete Test ${Date.now()}`, amountMinor: 100 });
+      const response = await request(app)
+        .delete(`/api/v1/balance/liabilities/${created.body.id}`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({ id: created.body.id });
+
+      const getResponse = await request(app)
+        .get(`/api/v1/balance/liabilities/${created.body.id}`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(getResponse.status).toBe(404);
+
+      const auditEntries = await queryAuditEntries(getAuditDb(), firstUser.userId, {
+        resource: 'balance_liabilities',
+      });
+      expect(auditEntries).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            actor: { type: 'token', tokenId },
+            method: 'DELETE',
+            resourceId: created.body.id,
+          }),
+        ]),
+      );
+    });
+
+    it('rejects a tag that collides with an existing liability', async () => {
+      const { token } = await balanceToken(['balance:w']);
+      const tag = `Duplicate ${Date.now()}`;
+      const first = await request(app)
+        .post('/api/v1/balance/liabilities')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ tag, amountMinor: 100 });
+      expect(first.status).toBe(201);
+      const second = await request(app)
+        .post('/api/v1/balance/liabilities')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ tag, amountMinor: 200 });
+      expect(second.status).toBe(400);
+      expect(second.body.code).toBe('validation_invalid');
+    });
+
+    it('does not reject a tag that collides with an Asset tag (separate namespace)', async () => {
+      const { token } = await balanceToken(['balance:r', 'balance:w']);
+      const tag = `Shared With Asset ${Date.now()}`;
+      const asset = await request(app)
+        .post('/api/v1/balance/assets')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ tag, amountMinor: 100 });
+      expect(asset.status).toBe(201);
+      const liability = await request(app)
+        .post('/api/v1/balance/liabilities')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ tag, amountMinor: 200 });
+      expect(liability.status).toBe(201);
+    });
+
+    it('rejects requests without the balance:r/balance:w scopes', async () => {
+      const { token: writeOnly } = await balanceToken(['balance:w']);
+      const getResponse = await request(app)
+        .get('/api/v1/balance/liabilities')
+        .set('Authorization', `Bearer ${writeOnly}`);
+      expect(getResponse.status).toBe(403);
+      expect(getResponse.body.code).toBe('scope_insufficient');
+
+      const { token: readOnly } = await balanceToken(['balance:r']);
+      const postResponse = await request(app)
+        .post('/api/v1/balance/liabilities')
+        .set('Authorization', `Bearer ${readOnly}`)
+        .send({ tag: 'Should Not Save', amountMinor: 1 });
+      expect(postResponse.status).toBe(403);
+      expect(postResponse.body.code).toBe('scope_insufficient');
+    });
+
+    it('keeps liabilities isolated to the authenticated user document', async () => {
+      const { token } = await balanceToken(['balance:r', 'balance:w']);
+      const otherCreated = await sessionRequest(
+        'post',
+        '/api/v1/auth/tokens',
+        secondUser.token,
+      ).send({
+        name: `balance-liability-other-${Date.now()}`,
+        scopes: ['balance:w'],
+      });
+      const otherLiability = await request(app)
+        .post('/api/v1/balance/liabilities')
+        .set('Authorization', `Bearer ${otherCreated.body.token}`)
+        .send({ tag: `Only Other User Liability ${Date.now()}`, amountMinor: 999900 });
+      expect(otherLiability.status).toBe(201);
+
+      const list = await request(app)
+        .get('/api/v1/balance/liabilities')
+        .set('Authorization', `Bearer ${token}`);
+      expect(list.body.liabilities).not.toEqual(
+        expect.arrayContaining([expect.objectContaining({ id: otherLiability.body.id })]),
+      );
+
+      const getResponse = await request(app)
+        .get(`/api/v1/balance/liabilities/${otherLiability.body.id}`)
         .set('Authorization', `Bearer ${token}`);
       expect(getResponse.status).toBe(404);
     });

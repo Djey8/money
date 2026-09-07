@@ -151,3 +151,13 @@ Every Pro API write is audit logged. Prefer narrowly scoped, expiring tokens and
 4. `PATCH` is partial — send only the fields you want to change (`tag` and/or `amountMinor`).
 5. `DELETE` is not reversible through the API.
 6. `POST`/`PATCH`/`DELETE` are audit logged.
+
+## List, create, get, update, or delete liabilities
+
+1. `GET/POST /api/v1/balance/liabilities` and `GET/PATCH/DELETE /api/v1/balance/liabilities/{id}` require `balance:r`/`balance:w`. A liability is `{tag, amountMinor, investment, creditMinor}` (LIAB-1/2/3) — `investment` flags whether it's tied to an investment (e.g. a mortgage on a rental property), `creditMinor` tracks the remaining credit/loan amount separately from `amountMinor`.
+2. Unlike Assets/Shares/Investments, a liability's `tag` has its own **independent** namespace — confirmed by reading `add-liabilitie.component.ts`/`info-liabilitie.component.ts` directly, both only check against other liabilities. A liability's `tag` can freely match an existing Asset/Share/Investment tag without conflict.
+3. The "payback" quick-action in the original UI (`info-liabilitie.component.ts`'s `payback()`) only pre-fills the Add Transaction panel with a `Payback Liabilitie <amount> <credit>;` comment — it never touches the liability record itself, so there's no dedicated endpoint for it; use `POST /transactions` directly the same way Smile/Fire's Mojo quick-add does (see "Add a transaction" above).
+4. Existing liabilities need `mm-admin migrate-balance-entity-ids --collection liabilities` run first (same migration tool as Assets, different `--collection`).
+5. `PATCH` is partial — send only the fields you want to change.
+6. `DELETE` is not reversible through the API.
+7. `POST`/`PATCH`/`DELETE` are audit logged.

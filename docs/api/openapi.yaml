@@ -1290,6 +1290,136 @@ paths:
           $ref: '#/components/responses/InsufficientScope'
         '404':
           $ref: '#/components/responses/NotFound'
+  /balance/liabilities:
+    get:
+      operationId: listLiabilities
+      summary: List liabilities
+      description: >-
+        Returns every liability owned by the caller (LIAB-1/2/3). Existing liabilities must first receive stable IDs
+        through `mm-admin migrate-balance-entity-ids --collection liabilities`. Unlike Assets/Shares/Investments,
+        a liability's `tag` has its own independent namespace — it never collides with an Asset/Share/Investment tag.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Liabilities owned by the caller
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [liabilities]
+                properties:
+                  liabilities:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Liability'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+    post:
+      operationId: createLiability
+      summary: Create a liability
+      description: '`tag` must not collide (case-sensitive exact match) with an existing liability''s tag.'
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateLiabilityRequest'
+            example:
+              tag: Mortgage
+              amountMinor: 15000000
+              investment: true
+              creditMinor: 5000000
+      responses:
+        '201':
+          description: Created liability
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Liability'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+  /balance/liabilities/{liabilityId}:
+    parameters:
+      - name: liabilityId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getLiability
+      summary: Get a single liability
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The liability
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Liability'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      operationId: updateLiability
+      summary: Update a liability
+      description: Accepts a partial body — only the fields you send are changed. A changed `tag` is checked against the caller's other liabilities only (not against Assets/Shares/Investments).
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchLiabilityRequest'
+            example:
+              creditMinor: 4000000
+      responses:
+        '200':
+          description: Updated liability
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Liability'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      operationId: deleteLiability
+      summary: Delete a liability
+      description: Not reversible through the API.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Liability deleted
+          content:
+            application/json:
+              example:
+                id: liabilities_01234567-89ab-cdef-0123-456789abcdef
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
   /me:
     get:
       operationId: getCurrentIdentity
@@ -2307,6 +2437,49 @@ components:
         tag:
           type: string
         amountMinor:
+          type: integer
+    Liability:
+      type: object
+      required: [id, tag, amountMinor, investment, creditMinor]
+      properties:
+        id:
+          type: string
+        tag:
+          type: string
+        amountMinor:
+          type: integer
+        investment:
+          type: boolean
+          description: Whether this liability is tied to an investment (e.g. a mortgage on a rental property).
+        creditMinor:
+          type: integer
+          description: Remaining credit/loan amount, tracked separately from amountMinor.
+    CreateLiabilityRequest:
+      type: object
+      required: [tag]
+      properties:
+        tag:
+          type: string
+        amountMinor:
+          type: integer
+          description: Defaults to 0 when omitted.
+        investment:
+          type: boolean
+          description: Defaults to false when omitted.
+        creditMinor:
+          type: integer
+          description: Defaults to 0 when omitted.
+    PatchLiabilityRequest:
+      type: object
+      description: All fields optional — send only what you want to change. Unrecognized fields are rejected.
+      properties:
+        tag:
+          type: string
+        amountMinor:
+          type: integer
+        investment:
+          type: boolean
+        creditMinor:
           type: integer
     CreateTransactionRequest:
       type: object
