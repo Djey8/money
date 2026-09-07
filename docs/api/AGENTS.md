@@ -72,3 +72,12 @@ Every Pro API write is audit logged. Prefer narrowly scoped, expiring tokens and
 3. `equity`/`netWorth` (the same value under two names, matching the original) is total assets minus total liabilities and can be negative.
 4. This reads entity data that has no write endpoint yet (`balance/asset/*`, `balance/liabilities`, `income/revenue/properties` — Slice 4 on the project roadmap); until then the only way to change these values is through the UI.
 5. This is a read; it is not audit logged.
+
+## Read key ratios, top categories, and KPI-dashboard ratios for a period
+
+1. `GET /api/v1/reports/kpis` requires `reports:r`, takes the same `period`/`offset` query parameters as `/reports/income-statement`, and returns `ratios`/`previousRatios` (six key ratios each), `topExpenses`/`topIncomes` (up to 5 categories for the current period only, no `previous` comparison), and four `dashboard*` fields.
+2. **Read `dashboardSavingsRatePercent`/`dashboardFixedCostRatioPercent` as genuinely different numbers from `ratios.savingsRatePercent`/`ratios.fixedCostRatioPercent`, not a formatting variant of the same one.** They come from two independently-maintained formulas in the original app (see `docs/domain/KPI_FORMULAS.md` for the exact math and a worked example of where they diverge) — don't average them, don't assume one is stale, and don't be surprised if they disagree by a few points on an account with Mojo activity.
+3. `ratios.netMarginPercent` is intentionally identical to `ratios.savingsRatePercent` — that's a pre-existing redundancy in the original app's own `KeyRatios` type, not a bug in this port.
+4. `ratios.debtRatio` and `ratios.interestCoverage` are plain ratios, not percentages, despite sitting next to fields that are.
+5. `topExpenses`/`topIncomes` each cap at 5 entries sorted by amount descending; an untagged transaction's category shows as `—` rather than being dropped.
+6. This is a read; it is not audit logged.

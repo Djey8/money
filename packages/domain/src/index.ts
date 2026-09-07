@@ -12,3 +12,4 @@ export * from './reports/statement-shared';
 export * from './reports/income-statement';
 export * from './reports/cashflow';
 export * from './reports/balance-sheet';
+export * from './reports/kpis';

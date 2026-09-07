@@ -1218,7 +1218,10 @@ describe('v1 API authentication and PAT management', () => {
       const doc = await usersDb.get(userId);
       doc.data = doc.data || {};
       doc.data.balance = balance;
-      doc.data.income = { ...doc.data.income, revenue: { ...doc.data.income?.revenue, ...incomeRevenue } };
+      doc.data.income = {
+        ...doc.data.income,
+        revenue: { ...doc.data.income?.revenue, ...incomeRevenue },
+      };
       await usersDb.insert(doc);
     }
 
@@ -1264,7 +1267,11 @@ describe('v1 API authentication and PAT management', () => {
 
     it('keeps balance-sheet totals isolated to the authenticated user document', async () => {
       const token = await reportsToken();
-      await setBalanceSheetData(firstUser.userId, { asset: { assets: [{ tag: 'Own asset', amount: 1000 }] } }, {});
+      await setBalanceSheetData(
+        firstUser.userId,
+        { asset: { assets: [{ tag: 'Own asset', amount: 1000 }] } },
+        {},
+      );
       await setBalanceSheetData(
         secondUser.userId,
         { asset: { assets: [{ tag: 'Only second user asset', amount: 999900 }] } },
@@ -1275,6 +1282,127 @@ describe('v1 API authentication and PAT management', () => {
         .set('Authorization', `Bearer ${token}`);
       expect(response.status).toBe(200);
       expect(response.body.assets.cash).toBe(100000);
+    });
+  });
+
+  describe('GET /reports/kpis', () => {
+    async function reportsToken() {
+      const created = await sessionRequest('post', '/api/v1/auth/tokens').send({
+        name: `reports-agent-${Date.now()}-${Math.random()}`,
+        scopes: ['reports:r'],
+      });
+      return created.body.token;
+    }
+
+    async function setSubscriptions(userId, subscriptions) {
+      const usersDb = getUsersDb();
+      const doc = await usersDb.get(userId);
+      doc.data = doc.data || {};
+      doc.data.subscriptions = subscriptions;
+      await usersDb.insert(doc);
+    }
+
+    it('computes savings-rate and fixed-cost ratios plus top categories for the requested period', async () => {
+      const token = await reportsToken();
+      await setSubscriptions(firstUser.userId, [
+        { title: 'Netflix', category: '@KpiNetflix', amount: -1000000 },
+      ]);
+      const before = await request(app)
+        .get('/api/v1/reports/kpis?period=year&offset=0')
+        .set('Authorization', `Bearer ${token}`);
+      await sessionRequest('post', '/api/v1/transactions').send({
+        account: 'Income',
+        amountMinor: 20000000,
+        date: '2026-09-05',
+        time: '09:00',
+        category: '@Kpi salary',
+        comment: '',
+      });
+      await sessionRequest('post', '/api/v1/transactions').send({
+        account: 'Daily',
+        amountMinor: -1000000,
+        date: '2026-09-06',
+        time: '09:00',
+        category: '@KpiNetflix',
+        comment: '',
+      });
+      const after = await request(app)
+        .get('/api/v1/reports/kpis?period=year&offset=0')
+        .set('Authorization', `Bearer ${token}`);
+      expect(after.status).toBe(200);
+      expect(after.body.ratios.savingsRatePercent).not.toBe(before.body.ratios.savingsRatePercent);
+      // Amounts here are deliberately much larger than any other test's fixture data in this
+      // file (which shares firstUser's account and period=year spans it all), so this
+      // transaction is guaranteed to rank in the top-5-by-amount cap regardless of test order.
+      expect(after.body.topExpenses).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ category: 'KpiNetflix', amountMinor: 1000000 }),
+        ]),
+      );
+      expect(after.body.topIncomes).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ category: 'Kpi salary', amountMinor: 20000000 }),
+        ]),
+      );
+    });
+
+    it('diverges the dashboard savings rate from the statement savings rate on a Mojo-tagged expense', async () => {
+      const token = await reportsToken();
+      await sessionRequest('post', '/api/v1/transactions').send({
+        account: 'Daily',
+        amountMinor: -5000,
+        date: '2026-09-06',
+        time: '09:00',
+        category: '@Mojo',
+        comment: '',
+      });
+      const response = await request(app)
+        .get('/api/v1/reports/kpis?period=year&offset=0')
+        .set('Authorization', `Bearer ${token}`);
+      expect(response.status).toBe(200);
+      expect(response.body.dashboardSavingsRatePercent).not.toBe(
+        response.body.ratios.savingsRatePercent,
+      );
+    });
+
+    it('rejects an invalid period value', async () => {
+      const token = await reportsToken();
+      const response = await request(app)
+        .get('/api/v1/reports/kpis?period=fortnight')
+        .set('Authorization', `Bearer ${token}`);
+      expect(response.status).toBe(400);
+      expect(response.body.code).toBe('validation_invalid');
+    });
+
+    it('rejects requests without the reports:r scope', async () => {
+      const writeOnly = await sessionRequest('post', '/api/v1/auth/tokens').send({
+        name: `write-not-reports-kpis-${Date.now()}`,
+        scopes: ['transactions:w'],
+      });
+      const response = await request(app)
+        .get('/api/v1/reports/kpis')
+        .set('Authorization', `Bearer ${writeOnly.body.token}`);
+      expect(response.status).toBe(403);
+      expect(response.body.code).toBe('scope_insufficient');
+    });
+
+    it('keeps kpi totals isolated to the authenticated user document', async () => {
+      const token = await reportsToken();
+      await sessionRequest('post', '/api/v1/transactions', secondUser.token).send({
+        account: 'Income',
+        amountMinor: 999900,
+        date: '2026-09-06',
+        time: '09:00',
+        category: '@Only second user kpi',
+        comment: '',
+      });
+      const response = await request(app)
+        .get('/api/v1/reports/kpis?period=year&offset=0')
+        .set('Authorization', `Bearer ${token}`);
+      expect(response.status).toBe(200);
+      expect(response.body.topIncomes).not.toEqual(
+        expect.arrayContaining([expect.objectContaining({ category: 'Only second user kpi' })]),
+      );
     });
   });
 

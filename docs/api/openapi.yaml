@@ -595,6 +595,83 @@ paths:
           $ref: '#/components/responses/AuthenticationRequired'
         '403':
           $ref: '#/components/responses/InsufficientScope'
+  /reports/kpis:
+    get:
+      operationId: getKpis
+      summary: Get key ratios, top categories, and both KPI-dashboard variants for a period
+      description: >-
+        Ports `computeRatiosForRange`/`topCategories` from `src/app/stats/statement/statement-calculations.ts`
+        (`ratios`/`previousRatios`/`topExpenses`/`topIncomes`) plus, per PLAN.md D-7/D-23,
+        `dashboardSavingsRatePercent` and `dashboardFixedCostRatioPercent` — a second, genuinely different pair of
+        formulas from `src/app/stats/stats-calculations.ts`'s KPI dashboard (STATS-1). The two savings-rate values
+        and the two fixed-cost-ratio values are each independently computed and exposed distinctly named on purpose
+        — see `docs/domain/KPI_FORMULAS.md` for their exact formulas and where/why they diverge.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [week, month, quarter, halfyear, year]
+            default: month
+        - name: offset
+          in: query
+          description: Periods before the current one; 0 is the period containing today, -1 the one before it, and so on.
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: KPI ratios, top categories, and dashboard-formula ratios for the requested period
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KpiReport'
+              example:
+                period:
+                  startDate: '2026-09-01'
+                  endDate: '2026-09-30'
+                  label: Sep 2026
+                previousPeriod:
+                  startDate: '2026-08-01'
+                  endDate: '2026-08-31'
+                  label: Aug 2026
+                ratios:
+                  savingsRatePercent: 84.03
+                  fixedCostRatioPercent: 32.5
+                  netMarginPercent: 84.03
+                  debtRatio: 0.4
+                  equityRatioPercent: 42.86
+                  interestCoverage: 5.2
+                previousRatios:
+                  savingsRatePercent: 84.8
+                  fixedCostRatioPercent: 30.1
+                  netMarginPercent: 84.8
+                  debtRatio: 0.41
+                  equityRatioPercent: 41.9
+                  interestCoverage: 4.9
+                dashboardSavingsRatePercent: 82.1
+                previousDashboardSavingsRatePercent: 83.4
+                dashboardFixedCostRatioPercent: 29.8
+                previousDashboardFixedCostRatioPercent: 28.2
+                topExpenses:
+                  - category: Groceries
+                    amountMinor: 45000
+                    percent: 62.5
+                  - category: Fun
+                    amountMinor: 27000
+                    percent: 37.5
+                topIncomes:
+                  - category: Salary
+                    amountMinor: 250000
+                    percent: 100
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
   /me:
     get:
       operationId: getCurrentIdentity
@@ -911,6 +988,80 @@ components:
         netWorth:
           type: integer
           description: Alias for `equity`.
+    KeyRatios:
+      type: object
+      required:
+        - savingsRatePercent
+        - fixedCostRatioPercent
+        - netMarginPercent
+        - debtRatio
+        - equityRatioPercent
+        - interestCoverage
+      properties:
+        savingsRatePercent:
+          type: number
+        fixedCostRatioPercent:
+          type: number
+        netMarginPercent:
+          type: number
+          description: Identical formula/value to `savingsRatePercent` — a pre-existing redundancy ported faithfully from the original.
+        debtRatio:
+          type: number
+          description: liabilities.total / assets.total. Not a percentage.
+        equityRatioPercent:
+          type: number
+        interestCoverage:
+          type: number
+          description: netResult / interestExpenses. Not a percentage.
+    CategoryAggregate:
+      type: object
+      required: [category, amountMinor, percent]
+      properties:
+        category:
+          type: string
+        amountMinor:
+          type: integer
+        percent:
+          type: number
+          description: Share of this category within its own top-categories list (expenses vs. incomes are two separate 100% totals).
+    KpiReport:
+      type: object
+      required:
+        - period
+        - previousPeriod
+        - ratios
+        - previousRatios
+        - dashboardSavingsRatePercent
+        - previousDashboardSavingsRatePercent
+        - dashboardFixedCostRatioPercent
+        - previousDashboardFixedCostRatioPercent
+        - topExpenses
+        - topIncomes
+      properties:
+        period:
+          $ref: '#/components/schemas/PeriodRange'
+        previousPeriod:
+          $ref: '#/components/schemas/PeriodRange'
+        ratios:
+          $ref: '#/components/schemas/KeyRatios'
+        previousRatios:
+          $ref: '#/components/schemas/KeyRatios'
+        dashboardSavingsRatePercent:
+          type: number
+        previousDashboardSavingsRatePercent:
+          type: number
+        dashboardFixedCostRatioPercent:
+          type: number
+        previousDashboardFixedCostRatioPercent:
+          type: number
+        topExpenses:
+          type: array
+          items:
+            $ref: '#/components/schemas/CategoryAggregate'
+        topIncomes:
+          type: array
+          items:
+            $ref: '#/components/schemas/CategoryAggregate'
     CreateTransactionRequest:
       type: object
       required: [account, amountMinor, date, time, category, comment]

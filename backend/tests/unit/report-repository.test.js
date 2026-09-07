@@ -5,6 +5,7 @@ const {
   getIncomeStatement,
   getCashflow,
   getBalanceSheet,
+  getKpis,
 } = require('../../repositories/report-repository');
 
 // Fixed reference date so period boundaries are deterministic regardless of
@@ -333,5 +334,123 @@ describe('getBalanceSheet', () => {
     const sheet = await getBalanceSheet(deps, 'user_1');
     expect(sheet.assets.total).toBe(0);
     expect(sheet.equity).toBe(0);
+  });
+});
+
+describe('getKpis', () => {
+  it('computes ratios for the period plus the balance sheet snapshot in one call', async () => {
+    const deps = dependencies({
+      transactions: [
+        {
+          id: 'tx_1',
+          account: 'Income',
+          amount: 1000,
+          date: '2026-09-10',
+          time: '09:00',
+          category: '@Salary',
+          comment: '',
+        },
+        {
+          id: 'tx_2',
+          account: 'Daily',
+          amount: -400,
+          date: '2026-09-11',
+          time: '09:00',
+          category: '@Food',
+          comment: '',
+        },
+      ],
+      balance: { asset: { assets: [{ tag: 'Car', amount: 8000 }] } },
+    });
+    const report = await getKpis(deps, 'user_1', { period: 'month', offset: 0, now: NOW });
+    expect(report.period).toEqual({
+      startDate: '2026-09-01',
+      endDate: '2026-09-30',
+      label: 'Sep 2026',
+    });
+    expect(report.ratios.savingsRatePercent).toBe(60);
+    expect(report.ratios.debtRatio).toBe(0);
+    expect(report.dashboardSavingsRatePercent).toBe(60);
+    expect(report.topExpenses).toEqual([{ category: 'Food', amountMinor: 40000, percent: 100 }]);
+  });
+
+  it('matches expenses against decrypted subscription categories for the fixed-cost ratios', async () => {
+    const deps = dependencies({
+      transactions: [
+        {
+          id: 'tx_1',
+          account: 'Daily',
+          amount: -10,
+          date: '2026-09-10',
+          time: '09:00',
+          category: '@Netflix',
+          comment: '',
+        },
+        {
+          id: 'tx_2',
+          account: 'Daily',
+          amount: -30,
+          date: '2026-09-10',
+          time: '09:00',
+          category: '@Groceries',
+          comment: '',
+        },
+      ],
+      subscriptions: [{ title: 'Netflix', category: '@Netflix', amount: -10 }],
+    });
+    const report = await getKpis(deps, 'user_1', { period: 'month', offset: 0, now: NOW });
+    expect(report.ratios.fixedCostRatioPercent).toBe(25);
+    expect(report.dashboardFixedCostRatioPercent).toBe(25);
+  });
+
+  it('decrypts subscription categories and balance-sheet entries when database encryption is enabled', async () => {
+    const session = new EncryptionSession('secret');
+    const encryptField = (value) => session.encrypt(String(value));
+    const deps = dependencies(
+      {
+        transactions: [
+          {
+            id: encryptField('tx_1'),
+            account: encryptField('Daily'),
+            amount: encryptField('-10'),
+            date: encryptField('2026-09-10'),
+            time: encryptField('09:00'),
+            category: encryptField('@Netflix'),
+            comment: encryptField(''),
+          },
+        ],
+        subscriptions: [
+          {
+            title: encryptField('Netflix'),
+            category: encryptField('@Netflix'),
+            amount: encryptField('-10'),
+          },
+        ],
+        balance: {
+          asset: { assets: [{ tag: encryptField('Car'), amount: encryptField('8000') }] },
+        },
+      },
+      { key: 'secret', encryptDatabase: true },
+    );
+    const report = await getKpis(deps, 'user_1', { period: 'month', offset: 0, now: NOW });
+    expect(report.ratios.fixedCostRatioPercent).toBe(100);
+  });
+
+  it('returns an all-zero report for a user with no data document', async () => {
+    const error = new Error('not_found');
+    error.statusCode = 404;
+    const deps = {
+      usersDb: { get: jest.fn(async () => Promise.reject(error)) },
+      authDb: { get: jest.fn(async () => Promise.reject(error)) },
+    };
+    const report = await getKpis(deps, 'user_1', { period: 'month', offset: 0, now: NOW });
+    expect(report.ratios.savingsRatePercent).toBe(0);
+    expect(report.topExpenses).toEqual([]);
+  });
+
+  it('defaults now to the real current time when omitted', async () => {
+    const deps = dependencies({ transactions: [] });
+    const report = await getKpis(deps, 'user_1', { period: 'year', offset: 0 });
+    expect(report.period.label).toBe(String(new Date().getFullYear()));
   });
 });

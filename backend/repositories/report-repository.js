@@ -4,6 +4,7 @@ const {
   computeIncomeStatement,
   computeCashflow,
   computeBalanceSheet,
+  computeKpiReport,
   getPeriodRange,
   toMinorUnits,
   MONEY_FIELD_NAMES,
@@ -63,7 +64,12 @@ async function loadPeriodTransactions(deps, userId, { period, offset, now }) {
   const transactions = toApiTransactions(rawTransactions, session, schemaVersion, currency);
   const currentRange = getPeriodRange(period, offset, now);
   const previousRange = getPeriodRange(period, offset - 1, now);
-  return { data, session, transactions, currentRange, previousRange };
+  return { data, session, schemaVersion, transactions, currentRange, previousRange };
+}
+
+/** Decrypted, cleaned subscription categories — the "fixed cost" category set both `computeKeyRatios` and the dashboard fixed-cost-ratio formula match expenses against. */
+function loadSubscriptionCategories(data, session) {
+  return (data.subscriptions || []).map((entry) => decryptValue(entry.category, session));
 }
 
 /**
@@ -115,13 +121,8 @@ async function getCashflow(deps, userId, options) {
   return { period: currentRange, previousPeriod: previousRange, ...statement };
 }
 
-/**
- * `GET /reports/balance-sheet` is a current snapshot, not period-scoped —
- * unlike income-statement/cashflow it takes no `period`/`offset`, matching
- * the original `computeBalanceSheet`'s own signature.
- */
-async function getBalanceSheet(deps, userId) {
-  const { data, session, schemaVersion } = await loadUserData(deps, userId);
+/** Builds `computeBalanceSheet`'s input from a user document's raw, still-encrypted entity arrays. Shared by `getBalanceSheet` and `getKpis`, which both need a current balance-sheet snapshot alongside whatever else they compute. */
+function buildBalanceSheetInput(data, session, schemaVersion) {
   const decryptEntries = (entries) =>
     (entries || []).map((entry) => decryptEntry(entry, session, schemaVersion));
 
@@ -143,12 +144,38 @@ async function getBalanceSheet(deps, userId) {
     amountMinor: e.amount || 0,
   }));
 
-  return computeBalanceSheet({ assets, shares, investments, properties, liabilities });
+  return { assets, shares, investments, properties, liabilities };
+}
+
+/**
+ * `GET /reports/balance-sheet` is a current snapshot, not period-scoped —
+ * unlike income-statement/cashflow it takes no `period`/`offset`, matching
+ * the original `computeBalanceSheet`'s own signature.
+ */
+async function getBalanceSheet(deps, userId) {
+  const { data, session, schemaVersion } = await loadUserData(deps, userId);
+  return computeBalanceSheet(buildBalanceSheetInput(data, session, schemaVersion));
+}
+
+async function getKpis(deps, userId, options) {
+  const { data, session, schemaVersion, transactions, currentRange, previousRange } =
+    await loadPeriodTransactions(deps, userId, options);
+  const balance = computeBalanceSheet(buildBalanceSheetInput(data, session, schemaVersion));
+  const fixedCostCategories = loadSubscriptionCategories(data, session);
+  const report = computeKpiReport(
+    transactions,
+    currentRange,
+    previousRange,
+    balance,
+    fixedCostCategories,
+  );
+  return { period: currentRange, previousPeriod: previousRange, ...report };
 }
 
 module.exports = {
   getIncomeStatement,
   getCashflow,
   getBalanceSheet,
+  getKpis,
   loadIncomeClassificationTags,
 };

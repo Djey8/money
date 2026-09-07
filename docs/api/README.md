@@ -122,3 +122,14 @@ Requires a PAT with `reports:r`. Returns a current snapshot of assets, liabiliti
 curl "http://localhost:3000/api/v1/reports/balance-sheet" \
   -H "Authorization: Bearer $MONEY_MANAGER_TOKEN"
 ```
+
+## Read key ratios, top categories, and KPI-dashboard ratios for a period
+
+Requires a PAT with `reports:r`. Returns savings rate, fixed cost ratio, and other key ratios (current and previous period), the top 5 expense and income categories, and a second, independently-computed pair of savings-rate/fixed-cost-ratio values matching the app's KPI dashboard — see `docs/domain/KPI_FORMULAS.md` for why there are two of each.
+
+```bash
+curl "http://localhost:3000/api/v1/reports/kpis?period=month&offset=0" \
+  -H "Authorization: Bearer $MONEY_MANAGER_TOKEN"
+```
+
+Same `period`/`offset` parameters as `/reports/income-statement`.

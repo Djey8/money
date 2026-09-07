@@ -39,3 +39,29 @@ export function isTransfer(category: string): boolean {
 export function inRange(transaction: ApiTransaction, range: PeriodRange): boolean {
   return transaction.date >= range.startDate && transaction.date <= range.endDate;
 }
+
+/** Total Income-account revenue in range, excluding transfers — the same total `computeIncomeSide` in income-statement.ts sums, without its interest/property/other breakdown. Shared with kpis.ts's `computeKeyRatios`, which needs only the total. */
+export function sumIncomeInRange(transactions: ApiTransaction[], range: PeriodRange): number {
+  return transactions
+    .filter(
+      (transaction) =>
+        transaction.account === 'Income' &&
+        transaction.amountMinor > 0 &&
+        !isTransfer(transaction.category) &&
+        inRange(transaction, range),
+    )
+    .reduce((sum, transaction) => sum + transaction.amountMinor, 0);
+}
+
+/** Total expense-account spending in range, excluding transfers — the same total `computeExpenseSide` in income-statement.ts sums, without its per-account breakdown. */
+export function sumExpensesInRange(transactions: ApiTransaction[], range: PeriodRange): number {
+  return transactions
+    .filter(
+      (transaction) =>
+        (EXPENSE_ACCOUNTS as readonly string[]).includes(transaction.account) &&
+        transaction.amountMinor < 0 &&
+        !isTransfer(transaction.category) &&
+        inRange(transaction, range),
+    )
+    .reduce((sum, transaction) => sum + Math.abs(transaction.amountMinor), 0);
+}
