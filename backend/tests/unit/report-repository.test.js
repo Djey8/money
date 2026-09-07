@@ -1,7 +1,11 @@
 'use strict';
 
 const { EncryptionSession } = require('@money/domain');
-const { getIncomeStatement, getCashflow } = require('../../repositories/report-repository');
+const {
+  getIncomeStatement,
+  getCashflow,
+  getBalanceSheet,
+} = require('../../repositories/report-repository');
 
 // Fixed reference date so period boundaries are deterministic regardless of
 // the actual day this suite runs — transactions below are dated inside
@@ -258,5 +262,76 @@ describe('getCashflow', () => {
     const deps = dependencies({ transactions: [] });
     const statement = await getCashflow(deps, 'user_1', { period: 'year', offset: 0 });
     expect(statement.period.label).toBe(String(new Date().getFullYear()));
+  });
+});
+
+describe('getBalanceSheet', () => {
+  it('aggregates assets, shares, investments, properties, and liabilities into one snapshot', async () => {
+    const deps = dependencies({
+      balance: {
+        asset: {
+          assets: [{ tag: 'Car', amount: 8000 }],
+          shares: [{ tag: 'MSFT', quantity: 10, price: 415 }],
+          investments: [{ tag: 'Rental Unit A', amount: 180000, deposit: 30000 }],
+        },
+        liabilities: [{ tag: 'Mortgage', amount: 150000 }],
+      },
+      income: { revenue: { properties: [{ tag: 'Rental Unit A', amount: 800 }] } },
+    });
+    const sheet = await getBalanceSheet(deps, 'user_1');
+    expect(sheet.assets.cash).toBe(800000);
+    expect(sheet.assets.shares).toBe(415000);
+    expect(sheet.assets.investments).toBe(21000000);
+    expect(sheet.assets.properties).toBe(80000);
+    expect(sheet.liabilities.debts).toBe(15000000);
+    expect(sheet.assets.total).toBe(22295000);
+    expect(sheet.equity).toBe(7295000);
+    expect(sheet.netWorth).toBe(7295000);
+  });
+
+  it('decrypts every entry field when database encryption is enabled', async () => {
+    const session = new EncryptionSession('secret');
+    const encryptField = (value) => session.encrypt(String(value));
+    const deps = dependencies(
+      {
+        balance: {
+          asset: {
+            assets: [{ tag: encryptField('Car'), amount: encryptField('8000') }],
+          },
+        },
+      },
+      { key: 'secret', encryptDatabase: true },
+    );
+    const sheet = await getBalanceSheet(deps, 'user_1');
+    expect(sheet.assets.cash).toBe(800000);
+  });
+
+  it('leaves already-minor-unit values (schema version 2) unconverted', async () => {
+    const deps = dependencies({
+      meta: { schemaVersion: 2 },
+      balance: {
+        asset: {
+          assets: [{ tag: 'Car', amount: 800000 }],
+          shares: [{ tag: 'MSFT', quantity: 10, price: 41500 }],
+          investments: [{ tag: 'Rental Unit A', amount: 18000000, deposit: 3000000 }],
+        },
+      },
+    });
+    const sheet = await getBalanceSheet(deps, 'user_1');
+    expect(sheet.assets.cash).toBe(800000);
+    expect(sheet.assets.shares).toBe(415000);
+    expect(sheet.assets.investments).toBe(21000000);
+  });
+
+  it('returns an all-zero snapshot for a user with no data document', async () => {
+    const error = new Error('not_found');
+    error.statusCode = 404;
+    const deps = {
+      usersDb: { get: jest.fn(async () => Promise.reject(error)) },
+      authDb: { get: jest.fn(async () => Promise.reject(error)) },
+    };
+    const sheet = await getBalanceSheet(deps, 'user_1');
+    expect(sheet.assets.total).toBe(0);
+    expect(sheet.equity).toBe(0);
   });
 });

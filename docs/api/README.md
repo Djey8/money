@@ -113,3 +113,12 @@ curl "http://localhost:3000/api/v1/reports/cashflow?period=month&offset=0" \
 ```
 
 Same `period`/`offset` parameters as `/reports/income-statement`.
+
+## Read the current balance sheet
+
+Requires a PAT with `reports:r`. Returns a current snapshot of assets, liabilities, and equity — no period parameters, unlike the other report endpoints.
+
+```bash
+curl "http://localhost:3000/api/v1/reports/balance-sheet" \
+  -H "Authorization: Bearer $MONEY_MANAGER_TOKEN"
+```

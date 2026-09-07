@@ -64,3 +64,11 @@ Every Pro API write is audit logged. Prefer narrowly scoped, expiring tokens and
 3. A transfer that doesn't match any of those four buckets (e.g. `Income` → `Daily`/`Splurge`) is dropped entirely — it is not double-counted as operating.
 4. `netCashflow` is `operating - investing - financing - mojo`.
 5. This is a read; it is not audit logged.
+
+## Read the current balance sheet
+
+1. `GET /api/v1/reports/balance-sheet` requires `reports:r` and takes **no** query parameters — unlike the other report endpoints, this is a current snapshot with no period/previous-period comparison, matching the original app's own lack of historical balance-sheet tracking.
+2. `assets.shares` is the sum of each share's `quantity × price`; `assets.investments` is the sum of each investment's `amount + deposit` (a mortgage-financed investment counts its own cash deposit as an asset, not just the financed value). `assets.cash` and `assets.properties` are plain sums.
+3. `equity`/`netWorth` (the same value under two names, matching the original) is total assets minus total liabilities and can be negative.
+4. This reads entity data that has no write endpoint yet (`balance/asset/*`, `balance/liabilities`, `income/revenue/properties` — Slice 4 on the project roadmap); until then the only way to change these values is through the UI.
+5. This is a read; it is not audit logged.

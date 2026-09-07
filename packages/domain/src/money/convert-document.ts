@@ -13,7 +13,7 @@ import { isCleanlyRepresentable, toMinorUnits } from './minor-units';
  * (Liability.investment — a boolean flag, not an amount, despite the
  * name), `riskScore` (Grow — a 1-5 rating), any `*Date` field.
  */
-const MONEY_FIELD_NAMES = new Set([
+export const MONEY_FIELD_NAMES = new Set([
   'amount',
   'deposit',
   'credit',

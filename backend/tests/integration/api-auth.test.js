@@ -1204,6 +1204,80 @@ describe('v1 API authentication and PAT management', () => {
     });
   });
 
+  describe('GET /reports/balance-sheet', () => {
+    async function reportsToken() {
+      const created = await sessionRequest('post', '/api/v1/auth/tokens').send({
+        name: `reports-agent-${Date.now()}-${Math.random()}`,
+        scopes: ['reports:r'],
+      });
+      return created.body.token;
+    }
+
+    async function setBalanceSheetData(userId, balance, incomeRevenue) {
+      const usersDb = getUsersDb();
+      const doc = await usersDb.get(userId);
+      doc.data = doc.data || {};
+      doc.data.balance = balance;
+      doc.data.income = { ...doc.data.income, revenue: { ...doc.data.income?.revenue, ...incomeRevenue } };
+      await usersDb.insert(doc);
+    }
+
+    it('aggregates assets, shares, investments, properties, and liabilities into one current snapshot', async () => {
+      const token = await reportsToken();
+      await setBalanceSheetData(
+        firstUser.userId,
+        {
+          asset: {
+            assets: [{ tag: 'Car', amount: 8000 }],
+            shares: [{ tag: 'MSFT', quantity: 10, price: 415 }],
+            investments: [{ tag: 'Rental Unit A', amount: 180000, deposit: 30000 }],
+          },
+          liabilities: [{ tag: 'Mortgage', amount: 150000 }],
+        },
+        { properties: [{ tag: 'Rental Unit A', amount: 800 }] },
+      );
+      const response = await request(app)
+        .get('/api/v1/reports/balance-sheet')
+        .set('Authorization', `Bearer ${token}`);
+      expect(response.status).toBe(200);
+      expect(response.body.assets.cash).toBe(800000);
+      expect(response.body.assets.shares).toBe(415000);
+      expect(response.body.assets.investments).toBe(21000000);
+      expect(response.body.assets.properties).toBe(80000);
+      expect(response.body.liabilities.debts).toBe(15000000);
+      expect(response.body.assets.total).toBe(22295000);
+      expect(response.body.equity).toBe(7295000);
+      expect(response.body.netWorth).toBe(7295000);
+    });
+
+    it('rejects requests without the reports:r scope', async () => {
+      const writeOnly = await sessionRequest('post', '/api/v1/auth/tokens').send({
+        name: `write-not-reports-balance-${Date.now()}`,
+        scopes: ['transactions:w'],
+      });
+      const response = await request(app)
+        .get('/api/v1/reports/balance-sheet')
+        .set('Authorization', `Bearer ${writeOnly.body.token}`);
+      expect(response.status).toBe(403);
+      expect(response.body.code).toBe('scope_insufficient');
+    });
+
+    it('keeps balance-sheet totals isolated to the authenticated user document', async () => {
+      const token = await reportsToken();
+      await setBalanceSheetData(firstUser.userId, { asset: { assets: [{ tag: 'Own asset', amount: 1000 }] } }, {});
+      await setBalanceSheetData(
+        secondUser.userId,
+        { asset: { assets: [{ tag: 'Only second user asset', amount: 999900 }] } },
+        {},
+      );
+      const response = await request(app)
+        .get('/api/v1/reports/balance-sheet')
+        .set('Authorization', `Bearer ${token}`);
+      expect(response.status).toBe(200);
+      expect(response.body.assets.cash).toBe(100000);
+    });
+  });
+
   it('creates a PAT once and exposes its identity to /me', async () => {
     const create = await sessionRequest('post', '/api/v1/auth/tokens').send({
       name: 'integration-agent',

@@ -560,6 +560,41 @@ paths:
           $ref: '#/components/responses/AuthenticationRequired'
         '403':
           $ref: '#/components/responses/InsufficientScope'
+  /reports/balance-sheet:
+    get:
+      operationId: getBalanceSheet
+      summary: Get the current balance sheet
+      description: >-
+        A current snapshot of assets, liabilities, and equity — not period-scoped, unlike the other report
+        endpoints, matching `computeBalanceSheet` in `src/app/stats/statement/statement-calculations.ts` (canonical
+        per PLAN.md D-22). `assets.shares` is each share's `quantity × price`; `assets.investments` is each
+        investment's `amount + deposit`; `equity`/`netWorth` is total assets minus total liabilities and can be
+        negative.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Current balance sheet
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BalanceSheet'
+              example:
+                assets:
+                  cash: 800000
+                  shares: 415000
+                  investments: 21000000
+                  properties: 80000
+                  total: 22295000
+                liabilities:
+                  debts: 15000000
+                  total: 15000000
+                equity: 7295000
+                netWorth: 7295000
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
   /me:
     get:
       operationId: getCurrentIdentity
@@ -844,6 +879,38 @@ components:
           $ref: '#/components/schemas/StatementRow'
         netCashflow:
           $ref: '#/components/schemas/StatementRow'
+    BalanceSheet:
+      type: object
+      required: [assets, liabilities, equity, netWorth]
+      properties:
+        assets:
+          type: object
+          required: [cash, shares, investments, properties, total]
+          properties:
+            cash:
+              type: integer
+            shares:
+              type: integer
+            investments:
+              type: integer
+            properties:
+              type: integer
+            total:
+              type: integer
+        liabilities:
+          type: object
+          required: [debts, total]
+          properties:
+            debts:
+              type: integer
+            total:
+              type: integer
+        equity:
+          type: integer
+          description: Total assets minus total liabilities. Can be negative.
+        netWorth:
+          type: integer
+          description: Alias for `equity`.
     CreateTransactionRequest:
       type: object
       required: [account, amountMinor, date, time, category, comment]

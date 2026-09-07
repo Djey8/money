@@ -15,7 +15,11 @@ const {
   updateTransaction,
   MAX_BATCH_OPERATIONS,
 } = require('../repositories/transaction-repository');
-const { getIncomeStatement, getCashflow } = require('../repositories/report-repository');
+const {
+  getIncomeStatement,
+  getCashflow,
+  getBalanceSheet,
+} = require('../repositories/report-repository');
 const { getUsersDb, getAuthDb } = require('../config/db');
 const { getEncryptionSession } = require('../services/encryption-session');
 const {
@@ -640,6 +644,15 @@ router.get('/reports/cashflow', requireScope('reports:r'), async (req, res, next
       offset: validation.offset,
     });
     return res.json(statement);
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.get('/reports/balance-sheet', requireScope('reports:r'), async (req, res, next) => {
+  try {
+    const sheet = await getBalanceSheet({ usersDb: getUsersDb(), authDb: getAuthDb() }, req.userId);
+    return res.json(sheet);
   } catch (error) {
     return next(error);
   }
