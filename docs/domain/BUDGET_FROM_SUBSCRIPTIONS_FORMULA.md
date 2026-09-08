@@ -29,8 +29,8 @@ is left untouched.
 
 Reading `plan.component.ts`'s `subscriptions()` directly confirms `sub.frequency` is never read anywhere in that method — it always adds the subscription's full nominal `amount` into every month it's active, with no frequency-based scaling at all:
 
-- A **quarterly** €300 subscription gets €300 added into *every* month it's active, not €100 (a third of it, since it only actually bills once a quarter) — a 3x over-budget for two months out of three, and correct only by coincidence in the billing month itself.
-- A **yearly** €1200 subscription gets its full €1200 added to *every single month* — a 12x over-budget every month.
+- A **quarterly** €300 subscription gets €300 added into _every_ month it's active, not €100 (a third of it, since it only actually bills once a quarter) — a 3x over-budget for two months out of three, and correct only by coincidence in the billing month itself.
+- A **yearly** €1200 subscription gets its full €1200 added to _every single month_ — a 12x over-budget every month.
 - A **weekly**/**biweekly** subscription only gets its nominal amount added once per month, when it actually recurs roughly 4.33/2.17 times a month — a real under-budget.
 - Only **monthly** frequency happens to be correct, because a monthly subscription's nominal amount already is its own per-month cost.
 
@@ -38,7 +38,7 @@ This is a real over/under-budgeting bug, not a rounding nuance — for a caller 
 
 ## A structural adaptation, not a correction
 
-The original also has a narrower, unrelated quirk in its end-month handling: a transaction-matching heuristic that only *sometimes* includes a subscription's own end month (`plan.component.ts` lines ~561–578), depending on whether a matching transaction exists that month. This port doesn't replicate that heuristic — a subscription's active range is simply every calendar month from `startDate`'s month through `endDate`'s month inclusive (or through `now`'s month if there's no end date). This is a cleaner, more predictable rule that doesn't depend on unrelated transaction history, and doesn't change which subscriptions get processed at all in the common case (no end date, or an end date that isn't the current month) — see `packages/domain/src/transactions/budget-from-subscriptions.ts`'s header comment for the full reasoning.
+The original also has a narrower, unrelated quirk in its end-month handling: a transaction-matching heuristic that only _sometimes_ includes a subscription's own end month (`plan.component.ts` lines ~561–578), depending on whether a matching transaction exists that month. This port doesn't replicate that heuristic — a subscription's active range is simply every calendar month from `startDate`'s month through `endDate`'s month inclusive (or through `now`'s month if there's no end date). This is a cleaner, more predictable rule that doesn't depend on unrelated transaction history, and doesn't change which subscriptions get processed at all in the common case (no end date, or an end date that isn't the current month) — see `packages/domain/src/transactions/budget-from-subscriptions.ts`'s header comment for the full reasoning.
 
 ## Worked example
 

@@ -61,7 +61,9 @@ function printUsage() {
   console.error('  mm-admin token list --user <id>');
   console.error('  mm-admin token revoke --token-id <id>');
   console.error('  mm-admin migrate-transaction-ids --user <id> [--dry-run]');
-  console.error('  mm-admin migrate-fund-project-ids --user <id> --collection smile|fire [--dry-run]');
+  console.error(
+    '  mm-admin migrate-fund-project-ids --user <id> --collection smile|fire [--dry-run]',
+  );
   console.error(
     '  mm-admin migrate-balance-entity-ids --user <id> --collection assets|shares|investments|liabilities|grow|subscriptions|budget [--dry-run]',
   );

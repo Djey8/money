@@ -195,7 +195,14 @@ describe('updateSubscription', () => {
   it('updates fields without triggering transaction cleanup when nothing identifying changed', async () => {
     const document = existingSubscriptionDocument();
     document.data.transactions = [
-      { account: 'Daily', amount: 10, date: '2026-01-01', time: '09:00', category: '@Streaming', comment: 'Spotify' },
+      {
+        account: 'Daily',
+        amount: 10,
+        date: '2026-01-01',
+        time: '09:00',
+        category: '@Streaming',
+        comment: 'Spotify',
+      },
     ];
     const { deps, current } = writableDeps(document);
     const subscription = await updateSubscription(deps, 'user_1', 'subscriptions_1', {
@@ -255,7 +262,14 @@ describe('updateSubscription', () => {
   it('does not trigger cleanup when only endDate changes', async () => {
     const document = existingSubscriptionDocument();
     document.data.transactions = [
-      { account: 'Daily', amount: 10, date: '2026-01-01', time: '09:00', category: '@Streaming', comment: 'Spotify' },
+      {
+        account: 'Daily',
+        amount: 10,
+        date: '2026-01-01',
+        time: '09:00',
+        category: '@Streaming',
+        comment: 'Spotify',
+      },
     ];
     const { deps, current } = writableDeps(document);
     await updateSubscription(deps, 'user_1', 'subscriptions_1', { endDate: '2026-06-01' });
@@ -278,7 +292,14 @@ describe('deleteSubscription', () => {
       data: {
         subscriptions: [minimalRawSubscription()],
         transactions: [
-          { account: 'Daily', amount: 10, date: '2026-01-01', time: '09:00', category: '@Streaming', comment: 'Spotify' },
+          {
+            account: 'Daily',
+            amount: 10,
+            date: '2026-01-01',
+            time: '09:00',
+            category: '@Streaming',
+            comment: 'Spotify',
+          },
         ],
       },
     };
@@ -296,7 +317,15 @@ describe('deleteSubscription', () => {
       data: {
         subscriptions: [minimalRawSubscription()],
         transactions: [
-          { id: 'transactions_1', account: 'Daily', amount: 10, date: '2026-01-01', time: '09:00', category: '@Streaming', comment: 'Spotify' },
+          {
+            id: 'transactions_1',
+            account: 'Daily',
+            amount: 10,
+            date: '2026-01-01',
+            time: '09:00',
+            category: '@Streaming',
+            comment: 'Spotify',
+          },
         ],
       },
     };
@@ -306,7 +335,11 @@ describe('deleteSubscription', () => {
   });
 
   it('returns null for an id that does not exist', async () => {
-    const document = { _id: 'user_1', _rev: '1-a', data: { subscriptions: [minimalRawSubscription()] } };
+    const document = {
+      _id: 'user_1',
+      _rev: '1-a',
+      data: { subscriptions: [minimalRawSubscription()] },
+    };
     const { deps } = writableDeps(document);
     await expect(deleteSubscription(deps, 'user_1', 'subscriptions_missing')).resolves.toBeNull();
   });
@@ -394,7 +427,11 @@ describe('batchSubscriptions', () => {
     ]);
     expect(results[0]).toMatchObject({ op: 'create', status: 'created' });
     expect(results[0].subscription).toMatchObject({ amountMinor: -500 });
-    expect(results[1]).toMatchObject({ op: 'update', id: 'subscriptions_existing', status: 'updated' });
+    expect(results[1]).toMatchObject({
+      op: 'update',
+      id: 'subscriptions_existing',
+      status: 'updated',
+    });
     expect(results[1].subscription).toMatchObject({ amountMinor: -2000 });
     expect(results[2]).toMatchObject({
       op: 'delete',

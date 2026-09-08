@@ -36,13 +36,13 @@
  */
 
 const crypto = require('crypto');
-const { toMinorUnits, transactionFromApi, generateDueSubscriptionTransactions } = require('@money/domain');
-const { getEncryptionSession } = require('../services/encryption-session');
 const {
-  decryptValue,
-  toApiTransactions,
-  encryptTransaction,
-} = require('./transaction-repository');
+  toMinorUnits,
+  transactionFromApi,
+  generateDueSubscriptionTransactions,
+} = require('@money/domain');
+const { getEncryptionSession } = require('../services/encryption-session');
+const { decryptValue, toApiTransactions, encryptTransaction } = require('./transaction-repository');
 const {
   writeValue,
   toStoredMoney,
@@ -203,26 +203,33 @@ async function withSubscriptionsWrite({ usersDb, authDb }, userId, mutate) {
 }
 
 async function createSubscription(deps, userId, input) {
-  return withSubscriptionsWrite(deps, userId, ({ data, rawSubscriptions, session, schemaVersion }) => {
-    const newSubscription = {
-      id: `subscriptions_${crypto.randomUUID()}`,
-      title: input.title || '',
-      account: input.account,
-      amountMinor: input.amountMinor,
-      startDate: input.startDate,
-      endDate: input.endDate || null,
-      category: input.category,
-      comment: input.comment || '',
-      frequency: input.frequency || 'monthly',
-    };
-    return {
-      updatedData: {
-        ...data,
-        subscriptions: [...rawSubscriptions, encryptSubscription(newSubscription, session, schemaVersion)],
-      },
-      result: newSubscription,
-    };
-  });
+  return withSubscriptionsWrite(
+    deps,
+    userId,
+    ({ data, rawSubscriptions, session, schemaVersion }) => {
+      const newSubscription = {
+        id: `subscriptions_${crypto.randomUUID()}`,
+        title: input.title || '',
+        account: input.account,
+        amountMinor: input.amountMinor,
+        startDate: input.startDate,
+        endDate: input.endDate || null,
+        category: input.category,
+        comment: input.comment || '',
+        frequency: input.frequency || 'monthly',
+      };
+      return {
+        updatedData: {
+          ...data,
+          subscriptions: [
+            ...rawSubscriptions,
+            encryptSubscription(newSubscription, session, schemaVersion),
+          ],
+        },
+        result: newSubscription,
+      };
+    },
+  );
 }
 
 const TRIGGER_FIELDS = [
@@ -291,7 +298,12 @@ async function updateSubscription(deps, userId, subscriptionId, patch) {
   );
 }
 
-async function deleteSubscription(deps, userId, subscriptionId, { deleteTransactions = false } = {}) {
+async function deleteSubscription(
+  deps,
+  userId,
+  subscriptionId,
+  { deleteTransactions = false } = {},
+) {
   return withSubscriptionsWrite(
     deps,
     userId,
@@ -411,70 +423,74 @@ async function refreshSubscriptions(deps, userId, { now = new Date() } = {}) {
  * via `PATCH`/`DELETE /subscriptions/{id}`.
  */
 async function batchSubscriptions(deps, userId, items, { atomic = false } = {}) {
-  return withSubscriptionsWrite(deps, userId, ({ data, rawSubscriptions, session, schemaVersion }) => {
-    let working = decryptAllSubscriptions(rawSubscriptions, session, schemaVersion);
-    let anyApplied = false;
-    const outcomes = items.map((item) => {
-      if (item.error) return { op: item.op, id: item.id, status: 'error', error: item.error };
-      try {
-        if (item.op === 'create') {
-          const newSubscription = {
-            id: `subscriptions_${crypto.randomUUID()}`,
-            title: item.fields.title || '',
-            account: item.fields.account,
-            amountMinor: item.fields.amountMinor,
-            startDate: item.fields.startDate,
-            endDate: item.fields.endDate || null,
-            category: item.fields.category,
-            comment: item.fields.comment || '',
-            frequency: item.fields.frequency || 'monthly',
-          };
-          working = [...working, newSubscription];
+  return withSubscriptionsWrite(
+    deps,
+    userId,
+    ({ data, rawSubscriptions, session, schemaVersion }) => {
+      let working = decryptAllSubscriptions(rawSubscriptions, session, schemaVersion);
+      let anyApplied = false;
+      const outcomes = items.map((item) => {
+        if (item.error) return { op: item.op, id: item.id, status: 'error', error: item.error };
+        try {
+          if (item.op === 'create') {
+            const newSubscription = {
+              id: `subscriptions_${crypto.randomUUID()}`,
+              title: item.fields.title || '',
+              account: item.fields.account,
+              amountMinor: item.fields.amountMinor,
+              startDate: item.fields.startDate,
+              endDate: item.fields.endDate || null,
+              category: item.fields.category,
+              comment: item.fields.comment || '',
+              frequency: item.fields.frequency || 'monthly',
+            };
+            working = [...working, newSubscription];
+            anyApplied = true;
+            return { op: 'create', status: 'created', id: newSubscription.id };
+          }
+          if (item.op === 'update') {
+            const index = working.findIndex((subscription) => subscription.id === item.id);
+            if (index === -1) throw new Error('No matching subscription exists.');
+            working = working.map((subscription, candidateIndex) =>
+              candidateIndex === index ? { ...subscription, ...item.fields } : subscription,
+            );
+            anyApplied = true;
+            return { op: 'update', status: 'updated', id: item.id };
+          }
+          if (!working.some((subscription) => subscription.id === item.id)) {
+            throw new Error('No matching subscription exists.');
+          }
+          working = working.filter((subscription) => subscription.id !== item.id);
           anyApplied = true;
-          return { op: 'create', status: 'created', id: newSubscription.id };
+          return { op: 'delete', status: 'deleted', id: item.id };
+        } catch (error) {
+          return { op: item.op, id: item.id, status: 'error', error: error.message };
         }
-        if (item.op === 'update') {
-          const index = working.findIndex((subscription) => subscription.id === item.id);
-          if (index === -1) throw new Error('No matching subscription exists.');
-          working = working.map((subscription, candidateIndex) =>
-            candidateIndex === index ? { ...subscription, ...item.fields } : subscription,
-          );
-          anyApplied = true;
-          return { op: 'update', status: 'updated', id: item.id };
-        }
-        if (!working.some((subscription) => subscription.id === item.id)) {
-          throw new Error('No matching subscription exists.');
-        }
-        working = working.filter((subscription) => subscription.id !== item.id);
-        anyApplied = true;
-        return { op: 'delete', status: 'deleted', id: item.id };
-      } catch (error) {
-        return { op: item.op, id: item.id, status: 'error', error: error.message };
+      });
+
+      const hasErrors = outcomes.some((outcome) => outcome.status === 'error');
+      if ((atomic && hasErrors) || !anyApplied) {
+        const results = outcomes.map((outcome) =>
+          outcome.status === 'error' ? outcome : { ...outcome, status: 'not_applied' },
+        );
+        return { skipWrite: true, result: results };
       }
-    });
 
-    const hasErrors = outcomes.some((outcome) => outcome.status === 'error');
-    if ((atomic && hasErrors) || !anyApplied) {
-      const results = outcomes.map((outcome) =>
-        outcome.status === 'error' ? outcome : { ...outcome, status: 'not_applied' },
-      );
-      return { skipWrite: true, result: results };
-    }
-
-    return {
-      updatedData: {
-        ...data,
-        subscriptions: working.map((subscription) =>
-          encryptSubscription(subscription, session, schemaVersion),
-        ),
-      },
-      result: outcomes.map((outcome) => {
-        if (outcome.status === 'error' || outcome.op === 'delete') return outcome;
-        const subscription = working.find((candidate) => candidate.id === outcome.id);
-        return { ...outcome, subscription };
-      }),
-    };
-  });
+      return {
+        updatedData: {
+          ...data,
+          subscriptions: working.map((subscription) =>
+            encryptSubscription(subscription, session, schemaVersion),
+          ),
+        },
+        result: outcomes.map((outcome) => {
+          if (outcome.status === 'error' || outcome.op === 'delete') return outcome;
+          const subscription = working.find((candidate) => candidate.id === outcome.id);
+          return { ...outcome, subscription };
+        }),
+      };
+    },
+  );
 }
 
 module.exports = {
