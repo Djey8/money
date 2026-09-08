@@ -426,3 +426,22 @@ curl -X PATCH "http://localhost:3000/api/v1/budget/budget_<id>" \
 curl -X DELETE "http://localhost:3000/api/v1/budget/budget_<id>" \
   -H "Authorization: Bearer $MONEY_MANAGER_TOKEN"
 ```
+
+## Bulk-populate a month's budget (fill-forward, copy, delete-month)
+
+Requires a PAT with `budget:w`. Fill-forward is add-only (never overwrites); copy overwrites the target month's matching rows. See `docs/api/AGENTS.md` for the exact chaining/overwrite semantics.
+
+```bash
+curl -X POST "http://localhost:3000/api/v1/budget/fill-forward" \
+  -H "Authorization: Bearer $MONEY_MANAGER_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"targetMonth": "2026-04"}'
+
+curl -X POST "http://localhost:3000/api/v1/budget/copy" \
+  -H "Authorization: Bearer $MONEY_MANAGER_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"fromMonth": "2026-01", "toMonth": "2026-02"}'
+
+curl -X DELETE "http://localhost:3000/api/v1/budget?month=2026-01" \
+  -H "Authorization: Bearer $MONEY_MANAGER_TOKEN"
+```

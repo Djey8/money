@@ -2647,6 +2647,41 @@ paths:
           $ref: '#/components/responses/AuthenticationRequired'
         '403':
           $ref: '#/components/responses/InsufficientScope'
+    delete:
+      operationId: deleteBudgetMonth
+      summary: Delete every budget row for a month (BUD-7)
+      description: Not reversible through the API. No cascade to any other entity.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: month
+          in: query
+          required: true
+          schema:
+            type: string
+            pattern: '^\d{4}-(0[1-9]|1[0-2])$'
+      responses:
+        '200':
+          description: How many rows were deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [month, deletedCount]
+                properties:
+                  month:
+                    type: string
+                  deletedCount:
+                    type: integer
+              example:
+                month: '2026-01'
+                deletedCount: 2
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
   /budget/{budgetId}:
     parameters:
       - name: budgetId
@@ -2719,6 +2754,106 @@ paths:
           $ref: '#/components/responses/InsufficientScope'
         '404':
           $ref: '#/components/responses/NotFound'
+  /budget/fill-forward:
+    post:
+      operationId: fillForwardBudget
+      summary: Fill forward budget rows from the nearest prior populated month (BUD-4)
+      description: >-
+        Walks backward up to 120 months from `targetMonth` for the nearest month with any row, then chain-fills
+        forward month by month to `targetMonth` — each newly-filled month becomes the source for the next step.
+        Add-only: never overwrites a row that already exists for a given (date, tag), in an intermediate month or
+        the target month. A silent no-op (`rowsAdded: 0`) if no prior month within 120 months has any row at all —
+        ported from `plan.component.ts`'s `fill()` exactly, including that silence.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [targetMonth]
+              properties:
+                targetMonth:
+                  type: string
+                  pattern: '^\d{4}-(0[1-9]|1[0-2])$'
+            example:
+              targetMonth: '2026-04'
+      responses:
+        '200':
+          description: How many rows were added
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [targetMonth, rowsAdded]
+                properties:
+                  targetMonth:
+                    type: string
+                  rowsAdded:
+                    type: integer
+              example:
+                targetMonth: '2026-04'
+                rowsAdded: 3
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+  /budget/copy:
+    post:
+      operationId: copyBudget
+      summary: Copy every budget row from one month into another (BUD-5)
+      description: >-
+        Copies every row from `fromMonth` into `toMonth`. Unlike fill-forward, this OVERWRITES an existing target
+        row's amount if one already matches (date, tag) — a deliberately different behavior from
+        `POST /budget/fill-forward`, matching the original app's own two distinct operations
+        (`plan.component.ts`'s `copy()`).
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [fromMonth, toMonth]
+              properties:
+                fromMonth:
+                  type: string
+                  pattern: '^\d{4}-(0[1-9]|1[0-2])$'
+                toMonth:
+                  type: string
+                  pattern: '^\d{4}-(0[1-9]|1[0-2])$'
+            example:
+              fromMonth: '2026-01'
+              toMonth: '2026-02'
+      responses:
+        '200':
+          description: How many rows were copied
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [fromMonth, toMonth, rowsCopied]
+                properties:
+                  fromMonth:
+                    type: string
+                  toMonth:
+                    type: string
+                  rowsCopied:
+                    type: integer
+              example:
+                fromMonth: '2026-01'
+                toMonth: '2026-02'
+                rowsCopied: 2
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
 components:
   securitySchemes:
     bearerAuth:
