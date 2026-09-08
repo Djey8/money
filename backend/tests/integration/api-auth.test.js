@@ -1284,7 +1284,11 @@ describe('v1 API authentication and PAT management', () => {
       );
       await setBalanceSheetData(
         secondUser.userId,
-        { asset: { assets: [{ id: 'assets_fixture_other', tag: 'Only second user asset', amount: 999900 }] } },
+        {
+          asset: {
+            assets: [{ id: 'assets_fixture_other', tag: 'Only second user asset', amount: 999900 }],
+          },
+        },
         {},
       );
       const response = await request(app)
@@ -1315,7 +1319,12 @@ describe('v1 API authentication and PAT management', () => {
     it('computes savings-rate and fixed-cost ratios plus top categories for the requested period', async () => {
       const token = await reportsToken();
       await setSubscriptions(firstUser.userId, [
-        { id: `subscriptions_kpi_fixture_${Date.now()}`, title: 'Netflix', category: '@KpiNetflix', amount: -1000000 },
+        {
+          id: `subscriptions_kpi_fixture_${Date.now()}`,
+          title: 'Netflix',
+          category: '@KpiNetflix',
+          amount: -1000000,
+        },
       ]);
       const before = await request(app)
         .get('/api/v1/reports/kpis?period=year&offset=0')
@@ -1426,7 +1435,10 @@ describe('v1 API authentication and PAT management', () => {
       const created = await request(app)
         .post('/api/v1/auth/tokens')
         .set('Authorization', `Bearer ${user.token}`)
-        .send({ name: `fire-coverage-agent-${Date.now()}-${Math.random()}`, scopes: ['reports:r'] });
+        .send({
+          name: `fire-coverage-agent-${Date.now()}-${Math.random()}`,
+          scopes: ['reports:r'],
+        });
       return { ...user, patToken: created.body.token };
     }
 
@@ -1549,7 +1561,10 @@ describe('v1 API authentication and PAT management', () => {
       const writeOnly = await request(app)
         .post('/api/v1/auth/tokens')
         .set('Authorization', `Bearer ${user.token}`)
-        .send({ name: `write-not-reports-fire-coverage-${Date.now()}`, scopes: ['transactions:w'] });
+        .send({
+          name: `write-not-reports-fire-coverage-${Date.now()}`,
+          scopes: ['transactions:w'],
+        });
       const response = await request(app)
         .get('/api/v1/reports/fire-coverage')
         .set('Authorization', `Bearer ${writeOnly.body.token}`);
@@ -1602,7 +1617,9 @@ describe('v1 API authentication and PAT management', () => {
     it('computes status from the stored Mojo balance', async () => {
       const { token } = await mojoToken(['mojo:r']);
       await setMojo(firstUser.userId, { amount: 1500, target: 2000 });
-      const response = await request(app).get('/api/v1/mojo').set('Authorization', `Bearer ${token}`);
+      const response = await request(app)
+        .get('/api/v1/mojo')
+        .set('Authorization', `Bearer ${token}`);
       expect(response.status).toBe(200);
       expect(response.body).toEqual({
         amountMinor: 150000,
@@ -1629,7 +1646,9 @@ describe('v1 API authentication and PAT management', () => {
       const stored = await getUsersDb().get(firstUser.userId);
       expect(stored.data.mojo.amount).toBe(1500);
       expect(stored.data.mojo.target).toBe(3000);
-      const auditEntries = await queryAuditEntries(getAuditDb(), firstUser.userId, { resource: 'mojo' });
+      const auditEntries = await queryAuditEntries(getAuditDb(), firstUser.userId, {
+        resource: 'mojo',
+      });
       expect(auditEntries).toEqual(
         expect.arrayContaining([
           expect.objectContaining({ actor: { type: 'token', tokenId }, method: 'PUT' }),
@@ -1659,7 +1678,9 @@ describe('v1 API authentication and PAT management', () => {
       expect(putResponse.body.code).toBe('scope_insufficient');
 
       const { token: writeOnly } = await mojoToken(['mojo:w']);
-      const getResponse = await request(app).get('/api/v1/mojo').set('Authorization', `Bearer ${writeOnly}`);
+      const getResponse = await request(app)
+        .get('/api/v1/mojo')
+        .set('Authorization', `Bearer ${writeOnly}`);
       expect(getResponse.status).toBe(403);
       expect(getResponse.body.code).toBe('scope_insufficient');
     });
@@ -1668,7 +1689,9 @@ describe('v1 API authentication and PAT management', () => {
       const { token } = await mojoToken(['mojo:r']);
       await setMojo(firstUser.userId, { amount: 1000, target: 2000 });
       await setMojo(secondUser.userId, { amount: 999900, target: 999900 });
-      const response = await request(app).get('/api/v1/mojo').set('Authorization', `Bearer ${token}`);
+      const response = await request(app)
+        .get('/api/v1/mojo')
+        .set('Authorization', `Bearer ${token}`);
       expect(response.status).toBe(200);
       expect(response.body.amountMinor).toBe(100000);
     });
@@ -1711,7 +1734,9 @@ describe('v1 API authentication and PAT management', () => {
           updatedAt: '2026-01-01T00:00:00.000Z',
         },
       ]);
-      const response = await request(app).get('/api/v1/smile').set('Authorization', `Bearer ${token}`);
+      const response = await request(app)
+        .get('/api/v1/smile')
+        .set('Authorization', `Bearer ${token}`);
       expect(response.status).toBe(200);
       const project = response.body.projects.find((p) => p.id === 'smile_list_1');
       expect(project.buckets[0]).toMatchObject({ targetMinor: 150000, amountMinor: 20000 });
@@ -1727,7 +1752,9 @@ describe('v1 API authentication and PAT management', () => {
       expect(response.status).toBe(201);
       expect(response.body.buckets).toHaveLength(1);
       expect(response.body.totals.targetMinor).toBe(150000);
-      const auditEntries = await queryAuditEntries(getAuditDb(), firstUser.userId, { resource: 'smile' });
+      const auditEntries = await queryAuditEntries(getAuditDb(), firstUser.userId, {
+        resource: 'smile',
+      });
       expect(auditEntries).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
@@ -1746,7 +1773,10 @@ describe('v1 API authentication and PAT management', () => {
         .set('Authorization', `Bearer ${token}`)
         .send({
           title: `Integration Custom ${Date.now()}`,
-          buckets: [{ title: 'Flights', targetMinor: 150000 }, { title: 'Hotel', targetMinor: 80000 }],
+          buckets: [
+            { title: 'Flights', targetMinor: 150000 },
+            { title: 'Hotel', targetMinor: 80000 },
+          ],
           links: [{ label: 'Trip site', url: 'https://example.com' }],
           actionItems: [{ text: 'Book flights', priority: 'high' }],
           notes: [{ text: 'Remember passports' }],
@@ -1755,7 +1785,9 @@ describe('v1 API authentication and PAT management', () => {
       expect(response.body.buckets.map((b) => b.title)).toEqual(['Flights', 'Hotel']);
       expect(response.body.totals.targetMinor).toBe(230000);
       expect(response.body.links).toEqual([{ label: 'Trip site', url: 'https://example.com' }]);
-      expect(response.body.actionItems).toEqual([{ text: 'Book flights', done: false, priority: 'high' }]);
+      expect(response.body.actionItems).toEqual([
+        { text: 'Book flights', done: false, priority: 'high' },
+      ]);
       expect(response.body.notes).toEqual([
         { text: 'Remember passports', createdAt: expect.any(String) },
       ]);
@@ -1824,7 +1856,9 @@ describe('v1 API authentication and PAT management', () => {
       expect(postResponse.body.code).toBe('scope_insufficient');
 
       const { token: writeOnly } = await smileToken(['smile:w']);
-      const getResponse = await request(app).get('/api/v1/smile').set('Authorization', `Bearer ${writeOnly}`);
+      const getResponse = await request(app)
+        .get('/api/v1/smile')
+        .set('Authorization', `Bearer ${writeOnly}`);
       expect(getResponse.status).toBe(403);
       expect(getResponse.body.code).toBe('scope_insufficient');
     });
@@ -1846,7 +1880,9 @@ describe('v1 API authentication and PAT management', () => {
           updatedAt: '2026-01-01T00:00:00.000Z',
         },
       ]);
-      const response = await request(app).get('/api/v1/smile').set('Authorization', `Bearer ${token}`);
+      const response = await request(app)
+        .get('/api/v1/smile')
+        .set('Authorization', `Bearer ${token}`);
       expect(response.status).toBe(200);
       expect(response.body.projects).not.toEqual(
         expect.arrayContaining([expect.objectContaining({ id: 'smile_second_user' })]),
@@ -1867,7 +1903,11 @@ describe('v1 API authentication and PAT management', () => {
       const response = await request(app)
         .post('/api/v1/smile')
         .set('Authorization', `Bearer ${token}`)
-        .send({ title: `Smile Id Test ${Date.now()}-${Math.random()}`, targetMinor: 100000, ...overrides });
+        .send({
+          title: `Smile Id Test ${Date.now()}-${Math.random()}`,
+          targetMinor: 100000,
+          ...overrides,
+        });
       expect(response.status).toBe(201);
       return response.body;
     }
@@ -1901,10 +1941,16 @@ describe('v1 API authentication and PAT management', () => {
       expect(response.status).toBe(200);
       expect(response.body.phase).toBe('ready');
       expect(response.body.title).toBe(created.title);
-      const auditEntries = await queryAuditEntries(getAuditDb(), firstUser.userId, { resource: 'smile' });
+      const auditEntries = await queryAuditEntries(getAuditDb(), firstUser.userId, {
+        resource: 'smile',
+      });
       expect(auditEntries).toEqual(
         expect.arrayContaining([
-          expect.objectContaining({ actor: { type: 'token', tokenId }, method: 'PATCH', resourceId: created.id }),
+          expect.objectContaining({
+            actor: { type: 'token', tokenId },
+            method: 'PATCH',
+            resourceId: created.id,
+          }),
         ]),
       );
     });
@@ -1918,12 +1964,21 @@ describe('v1 API authentication and PAT management', () => {
         .set('Authorization', `Bearer ${token}`)
         .send({
           buckets: [
-            { id: existingBucketId, title: created.buckets[0].title, targetMinor: 200000, amountMinor: 50000 },
+            {
+              id: existingBucketId,
+              title: created.buckets[0].title,
+              targetMinor: 200000,
+              amountMinor: 50000,
+            },
             { title: 'New Bucket', targetMinor: 30000 },
           ],
         });
       expect(response.status).toBe(200);
-      expect(response.body.buckets[0]).toMatchObject({ id: existingBucketId, targetMinor: 200000, amountMinor: 50000 });
+      expect(response.body.buckets[0]).toMatchObject({
+        id: existingBucketId,
+        targetMinor: 200000,
+        amountMinor: 50000,
+      });
       expect(response.body.buckets[1].id).not.toBe(existingBucketId);
       expect(response.body.totals.targetMinor).toBe(230000);
     });
@@ -2028,10 +2083,16 @@ describe('v1 API authentication and PAT management', () => {
         .get(`/api/v1/smile/${created.id}`)
         .set('Authorization', `Bearer ${token}`);
       expect(getResponse.status).toBe(404);
-      const auditEntries = await queryAuditEntries(getAuditDb(), firstUser.userId, { resource: 'smile' });
+      const auditEntries = await queryAuditEntries(getAuditDb(), firstUser.userId, {
+        resource: 'smile',
+      });
       expect(auditEntries).toEqual(
         expect.arrayContaining([
-          expect.objectContaining({ actor: { type: 'token', tokenId }, method: 'DELETE', resourceId: created.id }),
+          expect.objectContaining({
+            actor: { type: 'token', tokenId },
+            method: 'DELETE',
+            resourceId: created.id,
+          }),
         ]),
       );
     });
@@ -2069,11 +2130,15 @@ describe('v1 API authentication and PAT management', () => {
       expect(deleteResponse.body.code).toBe('scope_insufficient');
     });
 
-    it('does not let one user read, patch, or delete another user\'s Smile project', async () => {
+    it("does not let one user read, patch, or delete another user's Smile project", async () => {
       const { token: ownerToken } = await smileToken(['smile:w']);
       const created = await createProject(ownerToken);
 
-      const otherUserSmileToken = await sessionRequest('post', '/api/v1/auth/tokens', secondUser.token).send({
+      const otherUserSmileToken = await sessionRequest(
+        'post',
+        '/api/v1/auth/tokens',
+        secondUser.token,
+      ).send({
         name: `smile-cross-user-${Date.now()}`,
         scopes: ['smile:r', 'smile:w'],
       });
@@ -2110,7 +2175,11 @@ describe('v1 API authentication and PAT management', () => {
       const response = await request(app)
         .post('/api/v1/smile')
         .set('Authorization', `Bearer ${token}`)
-        .send({ title: `Smile Plan Test ${Date.now()}-${Math.random()}`, targetMinor: 300000, ...overrides });
+        .send({
+          title: `Smile Plan Test ${Date.now()}-${Math.random()}`,
+          targetMinor: 300000,
+          ...overrides,
+        });
       expect(response.status).toBe(201);
       return response.body;
     }
@@ -2146,7 +2215,9 @@ describe('v1 API authentication and PAT management', () => {
       expect(project.body.plannedSubscriptions).toHaveLength(1);
       expect(project.body.plannedSubscriptions[0].id).toBe(response.body.id);
 
-      const auditEntries = await queryAuditEntries(getAuditDb(), firstUser.userId, { resource: 'smile' });
+      const auditEntries = await queryAuditEntries(getAuditDb(), firstUser.userId, {
+        resource: 'smile',
+      });
       expect(auditEntries).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
@@ -2228,7 +2299,11 @@ describe('v1 API authentication and PAT management', () => {
     it("keeps payment plan creation isolated to the caller's own project", async () => {
       const { token } = await smileToken(['smile:r', 'smile:w']);
       const created = await createProject(token);
-      const otherCreated = await sessionRequest('post', '/api/v1/auth/tokens', secondUser.token).send({
+      const otherCreated = await sessionRequest(
+        'post',
+        '/api/v1/auth/tokens',
+        secondUser.token,
+      ).send({
         name: `smile-plan-other-${Date.now()}`,
         scopes: ['smile:w'],
       });
@@ -2277,7 +2352,9 @@ describe('v1 API authentication and PAT management', () => {
           updatedAt: '2026-01-01T00:00:00.000Z',
         },
       ]);
-      const response = await request(app).get('/api/v1/fire').set('Authorization', `Bearer ${token}`);
+      const response = await request(app)
+        .get('/api/v1/fire')
+        .set('Authorization', `Bearer ${token}`);
       expect(response.status).toBe(200);
       const project = response.body.projects.find((p) => p.id === 'fire_list_1');
       expect(project.buckets[0]).toMatchObject({ targetMinor: 150000, amountMinor: 20000 });
@@ -2293,7 +2370,9 @@ describe('v1 API authentication and PAT management', () => {
       expect(response.status).toBe(201);
       expect(response.body.buckets).toHaveLength(1);
       expect(response.body.totals.targetMinor).toBe(150000);
-      const auditEntries = await queryAuditEntries(getAuditDb(), firstUser.userId, { resource: 'fire' });
+      const auditEntries = await queryAuditEntries(getAuditDb(), firstUser.userId, {
+        resource: 'fire',
+      });
       expect(auditEntries).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
@@ -2312,7 +2391,10 @@ describe('v1 API authentication and PAT management', () => {
         .set('Authorization', `Bearer ${token}`)
         .send({
           title: `Integration Custom ${Date.now()}`,
-          buckets: [{ title: 'Flights', targetMinor: 150000 }, { title: 'Hotel', targetMinor: 80000 }],
+          buckets: [
+            { title: 'Flights', targetMinor: 150000 },
+            { title: 'Hotel', targetMinor: 80000 },
+          ],
           links: [{ label: 'Trip site', url: 'https://example.com' }],
           actionItems: [{ text: 'Book flights', priority: 'high' }],
           notes: [{ text: 'Remember passports' }],
@@ -2321,7 +2403,9 @@ describe('v1 API authentication and PAT management', () => {
       expect(response.body.buckets.map((b) => b.title)).toEqual(['Flights', 'Hotel']);
       expect(response.body.totals.targetMinor).toBe(230000);
       expect(response.body.links).toEqual([{ label: 'Trip site', url: 'https://example.com' }]);
-      expect(response.body.actionItems).toEqual([{ text: 'Book flights', done: false, priority: 'high' }]);
+      expect(response.body.actionItems).toEqual([
+        { text: 'Book flights', done: false, priority: 'high' },
+      ]);
       expect(response.body.notes).toEqual([
         { text: 'Remember passports', createdAt: expect.any(String) },
       ]);
@@ -2390,7 +2474,9 @@ describe('v1 API authentication and PAT management', () => {
       expect(postResponse.body.code).toBe('scope_insufficient');
 
       const { token: writeOnly } = await fireToken(['fire:w']);
-      const getResponse = await request(app).get('/api/v1/fire').set('Authorization', `Bearer ${writeOnly}`);
+      const getResponse = await request(app)
+        .get('/api/v1/fire')
+        .set('Authorization', `Bearer ${writeOnly}`);
       expect(getResponse.status).toBe(403);
       expect(getResponse.body.code).toBe('scope_insufficient');
     });
@@ -2412,7 +2498,9 @@ describe('v1 API authentication and PAT management', () => {
           updatedAt: '2026-01-01T00:00:00.000Z',
         },
       ]);
-      const response = await request(app).get('/api/v1/fire').set('Authorization', `Bearer ${token}`);
+      const response = await request(app)
+        .get('/api/v1/fire')
+        .set('Authorization', `Bearer ${token}`);
       expect(response.status).toBe(200);
       expect(response.body.projects).not.toEqual(
         expect.arrayContaining([expect.objectContaining({ id: 'fire_second_user' })]),
@@ -2433,7 +2521,11 @@ describe('v1 API authentication and PAT management', () => {
       const response = await request(app)
         .post('/api/v1/fire')
         .set('Authorization', `Bearer ${token}`)
-        .send({ title: `Fire Id Test ${Date.now()}-${Math.random()}`, targetMinor: 100000, ...overrides });
+        .send({
+          title: `Fire Id Test ${Date.now()}-${Math.random()}`,
+          targetMinor: 100000,
+          ...overrides,
+        });
       expect(response.status).toBe(201);
       return response.body;
     }
@@ -2467,10 +2559,16 @@ describe('v1 API authentication and PAT management', () => {
       expect(response.status).toBe(200);
       expect(response.body.phase).toBe('ready');
       expect(response.body.title).toBe(created.title);
-      const auditEntries = await queryAuditEntries(getAuditDb(), firstUser.userId, { resource: 'fire' });
+      const auditEntries = await queryAuditEntries(getAuditDb(), firstUser.userId, {
+        resource: 'fire',
+      });
       expect(auditEntries).toEqual(
         expect.arrayContaining([
-          expect.objectContaining({ actor: { type: 'token', tokenId }, method: 'PATCH', resourceId: created.id }),
+          expect.objectContaining({
+            actor: { type: 'token', tokenId },
+            method: 'PATCH',
+            resourceId: created.id,
+          }),
         ]),
       );
     });
@@ -2484,12 +2582,21 @@ describe('v1 API authentication and PAT management', () => {
         .set('Authorization', `Bearer ${token}`)
         .send({
           buckets: [
-            { id: existingBucketId, title: created.buckets[0].title, targetMinor: 200000, amountMinor: 50000 },
+            {
+              id: existingBucketId,
+              title: created.buckets[0].title,
+              targetMinor: 200000,
+              amountMinor: 50000,
+            },
             { title: 'New Bucket', targetMinor: 30000 },
           ],
         });
       expect(response.status).toBe(200);
-      expect(response.body.buckets[0]).toMatchObject({ id: existingBucketId, targetMinor: 200000, amountMinor: 50000 });
+      expect(response.body.buckets[0]).toMatchObject({
+        id: existingBucketId,
+        targetMinor: 200000,
+        amountMinor: 50000,
+      });
       expect(response.body.buckets[1].id).not.toBe(existingBucketId);
       expect(response.body.totals.targetMinor).toBe(230000);
     });
@@ -2594,10 +2701,16 @@ describe('v1 API authentication and PAT management', () => {
         .get(`/api/v1/fire/${created.id}`)
         .set('Authorization', `Bearer ${token}`);
       expect(getResponse.status).toBe(404);
-      const auditEntries = await queryAuditEntries(getAuditDb(), firstUser.userId, { resource: 'fire' });
+      const auditEntries = await queryAuditEntries(getAuditDb(), firstUser.userId, {
+        resource: 'fire',
+      });
       expect(auditEntries).toEqual(
         expect.arrayContaining([
-          expect.objectContaining({ actor: { type: 'token', tokenId }, method: 'DELETE', resourceId: created.id }),
+          expect.objectContaining({
+            actor: { type: 'token', tokenId },
+            method: 'DELETE',
+            resourceId: created.id,
+          }),
         ]),
       );
     });
@@ -2635,11 +2748,15 @@ describe('v1 API authentication and PAT management', () => {
       expect(deleteResponse.body.code).toBe('scope_insufficient');
     });
 
-    it('does not let one user read, patch, or delete another user\'s Fire project', async () => {
+    it("does not let one user read, patch, or delete another user's Fire project", async () => {
       const { token: ownerToken } = await fireToken(['fire:w']);
       const created = await createProject(ownerToken);
 
-      const otherUserFireToken = await sessionRequest('post', '/api/v1/auth/tokens', secondUser.token).send({
+      const otherUserFireToken = await sessionRequest(
+        'post',
+        '/api/v1/auth/tokens',
+        secondUser.token,
+      ).send({
         name: `fire-cross-user-${Date.now()}`,
         scopes: ['fire:r', 'fire:w'],
       });
@@ -2676,7 +2793,11 @@ describe('v1 API authentication and PAT management', () => {
       const response = await request(app)
         .post('/api/v1/fire')
         .set('Authorization', `Bearer ${token}`)
-        .send({ title: `Fire Plan Test ${Date.now()}-${Math.random()}`, targetMinor: 300000, ...overrides });
+        .send({
+          title: `Fire Plan Test ${Date.now()}-${Math.random()}`,
+          targetMinor: 300000,
+          ...overrides,
+        });
       expect(response.status).toBe(201);
       return response.body;
     }
@@ -2712,7 +2833,9 @@ describe('v1 API authentication and PAT management', () => {
       expect(project.body.plannedSubscriptions).toHaveLength(1);
       expect(project.body.plannedSubscriptions[0].id).toBe(response.body.id);
 
-      const auditEntries = await queryAuditEntries(getAuditDb(), firstUser.userId, { resource: 'fire' });
+      const auditEntries = await queryAuditEntries(getAuditDb(), firstUser.userId, {
+        resource: 'fire',
+      });
       expect(auditEntries).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
@@ -2794,7 +2917,11 @@ describe('v1 API authentication and PAT management', () => {
     it("keeps payment plan creation isolated to the caller's own project", async () => {
       const { token } = await fireToken(['fire:r', 'fire:w']);
       const created = await createProject(token);
-      const otherCreated = await sessionRequest('post', '/api/v1/auth/tokens', secondUser.token).send({
+      const otherCreated = await sessionRequest(
+        'post',
+        '/api/v1/auth/tokens',
+        secondUser.token,
+      ).send({
         name: `fire-plan-other-${Date.now()}`,
         scopes: ['fire:w'],
       });
@@ -2835,7 +2962,9 @@ describe('v1 API authentication and PAT management', () => {
       expect(created.body.amountMinor).toBe(800000);
       expect(created.body.id).toMatch(/^assets_/);
 
-      const list = await request(app).get('/api/v1/balance/assets').set('Authorization', `Bearer ${token}`);
+      const list = await request(app)
+        .get('/api/v1/balance/assets')
+        .set('Authorization', `Bearer ${token}`);
       expect(list.status).toBe(200);
       expect(list.body.assets).toEqual(
         expect.arrayContaining([expect.objectContaining({ id: created.body.id })]),
@@ -2846,7 +2975,11 @@ describe('v1 API authentication and PAT management', () => {
       });
       expect(auditEntries).toEqual(
         expect.arrayContaining([
-          expect.objectContaining({ actor: { type: 'token', tokenId }, method: 'POST', resourceId: created.body.id }),
+          expect.objectContaining({
+            actor: { type: 'token', tokenId },
+            method: 'POST',
+            resourceId: created.body.id,
+          }),
         ]),
       );
     });
@@ -2899,7 +3032,11 @@ describe('v1 API authentication and PAT management', () => {
       });
       expect(auditEntries).toEqual(
         expect.arrayContaining([
-          expect.objectContaining({ actor: { type: 'token', tokenId }, method: 'PATCH', resourceId: created.body.id }),
+          expect.objectContaining({
+            actor: { type: 'token', tokenId },
+            method: 'PATCH',
+            resourceId: created.body.id,
+          }),
         ]),
       );
     });
@@ -2926,7 +3063,11 @@ describe('v1 API authentication and PAT management', () => {
       });
       expect(auditEntries).toEqual(
         expect.arrayContaining([
-          expect.objectContaining({ actor: { type: 'token', tokenId }, method: 'DELETE', resourceId: created.body.id }),
+          expect.objectContaining({
+            actor: { type: 'token', tokenId },
+            method: 'DELETE',
+            resourceId: created.body.id,
+          }),
         ]),
       );
     });
@@ -2983,7 +3124,11 @@ describe('v1 API authentication and PAT management', () => {
 
     it('keeps assets isolated to the authenticated user document', async () => {
       const { token } = await balanceToken(['balance:r', 'balance:w']);
-      const otherCreated = await sessionRequest('post', '/api/v1/auth/tokens', secondUser.token).send({
+      const otherCreated = await sessionRequest(
+        'post',
+        '/api/v1/auth/tokens',
+        secondUser.token,
+      ).send({
         name: `balance-other-${Date.now()}`,
         scopes: ['balance:w'],
       });
@@ -2993,7 +3138,9 @@ describe('v1 API authentication and PAT management', () => {
         .send({ tag: `Only Other User Asset ${Date.now()}`, amountMinor: 999900 });
       expect(otherAsset.status).toBe(201);
 
-      const list = await request(app).get('/api/v1/balance/assets').set('Authorization', `Bearer ${token}`);
+      const list = await request(app)
+        .get('/api/v1/balance/assets')
+        .set('Authorization', `Bearer ${token}`);
       expect(list.body.assets).not.toEqual(
         expect.arrayContaining([expect.objectContaining({ id: otherAsset.body.id })]),
       );
@@ -4367,7 +4514,9 @@ describe('v1 API authentication and PAT management', () => {
         .get('/api/v1/transactions')
         .set('Authorization', `Bearer ${token}`);
       expect(transactions.body.transactions).toEqual(
-        expect.arrayContaining([expect.objectContaining({ date: '2026-01-01', amountMinor: -1000 })]),
+        expect.arrayContaining([
+          expect.objectContaining({ date: '2026-01-01', amountMinor: -1000 }),
+        ]),
       );
     });
 
@@ -4415,7 +4564,7 @@ describe('v1 API authentication and PAT management', () => {
       expect(matching[0].amountMinor).toBe(-2000);
     });
 
-    it('stops generating once a Smile project reaches its target, even when it is not the first project (proves the fix for the original app\'s index-0-only cap bug)', async () => {
+    it("stops generating once a Smile project reaches its target, even when it is not the first project (proves the fix for the original app's index-0-only cap bug)", async () => {
       const { token } = await refreshToken([
         'subscriptions:r',
         'subscriptions:w',
@@ -4470,13 +4619,23 @@ describe('v1 API authentication and PAT management', () => {
       expect(response.body.code).toBe('scope_insufficient');
     });
 
-    it('only generates transactions from the caller\'s own subscriptions, not another user\'s', async () => {
-      const { token: tokenA } = await refreshToken(['subscriptions:r', 'subscriptions:w', 'transactions:r']);
-      const { token: tokenB } = await refreshToken(['subscriptions:r', 'subscriptions:w', 'transactions:r']);
+    it("only generates transactions from the caller's own subscriptions, not another user's", async () => {
+      const { token: tokenA } = await refreshToken([
+        'subscriptions:r',
+        'subscriptions:w',
+        'transactions:r',
+      ]);
+      const { token: tokenB } = await refreshToken([
+        'subscriptions:r',
+        'subscriptions:w',
+        'transactions:r',
+      ]);
       await request(app)
         .post('/api/v1/subscriptions')
         .set('Authorization', `Bearer ${tokenB}`)
-        .send(subscriptionBody({ category: `@RefreshIsolation${Date.now()}`, endDate: '2026-01-01' }));
+        .send(
+          subscriptionBody({ category: `@RefreshIsolation${Date.now()}`, endDate: '2026-01-01' }),
+        );
 
       // User A has no subscriptions of their own — refreshing must not see or apply user B's.
       const refreshA = await request(app)
@@ -4506,7 +4665,12 @@ describe('v1 API authentication and PAT management', () => {
     }
 
     function budgetBody(overrides = {}) {
-      return { date: '2026-01', tag: `@BudgetTest${Date.now()}${Math.random()}`, amountMinor: 30000, ...overrides };
+      return {
+        date: '2026-01',
+        tag: `@BudgetTest${Date.now()}${Math.random()}`,
+        amountMinor: 30000,
+        ...overrides,
+      };
     }
 
     it('creates a budget row and lists it, and audit logs the write', async () => {
@@ -4706,7 +4870,11 @@ describe('v1 API authentication and PAT management', () => {
 
     it('keeps budget rows isolated to the authenticated user document', async () => {
       const { token } = await budgetToken(['budget:r', 'budget:w']);
-      const otherCreated = await sessionRequest('post', '/api/v1/auth/tokens', secondUser.token).send({
+      const otherCreated = await sessionRequest(
+        'post',
+        '/api/v1/auth/tokens',
+        secondUser.token,
+      ).send({
         name: `budget-other-${Date.now()}`,
         scopes: ['budget:w'],
       });
@@ -4765,9 +4933,7 @@ describe('v1 API authentication and PAT management', () => {
       expect(response.status).toBe(200);
       expect(response.body).toEqual({ targetMonth: '2026-04', rowsAdded: 3 });
 
-      const list = await request(app)
-        .get('/api/v1/budget')
-        .set('Authorization', `Bearer ${token}`);
+      const list = await request(app).get('/api/v1/budget').set('Authorization', `Bearer ${token}`);
       const months = list.body.budget.map((row) => row.date).sort();
       expect(months).toEqual(['2026-01', '2026-02', '2026-03', '2026-04']);
     });
@@ -4788,9 +4954,7 @@ describe('v1 API authentication and PAT management', () => {
         .set('Authorization', `Bearer ${token}`)
         .send({ targetMonth: '2026-03' });
 
-      const list = await request(app)
-        .get('/api/v1/budget')
-        .set('Authorization', `Bearer ${token}`);
+      const list = await request(app).get('/api/v1/budget').set('Authorization', `Bearer ${token}`);
       const february = list.body.budget.find((row) => row.date === '2026-02');
       const march = list.body.budget.find((row) => row.date === '2026-03');
       expect(february.amountMinor).toBe(99900);
@@ -4879,9 +5043,7 @@ describe('v1 API authentication and PAT management', () => {
       expect(response.status).toBe(200);
       expect(response.body).toEqual({ month: '2026-01', deletedCount: 2 });
 
-      const list = await request(app)
-        .get('/api/v1/budget')
-        .set('Authorization', `Bearer ${token}`);
+      const list = await request(app).get('/api/v1/budget').set('Authorization', `Bearer ${token}`);
       expect(list.body.budget).toHaveLength(1);
       expect(list.body.budget[0].date).toBe('2026-02');
     });
@@ -4949,6 +5111,149 @@ describe('v1 API authentication and PAT management', () => {
         .get('/api/v1/budget')
         .set('Authorization', `Bearer ${tokenB}`);
       expect(listB.body.budget).toHaveLength(1);
+    });
+  });
+
+  describe('POST /budget/from-subscriptions', () => {
+    // Fresh user per test — this endpoint reads every subscription on the account, so a shared
+    // account would leak other tests' subscriptions into the computed budget rows.
+    async function budgetFromSubsToken(scopes) {
+      const user = await registerTestUser(`_budget_from_subs_${Date.now()}_${Math.random()}`);
+      const created = await sessionRequest('post', '/api/v1/auth/tokens', user.token).send({
+        name: `budget-from-subs-agent-${Date.now()}-${Math.random()}`,
+        scopes,
+      });
+      return { ...created.body, sessionToken: user.token };
+    }
+
+    it('populates a budget row using the monthly-equivalent amount for a quarterly subscription', async () => {
+      const { token } = await budgetFromSubsToken(['subscriptions:w', 'budget:r', 'budget:w']);
+      await request(app)
+        .post('/api/v1/subscriptions')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          account: 'Daily',
+          amountMinor: -30000,
+          startDate: '2026-01-01',
+          endDate: '2026-01-01',
+          category: '@Insurance',
+          frequency: 'quarterly',
+        });
+
+      const response = await request(app)
+        .post('/api/v1/budget/from-subscriptions')
+        .set('Authorization', `Bearer ${token}`);
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({ rowsWritten: 1 });
+
+      const list = await request(app)
+        .get('/api/v1/budget?month=2026-01')
+        .set('Authorization', `Bearer ${token}`);
+      expect(list.body.budget).toEqual([
+        expect.objectContaining({ date: '2026-01', tag: '@Insurance', amountMinor: 10000 }),
+      ]);
+    });
+
+    it('unconditionally overwrites an existing row for the computed (date, tag) pair', async () => {
+      const { token } = await budgetFromSubsToken(['subscriptions:w', 'budget:r', 'budget:w']);
+      await request(app)
+        .post('/api/v1/budget')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ date: '2026-01', tag: '@Streaming', amountMinor: 1 });
+      await request(app)
+        .post('/api/v1/subscriptions')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          account: 'Daily',
+          amountMinor: -1000,
+          startDate: '2026-01-01',
+          endDate: '2026-01-01',
+          category: '@Streaming',
+          frequency: 'monthly',
+        });
+
+      await request(app)
+        .post('/api/v1/budget/from-subscriptions')
+        .set('Authorization', `Bearer ${token}`);
+
+      const list = await request(app)
+        .get('/api/v1/budget?month=2026-01')
+        .set('Authorization', `Bearer ${token}`);
+      expect(list.body.budget).toHaveLength(1);
+      expect(list.body.budget[0].amountMinor).toBe(1000);
+    });
+
+    it('skips a subscription on the Income account', async () => {
+      const { token } = await budgetFromSubsToken(['subscriptions:w', 'budget:r', 'budget:w']);
+      await request(app)
+        .post('/api/v1/subscriptions')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          account: 'Income',
+          amountMinor: 500000,
+          startDate: '2026-01-01',
+          endDate: '2026-01-01',
+          category: '@Salary',
+          frequency: 'monthly',
+        });
+
+      const response = await request(app)
+        .post('/api/v1/budget/from-subscriptions')
+        .set('Authorization', `Bearer ${token}`);
+      expect(response.body).toEqual({ rowsWritten: 0 });
+    });
+
+    it('rejects requests without the budget:w scope', async () => {
+      const { token } = await budgetFromSubsToken(['budget:r']);
+      const response = await request(app)
+        .post('/api/v1/budget/from-subscriptions')
+        .set('Authorization', `Bearer ${token}`);
+      expect(response.status).toBe(403);
+      expect(response.body.code).toBe('scope_insufficient');
+    });
+
+    it("reads and applies the caller's real subscriptions with a budget:w-only token (no subscriptions:r/w grant)", async () => {
+      const { token, sessionToken } = await budgetFromSubsToken(['budget:w']);
+      await sessionRequest('post', '/api/v1/subscriptions', sessionToken).send({
+        account: 'Daily',
+        amountMinor: -1200,
+        startDate: '2026-01-01',
+        endDate: '2026-01-01',
+        category: '@Domain',
+        frequency: 'yearly',
+      });
+
+      const response = await request(app)
+        .post('/api/v1/budget/from-subscriptions')
+        .set('Authorization', `Bearer ${token}`);
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({ rowsWritten: 1 });
+
+      const list = await sessionRequest('get', '/api/v1/budget?month=2026-01', sessionToken);
+      expect(list.body.budget).toEqual([
+        expect.objectContaining({ date: '2026-01', tag: '@Domain', amountMinor: 100 }),
+      ]);
+    });
+
+    it("only uses the caller's own subscriptions, not another user's", async () => {
+      const { token: tokenA } = await budgetFromSubsToken(['budget:r', 'budget:w']);
+      const { token: tokenB } = await budgetFromSubsToken(['subscriptions:w']);
+      await request(app)
+        .post('/api/v1/subscriptions')
+        .set('Authorization', `Bearer ${tokenB}`)
+        .send({
+          account: 'Daily',
+          amountMinor: -1000,
+          startDate: '2026-01-01',
+          endDate: '2026-01-01',
+          category: '@OnlyB',
+          frequency: 'monthly',
+        });
+
+      const response = await request(app)
+        .post('/api/v1/budget/from-subscriptions')
+        .set('Authorization', `Bearer ${tokenA}`);
+      expect(response.body).toEqual({ rowsWritten: 0 });
     });
   });
 
@@ -5069,7 +5374,13 @@ describe('v1 API authentication and PAT management', () => {
         .set('Idempotency-Key', key)
         .send({
           operations: [
-            { op: 'create', account: 'Daily', amountMinor: -1, startDate: '2026-01-01', category: '@A' },
+            {
+              op: 'create',
+              account: 'Daily',
+              amountMinor: -1,
+              startDate: '2026-01-01',
+              category: '@A',
+            },
           ],
         });
 
@@ -5079,7 +5390,13 @@ describe('v1 API authentication and PAT management', () => {
         .set('Idempotency-Key', key)
         .send({
           operations: [
-            { op: 'create', account: 'Daily', amountMinor: -2, startDate: '2026-01-01', category: '@B' },
+            {
+              op: 'create',
+              account: 'Daily',
+              amountMinor: -2,
+              startDate: '2026-01-01',
+              category: '@B',
+            },
           ],
         });
       expect(mismatched.status).toBe(409);

@@ -25,9 +25,10 @@
  */
 
 const crypto = require('crypto');
-const { toMinorUnits } = require('@money/domain');
+const { toMinorUnits, computeBudgetRowsFromSubscriptions } = require('@money/domain');
 const { getEncryptionSession } = require('../services/encryption-session');
 const { decryptValue } = require('./transaction-repository');
+const { decryptAllSubscriptions } = require('./subscription-repository');
 const { writeValue, toStoredMoney } = require('../services/transaction-derived-state');
 
 const MAX_WRITE_RETRIES = 10;
@@ -340,6 +341,45 @@ async function copyBudget(deps, userId, { fromMonth, toMonth }) {
   });
 }
 
+/**
+ * `POST /budget/from-subscriptions` — populates budget rows from active
+ * subscriptions, converting each to its real monthly-equivalent amount by
+ * frequency (see `packages/domain/src/transactions/budget-from-subscriptions.ts`
+ * for the formula and the over-budgeting bug this corrects in the original
+ * app). Unconditionally overwrites any existing row for a computed
+ * (date, tag) pair, matching the original's own overwrite behavior.
+ */
+async function fromSubscriptionsBudget(deps, userId, { now = new Date() } = {}) {
+  return withBudgetWrite(deps, userId, ({ data, rawRows, session, schemaVersion }) => {
+    const rawSubscriptions = data.subscriptions || [];
+    if (!Array.isArray(rawSubscriptions)) throw new Error('Stored subscriptions must be an array');
+    const subscriptions = decryptAllSubscriptions(rawSubscriptions, session, schemaVersion);
+    const computedRows = computeBudgetRowsFromSubscriptions(subscriptions, now);
+    if (computedRows.length === 0) {
+      return { skipWrite: true, result: { rowsWritten: 0 } };
+    }
+
+    let working = decryptAllBudgetRows(rawRows, session, schemaVersion);
+    for (const computedRow of computedRows) {
+      const index = working.findIndex(
+        (row) => row.date === computedRow.date && row.tag === computedRow.tag,
+      );
+      if (index === -1) {
+        working = [...working, { id: `budget_${crypto.randomUUID()}`, ...computedRow }];
+      } else {
+        working = working.map((row, i) =>
+          i === index ? { ...row, amountMinor: computedRow.amountMinor } : row,
+        );
+      }
+    }
+
+    return {
+      updatedRawRows: working.map((row) => encryptBudgetRow(row, session, schemaVersion)),
+      result: { rowsWritten: computedRows.length },
+    };
+  });
+}
+
 module.exports = {
   listBudget,
   getBudgetRow,
@@ -347,6 +387,7 @@ module.exports = {
   updateBudgetRow,
   deleteBudgetRow,
   deleteBudgetMonth,
+  fromSubscriptionsBudget,
   fillForwardBudget,
   copyBudget,
   // Internals re-exported for the fill-forward/copy/from-subscriptions modules.

@@ -108,6 +108,7 @@ const {
   deleteBudgetMonth,
   fillForwardBudget,
   copyBudget,
+  fromSubscriptionsBudget,
 } = require('../repositories/budget-repository');
 const { getUsersDb, getAuthDb } = require('../config/db');
 const { getEncryptionSession } = require('../services/encryption-session');
@@ -240,7 +241,9 @@ function isNonEmptyString(value) {
 }
 
 function validateFundLink(link) {
-  return link && typeof link === 'object' && isNonEmptyString(link.label) && isNonEmptyString(link.url);
+  return (
+    link && typeof link === 'object' && isNonEmptyString(link.label) && isNonEmptyString(link.url)
+  );
 }
 
 function validateFundNote(note) {
@@ -276,7 +279,10 @@ function validateFundBucketInput(bucket) {
   if (!Number.isInteger(bucket.targetMinor) || bucket.targetMinor <= 0) {
     return 'Each bucket requires a positive integer targetMinor.';
   }
-  if (bucket.amountMinor !== undefined && (!Number.isInteger(bucket.amountMinor) || bucket.amountMinor < 0)) {
+  if (
+    bucket.amountMinor !== undefined &&
+    (!Number.isInteger(bucket.amountMinor) || bucket.amountMinor < 0)
+  ) {
     return "Each bucket's amountMinor must be a non-negative integer.";
   }
   // `id` is only meaningful on PATCH (preserves an existing bucket's identity
@@ -322,7 +328,10 @@ function validateCreateSmileProjectInput(input) {
     if (!Number.isInteger(input.targetMinor) || input.targetMinor <= 0) {
       return 'targetMinor must be a positive integer.';
     }
-    if (input.amountMinor !== undefined && (!Number.isInteger(input.amountMinor) || input.amountMinor < 0)) {
+    if (
+      input.amountMinor !== undefined &&
+      (!Number.isInteger(input.amountMinor) || input.amountMinor < 0)
+    ) {
       return 'amountMinor must be a non-negative integer.';
     }
   }
@@ -412,7 +421,10 @@ function validatePatchSmileProjectInput(input) {
     }
   }
   if (input.actionItems !== undefined) {
-    if (!Array.isArray(input.actionItems) || !input.actionItems.every(validateUpdateFundActionItem)) {
+    if (
+      !Array.isArray(input.actionItems) ||
+      !input.actionItems.every(validateUpdateFundActionItem)
+    ) {
       return 'actionItems must be an array of {text, done, priority?} objects — done is required here since this replaces the whole array.';
     }
   }
@@ -436,7 +448,10 @@ function validateCreateFireProjectInput(input) {
     if (!Number.isInteger(input.targetMinor) || input.targetMinor <= 0) {
       return 'targetMinor must be a positive integer.';
     }
-    if (input.amountMinor !== undefined && (!Number.isInteger(input.amountMinor) || input.amountMinor < 0)) {
+    if (
+      input.amountMinor !== undefined &&
+      (!Number.isInteger(input.amountMinor) || input.amountMinor < 0)
+    ) {
       return 'amountMinor must be a non-negative integer.';
     }
   }
@@ -526,7 +541,10 @@ function validatePatchFireProjectInput(input) {
     }
   }
   if (input.actionItems !== undefined) {
-    if (!Array.isArray(input.actionItems) || !input.actionItems.every(validateUpdateFundActionItem)) {
+    if (
+      !Array.isArray(input.actionItems) ||
+      !input.actionItems.every(validateUpdateFundActionItem)
+    ) {
       return 'actionItems must be an array of {text, done, priority?} objects — done is required here since this replaces the whole array.';
     }
   }
@@ -555,7 +573,10 @@ function validateCreatePaymentPlanInput(input) {
   }
   if (!isNonEmptyString(input.account)) return 'account must be a non-empty string.';
   if (input.selectedBucketIds !== undefined) {
-    if (!Array.isArray(input.selectedBucketIds) || !input.selectedBucketIds.every(isNonEmptyString)) {
+    if (
+      !Array.isArray(input.selectedBucketIds) ||
+      !input.selectedBucketIds.every(isNonEmptyString)
+    ) {
       return 'selectedBucketIds must be an array of non-empty strings.';
     }
   }
@@ -1558,7 +1579,10 @@ router.delete(
 
 router.get('/smile', requireScope('smile:r'), async (req, res, next) => {
   try {
-    const projects = await listSmileProjects({ usersDb: getUsersDb(), authDb: getAuthDb() }, req.userId);
+    const projects = await listSmileProjects(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+    );
     return res.json({ projects });
   } catch (error) {
     return next(error);
@@ -1568,7 +1592,13 @@ router.get('/smile', requireScope('smile:r'), async (req, res, next) => {
 router.post('/smile', requireScope('smile:w'), async (req, res, next) => {
   const validationError = validateCreateSmileProjectInput(req.body);
   if (validationError) {
-    return problem(res, 400, 'validation_invalid', 'Invalid Smile project request', validationError);
+    return problem(
+      res,
+      400,
+      'validation_invalid',
+      'Invalid Smile project request',
+      validationError,
+    );
   }
   try {
     const project = await createSmileProject(
@@ -1587,7 +1617,13 @@ router.post('/smile', requireScope('smile:w'), async (req, res, next) => {
     return res.status(201).json(project);
   } catch (error) {
     if (error.code === 'SMILE_DUPLICATE_TITLE') {
-      return problem(res, 400, 'validation_invalid', 'Invalid Smile project request', error.message);
+      return problem(
+        res,
+        400,
+        'validation_invalid',
+        'Invalid Smile project request',
+        error.message,
+      );
     }
     return next(error);
   }
@@ -1601,7 +1637,13 @@ router.get('/smile/:projectId', requireScope('smile:r'), async (req, res, next) 
       req.params.projectId,
     );
     if (!project) {
-      return problem(res, 404, 'not_found', 'Smile project not found', 'No matching Smile project exists.');
+      return problem(
+        res,
+        404,
+        'not_found',
+        'Smile project not found',
+        'No matching Smile project exists.',
+      );
     }
     return res.json(project);
   } catch (error) {
@@ -1612,7 +1654,13 @@ router.get('/smile/:projectId', requireScope('smile:r'), async (req, res, next) 
 router.patch('/smile/:projectId', requireScope('smile:w'), async (req, res, next) => {
   const validationError = validatePatchSmileProjectInput(req.body);
   if (validationError) {
-    return problem(res, 400, 'validation_invalid', 'Invalid Smile project request', validationError);
+    return problem(
+      res,
+      400,
+      'validation_invalid',
+      'Invalid Smile project request',
+      validationError,
+    );
   }
   try {
     const project = await updateSmileProject(
@@ -1622,7 +1670,13 @@ router.patch('/smile/:projectId', requireScope('smile:w'), async (req, res, next
       req.body,
     );
     if (!project) {
-      return problem(res, 404, 'not_found', 'Smile project not found', 'No matching Smile project exists.');
+      return problem(
+        res,
+        404,
+        'not_found',
+        'Smile project not found',
+        'No matching Smile project exists.',
+      );
     }
     await recordAuditEntry(getAuditDb(), {
       userId: req.userId,
@@ -1635,7 +1689,13 @@ router.patch('/smile/:projectId', requireScope('smile:w'), async (req, res, next
     return res.json(project);
   } catch (error) {
     if (error.code === 'SMILE_DUPLICATE_TITLE') {
-      return problem(res, 400, 'validation_invalid', 'Invalid Smile project request', error.message);
+      return problem(
+        res,
+        400,
+        'validation_invalid',
+        'Invalid Smile project request',
+        error.message,
+      );
     }
     return next(error);
   }
@@ -1649,7 +1709,13 @@ router.delete('/smile/:projectId', requireScope('smile:w'), async (req, res, nex
       req.params.projectId,
     );
     if (!deleted) {
-      return problem(res, 404, 'not_found', 'Smile project not found', 'No matching Smile project exists.');
+      return problem(
+        res,
+        404,
+        'not_found',
+        'Smile project not found',
+        'No matching Smile project exists.',
+      );
     }
     await recordAuditEntry(getAuditDb(), {
       userId: req.userId,
@@ -1678,7 +1744,13 @@ router.post('/smile/:projectId/payment-plan', requireScope('smile:w'), async (re
       req.body,
     );
     if (!plan) {
-      return problem(res, 404, 'not_found', 'Smile project not found', 'No matching Smile project exists.');
+      return problem(
+        res,
+        404,
+        'not_found',
+        'Smile project not found',
+        'No matching Smile project exists.',
+      );
     }
     await recordAuditEntry(getAuditDb(), {
       userId: req.userId,
@@ -1699,7 +1771,10 @@ router.post('/smile/:projectId/payment-plan', requireScope('smile:w'), async (re
 
 router.get('/fire', requireScope('fire:r'), async (req, res, next) => {
   try {
-    const projects = await listFireProjects({ usersDb: getUsersDb(), authDb: getAuthDb() }, req.userId);
+    const projects = await listFireProjects(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+    );
     return res.json({ projects });
   } catch (error) {
     return next(error);
@@ -1742,7 +1817,13 @@ router.get('/fire/:projectId', requireScope('fire:r'), async (req, res, next) =>
       req.params.projectId,
     );
     if (!project) {
-      return problem(res, 404, 'not_found', 'Fire project not found', 'No matching Fire project exists.');
+      return problem(
+        res,
+        404,
+        'not_found',
+        'Fire project not found',
+        'No matching Fire project exists.',
+      );
     }
     return res.json(project);
   } catch (error) {
@@ -1763,7 +1844,13 @@ router.patch('/fire/:projectId', requireScope('fire:w'), async (req, res, next) 
       req.body,
     );
     if (!project) {
-      return problem(res, 404, 'not_found', 'Fire project not found', 'No matching Fire project exists.');
+      return problem(
+        res,
+        404,
+        'not_found',
+        'Fire project not found',
+        'No matching Fire project exists.',
+      );
     }
     await recordAuditEntry(getAuditDb(), {
       userId: req.userId,
@@ -1790,7 +1877,13 @@ router.delete('/fire/:projectId', requireScope('fire:w'), async (req, res, next)
       req.params.projectId,
     );
     if (!deleted) {
-      return problem(res, 404, 'not_found', 'Fire project not found', 'No matching Fire project exists.');
+      return problem(
+        res,
+        404,
+        'not_found',
+        'Fire project not found',
+        'No matching Fire project exists.',
+      );
     }
     await recordAuditEntry(getAuditDb(), {
       userId: req.userId,
@@ -1819,7 +1912,13 @@ router.post('/fire/:projectId/payment-plan', requireScope('fire:w'), async (req,
       req.body,
     );
     if (!plan) {
-      return problem(res, 404, 'not_found', 'Fire project not found', 'No matching Fire project exists.');
+      return problem(
+        res,
+        404,
+        'not_found',
+        'Fire project not found',
+        'No matching Fire project exists.',
+      );
     }
     await recordAuditEntry(getAuditDb(), {
       userId: req.userId,
@@ -2435,10 +2534,14 @@ router.get('/reports/cashflow', requireScope('reports:r'), async (req, res, next
     return problem(res, 400, 'validation_invalid', 'Invalid report request', validation.error);
   }
   try {
-    const statement = await getCashflow({ usersDb: getUsersDb(), authDb: getAuthDb() }, req.userId, {
-      period: validation.period,
-      offset: validation.offset,
-    });
+    const statement = await getCashflow(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+      {
+        period: validation.period,
+        offset: validation.offset,
+      },
+    );
     return res.json(statement);
   } catch (error) {
     return next(error);
@@ -2472,7 +2575,10 @@ router.get('/reports/kpis', requireScope('reports:r'), async (req, res, next) =>
 
 router.get('/reports/fire-coverage', requireScope('reports:r'), async (req, res, next) => {
   try {
-    const report = await getFireCoverage({ usersDb: getUsersDb(), authDb: getAuthDb() }, req.userId);
+    const report = await getFireCoverage(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+    );
     return res.json(report);
   } catch (error) {
     return next(error);
@@ -2905,94 +3011,112 @@ router.get('/subscriptions/export', requireScope('subscriptions:bulk'), async (r
   }
 });
 
-router.get('/subscriptions/:subscriptionId', requireScope('subscriptions:r'), async (req, res, next) => {
-  try {
-    const subscription = await getSubscription(
-      { usersDb: getUsersDb(), authDb: getAuthDb() },
-      req.userId,
-      req.params.subscriptionId,
-    );
-    if (!subscription) {
-      return problem(
-        res,
-        404,
-        'not_found',
-        'Subscription not found',
-        'No matching subscription exists.',
+router.get(
+  '/subscriptions/:subscriptionId',
+  requireScope('subscriptions:r'),
+  async (req, res, next) => {
+    try {
+      const subscription = await getSubscription(
+        { usersDb: getUsersDb(), authDb: getAuthDb() },
+        req.userId,
+        req.params.subscriptionId,
       );
+      if (!subscription) {
+        return problem(
+          res,
+          404,
+          'not_found',
+          'Subscription not found',
+          'No matching subscription exists.',
+        );
+      }
+      return res.json(subscription);
+    } catch (error) {
+      return next(error);
     }
-    return res.json(subscription);
-  } catch (error) {
-    return next(error);
-  }
-});
+  },
+);
 
-router.patch('/subscriptions/:subscriptionId', requireScope('subscriptions:w'), async (req, res, next) => {
-  const validationError = validatePatchSubscriptionInput(req.body);
-  if (validationError) {
-    return problem(res, 400, 'validation_invalid', 'Invalid subscription request', validationError);
-  }
-  try {
-    const subscription = await updateSubscription(
-      { usersDb: getUsersDb(), authDb: getAuthDb() },
-      req.userId,
-      req.params.subscriptionId,
-      req.body,
-    );
-    if (!subscription) {
+router.patch(
+  '/subscriptions/:subscriptionId',
+  requireScope('subscriptions:w'),
+  async (req, res, next) => {
+    const validationError = validatePatchSubscriptionInput(req.body);
+    if (validationError) {
       return problem(
         res,
-        404,
-        'not_found',
-        'Subscription not found',
-        'No matching subscription exists.',
+        400,
+        'validation_invalid',
+        'Invalid subscription request',
+        validationError,
       );
     }
-    await recordAuditEntry(getAuditDb(), {
-      userId: req.userId,
-      actor: auditActor(req.auth),
-      method: req.method,
-      path: req.baseUrl + req.path,
-      resource: 'subscriptions',
-      resourceId: subscription.id,
-    });
-    return res.json(subscription);
-  } catch (error) {
-    return next(error);
-  }
-});
+    try {
+      const subscription = await updateSubscription(
+        { usersDb: getUsersDb(), authDb: getAuthDb() },
+        req.userId,
+        req.params.subscriptionId,
+        req.body,
+      );
+      if (!subscription) {
+        return problem(
+          res,
+          404,
+          'not_found',
+          'Subscription not found',
+          'No matching subscription exists.',
+        );
+      }
+      await recordAuditEntry(getAuditDb(), {
+        userId: req.userId,
+        actor: auditActor(req.auth),
+        method: req.method,
+        path: req.baseUrl + req.path,
+        resource: 'subscriptions',
+        resourceId: subscription.id,
+      });
+      return res.json(subscription);
+    } catch (error) {
+      return next(error);
+    }
+  },
+);
 
-router.delete('/subscriptions/:subscriptionId', requireScope('subscriptions:w'), async (req, res, next) => {
-  const deleteTransactions = req.query.deleteTransactions === 'true';
-  try {
-    const deleted = await deleteSubscription(
-      { usersDb: getUsersDb(), authDb: getAuthDb() },
-      req.userId,
-      req.params.subscriptionId,
-      { deleteTransactions },
-    );
-    if (!deleted) {
-      return problem(
-        res,
-        404,
-        'not_found',
-        'Subscription not found',
-        'No matching subscription exists.',
+router.delete(
+  '/subscriptions/:subscriptionId',
+  requireScope('subscriptions:w'),
+  async (req, res, next) => {
+    const deleteTransactions = req.query.deleteTransactions === 'true';
+    try {
+      const deleted = await deleteSubscription(
+        { usersDb: getUsersDb(), authDb: getAuthDb() },
+        req.userId,
+        req.params.subscriptionId,
+        { deleteTransactions },
       );
+      if (!deleted) {
+        return problem(
+          res,
+          404,
+          'not_found',
+          'Subscription not found',
+          'No matching subscription exists.',
+        );
+      }
+      await recordAuditEntry(getAuditDb(), {
+        userId: req.userId,
+        actor: auditActor(req.auth),
+        method: req.method,
+        path: req.baseUrl + req.path,
+        resource: 'subscriptions',
+        resourceId: req.params.subscriptionId,
+      });
+      return res.json({ id: req.params.subscriptionId });
+    } catch (error) {
+      return next(error);
     }
-    await recordAuditEntry(getAuditDb(), {
-      userId: req.userId,
-      actor: auditActor(req.auth),
-      method: req.method,
-      path: req.baseUrl + req.path,
-      resource: 'subscriptions',
-      resourceId: req.params.subscriptionId,
-    });
-    return res.json({ id: req.params.subscriptionId });
-  } catch (error) {
-    return next(error);
-  }
-});
+  },
+);
 
 router.post('/subscriptions/refresh', requireScope('subscriptions:w'), async (req, res, next) => {
   try {
@@ -3102,11 +3226,9 @@ router.post('/subscriptions/import', requireScope('subscriptions:bulk'), async (
 
 router.get('/budget', requireScope('budget:r'), async (req, res, next) => {
   try {
-    const budget = await listBudget(
-      { usersDb: getUsersDb(), authDb: getAuthDb() },
-      req.userId,
-      { month: req.query.month },
-    );
+    const budget = await listBudget({ usersDb: getUsersDb(), authDb: getAuthDb() }, req.userId, {
+      month: req.query.month,
+    });
     return res.json({ budget });
   } catch (error) {
     return next(error);
@@ -3146,7 +3268,13 @@ router.get('/budget/:budgetId', requireScope('budget:r'), async (req, res, next)
       req.params.budgetId,
     );
     if (!row) {
-      return problem(res, 404, 'not_found', 'Budget row not found', 'No matching budget row exists.');
+      return problem(
+        res,
+        404,
+        'not_found',
+        'Budget row not found',
+        'No matching budget row exists.',
+      );
     }
     return res.json(row);
   } catch (error) {
@@ -3167,7 +3295,13 @@ router.patch('/budget/:budgetId', requireScope('budget:w'), async (req, res, nex
       req.body,
     );
     if (!row) {
-      return problem(res, 404, 'not_found', 'Budget row not found', 'No matching budget row exists.');
+      return problem(
+        res,
+        404,
+        'not_found',
+        'Budget row not found',
+        'No matching budget row exists.',
+      );
     }
     await recordAuditEntry(getAuditDb(), {
       userId: req.userId,
@@ -3194,7 +3328,13 @@ router.delete('/budget/:budgetId', requireScope('budget:w'), async (req, res, ne
       req.params.budgetId,
     );
     if (!deleted) {
-      return problem(res, 404, 'not_found', 'Budget row not found', 'No matching budget row exists.');
+      return problem(
+        res,
+        404,
+        'not_found',
+        'Budget row not found',
+        'No matching budget row exists.',
+      );
     }
     await recordAuditEntry(getAuditDb(), {
       userId: req.userId,
@@ -3241,11 +3381,10 @@ router.post('/budget/copy', requireScope('budget:w'), async (req, res, next) => 
     return problem(res, 400, 'validation_invalid', 'Invalid budget request', validationError);
   }
   try {
-    const result = await copyBudget(
-      { usersDb: getUsersDb(), authDb: getAuthDb() },
-      req.userId,
-      { fromMonth: req.body.fromMonth, toMonth: req.body.toMonth },
-    );
+    const result = await copyBudget({ usersDb: getUsersDb(), authDb: getAuthDb() }, req.userId, {
+      fromMonth: req.body.fromMonth,
+      toMonth: req.body.toMonth,
+    });
     await recordAuditEntry(getAuditDb(), {
       userId: req.userId,
       actor: auditActor(req.auth),
@@ -3253,6 +3392,26 @@ router.post('/budget/copy', requireScope('budget:w'), async (req, res, next) => 
       path: req.baseUrl + req.path,
       resource: 'budget',
       itemCount: result.rowsCopied,
+    });
+    return res.json(result);
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.post('/budget/from-subscriptions', requireScope('budget:w'), async (req, res, next) => {
+  try {
+    const result = await fromSubscriptionsBudget(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+    );
+    await recordAuditEntry(getAuditDb(), {
+      userId: req.userId,
+      actor: auditActor(req.auth),
+      method: req.method,
+      path: req.baseUrl + req.path,
+      resource: 'budget',
+      itemCount: result.rowsWritten,
     });
     return res.json(result);
   } catch (error) {

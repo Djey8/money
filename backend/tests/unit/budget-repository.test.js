@@ -10,6 +10,7 @@ const {
   deleteBudgetMonth,
   fillForwardBudget,
   copyBudget,
+  fromSubscriptionsBudget,
 } = require('../../repositories/budget-repository');
 
 function dependencies(data, encryptionConfig) {
@@ -21,6 +22,21 @@ function dependencies(data, encryptionConfig) {
 
 function minimalRawRow(overrides = {}) {
   return { id: 'budget_1', date: '2026-01', tag: '@Groceries', amount: 300, ...overrides };
+}
+
+function minimalRawSubscription(overrides = {}) {
+  return {
+    id: 'subscriptions_1',
+    title: 'Spotify',
+    account: 'Daily',
+    amount: -10,
+    startDate: '2026-01-01',
+    endDate: '',
+    category: '@Streaming',
+    comment: '',
+    frequency: 'monthly',
+    ...overrides,
+  };
 }
 
 function writableDeps(initialDocument) {
@@ -47,7 +63,9 @@ describe('listBudget', () => {
   it('decrypts and normalizes stored budget rows', async () => {
     const deps = dependencies({ budget: [minimalRawRow()] });
     const rows = await listBudget(deps, 'user_1');
-    expect(rows).toEqual([{ id: 'budget_1', date: '2026-01', tag: '@Groceries', amountMinor: 30000 }]);
+    expect(rows).toEqual([
+      { id: 'budget_1', date: '2026-01', tag: '@Groceries', amountMinor: 30000 },
+    ]);
   });
 
   it('filters by month when given', async () => {
@@ -58,7 +76,9 @@ describe('listBudget', () => {
       ],
     });
     const rows = await listBudget(deps, 'user_1', { month: '2026-02' });
-    expect(rows).toEqual([{ id: 'budget_2', date: '2026-02', tag: '@Groceries', amountMinor: 30000 }]);
+    expect(rows).toEqual([
+      { id: 'budget_2', date: '2026-02', tag: '@Groceries', amountMinor: 30000 },
+    ]);
   });
 
   it('throws a clear error for a row missing a stable id', async () => {
@@ -72,7 +92,9 @@ describe('listBudget', () => {
     const session = new EncryptionSession('secret');
     const encryptField = (value) => session.encrypt(String(value));
     const deps = dependencies(
-      { budget: [{ ...minimalRawRow(), id: encryptField('budget_1'), amount: encryptField('300') }] },
+      {
+        budget: [{ ...minimalRawRow(), id: encryptField('budget_1'), amount: encryptField('300') }],
+      },
       { key: 'secret', encryptDatabase: true },
     );
     const [row] = await listBudget(deps, 'user_1');
@@ -325,6 +347,71 @@ describe('copyBudget', () => {
     const { deps } = writableDeps(document);
     const result = await copyBudget(deps, 'user_1', { fromMonth: '2026-01', toMonth: '2026-02' });
     expect(result).toEqual({ fromMonth: '2026-01', toMonth: '2026-02', rowsCopied: 0 });
+    expect(deps.usersDb.insert).not.toHaveBeenCalled();
+  });
+});
+
+describe('fromSubscriptionsBudget', () => {
+  const NOW = new Date('2026-01-15');
+
+  it('creates a new budget row using the monthly-equivalent amount, not the full nominal amount', async () => {
+    const document = {
+      _id: 'user_1',
+      _rev: '1-a',
+      data: {
+        subscriptions: [
+          minimalRawSubscription({
+            amount: -300,
+            startDate: '2026-01-01',
+            endDate: '2026-01-01',
+            category: '@Insurance',
+            frequency: 'quarterly',
+          }),
+        ],
+        budget: [],
+      },
+    };
+    const { deps, current } = writableDeps(document);
+    const result = await fromSubscriptionsBudget(deps, 'user_1', { now: NOW });
+    expect(result).toEqual({ rowsWritten: 1 });
+    const row = current().data.budget[0];
+    expect(row.date).toBe('2026-01');
+    expect(row.tag).toBe('@Insurance');
+    expect(row.amount).toBe(100);
+  });
+
+  it('unconditionally overwrites an existing row for the computed (date, tag) pair', async () => {
+    const document = {
+      _id: 'user_1',
+      _rev: '1-a',
+      data: {
+        subscriptions: [
+          minimalRawSubscription({
+            amount: -1000,
+            startDate: '2026-01-01',
+            endDate: '2026-01-01',
+            category: '@Streaming',
+            frequency: 'monthly',
+          }),
+        ],
+        budget: [
+          minimalRawRow({ id: 'budget_existing', date: '2026-01', tag: '@Streaming', amount: 1 }),
+        ],
+      },
+    };
+    const { deps, current } = writableDeps(document);
+    await fromSubscriptionsBudget(deps, 'user_1', { now: NOW });
+    const rows = current().data.budget;
+    expect(rows).toHaveLength(1);
+    expect(rows[0].id).toBe('budget_existing');
+    expect(rows[0].amount).toBe(1000);
+  });
+
+  it('does not write anything when there are no subscriptions to compute rows from', async () => {
+    const document = { _id: 'user_1', _rev: '1-a', data: { subscriptions: [], budget: [] } };
+    const { deps } = writableDeps(document);
+    const result = await fromSubscriptionsBudget(deps, 'user_1', { now: NOW });
+    expect(result).toEqual({ rowsWritten: 0 });
     expect(deps.usersDb.insert).not.toHaveBeenCalled();
   });
 });
