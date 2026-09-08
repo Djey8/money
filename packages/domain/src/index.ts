@@ -20,3 +20,4 @@ export * from './grow/dsl';
 export * from './grow/actions';
 export * from './reports/grow-pnl';
 export * from './transactions/frequency-strategies';
+export * from './transactions/subscription-generation';
