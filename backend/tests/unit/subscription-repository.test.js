@@ -8,6 +8,7 @@ const {
   updateSubscription,
   deleteSubscription,
   refreshSubscriptions,
+  batchSubscriptions,
 } = require('../../repositories/subscription-repository');
 
 function dependencies(data, encryptionConfig) {
@@ -372,5 +373,99 @@ describe('refreshSubscriptions', () => {
     const result = await refreshSubscriptions(deps, 'user_1', { now: NOW });
     expect(result).toEqual({ transactionsCreated: 0, subscriptionsProcessed: 1 });
     expect(deps.usersDb.insert).not.toHaveBeenCalled();
+  });
+});
+
+describe('batchSubscriptions', () => {
+  it('applies a mix of create/update/delete in one document write', async () => {
+    const document = {
+      _id: 'user_1',
+      _rev: '1-a',
+      data: { subscriptions: [minimalRawSubscription({ id: 'subscriptions_existing' })] },
+    };
+    const { deps, current } = writableDeps(document);
+    const results = await batchSubscriptions(deps, 'user_1', [
+      {
+        op: 'create',
+        fields: { account: 'Daily', amountMinor: -500, startDate: '2026-01-01', category: '@Gym' },
+      },
+      { op: 'update', id: 'subscriptions_existing', fields: { amountMinor: -2000 } },
+      { op: 'delete', id: 'subscriptions_never_mind' },
+    ]);
+    expect(results[0]).toMatchObject({ op: 'create', status: 'created' });
+    expect(results[0].subscription).toMatchObject({ amountMinor: -500 });
+    expect(results[1]).toMatchObject({ op: 'update', id: 'subscriptions_existing', status: 'updated' });
+    expect(results[1].subscription).toMatchObject({ amountMinor: -2000 });
+    expect(results[2]).toMatchObject({
+      op: 'delete',
+      id: 'subscriptions_never_mind',
+      status: 'error',
+    });
+    expect(deps.usersDb.insert).toHaveBeenCalledTimes(1);
+    expect(current().data.subscriptions).toHaveLength(2);
+  });
+
+  it('applies successful items and reports failures independently in non-atomic mode', async () => {
+    const document = {
+      _id: 'user_1',
+      _rev: '1-a',
+      data: { subscriptions: [minimalRawSubscription({ id: 'subscriptions_existing' })] },
+    };
+    const { deps } = writableDeps(document);
+    const results = await batchSubscriptions(deps, 'user_1', [
+      { op: 'update', id: 'subscriptions_missing', fields: { amountMinor: -500 } },
+      { op: 'delete', id: 'subscriptions_existing' },
+    ]);
+    expect(results[0]).toMatchObject({ status: 'error' });
+    expect(results[1]).toMatchObject({ status: 'deleted' });
+    expect(deps.usersDb.insert).toHaveBeenCalledTimes(1);
+  });
+
+  it('rolls back everything in atomic mode when any operation fails', async () => {
+    const document = {
+      _id: 'user_1',
+      _rev: '1-a',
+      data: { subscriptions: [minimalRawSubscription({ id: 'subscriptions_existing' })] },
+    };
+    const { deps, current } = writableDeps(document);
+    const results = await batchSubscriptions(
+      deps,
+      'user_1',
+      [
+        { op: 'delete', id: 'subscriptions_existing' },
+        { op: 'update', id: 'subscriptions_missing', fields: { amountMinor: -500 } },
+      ],
+      { atomic: true },
+    );
+    expect(results[0]).toMatchObject({ status: 'not_applied' });
+    expect(results[1]).toMatchObject({ status: 'error' });
+    expect(deps.usersDb.insert).not.toHaveBeenCalled();
+    expect(current().data.subscriptions).toHaveLength(1);
+  });
+
+  it('does not cascade transaction cleanup for a batch update touching an identifying field', async () => {
+    const document = {
+      _id: 'user_1',
+      _rev: '1-a',
+      data: {
+        subscriptions: [minimalRawSubscription({ id: 'subscriptions_existing' })],
+        transactions: [
+          {
+            id: 'transactions_1',
+            account: 'Daily',
+            amount: 10,
+            date: '2026-01-01',
+            time: '09:00',
+            category: '@Streaming',
+            comment: 'Spotify',
+          },
+        ],
+      },
+    };
+    const { deps, current } = writableDeps(document);
+    await batchSubscriptions(deps, 'user_1', [
+      { op: 'update', id: 'subscriptions_existing', fields: { amountMinor: -1500 } },
+    ]);
+    expect(current().data.transactions).toHaveLength(1);
   });
 });

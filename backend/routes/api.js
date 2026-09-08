@@ -97,6 +97,7 @@ const {
   updateSubscription,
   deleteSubscription,
   refreshSubscriptions,
+  batchSubscriptions,
 } = require('../repositories/subscription-repository');
 const { getUsersDb, getAuthDb } = require('../config/db');
 const { getEncryptionSession } = require('../services/encryption-session');
@@ -648,6 +649,88 @@ function validatePatchSubscriptionInput(input) {
   return null;
 }
 
+function validateSubscriptionBatchOperationItem(operation) {
+  if (!operation || typeof operation !== 'object' || Array.isArray(operation)) {
+    return { op: undefined, error: 'Each operation must be an object.' };
+  }
+  if (operation.op === 'create') {
+    const { op: _op, ...fields } = operation;
+    const fieldsError = validateSubscriptionInput(fields);
+    return fieldsError ? { op: 'create', error: fieldsError } : { op: 'create', fields };
+  }
+  if (operation.op === 'update') {
+    if (typeof operation.id !== 'string' || operation.id.trim() === '') {
+      return { op: 'update', error: 'id is required.' };
+    }
+    const { op: _op, id, ...fields } = operation;
+    if (Object.keys(fields).length === 0) {
+      return { op: 'update', id, error: 'At least one field must be provided.' };
+    }
+    const fieldsError = validatePatchSubscriptionInput(fields);
+    return fieldsError ? { op: 'update', id, error: fieldsError } : { op: 'update', id, fields };
+  }
+  if (operation.op === 'delete') {
+    const { op: _op, id, ...rest } = operation;
+    if (typeof id !== 'string' || id.trim() === '')
+      return { op: 'delete', error: 'id is required.' };
+    const extraField = Object.keys(rest)[0];
+    if (extraField) {
+      return { op: 'delete', id, error: `${extraField} is not allowed for a delete operation.` };
+    }
+    return { op: 'delete', id };
+  }
+  return { op: operation.op, error: "op must be 'create', 'update', or 'delete'." };
+}
+
+function validateSubscriptionBatchRequest(body) {
+  if (!body || typeof body !== 'object') return { error: 'A batch request object is required.' };
+  if (body.atomic !== undefined && typeof body.atomic !== 'boolean') {
+    return { error: 'atomic must be a boolean.' };
+  }
+  if (!Array.isArray(body.operations) || body.operations.length === 0) {
+    return { error: 'operations must be a non-empty array.' };
+  }
+  if (body.operations.length > MAX_BATCH_OPERATIONS) {
+    return { error: `operations cannot exceed ${MAX_BATCH_OPERATIONS} items.` };
+  }
+  return { items: body.operations.map(validateSubscriptionBatchOperationItem) };
+}
+
+function parseSubscriptionImportLines(rawBody) {
+  if (typeof rawBody !== 'string' || rawBody.trim() === '') {
+    return { error: 'A newline-delimited JSON (NDJSON) body is required.' };
+  }
+  const lines = rawBody
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+  if (lines.length === 0) {
+    return { error: 'A newline-delimited JSON (NDJSON) body is required.' };
+  }
+  if (lines.length > MAX_IMPORT_LINES) {
+    return { error: `Import cannot exceed ${MAX_IMPORT_LINES} lines.` };
+  }
+  const items = lines.map((line, index) => {
+    if (line.length > MAX_IMPORT_LINE_LENGTH) {
+      return {
+        op: 'create',
+        error: `Line ${index + 1} exceeds ${MAX_IMPORT_LINE_LENGTH} characters.`,
+      };
+    }
+    let parsed;
+    try {
+      parsed = JSON.parse(line);
+    } catch {
+      return { op: 'create', error: `Line ${index + 1} is not valid JSON.` };
+    }
+    const fieldsError = validateSubscriptionInput(parsed);
+    return fieldsError
+      ? { op: 'create', error: `Line ${index + 1}: ${fieldsError}` }
+      : { op: 'create', fields: parsed };
+  });
+  return { items };
+}
+
 function validateCreateAssetInput(input) {
   if (!input || typeof input !== 'object') return 'An asset object is required.';
   if (!isNonEmptyString(input.tag)) return 'tag must be a non-empty string.';
@@ -976,14 +1059,22 @@ function validateIdempotencyKeyPresence(req) {
 }
 
 /**
- * Wraps a bulk transactions write with the shared Idempotency-Key contract:
- * requires the header, replays a prior result for the same key + body,
- * rejects the same key reused with a different body, and otherwise runs
- * `run()` once and records its result on the audit entry so a later replay
- * can find it. See the "known gap" note where this is called: the write
- * `run()` performs and this audit record are not one atomic transaction.
+ * Wraps a bulk write with the shared Idempotency-Key contract: requires the
+ * header, replays a prior result for the same key + body, rejects the same
+ * key reused with a different body, and otherwise runs `run()` once and
+ * records its result on the audit entry so a later replay can find it. See
+ * the "known gap" note where this is called: the write `run()` performs and
+ * this audit record are not one atomic transaction. `resource` scopes the
+ * idempotency lookup and audit entry to the calling resource (`transactions`,
+ * `subscriptions`, ...) so two different bulk endpoints can't collide on the
+ * same key.
  */
-async function handleIdempotentBulkWrite(req, res, next, { requestBodyForHash, itemCount, run }) {
+async function handleIdempotentBulkWrite(
+  req,
+  res,
+  next,
+  { resource = 'transactions', requestBodyForHash, itemCount, run },
+) {
   const idempotencyKey = req.get('Idempotency-Key');
   if (!idempotencyKey || !idempotencyKey.trim()) {
     return problem(
@@ -1000,7 +1091,7 @@ async function handleIdempotentBulkWrite(req, res, next, { requestBodyForHash, i
     const existingReplay = await findAuditEntryByIdempotencyKey(
       auditDb,
       req.userId,
-      'transactions',
+      resource,
       idempotencyKey,
     );
     const session = await getEncryptionSession(getAuthDb(), req.userId);
@@ -1029,7 +1120,7 @@ async function handleIdempotentBulkWrite(req, res, next, { requestBodyForHash, i
         actor: auditActor(req.auth),
         method: req.method,
         path: req.baseUrl + req.path,
-        resource: 'transactions',
+        resource,
         itemCount,
         idempotencyKey,
         requestHash,
@@ -2719,6 +2810,29 @@ router.post('/subscriptions', requireScope('subscriptions:w'), async (req, res, 
   }
 });
 
+// Registered before the `/subscriptions/:subscriptionId` route below so `export` is never
+// captured as a subscription id.
+router.get('/subscriptions/export', requireScope('subscriptions:bulk'), async (req, res, next) => {
+  try {
+    const subscriptions = await listSubscriptions(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+    );
+    await recordAuditEntry(getAuditDb(), {
+      userId: req.userId,
+      actor: auditActor(req.auth),
+      method: req.method,
+      path: req.baseUrl + req.path,
+      resource: 'subscriptions',
+      itemCount: subscriptions.length,
+    });
+    res.type('application/x-ndjson');
+    return res.send(subscriptions.map((subscription) => JSON.stringify(subscription)).join('\n'));
+  } catch (error) {
+    return next(error);
+  }
+});
+
 router.get('/subscriptions/:subscriptionId', requireScope('subscriptions:r'), async (req, res, next) => {
   try {
     const subscription = await getSubscription(
@@ -2828,9 +2942,96 @@ router.post('/subscriptions/refresh', requireScope('subscriptions:w'), async (re
   }
 });
 
+router.post('/subscriptions/batch', requireScope('subscriptions:bulk'), async (req, res, next) => {
+  const idempotencyKeyError = validateIdempotencyKeyPresence(req);
+  if (idempotencyKeyError) {
+    return problem(
+      res,
+      400,
+      'validation_invalid',
+      'Invalid subscription batch request',
+      idempotencyKeyError,
+    );
+  }
+  const validation = validateSubscriptionBatchRequest(req.body);
+  if (validation.error) {
+    return problem(
+      res,
+      400,
+      'validation_invalid',
+      'Invalid subscription batch request',
+      validation.error,
+    );
+  }
+  const atomic = Boolean(req.body.atomic);
+  return handleIdempotentBulkWrite(req, res, next, {
+    resource: 'subscriptions',
+    requestBodyForHash: JSON.stringify(req.body),
+    itemCount: validation.items.length,
+    run: async () => {
+      const results = await batchSubscriptions(
+        { usersDb: getUsersDb(), authDb: getAuthDb() },
+        req.userId,
+        validation.items,
+        { atomic },
+      );
+      return {
+        idempotencyKey: req.get('Idempotency-Key'),
+        atomic,
+        itemCount: validation.items.length,
+        results,
+      };
+    },
+  });
+});
+
+router.post('/subscriptions/import', requireScope('subscriptions:bulk'), async (req, res, next) => {
+  const idempotencyKeyError = validateIdempotencyKeyPresence(req);
+  if (idempotencyKeyError) {
+    return problem(
+      res,
+      400,
+      'validation_invalid',
+      'Invalid subscription import request',
+      idempotencyKeyError,
+    );
+  }
+  const validation = parseSubscriptionImportLines(req.body);
+  if (validation.error) {
+    return problem(
+      res,
+      400,
+      'validation_invalid',
+      'Invalid subscription import request',
+      validation.error,
+    );
+  }
+  const atomic = req.query.atomic === 'true';
+  return handleIdempotentBulkWrite(req, res, next, {
+    resource: 'subscriptions',
+    requestBodyForHash: req.body,
+    itemCount: validation.items.length,
+    run: async () => {
+      const results = await batchSubscriptions(
+        { usersDb: getUsersDb(), authDb: getAuthDb() },
+        req.userId,
+        validation.items,
+        { atomic },
+      );
+      return {
+        idempotencyKey: req.get('Idempotency-Key'),
+        atomic,
+        itemCount: validation.items.length,
+        results,
+      };
+    },
+  });
+});
+
 module.exports = router;
 // Attached for direct unit testing (parseImportLines has enough
 // dependency-free edge cases — empty body, per-line JSON/field errors, the
 // line-count and line-length caps — to be worth testing without a live
 // server, unlike this file's simpler validators).
 module.exports.parseImportLines = parseImportLines;
+module.exports.parseSubscriptionImportLines = parseSubscriptionImportLines;
