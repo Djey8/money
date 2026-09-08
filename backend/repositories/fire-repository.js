@@ -546,4 +546,8 @@ module.exports = {
   updateFireProject,
   deleteFireProject,
   createFirePaymentPlan,
+  // Re-exported for data-repository.js's importUserData, which delegates to
+  // each collection's own encrypt logic per D-9 rather than reimplementing it.
+  encryptProject,
+  decryptAllProjects,
 };

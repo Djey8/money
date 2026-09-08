@@ -221,4 +221,14 @@ async function deleteAsset(deps, userId, assetId) {
   });
 }
 
-module.exports = { listAssets, getAsset, createAsset, updateAsset, deleteAsset };
+module.exports = {
+  listAssets,
+  getAsset,
+  createAsset,
+  updateAsset,
+  deleteAsset,
+  // Re-exported for data-repository.js's importUserData (D-9: delegate to
+  // each collection's own encrypt logic rather than reimplementing it).
+  encryptAsset,
+  decryptAllAssets,
+};

@@ -311,4 +311,14 @@ async function deleteShare(deps, userId, shareId) {
   });
 }
 
-module.exports = { listShares, getShare, createShare, updateShare, deleteShare };
+module.exports = {
+  listShares,
+  getShare,
+  createShare,
+  updateShare,
+  deleteShare,
+  // Re-exported for data-repository.js's importUserData (D-9: delegate to
+  // each collection's own encrypt logic rather than reimplementing it).
+  encryptShare,
+  decryptAllShares,
+};

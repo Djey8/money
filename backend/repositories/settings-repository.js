@@ -155,4 +155,37 @@ async function updateSettings({ usersDb, authDb }, userId, patch) {
   throw new Error('Failed to update settings after maximum retries due to write conflicts');
 }
 
-module.exports = { getSettings, updateSettings, DEFAULT_SETTINGS };
+/**
+ * Shared between `PATCH /settings` (backend/routes/api.js) and
+ * `POST /data/import` (data-repository.js's `importUserData`) — moved here
+ * (D-9) rather than kept private to the route so import doesn't need a
+ * second, independent copy of "allocation must be four finite numbers
+ * summing to 100." Returns an error string, or `null` if valid.
+ */
+function validateSettingsAllocation(allocation) {
+  if (typeof allocation !== 'object' || allocation === null || Array.isArray(allocation)) {
+    return 'allocation must be an object with daily, splurge, smile, and fire.';
+  }
+  const fields = ['daily', 'splurge', 'smile', 'fire'];
+  const unknownField = Object.keys(allocation).find((key) => !fields.includes(key));
+  if (unknownField) return `allocation.${unknownField} is not a recognized field.`;
+  for (const field of fields) {
+    if (!Number.isFinite(allocation[field])) return `allocation.${field} must be a number.`;
+  }
+  const sum = fields.reduce((total, field) => total + allocation[field], 0);
+  if (Math.abs(sum - 100) > 0.001) {
+    return 'allocation.daily + splurge + smile + fire must sum to 100.';
+  }
+  return null;
+}
+
+module.exports = {
+  getSettings,
+  updateSettings,
+  DEFAULT_SETTINGS,
+  validateSettingsAllocation,
+  // Re-exported for data-repository.js's importUserData (D-9: delegate to
+  // each collection's own encrypt logic rather than reimplementing it).
+  encryptSettings,
+  decryptSettings,
+};

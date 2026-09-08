@@ -5499,6 +5499,270 @@ describe('v1 API authentication and PAT management', () => {
     });
   });
 
+  describe('POST /data/import', () => {
+    // Fresh user per test — this endpoint replaces the entire account, so a
+    // shared account would corrupt other tests' data.
+    async function importUser() {
+      return registerTestUser(`_import_${Date.now()}_${Math.random()}`);
+    }
+
+    async function importToken(sessionToken, scopes) {
+      const created = await sessionRequest('post', '/api/v1/auth/tokens', sessionToken).send({
+        name: `import-agent-${Date.now()}-${Math.random()}`,
+        scopes,
+      });
+      return created.body.token;
+    }
+
+    it('round-trips a real export into a fresh account via import', async () => {
+      const sourceUser = await importUser();
+      await sessionRequest('post', '/api/v1/transactions', sourceUser.token).send({
+        account: 'Income',
+        amountMinor: 500000,
+        date: '2026-09-06',
+        time: '09:00',
+        category: '@Salary',
+        comment: '',
+      });
+      await sessionRequest('patch', '/api/v1/settings', sourceUser.token).send({
+        theme: 'dark',
+      });
+      const sourceToken = await importToken(sourceUser.token, ['data:bulk']);
+      const exported = await request(app)
+        .get('/api/v1/data/export')
+        .set('Authorization', `Bearer ${sourceToken}`);
+      expect(exported.status).toBe(200);
+
+      const destUser = await importUser();
+      const destToken = await importToken(destUser.token, ['data:bulk']);
+      const importResponse = await request(app)
+        .post('/api/v1/data/import')
+        .set('Authorization', `Bearer ${destToken}`)
+        .set('Idempotency-Key', `import-${Date.now()}-1`)
+        .send({ confirm: true, data: exported.body.data });
+
+      expect(importResponse.status).toBe(200);
+      expect(importResponse.body.transactionCount).toBe(1);
+
+      const destListed = await sessionRequest('get', '/api/v1/transactions', destUser.token);
+      expect(destListed.body.transactions).toHaveLength(1);
+      expect(destListed.body.transactions[0]).toMatchObject({
+        account: 'Income',
+        amountMinor: 500000,
+        category: '@Salary',
+      });
+      const destSettings = await sessionRequest('get', '/api/v1/settings', destUser.token);
+      expect(destSettings.body.theme).toBe('dark');
+    });
+
+    it('requires confirm: true', async () => {
+      const user = await importUser();
+      const token = await importToken(user.token, ['data:bulk']);
+      const response = await request(app)
+        .post('/api/v1/data/import')
+        .set('Authorization', `Bearer ${token}`)
+        .set('Idempotency-Key', `import-${Date.now()}-2`)
+        .send({ data: { meta: { schemaVersion: 1 }, transactions: [] } });
+      expect(response.status).toBe(400);
+      expect(response.body.code).toBe('validation_invalid');
+    });
+
+    it('rejects a schema-version mismatch against the current account', async () => {
+      const user = await importUser();
+      await sessionRequest('post', '/api/v1/transactions', user.token).send({
+        account: 'Daily',
+        amountMinor: -100,
+        date: '2026-09-06',
+        time: '10:00',
+        category: '@Groceries',
+        comment: '',
+      });
+      const token = await importToken(user.token, ['data:bulk']);
+      const response = await request(app)
+        .post('/api/v1/data/import')
+        .set('Authorization', `Bearer ${token}`)
+        .set('Idempotency-Key', `import-${Date.now()}-3`)
+        .send({ confirm: true, data: { meta: { schemaVersion: 2 }, transactions: [] } });
+      expect(response.status).toBe(400);
+      expect(response.body.detail).toContain('schema version');
+    });
+
+    it('refuses to import a zero-amount transaction rather than silently dropping it', async () => {
+      const user = await importUser();
+      const token = await importToken(user.token, ['data:bulk']);
+      const response = await request(app)
+        .post('/api/v1/data/import')
+        .set('Authorization', `Bearer ${token}`)
+        .set('Idempotency-Key', `import-${Date.now()}-4`)
+        .send({
+          confirm: true,
+          data: {
+            meta: { schemaVersion: 1 },
+            transactions: [
+              {
+                id: 'tx_zero',
+                account: 'Daily',
+                amount: 0,
+                date: '2026-09-06',
+                time: '08:00',
+                category: '@Log',
+                comment: '',
+              },
+            ],
+          },
+        });
+      expect(response.status).toBe(400);
+      expect(response.body.detail).toContain('zero amount');
+    });
+
+    it('requires the data:bulk scope', async () => {
+      const user = await importUser();
+      const token = await importToken(user.token, ['transactions:rw']);
+      const response = await request(app)
+        .post('/api/v1/data/import')
+        .set('Authorization', `Bearer ${token}`)
+        .set('Idempotency-Key', `import-${Date.now()}-5`)
+        .send({ confirm: true, data: { meta: { schemaVersion: 1 }, transactions: [] } });
+      expect(response.status).toBe(403);
+      expect(response.body.code).toBe('scope_insufficient');
+    });
+
+    it('requires an Idempotency-Key header', async () => {
+      const user = await importUser();
+      const token = await importToken(user.token, ['data:bulk']);
+      const response = await request(app)
+        .post('/api/v1/data/import')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ confirm: true, data: { meta: { schemaVersion: 1 }, transactions: [] } });
+      expect(response.status).toBe(400);
+      expect(response.body.code).toBe('validation_invalid');
+    });
+
+    it('replays the same result for a repeated Idempotency-Key without reapplying', async () => {
+      const user = await importUser();
+      const token = await importToken(user.token, ['data:bulk']);
+      const key = `import-${Date.now()}-6`;
+      const body = {
+        confirm: true,
+        data: {
+          meta: { schemaVersion: 1 },
+          transactions: [
+            {
+              id: 'tx_1',
+              account: 'Income',
+              amount: 100,
+              date: '2026-09-06',
+              time: '09:00',
+              category: '@Gift',
+              comment: '',
+            },
+          ],
+        },
+      };
+
+      const first = await request(app)
+        .post('/api/v1/data/import')
+        .set('Authorization', `Bearer ${token}`)
+        .set('Idempotency-Key', key)
+        .send(body);
+      const second = await request(app)
+        .post('/api/v1/data/import')
+        .set('Authorization', `Bearer ${token}`)
+        .set('Idempotency-Key', key)
+        .send(body);
+
+      expect(first.status).toBe(200);
+      expect(second.status).toBe(200);
+      expect(second.body).toEqual(first.body);
+    });
+
+    it('keeps import isolated to the authenticated user document', async () => {
+      const userA = await importUser();
+      const userB = await importUser();
+      await sessionRequest('post', '/api/v1/transactions', userB.token).send({
+        account: 'Income',
+        amountMinor: 999900,
+        date: '2026-09-06',
+        time: '09:00',
+        category: '@UserB salary',
+        comment: '',
+      });
+
+      const tokenA = await importToken(userA.token, ['data:bulk']);
+      const response = await request(app)
+        .post('/api/v1/data/import')
+        .set('Authorization', `Bearer ${tokenA}`)
+        .set('Idempotency-Key', `import-${Date.now()}-7`)
+        .send({ confirm: true, data: { meta: { schemaVersion: 1 }, transactions: [] } });
+      expect(response.status).toBe(200);
+
+      // User B's data must be completely untouched.
+      const stillThere = await sessionRequest('get', '/api/v1/transactions', userB.token);
+      expect(stillThere.body.transactions).toHaveLength(1);
+      expect(stillThere.body.transactions[0].category).toBe('@UserB salary');
+    });
+
+    it('overwrites an existing account entirely, replacing prior transactions', async () => {
+      const user = await importUser();
+      const created = await sessionRequest('post', '/api/v1/transactions', user.token).send({
+        account: 'Daily',
+        amountMinor: -100,
+        date: '2026-09-06',
+        time: '08:00',
+        category: '@OldData',
+        comment: '',
+      });
+      expect(created.status).toBe(201);
+      const token = await importToken(user.token, ['data:bulk']);
+
+      const response = await request(app)
+        .post('/api/v1/data/import')
+        .set('Authorization', `Bearer ${token}`)
+        .set('Idempotency-Key', `import-${Date.now()}-8`)
+        .send({
+          confirm: true,
+          data: {
+            meta: { schemaVersion: 1 },
+            transactions: [
+              {
+                id: 'tx_new',
+                account: 'Daily',
+                amount: -55,
+                date: '2026-09-07',
+                time: '11:00',
+                category: '@NewData',
+                comment: '',
+              },
+            ],
+          },
+        });
+      expect(response.status).toBe(200);
+
+      const listed = await sessionRequest('get', '/api/v1/transactions', user.token);
+      expect(listed.body.transactions).toHaveLength(1);
+      expect(listed.body.transactions[0].category).toBe('@NewData');
+    });
+
+    it('wipes a collection present in the current account but absent from the import payload', async () => {
+      const user = await importUser();
+      const createdGrow = await sessionRequest('post', '/api/v1/grow', user.token).send({
+        title: 'Old Rental',
+      });
+      expect(createdGrow.status).toBe(201);
+      const token = await importToken(user.token, ['data:bulk']);
+
+      const response = await request(app)
+        .post('/api/v1/data/import')
+        .set('Authorization', `Bearer ${token}`)
+        .set('Idempotency-Key', `import-${Date.now()}-9`)
+        .send({ confirm: true, data: { meta: { schemaVersion: 1 }, transactions: [] } });
+      expect(response.status).toBe(200);
+
+      const growList = await sessionRequest('get', '/api/v1/grow', user.token);
+      expect(growList.body.grow).toEqual([]);
+    });
+  });
+
   describe('POST /data/recalculate', () => {
     // Fresh user per test — this endpoint recalculates every derived
     // aggregate on the account, so a shared account would leak other tests'

@@ -110,12 +110,21 @@ const {
   copyBudget,
   fromSubscriptionsBudget,
 } = require('../repositories/budget-repository');
-const { getSettings, updateSettings } = require('../repositories/settings-repository');
+const {
+  getSettings,
+  updateSettings,
+  validateSettingsAllocation,
+} = require('../repositories/settings-repository');
 const {
   getPublicEncryptionConfig,
   updatePublicEncryptionConfig,
 } = require('../repositories/encryption-config-repository');
-const { recalculateUserData, exportUserData } = require('../repositories/data-repository');
+const {
+  recalculateUserData,
+  exportUserData,
+  importUserData,
+  ImportError,
+} = require('../repositories/data-repository');
 const { getUsersDb, getAuthDb } = require('../config/db');
 const { getEncryptionSession } = require('../services/encryption-session');
 const {
@@ -850,22 +859,6 @@ const EDITABLE_SETTINGS_FIELDS = [
   'isEuropeanFormat',
   'allocation',
 ];
-
-function validateSettingsAllocation(allocation) {
-  if (typeof allocation !== 'object' || allocation === null || Array.isArray(allocation)) {
-    return 'allocation must be an object with daily, splurge, smile, and fire.';
-  }
-  const fields = ['daily', 'splurge', 'smile', 'fire'];
-  const unknownField = Object.keys(allocation).find((key) => !fields.includes(key));
-  if (unknownField) return `allocation.${unknownField} is not a recognized field.`;
-  for (const field of fields) {
-    if (!Number.isFinite(allocation[field])) return `allocation.${field} must be a number.`;
-  }
-  const sum = fields.reduce((total, field) => total + allocation[field], 0);
-  if (Math.abs(sum - 100) > 0.001)
-    return 'allocation.daily + splurge + smile + fire must sum to 100.';
-  return null;
-}
 
 function validatePatchSettingsInput(input) {
   if (!input || typeof input !== 'object' || Array.isArray(input)) {
@@ -3664,6 +3657,26 @@ router.get('/data/export', requireScope('data:bulk'), async (req, res, next) => 
   } catch (error) {
     return next(error);
   }
+});
+
+// `data:bulk`, requires `{confirm: true}` — this replaces the entire
+// account. Backs up the pre-import document to disk (mirroring `mm-admin
+// migrate`'s own pattern) before overwriting, so a bad import is manually
+// recoverable by an operator with server access. Idempotency-Key required
+// like every other bulk write; importing the identical payload twice is
+// naturally idempotent (same final state), but a replay still short-
+// circuits to the first run's result rather than re-running the write.
+router.post('/data/import', requireScope('data:bulk'), async (req, res, next) => {
+  return handleIdempotentBulkWrite(req, res, next, {
+    resource: 'data',
+    requestBodyForHash: JSON.stringify(req.body || {}),
+    run: async () =>
+      importUserData({ usersDb: getUsersDb(), authDb: getAuthDb() }, req.userId, req.body),
+    onError: (error) => {
+      if (!(error instanceof ImportError)) return undefined;
+      return problem(res, 400, 'validation_invalid', 'Invalid import request', error.message);
+    },
+  });
 });
 
 // `data:bulk` (not a scope any `rw` grant satisfies, per docs/adr/0006) —

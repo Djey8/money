@@ -228,4 +228,8 @@ module.exports = {
   createLiability,
   updateLiability,
   deleteLiability,
+  // Re-exported for data-repository.js's importUserData (D-9: delegate to
+  // each collection's own encrypt logic rather than reimplementing it).
+  encryptLiability,
+  decryptAllLiabilities,
 };
