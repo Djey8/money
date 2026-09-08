@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "money-manager": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["${CLAUDE_PROJECT_DIR}/apps/mcp/dist/index.js"],
+      "env": {
+        "MM_API_URL": "${MM_API_URL:-http://localhost:3000/api/v1}",
+        "MM_API_TOKEN": "${MM_API_TOKEN}"
+      }
+    }
+  }
+}

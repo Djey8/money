@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted — implementation detail to be finalized in Phase 5
+Accepted — implemented in Slice 7 (Phase 5). One deliberate deviation from this ADR's original wording, noted in Consequences: the "explain" tools shipped as a single `explain_concept` tool with a `topic` argument, not one tool per concept.
 
 ## Context
 
@@ -22,3 +22,4 @@ Master prompt §4.6/§7 requires deciding: generated from OpenAPI vs. hand-writt
 - The MCP layer has a hard dependency on the OpenAPI spec (ADR-0007) being accurate and current — another reason the spec-sync CI check matters, since MCP tool generation would otherwise silently drift too.
 - Grouping tools by operation rather than 1:1 with endpoints means the MCP layer has its own thin dispatch logic (mapping a tool call + action to the right HTTP call) — a small amount of code that has no OpenAPI-spec equivalent and needs its own tests.
 - If MCP's stdio smoke test (master prompt §7, `docs/api/MCP.md`) surfaces that Money Manager isn't a good fit for MCP for some reason discovered during implementation, the master prompt's own fallback applies: document the plain-HTTP workflow for a Claude chat instead — this ADR doesn't foreclose that, it just states MCP is the first thing attempted, per instruction.
+- **Naming correction from implementation**: this ADR's Decision section named `explain_barefoot_allocation`/`explain_grow_pnl` as illustrative examples of per-concept explain tools. The shipped implementation (`apps/mcp/src/tools/explain.ts`) instead exposes one `explain_concept` tool with a `topic` enum, auto-discovered from `docs/domain/*.md` at startup — functionally equivalent (still loaded once at startup, still backed by the same docs) but scales to new `docs/domain/` files without a matching MCP code change, unlike a fixed one-tool-per-concept list. Recorded here so a future reader doesn't go looking for tools literally named `explain_barefoot_allocation`.

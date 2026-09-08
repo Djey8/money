@@ -2,6 +2,8 @@
 
 The self-hosted Pro API is versioned under `/api/v1`. Its source-of-truth contract is [openapi.yaml](openapi.yaml).
 
+Using this API from an LLM agent (Claude Code, Claude Desktop, or another MCP client)? See [MCP.md](MCP.md) — `apps/mcp` exposes every endpoint below as a grouped set of MCP tools, generated from this same spec, instead of raw HTTP calls.
+
 ## Create an agent token
 
 Use an authenticated browser session, never another PAT, to issue an agent token. The plaintext token is returned only in this response.
