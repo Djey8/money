@@ -34,7 +34,7 @@ function tx(overrides: Partial<ApiTransaction> = {}): ApiTransaction {
     amountMinor: -1000,
     currency: 'EUR',
     date: '2026-01-15',
-    time: '',
+    time: '09:00',
     category: '@Streaming',
     comment: 'Spotify',
     ...overrides,
@@ -50,7 +50,7 @@ describe('generateDueSubscriptionTransactions', () => {
       account: 'Daily',
       amountMinor: -1000,
       date: '2026-01-15',
-      time: '',
+      time: '00:00',
       category: '@Streaming',
       comment: 'Spotify',
     });

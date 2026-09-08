@@ -32,6 +32,12 @@ import { calculateOccurrences, SubscriptionFrequency } from './frequency-strateg
  * `recalculateFundState` computes when the repository layer runs the full,
  * final transaction list through it, exactly like every other transaction
  * write already does.
+ *
+ * One structural adaptation: the original passes an empty `time` (`''`) for
+ * every generated transaction — this API's `Transaction` type requires a
+ * non-empty one (`transaction.ts`'s `normalizeTransaction`), so generated
+ * transactions use `'00:00'` instead. A subscription occurrence has no
+ * natural time-of-day regardless, so this changes no real behavior.
  */
 
 export interface SubscriptionForGeneration {
@@ -133,7 +139,7 @@ export function generateDueSubscriptionTransactions(
         account: candidate.account,
         amountMinor: candidate.amountMinor,
         date: candidate.date,
-        time: '',
+        time: '00:00',
         category: candidate.category,
         comment: candidate.comment,
       };
