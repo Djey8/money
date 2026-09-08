@@ -493,6 +493,18 @@ curl "http://localhost:3000/api/v1/data/export" \
   -H "Authorization: Bearer $MONEY_MANAGER_TOKEN"
 ```
 
+## Import a full account (destructive)
+
+Requires `data:bulk`, an `Idempotency-Key` header, and `{confirm: true}` — this replaces the entire account with the given `data` (the same shape `GET /data/export` returns). Requires the imported schema version to match the account's current one. Backs up the pre-import document on the server first.
+
+```bash
+curl -X POST "http://localhost:3000/api/v1/data/import" \
+  -H "Authorization: Bearer $MONEY_MANAGER_TOKEN" \
+  -H "Idempotency-Key: $(uuidgen)" \
+  -H "Content-Type: application/json" \
+  -d '{"confirm": true, "data": {...}}'
+```
+
 ## Force a recalculation of derived state
 
 Requires `data:bulk` and an `Idempotency-Key` header. Forces the same recalculation every transaction write already runs (accounting totals, Mojo, Smile/Fire fund buckets) — the "Fix Accounting" button's server-side equivalent. Useful after a data import or manual fix that could have left derived aggregates stale; never required after a normal write through this API.

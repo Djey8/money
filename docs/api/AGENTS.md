@@ -276,6 +276,14 @@ Every Pro API write is audit logged. Prefer narrowly scoped, expiring tokens and
 3. `GET` is audit logged despite being a read, since `data:bulk` is exactly the kind of blast-radius scope worth a record of who dumped the whole account and when.
 4. There is no schema-version normalization here — money fields come back exactly as stored (decimal for a `schemaVersion: 1` account, integer minor units for `schemaVersion: 2`). Check `data.meta.schemaVersion` before assuming which.
 
+## Import a full account (destructive — confirm before calling)
+
+1. `POST /api/v1/data/import` (SET-9) requires `data:bulk`, an `Idempotency-Key` header, and a body of `{confirm: true, data: {...}}` where `data` is the same shape `GET /data/export` returns. **This replaces the entire account** — every collection, not a merge. Never call this without the caller (human or agent) having explicitly confirmed they want a full replace.
+2. Requires `data.meta.schemaVersion` to match the account's current schema version when the account already has data — rejected with `400 validation_invalid` otherwise. This endpoint never converts between schema versions; run `mm-admin migrate` first if the imported data is on a different version.
+3. **`data.transactions` and everything `applyDerivedState` normally recomputes on a transaction write — income totals, Mojo's `amount`, Smile/Fire fund-bucket `amount` — are never trusted from the imported document.** They're always rebuilt from the imported transactions after every other collection is written, exactly like every other write in this API. An imported zero-amount transaction is rejected with `400` rather than silently dropped, for the same reason `POST /data/recalculate` rejects one.
+4. The server writes a timestamped backup of the pre-import document before overwriting (if one existed) — `backupFile` in the response names it. This is a server-local safety net for an operator to restore from if the import turns out to be wrong; it is not something this API exposes a restore endpoint for.
+5. Re-encrypts every collection using that collection's own existing encrypt logic — so an item missing a stable `id` (e.g. hand-authored JSON, not a real export) is rejected with `400`, the same requirement a real export already satisfies.
+
 ## Force a recalculation of derived state
 
 1. `POST /api/v1/data/recalculate` (SET-11) requires `data:bulk` and an `Idempotency-Key` header, same replay/mismatch contract as `POST /transactions/batch`. Takes no meaningful request body.

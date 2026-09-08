@@ -3059,6 +3059,86 @@ paths:
           $ref: '#/components/responses/AuthenticationRequired'
         '403':
           $ref: '#/components/responses/InsufficientScope'
+  /data/import:
+    post:
+      operationId: importData
+      summary: Replace the entire account with the given data (SET-9)
+      description: >-
+        Restores what `GET /data/export` produced (or a hand-authored equivalent). Requires `{confirm: true}` —
+        this is destructive and replaces every collection. Requires the imported `data.meta.schemaVersion` to
+        match the account's current one when an account already exists (this never converts between schema
+        versions — that's `mm-admin migrate`'s job). Backs up the pre-import document to disk before overwriting,
+        mirroring `mm-admin migrate`'s own backup pattern, so a bad import is manually recoverable by an operator
+        with server access. `data.transactions` and every field `applyDerivedState` normally recomputes on a
+        transaction write (income totals, Mojo's `amount`, Smile/Fire fund-bucket `amount`) are never trusted
+        from the imported document directly — they're always rebuilt from the imported transactions, exactly as
+        every other write already does. Requires the `data:bulk` scope and an `Idempotency-Key` header, with the
+        same replay/mismatch contract as `POST /transactions/batch`.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [confirm, data]
+              properties:
+                confirm:
+                  type: boolean
+                  description: Must be `true` — an explicit acknowledgement that this replaces the whole account.
+                data:
+                  type: object
+                  description: The same shape `GET /data/export` returns under its own `data` key.
+              example:
+                confirm: true
+                data:
+                  meta:
+                    schemaVersion: 1
+                    currency: EUR
+                  transactions:
+                    - id: tx_01234567-89ab-cdef-0123-456789abcdef
+                      account: Daily
+                      amount: -12.5
+                      date: '2026-09-06'
+                      time: '14:00'
+                      category: '@Groceries'
+                      comment: ''
+      responses:
+        '200':
+          description: How many transactions were imported
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [transactionCount, schemaVersion]
+                properties:
+                  transactionCount:
+                    type: integer
+                  schemaVersion:
+                    type: integer
+                  backupFile:
+                    type: string
+                    nullable: true
+                    description: Path to the pre-import backup on the server, or `null` if no account existed yet.
+              example:
+                transactionCount: 42
+                schemaVersion: 1
+                backupFile: /app/backend/migration-backups/user_123-import-2026-09-06T14-00-00-000Z.json
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '409':
+          $ref: '#/components/responses/IdempotencyConflict'
   /data/recalculate:
     post:
       operationId: recalculateData
