@@ -7,6 +7,7 @@ const {
   createSubscription,
   updateSubscription,
   deleteSubscription,
+  refreshSubscriptions,
 } = require('../../repositories/subscription-repository');
 
 function dependencies(data, encryptionConfig) {
@@ -307,5 +308,69 @@ describe('deleteSubscription', () => {
     const document = { _id: 'user_1', _rev: '1-a', data: { subscriptions: [minimalRawSubscription()] } };
     const { deps } = writableDeps(document);
     await expect(deleteSubscription(deps, 'user_1', 'subscriptions_missing')).resolves.toBeNull();
+  });
+});
+
+describe('refreshSubscriptions', () => {
+  const NOW = new Date('2026-03-15');
+
+  it('generates due transactions and appends them, reporting counts', async () => {
+    const document = {
+      _id: 'user_1',
+      _rev: '1-a',
+      data: {
+        subscriptions: [
+          minimalRawSubscription({ startDate: '2026-01-15', amount: -10, frequency: 'monthly' }),
+        ],
+      },
+    };
+    const { deps, current } = writableDeps(document);
+    const result = await refreshSubscriptions(deps, 'user_1', { now: NOW });
+    expect(result.subscriptionsProcessed).toBe(1);
+    expect(result.transactionsCreated).toBeGreaterThan(0);
+    const stored = current().data.transactions;
+    expect(stored).toHaveLength(result.transactionsCreated);
+    expect(stored[0]).toMatchObject({ account: 'Daily', category: '@Streaming' });
+  });
+
+  it('does not write anything when no subscription is due yet', async () => {
+    const document = {
+      _id: 'user_1',
+      _rev: '1-a',
+      data: {
+        subscriptions: [minimalRawSubscription({ startDate: '2026-12-01' })],
+      },
+    };
+    const { deps } = writableDeps(document);
+    const result = await refreshSubscriptions(deps, 'user_1', { now: NOW });
+    expect(result).toEqual({ transactionsCreated: 0, subscriptionsProcessed: 0 });
+    expect(deps.usersDb.insert).not.toHaveBeenCalled();
+  });
+
+  it('does not regenerate a transaction that was already created for an occurrence', async () => {
+    const document = {
+      _id: 'user_1',
+      _rev: '1-a',
+      data: {
+        subscriptions: [
+          minimalRawSubscription({ startDate: '2026-01-15', endDate: '2026-01-15', amount: -10 }),
+        ],
+        transactions: [
+          {
+            id: 'transactions_1',
+            account: 'Daily',
+            amount: -10,
+            date: '2026-01-15',
+            time: '00:00',
+            category: '@Streaming',
+            comment: 'Spotify',
+          },
+        ],
+      },
+    };
+    const { deps } = writableDeps(document);
+    const result = await refreshSubscriptions(deps, 'user_1', { now: NOW });
+    expect(result).toEqual({ transactionsCreated: 0, subscriptionsProcessed: 1 });
+    expect(deps.usersDb.insert).not.toHaveBeenCalled();
   });
 });

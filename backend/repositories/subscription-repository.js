@@ -36,7 +36,7 @@
  */
 
 const crypto = require('crypto');
-const { toMinorUnits, transactionFromApi } = require('@money/domain');
+const { toMinorUnits, transactionFromApi, generateDueSubscriptionTransactions } = require('@money/domain');
 const { getEncryptionSession } = require('../services/encryption-session');
 const {
   decryptValue,
@@ -47,6 +47,7 @@ const {
   writeValue,
   toStoredMoney,
   applyDerivedState,
+  buildDerivedStateContext,
 } = require('../services/transaction-derived-state');
 
 const MAX_WRITE_RETRIES = 10;
@@ -152,11 +153,16 @@ function deleteMatchingTransactions(subscription, existingTransactions) {
 /**
  * Shared read → mutate → write-with-retry-on-409 loop. `mutate` receives the
  * still-encrypted `rawSubscriptions` plus the full `data` document (needed
- * to reach `data.transactions` for the PATCH/DELETE cascade) and returns
- * either `null` (nothing to do) or `{updatedData, result}` — `mutate` builds
- * `updatedData` itself (rather than this loop assembling it from named
- * parts) since a cascade needs to overlay `subscriptions`/`transactions` on
- * top of `applyDerivedState`'s own full data patch, not just `data`.
+ * to reach `data.transactions` for the PATCH/DELETE cascade) and returns one
+ * of:
+ * - `null` — nothing to do (e.g. the target id doesn't exist); no write happens.
+ * - `{ skipWrite: true, result }` — a no-op outcome (e.g. a refresh that had
+ *   nothing due); no write happens, `result` is returned as-is.
+ * - `{ updatedData, result }` — the new full data document to persist.
+ *   `mutate` builds `updatedData` itself (rather than this loop assembling it
+ *   from named parts) since a cascade needs to overlay
+ *   `subscriptions`/`transactions` on top of `applyDerivedState`'s own full
+ *   data patch, not just `data`.
  */
 async function withSubscriptionsWrite({ usersDb, authDb }, userId, mutate) {
   let attempt = 0;
@@ -182,6 +188,7 @@ async function withSubscriptionsWrite({ usersDb, authDb }, userId, mutate) {
 
     const mutation = mutate({ data, rawSubscriptions, session, schemaVersion, currency });
     if (mutation === null) return null;
+    if (mutation.skipWrite) return mutation.result;
     const { updatedData, result } = mutation;
     const now = new Date().toISOString();
     try {
@@ -333,13 +340,74 @@ async function deleteSubscription(deps, userId, subscriptionId, { deleteTransact
   );
 }
 
+/**
+ * `POST /subscriptions/refresh` — generates whatever transactions are due
+ * from active subscriptions and haven't already been generated
+ * (`generateDueSubscriptionTransactions`, `packages/domain/src/transactions/
+ * subscription-generation.ts`), then appends them in the same write every
+ * other transaction mutation goes through (`applyDerivedState`), so Mojo/
+ * Smile/Fire fund state and the Income accounting rebuild reflect the new
+ * transactions atomically alongside them — an improvement over the original
+ * app's per-transaction sequential persistence.
+ */
+async function refreshSubscriptions(deps, userId, { now = new Date() } = {}) {
+  return withSubscriptionsWrite(
+    deps,
+    userId,
+    ({ data, rawSubscriptions, session, schemaVersion, currency }) => {
+      const subscriptions = decryptAllSubscriptions(rawSubscriptions, session, schemaVersion);
+      const rawTransactions = data.transactions || [];
+      const existingTransactions = toApiTransactions(
+        rawTransactions,
+        session,
+        schemaVersion,
+        currency,
+      );
+      const fundState = buildDerivedStateContext(data, session, schemaVersion).funds;
+      const generation = generateDueSubscriptionTransactions(
+        subscriptions,
+        existingTransactions,
+        fundState,
+        now,
+      );
+      const result = {
+        transactionsCreated: generation.transactionsCreated,
+        subscriptionsProcessed: generation.subscriptionsProcessed,
+      };
+      if (generation.transactionsCreated === 0) {
+        return { skipWrite: true, result };
+      }
+
+      const newTransactions = generation.transactions.map((transaction) => ({
+        ...transaction,
+        id: `tx_${crypto.randomUUID()}`,
+        currency,
+      }));
+      const derived = applyDerivedState(
+        data,
+        [...existingTransactions, ...newTransactions],
+        session,
+        schemaVersion,
+      );
+      const updatedRawTransactions = derived.transactions.map((effective) =>
+        encryptTransaction(transactionFromApi(effective, schemaVersion), session),
+      );
+      return {
+        updatedData: { ...derived.data, transactions: updatedRawTransactions },
+        result,
+      };
+    },
+  );
+}
+
 module.exports = {
   listSubscriptions,
   getSubscription,
   createSubscription,
   updateSubscription,
   deleteSubscription,
-  // Internals re-exported for the refresh/batch/export/import modules.
+  refreshSubscriptions,
+  // Internals re-exported for the batch/export/import modules.
   decryptMoney,
   decryptSubscription,
   encryptSubscription,

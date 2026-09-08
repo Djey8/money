@@ -96,6 +96,7 @@ const {
   createSubscription,
   updateSubscription,
   deleteSubscription,
+  refreshSubscriptions,
 } = require('../repositories/subscription-repository');
 const { getUsersDb, getAuthDb } = require('../config/db');
 const { getEncryptionSession } = require('../services/encryption-session');
@@ -2802,6 +2803,26 @@ router.delete('/subscriptions/:subscriptionId', requireScope('subscriptions:w'),
       resourceId: req.params.subscriptionId,
     });
     return res.json({ id: req.params.subscriptionId });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.post('/subscriptions/refresh', requireScope('subscriptions:w'), async (req, res, next) => {
+  try {
+    const result = await refreshSubscriptions(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+    );
+    await recordAuditEntry(getAuditDb(), {
+      userId: req.userId,
+      actor: auditActor(req.auth),
+      method: req.method,
+      path: req.baseUrl + req.path,
+      resource: 'subscriptions_refresh',
+      itemCount: result.transactionsCreated,
+    });
+    return res.json(result);
   } catch (error) {
     return next(error);
   }

@@ -4317,6 +4317,185 @@ describe('v1 API authentication and PAT management', () => {
     });
   });
 
+  describe('POST /subscriptions/refresh', () => {
+    // Each test registers its own user so `subscriptionsProcessed`/`transactionsCreated` counts
+    // aren't polluted by subscriptions other tests left on a shared account.
+    async function refreshToken(scopes) {
+      const user = await registerTestUser(`_subscription_refresh_${Date.now()}_${Math.random()}`);
+      const created = await sessionRequest('post', '/api/v1/auth/tokens', user.token).send({
+        name: `subscription-refresh-agent-${Date.now()}-${Math.random()}`,
+        scopes,
+      });
+      return created.body;
+    }
+
+    function subscriptionBody(overrides = {}) {
+      return {
+        title: 'Spotify',
+        account: 'Daily',
+        amountMinor: -1000,
+        startDate: '2026-01-01',
+        category: '@Streaming',
+        ...overrides,
+      };
+    }
+
+    it('generates due transactions for an active subscription and reports counts', async () => {
+      const { token } = await refreshToken([
+        'subscriptions:r',
+        'subscriptions:w',
+        'transactions:r',
+      ]);
+      await request(app)
+        .post('/api/v1/subscriptions')
+        .set('Authorization', `Bearer ${token}`)
+        .send(
+          subscriptionBody({
+            category: `@RefreshRun${Date.now()}`,
+            startDate: '2026-01-01',
+            endDate: '2026-01-01',
+          }),
+        );
+
+      const response = await request(app)
+        .post('/api/v1/subscriptions/refresh')
+        .set('Authorization', `Bearer ${token}`);
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({ transactionsCreated: 1, subscriptionsProcessed: 1 });
+
+      const transactions = await request(app)
+        .get('/api/v1/transactions')
+        .set('Authorization', `Bearer ${token}`);
+      expect(transactions.body.transactions).toEqual(
+        expect.arrayContaining([expect.objectContaining({ date: '2026-01-01', amountMinor: -1000 })]),
+      );
+    });
+
+    it('does not regenerate an already-generated occurrence, but does regenerate it under a new identity after a PATCH', async () => {
+      const { token } = await refreshToken([
+        'subscriptions:r',
+        'subscriptions:w',
+        'transactions:r',
+        'transactions:w',
+      ]);
+      const category = `@RefreshDup${Date.now()}`;
+      const created = await request(app)
+        .post('/api/v1/subscriptions')
+        .set('Authorization', `Bearer ${token}`)
+        .send(subscriptionBody({ category, startDate: '2026-02-01', endDate: '2026-02-01' }));
+
+      const first = await request(app)
+        .post('/api/v1/subscriptions/refresh')
+        .set('Authorization', `Bearer ${token}`);
+      expect(first.body).toEqual({ transactionsCreated: 1, subscriptionsProcessed: 1 });
+
+      const second = await request(app)
+        .post('/api/v1/subscriptions/refresh')
+        .set('Authorization', `Bearer ${token}`);
+      expect(second.body).toEqual({ transactionsCreated: 0, subscriptionsProcessed: 1 });
+
+      // Changing the amount changes the subscription's identity, so its PATCH cascade
+      // deletes the old-identity transaction — a subsequent refresh should regenerate
+      // exactly one transaction under the new identity, not zero and not two.
+      await request(app)
+        .patch(`/api/v1/subscriptions/${created.body.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ amountMinor: -2000 });
+
+      const third = await request(app)
+        .post('/api/v1/subscriptions/refresh')
+        .set('Authorization', `Bearer ${token}`);
+      expect(third.body).toEqual({ transactionsCreated: 1, subscriptionsProcessed: 1 });
+
+      const transactions = await request(app)
+        .get('/api/v1/transactions')
+        .set('Authorization', `Bearer ${token}`);
+      const matching = transactions.body.transactions.filter((t) => t.category === category);
+      expect(matching).toHaveLength(1);
+      expect(matching[0].amountMinor).toBe(-2000);
+    });
+
+    it('stops generating once a Smile project reaches its target, even when it is not the first project (proves the fix for the original app\'s index-0-only cap bug)', async () => {
+      const { token } = await refreshToken([
+        'subscriptions:r',
+        'subscriptions:w',
+        'transactions:r',
+        'smile:r',
+        'smile:w',
+      ]);
+      await request(app)
+        .post('/api/v1/smile')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ title: `RefreshCapFirst${Date.now()}`, targetMinor: 100000 });
+      const secondProjectTitle = `RefreshCapSecond${Date.now()}`;
+      await request(app)
+        .post('/api/v1/smile')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ title: secondProjectTitle, targetMinor: 6000 });
+
+      await request(app)
+        .post('/api/v1/subscriptions')
+        .set('Authorization', `Bearer ${token}`)
+        .send(
+          subscriptionBody({
+            category: `@${secondProjectTitle}`,
+            amountMinor: -3000,
+            startDate: '2026-01-01',
+            endDate: '2026-02-01',
+            frequency: 'weekly',
+          }),
+        );
+
+      const response = await request(app)
+        .post('/api/v1/subscriptions/refresh')
+        .set('Authorization', `Bearer ${token}`);
+      expect(response.status).toBe(200);
+      // 5 weekly occurrences fall in the window, but the second occurrence already fills the
+      // 6000-minor target exactly (3000 + 3000) — every later occurrence must be skipped.
+      expect(response.body.transactionsCreated).toBe(2);
+
+      const project = await request(app)
+        .get('/api/v1/smile')
+        .set('Authorization', `Bearer ${token}`);
+      const bucket = project.body.projects.find((p) => p.title === secondProjectTitle).buckets[0];
+      expect(bucket.amountMinor).toBe(6000);
+    });
+
+    it('rejects requests without the subscriptions:w scope', async () => {
+      const { token } = await refreshToken(['subscriptions:r']);
+      const response = await request(app)
+        .post('/api/v1/subscriptions/refresh')
+        .set('Authorization', `Bearer ${token}`);
+      expect(response.status).toBe(403);
+      expect(response.body.code).toBe('scope_insufficient');
+    });
+
+    it('only generates transactions from the caller\'s own subscriptions, not another user\'s', async () => {
+      const { token: tokenA } = await refreshToken(['subscriptions:r', 'subscriptions:w', 'transactions:r']);
+      const { token: tokenB } = await refreshToken(['subscriptions:r', 'subscriptions:w', 'transactions:r']);
+      await request(app)
+        .post('/api/v1/subscriptions')
+        .set('Authorization', `Bearer ${tokenB}`)
+        .send(subscriptionBody({ category: `@RefreshIsolation${Date.now()}`, endDate: '2026-01-01' }));
+
+      // User A has no subscriptions of their own — refreshing must not see or apply user B's.
+      const refreshA = await request(app)
+        .post('/api/v1/subscriptions/refresh')
+        .set('Authorization', `Bearer ${tokenA}`);
+      expect(refreshA.body).toEqual({ transactionsCreated: 0, subscriptionsProcessed: 0 });
+      const transactionsA = await request(app)
+        .get('/api/v1/transactions')
+        .set('Authorization', `Bearer ${tokenA}`);
+      expect(transactionsA.body.transactions).toEqual([]);
+
+      // User B's own subscription is untouched by A's refresh call and still generates normally.
+      const refreshB = await request(app)
+        .post('/api/v1/subscriptions/refresh')
+        .set('Authorization', `Bearer ${tokenB}`);
+      expect(refreshB.body).toEqual({ transactionsCreated: 1, subscriptionsProcessed: 1 });
+    });
+  });
+
   describe('POST /grow/:id/{buy,sell,dividend,payback,cashflow,deposit}', () => {
     async function growToken(scopes) {
       const created = await sessionRequest('post', '/api/v1/auth/tokens').send({
