@@ -32,6 +32,9 @@ yarn-error.log
 !.vscode/extensions.json
 .history/*
 
+# Claude Code local tooling config (per-machine permissions, not project config)
+.claude/settings.json
+
 # Playwright
 /playwright-report
 /test-results
