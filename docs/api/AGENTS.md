@@ -269,6 +269,13 @@ Every Pro API write is audit logged. Prefer narrowly scoped, expiring tokens and
 4. **Changing an already-active key is rejected with `400 validation_invalid`.** The backend has no re-encryption logic anywhere — it only ever overwrites the config metadata, never re-processes already-stored ciphertext. Setting an initial key when none is active yet (current key is `'default'`/unset) works normally; resubmitting the exact same active key is a no-op. To actually rotate a key already protecting real data, use `mm-admin rotate-encryption-key` on the server (dry-run/backup/verify/rollback, the same rigor as `mm-admin migrate`) — there is no API path for this.
 5. `PUT` is audit logged (as `encryption_config`, no payload beyond the boolean flags); `GET` is not.
 
+## Export the full account
+
+1. `GET /api/v1/data/export` (SET-8) requires `data:bulk`. Returns `{data, createdAt, updatedAt}` — everything under the account's data document (transactions, balances, settings, everything), always decrypted server-side regardless of whether database encryption is on.
+2. Unlike the legacy, session-only `GET /api/data/document` (which returns ciphertext as-stored, since only the Angular client holds the key), this always returns plaintext, matching every other Pro API read (ADR-0001). Unlike the original client-side export (`settings.component.ts` `exportMigrationData`), this never bundles the encryption key or config into the result — an MCP tool or agent reading an export must never see the key.
+3. `GET` is audit logged despite being a read, since `data:bulk` is exactly the kind of blast-radius scope worth a record of who dumped the whole account and when.
+4. There is no schema-version normalization here — money fields come back exactly as stored (decimal for a `schemaVersion: 1` account, integer minor units for `schemaVersion: 2`). Check `data.meta.schemaVersion` before assuming which.
+
 ## Force a recalculation of derived state
 
 1. `POST /api/v1/data/recalculate` (SET-11) requires `data:bulk` and an `Idempotency-Key` header, same replay/mismatch contract as `POST /transactions/batch`. Takes no meaningful request body.

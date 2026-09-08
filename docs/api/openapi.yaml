@@ -3010,6 +3010,55 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
+  /data/export:
+    get:
+      operationId: exportData
+      summary: Export the full account document, decrypted (SET-8)
+      description: >-
+        Wraps the same full-document read the legacy, session-only `GET /api/data/document` does, with two
+        deliberate corrections: this always returns plaintext, even when database encryption is on (the legacy
+        route returns ciphertext as-stored, since only the Angular client holds the key), and this never includes
+        the encryption key or config — the original client-side export bundles the raw key into the downloaded
+        file, which this does not replicate. Audited despite being a `GET`, since `data:bulk` is exactly the kind
+        of blast-radius scope worth a record of who read a full account dump and when.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The full account document
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, createdAt, updatedAt]
+                properties:
+                  data:
+                    type: object
+                    description: Everything under the account's data document (transactions, balances, settings, ...), decrypted.
+                  createdAt:
+                    type: string
+                    format: date-time
+                    nullable: true
+                  updatedAt:
+                    type: string
+                    format: date-time
+                    nullable: true
+              example:
+                data:
+                  transactions:
+                    - id: tx_01234567-89ab-cdef-0123-456789abcdef
+                      account: Daily
+                      amount: -12.5
+                      date: '2026-09-06'
+                      time: '14:00'
+                      category: '@Groceries'
+                      comment: ''
+                createdAt: '2026-01-01T00:00:00.000Z'
+                updatedAt: '2026-09-06T14:00:00.000Z'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
   /data/recalculate:
     post:
       operationId: recalculateData

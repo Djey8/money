@@ -484,6 +484,15 @@ curl -X PUT "http://localhost:3000/api/v1/encryption-config" \
   -d '{"encryptDatabase": true}'
 ```
 
+## Export the full account
+
+Requires `data:bulk`. Always returns decrypted plaintext (unlike the legacy `/api/data/document`) and never includes the encryption key/config.
+
+```bash
+curl "http://localhost:3000/api/v1/data/export" \
+  -H "Authorization: Bearer $MONEY_MANAGER_TOKEN"
+```
+
 ## Force a recalculation of derived state
 
 Requires `data:bulk` and an `Idempotency-Key` header. Forces the same recalculation every transaction write already runs (accounting totals, Mojo, Smile/Fire fund buckets) — the "Fix Accounting" button's server-side equivalent. Useful after a data import or manual fix that could have left derived aggregates stale; never required after a normal write through this API.
