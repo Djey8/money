@@ -483,7 +483,7 @@ router.put('/update-email', authenticateToken, async (req, res) => {
     });
     res.cookie('access_token', accessToken, {
       ...COOKIE_OPTIONS,
-      maxAge: 15 * 60 * 1000,
+      maxAge: ACCESS_TOKEN_MAX_AGE_MS,
     });
 
     logger.logUserActivity(userId, 'email_updated', {
@@ -639,3 +639,11 @@ router.post('/logout', async (req, res) => {
 
 module.exports = router;
 module.exports.authenticateToken = authenticateToken; // Re-export for backward compat
+// Re-exported for backend/repositories/account-repository.js and its Pro
+// API routes (GET/PATCH/DELETE /api/v1/account) — reusing this module's
+// own cookie/token machinery rather than a second copy of it.
+module.exports.ACCESS_TOKEN_EXPIRES_IN = ACCESS_TOKEN_EXPIRES_IN;
+module.exports.ACCESS_TOKEN_MAX_AGE_MS = ACCESS_TOKEN_MAX_AGE_MS;
+module.exports.COOKIE_OPTIONS = COOKIE_OPTIONS;
+module.exports.clearAuthCookies = clearAuthCookies;
+module.exports.revokeRefreshToken = revokeRefreshToken;

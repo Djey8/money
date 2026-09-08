@@ -89,6 +89,15 @@ async function createIndexes() {
       name: 'auth-pat-token-hash-index',
     });
 
+    // Serves listTokens' "this user's PATs" lookup (cli/commands/token.js)
+    // and account-repository.js's deleteAccount PAT-cleanup cascade.
+    await authDb.createIndex({
+      index: {
+        fields: ['type', 'userId'],
+      },
+      name: 'auth-pat-user-index',
+    });
+
     // Index for users database
     await usersDb.createIndex({
       index: {

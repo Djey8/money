@@ -7208,4 +7208,218 @@ describe('v1 API authentication and PAT management', () => {
     expect(response.status).toBe(404);
     expect(response.body.code).toBe('not_found');
   });
+
+  describe('Account (GET/PATCH/DELETE /account, POST /account/verify-password)', () => {
+    // Fresh user per test — email changes and account deletion are
+    // destructive/identity-sensitive; a shared account would corrupt other
+    // tests.
+    async function accountUser() {
+      return registerTestUser(`_account_${Date.now()}_${Math.random()}`);
+    }
+
+    async function accountToken(sessionToken, scopes) {
+      const created = await sessionRequest('post', '/api/v1/auth/tokens', sessionToken).send({
+        name: `account-agent-${Date.now()}-${Math.random()}`,
+        scopes,
+      });
+      return created.body.token;
+    }
+
+    describe('GET /account', () => {
+      it('returns the account email, readable via a PAT with account:r', async () => {
+        const user = await accountUser();
+        const token = await accountToken(user.token, ['account:r']);
+        const response = await request(app)
+          .get('/api/v1/account')
+          .set('Authorization', `Bearer ${token}`);
+        expect(response.status).toBe(200);
+        expect(response.body.email).toBe(user.email);
+      });
+
+      it('requires the account:r scope', async () => {
+        const user = await accountUser();
+        const token = await accountToken(user.token, ['transactions:r']);
+        const response = await request(app)
+          .get('/api/v1/account')
+          .set('Authorization', `Bearer ${token}`);
+        expect(response.status).toBe(403);
+        expect(response.body.code).toBe('scope_insufficient');
+      });
+    });
+
+    describe('PATCH /account', () => {
+      it('updates the email via a session and reissues the session cookie with the full 24h lifetime', async () => {
+        const user = await accountUser();
+        const newEmail = `updated_${Date.now()}@test.local`;
+        const response = await sessionRequest('patch', '/api/v1/account', user.token).send({
+          email: newEmail,
+        });
+        expect(response.status).toBe(200);
+        expect(response.body.email).toBe(newEmail);
+
+        const cookies = response.headers['set-cookie'] || [];
+        const accessCookie = cookies.find((c) => c.startsWith('access_token='));
+        expect(accessCookie).toBeDefined();
+        // 24h = 86400s — the fixed value; the legacy bug set this to 900 (15 min).
+        expect(accessCookie).toContain('Max-Age=86400');
+
+        // The stored account record must reflect the change immediately,
+        // independent of which token reads it back.
+        const readToken = await accountToken(user.token, ['account:r']);
+        const getResponse = await request(app)
+          .get('/api/v1/account')
+          .set('Authorization', `Bearer ${readToken}`);
+        expect(getResponse.body.email).toBe(newEmail);
+      });
+
+      it('also updates data.info.email in the same operation', async () => {
+        const user = await accountUser();
+        const newEmail = `updated_${Date.now()}@test.local`;
+        await sessionRequest('patch', '/api/v1/account', user.token).send({ email: newEmail });
+
+        const exportToken = await accountToken(user.token, ['data:bulk']);
+        const exported = await request(app)
+          .get('/api/v1/data/export')
+          .set('Authorization', `Bearer ${exportToken}`);
+        expect(exported.body.data.info.email).toBe(newEmail);
+      });
+
+      it('rejects a malformed email', async () => {
+        const user = await accountUser();
+        const response = await sessionRequest('patch', '/api/v1/account', user.token).send({
+          email: 'not-an-email',
+        });
+        expect(response.status).toBe(400);
+        expect(response.body.code).toBe('validation_invalid');
+      });
+
+      it('rejects an email already used by another account', async () => {
+        const userA = await accountUser();
+        const userB = await accountUser();
+        const response = await sessionRequest('patch', '/api/v1/account', userA.token).send({
+          email: userB.email,
+        });
+        expect(response.status).toBe(409);
+        expect(response.body.code).toBe('conflict_email_taken');
+      });
+
+      it('rejects a PAT, regardless of scope', async () => {
+        const user = await accountUser();
+        const token = await accountToken(user.token, ['account:r', 'account:w']);
+        const response = await request(app)
+          .patch('/api/v1/account')
+          .set('Authorization', `Bearer ${token}`)
+          .send({ email: `pat-attempt-${Date.now()}@test.local` });
+        expect(response.status).toBe(403);
+        expect(response.body.code).toBe('auth_session_required');
+      });
+
+      it('rejects an unrecognized field', async () => {
+        const user = await accountUser();
+        const response = await sessionRequest('patch', '/api/v1/account', user.token).send({
+          username: 'nope',
+        });
+        expect(response.status).toBe(400);
+        expect(response.body.code).toBe('validation_invalid');
+      });
+    });
+
+    describe('POST /account/verify-password', () => {
+      it('returns valid: true for the correct password', async () => {
+        const user = await accountUser();
+        const response = await sessionRequest(
+          'post',
+          '/api/v1/account/verify-password',
+          user.token,
+        ).send({ password: 'TestPassword123!' });
+        expect(response.status).toBe(200);
+        expect(response.body.valid).toBe(true);
+      });
+
+      it('rejects an incorrect password', async () => {
+        const user = await accountUser();
+        const response = await sessionRequest(
+          'post',
+          '/api/v1/account/verify-password',
+          user.token,
+        ).send({ password: 'wrong-password' });
+        expect(response.status).toBe(401);
+      });
+
+      it('rejects a PAT, regardless of scope', async () => {
+        const user = await accountUser();
+        const token = await accountToken(user.token, ['account:r', 'account:w']);
+        const response = await request(app)
+          .post('/api/v1/account/verify-password')
+          .set('Authorization', `Bearer ${token}`)
+          .send({ password: 'TestPassword123!' });
+        expect(response.status).toBe(403);
+        expect(response.body.code).toBe('auth_session_required');
+      });
+    });
+
+    describe('DELETE /account', () => {
+      it('requires confirm: true', async () => {
+        const user = await accountUser();
+        const response = await sessionRequest('delete', '/api/v1/account', user.token).send({});
+        expect(response.status).toBe(400);
+        expect(response.body.code).toBe('validation_invalid');
+      });
+
+      it('rejects a PAT, regardless of scope', async () => {
+        const user = await accountUser();
+        const token = await accountToken(user.token, ['account:r', 'account:w']);
+        const response = await request(app)
+          .delete('/api/v1/account')
+          .set('Authorization', `Bearer ${token}`)
+          .send({ confirm: true });
+        expect(response.status).toBe(403);
+        expect(response.body.code).toBe('auth_session_required');
+      });
+
+      it('deletes the account and every PAT belonging to it, so a leaked PAT can no longer authenticate', async () => {
+        const user = await accountUser();
+        const token = await accountToken(user.token, ['transactions:r']);
+
+        // Confirm the PAT works before deletion.
+        const before = await request(app).get('/api/v1/me').set('Authorization', `Bearer ${token}`);
+        expect(before.status).toBe(200);
+
+        const response = await sessionRequest('delete', '/api/v1/account', user.token).send({
+          confirm: true,
+        });
+        expect(response.status).toBe(200);
+        expect(response.body.deletedTokenCount).toBe(1);
+
+        // The same PAT must no longer authenticate — its document is gone.
+        const after = await request(app).get('/api/v1/me').set('Authorization', `Bearer ${token}`);
+        expect(after.status).toBe(401);
+      });
+
+      it('clears the session cookies', async () => {
+        const user = await accountUser();
+        const response = await sessionRequest('delete', '/api/v1/account', user.token).send({
+          confirm: true,
+        });
+        expect(response.status).toBe(200);
+        const cookies = response.headers['set-cookie'] || [];
+        const cleared = cookies.find((c) => c.startsWith('access_token='));
+        expect(cleared).toBeDefined();
+        expect(cleared).toMatch(/access_token=;/);
+      });
+
+      it('does not affect another user’s account or tokens', async () => {
+        const userA = await accountUser();
+        const userB = await accountUser();
+        const tokenB = await accountToken(userB.token, ['transactions:r']);
+
+        await sessionRequest('delete', '/api/v1/account', userA.token).send({ confirm: true });
+
+        const stillWorks = await request(app)
+          .get('/api/v1/me')
+          .set('Authorization', `Bearer ${tokenB}`);
+        expect(stillWorks.status).toBe(200);
+      });
+    });
+  });
 });

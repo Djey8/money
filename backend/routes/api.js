@@ -1,10 +1,25 @@
 'use strict';
 
 const crypto = require('crypto');
+const jwt = require('jsonwebtoken');
 const express = require('express');
 const { getAuditDb } = require('../config/db');
 const { recordAuditEntry, findAuditEntryByIdempotencyKey } = require('../config/audit');
 const { createToken, listTokens, revokeToken } = require('../cli/commands/token');
+const {
+  ACCESS_TOKEN_EXPIRES_IN,
+  ACCESS_TOKEN_MAX_AGE_MS,
+  COOKIE_OPTIONS,
+  clearAuthCookies,
+  revokeRefreshToken,
+} = require('./auth');
+const {
+  getAccount,
+  updateAccountEmail,
+  verifyAccountPassword,
+  deleteAccount,
+  AccountError,
+} = require('../repositories/account-repository');
 const {
   batchTransactions,
   copyTransaction,
@@ -3699,6 +3714,160 @@ router.post('/data/recalculate', requireScope('data:bulk'), async (req, res, nex
       return problem(res, 400, 'validation_invalid', 'Cannot recalculate', error.message);
     },
   });
+});
+
+// `account:r` — reading the current email isn't identity-sensitive the way
+// changing/deleting it is, so this alone stays PAT-readable (decision 3,
+// Slice 6 plan), unlike every other route on this resource below.
+router.get('/account', requireScope('account:r'), async (req, res, next) => {
+  try {
+    const account = await getAccount({ authDb: getAuthDb() }, req.userId);
+    return res.json(account);
+  } catch (error) {
+    if (error instanceof AccountError && error.code === 'ACCOUNT_NOT_FOUND') {
+      return problem(res, 404, 'not_found', 'Account not found', error.message);
+    }
+    return next(error);
+  }
+});
+
+function validatePatchAccountInput(input) {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) {
+    return 'A request body object is required.';
+  }
+  const unknownField = Object.keys(input).find((key) => key !== 'email');
+  if (unknownField) return `${unknownField} is not an editable field.`;
+  if (!isNonEmptyString(input.email)) return 'email must be a non-empty string.';
+  return null;
+}
+
+// requireSession-only, no scope check on top — the same restriction already
+// applied to `/auth/tokens*` and `PUT /encryption-config`: a leaked PAT with
+// `account:w` scope must never be able to change the account's email.
+router.patch('/account', requireSession, async (req, res, next) => {
+  const validationError = validatePatchAccountInput(req.body);
+  if (validationError) {
+    return problem(res, 400, 'validation_invalid', 'Invalid account request', validationError);
+  }
+  try {
+    const result = await updateAccountEmail(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+      req.body.email,
+    );
+    // Reissue the session cookie with the new email, the same way the
+    // legacy PUT /auth/update-email does — using ACCESS_TOKEN_MAX_AGE_MS
+    // (24h), not that route's own now-fixed 15-minute bug.
+    const accessToken = jwt.sign(
+      { userId: req.userId, email: result.email },
+      process.env.JWT_SECRET,
+      { expiresIn: ACCESS_TOKEN_EXPIRES_IN },
+    );
+    res.cookie('access_token', accessToken, {
+      ...COOKIE_OPTIONS,
+      maxAge: ACCESS_TOKEN_MAX_AGE_MS,
+    });
+    await recordAuditEntry(getAuditDb(), {
+      userId: req.userId,
+      actor: auditActor(req.auth),
+      method: req.method,
+      path: req.baseUrl + req.path,
+      resource: 'account',
+    });
+    return res.json(result);
+  } catch (error) {
+    if (error instanceof AccountError) {
+      const isConflict = error.code === 'ACCOUNT_EMAIL_TAKEN';
+      return problem(
+        res,
+        isConflict ? 409 : 400,
+        isConflict ? 'conflict_email_taken' : 'validation_invalid',
+        'Invalid account request',
+        error.message,
+      );
+    }
+    return next(error);
+  }
+});
+
+// requireSession-only — verifying the account password gates other
+// sensitive UI actions; a PAT (even with account:w) must never be able to
+// do this on the user's behalf.
+router.post('/account/verify-password', requireSession, async (req, res, next) => {
+  if (!isNonEmptyString(req.body?.password)) {
+    return problem(
+      res,
+      400,
+      'validation_invalid',
+      'Invalid verify-password request',
+      'password must be a non-empty string.',
+    );
+  }
+  try {
+    const valid = await verifyAccountPassword(
+      { authDb: getAuthDb() },
+      req.userId,
+      req.body.password,
+    );
+    if (!valid) {
+      return problem(
+        res,
+        401,
+        'auth_invalid',
+        'Invalid password',
+        'The provided password is incorrect.',
+      );
+    }
+    return res.json({ valid: true });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+// requireSession-only, requires {confirm: true} — this permanently deletes
+// the account. Extends the legacy DELETE /auth/delete-account cascade
+// (which destroys only the usersDb/authDb documents) to also delete every
+// PAT belonging to the user — left in place, a PAT would otherwise keep
+// authenticating after the account it belongs to no longer exists — and to
+// explicitly revoke the current refresh token, rather than relying solely
+// on the deleted authDb document to (eventually, on next use) invalidate it.
+router.delete('/account', requireSession, async (req, res, next) => {
+  if (req.body?.confirm !== true) {
+    return problem(
+      res,
+      400,
+      'validation_invalid',
+      'Invalid delete-account request',
+      'confirm must be true to delete the account.',
+    );
+  }
+  try {
+    const result = await deleteAccount({ usersDb: getUsersDb(), authDb: getAuthDb() }, req.userId);
+    const refreshToken = req.cookies?.refresh_token;
+    if (refreshToken) {
+      try {
+        const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET);
+        await revokeRefreshToken(decoded.jti);
+      } catch {
+        // Already invalid/expired/malformed — nothing left to revoke.
+      }
+    }
+    await recordAuditEntry(getAuditDb(), {
+      userId: req.userId,
+      actor: auditActor(req.auth),
+      method: req.method,
+      path: req.baseUrl + req.path,
+      resource: 'account',
+      itemCount: result.deletedTokenCount,
+    });
+    clearAuthCookies(res);
+    return res.json({ deletedTokenCount: result.deletedTokenCount });
+  } catch (error) {
+    if (error instanceof AccountError) {
+      return problem(res, 400, 'validation_invalid', 'Cannot delete account', error.message);
+    }
+    return next(error);
+  }
 });
 
 module.exports = router;
