@@ -2,13 +2,17 @@
   "name": "money",
   "version": "1.12.0",
   "workspaces": [
-    "packages/domain"
+    "packages/domain",
+    "apps/mcp"
   ],
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
     "build:domain": "npm run build --workspace=packages/domain",
     "test:domain": "npm run test --workspace=packages/domain",
+    "build:mcp": "npm run build --workspace=apps/mcp",
+    "test:mcp": "npm run test --workspace=apps/mcp",
+    "typecheck:mcp": "npm run typecheck --workspace=apps/mcp",
     "build": "npm run build:domain && ng build --configuration firebase",
     "build:selfhosted": "npm run build:domain && ng build --configuration selfhosted",
     "build:firebase": "npm run build:domain && ng build --configuration firebase",
@@ -33,7 +37,7 @@
     "format": "prettier --check .",
     "format:fix": "prettier --write .",
     "typecheck": "tsc --noEmit -p tsconfig.app.json",
-    "verify": "npm run build:domain && npm run test:domain && npm run lint && npm run format && npm run typecheck && npm test -- --watchAll=false && npm run --prefix backend verify"
+    "verify": "npm run build:domain && npm run test:domain && npm run build:mcp && npm run test:mcp && npm run typecheck:mcp && npm run lint && npm run format && npm run typecheck && npm test -- --watchAll=false && npm run --prefix backend verify"
   },
   "private": true,
   "dependencies": {
@@ -101,6 +105,10 @@
     "packages/domain/src/**/*.ts": [
       "eslint --fix",
       "npm run test --workspace=packages/domain --if-present -- --bail --findRelatedTests --passWithNoTests"
+    ],
+    "apps/mcp/{src,scripts}/**/*.ts": [
+      "eslint --fix",
+      "npm run test --workspace=apps/mcp --if-present -- --bail --findRelatedTests --passWithNoTests"
     ]
   }
 }

@@ -1,0 +1,37 @@
+{
+  "name": "@money/mcp",
+  "version": "0.1.0",
+  "private": true,
+  "description": "MCP server exposing the self-hosted Money Manager Pro API as agent tools. See docs/adr/0008-mcp-server-design.md.",
+  "main": "dist/index.js",
+  "bin": {
+    "money-manager-mcp": "dist/index.js"
+  },
+  "scripts": {
+    "generate": "tsx scripts/generate-operations.ts",
+    "prebuild": "npm run generate",
+    "build": "tsc -p tsconfig.json",
+    "clean": "rm -rf dist src/generated/operations.ts",
+    "pretest": "npm run generate",
+    "test": "jest -- tests/unit",
+    "test:integration": "npm run build && jest --forceExit --detectOpenHandles -- tests/integration",
+    "lint": "eslint .",
+    "format": "prettier --check . --config ../../.prettierrc.json --ignore-path ../../.prettierignore",
+    "pretypecheck": "npm run generate",
+    "typecheck": "tsc --noEmit -p tsconfig.scripts.json",
+    "verify": "npm run lint && npm run format && npm run typecheck && npm run build && npm test"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "js-yaml": "^4.1.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.14",
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^20.6.4",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.4.6",
+    "tsx": "^4.19.2",
+    "typescript": "~5.9.3"
+  }
+}

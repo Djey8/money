@@ -41,6 +41,50 @@ jobs:
           name: frontend-coverage
           path: coverage/
 
+  mcp-unit:
+    name: MCP Server Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --legacy-peer-deps
+      - run: npm run build:mcp
+      - run: npm run typecheck:mcp
+      - run: npm run test:mcp
+
+  mcp-integration:
+    name: MCP Server Integration Tests
+    runs-on: ubuntu-latest
+    services:
+      couchdb:
+        image: couchdb:3
+        ports:
+          - 5984:5984
+        env:
+          COUCHDB_USER: admin
+          COUCHDB_PASSWORD: password
+        options: >-
+          --health-cmd "curl -f http://localhost:5984/_up || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      COUCHDB_URL: http://admin:password@localhost:5984
+      JWT_SECRET: test-secret-for-ci
+      NODE_ENV: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --legacy-peer-deps
+      - run: cd backend && npm ci
+      - run: npm run test:integration --workspace=apps/mcp
+
   backend-unit:
     name: Backend Unit Tests
     runs-on: ubuntu-latest
