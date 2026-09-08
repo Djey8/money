@@ -29,9 +29,59 @@
  * "recalculates derived state, never touches your transactions" contract.
  */
 
+const { decryptDocumentPreservingTypes } = require('@money/domain');
 const { withTransactionsWrite } = require('./transaction-repository');
+const { getEncryptionSession } = require('../services/encryption-session');
 
 class RecalculateError extends Error {}
+
+/**
+ * `GET /data/export` (SET-8) — wraps the same full-document read the
+ * legacy, session-only `GET /api/data/document` does, with two deliberate
+ * corrections:
+ *
+ * 1. **Always returns plaintext, with correct JSON types**, even when
+ *    `encryptDatabase` is on. The legacy route returns the document
+ *    exactly as stored — still ciphertext, since only the Angular client
+ *    (which already holds the key) can make sense of it. Every other Pro
+ *    API read decrypts server-side (ADR-0001), and an exported file is
+ *    explicitly meant to be portable/human-readable, so this does too —
+ *    using `decryptDocumentPreservingTypes` (packages/domain), which both
+ *    decrypts every encrypted leaf regardless of shape/name AND recovers
+ *    the original number type for known-numeric fields (encryption always
+ *    stores a number as its stringified form, so a naive decrypt-only walk
+ *    would hand back `"-12.5"` instead of `-12.5`). Throws if a value looks
+ *    encrypted but no key is configured — reachable if `encryptDatabase`
+ *    was toggled off without re-encrypting already-stored data (allowed by
+ *    `PUT /encryption-config`) — rather than silently returning leftover
+ *    ciphertext inside an otherwise-plaintext export.
+ * 2. **Never includes the encryption key or config.** This isn't an active
+ *    filtering step — `encryptionConfig` lives only on the separate
+ *    `authDb` document (`services/encryption-session.js`), never inside
+ *    `usersDb`'s `data`, and this function never reads `authDb` for
+ *    anything but the decryption session — but it's called out because the
+ *    original client-side export (`settings.component.ts`
+ *    `exportMigrationData`, SET-8) does bundle the raw key into the
+ *    downloaded file, which this deliberately does not replicate.
+ */
+async function exportUserData({ usersDb, authDb }, userId) {
+  let userDoc;
+  try {
+    userDoc = await usersDb.get(userId);
+  } catch (error) {
+    if (error.statusCode !== 404) throw error;
+    return { data: {}, createdAt: null, updatedAt: null };
+  }
+  const session = await getEncryptionSession(authDb, userId);
+  const { data } = decryptDocumentPreservingTypes(userDoc.data || {}, {
+    decrypt: session ? (value) => session.decrypt(value) : undefined,
+  });
+  return {
+    data,
+    createdAt: userDoc.createdAt || null,
+    updatedAt: userDoc.updatedAt || null,
+  };
+}
 
 async function recalculateUserData(deps, userId) {
   const result = await withTransactionsWrite(
@@ -61,4 +111,4 @@ async function recalculateUserData(deps, userId) {
   return result || { transactionCount: 0 };
 }
 
-module.exports = { recalculateUserData, RecalculateError };
+module.exports = { recalculateUserData, RecalculateError, exportUserData };

@@ -5378,6 +5378,127 @@ describe('v1 API authentication and PAT management', () => {
     });
   });
 
+  describe('GET /data/export', () => {
+    // Fresh user per test — this endpoint dumps the whole account, so a
+    // shared account would leak other tests' data into the export.
+    async function exportUser() {
+      return registerTestUser(`_export_${Date.now()}_${Math.random()}`);
+    }
+
+    async function exportToken(sessionToken, scopes) {
+      const created = await sessionRequest('post', '/api/v1/auth/tokens', sessionToken).send({
+        name: `export-agent-${Date.now()}-${Math.random()}`,
+        scopes,
+      });
+      return created.body.token;
+    }
+
+    it('exports the full account document, decrypted', async () => {
+      const user = await exportUser();
+      await sessionRequest('post', '/api/v1/transactions', user.token).send({
+        account: 'Income',
+        amountMinor: 500000,
+        date: '2026-09-06',
+        time: '09:00',
+        category: '@Salary',
+        comment: '',
+      });
+
+      const token = await exportToken(user.token, ['data:bulk']);
+      const response = await request(app)
+        .get('/api/v1/data/export')
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.data.transactions).toHaveLength(1);
+      expect(response.body.data.transactions[0]).toMatchObject({
+        account: 'Income',
+        category: '@Salary',
+      });
+      expect(response.body.createdAt).toEqual(expect.any(String));
+      expect(response.body.updatedAt).toEqual(expect.any(String));
+    });
+
+    it('returns a document with no transactions for a brand-new account', async () => {
+      const user = await exportUser();
+      const token = await exportToken(user.token, ['data:bulk']);
+      const response = await request(app)
+        .get('/api/v1/data/export')
+        .set('Authorization', `Bearer ${token}`);
+      expect(response.status).toBe(200);
+      // Registration itself writes data.info.{username,email} — only
+      // transactions (and everything else this test doesn't set up) starts
+      // genuinely empty.
+      expect(response.body.data.transactions).toBeUndefined();
+      expect(response.body.createdAt).toEqual(expect.any(String));
+    });
+
+    it('decrypts encrypted fields and never exposes the raw encryption key', async () => {
+      const user = await exportUser();
+      await sessionRequest('put', '/api/v1/encryption-config', user.token).send({
+        key: 'export-test-secret-key',
+        encryptDatabase: true,
+      });
+      await sessionRequest('post', '/api/v1/transactions', user.token).send({
+        account: 'Daily',
+        amountMinor: -4200,
+        date: '2026-09-06',
+        time: '10:00',
+        category: '@Groceries',
+        comment: 'Weekly shop',
+      });
+
+      const token = await exportToken(user.token, ['data:bulk']);
+      const response = await request(app)
+        .get('/api/v1/data/export')
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.data.transactions[0]).toMatchObject({
+        account: 'Daily',
+        category: '@Groceries',
+        comment: 'Weekly shop',
+      });
+      // Money fields must come back as real numbers, not the stringified form
+      // encryption stores them as internally.
+      expect(response.body.data.transactions[0].amount).toBe(-42);
+      expect(typeof response.body.data.transactions[0].amount).toBe('number');
+      expect(JSON.stringify(response.body)).not.toContain('export-test-secret-key');
+    });
+
+    it('requires the data:bulk scope', async () => {
+      const user = await exportUser();
+      const token = await exportToken(user.token, ['transactions:r']);
+      const response = await request(app)
+        .get('/api/v1/data/export')
+        .set('Authorization', `Bearer ${token}`);
+      expect(response.status).toBe(403);
+      expect(response.body.code).toBe('scope_insufficient');
+    });
+
+    it('keeps the export isolated to the authenticated user document', async () => {
+      const userA = await exportUser();
+      const userB = await exportUser();
+      await sessionRequest('post', '/api/v1/transactions', userB.token).send({
+        account: 'Income',
+        amountMinor: 999900,
+        date: '2026-09-06',
+        time: '09:00',
+        category: '@UserB salary',
+        comment: '',
+      });
+
+      const tokenA = await exportToken(userA.token, ['data:bulk']);
+      const response = await request(app)
+        .get('/api/v1/data/export')
+        .set('Authorization', `Bearer ${tokenA}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.data.transactions).toBeUndefined();
+      expect(JSON.stringify(response.body)).not.toContain('UserB salary');
+    });
+  });
+
   describe('POST /data/recalculate', () => {
     // Fresh user per test — this endpoint recalculates every derived
     // aggregate on the account, so a shared account would leak other tests'

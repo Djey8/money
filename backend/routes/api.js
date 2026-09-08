@@ -115,7 +115,7 @@ const {
   getPublicEncryptionConfig,
   updatePublicEncryptionConfig,
 } = require('../repositories/encryption-config-repository');
-const { recalculateUserData } = require('../repositories/data-repository');
+const { recalculateUserData, exportUserData } = require('../repositories/data-repository');
 const { getUsersDb, getAuthDb } = require('../config/db');
 const { getEncryptionSession } = require('../services/encryption-session');
 const {
@@ -3640,6 +3640,28 @@ router.put('/encryption-config', requireSession, async (req, res, next) => {
         error.message,
       );
     }
+    return next(error);
+  }
+});
+
+// `data:bulk` — a full-account dump is exactly the kind of blast-radius
+// read that scope is meant to gate, even though it's a GET. Always
+// decrypts (unlike the legacy `GET /api/data/document`, which returns
+// ciphertext as-stored) and never includes the encryption key/config
+// (which lives only on the separate authDb document anyway). Audited like
+// `GET /subscriptions/export` despite being a read.
+router.get('/data/export', requireScope('data:bulk'), async (req, res, next) => {
+  try {
+    const result = await exportUserData({ usersDb: getUsersDb(), authDb: getAuthDb() }, req.userId);
+    await recordAuditEntry(getAuditDb(), {
+      userId: req.userId,
+      actor: auditActor(req.auth),
+      method: req.method,
+      path: req.baseUrl + req.path,
+      resource: 'data',
+    });
+    return res.json(result);
+  } catch (error) {
     return next(error);
   }
 });
