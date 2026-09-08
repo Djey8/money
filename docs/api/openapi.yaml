@@ -3179,6 +3179,190 @@ paths:
           $ref: '#/components/responses/InsufficientScope'
         '409':
           $ref: '#/components/responses/IdempotencyConflict'
+  /account:
+    get:
+      operationId: getAccount
+      summary: Read the caller's account email (AUTH-6, PROF-1)
+      description: >-
+        Requires `account:r` — readable via a PAT with any scope holding it, unlike every other operation on this
+        resource. Reading the current email isn't identity-sensitive the way changing or deleting the account is.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The caller's account
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [email]
+                properties:
+                  email:
+                    type: string
+                    format: email
+                  createdAt:
+                    type: string
+                    format: date-time
+                    nullable: true
+              example:
+                email: jkluess@example.com
+                createdAt: '2026-01-01T00:00:00.000Z'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+    patch:
+      operationId: updateAccount
+      summary: Change the account's email (AUTH-6)
+      description: >-
+        Session-only — never callable with a PAT, regardless of scope, the same restriction already applied to
+        `/auth/tokens*` and `PUT /encryption-config`. Rejects an email already used by another account. Reissues
+        the session cookie with the new email using the standard 24h lifetime (the legacy, session-only `PUT
+        /auth/update-email` had a bug reissuing it with only a 15-minute lifetime — fixed here, and in that route
+        too). Also updates `data.info.email` in the same operation, which the legacy route never did, so the two
+        copies of the email (`authDb` and the Pro-API-readable `data.info`) never silently diverge.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email:
+                  type: string
+                  format: email
+            example:
+              email: new-address@example.com
+      responses:
+        '200':
+          description: Updated account
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [email]
+                properties:
+                  email:
+                    type: string
+                    format: email
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          description: Insufficient scope, or a real login session is required (PATs can never call this endpoint)
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '409':
+          description: Email already in use by another account
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              example:
+                type: https://money-manager.dev/problems/conflict_email_taken
+                title: Invalid account request
+                status: 409
+                detail: Email already in use by another account.
+                code: conflict_email_taken
+    delete:
+      operationId: deleteAccount
+      summary: Permanently delete the account (AUTH-8)
+      description: >-
+        Session-only, requires `{confirm: true}` — this is destructive and irreversible. Extends the legacy
+        `DELETE /auth/delete-account` cascade (which destroys only the `usersDb`/`authDb` documents) to also
+        delete every Personal Access Token belonging to the user — left in place, a PAT would otherwise keep
+        authenticating after the account it belongs to no longer exists — and to explicitly revoke the current
+        refresh token, rather than relying solely on the deleted `authDb` document to eventually invalidate it.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [confirm]
+              properties:
+                confirm:
+                  type: boolean
+            example:
+              confirm: true
+      responses:
+        '200':
+          description: How many Personal Access Tokens were deleted along with the account
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [deletedTokenCount]
+                properties:
+                  deletedTokenCount:
+                    type: integer
+              example:
+                deletedTokenCount: 2
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          description: Insufficient scope, or a real login session is required (PATs can never call this endpoint)
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+  /account/verify-password:
+    post:
+      operationId: verifyAccountPassword
+      summary: Verify the account's password (AUTH-7)
+      description: >-
+        Session-only — never callable with a PAT, regardless of scope. A thin wrapper on the same bcrypt-compare
+        logic the legacy, session-only `POST /auth/verify-password` uses, gating sensitive UI actions (e.g.
+        viewing/changing encryption settings) the same way.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [password]
+              properties:
+                password:
+                  type: string
+      responses:
+        '200':
+          description: The password is correct
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [valid]
+                properties:
+                  valid:
+                    type: boolean
+              example:
+                valid: true
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          description: The password is incorrect
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '403':
+          description: A real login session is required (PATs can never call this endpoint)
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
 components:
   securitySchemes:
     bearerAuth:

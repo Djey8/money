@@ -514,3 +514,28 @@ curl -X POST "http://localhost:3000/api/v1/data/recalculate" \
   -H "Authorization: Bearer $MONEY_MANAGER_TOKEN" \
   -H "Idempotency-Key: $(uuidgen)"
 ```
+
+## Read, update, or delete the account
+
+`GET` works with any PAT scope holding `account:r`. `PATCH`/`DELETE`/`verify-password` require an actual login session — none of them can be called with a PAT, regardless of scope.
+
+```bash
+curl "http://localhost:3000/api/v1/account" \
+  -H "Authorization: Bearer $MONEY_MANAGER_TOKEN"
+
+# The following three require a session cookie/bearer token from the logged-in browser, not a PAT.
+curl -X PATCH "http://localhost:3000/api/v1/account" \
+  -H "Authorization: Bearer $SESSION_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"email": "new-address@example.com"}'
+
+curl -X POST "http://localhost:3000/api/v1/account/verify-password" \
+  -H "Authorization: Bearer $SESSION_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"password": "..."}'
+
+curl -X DELETE "http://localhost:3000/api/v1/account" \
+  -H "Authorization: Bearer $SESSION_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"confirm": true}'
+```
