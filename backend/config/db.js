@@ -126,6 +126,16 @@ async function createIndexes() {
       name: 'audit-idempotency-key-index',
     });
 
+    // Serves `mm-admin rotate-encryption-key`'s "this user's encrypted
+    // audit entries" lookup (cli/commands/rotate-encryption-key.js) —
+    // without this, that query falls back to an unindexed scan.
+    await auditDb.createIndex({
+      index: {
+        fields: ['userId', 'payloadEncrypted'],
+      },
+      name: 'audit-user-payload-encrypted-index',
+    });
+
     console.log('Indexes created successfully');
   } catch (error) {
     console.error('Error creating indexes:', error);

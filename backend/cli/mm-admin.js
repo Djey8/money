@@ -18,18 +18,21 @@
  *   node cli/mm-admin.js migrate-transaction-ids --user <id> [--dry-run]
  *   node cli/mm-admin.js migrate-fund-project-ids --user <id> --collection smile|fire [--dry-run]
  *   node cli/mm-admin.js migrate-balance-entity-ids --user <id> --collection assets|shares|investments|liabilities|grow|subscriptions|budget [--dry-run]
+ *   node cli/mm-admin.js rotate-encryption-key --user <id> --new-key <key> [--dry-run]
+ *   node cli/mm-admin.js rotate-encryption-key --user <id> --rollback <backupFile>
  *
  * See docs/adr/0002-money-minor-units-migration.md (migrate) and
  * docs/adr/0006-api-scopes-and-access-control.md (user/token).
  */
 
-const { initializeDatabase, getUsersDb, getAuthDb } = require('../config/db');
+const { initializeDatabase, getUsersDb, getAuthDb, getAuditDb } = require('../config/db');
 const { runMigration } = require('./commands/migrate');
 const { createUser, listUsers } = require('./commands/user');
 const { createToken, listTokens, revokeToken } = require('./commands/token');
 const { backfillTransactionIds } = require('./commands/backfill-transaction-ids');
 const { backfillFundProjectIds } = require('./commands/backfill-fund-project-ids');
 const { backfillBalanceEntityIds } = require('./commands/backfill-balance-entity-ids');
+const { runRotateEncryptionKey } = require('./commands/rotate-encryption-key');
 
 function parseArgs(argv) {
   const options = {};
@@ -67,6 +70,8 @@ function printUsage() {
   console.error(
     '  mm-admin migrate-balance-entity-ids --user <id> --collection assets|shares|investments|liabilities|grow|subscriptions|budget [--dry-run]',
   );
+  console.error('  mm-admin rotate-encryption-key --user <id> --new-key <key> [--dry-run]');
+  console.error('  mm-admin rotate-encryption-key --user <id> --rollback <backupFile>');
 }
 
 function print(result) {
@@ -136,7 +141,7 @@ async function main() {
   }
 
   await initializeDatabase();
-  const deps = { usersDb: getUsersDb(), authDb: getAuthDb() };
+  const deps = { usersDb: getUsersDb(), authDb: getAuthDb(), auditDb: getAuditDb() };
 
   if (command === 'migrate') {
     await handleMigrate(deps, parseArgs([second, ...rest].filter((a) => a !== undefined)));
@@ -177,6 +182,17 @@ async function main() {
         dryRun: Boolean(args['dry-run']),
       }),
     );
+    return;
+  }
+  if (command === 'rotate-encryption-key') {
+    const args = parseArgs([second, ...rest].filter((arg) => arg !== undefined));
+    const result = await runRotateEncryptionKey(deps, {
+      userId: args.user,
+      newKey: typeof args['new-key'] === 'string' ? args['new-key'] : undefined,
+      dryRun: Boolean(args['dry-run']),
+      rollbackFile: typeof args.rollback === 'string' ? args.rollback : undefined,
+    });
+    print(result);
     return;
   }
 

@@ -1,4 +1,5 @@
 export * from './crypto/cryptic';
+export * from './crypto/reencrypt-document';
 export * from './money/minor-units';
 export * from './money/convert-document';
 export * from './transactions/transaction';
