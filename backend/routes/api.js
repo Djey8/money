@@ -90,6 +90,13 @@ const {
   cashflowGrow,
   depositGrow,
 } = require('../repositories/grow-action-repository');
+const {
+  listSubscriptions,
+  getSubscription,
+  createSubscription,
+  updateSubscription,
+  deleteSubscription,
+} = require('../repositories/subscription-repository');
 const { getUsersDb, getAuthDb } = require('../config/db');
 const { getEncryptionSession } = require('../services/encryption-session');
 const {
@@ -545,6 +552,97 @@ function validateCreatePaymentPlanInput(input) {
     (!Number.isInteger(input.manualAmountMinor) || input.manualAmountMinor <= 0)
   ) {
     return 'manualAmountMinor must be a positive integer.';
+  }
+  return null;
+}
+
+const SUBSCRIPTION_FREQUENCIES = ['weekly', 'biweekly', 'monthly', 'quarterly', 'yearly'];
+
+function validateSubscriptionInput(input) {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) {
+    return 'A subscription object is required.';
+  }
+  if (!isNonEmptyString(input.account)) return 'account must be a non-empty string.';
+  if (!Number.isInteger(input.amountMinor)) return 'amountMinor must be an integer.';
+  if (input.amountMinor === 0) return 'amountMinor cannot be zero.';
+  if (!isNonEmptyString(input.category) || input.category === '@') {
+    return 'category must be a non-empty string.';
+  }
+  if (!isNonEmptyString(input.startDate) || !/^\d{4}-\d{2}-\d{2}$/.test(input.startDate)) {
+    return 'startDate must use YYYY-MM-DD format.';
+  }
+  if (
+    input.endDate !== undefined &&
+    input.endDate !== null &&
+    (!isNonEmptyString(input.endDate) || !/^\d{4}-\d{2}-\d{2}$/.test(input.endDate))
+  ) {
+    return 'endDate must use YYYY-MM-DD format, or be null.';
+  }
+  if (input.title !== undefined && typeof input.title !== 'string') {
+    return 'title must be a string.';
+  }
+  if (input.comment !== undefined && typeof input.comment !== 'string') {
+    return 'comment must be a string.';
+  }
+  if (input.frequency !== undefined && !SUBSCRIPTION_FREQUENCIES.includes(input.frequency)) {
+    return `frequency must be one of ${SUBSCRIPTION_FREQUENCIES.join(', ')}.`;
+  }
+  return null;
+}
+
+const EDITABLE_SUBSCRIPTION_FIELDS = [
+  'title',
+  'account',
+  'amountMinor',
+  'startDate',
+  'endDate',
+  'category',
+  'comment',
+  'frequency',
+];
+
+function validatePatchSubscriptionInput(input) {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) {
+    return 'A subscription object is required.';
+  }
+  const unknownField = Object.keys(input).find(
+    (key) => !EDITABLE_SUBSCRIPTION_FIELDS.includes(key),
+  );
+  if (unknownField) return `${unknownField} is not an editable field.`;
+  if (input.account !== undefined && !isNonEmptyString(input.account)) {
+    return 'account must be a non-empty string.';
+  }
+  if (input.amountMinor !== undefined) {
+    if (!Number.isInteger(input.amountMinor)) return 'amountMinor must be an integer.';
+    if (input.amountMinor === 0) return 'amountMinor cannot be zero.';
+  }
+  if (
+    input.category !== undefined &&
+    (!isNonEmptyString(input.category) || input.category === '@')
+  ) {
+    return 'category must be a non-empty string.';
+  }
+  if (
+    input.startDate !== undefined &&
+    (!isNonEmptyString(input.startDate) || !/^\d{4}-\d{2}-\d{2}$/.test(input.startDate))
+  ) {
+    return 'startDate must use YYYY-MM-DD format.';
+  }
+  if (
+    input.endDate !== undefined &&
+    input.endDate !== null &&
+    (!isNonEmptyString(input.endDate) || !/^\d{4}-\d{2}-\d{2}$/.test(input.endDate))
+  ) {
+    return 'endDate must use YYYY-MM-DD format, or be null.';
+  }
+  if (input.title !== undefined && typeof input.title !== 'string') {
+    return 'title must be a string.';
+  }
+  if (input.comment !== undefined && typeof input.comment !== 'string') {
+    return 'comment must be a string.';
+  }
+  if (input.frequency !== undefined && !SUBSCRIPTION_FREQUENCIES.includes(input.frequency)) {
+    return `frequency must be one of ${SUBSCRIPTION_FREQUENCIES.join(', ')}.`;
   }
   return null;
 }
@@ -2583,6 +2681,131 @@ router.post('/grow/:growId/deposit', requireScope('grow:w'), async (req, res, ne
   }
 });
 
+router.get('/subscriptions', requireScope('subscriptions:r'), async (req, res, next) => {
+  try {
+    const subscriptions = await listSubscriptions(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+    );
+    return res.json({ subscriptions });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.post('/subscriptions', requireScope('subscriptions:w'), async (req, res, next) => {
+  const validationError = validateSubscriptionInput(req.body);
+  if (validationError) {
+    return problem(res, 400, 'validation_invalid', 'Invalid subscription request', validationError);
+  }
+  try {
+    const subscription = await createSubscription(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+      req.body,
+    );
+    await recordAuditEntry(getAuditDb(), {
+      userId: req.userId,
+      actor: auditActor(req.auth),
+      method: req.method,
+      path: req.baseUrl + req.path,
+      resource: 'subscriptions',
+      resourceId: subscription.id,
+    });
+    return res.status(201).json(subscription);
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.get('/subscriptions/:subscriptionId', requireScope('subscriptions:r'), async (req, res, next) => {
+  try {
+    const subscription = await getSubscription(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+      req.params.subscriptionId,
+    );
+    if (!subscription) {
+      return problem(
+        res,
+        404,
+        'not_found',
+        'Subscription not found',
+        'No matching subscription exists.',
+      );
+    }
+    return res.json(subscription);
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.patch('/subscriptions/:subscriptionId', requireScope('subscriptions:w'), async (req, res, next) => {
+  const validationError = validatePatchSubscriptionInput(req.body);
+  if (validationError) {
+    return problem(res, 400, 'validation_invalid', 'Invalid subscription request', validationError);
+  }
+  try {
+    const subscription = await updateSubscription(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+      req.params.subscriptionId,
+      req.body,
+    );
+    if (!subscription) {
+      return problem(
+        res,
+        404,
+        'not_found',
+        'Subscription not found',
+        'No matching subscription exists.',
+      );
+    }
+    await recordAuditEntry(getAuditDb(), {
+      userId: req.userId,
+      actor: auditActor(req.auth),
+      method: req.method,
+      path: req.baseUrl + req.path,
+      resource: 'subscriptions',
+      resourceId: subscription.id,
+    });
+    return res.json(subscription);
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.delete('/subscriptions/:subscriptionId', requireScope('subscriptions:w'), async (req, res, next) => {
+  const deleteTransactions = req.query.deleteTransactions === 'true';
+  try {
+    const deleted = await deleteSubscription(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+      req.params.subscriptionId,
+      { deleteTransactions },
+    );
+    if (!deleted) {
+      return problem(
+        res,
+        404,
+        'not_found',
+        'Subscription not found',
+        'No matching subscription exists.',
+      );
+    }
+    await recordAuditEntry(getAuditDb(), {
+      userId: req.userId,
+      actor: auditActor(req.auth),
+      method: req.method,
+      path: req.baseUrl + req.path,
+      resource: 'subscriptions',
+      resourceId: req.params.subscriptionId,
+    });
+    return res.json({ id: req.params.subscriptionId });
+  } catch (error) {
+    return next(error);
+  }
+});
 
 module.exports = router;
 // Attached for direct unit testing (parseImportLines has enough

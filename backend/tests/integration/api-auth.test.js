@@ -1315,7 +1315,7 @@ describe('v1 API authentication and PAT management', () => {
     it('computes savings-rate and fixed-cost ratios plus top categories for the requested period', async () => {
       const token = await reportsToken();
       await setSubscriptions(firstUser.userId, [
-        { title: 'Netflix', category: '@KpiNetflix', amount: -1000000 },
+        { id: `subscriptions_kpi_fixture_${Date.now()}`, title: 'Netflix', category: '@KpiNetflix', amount: -1000000 },
       ]);
       const before = await request(app)
         .get('/api/v1/reports/kpis?period=year&offset=0')
@@ -3962,6 +3962,358 @@ describe('v1 API authentication and PAT management', () => {
         .get(`/api/v1/grow/${otherProject.body.id}`)
         .set('Authorization', `Bearer ${token}`);
       expect(getResponse.status).toBe(404);
+    });
+  });
+
+  describe('GET/POST /subscriptions and GET/PATCH/DELETE /subscriptions/:id', () => {
+    async function subscriptionToken(scopes) {
+      const created = await sessionRequest('post', '/api/v1/auth/tokens').send({
+        name: `subscription-agent-${Date.now()}-${Math.random()}`,
+        scopes,
+      });
+      return created.body;
+    }
+
+    function subscriptionBody(overrides = {}) {
+      return {
+        title: 'Spotify',
+        account: 'Daily',
+        amountMinor: -1000,
+        startDate: '2026-01-01',
+        category: '@Streaming',
+        ...overrides,
+      };
+    }
+
+    it('creates a subscription and lists it, and audit logs the write', async () => {
+      const { token, tokenId } = await subscriptionToken(['subscriptions:r', 'subscriptions:w']);
+      const created = await request(app)
+        .post('/api/v1/subscriptions')
+        .set('Authorization', `Bearer ${token}`)
+        .send(subscriptionBody());
+      expect(created.status).toBe(201);
+      expect(created.body.id).toMatch(/^subscriptions_/);
+      expect(created.body.frequency).toBe('monthly');
+      expect(created.body.endDate).toBeNull();
+
+      const list = await request(app)
+        .get('/api/v1/subscriptions')
+        .set('Authorization', `Bearer ${token}`);
+      expect(list.status).toBe(200);
+      expect(list.body.subscriptions).toEqual(
+        expect.arrayContaining([expect.objectContaining({ id: created.body.id })]),
+      );
+
+      const auditEntries = await queryAuditEntries(getAuditDb(), firstUser.userId, {
+        resource: 'subscriptions',
+      });
+      expect(auditEntries).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            actor: { type: 'token', tokenId },
+            method: 'POST',
+            resourceId: created.body.id,
+          }),
+        ]),
+      );
+    });
+
+    it('gets a single subscription by id and returns 404 for one that does not exist', async () => {
+      const { token } = await subscriptionToken(['subscriptions:r', 'subscriptions:w']);
+      const created = await request(app)
+        .post('/api/v1/subscriptions')
+        .set('Authorization', `Bearer ${token}`)
+        .send(subscriptionBody());
+      const found = await request(app)
+        .get(`/api/v1/subscriptions/${created.body.id}`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(found.status).toBe(200);
+      expect(found.body.id).toBe(created.body.id);
+
+      const missing = await request(app)
+        .get('/api/v1/subscriptions/subscriptions_does_not_exist')
+        .set('Authorization', `Bearer ${token}`);
+      expect(missing.status).toBe(404);
+      expect(missing.body.code).toBe('not_found');
+    });
+
+    it('rejects invalid create input', async () => {
+      const { token } = await subscriptionToken(['subscriptions:w']);
+      const response = await request(app)
+        .post('/api/v1/subscriptions')
+        .set('Authorization', `Bearer ${token}`)
+        .send(subscriptionBody({ category: '@' }));
+      expect(response.status).toBe(400);
+      expect(response.body.code).toBe('validation_invalid');
+    });
+
+    it('updates fields without triggering transaction cleanup when nothing identifying changed, and audit logs the write', async () => {
+      const { token, tokenId } = await subscriptionToken(['subscriptions:r', 'subscriptions:w']);
+      const created = await request(app)
+        .post('/api/v1/subscriptions')
+        .set('Authorization', `Bearer ${token}`)
+        .send(subscriptionBody());
+      const response = await request(app)
+        .patch(`/api/v1/subscriptions/${created.body.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ endDate: '2026-12-31' });
+      expect(response.status).toBe(200);
+      expect(response.body.endDate).toBe('2026-12-31');
+      expect(response.body.title).toBe(created.body.title);
+
+      const auditEntries = await queryAuditEntries(getAuditDb(), firstUser.userId, {
+        resource: 'subscriptions',
+      });
+      expect(auditEntries).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            actor: { type: 'token', tokenId },
+            method: 'PATCH',
+            resourceId: created.body.id,
+          }),
+        ]),
+      );
+    });
+
+    it('rejects an unknown field on PATCH', async () => {
+      const { token } = await subscriptionToken(['subscriptions:r', 'subscriptions:w']);
+      const created = await request(app)
+        .post('/api/v1/subscriptions')
+        .set('Authorization', `Bearer ${token}`)
+        .send(subscriptionBody());
+      const response = await request(app)
+        .patch(`/api/v1/subscriptions/${created.body.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ changeHistory: [] });
+      expect(response.status).toBe(400);
+      expect(response.body.code).toBe('validation_invalid');
+    });
+
+    it('cascades deletion of matching transactions when an identifying field changes on PATCH, using the tighter 4-field match', async () => {
+      const { token } = await subscriptionToken([
+        'subscriptions:r',
+        'subscriptions:w',
+        'transactions:r',
+        'transactions:w',
+      ]);
+      const created = await request(app)
+        .post('/api/v1/subscriptions')
+        .set('Authorization', `Bearer ${token}`)
+        .send(subscriptionBody());
+      const matching = await request(app)
+        .post('/api/v1/transactions')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          account: 'Daily',
+          amountMinor: -1000,
+          date: '2026-01-01',
+          time: '09:00',
+          category: '@Streaming',
+          comment: 'Spotify',
+        });
+      expect(matching.status).toBe(201);
+      const unrelated = await request(app)
+        .post('/api/v1/transactions')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          account: 'Daily',
+          amountMinor: -500,
+          date: '2026-02-01',
+          time: '09:00',
+          category: '@Groceries',
+          comment: 'unrelated',
+        });
+      expect(unrelated.status).toBe(201);
+      // Matches on account+amount+category alone (the original app's 3-field match) but not on
+      // comment — proves the API's tighter 4-field match doesn't delete it.
+      const coincidental = await request(app)
+        .post('/api/v1/transactions')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          account: 'Daily',
+          amountMinor: -1000,
+          date: '2026-03-01',
+          time: '09:00',
+          category: '@Streaming',
+          comment: 'A manually entered note',
+        });
+      expect(coincidental.status).toBe(201);
+
+      const response = await request(app)
+        .patch(`/api/v1/subscriptions/${created.body.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ amountMinor: -1500 });
+      expect(response.status).toBe(200);
+
+      const remaining = await request(app)
+        .get('/api/v1/transactions')
+        .set('Authorization', `Bearer ${token}`);
+      const remainingIds = remaining.body.transactions.map((t) => t.id);
+      expect(remainingIds).not.toContain(matching.body.id);
+      expect(remainingIds).toContain(unrelated.body.id);
+      expect(remainingIds).toContain(coincidental.body.id);
+    });
+
+    it('deletes a subscription, leaving transactions untouched by default, and audit logs the write', async () => {
+      const { token, tokenId } = await subscriptionToken([
+        'subscriptions:r',
+        'subscriptions:w',
+        'transactions:r',
+        'transactions:w',
+      ]);
+      const created = await request(app)
+        .post('/api/v1/subscriptions')
+        .set('Authorization', `Bearer ${token}`)
+        .send(subscriptionBody());
+      const transaction = await request(app)
+        .post('/api/v1/transactions')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          account: 'Daily',
+          amountMinor: -1000,
+          date: '2026-01-01',
+          time: '09:00',
+          category: '@Streaming',
+          comment: 'Spotify',
+        });
+      expect(transaction.status).toBe(201);
+
+      const response = await request(app)
+        .delete(`/api/v1/subscriptions/${created.body.id}`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({ id: created.body.id });
+
+      const remaining = await request(app)
+        .get('/api/v1/transactions')
+        .set('Authorization', `Bearer ${token}`);
+      expect(remaining.body.transactions.map((t) => t.id)).toContain(transaction.body.id);
+
+      const getResponse = await request(app)
+        .get(`/api/v1/subscriptions/${created.body.id}`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(getResponse.status).toBe(404);
+
+      const auditEntries = await queryAuditEntries(getAuditDb(), firstUser.userId, {
+        resource: 'subscriptions',
+      });
+      expect(auditEntries).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            actor: { type: 'token', tokenId },
+            method: 'DELETE',
+            resourceId: created.body.id,
+          }),
+        ]),
+      );
+    });
+
+    it('deletes a subscription and its matching transactions when deleteTransactions=true', async () => {
+      const { token } = await subscriptionToken([
+        'subscriptions:r',
+        'subscriptions:w',
+        'transactions:r',
+        'transactions:w',
+      ]);
+      const created = await request(app)
+        .post('/api/v1/subscriptions')
+        .set('Authorization', `Bearer ${token}`)
+        .send(subscriptionBody());
+      const transaction = await request(app)
+        .post('/api/v1/transactions')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          account: 'Daily',
+          amountMinor: -1000,
+          date: '2026-01-01',
+          time: '09:00',
+          category: '@Streaming',
+          comment: 'Spotify',
+        });
+      expect(transaction.status).toBe(201);
+      // Matches on account+amount+category alone (the original app's 3-field match) but not on
+      // comment — proves the API's tighter 4-field match doesn't delete it.
+      const coincidental = await request(app)
+        .post('/api/v1/transactions')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          account: 'Daily',
+          amountMinor: -1000,
+          date: '2026-02-01',
+          time: '09:00',
+          category: '@Streaming',
+          comment: 'A manually entered note',
+        });
+      expect(coincidental.status).toBe(201);
+
+      const response = await request(app)
+        .delete(`/api/v1/subscriptions/${created.body.id}?deleteTransactions=true`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(response.status).toBe(200);
+
+      const remaining = await request(app)
+        .get('/api/v1/transactions')
+        .set('Authorization', `Bearer ${token}`);
+      const remainingIds = remaining.body.transactions.map((t) => t.id);
+      expect(remainingIds).not.toContain(transaction.body.id);
+      expect(remainingIds).toContain(coincidental.body.id);
+    });
+
+    it('rejects requests without the subscriptions:r/subscriptions:w scopes', async () => {
+      const { token: writeOnly } = await subscriptionToken(['subscriptions:w']);
+      const getResponse = await request(app)
+        .get('/api/v1/subscriptions')
+        .set('Authorization', `Bearer ${writeOnly}`);
+      expect(getResponse.status).toBe(403);
+      expect(getResponse.body.code).toBe('scope_insufficient');
+
+      const { token: readOnly } = await subscriptionToken(['subscriptions:r']);
+      const postResponse = await request(app)
+        .post('/api/v1/subscriptions')
+        .set('Authorization', `Bearer ${readOnly}`)
+        .send(subscriptionBody());
+      expect(postResponse.status).toBe(403);
+      expect(postResponse.body.code).toBe('scope_insufficient');
+    });
+
+    it('keeps subscriptions isolated to the authenticated user document', async () => {
+      const { token } = await subscriptionToken(['subscriptions:r', 'subscriptions:w']);
+      const otherCreated = await sessionRequest(
+        'post',
+        '/api/v1/auth/tokens',
+        secondUser.token,
+      ).send({
+        name: `subscription-other-${Date.now()}`,
+        scopes: ['subscriptions:w'],
+      });
+      const otherSubscription = await request(app)
+        .post('/api/v1/subscriptions')
+        .set('Authorization', `Bearer ${otherCreated.body.token}`)
+        .send(subscriptionBody({ title: `OnlyOtherUser${Date.now()}` }));
+      expect(otherSubscription.status).toBe(201);
+
+      const list = await request(app)
+        .get('/api/v1/subscriptions')
+        .set('Authorization', `Bearer ${token}`);
+      expect(list.body.subscriptions).not.toEqual(
+        expect.arrayContaining([expect.objectContaining({ id: otherSubscription.body.id })]),
+      );
+
+      const getResponse = await request(app)
+        .get(`/api/v1/subscriptions/${otherSubscription.body.id}`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(getResponse.status).toBe(404);
+
+      const patchResponse = await request(app)
+        .patch(`/api/v1/subscriptions/${otherSubscription.body.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ title: 'ShouldNotApply' });
+      expect(patchResponse.status).toBe(404);
+
+      const deleteResponse = await request(app)
+        .delete(`/api/v1/subscriptions/${otherSubscription.body.id}`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(deleteResponse.status).toBe(404);
     });
   });
 
