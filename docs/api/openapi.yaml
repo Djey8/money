@@ -2301,6 +2301,424 @@ paths:
           $ref: '#/components/responses/InsufficientScope'
         '404':
           $ref: '#/components/responses/NotFound'
+  /subscriptions:
+    get:
+      operationId: listSubscriptions
+      summary: List subscriptions (SUB-4)
+      description: Returns every subscription owned by the caller. Existing subscriptions must first receive stable IDs through `mm-admin migrate-balance-entity-ids --collection subscriptions`.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Subscriptions owned by the caller
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [subscriptions]
+                properties:
+                  subscriptions:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Subscription'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+    post:
+      operationId: createSubscription
+      summary: Create a subscription (SUB-1)
+      description: Does not generate any transactions by itself — call `POST /subscriptions/refresh` afterward to generate transactions for occurrences already due.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSubscriptionRequest'
+            example:
+              title: Spotify
+              account: Daily
+              amountMinor: -1000
+              startDate: '2026-01-01'
+              category: '@Streaming'
+              frequency: monthly
+      responses:
+        '201':
+          description: Created subscription
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subscription'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+  /subscriptions/export:
+    get:
+      operationId: exportSubscriptions
+      summary: Export all subscriptions as newline-delimited JSON
+      description: Returns every subscription owned by the caller, one JSON object per line. Requires `subscriptions:bulk`.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Newline-delimited JSON, one Subscription per line
+          content:
+            application/x-ndjson:
+              schema:
+                type: string
+              example: |-
+                {"id":"subscriptions_01234567-89ab-cdef-0123-456789abcdef","title":"Spotify","account":"Daily","amountMinor":-1000,"startDate":"2026-01-01","endDate":null,"category":"@Streaming","comment":"","frequency":"monthly"}
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+  /subscriptions/import:
+    post:
+      operationId: importSubscriptions
+      summary: Bulk-create subscriptions from newline-delimited JSON
+      description: >-
+        Creates one subscription per line of the request body (each line the same shape as CreateSubscriptionRequest).
+        Requires `subscriptions:bulk` and an `Idempotency-Key` header, with the same replay/mismatch contract as
+        `POST /transactions/import`. Up to 10,000 lines of at most 16KB each per call. `?atomic=true` makes the whole
+        import all-or-nothing; the default applies what parses and validates, reporting the rest per line as `error`.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: atomic
+          in: query
+          schema:
+            type: boolean
+            default: false
+      requestBody:
+        required: true
+        content:
+          application/x-ndjson:
+            schema:
+              type: string
+            example: |-
+              {"account":"Daily","amountMinor":-3000,"startDate":"2026-01-01","category":"@Gym"}
+      responses:
+        '200':
+          description: Per-line results, in the same shape as a batch response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchSubscriptionsResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '409':
+          $ref: '#/components/responses/IdempotencyConflict'
+  /subscriptions/batch:
+    post:
+      operationId: batchSubscriptions
+      summary: Create, update, or delete many subscriptions in one request
+      description: >-
+        Applies a mix of create/update/delete operations in one document write. Requires the `subscriptions:bulk`
+        scope and an `Idempotency-Key` header, with the same replay/mismatch contract as `POST /transactions/batch`.
+        Deliberately does not cascade the stale-transaction cleanup that `PATCH`/`DELETE /subscriptions/{id}` perform
+        on an identity-changing edit — a bulk metadata operation shouldn't have the side effect of silently deleting
+        transactions across many subscriptions at once.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BatchSubscriptionsRequest'
+            example:
+              atomic: false
+              operations:
+                - op: create
+                  account: Daily
+                  amountMinor: -3000
+                  startDate: '2026-01-01'
+                  category: '@Gym'
+                - op: update
+                  id: subscriptions_01234567-89ab-cdef-0123-456789abcdef
+                  amountMinor: -3500
+                - op: delete
+                  id: subscriptions_11111111-89ab-cdef-0123-456789abcdef
+      responses:
+        '200':
+          description: Per-item results (some items may report `error` even on a 200, in non-atomic mode)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchSubscriptionsResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '409':
+          $ref: '#/components/responses/IdempotencyConflict'
+  /subscriptions/refresh:
+    post:
+      operationId: refreshSubscriptions
+      summary: Generate due transactions from active subscriptions (SUB-4)
+      description: >-
+        For every subscription whose `startDate` has passed, computes which occurrence dates are due (per
+        `frequency`, up to today or `endDate` if it has already passed) and generates a transaction for each one not
+        already generated (matched on date/account/amount/category/comment). Generated transactions are appended in
+        the same write every other transaction mutation goes through, so Mojo/Smile/Fire fund state and the Income
+        accounting rebuild reflect them atomically. A Mojo or Smile-project contribution whose target is already
+        fully funded is skipped rather than generated. Idempotent to call repeatedly — a run with nothing newly due
+        returns `transactionsCreated: 0` without writing anything.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Counts of what this run generated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefreshSubscriptionsResponse'
+              example:
+                transactionsCreated: 2
+                subscriptionsProcessed: 3
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+  /subscriptions/{subscriptionId}:
+    parameters:
+      - name: subscriptionId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getSubscription
+      summary: Get a single subscription
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The subscription
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subscription'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      operationId: updateSubscription
+      summary: Update a subscription (SUB-2)
+      description: >-
+        Accepts a partial body. If any of title/category/amountMinor/account/comment/startDate/frequency actually
+        changes, cascades a cleanup that deletes every existing transaction matching the subscription's OLD identity
+        (account+amountMinor+category+comment) — a tighter 4-field match than the original app's 3-field
+        account+amount+category match, to avoid deleting unrelated manually-entered transactions that happen to
+        coincide on just those three fields. Only deletes; call `POST /subscriptions/refresh` afterward to
+        regenerate under the new identity.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchSubscriptionRequest'
+            example:
+              amountMinor: -1200
+      responses:
+        '200':
+          description: Updated subscription
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subscription'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      operationId: deleteSubscription
+      summary: Delete a subscription (SUB-3)
+      description: Leaves already-generated transactions untouched by default. Pass `?deleteTransactions=true` to also delete every transaction matching this subscription's identity.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: deleteTransactions
+          in: query
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: Subscription deleted
+          content:
+            application/json:
+              example:
+                id: subscriptions_01234567-89ab-cdef-0123-456789abcdef
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /budget:
+    get:
+      operationId: listBudget
+      summary: List budget rows (BUD-2, BUD-3)
+      description: Returns every budget row owned by the caller, optionally filtered to one month. Existing budget rows must first receive stable IDs through `mm-admin migrate-balance-entity-ids --collection budget`.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: month
+          in: query
+          description: Filter to one month, YYYY-MM.
+          schema:
+            type: string
+            pattern: '^\d{4}-(0[1-9]|1[0-2])$'
+      responses:
+        '200':
+          description: Budget rows owned by the caller
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [budget]
+                properties:
+                  budget:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Budget'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+    post:
+      operationId: upsertBudget
+      summary: Create or update a budget row for a (month, category) pair (BUD-1)
+      description: Upserts by `(date, tag)` — if a row already exists for that month and category, its amount is overwritten in place (keeping its id); otherwise a new row is created. Matches the original app's add-budget form exactly.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBudgetRequest'
+            example:
+              date: '2026-01'
+              tag: '@Groceries'
+              amountMinor: 30000
+      responses:
+        '201':
+          description: Created or updated budget row
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Budget'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+  /budget/{budgetId}:
+    parameters:
+      - name: budgetId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getBudgetRow
+      summary: Get a single budget row
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The budget row
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Budget'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      operationId: updateBudgetRow
+      summary: Update a budget row (BUD-2)
+      description: Accepts a partial body. Rejects the update if changing `date` or `tag` would collide with another existing row's (date, tag) pair — a new guard the original app never needed since it never exposed an edit-in-place path for a single row.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchBudgetRequest'
+            example:
+              amountMinor: 45000
+      responses:
+        '200':
+          description: Updated budget row
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Budget'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      operationId: deleteBudgetRow
+      summary: Delete a budget row (BUD-2)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Budget row deleted
+          content:
+            application/json:
+              example:
+                id: budget_01234567-89ab-cdef-0123-456789abcdef
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
 components:
   securitySchemes:
     bearerAuth:
@@ -3888,6 +4306,182 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/BatchTransactionResult'
+    Subscription:
+      type: object
+      required: [id, title, account, amountMinor, startDate, endDate, category, comment, frequency]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        account:
+          type: string
+        amountMinor:
+          type: integer
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+          nullable: true
+        category:
+          type: string
+        comment:
+          type: string
+        frequency:
+          type: string
+          enum: [weekly, biweekly, monthly, quarterly, yearly]
+    CreateSubscriptionRequest:
+      type: object
+      required: [account, amountMinor, startDate, category]
+      properties:
+        title:
+          type: string
+          default: ''
+        account:
+          type: string
+        amountMinor:
+          type: integer
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+          nullable: true
+        category:
+          type: string
+        comment:
+          type: string
+          default: ''
+        frequency:
+          type: string
+          enum: [weekly, biweekly, monthly, quarterly, yearly]
+          default: monthly
+    PatchSubscriptionRequest:
+      type: object
+      description: All fields optional — send only what you want to change.
+      properties:
+        title:
+          type: string
+        account:
+          type: string
+        amountMinor:
+          type: integer
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+          nullable: true
+        category:
+          type: string
+        comment:
+          type: string
+        frequency:
+          type: string
+          enum: [weekly, biweekly, monthly, quarterly, yearly]
+    RefreshSubscriptionsResponse:
+      type: object
+      required: [transactionsCreated, subscriptionsProcessed]
+      properties:
+        transactionsCreated:
+          type: integer
+        subscriptionsProcessed:
+          type: integer
+          description: Count of subscriptions whose startDate has passed and were evaluated this run (whether or not they had anything due).
+    BatchSubscriptionOperation:
+      type: object
+      required: [op]
+      description: The same object shape as CreateSubscriptionRequest for `create`, or `{op, id, ...fields}` for `update`/`delete`.
+      properties:
+        op:
+          type: string
+          enum: [create, update, delete]
+        id:
+          type: string
+    BatchSubscriptionsRequest:
+      type: object
+      required: [operations]
+      properties:
+        operations:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/BatchSubscriptionOperation'
+        atomic:
+          type: boolean
+          default: false
+          description: When true, no operation is applied if any operation in the batch fails.
+    BatchSubscriptionResult:
+      type: object
+      required: [op, status]
+      properties:
+        op:
+          type: string
+          enum: [create, update, delete]
+        status:
+          type: string
+          enum: [created, updated, deleted, error, not_applied]
+        id:
+          type: string
+        subscription:
+          $ref: '#/components/schemas/Subscription'
+        error:
+          type: string
+    BatchSubscriptionsResponse:
+      type: object
+      required: [idempotencyKey, atomic, itemCount, results]
+      properties:
+        idempotencyKey:
+          type: string
+        atomic:
+          type: boolean
+        itemCount:
+          type: integer
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/BatchSubscriptionResult'
+    Budget:
+      type: object
+      required: [id, date, tag, amountMinor]
+      properties:
+        id:
+          type: string
+        date:
+          type: string
+          description: Month, YYYY-MM.
+          pattern: '^\d{4}-(0[1-9]|1[0-2])$'
+        tag:
+          type: string
+        amountMinor:
+          type: integer
+    CreateBudgetRequest:
+      type: object
+      required: [date, tag, amountMinor]
+      properties:
+        date:
+          type: string
+          pattern: '^\d{4}-(0[1-9]|1[0-2])$'
+        tag:
+          type: string
+        amountMinor:
+          type: integer
+    PatchBudgetRequest:
+      type: object
+      description: All fields optional — send only what you want to change. Changing date or tag is rejected if it would collide with another existing row.
+      properties:
+        date:
+          type: string
+          pattern: '^\d{4}-(0[1-9]|1[0-2])$'
+        tag:
+          type: string
+        amountMinor:
+          type: integer
     Problem:
       type: object
       required: [type, title, status, detail, code]

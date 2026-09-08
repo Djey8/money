@@ -220,7 +220,7 @@ Each user document has the following structure:
         "frequency": "monthly"
       }
     ],
-    "budget": [{ "tag": "@Groceries", "amount": 300, "date": "2026-03-01" }],
+    "budget": [{ "tag": "@Groceries", "amount": 300, "date": "2026-03" }],
     "smile": [
       {
         "title": "Vacation",

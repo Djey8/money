@@ -373,3 +373,56 @@ Requires a PAT with `reports:r`. An all-time snapshot (no `period`/`offset`) sum
 curl "http://localhost:3000/api/v1/reports/grow/grow_<id>/pnl" \
   -H "Authorization: Bearer $MONEY_MANAGER_TOKEN"
 ```
+
+## List, create, get, update, or delete subscriptions
+
+Requires a PAT with `subscriptions:r`/`subscriptions:w`. Creating or editing never generates a transaction by itself — call refresh (below) afterward. See `docs/api/AGENTS.md` for the PATCH cascade-cleanup and DELETE `?deleteTransactions=` behavior.
+
+```bash
+curl "http://localhost:3000/api/v1/subscriptions" \
+  -H "Authorization: Bearer $MONEY_MANAGER_TOKEN"
+
+curl -X POST "http://localhost:3000/api/v1/subscriptions" \
+  -H "Authorization: Bearer $MONEY_MANAGER_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Spotify", "account": "Daily", "amountMinor": -1000, "startDate": "2026-01-01", "category": "@Streaming", "frequency": "monthly"}'
+
+curl -X PATCH "http://localhost:3000/api/v1/subscriptions/subscriptions_<id>" \
+  -H "Authorization: Bearer $MONEY_MANAGER_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"amountMinor": -1200}'
+
+curl -X DELETE "http://localhost:3000/api/v1/subscriptions/subscriptions_<id>?deleteTransactions=true" \
+  -H "Authorization: Bearer $MONEY_MANAGER_TOKEN"
+```
+
+## Generate due transactions from subscriptions
+
+Requires a PAT with `subscriptions:w`. Safe to call repeatedly — an occurrence already generated is skipped, not duplicated. See `docs/api/AGENTS.md` for the Mojo/Smile target-cap skip behavior.
+
+```bash
+curl -X POST "http://localhost:3000/api/v1/subscriptions/refresh" \
+  -H "Authorization: Bearer $MONEY_MANAGER_TOKEN"
+```
+
+## List, create, get, update, or delete budget rows
+
+Requires a PAT with `budget:r`/`budget:w`. `date` is always `YYYY-MM` (month, no day). `POST` upserts by `(date, tag)` — a second POST for the same month/category overwrites the amount rather than creating a duplicate row.
+
+```bash
+curl "http://localhost:3000/api/v1/budget?month=2026-01" \
+  -H "Authorization: Bearer $MONEY_MANAGER_TOKEN"
+
+curl -X POST "http://localhost:3000/api/v1/budget" \
+  -H "Authorization: Bearer $MONEY_MANAGER_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"date": "2026-01", "tag": "@Groceries", "amountMinor": 30000}'
+
+curl -X PATCH "http://localhost:3000/api/v1/budget/budget_<id>" \
+  -H "Authorization: Bearer $MONEY_MANAGER_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"amountMinor": 45000}'
+
+curl -X DELETE "http://localhost:3000/api/v1/budget/budget_<id>" \
+  -H "Authorization: Bearer $MONEY_MANAGER_TOKEN"
+```
