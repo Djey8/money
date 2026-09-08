@@ -3010,6 +3010,46 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
+  /data/recalculate:
+    post:
+      operationId: recalculateData
+      summary: Force a full recalculation of derived state from transactions (SET-11)
+      description: >-
+        The server-side equivalent of the original app's "Fix Accounting" button. Every transaction write already
+        runs this same recalculation (accounting totals, Mojo, Smile/Fire fund buckets) automatically — this
+        endpoint exists to force it again against whatever is currently stored, without changing any transaction,
+        useful after `POST /data/import` or manual data surgery that could have left the derived aggregates stale.
+        Requires the `data:bulk` scope and an `Idempotency-Key` header, with the same replay/mismatch contract as
+        `POST /transactions/batch`, even though recalculating twice is naturally idempotent in effect.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: How many transactions were recalculated
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [transactionCount]
+                properties:
+                  transactionCount:
+                    type: integer
+              example:
+                transactionCount: 42
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '409':
+          $ref: '#/components/responses/IdempotencyConflict'
 components:
   securitySchemes:
     bearerAuth:

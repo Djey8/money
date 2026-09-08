@@ -483,3 +483,13 @@ curl -X PUT "http://localhost:3000/api/v1/encryption-config" \
   -H "Content-Type: application/json" \
   -d '{"encryptDatabase": true}'
 ```
+
+## Force a recalculation of derived state
+
+Requires `data:bulk` and an `Idempotency-Key` header. Forces the same recalculation every transaction write already runs (accounting totals, Mojo, Smile/Fire fund buckets) — the "Fix Accounting" button's server-side equivalent. Useful after a data import or manual fix that could have left derived aggregates stale; never required after a normal write through this API.
+
+```bash
+curl -X POST "http://localhost:3000/api/v1/data/recalculate" \
+  -H "Authorization: Bearer $MONEY_MANAGER_TOKEN" \
+  -H "Idempotency-Key: $(uuidgen)"
+```

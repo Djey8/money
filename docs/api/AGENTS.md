@@ -268,3 +268,10 @@ Every Pro API write is audit logged. Prefer narrowly scoped, expiring tokens and
 3. Despite the `PUT` verb, the body is a **partial patch**: `encryptLocal`/`encryptDatabase` may be toggled freely, independent of `key`.
 4. **Changing an already-active key is rejected with `400 validation_invalid`.** The backend has no re-encryption logic anywhere — it only ever overwrites the config metadata, never re-processes already-stored ciphertext. Setting an initial key when none is active yet (current key is `'default'`/unset) works normally; resubmitting the exact same active key is a no-op. To actually rotate a key already protecting real data, use `mm-admin rotate-encryption-key` on the server (dry-run/backup/verify/rollback, the same rigor as `mm-admin migrate`) — there is no API path for this.
 5. `PUT` is audit logged (as `encryption_config`, no payload beyond the boolean flags); `GET` is not.
+
+## Force a recalculation of derived state
+
+1. `POST /api/v1/data/recalculate` (SET-11) requires `data:bulk` and an `Idempotency-Key` header, same replay/mismatch contract as `POST /transactions/batch`. Takes no meaningful request body.
+2. This is the server-side equivalent of the original app's "Fix Accounting" button. Every transaction write already runs this same recalculation (`applyDerivedState`: accounting totals, Mojo, Smile/Fire fund buckets) automatically — call this endpoint only when you suspect the stored derived aggregates are stale relative to the transactions, e.g. right after `POST /data/import` (once it exists) or after a manual data fix outside the normal write paths. It is never required after any normal write through this API.
+3. Response is `{transactionCount}` — how many transactions were re-processed. It does not add, remove, or otherwise modify any transaction; only the derived aggregates (income statement, Mojo/Smile/Fire) are rewritten.
+4. `data:bulk` — not a scope any `rw` grant satisfies (docs/adr/0006) — is required even though this is a "fix" operation, not a create/delete: forcing a full-document rewrite is exactly the kind of bulk/blast-radius operation that scope is meant to gate.
