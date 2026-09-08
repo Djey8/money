@@ -6,7 +6,33 @@ const { getAuthDb, getUsersDb } = require('../config/db');
 const logger = require('../config/logger');
 const { logAuthEvent, logUserActivity, logSecurityEvent } = require('../middleware/logging');
 const { authenticateToken } = require('../middleware/auth');
+const {
+  getEncryptionConfig,
+  setEncryptionConfig,
+  DEFAULT_ENCRYPTION_CONFIG,
+} = require('../services/encryption-session');
 const router = express.Router();
+
+/**
+ * `/login` and `/refresh` enrich their response with `encryptionConfig`
+ * purely so the frontend can restore its in-memory key — neither route's
+ * actual job (authenticating, issuing/rotating tokens) depends on this
+ * read succeeding. Unlike the dedicated `/encryption-config` routes (which
+ * correctly propagate a genuine, non-404 failure), a transient failure
+ * here must degrade to defaults rather than fail the whole request: by
+ * the time this read runs, `/login` has already set session cookies and
+ * `/refresh` has already revoked the old refresh token and issued new
+ * cookies, so letting this throw would report "login/refresh failed" to a
+ * caller who actually now holds a valid session (or, worse for `/refresh`,
+ * get forcibly logged out by `clearAuthCookies` in the outer catch).
+ */
+async function getEncryptionConfigOrDefault(authDb, userId) {
+  try {
+    return await getEncryptionConfig(authDb, userId);
+  } catch {
+    return DEFAULT_ENCRYPTION_CONFIG;
+  }
+}
 
 const JWT_SECRET = process.env.JWT_SECRET;
 // Long-lived sessions: UX is prioritized over re-authentication frequency.
@@ -130,34 +156,6 @@ function isAccountLocked(email) {
     return false;
   }
   return false;
-}
-
-// --- Encryption config helpers ------------------------------------------------
-// Stored in the user's auth document as `encryptionConfig`.
-// Returns { key, encryptLocal, encryptDatabase } or defaults.
-
-async function getEncryptionConfig(userId) {
-  try {
-    const authDb = getAuthDb();
-    const userDoc = await authDb.get(userId);
-    return (
-      userDoc.encryptionConfig || { key: 'default', encryptLocal: true, encryptDatabase: false }
-    );
-  } catch {
-    return { key: 'default', encryptLocal: true, encryptDatabase: false };
-  }
-}
-
-async function setEncryptionConfig(userId, config) {
-  const authDb = getAuthDb();
-  const userDoc = await authDb.get(userId);
-  userDoc.encryptionConfig = {
-    key: config.key || 'default',
-    encryptLocal: !!config.encryptLocal,
-    encryptDatabase: !!config.encryptDatabase,
-  };
-  userDoc.updatedAt = new Date().toISOString();
-  await authDb.insert(userDoc);
 }
 
 // Guest identity — issues a lightweight JWT (role: 'guest') for unauthenticated
@@ -366,7 +364,7 @@ router.post('/login', async (req, res) => {
     setAuthCookies(res, accessToken, refreshToken);
 
     // Include encryption config so frontend can restore in-memory key
-    const encryptionConfig = await getEncryptionConfig(user._id);
+    const encryptionConfig = await getEncryptionConfigOrDefault(getAuthDb(), user._id);
 
     res.json({
       userId: user._id,
@@ -576,7 +574,7 @@ router.post('/refresh', async (req, res) => {
     setAuthCookies(res, accessToken, newRefreshToken);
 
     // Include encryption config so frontend can restore in-memory key after refresh
-    const encryptionConfig = await getEncryptionConfig(decoded.userId);
+    const encryptionConfig = await getEncryptionConfigOrDefault(getAuthDb(), decoded.userId);
 
     res.json({ userId: decoded.userId, email: decoded.email, encryptionConfig });
   } catch (error) {
@@ -589,7 +587,7 @@ router.post('/refresh', async (req, res) => {
 // Get encryption config (for page reload — key stays in memory only on frontend)
 router.get('/encryption-config', authenticateToken, async (req, res) => {
   try {
-    const config = await getEncryptionConfig(req.userId);
+    const config = await getEncryptionConfig(getAuthDb(), req.userId);
     res.json(config);
   } catch (error) {
     logger.logError(error, { context: 'get_encryption_config', userId: req.userId });
@@ -604,7 +602,7 @@ router.put('/encryption-config', authenticateToken, async (req, res) => {
     if (key === undefined) {
       return res.status(400).json({ error: 'Encryption key is required' });
     }
-    await setEncryptionConfig(req.userId, { key, encryptLocal, encryptDatabase });
+    await setEncryptionConfig(getAuthDb(), req.userId, { key, encryptLocal, encryptDatabase });
     logUserActivity(req.userId, 'encryption_config_updated', {
       encryptLocal: !!encryptLocal,
       encryptDatabase: !!encryptDatabase,

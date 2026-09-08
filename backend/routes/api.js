@@ -111,6 +111,10 @@ const {
   fromSubscriptionsBudget,
 } = require('../repositories/budget-repository');
 const { getSettings, updateSettings } = require('../repositories/settings-repository');
+const {
+  getPublicEncryptionConfig,
+  updatePublicEncryptionConfig,
+} = require('../repositories/encryption-config-repository');
 const { getUsersDb, getAuthDb } = require('../config/db');
 const { getEncryptionSession } = require('../services/encryption-session');
 const {
@@ -889,6 +893,34 @@ function validatePatchSettingsInput(input) {
   if (input.allocation !== undefined) {
     const allocationError = validateSettingsAllocation(input.allocation);
     if (allocationError) return allocationError;
+  }
+  return null;
+}
+
+const EDITABLE_ENCRYPTION_CONFIG_FIELDS = ['key', 'encryptLocal', 'encryptDatabase'];
+
+/**
+ * Despite the PUT verb (kept for consistency with this resource's single-config-object shape),
+ * this accepts a partial body — any subset of the three fields — since toggling
+ * encryptLocal/encryptDatabase without touching key is an explicitly supported use case (see
+ * encryption-config-repository.js).
+ */
+function validatePutEncryptionConfigInput(input) {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) {
+    return 'A request body object is required.';
+  }
+  const unknownField = Object.keys(input).find(
+    (key) => !EDITABLE_ENCRYPTION_CONFIG_FIELDS.includes(key),
+  );
+  if (unknownField) return `${unknownField} is not a recognized field.`;
+  if (input.key !== undefined && (typeof input.key !== 'string' || input.key.trim() === '')) {
+    return 'key must be a non-empty string.';
+  }
+  if (input.encryptLocal !== undefined && typeof input.encryptLocal !== 'boolean') {
+    return 'encryptLocal must be a boolean.';
+  }
+  if (input.encryptDatabase !== undefined && typeof input.encryptDatabase !== 'boolean') {
+    return 'encryptDatabase must be a boolean.';
   }
   return null;
 }
@@ -3547,6 +3579,54 @@ router.patch('/settings', requireScope('settings:w'), async (req, res, next) => 
     });
     return res.json(settings);
   } catch (error) {
+    return next(error);
+  }
+});
+
+router.get('/encryption-config', requireScope('encryption:r'), async (req, res, next) => {
+  try {
+    const config = await getPublicEncryptionConfig({ authDb: getAuthDb() }, req.userId);
+    return res.json(config);
+  } catch (error) {
+    return next(error);
+  }
+});
+
+// requireSession-only, no scope check on top — a security-posture change (which key is active,
+// whether encryption is on) is treated the same as PAT-management (`/auth/tokens*`): human-only,
+// regardless of what scopes a token holds, since a session already carries full access anyway.
+router.put('/encryption-config', requireSession, async (req, res, next) => {
+  const validationError = validatePutEncryptionConfigInput(req.body);
+  if (validationError) {
+    return problem(
+      res,
+      400,
+      'validation_invalid',
+      'Invalid encryption config request',
+      validationError,
+    );
+  }
+  try {
+    const input = req.body.key === undefined ? req.body : { ...req.body, key: req.body.key.trim() };
+    const config = await updatePublicEncryptionConfig({ authDb: getAuthDb() }, req.userId, input);
+    await recordAuditEntry(getAuditDb(), {
+      userId: req.userId,
+      actor: auditActor(req.auth),
+      method: req.method,
+      path: req.baseUrl + req.path,
+      resource: 'encryption_config',
+    });
+    return res.json(config);
+  } catch (error) {
+    if (error.code === 'ENCRYPTION_KEY_ROTATION_REQUIRES_CLI') {
+      return problem(
+        res,
+        400,
+        'validation_invalid',
+        'Invalid encryption config request',
+        error.message,
+      );
+    }
     return next(error);
   }
 });

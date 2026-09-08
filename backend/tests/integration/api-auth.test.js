@@ -5237,6 +5237,147 @@ describe('v1 API authentication and PAT management', () => {
     });
   });
 
+  describe('GET/PUT /encryption-config', () => {
+    // Fresh user per test — encryption config is a per-account singleton, same reasoning as
+    // /settings above.
+    async function encryptionUser() {
+      return registerTestUser(`_encryption_${Date.now()}_${Math.random()}`);
+    }
+
+    async function encryptionToken(sessionToken, scopes) {
+      const created = await sessionRequest('post', '/api/v1/auth/tokens', sessionToken).send({
+        name: `encryption-agent-${Date.now()}-${Math.random()}`,
+        scopes,
+      });
+      return created.body.token;
+    }
+
+    it('returns the default config for an account that has never configured encryption', async () => {
+      const user = await encryptionUser();
+      const token = await encryptionToken(user.token, ['encryption:r']);
+      const response = await request(app)
+        .get('/api/v1/encryption-config')
+        .set('Authorization', `Bearer ${token}`);
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({
+        encryptLocal: true,
+        encryptDatabase: false,
+        keyConfigured: false,
+      });
+    });
+
+    it('never returns the raw key', async () => {
+      const user = await encryptionUser();
+      await sessionRequest('put', '/api/auth/encryption-config', user.token).send({
+        key: 'a-real-secret-key',
+        encryptLocal: true,
+        encryptDatabase: true,
+      });
+      const token = await encryptionToken(user.token, ['encryption:r']);
+      const response = await request(app)
+        .get('/api/v1/encryption-config')
+        .set('Authorization', `Bearer ${token}`);
+      expect(response.body).toEqual({
+        encryptLocal: true,
+        encryptDatabase: true,
+        keyConfigured: true,
+      });
+      expect(response.body.key).toBeUndefined();
+      expect(JSON.stringify(response.body)).not.toContain('a-real-secret-key');
+    });
+
+    it('sets an initial key via a session and reports it as configured', async () => {
+      const user = await encryptionUser();
+      const response = await sessionRequest('put', '/api/v1/encryption-config', user.token).send({
+        key: 'first-key',
+        encryptDatabase: true,
+      });
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({
+        encryptLocal: true,
+        encryptDatabase: true,
+        keyConfigured: true,
+      });
+    });
+
+    it('toggles encryptLocal/encryptDatabase via a session without touching an already-active key', async () => {
+      const user = await encryptionUser();
+      await sessionRequest('put', '/api/v1/encryption-config', user.token).send({
+        key: 'active-key',
+        encryptDatabase: true,
+      });
+      const response = await sessionRequest('put', '/api/v1/encryption-config', user.token).send({
+        encryptDatabase: false,
+      });
+      expect(response.status).toBe(200);
+      expect(response.body.encryptDatabase).toBe(false);
+      expect(response.body.keyConfigured).toBe(true);
+    });
+
+    it('rejects changing an already-active key to a different value, pointing at mm-admin', async () => {
+      const user = await encryptionUser();
+      await sessionRequest('put', '/api/v1/encryption-config', user.token).send({
+        key: 'active-key',
+        encryptDatabase: true,
+      });
+      const response = await sessionRequest('put', '/api/v1/encryption-config', user.token).send({
+        key: 'a-different-key',
+      });
+      expect(response.status).toBe(400);
+      expect(response.body.code).toBe('validation_invalid');
+      expect(response.body.detail).toContain('mm-admin rotate-encryption-key');
+    });
+
+    it('rejects a PAT from calling PUT /encryption-config, regardless of scope', async () => {
+      const user = await encryptionUser();
+      const token = await encryptionToken(user.token, ['encryption:r', 'encryption:w']);
+      const response = await request(app)
+        .put('/api/v1/encryption-config')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ encryptDatabase: true });
+      expect(response.status).toBe(403);
+      expect(response.body.code).toBe('auth_session_required');
+    });
+
+    it('rejects GET without the encryption:r scope', async () => {
+      const user = await encryptionUser();
+      const token = await encryptionToken(user.token, ['settings:r']);
+      const response = await request(app)
+        .get('/api/v1/encryption-config')
+        .set('Authorization', `Bearer ${token}`);
+      expect(response.status).toBe(403);
+      expect(response.body.code).toBe('scope_insufficient');
+    });
+
+    it('rejects an unrecognized field', async () => {
+      const user = await encryptionUser();
+      const response = await sessionRequest('put', '/api/v1/encryption-config', user.token).send({
+        isLocal: true,
+      });
+      expect(response.status).toBe(400);
+      expect(response.body.code).toBe('validation_invalid');
+    });
+
+    it('keeps encryption config isolated to the authenticated user document', async () => {
+      const userA = await encryptionUser();
+      const userB = await encryptionUser();
+      await sessionRequest('put', '/api/v1/encryption-config', userB.token).send({
+        key: 'user-b-key',
+        encryptDatabase: true,
+      });
+
+      const tokenA = await encryptionToken(userA.token, ['encryption:r']);
+      const getA = await request(app)
+        .get('/api/v1/encryption-config')
+        .set('Authorization', `Bearer ${tokenA}`);
+      expect(getA.body).toEqual({
+        encryptLocal: true,
+        encryptDatabase: false,
+        keyConfigured: false,
+      });
+    });
+  });
+
   describe('POST /budget/from-subscriptions', () => {
     // Fresh user per test — this endpoint reads every subscription on the account, so a shared
     // account would leak other tests' subscriptions into the computed budget rows.

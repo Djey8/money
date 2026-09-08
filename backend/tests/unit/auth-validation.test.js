@@ -19,7 +19,9 @@ jest.mock('../../config/db', () => {
   const mockAuthDb = {
     find: jest.fn(),
     insert: jest.fn(),
-    get: jest.fn(),
+    // Login/refresh also read the user's encryptionConfig via authDb.get(userId) — default to
+    // an empty doc (no encryptionConfig field) so that lookup resolves safely to defaults.
+    get: jest.fn().mockResolvedValue({}),
   };
   const mockUsersDb = {
     insert: jest.fn(),
@@ -156,6 +158,29 @@ describe('POST /api/auth/login — input validation', () => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     expect(decoded.userId).toBe('u1');
     expect(decoded.email).toBe('u@t.com');
+  });
+
+  it('still succeeds and defaults encryptionConfig when reading it hits a real (non-404) DB error', async () => {
+    const hashed = await bcrypt.hash('correct', 10);
+    __mockAuthDb.find.mockResolvedValue({
+      docs: [{ _id: 'u1', email: 'u@t.com', password: hashed }],
+    });
+    // Simulate a transient CouchDB failure on the encryptionConfig enrichment read specifically —
+    // login's own job (issuing session cookies) must not fail because of this non-essential read.
+    __mockAuthDb.get.mockRejectedValueOnce(new Error('ECONNRESET'));
+
+    const res = await request(app)
+      .post('/api/auth/login')
+      .send({ email: 'u@t.com', password: 'correct' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.encryptionConfig).toEqual({
+      key: 'default',
+      encryptLocal: true,
+      encryptDatabase: false,
+    });
+    const cookies = res.headers['set-cookie'] || [];
+    expect(cookies.some((c) => c.startsWith('access_token='))).toBe(true);
   });
 });
 

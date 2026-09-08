@@ -15,7 +15,9 @@ jest.mock('../../config/db', () => {
   const mockAuthDb = {
     find: jest.fn(),
     insert: jest.fn(),
-    get: jest.fn(),
+    // Login/refresh also read the user's encryptionConfig via authDb.get(userId) — default to
+    // an empty doc (no encryptionConfig field) so that lookup resolves safely to defaults.
+    get: jest.fn().mockResolvedValue({}),
   };
   const mockUsersDb = {
     insert: jest.fn(),
