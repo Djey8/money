@@ -115,6 +115,7 @@ const {
   getPublicEncryptionConfig,
   updatePublicEncryptionConfig,
 } = require('../repositories/encryption-config-repository');
+const { recalculateUserData } = require('../repositories/data-repository');
 const { getUsersDb, getAuthDb } = require('../config/db');
 const { getEncryptionSession } = require('../services/encryption-session');
 const {
@@ -1262,12 +1263,20 @@ function validateIdempotencyKeyPresence(req) {
  * idempotency lookup and audit entry to the calling resource (`transactions`,
  * `subscriptions`, ...) so two different bulk endpoints can't collide on the
  * same key.
+ *
+ * `onError`, if given, gets first look at anything `run()` throws and may
+ * return a Problem Details response of its own (matching this file's usual
+ * `if (error.code === '...') return problem(...)` inline pattern, just
+ * relocated here since this helper's own `catch` — falling through to the
+ * generic `next(error)` 500 handler — would otherwise be the only thing
+ * that sees it). Return `undefined`/nothing from `onError` to fall through
+ * to that default `next(error)` handling for anything it doesn't recognize.
  */
 async function handleIdempotentBulkWrite(
   req,
   res,
   next,
-  { resource = 'transactions', requestBodyForHash, itemCount, run },
+  { resource = 'transactions', requestBodyForHash, itemCount, run, onError },
 ) {
   const idempotencyKey = req.get('Idempotency-Key');
   if (!idempotencyKey || !idempotencyKey.trim()) {
@@ -1324,6 +1333,10 @@ async function handleIdempotentBulkWrite(
     );
     return res.status(200).json(response);
   } catch (error) {
+    if (onError) {
+      const handled = onError(error);
+      if (handled !== undefined) return handled;
+    }
     return next(error);
   }
 }
@@ -3629,6 +3642,28 @@ router.put('/encryption-config', requireSession, async (req, res, next) => {
     }
     return next(error);
   }
+});
+
+// `data:bulk` (not a scope any `rw` grant satisfies, per docs/adr/0006) —
+// this forces a recalculation of every derived aggregate (accounting
+// totals, Mojo, Smile/Fire fund buckets), the same server-side logic every
+// transaction write already runs, useful after a direct data edit (e.g.
+// `POST /data/import`, or manual CouchDB surgery) that could have left
+// those aggregates stale. Idempotency-Key required like every other bulk
+// write (docs/MASTER_PROMPT.md §4.2) even though recalculating twice is
+// naturally idempotent in effect — replaying the same key still short-
+// circuits to the first run's result rather than doing the work twice.
+router.post('/data/recalculate', requireScope('data:bulk'), async (req, res, next) => {
+  return handleIdempotentBulkWrite(req, res, next, {
+    resource: 'data',
+    requestBodyForHash: JSON.stringify(req.body || {}),
+    run: async () =>
+      recalculateUserData({ usersDb: getUsersDb(), authDb: getAuthDb() }, req.userId),
+    onError: (error) => {
+      if (error.code !== 'RECALCULATE_WOULD_DROP_TRANSACTIONS') return undefined;
+      return problem(res, 400, 'validation_invalid', 'Cannot recalculate', error.message);
+    },
+  });
 });
 
 module.exports = router;

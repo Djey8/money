@@ -5378,6 +5378,189 @@ describe('v1 API authentication and PAT management', () => {
     });
   });
 
+  describe('POST /data/recalculate', () => {
+    // Fresh user per test — this endpoint recalculates every derived
+    // aggregate on the account, so a shared account would leak other tests'
+    // transactions/income totals into the computed result.
+    async function recalculateUser() {
+      return registerTestUser(`_recalc_${Date.now()}_${Math.random()}`);
+    }
+
+    async function recalculateToken(sessionToken, scopes) {
+      const created = await sessionRequest('post', '/api/v1/auth/tokens', sessionToken).send({
+        name: `recalculate-agent-${Date.now()}-${Math.random()}`,
+        scopes,
+      });
+      return created.body.token;
+    }
+
+    it('recalculates derived state and reports the transaction count', async () => {
+      const user = await recalculateUser();
+      await sessionRequest('post', '/api/v1/transactions', user.token).send({
+        account: 'Income',
+        amountMinor: 500000,
+        date: '2026-09-06',
+        time: '09:00',
+        category: '@Salary',
+        comment: '',
+      });
+      await sessionRequest('post', '/api/v1/transactions', user.token).send({
+        account: 'Daily',
+        amountMinor: -1250,
+        date: '2026-09-06',
+        time: '10:00',
+        category: '@Groceries',
+        comment: '',
+      });
+
+      const token = await recalculateToken(user.token, ['data:bulk']);
+      const response = await request(app)
+        .post('/api/v1/data/recalculate')
+        .set('Authorization', `Bearer ${token}`)
+        .set('Idempotency-Key', `recalc-${Date.now()}-1`)
+        .send({});
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({ transactionCount: 2 });
+
+      // Recalculation must not have changed the stored transactions themselves.
+      const listed = await sessionRequest('get', '/api/v1/transactions', user.token);
+      expect(listed.body.transactions).toHaveLength(2);
+
+      const statement = await sessionRequest('get', '/api/v1/reports/income-statement', user.token);
+      expect(statement.status).toBe(200);
+    });
+
+    it('returns a zero count for an account with no transactions yet', async () => {
+      const user = await recalculateUser();
+      const token = await recalculateToken(user.token, ['data:bulk']);
+      const response = await request(app)
+        .post('/api/v1/data/recalculate')
+        .set('Authorization', `Bearer ${token}`)
+        .set('Idempotency-Key', `recalc-${Date.now()}-2`)
+        .send({});
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({ transactionCount: 0 });
+    });
+
+    it('requires the data:bulk scope — rw on a related resource is not enough', async () => {
+      const user = await recalculateUser();
+      const token = await recalculateToken(user.token, ['transactions:rw']);
+      const response = await request(app)
+        .post('/api/v1/data/recalculate')
+        .set('Authorization', `Bearer ${token}`)
+        .set('Idempotency-Key', `recalc-${Date.now()}-3`)
+        .send({});
+      expect(response.status).toBe(403);
+      expect(response.body.code).toBe('scope_insufficient');
+    });
+
+    it('requires an Idempotency-Key header', async () => {
+      const user = await recalculateUser();
+      const token = await recalculateToken(user.token, ['data:bulk']);
+      const response = await request(app)
+        .post('/api/v1/data/recalculate')
+        .set('Authorization', `Bearer ${token}`)
+        .send({});
+      expect(response.status).toBe(400);
+      expect(response.body.code).toBe('validation_invalid');
+    });
+
+    it('replays the same result for a repeated Idempotency-Key without reapplying', async () => {
+      const user = await recalculateUser();
+      await sessionRequest('post', '/api/v1/transactions', user.token).send({
+        account: 'Income',
+        amountMinor: 100000,
+        date: '2026-09-06',
+        time: '09:00',
+        category: '@Salary',
+        comment: '',
+      });
+      const token = await recalculateToken(user.token, ['data:bulk']);
+      const key = `recalc-${Date.now()}-4`;
+
+      const first = await request(app)
+        .post('/api/v1/data/recalculate')
+        .set('Authorization', `Bearer ${token}`)
+        .set('Idempotency-Key', key)
+        .send({});
+      const second = await request(app)
+        .post('/api/v1/data/recalculate')
+        .set('Authorization', `Bearer ${token}`)
+        .set('Idempotency-Key', key)
+        .send({});
+
+      expect(first.status).toBe(200);
+      expect(second.status).toBe(200);
+      expect(second.body).toEqual(first.body);
+    });
+
+    it('refuses to recalculate rather than silently dropping a zero-amount transaction', async () => {
+      // A zero-amount transaction can never be created through this API (both POST and PATCH
+      // reject amountMinor: 0), but can exist in legacy-origin data — seed one directly, the same
+      // way other tests here seed edge-case stored shapes the API itself won't produce.
+      const user = await recalculateUser();
+      await sessionRequest('post', '/api/v1/transactions', user.token).send({
+        account: 'Income',
+        amountMinor: 100000,
+        date: '2026-09-06',
+        time: '09:00',
+        category: '@Salary',
+        comment: '',
+      });
+      const usersDb = getUsersDb();
+      const doc = await usersDb.get(user.userId);
+      doc.data.transactions.push({
+        id: 'tx_legacy_zero',
+        account: 'Daily',
+        amount: 0,
+        date: '2026-09-06',
+        time: '10:00',
+        category: '@Log',
+        comment: 'legacy zero-amount entry',
+      });
+      await usersDb.insert(doc);
+
+      const token = await recalculateToken(user.token, ['data:bulk']);
+      const response = await request(app)
+        .post('/api/v1/data/recalculate')
+        .set('Authorization', `Bearer ${token}`)
+        .set('Idempotency-Key', `recalc-${Date.now()}-6`)
+        .send({});
+
+      expect(response.status).toBe(400);
+      expect(response.body.code).toBe('validation_invalid');
+      expect(response.body.detail).toContain('zero amount');
+
+      // Nothing was dropped — the zero-amount transaction is still there.
+      const stillThere = await usersDb.get(user.userId);
+      expect(stillThere.data.transactions).toHaveLength(2);
+    });
+
+    it('keeps recalculation isolated to the authenticated user document', async () => {
+      const userA = await recalculateUser();
+      const userB = await recalculateUser();
+      await sessionRequest('post', '/api/v1/transactions', userB.token).send({
+        account: 'Income',
+        amountMinor: 999900,
+        date: '2026-09-06',
+        time: '09:00',
+        category: '@UserB salary',
+        comment: '',
+      });
+
+      const tokenA = await recalculateToken(userA.token, ['data:bulk']);
+      const response = await request(app)
+        .post('/api/v1/data/recalculate')
+        .set('Authorization', `Bearer ${tokenA}`)
+        .set('Idempotency-Key', `recalc-${Date.now()}-5`)
+        .send({});
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({ transactionCount: 0 });
+    });
+  });
+
   describe('POST /budget/from-subscriptions', () => {
     // Fresh user per test — this endpoint reads every subscription on the account, so a shared
     // account would leak other tests' subscriptions into the computed budget rows.

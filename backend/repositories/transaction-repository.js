@@ -383,4 +383,8 @@ module.exports = {
   toApiTransactions,
   decodeCursor,
   filterAndSortTransactions,
+  // Re-exported for data-repository.js's recalculateUserData, which reuses
+  // this exact read -> recalculate-derived-state -> write-with-retry loop
+  // rather than duplicating it, per D-9.
+  withTransactionsWrite,
 };
