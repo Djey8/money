@@ -105,6 +105,9 @@ const {
   upsertBudget,
   updateBudgetRow,
   deleteBudgetRow,
+  deleteBudgetMonth,
+  fillForwardBudget,
+  copyBudget,
 } = require('../repositories/budget-repository');
 const { getUsersDb, getAuthDb } = require('../config/db');
 const { getEncryptionSession } = require('../services/encryption-session');
@@ -773,6 +776,29 @@ function validatePatchBudgetInput(input) {
   }
   if (input.amountMinor !== undefined && !Number.isInteger(input.amountMinor)) {
     return 'amountMinor must be an integer.';
+  }
+  return null;
+}
+
+function validateFillForwardBudgetInput(input) {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) {
+    return 'A request body object is required.';
+  }
+  if (!isNonEmptyString(input.targetMonth) || !BUDGET_MONTH_PATTERN.test(input.targetMonth)) {
+    return 'targetMonth must use YYYY-MM format.';
+  }
+  return null;
+}
+
+function validateCopyBudgetInput(input) {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) {
+    return 'A request body object is required.';
+  }
+  if (!isNonEmptyString(input.fromMonth) || !BUDGET_MONTH_PATTERN.test(input.fromMonth)) {
+    return 'fromMonth must use YYYY-MM format.';
+  }
+  if (!isNonEmptyString(input.toMonth) || !BUDGET_MONTH_PATTERN.test(input.toMonth)) {
+    return 'toMonth must use YYYY-MM format.';
   }
   return null;
 }
@@ -3179,6 +3205,86 @@ router.delete('/budget/:budgetId', requireScope('budget:w'), async (req, res, ne
       resourceId: req.params.budgetId,
     });
     return res.json({ id: req.params.budgetId });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.post('/budget/fill-forward', requireScope('budget:w'), async (req, res, next) => {
+  const validationError = validateFillForwardBudgetInput(req.body);
+  if (validationError) {
+    return problem(res, 400, 'validation_invalid', 'Invalid budget request', validationError);
+  }
+  try {
+    const result = await fillForwardBudget(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+      req.body.targetMonth,
+    );
+    await recordAuditEntry(getAuditDb(), {
+      userId: req.userId,
+      actor: auditActor(req.auth),
+      method: req.method,
+      path: req.baseUrl + req.path,
+      resource: 'budget',
+      itemCount: result.rowsAdded,
+    });
+    return res.json(result);
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.post('/budget/copy', requireScope('budget:w'), async (req, res, next) => {
+  const validationError = validateCopyBudgetInput(req.body);
+  if (validationError) {
+    return problem(res, 400, 'validation_invalid', 'Invalid budget request', validationError);
+  }
+  try {
+    const result = await copyBudget(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+      { fromMonth: req.body.fromMonth, toMonth: req.body.toMonth },
+    );
+    await recordAuditEntry(getAuditDb(), {
+      userId: req.userId,
+      actor: auditActor(req.auth),
+      method: req.method,
+      path: req.baseUrl + req.path,
+      resource: 'budget',
+      itemCount: result.rowsCopied,
+    });
+    return res.json(result);
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.delete('/budget', requireScope('budget:w'), async (req, res, next) => {
+  if (!isNonEmptyString(req.query.month) || !BUDGET_MONTH_PATTERN.test(req.query.month)) {
+    return problem(
+      res,
+      400,
+      'validation_invalid',
+      'Invalid budget request',
+      'month must use YYYY-MM format.',
+    );
+  }
+  try {
+    const result = await deleteBudgetMonth(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+      req.query.month,
+    );
+    await recordAuditEntry(getAuditDb(), {
+      userId: req.userId,
+      actor: auditActor(req.auth),
+      method: req.method,
+      path: req.baseUrl + req.path,
+      resource: 'budget',
+      itemCount: result.deletedCount,
+    });
+    return res.json(result);
   } catch (error) {
     return next(error);
   }

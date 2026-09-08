@@ -4739,6 +4739,219 @@ describe('v1 API authentication and PAT management', () => {
     });
   });
 
+  describe('POST /budget/fill-forward, POST /budget/copy, and DELETE /budget?month=', () => {
+    // Each test registers its own user — fill-forward's backward search would otherwise pick up
+    // unrelated budget rows other tests in this file leave on a shared account.
+    async function budgetToken(scopes) {
+      const user = await registerTestUser(`_budget_bulk_${Date.now()}_${Math.random()}`);
+      const created = await sessionRequest('post', '/api/v1/auth/tokens', user.token).send({
+        name: `budget-bulk-agent-${Date.now()}-${Math.random()}`,
+        scopes,
+      });
+      return created.body;
+    }
+
+    it('chain-fills forward from the nearest prior populated month, add-only', async () => {
+      const { token } = await budgetToken(['budget:r', 'budget:w']);
+      await request(app)
+        .post('/api/v1/budget')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ date: '2026-01', tag: '@Groceries', amountMinor: 30000 });
+
+      const response = await request(app)
+        .post('/api/v1/budget/fill-forward')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ targetMonth: '2026-04' });
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({ targetMonth: '2026-04', rowsAdded: 3 });
+
+      const list = await request(app)
+        .get('/api/v1/budget')
+        .set('Authorization', `Bearer ${token}`);
+      const months = list.body.budget.map((row) => row.date).sort();
+      expect(months).toEqual(['2026-01', '2026-02', '2026-03', '2026-04']);
+    });
+
+    it('does not overwrite an existing row for (date, tag) in an intermediate month', async () => {
+      const { token } = await budgetToken(['budget:r', 'budget:w']);
+      await request(app)
+        .post('/api/v1/budget')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ date: '2026-01', tag: '@Groceries', amountMinor: 30000 });
+      await request(app)
+        .post('/api/v1/budget')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ date: '2026-02', tag: '@Groceries', amountMinor: 99900 });
+
+      await request(app)
+        .post('/api/v1/budget/fill-forward')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ targetMonth: '2026-03' });
+
+      const list = await request(app)
+        .get('/api/v1/budget')
+        .set('Authorization', `Bearer ${token}`);
+      const february = list.body.budget.find((row) => row.date === '2026-02');
+      const march = list.body.budget.find((row) => row.date === '2026-03');
+      expect(february.amountMinor).toBe(99900);
+      expect(march.amountMinor).toBe(99900);
+    });
+
+    it('does nothing when no prior month within 120 months has any row', async () => {
+      const { token } = await budgetToken(['budget:r', 'budget:w']);
+      const response = await request(app)
+        .post('/api/v1/budget/fill-forward')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ targetMonth: '2026-04' });
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({ targetMonth: '2026-04', rowsAdded: 0 });
+    });
+
+    it('rejects an invalid targetMonth', async () => {
+      const { token } = await budgetToken(['budget:w']);
+      const response = await request(app)
+        .post('/api/v1/budget/fill-forward')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ targetMonth: '2026-13' });
+      expect(response.status).toBe(400);
+      expect(response.body.code).toBe('validation_invalid');
+    });
+
+    it('copies every row from the source month, overwriting an existing target row and creating new ones', async () => {
+      const { token } = await budgetToken(['budget:r', 'budget:w']);
+      await request(app)
+        .post('/api/v1/budget')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ date: '2026-01', tag: '@Groceries', amountMinor: 30000 });
+      await request(app)
+        .post('/api/v1/budget')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ date: '2026-01', tag: '@Rent', amountMinor: 120000 });
+      await request(app)
+        .post('/api/v1/budget')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ date: '2026-02', tag: '@Groceries', amountMinor: 99900 });
+
+      const response = await request(app)
+        .post('/api/v1/budget/copy')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ fromMonth: '2026-01', toMonth: '2026-02' });
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({ fromMonth: '2026-01', toMonth: '2026-02', rowsCopied: 2 });
+
+      const list = await request(app)
+        .get('/api/v1/budget?month=2026-02')
+        .set('Authorization', `Bearer ${token}`);
+      const groceries = list.body.budget.find((row) => row.tag === '@Groceries');
+      const rent = list.body.budget.find((row) => row.tag === '@Rent');
+      expect(groceries.amountMinor).toBe(30000);
+      expect(rent.amountMinor).toBe(120000);
+    });
+
+    it('rejects invalid copy input', async () => {
+      const { token } = await budgetToken(['budget:w']);
+      const response = await request(app)
+        .post('/api/v1/budget/copy')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ fromMonth: '2026-01', toMonth: 'not-a-month' });
+      expect(response.status).toBe(400);
+      expect(response.body.code).toBe('validation_invalid');
+    });
+
+    it('deletes every row for a month via DELETE /budget?month=', async () => {
+      const { token } = await budgetToken(['budget:r', 'budget:w']);
+      await request(app)
+        .post('/api/v1/budget')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ date: '2026-01', tag: '@Groceries', amountMinor: 30000 });
+      await request(app)
+        .post('/api/v1/budget')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ date: '2026-01', tag: '@Rent', amountMinor: 120000 });
+      await request(app)
+        .post('/api/v1/budget')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ date: '2026-02', tag: '@Rent', amountMinor: 120000 });
+
+      const response = await request(app)
+        .delete('/api/v1/budget?month=2026-01')
+        .set('Authorization', `Bearer ${token}`);
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({ month: '2026-01', deletedCount: 2 });
+
+      const list = await request(app)
+        .get('/api/v1/budget')
+        .set('Authorization', `Bearer ${token}`);
+      expect(list.body.budget).toHaveLength(1);
+      expect(list.body.budget[0].date).toBe('2026-02');
+    });
+
+    it('rejects a DELETE /budget without a valid month query parameter', async () => {
+      const { token } = await budgetToken(['budget:w']);
+      const response = await request(app)
+        .delete('/api/v1/budget')
+        .set('Authorization', `Bearer ${token}`);
+      expect(response.status).toBe(400);
+      expect(response.body.code).toBe('validation_invalid');
+    });
+
+    it('rejects requests without the budget:w scope', async () => {
+      const { token } = await budgetToken(['budget:r']);
+      const fillForward = await request(app)
+        .post('/api/v1/budget/fill-forward')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ targetMonth: '2026-04' });
+      expect(fillForward.status).toBe(403);
+
+      const copy = await request(app)
+        .post('/api/v1/budget/copy')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ fromMonth: '2026-01', toMonth: '2026-02' });
+      expect(copy.status).toBe(403);
+
+      const deleteMonth = await request(app)
+        .delete('/api/v1/budget?month=2026-01')
+        .set('Authorization', `Bearer ${token}`);
+      expect(deleteMonth.status).toBe(403);
+    });
+
+    it('keeps fill-forward/copy/delete-month isolated to the authenticated user document', async () => {
+      const { token: tokenA } = await budgetToken(['budget:r', 'budget:w']);
+      const { token: tokenB } = await budgetToken(['budget:r', 'budget:w']);
+      await request(app)
+        .post('/api/v1/budget')
+        .set('Authorization', `Bearer ${tokenB}`)
+        .send({ date: '2026-01', tag: '@OnlyB', amountMinor: 1000 });
+
+      const fillForward = await request(app)
+        .post('/api/v1/budget/fill-forward')
+        .set('Authorization', `Bearer ${tokenA}`)
+        .send({ targetMonth: '2026-04' });
+      expect(fillForward.body).toEqual({ targetMonth: '2026-04', rowsAdded: 0 });
+
+      const copy = await request(app)
+        .post('/api/v1/budget/copy')
+        .set('Authorization', `Bearer ${tokenA}`)
+        .send({ fromMonth: '2026-01', toMonth: '2026-02' });
+      expect(copy.body).toEqual({ fromMonth: '2026-01', toMonth: '2026-02', rowsCopied: 0 });
+
+      const deleteMonth = await request(app)
+        .delete('/api/v1/budget?month=2026-01')
+        .set('Authorization', `Bearer ${tokenA}`);
+      expect(deleteMonth.body).toEqual({ month: '2026-01', deletedCount: 0 });
+
+      const listA = await request(app)
+        .get('/api/v1/budget')
+        .set('Authorization', `Bearer ${tokenA}`);
+      expect(listA.body.budget).toEqual([]);
+
+      const listB = await request(app)
+        .get('/api/v1/budget')
+        .set('Authorization', `Bearer ${tokenB}`);
+      expect(listB.body.budget).toHaveLength(1);
+    });
+  });
+
   describe('POST /subscriptions/batch', () => {
     async function bulkToken() {
       const created = await sessionRequest('post', '/api/v1/auth/tokens').send({

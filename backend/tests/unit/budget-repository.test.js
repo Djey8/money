@@ -8,6 +8,8 @@ const {
   updateBudgetRow,
   deleteBudgetRow,
   deleteBudgetMonth,
+  fillForwardBudget,
+  copyBudget,
 } = require('../../repositories/budget-repository');
 
 function dependencies(data, encryptionConfig) {
@@ -215,5 +217,114 @@ describe('deleteBudgetMonth', () => {
     const result = await deleteBudgetMonth(deps, 'user_1', '2026-01');
     expect(result).toEqual({ month: '2026-01', deletedCount: 2 });
     expect(current().data.budget).toHaveLength(1);
+  });
+});
+
+describe('fillForwardBudget', () => {
+  it('finds the nearest prior populated month and chain-fills forward, add-only', async () => {
+    const document = {
+      _id: 'user_1',
+      _rev: '1-a',
+      data: {
+        budget: [minimalRawRow({ id: 'budget_1', date: '2026-01', tag: '@Groceries' })],
+      },
+    };
+    const { deps, current } = writableDeps(document);
+    const result = await fillForwardBudget(deps, 'user_1', '2026-04');
+    expect(result).toEqual({ targetMonth: '2026-04', rowsAdded: 3 });
+    const dates = current()
+      .data.budget.map((row) => row.date)
+      .sort();
+    expect(dates).toEqual(['2026-01', '2026-02', '2026-03', '2026-04']);
+  });
+
+  it('chain-fills correctly across a December-to-January year rollover', async () => {
+    const document = {
+      _id: 'user_1',
+      _rev: '1-a',
+      data: {
+        budget: [minimalRawRow({ id: 'budget_1', date: '2026-11', tag: '@Groceries' })],
+      },
+    };
+    const { deps, current } = writableDeps(document);
+    const result = await fillForwardBudget(deps, 'user_1', '2027-01');
+    expect(result).toEqual({ targetMonth: '2027-01', rowsAdded: 2 });
+    const dates = current()
+      .data.budget.map((row) => row.date)
+      .sort();
+    expect(dates).toEqual(['2026-11', '2026-12', '2027-01']);
+  });
+
+  it('does not overwrite a row that already exists for (date, tag) in an intermediate month', async () => {
+    const document = {
+      _id: 'user_1',
+      _rev: '1-a',
+      data: {
+        budget: [
+          minimalRawRow({ id: 'budget_1', date: '2026-01', tag: '@Groceries', amount: 300 }),
+          minimalRawRow({ id: 'budget_2', date: '2026-02', tag: '@Groceries', amount: 999 }),
+        ],
+      },
+    };
+    const { deps, current } = writableDeps(document);
+    await fillForwardBudget(deps, 'user_1', '2026-03');
+    const february = current().data.budget.find((row) => row.date === '2026-02');
+    expect(february.amount).toBe(999);
+    const march = current().data.budget.find((row) => row.date === '2026-03');
+    expect(march.amount).toBe(999);
+  });
+
+  it('does not write anything when no prior month within 120 months has any row', async () => {
+    const document = { _id: 'user_1', _rev: '1-a', data: { budget: [] } };
+    const { deps } = writableDeps(document);
+    const result = await fillForwardBudget(deps, 'user_1', '2026-04');
+    expect(result).toEqual({ targetMonth: '2026-04', rowsAdded: 0 });
+    expect(deps.usersDb.insert).not.toHaveBeenCalled();
+  });
+});
+
+describe('copyBudget', () => {
+  it('copies every row from the source month into an empty target month', async () => {
+    const document = {
+      _id: 'user_1',
+      _rev: '1-a',
+      data: {
+        budget: [
+          minimalRawRow({ id: 'budget_1', date: '2026-01', tag: '@Groceries', amount: 300 }),
+          minimalRawRow({ id: 'budget_2', date: '2026-01', tag: '@Rent', amount: 1200 }),
+        ],
+      },
+    };
+    const { deps, current } = writableDeps(document);
+    const result = await copyBudget(deps, 'user_1', { fromMonth: '2026-01', toMonth: '2026-02' });
+    expect(result).toEqual({ fromMonth: '2026-01', toMonth: '2026-02', rowsCopied: 2 });
+    const february = current().data.budget.filter((row) => row.date === '2026-02');
+    expect(february).toHaveLength(2);
+  });
+
+  it('overwrites an existing target row amount when (date, tag) already exists', async () => {
+    const document = {
+      _id: 'user_1',
+      _rev: '1-a',
+      data: {
+        budget: [
+          minimalRawRow({ id: 'budget_1', date: '2026-01', tag: '@Groceries', amount: 300 }),
+          minimalRawRow({ id: 'budget_2', date: '2026-02', tag: '@Groceries', amount: 999 }),
+        ],
+      },
+    };
+    const { deps, current } = writableDeps(document);
+    await copyBudget(deps, 'user_1', { fromMonth: '2026-01', toMonth: '2026-02' });
+    const february = current().data.budget.find((row) => row.date === '2026-02');
+    expect(february.id).toBe('budget_2');
+    expect(february.amount).toBe(300);
+  });
+
+  it('does not write anything when the source month has no rows', async () => {
+    const document = { _id: 'user_1', _rev: '1-a', data: { budget: [] } };
+    const { deps } = writableDeps(document);
+    const result = await copyBudget(deps, 'user_1', { fromMonth: '2026-01', toMonth: '2026-02' });
+    expect(result).toEqual({ fromMonth: '2026-01', toMonth: '2026-02', rowsCopied: 0 });
+    expect(deps.usersDb.insert).not.toHaveBeenCalled();
   });
 });

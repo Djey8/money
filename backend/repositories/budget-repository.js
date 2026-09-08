@@ -100,8 +100,11 @@ async function getBudgetRow(deps, userId, budgetId) {
 /**
  * Shared read → mutate → write-with-retry-on-409 loop for every Budget
  * write, mirroring `asset-repository.js`'s `withAssetsWrite`. `mutate`
- * receives the still-encrypted `rawRows` array and returns either `null`
- * (nothing to do) or `{ updatedRawRows, result }`.
+ * receives the still-encrypted `rawRows` array and returns one of:
+ * - `null` — nothing to do (e.g. the target id doesn't exist); no write happens.
+ * - `{ skipWrite: true, result }` — a no-op outcome (e.g. a fill-forward or
+ *   copy that had nothing to do); no write happens, `result` is returned as-is.
+ * - `{ updatedRawRows, result }` — the new rows array to persist.
  */
 async function withBudgetWrite({ usersDb, authDb }, userId, mutate) {
   let attempt = 0;
@@ -126,6 +129,7 @@ async function withBudgetWrite({ usersDb, authDb }, userId, mutate) {
 
     const mutation = mutate({ data, rawRows, session, schemaVersion });
     if (mutation === null) return null;
+    if (mutation.skipWrite) return mutation.result;
     const { updatedRawRows, result } = mutation;
     const updatedData = { ...data, budget: updatedRawRows };
     const now = new Date().toISOString();
@@ -222,6 +226,120 @@ async function deleteBudgetMonth(deps, userId, month) {
   });
 }
 
+function shiftMonth(month, delta) {
+  const [year, monthNumber] = month.split('-').map(Number);
+  const totalMonths = year * 12 + (monthNumber - 1) + delta;
+  const nextYear = Math.floor(totalMonths / 12);
+  const nextMonth = (totalMonths % 12) + 1;
+  return `${nextYear}-${String(nextMonth).padStart(2, '0')}`;
+}
+
+const MAX_FILL_FORWARD_LOOKBACK_MONTHS = 120;
+
+/**
+ * `POST /budget/fill-forward` — walks backward up to 120 months from
+ * `targetMonth` for the nearest prior month with any row, then chain-fills
+ * forward month by month to `targetMonth`. Each newly-filled month becomes
+ * the source for the next step (true chaining, not always copying from the
+ * original last-populated month). Add-only: never overwrites a row that
+ * already exists for a given (date, tag), in an intermediate month or the
+ * target month — ported from `plan.component.ts`'s `fill()` exactly,
+ * including its silent no-op when no prior month has any budget at all.
+ */
+async function fillForwardBudget(deps, userId, targetMonth) {
+  return withBudgetWrite(deps, userId, ({ rawRows, session, schemaVersion }) => {
+    const existing = decryptAllBudgetRows(rawRows, session, schemaVersion);
+
+    let lastPopulatedMonth = null;
+    for (let back = 1; back <= MAX_FILL_FORWARD_LOOKBACK_MONTHS; back += 1) {
+      const candidate = shiftMonth(targetMonth, -back);
+      if (existing.some((row) => row.date === candidate)) {
+        lastPopulatedMonth = candidate;
+        break;
+      }
+    }
+    if (!lastPopulatedMonth) {
+      return { skipWrite: true, result: { targetMonth, rowsAdded: 0 } };
+    }
+
+    let working = existing;
+    let cursor = lastPopulatedMonth;
+    while (cursor !== targetMonth) {
+      const nextMonth = shiftMonth(cursor, 1);
+      const sourceRows = working.filter((row) => row.date === cursor);
+      for (const sourceRow of sourceRows) {
+        const alreadyExists = working.some(
+          (row) => row.date === nextMonth && row.tag === sourceRow.tag,
+        );
+        if (!alreadyExists) {
+          working = [
+            ...working,
+            {
+              id: `budget_${crypto.randomUUID()}`,
+              date: nextMonth,
+              tag: sourceRow.tag,
+              amountMinor: sourceRow.amountMinor,
+            },
+          ];
+        }
+      }
+      cursor = nextMonth;
+    }
+
+    if (working.length === existing.length) {
+      return { skipWrite: true, result: { targetMonth, rowsAdded: 0 } };
+    }
+    return {
+      updatedRawRows: working.map((row) => encryptBudgetRow(row, session, schemaVersion)),
+      result: { targetMonth, rowsAdded: working.length - existing.length },
+    };
+  });
+}
+
+/**
+ * `POST /budget/copy` — copies every row from `fromMonth` into `toMonth`,
+ * overwriting an existing target row's amount if one already matches
+ * (date, tag) — deliberately different overwrite semantics from
+ * `fillForwardBudget`, matching the original app's own two distinct
+ * behaviors (`plan.component.ts`'s `copy()`).
+ */
+async function copyBudget(deps, userId, { fromMonth, toMonth }) {
+  return withBudgetWrite(deps, userId, ({ rawRows, session, schemaVersion }) => {
+    const existing = decryptAllBudgetRows(rawRows, session, schemaVersion);
+    const sourceRows = existing.filter((row) => row.date === fromMonth);
+    if (sourceRows.length === 0) {
+      return { skipWrite: true, result: { fromMonth, toMonth, rowsCopied: 0 } };
+    }
+
+    let working = existing;
+    for (const sourceRow of sourceRows) {
+      const targetIndex = working.findIndex(
+        (row) => row.date === toMonth && row.tag === sourceRow.tag,
+      );
+      if (targetIndex === -1) {
+        working = [
+          ...working,
+          {
+            id: `budget_${crypto.randomUUID()}`,
+            date: toMonth,
+            tag: sourceRow.tag,
+            amountMinor: sourceRow.amountMinor,
+          },
+        ];
+      } else {
+        working = working.map((row, i) =>
+          i === targetIndex ? { ...row, amountMinor: sourceRow.amountMinor } : row,
+        );
+      }
+    }
+
+    return {
+      updatedRawRows: working.map((row) => encryptBudgetRow(row, session, schemaVersion)),
+      result: { fromMonth, toMonth, rowsCopied: sourceRows.length },
+    };
+  });
+}
+
 module.exports = {
   listBudget,
   getBudgetRow,
@@ -229,6 +347,8 @@ module.exports = {
   updateBudgetRow,
   deleteBudgetRow,
   deleteBudgetMonth,
+  fillForwardBudget,
+  copyBudget,
   // Internals re-exported for the fill-forward/copy/from-subscriptions modules.
   decryptMoney,
   decryptBudgetRow,
