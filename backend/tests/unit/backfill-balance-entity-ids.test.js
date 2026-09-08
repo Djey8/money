@@ -80,6 +80,8 @@ describe('backfillBalanceEntityIds', () => {
     ['investments', ['balance', 'asset', 'investments']],
     ['liabilities', ['balance', 'liabilities']],
     ['grow', ['grow']],
+    ['subscriptions', ['subscriptions']],
+    ['budget', ['budget']],
   ])('backfills %s at its own storage path', async (collection, pathSegments) => {
     const leaf = { tag: 'Entry' };
     const data = {};

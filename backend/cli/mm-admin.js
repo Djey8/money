@@ -17,7 +17,7 @@
  *   node cli/mm-admin.js token revoke --token-id <id>
  *   node cli/mm-admin.js migrate-transaction-ids --user <id> [--dry-run]
  *   node cli/mm-admin.js migrate-fund-project-ids --user <id> --collection smile|fire [--dry-run]
- *   node cli/mm-admin.js migrate-balance-entity-ids --user <id> --collection assets|shares|investments|liabilities|grow [--dry-run]
+ *   node cli/mm-admin.js migrate-balance-entity-ids --user <id> --collection assets|shares|investments|liabilities|grow|subscriptions|budget [--dry-run]
  *
  * See docs/adr/0002-money-minor-units-migration.md (migrate) and
  * docs/adr/0006-api-scopes-and-access-control.md (user/token).
@@ -63,7 +63,7 @@ function printUsage() {
   console.error('  mm-admin migrate-transaction-ids --user <id> [--dry-run]');
   console.error('  mm-admin migrate-fund-project-ids --user <id> --collection smile|fire [--dry-run]');
   console.error(
-    '  mm-admin migrate-balance-entity-ids --user <id> --collection assets|shares|investments|liabilities|grow [--dry-run]',
+    '  mm-admin migrate-balance-entity-ids --user <id> --collection assets|shares|investments|liabilities|grow|subscriptions|budget [--dry-run]',
   );
 }
 
