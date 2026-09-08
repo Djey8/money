@@ -48,7 +48,8 @@ function decryptBucket(raw, session, schemaVersion) {
   if (raw.notes !== undefined) bucket.notes = decryptValue(raw.notes, session);
   if (raw.links) bucket.links = raw.links.map((link) => decryptLink(link, session));
   if (raw.targetDate !== undefined) bucket.targetDate = decryptValue(raw.targetDate, session);
-  if (raw.completionDate !== undefined) bucket.completionDate = decryptValue(raw.completionDate, session);
+  if (raw.completionDate !== undefined)
+    bucket.completionDate = decryptValue(raw.completionDate, session);
   return bucket;
 }
 
@@ -81,13 +82,18 @@ function decryptPlan(raw, session, schemaVersion) {
     frequency: decryptValue(raw.frequency, session),
     targetDate: decryptValue(raw.targetDate, session),
     targetBucketIds: (raw.targetBucketIds || []).map((id) => decryptValue(id, session)),
-    originalCalculatedAmountMinor: decryptMoney(raw.originalCalculatedAmount, session, schemaVersion),
+    originalCalculatedAmountMinor: decryptMoney(
+      raw.originalCalculatedAmount,
+      session,
+      schemaVersion,
+    ),
     manuallyAdjusted: decryptBoolean(raw.manuallyAdjusted, session),
     createdAt: decryptValue(raw.createdAt, session),
     updatedAt: decryptValue(raw.updatedAt, session),
   };
   if (raw.activatedAt !== undefined) plan.activatedAt = decryptValue(raw.activatedAt, session);
-  if (raw.deactivatedAt !== undefined) plan.deactivatedAt = decryptValue(raw.deactivatedAt, session);
+  if (raw.deactivatedAt !== undefined)
+    plan.deactivatedAt = decryptValue(raw.deactivatedAt, session);
   if (raw.activeSubscriptionId !== undefined) {
     plan.activeSubscriptionId = decryptValue(raw.activeSubscriptionId, session);
   }
@@ -96,7 +102,9 @@ function decryptPlan(raw, session, schemaVersion) {
 
 /** Decrypts every field of one stored Smile project and computes its read-side bucket totals. */
 function decryptProject(raw, session, schemaVersion) {
-  const buckets = (raw.buckets || []).map((bucket) => decryptBucket(bucket, session, schemaVersion));
+  const buckets = (raw.buckets || []).map((bucket) =>
+    decryptBucket(bucket, session, schemaVersion),
+  );
   const project = {
     id: decryptValue(raw.id, session),
     title: decryptValue(raw.title, session),
@@ -115,7 +123,8 @@ function decryptProject(raw, session, schemaVersion) {
     updatedAt: decryptValue(raw.updatedAt, session),
   };
   if (raw.targetDate !== undefined) project.targetDate = decryptValue(raw.targetDate, session);
-  if (raw.completionDate !== undefined) project.completionDate = decryptValue(raw.completionDate, session);
+  if (raw.completionDate !== undefined)
+    project.completionDate = decryptValue(raw.completionDate, session);
   return project;
 }
 
@@ -146,7 +155,8 @@ function encryptBucket(bucket, session, schemaVersion) {
   };
   if (bucket.notes !== undefined) encrypted.notes = writeValue(bucket.notes, session);
   if (bucket.links) encrypted.links = bucket.links.map((link) => encryptLink(link, session));
-  if (bucket.targetDate !== undefined) encrypted.targetDate = writeValue(bucket.targetDate, session);
+  if (bucket.targetDate !== undefined)
+    encrypted.targetDate = writeValue(bucket.targetDate, session);
   if (bucket.completionDate !== undefined) {
     encrypted.completionDate = writeValue(bucket.completionDate, session);
   }
@@ -205,7 +215,8 @@ function encryptProject(project, session, schemaVersion) {
     createdAt: writeValue(project.createdAt, session),
     updatedAt: writeValue(project.updatedAt, session),
   };
-  if (project.targetDate !== undefined) encrypted.targetDate = writeValue(project.targetDate, session);
+  if (project.targetDate !== undefined)
+    encrypted.targetDate = writeValue(project.targetDate, session);
   if (project.completionDate !== undefined) {
     encrypted.completionDate = writeValue(project.completionDate, session);
   }
@@ -348,7 +359,9 @@ async function createSmileProject(deps, userId, input) {
     const now = new Date().toISOString();
     const buckets = [];
     if (input.targetMinor !== undefined) {
-      buckets.push(buildBucket({ title, targetMinor: input.targetMinor, amountMinor: input.amountMinor }));
+      buckets.push(
+        buildBucket({ title, targetMinor: input.targetMinor, amountMinor: input.amountMinor }),
+      );
     }
     for (const bucketInput of input.buckets || []) {
       buckets.push(buildBucket(bucketInput));

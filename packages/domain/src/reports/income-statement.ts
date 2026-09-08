@@ -1,6 +1,14 @@
 import { ApiTransaction } from '../transactions/transaction';
 import { PeriodRange } from './period-range';
-import { StatementRow, makeRow, EXPENSE_ACCOUNTS, ExpenseAccount, cleanCategory, isTransfer, inRange } from './statement-shared';
+import {
+  StatementRow,
+  makeRow,
+  EXPENSE_ACCOUNTS,
+  ExpenseAccount,
+  cleanCategory,
+  isTransfer,
+  inRange,
+} from './statement-shared';
 
 /**
  * Ports `computeIncomeStatement`/`computeIncomeSide`/`computeExpenseSide`/
@@ -59,7 +67,10 @@ function buildClassificationSets(tags: IncomeClassificationTags): Classification
   };
 }
 
-function classifyIncome(tag: string, sets: ClassificationSets): 'interest' | 'property' | 'revenue' {
+function classifyIncome(
+  tag: string,
+  sets: ClassificationSets,
+): 'interest' | 'property' | 'revenue' {
   const lower = tag.toLowerCase();
   if (sets.interestSet.has(lower)) return 'interest';
   if (sets.propertySet.has(lower)) return 'property';
@@ -70,7 +81,13 @@ function computeIncomeSide(
   transactions: ApiTransaction[],
   range: PeriodRange,
   tags: IncomeClassificationTags,
-): { revenues: number; interests: number; propertyIncome: number; otherIncome: number; total: number } {
+): {
+  revenues: number;
+  interests: number;
+  propertyIncome: number;
+  otherIncome: number;
+  total: number;
+} {
   const sets = buildClassificationSets(tags);
   let revenues = 0;
   let interests = 0;
@@ -91,7 +108,13 @@ function computeIncomeSide(
     else if (kind === 'property') propertyIncome += transaction.amountMinor;
     else revenues += transaction.amountMinor;
   }
-  return { revenues, interests, propertyIncome, otherIncome, total: revenues + interests + propertyIncome + otherIncome };
+  return {
+    revenues,
+    interests,
+    propertyIncome,
+    otherIncome,
+    total: revenues + interests + propertyIncome + otherIncome,
+  };
 }
 
 function computeExpenseSide(

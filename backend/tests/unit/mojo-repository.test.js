@@ -23,7 +23,10 @@ describe('getMojoStatus', () => {
   });
 
   it('leaves already-minor-unit values (schema version 2) unconverted', async () => {
-    const deps = dependencies({ meta: { schemaVersion: 2 }, mojo: { amount: 150000, target: 200000 } });
+    const deps = dependencies({
+      meta: { schemaVersion: 2 },
+      mojo: { amount: 150000, target: 200000 },
+    });
     const status = await getMojoStatus(deps, 'user_1');
     expect(status.amountMinor).toBe(150000);
     expect(status.targetMinor).toBe(200000);
@@ -74,7 +77,9 @@ describe('updateMojoTarget', () => {
         }),
       },
       authDb: {
-        get: jest.fn(async () => ({ encryptionConfig: { key: 'default', encryptDatabase: false } })),
+        get: jest.fn(async () => ({
+          encryptionConfig: { key: 'default', encryptDatabase: false },
+        })),
       },
     };
     const status = await updateMojoTarget(deps, 'user_1', 300000);
@@ -128,10 +133,14 @@ describe('updateMojoTarget', () => {
         }),
       },
       authDb: {
-        get: jest.fn(async () => ({ encryptionConfig: { key: 'default', encryptDatabase: false } })),
+        get: jest.fn(async () => ({
+          encryptionConfig: { key: 'default', encryptDatabase: false },
+        })),
       },
     };
-    await expect(updateMojoTarget(deps, 'user_1', 500)).resolves.toMatchObject({ targetMinor: 500 });
+    await expect(updateMojoTarget(deps, 'user_1', 500)).resolves.toMatchObject({
+      targetMinor: 500,
+    });
     expect(writes).toBe(2);
     expect(deps.usersDb.get).toHaveBeenCalledTimes(2);
   });

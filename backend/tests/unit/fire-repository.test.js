@@ -38,7 +38,12 @@ describe('listFireProjects', () => {
     });
     const [project] = await listFireProjects(deps, 'user_1');
     expect(project.id).toBe('fire_1');
-    expect(project.buckets[0]).toMatchObject({ id: 'b1', title: 'Flights', targetMinor: 150000, amountMinor: 20000 });
+    expect(project.buckets[0]).toMatchObject({
+      id: 'b1',
+      title: 'Flights',
+      targetMinor: 150000,
+      amountMinor: 20000,
+    });
     expect(project.totals).toEqual({
       targetMinor: 150000,
       amountMinor: 20000,
@@ -47,7 +52,9 @@ describe('listFireProjects', () => {
     });
     expect(project.links).toEqual([{ label: 'Flights site', url: 'https://example.com' }]);
     expect(project.actionItems).toEqual([{ text: 'Book flights', done: false, priority: 'high' }]);
-    expect(project.notes).toEqual([{ text: 'Check passports', createdAt: '2026-01-01T00:00:00.000Z' }]);
+    expect(project.notes).toEqual([
+      { text: 'Check passports', createdAt: '2026-01-01T00:00:00.000Z' },
+    ]);
   });
 
   it('throws a clear error for a project missing a stable id', async () => {
@@ -128,7 +135,11 @@ describe('createFireProject', () => {
     };
     const deps = {
       usersDb: { get: jest.fn(async () => structuredClone(document)) },
-      authDb: { get: jest.fn(async () => ({ encryptionConfig: { key: 'default', encryptDatabase: false } })) },
+      authDb: {
+        get: jest.fn(async () => ({
+          encryptionConfig: { key: 'default', encryptDatabase: false },
+        })),
+      },
     };
     await expect(
       createFireProject(deps, 'user_1', { title: 'Vacation', targetMinor: 100000 }),
@@ -144,9 +155,16 @@ describe('createFireProject', () => {
           document = { ...next, _rev: '2-b' };
         }),
       },
-      authDb: { get: jest.fn(async () => ({ encryptionConfig: { key: 'default', encryptDatabase: false } })) },
+      authDb: {
+        get: jest.fn(async () => ({
+          encryptionConfig: { key: 'default', encryptDatabase: false },
+        })),
+      },
     };
-    const project = await createFireProject(deps, 'user_1', { title: 'Vacation', targetMinor: 150000 });
+    const project = await createFireProject(deps, 'user_1', {
+      title: 'Vacation',
+      targetMinor: 150000,
+    });
     expect(project.buckets).toEqual([
       expect.objectContaining({ title: 'Vacation', targetMinor: 150000, amountMinor: 0 }),
     ]);
@@ -164,7 +182,11 @@ describe('createFireProject', () => {
           document = { ...next, _rev: '2-b' };
         }),
       },
-      authDb: { get: jest.fn(async () => ({ encryptionConfig: { key: 'default', encryptDatabase: false } })) },
+      authDb: {
+        get: jest.fn(async () => ({
+          encryptionConfig: { key: 'default', encryptDatabase: false },
+        })),
+      },
     };
     const project = await createFireProject(deps, 'user_1', {
       title: 'Vacation',
@@ -184,7 +206,11 @@ describe('createFireProject', () => {
           document = { ...next, _rev: '2-b' };
         }),
       },
-      authDb: { get: jest.fn(async () => ({ encryptionConfig: { key: 'default', encryptDatabase: false } })) },
+      authDb: {
+        get: jest.fn(async () => ({
+          encryptionConfig: { key: 'default', encryptDatabase: false },
+        })),
+      },
     };
     const project = await createFireProject(deps, 'user_1', {
       title: '  Vacation  ',
@@ -202,7 +228,11 @@ describe('createFireProject', () => {
     };
     const deps = {
       usersDb: { get: jest.fn(async () => structuredClone(document)) },
-      authDb: { get: jest.fn(async () => ({ encryptionConfig: { key: 'default', encryptDatabase: false } })) },
+      authDb: {
+        get: jest.fn(async () => ({
+          encryptionConfig: { key: 'default', encryptDatabase: false },
+        })),
+      },
     };
     await expect(
       createFireProject(deps, 'user_1', { title: 'Vacation', targetMinor: 100000 }),
@@ -218,7 +248,11 @@ describe('createFireProject', () => {
           document = { ...next, _rev: '2-b' };
         }),
       },
-      authDb: { get: jest.fn(async () => ({ encryptionConfig: { key: 'default', encryptDatabase: false } })) },
+      authDb: {
+        get: jest.fn(async () => ({
+          encryptionConfig: { key: 'default', encryptDatabase: false },
+        })),
+      },
     };
     const project = await createFireProject(deps, 'user_1', {
       title: 'Done Goal',
@@ -238,9 +272,14 @@ describe('createFireProject', () => {
           document = { ...next, _rev: '2-b' };
         }),
       },
-      authDb: { get: jest.fn(async () => ({ encryptionConfig: { key: 'secret', encryptDatabase: true } })) },
+      authDb: {
+        get: jest.fn(async () => ({ encryptionConfig: { key: 'secret', encryptDatabase: true } })),
+      },
     };
-    const project = await createFireProject(deps, 'user_1', { title: 'Vacation', targetMinor: 150000 });
+    const project = await createFireProject(deps, 'user_1', {
+      title: 'Vacation',
+      targetMinor: 150000,
+    });
     expect(project.title).toBe('Vacation');
     expect(typeof document.data.fire[0].title).toBe('string');
     expect(document.data.fire[0].title).toMatch(/^v2:/);
@@ -263,7 +302,11 @@ describe('createFireProject', () => {
           document = { ...next, _rev: '2-b' };
         }),
       },
-      authDb: { get: jest.fn(async () => ({ encryptionConfig: { key: 'default', encryptDatabase: false } })) },
+      authDb: {
+        get: jest.fn(async () => ({
+          encryptionConfig: { key: 'default', encryptDatabase: false },
+        })),
+      },
     };
     await expect(
       createFireProject(deps, 'user_1', { title: 'Vacation', targetMinor: 150000 }),
@@ -306,7 +349,11 @@ function writableDeps(initialDocument) {
           document = { ...next, _rev: '2-b' };
         }),
       },
-      authDb: { get: jest.fn(async () => ({ encryptionConfig: { key: 'default', encryptDatabase: false } })) },
+      authDb: {
+        get: jest.fn(async () => ({
+          encryptionConfig: { key: 'default', encryptDatabase: false },
+        })),
+      },
     },
     current: () => document,
   };
@@ -425,10 +472,7 @@ describe('updateFireProject', () => {
     document.data.fire[0].notes = [{ text: 'Existing', createdAt: '2026-02-01T00:00:00.000Z' }];
     const { deps } = writableDeps(document);
     const project = await updateFireProject(deps, 'user_1', 'fire_1', {
-      notes: [
-        { text: 'Existing', createdAt: '2026-02-01T00:00:00.000Z' },
-        { text: 'New note' },
-      ],
+      notes: [{ text: 'Existing', createdAt: '2026-02-01T00:00:00.000Z' }, { text: 'New note' }],
     });
     expect(project.notes[0].createdAt).toBe('2026-02-01T00:00:00.000Z');
     expect(project.notes[1].createdAt).toEqual(expect.any(String));
@@ -453,9 +497,9 @@ describe('updateFireProject', () => {
     const document = existingProjectDocument();
     document.data.fire.push({ title: 'Legacy', buckets: [] });
     const { deps } = writableDeps(document);
-    await expect(
-      updateFireProject(deps, 'user_1', 'fire_1', { phase: 'ready' }),
-    ).rejects.toThrow('migrate-fund-project-ids');
+    await expect(updateFireProject(deps, 'user_1', 'fire_1', { phase: 'ready' })).rejects.toThrow(
+      'migrate-fund-project-ids',
+    );
   });
 
   it('encrypts the updated project while leaving the untouched raw document field encrypted as before', async () => {
@@ -497,7 +541,9 @@ describe('updateFireProject', () => {
           stored = { ...next, _rev: '2-b' };
         }),
       },
-      authDb: { get: jest.fn(async () => ({ encryptionConfig: { key: 'secret', encryptDatabase: true } })) },
+      authDb: {
+        get: jest.fn(async () => ({ encryptionConfig: { key: 'secret', encryptDatabase: true } })),
+      },
     };
     const project = await updateFireProject(deps, 'user_1', 'fire_1', { phase: 'ready' });
     expect(project.phase).toBe('ready');
@@ -521,7 +567,11 @@ describe('updateFireProject', () => {
           document = { ...next, _rev: '2-b' };
         }),
       },
-      authDb: { get: jest.fn(async () => ({ encryptionConfig: { key: 'default', encryptDatabase: false } })) },
+      authDb: {
+        get: jest.fn(async () => ({
+          encryptionConfig: { key: 'default', encryptDatabase: false },
+        })),
+      },
     };
     await expect(
       updateFireProject(deps, 'user_1', 'fire_1', { phase: 'ready' }),
@@ -562,7 +612,11 @@ describe('updateFireProject', () => {
           throw error;
         }),
       },
-      authDb: { get: jest.fn(async () => ({ encryptionConfig: { key: 'default', encryptDatabase: false } })) },
+      authDb: {
+        get: jest.fn(async () => ({
+          encryptionConfig: { key: 'default', encryptDatabase: false },
+        })),
+      },
     };
     await expect(
       updateFireProject(deps, 'user_1', 'fire_1', { title: 'Renamed' }),
@@ -738,7 +792,9 @@ describe('createFirePaymentPlan', () => {
           stored = { ...next, _rev: '2-b' };
         }),
       },
-      authDb: { get: jest.fn(async () => ({ encryptionConfig: { key: 'secret', encryptDatabase: true } })) },
+      authDb: {
+        get: jest.fn(async () => ({ encryptionConfig: { key: 'secret', encryptDatabase: true } })),
+      },
     };
     const plan = await createFirePaymentPlan(deps, 'user_1', 'fire_1', planInput);
     expect(plan.amountMinor).toBe(Math.round(130000 / 3));

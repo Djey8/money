@@ -1,6 +1,13 @@
 import { ApiTransaction } from '../transactions/transaction';
 import { PeriodRange } from './period-range';
-import { StatementRow, makeRow, EXPENSE_ACCOUNTS, cleanCategory, isTransfer, inRange } from './statement-shared';
+import {
+  StatementRow,
+  makeRow,
+  EXPENSE_ACCOUNTS,
+  cleanCategory,
+  isTransfer,
+  inRange,
+} from './statement-shared';
 
 /**
  * Ports `computeCashflow`/`computeCashflowOne` from
@@ -42,7 +49,11 @@ function computeCashflowOne(
       financing += Math.abs(amount);
       continue;
     }
-    if (transaction.account === 'Income' && amount < 0 && (category === 'Smile' || category === 'Fire')) {
+    if (
+      transaction.account === 'Income' &&
+      amount < 0 &&
+      (category === 'Smile' || category === 'Fire')
+    ) {
       investing += Math.abs(amount);
       continue;
     }

@@ -2,8 +2,16 @@ import { computeCashflow } from './cashflow';
 import { PeriodRange } from './period-range';
 import { ApiTransaction } from '../transactions/transaction';
 
-const currentRange: PeriodRange = { startDate: '2026-09-01', endDate: '2026-09-30', label: 'Sep 2026' };
-const previousRange: PeriodRange = { startDate: '2026-08-01', endDate: '2026-08-31', label: 'Aug 2026' };
+const currentRange: PeriodRange = {
+  startDate: '2026-09-01',
+  endDate: '2026-09-30',
+  label: 'Sep 2026',
+};
+const previousRange: PeriodRange = {
+  startDate: '2026-08-01',
+  endDate: '2026-08-31',
+  label: 'Aug 2026',
+};
 
 function tx(overrides: Partial<ApiTransaction>): ApiTransaction {
   return {

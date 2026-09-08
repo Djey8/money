@@ -2,8 +2,16 @@ import { computeIncomeStatement } from './income-statement';
 import { PeriodRange } from './period-range';
 import { ApiTransaction } from '../transactions/transaction';
 
-const currentRange: PeriodRange = { startDate: '2026-09-01', endDate: '2026-09-30', label: 'Sep 2026' };
-const previousRange: PeriodRange = { startDate: '2026-08-01', endDate: '2026-08-31', label: 'Aug 2026' };
+const currentRange: PeriodRange = {
+  startDate: '2026-09-01',
+  endDate: '2026-09-30',
+  label: 'Sep 2026',
+};
+const previousRange: PeriodRange = {
+  startDate: '2026-08-01',
+  endDate: '2026-08-31',
+  label: 'Aug 2026',
+};
 
 function tx(overrides: Partial<ApiTransaction>): ApiTransaction {
   return {
@@ -21,7 +29,11 @@ function tx(overrides: Partial<ApiTransaction>): ApiTransaction {
 
 describe('computeIncomeStatement', () => {
   it('classifies income as revenue by default (no matching tag)', () => {
-    const statement = computeIncomeStatement([tx({ amountMinor: 100000 })], currentRange, previousRange);
+    const statement = computeIncomeStatement(
+      [tx({ amountMinor: 100000 })],
+      currentRange,
+      previousRange,
+    );
     expect(statement.revenues.current).toBe(100000);
     expect(statement.interests.current).toBe(0);
     expect(statement.propertyIncome.current).toBe(0);
@@ -167,9 +179,21 @@ describe('computeIncomeStatement', () => {
     const statement = computeIncomeStatement(
       [
         tx({ id: 'cur-in', account: 'Income', amountMinor: 100000, date: '2026-09-01' }),
-        tx({ id: 'cur-ex', account: 'Daily', category: '@Food', amountMinor: -75000, date: '2026-09-01' }),
+        tx({
+          id: 'cur-ex',
+          account: 'Daily',
+          category: '@Food',
+          amountMinor: -75000,
+          date: '2026-09-01',
+        }),
         tx({ id: 'prev-in', account: 'Income', amountMinor: 100000, date: '2026-08-01' }),
-        tx({ id: 'prev-ex', account: 'Daily', category: '@Food', amountMinor: -80000, date: '2026-08-01' }),
+        tx({
+          id: 'prev-ex',
+          account: 'Daily',
+          category: '@Food',
+          amountMinor: -80000,
+          date: '2026-08-01',
+        }),
       ],
       currentRange,
       previousRange,
