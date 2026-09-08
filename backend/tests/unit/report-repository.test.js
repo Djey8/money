@@ -7,6 +7,7 @@ const {
   getBalanceSheet,
   getKpis,
   getFireCoverage,
+  getGrowPnl,
 } = require('../../repositories/report-repository');
 
 // Fixed reference date so period boundaries are deterministic regardless of
@@ -588,5 +589,104 @@ describe('getFireCoverage', () => {
     const deps = dependencies({ transactions: [] });
     const report = await getFireCoverage(deps, 'user_1', {});
     expect(report.monthsConsidered).toBe(0);
+  });
+});
+
+describe('getGrowPnl', () => {
+  function minimalRawGrow(overrides = {}) {
+    return {
+      id: 'grow_1',
+      title: 'MSFT',
+      sub: '',
+      phase: 'execute',
+      description: '',
+      strategy: '',
+      riskScore: 3,
+      risks: '',
+      links: [],
+      actionItems: [],
+      notes: [],
+      cashflow: 0,
+      amount: 0,
+      isAsset: false,
+      share: null,
+      investment: null,
+      liabilitie: null,
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-01T00:00:00.000Z',
+      ...overrides,
+    };
+  }
+
+  it('sums every transaction whose category matches the grow project title', async () => {
+    const deps = dependencies({
+      grow: [minimalRawGrow()],
+      transactions: [
+        {
+          id: 'tx_1',
+          account: 'Fire',
+          amount: -4150,
+          date: '2026-07-10',
+          time: '09:00',
+          category: '@MSFT',
+          comment: 'Buy Share MSFT 10 x 415;',
+        },
+        {
+          id: 'tx_2',
+          account: 'Income',
+          amount: 500,
+          date: '2026-08-05',
+          time: '09:00',
+          category: '@MSFT',
+          comment: 'Dividende Share MSFT 10 x 50;',
+        },
+        {
+          id: 'tx_3',
+          account: 'Daily',
+          amount: -20,
+          date: '2026-08-06',
+          time: '09:00',
+          category: '@Groceries',
+          comment: '',
+        },
+      ],
+    });
+    const report = await getGrowPnl(deps, 'user_1', 'grow_1');
+    expect(report.title).toBe('MSFT');
+    expect(report.investedMinor).toBe(415000);
+    expect(report.returnedMinor).toBe(50000);
+    expect(report.netCashflowMinor).toBe(50000 - 415000);
+    expect(report.transactionCount).toBe(2);
+  });
+
+  it('returns null for a grow id that does not exist', async () => {
+    const deps = dependencies({ grow: [minimalRawGrow()], transactions: [] });
+    const report = await getGrowPnl(deps, 'user_1', 'grow_missing');
+    expect(report).toBeNull();
+  });
+
+  it('returns all zeros for a grow project with no matching transactions', async () => {
+    const deps = dependencies({
+      grow: [minimalRawGrow()],
+      transactions: [
+        {
+          id: 'tx_1',
+          account: 'Daily',
+          amount: -20,
+          date: '2026-08-06',
+          time: '09:00',
+          category: '@Groceries',
+          comment: '',
+        },
+      ],
+    });
+    const report = await getGrowPnl(deps, 'user_1', 'grow_1');
+    expect(report).toEqual({
+      title: 'MSFT',
+      netCashflowMinor: 0,
+      investedMinor: 0,
+      returnedMinor: 0,
+      transactionCount: 0,
+    });
   });
 });

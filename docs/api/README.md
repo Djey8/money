@@ -364,3 +364,12 @@ curl -X POST "http://localhost:3000/api/v1/grow/grow_<id>/sell" \
 curl -X DELETE "http://localhost:3000/api/v1/grow/grow_<id>" \
   -H "Authorization: Bearer $MONEY_MANAGER_TOKEN"
 ```
+
+## Read a grow project's profit/loss summary
+
+Requires a PAT with `reports:r`. An all-time snapshot (no `period`/`offset`) summing every transaction whose category matches the project's title. See `docs/api/AGENTS.md` and `docs/domain/GROW_PNL_FORMULA.md`.
+
+```bash
+curl "http://localhost:3000/api/v1/reports/grow/grow_<id>/pnl" \
+  -H "Authorization: Bearer $MONEY_MANAGER_TOKEN"
+```

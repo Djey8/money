@@ -6,12 +6,14 @@ const {
   computeBalanceSheet,
   computeKpiReport,
   computeFireCoverage,
+  computeGrowPnl,
   getPeriodRange,
   toMinorUnits,
   MONEY_FIELD_NAMES,
 } = require('@money/domain');
 const { getEncryptionSession } = require('../services/encryption-session');
 const { decryptValue, toApiTransactions } = require('./transaction-repository');
+const { decryptAllGrow } = require('./grow-repository');
 
 /**
  * Loads the tag lists `computeIncomeStatement` needs to classify Income-account
@@ -194,11 +196,35 @@ async function getFireCoverage(deps, userId, { now } = {}) {
   return computeFireCoverage(transactions, mojo.amountMinor, now);
 }
 
+/**
+ * All-time report, like `getFireCoverage` — sums every transaction whose
+ * `category` matches the Grow project's `title`, ported from
+ * `grow.component.ts`'s `getGrowProjectsGV` (see
+ * `packages/domain/src/reports/grow-pnl.ts`'s own header for the full
+ * ported-vs-new breakdown). Returns `null` if no grow project with this id
+ * exists, for the route layer to map to 404.
+ */
+async function getGrowPnl(deps, userId, growId) {
+  const { data, session, schemaVersion } = await loadUserData(deps, userId);
+  const rawGrow = data.grow || [];
+  if (!Array.isArray(rawGrow)) throw new Error('Stored grow projects must be an array');
+  const grow = decryptAllGrow(rawGrow, session, schemaVersion).find(
+    (project) => project.id === growId,
+  );
+  if (!grow) return null;
+  const currency = data.meta?.currency || 'EUR';
+  const rawTransactions = data.transactions || [];
+  if (!Array.isArray(rawTransactions)) throw new Error('Stored transactions must be an array');
+  const transactions = toApiTransactions(rawTransactions, session, schemaVersion, currency);
+  return computeGrowPnl(grow.title, transactions);
+}
+
 module.exports = {
   getIncomeStatement,
   getCashflow,
   getBalanceSheet,
   getKpis,
   getFireCoverage,
+  getGrowPnl,
   loadIncomeClassificationTags,
 };

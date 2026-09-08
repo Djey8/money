@@ -21,6 +21,7 @@ const {
   getBalanceSheet,
   getKpis,
   getFireCoverage,
+  getGrowPnl,
 } = require('../repositories/report-repository');
 const { getMojoStatus, updateMojoTarget } = require('../repositories/mojo-repository');
 const {
@@ -2210,6 +2211,28 @@ router.get('/reports/kpis', requireScope('reports:r'), async (req, res, next) =>
 router.get('/reports/fire-coverage', requireScope('reports:r'), async (req, res, next) => {
   try {
     const report = await getFireCoverage({ usersDb: getUsersDb(), authDb: getAuthDb() }, req.userId);
+    return res.json(report);
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.get('/reports/grow/:growId/pnl', requireScope('reports:r'), async (req, res, next) => {
+  try {
+    const report = await getGrowPnl(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+      req.params.growId,
+    );
+    if (!report) {
+      return problem(
+        res,
+        404,
+        'not_found',
+        'Grow project not found',
+        'No matching grow project exists.',
+      );
+    }
     return res.json(report);
   } catch (error) {
     return next(error);

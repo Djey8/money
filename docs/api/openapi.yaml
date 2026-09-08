@@ -705,6 +705,44 @@ paths:
           $ref: '#/components/responses/AuthenticationRequired'
         '403':
           $ref: '#/components/responses/InsufficientScope'
+  /reports/grow/{growId}/pnl:
+    parameters:
+      - name: growId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getGrowPnl
+      summary: Get a grow project's profit/loss summary
+      description: >-
+        Ports `getGrowProjectsGV` from `grow.component.ts` ("GV" — German *Gewinn/Verlust*, "profit/loss") — sums
+        every transaction whose `category` matches the grow project's `title`, with no account filtering, exactly
+        as the original does. `netCashflowMinor` is numerically identical to the original's own aggregate; the
+        `investedMinor`/`returnedMinor` split is new (the original never separates outflows from inflows). See
+        `docs/domain/GROW_PNL_FORMULA.md` for the full rationale, including why a mark-to-model "current value" is
+        deliberately not included.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The grow project's profit/loss summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GrowPnl'
+              example:
+                title: MSFT
+                netCashflowMinor: 35000
+                investedMinor: 415000
+                returnedMinor: 450000
+                transactionCount: 2
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
   /mojo:
     get:
       operationId: getMojo
@@ -2565,6 +2603,23 @@ components:
         monthsConsidered:
           type: integer
           description: Distinct calendar months, excluding the current one, with at least one qualifying expense — the denominator's sample size.
+    GrowPnl:
+      type: object
+      required: [title, netCashflowMinor, investedMinor, returnedMinor, transactionCount]
+      properties:
+        title:
+          type: string
+        netCashflowMinor:
+          type: integer
+          description: returnedMinor - investedMinor. Numerically identical to the original's own getGrowProjectsGV aggregate.
+        investedMinor:
+          type: integer
+          description: Sum of every matching transaction's negative amountMinor (absolute value).
+        returnedMinor:
+          type: integer
+          description: Sum of every matching transaction's positive amountMinor.
+        transactionCount:
+          type: integer
     FundProjectTotals:
       type: object
       required: [targetMinor, amountMinor, remainingMinor, percentFilled]

@@ -4319,6 +4319,86 @@ describe('v1 API authentication and PAT management', () => {
     });
   });
 
+  describe('GET /reports/grow/:id/pnl', () => {
+    async function growToken(scopes) {
+      const created = await sessionRequest('post', '/api/v1/auth/tokens').send({
+        name: `grow-pnl-agent-${Date.now()}-${Math.random()}`,
+        scopes,
+      });
+      return created.body;
+    }
+
+    it('sums buy/sell transactions into invested/returned/net figures', async () => {
+      const { token } = await growToken(['grow:w', 'grow:r', 'reports:r']);
+      const title = `PnlShare${Date.now()}${Math.random()}`;
+      const project = await request(app)
+        .post('/api/v1/grow')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ title, share: true });
+      expect(project.status).toBe(201);
+
+      await request(app)
+        .post(`/api/v1/grow/${project.body.id}/buy`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ quantity: 10, priceMinor: 41500 });
+      await request(app)
+        .post(`/api/v1/grow/${project.body.id}/sell`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ quantity: 10, priceMinor: 45000 });
+
+      const response = await request(app)
+        .get(`/api/v1/reports/grow/${project.body.id}/pnl`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(response.status).toBe(200);
+      expect(response.body.title).toBe(title);
+      expect(response.body.investedMinor).toBe(415000);
+      expect(response.body.returnedMinor).toBe(450000);
+      expect(response.body.netCashflowMinor).toBe(35000);
+      expect(response.body.transactionCount).toBe(2);
+    });
+
+    it('returns 404 for a grow id that does not exist', async () => {
+      const { token } = await growToken(['reports:r']);
+      const response = await request(app)
+        .get('/api/v1/reports/grow/grow_does_not_exist/pnl')
+        .set('Authorization', `Bearer ${token}`);
+      expect(response.status).toBe(404);
+      expect(response.body.code).toBe('not_found');
+    });
+
+    it('does not let a token read another user’s grow project P&L', async () => {
+      const otherCreated = await sessionRequest(
+        'post',
+        '/api/v1/auth/tokens',
+        secondUser.token,
+      ).send({ name: `grow-pnl-other-${Date.now()}`, scopes: ['grow:w'] });
+      const otherProject = await request(app)
+        .post('/api/v1/grow')
+        .set('Authorization', `Bearer ${otherCreated.body.token}`)
+        .send({ title: `OtherUserPnl${Date.now()}` });
+      expect(otherProject.status).toBe(201);
+
+      const { token } = await growToken(['reports:r']);
+      const response = await request(app)
+        .get(`/api/v1/reports/grow/${otherProject.body.id}/pnl`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(response.status).toBe(404);
+      expect(response.body.code).toBe('not_found');
+    });
+
+    it('rejects requests without the reports:r scope', async () => {
+      const { token: writer } = await growToken(['grow:w']);
+      const project = await request(app)
+        .post('/api/v1/grow')
+        .set('Authorization', `Bearer ${writer}`)
+        .send({ title: `ScopeCheck${Date.now()}` });
+      const response = await request(app)
+        .get(`/api/v1/reports/grow/${project.body.id}/pnl`)
+        .set('Authorization', `Bearer ${writer}`);
+      expect(response.status).toBe(403);
+      expect(response.body.code).toBe('scope_insufficient');
+    });
+  });
 
   describe('GET /income/revenues, /income/interests, /income/properties', () => {
     // A dedicated, freshly-registered user per test — these three endpoints reflect the FULL
