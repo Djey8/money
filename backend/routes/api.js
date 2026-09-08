@@ -99,6 +99,13 @@ const {
   refreshSubscriptions,
   batchSubscriptions,
 } = require('../repositories/subscription-repository');
+const {
+  listBudget,
+  getBudgetRow,
+  upsertBudget,
+  updateBudgetRow,
+  deleteBudgetRow,
+} = require('../repositories/budget-repository');
 const { getUsersDb, getAuthDb } = require('../config/db');
 const { getEncryptionSession } = require('../services/encryption-session');
 const {
@@ -729,6 +736,45 @@ function parseSubscriptionImportLines(rawBody) {
       : { op: 'create', fields: parsed };
   });
   return { items };
+}
+
+const BUDGET_MONTH_PATTERN = /^\d{4}-(0[1-9]|1[0-2])$/;
+
+function validateBudgetInput(input) {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) {
+    return 'A budget object is required.';
+  }
+  if (!isNonEmptyString(input.date) || !BUDGET_MONTH_PATTERN.test(input.date)) {
+    return 'date must use YYYY-MM format.';
+  }
+  if (!isNonEmptyString(input.tag) || input.tag === '@') {
+    return 'tag must be a non-empty string.';
+  }
+  if (!Number.isInteger(input.amountMinor)) return 'amountMinor must be an integer.';
+  return null;
+}
+
+const EDITABLE_BUDGET_FIELDS = ['date', 'tag', 'amountMinor'];
+
+function validatePatchBudgetInput(input) {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) {
+    return 'A budget object is required.';
+  }
+  const unknownField = Object.keys(input).find((key) => !EDITABLE_BUDGET_FIELDS.includes(key));
+  if (unknownField) return `${unknownField} is not an editable field.`;
+  if (
+    input.date !== undefined &&
+    (!isNonEmptyString(input.date) || !BUDGET_MONTH_PATTERN.test(input.date))
+  ) {
+    return 'date must use YYYY-MM format.';
+  }
+  if (input.tag !== undefined && (!isNonEmptyString(input.tag) || input.tag === '@')) {
+    return 'tag must be a non-empty string.';
+  }
+  if (input.amountMinor !== undefined && !Number.isInteger(input.amountMinor)) {
+    return 'amountMinor must be an integer.';
+  }
+  return null;
 }
 
 function validateCreateAssetInput(input) {
@@ -3026,6 +3072,116 @@ router.post('/subscriptions/import', requireScope('subscriptions:bulk'), async (
       };
     },
   });
+});
+
+router.get('/budget', requireScope('budget:r'), async (req, res, next) => {
+  try {
+    const budget = await listBudget(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+      { month: req.query.month },
+    );
+    return res.json({ budget });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.post('/budget', requireScope('budget:w'), async (req, res, next) => {
+  const validationError = validateBudgetInput(req.body);
+  if (validationError) {
+    return problem(res, 400, 'validation_invalid', 'Invalid budget request', validationError);
+  }
+  try {
+    const row = await upsertBudget(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+      req.body,
+    );
+    await recordAuditEntry(getAuditDb(), {
+      userId: req.userId,
+      actor: auditActor(req.auth),
+      method: req.method,
+      path: req.baseUrl + req.path,
+      resource: 'budget',
+      resourceId: row.id,
+    });
+    return res.status(201).json(row);
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.get('/budget/:budgetId', requireScope('budget:r'), async (req, res, next) => {
+  try {
+    const row = await getBudgetRow(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+      req.params.budgetId,
+    );
+    if (!row) {
+      return problem(res, 404, 'not_found', 'Budget row not found', 'No matching budget row exists.');
+    }
+    return res.json(row);
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.patch('/budget/:budgetId', requireScope('budget:w'), async (req, res, next) => {
+  const validationError = validatePatchBudgetInput(req.body);
+  if (validationError) {
+    return problem(res, 400, 'validation_invalid', 'Invalid budget request', validationError);
+  }
+  try {
+    const row = await updateBudgetRow(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+      req.params.budgetId,
+      req.body,
+    );
+    if (!row) {
+      return problem(res, 404, 'not_found', 'Budget row not found', 'No matching budget row exists.');
+    }
+    await recordAuditEntry(getAuditDb(), {
+      userId: req.userId,
+      actor: auditActor(req.auth),
+      method: req.method,
+      path: req.baseUrl + req.path,
+      resource: 'budget',
+      resourceId: row.id,
+    });
+    return res.json(row);
+  } catch (error) {
+    if (error.code === 'BUDGET_DUPLICATE_MONTH_TAG') {
+      return problem(res, 400, 'validation_invalid', 'Invalid budget request', error.message);
+    }
+    return next(error);
+  }
+});
+
+router.delete('/budget/:budgetId', requireScope('budget:w'), async (req, res, next) => {
+  try {
+    const deleted = await deleteBudgetRow(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+      req.params.budgetId,
+    );
+    if (!deleted) {
+      return problem(res, 404, 'not_found', 'Budget row not found', 'No matching budget row exists.');
+    }
+    await recordAuditEntry(getAuditDb(), {
+      userId: req.userId,
+      actor: auditActor(req.auth),
+      method: req.method,
+      path: req.baseUrl + req.path,
+      resource: 'budget',
+      resourceId: req.params.budgetId,
+    });
+    return res.json({ id: req.params.budgetId });
+  } catch (error) {
+    return next(error);
+  }
 });
 
 module.exports = router;

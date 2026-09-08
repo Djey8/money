@@ -4496,6 +4496,249 @@ describe('v1 API authentication and PAT management', () => {
     });
   });
 
+  describe('GET/POST /budget and GET/PATCH/DELETE /budget/:id', () => {
+    async function budgetToken(scopes) {
+      const created = await sessionRequest('post', '/api/v1/auth/tokens').send({
+        name: `budget-agent-${Date.now()}-${Math.random()}`,
+        scopes,
+      });
+      return created.body;
+    }
+
+    function budgetBody(overrides = {}) {
+      return { date: '2026-01', tag: `@BudgetTest${Date.now()}${Math.random()}`, amountMinor: 30000, ...overrides };
+    }
+
+    it('creates a budget row and lists it, and audit logs the write', async () => {
+      const { token, tokenId } = await budgetToken(['budget:r', 'budget:w']);
+      const body = budgetBody();
+      const created = await request(app)
+        .post('/api/v1/budget')
+        .set('Authorization', `Bearer ${token}`)
+        .send(body);
+      expect(created.status).toBe(201);
+      expect(created.body.id).toMatch(/^budget_/);
+      expect(created.body.amountMinor).toBe(30000);
+
+      const list = await request(app).get('/api/v1/budget').set('Authorization', `Bearer ${token}`);
+      expect(list.status).toBe(200);
+      expect(list.body.budget).toEqual(
+        expect.arrayContaining([expect.objectContaining({ id: created.body.id })]),
+      );
+
+      const auditEntries = await queryAuditEntries(getAuditDb(), firstUser.userId, {
+        resource: 'budget',
+      });
+      expect(auditEntries).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            actor: { type: 'token', tokenId },
+            method: 'POST',
+            resourceId: created.body.id,
+          }),
+        ]),
+      );
+    });
+
+    it('upserts by (date, tag): a second POST for the same month/tag overwrites the amount and keeps the id', async () => {
+      const { token } = await budgetToken(['budget:r', 'budget:w']);
+      const body = budgetBody();
+      const first = await request(app)
+        .post('/api/v1/budget')
+        .set('Authorization', `Bearer ${token}`)
+        .send(body);
+      const second = await request(app)
+        .post('/api/v1/budget')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ ...body, amountMinor: 50000 });
+      expect(second.status).toBe(201);
+      expect(second.body.id).toBe(first.body.id);
+      expect(second.body.amountMinor).toBe(50000);
+
+      const list = await request(app).get('/api/v1/budget').set('Authorization', `Bearer ${token}`);
+      expect(list.body.budget.filter((row) => row.id === first.body.id)).toHaveLength(1);
+    });
+
+    it('filters GET /budget by month', async () => {
+      const { token } = await budgetToken(['budget:r', 'budget:w']);
+      const tag = `@MonthFilter${Date.now()}`;
+      await request(app)
+        .post('/api/v1/budget')
+        .set('Authorization', `Bearer ${token}`)
+        .send(budgetBody({ date: '2026-03', tag }));
+      await request(app)
+        .post('/api/v1/budget')
+        .set('Authorization', `Bearer ${token}`)
+        .send(budgetBody({ date: '2026-04', tag }));
+
+      const response = await request(app)
+        .get('/api/v1/budget?month=2026-03')
+        .set('Authorization', `Bearer ${token}`);
+      expect(response.body.budget).toEqual(
+        expect.arrayContaining([expect.objectContaining({ date: '2026-03', tag })]),
+      );
+      expect(response.body.budget.some((row) => row.date === '2026-04')).toBe(false);
+    });
+
+    it('gets a single budget row by id and returns 404 for one that does not exist', async () => {
+      const { token } = await budgetToken(['budget:r', 'budget:w']);
+      const created = await request(app)
+        .post('/api/v1/budget')
+        .set('Authorization', `Bearer ${token}`)
+        .send(budgetBody());
+      const found = await request(app)
+        .get(`/api/v1/budget/${created.body.id}`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(found.status).toBe(200);
+      expect(found.body.id).toBe(created.body.id);
+
+      const missing = await request(app)
+        .get('/api/v1/budget/budget_does_not_exist')
+        .set('Authorization', `Bearer ${token}`);
+      expect(missing.status).toBe(404);
+      expect(missing.body.code).toBe('not_found');
+    });
+
+    it('updates a budget row, and audit logs the write', async () => {
+      const { token, tokenId } = await budgetToken(['budget:r', 'budget:w']);
+      const created = await request(app)
+        .post('/api/v1/budget')
+        .set('Authorization', `Bearer ${token}`)
+        .send(budgetBody());
+      const response = await request(app)
+        .patch(`/api/v1/budget/${created.body.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ amountMinor: 45000 });
+      expect(response.status).toBe(200);
+      expect(response.body.amountMinor).toBe(45000);
+
+      const auditEntries = await queryAuditEntries(getAuditDb(), firstUser.userId, {
+        resource: 'budget',
+      });
+      expect(auditEntries).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            actor: { type: 'token', tokenId },
+            method: 'PATCH',
+            resourceId: created.body.id,
+          }),
+        ]),
+      );
+    });
+
+    it('rejects a PATCH that would collide with another row on (date, tag)', async () => {
+      const { token } = await budgetToken(['budget:r', 'budget:w']);
+      const tag = `@CollisionTarget${Date.now()}`;
+      const target = await request(app)
+        .post('/api/v1/budget')
+        .set('Authorization', `Bearer ${token}`)
+        .send(budgetBody({ date: '2026-05', tag }));
+      const other = await request(app)
+        .post('/api/v1/budget')
+        .set('Authorization', `Bearer ${token}`)
+        .send(budgetBody({ date: '2026-06', tag: `@CollisionOther${Date.now()}` }));
+      const response = await request(app)
+        .patch(`/api/v1/budget/${other.body.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ date: '2026-05', tag });
+      expect(response.status).toBe(400);
+      expect(response.body.code).toBe('validation_invalid');
+      expect(target.status).toBe(201);
+    });
+
+    it('rejects invalid create input', async () => {
+      const { token } = await budgetToken(['budget:w']);
+      const response = await request(app)
+        .post('/api/v1/budget')
+        .set('Authorization', `Bearer ${token}`)
+        .send(budgetBody({ date: '2026-13' }));
+      expect(response.status).toBe(400);
+      expect(response.body.code).toBe('validation_invalid');
+    });
+
+    it('deletes a budget row, and audit logs the write', async () => {
+      const { token, tokenId } = await budgetToken(['budget:r', 'budget:w']);
+      const created = await request(app)
+        .post('/api/v1/budget')
+        .set('Authorization', `Bearer ${token}`)
+        .send(budgetBody());
+      const response = await request(app)
+        .delete(`/api/v1/budget/${created.body.id}`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({ id: created.body.id });
+
+      const getResponse = await request(app)
+        .get(`/api/v1/budget/${created.body.id}`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(getResponse.status).toBe(404);
+
+      const auditEntries = await queryAuditEntries(getAuditDb(), firstUser.userId, {
+        resource: 'budget',
+      });
+      expect(auditEntries).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            actor: { type: 'token', tokenId },
+            method: 'DELETE',
+            resourceId: created.body.id,
+          }),
+        ]),
+      );
+    });
+
+    it('rejects requests without the budget:r/budget:w scopes', async () => {
+      const { token: writeOnly } = await budgetToken(['budget:w']);
+      const getResponse = await request(app)
+        .get('/api/v1/budget')
+        .set('Authorization', `Bearer ${writeOnly}`);
+      expect(getResponse.status).toBe(403);
+      expect(getResponse.body.code).toBe('scope_insufficient');
+
+      const { token: readOnly } = await budgetToken(['budget:r']);
+      const postResponse = await request(app)
+        .post('/api/v1/budget')
+        .set('Authorization', `Bearer ${readOnly}`)
+        .send(budgetBody());
+      expect(postResponse.status).toBe(403);
+      expect(postResponse.body.code).toBe('scope_insufficient');
+    });
+
+    it('keeps budget rows isolated to the authenticated user document', async () => {
+      const { token } = await budgetToken(['budget:r', 'budget:w']);
+      const otherCreated = await sessionRequest('post', '/api/v1/auth/tokens', secondUser.token).send({
+        name: `budget-other-${Date.now()}`,
+        scopes: ['budget:w'],
+      });
+      const otherRow = await request(app)
+        .post('/api/v1/budget')
+        .set('Authorization', `Bearer ${otherCreated.body.token}`)
+        .send(budgetBody({ tag: `@OnlyOtherUser${Date.now()}` }));
+      expect(otherRow.status).toBe(201);
+
+      const list = await request(app).get('/api/v1/budget').set('Authorization', `Bearer ${token}`);
+      expect(list.body.budget).not.toEqual(
+        expect.arrayContaining([expect.objectContaining({ id: otherRow.body.id })]),
+      );
+
+      const getResponse = await request(app)
+        .get(`/api/v1/budget/${otherRow.body.id}`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(getResponse.status).toBe(404);
+
+      const patchResponse = await request(app)
+        .patch(`/api/v1/budget/${otherRow.body.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ amountMinor: 1 });
+      expect(patchResponse.status).toBe(404);
+
+      const deleteResponse = await request(app)
+        .delete(`/api/v1/budget/${otherRow.body.id}`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(deleteResponse.status).toBe(404);
+    });
+  });
+
   describe('POST /subscriptions/batch', () => {
     async function bulkToken() {
       const created = await sessionRequest('post', '/api/v1/auth/tokens').send({
