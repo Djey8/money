@@ -468,3 +468,18 @@ curl -X PATCH "http://localhost:3000/api/v1/settings" \
   -H "Content-Type: application/json" \
   -d '{"theme": "dark", "currency": "$"}'
 ```
+
+## Read or update encryption configuration
+
+Requires `encryption:r` for `GET` (a PAT with any scope works). `PUT` requires an actual login session — it cannot be called with a PAT at all, regardless of scope. `GET` never returns the raw key. Changing an already-active key is rejected; use `mm-admin rotate-encryption-key` on the server for that.
+
+```bash
+curl "http://localhost:3000/api/v1/encryption-config" \
+  -H "Authorization: Bearer $MONEY_MANAGER_TOKEN"
+
+# PUT requires a session cookie/bearer token from the logged-in browser, not a PAT.
+curl -X PUT "http://localhost:3000/api/v1/encryption-config" \
+  -H "Authorization: Bearer $SESSION_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"encryptDatabase": true}'
+```

@@ -2948,6 +2948,68 @@ paths:
           $ref: '#/components/responses/AuthenticationRequired'
         '403':
           $ref: '#/components/responses/InsufficientScope'
+  /encryption-config:
+    get:
+      operationId: getEncryptionConfig
+      summary: Read the caller's encryption configuration (SET-6)
+      description: >-
+        Never returns the raw key, unlike the legacy session-only `/api/auth/encryption-config` — an MCP tool or
+        agent reading this endpoint must never see the plaintext key (ADR-0001). `keyConfigured` reports whether a
+        real key is active, without revealing it.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The caller's encryption configuration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EncryptionConfig'
+              example:
+                encryptLocal: true
+                encryptDatabase: true
+                keyConfigured: true
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+    put:
+      operationId: updateEncryptionConfig
+      summary: Toggle encryption, or set an initial key
+      description: >-
+        Session-only — never callable with a PAT, regardless of scope, the same restriction already applied to
+        `/auth/tokens*`. Despite the PUT verb (kept for consistency with this resource's single-config-object
+        shape), accepts a partial body: `encryptLocal`/`encryptDatabase` may be toggled freely, and `key` may be set
+        when none is active yet. **Cannot change an already-active key** — the backend has no re-encryption logic,
+        so a bare key swap would make all existing encrypted data permanently unreadable; changing an active key
+        requires `mm-admin rotate-encryption-key` instead.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PutEncryptionConfigRequest'
+            example:
+              encryptDatabase: true
+      responses:
+        '200':
+          description: Updated encryption configuration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EncryptionConfig'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          description: Insufficient scope, or a real login session is required (PATs can never call this endpoint)
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
 components:
   securitySchemes:
     bearerAuth:
@@ -4766,6 +4828,27 @@ components:
           type: boolean
         allocation:
           $ref: '#/components/schemas/SettingsAllocation'
+    EncryptionConfig:
+      type: object
+      required: [encryptLocal, encryptDatabase, keyConfigured]
+      properties:
+        encryptLocal:
+          type: boolean
+        encryptDatabase:
+          type: boolean
+        keyConfigured:
+          type: boolean
+          description: Whether a real (non-default) key is active. The key value itself is never returned.
+    PutEncryptionConfigRequest:
+      type: object
+      description: All fields optional. `key` may only be set when no key is active yet, or resubmitted unchanged — changing an active key is rejected.
+      properties:
+        key:
+          type: string
+        encryptLocal:
+          type: boolean
+        encryptDatabase:
+          type: boolean
     Problem:
       type: object
       required: [type, title, status, detail, code]
