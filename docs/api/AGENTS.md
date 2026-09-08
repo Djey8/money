@@ -252,3 +252,11 @@ Every Pro API write is audit logged. Prefer narrowly scoped, expiring tokens and
 4. **Unconditionally overwrites** any existing budget row for a computed (date, tag) pair — matching the original app's own overwrite behavior — but leaves untouched any (month, category) pair with no active subscription.
 5. Multiple subscriptions sharing the same category and active in the same month are summed into one row, not one row per subscription.
 6. Response is `{rowsWritten}` — the count of (month, category) rows actually written this call. This is a write; audit logged with `itemCount` set to `rowsWritten`.
+
+## Read or update settings
+
+1. `GET/PATCH /api/v1/settings` requires `settings:r`/`settings:w` (SET-1,2,3,4,5,10). This is new server-side storage introduced by the Pro API — confirmed by reading `settings.component.ts` directly, every one of these fields except `username`/`email` lives only in the original app's browser `localStorage` today, with no CouchDB path at all. There's nothing to migrate from and no pre-existing bug to preserve or fix here.
+2. **`username` lives here; `email` does not.** `email` is identity-sensitive (uniqueness check, session-cookie reissue) and is owned by `PATCH /account` instead — sending `email` to `PATCH /settings` is rejected as an unrecognized field, same as any other typo.
+3. `PATCH` accepts a partial body — only the fields you send are changed — **except `allocation`**, which is replaced as a whole unit: send all four of `daily`/`splurge`/`smile`/`fire` together, and they must sum to 100 (matching the original app's own `changeAllocation()` validation, including that it does _not_ reject a negative sub-field as long as the total is still 100 — an inherited quirk, not a new bug).
+4. Confirmed original defaults, returned for any field never explicitly saved: `daily=60, splurge=10, smile=10, fire=20`, `currency='€'`, `theme='light'`, `language='en'`, `dateFormat='dd.MM.yyyy'`, `isEuropeanFormat=true`. `language` normalizes the original's six mutually-exclusive boolean flags (`isEng`/`isDe`/etc.) into one enum; `dateFormat` is one of the 7 presets the original UI offers.
+5. `PATCH` is audit logged; `GET` is not.

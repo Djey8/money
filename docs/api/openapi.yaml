@@ -2884,6 +2884,70 @@ paths:
           $ref: '#/components/responses/AuthenticationRequired'
         '403':
           $ref: '#/components/responses/InsufficientScope'
+  /settings:
+    get:
+      operationId: getSettings
+      summary: Read the caller's settings (SET-1,2,3,4,5,10)
+      description: >-
+        Returns the confirmed original-app defaults for any field never explicitly saved. Unlike every other field
+        here, `username` is the only profile field owned by this resource — `email` is owned by `PATCH /account`
+        (identity-sensitive, session-only) instead, and is rejected as an unknown field if sent here.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The caller's settings
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Settings'
+              example:
+                username: jkluess
+                currency: '€'
+                theme: light
+                language: en
+                dateFormat: dd.MM.yyyy
+                isEuropeanFormat: true
+                allocation:
+                  daily: 60
+                  splurge: 10
+                  smile: 10
+                  fire: 20
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+    patch:
+      operationId: updateSettings
+      summary: Update one or more settings fields
+      description: >-
+        Accepts a partial body — only the fields you send are changed. `allocation` is the one exception: it's
+        replaced as a whole unit (send all four of `daily`/`splurge`/`smile`/`fire` together) since a partial ratio
+        update can't be validated to sum to 100. Sending `email` (or any other unrecognized field) is rejected.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchSettingsRequest'
+            example:
+              theme: dark
+              currency: '$'
+      responses:
+        '200':
+          description: Updated settings
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Settings'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
 components:
   securitySchemes:
     bearerAuth:
@@ -4647,6 +4711,61 @@ components:
           type: string
         amountMinor:
           type: integer
+    SettingsAllocation:
+      type: object
+      required: [daily, splurge, smile, fire]
+      description: Must sum to 100.
+      properties:
+        daily:
+          type: number
+        splurge:
+          type: number
+        smile:
+          type: number
+        fire:
+          type: number
+    Settings:
+      type: object
+      required: [username, currency, theme, language, dateFormat, isEuropeanFormat, allocation]
+      properties:
+        username:
+          type: string
+        currency:
+          type: string
+        theme:
+          type: string
+          enum: [light, dark]
+        language:
+          type: string
+          enum: [en, de, es, fr, cn, ar]
+        dateFormat:
+          type: string
+          enum: [dd.MM.yyyy, dd.MM.yy, dd/MM/yyyy, dd/MM/yy, yyyy-MM-dd, MM/dd/yyyy, dd-MM-yyyy]
+        isEuropeanFormat:
+          type: boolean
+        allocation:
+          $ref: '#/components/schemas/SettingsAllocation'
+    PatchSettingsRequest:
+      type: object
+      description: All fields optional — send only what you want to change. allocation, if sent, must include all four sub-fields and sum to 100.
+      properties:
+        username:
+          type: string
+        currency:
+          type: string
+        theme:
+          type: string
+          enum: [light, dark]
+        language:
+          type: string
+          enum: [en, de, es, fr, cn, ar]
+        dateFormat:
+          type: string
+          enum: [dd.MM.yyyy, dd.MM.yy, dd/MM/yyyy, dd/MM/yy, yyyy-MM-dd, MM/dd/yyyy, dd-MM-yyyy]
+        isEuropeanFormat:
+          type: boolean
+        allocation:
+          $ref: '#/components/schemas/SettingsAllocation'
     Problem:
       type: object
       required: [type, title, status, detail, code]

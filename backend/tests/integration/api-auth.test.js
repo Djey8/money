@@ -5114,6 +5114,129 @@ describe('v1 API authentication and PAT management', () => {
     });
   });
 
+  describe('GET/PATCH /settings', () => {
+    // Fresh user per test — settings is a singleton per account, so a shared account would leak
+    // one test's patch into another test's "defaults" assertions.
+    async function settingsToken(scopes) {
+      const user = await registerTestUser(`_settings_${Date.now()}_${Math.random()}`);
+      const created = await sessionRequest('post', '/api/v1/auth/tokens', user.token).send({
+        name: `settings-agent-${Date.now()}-${Math.random()}`,
+        scopes,
+      });
+      return { ...created.body, userId: user.userId };
+    }
+
+    it('returns the confirmed original defaults when nothing has been saved yet', async () => {
+      const { token } = await settingsToken(['settings:r']);
+      const response = await request(app)
+        .get('/api/v1/settings')
+        .set('Authorization', `Bearer ${token}`);
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({
+        username: '',
+        currency: '€',
+        theme: 'light',
+        language: 'en',
+        dateFormat: 'dd.MM.yyyy',
+        isEuropeanFormat: true,
+        allocation: { daily: 60, splurge: 10, smile: 10, fire: 20 },
+      });
+    });
+
+    it('applies a partial patch, leaving every other field at its current value, and audit logs the write', async () => {
+      const { token, tokenId, userId } = await settingsToken(['settings:r', 'settings:w']);
+      const response = await request(app)
+        .patch('/api/v1/settings')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ currency: '$', theme: 'dark' });
+      expect(response.status).toBe(200);
+      expect(response.body.currency).toBe('$');
+      expect(response.body.theme).toBe('dark');
+      expect(response.body.language).toBe('en');
+
+      const get = await request(app)
+        .get('/api/v1/settings')
+        .set('Authorization', `Bearer ${token}`);
+      expect(get.body.currency).toBe('$');
+      expect(get.body.theme).toBe('dark');
+
+      const auditEntries = await queryAuditEntries(getAuditDb(), userId, { resource: 'settings' });
+      expect(auditEntries).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ actor: { type: 'token', tokenId }, method: 'PATCH' }),
+        ]),
+      );
+    });
+
+    it('replaces allocation as a whole unit and rejects one that does not sum to 100', async () => {
+      const { token } = await settingsToken(['settings:r', 'settings:w']);
+      const good = await request(app)
+        .patch('/api/v1/settings')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ allocation: { daily: 40, splurge: 20, smile: 20, fire: 20 } });
+      expect(good.status).toBe(200);
+      expect(good.body.allocation).toEqual({ daily: 40, splurge: 20, smile: 20, fire: 20 });
+
+      const bad = await request(app)
+        .patch('/api/v1/settings')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ allocation: { daily: 40, splurge: 20, smile: 20, fire: 10 } });
+      expect(bad.status).toBe(400);
+      expect(bad.body.code).toBe('validation_invalid');
+    });
+
+    it('rejects an invalid theme/language/dateFormat', async () => {
+      const { token } = await settingsToken(['settings:w']);
+      const response = await request(app)
+        .patch('/api/v1/settings')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ theme: 'purple' });
+      expect(response.status).toBe(400);
+      expect(response.body.code).toBe('validation_invalid');
+    });
+
+    it('rejects an unknown field, including email (owned by /account, not /settings)', async () => {
+      const { token } = await settingsToken(['settings:w']);
+      const response = await request(app)
+        .patch('/api/v1/settings')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ email: 'new@example.com' });
+      expect(response.status).toBe(400);
+      expect(response.body.code).toBe('validation_invalid');
+    });
+
+    it('rejects requests without the settings:r/settings:w scopes', async () => {
+      const { token: writeOnly } = await settingsToken(['settings:w']);
+      const getResponse = await request(app)
+        .get('/api/v1/settings')
+        .set('Authorization', `Bearer ${writeOnly}`);
+      expect(getResponse.status).toBe(403);
+      expect(getResponse.body.code).toBe('scope_insufficient');
+
+      const { token: readOnly } = await settingsToken(['settings:r']);
+      const patchResponse = await request(app)
+        .patch('/api/v1/settings')
+        .set('Authorization', `Bearer ${readOnly}`)
+        .send({ theme: 'dark' });
+      expect(patchResponse.status).toBe(403);
+      expect(patchResponse.body.code).toBe('scope_insufficient');
+    });
+
+    it('keeps settings isolated to the authenticated user document', async () => {
+      const { token: tokenA } = await settingsToken(['settings:r']);
+      const { token: tokenB } = await settingsToken(['settings:r', 'settings:w']);
+      await request(app)
+        .patch('/api/v1/settings')
+        .set('Authorization', `Bearer ${tokenB}`)
+        .send({ username: 'onlyB' });
+
+      const getA = await request(app)
+        .get('/api/v1/settings')
+        .set('Authorization', `Bearer ${tokenA}`);
+      expect(getA.body.username).toBe('');
+    });
+  });
+
   describe('POST /budget/from-subscriptions', () => {
     // Fresh user per test — this endpoint reads every subscription on the account, so a shared
     // account would leak other tests' subscriptions into the computed budget rows.

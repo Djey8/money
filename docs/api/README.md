@@ -454,3 +454,17 @@ Requires a PAT with `budget:w`. No request body — always evaluates every activ
 curl -X POST "http://localhost:3000/api/v1/budget/from-subscriptions" \
   -H "Authorization: Bearer $MONEY_MANAGER_TOKEN"
 ```
+
+## Read or update settings
+
+Requires a PAT with `settings:r`/`settings:w`. `email` is not a settings field — see `PATCH /account`. `allocation` is replaced as a whole unit (all four fields, summing to 100), never merged field-by-field.
+
+```bash
+curl "http://localhost:3000/api/v1/settings" \
+  -H "Authorization: Bearer $MONEY_MANAGER_TOKEN"
+
+curl -X PATCH "http://localhost:3000/api/v1/settings" \
+  -H "Authorization: Bearer $MONEY_MANAGER_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"theme": "dark", "currency": "$"}'
+```

@@ -110,6 +110,7 @@ const {
   copyBudget,
   fromSubscriptionsBudget,
 } = require('../repositories/budget-repository');
+const { getSettings, updateSettings } = require('../repositories/settings-repository');
 const { getUsersDb, getAuthDb } = require('../config/db');
 const { getEncryptionSession } = require('../services/encryption-session');
 const {
@@ -820,6 +821,74 @@ function validateCopyBudgetInput(input) {
   }
   if (!isNonEmptyString(input.toMonth) || !BUDGET_MONTH_PATTERN.test(input.toMonth)) {
     return 'toMonth must use YYYY-MM format.';
+  }
+  return null;
+}
+
+const SETTINGS_THEMES = ['light', 'dark'];
+const SETTINGS_LANGUAGES = ['en', 'de', 'es', 'fr', 'cn', 'ar'];
+const SETTINGS_DATE_FORMATS = [
+  'dd.MM.yyyy',
+  'dd.MM.yy',
+  'dd/MM/yyyy',
+  'dd/MM/yy',
+  'yyyy-MM-dd',
+  'MM/dd/yyyy',
+  'dd-MM-yyyy',
+];
+const EDITABLE_SETTINGS_FIELDS = [
+  'username',
+  'currency',
+  'theme',
+  'language',
+  'dateFormat',
+  'isEuropeanFormat',
+  'allocation',
+];
+
+function validateSettingsAllocation(allocation) {
+  if (typeof allocation !== 'object' || allocation === null || Array.isArray(allocation)) {
+    return 'allocation must be an object with daily, splurge, smile, and fire.';
+  }
+  const fields = ['daily', 'splurge', 'smile', 'fire'];
+  const unknownField = Object.keys(allocation).find((key) => !fields.includes(key));
+  if (unknownField) return `allocation.${unknownField} is not a recognized field.`;
+  for (const field of fields) {
+    if (!Number.isFinite(allocation[field])) return `allocation.${field} must be a number.`;
+  }
+  const sum = fields.reduce((total, field) => total + allocation[field], 0);
+  if (Math.abs(sum - 100) > 0.001)
+    return 'allocation.daily + splurge + smile + fire must sum to 100.';
+  return null;
+}
+
+function validatePatchSettingsInput(input) {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) {
+    return 'A settings object is required.';
+  }
+  const unknownField = Object.keys(input).find((key) => !EDITABLE_SETTINGS_FIELDS.includes(key));
+  if (unknownField) return `${unknownField} is not an editable field.`;
+  if (input.username !== undefined && typeof input.username !== 'string') {
+    return 'username must be a string.';
+  }
+  if (input.currency !== undefined && !isNonEmptyString(input.currency)) {
+    return 'currency must be a non-empty string.';
+  }
+  if (input.theme !== undefined && !SETTINGS_THEMES.includes(input.theme)) {
+    return `theme must be one of ${SETTINGS_THEMES.join(', ')}.`;
+  }
+  if (input.language !== undefined && !SETTINGS_LANGUAGES.includes(input.language)) {
+    return `language must be one of ${SETTINGS_LANGUAGES.join(', ')}.`;
+  }
+  if (input.dateFormat !== undefined && !SETTINGS_DATE_FORMATS.includes(input.dateFormat)) {
+    return `dateFormat must be one of ${SETTINGS_DATE_FORMATS.join(', ')}.`;
+  }
+  if (input.isEuropeanFormat !== undefined && typeof input.isEuropeanFormat !== 'boolean') {
+    return 'isEuropeanFormat must be a boolean.';
+  }
+  if (input.allocation !== undefined) {
+    const allocationError = validateSettingsAllocation(input.allocation);
+    if (allocationError) return allocationError;
   }
   return null;
 }
@@ -3444,6 +3513,39 @@ router.delete('/budget', requireScope('budget:w'), async (req, res, next) => {
       itemCount: result.deletedCount,
     });
     return res.json(result);
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.get('/settings', requireScope('settings:r'), async (req, res, next) => {
+  try {
+    const settings = await getSettings({ usersDb: getUsersDb(), authDb: getAuthDb() }, req.userId);
+    return res.json(settings);
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.patch('/settings', requireScope('settings:w'), async (req, res, next) => {
+  const validationError = validatePatchSettingsInput(req.body);
+  if (validationError) {
+    return problem(res, 400, 'validation_invalid', 'Invalid settings request', validationError);
+  }
+  try {
+    const settings = await updateSettings(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+      req.body,
+    );
+    await recordAuditEntry(getAuditDb(), {
+      userId: req.userId,
+      actor: auditActor(req.auth),
+      method: req.method,
+      path: req.baseUrl + req.path,
+      resource: 'settings',
+    });
+    return res.json(settings);
   } catch (error) {
     return next(error);
   }
