@@ -445,3 +445,12 @@ curl -X POST "http://localhost:3000/api/v1/budget/copy" \
 curl -X DELETE "http://localhost:3000/api/v1/budget?month=2026-01" \
   -H "Authorization: Bearer $MONEY_MANAGER_TOKEN"
 ```
+
+## Populate budget rows from active subscriptions
+
+Requires a PAT with `budget:w`. No request body — always evaluates every active subscription on the account, converting each to its real monthly-equivalent amount by frequency. See `docs/domain/BUDGET_FROM_SUBSCRIPTIONS_FORMULA.md`.
+
+```bash
+curl -X POST "http://localhost:3000/api/v1/budget/from-subscriptions" \
+  -H "Authorization: Bearer $MONEY_MANAGER_TOKEN"
+```

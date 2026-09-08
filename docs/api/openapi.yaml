@@ -1358,7 +1358,7 @@ paths:
     post:
       operationId: createLiability
       summary: Create a liability
-      description: '`tag` must not collide (case-sensitive exact match) with an existing liability''s tag.'
+      description: "`tag` must not collide (case-sensitive exact match) with an existing liability's tag."
       security:
         - bearerAuth: []
       requestBody:
@@ -2854,6 +2854,36 @@ paths:
           $ref: '#/components/responses/AuthenticationRequired'
         '403':
           $ref: '#/components/responses/InsufficientScope'
+  /budget/from-subscriptions:
+    post:
+      operationId: fromSubscriptionsBudget
+      summary: Populate budget rows from active subscriptions (BUD-6)
+      description: >-
+        For every subscription not on the `Income` account, converts its amount to a real monthly-equivalent by
+        frequency (weekly ×52/12, biweekly ×26/12, monthly ×1, quarterly ÷3, yearly ÷12) and sums it into a budget
+        row for every calendar month the subscription is active — corrects a real over/under-budgeting bug in the
+        original app, which never scales by frequency at all. Unconditionally overwrites any existing row for a
+        computed (date, tag) pair. Takes no request body — always evaluates every active subscription on the
+        account. See `docs/domain/BUDGET_FROM_SUBSCRIPTIONS_FORMULA.md` for the full formula and worked example.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: How many budget rows were written
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [rowsWritten]
+                properties:
+                  rowsWritten:
+                    type: integer
+              example:
+                rowsWritten: 2
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
 components:
   securitySchemes:
     bearerAuth:
@@ -3717,10 +3747,10 @@ components:
           format: date
         category:
           type: string
-          description: '`@<projectTitle>` — matches this project''s transactions by category, same convention as every other entity.'
+          description: "`@<projectTitle>` — matches this project's transactions by category, same convention as every other entity."
         comment:
           type: string
-          description: '`#bucket:Title:Amount` tags describing how amountMinor is allocated across the funded buckets — the same DSL a transaction''s comment uses.'
+          description: "`#bucket:Title:Amount` tags describing how amountMinor is allocated across the funded buckets — the same DSL a transaction's comment uses."
         frequency:
           type: string
           enum: [weekly, biweekly, monthly, quarterly, yearly]
