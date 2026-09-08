@@ -28,6 +28,9 @@ const COLLECTION_PATHS = {
   shares: ['balance', 'asset', 'shares'],
   investments: ['balance', 'asset', 'investments'],
   liabilities: ['balance', 'liabilities'],
+  // Grow lives at a flat top-level path (like Smile/Fire), unlike the nested
+  // balance-sheet entities above — a single-segment path works unchanged.
+  grow: ['grow'],
 };
 
 function getAtPath(data, pathSegments) {

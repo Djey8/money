@@ -332,3 +332,35 @@ curl "http://localhost:3000/api/v1/income/interests" \
 curl "http://localhost:3000/api/v1/income/properties" \
   -H "Authorization: Bearer $MONEY_MANAGER_TOKEN"
 ```
+
+## List, create, get, update, delete, or act on Grow projects
+
+Requires a PAT with `grow:r` (list/get) or `grow:w` (create/update/delete/act). A project's kind (`isAsset`/`share`/`investment`) is fixed at creation and determines which fields `buy`/`sell` expect. `PATCH` only accepts metadata — use the typed actions for money-moving changes. See `docs/api/AGENTS.md` and `docs/domain/GROW_DSL_FORMULA.md` for the full rules.
+
+```bash
+curl "http://localhost:3000/api/v1/grow" \
+  -H "Authorization: Bearer $MONEY_MANAGER_TOKEN"
+
+curl -X POST "http://localhost:3000/api/v1/grow" \
+  -H "Authorization: Bearer $MONEY_MANAGER_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"title": "MSFT", "share": true, "phase": "plan"}'
+
+curl -X PATCH "http://localhost:3000/api/v1/grow/grow_<id>" \
+  -H "Authorization: Bearer $MONEY_MANAGER_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"phase": "monitor", "riskScore": 4}'
+
+curl -X POST "http://localhost:3000/api/v1/grow/grow_<id>/buy" \
+  -H "Authorization: Bearer $MONEY_MANAGER_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"quantity": 10, "priceMinor": 41500}'
+
+curl -X POST "http://localhost:3000/api/v1/grow/grow_<id>/sell" \
+  -H "Authorization: Bearer $MONEY_MANAGER_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"quantity": 5, "priceMinor": 42000}'
+
+curl -X DELETE "http://localhost:3000/api/v1/grow/grow_<id>" \
+  -H "Authorization: Bearer $MONEY_MANAGER_TOKEN"
+```

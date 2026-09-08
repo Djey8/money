@@ -1898,6 +1898,371 @@ paths:
           $ref: '#/components/responses/SessionRequired'
         '404':
           $ref: '#/components/responses/NotFound'
+  /grow:
+    get:
+      operationId: listGrow
+      summary: List grow projects
+      description: Returns every grow project owned by the caller (GROW-1). Existing grow projects must first receive stable IDs through `mm-admin migrate-balance-entity-ids --collection grow`.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Grow projects owned by the caller
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [grow]
+                properties:
+                  grow:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Grow'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+    post:
+      operationId: createGrow
+      summary: Create a grow project
+      description: >-
+        `title` must not collide with an existing grow project's title (GROW-2). `isAsset`/`share`/`investment` are
+        mutually exclusive booleans marking this project's fixed kind — once set, it determines which typed-action
+        request shape `POST /grow/{growId}/buy` and `.../sell` expect, and cannot be changed afterwards. `amountMinor`
+        and `cashflowMinor` always start at 0 and `liabilitie` starts `null` — they're only ever changed by the typed
+        action endpoints, never by this or `PATCH /grow/{growId}`.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateGrowRequest'
+            example:
+              title: MSFT
+              phase: plan
+              share: true
+      responses:
+        '201':
+          description: Created grow project
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Grow'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+  /grow/{growId}:
+    parameters:
+      - name: growId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getGrow
+      summary: Get a single grow project
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The grow project
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Grow'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      operationId: updateGrow
+      summary: Update a grow project's metadata
+      description: >-
+        Accepts a partial body — only the fields you send are changed (GROW-3). Money-moving fields
+        (`amountMinor`, `cashflowMinor`, `share`, `investment`, `liabilitie`) are rejected here — use the typed
+        action endpoints instead.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchGrowRequest'
+            example:
+              phase: monitor
+              riskScore: 4
+      responses:
+        '200':
+          description: Updated grow project
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Grow'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      operationId: deleteGrow
+      summary: Delete a grow project
+      description: Not reversible through the API. Does not delete any linked Asset/Share/Investment/Liability record or past transactions.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Grow project deleted
+          content:
+            application/json:
+              example:
+                id: grow_01234567-89ab-cdef-0123-456789abcdef
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /grow/{growId}/buy:
+    parameters:
+      - name: growId
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      operationId: buyGrow
+      summary: Record a buy against a grow project (GROW-4)
+      description: >-
+        Generates the same canonical `Transaction.comment` DSL the existing Angular UI reads
+        (`docs/domain/GROW_DSL_FORMULA.md`), atomically alongside the Asset/Share/Investment patch and, for an
+        attached `liabilitie`, a standalone Liability record tagged with the grow project's own title (reflected
+        onto this project's own `liabilitie` field too, so a later `payback` or a `sell` with `payback` has
+        something to act on). An Investment-kind buy always creates/updates the companion `M-<title>` mortgage
+        liability unconditionally, in addition to and distinct from any attached `liabilitie`.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BuyGrowRequest'
+            example:
+              quantity: 10
+              priceMinor: 41500
+      responses:
+        '201':
+          description: The buy was recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GrowActionResult'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /grow/{growId}/sell:
+    parameters:
+      - name: growId
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      operationId: sellGrow
+      summary: Record a sale against a grow project (GROW-5)
+      description: An investment-kind sell may include `payback` to settle an attached liability atomically with the sale.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SellGrowRequest'
+            example:
+              quantity: 5
+              priceMinor: 26000
+      responses:
+        '201':
+          description: The sale was recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GrowActionResult'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /grow/{growId}/dividend:
+    parameters:
+      - name: growId
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      operationId: dividendGrow
+      summary: Record a dividend against a share-kind grow project (GROW-6)
+      description: Only valid when the grow project's kind is `share`. Produces a transaction only — no Share/Grow state changes (confirmed dividends don't affect a holding's quantity or price).
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DividendGrowRequest'
+            example:
+              quantity: 10
+              priceMinor: 5000
+      responses:
+        '201':
+          description: The dividend was recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GrowActionResult'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /grow/{growId}/payback:
+    parameters:
+      - name: growId
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      operationId: paybackGrow
+      summary: Record a payback against a grow project's attached liability (GROW-6)
+      description: >-
+        Only valid when the grow project has an attached `liabilitie` (regardless of kind — matches
+        `grow.component.ts`'s own `paybackProject()`, which has no kind check). A payback that zeroes both
+        `amountMinor` and `creditMinor` removes the liability and sets `liabilitie` to `null`.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaybackGrowRequest'
+            example:
+              amountMinor: 50000
+              creditMinor: 10000
+      responses:
+        '201':
+          description: The payback was recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GrowActionResult'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /grow/{growId}/cashflow:
+    parameters:
+      - name: growId
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      operationId: cashflowGrow
+      summary: Record a recurring cashflow against a grow project (GROW-7)
+      description: An optional attached liability `creditMinor` is netted out of the transaction amount. Produces a transaction only — no Grow state changes.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CashflowGrowRequest'
+            example:
+              cashflowMinor: 15000
+              creditMinor: 2000
+      responses:
+        '201':
+          description: The cashflow was recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GrowActionResult'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /grow/{growId}/deposit:
+    parameters:
+      - name: growId
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      operationId: depositGrow
+      summary: Record a cash deposit against a grow project (GROW-7)
+      description: Produces a transaction only — no Grow state changes.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DepositGrowRequest'
+            example:
+              amountMinor: 30000
+      responses:
+        '201':
+          description: The deposit was recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GrowActionResult'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
 components:
   securitySchemes:
     bearerAuth:
@@ -2918,6 +3283,424 @@ components:
         amountMinor:
           type: integer
       description: No `id` — this is a read-only, fully-derived aggregate (see the parent endpoint's own description).
+    GrowLink:
+      type: object
+      required: [label, url]
+      properties:
+        label:
+          type: string
+        url:
+          type: string
+    GrowActionItem:
+      type: object
+      required: [text, done, priority]
+      properties:
+        text:
+          type: string
+        done:
+          type: boolean
+        priority:
+          type: string
+          enum: [low, medium, high]
+        dueDate:
+          type: string
+          format: date
+    GrowNote:
+      type: object
+      required: [text, createdAt]
+      properties:
+        text:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    GrowEmbeddedShare:
+      type: object
+      nullable: true
+      description: A denormalized copy of the linked Share, kept in sync by the typed actions (and by `PATCH /balance/shares/{shareId}`) — `null` unless this project's kind is `share`.
+      properties:
+        tag:
+          type: string
+        quantity:
+          type: number
+        priceMinor:
+          type: integer
+    GrowEmbeddedInvestment:
+      type: object
+      nullable: true
+      description: A denormalized copy of the linked Investment, kept in sync by the typed actions — `null` unless this project's kind is `investment`.
+      properties:
+        tag:
+          type: string
+        depositMinor:
+          type: integer
+        amountMinor:
+          type: integer
+    GrowEmbeddedLiabilitie:
+      type: object
+      nullable: true
+      description: A denormalized copy of an attached Liability, kept in sync by `buy`/`sell`/`payback` — `null` until one is attached.
+      properties:
+        tag:
+          type: string
+        amountMinor:
+          type: integer
+        investment:
+          type: boolean
+        creditMinor:
+          type: integer
+    Grow:
+      type: object
+      required:
+        - id
+        - title
+        - sub
+        - phase
+        - description
+        - strategy
+        - riskScore
+        - risks
+        - links
+        - actionItems
+        - notes
+        - cashflowMinor
+        - amountMinor
+        - isAsset
+        - share
+        - investment
+        - liabilitie
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        sub:
+          type: string
+        phase:
+          type: string
+          enum: [idea, research, plan, execute, monitor, completed]
+        description:
+          type: string
+        strategy:
+          type: string
+        riskScore:
+          type: number
+        risks:
+          type: string
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/GrowLink'
+        actionItems:
+          type: array
+          items:
+            $ref: '#/components/schemas/GrowActionItem'
+        notes:
+          type: array
+          items:
+            $ref: '#/components/schemas/GrowNote'
+        cashflowMinor:
+          type: integer
+          description: Only ever changed by `POST /grow/{growId}/cashflow` — see that endpoint's own description (it currently does not, matching the source app).
+        amountMinor:
+          type: integer
+          description: This project's own cash-invested total — only ever changed by the typed action endpoints.
+        isAsset:
+          type: boolean
+          description: This project's fixed kind is asset-tracking. Mutually exclusive with `share`/`investment` being non-null.
+        share:
+          $ref: '#/components/schemas/GrowEmbeddedShare'
+        investment:
+          $ref: '#/components/schemas/GrowEmbeddedInvestment'
+        liabilitie:
+          $ref: '#/components/schemas/GrowEmbeddedLiabilitie'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        type:
+          type: string
+          enum: [income-growth, budget-optimization, subscription-action, expense-insight]
+        category:
+          oneOf:
+            - type: string
+            - type: array
+              items:
+                type: string
+        currentCostMinor:
+          type: integer
+        targetCostMinor:
+          type: integer
+        monthlySavingsMinor:
+          type: integer
+        annualSavingsMinor:
+          type: integer
+        reasoning:
+          type: string
+        alternative:
+          type: string
+        alternativeCostMinor:
+          type: integer
+        pattern:
+          type: string
+        insights:
+          type: string
+        status:
+          type: string
+          description: Legacy free-text status ('bought', 'sold', 'paid back', 'paid off') the typed actions set for display parity with the original app — prefer `phase` in new clients.
+    CreateGrowRequest:
+      type: object
+      required: [title]
+      properties:
+        title:
+          type: string
+        sub:
+          type: string
+        phase:
+          type: string
+          enum: [idea, research, plan, execute, monitor, completed]
+        description:
+          type: string
+        strategy:
+          type: string
+        riskScore:
+          type: number
+        risks:
+          type: string
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/GrowLink'
+        actionItems:
+          type: array
+          items:
+            $ref: '#/components/schemas/GrowActionItem'
+        notes:
+          type: array
+          items:
+            $ref: '#/components/schemas/GrowNote'
+        isAsset:
+          type: boolean
+          description: Marks this project's fixed kind as asset-tracking (mutually exclusive with share/investment).
+        share:
+          type: boolean
+          description: Marks this project's fixed kind as share-tracking (mutually exclusive with isAsset/investment).
+        investment:
+          type: boolean
+          description: Marks this project's fixed kind as investment-tracking (mutually exclusive with isAsset/share).
+        type:
+          type: string
+          enum: [income-growth, budget-optimization, subscription-action, expense-insight]
+        category:
+          oneOf:
+            - type: string
+            - type: array
+              items:
+                type: string
+        currentCostMinor:
+          type: integer
+        targetCostMinor:
+          type: integer
+        monthlySavingsMinor:
+          type: integer
+        annualSavingsMinor:
+          type: integer
+        reasoning:
+          type: string
+        alternative:
+          type: string
+        alternativeCostMinor:
+          type: integer
+        pattern:
+          type: string
+        insights:
+          type: string
+    PatchGrowRequest:
+      type: object
+      description: All fields optional — send only what you want to change. Unrecognized fields (including amountMinor/cashflowMinor/share/investment/liabilitie) are rejected.
+      properties:
+        title:
+          type: string
+        sub:
+          type: string
+        phase:
+          type: string
+          enum: [idea, research, plan, execute, monitor, completed]
+        description:
+          type: string
+        strategy:
+          type: string
+        riskScore:
+          type: number
+        risks:
+          type: string
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/GrowLink'
+        actionItems:
+          type: array
+          items:
+            $ref: '#/components/schemas/GrowActionItem'
+        notes:
+          type: array
+          items:
+            $ref: '#/components/schemas/GrowNote'
+        type:
+          type: string
+          enum: [income-growth, budget-optimization, subscription-action, expense-insight]
+        category:
+          oneOf:
+            - type: string
+            - type: array
+              items:
+                type: string
+        currentCostMinor:
+          type: integer
+        targetCostMinor:
+          type: integer
+        monthlySavingsMinor:
+          type: integer
+        annualSavingsMinor:
+          type: integer
+        reasoning:
+          type: string
+        alternative:
+          type: string
+        alternativeCostMinor:
+          type: integer
+        pattern:
+          type: string
+        insights:
+          type: string
+        status:
+          type: string
+    GrowActionResult:
+      type: object
+      required: [grow, transaction]
+      properties:
+        grow:
+          $ref: '#/components/schemas/Grow'
+        transaction:
+          $ref: '#/components/schemas/ApiTransaction'
+    GrowLiabilitieAttachment:
+      type: object
+      required: [loanMinor, creditMinor]
+      description: An optional financing loan attached to a buy, tagged with the grow project's own title — distinct from an Investment's own `M-<title>` mortgage liability.
+      properties:
+        loanMinor:
+          type: integer
+        creditMinor:
+          type: integer
+    BuyGrowRequest:
+      type: object
+      description: >-
+        Required fields depend on the grow project's own fixed kind: `asset` needs `totalAmountMinor`; `share`
+        needs `quantity` and `priceMinor`; `investment` needs `depositMinor` and `mortgageMinor`. A body shaped
+        for the wrong kind is rejected with `validation_invalid`.
+      properties:
+        totalAmountMinor:
+          type: integer
+        quantity:
+          type: number
+        priceMinor:
+          type: integer
+        depositMinor:
+          type: integer
+        mortgageMinor:
+          type: integer
+        liabilitie:
+          $ref: '#/components/schemas/GrowLiabilitieAttachment'
+        date:
+          type: string
+          format: date
+          description: Defaults to today when omitted.
+        time:
+          type: string
+          description: Defaults to the current time when omitted.
+    SellGrowRequest:
+      type: object
+      description: >-
+        Same kind-dependent shape as BuyGrowRequest for totalAmountMinor / quantity+priceMinor / depositMinor+mortgageMinor.
+        An investment-kind sell may also include `payback` to settle an attached liability atomically with the sale.
+      properties:
+        totalAmountMinor:
+          type: integer
+        quantity:
+          type: number
+        priceMinor:
+          type: integer
+        depositMinor:
+          type: integer
+        mortgageMinor:
+          type: integer
+        payback:
+          type: object
+          required: [amountMinor, creditMinor]
+          properties:
+            amountMinor:
+              type: integer
+            creditMinor:
+              type: integer
+        date:
+          type: string
+          format: date
+        time:
+          type: string
+    DividendGrowRequest:
+      type: object
+      required: [quantity, priceMinor]
+      properties:
+        quantity:
+          type: number
+        priceMinor:
+          type: integer
+        date:
+          type: string
+          format: date
+        time:
+          type: string
+    PaybackGrowRequest:
+      type: object
+      required: [amountMinor, creditMinor]
+      properties:
+        amountMinor:
+          type: integer
+        creditMinor:
+          type: integer
+        date:
+          type: string
+          format: date
+        time:
+          type: string
+    CashflowGrowRequest:
+      type: object
+      required: [cashflowMinor]
+      properties:
+        cashflowMinor:
+          type: integer
+        creditMinor:
+          type: integer
+        date:
+          type: string
+          format: date
+        time:
+          type: string
+    DepositGrowRequest:
+      type: object
+      required: [amountMinor]
+      properties:
+        amountMinor:
+          type: integer
+        date:
+          type: string
+          format: date
+        time:
+          type: string
     CreateTransactionRequest:
       type: object
       required: [account, amountMinor, date, time, category, comment]

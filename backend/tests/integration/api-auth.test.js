@@ -3632,6 +3632,7 @@ describe('v1 API authentication and PAT management', () => {
         .set('Authorization', `Bearer ${token}`)
         .send({ tag, quantity: 10, priceMinor: 41500 });
       await seedGrowProject(firstUser.userId, {
+        id: `grow_fixture_${Date.now()}_${Math.random()}`,
         title: tag,
         isAsset: true,
         share: { tag, quantity: 10, price: 415 },
@@ -3758,6 +3759,566 @@ describe('v1 API authentication and PAT management', () => {
       expect(getResponse.status).toBe(404);
     });
   });
+
+  describe('GET/POST /grow and GET/PATCH/DELETE /grow/:id', () => {
+    async function growToken(scopes) {
+      const created = await sessionRequest('post', '/api/v1/auth/tokens').send({
+        name: `grow-agent-${Date.now()}-${Math.random()}`,
+        scopes,
+      });
+      return created.body;
+    }
+
+    it('creates a share-kind grow project and lists it, and audit logs the write', async () => {
+      const { token, tokenId } = await growToken(['grow:r', 'grow:w']);
+      const title = `MSFT${Date.now()}${Math.random()}`;
+      const created = await request(app)
+        .post('/api/v1/grow')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ title, share: true, phase: 'plan' });
+      expect(created.status).toBe(201);
+      expect(created.body.id).toMatch(/^grow_/);
+      expect(created.body.share).toEqual({ tag: title, quantity: 0, priceMinor: 0 });
+      expect(created.body.amountMinor).toBe(0);
+
+      const list = await request(app).get('/api/v1/grow').set('Authorization', `Bearer ${token}`);
+      expect(list.status).toBe(200);
+      expect(list.body.grow).toEqual(
+        expect.arrayContaining([expect.objectContaining({ id: created.body.id })]),
+      );
+
+      const auditEntries = await queryAuditEntries(getAuditDb(), firstUser.userId, {
+        resource: 'grow',
+      });
+      expect(auditEntries).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            actor: { type: 'token', tokenId },
+            method: 'POST',
+            resourceId: created.body.id,
+          }),
+        ]),
+      );
+    });
+
+    it('gets a single grow project by id and returns 404 for one that does not exist', async () => {
+      const { token } = await growToken(['grow:r', 'grow:w']);
+      const created = await request(app)
+        .post('/api/v1/grow')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ title: `GetTest${Date.now()}`, isAsset: true });
+      const found = await request(app)
+        .get(`/api/v1/grow/${created.body.id}`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(found.status).toBe(200);
+      expect(found.body.id).toBe(created.body.id);
+
+      const missing = await request(app)
+        .get('/api/v1/grow/grow_does_not_exist')
+        .set('Authorization', `Bearer ${token}`);
+      expect(missing.status).toBe(404);
+      expect(missing.body.code).toBe('not_found');
+    });
+
+    it('updates only the metadata fields provided, and audit logs the write', async () => {
+      const { token, tokenId } = await growToken(['grow:r', 'grow:w']);
+      const created = await request(app)
+        .post('/api/v1/grow')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ title: `PatchTest${Date.now()}`, isAsset: true, phase: 'idea' });
+      const response = await request(app)
+        .patch(`/api/v1/grow/${created.body.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ phase: 'monitor', riskScore: 4 });
+      expect(response.status).toBe(200);
+      expect(response.body.phase).toBe('monitor');
+      expect(response.body.riskScore).toBe(4);
+      expect(response.body.title).toBe(created.body.title);
+
+      const auditEntries = await queryAuditEntries(getAuditDb(), firstUser.userId, {
+        resource: 'grow',
+      });
+      expect(auditEntries).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            actor: { type: 'token', tokenId },
+            method: 'PATCH',
+            resourceId: created.body.id,
+          }),
+        ]),
+      );
+    });
+
+    it('rejects a PATCH touching a money-moving field', async () => {
+      const { token } = await growToken(['grow:r', 'grow:w']);
+      const created = await request(app)
+        .post('/api/v1/grow')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ title: `RejectPatch${Date.now()}`, isAsset: true });
+      const response = await request(app)
+        .patch(`/api/v1/grow/${created.body.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ amountMinor: 100 });
+      expect(response.status).toBe(400);
+      expect(response.body.code).toBe('validation_invalid');
+    });
+
+    it('rejects a title that collides with an existing grow project', async () => {
+      const { token } = await growToken(['grow:w']);
+      const title = `Duplicate${Date.now()}`;
+      const first = await request(app)
+        .post('/api/v1/grow')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ title, isAsset: true });
+      expect(first.status).toBe(201);
+      const second = await request(app)
+        .post('/api/v1/grow')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ title, isAsset: true });
+      expect(second.status).toBe(400);
+      expect(second.body.code).toBe('validation_invalid');
+    });
+
+    it('rejects more than one of isAsset/share/investment set to true', async () => {
+      const { token } = await growToken(['grow:w']);
+      const response = await request(app)
+        .post('/api/v1/grow')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ title: `MultiKind${Date.now()}`, isAsset: true, share: true });
+      expect(response.status).toBe(400);
+      expect(response.body.code).toBe('validation_invalid');
+    });
+
+    it('deletes a grow project, and audit logs the write', async () => {
+      const { token, tokenId } = await growToken(['grow:r', 'grow:w']);
+      const created = await request(app)
+        .post('/api/v1/grow')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ title: `DeleteTest${Date.now()}`, isAsset: true });
+      const response = await request(app)
+        .delete(`/api/v1/grow/${created.body.id}`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({ id: created.body.id });
+
+      const getResponse = await request(app)
+        .get(`/api/v1/grow/${created.body.id}`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(getResponse.status).toBe(404);
+
+      const auditEntries = await queryAuditEntries(getAuditDb(), firstUser.userId, {
+        resource: 'grow',
+      });
+      expect(auditEntries).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            actor: { type: 'token', tokenId },
+            method: 'DELETE',
+            resourceId: created.body.id,
+          }),
+        ]),
+      );
+    });
+
+    it('rejects requests without the grow:r/grow:w scopes', async () => {
+      const { token: writeOnly } = await growToken(['grow:w']);
+      const getResponse = await request(app)
+        .get('/api/v1/grow')
+        .set('Authorization', `Bearer ${writeOnly}`);
+      expect(getResponse.status).toBe(403);
+      expect(getResponse.body.code).toBe('scope_insufficient');
+
+      const { token: readOnly } = await growToken(['grow:r']);
+      const postResponse = await request(app)
+        .post('/api/v1/grow')
+        .set('Authorization', `Bearer ${readOnly}`)
+        .send({ title: 'ShouldNotSave', isAsset: true });
+      expect(postResponse.status).toBe(403);
+      expect(postResponse.body.code).toBe('scope_insufficient');
+    });
+
+    it('keeps grow projects isolated to the authenticated user document', async () => {
+      const { token } = await growToken(['grow:r', 'grow:w']);
+      const otherCreated = await sessionRequest(
+        'post',
+        '/api/v1/auth/tokens',
+        secondUser.token,
+      ).send({
+        name: `grow-other-${Date.now()}`,
+        scopes: ['grow:w'],
+      });
+      const otherProject = await request(app)
+        .post('/api/v1/grow')
+        .set('Authorization', `Bearer ${otherCreated.body.token}`)
+        .send({ title: `OnlyOtherUserGrow${Date.now()}`, isAsset: true });
+      expect(otherProject.status).toBe(201);
+
+      const list = await request(app).get('/api/v1/grow').set('Authorization', `Bearer ${token}`);
+      expect(list.body.grow).not.toEqual(
+        expect.arrayContaining([expect.objectContaining({ id: otherProject.body.id })]),
+      );
+
+      const getResponse = await request(app)
+        .get(`/api/v1/grow/${otherProject.body.id}`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(getResponse.status).toBe(404);
+    });
+  });
+
+  describe('POST /grow/:id/{buy,sell,dividend,payback,cashflow,deposit}', () => {
+    async function growToken(scopes) {
+      const created = await sessionRequest('post', '/api/v1/auth/tokens').send({
+        name: `grow-action-agent-${Date.now()}-${Math.random()}`,
+        scopes,
+      });
+      return created.body;
+    }
+
+    async function createGrowProject(token, body) {
+      const created = await request(app)
+        .post('/api/v1/grow')
+        .set('Authorization', `Bearer ${token}`)
+        .send(body);
+      expect(created.status).toBe(201);
+      return created.body;
+    }
+
+    it('buy on an asset-kind project creates the asset and reduces Grow.amount/the transaction by any financing loan', async () => {
+      const { token, tokenId } = await growToken(['grow:r', 'grow:w', 'balance:r']);
+      const title = `Car${Date.now()}${Math.random()}`;
+      const project = await createGrowProject(token, { title, isAsset: true });
+
+      const response = await request(app)
+        .post(`/api/v1/grow/${project.id}/buy`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ totalAmountMinor: 150000, liabilitie: { loanMinor: 100000, creditMinor: 5000 } });
+      expect(response.status).toBe(201);
+      expect(response.body.grow.amountMinor).toBe(50000);
+      expect(response.body.grow.status).toBe('bought');
+      expect(response.body.transaction.amountMinor).toBe(-50000);
+      expect(response.body.transaction.comment).toBe(
+        `Liabilitie 1000 50; Buy Asset ${title} 1 x 1500;`,
+      );
+
+      const assets = await request(app)
+        .get('/api/v1/balance/assets')
+        .set('Authorization', `Bearer ${token}`);
+      expect(assets.body.assets).toEqual(
+        expect.arrayContaining([expect.objectContaining({ tag: title, amountMinor: 150000 })]),
+      );
+
+      const auditEntries = await queryAuditEntries(getAuditDb(), firstUser.userId, {
+        resource: 'grow_buy',
+      });
+      expect(auditEntries).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ actor: { type: 'token', tokenId }, resourceId: project.id }),
+        ]),
+      );
+    });
+
+    it('buy on a share-kind project accumulates onto an existing position', async () => {
+      const { token } = await growToken(['grow:r', 'grow:w', 'balance:r']);
+      const title = `MSFT${Date.now()}${Math.random()}`;
+      const project = await createGrowProject(token, { title, share: true });
+
+      const first = await request(app)
+        .post(`/api/v1/grow/${project.id}/buy`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ quantity: 5, priceMinor: 20000 });
+      expect(first.status).toBe(201);
+      const second = await request(app)
+        .post(`/api/v1/grow/${project.id}/buy`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ quantity: 10, priceMinor: 25000 });
+      expect(second.status).toBe(201);
+      expect(second.body.grow.share).toEqual({ tag: title, quantity: 15, priceMinor: 25000 });
+
+      const shares = await request(app)
+        .get('/api/v1/balance/shares')
+        .set('Authorization', `Bearer ${token}`);
+      expect(shares.body.shares).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ tag: title, quantity: 15, priceMinor: 25000 }),
+        ]),
+      );
+    });
+
+    it('buy on an investment-kind project creates the companion M-<title> mortgage liability', async () => {
+      const { token } = await growToken(['grow:r', 'grow:w', 'balance:r']);
+      const title = `RentalFlat${Date.now()}${Math.random()}`;
+      const project = await createGrowProject(token, { title, investment: true });
+
+      const response = await request(app)
+        .post(`/api/v1/grow/${project.id}/buy`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ depositMinor: 2000000, mortgageMinor: 30000000 });
+      expect(response.status).toBe(201);
+      expect(response.body.grow.investment).toEqual({
+        tag: title,
+        depositMinor: 2000000,
+        amountMinor: 30000000,
+      });
+
+      const liabilities = await request(app)
+        .get('/api/v1/balance/liabilities')
+        .set('Authorization', `Bearer ${token}`);
+      expect(liabilities.body.liabilities).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ tag: `M-${title}`, amountMinor: 30000000 }),
+        ]),
+      );
+    });
+
+    it('rejects a buy on a project with no asset/share/investment kind', async () => {
+      const { token } = await growToken(['grow:w']);
+      const project = await createGrowProject(token, { title: `NoKind${Date.now()}` });
+      const response = await request(app)
+        .post(`/api/v1/grow/${project.id}/buy`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ totalAmountMinor: 100 });
+      expect(response.status).toBe(400);
+      expect(response.body.code).toBe('validation_invalid');
+    });
+
+    it('rejects a share-shaped body sent to an asset-kind project instead of silently producing NaN', async () => {
+      const { token } = await growToken(['grow:w']);
+      const project = await createGrowProject(token, {
+        title: `KindMismatch${Date.now()}`,
+        isAsset: true,
+      });
+      const response = await request(app)
+        .post(`/api/v1/grow/${project.id}/buy`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ quantity: 10, priceMinor: 25000 });
+      expect(response.status).toBe(400);
+      expect(response.body.code).toBe('validation_invalid');
+    });
+
+    it('sell on an asset-kind project removes the asset when the sale zeroes it out', async () => {
+      const { token } = await growToken(['grow:r', 'grow:w', 'balance:r']);
+      const title = `Boat${Date.now()}${Math.random()}`;
+      const project = await createGrowProject(token, { title, isAsset: true });
+      await request(app)
+        .post(`/api/v1/grow/${project.id}/buy`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ totalAmountMinor: 120000 });
+
+      const response = await request(app)
+        .post(`/api/v1/grow/${project.id}/sell`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ totalAmountMinor: 120000 });
+      expect(response.status).toBe(201);
+      expect(response.body.grow.status).toBe('sold');
+      expect(response.body.transaction.amountMinor).toBe(120000);
+      expect(response.body.transaction.account).toBe('Income');
+
+      const assets = await request(app)
+        .get('/api/v1/balance/assets')
+        .set('Authorization', `Bearer ${token}`);
+      expect(assets.body.assets).not.toEqual(
+        expect.arrayContaining([expect.objectContaining({ tag: title })]),
+      );
+    });
+
+    it('sell on an investment-kind project with a payback settles the attached liability atomically', async () => {
+      const { token } = await growToken(['grow:r', 'grow:w', 'balance:r']);
+      const title = `PaidOffFlat${Date.now()}${Math.random()}`;
+      const project = await createGrowProject(token, { title, investment: true });
+      await request(app)
+        .post(`/api/v1/grow/${project.id}/buy`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          depositMinor: 2000000,
+          mortgageMinor: 30000000,
+          liabilitie: { loanMinor: 231500, creditMinor: 46300 },
+        });
+
+      const response = await request(app)
+        .post(`/api/v1/grow/${project.id}/sell`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          depositMinor: 500000,
+          mortgageMinor: 2900000,
+          payback: { amountMinor: 231500, creditMinor: 46300 },
+        });
+      expect(response.status).toBe(201);
+      expect(response.body.grow.liabilitie).toBeNull();
+      expect(response.body.transaction.comment).toBe(
+        `Payback Liabilitie 2315 463; Sell Investment ${title} 5000 29000;`,
+      );
+
+      const liabilities = await request(app)
+        .get('/api/v1/balance/liabilities')
+        .set('Authorization', `Bearer ${token}`);
+      expect(liabilities.body.liabilities).not.toEqual(
+        expect.arrayContaining([expect.objectContaining({ tag: title })]),
+      );
+    });
+
+    it('rejects selling a position that does not exist', async () => {
+      const { token } = await growToken(['grow:w']);
+      const project = await createGrowProject(token, {
+        title: `NoPosition${Date.now()}`,
+        share: true,
+      });
+      const response = await request(app)
+        .post(`/api/v1/grow/${project.id}/sell`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ quantity: 1, priceMinor: 100 });
+      expect(response.status).toBe(400);
+      expect(response.body.code).toBe('validation_invalid');
+    });
+
+    it('records a dividend transaction with no Share/Grow mutation', async () => {
+      const { token } = await growToken(['grow:r', 'grow:w', 'balance:r']);
+      const title = `Dividend${Date.now()}${Math.random()}`;
+      const project = await createGrowProject(token, { title, share: true });
+      await request(app)
+        .post(`/api/v1/grow/${project.id}/buy`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ quantity: 10, priceMinor: 41500 });
+
+      const response = await request(app)
+        .post(`/api/v1/grow/${project.id}/dividend`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ quantity: 10, priceMinor: 5000 });
+      expect(response.status).toBe(201);
+      expect(response.body.transaction.amountMinor).toBe(50000);
+      expect(response.body.transaction.comment).toBe(`Dividende Share ${title} 10 x 50;`);
+
+      const shares = await request(app)
+        .get('/api/v1/balance/shares')
+        .set('Authorization', `Bearer ${token}`);
+      expect(shares.body.shares).toEqual(
+        expect.arrayContaining([expect.objectContaining({ tag: title, quantity: 10 })]),
+      );
+    });
+
+    it('rejects a dividend on a non-share-kind project', async () => {
+      const { token } = await growToken(['grow:w']);
+      const project = await createGrowProject(token, {
+        title: `NotShare${Date.now()}`,
+        isAsset: true,
+      });
+      const response = await request(app)
+        .post(`/api/v1/grow/${project.id}/dividend`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ quantity: 1, priceMinor: 100 });
+      expect(response.status).toBe(400);
+      expect(response.body.code).toBe('validation_invalid');
+    });
+
+    it('payback on a standalone debt-tracking project reduces the liability and Grow.liabilitie', async () => {
+      const { token } = await growToken(['grow:r', 'grow:w', 'balance:r', 'balance:w']);
+      const title = `Debt${Date.now()}${Math.random()}`;
+      const liability = await request(app)
+        .post('/api/v1/balance/liabilities')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ tag: title, amountMinor: 500000, creditMinor: 20000 });
+      expect(liability.status).toBe(201);
+      const project = await createGrowProject(token, { title });
+      // The embedded `.liabilitie` copy isn't set by any typed action (only PATCH's own
+      // metadata fields are editable, and liabilitie is excluded from those too) — a real
+      // client seeds it the same way `add-grow.component.ts` does at creation, via a direct
+      // repository write (mirroring the already-shipped seedGrowProject helper's pattern).
+      const usersDb = getUsersDb();
+      const doc = await usersDb.get(firstUser.userId);
+      const growEntry = doc.data.grow.find((g) => g.title === title);
+      growEntry.liabilitie = { tag: title, amount: 5000, investment: true, credit: 200 };
+      await usersDb.insert(doc);
+
+      const response = await request(app)
+        .post(`/api/v1/grow/${project.id}/payback`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ amountMinor: 50000, creditMinor: 10000 });
+      expect(response.status).toBe(201);
+      expect(response.body.grow.status).toBe('paid back');
+      expect(response.body.grow.liabilitie.amountMinor).toBe(450000);
+
+      const liabilities = await request(app)
+        .get('/api/v1/balance/liabilities')
+        .set('Authorization', `Bearer ${token}`);
+      expect(liabilities.body.liabilities).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ tag: title, amountMinor: 450000, creditMinor: 10000 }),
+        ]),
+      );
+    });
+
+    it('rejects a payback when the grow project has no attached liability', async () => {
+      const { token } = await growToken(['grow:w']);
+      const project = await createGrowProject(token, {
+        title: `NoLiability${Date.now()}`,
+        isAsset: true,
+      });
+      const response = await request(app)
+        .post(`/api/v1/grow/${project.id}/payback`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ amountMinor: 1, creditMinor: 1 });
+      expect(response.status).toBe(400);
+      expect(response.body.code).toBe('validation_invalid');
+    });
+
+    it('records a cashflow transaction with no Grow mutation', async () => {
+      const { token } = await growToken(['grow:r', 'grow:w']);
+      const project = await createGrowProject(token, { title: `Cashflow${Date.now()}` });
+      const response = await request(app)
+        .post(`/api/v1/grow/${project.id}/cashflow`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ cashflowMinor: 15000, creditMinor: 2000 });
+      expect(response.status).toBe(201);
+      expect(response.body.transaction.amountMinor).toBe(13000);
+      expect(response.body.transaction.comment).toBe('CASHFLOW 150 - CREDIT 20;');
+      expect(response.body.transaction.account).toBe('Income');
+    });
+
+    it('records a deposit transaction as a cash outflow', async () => {
+      const { token } = await growToken(['grow:r', 'grow:w']);
+      const project = await createGrowProject(token, { title: `Deposit${Date.now()}` });
+      const response = await request(app)
+        .post(`/api/v1/grow/${project.id}/deposit`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ amountMinor: 30000 });
+      expect(response.status).toBe(201);
+      expect(response.body.transaction.amountMinor).toBe(-30000);
+      expect(response.body.transaction.comment).toBe('Deposit 300;');
+      expect(response.body.transaction.account).toBe('Fire');
+    });
+
+    it('rejects requests without the grow:w scope', async () => {
+      const writer = await growToken(['grow:w']);
+      const project = await createGrowProject(writer.token, {
+        title: `ScopeCheck${Date.now()}`,
+      });
+      const { token: readOnly } = await growToken(['grow:r']);
+      const response = await request(app)
+        .post(`/api/v1/grow/${project.id}/deposit`)
+        .set('Authorization', `Bearer ${readOnly}`)
+        .send({ amountMinor: 100 });
+      expect(response.status).toBe(403);
+      expect(response.body.code).toBe('scope_insufficient');
+    });
+
+    it('does not let a token act on another user’s grow project', async () => {
+      const { token } = await growToken(['grow:w']);
+      const otherCreated = await sessionRequest(
+        'post',
+        '/api/v1/auth/tokens',
+        secondUser.token,
+      ).send({ name: `grow-action-other-${Date.now()}`, scopes: ['grow:w'] });
+      const otherProject = await createGrowProject(otherCreated.body.token, {
+        title: `OtherUserProject${Date.now()}`,
+      });
+      const response = await request(app)
+        .post(`/api/v1/grow/${otherProject.id}/deposit`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ amountMinor: 100 });
+      expect(response.status).toBe(404);
+      expect(response.body.code).toBe('not_found');
+    });
+  });
+
 
   describe('GET /income/revenues, /income/interests, /income/properties', () => {
     // A dedicated, freshly-registered user per test — these three endpoints reflect the FULL

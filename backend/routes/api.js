@@ -74,6 +74,21 @@ const {
   listInterests,
   listProperties,
 } = require('../repositories/income-entity-repository');
+const {
+  listGrow,
+  getGrow,
+  createGrow,
+  updateGrow,
+  deleteGrow,
+} = require('../repositories/grow-repository');
+const {
+  buyGrow,
+  sellGrow,
+  dividendGrow,
+  paybackGrow,
+  cashflowGrow,
+  depositGrow,
+} = require('../repositories/grow-action-repository');
 const { getUsersDb, getAuthDb } = require('../config/db');
 const { getEncryptionSession } = require('../services/encryption-session');
 const {
@@ -659,6 +674,153 @@ function validatePatchShareInput(input) {
     return 'priceMinor must be an integer.';
   }
   return null;
+}
+
+const GROW_PHASES = ['idea', 'research', 'plan', 'execute', 'monitor', 'completed'];
+const GROW_TYPES = [
+  'income-growth',
+  'budget-optimization',
+  'subscription-action',
+  'expense-insight',
+];
+const GROW_MONEY_MINOR_FIELDS = [
+  'currentCostMinor',
+  'targetCostMinor',
+  'monthlySavingsMinor',
+  'annualSavingsMinor',
+  'alternativeCostMinor',
+];
+
+function validateGrowCategory(category) {
+  if (category === undefined) return null;
+  const valid =
+    typeof category === 'string' ||
+    (Array.isArray(category) && category.every((entry) => typeof entry === 'string'));
+  return valid ? null : 'category must be a string or an array of strings.';
+}
+
+function validateGrowSharedMetadataFields(input) {
+  if (input.phase !== undefined && !GROW_PHASES.includes(input.phase)) {
+    return `phase must be one of ${GROW_PHASES.join(', ')}.`;
+  }
+  if (input.type !== undefined && !GROW_TYPES.includes(input.type)) {
+    return `type must be one of ${GROW_TYPES.join(', ')}.`;
+  }
+  if (input.riskScore !== undefined && !Number.isFinite(input.riskScore)) {
+    return 'riskScore must be a number.';
+  }
+  if (
+    input.links !== undefined &&
+    (!Array.isArray(input.links) || !input.links.every(validateFundLink))
+  ) {
+    return 'links must be an array of {label, url} objects.';
+  }
+  if (
+    input.actionItems !== undefined &&
+    (!Array.isArray(input.actionItems) || !input.actionItems.every(validateFundActionItem))
+  ) {
+    return 'actionItems must be an array of {text, done?, priority?} objects.';
+  }
+  if (
+    input.notes !== undefined &&
+    (!Array.isArray(input.notes) || !input.notes.every(validateFundNote))
+  ) {
+    return 'notes must be an array of {text} objects.';
+  }
+  const categoryError = validateGrowCategory(input.category);
+  if (categoryError) return categoryError;
+  for (const field of GROW_MONEY_MINOR_FIELDS) {
+    if (input[field] !== undefined && !Number.isInteger(input[field])) {
+      return `${field} must be an integer.`;
+    }
+  }
+  return null;
+}
+
+function validateCreateGrowInput(input) {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) {
+    return 'A grow project object is required.';
+  }
+  if (!isNonEmptyString(input.title)) return 'title must be a non-empty string.';
+  if (input.isAsset !== undefined && typeof input.isAsset !== 'boolean') {
+    return 'isAsset must be a boolean.';
+  }
+  if (input.share !== undefined && typeof input.share !== 'boolean') {
+    return 'share must be a boolean (whether this project tracks a Share position).';
+  }
+  if (input.investment !== undefined && typeof input.investment !== 'boolean') {
+    return 'investment must be a boolean (whether this project tracks an Investment position).';
+  }
+  const kindCount = [input.isAsset, input.share, input.investment].filter(Boolean).length;
+  if (kindCount > 1) {
+    return 'isAsset, share, and investment are mutually exclusive — set at most one to true.';
+  }
+  return validateGrowSharedMetadataFields(input);
+}
+
+const EDITABLE_GROW_FIELDS = [
+  'title',
+  'sub',
+  'phase',
+  'description',
+  'strategy',
+  'riskScore',
+  'risks',
+  'links',
+  'actionItems',
+  'notes',
+  'type',
+  'category',
+  ...GROW_MONEY_MINOR_FIELDS,
+  'reasoning',
+  'alternative',
+  'pattern',
+  'insights',
+  'status',
+];
+
+function validatePatchGrowInput(input) {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) {
+    return 'A grow project object is required.';
+  }
+  const unknownField = Object.keys(input).find((key) => !EDITABLE_GROW_FIELDS.includes(key));
+  if (unknownField) {
+    return `${unknownField} is not an editable field (use the typed action endpoints for amount/cashflow/share/investment/liabilitie).`;
+  }
+  if (input.title !== undefined && !isNonEmptyString(input.title)) {
+    return 'title must be a non-empty string.';
+  }
+  return validateGrowSharedMetadataFields(input);
+}
+
+function validateGrowActionBody(input) {
+  return !input || typeof input !== 'object' || Array.isArray(input)
+    ? 'A request body object is required.'
+    : null;
+}
+
+const GROW_ACTION_VALIDATION_CODES = [
+  'GROW_INVALID_INPUT',
+  'GROW_NO_KIND',
+  'GROW_NO_POSITION',
+  'GROW_NO_LIABILITY',
+  'GROW_NOT_SHARE_KIND',
+];
+
+function handleGrowActionError(res, next, error, label) {
+  if (error.code === 'GROW_NOT_FOUND') {
+    return problem(
+      res,
+      404,
+      'not_found',
+      'Grow project not found',
+      'No matching grow project exists.',
+    );
+  }
+  if (GROW_ACTION_VALIDATION_CODES.includes(error.code)) {
+    return problem(res, 400, 'validation_invalid', `Invalid ${label} request`, error.message);
+  }
+  return next(error);
 }
 
 const MAX_IMPORT_LINES = 10000;
@@ -2114,6 +2276,290 @@ router.delete('/auth/tokens/:tokenId', requireSession, async (req, res, next) =>
     return next(error);
   }
 });
+
+router.get('/grow', requireScope('grow:r'), async (req, res, next) => {
+  try {
+    const grow = await listGrow({ usersDb: getUsersDb(), authDb: getAuthDb() }, req.userId);
+    return res.json({ grow });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.post('/grow', requireScope('grow:w'), async (req, res, next) => {
+  const validationError = validateCreateGrowInput(req.body);
+  if (validationError) {
+    return problem(res, 400, 'validation_invalid', 'Invalid grow project request', validationError);
+  }
+  try {
+    const project = await createGrow(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+      req.body,
+    );
+    await recordAuditEntry(getAuditDb(), {
+      userId: req.userId,
+      actor: auditActor(req.auth),
+      method: req.method,
+      path: req.baseUrl + req.path,
+      resource: 'grow',
+      resourceId: project.id,
+    });
+    return res.status(201).json(project);
+  } catch (error) {
+    if (error.code === 'GROW_DUPLICATE_TITLE') {
+      return problem(res, 400, 'validation_invalid', 'Invalid grow project request', error.message);
+    }
+    return next(error);
+  }
+});
+
+router.get('/grow/:growId', requireScope('grow:r'), async (req, res, next) => {
+  try {
+    const project = await getGrow(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+      req.params.growId,
+    );
+    if (!project) {
+      return problem(
+        res,
+        404,
+        'not_found',
+        'Grow project not found',
+        'No matching grow project exists.',
+      );
+    }
+    return res.json(project);
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.patch('/grow/:growId', requireScope('grow:w'), async (req, res, next) => {
+  const validationError = validatePatchGrowInput(req.body);
+  if (validationError) {
+    return problem(res, 400, 'validation_invalid', 'Invalid grow project request', validationError);
+  }
+  try {
+    const project = await updateGrow(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+      req.params.growId,
+      req.body,
+    );
+    if (!project) {
+      return problem(
+        res,
+        404,
+        'not_found',
+        'Grow project not found',
+        'No matching grow project exists.',
+      );
+    }
+    await recordAuditEntry(getAuditDb(), {
+      userId: req.userId,
+      actor: auditActor(req.auth),
+      method: req.method,
+      path: req.baseUrl + req.path,
+      resource: 'grow',
+      resourceId: project.id,
+    });
+    return res.json(project);
+  } catch (error) {
+    if (error.code === 'GROW_DUPLICATE_TITLE' || error.code === 'GROW_MONEY_FIELD_NOT_PATCHABLE') {
+      return problem(res, 400, 'validation_invalid', 'Invalid grow project request', error.message);
+    }
+    return next(error);
+  }
+});
+
+router.delete('/grow/:growId', requireScope('grow:w'), async (req, res, next) => {
+  try {
+    const deleted = await deleteGrow(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+      req.params.growId,
+    );
+    if (!deleted) {
+      return problem(
+        res,
+        404,
+        'not_found',
+        'Grow project not found',
+        'No matching grow project exists.',
+      );
+    }
+    await recordAuditEntry(getAuditDb(), {
+      userId: req.userId,
+      actor: auditActor(req.auth),
+      method: req.method,
+      path: req.baseUrl + req.path,
+      resource: 'grow',
+      resourceId: req.params.growId,
+    });
+    return res.json({ id: req.params.growId });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.post('/grow/:growId/buy', requireScope('grow:w'), async (req, res, next) => {
+  const validationError = validateGrowActionBody(req.body);
+  if (validationError) {
+    return problem(res, 400, 'validation_invalid', 'Invalid buy request', validationError);
+  }
+  try {
+    const result = await buyGrow(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+      req.params.growId,
+      req.body,
+    );
+    await recordAuditEntry(getAuditDb(), {
+      userId: req.userId,
+      actor: auditActor(req.auth),
+      method: req.method,
+      path: req.baseUrl + req.path,
+      resource: 'grow_buy',
+      resourceId: req.params.growId,
+    });
+    return res.status(201).json(result);
+  } catch (error) {
+    return handleGrowActionError(res, next, error, 'buy');
+  }
+});
+
+router.post('/grow/:growId/sell', requireScope('grow:w'), async (req, res, next) => {
+  const validationError = validateGrowActionBody(req.body);
+  if (validationError) {
+    return problem(res, 400, 'validation_invalid', 'Invalid sell request', validationError);
+  }
+  try {
+    const result = await sellGrow(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+      req.params.growId,
+      req.body,
+    );
+    await recordAuditEntry(getAuditDb(), {
+      userId: req.userId,
+      actor: auditActor(req.auth),
+      method: req.method,
+      path: req.baseUrl + req.path,
+      resource: 'grow_sell',
+      resourceId: req.params.growId,
+    });
+    return res.status(201).json(result);
+  } catch (error) {
+    return handleGrowActionError(res, next, error, 'sell');
+  }
+});
+
+router.post('/grow/:growId/dividend', requireScope('grow:w'), async (req, res, next) => {
+  const validationError = validateGrowActionBody(req.body);
+  if (validationError) {
+    return problem(res, 400, 'validation_invalid', 'Invalid dividend request', validationError);
+  }
+  try {
+    const result = await dividendGrow(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+      req.params.growId,
+      req.body,
+    );
+    await recordAuditEntry(getAuditDb(), {
+      userId: req.userId,
+      actor: auditActor(req.auth),
+      method: req.method,
+      path: req.baseUrl + req.path,
+      resource: 'grow_dividend',
+      resourceId: req.params.growId,
+    });
+    return res.status(201).json(result);
+  } catch (error) {
+    return handleGrowActionError(res, next, error, 'dividend');
+  }
+});
+
+router.post('/grow/:growId/payback', requireScope('grow:w'), async (req, res, next) => {
+  const validationError = validateGrowActionBody(req.body);
+  if (validationError) {
+    return problem(res, 400, 'validation_invalid', 'Invalid payback request', validationError);
+  }
+  try {
+    const result = await paybackGrow(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+      req.params.growId,
+      req.body,
+    );
+    await recordAuditEntry(getAuditDb(), {
+      userId: req.userId,
+      actor: auditActor(req.auth),
+      method: req.method,
+      path: req.baseUrl + req.path,
+      resource: 'grow_payback',
+      resourceId: req.params.growId,
+    });
+    return res.status(201).json(result);
+  } catch (error) {
+    return handleGrowActionError(res, next, error, 'payback');
+  }
+});
+
+router.post('/grow/:growId/cashflow', requireScope('grow:w'), async (req, res, next) => {
+  const validationError = validateGrowActionBody(req.body);
+  if (validationError) {
+    return problem(res, 400, 'validation_invalid', 'Invalid cashflow request', validationError);
+  }
+  try {
+    const result = await cashflowGrow(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+      req.params.growId,
+      req.body,
+    );
+    await recordAuditEntry(getAuditDb(), {
+      userId: req.userId,
+      actor: auditActor(req.auth),
+      method: req.method,
+      path: req.baseUrl + req.path,
+      resource: 'grow_cashflow',
+      resourceId: req.params.growId,
+    });
+    return res.status(201).json(result);
+  } catch (error) {
+    return handleGrowActionError(res, next, error, 'cashflow');
+  }
+});
+
+router.post('/grow/:growId/deposit', requireScope('grow:w'), async (req, res, next) => {
+  const validationError = validateGrowActionBody(req.body);
+  if (validationError) {
+    return problem(res, 400, 'validation_invalid', 'Invalid deposit request', validationError);
+  }
+  try {
+    const result = await depositGrow(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+      req.params.growId,
+      req.body,
+    );
+    await recordAuditEntry(getAuditDb(), {
+      userId: req.userId,
+      actor: auditActor(req.auth),
+      method: req.method,
+      path: req.baseUrl + req.path,
+      resource: 'grow_deposit',
+      resourceId: req.params.growId,
+    });
+    return res.status(201).json(result);
+  } catch (error) {
+    return handleGrowActionError(res, next, error, 'deposit');
+  }
+});
+
 
 module.exports = router;
 // Attached for direct unit testing (parseImportLines has enough

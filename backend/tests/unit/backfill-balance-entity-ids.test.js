@@ -79,7 +79,8 @@ describe('backfillBalanceEntityIds', () => {
     ['shares', ['balance', 'asset', 'shares']],
     ['investments', ['balance', 'asset', 'investments']],
     ['liabilities', ['balance', 'liabilities']],
-  ])('backfills %s at its own nested storage path', async (collection, pathSegments) => {
+    ['grow', ['grow']],
+  ])('backfills %s at its own storage path', async (collection, pathSegments) => {
     const leaf = { tag: 'Entry' };
     const data = {};
     let cursor = data;
@@ -146,7 +147,7 @@ describe('backfillBalanceEntityIds', () => {
     await expect(
       backfillBalanceEntityIds(
         { usersDb, authDb: makeAuthDb() },
-        { userId: 'user_1', collection: 'grow' },
+        { userId: 'user_1', collection: 'unknown' },
       ),
     ).rejects.toThrow('--collection must be one of');
   });
