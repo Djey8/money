@@ -1,0 +1,27 @@
+title = "Money Manager gitleaks config"
+
+# Extends gitleaks' default ruleset; only adds an allowlist for confirmed
+# false positives, matched by exact value so a genuine future secret in
+# these same files is still caught.
+[extend]
+useDefault = true
+
+[allowlist]
+description = """
+Known non-secrets flagged by the default ruleset:
+- docs/api/openapi.yaml: placeholder PAT values in request/response examples
+  (sequential hex, never a real generated token)
+- packages/domain/src/crypto/cryptic.spec.ts: fixed test fixture used to
+  verify the legacy (pre-v2) passphrase decryption path
+- src/environments/environment*.ts: the Firebase Web API key. Firebase
+  client API keys are designed to be public — access control is enforced
+  by Firebase Security Rules, not by hiding this value (see Firebase's own
+  docs). This is the live production Firebase config per docs/adr and the
+  mm-release skill, intentionally checked in.
+"""
+regexes = [
+  '''pat_0123456789abcdef0123456789abcdef''',
+  '''mmpat_0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef''',
+  '''legacy-passphrase-1234''',
+  '''AIzaSyABlsfWQyAp9v4IpQYS51LKdoG_3r_vC3I''',
+]
