@@ -216,7 +216,7 @@ jobs:
         run: docker build -t money-frontend:scan .
 
       - name: Build backend image
-        run: docker build -t money-backend:scan ./backend
+        run: docker build -t money-backend:scan -f backend/Dockerfile .
 
       - name: Scan frontend image
         uses: aquasecurity/trivy-action@master

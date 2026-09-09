@@ -1,4 +1,13 @@
-node_modules
+# Explicitly recursive (not just "node_modules"): a bare, unanchored pattern
+# does NOT reliably exclude nested directories like backend/node_modules or
+# packages/*/node_modules in every builder (confirmed empirically — Podman's
+# builder here only matched it at the context root). This matters now that
+# backend/ is included in this context too (see the note below) — without
+# this, COPY backend/ . in backend/Dockerfile would pull in the *host's own*
+# backend/node_modules, silently overwriting the correct node_modules that
+# Dockerfile's own npm ci step had just built inside the image, with a stale,
+# host-absolute-path @money/domain symlink pointing nowhere in the container.
+**/node_modules
 dist
 .angular
 .vscode
@@ -15,7 +24,11 @@ e2e
 .editorconfig
 karma.conf.js
 .browserslistrc
-backend
+# NOT ignored: backend/ — backend/Dockerfile now also builds from this same
+# root context (see its header comment) and needs backend/ visible to its own
+# COPY steps. Harmless for the frontend image: its COPY . . only feeds an
+# intermediate build stage discarded before the final nginx stage, so this
+# adds build-time I/O only, never final image size or content.
 k8s
 docs
 *.sh

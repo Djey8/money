@@ -23,7 +23,9 @@ services:
       start_period: 10s
 
   backend-e2e:
-    build: ./backend
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
     container_name: money-backend-e2e
     ports:
       - '3000:3000'

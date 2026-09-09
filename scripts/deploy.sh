@@ -337,8 +337,12 @@ if [ "${SKIP_BUILD}" = false ]; then
             fi
             
             if [ "${SKIP_BACKEND}" = false ] && ([ "${BUILD_BACKEND}" = true ] || [ "${BACKEND_EXISTS}" -eq 0 ]); then
+                # backend/Dockerfile builds packages/domain (a workspace member
+                # backend/package.json depends on via "file:../packages/domain") from
+                # source in its own stage, so this build needs the repo root as its
+                # context, not backend/ — see backend/Dockerfile's header comment.
                 log_info "Building backend (tag: ${IMAGE_TAG})..."
-                podman build ${CACHE_FLAG} -t localhost/money-backend:${IMAGE_TAG} -t localhost/money-backend:latest "${PROJECT_DIR}/backend" || {
+                podman build ${CACHE_FLAG} -t localhost/money-backend:${IMAGE_TAG} -t localhost/money-backend:latest -f "${PROJECT_DIR}/backend/Dockerfile" "${PROJECT_DIR}" || {
                     log_error "Backend build failed"
                     exit 1
                 }

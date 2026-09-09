@@ -101,11 +101,11 @@ source ~/.bashrc
 
 ### 2. Build container images
 
-On the server (or build elsewhere and transfer):
+On the server (or build elsewhere and transfer). Both images build from the repo root as their context (the backend image builds `packages/domain`, a workspace member it depends on, from source in its own stage — see `backend/Dockerfile`'s header comment):
 
 ```bash
 docker build -t money-frontend:latest .
-docker build -t money-backend:latest ./backend
+docker build -t money-backend:latest -f backend/Dockerfile .
 ```
 
 If building on a separate machine, save and load:

@@ -22,7 +22,9 @@ services:
     restart: unless-stopped
 
   backend:
-    build: ./backend
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
     container_name: money-backend
     ports:
       - '3000:3000'
