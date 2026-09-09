@@ -37,31 +37,6 @@ FROM node:22-alpine@sha256:8ea2348b068a9544dae7317b4f3aafcdc032df1647bb7d768a05a
 # Patch known CVEs in Alpine system packages
 RUN apk upgrade --no-cache libcrypto3 libssl3 musl musl-utils zlib
 
-# Patch picomatch ReDoS (CVE-2026-33671) in global npm
-RUN cd /usr/local/lib/node_modules/npm/node_modules/picomatch && \
-    npm pack picomatch@4.0.4 2>/dev/null && \
-    tar xzf picomatch-4.0.4.tgz --strip-components=1 && \
-    rm -f picomatch-4.0.4.tgz
-
-# Patch brace-expansion ReDoS (CVE-2026-13149, CVE-2026-14257, and the
-# CVE-2026-69152 bypass of the CVE-2026-14257 mitigation) in global npm
-RUN cd /usr/local/lib/node_modules/npm/node_modules/brace-expansion && \
-    npm pack brace-expansion@2.1.4 2>/dev/null && \
-    tar xzf brace-expansion-2.1.4.tgz --strip-components=1 && \
-    rm -f brace-expansion-2.1.4.tgz
-
-# Patch node-tar DoS via gzip bomb / malformed headers (CVE-2026-59873, CVE-2026-59874) in global npm
-RUN cd /usr/local/lib/node_modules/npm/node_modules/tar && \
-    npm pack tar@7.5.19 2>/dev/null && \
-    tar xzf tar-7.5.19.tgz --strip-components=1 && \
-    rm -f tar-7.5.19.tgz
-
-# Patch sigstore ignored certificateOIDs verification (CVE-2026-48815) in global npm
-RUN cd /usr/local/lib/node_modules/npm/node_modules/sigstore && \
-    npm pack sigstore@4.1.1 2>/dev/null && \
-    tar xzf sigstore-4.1.1.tgz --strip-components=1 && \
-    rm -f sigstore-4.1.1.tgz
-
 WORKDIR /app
 
 # Copy package files
@@ -73,6 +48,17 @@ RUN npm config set fetch-timeout 600000 && \
     npm config set fetch-retry-mintimeout 20000 && \
     npm config set fetch-retry-maxtimeout 120000 && \
     if [ -f package-lock.json ]; then npm ci --only=production; else npm install --only=production; fi
+
+# The running container only ever executes `node server.js` — npm (and its
+# own bundled dependency tree, which ships CVEs of its own, independent of
+# anything this app depends on) is never invoked at runtime. Removing it
+# here, once the production install above is done with it, fixes those
+# findings at the source instead of patching individual nested npm
+# dependencies one CVE at a time as new ones surface (mm-admin is run
+# against the deployed CouchDB endpoint from a developer machine with the
+# repo checked out, not from inside this container — no npm needed here).
+RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack \
+    /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack
 
 # Copy application files
 COPY backend/ .
