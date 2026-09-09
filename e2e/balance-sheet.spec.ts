@@ -64,7 +64,7 @@ test.describe('Balance Sheet', () => {
     // Balance box should show a value
     const balanceBox = page.locator('.balanceBox').first();
     await expect(balanceBox).toBeVisible();
-    const text = await balanceBox.textContent() ?? '';
+    const text = (await balanceBox.textContent()) ?? '';
     // Should contain some numeric content
     expect(text.trim()).not.toBe('');
   });
@@ -91,7 +91,7 @@ test.describe('Balance Sheet', () => {
     await page.waitForTimeout(2000);
 
     // The asset should appear on the page
-    const bodyText = await page.locator('body').textContent() ?? '';
+    const bodyText = (await page.locator('body').textContent()) ?? '';
     expect(bodyText).toContain('Emergency Cash');
   });
 

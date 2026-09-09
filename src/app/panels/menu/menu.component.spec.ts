@@ -1,7 +1,6 @@
 import { MenuComponent } from './menu.component';
 
 describe('MenuComponent', () => {
-
   beforeEach(() => {
     MenuComponent.isMenu = false;
     MenuComponent.openStats = false;

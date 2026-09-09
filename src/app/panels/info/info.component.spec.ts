@@ -2,7 +2,6 @@ import { InfoComponent } from './info.component';
 import { AppStateService } from '../../shared/services/app-state.service';
 
 describe('InfoComponent', () => {
-
   beforeEach(() => {
     (AppStateService as any)._instance = undefined;
     InfoComponent.index = 1;

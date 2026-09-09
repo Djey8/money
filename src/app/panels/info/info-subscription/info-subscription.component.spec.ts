@@ -2,7 +2,6 @@ import { InfoSubscriptionComponent } from './info-subscription.component';
 import { AppStateService } from '../../../shared/services/app-state.service';
 
 describe('InfoSubscriptionComponent', () => {
-
   beforeEach(() => {
     (AppStateService as any)._instance = undefined;
     InfoSubscriptionComponent.index = 1;
@@ -19,7 +18,17 @@ describe('InfoSubscriptionComponent', () => {
   });
 
   it('setInfoSubscriptionComponent should set all static fields', () => {
-    InfoSubscriptionComponent.setInfoSubscriptionComponent(5, 'Netflix', 'Splurge', -12.99, '2024-01-01', '2025-01-01', 'media', 'streaming', 'monthly');
+    InfoSubscriptionComponent.setInfoSubscriptionComponent(
+      5,
+      'Netflix',
+      'Splurge',
+      -12.99,
+      '2024-01-01',
+      '2025-01-01',
+      'media',
+      'streaming',
+      'monthly',
+    );
 
     expect(InfoSubscriptionComponent.index).toBe(5);
     expect(InfoSubscriptionComponent.title).toBe('Netflix');
@@ -35,7 +44,17 @@ describe('InfoSubscriptionComponent', () => {
   });
 
   it('setInfoSubscriptionComponent should derive img from lowercase account', () => {
-    InfoSubscriptionComponent.setInfoSubscriptionComponent(0, 'Test', 'Fire', -1, '2024-01-01', '', 'cat', '', 'weekly');
+    InfoSubscriptionComponent.setInfoSubscriptionComponent(
+      0,
+      'Test',
+      'Fire',
+      -1,
+      '2024-01-01',
+      '',
+      'cat',
+      '',
+      'weekly',
+    );
     expect(InfoSubscriptionComponent.img).toBe('fire');
   });
 });

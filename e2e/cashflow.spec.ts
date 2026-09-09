@@ -45,7 +45,7 @@ test.describe('Cashflow & Income Statement', () => {
     await page.waitForTimeout(2000);
 
     // Cashflow section should display income and expense totals
-    const bodyText = await page.locator('body').textContent() ?? '';
+    const bodyText = (await page.locator('body').textContent()) ?? '';
     // Should contain some monetary values (the salary we added)
     expect(bodyText).toEqual(expect.stringMatching(/4[.,]000|4000/));
   });
@@ -61,7 +61,7 @@ test.describe('Cashflow & Income Statement', () => {
     await page.waitForTimeout(2000);
 
     // Revenue section should be present
-    const bodyText = await page.locator('body').textContent() ?? '';
+    const bodyText = (await page.locator('body').textContent()) ?? '';
     // We added a Salary income, so it should appear under revenue
     expect(bodyText).toContain('Salary');
   });
@@ -70,7 +70,7 @@ test.describe('Cashflow & Income Statement', () => {
     await navigateTo(page, 'income');
     await page.waitForTimeout(2000);
 
-    const bodyText = await page.locator('body').textContent() ?? '';
+    const bodyText = (await page.locator('body').textContent()) ?? '';
     // The expense categories we added should appear
     expect(bodyText).toContain('Rent');
     expect(bodyText).toContain('Groceries');
@@ -81,7 +81,8 @@ test.describe('Cashflow & Income Statement', () => {
     await page.waitForTimeout(2000);
 
     // The total/balance area should show a value
-    const totalText = await page.locator('#total, #income, #expenses').first().textContent() ?? '';
+    const totalText =
+      (await page.locator('#total, #income, #expenses').first().textContent()) ?? '';
     expect(totalText.trim()).not.toBe('');
   });
 });

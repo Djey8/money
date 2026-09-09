@@ -25,7 +25,9 @@ test.describe('Language Switching', () => {
    */
   async function openLanguageSettings(page: import('@playwright/test').Page) {
     // Ensure profile panel is closed before trying to open it
-    await expect(page.locator('#profile-Container')).toBeHidden({ timeout: 3_000 }).catch(() => {});
+    await expect(page.locator('#profile-Container'))
+      .toBeHidden({ timeout: 3_000 })
+      .catch(() => {});
     // Use .last() because multiple toolbars may be stacked (home + navigated page)
     await page.locator('#profile-pic').last().click({ force: true });
     // Wait for profile panel to appear (uses *ngIf, so it must be in the DOM)
@@ -34,7 +36,10 @@ test.describe('Language Switching', () => {
     await page.waitForSelector('#infoTransaction-Container', { state: 'visible', timeout: 5_000 });
 
     // Click language menu item (match English, German "Sprache", or other language labels)
-    await page.locator('.settings-menu-item').filter({ hasText: /language|sprache|idioma|langue|语言/i }).click();
+    await page
+      .locator('.settings-menu-item')
+      .filter({ hasText: /language|sprache|idioma|langue|语言/i })
+      .click();
     await page.waitForTimeout(500);
   }
 
@@ -56,7 +61,7 @@ test.describe('Language Switching', () => {
     // Navigate to transactions — heading should be in German
     await navigateTo(page, 'transactions');
     await page.waitForTimeout(1000);
-    const headingText = await page.locator('#heading').last().textContent() ?? '';
+    const headingText = (await page.locator('#heading').last().textContent()) ?? '';
     // German: "Transaktionen" instead of "Transactions"
     expect(headingText.toLowerCase()).toContain('transaktionen');
   });
@@ -74,7 +79,7 @@ test.describe('Language Switching', () => {
 
     await navigateTo(page, 'transactions');
     await page.waitForTimeout(1000);
-    const headingText = await page.locator('#heading').last().textContent() ?? '';
+    const headingText = (await page.locator('#heading').last().textContent()) ?? '';
     // Spanish: "Transacciones"
     expect(headingText.toLowerCase()).toContain('transacciones');
   });
@@ -92,7 +97,7 @@ test.describe('Language Switching', () => {
 
     await navigateTo(page, 'transactions');
     await page.waitForTimeout(1000);
-    const headingText = await page.locator('#heading').last().textContent() ?? '';
+    const headingText = (await page.locator('#heading').last().textContent()) ?? '';
     // French: "Transactions" (same word in French)
     expect(headingText.toLowerCase()).toContain('transactions');
   });
@@ -110,7 +115,7 @@ test.describe('Language Switching', () => {
 
     await navigateTo(page, 'transactions');
     await page.waitForTimeout(1000);
-    const headingText = await page.locator('#heading').last().textContent() ?? '';
+    const headingText = (await page.locator('#heading').last().textContent()) ?? '';
     // Chinese: should contain Chinese characters
     expect(headingText).toEqual(expect.stringMatching(/[\u4e00-\u9fff]/));
   });
@@ -141,7 +146,7 @@ test.describe('Language Switching', () => {
 
     await navigateTo(page, 'transactions');
     await page.waitForTimeout(1000);
-    const headingText = await page.locator('#heading').last().textContent() ?? '';
+    const headingText = (await page.locator('#heading').last().textContent()) ?? '';
     expect(headingText.toLowerCase()).toContain('transactions');
   });
 });

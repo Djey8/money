@@ -8,20 +8,20 @@ module.exports = {
     '!src/app/**/*.module.ts',
     '!src/app/**/*.spec.ts',
     '!src/app/interfaces/**',
-    '!src/main.ts'
+    '!src/main.ts',
   ],
   coverageThreshold: {
     global: {
       branches: 5,
       functions: 20,
       lines: 15,
-      statements: 15
-    }
+      statements: 15,
+    },
   },
   moduleNameMapper: {
-    '^src/(.*)$': '<rootDir>/src/$1'
+    '^src/(.*)$': '<rootDir>/src/$1',
   },
   transformIgnorePatterns: [
-    'node_modules/(?!(@angular|@ngx-translate|rxjs|d3|d3-.*|internmap|delaunator|robust-predicates|@angular/fire|firebase|@firebase)/)'
-  ]
+    'node_modules/(?!(@angular|@ngx-translate|rxjs|d3|d3-.*|internmap|delaunator|robust-predicates|@angular/fire|firebase|@firebase)/)',
+  ],
 };

@@ -65,24 +65,24 @@ export class AppStateService {
   mojo: Mojo = { amount: 0, target: 0 };
 
   // Phase C: Settings
-  currency: string = '€';
-  isLoading: boolean = true;
-  isSaving: boolean = false;
+  currency = '€';
+  isLoading = true;
+  isSaving = false;
   lastUpdatedAt: string | null = null;
   tier2Loaded = false;
   tier3GrowLoaded = false;
   tier3BalanceLoaded = false;
-  daily: number = 60.0;
-  splurge: number = 10.0;
-  smile: number = 10.0;
-  fire: number = 20.0;
-  key: string = 'default';
-  dateFormat: string = 'dd.MM.yyyy';
-  isEuropeanFormat: boolean = true;
-  isLocal: boolean = true;
-  isDatabase: boolean = false;
-  username: string = 'Username';
-  email: string = 'test@web.de';
+  daily = 60.0;
+  splurge = 10.0;
+  smile = 10.0;
+  fire = 20.0;
+  key = 'default';
+  dateFormat = 'dd.MM.yyyy';
+  isEuropeanFormat = true;
+  isLocal = true;
+  isDatabase = false;
+  username = 'Username';
+  email = 'test@web.de';
 
   constructor() {
     AppStateService.instance = this;
@@ -95,7 +95,7 @@ export class AppStateService {
         if (this.allTransactions[i].account == account) {
           result += this.allTransactions[i].amount;
         } else if (this.allTransactions[i].account == 'Income') {
-          result += Math.round(((this.allTransactions[i].amount * p) + Number.EPSILON) * 100) / 100;
+          result += Math.round((this.allTransactions[i].amount * p + Number.EPSILON) * 100) / 100;
         }
       }
       return result;

@@ -1,229 +1,236 @@
-  #balancebtn {
-    border-radius: var(--radius-full);
-    margin-right: 20px;
-  }
+#balancebtn {
+  border-radius: var(--radius-full);
+  margin-right: 20px;
+}
 
-  #cashflowbtn {
-    border-radius: var(--radius-full);
-    margin-left: 0px;
-  }
+#cashflowbtn {
+  border-radius: var(--radius-full);
+  margin-left: 0px;
+}
 
-  .filter-circle-btn {
-    border-radius: var(--radius-full);
-  }
+.filter-circle-btn {
+  border-radius: var(--radius-full);
+}
 
+#revenueBox,
+#expensesBox {
+  width: 70%;
+  margin-left: auto;
+  margin-right: auto;
+  border: 3px solid white;
+  background-color: var(--color-primary);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  border-color: white;
+  border-width: 2%;
+  min-width: 275px;
+  margin-bottom: 20px;
+  max-width: 1000px;
+}
 
-  #revenueBox,
-  #expensesBox {
-    width: 70%;
-    margin-left: auto;
-    margin-right: auto;
-    border: 3px solid white;
-    background-color: var(--color-primary);
-    border-radius: var(--radius-lg);
-    padding: 20px;
-    border-color: white;
-    border-width: 2%;
-    min-width: 275px;
-    margin-bottom: 20px;
-    max-width: 1000px;
-  }
+.cashflowLable {
+  text-align: center;
+  font-size: 2em;
+  color: white;
+  margin-top: 0px;
+  margin-bottom: 0px;
+}
 
-  .cashflowLable {
-    text-align: center;
-    font-size: 2em;
-    color: white;
-    margin-top: 0px;
-    margin-bottom: 0px;
-  }
+#revenueTitle,
+#expensesTitle,
+#creditAmountLable,
+.balanceLable {
+  text-align: center;
+  font-size: 2em;
+  color: white;
+  margin-top: 0px;
+  margin-bottom: 1%;
+}
 
-  #revenueTitle,
-  #expensesTitle,
-  #creditAmountLable,
-  .balanceLable {
-    text-align: center;
-    font-size: 2em;
-    color: white;
-    margin-top: 0px;
-    margin-bottom: 1%;
-  }
+.searchDate {
+  text-align: center;
+  font-size: 19px;
+  color: white;
+  margin-top: 0px;
+  margin-bottom: 1%;
+}
 
-  .searchDate {
-    text-align: center;
-    font-size: 19px;
-    color: white;
-    margin-top: 0px;
-    margin-bottom: 1%;
-  }
+.income-table {
+  border-collapse: collapse;
+  width: 100%;
+}
 
-  .income-table {
-    border-collapse: collapse;
-    width: 100%;
-  }
+.income-row {
+  border-bottom: 1px solid var(--color-border-light);
+}
 
-  .income-row {
-    border-bottom: 1px solid var(--color-border-light);
-  }
+.income-table td {
+  padding: 8px;
+  text-align: left;
+  background-color: transparent;
+}
 
-  .income-table td {
-    padding: 8px;
-    text-align: left;
-    background-color: transparent;
-  }
+.income-table td:last-child {
+  text-align: right;
+}
 
-  .income-table td:last-child {
-    text-align: right;
-  }
+.income-table th {
+  padding: 8px;
+  text-align: left;
+  border-bottom: 1px solid var(--color-border-light);
+  background-color: transparent;
+}
 
-  .income-table th {
-    padding: 8px;
-    text-align: left;
-    border-bottom: 1px solid var(--color-border-light);
-    background-color: transparent;
-  }
+.income-table th:last-child {
+  text-align: right;
+}
 
-  .income-table th:last-child {
-    text-align: right;
-  }
+.filterAbtn {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full);
+  margin-left: 50%;
+  transform: translate(-20px, 0);
+}
 
+#revenue-box,
+#expenses-box {
+  background-color: var(--color-surface);
+  margin-left: 5%;
+  margin-right: 5%;
+  border-radius: var(--radius-md);
+  margin-bottom: 10px;
+  padding: 5px;
+}
 
+/* filter styles now handled by shared/filter-styles.css */
 
-  .filterAbtn {
-    width: 40px;
-    height: 40px;
-    border-radius: var(--radius-full);
-    margin-left: 50%;
-    transform: translate(-20px, 0);
-  }
+#revenuesTable,
+#dailyExpensesTable,
+#splurgeExpensesTable,
+#smileExpensesTable,
+#fireExpensesTable,
+#liabilitiesTable,
+#mojosTable {
+  width: 95%;
+  margin-left: 2.5%;
+}
 
-  #revenue-box,
-  #expenses-box {
-    background-color: var(--color-surface);
-    margin-left: 5%;
-    margin-right: 5%;
-    border-radius: var(--radius-md);
-    margin-bottom: 10px;
-    padding: 5px;
-  }
+#revenuesTable td,
+#dailyExpensesTable td,
+#splurgeExpensesTable td,
+#smileExpensesTable td,
+#fireExpensesTable td,
+#liabilitiesTable td,
+#mojosTable td {
+  text-align: left;
+}
 
-  /* filter styles now handled by shared/filter-styles.css */
+#revenuesTable td:last-child,
+#dailyExpensesTable td:last-child,
+#splurgeExpensesTable td:last-child,
+#smileExpensesTable td:last-child,
+#fireExpensesTable td:last-child,
+#liabilitiesTable td:last-child,
+#mojosTable td:last-child {
+  text-align: right;
+}
 
-  #revenuesTable,
-  #dailyExpensesTable,
-  #splurgeExpensesTable,
-  #smileExpensesTable,
-  #fireExpensesTable,
-  #liabilitiesTable,
-  #mojosTable {
-    width: 95%;
-    margin-left: 2.5%;
-  }
+#intrestsTable,
+#propertiesTable {
+  width: 95%;
+  margin-left: 2.5%;
+}
 
-  #revenuesTable td,
-  #dailyExpensesTable td,
-  #splurgeExpensesTable td,
-  #smileExpensesTable td,
-  #fireExpensesTable td,
-  #liabilitiesTable td,
-  #mojosTable td {
-    text-align: left;
-  }
+#intrestsTable td,
+#propertiesTable td {
+  text-align: left;
+}
 
-  #revenuesTable td:last-child,
-  #dailyExpensesTable td:last-child,
-  #splurgeExpensesTable td:last-child,
-  #smileExpensesTable td:last-child,
-  #fireExpensesTable td:last-child,
-  #liabilitiesTable td:last-child,
-  #mojosTable td:last-child {
-    text-align: right;
-  }
+#intrestsTable td:last-child,
+#propertiesTable td:last-child {
+  text-align: right;
+}
 
-  #intrestsTable,
-  #propertiesTable {
-    width: 95%;
-    margin-left: 2.5%;
-  }
+.balanceBox {
+  width: 70%;
+  margin-left: auto;
+  margin-right: auto;
+  border: 3px solid white;
+  background-color: var(--color-primary);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  border-color: white;
+  border-width: 2%;
+  min-width: auto;
+  margin-bottom: 20px;
+  max-width: 1000px;
+}
 
-  #intrestsTable td,
-  #propertiesTable td {
-    text-align: left;
-  }
+#input-container {
+  background-color: var(--color-surface);
+  margin-left: 5%;
+  width: 90%;
+  border-radius: var(--radius-md);
+  margin-bottom: 10px;
+}
 
-  #intrestsTable td:last-child,
-  #propertiesTable td:last-child {
-    text-align: right;
-  }
+#input-container form {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  margin: 0 auto;
+  padding: 5px;
+}
 
-  .balanceBox {
-    width: 70%;
-    margin-left: auto;
-    margin-right: auto;
-    border: 3px solid white;
-    background-color: var(--color-primary);
-    border-radius: var(--radius-lg);
-    padding: 20px;
-    border-color: white;
-    border-width: 2%;
-    min-width: auto;
-    margin-bottom: 20px;
-    max-width: 1000px;
-  }
+#input-container label {
+  margin-bottom: 1%;
+  margin-left: 10px;
+  margin-top: 20px;
+}
 
-  #input-container {
-    background-color: var(--color-surface);
-    margin-left: 5%;
-    width: 90%;
-    border-radius: var(--radius-md);
-    margin-bottom: 10px;
-  }
+/* date input styles now handled by shared/filter-styles.css */
 
-  #input-container form {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    margin: 0 auto;
-    padding: 5px;
-  }
+.total-header {
+  text-align: center;
+  font-size: 2em;
+  color: white;
+  margin-top: 0px;
+  margin-bottom: 1%;
+}
 
-  #input-container label {
-    margin-bottom: 1%;
-    margin-left: 10px;
-    margin-top: 20px;
-  }
+.toglebtn {
+  float: right;
+  margin-top: 30px;
+  margin-right: 10px;
+}
 
-  /* date input styles now handled by shared/filter-styles.css */
+.toggle-icon {
+  font-size: 20px;
+  cursor: pointer;
+  color: inherit;
+}
 
+.amount {
+  font-weight: normal;
+}
 
+.revenueTitle,
+.expenseTitle {
+  text-align: left;
+}
 
+.revenueAmount,
+.expenseAmount {
+  text-align: right;
+  font-weight: bold;
+}
 
-
-  .total-header {
-    text-align: center;
-    font-size: 2em;
-    color: white;
-    margin-top: 0px;
-    margin-bottom: 1%;
-  }
-
-  .toglebtn {
-    float: right;
-    margin-top: 30px;
-    margin-right: 10px;
-  }
-
-  .toggle-icon {
-    font-size: 20px;
-    cursor: pointer;
-    color: inherit;
-  }
-
-  .amount {
-    font-weight: normal;
-  }
-
+@media screen and (min-width: 600px) {
   .revenueTitle,
   .expenseTitle {
+    font-size: larger;
+    padding: 5px;
     text-align: left;
   }
 
@@ -231,81 +238,64 @@
   .expenseAmount {
     text-align: right;
     font-weight: bold;
+    min-width: 80px;
   }
 
-  @media screen and (min-width: 600px) {
-
-    .revenueTitle,
-    .expenseTitle {
-      font-size: larger;
-      padding: 5px;
-      text-align: left;
-    }
-
-    .revenueAmount,
-    .expenseAmount {
-      text-align: right;
-      font-weight: bold;
-      min-width: 80px;
-    }
-
-    .infoLableA {
-      margin-top: 20px;
-      text-align: left;
-      font-size: larger;
-    }
-
-    .infoLableC {
-      margin-top: 20px;
-      text-align: left;
-      font-size: larger;
-      margin-left: 2.5%;
-    }
-
-    .dailyHeadTable {
-      margin-left: 2.5%;
-      width: 95%;
-    }
+  .infoLableA {
+    margin-top: 20px;
+    text-align: left;
+    font-size: larger;
   }
 
-  @media screen and (max-width: 600px) {
-
-    .revenueTitle,
-    .expenseTitle {
-      font-size: small;
-      text-align: left;
-    }
-
-    .revenueAmount,
-    .expenseAmount {
-      text-align: right;
-      font-weight: bold;
-      min-width: 80px;
-      font-size: small;
-    }
-
-    .infoLableA {
-      margin-top: 20px;
-      text-align: left;
-      margin-left: 2.5%;
-      font-size: medium;
-    }
-
-    .income-table td,
-    .income-table th {
-      padding: 4px 2px;
-      font-size: small;
-    }
+  .infoLableC {
+    margin-top: 20px;
+    text-align: left;
+    font-size: larger;
+    margin-left: 2.5%;
   }
+
+  .dailyHeadTable {
+    margin-left: 2.5%;
+    width: 95%;
+  }
+}
+
+@media screen and (max-width: 600px) {
+  .revenueTitle,
+  .expenseTitle {
+    font-size: small;
+    text-align: left;
+  }
+
+  .revenueAmount,
+  .expenseAmount {
+    text-align: right;
+    font-weight: bold;
+    min-width: 80px;
+    font-size: small;
+  }
+
+  .infoLableA {
+    margin-top: 20px;
+    text-align: left;
+    margin-left: 2.5%;
+    font-size: medium;
+  }
+
+  .income-table td,
+  .income-table th {
+    padding: 4px 2px;
+    font-size: small;
+  }
+}
 
 .amount-positive {
   color: var(--color-text);
 }
 
 .amount-negative {
-    color: var(--color-danger);
+  color: var(--color-danger);
 }
-
 
 /* Filter styles now imported from shared/filter-styles.css */
 

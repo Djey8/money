@@ -1,0 +1,9 @@
+dist/
+coverage/
+node_modules/
+backend/node_modules/
+backend/migration-backups/
+*.min.js
+package-lock.json
+backend/package-lock.json
+e2e/visual-regression.spec.ts-snapshots/

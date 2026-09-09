@@ -5,14 +5,32 @@ import { AppStateService } from './app-state.service';
 const mockTranslate = { currentLang: 'en' } as any;
 
 // Helper to create transaction test data
-function makeTransactions(months: string[], monthlyIncome: number, monthlyExpenses: Record<string, number>): any[] {
+function makeTransactions(
+  months: string[],
+  monthlyIncome: number,
+  monthlyExpenses: Record<string, number>,
+): any[] {
   const txns: any[] = [];
-  months.forEach(month => {
+  months.forEach((month) => {
     if (monthlyIncome > 0) {
-      txns.push({ account: 'Income', amount: monthlyIncome, date: `${month}-15`, time: '12:00', category: 'Salary', comment: '' });
+      txns.push({
+        account: 'Income',
+        amount: monthlyIncome,
+        date: `${month}-15`,
+        time: '12:00',
+        category: 'Salary',
+        comment: '',
+      });
     }
     Object.entries(monthlyExpenses).forEach(([category, amount]) => {
-      txns.push({ account: 'Daily', amount: -amount, date: `${month}-10`, time: '12:00', category, comment: '' });
+      txns.push({
+        account: 'Daily',
+        amount: -amount,
+        date: `${month}-10`,
+        time: '12:00',
+        category,
+        comment: '',
+      });
     });
   });
   return txns;
@@ -162,7 +180,8 @@ describe('PromptGeneratorService', () => {
     it('should compute monthly averages from transactions', () => {
       AppStateService.instance.allTransactions = makeTransactions(
         ['2025-01', '2025-02', '2025-03', '2025-04'],
-        3000, { Groceries: 400, Rent: 800 }
+        3000,
+        { Groceries: 400, Rent: 800 },
       );
       const prompt = service.generateGrowPrompt(options);
       expect(prompt).toContain('Monthly Averages');
@@ -175,7 +194,8 @@ describe('PromptGeneratorService', () => {
     it('should anonymize monthly averages by default', () => {
       AppStateService.instance.allTransactions = makeTransactions(
         ['2025-01', '2025-02', '2025-03'],
-        3777, { Groceries: 412 }
+        3777,
+        { Groceries: 412 },
       );
       const prompt = service.generateGrowPrompt(options);
       expect(prompt).not.toContain('3777');
@@ -185,10 +205,9 @@ describe('PromptGeneratorService', () => {
 
     it('should show exact monthly averages when anonymized=false', () => {
       options.anonymized = false;
-      AppStateService.instance.allTransactions = makeTransactions(
-        ['2025-01', '2025-02'],
-        4000, { Groceries: 500 }
-      );
+      AppStateService.instance.allTransactions = makeTransactions(['2025-01', '2025-02'], 4000, {
+        Groceries: 500,
+      });
       const prompt = service.generateGrowPrompt(options);
       expect(prompt).toContain('4000');
       expect(prompt).toContain('500');
@@ -197,7 +216,8 @@ describe('PromptGeneratorService', () => {
     it('should show top expense categories', () => {
       AppStateService.instance.allTransactions = makeTransactions(
         ['2025-01', '2025-02', '2025-03'],
-        3000, { Groceries: 400, Rent: 800, Transport: 150, Dining: 200, Entertainment: 100 }
+        3000,
+        { Groceries: 400, Rent: 800, Transport: 150, Dining: 200, Entertainment: 100 },
       );
       const prompt = service.generateGrowPrompt(options);
       expect(prompt).toContain('Top Expense Categories');
@@ -207,9 +227,30 @@ describe('PromptGeneratorService', () => {
 
     it('should show spending distribution by account', () => {
       AppStateService.instance.allTransactions = [
-        { account: 'Daily', amount: -500, date: '2025-01-10', time: '12:00', category: 'Food', comment: '' },
-        { account: 'Splurge', amount: -200, date: '2025-01-10', time: '12:00', category: 'Shopping', comment: '' },
-        { account: 'Income', amount: 3000, date: '2025-01-15', time: '12:00', category: 'Salary', comment: '' },
+        {
+          account: 'Daily',
+          amount: -500,
+          date: '2025-01-10',
+          time: '12:00',
+          category: 'Food',
+          comment: '',
+        },
+        {
+          account: 'Splurge',
+          amount: -200,
+          date: '2025-01-10',
+          time: '12:00',
+          category: 'Shopping',
+          comment: '',
+        },
+        {
+          account: 'Income',
+          amount: 3000,
+          date: '2025-01-15',
+          time: '12:00',
+          category: 'Salary',
+          comment: '',
+        },
       ] as any;
       const prompt = service.generateGrowPrompt(options);
       expect(prompt).toContain('Spending Distribution');
@@ -221,12 +262,33 @@ describe('PromptGeneratorService', () => {
     it('should show trends and outliers with enough data', () => {
       // 6 months of normal spending + 1 outlier month
       const txns: any[] = [];
-      ['2025-01', '2025-02', '2025-03', '2025-04', '2025-05', '2025-06'].forEach(m => {
-        txns.push({ account: 'Income', amount: 3000, date: `${m}-15`, time: '12:00', category: 'Salary', comment: '' });
-        txns.push({ account: 'Daily', amount: -800, date: `${m}-10`, time: '12:00', category: 'Rent', comment: '' });
+      ['2025-01', '2025-02', '2025-03', '2025-04', '2025-05', '2025-06'].forEach((m) => {
+        txns.push({
+          account: 'Income',
+          amount: 3000,
+          date: `${m}-15`,
+          time: '12:00',
+          category: 'Salary',
+          comment: '',
+        });
+        txns.push({
+          account: 'Daily',
+          amount: -800,
+          date: `${m}-10`,
+          time: '12:00',
+          category: 'Rent',
+          comment: '',
+        });
       });
       // Outlier: huge spending in March
-      txns.push({ account: 'Daily', amount: -3000, date: '2025-03-20', time: '12:00', category: 'Emergency', comment: '' });
+      txns.push({
+        account: 'Daily',
+        amount: -3000,
+        date: '2025-03-20',
+        time: '12:00',
+        category: 'Emergency',
+        comment: '',
+      });
       AppStateService.instance.allTransactions = txns;
       const prompt = service.generateGrowPrompt(options);
       expect(prompt).toContain('Trends & Notable Months');
@@ -236,14 +298,70 @@ describe('PromptGeneratorService', () => {
 
     it('should detect variable income', () => {
       AppStateService.instance.allTransactions = [
-        { account: 'Income', amount: 1000, date: '2025-01-15', time: '12:00', category: 'Freelance', comment: '' },
-        { account: 'Income', amount: 5000, date: '2025-02-15', time: '12:00', category: 'Freelance', comment: '' },
-        { account: 'Income', amount: 800, date: '2025-03-15', time: '12:00', category: 'Freelance', comment: '' },
-        { account: 'Income', amount: 4200, date: '2025-04-15', time: '12:00', category: 'Freelance', comment: '' },
-        { account: 'Daily', amount: -500, date: '2025-01-10', time: '12:00', category: 'Food', comment: '' },
-        { account: 'Daily', amount: -500, date: '2025-02-10', time: '12:00', category: 'Food', comment: '' },
-        { account: 'Daily', amount: -500, date: '2025-03-10', time: '12:00', category: 'Food', comment: '' },
-        { account: 'Daily', amount: -500, date: '2025-04-10', time: '12:00', category: 'Food', comment: '' },
+        {
+          account: 'Income',
+          amount: 1000,
+          date: '2025-01-15',
+          time: '12:00',
+          category: 'Freelance',
+          comment: '',
+        },
+        {
+          account: 'Income',
+          amount: 5000,
+          date: '2025-02-15',
+          time: '12:00',
+          category: 'Freelance',
+          comment: '',
+        },
+        {
+          account: 'Income',
+          amount: 800,
+          date: '2025-03-15',
+          time: '12:00',
+          category: 'Freelance',
+          comment: '',
+        },
+        {
+          account: 'Income',
+          amount: 4200,
+          date: '2025-04-15',
+          time: '12:00',
+          category: 'Freelance',
+          comment: '',
+        },
+        {
+          account: 'Daily',
+          amount: -500,
+          date: '2025-01-10',
+          time: '12:00',
+          category: 'Food',
+          comment: '',
+        },
+        {
+          account: 'Daily',
+          amount: -500,
+          date: '2025-02-10',
+          time: '12:00',
+          category: 'Food',
+          comment: '',
+        },
+        {
+          account: 'Daily',
+          amount: -500,
+          date: '2025-03-10',
+          time: '12:00',
+          category: 'Food',
+          comment: '',
+        },
+        {
+          account: 'Daily',
+          amount: -500,
+          date: '2025-04-10',
+          time: '12:00',
+          category: 'Food',
+          comment: '',
+        },
       ] as any;
       const prompt = service.generateGrowPrompt(options);
       expect(prompt).toContain('variable');
@@ -253,9 +371,30 @@ describe('PromptGeneratorService', () => {
       const now = new Date();
       const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
       AppStateService.instance.allTransactions = [
-        { account: 'Income', amount: 9999, date: `${currentMonth}-05`, time: '12:00', category: 'Salary', comment: '' },
-        { account: 'Income', amount: 3000, date: '2025-01-15', time: '12:00', category: 'Salary', comment: '' },
-        { account: 'Daily', amount: -800, date: '2025-01-10', time: '12:00', category: 'Food', comment: '' },
+        {
+          account: 'Income',
+          amount: 9999,
+          date: `${currentMonth}-05`,
+          time: '12:00',
+          category: 'Salary',
+          comment: '',
+        },
+        {
+          account: 'Income',
+          amount: 3000,
+          date: '2025-01-15',
+          time: '12:00',
+          category: 'Salary',
+          comment: '',
+        },
+        {
+          account: 'Daily',
+          amount: -800,
+          date: '2025-01-10',
+          time: '12:00',
+          category: 'Food',
+          comment: '',
+        },
       ] as any;
       options.anonymized = false;
       const prompt = service.generateGrowPrompt(options);
@@ -267,8 +406,24 @@ describe('PromptGeneratorService', () => {
     it('should include subscriptions', () => {
       AppStateService.instance.allTransactions = makeTransactions(['2025-01'], 3000, { Food: 500 });
       AppStateService.instance.allSubscriptions = [
-        { title: 'Netflix', account: 'Daily', amount: 15, startDate: '', endDate: '', category: 'Streaming', comment: '' },
-        { title: 'Gym', account: 'Daily', amount: 40, startDate: '', endDate: '', category: 'Health', comment: '' },
+        {
+          title: 'Netflix',
+          account: 'Daily',
+          amount: 15,
+          startDate: '',
+          endDate: '',
+          category: 'Streaming',
+          comment: '',
+        },
+        {
+          title: 'Gym',
+          account: 'Daily',
+          amount: 40,
+          startDate: '',
+          endDate: '',
+          category: 'Health',
+          comment: '',
+        },
       ] as any;
       const prompt = service.generateGrowPrompt(options);
       expect(prompt).toContain('subscriptions');
@@ -317,7 +472,26 @@ describe('PromptGeneratorService', () => {
 
     it('should include existing grow projects count', () => {
       AppStateService.instance.allGrowProjects = [
-        { title: 'Test', sub: '', phase: 'idea', description: '', strategy: '', riskScore: 0, risks: '', cashflow: 0, amount: 1000, isAsset: false, share: null, investment: null, liabilitie: null, actionItems: [], links: [], notes: [], createdAt: '', updatedAt: '' }
+        {
+          title: 'Test',
+          sub: '',
+          phase: 'idea',
+          description: '',
+          strategy: '',
+          riskScore: 0,
+          risks: '',
+          cashflow: 0,
+          amount: 1000,
+          isAsset: false,
+          share: null,
+          investment: null,
+          liabilitie: null,
+          actionItems: [],
+          links: [],
+          notes: [],
+          createdAt: '',
+          updatedAt: '',
+        },
       ];
       const prompt = service.generateGrowPrompt(options);
       expect(prompt).toContain('EXISTING GROW PROJECTS (1)');
@@ -325,7 +499,26 @@ describe('PromptGeneratorService', () => {
 
     it('should describe existing grow projects in detail', () => {
       AppStateService.instance.allGrowProjects = [
-        { title: 'VWCE ETF', sub: 'Global ETF', phase: 'execute', description: 'Monthly DCA into world ETF', strategy: 'Dollar cost averaging', riskScore: 2, risks: '2/5', cashflow: 0, amount: 5000, isAsset: false, share: { tag: 'VWCE', quantity: 45, price: 111 }, investment: null, liabilitie: null, actionItems: [], links: [], notes: [], createdAt: '', updatedAt: '' }
+        {
+          title: 'VWCE ETF',
+          sub: 'Global ETF',
+          phase: 'execute',
+          description: 'Monthly DCA into world ETF',
+          strategy: 'Dollar cost averaging',
+          riskScore: 2,
+          risks: '2/5',
+          cashflow: 0,
+          amount: 5000,
+          isAsset: false,
+          share: { tag: 'VWCE', quantity: 45, price: 111 },
+          investment: null,
+          liabilitie: null,
+          actionItems: [],
+          links: [],
+          notes: [],
+          createdAt: '',
+          updatedAt: '',
+        },
       ];
       const prompt = service.generateGrowPrompt(options);
       expect(prompt).toContain('"VWCE ETF"');
@@ -339,7 +532,26 @@ describe('PromptGeneratorService', () => {
 
     it('should anonymize grow project amounts when anonymized=true', () => {
       AppStateService.instance.allGrowProjects = [
-        { title: 'TestGrow', sub: '', phase: 'idea', description: '', strategy: '', riskScore: 0, risks: '', cashflow: 823, amount: 12345, isAsset: false, share: null, investment: null, liabilitie: null, actionItems: [], links: [], notes: [], createdAt: '', updatedAt: '' }
+        {
+          title: 'TestGrow',
+          sub: '',
+          phase: 'idea',
+          description: '',
+          strategy: '',
+          riskScore: 0,
+          risks: '',
+          cashflow: 823,
+          amount: 12345,
+          isAsset: false,
+          share: null,
+          investment: null,
+          liabilitie: null,
+          actionItems: [],
+          links: [],
+          notes: [],
+          createdAt: '',
+          updatedAt: '',
+        },
       ];
       const prompt = service.generateGrowPrompt(options);
       expect(prompt).toContain('"TestGrow"');
@@ -361,9 +573,13 @@ describe('PromptGeneratorService', () => {
     });
 
     it('should include net worth and DTI when data is available', () => {
-      AppStateService.instance.allTransactions = makeTransactions(['2025-01', '2025-02'], 4000, { Rent: 800 });
+      AppStateService.instance.allTransactions = makeTransactions(['2025-01', '2025-02'], 4000, {
+        Rent: 800,
+      });
       AppStateService.instance.allShares = [{ tag: 'VWCE', quantity: 10, price: 100 }] as any;
-      AppStateService.instance.liabilities = [{ tag: 'Car Loan', amount: 15000, credit: 400, investment: false }] as any;
+      AppStateService.instance.liabilities = [
+        { tag: 'Car Loan', amount: 15000, credit: 400, investment: false },
+      ] as any;
       const prompt = service.generateGrowPrompt(options);
       expect(prompt).toContain('Net worth');
       expect(prompt).toContain('Debt-to-income ratio');
@@ -390,7 +606,8 @@ describe('PromptGeneratorService', () => {
       AppStateService.instance.mojo = { amount: 4000, target: 8000 };
       AppStateService.instance.allTransactions = makeTransactions(
         ['2025-01', '2025-02', '2025-03'],
-        3000, { Rent: 800, Food: 400 }
+        3000,
+        { Rent: 800, Food: 400 },
       );
       options.anonymized = false;
       const prompt = service.generateGrowPrompt(options);
@@ -430,7 +647,15 @@ describe('PromptGeneratorService', () => {
       options.anonymized = false;
       AppStateService.instance.allTransactions = makeTransactions(['2025-01'], 3000, { Food: 500 });
       AppStateService.instance.allSubscriptions = [
-        { title: 'Netflix', account: 'Daily', amount: 15, startDate: '', endDate: '', category: 'Streaming', comment: '' },
+        {
+          title: 'Netflix',
+          account: 'Daily',
+          amount: 15,
+          startDate: '',
+          endDate: '',
+          category: 'Streaming',
+          comment: '',
+        },
       ] as any;
       const prompt = service.generateGrowPrompt(options);
       expect(prompt).toContain('Netflix');
@@ -653,21 +878,27 @@ describe('PromptGeneratorService', () => {
 
     it('should use user-specified monthly budget over calculated surplus', () => {
       options.monthlyBudget = 500;
-      AppStateService.instance.allTransactions = makeTransactions(['2025-01'], 3000, { Food: 1000 });
+      AppStateService.instance.allTransactions = makeTransactions(['2025-01'], 3000, {
+        Food: 1000,
+      });
       const prompt = service.generateGrowPrompt(options);
       expect(prompt).toContain('user-specified');
     });
 
     it('should show estimated investable surplus when no budget specified', () => {
       options.monthlyBudget = 0;
-      AppStateService.instance.allTransactions = makeTransactions(['2025-01'], 3000, { Food: 1000 });
+      AppStateService.instance.allTransactions = makeTransactions(['2025-01'], 3000, {
+        Food: 1000,
+      });
       const prompt = service.generateGrowPrompt(options);
       expect(prompt).toContain('Estimated investable surplus');
     });
 
     it('should include willing-to-cut flag', () => {
       options.willingToCutExpenses = true;
-      AppStateService.instance.allTransactions = makeTransactions(['2025-01'], 3000, { Food: 1000 });
+      AppStateService.instance.allTransactions = makeTransactions(['2025-01'], 3000, {
+        Food: 1000,
+      });
       const prompt = service.generateGrowPrompt(options);
       expect(prompt).toContain('Willing to reduce expenses');
     });
@@ -726,15 +957,34 @@ describe('PromptGeneratorService', () => {
     });
 
     it('should show actual vs target allocation when transactions exist', () => {
-      AppStateService.instance.allTransactions = makeTransactions(
-        ['2025-01', '2025-02'],
-        3000,
-        { Food: 500 }
-      );
+      AppStateService.instance.allTransactions = makeTransactions(['2025-01', '2025-02'], 3000, {
+        Food: 500,
+      });
       AppStateService.instance.allTransactions.push(
-        { account: 'Daily', amount: -1200, date: '2025-01-05', time: '12:00', category: 'Rent', comment: '' },
-        { account: 'Splurge', amount: -300, date: '2025-01-15', time: '12:00', category: 'Shopping', comment: '' },
-        { account: 'Smile', amount: -200, date: '2025-01-20', time: '12:00', category: 'Hobby', comment: '' }
+        {
+          account: 'Daily',
+          amount: -1200,
+          date: '2025-01-05',
+          time: '12:00',
+          category: 'Rent',
+          comment: '',
+        },
+        {
+          account: 'Splurge',
+          amount: -300,
+          date: '2025-01-15',
+          time: '12:00',
+          category: 'Shopping',
+          comment: '',
+        },
+        {
+          account: 'Smile',
+          amount: -200,
+          date: '2025-01-20',
+          time: '12:00',
+          category: 'Hobby',
+          comment: '',
+        },
       );
       const prompt = service.generateBudgetOptimizerPrompt(options);
       expect(prompt).toContain('Actual Spending Distribution');
@@ -744,10 +994,38 @@ describe('PromptGeneratorService', () => {
 
     it('should show top expense categories', () => {
       AppStateService.instance.allTransactions = [
-        { account: 'Daily', amount: -800, date: '2025-01-05', time: '12:00', category: 'Rent', comment: '' },
-        { account: 'Daily', amount: -400, date: '2025-01-10', time: '12:00', category: 'Groceries', comment: '' },
-        { account: 'Splurge', amount: -200, date: '2025-01-15', time: '12:00', category: 'Dining', comment: '' },
-        { account: 'Income', amount: 3000, date: '2025-01-15', time: '12:00', category: 'Salary', comment: '' }
+        {
+          account: 'Daily',
+          amount: -800,
+          date: '2025-01-05',
+          time: '12:00',
+          category: 'Rent',
+          comment: '',
+        },
+        {
+          account: 'Daily',
+          amount: -400,
+          date: '2025-01-10',
+          time: '12:00',
+          category: 'Groceries',
+          comment: '',
+        },
+        {
+          account: 'Splurge',
+          amount: -200,
+          date: '2025-01-15',
+          time: '12:00',
+          category: 'Dining',
+          comment: '',
+        },
+        {
+          account: 'Income',
+          amount: 3000,
+          date: '2025-01-15',
+          time: '12:00',
+          category: 'Salary',
+          comment: '',
+        },
       ];
       const prompt = service.generateBudgetOptimizerPrompt(options);
       expect(prompt).toContain('Top 10 Expense Categories');
@@ -758,8 +1036,24 @@ describe('PromptGeneratorService', () => {
     it('should include subscriptions in budget context', () => {
       AppStateService.instance.allTransactions = makeTransactions(['2025-01'], 3000, { Food: 500 });
       AppStateService.instance.allSubscriptions = [
-        { title: 'Netflix', account: 'Daily', amount: 15, startDate: '', endDate: '', category: 'Streaming', comment: '' },
-        { title: 'Spotify', account: 'Daily', amount: 10, startDate: '', endDate: '', category: 'Music', comment: '' }
+        {
+          title: 'Netflix',
+          account: 'Daily',
+          amount: 15,
+          startDate: '',
+          endDate: '',
+          category: 'Streaming',
+          comment: '',
+        },
+        {
+          title: 'Spotify',
+          account: 'Daily',
+          amount: 10,
+          startDate: '',
+          endDate: '',
+          category: 'Music',
+          comment: '',
+        },
       ] as any;
       const prompt = service.generateBudgetOptimizerPrompt(options);
       expect(prompt).toContain('Recurring Subscriptions');
@@ -768,9 +1062,23 @@ describe('PromptGeneratorService', () => {
 
     it('should show spending trends', () => {
       const txns: any[] = [];
-      ['2025-01', '2025-02', '2025-03'].forEach(m => {
-        txns.push({ account: 'Income', amount: 3000, date: `${m}-15`, time: '12:00', category: 'Salary', comment: '' });
-        txns.push({ account: 'Daily', amount: -1000, date: `${m}-10`, time: '12:00', category: 'Rent', comment: '' });
+      ['2025-01', '2025-02', '2025-03'].forEach((m) => {
+        txns.push({
+          account: 'Income',
+          amount: 3000,
+          date: `${m}-15`,
+          time: '12:00',
+          category: 'Salary',
+          comment: '',
+        });
+        txns.push({
+          account: 'Daily',
+          amount: -1000,
+          date: `${m}-10`,
+          time: '12:00',
+          category: 'Rent',
+          comment: '',
+        });
       });
       AppStateService.instance.allTransactions = txns;
       const prompt = service.generateBudgetOptimizerPrompt(options);
@@ -821,9 +1129,33 @@ describe('PromptGeneratorService', () => {
 
     it('should list all subscriptions when not anonymized', () => {
       AppStateService.instance.allSubscriptions = [
-        { title: 'Netflix', account: 'Daily', amount: 15, startDate: '', endDate: '', category: 'Streaming', comment: '' },
-        { title: 'Spotify', account: 'Daily', amount: 10, startDate: '', endDate: '', category: 'Music', comment: '' },
-        { title: 'Gym', account: 'Daily', amount: 40, startDate: '', endDate: '', category: 'Health', comment: '' }
+        {
+          title: 'Netflix',
+          account: 'Daily',
+          amount: 15,
+          startDate: '',
+          endDate: '',
+          category: 'Streaming',
+          comment: '',
+        },
+        {
+          title: 'Spotify',
+          account: 'Daily',
+          amount: 10,
+          startDate: '',
+          endDate: '',
+          category: 'Music',
+          comment: '',
+        },
+        {
+          title: 'Gym',
+          account: 'Daily',
+          amount: 40,
+          startDate: '',
+          endDate: '',
+          category: 'Health',
+          comment: '',
+        },
       ] as any;
       options.anonymized = false;
       const prompt = service.generateSubscriptionAuditPrompt(options);
@@ -837,9 +1169,33 @@ describe('PromptGeneratorService', () => {
 
     it('should group subscriptions by category', () => {
       AppStateService.instance.allSubscriptions = [
-        { title: 'Netflix', account: 'Daily', amount: 15, startDate: '', endDate: '', category: 'Streaming', comment: '' },
-        { title: 'Disney+', account: 'Daily', amount: 10, startDate: '', endDate: '', category: 'Streaming', comment: '' },
-        { title: 'Spotify', account: 'Daily', amount: 10, startDate: '', endDate: '', category: 'Music', comment: '' }
+        {
+          title: 'Netflix',
+          account: 'Daily',
+          amount: 15,
+          startDate: '',
+          endDate: '',
+          category: 'Streaming',
+          comment: '',
+        },
+        {
+          title: 'Disney+',
+          account: 'Daily',
+          amount: 10,
+          startDate: '',
+          endDate: '',
+          category: 'Streaming',
+          comment: '',
+        },
+        {
+          title: 'Spotify',
+          account: 'Daily',
+          amount: 10,
+          startDate: '',
+          endDate: '',
+          category: 'Music',
+          comment: '',
+        },
       ] as any;
       options.anonymized = false;
       const prompt = service.generateSubscriptionAuditPrompt(options);
@@ -850,8 +1206,24 @@ describe('PromptGeneratorService', () => {
 
     it('should show total monthly and annual costs', () => {
       AppStateService.instance.allSubscriptions = [
-        { title: 'Netflix', account: 'Daily', amount: 15, startDate: '', endDate: '', category: 'Streaming', comment: '' },
-        { title: 'Gym', account: 'Daily', amount: 40, startDate: '', endDate: '', category: 'Health', comment: '' }
+        {
+          title: 'Netflix',
+          account: 'Daily',
+          amount: 15,
+          startDate: '',
+          endDate: '',
+          category: 'Streaming',
+          comment: '',
+        },
+        {
+          title: 'Gym',
+          account: 'Daily',
+          amount: 40,
+          startDate: '',
+          endDate: '',
+          category: 'Health',
+          comment: '',
+        },
       ] as any;
       options.anonymized = false;
       const prompt = service.generateSubscriptionAuditPrompt(options);
@@ -863,7 +1235,15 @@ describe('PromptGeneratorService', () => {
 
     it('should calculate subscriptions as % of income when transactions exist', () => {
       AppStateService.instance.allSubscriptions = [
-        { title: 'Netflix', account: 'Daily', amount: 15, startDate: '', endDate: '', category: 'Streaming', comment: '' }
+        {
+          title: 'Netflix',
+          account: 'Daily',
+          amount: 15,
+          startDate: '',
+          endDate: '',
+          category: 'Streaming',
+          comment: '',
+        },
       ] as any;
       AppStateService.instance.allTransactions = makeTransactions(['2025-01'], 3000, { Food: 500 });
       const prompt = service.generateSubscriptionAuditPrompt(options);
@@ -880,7 +1260,15 @@ describe('PromptGeneratorService', () => {
 
     it('should respect anonymization', () => {
       AppStateService.instance.allSubscriptions = [
-        { title: 'Netflix', account: 'Daily', amount: 15, startDate: '', endDate: '', category: 'Streaming', comment: '' }
+        {
+          title: 'Netflix',
+          account: 'Daily',
+          amount: 15,
+          startDate: '',
+          endDate: '',
+          category: 'Streaming',
+          comment: '',
+        },
       ] as any;
       options.anonymized = true;
       const prompt = service.generateSubscriptionAuditPrompt(options);
@@ -926,9 +1314,23 @@ describe('PromptGeneratorService', () => {
 
     it('should show month-by-month breakdown', () => {
       const txns: any[] = [];
-      ['2025-01', '2025-02', '2025-03'].forEach(m => {
-        txns.push({ account: 'Income', amount: 3000, date: `${m}-15`, time: '12:00', category: 'Salary', comment: '' });
-        txns.push({ account: 'Daily', amount: -1000, date: `${m}-10`, time: '12:00', category: 'Rent', comment: '' });
+      ['2025-01', '2025-02', '2025-03'].forEach((m) => {
+        txns.push({
+          account: 'Income',
+          amount: 3000,
+          date: `${m}-15`,
+          time: '12:00',
+          category: 'Salary',
+          comment: '',
+        });
+        txns.push({
+          account: 'Daily',
+          amount: -1000,
+          date: `${m}-10`,
+          time: '12:00',
+          category: 'Rent',
+          comment: '',
+        });
       });
       AppStateService.instance.allTransactions = txns;
       const prompt = service.generateExpensePatternAnalysisPrompt(options);
@@ -940,9 +1342,32 @@ describe('PromptGeneratorService', () => {
 
     it('should show top 15 categories', () => {
       const txns: any[] = [];
-      txns.push({ account: 'Income', amount: 3000, date: '2025-01-15', time: '12:00', category: 'Salary', comment: '' });
-      ['Rent', 'Groceries', 'Transport', 'Dining', 'Entertainment', 'Shopping', 'Health', 'Education'].forEach(cat => {
-        txns.push({ account: 'Daily', amount: -Math.floor(Math.random() * 300 + 100), date: '2025-01-10', time: '12:00', category: cat, comment: '' });
+      txns.push({
+        account: 'Income',
+        amount: 3000,
+        date: '2025-01-15',
+        time: '12:00',
+        category: 'Salary',
+        comment: '',
+      });
+      [
+        'Rent',
+        'Groceries',
+        'Transport',
+        'Dining',
+        'Entertainment',
+        'Shopping',
+        'Health',
+        'Education',
+      ].forEach((cat) => {
+        txns.push({
+          account: 'Daily',
+          amount: -Math.floor(Math.random() * 300 + 100),
+          date: '2025-01-10',
+          time: '12:00',
+          category: cat,
+          comment: '',
+        });
       });
       AppStateService.instance.allTransactions = txns;
       const prompt = service.generateExpensePatternAnalysisPrompt(options);
@@ -956,8 +1381,22 @@ describe('PromptGeneratorService', () => {
       // High volatility months
       ['2025-01', '2025-02', '2025-03', '2025-04'].forEach((m, i) => {
         const expense = [500, 2000, 600, 2500][i]; // Very volatile
-        txns.push({ account: 'Income', amount: 3000, date: `${m}-15`, time: '12:00', category: 'Salary', comment: '' });
-        txns.push({ account: 'Daily', amount: -expense, date: `${m}-10`, time: '12:00', category: 'Various', comment: '' });
+        txns.push({
+          account: 'Income',
+          amount: 3000,
+          date: `${m}-15`,
+          time: '12:00',
+          category: 'Salary',
+          comment: '',
+        });
+        txns.push({
+          account: 'Daily',
+          amount: -expense,
+          date: `${m}-10`,
+          time: '12:00',
+          category: 'Various',
+          comment: '',
+        });
       });
       AppStateService.instance.allTransactions = txns;
       const prompt = service.generateExpensePatternAnalysisPrompt(options);
@@ -969,8 +1408,22 @@ describe('PromptGeneratorService', () => {
       const txns: any[] = [];
       ['2025-01', '2025-02', '2025-03'].forEach((m, i) => {
         const expense = [1000, 2500, 800][i];
-        txns.push({ account: 'Income', amount: 3000, date: `${m}-15`, time: '12:00', category: 'Salary', comment: '' });
-        txns.push({ account: 'Daily', amount: -expense, date: `${m}-10`, time: '12:00', category: 'Expenses', comment: '' });
+        txns.push({
+          account: 'Income',
+          amount: 3000,
+          date: `${m}-15`,
+          time: '12:00',
+          category: 'Salary',
+          comment: '',
+        });
+        txns.push({
+          account: 'Daily',
+          amount: -expense,
+          date: `${m}-10`,
+          time: '12:00',
+          category: 'Expenses',
+          comment: '',
+        });
       });
       AppStateService.instance.allTransactions = txns;
       const prompt = service.generateExpensePatternAnalysisPrompt(options);
@@ -983,9 +1436,23 @@ describe('PromptGeneratorService', () => {
     it('should show long-term trends with enough data', () => {
       const txns: any[] = [];
       ['2025-01', '2025-02', '2025-03', '2025-04', '2025-05', '2025-06'].forEach((m, i) => {
-        const expense = 1000 + (i * 100); // Increasing trend
-        txns.push({ account: 'Income', amount: 3000, date: `${m}-15`, time: '12:00', category: 'Salary', comment: '' });
-        txns.push({ account: 'Daily', amount: -expense, date: `${m}-10`, time: '12:00', category: 'Expenses', comment: '' });
+        const expense = 1000 + i * 100; // Increasing trend
+        txns.push({
+          account: 'Income',
+          amount: 3000,
+          date: `${m}-15`,
+          time: '12:00',
+          category: 'Salary',
+          comment: '',
+        });
+        txns.push({
+          account: 'Daily',
+          amount: -expense,
+          date: `${m}-10`,
+          time: '12:00',
+          category: 'Expenses',
+          comment: '',
+        });
       });
       AppStateService.instance.allTransactions = txns;
       const prompt = service.generateExpensePatternAnalysisPrompt(options);

@@ -46,7 +46,9 @@
   font-weight: 700;
   font-size: 0.95rem;
   cursor: pointer;
-  transition: transform 0.15s, box-shadow 0.15s;
+  transition:
+    transform 0.15s,
+    box-shadow 0.15s;
 }
 .community-new-btn:hover {
   transform: translateY(-2px);
@@ -142,7 +144,10 @@
   padding: 1.25rem 1.5rem;
   text-decoration: none;
   color: var(--color-text);
-  transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+  transition:
+    transform 0.15s,
+    box-shadow 0.15s,
+    border-color 0.15s;
 }
 .community-thread-card:hover {
   transform: translateY(-2px);

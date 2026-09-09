@@ -2,8 +2,8 @@ import { Directive, ElementRef, Input, OnChanges, SimpleChanges } from '@angular
 
 @Directive({ selector: '[appCountUp]', standalone: true })
 export class CountUpDirective implements OnChanges {
-  @Input('appCountUp') targetValue: number = 0;
-  @Input() countDuration: number = 600; // ms
+  @Input('appCountUp') targetValue = 0;
+  @Input() countDuration = 600; // ms
 
   private animationFrame: number | null = null;
 

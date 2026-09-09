@@ -21,23 +21,23 @@ This is a non-negotiable design rule that applies to every AI prompt feature acr
 
 ### 0.1 How Anonymization Works
 
-| Data Point | Anonymized (Default) | Unanonymized (Opt-in) |
-|-----------|---------------------|----------------------|
-| Income | "Income range: €2,000–€3,000/mo" | "Monthly income: €2,847" |
-| Expenses | "~60% of income" | "Monthly expenses: €1,708" |
-| Net worth | "Net worth range: €10k–€25k" | "Net worth: €18,430" |
-| Individual assets | "3 assets, total range €5k–€10k" | "Asset: Car €8,500, Savings €4,200..." |
-| Shares | "4 share positions, portfolio range €5k–€15k" | "MSFT 12 shares @ €415..." |
-| Liabilities | "2 liabilities, total range €10k–€20k" | "Mortgage: €14,200 remaining..." |
-| Account names | Stripped entirely | Included |
-| Allocation ratios | Included (already %) | Included |
-| Grow project titles | Generic: "Project A, B, C" | Real titles included |
+| Data Point          | Anonymized (Default)                          | Unanonymized (Opt-in)                  |
+| ------------------- | --------------------------------------------- | -------------------------------------- |
+| Income              | "Income range: €2,000–€3,000/mo"              | "Monthly income: €2,847"               |
+| Expenses            | "~60% of income"                              | "Monthly expenses: €1,708"             |
+| Net worth           | "Net worth range: €10k–€25k"                  | "Net worth: €18,430"                   |
+| Individual assets   | "3 assets, total range €5k–€10k"              | "Asset: Car €8,500, Savings €4,200..." |
+| Shares              | "4 share positions, portfolio range €5k–€15k" | "MSFT 12 shares @ €415..."             |
+| Liabilities         | "2 liabilities, total range €10k–€20k"        | "Mortgage: €14,200 remaining..."       |
+| Account names       | Stripped entirely                             | Included                               |
+| Allocation ratios   | Included (already %)                          | Included                               |
+| Grow project titles | Generic: "Project A, B, C"                    | Real titles included                   |
 
 ### 0.2 Anonymization Tiers
 
 **Tier 1 — Anonymized (Default):** Amounts converted to ranges (rounded to nearest €500/€1k/€5k depending on magnitude). Account/asset names stripped. Project titles genericized. Allocation percentages kept as-is (already non-sensitive). Counts and ratios preserved for analytical value.
 
-**Tier 2 — Unanonymized (Opt-in toggle):** Exact amounts, real names, real titles. User must explicitly enable this via a clearly labeled toggle: *"Include exact amounts and names (your data will be visible in the prompt)"*. A confirmation dialog warns: *"The prompt will contain your real financial data. Only paste this into AI services you trust."*
+**Tier 2 — Unanonymized (Opt-in toggle):** Exact amounts, real names, real titles. User must explicitly enable this via a clearly labeled toggle: _"Include exact amounts and names (your data will be visible in the prompt)"_. A confirmation dialog warns: _"The prompt will contain your real financial data. Only paste this into AI services you trust."_
 
 ### 0.3 Implementation Rule
 
@@ -54,6 +54,7 @@ formatIncome(income: number, anonymized: boolean = true): string {
 ```
 
 The `toRange()` utility snaps values to human-readable ranges:
+
 - < €500 → "under €500"
 - €500–€5,000 → nearest €500 ("€1,500–€2,000")
 - €5,000–€50,000 → nearest €5,000 ("€10,000–€15,000")
@@ -65,18 +66,19 @@ The `toRange()` utility snaps values to human-readable ranges:
 
 ### 1.1 Does This Make Sense? — Yes, With Conditions
 
-| Factor | Assessment |
-|--------|-----------|
-| **Technical feasibility** | HIGH — All required data is already in `AppStateService`. Prompt construction is pure string templating, no backend changes needed. |
-| **User value** | HIGH — Personalized investment strategies based on real financial data are extremely valuable and currently require expensive financial advisors. |
-| **Cost** | NEAR ZERO — No AI hosting, no API keys, no backend changes. Pure frontend feature. |
-| **Privacy** | ANONYMIZED BY DEFAULT — Prompts use ranges and stripped names. Users never accidentally leak exact financial data. Opt-in toggle for exact values with explicit consent. |
-| **Risk** | LOW — No liability for AI-generated advice (standard disclaimer). No infrastructure risk. Reversible if it doesn't work. |
-| **Limitation** | Manual copy-paste creates friction. Acceptable for V1; API integration can come later. |
+| Factor                    | Assessment                                                                                                                                                               |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Technical feasibility** | HIGH — All required data is already in `AppStateService`. Prompt construction is pure string templating, no backend changes needed.                                      |
+| **User value**            | HIGH — Personalized investment strategies based on real financial data are extremely valuable and currently require expensive financial advisors.                        |
+| **Cost**                  | NEAR ZERO — No AI hosting, no API keys, no backend changes. Pure frontend feature.                                                                                       |
+| **Privacy**               | ANONYMIZED BY DEFAULT — Prompts use ranges and stripped names. Users never accidentally leak exact financial data. Opt-in toggle for exact values with explicit consent. |
+| **Risk**                  | LOW — No liability for AI-generated advice (standard disclaimer). No infrastructure risk. Reversible if it doesn't work.                                                 |
+| **Limitation**            | Manual copy-paste creates friction. Acceptable for V1; API integration can come later.                                                                                   |
 
 ### 1.2 What Exactly Should We Build?
 
 A **Prompt Generator Panel** accessible from the Grow page that:
+
 1. Reads the user's current financial snapshot (income, expenses, assets, liabilities, existing grow projects)
 2. Constructs a structured prompt tuned to their situation
 3. Presents the prompt for copy-paste into any LLM
@@ -112,22 +114,27 @@ EXPENSE ALLOCATION
 The prompt will guide the LLM to evaluate options across three tracks:
 
 #### Track A — Asset Trading (Buy → Sell)
+
 - Physical assets, collectibles, domain names, websites, digital products
 - Lower barrier to entry, active management required
 - Maps to: `Grow.isAsset = true`, `Grow.amount` = purchase price
 
 #### Track B — Shares & Dividends (Buy → Dividends → Sell)
+
 - ETFs, dividend stocks, REITs
 - Passive income via dividends, capital appreciation on exit
 - Maps to: `Grow.share = { tag, quantity, price }`, `Grow.cashflow` = expected dividends
 
 #### Track C — Leveraged Investments (Credit → Invest → Passive Income)
+
 - Real estate, business acquisitions, equipment leasing
 - Larger capital required (deposit + loan), regular passive income
 - Maps to: `Grow.investment = { tag, amount, deposit }`, `Grow.liabilitie = { tag, amount, investment: true, credit }`, `Grow.cashflow` = net monthly income
 
 #### Cross-Track: Loan Risk Management
+
 For all three tracks, the prompt evaluates:
+
 - Can/should the user take a loan for this?
 - Debt-to-income ratio impact
 - Break-even timeline
@@ -173,15 +180,15 @@ OUTPUT FORMAT BLOCK (structured for direct mapping to Grow fields)
 
 The prompt explicitly asks for a decision matrix with:
 
-| Criteria | Weight | Option A | Option B | Option C |
-|----------|--------|----------|----------|----------|
-| Initial capital needed | — | — | — | — |
-| Monthly passive income | — | — | — | — |
-| Time to break even | — | — | — | — |
-| Risk level (1-5) | — | — | — | — |
-| Liquidity | — | — | — | — |
-| Loan dependency | — | — | — | — |
-| **Weighted score** | — | — | — | — |
+| Criteria               | Weight | Option A | Option B | Option C |
+| ---------------------- | ------ | -------- | -------- | -------- |
+| Initial capital needed | —      | —        | —        | —        |
+| Monthly passive income | —      | —        | —        | —        |
+| Time to break even     | —      | —        | —        | —        |
+| Risk level (1-5)       | —      | —        | —        | —        |
+| Liquidity              | —      | —        | —        | —        |
+| Loan dependency        | —      | —        | —        | —        |
+| **Weighted score**     | —      | —        | —        | —        |
 
 This gives users a clear, structured comparison to make their investment decision.
 
@@ -236,23 +243,24 @@ This gives users a clear, structured comparison to make their investment decisio
 
 ### 3.2 Technical Tasks
 
-| # | Task | Component/Service | Effort |
-|---|------|-------------------|--------|
-| 1 | Create `PromptGeneratorService` | `src/app/shared/services/prompt-generator.service.ts` | New service |
-| 2 | Financial snapshot extraction (anonymized by default) | Method in PromptGeneratorService reads AppStateService, applies range anonymization | Logic |
-| 2b | `toRange()` utility + anonymization toggle logic | Shared utility for all prompt generators, confirmation dialog for opt-in | Logic |
-| 3 | Prompt template engine | String builder with conditionals for tracks/preferences/anonymization tier | Logic |
-| 4 | AI Prompt Panel component | `src/app/panels/ai-prompt/` | New panel |
-| 5 | Clipboard copy integration | Angular CDK Clipboard | Small |
-| 6 | JSON response parser | Parse LLM JSON output → Grow[] objects | Logic |
-| 7 | Import-to-Grow-Projects flow | Call existing `batchWriteAndSync()` to persist | Wiring |
-| 8 | Disclaimer/legal notice | Static text in panel | Small |
-| 9 | i18n translations | EN + DE keys for all panel text | Config |
-| 10 | Unit tests | PromptGeneratorService, parser | Tests |
+| #   | Task                                                  | Component/Service                                                                   | Effort      |
+| --- | ----------------------------------------------------- | ----------------------------------------------------------------------------------- | ----------- |
+| 1   | Create `PromptGeneratorService`                       | `src/app/shared/services/prompt-generator.service.ts`                               | New service |
+| 2   | Financial snapshot extraction (anonymized by default) | Method in PromptGeneratorService reads AppStateService, applies range anonymization | Logic       |
+| 2b  | `toRange()` utility + anonymization toggle logic      | Shared utility for all prompt generators, confirmation dialog for opt-in            | Logic       |
+| 3   | Prompt template engine                                | String builder with conditionals for tracks/preferences/anonymization tier          | Logic       |
+| 4   | AI Prompt Panel component                             | `src/app/panels/ai-prompt/`                                                         | New panel   |
+| 5   | Clipboard copy integration                            | Angular CDK Clipboard                                                               | Small       |
+| 6   | JSON response parser                                  | Parse LLM JSON output → Grow[] objects                                              | Logic       |
+| 7   | Import-to-Grow-Projects flow                          | Call existing `batchWriteAndSync()` to persist                                      | Wiring      |
+| 8   | Disclaimer/legal notice                               | Static text in panel                                                                | Small       |
+| 9   | i18n translations                                     | EN + DE keys for all panel text                                                     | Config      |
+| 10  | Unit tests                                            | PromptGeneratorService, parser                                                      | Tests       |
 
 ### 3.3 No Backend Changes Required
 
 The entire feature is client-side:
+
 - Read data from `AppStateService` (already loaded)
 - Build prompt string (pure functions)
 - Copy to clipboard (browser API)
@@ -267,22 +275,23 @@ Beyond Grow Projects, here are all identified use cases where AI prompts add val
 
 ### 4.1 Use Case Map
 
-| # | Use Case | Data Source | User Value | Effort | Priority |
-|---|----------|-----------|-----------|--------|----------|
-| **1** | **Grow Strategy Generator** | Income, expenses, balance sheet, grow projects | Personalized investment strategies with decision matrix | Medium | **P0 — Phase 1** |
-| **2** | **Budget Optimizer** | Transactions, budgets, allocation ratios (daily/splurge/smile/fire) | "Given my spending patterns, how should I adjust my budget allocations?" | Low | **P1 — Phase 2** |
-| **3** | **Subscription Audit** | Subscriptions list with amounts | "Which subscriptions should I cancel, downgrade, or negotiate?" | Low | **P1 — Phase 2** |
-| **4** | **Expense Pattern Analysis** | Transactions (categories, amounts, dates) | "What are my spending blind spots? Where am I leaking money?" | Low | **P1 — Phase 2** |
-| **5** | **FIRE Independence Calculator** | Income, expenses, fire emergencies, mojo target, investments | "How long until financial independence? What should I change?" | Medium | **P2 — Phase 3** |
-| **6** | **Debt Payoff Strategist** | Liabilities, income surplus | "Avalanche vs. Snowball: what's my optimal debt payoff plan?" | Low | **P2 — Phase 3** |
-| **7** | **Tax Optimization Hints** | Full income statement, investments, properties | "What tax-relevant deductions might I be missing?" (jurisdiction-aware) | Medium | **P3 — Phase 4** |
-| **8** | **Smile Project Funding Planner** | Smile projects (targets), income surplus, timeline | "How should I fund my personal goals given my current finances?" | Low | **P2 — Phase 3** |
+| #     | Use Case                          | Data Source                                                         | User Value                                                               | Effort | Priority         |
+| ----- | --------------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------------ | ------ | ---------------- |
+| **1** | **Grow Strategy Generator**       | Income, expenses, balance sheet, grow projects                      | Personalized investment strategies with decision matrix                  | Medium | **P0 — Phase 1** |
+| **2** | **Budget Optimizer**              | Transactions, budgets, allocation ratios (daily/splurge/smile/fire) | "Given my spending patterns, how should I adjust my budget allocations?" | Low    | **P1 — Phase 2** |
+| **3** | **Subscription Audit**            | Subscriptions list with amounts                                     | "Which subscriptions should I cancel, downgrade, or negotiate?"          | Low    | **P1 — Phase 2** |
+| **4** | **Expense Pattern Analysis**      | Transactions (categories, amounts, dates)                           | "What are my spending blind spots? Where am I leaking money?"            | Low    | **P1 — Phase 2** |
+| **5** | **FIRE Independence Calculator**  | Income, expenses, fire emergencies, mojo target, investments        | "How long until financial independence? What should I change?"           | Medium | **P2 — Phase 3** |
+| **6** | **Debt Payoff Strategist**        | Liabilities, income surplus                                         | "Avalanche vs. Snowball: what's my optimal debt payoff plan?"            | Low    | **P2 — Phase 3** |
+| **7** | **Tax Optimization Hints**        | Full income statement, investments, properties                      | "What tax-relevant deductions might I be missing?" (jurisdiction-aware)  | Medium | **P3 — Phase 4** |
+| **8** | **Smile Project Funding Planner** | Smile projects (targets), income surplus, timeline                  | "How should I fund my personal goals given my current finances?"         | Low    | **P2 — Phase 3** |
 
 ### 4.2 The USP Statement
 
 > **"The only personal finance app that turns your own financial data into AI-powered strategies — without ever sharing your data with us."**
 
 Key differentiators:
+
 1. **Privacy-first AI** — All prompts are anonymized by default (ranges, no names). Data never leaves the device unless the user copies the prompt. Exact values require explicit opt-in.
 2. **Data-driven prompts** — Not generic financial advice. Prompts are constructed from real income, expenses, and portfolio data.
 3. **Actionable output** — AI responses map directly to app features (Grow projects, budget adjustments, subscription actions). Users don't just get advice — they get items they can import and track.
@@ -291,30 +300,31 @@ Key differentiators:
 
 ### 4.3 Competitive Moat
 
-| Competitor Approach | Our Approach |
-|--------------------|-------------|
-| Embed expensive AI APIs (margin pressure) | User brings their own AI (zero cost) |
-| Generic chatbot ("ask about finances") | Structured prompts with your actual data |
-| Advice you can't act on | Output imports directly into your projects |
-| Data sent to company servers | Data stays on your device |
+| Competitor Approach                       | Our Approach                               |
+| ----------------------------------------- | ------------------------------------------ |
+| Embed expensive AI APIs (margin pressure) | User brings their own AI (zero cost)       |
+| Generic chatbot ("ask about finances")    | Structured prompts with your actual data   |
+| Advice you can't act on                   | Output imports directly into your projects |
+| Data sent to company servers              | Data stays on your device                  |
 
 ---
 
 ## 5. Risk Assessment
 
-| Risk | Likelihood | Impact | Mitigation |
-|------|-----------|--------|-----------|
-| LLM gives bad financial advice | HIGH | MEDIUM | Disclaimer: "AI suggestions are not financial advice. Consult a professional." Never auto-execute recommendations. |
-| User pastes sensitive data into LLM | LOW | MEDIUM | Anonymized by default. Exact values require opt-in with confirmation. Prompt preview always visible before copy. |
-| LLM response doesn't match expected JSON format | HIGH | LOW | Robust parser with fallback. Show parsing errors with guidance. Allow manual mapping. |
-| Copy-paste friction leads to low adoption | MEDIUM | MEDIUM | V1 validates the concept. V2 can add optional API integration for users with their own API keys. |
-| LLM service changes or becomes unavailable | LOW | LOW | Prompts are LLM-agnostic. User can use any service. |
+| Risk                                            | Likelihood | Impact | Mitigation                                                                                                         |
+| ----------------------------------------------- | ---------- | ------ | ------------------------------------------------------------------------------------------------------------------ |
+| LLM gives bad financial advice                  | HIGH       | MEDIUM | Disclaimer: "AI suggestions are not financial advice. Consult a professional." Never auto-execute recommendations. |
+| User pastes sensitive data into LLM             | LOW        | MEDIUM | Anonymized by default. Exact values require opt-in with confirmation. Prompt preview always visible before copy.   |
+| LLM response doesn't match expected JSON format | HIGH       | LOW    | Robust parser with fallback. Show parsing errors with guidance. Allow manual mapping.                              |
+| Copy-paste friction leads to low adoption       | MEDIUM     | MEDIUM | V1 validates the concept. V2 can add optional API integration for users with their own API keys.                   |
+| LLM service changes or becomes unavailable      | LOW        | LOW    | Prompts are LLM-agnostic. User can use any service.                                                                |
 
 ---
 
 ## 6. Phased Roadmap
 
 ### Phase 1 — Grow Strategy Generator (MVP)
+
 - `toRange()` utility and anonymization engine (core building block for all phases)
 - `PromptGeneratorService` with financial snapshot extraction (anonymized by default)
 - Anonymization toggle with opt-in confirmation dialog
@@ -325,6 +335,7 @@ Key differentiators:
 - Unit tests (including anonymization coverage)
 
 ### Phase 2 — Quick Wins (COMPLETED)
+
 - [x] Budget Optimizer prompt
 - [x] Subscription Audit prompt
 - [x] Expense Pattern Analysis prompt
@@ -337,9 +348,11 @@ Key differentiators:
 - [x] Fix remaining prompt generator tests (9 failures) - Changed growth phase default to "idea"
 
 ### Phase 2.5 — Smile & Fire Project Refactoring (IN PROGRESS)
+
 **Goal**: Elevate Smile Projects to the same sophistication as Grow Projects, with phases, planning, multi-bucket support, and action tracking.
 
 #### Smile Projects Enhancement
+
 - [x] **Data Model**: Update Smile interface with buckets, phases, action items, links, notes, dates
 - [x] **Data Model**: Create SmileBucket interface (id, name, targetAmount, phase, completed, notes)
 - [x] **Migration**: Auto-migrate existing smile projects to single-bucket format
@@ -355,6 +368,7 @@ Key differentiators:
 - [x] **Testing**: Add transaction-bucket linking tests
 
 #### Fire Emergency Projects Enhancement (Future)
+
 - [x] Apply same pattern as Smile Projects
 - [x] Add phases, action items, planning features
 - [x] Multi-bucket support for complex emergencies
@@ -370,6 +384,7 @@ Key differentiators:
 ### 9.1 Overview
 
 The Smile Project Generator is a two-mode AI tool designed to:
+
 1. **Create new Smile Projects from scratch** — Turn dreams into actionable, budgeted plans with research, bucket breakdown, action items, and payment schedules
 2. **Improve existing Smile Projects** — Enhance planning, adjust budgets, add research, and refine strategy for in-progress projects
 
@@ -382,6 +397,7 @@ The Smile Project Generator is a two-mode AI tool designed to:
 ### 9.2 Mode A — Create New Smile Project
 
 #### Use Cases
+
 - Building your own house
 - Dream car purchase
 - World tour vacation
@@ -392,14 +408,14 @@ The Smile Project Generator is a two-mode AI tool designed to:
 
 #### User Input Fields (Step 1: Configure)
 
-| Field | Type | Description | Example |
-|-------|------|-------------|---------|
-| **Goal** | Long text | What do you want to achieve? | "I want to plan a 3-month world tour visiting Japan, New Zealand, and Peru" |
-| **Urgency** | Dropdown | When do you need this? | "Flexible / 6 months / 1 year / 2+ years" |
-| **Research Depth** | Dropdown | How detailed should the AI research be? | "Quick overview / Moderate / Deep research" |
-| **Information Focus** | Checkboxes | What info should the AI prioritize? | ☑ Shopping sites<br>☑ User reviews<br>☑ Comparison tools<br>☑ Tips & tricks<br>☑ Forums & communities<br>☑ Expert guides |
-| **Budget Flexibility** | Dropdown | How flexible is your budget? | "Strict limit / Some flexibility / Open to suggestions" |
-| **Complexity** | Dropdown | Project complexity hint | "Simple (1-2 buckets) / Moderate (3-5 buckets) / Complex (5+ buckets)" |
+| Field                  | Type       | Description                             | Example                                                                                                                  |
+| ---------------------- | ---------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| **Goal**               | Long text  | What do you want to achieve?            | "I want to plan a 3-month world tour visiting Japan, New Zealand, and Peru"                                              |
+| **Urgency**            | Dropdown   | When do you need this?                  | "Flexible / 6 months / 1 year / 2+ years"                                                                                |
+| **Research Depth**     | Dropdown   | How detailed should the AI research be? | "Quick overview / Moderate / Deep research"                                                                              |
+| **Information Focus**  | Checkboxes | What info should the AI prioritize?     | ☑ Shopping sites<br>☑ User reviews<br>☑ Comparison tools<br>☑ Tips & tricks<br>☑ Forums & communities<br>☑ Expert guides |
+| **Budget Flexibility** | Dropdown   | How flexible is your budget?            | "Strict limit / Some flexibility / Open to suggestions"                                                                  |
+| **Complexity**         | Dropdown   | Project complexity hint                 | "Simple (1-2 buckets) / Moderate (3-5 buckets) / Complex (5+ buckets)"                                                   |
 
 #### Financial Context Included in Prompt (Anonymized by Default)
 
@@ -565,7 +581,7 @@ Provide:
         { "label": "Airbnb: Local experiences", "url": "https://www.airbnb.com" }
       ],
       "targetDate": "2027-01-15"
-    },
+    }
     // ... more buckets (Food & Activities, Travel Insurance, Gear & Preparation, Emergency Fund)
   ],
   "actionItems": [
@@ -580,7 +596,7 @@ Provide:
       "done": false,
       "priority": "high",
       "dueDate": "2026-12-01"
-    },
+    }
     // ... more actions
   ],
   "plannedPayments": [
@@ -603,19 +619,20 @@ Provide:
 ### 9.3 Mode B — Improve Existing Smile Project
 
 #### Use Cases
+
 - Project is half-complete, need to adjust budget/timeline
 - Found cheaper alternatives, want to update buckets
 - Circumstances changed (got raise, had unexpected expense)
 - Want more research/links for specific buckets
--Need better action item breakdown
+  -Need better action item breakdown
 
 #### User Input Fields (Step 1: Configure)
 
-| Field | Type | Description |
-|-------|------|-------------|
-| **Select Projects** | Multi-select dropdown | Choose 1+ existing Smile projects to improve |
-| **Improvement Focus** | Checkboxes | What needs enhancement?<br>☑ Adjust budget (cheaper/more expensive)<br>☑ Update timeline<br>☑ Add more research/links<br>☑ Refine action items<br>☑ Optimize payment plan<br>☑ Add bucket milestones |
-| **Changed Circumstances** | Long text (optional) | "I got a raise / Lost my job / Found cheaper option / etc." |
+| Field                     | Type                  | Description                                                                                                                                                                                          |
+| ------------------------- | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Select Projects**       | Multi-select dropdown | Choose 1+ existing Smile projects to improve                                                                                                                                                         |
+| **Improvement Focus**     | Checkboxes            | What needs enhancement?<br>☑ Adjust budget (cheaper/more expensive)<br>☑ Update timeline<br>☑ Add more research/links<br>☑ Refine action items<br>☑ Optimize payment plan<br>☑ Add bucket milestones |
+| **Changed Circumstances** | Long text (optional)  | "I got a raise / Lost my job / Found cheaper option / etc."                                                                                                                                          |
 
 #### Prompt Template Structure
 
@@ -658,7 +675,7 @@ OUTPUT FORMAT (JSON array, one object per project)
     // - Adjust targets/timelines based on improvement focus
     // - Add new links/notes without removing old ones
     // - Update payment plans if timeline/budget changed
-    
+
     "improvementSummary": "What changed and why (2-3 sentences)",
     ...rest of Smile interface...
   },
@@ -680,14 +697,14 @@ For each project, provide:
 
 #### Components to Update
 
-| Component | Change Required | Effort |
-|-----------|----------------|--------|
-| `smile.component.ts` | Add AI icon button next to "+ Add Smile" in header | Small |
-| `smile.component.html` | Add click handler to open AI generator panel | Small |
-| `prompt-generator.service.ts` | Add `generateSmilePrompt()` methods for Mode A & B | Medium |
-| New: `ai-smile-config.component` | Configuration panel for Step 1 (mode selection, inputs) | New component |
-| Reuse: AI prompt display panel | Already exists, just configure for Smile output | Config |
-| `app-state.service.ts` | Ensure Smile interface includes all required fields | Already done (Phase 2.5) |
+| Component                        | Change Required                                         | Effort                   |
+| -------------------------------- | ------------------------------------------------------- | ------------------------ |
+| `smile.component.ts`             | Add AI icon button next to "+ Add Smile" in header      | Small                    |
+| `smile.component.html`           | Add click handler to open AI generator panel            | Small                    |
+| `prompt-generator.service.ts`    | Add `generateSmilePrompt()` methods for Mode A & B      | Medium                   |
+| New: `ai-smile-config.component` | Configuration panel for Step 1 (mode selection, inputs) | New component            |
+| Reuse: AI prompt display panel   | Already exists, just configure for Smile output         | Config                   |
+| `app-state.service.ts`           | Ensure Smile interface includes all required fields     | Already done (Phase 2.5) |
 
 #### Prompt Generator Methods
 
@@ -719,25 +736,25 @@ validateSmileImport(jsonResponse: string): Smile | Smile[] {
 ```typescript
 private extractSmileFinancialContext(anonymized: boolean): string {
   const state = AppStateService.instance;
-  
+
   // Calculate Smile-specific metrics
   const monthlyIncome = this.calculateMonthlyIncome();
   const smileAllocation = state.smile; // percentage (e.g., 10)
   const smileMonthlyBudget = (monthlyIncome * smileAllocation) / 100;
-  
+
   // Get current Smile bucket balance (from transactions tagged as Smile)
   const smileAccountBalance = state.getAmount('Smile', smileAllocation / 100);
-  
+
   // Calculate last month's contribution
   const lastMonthContribution = this.getLastMonthSmileContribution();
-  
+
   // Existing Smile projects (count, total target, total saved)
   const existingProjects = state.allSmileProjects;
-  const totalSmileTarget = existingProjects.reduce((sum, p) => 
+  const totalSmileTarget = existingProjects.reduce((sum, p) =>
     sum + this.calculateSmileTotal(p).target, 0);
-  const totalSmileSaved = existingProjects.reduce((sum, p) => 
+  const totalSmileSaved = existingProjects.reduce((sum, p) =>
     sum + this.calculateSmileTotal(p).amount, 0);
-  
+
   if (anonymized) {
     return `
 Financial Situation:
@@ -771,6 +788,7 @@ Financial Situation:
 The Fire Emergency Generator follows the same pattern as Smile but is specialized for **crisis management and debt payback planning**.
 
 **Focus Areas**:
+
 - Unexpected emergencies (broken dishwasher, medical bills, car repair)
 - Debt payback strategies (personal loans, family loans, mortgages)
 - Multi-bucket complex emergencies (e.g., medical emergency with treatment + travel + lost income buckets)
@@ -784,6 +802,7 @@ The Fire Emergency Generator follows the same pattern as Smile but is specialize
 ### 10.2 Mode A — Create New Emergency Plan
 
 #### Use Cases
+
 - Broken appliance needs replacement
 - Medical emergency with bills
 - Car accident (repair + rental + deductible)
@@ -794,15 +813,15 @@ The Fire Emergency Generator follows the same pattern as Smile but is specialize
 
 #### User Input Fields (Step 1: Configure)
 
-| Field | Type | Description | Example |
-|-------|------|-------------|---------|
-| **Emergency Type** | Dropdown | What happened? | "Appliance failure / Medical / Car trouble / Debt payback / Job loss / Family loan / Other" |
-| **Total Amount** | Number | How much do you need/owe? | 1500 |
-| **Already Borrowed?** | Radio | Did you already borrow this money? | Yes / No |
-| **Lender Details** | Long text (if borrowed) | Who lent you money & terms? | "Parents, no interest, no rush, but I want to pay back responsibly" |
-| **Urgency** | Dropdown | How soon do you need this resolved? | "Immediate / 1 month / 3 months / 6+ months / Flexible" |
-| **Payback Strategy** | Dropdown | Preferred debt strategy | "Snowball (smallest first) / Avalanche (highest interest first) / Realistic timeline / Let AI decide" |
-| **Research Needs** | Checkboxes | What info do you need? | ☑ Product comparisons<br>☑ Service providers<br>☑ Financing options<br>☑ DIY vs professional<br>☑ Insurance implications |
+| Field                 | Type                    | Description                         | Example                                                                                                                  |
+| --------------------- | ----------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| **Emergency Type**    | Dropdown                | What happened?                      | "Appliance failure / Medical / Car trouble / Debt payback / Job loss / Family loan / Other"                              |
+| **Total Amount**      | Number                  | How much do you need/owe?           | 1500                                                                                                                     |
+| **Already Borrowed?** | Radio                   | Did you already borrow this money?  | Yes / No                                                                                                                 |
+| **Lender Details**    | Long text (if borrowed) | Who lent you money & terms?         | "Parents, no interest, no rush, but I want to pay back responsibly"                                                      |
+| **Urgency**           | Dropdown                | How soon do you need this resolved? | "Immediate / 1 month / 3 months / 6+ months / Flexible"                                                                  |
+| **Payback Strategy**  | Dropdown                | Preferred debt strategy             | "Snowball (smallest first) / Avalanche (highest interest first) / Realistic timeline / Let AI decide"                    |
+| **Research Needs**    | Checkboxes              | What info do you need?              | ☑ Product comparisons<br>☑ Service providers<br>☑ Financing options<br>☑ DIY vs professional<br>☑ Insurance implications |
 
 #### Prompt Template Structure
 
@@ -965,8 +984,14 @@ AFFORDABILITY & RISK ASSESSMENT
       "amount": 0,
       "notes": "€150/month is 60% of my Fire allocation (€250/mo), leaving €100/mo for rebuilding emergency fund. No interest means no urgency to pay faster. Priority: Pay consistently to show reliability, but adjust if real emergency hits.",
       "links": [
-        { "label": "Reddit: r/personalfinance — Family loan best practices", "url": "https://reddit.com/r/personalfinance" },
-        { "label": "Article: Paying back family loans without damaging relationships", "url": "https://example.com/family-loans-guide" }
+        {
+          "label": "Reddit: r/personalfinance — Family loan best practices",
+          "url": "https://reddit.com/r/personalfinance"
+        },
+        {
+          "label": "Article: Paying back family loans without damaging relationships",
+          "url": "https://example.com/family-loans-guide"
+        }
       ],
       "targetDate": "2027-03-01"
     }
@@ -1011,6 +1036,7 @@ AFFORDABILITY & RISK ASSESSMENT
 ### 10.3 Mode B — Improve Existing Fire Emergency
 
 Same pattern as Smile Mode B:
+
 - Select existing Fire emergencies
 - Choose improvement focus (adjust budget, update timeline, add research, refine payback plan)
 - Preserve completed buckets and payments made
@@ -1020,40 +1046,40 @@ Same pattern as Smile Mode B:
 
 ### 10.4 Technical Implementation
 
-| Component | Change Required | Effort |
-|-----------|----------------|--------|
-| `fire.component.ts` | Add AI icon button next to "+ Add Emergency" in header | Small |
-| `fire.component.html` | Add click handler to open AI generator panel | Small |
-| `prompt-generator.service.ts` | Add `generateFirePrompt()` methods for Mode A & B | Medium |
-| New: `ai-fire-config.component` | Configuration panel for emergency inputs | New component |
-| Reuse: AI prompt display panel | Already exists, configure for Fire output | Config |
+| Component                       | Change Required                                        | Effort        |
+| ------------------------------- | ------------------------------------------------------ | ------------- |
+| `fire.component.ts`             | Add AI icon button next to "+ Add Emergency" in header | Small         |
+| `fire.component.html`           | Add click handler to open AI generator panel           | Small         |
+| `prompt-generator.service.ts`   | Add `generateFirePrompt()` methods for Mode A & B      | Medium        |
+| New: `ai-fire-config.component` | Configuration panel for emergency inputs               | New component |
+| Reuse: AI prompt display panel  | Already exists, configure for Fire output              | Config        |
 
 #### Financial Data Extraction for Fire
 
 ```typescript
 private extractFireFinancialContext(anonymized: boolean): string {
   const state = AppStateService.instance;
-  
+
   const monthlyIncome = this.calculateMonthlyIncome();
   const fireAllocation = state.fire; // percentage (e.g., 20)
   const fireMonthlyBudget = (monthlyIncome * fireAllocation) / 100;
-  
+
   const fireAccountBalance = state.getAmount('Fire', fireAllocation / 100);
   const lastMonthContribution = this.getLastMonthFireContribution();
-  
+
   const existingEmergencies = state.allFireEmergencies;
-  const totalFireTarget = existingEmergencies.reduce((sum, e) => 
+  const totalFireTarget = existingEmergencies.reduce((sum, e) =>
     sum + this.calculateFireTotal(e).target, 0);
-  const totalFireSaved = existingEmergencies.reduce((sum, e) => 
+  const totalFireSaved = existingEmergencies.reduce((sum, e) =>
     sum + this.calculateFireTotal(e).amount, 0);
-  
+
   // Calculate debt-to-income ratio
   const monthlyDebtPayments = this.calculateMonthlyDebtPayments();
   const debtToIncomeRatio = (monthlyDebtPayments / monthlyIncome) * 100;
-  
+
   // Calculate available surplus (income - all obligations)
   const availableSurplus = this.calculateAvailableSurplus();
-  
+
   if (anonymized) {
     return `
 Financial Situation:
@@ -1102,6 +1128,7 @@ const defaultPhase: FirePhase = 'idea';
 ### 11.1 Shared Infrastructure (Reuse from Grow/Budget/Subscription)
 
 **Already Built** (from Phase 1 & 2):
+
 - `prompt-generator.service.ts` — Just add new methods for Smile/Fire
 - AI prompt display panel component — Reusable
 - Anonymization utilities (`toRange()`, toggle, confirmation) — Already exists
@@ -1110,84 +1137,89 @@ const defaultPhase: FirePhase = 'idea';
 - i18n infrastructure — Just add new keys
 
 **New Components Needed**:
+
 1. `ai-smile-config.component` — Configuration panel for Smile inputs
 2. `ai-fire-config.component` — Configuration panel for Fire inputs
 
 ### 11.2 Implementation Tasks
 
-| # | Task | Component | Effort | Priority |
-|---|------|-----------|--------|----------|
+| #                      | Task                                             | Component                     | Effort | Priority |
+| ---------------------- | ------------------------------------------------ | ----------------------------- | ------ | -------- |
 | **Data Model Updates** |
-| 1 | Add 'idea' phase to SmilePhase type | `smile.ts` | Small | **P0** |
-| 2 | Add 'idea' phase to FirePhase type | `fire.ts` | Small | **P0** |
-| 3 | Update default phase to 'idea' in add-smile | `add-smile.component.ts` | Small | **P0** |
-| 4 | Update default phase to 'idea' in add-fire | `add-fire.component.ts` | Small | **P0** |
+| 1                      | Add 'idea' phase to SmilePhase type              | `smile.ts`                    | Small  | **P0**   |
+| 2                      | Add 'idea' phase to FirePhase type               | `fire.ts`                     | Small  | **P0**   |
+| 3                      | Update default phase to 'idea' in add-smile      | `add-smile.component.ts`      | Small  | **P0**   |
+| 4                      | Update default phase to 'idea' in add-fire       | `add-fire.component.ts`       | Small  | **P0**   |
 | **Smile AI Generator** |
-| 5 | Add AI icon to Smile component header | `smile.component.html/ts` | Small | **P1** |
-| 6 | Create `ai-smile-config.component` | New component | Medium | **P1** |
-| 7 | Add `generateSmileCreatePrompt()` | `prompt-generator.service.ts` | Medium | **P1** |
-| 8 | Add `generateSmileImprovePrompt()` | `prompt-generator.service.ts` | Medium | **P1** |
-| 9 | Add `extractSmileFinancialContext()` | `prompt-generator.service.ts` | Medium | **P1** |
-| 10 | Add `validateSmileImport()` parser | `prompt-generator.service.ts` | Small | **P1** |
-| 11 | Wire up Smile AI flow (config → prompt → import) | Integration | Small | **P1** |
-| 12 | i18n keys for Smile AI (EN, DE) | Translations | Small | **P1** |
-| **Fire AI Generator** |
-| 13 | Add AI icon to Fire component header | `fire.component.html/ts` | Small | **P1** |
-| 14 | Create `ai-fire-config.component` | New component | Medium | **P1** |
-| 15 | Add `generateFireCreatePrompt()` | `prompt-generator.service.ts` | Medium | **P1** |
-| 16 | Add `generateFireImprovePrompt()` | `prompt-generator.service.ts` | Medium | **P1** |
-| 17 | Add `extractFireFinancialContext()` | `prompt-generator.service.ts` | Medium | **P1** |
-| 18 | Add `calculateDebtToIncomeRatio()` helper | `prompt-generator.service.ts` | Small | **P1** |
-| 19 | Add `validateFireImport()` parser | `prompt-generator.service.ts` | Small | **P1** |
-| 20 | Wire up Fire AI flow (config → prompt → import) | Integration | Small | **P1** |
-| 21 | i18n keys for Fire AI (EN, DE) | Translations | Small | **P1** |
-| **Testing** |
-| 22 | Unit tests for Smile prompt generation | Tests | Medium | **P2** |
-| 23 | Unit tests for Fire prompt generation | Tests | Medium | **P2** |
-| 24 | Unit tests for debt-to-income calculations | Tests | Small | **P2** |
-| 25 | E2E test: Create Smile via AI | E2E | Medium | **P2** |
-| 26 | E2E test: Create Fire via AI | E2E | Medium | **P2** |
-| 27 | E2E test: Improve existing Smile via AI | E2E | Medium | **P2** |
+| 5                      | Add AI icon to Smile component header            | `smile.component.html/ts`     | Small  | **P1**   |
+| 6                      | Create `ai-smile-config.component`               | New component                 | Medium | **P1**   |
+| 7                      | Add `generateSmileCreatePrompt()`                | `prompt-generator.service.ts` | Medium | **P1**   |
+| 8                      | Add `generateSmileImprovePrompt()`               | `prompt-generator.service.ts` | Medium | **P1**   |
+| 9                      | Add `extractSmileFinancialContext()`             | `prompt-generator.service.ts` | Medium | **P1**   |
+| 10                     | Add `validateSmileImport()` parser               | `prompt-generator.service.ts` | Small  | **P1**   |
+| 11                     | Wire up Smile AI flow (config → prompt → import) | Integration                   | Small  | **P1**   |
+| 12                     | i18n keys for Smile AI (EN, DE)                  | Translations                  | Small  | **P1**   |
+| **Fire AI Generator**  |
+| 13                     | Add AI icon to Fire component header             | `fire.component.html/ts`      | Small  | **P1**   |
+| 14                     | Create `ai-fire-config.component`                | New component                 | Medium | **P1**   |
+| 15                     | Add `generateFireCreatePrompt()`                 | `prompt-generator.service.ts` | Medium | **P1**   |
+| 16                     | Add `generateFireImprovePrompt()`                | `prompt-generator.service.ts` | Medium | **P1**   |
+| 17                     | Add `extractFireFinancialContext()`              | `prompt-generator.service.ts` | Medium | **P1**   |
+| 18                     | Add `calculateDebtToIncomeRatio()` helper        | `prompt-generator.service.ts` | Small  | **P1**   |
+| 19                     | Add `validateFireImport()` parser                | `prompt-generator.service.ts` | Small  | **P1**   |
+| 20                     | Wire up Fire AI flow (config → prompt → import)  | Integration                   | Small  | **P1**   |
+| 21                     | i18n keys for Fire AI (EN, DE)                   | Translations                  | Small  | **P1**   |
+| **Testing**            |
+| 22                     | Unit tests for Smile prompt generation           | Tests                         | Medium | **P2**   |
+| 23                     | Unit tests for Fire prompt generation            | Tests                         | Medium | **P2**   |
+| 24                     | Unit tests for debt-to-income calculations       | Tests                         | Small  | **P2**   |
+| 25                     | E2E test: Create Smile via AI                    | E2E                           | Medium | **P2**   |
+| 26                     | E2E test: Create Fire via AI                     | E2E                           | Medium | **P2**   |
+| 27                     | E2E test: Improve existing Smile via AI          | E2E                           | Medium | **P2**   |
 
 ---
 
 ## 12. Key Differentiators — Smile vs Fire Prompts
 
-| Aspect | Smile Projects | Fire Emergencies |
-|--------|---------------|------------------|
-| **Tone** | Inspirational, dream-focused | Practical, crisis management |
-| **Research Focus** | Quality of experience, reviews, "best of" | Price comparison, "good enough", speed |
-| **Budget Approach** | Aspirational upper limits | Strict necessity limits |
-| **Timeline** | Flexible, patient | Urgent, time-sensitive |
-| **Action Items** | Planning & preparation | Immediate fixes & damage control |
-| **Links** | Shopping, reviews, experiences, inspiration | Comparisons, DIY guides, financing, warranties |
-| **Payment Plans** | Build up slowly (saving) | Pay down aggressively (debt elimination) |
-| **Notes Focus** | Tips to enhance experience | Prevention & risk management |
-| **Risk Assessment** | "Can I afford my dream?" | "Will this debt hurt me?" |
-| **Payback Strategy** | N/A (saving, not debt) | Snowball/Avalanche/Realistic |
+| Aspect               | Smile Projects                              | Fire Emergencies                               |
+| -------------------- | ------------------------------------------- | ---------------------------------------------- |
+| **Tone**             | Inspirational, dream-focused                | Practical, crisis management                   |
+| **Research Focus**   | Quality of experience, reviews, "best of"   | Price comparison, "good enough", speed         |
+| **Budget Approach**  | Aspirational upper limits                   | Strict necessity limits                        |
+| **Timeline**         | Flexible, patient                           | Urgent, time-sensitive                         |
+| **Action Items**     | Planning & preparation                      | Immediate fixes & damage control               |
+| **Links**            | Shopping, reviews, experiences, inspiration | Comparisons, DIY guides, financing, warranties |
+| **Payment Plans**    | Build up slowly (saving)                    | Pay down aggressively (debt elimination)       |
+| **Notes Focus**      | Tips to enhance experience                  | Prevention & risk management                   |
+| **Risk Assessment**  | "Can I afford my dream?"                    | "Will this debt hurt me?"                      |
+| **Payback Strategy** | N/A (saving, not debt)                      | Snowball/Avalanche/Realistic                   |
 
 ---
 
 ## 13. Future Enhancements (Phase 3.5+)
 
 ### Prompt History (Local Storage)
+
 - Save generated prompts with timestamp
 - Reuse/edit previous prompts
 - Compare AI responses over time
 - Export prompt history as JSON
 
 ### Multi-Project Synergy Detection
+
 - AI analyzes all Smile projects together
 - Suggests consolidation opportunities (e.g., "These 3 trips could become 1 world tour")
 - Cross-project resource sharing (e.g., camping gear for multiple outdoor projects)
 
 ### Payback Simulator
+
 - Interactive calculator for debt payback scenarios
 - "What if I pay €X more per month?"
 - "What if interest rates change?"
 - Visual timeline slider
 
 ### AI Learning from Outcomes
+
 - After completing a Smile/Fire project, ask: "How accurate was the AI plan?"
 - Store learnings in local memory
 - Future prompts include: "Based on your past projects, you tend to underestimate travel costs by 15%..."
@@ -1214,6 +1246,7 @@ const defaultPhase: FirePhase = 'idea';
 ## 15. Questions & Iteration Notes
 
 **Open Questions for Testing**:
+
 1. What LLMs produce the best quality links? (GPT-4, Claude, Gemini comparison)
 2. How often do users need Mode B (improve) vs Mode A (create)?
 3. What's the optimal default for "Research Depth"? (Quick/Moderate/Deep)
@@ -1221,6 +1254,7 @@ const defaultPhase: FirePhase = 'idea';
 5. Fire emergencies: Should we auto-detect "already borrowed" from liabilities in balance sheet?
 
 **Iteration Plan**:
+
 - Phase 3.0: MVP (Mode A only for both Smile & Fire)
 - Phase 3.1: Add Mode B (improve existing)
 - Phase 3.2: Add advanced payback strategies (debt consolidation suggestions)
@@ -1232,6 +1266,7 @@ const defaultPhase: FirePhase = 'idea';
 **END OF PHASE 3 SPECIFICATION**
 
 ### Phase 4 — Enhancement & Optional API
+
 - Tax Optimization prompt (jurisdiction selector)
 - Optional: "Bring Your Own API Key" for direct LLM integration (ChatGPT, Claude APIs)
 - Optional: Response caching for repeated queries
@@ -1241,7 +1276,7 @@ const defaultPhase: FirePhase = 'idea';
 
 ## 7. Legal & Compliance Notes
 
-- All AI prompt panels must include: *"This is not financial advice. AI-generated suggestions are for informational purposes only. Consult a qualified financial advisor before making investment decisions."*
+- All AI prompt panels must include: _"This is not financial advice. AI-generated suggestions are for informational purposes only. Consult a qualified financial advisor before making investment decisions."_
 - No user data leaves the app unless the user manually copies the prompt
 - **Data anonymization is ON by default** (see Section 0). Exact values require explicit opt-in with confirmation dialog.
 - The prompt preview (Step 3) always shows the full prompt text so the user can verify what data is included before copying
@@ -1252,19 +1287,23 @@ const defaultPhase: FirePhase = 'idea';
 ## 8. Next Steps — TODO
 
 ### Approval
+
 - [x] **CEO Decision**: Approve Phase 1 scope and the USP positioning
 - [x] **CEO Decision**: Confirm anonymization-by-default as company policy
 
 ### Design
+
 - [x] **Design**: UI/UX mockup for the AI Prompt Panel (fits existing panel pattern: `src/app/panels/`)
 - [x] **Design**: Anonymization toggle UX + confirmation dialog wording
 
 ### Implementation — Anonymization Core (build first)
+
 - [x] **Implement**: `toRange()` utility — amount-to-range snapping logic
 - [x] **Implement**: Anonymization methods in `PromptGeneratorService` — formatters for each data type (income, expenses, assets, shares, liabilities, projects)
 - [x] **Implement**: Anonymization toggle component with opt-in privacy warning and confirmation dialog
 
 ### Implementation — Prompt Generator
+
 - [x] **Implement**: `PromptGeneratorService` — financial snapshot extraction (calls anonymization by default)
 - [x] **Implement**: Prompt template engine for Grow Strategy (3 tracks + loan analysis)
 - [x] **Implement**: AI Prompt Panel component with Step 1-3 flow (Configure → Prompt → Import)
@@ -1272,16 +1311,19 @@ const defaultPhase: FirePhase = 'idea';
 - [x] **Implement**: Clipboard copy with user feedback
 
 ### Implementation — Response Import
+
 - [x] **Implement**: JSON response parser with Grow interface mapping
 - [x] **Implement**: Validation layer — sanitize/reject malformed or suspicious LLM output before import
 - [x] **Implement**: Import flow using existing `batchWriteAndSync()`
 - [x] **Implement**: File upload (.json) support
 
 ### Implementation — Shared Infrastructure
+
 - [x] **Implement**: Disclaimer component (integrated in panel)
 - [x] **Implement**: i18n keys (EN, DE) for all AI panel text + anonymization toggle labels
 
 ### Testing
+
 - [x] **Test**: Unit tests for `toRange()` utility — edge cases (0, negative, very large numbers)
 - [x] **Test**: Unit tests for anonymization — verify no exact values leak in default mode
 - [x] **Test**: Unit tests for PromptGeneratorService — snapshot extraction, both tiers
@@ -1289,10 +1331,12 @@ const defaultPhase: FirePhase = 'idea';
 - [ ] **Test**: E2E test for AI prompt generation flow (generate → copy → paste → import)
 
 ### Review & Compliance
+
 - [ ] **Review**: Legal disclaimer text with compliance
 - [ ] **Review**: Anonymization output — spot-check that no PII leaks in Tier 1 prompts
 
 ### Next Phase Planning
+
 - [x] **Plan**: Phase 2 prompt templates (Budget, Subscriptions, Expenses)
 - [x] **Implement**: Phase 2 — Budget Optimizer prompt
 - [x] **Implement**: Phase 2 — Subscription Audit prompt
@@ -1300,15 +1344,18 @@ const defaultPhase: FirePhase = 'idea';
 - [x] **Implement**: Phase 2 — Shared prompt panel infrastructure (reusable across features)
 
 ### Phase 3 Implementation — Smile & Fire AI Generators
+
 **Status:** ✅ **COMPLETE** (2026-04-06)
 
 #### Core Infrastructure
+
 - [x] **Data Model**: Added 'idea' phase to SmilePhase ('idea' | 'planning' | 'saving' | 'ready' | 'completed')
 - [x] **Data Model**: Added 'idea' phase to FirePhase ('idea' | 'planning' | 'saving' | 'ready' | 'completed')
 - [x] **Components**: Updated default phase to 'idea' in add-smile and add-fire components
 - [x] **Components**: Updated phases array to include 'idea' in both components
 
 #### Context-Based Isolation ✅ NEW
+
 - [x] **AI Assistant**: Added `initialContext` parameter ('grow' | 'smile' | 'fire' | 'all')
 - [x] **Dropdown Filtering**: Only show relevant prompt types based on context
 - [x] **Smile Projects**: Opens with context='smile' showing only smile-create/smile-improve
@@ -1316,6 +1363,7 @@ const defaultPhase: FirePhase = 'idea';
 - [x] **Grow**: Opens with context='all' or 'grow' showing all 4 Grow prompt types
 
 #### Prompt Generation Service
+
 - [x] **Service**: Added `extractSmileFinancialContext()` method
   - Extracts Smile allocation percentage
   - Calculates Smile account balance
@@ -1336,6 +1384,7 @@ const defaultPhase: FirePhase = 'idea';
 - [x] **Type System**: Extended PromptOptions with Smile/Fire specific fields
 
 #### Complete Configuration UI ✅ NEW
+
 - [x] **Smile Create Settings**:
   - [x] Goal (textarea) - fully connected to PromptOptions
   - [x] Urgency (dropdown: flexible/6months/1year/2years) - fully connected
@@ -1355,12 +1404,14 @@ const defaultPhase: FirePhase = 'idea';
   - [x] Number of Suggestions (dropdown with "Other" option) ✅ NEW
 
 #### "Other" Option Pattern ✅ NEW
+
 - [x] **Implementation**: Number of Suggestions dropdown includes "Other" option
 - [x] **Custom Input**: Shows number input field when "Other" is selected
 - [x] **Data Flow**: Custom value properly passed to prompt generation
 - [x] **Applied To**: Both Smile and Fire configurations
 
 #### Import Functionality ✅ NEW
+
 - [x] **Smile Import**: Full JSON parsing and validation
   - [x] `parseSmileProjects()` method extracts Smile objects from AI response
   - [x] `importSmileProjects()` method saves to AppState and localStorage
@@ -1378,6 +1429,7 @@ const defaultPhase: FirePhase = 'idea';
 - [x] **Shared Utilities**: `extractAndParseJson()`, `sanitize()` for XSS protection
 
 #### UI Integration
+
 - [x] **UI**: Added AI icon button to smile-projects.component.html header
 - [x] **UI**: Added AI icon button to fire-emergencies.component.html header
 - [x] **UI**: Added `openAiAssistant()` method to smile-projects component
@@ -1386,6 +1438,7 @@ const defaultPhase: FirePhase = 'idea';
 - [x] **UI**: Imported AiAssistantComponent in smile-projects and fire-emergencies modules
 
 #### AI Assistant Panel Integration
+
 - [x] **Panel**: Added switch cases for 'smile-create', 'smile-improve', 'fire-create', 'fire-improve' in generatePrompt()
 - [x] **Panel**: Extended importType union to include 'smile-project' and 'fire-emergency'
 - [x] **Panel**: Updated goToImport() and skipToImport() methods to handle Smile/Fire types
@@ -1393,6 +1446,7 @@ const defaultPhase: FirePhase = 'idea';
 - [x] **Panel**: Helper method `toggleArrayValue()` for checkbox arrays ✅ NEW
 
 #### i18n Support (Complete)
+
 - [x] **English (en.json)**: All Smile/Fire prompt type labels and descriptions
 - [x] **English (en.json)**: All configuration field labels (goal, urgency, research, etc.)
 - [x] **English (en.json)**: Information Focus checkbox labels ✅ NEW
@@ -1406,6 +1460,7 @@ const defaultPhase: FirePhase = 'idea';
 - [x] **Arabic (ar.json)**: Added startWithAi keys
 
 #### Testing & Validation
+
 - [x] **Tests**: Fixed add-fire.component.spec.ts to expect 'idea' as default phase
 - [x] **Tests**: All 70 test suites passing (661 tests total) ✅ VERIFIED
 - [x] **Validation**: No TypeScript compilation errors ✅ VERIFIED
@@ -1416,6 +1471,7 @@ const defaultPhase: FirePhase = 'idea';
 #### Phase 3 - Final Status: ✅ **PRODUCTION READY**
 
 **What Works:**
+
 1. ✅ **Complete Isolation**: Fire/Smile/Grow contexts are fully separated
 2. ✅ **Full Configuration UI**: All fields implemented with checkboxes and "Other" options
 3. ✅ **Working Import**: JSON parsing and project creation fully functional
@@ -1424,30 +1480,35 @@ const defaultPhase: FirePhase = 'idea';
 6. ✅ **All Tests Passing**: 70 suites, 661 tests, zero failures
 
 **Known Limitations / Future Work:**
+
 - [ ] **Mode B (Improve)**: UI for selecting existing project/emergency and improvement areas (placeholder exists)
 - [ ] **Advanced Customization**: numberOfSuggestions integrated into prompt templates
 - [ ] **Smile/Fire Improve**: Full implementation of improvement mode (create mode complete)
 
 #### Implementation Notes
+
 ✅ **Architecture**: Clean separation of concerns - context filtering at panel level, import handlers specific to each type
 
 ✅ **Data Flow**: PromptOptions → generatePrompt() → AI → parseAndPreview() → importProjects() → AppState/localStorage
 
 ✅ **User Experience**: Clicking AI button in Smile shows ONLY Smile options. Clicking AI button in Fire shows ONLY Fire options. Perfect isolation achieved.
 
-💡 **Next Steps for Future Iterations**: 
+💡 **Next Steps for Future Iterations**:
+
 1. Implement Mode B (Improve) with project/emergency selector
 2. Add numberOfSuggestions to prompt templates (currently accepted but not used in prompt text)
 3. Consider adding preview/validation step before import
 4. Add more informationFocus and researchNeeds options based on user feedback
 
 #### Core Infrastructure
+
 - [x] **Data Model**: Added 'idea' phase to SmilePhase ('idea' | 'planning' | 'saving' | 'ready' | 'completed')
 - [x] **Data Model**: Added 'idea' phase to FirePhase ('idea' | 'planning' | 'saving' | 'ready' | 'completed')
 - [x] **Components**: Updated default phase to 'idea' in add-smile and add-fire components
 - [x] **Components**: Updated phases array to include 'idea' in both components
 
 #### Prompt Generation Service
+
 - [x] **Service**: Added `extractSmileFinancialContext()` method
   - Extracts Smile allocation percentage
   - Calculates Smile account balance
@@ -1467,6 +1528,7 @@ const defaultPhase: FirePhase = 'idea';
 - [x] **Type System**: Extended PromptType to include 'smile-create', 'smile-improve', 'fire-create', 'fire-improve'
 
 #### UI Integration
+
 - [x] **UI**: Added AI icon button to smile-projects.component.html header
 - [x] **UI**: Added AI icon button to fire-emergencies.component.html header
 - [x] **UI**: Added `openAiAssistant()` method to smile-projects component
@@ -1475,24 +1537,28 @@ const defaultPhase: FirePhase = 'idea';
 - [x] **UI**: Imported AiAssistantComponent in smile-projects and fire-emergencies modules
 
 #### AI Assistant Panel Integration
+
 - [x] **Panel**: Added switch cases for 'smile-create', 'smile-improve', 'fire-create', 'fire-improve' in generatePrompt()
 - [x] **Panel**: Extended importType union to include 'smile-project' and 'fire-emergency'
 - [x] **Panel**: Updated goToImport() and skipToImport() methods to handle Smile/Fire types
 - [x] **Panel**: Added placeholder configurations for Smile/Fire prompts (full UIconig panel to be implemented in future iteration)
 
 #### i18n Support
+
 - [x] **i18n**: Added `SmileProjects.startWithAi` key to en.json ("Start with AI")
 - [x] **i18n**: Added `FireEmergencies.startWithAi` key to en.json ("Start with AI")
 - [x] **i18n**: Added `SmileProjects.startWithAi` key to de.json ("Mit KI starten")
 - [x] **i18n**: Added `FireEmergencies.startWithAi` key to de.json ("Mit KI starten")
 
 #### Testing & Validation
+
 - [x] **Tests**: Fixed add-fire.component.spec.ts to expect 'idea' as default phase
 - [x] **Tests**: All 70 test suites passing (661 tests total)
 - [x] **Validation**: No TypeScript compilation errors
 - [x] **Validation**: All existing Smile/Fire functionality preserved
 
 #### Known Limitations / Future Work
+
 - [ ] **UI Configuration Panel**: Full Smile/Fire configuration UI not yet implemented (placeholder defaults used)
   - Smile: goal field, urgency selector, research depth, information focus checkboxes, budget flexibility
   - Fire: emergency type field, total amount, already borrowed toggle, lender details, payback strategy
@@ -1501,6 +1567,7 @@ const defaultPhase: FirePhase = 'idea';
 - [ ] **Prompt Templates**: Advanced customization options from spec (numberOfSuggestions, selectedBuckets, etc.)
 
 #### Implementation Notes
+
 ✅ **Pattern Established**: The core architecture is in place. Adding full configuration UI is straightforward once design is finalized.
 
 ✅ **Backwards Compatible**: All existing Smile/Fire features work unchanged. New 'idea' phase is opt-in via AI generator.

@@ -1,4 +1,4 @@
-import { ViewChild, inject, Directive, OnDestroy } from '@angular/core';
+import { ViewChild, inject, Directive, OnDestroy, OnInit, AfterViewChecked } from '@angular/core';
 import { LiveAnnouncer } from '@angular/cdk/a11y';
 import { MatSort } from '@angular/material/sort';
 import { MatPaginator } from '@angular/material/paginator';
@@ -19,16 +19,17 @@ import { AppStateService } from '../services/app-state.service';
  * Each child defines its own `allowedAccounts`, `classReference`, and account-specific logic.
  */
 @Directive()
-export abstract class BaseAccountComponent implements OnDestroy {
-
+export abstract class BaseAccountComponent implements OnDestroy, OnInit, AfterViewChecked {
   protected _liveAnnouncer = inject(LiveAnnouncer);
   private txSub?: RxSubscription;
   private tableInitialized = false;
   private paginatorSynced = false;
   displayedColumns: string[] = ['id', 'account', 'amount', 'category', 'date'];
-  searchTextField = "";
+  searchTextField = '';
 
-  public get appReference() { return AppComponent; }
+  public get appReference() {
+    return AppComponent;
+  }
   public settingsReference = SettingsComponent;
   public accountingReference = AccountingComponent;
   public appState = AppStateService.instance;
@@ -40,7 +41,10 @@ export abstract class BaseAccountComponent implements OnDestroy {
   @ViewChild('topPaginator') topPaginator!: MatPaginator;
   @ViewChild('bottomPaginator') bottomPaginator!: MatPaginator;
 
-  constructor(protected router: Router, protected filterService: TransactionFilterService) {}
+  constructor(
+    protected router: Router,
+    protected filterService: TransactionFilterService,
+  ) {}
 
   /**
    * Shared constructor initialization. Call from child constructor.
@@ -50,13 +54,15 @@ export abstract class BaseAccountComponent implements OnDestroy {
     cls.allTransactions = AppStateService.instance.allTransactions;
 
     // Filter to show only allowed accounts initially
-    AccountingComponent.dataSource.data = AppStateService.instance.allTransactions.map((transaction, index) => {
-      return {
-        ...transaction,
-        id: index,
-        visible: cls.allowedAccounts.includes(transaction.account)
-      };
-    });
+    AccountingComponent.dataSource.data = AppStateService.instance.allTransactions.map(
+      (transaction, index) => {
+        return {
+          ...transaction,
+          id: index,
+          visible: cls.allowedAccounts.includes(transaction.account),
+        };
+      },
+    );
 
     // Set filter predicate to show only visible transactions
     AccountingComponent.dataSource.filterPredicate = (data: any) => {
@@ -68,10 +74,12 @@ export abstract class BaseAccountComponent implements OnDestroy {
     cls.setDate();
     cls.availableAccounts = this.filterService.getAvailableAccounts(
       AppStateService.instance.allTransactions,
-      cls.allowedAccounts
+      cls.allowedAccounts,
     );
     cls.availableTags = this.filterService.getAvailableTags(
-      AppStateService.instance.allTransactions.filter(t => cls.allowedAccounts.includes(t.account))
+      AppStateService.instance.allTransactions.filter((t) =>
+        cls.allowedAccounts.includes(t.account),
+      ),
     );
   }
 
@@ -117,8 +125,10 @@ export abstract class BaseAccountComponent implements OnDestroy {
       this.paginatorSynced = true;
 
       this.topPaginator.page.subscribe((pageEvent) => {
-        if (this.bottomPaginator.pageIndex !== pageEvent.pageIndex ||
-            this.bottomPaginator.pageSize !== pageEvent.pageSize) {
+        if (
+          this.bottomPaginator.pageIndex !== pageEvent.pageIndex ||
+          this.bottomPaginator.pageSize !== pageEvent.pageSize
+        ) {
           this.bottomPaginator.pageIndex = pageEvent.pageIndex;
           this.bottomPaginator.pageSize = pageEvent.pageSize;
           this.bottomPaginator.page.emit(pageEvent);
@@ -126,8 +136,10 @@ export abstract class BaseAccountComponent implements OnDestroy {
       });
 
       this.bottomPaginator.page.subscribe((pageEvent) => {
-        if (this.topPaginator.pageIndex !== pageEvent.pageIndex ||
-            this.topPaginator.pageSize !== pageEvent.pageSize) {
+        if (
+          this.topPaginator.pageIndex !== pageEvent.pageIndex ||
+          this.topPaginator.pageSize !== pageEvent.pageSize
+        ) {
           this.topPaginator.pageIndex = pageEvent.pageIndex;
           this.topPaginator.pageSize = pageEvent.pageSize;
         }
@@ -192,19 +204,23 @@ export abstract class BaseAccountComponent implements OnDestroy {
     const filteredTransactions = this.filterService.applyFilters(
       AppStateService.instance.allTransactions,
       cls.advancedFilter,
-      cls.allowedAccounts
+      cls.allowedAccounts,
     );
 
-    AccountingComponent.dataSource.data = AppStateService.instance.allTransactions.map((transaction, index) => {
-      const isVisible = filteredTransactions.some(t =>
-        t.date === transaction.date &&
-        t.amount === transaction.amount &&
-        t.category === transaction.category &&
-        t.comment === transaction.comment &&
-        t.account === transaction.account
-      ) && cls.allowedAccounts.includes(transaction.account);
-      return { ...transaction, id: index, visible: isVisible };
-    });
+    AccountingComponent.dataSource.data = AppStateService.instance.allTransactions.map(
+      (transaction, index) => {
+        const isVisible =
+          filteredTransactions.some(
+            (t) =>
+              t.date === transaction.date &&
+              t.amount === transaction.amount &&
+              t.category === transaction.category &&
+              t.comment === transaction.comment &&
+              t.account === transaction.account,
+          ) && cls.allowedAccounts.includes(transaction.account);
+        return { ...transaction, id: index, visible: isVisible };
+      },
+    );
 
     AccountingComponent.dataSource.filterPredicate = (data: any) => {
       return data.visible !== false;
@@ -236,17 +252,19 @@ export abstract class BaseAccountComponent implements OnDestroy {
         date: true,
         time: true,
         category: true,
-        comment: true
-      }
+        comment: true,
+      },
     };
 
-    AccountingComponent.dataSource.data = AppStateService.instance.allTransactions.map((transaction, index) => {
-      return {
-        ...transaction,
-        id: index,
-        visible: cls.allowedAccounts.includes(transaction.account)
-      };
-    });
+    AccountingComponent.dataSource.data = AppStateService.instance.allTransactions.map(
+      (transaction, index) => {
+        return {
+          ...transaction,
+          id: index,
+          visible: cls.allowedAccounts.includes(transaction.account),
+        };
+      },
+    );
 
     AccountingComponent.dataSource.filterPredicate = (data: any) => {
       return data.visible !== false;
@@ -266,7 +284,7 @@ export abstract class BaseAccountComponent implements OnDestroy {
     const cls = this.classReference;
     const searchTerms = this.searchTextField.toLowerCase().split(',');
     AccountingComponent.dataSource.filterPredicate = (data, filter) => {
-      return searchTerms.some(term => {
+      return searchTerms.some((term) => {
         const trimmedTerm = term.trim();
 
         let dateMatches = data.date.toLowerCase().includes(trimmedTerm);
@@ -283,12 +301,14 @@ export abstract class BaseAccountComponent implements OnDestroy {
           }
         }
 
-        return data.account.toLowerCase().includes(trimmedTerm) ||
-           String(data.amount).includes(trimmedTerm) ||
-           dateMatches ||
-           data.time.toLowerCase().includes(trimmedTerm) ||
-           data.category.toLowerCase().includes(trimmedTerm) ||
-           data.comment.toLowerCase().includes(trimmedTerm);
+        return (
+          data.account.toLowerCase().includes(trimmedTerm) ||
+          String(data.amount).includes(trimmedTerm) ||
+          dateMatches ||
+          data.time.toLowerCase().includes(trimmedTerm) ||
+          data.category.toLowerCase().includes(trimmedTerm) ||
+          data.comment.toLowerCase().includes(trimmedTerm)
+        );
       });
     };
 
@@ -297,7 +317,7 @@ export abstract class BaseAccountComponent implements OnDestroy {
   }
 
   clearSearch() {
-    this.searchTextField = "";
+    this.searchTextField = '';
     this.classReference.isSearched = false;
     AccountingComponent.dataSource.filter = '';
   }
@@ -311,7 +331,7 @@ export abstract class BaseAccountComponent implements OnDestroy {
       AppStateService.instance.allTransactions[index].date,
       AppStateService.instance.allTransactions[index].time,
       AppStateService.instance.allTransactions[index].category,
-      AppStateService.instance.allTransactions[index].comment
+      AppStateService.instance.allTransactions[index].comment,
     );
   }
 }

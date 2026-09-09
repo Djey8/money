@@ -4,7 +4,7 @@ const winston = require('winston');
 const logFormat = winston.format.combine(
   winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
   winston.format.errors({ stack: true }),
-  winston.format.json()
+  winston.format.json(),
 );
 
 // Console format for development (human-readable)
@@ -13,30 +13,30 @@ const consoleFormat = winston.format.combine(
   winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
   winston.format.printf(({ timestamp, level, message, ...metadata }) => {
     let msg = `${timestamp} [${level}]: ${message}`;
-    
+
     // Add metadata if present
     if (Object.keys(metadata).length > 0) {
       msg += ` ${JSON.stringify(metadata)}`;
     }
-    
+
     return msg;
-  })
+  }),
 );
 
 // Create the logger
 const logger = winston.createLogger({
   level: process.env.LOG_LEVEL || 'info',
   format: logFormat,
-  defaultMeta: { 
+  defaultMeta: {
     service: 'money-backend',
-    environment: process.env.NODE_ENV || 'development'
+    environment: process.env.NODE_ENV || 'development',
   },
   transports: [
     // Write all logs to stdout (for Loki/Promtail to collect)
     new winston.transports.Console({
-      format: process.env.NODE_ENV === 'production' ? logFormat : consoleFormat
-    })
-  ]
+      format: process.env.NODE_ENV === 'production' ? logFormat : consoleFormat,
+    }),
+  ],
 });
 
 // Helper function to log user activity
@@ -45,7 +45,7 @@ logger.logUserActivity = (userId, action, details = {}) => {
     userId,
     action,
     activityType: 'user_behavior',
-    ...details
+    ...details,
   });
 };
 
@@ -59,7 +59,7 @@ logger.logRequest = (req, responseTime, statusCode) => {
     userId: req.userId || req.user?.userId,
     statusCode,
     responseTime: `${responseTime}ms`,
-    requestType: 'api_call'
+    requestType: 'api_call',
   });
 };
 
@@ -69,10 +69,10 @@ logger.logError = (error, context = {}) => {
     error: {
       name: error.name,
       message: error.message,
-      stack: error.stack
+      stack: error.stack,
     },
     errorType: 'application_error',
-    ...context
+    ...context,
   });
 };
 
@@ -81,7 +81,7 @@ logger.logSecurity = (event, details = {}) => {
   logger.warn('Security event', {
     event,
     securityType: 'security_event',
-    ...details
+    ...details,
   });
 };
 

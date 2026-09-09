@@ -8,18 +8,21 @@ import { firstValueFrom } from 'rxjs';
  * Centralized authentication service that handles both Firebase and selfhosted authentication
  */
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class AuthService {
   private mode: 'firebase' | 'selfhosted' = environment.mode as 'firebase' | 'selfhosted';
 
-  constructor(private afAuth: AngularFireAuth, private http: HttpClient) {}
+  constructor(
+    private afAuth: AngularFireAuth,
+    private http: HttpClient,
+  ) {}
 
   /**
    * Check if user is authenticated (works for both Firebase and Selfhosted modes)
    * @returns Promise<{authenticated: boolean, error?: string}>
    */
-  async checkAuthentication(): Promise<{authenticated: boolean, error?: string}> {
+  async checkAuthentication(): Promise<{ authenticated: boolean; error?: string }> {
     // Demo mode: always authenticated
     if (sessionStorage.getItem('demo_mode') === 'true') {
       return { authenticated: true };
@@ -62,11 +65,11 @@ export class AuthService {
     } else {
       // Selfhosted mode - check if userId exists (cookie is validated server-side)
       const userId = localStorage.getItem('selfhosted_userId');
-      
+
       if (!userId) {
         return { authenticated: false, error: 'Session expired. Please log in again.' };
       }
-      
+
       return { authenticated: true };
     }
   }
@@ -106,7 +109,11 @@ export class AuthService {
       localStorage.removeItem('selfhosted_userId');
       try {
         await firstValueFrom(
-          this.http.post(`${environment.selfhosted.apiUrl}/auth/logout`, {}, { withCredentials: true })
+          this.http.post(
+            `${environment.selfhosted.apiUrl}/auth/logout`,
+            {},
+            { withCredentials: true },
+          ),
         );
       } catch {
         // Logout should succeed even if the request fails

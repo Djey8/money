@@ -12,24 +12,47 @@ import { AppNumberPipe } from 'src/app/shared/pipes/app-number.pipe';
 import { TrapFocusDirective } from 'src/app/shared/directives/trap-focus.directive';
 
 // Deferred imports — resolved after module init to break circular chains
-let AppComponent: any; setTimeout(() => import('src/app/app.component').then(m => AppComponent = m.AppComponent));
-let BalanceComponent: any; setTimeout(() => import('../../../main/cashflow/balance/balance.component').then(m => BalanceComponent = m.BalanceComponent));
-let InfoComponent: any; setTimeout(() => import('../info.component').then(m => InfoComponent = m.InfoComponent));
-let ProfileComponent: any; setTimeout(() => import('src/app/panels/profile/profile.component').then(m => ProfileComponent = m.ProfileComponent));
-let MenuComponent: any; setTimeout(() => import('src/app/panels/menu/menu.component').then(m => MenuComponent = m.MenuComponent));
-let AddComponent: any; setTimeout(() => import('src/app/panels/add/add.component').then(m => AddComponent = m.AddComponent));
-let AddSmileComponent: any; setTimeout(() => import('src/app/panels/add/add-smile/add-smile.component').then(m => AddSmileComponent = m.AddSmileComponent));
+let AppComponent: any;
+setTimeout(() => import('src/app/app.component').then((m) => (AppComponent = m.AppComponent)));
+let BalanceComponent: any;
+setTimeout(() =>
+  import('../../../main/cashflow/balance/balance.component').then(
+    (m) => (BalanceComponent = m.BalanceComponent),
+  ),
+);
+let InfoComponent: any;
+setTimeout(() => import('../info.component').then((m) => (InfoComponent = m.InfoComponent)));
+let ProfileComponent: any;
+setTimeout(() =>
+  import('src/app/panels/profile/profile.component').then(
+    (m) => (ProfileComponent = m.ProfileComponent),
+  ),
+);
+let MenuComponent: any;
+setTimeout(() =>
+  import('src/app/panels/menu/menu.component').then((m) => (MenuComponent = m.MenuComponent)),
+);
+let AddComponent: any;
+setTimeout(() =>
+  import('src/app/panels/add/add.component').then((m) => (AddComponent = m.AddComponent)),
+);
+let AddSmileComponent: any;
+setTimeout(() =>
+  import('src/app/panels/add/add-smile/add-smile.component').then(
+    (m) => (AddSmileComponent = m.AddSmileComponent),
+  ),
+);
 @Component({
   selector: 'app-info-asset',
   standalone: true,
   imports: [TrapFocusDirective, CommonModule, FormsModule, TranslateModule, AppNumberPipe],
   templateUrl: './info-asset.component.html',
-  styleUrls: ['../../../shared/styles/info-panel.css', './info-asset.component.css']
+  styleUrls: ['../../../shared/styles/info-panel.css', './info-asset.component.css'],
 })
 export class InfoAssetComponent extends BaseInfoComponent {
   static index = 1;
 
-  static title = "Driver Licence";
+  static title = 'Driver Licence';
   static amount = 0.0;
 
   static setInfoAssetComponent(id: number, title: string, amount: number) {
@@ -47,31 +70,34 @@ export class InfoAssetComponent extends BaseInfoComponent {
   static isInfo;
   static isError;
   public classReference = InfoAssetComponent;
-  constructor(router: Router, private persistence: PersistenceService) {
+  constructor(
+    router: Router,
+    private persistence: PersistenceService,
+  ) {
     super(router);
     this.initStatic(InfoAssetComponent);
   }
 
-  buyAsset(){
+  buyAsset() {
     AddComponent.categoryTextField = `@${InfoAssetComponent.title}`;
-    AddComponent.url = "/balance";
-    AddComponent.amountTextField = "-1";
+    AddComponent.url = '/balance';
+    AddComponent.amountTextField = '-1';
     AddComponent.commentTextField = `Buy Asset ${InfoAssetComponent.title} 1 x ${InfoAssetComponent.amount};`;
     AddComponent.isLiabilitie = false;
-    AddComponent.creditTextField = "";
+    AddComponent.creditTextField = '';
     InfoAssetComponent.isInfo = false;
     AddComponent.isAdd = true;
     MenuComponent.isMenu = false;
     InfoComponent.isInfo = false;
   }
-  sellAsset(){
+  sellAsset() {
     AddComponent.categoryTextField = `@${InfoAssetComponent.title}`;
-    AddComponent.selectedOption = "Income";
-    AddComponent.amountTextField = "1";
+    AddComponent.selectedOption = 'Income';
+    AddComponent.amountTextField = '1';
     AddComponent.commentTextField = `Sell Asset ${InfoAssetComponent.title} 1 x ${InfoAssetComponent.amount};`;
     AddComponent.isLiabilitie = false;
-    AddComponent.creditTextField = "";
-    AddComponent.url = "/balance";
+    AddComponent.creditTextField = '';
+    AddComponent.url = '/balance';
     InfoAssetComponent.isInfo = false;
     AddComponent.isAdd = true;
     MenuComponent.isMenu = false;
@@ -101,17 +127,25 @@ export class InfoAssetComponent extends BaseInfoComponent {
   }
 
   invalidTitle(title: string) {
-    return isDuplicateTitle(title, [AppStateService.instance.allAssets, AppStateService.instance.allShares, AppStateService.instance.allInvestments], 'tag');
+    return isDuplicateTitle(
+      title,
+      [
+        AppStateService.instance.allAssets,
+        AppStateService.instance.allShares,
+        AppStateService.instance.allInvestments,
+      ],
+      'tag',
+    );
   }
 
   updateAsset() {
     //Validation (check if Amount is not empty)
-    if (this.titleTextField == "") {
-      this.showError("Please fill out all required fields.");
+    if (this.titleTextField == '') {
+      this.showError('Please fill out all required fields.');
     } else {
       if (AppStateService.instance.allAssets[InfoAssetComponent.index].tag != this.titleTextField) {
         if (this.invalidTitle(this.titleTextField)) {
-          this.showError("This fire asset already exists.");
+          this.showError('This fire asset already exists.');
         }
       }
       if (!InfoAssetComponent.isError) {
@@ -140,7 +174,7 @@ export class InfoAssetComponent extends BaseInfoComponent {
           onError: (error) => {
             AppStateService.instance.isSaving = false;
             this.toastService.show(error.message || 'Database write failed', 'error');
-          }
+          },
         });
       }
     }
@@ -172,7 +206,7 @@ export class InfoAssetComponent extends BaseInfoComponent {
           onError: (error) => {
             AppStateService.instance.isSaving = false;
             this.toastService.show(error.message || 'Database write failed', 'error');
-          }
+          },
         });
       } catch (error) {
         this.showError(error.message || 'Error occurred');

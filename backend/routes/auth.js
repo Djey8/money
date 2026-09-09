@@ -6,7 +6,33 @@ const { getAuthDb, getUsersDb } = require('../config/db');
 const logger = require('../config/logger');
 const { logAuthEvent, logUserActivity, logSecurityEvent } = require('../middleware/logging');
 const { authenticateToken } = require('../middleware/auth');
+const {
+  getEncryptionConfig,
+  setEncryptionConfig,
+  DEFAULT_ENCRYPTION_CONFIG,
+} = require('../services/encryption-session');
 const router = express.Router();
+
+/**
+ * `/login` and `/refresh` enrich their response with `encryptionConfig`
+ * purely so the frontend can restore its in-memory key — neither route's
+ * actual job (authenticating, issuing/rotating tokens) depends on this
+ * read succeeding. Unlike the dedicated `/encryption-config` routes (which
+ * correctly propagate a genuine, non-404 failure), a transient failure
+ * here must degrade to defaults rather than fail the whole request: by
+ * the time this read runs, `/login` has already set session cookies and
+ * `/refresh` has already revoked the old refresh token and issued new
+ * cookies, so letting this throw would report "login/refresh failed" to a
+ * caller who actually now holds a valid session (or, worse for `/refresh`,
+ * get forcibly logged out by `clearAuthCookies` in the outer catch).
+ */
+async function getEncryptionConfigOrDefault(authDb, userId) {
+  try {
+    return await getEncryptionConfig(authDb, userId);
+  } catch {
+    return DEFAULT_ENCRYPTION_CONFIG;
+  }
+}
 
 const JWT_SECRET = process.env.JWT_SECRET;
 // Long-lived sessions: UX is prioritized over re-authentication frequency.
@@ -24,18 +50,18 @@ const COOKIE_OPTIONS = {
   httpOnly: true,
   secure: IS_PRODUCTION,
   sameSite: 'strict',
-  path: '/'
+  path: '/',
 };
 
 function setAuthCookies(res, accessToken, refreshToken) {
   res.cookie('access_token', accessToken, {
     ...COOKIE_OPTIONS,
-    maxAge: ACCESS_TOKEN_MAX_AGE_MS
+    maxAge: ACCESS_TOKEN_MAX_AGE_MS,
   });
   res.cookie('refresh_token', refreshToken, {
     ...COOKIE_OPTIONS,
     path: '/api/auth',
-    maxAge: REFRESH_TOKEN_MAX_AGE_MS
+    maxAge: REFRESH_TOKEN_MAX_AGE_MS,
   });
 }
 
@@ -46,8 +72,10 @@ function clearAuthCookies(res) {
 
 async function createRefreshToken(userId, email) {
   const jti = crypto.randomUUID();
-  const refreshToken = jwt.sign({ userId, email, jti }, JWT_SECRET, { expiresIn: REFRESH_TOKEN_EXPIRES_IN });
-  
+  const refreshToken = jwt.sign({ userId, email, jti }, JWT_SECRET, {
+    expiresIn: REFRESH_TOKEN_EXPIRES_IN,
+  });
+
   // Store refresh token reference in auth database for revocation
   const authDb = getAuthDb();
   await authDb.insert({
@@ -55,9 +83,9 @@ async function createRefreshToken(userId, email) {
     type: 'refresh_token',
     userId,
     createdAt: new Date().toISOString(),
-    expiresAt: new Date(Date.now() + REFRESH_TOKEN_MAX_AGE_MS).toISOString()
+    expiresAt: new Date(Date.now() + REFRESH_TOKEN_MAX_AGE_MS).toISOString(),
   });
-  
+
   return refreshToken;
 }
 
@@ -79,7 +107,7 @@ async function isRefreshTokenValid(jti) {
   try {
     await authDb.get(`rt_${jti}`);
     return true;
-  } catch (err) {
+  } catch {
     return false;
   }
 }
@@ -130,32 +158,6 @@ function isAccountLocked(email) {
   return false;
 }
 
-// --- Encryption config helpers ------------------------------------------------
-// Stored in the user's auth document as `encryptionConfig`.
-// Returns { key, encryptLocal, encryptDatabase } or defaults.
-
-async function getEncryptionConfig(userId) {
-  try {
-    const authDb = getAuthDb();
-    const userDoc = await authDb.get(userId);
-    return userDoc.encryptionConfig || { key: 'default', encryptLocal: true, encryptDatabase: false };
-  } catch {
-    return { key: 'default', encryptLocal: true, encryptDatabase: false };
-  }
-}
-
-async function setEncryptionConfig(userId, config) {
-  const authDb = getAuthDb();
-  const userDoc = await authDb.get(userId);
-  userDoc.encryptionConfig = {
-    key: config.key || 'default',
-    encryptLocal: !!config.encryptLocal,
-    encryptDatabase: !!config.encryptDatabase
-  };
-  userDoc.updatedAt = new Date().toISOString();
-  await authDb.insert(userDoc);
-}
-
 // Guest identity — issues a lightweight JWT (role: 'guest') for unauthenticated
 // visitors who want to post in the Community section without registering.
 // Idempotent: if the caller already has a valid access token (guest or full
@@ -175,11 +177,13 @@ router.post('/guest', (req, res) => {
   }
 
   const guestId = `guest_${Date.now()}_${crypto.randomUUID().replace(/-/g, '').substring(0, 9)}`;
-  const accessToken = jwt.sign({ userId: guestId, role: 'guest' }, JWT_SECRET, { expiresIn: GUEST_TOKEN_EXPIRES_IN });
+  const accessToken = jwt.sign({ userId: guestId, role: 'guest' }, JWT_SECRET, {
+    expiresIn: GUEST_TOKEN_EXPIRES_IN,
+  });
 
   res.cookie('access_token', accessToken, {
     ...COOKIE_OPTIONS,
-    maxAge: GUEST_TOKEN_MAX_AGE_MS
+    maxAge: GUEST_TOKEN_MAX_AGE_MS,
   });
 
   logAuthEvent('guest_login', guestId, true, {});
@@ -207,7 +211,9 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ error: 'Password must be at least 8 characters' });
     }
     if (!/[A-Z]/.test(password) || !/[a-z]/.test(password) || !/[0-9]/.test(password)) {
-      return res.status(400).json({ error: 'Password must contain uppercase, lowercase, and a number' });
+      return res
+        .status(400)
+        .json({ error: 'Password must contain uppercase, lowercase, and a number' });
     }
 
     const authDb = getAuthDb();
@@ -217,7 +223,7 @@ router.post('/register', async (req, res) => {
     try {
       const result = await authDb.find({
         selector: { email },
-        limit: 1
+        limit: 1,
       });
 
       if (result.docs.length > 0) {
@@ -236,7 +242,7 @@ router.post('/register', async (req, res) => {
       _id: userId,
       email,
       password: hashedPassword,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
     };
 
     await authDb.insert(user);
@@ -250,16 +256,16 @@ router.post('/register', async (req, res) => {
       data: {
         info: {
           email: email,
-          username: username || email.split('@')[0] // Use provided username or email prefix as default
-        }
-      }
+          username: username || email.split('@')[0], // Use provided username or email prefix as default
+        },
+      },
     };
 
     try {
       await usersDb.insert(userDataDoc);
       logger.logUserActivity(userId, 'user_registered', {
         username: username || email.split('@')[0],
-        hasCustomUsername: !!username
+        hasCustomUsername: !!username,
       });
     } catch (err) {
       logger.logError(err, { context: 'user_data_document_creation', userId });
@@ -272,7 +278,9 @@ router.post('/register', async (req, res) => {
     logUserActivity(userId, 'account_created', { email, registrationMethod: 'email' });
 
     // Generate tokens and set cookies
-    const accessToken = jwt.sign({ userId, email }, JWT_SECRET, { expiresIn: ACCESS_TOKEN_EXPIRES_IN });
+    const accessToken = jwt.sign({ userId, email }, JWT_SECRET, {
+      expiresIn: ACCESS_TOKEN_EXPIRES_IN,
+    });
     const refreshToken = await createRefreshToken(userId, email);
     setAuthCookies(res, accessToken, refreshToken);
 
@@ -282,7 +290,7 @@ router.post('/register', async (req, res) => {
     res.status(201).json({
       userId,
       email,
-      encryptionConfig
+      encryptionConfig,
     });
   } catch (error) {
     console.error('Registration error:', error);
@@ -305,7 +313,9 @@ router.post('/login', async (req, res) => {
       const retryAfter = Math.ceil((record.lockedUntil - Date.now()) / 1000);
       logSecurityEvent('account_locked', { email, attempts: record.count });
       res.set('Retry-After', String(retryAfter));
-      return res.status(429).json({ error: 'Account temporarily locked due to too many failed attempts. Try again later.' });
+      return res.status(429).json({
+        error: 'Account temporarily locked due to too many failed attempts. Try again later.',
+      });
     }
 
     const authDb = getAuthDb();
@@ -313,7 +323,7 @@ router.post('/login', async (req, res) => {
     // Find user
     const result = await authDb.find({
       selector: { email },
-      limit: 1
+      limit: 1,
     });
 
     if (result.docs.length === 0) {
@@ -328,7 +338,11 @@ router.post('/login', async (req, res) => {
     const isValidPassword = await bcrypt.compare(password, user.password);
     if (!isValidPassword) {
       const record = recordFailedAttempt(email);
-      logAuthEvent('login', user._id, false, { email, reason: 'invalid_password', failedAttempts: record.count });
+      logAuthEvent('login', user._id, false, {
+        email,
+        reason: 'invalid_password',
+        failedAttempts: record.count,
+      });
       if (record.count >= LOCKOUT_THRESHOLD) {
         logSecurityEvent('account_locked', { email, userId: user._id, attempts: record.count });
       }
@@ -343,17 +357,19 @@ router.post('/login', async (req, res) => {
     logUserActivity(user._id, 'user_login', { email, loginMethod: 'password' });
 
     // Generate tokens and set cookies
-    const accessToken = jwt.sign({ userId: user._id, email: user.email }, JWT_SECRET, { expiresIn: ACCESS_TOKEN_EXPIRES_IN });
+    const accessToken = jwt.sign({ userId: user._id, email: user.email }, JWT_SECRET, {
+      expiresIn: ACCESS_TOKEN_EXPIRES_IN,
+    });
     const refreshToken = await createRefreshToken(user._id, user.email);
     setAuthCookies(res, accessToken, refreshToken);
 
     // Include encryption config so frontend can restore in-memory key
-    const encryptionConfig = await getEncryptionConfig(user._id);
+    const encryptionConfig = await getEncryptionConfigOrDefault(getAuthDb(), user._id);
 
     res.json({
       userId: user._id,
       email: user.email,
-      encryptionConfig
+      encryptionConfig,
     });
   } catch (error) {
     console.error('Login error:', error);
@@ -377,34 +393,34 @@ router.post('/verify-password', authenticateToken, async (req, res) => {
     }
 
     const authDb = getAuthDb();
-    
+
     // Get user from auth database
     let userDoc;
     try {
       userDoc = await authDb.get(userId);
-    } catch (err) {
-      logger.logSecurity('password_verification_failed', { 
-        userId, 
-        reason: 'user_not_found' 
+    } catch {
+      logger.logSecurity('password_verification_failed', {
+        userId,
+        reason: 'user_not_found',
       });
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
     // Verify password
     const isValidPassword = await bcrypt.compare(password, userDoc.password);
-    
+
     if (!isValidPassword) {
-      logSecurityEvent('password_verification_failed', 'medium', { 
-        userId, 
-        reason: 'incorrect_password' 
+      logSecurityEvent('password_verification_failed', 'medium', {
+        userId,
+        reason: 'incorrect_password',
       });
       return res.status(401).json({ error: 'Invalid password' });
     }
 
-    logger.logUserActivity(userId, 'password_verified', { 
-      reason: 'sensitive_operation_access' 
+    logger.logUserActivity(userId, 'password_verified', {
+      reason: 'sensitive_operation_access',
     });
-    
+
     res.json({ valid: true });
   } catch (error) {
     logger.logError(error, { context: 'password_verification', userId: req.userId });
@@ -434,7 +450,7 @@ router.put('/update-email', authenticateToken, async (req, res) => {
     try {
       const result = await authDb.find({
         selector: { email: newEmail },
-        limit: 1
+        limit: 1,
       });
 
       if (result.docs.length > 0 && result.docs[0]._id !== userId) {
@@ -462,20 +478,22 @@ router.put('/update-email', authenticateToken, async (req, res) => {
     await authDb.insert(userDoc);
 
     // Generate new access token with updated email and set cookie
-    const accessToken = jwt.sign({ userId, email: newEmail }, JWT_SECRET, { expiresIn: ACCESS_TOKEN_EXPIRES_IN });
+    const accessToken = jwt.sign({ userId, email: newEmail }, JWT_SECRET, {
+      expiresIn: ACCESS_TOKEN_EXPIRES_IN,
+    });
     res.cookie('access_token', accessToken, {
       ...COOKIE_OPTIONS,
-      maxAge: 15 * 60 * 1000
+      maxAge: ACCESS_TOKEN_MAX_AGE_MS,
     });
 
     logger.logUserActivity(userId, 'email_updated', {
       previousEmail: req.userEmail,
-      newEmail: newEmail
+      newEmail: newEmail,
     });
 
     res.json({
       success: true,
-      email: newEmail
+      email: newEmail,
     });
   } catch (error) {
     logger.logError(error, { context: 'email_update', userId: req.userId });
@@ -525,7 +543,7 @@ router.delete('/delete-account', authenticateToken, async (req, res) => {
 router.post('/refresh', async (req, res) => {
   try {
     const refreshToken = req.cookies?.refresh_token;
-    
+
     if (!refreshToken) {
       return res.status(401).json({ error: 'No refresh token' });
     }
@@ -533,7 +551,7 @@ router.post('/refresh', async (req, res) => {
     let decoded;
     try {
       decoded = jwt.verify(refreshToken, JWT_SECRET);
-    } catch (err) {
+    } catch {
       clearAuthCookies(res);
       return res.status(401).json({ error: 'Invalid refresh token' });
     }
@@ -549,16 +567,14 @@ router.post('/refresh', async (req, res) => {
     // Rotate: revoke old refresh token, issue new pair
     await revokeRefreshToken(decoded.jti);
 
-    const accessToken = jwt.sign(
-      { userId: decoded.userId, email: decoded.email },
-      JWT_SECRET,
-      { expiresIn: ACCESS_TOKEN_EXPIRES_IN }
-    );
+    const accessToken = jwt.sign({ userId: decoded.userId, email: decoded.email }, JWT_SECRET, {
+      expiresIn: ACCESS_TOKEN_EXPIRES_IN,
+    });
     const newRefreshToken = await createRefreshToken(decoded.userId, decoded.email);
     setAuthCookies(res, accessToken, newRefreshToken);
 
     // Include encryption config so frontend can restore in-memory key after refresh
-    const encryptionConfig = await getEncryptionConfig(decoded.userId);
+    const encryptionConfig = await getEncryptionConfigOrDefault(getAuthDb(), decoded.userId);
 
     res.json({ userId: decoded.userId, email: decoded.email, encryptionConfig });
   } catch (error) {
@@ -571,7 +587,7 @@ router.post('/refresh', async (req, res) => {
 // Get encryption config (for page reload — key stays in memory only on frontend)
 router.get('/encryption-config', authenticateToken, async (req, res) => {
   try {
-    const config = await getEncryptionConfig(req.userId);
+    const config = await getEncryptionConfig(getAuthDb(), req.userId);
     res.json(config);
   } catch (error) {
     logger.logError(error, { context: 'get_encryption_config', userId: req.userId });
@@ -586,8 +602,11 @@ router.put('/encryption-config', authenticateToken, async (req, res) => {
     if (key === undefined) {
       return res.status(400).json({ error: 'Encryption key is required' });
     }
-    await setEncryptionConfig(req.userId, { key, encryptLocal, encryptDatabase });
-    logUserActivity(req.userId, 'encryption_config_updated', { encryptLocal: !!encryptLocal, encryptDatabase: !!encryptDatabase });
+    await setEncryptionConfig(getAuthDb(), req.userId, { key, encryptLocal, encryptDatabase });
+    logUserActivity(req.userId, 'encryption_config_updated', {
+      encryptLocal: !!encryptLocal,
+      encryptDatabase: !!encryptDatabase,
+    });
     res.json({ success: true });
   } catch (error) {
     logger.logError(error, { context: 'update_encryption_config', userId: req.userId });
@@ -599,20 +618,20 @@ router.put('/encryption-config', authenticateToken, async (req, res) => {
 router.post('/logout', async (req, res) => {
   try {
     const refreshToken = req.cookies?.refresh_token;
-    
+
     if (refreshToken) {
       try {
         const decoded = jwt.verify(refreshToken, JWT_SECRET);
         await revokeRefreshToken(decoded.jti);
         logUserActivity(decoded.userId, 'user_logout', { email: decoded.email });
-      } catch (err) {
+      } catch {
         // Token invalid/expired — just clear cookies
       }
     }
 
     clearAuthCookies(res);
     res.json({ success: true });
-  } catch (error) {
+  } catch {
     clearAuthCookies(res);
     res.json({ success: true }); // Logout should always succeed from client perspective
   }
@@ -620,3 +639,11 @@ router.post('/logout', async (req, res) => {
 
 module.exports = router;
 module.exports.authenticateToken = authenticateToken; // Re-export for backward compat
+// Re-exported for backend/repositories/account-repository.js and its Pro
+// API routes (GET/PATCH/DELETE /api/v1/account) — reusing this module's
+// own cookie/token machinery rather than a second copy of it.
+module.exports.ACCESS_TOKEN_EXPIRES_IN = ACCESS_TOKEN_EXPIRES_IN;
+module.exports.ACCESS_TOKEN_MAX_AGE_MS = ACCESS_TOKEN_MAX_AGE_MS;
+module.exports.COOKIE_OPTIONS = COOKIE_OPTIONS;
+module.exports.clearAuthCookies = clearAuthCookies;
+module.exports.revokeRefreshToken = revokeRefreshToken;

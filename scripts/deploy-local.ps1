@@ -292,8 +292,12 @@ if (-not $SkipBuild) {
     }
     
     if (-not $SkipBackend) {
+        # backend/Dockerfile builds packages/domain (a workspace member
+        # backend/package.json depends on via "file:../packages/domain") from source
+        # in its own stage, so this build needs the repo root as its context, not
+        # backend/ -- see backend/Dockerfile's header comment.
         Write-Host "Building Backend (tag: $imageTag)..." -ForegroundColor White
-        $buildCmd = "podman build $cacheFlag --pull=missing -t localhost/money-backend:$imageTag -t localhost/money-backend:latest $projectDir/backend"
+        $buildCmd = "podman build $cacheFlag --pull=missing -t localhost/money-backend:$imageTag -t localhost/money-backend:latest -f $projectDir/backend/Dockerfile $projectDir"
         Invoke-Expression $buildCmd
         if ($LASTEXITCODE -ne 0) {
             Write-Host "[ERROR] Backend build failed" -ForegroundColor Red

@@ -20,12 +20,15 @@ describe('CashflowComponent', () => {
         CashflowComponent,
         TranslateModule.forRoot(),
         HttpClientTestingModule,
-        RouterTestingModule
+        RouterTestingModule,
       ],
       providers: [
         { provide: DatabaseService, useValue: {} },
-        { provide: FIREBASE_OPTIONS, useValue: { projectId: 'test', appId: 'test', apiKey: 'test' } }
-      ]
+        {
+          provide: FIREBASE_OPTIONS,
+          useValue: { projectId: 'test', appId: 'test', apiKey: 'test' },
+        },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(CashflowComponent);

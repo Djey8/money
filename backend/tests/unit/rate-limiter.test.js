@@ -20,7 +20,7 @@ describe('Rate limiter skip logic', () => {
     jest.mock('../../config/db', () => ({
       initializeDatabase: jest.fn().mockResolvedValue(),
       getAuthDb: () => ({ find: jest.fn(), insert: jest.fn() }),
-      getUsersDb: () => ({ insert: jest.fn(), get: jest.fn() })
+      getUsersDb: () => ({ insert: jest.fn(), get: jest.fn() }),
     }));
 
     const app = require('../../server');
@@ -30,7 +30,7 @@ describe('Rate limiter skip logic', () => {
     for (let i = 0; i < 5; i++) {
       results.push(await request(app).get('/health'));
     }
-    results.forEach(r => {
+    results.forEach((r) => {
       expect(r.status).toBe(200);
     });
   });
@@ -43,7 +43,7 @@ describe('Rate limiter skip logic', () => {
     jest.mock('../../config/db', () => ({
       initializeDatabase: jest.fn().mockResolvedValue(),
       getAuthDb: () => ({ find: jest.fn(), insert: jest.fn() }),
-      getUsersDb: () => ({ insert: jest.fn(), get: jest.fn() })
+      getUsersDb: () => ({ insert: jest.fn(), get: jest.fn() }),
     }));
 
     const app = require('../../server');
@@ -54,7 +54,8 @@ describe('Rate limiter skip logic', () => {
     expect(res.status).toBe(200);
     // Health endpoint is outside /api/ prefix, so rate limit headers shouldn't appear.
     // Fire one /api/ request to check rate-limit headers are set.
-    const apiRes = await request(app).get('/api/data/read/test')
+    const apiRes = await request(app)
+      .get('/api/data/read/test')
       .set('Authorization', 'Bearer invalid');
     // Should get 403 (invalid token), but rate limit headers should be present
     expect(apiRes.headers).toHaveProperty('ratelimit-limit');

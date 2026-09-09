@@ -11,7 +11,8 @@
 // TODO: import your service
 // import { MyService } from './my.service';
 
-describe('MyService', () => {  // TODO: rename
+describe('MyService', () => {
+  // TODO: rename
   let service: any; // TODO: use actual type
 
   beforeEach(() => {

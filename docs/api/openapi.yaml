@@ -1,0 +1,5292 @@
+openapi: 3.1.0
+info:
+  title: Money Manager Pro API
+  version: 1.0.0-draft
+servers:
+  - url: /api/v1
+paths:
+  /transactions:
+    get:
+      operationId: listTransactions
+      summary: List transactions
+      description: Returns the caller's transactions in integer minor units. Existing records must first receive stable IDs through `mm-admin migrate-transaction-ids`.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+        - name: account
+          in: query
+          schema:
+            type: string
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: from
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [date, amount]
+            default: date
+        - name: order
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+      responses:
+        '200':
+          description: Transactions owned by the caller
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [transactions]
+                properties:
+                  transactions:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ApiTransaction'
+              example:
+                transactions:
+                  - id: tx_01234567-89ab-cdef-0123-456789abcdef
+                    account: Daily
+                    amountMinor: -1250
+                    currency: EUR
+                    date: '2026-09-06'
+                    time: '09:30'
+                    category: '@Groceries'
+                    comment: Weekly shop
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+    post:
+      operationId: createTransaction
+      summary: Create a transaction
+      description: Adds a transaction and atomically rebuilds its derived income, expense, Smile, Fire, and Mojo state.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTransactionRequest'
+            example:
+              account: Daily
+              amountMinor: -1250
+              date: '2026-09-06'
+              time: '09:30'
+              category: '@Groceries'
+              comment: Weekly shop
+      responses:
+        '201':
+          description: Created transaction
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiTransaction'
+              example:
+                id: tx_01234567-89ab-cdef-0123-456789abcdef
+                account: Daily
+                amountMinor: -1250
+                currency: EUR
+                date: '2026-09-06'
+                time: '09:30'
+                category: '@Groceries'
+                comment: Weekly shop
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+  /transactions/export:
+    get:
+      operationId: exportTransactions
+      summary: Export all transactions as newline-delimited JSON
+      description: Returns every transaction owned by the caller, one JSON object per line (no pagination, no filters), for full-account moves. Requires `transactions:bulk`.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Newline-delimited JSON, one ApiTransaction per line
+          content:
+            application/x-ndjson:
+              schema:
+                type: string
+              example: |-
+                {"id":"tx_01234567-89ab-cdef-0123-456789abcdef","account":"Daily","amountMinor":-1250,"currency":"EUR","date":"2026-09-06","time":"09:30","category":"@Groceries","comment":"Weekly shop"}
+                {"id":"tx_11111111-89ab-cdef-0123-456789abcdef","account":"Income","amountMinor":250000,"currency":"EUR","date":"2026-09-01","time":"08:00","category":"@Salary","comment":""}
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+  /transactions/import:
+    post:
+      operationId: importTransactions
+      summary: Bulk-create transactions from newline-delimited JSON
+      description: >-
+        Creates one transaction per line of the request body (each line the same shape as CreateTransactionRequest).
+        Requires `transactions:bulk` and an `Idempotency-Key` header — hashed from the raw request body, not a
+        re-serialized JSON value like batch, so byte-identical replay is required (see docs/api/AGENTS.md) — with
+        the same replay/mismatch contract and the same known write-then-record ordering gap as
+        `POST /transactions/batch`. Up to 10,000 lines of at most 16KB each per call. `?atomic=true` makes the whole
+        import all-or-nothing, same as batch's `atomic` flag; the default applies what parses and validates,
+        reporting the rest per line as `error`.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: atomic
+          in: query
+          schema:
+            type: boolean
+            default: false
+      requestBody:
+        required: true
+        content:
+          application/x-ndjson:
+            schema:
+              type: string
+            example: |-
+              {"account":"Daily","amountMinor":-850,"date":"2026-09-07","time":"08:15","category":"@Coffee","comment":""}
+              {"account":"Income","amountMinor":250000,"date":"2026-09-01","time":"08:00","category":"@Salary","comment":""}
+      responses:
+        '200':
+          description: Per-line results, in the same shape as a batch response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchTransactionsResponse'
+              example:
+                idempotencyKey: 2026-09-07-restore
+                atomic: false
+                itemCount: 2
+                results:
+                  - op: create
+                    status: created
+                    id: tx_22222222-89ab-cdef-0123-456789abcdef
+                    transaction:
+                      id: tx_22222222-89ab-cdef-0123-456789abcdef
+                      account: Daily
+                      amountMinor: -850
+                      currency: EUR
+                      date: '2026-09-07'
+                      time: '08:15'
+                      category: '@Coffee'
+                      comment: ''
+                  - op: create
+                    status: created
+                    id: tx_33333333-89ab-cdef-0123-456789abcdef
+                    transaction:
+                      id: tx_33333333-89ab-cdef-0123-456789abcdef
+                      account: Income
+                      amountMinor: 250000
+                      currency: EUR
+                      date: '2026-09-01'
+                      time: '08:00'
+                      category: '@Salary'
+                      comment: ''
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '409':
+          $ref: '#/components/responses/IdempotencyConflict'
+  /transactions/batch:
+    post:
+      operationId: batchTransactions
+      summary: Create, update, or delete many transactions in one request
+      description: >-
+        Applies a mix of create/update/delete operations atomically at the storage level (one document write) and
+        rebuilds derived income/expense/Smile/Fire/Mojo state once. Requires the `transactions:bulk` scope and an
+        `Idempotency-Key` header — replaying the same key with the same body returns the original result without
+        reapplying it; replaying it with a different body is rejected. The write and the idempotency record are not
+        one atomic transaction: a crash between them (rare) can make a same-key retry reapply the batch — see
+        docs/api/AGENTS.md. Setting `atomic` to true makes the whole batch all-or-nothing (if any operation fails,
+        none are applied, and a would-have-succeeded `create`'s `id` in the response was never persisted); the
+        default, false, applies what succeeds and reports failures per item.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BatchTransactionsRequest'
+            example:
+              atomic: false
+              operations:
+                - op: create
+                  account: Daily
+                  amountMinor: -850
+                  date: '2026-09-07'
+                  time: '08:15'
+                  category: '@Coffee'
+                  comment: ''
+                - op: update
+                  id: tx_01234567-89ab-cdef-0123-456789abcdef
+                  amountMinor: -1500
+                - op: delete
+                  id: tx_11111111-89ab-cdef-0123-456789abcdef
+      responses:
+        '200':
+          description: Per-item results (some items may report `error` even on a 200, in non-atomic mode)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchTransactionsResponse'
+              example:
+                idempotencyKey: 2026-09-07-morning-batch
+                atomic: false
+                itemCount: 3
+                results:
+                  - op: create
+                    status: created
+                    id: tx_22222222-89ab-cdef-0123-456789abcdef
+                    transaction:
+                      id: tx_22222222-89ab-cdef-0123-456789abcdef
+                      account: Daily
+                      amountMinor: -850
+                      currency: EUR
+                      date: '2026-09-07'
+                      time: '08:15'
+                      category: '@Coffee'
+                      comment: ''
+                  - op: update
+                    status: error
+                    id: tx_01234567-89ab-cdef-0123-456789abcdef
+                    error: No matching transaction exists.
+                  - op: delete
+                    status: deleted
+                    id: tx_11111111-89ab-cdef-0123-456789abcdef
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '409':
+          $ref: '#/components/responses/IdempotencyConflict'
+  /transactions/{transactionId}/copy:
+    post:
+      operationId: copyTransaction
+      summary: Copy a transaction
+      description: Creates a new transaction from an existing one's account, amount, category, and comment. Date and time default to now, matching the UI's copy behavior; any field may be overridden in the request body. Atomically rebuilds derived income, expense, Smile, Fire, and Mojo state.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: transactionId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CopyTransactionRequest'
+            example:
+              date: '2026-09-07'
+      responses:
+        '201':
+          description: The newly created copy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiTransaction'
+              example:
+                id: tx_11111111-89ab-cdef-0123-456789abcdef
+                account: Daily
+                amountMinor: -1250
+                currency: EUR
+                date: '2026-09-07'
+                time: '09:30'
+                category: '@Groceries'
+                comment: Weekly shop
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /transactions/{transactionId}:
+    get:
+      operationId: getTransaction
+      summary: Get one transaction
+      description: Returns a single transaction owned by the caller in integer minor units.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: transactionId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Transaction owned by the caller
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiTransaction'
+              example:
+                id: tx_01234567-89ab-cdef-0123-456789abcdef
+                account: Daily
+                amountMinor: -1250
+                currency: EUR
+                date: '2026-09-06'
+                time: '09:30'
+                category: '@Groceries'
+                comment: Weekly shop
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      operationId: updateTransaction
+      summary: Edit a transaction
+      description: Updates one or more fields on an existing transaction and atomically rebuilds its derived income, expense, Smile, Fire, and Mojo state. If the transaction's comment carries a `#bucket:` allocation tag (current or incoming), `amountMinor` and `comment` must be provided together — sending only one is rejected rather than silently applied against the other field's stale value.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: transactionId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTransactionRequest'
+            example:
+              amountMinor: -1500
+      responses:
+        '200':
+          description: Updated transaction
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiTransaction'
+              example:
+                id: tx_01234567-89ab-cdef-0123-456789abcdef
+                account: Daily
+                amountMinor: -1500
+                currency: EUR
+                date: '2026-09-06'
+                time: '09:30'
+                category: '@Groceries'
+                comment: Weekly shop
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      operationId: deleteTransaction
+      summary: Delete a transaction
+      description: Removes a transaction and atomically rebuilds its derived income, expense, Smile, Fire, and Mojo state.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: transactionId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Transaction deleted
+          content:
+            application/json:
+              example:
+                id: tx_01234567-89ab-cdef-0123-456789abcdef
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /reports/income-statement:
+    get:
+      operationId: getIncomeStatement
+      summary: Get the income statement for a period
+      description: >-
+        Computes revenues, interest/property/other income, per-account expenses, net result, and savings rate for one
+        period, plus the same figures for the immediately preceding period of the same length. Inter-account
+        transfers (Income→Daily/Splurge/Smile/Fire/Mojo) are excluded from both sides, matching
+        `src/app/stats/statement/statement-calculations.ts` — see PLAN.md D-22 for why this differs from the
+        `src/app/main/cashflow/*` components' own (buggy, out-of-scope) calculation.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [week, month, quarter, halfyear, year]
+            default: month
+        - name: offset
+          in: query
+          description: Periods before the current one; 0 is the period containing today, -1 the one before it, and so on.
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Income statement for the requested period and the one before it
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IncomeStatement'
+              example:
+                period:
+                  startDate: '2026-09-01'
+                  endDate: '2026-09-30'
+                  label: Sep 2026
+                previousPeriod:
+                  startDate: '2026-08-01'
+                  endDate: '2026-08-31'
+                  label: Aug 2026
+                revenues: { current: 250000, previous: 250000, changePercent: 0 }
+                interests: { current: 500, previous: 0, changePercent: 0 }
+                propertyIncome: { current: 0, previous: 0, changePercent: 0 }
+                otherIncome: { current: 0, previous: 0, changePercent: 0 }
+                totalIncome: { current: 250500, previous: 250000, changePercent: 0.2 }
+                expensesByAccount:
+                  Daily: { current: 40000, previous: 38000, changePercent: 5.26 }
+                  Splurge: { current: 0, previous: 0, changePercent: 0 }
+                  Smile: { current: 0, previous: 0, changePercent: 0 }
+                  Fire: { current: 0, previous: 0, changePercent: 0 }
+                totalExpenses: { current: 40000, previous: 38000, changePercent: 5.26 }
+                netResult: { current: 210500, previous: 212000, changePercent: -0.71 }
+                savingsRatePercent: { current: 84.03, previous: 84.8, changePercent: -0.91 }
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+  /reports/cashflow:
+    get:
+      operationId: getCashflow
+      summary: Get the cashflow statement for a period
+      description: >-
+        Splits all activity in one period into operating, investing (transfers into Smile/Fire), financing
+        (liability paybacks, detected via a `payback liabilitie` comment substring), and mojo (Mojo contributions),
+        plus net cashflow, for the requested period and the one before it. Matches
+        `src/app/stats/statement/statement-calculations.ts`'s `computeCashflow` — see PLAN.md D-22. Unlike
+        `/reports/income-statement`, this classifies every transaction regardless of account, not only
+        Income/expense-account activity.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [week, month, quarter, halfyear, year]
+            default: month
+        - name: offset
+          in: query
+          description: Periods before the current one; 0 is the period containing today, -1 the one before it, and so on.
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Cashflow statement for the requested period and the one before it
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CashflowStatement'
+              example:
+                period:
+                  startDate: '2026-09-01'
+                  endDate: '2026-09-30'
+                  label: Sep 2026
+                previousPeriod:
+                  startDate: '2026-08-01'
+                  endDate: '2026-08-31'
+                  label: Aug 2026
+                operating: { current: 210500, previous: 212000, changePercent: -0.71 }
+                investing: { current: 30000, previous: 20000, changePercent: 50 }
+                financing: { current: 15000, previous: 0, changePercent: 0 }
+                mojo: { current: 5000, previous: 5000, changePercent: 0 }
+                netCashflow: { current: 160500, previous: 187000, changePercent: -14.17 }
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+  /reports/balance-sheet:
+    get:
+      operationId: getBalanceSheet
+      summary: Get the current balance sheet
+      description: >-
+        A current snapshot of assets, liabilities, and equity — not period-scoped, unlike the other report
+        endpoints, matching `computeBalanceSheet` in `src/app/stats/statement/statement-calculations.ts` (canonical
+        per PLAN.md D-22). `assets.shares` is each share's `quantity × price`; `assets.investments` is each
+        investment's `amount + deposit`; `equity`/`netWorth` is total assets minus total liabilities and can be
+        negative.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Current balance sheet
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BalanceSheet'
+              example:
+                assets:
+                  cash: 800000
+                  shares: 415000
+                  investments: 21000000
+                  properties: 80000
+                  total: 22295000
+                liabilities:
+                  debts: 15000000
+                  total: 15000000
+                equity: 7295000
+                netWorth: 7295000
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+  /reports/kpis:
+    get:
+      operationId: getKpis
+      summary: Get key ratios, top categories, and both KPI-dashboard variants for a period
+      description: >-
+        Ports `computeRatiosForRange`/`topCategories` from `src/app/stats/statement/statement-calculations.ts`
+        (`ratios`/`previousRatios`/`topExpenses`/`topIncomes`) plus, per PLAN.md D-7/D-23,
+        `dashboardSavingsRatePercent` and `dashboardFixedCostRatioPercent` — a second, genuinely different pair of
+        formulas from `src/app/stats/stats-calculations.ts`'s KPI dashboard (STATS-1). The two savings-rate values
+        and the two fixed-cost-ratio values are each independently computed and exposed distinctly named on purpose
+        — see `docs/domain/KPI_FORMULAS.md` for their exact formulas and where/why they diverge.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [week, month, quarter, halfyear, year]
+            default: month
+        - name: offset
+          in: query
+          description: Periods before the current one; 0 is the period containing today, -1 the one before it, and so on.
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: KPI ratios, top categories, and dashboard-formula ratios for the requested period
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KpiReport'
+              example:
+                period:
+                  startDate: '2026-09-01'
+                  endDate: '2026-09-30'
+                  label: Sep 2026
+                previousPeriod:
+                  startDate: '2026-08-01'
+                  endDate: '2026-08-31'
+                  label: Aug 2026
+                ratios:
+                  savingsRatePercent: 84.03
+                  fixedCostRatioPercent: 32.5
+                  netMarginPercent: 84.03
+                  debtRatio: 0.4
+                  equityRatioPercent: 42.86
+                  interestCoverage: 5.2
+                previousRatios:
+                  savingsRatePercent: 84.8
+                  fixedCostRatioPercent: 30.1
+                  netMarginPercent: 84.8
+                  debtRatio: 0.41
+                  equityRatioPercent: 41.9
+                  interestCoverage: 4.9
+                dashboardSavingsRatePercent: 82.1
+                previousDashboardSavingsRatePercent: 83.4
+                dashboardFixedCostRatioPercent: 29.8
+                previousDashboardFixedCostRatioPercent: 28.2
+                topExpenses:
+                  - category: Groceries
+                    amountMinor: 45000
+                    percent: 62.5
+                  - category: Fun
+                    amountMinor: 27000
+                    percent: 37.5
+                topIncomes:
+                  - category: Salary
+                    amountMinor: 250000
+                    percent: 100
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+  /reports/fire-coverage:
+    get:
+      operationId: getFireCoverage
+      summary: Get the Fire emergency-fund coverage ratio
+      description: >-
+        Ports `getEmergencyCoverage`/`getAverageMonthlyExpenses` from `src/app/main/fire/fire.component.ts` (FIRE-2's
+        gauge: how many months of average expenses the Mojo reserve covers). A current snapshot, not period-scoped,
+        like `/reports/balance-sheet` — the endpoint itself decides which historical months to average over
+        (every calendar month with qualifying expense-account spending, excluding the current, necessarily
+        incomplete month). Four deliberate corrections versus the original UI gauge, made because this is the first
+        time this calculation has been ported into the API/domain package (see `docs/domain/FIRE_COVERAGE_FORMULA.md`
+        for the full rationale and a worked example): expense-account transfers (e.g. an `Income → Smile`
+        contribution) and `Mojo`-account transactions are excluded from the average, refunds (positive amounts on an
+        expense account) are excluded rather than netted, and `coverageRatio` is `null` rather than a fabricated number
+        when there's no expense history yet to average.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Fire coverage ratio and its inputs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FireCoverageReport'
+              example:
+                coverageRatio: 3.2
+                mojoAmountMinor: 480000
+                averageMonthlyExpensesMinor: 150000
+                monthsConsidered: 8
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+  /reports/grow/{growId}/pnl:
+    parameters:
+      - name: growId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getGrowPnl
+      summary: Get a grow project's profit/loss summary
+      description: >-
+        Ports `getGrowProjectsGV` from `grow.component.ts` ("GV" — German *Gewinn/Verlust*, "profit/loss") — sums
+        every transaction whose `category` matches the grow project's `title`, with no account filtering, exactly
+        as the original does. `netCashflowMinor` is numerically identical to the original's own aggregate; the
+        `investedMinor`/`returnedMinor` split is new (the original never separates outflows from inflows). See
+        `docs/domain/GROW_PNL_FORMULA.md` for the full rationale, including why a mark-to-model "current value" is
+        deliberately not included.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The grow project's profit/loss summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GrowPnl'
+              example:
+                title: MSFT
+                netCashflowMinor: 35000
+                investedMinor: 415000
+                returnedMinor: 450000
+                transactionCount: 2
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /mojo:
+    get:
+      operationId: getMojo
+      summary: Get the current Mojo status
+      description: >-
+        Mojo is a single shared emergency/long-term reserve, not a list — there is one Mojo balance per user.
+        `remainingMinor` and `percentFilled` are read-side conveniences on top of the raw `amountMinor`/`targetMinor`
+        pair; `amountMinor` is derived from transaction history (see `PUT /mojo`) and is not itself writable.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Current Mojo status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MojoStatus'
+              example:
+                amountMinor: 150000
+                targetMinor: 200000
+                remainingMinor: 50000
+                percentFilled: 75
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+    put:
+      operationId: updateMojoTarget
+      summary: Update the Mojo target
+      description: >-
+        Updates only `targetMinor` — `amountMinor` is owned by transaction-derived state (a `@Mojo`-tagged
+        contribution or a direct transaction on the `Mojo` account) and cannot be set directly here, matching the
+        UI's own Mojo editor (only the target is user-editable).
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [targetMinor]
+              properties:
+                targetMinor:
+                  type: integer
+                  minimum: 1
+            example:
+              targetMinor: 200000
+      responses:
+        '200':
+          description: Updated Mojo status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MojoStatus'
+              example:
+                amountMinor: 150000
+                targetMinor: 200000
+                remainingMinor: 50000
+                percentFilled: 75
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+  /smile:
+    get:
+      operationId: listSmileProjects
+      summary: List Smile projects
+      description: >-
+        Returns every Smile project owned by the caller. Existing projects must first receive stable IDs through
+        `mm-admin migrate-fund-project-ids --collection smile` (the legacy storage shape has no project-level id,
+        only bucket-level ids). `totals` is a read-side aggregate (`packages/domain`'s `computeProjectTotals`) summed
+        across all of a project's buckets — not stored, computed on every read.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Smile projects owned by the caller
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [projects]
+                properties:
+                  projects:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SmileProject'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+    post:
+      operationId: createSmileProject
+      summary: Create a Smile project
+      description: >-
+        Either `targetMinor` (optionally with `amountMinor`, becoming a single default bucket named after the
+        project's title) or a non-empty `buckets` array is required — matching the UI's own Add Smile form, which
+        accepts either a flat target or custom buckets and merges both if given. `title` must not exactly match
+        (case-sensitively — the UI's own duplicate check is exact-match, not case-insensitive) an existing Smile
+        project's title.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSmileProjectRequest'
+            example:
+              title: Summer Vacation
+              phase: saving
+              buckets:
+                - title: Flights
+                  targetMinor: 150000
+                - title: Hotel
+                  targetMinor: 80000
+      responses:
+        '201':
+          description: Created Smile project
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SmileProject'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+  /smile/{projectId}:
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getSmileProject
+      summary: Get a single Smile project
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The Smile project
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SmileProject'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      operationId: updateSmileProject
+      summary: Update a Smile project
+      description: >-
+        Accepts a partial body — only the fields you send are changed. `buckets`/`links`/`actionItems`/`notes`, when
+        sent, each REPLACE the entire array (not a per-item merge) — send the complete list you want, including
+        unchanged entries. For `buckets`, echo back an existing bucket's `id` to edit it in place; omit `id` (or use
+        one that doesn't match) to add a new bucket — any existing bucket whose `id` isn't present in the new array
+        is dropped. For `notes`, echo back an existing note's `createdAt` to preserve it; omit it on a new note to
+        get a fresh server timestamp. A changed `title` is checked for an exact-match collision against the
+        caller's other Smile projects (not against itself). Moving `phase` to `completed` stamps `completionDate`
+        automatically if one isn't already set; it never overwrites an explicit `completionDate` sent in the same
+        request, and moving away from `completed` never clears a previously-set `completionDate`.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchSmileProjectRequest'
+            example:
+              phase: ready
+      responses:
+        '200':
+          description: Updated Smile project
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SmileProject'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      operationId: deleteSmileProject
+      summary: Delete a Smile project
+      description: Not reversible through the API.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Project deleted
+          content:
+            application/json:
+              example:
+                id: smile_01234567-89ab-cdef-0123-456789abcdef
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /smile/{projectId}/payment-plan:
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      operationId: createSmilePaymentPlan
+      summary: Create a payment plan for a Smile project's buckets
+      description: >-
+        Ports SMILE-7 (the Payment Planner, shared by Smile and Fire) — computes a suggested per-period contribution
+        to fund the project's buckets by `targetDate`, then persists it (`status: "planned"`) onto the project's
+        `plannedSubscriptions` array. Only creation is exposed; activating a plan into a real recurring subscription
+        isn't part of this API. See `docs/domain/PAYMENT_PLAN_FORMULA.md` for the exact formula, including the four
+        deliberate corrections made while porting this calculation for the first time.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePaymentPlanRequest'
+            example:
+              planTitle: Flight Fund
+              startDate: '2026-01-01'
+              targetDate: '2026-04-01'
+              frequency: monthly
+              account: Daily
+      responses:
+        '201':
+          description: Created payment plan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentPlan'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /fire:
+    get:
+      operationId: listFireProjects
+      summary: List Fire projects
+      description: >-
+        Returns every Fire project owned by the caller. Existing projects must first receive stable IDs through
+        `mm-admin migrate-fund-project-ids --collection fire` (the legacy storage shape has no project-level id,
+        only bucket-level ids). `totals` is a read-side aggregate (`packages/domain`'s `computeProjectTotals`) summed
+        across all of a project's buckets — not stored, computed on every read.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Fire projects owned by the caller
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [projects]
+                properties:
+                  projects:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FireProject'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+    post:
+      operationId: createFireProject
+      summary: Create a Fire project
+      description: >-
+        Either `targetMinor` (optionally with `amountMinor`, becoming a single default bucket named after the
+        project's title) or a non-empty `buckets` array is required — matching the UI's own Add Fire form, which
+        accepts either a flat target or custom buckets and merges both if given. `title` must not exactly match
+        (case-sensitively — the UI's own duplicate check is exact-match, not case-insensitive) an existing Fire
+        project's title.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateFireProjectRequest'
+            example:
+              title: Summer Vacation
+              phase: saving
+              buckets:
+                - title: Flights
+                  targetMinor: 150000
+                - title: Hotel
+                  targetMinor: 80000
+      responses:
+        '201':
+          description: Created Fire project
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FireProject'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+  /fire/{projectId}:
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getFireProject
+      summary: Get a single Fire project
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The Fire project
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FireProject'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      operationId: updateFireProject
+      summary: Update a Fire project
+      description: >-
+        Accepts a partial body — only the fields you send are changed. `buckets`/`links`/`actionItems`/`notes`, when
+        sent, each REPLACE the entire array (not a per-item merge) — send the complete list you want, including
+        unchanged entries. For `buckets`, echo back an existing bucket's `id` to edit it in place; omit `id` (or use
+        one that doesn't match) to add a new bucket — any existing bucket whose `id` isn't present in the new array
+        is dropped. For `notes`, echo back an existing note's `createdAt` to preserve it; omit it on a new note to
+        get a fresh server timestamp. A changed `title` is checked for an exact-match collision against the
+        caller's other Fire projects (not against itself). Moving `phase` to `completed` stamps `completionDate`
+        automatically if one isn't already set; it never overwrites an explicit `completionDate` sent in the same
+        request, and moving away from `completed` never clears a previously-set `completionDate`. Unlike the
+        original UI's edit form, an omitted `completionDate` is never auto-cleared — see `docs/api/AGENTS.md` for
+        this deliberate divergence.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchFireProjectRequest'
+            example:
+              phase: ready
+      responses:
+        '200':
+          description: Updated Fire project
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FireProject'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      operationId: deleteFireProject
+      summary: Delete a Fire project
+      description: Not reversible through the API.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Project deleted
+          content:
+            application/json:
+              example:
+                id: fire_01234567-89ab-cdef-0123-456789abcdef
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /fire/{projectId}/payment-plan:
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      operationId: createFirePaymentPlan
+      summary: Create a payment plan for a Fire project's buckets
+      description: >-
+        Ports SMILE-7 (the Payment Planner, shared by Smile and Fire) — computes a suggested per-period contribution
+        to fund the project's buckets by `targetDate`, then persists it (`status: "planned"`) onto the project's
+        `plannedSubscriptions` array. Only creation is exposed; activating a plan into a real recurring subscription
+        isn't part of this API. See `docs/domain/PAYMENT_PLAN_FORMULA.md` for the exact formula, including the four
+        deliberate corrections made while porting this calculation for the first time.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePaymentPlanRequest'
+            example:
+              planTitle: Emergency Top-up
+              startDate: '2026-01-01'
+              targetDate: '2026-04-01'
+              frequency: monthly
+              account: Daily
+      responses:
+        '201':
+          description: Created payment plan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentPlan'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /balance/assets:
+    get:
+      operationId: listAssets
+      summary: List assets
+      description: >-
+        Returns every asset owned by the caller (ASSET-1/2/3). Existing assets must first receive stable IDs through
+        `mm-admin migrate-balance-entity-ids --collection assets` (the legacy storage shape has no id, only `tag`).
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Assets owned by the caller
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [assets]
+                properties:
+                  assets:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Asset'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+    post:
+      operationId: createAsset
+      summary: Create an asset
+      description: >-
+        `tag` must not collide (case-sensitive exact match) with an existing Asset, Share, or Investment tag —
+        these three entity types share one tag namespace in the original app, since a `Transaction.category` like
+        `@Car` must unambiguously resolve to one balance-sheet entry. Liabilities have their own separate tag
+        namespace and are not part of this check.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAssetRequest'
+            example:
+              tag: Car
+              amountMinor: 800000
+      responses:
+        '201':
+          description: Created asset
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Asset'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+  /balance/assets/{assetId}:
+    parameters:
+      - name: assetId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getAsset
+      summary: Get a single asset
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The asset
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Asset'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      operationId: updateAsset
+      summary: Update an asset
+      description: Accepts a partial body — only the fields you send are changed. A changed `tag` is checked for the same cross-entity collision `POST /balance/assets` checks, against the caller's other assets/shares/investments (not against itself).
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchAssetRequest'
+            example:
+              amountMinor: 900000
+      responses:
+        '200':
+          description: Updated asset
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Asset'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      operationId: deleteAsset
+      summary: Delete an asset
+      description: Not reversible through the API.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Asset deleted
+          content:
+            application/json:
+              example:
+                id: assets_01234567-89ab-cdef-0123-456789abcdef
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /balance/liabilities:
+    get:
+      operationId: listLiabilities
+      summary: List liabilities
+      description: >-
+        Returns every liability owned by the caller (LIAB-1/2/3). Existing liabilities must first receive stable IDs
+        through `mm-admin migrate-balance-entity-ids --collection liabilities`. Unlike Assets/Shares/Investments,
+        a liability's `tag` has its own independent namespace — it never collides with an Asset/Share/Investment tag.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Liabilities owned by the caller
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [liabilities]
+                properties:
+                  liabilities:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Liability'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+    post:
+      operationId: createLiability
+      summary: Create a liability
+      description: "`tag` must not collide (case-sensitive exact match) with an existing liability's tag."
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateLiabilityRequest'
+            example:
+              tag: Mortgage
+              amountMinor: 15000000
+              investment: true
+              creditMinor: 5000000
+      responses:
+        '201':
+          description: Created liability
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Liability'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+  /balance/liabilities/{liabilityId}:
+    parameters:
+      - name: liabilityId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getLiability
+      summary: Get a single liability
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The liability
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Liability'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      operationId: updateLiability
+      summary: Update a liability
+      description: Accepts a partial body — only the fields you send are changed. A changed `tag` is checked against the caller's other liabilities only (not against Assets/Shares/Investments).
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchLiabilityRequest'
+            example:
+              creditMinor: 4000000
+      responses:
+        '200':
+          description: Updated liability
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Liability'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      operationId: deleteLiability
+      summary: Delete a liability
+      description: Not reversible through the API.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Liability deleted
+          content:
+            application/json:
+              example:
+                id: liabilities_01234567-89ab-cdef-0123-456789abcdef
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /balance/investments:
+    get:
+      operationId: listInvestments
+      summary: List investments
+      description: >-
+        Returns every investment owned by the caller (INV-1/2/3). Existing investments must first receive stable IDs
+        through `mm-admin migrate-balance-entity-ids --collection investments`. `tag` shares one namespace with
+        Assets/Shares — it must not collide with an Asset, Share, or another Investment's tag.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Investments owned by the caller
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [investments]
+                properties:
+                  investments:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Investment'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+    post:
+      operationId: createInvestment
+      summary: Create an investment
+      description: '`tag` must not collide (case-sensitive exact match) with an existing Asset, Share, or Investment tag.'
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateInvestmentRequest'
+            example:
+              tag: Rental Unit A
+              amountMinor: 18000000
+              depositMinor: 3000000
+      responses:
+        '201':
+          description: Created investment
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Investment'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+  /balance/investments/{investmentId}:
+    parameters:
+      - name: investmentId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getInvestment
+      summary: Get a single investment
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The investment
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Investment'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      operationId: updateInvestment
+      summary: Update an investment
+      description: >-
+        Accepts a partial body — only the fields you send are changed. A changed `tag` is checked for the same
+        cross-entity collision `POST /balance/investments` checks, against the caller's other assets/shares/
+        investments (not against itself). Renaming an investment's `tag` also renames any
+        `income.revenue.properties` entry that matched the old tag, in the same atomic write — mirroring
+        `info-investment.component.ts`'s own cross-collection rename, done atomically instead of as two
+        separate writes.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchInvestmentRequest'
+            example:
+              depositMinor: 4000000
+      responses:
+        '200':
+          description: Updated investment
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Investment'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      operationId: deleteInvestment
+      summary: Delete an investment
+      description: Not reversible through the API.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Investment deleted
+          content:
+            application/json:
+              example:
+                id: investments_01234567-89ab-cdef-0123-456789abcdef
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /balance/shares:
+    get:
+      operationId: listShares
+      summary: List shares
+      description: >-
+        Returns every share owned by the caller (SHARE-1/2/3). Existing shares must first receive stable IDs
+        through `mm-admin migrate-balance-entity-ids --collection shares`. `tag` shares one namespace with
+        Assets/Investments — it must not collide with an Asset, Investment, or another Share's tag.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Shares owned by the caller
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [shares]
+                properties:
+                  shares:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Share'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+    post:
+      operationId: createShare
+      summary: Create a share
+      description: >-
+        `tag` must not collide (case-sensitive exact match) with an existing Asset, Investment, or Share tag.
+        Every space is stripped from `tag` before storing or comparing it — a ticker-like tag has no internal
+        spaces (a corrected version of the original UI's own space-stripping, which only removed the first space).
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateShareRequest'
+            example:
+              tag: MSFT
+              quantity: 10
+              priceMinor: 41500
+      responses:
+        '201':
+          description: Created share
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Share'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+  /balance/shares/{shareId}:
+    parameters:
+      - name: shareId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getShare
+      summary: Get a single share
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The share
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Share'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      operationId: updateShare
+      summary: Update a share
+      description: >-
+        Accepts a partial body — only the fields you send are changed. A changed `tag` is checked for the same
+        cross-entity collision `POST /balance/shares` checks (and has every space stripped the same way).
+        Renaming a share's `tag` also renames any `income.revenue.interests` entry that matched the old tag.
+        Independently of any rename, saving `quantity`/`priceMinor` also syncs the embedded `share.quantity`/
+        `share.price` on any Grow project whose `title` equals the (possibly just-renamed) tag — mirroring
+        `info-share.component.ts`'s own unconditional sync, done atomically alongside the rest of this write
+        instead of as separate, non-atomic writes.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchShareRequest'
+            example:
+              quantity: 20
+              priceMinor: 42000
+      responses:
+        '200':
+          description: Updated share
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Share'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      operationId: deleteShare
+      summary: Delete a share
+      description: Not reversible through the API. Does not clean up any Interest or Grow-project reference that pointed at this share's tag.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Share deleted
+          content:
+            application/json:
+              example:
+                id: shares_01234567-89ab-cdef-0123-456789abcdef
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /income/revenues:
+    get:
+      operationId: listRevenues
+      summary: List revenue sources
+      description: >-
+        Returns every revenue source owned by the caller (REV-1), read-only. A revenue entry is fully derived from
+        transaction history — `POST/PATCH/DELETE /transactions` fully recomputes `revenues`/`interests`/`properties`
+        from the *entire* transaction history on every write, with no merge against prior state, so there is no
+        durable create/update/delete operation for a revenue entry independent of the transactions that produce it.
+        A new tag appears automatically the first time an `@`-tagged transaction posts against it on the `Income`
+        account; editing/deleting the underlying transaction is the only way to change or remove one.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Revenue sources owned by the caller
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [revenues]
+                properties:
+                  revenues:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TaggedAmount'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+  /income/interests:
+    get:
+      operationId: listInterests
+      summary: List interest income sources
+      description: >-
+        Returns every interest income source owned by the caller (INT-1), read-only — same fully-derived,
+        no-durable-direct-edit shape as `GET /income/revenues`. An `@`-tagged Income-account transaction is
+        classified as interest income rather than plain revenue when its tag matches an existing Share's tag.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Interest income sources owned by the caller
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [interests]
+                properties:
+                  interests:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TaggedAmount'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+  /income/properties:
+    get:
+      operationId: listProperties
+      summary: List rental property income sources
+      description: >-
+        Returns every rental property income source owned by the caller (PROP-1), read-only — same fully-derived,
+        no-durable-direct-edit shape as `GET /income/revenues`. An `@`-tagged Income-account transaction is
+        classified as property income rather than plain revenue when its tag matches an existing Investment's tag.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Property income sources owned by the caller
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [properties]
+                properties:
+                  properties:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TaggedAmount'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+  /me:
+    get:
+      operationId: getCurrentIdentity
+      summary: Get the current API identity
+      description: Returns the current user's ID, authentication type, and effective scopes.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Current identity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Identity'
+              example:
+                userId: user_123
+                authenticationType: token
+                tokenName: household-agent
+                scopes: [transactions:rw, reports:r]
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+  /auth/tokens:
+    get:
+      operationId: listPersonalAccessTokens
+      summary: List personal access tokens
+      description: Requires an authenticated account session. PATs cannot manage tokens.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Tokens owned by the current user
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [tokens]
+                properties:
+                  tokens:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TokenMetadata'
+              example:
+                tokens:
+                  - tokenId: pat_0123456789abcdef0123456789abcdef
+                    name: household-agent
+                    scopes: [transactions:rw]
+                    createdAt: '2026-09-06T20:00:00.000Z'
+                    expiresAt: null
+                    revoked: false
+        '403':
+          $ref: '#/components/responses/SessionRequired'
+    post:
+      operationId: createPersonalAccessToken
+      summary: Create a personal access token
+      description: Requires an authenticated account session. The plaintext token is returned exactly once; browser-issued tokens cannot receive the admin scope.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTokenRequest'
+            example:
+              name: household-agent
+              scopes: [transactions:rw, reports:r]
+              expiresInDays: 90
+      responses:
+        '201':
+          description: Newly created token. Store token securely; it cannot be retrieved again.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/TokenMetadata'
+                  - type: object
+                    required: [token, userId]
+                    properties:
+                      token:
+                        type: string
+                        pattern: '^mmpat_[a-f0-9]{64}$'
+                      userId:
+                        type: string
+              example:
+                tokenId: pat_0123456789abcdef0123456789abcdef
+                token: mmpat_0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+                userId: user_123
+                name: household-agent
+                scopes: [transactions:rw, reports:r]
+                expiresAt: '2026-12-05T20:00:00.000Z'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '403':
+          $ref: '#/components/responses/SessionRequired'
+  /auth/tokens/{tokenId}:
+    delete:
+      operationId: revokePersonalAccessToken
+      summary: Revoke a personal access token
+      description: Requires an authenticated account session and only revokes a token owned by that user.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: tokenId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Token revoked
+          content:
+            application/json:
+              example:
+                tokenId: pat_0123456789abcdef0123456789abcdef
+                revoked: true
+        '403':
+          $ref: '#/components/responses/SessionRequired'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /grow:
+    get:
+      operationId: listGrow
+      summary: List grow projects
+      description: Returns every grow project owned by the caller (GROW-1). Existing grow projects must first receive stable IDs through `mm-admin migrate-balance-entity-ids --collection grow`.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Grow projects owned by the caller
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [grow]
+                properties:
+                  grow:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Grow'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+    post:
+      operationId: createGrow
+      summary: Create a grow project
+      description: >-
+        `title` must not collide with an existing grow project's title (GROW-2). `isAsset`/`share`/`investment` are
+        mutually exclusive booleans marking this project's fixed kind — once set, it determines which typed-action
+        request shape `POST /grow/{growId}/buy` and `.../sell` expect, and cannot be changed afterwards. `amountMinor`
+        and `cashflowMinor` always start at 0 and `liabilitie` starts `null` — they're only ever changed by the typed
+        action endpoints, never by this or `PATCH /grow/{growId}`.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateGrowRequest'
+            example:
+              title: MSFT
+              phase: plan
+              share: true
+      responses:
+        '201':
+          description: Created grow project
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Grow'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+  /grow/{growId}:
+    parameters:
+      - name: growId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getGrow
+      summary: Get a single grow project
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The grow project
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Grow'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      operationId: updateGrow
+      summary: Update a grow project's metadata
+      description: >-
+        Accepts a partial body — only the fields you send are changed (GROW-3). Money-moving fields
+        (`amountMinor`, `cashflowMinor`, `share`, `investment`, `liabilitie`) are rejected here — use the typed
+        action endpoints instead.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchGrowRequest'
+            example:
+              phase: monitor
+              riskScore: 4
+      responses:
+        '200':
+          description: Updated grow project
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Grow'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      operationId: deleteGrow
+      summary: Delete a grow project
+      description: Not reversible through the API. Does not delete any linked Asset/Share/Investment/Liability record or past transactions.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Grow project deleted
+          content:
+            application/json:
+              example:
+                id: grow_01234567-89ab-cdef-0123-456789abcdef
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /grow/{growId}/buy:
+    parameters:
+      - name: growId
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      operationId: buyGrow
+      summary: Record a buy against a grow project (GROW-4)
+      description: >-
+        Generates the same canonical `Transaction.comment` DSL the existing Angular UI reads
+        (`docs/domain/GROW_DSL_FORMULA.md`), atomically alongside the Asset/Share/Investment patch and, for an
+        attached `liabilitie`, a standalone Liability record tagged with the grow project's own title (reflected
+        onto this project's own `liabilitie` field too, so a later `payback` or a `sell` with `payback` has
+        something to act on). An Investment-kind buy always creates/updates the companion `M-<title>` mortgage
+        liability unconditionally, in addition to and distinct from any attached `liabilitie`.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BuyGrowRequest'
+            example:
+              quantity: 10
+              priceMinor: 41500
+      responses:
+        '201':
+          description: The buy was recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GrowActionResult'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /grow/{growId}/sell:
+    parameters:
+      - name: growId
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      operationId: sellGrow
+      summary: Record a sale against a grow project (GROW-5)
+      description: An investment-kind sell may include `payback` to settle an attached liability atomically with the sale.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SellGrowRequest'
+            example:
+              quantity: 5
+              priceMinor: 26000
+      responses:
+        '201':
+          description: The sale was recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GrowActionResult'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /grow/{growId}/dividend:
+    parameters:
+      - name: growId
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      operationId: dividendGrow
+      summary: Record a dividend against a share-kind grow project (GROW-6)
+      description: Only valid when the grow project's kind is `share`. Produces a transaction only — no Share/Grow state changes (confirmed dividends don't affect a holding's quantity or price).
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DividendGrowRequest'
+            example:
+              quantity: 10
+              priceMinor: 5000
+      responses:
+        '201':
+          description: The dividend was recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GrowActionResult'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /grow/{growId}/payback:
+    parameters:
+      - name: growId
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      operationId: paybackGrow
+      summary: Record a payback against a grow project's attached liability (GROW-6)
+      description: >-
+        Only valid when the grow project has an attached `liabilitie` (regardless of kind — matches
+        `grow.component.ts`'s own `paybackProject()`, which has no kind check). A payback that zeroes both
+        `amountMinor` and `creditMinor` removes the liability and sets `liabilitie` to `null`.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaybackGrowRequest'
+            example:
+              amountMinor: 50000
+              creditMinor: 10000
+      responses:
+        '201':
+          description: The payback was recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GrowActionResult'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /grow/{growId}/cashflow:
+    parameters:
+      - name: growId
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      operationId: cashflowGrow
+      summary: Record a recurring cashflow against a grow project (GROW-7)
+      description: An optional attached liability `creditMinor` is netted out of the transaction amount. Produces a transaction only — no Grow state changes.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CashflowGrowRequest'
+            example:
+              cashflowMinor: 15000
+              creditMinor: 2000
+      responses:
+        '201':
+          description: The cashflow was recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GrowActionResult'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /grow/{growId}/deposit:
+    parameters:
+      - name: growId
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      operationId: depositGrow
+      summary: Record a cash deposit against a grow project (GROW-7)
+      description: Produces a transaction only — no Grow state changes.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DepositGrowRequest'
+            example:
+              amountMinor: 30000
+      responses:
+        '201':
+          description: The deposit was recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GrowActionResult'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /subscriptions:
+    get:
+      operationId: listSubscriptions
+      summary: List subscriptions (SUB-4)
+      description: Returns every subscription owned by the caller. Existing subscriptions must first receive stable IDs through `mm-admin migrate-balance-entity-ids --collection subscriptions`.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Subscriptions owned by the caller
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [subscriptions]
+                properties:
+                  subscriptions:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Subscription'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+    post:
+      operationId: createSubscription
+      summary: Create a subscription (SUB-1)
+      description: Does not generate any transactions by itself — call `POST /subscriptions/refresh` afterward to generate transactions for occurrences already due.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSubscriptionRequest'
+            example:
+              title: Spotify
+              account: Daily
+              amountMinor: -1000
+              startDate: '2026-01-01'
+              category: '@Streaming'
+              frequency: monthly
+      responses:
+        '201':
+          description: Created subscription
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subscription'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+  /subscriptions/export:
+    get:
+      operationId: exportSubscriptions
+      summary: Export all subscriptions as newline-delimited JSON
+      description: Returns every subscription owned by the caller, one JSON object per line. Requires `subscriptions:bulk`.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Newline-delimited JSON, one Subscription per line
+          content:
+            application/x-ndjson:
+              schema:
+                type: string
+              example: |-
+                {"id":"subscriptions_01234567-89ab-cdef-0123-456789abcdef","title":"Spotify","account":"Daily","amountMinor":-1000,"startDate":"2026-01-01","endDate":null,"category":"@Streaming","comment":"","frequency":"monthly"}
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+  /subscriptions/import:
+    post:
+      operationId: importSubscriptions
+      summary: Bulk-create subscriptions from newline-delimited JSON
+      description: >-
+        Creates one subscription per line of the request body (each line the same shape as CreateSubscriptionRequest).
+        Requires `subscriptions:bulk` and an `Idempotency-Key` header, with the same replay/mismatch contract as
+        `POST /transactions/import`. Up to 10,000 lines of at most 16KB each per call. `?atomic=true` makes the whole
+        import all-or-nothing; the default applies what parses and validates, reporting the rest per line as `error`.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: atomic
+          in: query
+          schema:
+            type: boolean
+            default: false
+      requestBody:
+        required: true
+        content:
+          application/x-ndjson:
+            schema:
+              type: string
+            example: |-
+              {"account":"Daily","amountMinor":-3000,"startDate":"2026-01-01","category":"@Gym"}
+      responses:
+        '200':
+          description: Per-line results, in the same shape as a batch response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchSubscriptionsResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '409':
+          $ref: '#/components/responses/IdempotencyConflict'
+  /subscriptions/batch:
+    post:
+      operationId: batchSubscriptions
+      summary: Create, update, or delete many subscriptions in one request
+      description: >-
+        Applies a mix of create/update/delete operations in one document write. Requires the `subscriptions:bulk`
+        scope and an `Idempotency-Key` header, with the same replay/mismatch contract as `POST /transactions/batch`.
+        Deliberately does not cascade the stale-transaction cleanup that `PATCH`/`DELETE /subscriptions/{id}` perform
+        on an identity-changing edit — a bulk metadata operation shouldn't have the side effect of silently deleting
+        transactions across many subscriptions at once.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BatchSubscriptionsRequest'
+            example:
+              atomic: false
+              operations:
+                - op: create
+                  account: Daily
+                  amountMinor: -3000
+                  startDate: '2026-01-01'
+                  category: '@Gym'
+                - op: update
+                  id: subscriptions_01234567-89ab-cdef-0123-456789abcdef
+                  amountMinor: -3500
+                - op: delete
+                  id: subscriptions_11111111-89ab-cdef-0123-456789abcdef
+      responses:
+        '200':
+          description: Per-item results (some items may report `error` even on a 200, in non-atomic mode)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchSubscriptionsResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '409':
+          $ref: '#/components/responses/IdempotencyConflict'
+  /subscriptions/refresh:
+    post:
+      operationId: refreshSubscriptions
+      summary: Generate due transactions from active subscriptions (SUB-4)
+      description: >-
+        For every subscription whose `startDate` has passed, computes which occurrence dates are due (per
+        `frequency`, up to today or `endDate` if it has already passed) and generates a transaction for each one not
+        already generated (matched on date/account/amount/category/comment). Generated transactions are appended in
+        the same write every other transaction mutation goes through, so Mojo/Smile/Fire fund state and the Income
+        accounting rebuild reflect them atomically. A Mojo or Smile-project contribution whose target is already
+        fully funded is skipped rather than generated. Idempotent to call repeatedly — a run with nothing newly due
+        returns `transactionsCreated: 0` without writing anything.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Counts of what this run generated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefreshSubscriptionsResponse'
+              example:
+                transactionsCreated: 2
+                subscriptionsProcessed: 3
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+  /subscriptions/{subscriptionId}:
+    parameters:
+      - name: subscriptionId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getSubscription
+      summary: Get a single subscription
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The subscription
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subscription'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      operationId: updateSubscription
+      summary: Update a subscription (SUB-2)
+      description: >-
+        Accepts a partial body. If any of title/category/amountMinor/account/comment/startDate/frequency actually
+        changes, cascades a cleanup that deletes every existing transaction matching the subscription's OLD identity
+        (account+amountMinor+category+comment) — a tighter 4-field match than the original app's 3-field
+        account+amount+category match, to avoid deleting unrelated manually-entered transactions that happen to
+        coincide on just those three fields. Only deletes; call `POST /subscriptions/refresh` afterward to
+        regenerate under the new identity.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchSubscriptionRequest'
+            example:
+              amountMinor: -1200
+      responses:
+        '200':
+          description: Updated subscription
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subscription'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      operationId: deleteSubscription
+      summary: Delete a subscription (SUB-3)
+      description: Leaves already-generated transactions untouched by default. Pass `?deleteTransactions=true` to also delete every transaction matching this subscription's identity.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: deleteTransactions
+          in: query
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: Subscription deleted
+          content:
+            application/json:
+              example:
+                id: subscriptions_01234567-89ab-cdef-0123-456789abcdef
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /budget:
+    get:
+      operationId: listBudget
+      summary: List budget rows (BUD-2, BUD-3)
+      description: Returns every budget row owned by the caller, optionally filtered to one month. Existing budget rows must first receive stable IDs through `mm-admin migrate-balance-entity-ids --collection budget`.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: month
+          in: query
+          description: Filter to one month, YYYY-MM.
+          schema:
+            type: string
+            pattern: '^\d{4}-(0[1-9]|1[0-2])$'
+      responses:
+        '200':
+          description: Budget rows owned by the caller
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [budget]
+                properties:
+                  budget:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Budget'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+    post:
+      operationId: upsertBudget
+      summary: Create or update a budget row for a (month, category) pair (BUD-1)
+      description: Upserts by `(date, tag)` — if a row already exists for that month and category, its amount is overwritten in place (keeping its id); otherwise a new row is created. Matches the original app's add-budget form exactly.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBudgetRequest'
+            example:
+              date: '2026-01'
+              tag: '@Groceries'
+              amountMinor: 30000
+      responses:
+        '201':
+          description: Created or updated budget row
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Budget'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+    delete:
+      operationId: deleteBudgetMonth
+      summary: Delete every budget row for a month (BUD-7)
+      description: Not reversible through the API. No cascade to any other entity.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: month
+          in: query
+          required: true
+          schema:
+            type: string
+            pattern: '^\d{4}-(0[1-9]|1[0-2])$'
+      responses:
+        '200':
+          description: How many rows were deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [month, deletedCount]
+                properties:
+                  month:
+                    type: string
+                  deletedCount:
+                    type: integer
+              example:
+                month: '2026-01'
+                deletedCount: 2
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+  /budget/{budgetId}:
+    parameters:
+      - name: budgetId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getBudgetRow
+      summary: Get a single budget row
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The budget row
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Budget'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      operationId: updateBudgetRow
+      summary: Update a budget row (BUD-2)
+      description: Accepts a partial body. Rejects the update if changing `date` or `tag` would collide with another existing row's (date, tag) pair — a new guard the original app never needed since it never exposed an edit-in-place path for a single row.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchBudgetRequest'
+            example:
+              amountMinor: 45000
+      responses:
+        '200':
+          description: Updated budget row
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Budget'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      operationId: deleteBudgetRow
+      summary: Delete a budget row (BUD-2)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Budget row deleted
+          content:
+            application/json:
+              example:
+                id: budget_01234567-89ab-cdef-0123-456789abcdef
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /budget/fill-forward:
+    post:
+      operationId: fillForwardBudget
+      summary: Fill forward budget rows from the nearest prior populated month (BUD-4)
+      description: >-
+        Walks backward up to 120 months from `targetMonth` for the nearest month with any row, then chain-fills
+        forward month by month to `targetMonth` — each newly-filled month becomes the source for the next step.
+        Add-only: never overwrites a row that already exists for a given (date, tag), in an intermediate month or
+        the target month. A silent no-op (`rowsAdded: 0`) if no prior month within 120 months has any row at all —
+        ported from `plan.component.ts`'s `fill()` exactly, including that silence.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [targetMonth]
+              properties:
+                targetMonth:
+                  type: string
+                  pattern: '^\d{4}-(0[1-9]|1[0-2])$'
+            example:
+              targetMonth: '2026-04'
+      responses:
+        '200':
+          description: How many rows were added
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [targetMonth, rowsAdded]
+                properties:
+                  targetMonth:
+                    type: string
+                  rowsAdded:
+                    type: integer
+              example:
+                targetMonth: '2026-04'
+                rowsAdded: 3
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+  /budget/copy:
+    post:
+      operationId: copyBudget
+      summary: Copy every budget row from one month into another (BUD-5)
+      description: >-
+        Copies every row from `fromMonth` into `toMonth`. Unlike fill-forward, this OVERWRITES an existing target
+        row's amount if one already matches (date, tag) — a deliberately different behavior from
+        `POST /budget/fill-forward`, matching the original app's own two distinct operations
+        (`plan.component.ts`'s `copy()`).
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [fromMonth, toMonth]
+              properties:
+                fromMonth:
+                  type: string
+                  pattern: '^\d{4}-(0[1-9]|1[0-2])$'
+                toMonth:
+                  type: string
+                  pattern: '^\d{4}-(0[1-9]|1[0-2])$'
+            example:
+              fromMonth: '2026-01'
+              toMonth: '2026-02'
+      responses:
+        '200':
+          description: How many rows were copied
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [fromMonth, toMonth, rowsCopied]
+                properties:
+                  fromMonth:
+                    type: string
+                  toMonth:
+                    type: string
+                  rowsCopied:
+                    type: integer
+              example:
+                fromMonth: '2026-01'
+                toMonth: '2026-02'
+                rowsCopied: 2
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+  /budget/from-subscriptions:
+    post:
+      operationId: fromSubscriptionsBudget
+      summary: Populate budget rows from active subscriptions (BUD-6)
+      description: >-
+        For every subscription not on the `Income` account, converts its amount to a real monthly-equivalent by
+        frequency (weekly ×52/12, biweekly ×26/12, monthly ×1, quarterly ÷3, yearly ÷12) and sums it into a budget
+        row for every calendar month the subscription is active — corrects a real over/under-budgeting bug in the
+        original app, which never scales by frequency at all. Unconditionally overwrites any existing row for a
+        computed (date, tag) pair. Takes no request body — always evaluates every active subscription on the
+        account. See `docs/domain/BUDGET_FROM_SUBSCRIPTIONS_FORMULA.md` for the full formula and worked example.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: How many budget rows were written
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [rowsWritten]
+                properties:
+                  rowsWritten:
+                    type: integer
+              example:
+                rowsWritten: 2
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+  /settings:
+    get:
+      operationId: getSettings
+      summary: Read the caller's settings (SET-1,2,3,4,5,10)
+      description: >-
+        Returns the confirmed original-app defaults for any field never explicitly saved. Unlike every other field
+        here, `username` is the only profile field owned by this resource — `email` is owned by `PATCH /account`
+        (identity-sensitive, session-only) instead, and is rejected as an unknown field if sent here.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The caller's settings
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Settings'
+              example:
+                username: jkluess
+                currency: '€'
+                theme: light
+                language: en
+                dateFormat: dd.MM.yyyy
+                isEuropeanFormat: true
+                allocation:
+                  daily: 60
+                  splurge: 10
+                  smile: 10
+                  fire: 20
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+    patch:
+      operationId: updateSettings
+      summary: Update one or more settings fields
+      description: >-
+        Accepts a partial body — only the fields you send are changed. `allocation` is the one exception: it's
+        replaced as a whole unit (send all four of `daily`/`splurge`/`smile`/`fire` together) since a partial ratio
+        update can't be validated to sum to 100. Sending `email` (or any other unrecognized field) is rejected.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchSettingsRequest'
+            example:
+              theme: dark
+              currency: '$'
+      responses:
+        '200':
+          description: Updated settings
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Settings'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+  /encryption-config:
+    get:
+      operationId: getEncryptionConfig
+      summary: Read the caller's encryption configuration (SET-6)
+      description: >-
+        Never returns the raw key, unlike the legacy session-only `/api/auth/encryption-config` — an MCP tool or
+        agent reading this endpoint must never see the plaintext key (ADR-0001). `keyConfigured` reports whether a
+        real key is active, without revealing it.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The caller's encryption configuration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EncryptionConfig'
+              example:
+                encryptLocal: true
+                encryptDatabase: true
+                keyConfigured: true
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+    put:
+      operationId: updateEncryptionConfig
+      summary: Toggle encryption, or set an initial key
+      description: >-
+        Session-only — never callable with a PAT, regardless of scope, the same restriction already applied to
+        `/auth/tokens*`. Despite the PUT verb (kept for consistency with this resource's single-config-object
+        shape), accepts a partial body: `encryptLocal`/`encryptDatabase` may be toggled freely, and `key` may be set
+        when none is active yet. **Cannot change an already-active key** — the backend has no re-encryption logic,
+        so a bare key swap would make all existing encrypted data permanently unreadable; changing an active key
+        requires `mm-admin rotate-encryption-key` instead.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PutEncryptionConfigRequest'
+            example:
+              encryptDatabase: true
+      responses:
+        '200':
+          description: Updated encryption configuration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EncryptionConfig'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          description: Insufficient scope, or a real login session is required (PATs can never call this endpoint)
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+  /data/export:
+    get:
+      operationId: exportData
+      summary: Export the full account document, decrypted (SET-8)
+      description: >-
+        Wraps the same full-document read the legacy, session-only `GET /api/data/document` does, with two
+        deliberate corrections: this always returns plaintext, even when database encryption is on (the legacy
+        route returns ciphertext as-stored, since only the Angular client holds the key), and this never includes
+        the encryption key or config — the original client-side export bundles the raw key into the downloaded
+        file, which this does not replicate. Audited despite being a `GET`, since `data:bulk` is exactly the kind
+        of blast-radius scope worth a record of who read a full account dump and when.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The full account document
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, createdAt, updatedAt]
+                properties:
+                  data:
+                    type: object
+                    description: Everything under the account's data document (transactions, balances, settings, ...), decrypted.
+                  createdAt:
+                    type: string
+                    format: date-time
+                    nullable: true
+                  updatedAt:
+                    type: string
+                    format: date-time
+                    nullable: true
+              example:
+                data:
+                  transactions:
+                    - id: tx_01234567-89ab-cdef-0123-456789abcdef
+                      account: Daily
+                      amount: -12.5
+                      date: '2026-09-06'
+                      time: '14:00'
+                      category: '@Groceries'
+                      comment: ''
+                createdAt: '2026-01-01T00:00:00.000Z'
+                updatedAt: '2026-09-06T14:00:00.000Z'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+  /data/import:
+    post:
+      operationId: importData
+      summary: Replace the entire account with the given data (SET-9)
+      description: >-
+        Restores what `GET /data/export` produced (or a hand-authored equivalent). Requires `{confirm: true}` —
+        this is destructive and replaces every collection. Requires the imported `data.meta.schemaVersion` to
+        match the account's current one when an account already exists (this never converts between schema
+        versions — that's `mm-admin migrate`'s job). Backs up the pre-import document to disk before overwriting,
+        mirroring `mm-admin migrate`'s own backup pattern, so a bad import is manually recoverable by an operator
+        with server access. `data.transactions` and every field `applyDerivedState` normally recomputes on a
+        transaction write (income totals, Mojo's `amount`, Smile/Fire fund-bucket `amount`) are never trusted
+        from the imported document directly — they're always rebuilt from the imported transactions, exactly as
+        every other write already does. Requires the `data:bulk` scope and an `Idempotency-Key` header, with the
+        same replay/mismatch contract as `POST /transactions/batch`.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [confirm, data]
+              properties:
+                confirm:
+                  type: boolean
+                  description: Must be `true` — an explicit acknowledgement that this replaces the whole account.
+                data:
+                  type: object
+                  description: The same shape `GET /data/export` returns under its own `data` key.
+              example:
+                confirm: true
+                data:
+                  meta:
+                    schemaVersion: 1
+                    currency: EUR
+                  transactions:
+                    - id: tx_01234567-89ab-cdef-0123-456789abcdef
+                      account: Daily
+                      amount: -12.5
+                      date: '2026-09-06'
+                      time: '14:00'
+                      category: '@Groceries'
+                      comment: ''
+      responses:
+        '200':
+          description: How many transactions were imported
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [transactionCount, schemaVersion]
+                properties:
+                  transactionCount:
+                    type: integer
+                  schemaVersion:
+                    type: integer
+                  backupFile:
+                    type: string
+                    nullable: true
+                    description: Path to the pre-import backup on the server, or `null` if no account existed yet.
+              example:
+                transactionCount: 42
+                schemaVersion: 1
+                backupFile: /app/backend/migration-backups/user_123-import-2026-09-06T14-00-00-000Z.json
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '409':
+          $ref: '#/components/responses/IdempotencyConflict'
+  /data/recalculate:
+    post:
+      operationId: recalculateData
+      summary: Force a full recalculation of derived state from transactions (SET-11)
+      description: >-
+        The server-side equivalent of the original app's "Fix Accounting" button. Every transaction write already
+        runs this same recalculation (accounting totals, Mojo, Smile/Fire fund buckets) automatically — this
+        endpoint exists to force it again against whatever is currently stored, without changing any transaction,
+        useful after `POST /data/import` or manual data surgery that could have left the derived aggregates stale.
+        Requires the `data:bulk` scope and an `Idempotency-Key` header, with the same replay/mismatch contract as
+        `POST /transactions/batch`, even though recalculating twice is naturally idempotent in effect.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: How many transactions were recalculated
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [transactionCount]
+                properties:
+                  transactionCount:
+                    type: integer
+              example:
+                transactionCount: 42
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '409':
+          $ref: '#/components/responses/IdempotencyConflict'
+  /account:
+    get:
+      operationId: getAccount
+      summary: Read the caller's account email (AUTH-6, PROF-1)
+      description: >-
+        Requires `account:r` — readable via a PAT with any scope holding it, unlike every other operation on this
+        resource. Reading the current email isn't identity-sensitive the way changing or deleting the account is.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The caller's account
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [email]
+                properties:
+                  email:
+                    type: string
+                    format: email
+                  createdAt:
+                    type: string
+                    format: date-time
+                    nullable: true
+              example:
+                email: jkluess@example.com
+                createdAt: '2026-01-01T00:00:00.000Z'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+    patch:
+      operationId: updateAccount
+      summary: Change the account's email (AUTH-6)
+      description: >-
+        Session-only — never callable with a PAT, regardless of scope, the same restriction already applied to
+        `/auth/tokens*` and `PUT /encryption-config`. Rejects an email already used by another account. Reissues
+        the session cookie with the new email using the standard 24h lifetime (the legacy, session-only `PUT
+        /auth/update-email` had a bug reissuing it with only a 15-minute lifetime — fixed here, and in that route
+        too). Also updates `data.info.email` in the same operation, which the legacy route never did, so the two
+        copies of the email (`authDb` and the Pro-API-readable `data.info`) never silently diverge.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email:
+                  type: string
+                  format: email
+            example:
+              email: new-address@example.com
+      responses:
+        '200':
+          description: Updated account
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [email]
+                properties:
+                  email:
+                    type: string
+                    format: email
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          description: Insufficient scope, or a real login session is required (PATs can never call this endpoint)
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '409':
+          description: Email already in use by another account
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              example:
+                type: https://money-manager.dev/problems/conflict_email_taken
+                title: Invalid account request
+                status: 409
+                detail: Email already in use by another account.
+                code: conflict_email_taken
+    delete:
+      operationId: deleteAccount
+      summary: Permanently delete the account (AUTH-8)
+      description: >-
+        Session-only, requires `{confirm: true}` — this is destructive and irreversible. Extends the legacy
+        `DELETE /auth/delete-account` cascade (which destroys only the `usersDb`/`authDb` documents) to also
+        delete every Personal Access Token belonging to the user — left in place, a PAT would otherwise keep
+        authenticating after the account it belongs to no longer exists — and to explicitly revoke the current
+        refresh token, rather than relying solely on the deleted `authDb` document to eventually invalidate it.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [confirm]
+              properties:
+                confirm:
+                  type: boolean
+            example:
+              confirm: true
+      responses:
+        '200':
+          description: How many Personal Access Tokens were deleted along with the account
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [deletedTokenCount]
+                properties:
+                  deletedTokenCount:
+                    type: integer
+              example:
+                deletedTokenCount: 2
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          description: Insufficient scope, or a real login session is required (PATs can never call this endpoint)
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+  /account/verify-password:
+    post:
+      operationId: verifyAccountPassword
+      summary: Verify the account's password (AUTH-7)
+      description: >-
+        Session-only — never callable with a PAT, regardless of scope. A thin wrapper on the same bcrypt-compare
+        logic the legacy, session-only `POST /auth/verify-password` uses, gating sensitive UI actions (e.g.
+        viewing/changing encryption settings) the same way.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [password]
+              properties:
+                password:
+                  type: string
+      responses:
+        '200':
+          description: The password is correct
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [valid]
+                properties:
+                  valid:
+                    type: boolean
+              example:
+                valid: true
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          description: The password is incorrect
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '403':
+          description: A real login session is required (PATs can never call this endpoint)
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+  schemas:
+    Identity:
+      type: object
+      required: [userId, authenticationType, scopes]
+      properties:
+        userId:
+          type: string
+        authenticationType:
+          type: string
+          enum: [session, token]
+        tokenName:
+          type: string
+        scopes:
+          type: array
+          items:
+            type: string
+    TokenMetadata:
+      type: object
+      required: [tokenId, name, scopes, createdAt, expiresAt, revoked]
+      properties:
+        tokenId:
+          type: string
+        name:
+          type: string
+        scopes:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type: [string, 'null']
+          format: date-time
+        revoked:
+          type: boolean
+    CreateTokenRequest:
+      type: object
+      required: [name, scopes]
+      properties:
+        name:
+          type: string
+        scopes:
+          type: array
+          minItems: 1
+          items:
+            type: string
+        expiresInDays:
+          type: integer
+          minimum: 1
+    ApiTransaction:
+      type: object
+      required: [id, account, amountMinor, currency, date, time, category, comment]
+      properties:
+        id:
+          type: string
+        account:
+          type: string
+        amountMinor:
+          type: integer
+        currency:
+          type: string
+          pattern: '^[A-Z]{3}$'
+        date:
+          type: string
+          format: date
+        time:
+          type: string
+        category:
+          type: string
+        comment:
+          type: string
+    StatementRow:
+      type: object
+      required: [current, previous, changePercent]
+      description: Amounts are integer minor units. `changePercent` is the relative change of `current` vs `previous` (e.g. 20 → 25 is `25`, not `5`); it is `0` when `previous` is `0`.
+      properties:
+        current:
+          type: integer
+        previous:
+          type: integer
+        changePercent:
+          type: number
+    IncomeStatement:
+      type: object
+      required:
+        - period
+        - previousPeriod
+        - revenues
+        - interests
+        - propertyIncome
+        - otherIncome
+        - totalIncome
+        - expensesByAccount
+        - totalExpenses
+        - netResult
+        - savingsRatePercent
+      properties:
+        period:
+          $ref: '#/components/schemas/PeriodRange'
+        previousPeriod:
+          $ref: '#/components/schemas/PeriodRange'
+        revenues:
+          $ref: '#/components/schemas/StatementRow'
+        interests:
+          $ref: '#/components/schemas/StatementRow'
+        propertyIncome:
+          $ref: '#/components/schemas/StatementRow'
+        otherIncome:
+          $ref: '#/components/schemas/StatementRow'
+        totalIncome:
+          $ref: '#/components/schemas/StatementRow'
+        expensesByAccount:
+          type: object
+          required: [Daily, Splurge, Smile, Fire]
+          properties:
+            Daily:
+              $ref: '#/components/schemas/StatementRow'
+            Splurge:
+              $ref: '#/components/schemas/StatementRow'
+            Smile:
+              $ref: '#/components/schemas/StatementRow'
+            Fire:
+              $ref: '#/components/schemas/StatementRow'
+        totalExpenses:
+          $ref: '#/components/schemas/StatementRow'
+        netResult:
+          $ref: '#/components/schemas/StatementRow'
+        savingsRatePercent:
+          $ref: '#/components/schemas/StatementRow'
+    PeriodRange:
+      type: object
+      required: [startDate, endDate, label]
+      properties:
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        label:
+          type: string
+    CashflowStatement:
+      type: object
+      required: [period, previousPeriod, operating, investing, financing, mojo, netCashflow]
+      properties:
+        period:
+          $ref: '#/components/schemas/PeriodRange'
+        previousPeriod:
+          $ref: '#/components/schemas/PeriodRange'
+        operating:
+          $ref: '#/components/schemas/StatementRow'
+        investing:
+          $ref: '#/components/schemas/StatementRow'
+        financing:
+          $ref: '#/components/schemas/StatementRow'
+        mojo:
+          $ref: '#/components/schemas/StatementRow'
+        netCashflow:
+          $ref: '#/components/schemas/StatementRow'
+    BalanceSheet:
+      type: object
+      required: [assets, liabilities, equity, netWorth]
+      properties:
+        assets:
+          type: object
+          required: [cash, shares, investments, properties, total]
+          properties:
+            cash:
+              type: integer
+            shares:
+              type: integer
+            investments:
+              type: integer
+            properties:
+              type: integer
+            total:
+              type: integer
+        liabilities:
+          type: object
+          required: [debts, total]
+          properties:
+            debts:
+              type: integer
+            total:
+              type: integer
+        equity:
+          type: integer
+          description: Total assets minus total liabilities. Can be negative.
+        netWorth:
+          type: integer
+          description: Alias for `equity`.
+    KeyRatios:
+      type: object
+      required:
+        - savingsRatePercent
+        - fixedCostRatioPercent
+        - netMarginPercent
+        - debtRatio
+        - equityRatioPercent
+        - interestCoverage
+      properties:
+        savingsRatePercent:
+          type: number
+        fixedCostRatioPercent:
+          type: number
+        netMarginPercent:
+          type: number
+          description: Identical formula/value to `savingsRatePercent` — a pre-existing redundancy ported faithfully from the original.
+        debtRatio:
+          type: number
+          description: liabilities.total / assets.total. Not a percentage.
+        equityRatioPercent:
+          type: number
+        interestCoverage:
+          type: number
+          description: netResult / interestExpenses. Not a percentage.
+    CategoryAggregate:
+      type: object
+      required: [category, amountMinor, percent]
+      properties:
+        category:
+          type: string
+        amountMinor:
+          type: integer
+        percent:
+          type: number
+          description: Share of this category within its own top-categories list (expenses vs. incomes are two separate 100% totals).
+    KpiReport:
+      type: object
+      required:
+        - period
+        - previousPeriod
+        - ratios
+        - previousRatios
+        - dashboardSavingsRatePercent
+        - previousDashboardSavingsRatePercent
+        - dashboardFixedCostRatioPercent
+        - previousDashboardFixedCostRatioPercent
+        - topExpenses
+        - topIncomes
+      properties:
+        period:
+          $ref: '#/components/schemas/PeriodRange'
+        previousPeriod:
+          $ref: '#/components/schemas/PeriodRange'
+        ratios:
+          $ref: '#/components/schemas/KeyRatios'
+        previousRatios:
+          $ref: '#/components/schemas/KeyRatios'
+        dashboardSavingsRatePercent:
+          type: number
+        previousDashboardSavingsRatePercent:
+          type: number
+        dashboardFixedCostRatioPercent:
+          type: number
+        previousDashboardFixedCostRatioPercent:
+          type: number
+        topExpenses:
+          type: array
+          items:
+            $ref: '#/components/schemas/CategoryAggregate'
+        topIncomes:
+          type: array
+          items:
+            $ref: '#/components/schemas/CategoryAggregate'
+    MojoStatus:
+      type: object
+      required: [amountMinor, targetMinor, remainingMinor, percentFilled]
+      properties:
+        amountMinor:
+          type: integer
+          description: Derived from transaction history — not directly writable.
+        targetMinor:
+          type: integer
+        remainingMinor:
+          type: integer
+          description: max(0, targetMinor - amountMinor).
+        percentFilled:
+          type: number
+          description: amountMinor / targetMinor * 100, or 0 when targetMinor is 0. Not clamped to 100.
+    FireCoverageReport:
+      type: object
+      required: [coverageRatio, mojoAmountMinor, averageMonthlyExpensesMinor, monthsConsidered]
+      properties:
+        coverageRatio:
+          type: number
+          nullable: true
+          description: mojoAmountMinor / averageMonthlyExpensesMinor. null when monthsConsidered is 0 — there's no expense baseline to divide by, not a fabricated ratio.
+        mojoAmountMinor:
+          type: integer
+        averageMonthlyExpensesMinor:
+          type: integer
+          description: Average Daily/Splurge/Smile/Fire expense-account spending per historical calendar month, excluding transfers and the current (incomplete) month.
+        monthsConsidered:
+          type: integer
+          description: Distinct calendar months, excluding the current one, with at least one qualifying expense — the denominator's sample size.
+    GrowPnl:
+      type: object
+      required: [title, netCashflowMinor, investedMinor, returnedMinor, transactionCount]
+      properties:
+        title:
+          type: string
+        netCashflowMinor:
+          type: integer
+          description: returnedMinor - investedMinor. Numerically identical to the original's own getGrowProjectsGV aggregate.
+        investedMinor:
+          type: integer
+          description: Sum of every matching transaction's negative amountMinor (absolute value).
+        returnedMinor:
+          type: integer
+          description: Sum of every matching transaction's positive amountMinor.
+        transactionCount:
+          type: integer
+    FundProjectTotals:
+      type: object
+      required: [targetMinor, amountMinor, remainingMinor, percentFilled]
+      properties:
+        targetMinor:
+          type: integer
+        amountMinor:
+          type: integer
+        remainingMinor:
+          type: integer
+          description: max(0, targetMinor - amountMinor).
+        percentFilled:
+          type: number
+          description: amountMinor / targetMinor * 100, or 0 when targetMinor is 0.
+    FundLink:
+      type: object
+      required: [label, url]
+      properties:
+        label:
+          type: string
+        url:
+          type: string
+    FundNote:
+      type: object
+      required: [text, createdAt]
+      properties:
+        text:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    FundActionItem:
+      type: object
+      required: [text, done, priority]
+      properties:
+        text:
+          type: string
+        done:
+          type: boolean
+        priority:
+          type: string
+          enum: [low, medium, high]
+        dueDate:
+          type: string
+          format: date
+    SmileBucket:
+      type: object
+      required: [id, title, targetMinor, amountMinor]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        targetMinor:
+          type: integer
+        amountMinor:
+          type: integer
+        notes:
+          type: string
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/FundLink'
+        targetDate:
+          type: string
+          format: date
+        completionDate:
+          type: string
+          format: date
+    SmileProject:
+      type: object
+      required:
+        - id
+        - title
+        - sub
+        - phase
+        - description
+        - buckets
+        - totals
+        - links
+        - actionItems
+        - notes
+        - plannedSubscriptions
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        sub:
+          type: string
+        phase:
+          type: string
+          enum: [idea, planning, saving, ready, completed]
+        description:
+          type: string
+        targetDate:
+          type: string
+          format: date
+        completionDate:
+          type: string
+          format: date
+        buckets:
+          type: array
+          items:
+            $ref: '#/components/schemas/SmileBucket'
+        totals:
+          $ref: '#/components/schemas/FundProjectTotals'
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/FundLink'
+        actionItems:
+          type: array
+          items:
+            $ref: '#/components/schemas/FundActionItem'
+        notes:
+          type: array
+          items:
+            $ref: '#/components/schemas/FundNote'
+        plannedSubscriptions:
+          type: array
+          description: Payment plans created via POST /smile/{id}/payment-plan.
+          items:
+            $ref: '#/components/schemas/PaymentPlan'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    CreateSmileProjectRequest:
+      type: object
+      required: [title]
+      properties:
+        title:
+          type: string
+        sub:
+          type: string
+        phase:
+          type: string
+          enum: [idea, planning, saving, ready, completed]
+          default: idea
+        description:
+          type: string
+        targetDate:
+          type: string
+          format: date
+        targetMinor:
+          type: integer
+          description: Creates a single default bucket named after `title`. Either this or a non-empty `buckets` is required.
+        amountMinor:
+          type: integer
+          description: Only used together with `targetMinor`; defaults to 0.
+        buckets:
+          type: array
+          items:
+            type: object
+            required: [title, targetMinor]
+            properties:
+              title:
+                type: string
+              targetMinor:
+                type: integer
+              amountMinor:
+                type: integer
+                default: 0
+              notes:
+                type: string
+              targetDate:
+                type: string
+                format: date
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/FundLink'
+        actionItems:
+          type: array
+          items:
+            $ref: '#/components/schemas/CreateFundActionItem'
+        notes:
+          type: array
+          items:
+            $ref: '#/components/schemas/CreateFundNote'
+    CreateFundActionItem:
+      type: object
+      required: [text]
+      properties:
+        text:
+          type: string
+        priority:
+          type: string
+          enum: [low, medium, high]
+          default: medium
+        dueDate:
+          type: string
+          format: date
+      description: '`done` is not accepted here — a newly created action item always starts undone.'
+    CreateFundNote:
+      type: object
+      required: [text]
+      properties:
+        text:
+          type: string
+      description: '`createdAt` is not accepted here — always server-stamped at creation time, ignoring any client-supplied value.'
+    UpdateFundBucket:
+      type: object
+      required: [title, targetMinor]
+      properties:
+        id:
+          type: string
+          description: Echo back an existing bucket's id to edit it in place; omit to create a new bucket. Two buckets in the same patch cannot request the same id.
+        title:
+          type: string
+        targetMinor:
+          type: integer
+        amountMinor:
+          type: integer
+          default: 0
+        notes:
+          type: string
+        targetDate:
+          type: string
+          format: date
+    UpdateFundNote:
+      type: object
+      required: [text]
+      properties:
+        text:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+          description: Echo back an existing note's createdAt to preserve it; omit on a new note for a fresh server timestamp.
+    UpdateFundActionItem:
+      type: object
+      required: [text, done]
+      properties:
+        text:
+          type: string
+        done:
+          type: boolean
+          description: Required here (unlike creation) — this replaces the whole array, so an already-done item's state must be echoed back explicitly or it is lost, not defaulted to false.
+        priority:
+          type: string
+          enum: [low, medium, high]
+        dueDate:
+          type: string
+          format: date
+    PatchSmileProjectRequest:
+      type: object
+      description: All fields optional — send only what you want to change. Unrecognized fields are rejected.
+      properties:
+        title:
+          type: string
+        sub:
+          type: string
+        phase:
+          type: string
+          enum: [idea, planning, saving, ready, completed]
+        description:
+          type: string
+        targetDate:
+          type: string
+          format: date
+        completionDate:
+          type: string
+          format: date
+        buckets:
+          type: array
+          minItems: 1
+          description: Replaces the entire buckets array.
+          items:
+            $ref: '#/components/schemas/UpdateFundBucket'
+        links:
+          type: array
+          description: Replaces the entire links array.
+          items:
+            $ref: '#/components/schemas/FundLink'
+        actionItems:
+          type: array
+          description: Replaces the entire actionItems array. `done` is required on every item — see UpdateFundActionItem.
+          items:
+            $ref: '#/components/schemas/UpdateFundActionItem'
+        notes:
+          type: array
+          description: Replaces the entire notes array.
+          items:
+            $ref: '#/components/schemas/UpdateFundNote'
+    FireBucket:
+      type: object
+      required: [id, title, targetMinor, amountMinor]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        targetMinor:
+          type: integer
+        amountMinor:
+          type: integer
+        notes:
+          type: string
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/FundLink'
+        targetDate:
+          type: string
+          format: date
+        completionDate:
+          type: string
+          format: date
+    FireProject:
+      type: object
+      required:
+        - id
+        - title
+        - sub
+        - phase
+        - description
+        - buckets
+        - totals
+        - links
+        - actionItems
+        - notes
+        - plannedSubscriptions
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        sub:
+          type: string
+        phase:
+          type: string
+          enum: [idea, planning, saving, ready, completed]
+        description:
+          type: string
+        targetDate:
+          type: string
+          format: date
+        completionDate:
+          type: string
+          format: date
+        buckets:
+          type: array
+          items:
+            $ref: '#/components/schemas/FireBucket'
+        totals:
+          $ref: '#/components/schemas/FundProjectTotals'
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/FundLink'
+        actionItems:
+          type: array
+          items:
+            $ref: '#/components/schemas/FundActionItem'
+        notes:
+          type: array
+          items:
+            $ref: '#/components/schemas/FundNote'
+        plannedSubscriptions:
+          type: array
+          description: Payment plans created via POST /fire/{id}/payment-plan.
+          items:
+            $ref: '#/components/schemas/PaymentPlan'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    CreateFireProjectRequest:
+      type: object
+      required: [title]
+      properties:
+        title:
+          type: string
+        sub:
+          type: string
+        phase:
+          type: string
+          enum: [idea, planning, saving, ready, completed]
+          default: idea
+        description:
+          type: string
+        targetDate:
+          type: string
+          format: date
+        targetMinor:
+          type: integer
+          description: Creates a single default bucket named after `title`. Either this or a non-empty `buckets` is required.
+        amountMinor:
+          type: integer
+          description: Only used together with `targetMinor`; defaults to 0.
+        buckets:
+          type: array
+          items:
+            type: object
+            required: [title, targetMinor]
+            properties:
+              title:
+                type: string
+              targetMinor:
+                type: integer
+              amountMinor:
+                type: integer
+                default: 0
+              notes:
+                type: string
+              targetDate:
+                type: string
+                format: date
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/FundLink'
+        actionItems:
+          type: array
+          items:
+            $ref: '#/components/schemas/CreateFundActionItem'
+        notes:
+          type: array
+          items:
+            $ref: '#/components/schemas/CreateFundNote'
+    PatchFireProjectRequest:
+      type: object
+      description: All fields optional — send only what you want to change. Unrecognized fields are rejected.
+      properties:
+        title:
+          type: string
+        sub:
+          type: string
+        phase:
+          type: string
+          enum: [idea, planning, saving, ready, completed]
+        description:
+          type: string
+        targetDate:
+          type: string
+          format: date
+        completionDate:
+          type: string
+          format: date
+        buckets:
+          type: array
+          minItems: 1
+          description: Replaces the entire buckets array.
+          items:
+            $ref: '#/components/schemas/UpdateFundBucket'
+        links:
+          type: array
+          description: Replaces the entire links array.
+          items:
+            $ref: '#/components/schemas/FundLink'
+        actionItems:
+          type: array
+          description: Replaces the entire actionItems array. `done` is required on every item — see UpdateFundActionItem.
+          items:
+            $ref: '#/components/schemas/UpdateFundActionItem'
+        notes:
+          type: array
+          description: Replaces the entire notes array.
+          items:
+            $ref: '#/components/schemas/UpdateFundNote'
+    CreatePaymentPlanRequest:
+      type: object
+      required: [planTitle, startDate, targetDate, frequency, account]
+      properties:
+        planTitle:
+          type: string
+        selectedBucketIds:
+          type: array
+          items:
+            type: string
+          description: Bucket ids to fund; omit or send an empty array to fund every bucket (smart proportional allocation across all of them). Every id must reference an existing bucket on this project.
+        startDate:
+          type: string
+          format: date
+        targetDate:
+          type: string
+          format: date
+          description: The date by which the buckets should be fully funded — used to compute the number of payment periods.
+        frequency:
+          type: string
+          enum: [weekly, biweekly, monthly, quarterly, yearly]
+        account:
+          type: string
+        manualAmountMinor:
+          type: integer
+          description: Overrides the calculated per-period amount when provided. The calculated amount is still returned as originalCalculatedAmountMinor.
+    PaymentPlan:
+      type: object
+      required:
+        - id
+        - title
+        - status
+        - projectType
+        - projectTitle
+        - account
+        - amountMinor
+        - startDate
+        - endDate
+        - category
+        - comment
+        - frequency
+        - targetDate
+        - targetBucketIds
+        - originalCalculatedAmountMinor
+        - manuallyAdjusted
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        status:
+          type: string
+          enum: [planned]
+          description: Always "planned" for a freshly-created plan — activating a plan into a real recurring subscription isn't exposed by this API.
+        projectType:
+          type: string
+          enum: [smile, fire]
+        projectTitle:
+          type: string
+        account:
+          type: string
+        amountMinor:
+          type: integer
+          description: The per-period payment amount actually used — either the calculated amount, or manualAmountMinor if one was sent.
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        category:
+          type: string
+          description: "`@<projectTitle>` — matches this project's transactions by category, same convention as every other entity."
+        comment:
+          type: string
+          description: "`#bucket:Title:Amount` tags describing how amountMinor is allocated across the funded buckets — the same DSL a transaction's comment uses."
+        frequency:
+          type: string
+          enum: [weekly, biweekly, monthly, quarterly, yearly]
+        targetDate:
+          type: string
+          format: date
+        targetBucketIds:
+          type: array
+          items:
+            type: string
+        originalCalculatedAmountMinor:
+          type: integer
+          description: The calculated amount before any manual override — always present, even when manuallyAdjusted is true.
+        manuallyAdjusted:
+          type: boolean
+          description: True only when manualAmountMinor was sent and differed from originalCalculatedAmountMinor.
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    Asset:
+      type: object
+      required: [id, tag, amountMinor]
+      properties:
+        id:
+          type: string
+        tag:
+          type: string
+        amountMinor:
+          type: integer
+    CreateAssetRequest:
+      type: object
+      required: [tag]
+      properties:
+        tag:
+          type: string
+        amountMinor:
+          type: integer
+          description: Defaults to 0 when omitted.
+    PatchAssetRequest:
+      type: object
+      description: All fields optional — send only what you want to change. Unrecognized fields are rejected.
+      properties:
+        tag:
+          type: string
+        amountMinor:
+          type: integer
+    Liability:
+      type: object
+      required: [id, tag, amountMinor, investment, creditMinor]
+      properties:
+        id:
+          type: string
+        tag:
+          type: string
+        amountMinor:
+          type: integer
+        investment:
+          type: boolean
+          description: Whether this liability is tied to an investment (e.g. a mortgage on a rental property).
+        creditMinor:
+          type: integer
+          description: Remaining credit/loan amount, tracked separately from amountMinor.
+    CreateLiabilityRequest:
+      type: object
+      required: [tag]
+      properties:
+        tag:
+          type: string
+        amountMinor:
+          type: integer
+          description: Defaults to 0 when omitted.
+        investment:
+          type: boolean
+          description: Defaults to false when omitted.
+        creditMinor:
+          type: integer
+          description: Defaults to 0 when omitted.
+    PatchLiabilityRequest:
+      type: object
+      description: All fields optional — send only what you want to change. Unrecognized fields are rejected.
+      properties:
+        tag:
+          type: string
+        amountMinor:
+          type: integer
+        investment:
+          type: boolean
+        creditMinor:
+          type: integer
+    Investment:
+      type: object
+      required: [id, tag, amountMinor, depositMinor]
+      properties:
+        id:
+          type: string
+        tag:
+          type: string
+        amountMinor:
+          type: integer
+        depositMinor:
+          type: integer
+    CreateInvestmentRequest:
+      type: object
+      required: [tag]
+      properties:
+        tag:
+          type: string
+        amountMinor:
+          type: integer
+          description: Defaults to 0 when omitted.
+        depositMinor:
+          type: integer
+          description: Defaults to 0 when omitted.
+    PatchInvestmentRequest:
+      type: object
+      description: All fields optional — send only what you want to change. Unrecognized fields are rejected.
+      properties:
+        tag:
+          type: string
+        amountMinor:
+          type: integer
+        depositMinor:
+          type: integer
+    Share:
+      type: object
+      required: [id, tag, quantity, priceMinor]
+      properties:
+        id:
+          type: string
+        tag:
+          type: string
+        quantity:
+          type: number
+          description: A plain share count, not money — no minor-units conversion.
+        priceMinor:
+          type: integer
+    CreateShareRequest:
+      type: object
+      required: [tag]
+      properties:
+        tag:
+          type: string
+        quantity:
+          type: number
+          description: Defaults to 0 when omitted.
+        priceMinor:
+          type: integer
+          description: Defaults to 0 when omitted.
+    PatchShareRequest:
+      type: object
+      description: All fields optional — send only what you want to change. Unrecognized fields are rejected.
+      properties:
+        tag:
+          type: string
+        quantity:
+          type: number
+        priceMinor:
+          type: integer
+    TaggedAmount:
+      type: object
+      required: [tag, amountMinor]
+      properties:
+        tag:
+          type: string
+        amountMinor:
+          type: integer
+      description: No `id` — this is a read-only, fully-derived aggregate (see the parent endpoint's own description).
+    GrowLink:
+      type: object
+      required: [label, url]
+      properties:
+        label:
+          type: string
+        url:
+          type: string
+    GrowActionItem:
+      type: object
+      required: [text, done, priority]
+      properties:
+        text:
+          type: string
+        done:
+          type: boolean
+        priority:
+          type: string
+          enum: [low, medium, high]
+        dueDate:
+          type: string
+          format: date
+    GrowNote:
+      type: object
+      required: [text, createdAt]
+      properties:
+        text:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    GrowEmbeddedShare:
+      type: object
+      nullable: true
+      description: A denormalized copy of the linked Share, kept in sync by the typed actions (and by `PATCH /balance/shares/{shareId}`) — `null` unless this project's kind is `share`.
+      properties:
+        tag:
+          type: string
+        quantity:
+          type: number
+        priceMinor:
+          type: integer
+    GrowEmbeddedInvestment:
+      type: object
+      nullable: true
+      description: A denormalized copy of the linked Investment, kept in sync by the typed actions — `null` unless this project's kind is `investment`.
+      properties:
+        tag:
+          type: string
+        depositMinor:
+          type: integer
+        amountMinor:
+          type: integer
+    GrowEmbeddedLiabilitie:
+      type: object
+      nullable: true
+      description: A denormalized copy of an attached Liability, kept in sync by `buy`/`sell`/`payback` — `null` until one is attached.
+      properties:
+        tag:
+          type: string
+        amountMinor:
+          type: integer
+        investment:
+          type: boolean
+        creditMinor:
+          type: integer
+    Grow:
+      type: object
+      required:
+        - id
+        - title
+        - sub
+        - phase
+        - description
+        - strategy
+        - riskScore
+        - risks
+        - links
+        - actionItems
+        - notes
+        - cashflowMinor
+        - amountMinor
+        - isAsset
+        - share
+        - investment
+        - liabilitie
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        sub:
+          type: string
+        phase:
+          type: string
+          enum: [idea, research, plan, execute, monitor, completed]
+        description:
+          type: string
+        strategy:
+          type: string
+        riskScore:
+          type: number
+        risks:
+          type: string
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/GrowLink'
+        actionItems:
+          type: array
+          items:
+            $ref: '#/components/schemas/GrowActionItem'
+        notes:
+          type: array
+          items:
+            $ref: '#/components/schemas/GrowNote'
+        cashflowMinor:
+          type: integer
+          description: Only ever changed by `POST /grow/{growId}/cashflow` — see that endpoint's own description (it currently does not, matching the source app).
+        amountMinor:
+          type: integer
+          description: This project's own cash-invested total — only ever changed by the typed action endpoints.
+        isAsset:
+          type: boolean
+          description: This project's fixed kind is asset-tracking. Mutually exclusive with `share`/`investment` being non-null.
+        share:
+          $ref: '#/components/schemas/GrowEmbeddedShare'
+        investment:
+          $ref: '#/components/schemas/GrowEmbeddedInvestment'
+        liabilitie:
+          $ref: '#/components/schemas/GrowEmbeddedLiabilitie'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        type:
+          type: string
+          enum: [income-growth, budget-optimization, subscription-action, expense-insight]
+        category:
+          oneOf:
+            - type: string
+            - type: array
+              items:
+                type: string
+        currentCostMinor:
+          type: integer
+        targetCostMinor:
+          type: integer
+        monthlySavingsMinor:
+          type: integer
+        annualSavingsMinor:
+          type: integer
+        reasoning:
+          type: string
+        alternative:
+          type: string
+        alternativeCostMinor:
+          type: integer
+        pattern:
+          type: string
+        insights:
+          type: string
+        status:
+          type: string
+          description: Legacy free-text status ('bought', 'sold', 'paid back', 'paid off') the typed actions set for display parity with the original app — prefer `phase` in new clients.
+    CreateGrowRequest:
+      type: object
+      required: [title]
+      properties:
+        title:
+          type: string
+        sub:
+          type: string
+        phase:
+          type: string
+          enum: [idea, research, plan, execute, monitor, completed]
+        description:
+          type: string
+        strategy:
+          type: string
+        riskScore:
+          type: number
+        risks:
+          type: string
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/GrowLink'
+        actionItems:
+          type: array
+          items:
+            $ref: '#/components/schemas/GrowActionItem'
+        notes:
+          type: array
+          items:
+            $ref: '#/components/schemas/GrowNote'
+        isAsset:
+          type: boolean
+          description: Marks this project's fixed kind as asset-tracking (mutually exclusive with share/investment).
+        share:
+          type: boolean
+          description: Marks this project's fixed kind as share-tracking (mutually exclusive with isAsset/investment).
+        investment:
+          type: boolean
+          description: Marks this project's fixed kind as investment-tracking (mutually exclusive with isAsset/share).
+        type:
+          type: string
+          enum: [income-growth, budget-optimization, subscription-action, expense-insight]
+        category:
+          oneOf:
+            - type: string
+            - type: array
+              items:
+                type: string
+        currentCostMinor:
+          type: integer
+        targetCostMinor:
+          type: integer
+        monthlySavingsMinor:
+          type: integer
+        annualSavingsMinor:
+          type: integer
+        reasoning:
+          type: string
+        alternative:
+          type: string
+        alternativeCostMinor:
+          type: integer
+        pattern:
+          type: string
+        insights:
+          type: string
+    PatchGrowRequest:
+      type: object
+      description: All fields optional — send only what you want to change. Unrecognized fields (including amountMinor/cashflowMinor/share/investment/liabilitie) are rejected.
+      properties:
+        title:
+          type: string
+        sub:
+          type: string
+        phase:
+          type: string
+          enum: [idea, research, plan, execute, monitor, completed]
+        description:
+          type: string
+        strategy:
+          type: string
+        riskScore:
+          type: number
+        risks:
+          type: string
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/GrowLink'
+        actionItems:
+          type: array
+          items:
+            $ref: '#/components/schemas/GrowActionItem'
+        notes:
+          type: array
+          items:
+            $ref: '#/components/schemas/GrowNote'
+        type:
+          type: string
+          enum: [income-growth, budget-optimization, subscription-action, expense-insight]
+        category:
+          oneOf:
+            - type: string
+            - type: array
+              items:
+                type: string
+        currentCostMinor:
+          type: integer
+        targetCostMinor:
+          type: integer
+        monthlySavingsMinor:
+          type: integer
+        annualSavingsMinor:
+          type: integer
+        reasoning:
+          type: string
+        alternative:
+          type: string
+        alternativeCostMinor:
+          type: integer
+        pattern:
+          type: string
+        insights:
+          type: string
+        status:
+          type: string
+    GrowActionResult:
+      type: object
+      required: [grow, transaction]
+      properties:
+        grow:
+          $ref: '#/components/schemas/Grow'
+        transaction:
+          $ref: '#/components/schemas/ApiTransaction'
+    GrowLiabilitieAttachment:
+      type: object
+      required: [loanMinor, creditMinor]
+      description: An optional financing loan attached to a buy, tagged with the grow project's own title — distinct from an Investment's own `M-<title>` mortgage liability.
+      properties:
+        loanMinor:
+          type: integer
+        creditMinor:
+          type: integer
+    BuyGrowRequest:
+      type: object
+      description: >-
+        Required fields depend on the grow project's own fixed kind: `asset` needs `totalAmountMinor`; `share`
+        needs `quantity` and `priceMinor`; `investment` needs `depositMinor` and `mortgageMinor`. A body shaped
+        for the wrong kind is rejected with `validation_invalid`.
+      properties:
+        totalAmountMinor:
+          type: integer
+        quantity:
+          type: number
+        priceMinor:
+          type: integer
+        depositMinor:
+          type: integer
+        mortgageMinor:
+          type: integer
+        liabilitie:
+          $ref: '#/components/schemas/GrowLiabilitieAttachment'
+        date:
+          type: string
+          format: date
+          description: Defaults to today when omitted.
+        time:
+          type: string
+          description: Defaults to the current time when omitted.
+    SellGrowRequest:
+      type: object
+      description: >-
+        Same kind-dependent shape as BuyGrowRequest for totalAmountMinor / quantity+priceMinor / depositMinor+mortgageMinor.
+        An investment-kind sell may also include `payback` to settle an attached liability atomically with the sale.
+      properties:
+        totalAmountMinor:
+          type: integer
+        quantity:
+          type: number
+        priceMinor:
+          type: integer
+        depositMinor:
+          type: integer
+        mortgageMinor:
+          type: integer
+        payback:
+          type: object
+          required: [amountMinor, creditMinor]
+          properties:
+            amountMinor:
+              type: integer
+            creditMinor:
+              type: integer
+        date:
+          type: string
+          format: date
+        time:
+          type: string
+    DividendGrowRequest:
+      type: object
+      required: [quantity, priceMinor]
+      properties:
+        quantity:
+          type: number
+        priceMinor:
+          type: integer
+        date:
+          type: string
+          format: date
+        time:
+          type: string
+    PaybackGrowRequest:
+      type: object
+      required: [amountMinor, creditMinor]
+      properties:
+        amountMinor:
+          type: integer
+        creditMinor:
+          type: integer
+        date:
+          type: string
+          format: date
+        time:
+          type: string
+    CashflowGrowRequest:
+      type: object
+      required: [cashflowMinor]
+      properties:
+        cashflowMinor:
+          type: integer
+        creditMinor:
+          type: integer
+        date:
+          type: string
+          format: date
+        time:
+          type: string
+    DepositGrowRequest:
+      type: object
+      required: [amountMinor]
+      properties:
+        amountMinor:
+          type: integer
+        date:
+          type: string
+          format: date
+        time:
+          type: string
+    CreateTransactionRequest:
+      type: object
+      required: [account, amountMinor, date, time, category, comment]
+      properties:
+        account:
+          type: string
+        amountMinor:
+          type: integer
+          not:
+            enum: [0]
+          description: Integer minor units. Must not be zero.
+        date:
+          type: string
+          format: date
+        time:
+          type: string
+        category:
+          type: string
+        comment:
+          type: string
+    UpdateTransactionRequest:
+      type: object
+      minProperties: 1
+      description: At least one field must be provided. Unrecognized fields are rejected.
+      properties:
+        account:
+          type: string
+        amountMinor:
+          type: integer
+          not:
+            enum: [0]
+          description: Integer minor units. Must not be zero.
+        date:
+          type: string
+          format: date
+        time:
+          type: string
+        category:
+          type: string
+        comment:
+          type: string
+    CopyTransactionRequest:
+      type: object
+      description: All fields are optional overrides applied on top of the source transaction. Unrecognized fields are rejected.
+      properties:
+        account:
+          type: string
+        amountMinor:
+          type: integer
+          not:
+            enum: [0]
+          description: Integer minor units. Must not be zero.
+        date:
+          type: string
+          format: date
+        time:
+          type: string
+        category:
+          type: string
+        comment:
+          type: string
+    BatchTransactionOperation:
+      type: object
+      required: [op]
+      description: |
+        A `create` operation takes the same fields as `CreateTransactionRequest` plus `op`.
+        An `update` operation takes `id` plus one or more of `CreateTransactionRequest`'s fields (partial, like PATCH).
+        A `delete` operation takes only `op` and `id`.
+      properties:
+        op:
+          type: string
+          enum: [create, update, delete]
+        id:
+          type: string
+          description: Required for update and delete; not accepted for create.
+        account:
+          type: string
+        amountMinor:
+          type: integer
+        date:
+          type: string
+          format: date
+        time:
+          type: string
+        category:
+          type: string
+        comment:
+          type: string
+    BatchTransactionsRequest:
+      type: object
+      required: [operations]
+      properties:
+        operations:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/BatchTransactionOperation'
+        atomic:
+          type: boolean
+          default: false
+          description: When true, no operation is applied if any operation in the batch fails.
+    BatchTransactionResult:
+      type: object
+      required: [op, status]
+      properties:
+        op:
+          type: string
+          enum: [create, update, delete]
+        status:
+          type: string
+          enum: [created, updated, deleted, error, not_applied]
+        id:
+          type: string
+        transaction:
+          $ref: '#/components/schemas/ApiTransaction'
+        error:
+          type: string
+    BatchTransactionsResponse:
+      type: object
+      required: [idempotencyKey, atomic, itemCount, results]
+      properties:
+        idempotencyKey:
+          type: string
+        atomic:
+          type: boolean
+        itemCount:
+          type: integer
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/BatchTransactionResult'
+    Subscription:
+      type: object
+      required: [id, title, account, amountMinor, startDate, endDate, category, comment, frequency]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        account:
+          type: string
+        amountMinor:
+          type: integer
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+          nullable: true
+        category:
+          type: string
+        comment:
+          type: string
+        frequency:
+          type: string
+          enum: [weekly, biweekly, monthly, quarterly, yearly]
+    CreateSubscriptionRequest:
+      type: object
+      required: [account, amountMinor, startDate, category]
+      properties:
+        title:
+          type: string
+          default: ''
+        account:
+          type: string
+        amountMinor:
+          type: integer
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+          nullable: true
+        category:
+          type: string
+        comment:
+          type: string
+          default: ''
+        frequency:
+          type: string
+          enum: [weekly, biweekly, monthly, quarterly, yearly]
+          default: monthly
+    PatchSubscriptionRequest:
+      type: object
+      description: All fields optional — send only what you want to change.
+      properties:
+        title:
+          type: string
+        account:
+          type: string
+        amountMinor:
+          type: integer
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+          nullable: true
+        category:
+          type: string
+        comment:
+          type: string
+        frequency:
+          type: string
+          enum: [weekly, biweekly, monthly, quarterly, yearly]
+    RefreshSubscriptionsResponse:
+      type: object
+      required: [transactionsCreated, subscriptionsProcessed]
+      properties:
+        transactionsCreated:
+          type: integer
+        subscriptionsProcessed:
+          type: integer
+          description: Count of subscriptions whose startDate has passed and were evaluated this run (whether or not they had anything due).
+    BatchSubscriptionOperation:
+      type: object
+      required: [op]
+      description: The same object shape as CreateSubscriptionRequest for `create`, or `{op, id, ...fields}` for `update`/`delete`.
+      properties:
+        op:
+          type: string
+          enum: [create, update, delete]
+        id:
+          type: string
+    BatchSubscriptionsRequest:
+      type: object
+      required: [operations]
+      properties:
+        operations:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/BatchSubscriptionOperation'
+        atomic:
+          type: boolean
+          default: false
+          description: When true, no operation is applied if any operation in the batch fails.
+    BatchSubscriptionResult:
+      type: object
+      required: [op, status]
+      properties:
+        op:
+          type: string
+          enum: [create, update, delete]
+        status:
+          type: string
+          enum: [created, updated, deleted, error, not_applied]
+        id:
+          type: string
+        subscription:
+          $ref: '#/components/schemas/Subscription'
+        error:
+          type: string
+    BatchSubscriptionsResponse:
+      type: object
+      required: [idempotencyKey, atomic, itemCount, results]
+      properties:
+        idempotencyKey:
+          type: string
+        atomic:
+          type: boolean
+        itemCount:
+          type: integer
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/BatchSubscriptionResult'
+    Budget:
+      type: object
+      required: [id, date, tag, amountMinor]
+      properties:
+        id:
+          type: string
+        date:
+          type: string
+          description: Month, YYYY-MM.
+          pattern: '^\d{4}-(0[1-9]|1[0-2])$'
+        tag:
+          type: string
+        amountMinor:
+          type: integer
+    CreateBudgetRequest:
+      type: object
+      required: [date, tag, amountMinor]
+      properties:
+        date:
+          type: string
+          pattern: '^\d{4}-(0[1-9]|1[0-2])$'
+        tag:
+          type: string
+        amountMinor:
+          type: integer
+    PatchBudgetRequest:
+      type: object
+      description: All fields optional — send only what you want to change. Changing date or tag is rejected if it would collide with another existing row.
+      properties:
+        date:
+          type: string
+          pattern: '^\d{4}-(0[1-9]|1[0-2])$'
+        tag:
+          type: string
+        amountMinor:
+          type: integer
+    SettingsAllocation:
+      type: object
+      required: [daily, splurge, smile, fire]
+      description: Must sum to 100.
+      properties:
+        daily:
+          type: number
+        splurge:
+          type: number
+        smile:
+          type: number
+        fire:
+          type: number
+    Settings:
+      type: object
+      required: [username, currency, theme, language, dateFormat, isEuropeanFormat, allocation]
+      properties:
+        username:
+          type: string
+        currency:
+          type: string
+        theme:
+          type: string
+          enum: [light, dark]
+        language:
+          type: string
+          enum: [en, de, es, fr, cn, ar]
+        dateFormat:
+          type: string
+          enum: [dd.MM.yyyy, dd.MM.yy, dd/MM/yyyy, dd/MM/yy, yyyy-MM-dd, MM/dd/yyyy, dd-MM-yyyy]
+        isEuropeanFormat:
+          type: boolean
+        allocation:
+          $ref: '#/components/schemas/SettingsAllocation'
+    PatchSettingsRequest:
+      type: object
+      description: All fields optional — send only what you want to change. allocation, if sent, must include all four sub-fields and sum to 100.
+      properties:
+        username:
+          type: string
+        currency:
+          type: string
+        theme:
+          type: string
+          enum: [light, dark]
+        language:
+          type: string
+          enum: [en, de, es, fr, cn, ar]
+        dateFormat:
+          type: string
+          enum: [dd.MM.yyyy, dd.MM.yy, dd/MM/yyyy, dd/MM/yy, yyyy-MM-dd, MM/dd/yyyy, dd-MM-yyyy]
+        isEuropeanFormat:
+          type: boolean
+        allocation:
+          $ref: '#/components/schemas/SettingsAllocation'
+    EncryptionConfig:
+      type: object
+      required: [encryptLocal, encryptDatabase, keyConfigured]
+      properties:
+        encryptLocal:
+          type: boolean
+        encryptDatabase:
+          type: boolean
+        keyConfigured:
+          type: boolean
+          description: Whether a real (non-default) key is active. The key value itself is never returned.
+    PutEncryptionConfigRequest:
+      type: object
+      description: All fields optional. `key` may only be set when no key is active yet, or resubmitted unchanged — changing an active key is rejected.
+      properties:
+        key:
+          type: string
+        encryptLocal:
+          type: boolean
+        encryptDatabase:
+          type: boolean
+    Problem:
+      type: object
+      required: [type, title, status, detail, code]
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        code:
+          type: string
+  responses:
+    AuthenticationRequired:
+      description: Authentication required
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://money-manager.dev/problems/auth_required
+            title: Authentication required
+            status: 401
+            detail: Provide a session or PAT.
+            code: auth_required
+    SessionRequired:
+      description: An authenticated account session is required
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://money-manager.dev/problems/auth_session_required
+            title: Session authentication required
+            status: 403
+            detail: An authenticated account session is required for this operation.
+            code: auth_session_required
+    ValidationError:
+      description: Request validation failed
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://money-manager.dev/problems/validation_invalid
+            title: Invalid token request
+            status: 400
+            detail: At least one scope is required.
+            code: validation_invalid
+    InsufficientScope:
+      description: The supplied token does not grant the required scope
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://money-manager.dev/problems/scope_insufficient
+            title: Insufficient scope
+            status: 403
+            detail: This operation requires the 'transactions:r' scope.
+            code: scope_insufficient
+    NotFound:
+      description: Requested resource was not found
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://money-manager.dev/problems/not_found
+            title: Token not found
+            status: 404
+            detail: No matching token exists.
+            code: not_found
+    IdempotencyConflict:
+      description: The Idempotency-Key was already used for a request with a different body
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://money-manager.dev/problems/conflict_idempotency_mismatch
+            title: Idempotency key reused with a different request
+            status: 409
+            detail: This Idempotency-Key was already used for a request with a different body.
+            code: conflict_idempotency_mismatch

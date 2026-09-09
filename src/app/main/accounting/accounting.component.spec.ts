@@ -50,6 +50,13 @@ describe('AccountingComponent', () => {
   });
 
   it('should have expected available accounts', () => {
-    expect(AccountingComponent.availableAccounts).toEqual(['Income', 'Daily', 'Splurge', 'Smile', 'Fire', 'Mojo']);
+    expect(AccountingComponent.availableAccounts).toEqual([
+      'Income',
+      'Daily',
+      'Splurge',
+      'Smile',
+      'Fire',
+      'Mojo',
+    ]);
   });
 });

@@ -21,7 +21,7 @@ describe('Fire Migration Utils', () => {
         description: 'For unexpected expenses',
         buckets: [
           { id: 'b1', title: 'Medical', target: 5000, amount: 1000, notes: '', links: [] },
-          { id: 'b2', title: 'Car', target: 3000, amount: 500, notes: '', links: [] }
+          { id: 'b2', title: 'Car', target: 3000, amount: 500, notes: '', links: [] },
         ],
         links: [{ label: 'Blog', url: 'https://example.com' }],
         actionItems: [{ text: 'Review monthly', done: false, priority: 'medium' }],
@@ -29,11 +29,11 @@ describe('Fire Migration Utils', () => {
         createdAt: '2024-01-01T00:00:00Z',
         updatedAt: '2024-01-02T00:00:00Z',
         targetDate: '2024-12-31',
-        completionDate: ''
+        completionDate: '',
       };
 
       const result = migrateFire(modern);
-      
+
       expect(result.title).toBe('Emergency Fund');
       expect(result.buckets).toHaveLength(2);
       expect(result.phase).toBe('saving');
@@ -44,7 +44,7 @@ describe('Fire Migration Utils', () => {
       const legacy: any = {
         title: 'Car Repair',
         target: 5000,
-        amount: 2000
+        amount: 2000,
       };
 
       const result = migrateFire(legacy);
@@ -63,7 +63,7 @@ describe('Fire Migration Utils', () => {
       const legacy: any = {
         title: 'Future Fund',
         target: 10000,
-        amount: 0
+        amount: 0,
       };
 
       const result = migrateFire(legacy);
@@ -74,7 +74,7 @@ describe('Fire Migration Utils', () => {
       const legacy: any = {
         title: 'Almost There',
         target: 1000,
-        amount: 850
+        amount: 850,
       };
 
       const result = migrateFire(legacy);
@@ -85,7 +85,7 @@ describe('Fire Migration Utils', () => {
       const legacy: any = {
         title: 'Done Fund',
         target: 1000,
-        amount: 1000
+        amount: 1000,
       };
 
       const result = migrateFire(legacy);
@@ -101,11 +101,11 @@ describe('Fire Migration Utils', () => {
         amount: 500,
         sub: 'Health expenses',
         description: 'For medical emergencies',
-        createdAt: '2023-01-01T00:00:00Z'
+        createdAt: '2023-01-01T00:00:00Z',
       };
 
       const result = migrateFire(legacy);
-      
+
       expect(result.sub).toBe('Health expenses');
       expect(result.description).toBe('For medical emergencies');
       expect(result.createdAt).toBe('2023-01-01T00:00:00Z');
@@ -115,11 +115,11 @@ describe('Fire Migration Utils', () => {
       const legacy: any = {
         title: 'Simple',
         target: 1000,
-        amount: 0
+        amount: 0,
       };
 
       const result = migrateFire(legacy);
-      
+
       expect(result.links).toEqual([]);
       expect(result.actionItems).toEqual([]);
       expect(result.notes).toEqual([]);
@@ -128,11 +128,11 @@ describe('Fire Migration Utils', () => {
     it('should handle missing target gracefully', () => {
       const legacy: any = {
         title: 'No Target',
-        amount: 100
+        amount: 100,
       };
 
       const result = migrateFire(legacy);
-      
+
       expect(result.buckets[0].target).toBe(0);
       expect(result.buckets[0].amount).toBe(100);
     });
@@ -143,7 +143,7 @@ describe('Fire Migration Utils', () => {
       const legacyArray: any[] = [
         { title: 'Fund 1', target: 1000, amount: 100 },
         { title: 'Fund 2', target: 2000, amount: 500 },
-        { title: 'Fund 3', target: 5000, amount: 5000 }
+        { title: 'Fund 3', target: 5000, amount: 5000 },
       ];
 
       const result = migrateFireArray(legacyArray);
@@ -172,8 +172,8 @@ describe('Fire Migration Utils', () => {
           createdAt: '2024-01-01',
           updatedAt: '2024-01-01',
           targetDate: '',
-          completionDate: ''
-        }
+          completionDate: '',
+        },
       ];
 
       const result = migrateFireArray(mixedArray);
@@ -187,13 +187,13 @@ describe('Fire Migration Utils', () => {
       const fullyFundedFire = {
         title: 'Emergency Fund',
         target: 1000,
-        amount: 1000
+        amount: 1000,
       };
 
       const transactions = [
         { date: '2024-01-15', category: '@Emergency Fund', amount: -500 },
         { date: '2024-03-20', category: '@Emergency Fund', amount: -300 },
-        { date: '2024-05-10', category: '@Emergency Fund', amount: -200 }
+        { date: '2024-05-10', category: '@Emergency Fund', amount: -200 },
       ];
 
       const result = migrateFire(fullyFundedFire, transactions);
@@ -207,13 +207,13 @@ describe('Fire Migration Utils', () => {
         title: 'Emergency Fund',
         buckets: [
           { id: 'b1', title: 'Medical', target: 500, amount: 500, notes: '', links: [] },
-          { id: 'b2', title: 'Car', target: 500, amount: 500, notes: '', links: [] }
-        ]
+          { id: 'b2', title: 'Car', target: 500, amount: 500, notes: '', links: [] },
+        ],
       };
 
       const transactions = [
         { date: '2024-01-15', category: '@Medical', amount: -500 },
-        { date: '2024-06-30', category: '@Car', amount: -500 }
+        { date: '2024-06-30', category: '@Car', amount: -500 },
       ];
 
       const result = migrateFire(fullyFundedFire, transactions);
@@ -226,12 +226,10 @@ describe('Fire Migration Utils', () => {
       const partialFire = {
         title: 'Emergency Fund',
         target: 1000,
-        amount: 500
+        amount: 500,
       };
 
-      const transactions = [
-        { date: '2024-01-15', category: '@Emergency Fund', amount: -500 }
-      ];
+      const transactions = [{ date: '2024-01-15', category: '@Emergency Fund', amount: -500 }];
 
       const result = migrateFire(partialFire, transactions);
 

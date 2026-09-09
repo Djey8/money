@@ -7,7 +7,7 @@ const PBKDF2_KEY_SIZE = 8; // 8 words = 32 bytes = 256 bits
 const V2_PREFIX = 'v2:';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 /**
  * Encryption service using AES-256-CBC with PBKDF2-SHA256 key derivation
@@ -49,7 +49,7 @@ export class CrypticService {
       // Selfhosted: key is fetched from server, kept in memory only.
       // Preserve any pre-existing localStorage key + flags for migration to server.
       const legacyKey = localStorage.getItem('encryptKey');
-      this._pendingMigrationKey = (legacyKey && legacyKey !== 'default') ? legacyKey : null;
+      this._pendingMigrationKey = legacyKey && legacyKey !== 'default' ? legacyKey : null;
       if (this._pendingMigrationKey) {
         this._pendingMigrationEncryptLocal = localStorage.getItem('encryptLocal') === 'true';
         this._pendingMigrationEncryptDatabase = localStorage.getItem('encryptDatabase') === 'true';
@@ -57,28 +57,30 @@ export class CrypticService {
       localStorage.removeItem('encryptKey');
       // Use sessionStorage-cached key for instant decrypt on page refresh
       const cached = sessionStorage.getItem('encryptKey');
-      this.key = (cached && cached !== 'default') ? cached : null as any;
+      this.key = cached && cached !== 'default' ? cached : (null as any);
     } else {
       // Firebase: key persists in localStorage (no backend to store it)
       sessionStorage.removeItem('encryptKey'); // clean up any stale session cache
       const stored = localStorage.getItem('encryptKey');
-      this.key = (stored && stored !== 'default') ? stored : null as any;
+      this.key = stored && stored !== 'default' ? stored : (null as any);
     }
 
     const encryptLocal = localStorage.getItem('encryptLocal');
-    this.encryptionLocalEnabled = encryptLocal === "true" ? true : false;
+    this.encryptionLocalEnabled = encryptLocal === 'true' ? true : false;
 
     const encryptDatabase = localStorage.getItem('encryptDatabase');
-    this.encryptionDatabaseEnabled = encryptDatabase === "true" ? true : false;
+    this.encryptionDatabaseEnabled = encryptDatabase === 'true' ? true : false;
   }
 
   /**
    * Load encryption config from a server response (login, register, refresh, or GET /encryption-config).
    * Key is kept in memory only — never written to localStorage or sessionStorage.
    */
-  public loadFromServer(config: { key: string; encryptLocal: boolean; encryptDatabase: boolean } | null): void {
+  public loadFromServer(
+    config: { key: string; encryptLocal: boolean; encryptDatabase: boolean } | null,
+  ): void {
     if (!config) return;
-    const serverKey = (config.key && config.key !== 'default') ? config.key : null;
+    const serverKey = config.key && config.key !== 'default' ? config.key : null;
 
     // Migration: server has no real key but localStorage had one → use the old key + flags
     if (!serverKey && this._pendingMigrationKey) {
@@ -115,7 +117,7 @@ export class CrypticService {
   }
 
   public updateConfig(key: string, encryptLocal: boolean, encryptDatabase: boolean): void {
-    this.key = (key && key !== 'default') ? key : null;
+    this.key = key && key !== 'default' ? key : null;
     this.derivedKeyCache.clear();
     this.sessionSalt = null;
     // Firebase: persist key in localStorage (no backend). Selfhosted: memory-only.
@@ -152,7 +154,7 @@ export class CrypticService {
     const key = CryptoJS.PBKDF2(this.key, salt, {
       keySize: PBKDF2_KEY_SIZE,
       iterations: PBKDF2_ITERATIONS,
-      hasher: CryptoJS.algo.SHA256
+      hasher: CryptoJS.algo.SHA256,
     });
     this.derivedKeyCache.set(saltHex, key);
     return key;
@@ -166,8 +168,9 @@ export class CrypticService {
   }
 
   public encrypt(txt: string, location: string): string {
-    const shouldEncrypt = (location === 'local' && this.encryptionLocalEnabled) ||
-                          (location === 'database' && this.encryptionDatabaseEnabled);
+    const shouldEncrypt =
+      (location === 'local' && this.encryptionLocalEnabled) ||
+      (location === 'database' && this.encryptionDatabaseEnabled);
     if (!shouldEncrypt || !this.key) return txt;
 
     const salt = this.getSessionSalt();
@@ -177,7 +180,7 @@ export class CrypticService {
     const encrypted = CryptoJS.AES.encrypt(txt, derivedKey, {
       iv: iv,
       mode: CryptoJS.mode.CBC,
-      padding: CryptoJS.pad.Pkcs7
+      padding: CryptoJS.pad.Pkcs7,
     });
 
     const ciphertextWA = encrypted.ciphertext;
@@ -191,8 +194,9 @@ export class CrypticService {
 
   public decrypt(txtToDecrypt: string, location: string): string {
     try {
-      const shouldDecrypt = (location === 'local' && this.encryptionLocalEnabled) ||
-                            (location === 'database' && this.encryptionDatabaseEnabled);
+      const shouldDecrypt =
+        (location === 'local' && this.encryptionLocalEnabled) ||
+        (location === 'database' && this.encryptionDatabaseEnabled);
       if (!shouldDecrypt || !this.key) {
         // If data looks encrypted but we can't decrypt (no key yet, or decryption disabled),
         // return empty string instead of leaking the raw ciphertext blob
@@ -235,7 +239,7 @@ export class CrypticService {
     const decrypted = CryptoJS.AES.decrypt(cipherParams, derivedKey, {
       iv: iv,
       mode: CryptoJS.mode.CBC,
-      padding: CryptoJS.pad.Pkcs7
+      padding: CryptoJS.pad.Pkcs7,
     });
     return decrypted.toString(CryptoJS.enc.Utf8);
   }

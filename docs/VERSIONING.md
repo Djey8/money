@@ -12,17 +12,17 @@ Every commit must follow this pattern:
 <type>(<scope>): <subject>
 ```
 
-| Type       | Version Impact | When to use                              |
-|------------|---------------|------------------------------------------|
-| `feat`     | MINOR bump    | New feature                              |
-| `fix`      | PATCH bump    | Bug fix                                  |
-| `perf`     | PATCH bump    | Performance improvement                  |
-| `docs`     | No bump       | Documentation only                       |
-| `chore`    | No bump       | Maintenance (deps, configs, tooling)     |
-| `refactor` | No bump       | Code change that doesn't fix or add      |
-| `test`     | No bump       | Adding or updating tests                 |
-| `ci`       | No bump       | CI/CD workflow changes                   |
-| `style`    | No bump       | Formatting, whitespace, semicolons       |
+| Type       | Version Impact | When to use                          |
+| ---------- | -------------- | ------------------------------------ |
+| `feat`     | MINOR bump     | New feature                          |
+| `fix`      | PATCH bump     | Bug fix                              |
+| `perf`     | PATCH bump     | Performance improvement              |
+| `docs`     | No bump        | Documentation only                   |
+| `chore`    | No bump        | Maintenance (deps, configs, tooling) |
+| `refactor` | No bump        | Code change that doesn't fix or add  |
+| `test`     | No bump        | Adding or updating tests             |
+| `ci`       | No bump        | CI/CD workflow changes               |
+| `style`    | No bump        | Formatting, whitespace, semicolons   |
 
 ### Breaking changes → MAJOR bump
 
@@ -31,6 +31,7 @@ Use `!` after the type or add `BREAKING CHANGE:` in the footer:
 ```
 feat!: redesign transaction data model
 ```
+
 ```
 feat(auth): switch to OAuth2
 
@@ -69,6 +70,7 @@ From the `main` branch:
 ```
 
 This will:
+
 1. Read all commits since the last tag
 2. Auto-detect the bump type (`patch`, `minor`, or `major`) based on commit types
 3. Ask for confirmation
@@ -102,15 +104,16 @@ git push origin main --tags
 
 When you push a tag (`v*`), three things happen automatically:
 
-| Trigger                | Workflow                          | What it does                                   |
-|------------------------|-----------------------------------|------------------------------------------------|
-| Push tag `v*`          | `release.yml`                     | Runs tests, builds, creates GitHub Release with auto-generated release notes |
-| Push to `main`         | `firebase-hosting-merge.yml`      | Builds and deploys to Firebase Hosting         |
-| PR to `main`           | `test.yml`                        | Runs frontend + backend unit and integration tests |
+| Trigger        | Workflow                     | What it does                                                                 |
+| -------------- | ---------------------------- | ---------------------------------------------------------------------------- |
+| Push tag `v*`  | `release.yml`                | Runs tests, builds, creates GitHub Release with auto-generated release notes |
+| Push to `main` | `firebase-hosting-merge.yml` | Builds and deploys to Firebase Hosting                                       |
+| PR to `main`   | `test.yml`                   | Runs frontend + backend unit and integration tests                           |
 
 ### GitHub Release Notes
 
 The `release.yml` workflow uses `generate_release_notes: true`, which means GitHub auto-generates release notes from:
+
 - Commit messages between the previous tag and the new tag
 - Merged pull requests
 
@@ -135,11 +138,11 @@ The `version-bump.ps1` script updates both automatically.
 
 ## Scripts Reference
 
-| Script                          | Purpose                                           |
-|---------------------------------|---------------------------------------------------|
-| `scripts/auto-bump.ps1`        | Auto-detect bump type from commits, bump + tag    |
-| `scripts/version-bump.ps1`     | Manual bump: `-Type patch\|minor\|major` `-DryRun`|
-| `scripts/changelog.ps1`        | Regenerate CHANGELOG.md from commits              |
+| Script                     | Purpose                                            |
+| -------------------------- | -------------------------------------------------- |
+| `scripts/auto-bump.ps1`    | Auto-detect bump type from commits, bump + tag     |
+| `scripts/version-bump.ps1` | Manual bump: `-Type patch\|minor\|major` `-DryRun` |
+| `scripts/changelog.ps1`    | Regenerate CHANGELOG.md from commits               |
 
 ---
 

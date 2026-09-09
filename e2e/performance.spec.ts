@@ -61,7 +61,7 @@ test.describe('Performance: load times', () => {
 
     const batchRequests: string[] = [];
     const individualReads: string[] = [];
-    page.on('request', req => {
+    page.on('request', (req) => {
       const url = req.url();
       if (url.includes('/api/data/read/batch')) {
         batchRequests.push(url);

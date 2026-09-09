@@ -2,19 +2,20 @@ import { EnvironmentInjector, Injectable, runInInjectionContext } from '@angular
 import {
   AngularFireDatabase,
   AngularFireList,
-  AngularFireObject
+  AngularFireObject,
 } from '@angular/fire/compat/database';
 import { LocalService } from './local.service';
 import { CrypticService } from './cryptic.service';
 import { SelfhostedService } from './selfhosted.service';
 import { DirtyTrackerService } from './dirty-tracker.service';
 import { CacheService } from './cache.service';
+import { AppStateService } from './app-state.service';
 import { environment } from '../../../environments/environment';
 import { Observable, from, forkJoin, of } from 'rxjs';
-import { map, catchError, tap } from 'rxjs/operators';
+import { map, catchError, tap, switchMap } from 'rxjs/operators';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 /**
  * Unified database service that abstracts Firebase and selfhosted (CouchDB) backends.
@@ -22,12 +23,12 @@ import { map, catchError, tap } from 'rxjs/operators';
  * Supports dirty-tracking and caching optimizations in selfhosted mode.
  */
 export class DatabaseService {
-
   studentsRef: AngularFireList<any>;
   studentRef: AngularFireObject<any>;
-  
-  private mode: 'firebase' | 'selfhosted' = (environment.mode as 'firebase' | 'selfhosted') || 'firebase';
-  
+
+  private mode: 'firebase' | 'selfhosted' =
+    (environment.mode as 'firebase' | 'selfhosted') || 'firebase';
+
   /**
    * Constructs a new instance of the DatabaseService class.
    * @param db - The AngularFireDatabase instance (optional for selfhosted mode).
@@ -38,24 +39,21 @@ export class DatabaseService {
    * @param cacheService - The CacheService instance (for selfhosted optimization).
    */
   constructor(
-    private db: AngularFireDatabase, 
-    private localStorage: LocalService, 
+    private db: AngularFireDatabase,
+    private localStorage: LocalService,
     private cryptic: CrypticService,
     private selfhosted: SelfhostedService,
     private dirtyTracker: DirtyTrackerService,
     private cacheService: CacheService,
-    private injector: EnvironmentInjector
-  ) {
-    if (this.mode === 'selfhosted') {
-    }
-  }
+    private injector: EnvironmentInjector,
+  ) {}
 
   /**
    * Writes data to the database.
    * @param {string} tag - The tag under which the data will be stored.
    * @param {any} element - The data to be stored.
    * @returns {Observable<any>} Observable that completes when write succeeds or errors on failure.
-   * 
+   *
    * Note: Username and email (info/username, info/email) are NOT encrypted.
    * All other user data is encrypted when isDatabase is enabled.
    * The auth database email (backend) remains unencrypted for login matching.
@@ -63,13 +61,17 @@ export class DatabaseService {
   writeObject(tag: string, element: any): Observable<any> {
     // Skip encryption for username and email
     const isUserInfo = tag === 'info/username' || tag === 'info/email';
-    
+
     const clonedElement = JSON.parse(JSON.stringify(element));
 
     const encryptObjectValues = (obj: any): void => {
       for (const key in obj) {
-        if (obj.hasOwnProperty(key)) {
-          if (typeof obj[key] === 'number' || typeof obj[key] === 'boolean' || typeof obj[key] === 'string') {
+        if (Object.prototype.hasOwnProperty.call(obj, key)) {
+          if (
+            typeof obj[key] === 'number' ||
+            typeof obj[key] === 'boolean' ||
+            typeof obj[key] === 'string'
+          ) {
             obj[key] = this.cryptic.encrypt(obj[key].toString(), 'database');
           } else if (typeof obj[key] === 'object' && obj[key] !== null) {
             encryptObjectValues(obj[key]);
@@ -80,11 +82,11 @@ export class DatabaseService {
 
     // Handle encryption for different data types
     let dataToWrite = clonedElement;
-    
+
     if (!isUserInfo) {
       // Only encrypt if NOT username or email
       if (Array.isArray(clonedElement)) {
-        clonedElement.forEach(item => {
+        clonedElement.forEach((item) => {
           if (typeof item === 'object' && item !== null) {
             encryptObjectValues(item);
           }
@@ -93,22 +95,26 @@ export class DatabaseService {
       } else if (typeof clonedElement === 'object' && clonedElement !== null) {
         encryptObjectValues(clonedElement);
         dataToWrite = clonedElement;
-      } else if (typeof clonedElement === 'string' || typeof clonedElement === 'number' || typeof clonedElement === 'boolean') {
+      } else if (
+        typeof clonedElement === 'string' ||
+        typeof clonedElement === 'number' ||
+        typeof clonedElement === 'boolean'
+      ) {
         // For primitive values, encrypt them
         dataToWrite = this.cryptic.encrypt(clonedElement.toString(), 'database');
       }
     }
-    
+
     if (this.mode === 'firebase') {
       this.db.database.goOnline();
       const promise = runInInjectionContext(this.injector, () =>
-        this.db.object(`users/${this.localStorage.getData("uid")}/${tag}`).set(dataToWrite)
+        this.db.object(`users/${this.localStorage.getData('uid')}/${tag}`).set(dataToWrite),
       );
       return from(promise); // Convert Promise to Observable for consistent API
     } else {
       // Self-hosted mode with optimization
       const result = this.selfhosted.writeObject(tag, dataToWrite);
-      
+
       // Mark as clean and take snapshot after successful write
       result.subscribe({
         next: () => {
@@ -119,9 +125,9 @@ export class DatabaseService {
         },
         error: (error) => {
           console.error(`[Write] Failed: ${tag}`, error);
-        }
+        },
       });
-      
+
       return result;
     }
   }
@@ -153,35 +159,66 @@ export class DatabaseService {
    * Batch write multiple objects, filtering only dirty ones in selfhosted mode.
    * @param {Array<{tag: string, data: any}>} writes - Array of write operations
    * @param {boolean} forceWrite - If true, skip dirty tracking and write all (for encryption changes)
-   * @returns {Observable<any>} - Observable that completes when all writes finish
+   * @returns {Observable<any>} - Observable that completes when all writes finish. `{ conflict: true }`
+   *   means the write was refused because the server has changed since our last read — the caller
+   *   should refresh (e.g. `AppDataService.instance.loadFromDB()`) and let the user retry, not treat
+   *   this as a generic failure. See docs/adr/0003-api-ui-write-consistency.md: this is the
+   *   detect-and-refuse half of that ADR's write-safety mechanism (automatic re-read-and-merge is a
+   *   further improvement, not required to close the blob-clobber risk — refusing a stale write is
+   *   itself loss-safe, since nothing is silently overwritten).
    */
-  batchWrite(writes: {tag: string, data: any}[], forceWrite: boolean = false): Observable<any> {
+  batchWrite(writes: { tag: string; data: any }[], forceWrite = false): Observable<any> {
     if (this.mode === 'firebase') {
       // Firebase: write all
       const observables = writes
-        .map(w => this.writeObject(w.tag, w.data) as Observable<any>)
-        .filter(obs => obs !== undefined);
-      
+        .map((w) => this.writeObject(w.tag, w.data) as Observable<any>)
+        .filter((obs) => obs !== undefined);
+
       return observables.length > 0 ? forkJoin(observables) : of([]);
     } else {
       // Selfhosted: filter dirty only (unless forceWrite is true)
-      const dirtyWrites = forceWrite 
-        ? writes 
-        : writes.filter(w => this.dirtyTracker.hasChanged(w.tag, w.data));
+      const dirtyWrites = forceWrite
+        ? writes
+        : writes.filter((w) => this.dirtyTracker.hasChanged(w.tag, w.data));
       if (dirtyWrites.length === 0) {
         return of({ success: true, skipped: true, totalWrites: 0 });
       }
 
-      // Use backend batch endpoint if available (more efficient)
-      if (dirtyWrites.length > 1) {
-        return this.selfhosted.writeBatch(dirtyWrites.map(w => ({
-          path: w.tag,
-          data: this.prepareDataForWrite(w.tag, w.data)
-        }))).pipe(
+      // No baseline to compare against yet (e.g. nothing loaded this
+      // session) — nothing meaningful to conflict with, so skip the
+      // extra round-trip and write immediately.
+      if (AppStateService.instance.lastUpdatedAt === null) {
+        return this.performDirtyWrites(dirtyWrites);
+      }
+
+      return from(this.getUpdatedAt()).pipe(
+        switchMap((serverUpdatedAt) => {
+          const conflict =
+            serverUpdatedAt !== null && serverUpdatedAt !== AppStateService.instance.lastUpdatedAt;
+          if (conflict) {
+            return of({ success: false, skipped: true, conflict: true, totalWrites: 0 });
+          }
+          return this.performDirtyWrites(dirtyWrites);
+        }),
+      );
+    }
+  }
+
+  private performDirtyWrites(dirtyWrites: { tag: string; data: any }[]): Observable<any> {
+    // Use backend batch endpoint if available (more efficient)
+    if (dirtyWrites.length > 1) {
+      return this.selfhosted
+        .writeBatch(
+          dirtyWrites.map((w) => ({
+            path: w.tag,
+            data: this.prepareDataForWrite(w.tag, w.data),
+          })),
+        )
+        .pipe(
           tap({
             next: () => {
               // Mark all as clean and take snapshots
-              dirtyWrites.forEach(w => {
+              dirtyWrites.forEach((w) => {
                 this.dirtyTracker.markClean(w.tag);
                 this.dirtyTracker.takeSnapshot(w.tag, w.data);
                 this.cacheService.invalidate(w.tag);
@@ -190,26 +227,27 @@ export class DatabaseService {
             },
             error: (error) => {
               console.error('[BatchWrite] Failed:', error);
-            }
+            },
           }),
           map((response) => ({
             success: true,
             skipped: false,
             totalWrites: dirtyWrites.length,
-            response
-          }))
+            response,
+          })),
         );
-      } else {
-        // Single write, use regular write
-        const observables = dirtyWrites.map(w => this.writeObject(w.tag, w.data) as Observable<any>);
-        return forkJoin(observables).pipe(
-          map(() => ({
-            success: true,
-            skipped: false,
-            totalWrites: dirtyWrites.length
-          }))
-        );
-      }
+    } else {
+      // Single write, use regular write
+      const observables = dirtyWrites.map(
+        (w) => this.writeObject(w.tag, w.data) as Observable<any>,
+      );
+      return forkJoin(observables).pipe(
+        map(() => ({
+          success: true,
+          skipped: false,
+          totalWrites: dirtyWrites.length,
+        })),
+      );
     }
   }
 
@@ -222,13 +260,17 @@ export class DatabaseService {
   private prepareDataForWrite(tag: string, element: any): any {
     // Skip encryption for username and email
     const isUserInfo = tag === 'info/username' || tag === 'info/email';
-    
+
     const clonedElement = JSON.parse(JSON.stringify(element));
 
     const encryptObjectValues = (obj: any): void => {
       for (const key in obj) {
-        if (obj.hasOwnProperty(key)) {
-          if (typeof obj[key] === 'number' || typeof obj[key] === 'boolean' || typeof obj[key] === 'string') {
+        if (Object.prototype.hasOwnProperty.call(obj, key)) {
+          if (
+            typeof obj[key] === 'number' ||
+            typeof obj[key] === 'boolean' ||
+            typeof obj[key] === 'string'
+          ) {
             obj[key] = this.cryptic.encrypt(obj[key].toString(), 'database');
           } else if (typeof obj[key] === 'object' && obj[key] !== null) {
             encryptObjectValues(obj[key]);
@@ -239,11 +281,11 @@ export class DatabaseService {
 
     // Handle encryption for different data types
     let dataToWrite = clonedElement;
-    
+
     if (!isUserInfo) {
       // Only encrypt if NOT username or email (encrypt method checks if encryption is enabled)
       if (Array.isArray(clonedElement)) {
-        clonedElement.forEach(item => {
+        clonedElement.forEach((item) => {
           if (typeof item === 'object' && item !== null) {
             encryptObjectValues(item);
           }
@@ -252,7 +294,11 @@ export class DatabaseService {
       } else if (typeof clonedElement === 'object' && clonedElement !== null) {
         encryptObjectValues(clonedElement);
         dataToWrite = clonedElement;
-      } else if (typeof clonedElement === 'string' || typeof clonedElement === 'number' || typeof clonedElement === 'boolean') {
+      } else if (
+        typeof clonedElement === 'string' ||
+        typeof clonedElement === 'number' ||
+        typeof clonedElement === 'boolean'
+      ) {
         // For primitive values, encrypt them
         dataToWrite = this.cryptic.encrypt(clonedElement.toString(), 'database');
       }
@@ -269,7 +315,7 @@ export class DatabaseService {
    */
   getData(id: string): Promise<any> {
     if (this.mode === 'firebase') {
-      return this.db.database.ref(`users/${this.localStorage.getData("uid")}/${id}`).once('value');
+      return this.db.database.ref(`users/${this.localStorage.getData('uid')}/${id}`).once('value');
     } else {
       // Selfhosted mode with caching
       // Check cache first
@@ -277,7 +323,7 @@ export class DatabaseService {
       if (cached !== null) {
         return Promise.resolve({
           val: () => cached,
-          exists: () => true
+          exists: () => true,
         });
       }
       // Cache miss - fetch from database
@@ -288,17 +334,17 @@ export class DatabaseService {
             if (data !== null) {
               this.cacheService.set(id, data, 5 * 60 * 1000);
             }
-            
+
             // Mimic Firebase DataSnapshot structure
             resolve({
               val: () => data,
-              exists: () => data !== null
+              exists: () => data !== null,
             });
           },
           error: (error) => {
             console.error(`[Read] Failed: ${id}`, error);
             reject(error);
-          }
+          },
         });
       });
     }
@@ -313,22 +359,26 @@ export class DatabaseService {
     this.cacheService.clearAll();
   }
 
-  getBatchData(paths: string[]): Promise<{data: Record<string, any>, updatedAt: string | null} | null> {
+  getBatchData(
+    paths: string[],
+  ): Promise<{ data: Record<string, any>; updatedAt: string | null } | null> {
     if (this.mode === 'firebase') {
       const results: Record<string, any> = {};
-      const promises = paths.map(path =>
-        this.getData(path).then(snapshot => {
-          results[path] = snapshot.val();
-        }).catch(() => {
-          results[path] = null;
-        })
+      const promises = paths.map((path) =>
+        this.getData(path)
+          .then((snapshot) => {
+            results[path] = snapshot.val();
+          })
+          .catch(() => {
+            results[path] = null;
+          }),
       );
       return Promise.all(promises).then(() => ({ data: results, updatedAt: null }));
     } else {
       return new Promise((resolve, reject) => {
         this.selfhosted.readBatch(paths).subscribe({
-          next: (response) => resolve(response),  // null means 304 Not Modified
-          error: reject
+          next: (response) => resolve(response), // null means 304 Not Modified
+          error: reject,
         });
       });
     }
@@ -340,8 +390,8 @@ export class DatabaseService {
     }
     return new Promise((resolve) => {
       this.selfhosted.getUpdatedAt().subscribe({
-        next: (response) => resolve(response ? (response.updatedAt || null) : null),
-        error: () => resolve(null)
+        next: (response) => resolve(response ? response.updatedAt || null : null),
+        error: () => resolve(null),
       });
     });
   }
@@ -384,6 +434,4 @@ export class DatabaseService {
     this.db.database.goOnline();
     return this.db.database.ref(`users/${uid}`).remove();
   }
-
 }
-

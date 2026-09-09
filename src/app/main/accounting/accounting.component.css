@@ -1,7 +1,8 @@
-#statsbtn, #subbtn {
+#statsbtn,
+#subbtn {
   border-radius: var(--radius-full);
   margin-right: 0px;
-} 
+}
 
 /* Cashflow Game Salary Counter */
 .salary-counter {
@@ -19,49 +20,50 @@
 }
 
 .arrow-button {
-    background-color: var(--color-info);
-    color: white;
-    border: none;
-    border-radius: var(--radius-full);
-    width: 50px;
-    height: 50px;
-    font-size: 24px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background-color 0.3s ease;
+  background-color: var(--color-info);
+  color: white;
+  border: none;
+  border-radius: var(--radius-full);
+  width: 50px;
+  height: 50px;
+  font-size: 24px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.3s ease;
 }
 
 .arrow-button:hover {
-    background-color: var(--color-primary-hover);
+  background-color: var(--color-primary-hover);
 }
 
 .arrow-button:active {
-    background-color: var(--color-info-dark);
+  background-color: var(--color-info-dark);
 }
 
-.arrow-left, .arrow-right {
-    display: inline-block;
+.arrow-left,
+.arrow-right {
+  display: inline-block;
 }
 
 .salary-count {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    min-width: 150px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 150px;
 }
 
 .salary-label {
-    font-size: 14px;
-    color: var(--color-text-secondary);
-    margin-bottom: 5px;
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  margin-bottom: 5px;
 }
 
 .salary-number {
-    font-size: 36px;
-    font-weight: bold;
-    color: var(--color-text);
+  font-size: 36px;
+  font-weight: bold;
+  color: var(--color-text);
 }
 
 /* Filter styles now imported from shared/filter-styles.css */
@@ -100,16 +102,16 @@
     padding: 0 4px;
     min-height: 40px;
   }
-  
+
   .paginator-compact ::ng-deep .mat-mdc-paginator-page-size-label {
     display: none;
   }
-  
+
   .paginator-compact ::ng-deep .mat-mdc-paginator-range-label {
     margin: 0 4px;
     font-size: 11px;
   }
-  
+
   .paginator-compact ::ng-deep .mdc-button {
     padding: 0;
     min-width: 36px;

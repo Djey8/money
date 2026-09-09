@@ -1,86 +1,218 @@
 <!-- Toolbar -->
 <div class="toolbar" role="banner">
-  <img id="profile-pic" width="40" alt="Profile Logo" src="../assets/profile-blank.jpg"
-    role="button" tabindex="0" aria-label="Open profile" (click)="appReference.clickProfile()" (keydown.enter)="appReference.clickProfile()" />
-  <div id="heading" role="button" tabindex="0" (click)="appReference.openNavBar()" (keydown.enter)="appReference.openNavBar()">{{'Registration.title' | translate}}</div>
+  <img
+    id="profile-pic"
+    width="40"
+    alt="Profile Logo"
+    src="../assets/profile-blank.jpg"
+    role="button"
+    tabindex="0"
+    aria-label="Open profile"
+    (click)="appReference.clickProfile()"
+    (keydown.enter)="appReference.clickProfile()"
+  />
+  <div
+    id="heading"
+    role="button"
+    tabindex="0"
+    (click)="appReference.openNavBar()"
+    (keydown.enter)="appReference.openNavBar()"
+  >
+    {{ 'Registration.title' | translate }}
+  </div>
   <div class="spacer"></div>
 </div>
 
 <div *ngIf="isRegister" class="register-container">
   <form>
-    <h2>{{'Registration.Register' | translate}}</h2>
-    <img id="profile-pic" width="20%" alt="Profile Logo" src="../../assets/profile-blank.jpg" style="margin: auto;"/>
-    <label for="username" class="required">{{'Settings.username' | translate}}</label>
-    <input type="text" id="username" name="username" aria-required="true" [(ngModel)]="usernameTextField"
-        [attr.aria-invalid]="isError ? true : null" [attr.aria-describedby]="isError ? 'reg-error' : null">
+    <h2>{{ 'Registration.Register' | translate }}</h2>
+    <img
+      id="profile-pic"
+      width="20%"
+      alt="Profile Logo"
+      src="../../assets/profile-blank.jpg"
+      style="margin: auto"
+    />
+    <label for="username" class="required">{{ 'Settings.username' | translate }}</label>
+    <input
+      type="text"
+      id="username"
+      name="username"
+      aria-required="true"
+      [(ngModel)]="usernameTextField"
+      [attr.aria-invalid]="isError ? true : null"
+      [attr.aria-describedby]="isError ? 'reg-error' : null"
+    />
 
-    <label for="Email" class="required"> {{'Settings.email' | translate}} </label>
-    <input type="email" id="Email" name="Email" aria-required="true" [(ngModel)]="emailTextField"
-        [attr.aria-invalid]="isError ? true : null" [attr.aria-describedby]="isError ? 'reg-error' : null">
+    <label for="Email" class="required"> {{ 'Settings.email' | translate }} </label>
+    <input
+      type="email"
+      id="Email"
+      name="Email"
+      aria-required="true"
+      [(ngModel)]="emailTextField"
+      [attr.aria-invalid]="isError ? true : null"
+      [attr.aria-describedby]="isError ? 'reg-error' : null"
+    />
 
-    <label for="password" class="required"> {{'Registration.Password' | translate}} </label>
+    <label for="password" class="required"> {{ 'Registration.Password' | translate }} </label>
     <div class="password-wrapper">
-      <input [type]="showPassword ? 'text' : 'password'" id="password" name="Password" aria-required="true" [(ngModel)]="passwordTextField"
-          [attr.aria-invalid]="isError ? true : null" [attr.aria-describedby]="isError ? 'reg-error' : 'password-hint'">
-      <button type="button" (click)="toggleEye()" class="password-toggle-btn" aria-label="Toggle password visibility">
-      <svg class="password-toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-        <circle cx="12" cy="12" r="3"/>
-        <line [attr.visibility]="showPassword ? 'visible' : 'hidden'" x1="1" y1="1" x2="23" y2="23"/>
-      </svg>
+      <input
+        [type]="showPassword ? 'text' : 'password'"
+        id="password"
+        name="Password"
+        aria-required="true"
+        [(ngModel)]="passwordTextField"
+        [attr.aria-invalid]="isError ? true : null"
+        [attr.aria-describedby]="isError ? 'reg-error' : 'password-hint'"
+      />
+      <button
+        type="button"
+        (click)="toggleEye()"
+        class="password-toggle-btn"
+        aria-label="Toggle password visibility"
+      >
+        <svg
+          class="password-toggle-icon"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+          <circle cx="12" cy="12" r="3" />
+          <line
+            [attr.visibility]="showPassword ? 'visible' : 'hidden'"
+            x1="1"
+            y1="1"
+            x2="23"
+            y2="23"
+          />
+        </svg>
       </button>
     </div>
     <ul class="password-rules" *ngIf="passwordTextField.length > 0">
-      <li *ngIf="!hasMinLength">{{'Registration.RuleMinLength' | translate}}</li>
-      <li *ngIf="!hasUppercase">{{'Registration.RuleUppercase' | translate}}</li>
-      <li *ngIf="!hasLowercase">{{'Registration.RuleLowercase' | translate}}</li>
-      <li *ngIf="!hasNumber">{{'Registration.RuleNumber' | translate}}</li>
+      <li *ngIf="!hasMinLength">{{ 'Registration.RuleMinLength' | translate }}</li>
+      <li *ngIf="!hasUppercase">{{ 'Registration.RuleUppercase' | translate }}</li>
+      <li *ngIf="!hasLowercase">{{ 'Registration.RuleLowercase' | translate }}</li>
+      <li *ngIf="!hasNumber">{{ 'Registration.RuleNumber' | translate }}</li>
     </ul>
-    <p *ngIf="isError" id="reg-error" role="alert">{{errorMessageLable}}</p>
-    <button type="button" id="registerbtn" class="btn btn--primary" (click)="register()" [disabled]="isLoading" [attr.aria-busy]="isLoading ? true : null">
+    <p *ngIf="isError" id="reg-error" role="alert">{{ errorMessageLable }}</p>
+    <button
+      type="button"
+      id="registerbtn"
+      class="btn btn--primary"
+      (click)="register()"
+      [disabled]="isLoading"
+      [attr.aria-busy]="isLoading ? true : null"
+    >
       <span *ngIf="isLoading" class="spinner" aria-hidden="true"></span>
-      <span>{{(isLoading ? 'Registration.Loading' : 'Registration.Register') | translate}}</span>
+      <span>{{ (isLoading ? 'Registration.Loading' : 'Registration.Register') | translate }}</span>
     </button>
-    <button type="button" id="goToLoginbtn" class="btn btn--outline" (click)="goToLogin()" [disabled]="isLoading">{{'Registration.SignIn' | translate}}</button>
+    <button
+      type="button"
+      id="goToLoginbtn"
+      class="btn btn--outline"
+      (click)="goToLogin()"
+      [disabled]="isLoading"
+    >
+      {{ 'Registration.SignIn' | translate }}
+    </button>
   </form>
 </div>
 
 <div *ngIf="!isRegister" class="login-container">
   <form>
-    <h2>{{'Registration.SignIn' | translate}}</h2>
-    <label for="Email" class="required"> {{'Settings.email' | translate}} </label>
-    <input type="email" id="EmailL" name="Email" aria-required="true" [(ngModel)]="emailTextField"
-        [attr.aria-invalid]="isError ? true : null" [attr.aria-describedby]="isError ? 'login-error' : null">
+    <h2>{{ 'Registration.SignIn' | translate }}</h2>
+    <label for="Email" class="required"> {{ 'Settings.email' | translate }} </label>
+    <input
+      type="email"
+      id="EmailL"
+      name="Email"
+      aria-required="true"
+      [(ngModel)]="emailTextField"
+      [attr.aria-invalid]="isError ? true : null"
+      [attr.aria-describedby]="isError ? 'login-error' : null"
+    />
 
-    <label for="password" class="required"> {{'Registration.Password' | translate}}</label>
+    <label for="password" class="required"> {{ 'Registration.Password' | translate }}</label>
     <div class="password-wrapper">
-      <input [type]="showPassword ? 'text' : 'password'" id="passwordL" name="Password" aria-required="true" [(ngModel)]="passwordTextField"
-          [attr.aria-invalid]="isError ? true : null" [attr.aria-describedby]="isError ? 'login-error' : null">
-      <button type="button" (click)="toggleEye()" class="password-toggle-btn" aria-label="Toggle password visibility">
-      <svg class="password-toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-        <circle cx="12" cy="12" r="3"/>
-        <line [attr.visibility]="showPassword ? 'visible' : 'hidden'" x1="1" y1="1" x2="23" y2="23"/>
-      </svg>
+      <input
+        [type]="showPassword ? 'text' : 'password'"
+        id="passwordL"
+        name="Password"
+        aria-required="true"
+        [(ngModel)]="passwordTextField"
+        [attr.aria-invalid]="isError ? true : null"
+        [attr.aria-describedby]="isError ? 'login-error' : null"
+      />
+      <button
+        type="button"
+        (click)="toggleEye()"
+        class="password-toggle-btn"
+        aria-label="Toggle password visibility"
+      >
+        <svg
+          class="password-toggle-icon"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+          <circle cx="12" cy="12" r="3" />
+          <line
+            [attr.visibility]="showPassword ? 'visible' : 'hidden'"
+            x1="1"
+            y1="1"
+            x2="23"
+            y2="23"
+          />
+        </svg>
       </button>
     </div>
-    <p *ngIf="isError" id="login-error" role="alert">{{errorMessageLable}}</p>
-    <button type="button" id="loginbtn" class="btn btn--primary" (click)="login()" [disabled]="isLoading" [attr.aria-busy]="isLoading ? true : null">
+    <p *ngIf="isError" id="login-error" role="alert">{{ errorMessageLable }}</p>
+    <button
+      type="button"
+      id="loginbtn"
+      class="btn btn--primary"
+      (click)="login()"
+      [disabled]="isLoading"
+      [attr.aria-busy]="isLoading ? true : null"
+    >
       <span *ngIf="isLoading" class="spinner" aria-hidden="true"></span>
-      <span>{{(isLoading ? 'Registration.LoadingSignIn' : 'Registration.SignIn') | translate}}</span>
+      <span>{{
+        (isLoading ? 'Registration.LoadingSignIn' : 'Registration.SignIn') | translate
+      }}</span>
     </button>
-    <button type="button" id="backbtn" class="btn btn--outline" (click)="goToRegister()" [disabled]="isLoading">{{'Registration.Register' | translate}}</button>
-    <h3 id="encryptionLable">{{'Settings.encryptionLable' | translate}}</h3>
-                <hr
-                    class="separator-black">
+    <button
+      type="button"
+      id="backbtn"
+      class="btn btn--outline"
+      (click)="goToRegister()"
+      [disabled]="isLoading"
+    >
+      {{ 'Registration.Register' | translate }}
+    </button>
+    <h3 id="encryptionLable">{{ 'Settings.encryptionLable' | translate }}</h3>
+    <hr class="separator-black" />
     <button *ngIf="!isUploaded" type="button" (click)="upload()" class="settingsbtn">
-      {{'Registration.uploadFile' | translate}}
+      {{ 'Registration.uploadFile' | translate }}
     </button>
-    <button *ngIf="isUploaded" type="button" (click)="upload()" style="background-color: transparent; border: none;">
-      {{filename}}
+    <button
+      *ngIf="isUploaded"
+      type="button"
+      (click)="upload()"
+      style="background-color: transparent; border: none"
+    >
+      {{ filename }}
     </button>
     <button type="button" (click)="default()" class="settingsbtn">
-      {{'Registration.default' | translate}}
+      {{ 'Registration.default' | translate }}
     </button>
   </form>
 </div>

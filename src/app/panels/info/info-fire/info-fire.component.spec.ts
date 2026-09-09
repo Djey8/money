@@ -3,12 +3,13 @@ import { AppStateService } from '../../../shared/services/app-state.service';
 import { Fire } from '../../../interfaces/fire';
 
 describe('InfoFireComponent', () => {
-
   beforeEach(() => {
     (AppStateService as any)._instance = undefined;
     InfoFireComponent.index = 1;
     InfoFireComponent.title = 'Driver Licence';
-    InfoFireComponent.buckets = [{ id: 'b1', title: 'Main', target: 200.0, amount: 0.0, notes: '', links: [] }];
+    InfoFireComponent.buckets = [
+      { id: 'b1', title: 'Main', target: 200.0, amount: 0.0, notes: '', links: [] },
+    ];
     InfoFireComponent.phase = 'saving';
     InfoFireComponent.isInfo = false;
   });
@@ -19,16 +20,14 @@ describe('InfoFireComponent', () => {
       sub: 'General savings',
       phase: 'saving',
       description: 'Emergency fund for unexpected expenses',
-      buckets: [
-        { id: 'b1', title: 'Main', target: 10000, amount: 2500, notes: '', links: [] }
-      ],
+      buckets: [{ id: 'b1', title: 'Main', target: 10000, amount: 2500, notes: '', links: [] }],
       links: [],
       actionItems: [],
       notes: [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       targetDate: '',
-      completionDate: ''
+      completionDate: '',
     };
 
     InfoFireComponent.setInfoFireComponent(3, fire);
@@ -56,9 +55,9 @@ describe('InfoFireComponent', () => {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       targetDate: '',
-      completionDate: ''
+      completionDate: '',
     };
-    
+
     InfoFireComponent.isInfo = false;
     InfoFireComponent.setInfoFireComponent(0, fire);
     expect(InfoFireComponent.isInfo).toBe(true);

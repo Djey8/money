@@ -10,7 +10,9 @@
   grid-column: 1 / -1;
   box-shadow: var(--shadow-md);
   cursor: pointer;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
   padding: 12px 0;
 }
 .total-amount:hover {
@@ -79,7 +81,9 @@
   border-radius: var(--radius-full);
 }
 
-#statsbtn, #bistats, #budgetbtn {
+#statsbtn,
+#bistats,
+#budgetbtn {
   border-radius: var(--radius-full);
   margin-right: 0;
 }
@@ -116,7 +120,9 @@
     border-radius: 5%;
     box-shadow: var(--shadow-sm);
     cursor: pointer;
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    transition:
+      transform 0.15s ease,
+      box-shadow 0.15s ease;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -158,18 +164,29 @@
 
 /* Portrait: proportional side margins on wider screens */
 @media (orientation: portrait) and (min-width: 600px) {
-  .container { padding-left: 8vw; padding-right: 8vw; }
+  .container {
+    padding-left: 8vw;
+    padding-right: 8vw;
+  }
 }
 @media (orientation: portrait) and (min-width: 900px) {
-  .container { padding-left: 12vw; padding-right: 12vw; }
+  .container {
+    padding-left: 12vw;
+    padding-right: 12vw;
+  }
 }
 @media (orientation: portrait) and (min-width: 1200px) {
-  .container { padding-left: 18vw; padding-right: 18vw; }
+  .container {
+    padding-left: 18vw;
+    padding-right: 18vw;
+  }
 }
 
 /* Desktop bottom nav is shorter */
 @media (orientation: portrait) and (min-width: 769px) {
-  .container { padding-bottom: 62px; }
+  .container {
+    padding-bottom: 62px;
+  }
 }
 
 /* Narrow portrait: remove aspect-ratio constraint, reduce parent padding impact */
@@ -208,7 +225,9 @@
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-sm);
     cursor: pointer;
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    transition:
+      transform 0.15s ease,
+      box-shadow 0.15s ease;
     overflow: hidden;
     min-height: 0;
     display: flex;

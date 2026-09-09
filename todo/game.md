@@ -10,22 +10,22 @@
 ## 1. Why this is feasible
 
 Almost every primitive needed for a Kiyosaki-style game already exists
-in the data model. The job is mostly *interpretation* and *presentation*,
+in the data model. The job is mostly _interpretation_ and _presentation_,
 not new bookkeeping.
 
-| Cashflow board game concept | Already in app | Source |
-|---|---|---|
-| Salary | Income transactions | `transactions` (account = `income`) |
-| Doodads (lifestyle expenses) | Expenses on Splurge / Daily | `transactions` (account = `daily`/`splurge`) |
-| Assets producing cash flow | Investments, properties, shares, interests, dividends | `assets`, `investments`, `properties`, `shares`, `interests` |
-| Liabilities | Liabilities, loans, subscriptions | `liabilities`, `subscriptions` |
-| Passive income | Recurring positive cashflow from assets | `IncomeStatementService` |
-| Big / Small deals | Add Asset / Add Investment panels | `Add*` panels |
-| Rat race | Income statement + balance sheet | `cashflow`, `income`, `balance` views |
-| Fast track | Anything beyond "passive income > expenses" | (new) |
-| Dream / goal | Smile projects, FIRE emergencies | `smile`, `fire` |
-| Emergency fund | Mojo bucket | `mojo` |
-| Allocation | 60/10/10/20 (configurable) | Settings → Allocation |
+| Cashflow board game concept  | Already in app                                        | Source                                                       |
+| ---------------------------- | ----------------------------------------------------- | ------------------------------------------------------------ |
+| Salary                       | Income transactions                                   | `transactions` (account = `income`)                          |
+| Doodads (lifestyle expenses) | Expenses on Splurge / Daily                           | `transactions` (account = `daily`/`splurge`)                 |
+| Assets producing cash flow   | Investments, properties, shares, interests, dividends | `assets`, `investments`, `properties`, `shares`, `interests` |
+| Liabilities                  | Liabilities, loans, subscriptions                     | `liabilities`, `subscriptions`                               |
+| Passive income               | Recurring positive cashflow from assets               | `IncomeStatementService`                                     |
+| Big / Small deals            | Add Asset / Add Investment panels                     | `Add*` panels                                                |
+| Rat race                     | Income statement + balance sheet                      | `cashflow`, `income`, `balance` views                        |
+| Fast track                   | Anything beyond "passive income > expenses"           | (new)                                                        |
+| Dream / goal                 | Smile projects, FIRE emergencies                      | `smile`, `fire`                                              |
+| Emergency fund               | Mojo bucket                                           | `mojo`                                                       |
+| Allocation                   | 60/10/10/20 (configurable)                            | Settings → Allocation                                        |
 
 **Conclusion:** No new core data is required. Gamification is a
 **read-mostly view** plus a small write of game-state
@@ -35,15 +35,15 @@ not new bookkeeping.
 
 ## 2. Design constraints (decided)
 
-| Decision | Value |
-|---|---|
-| Architecture | New `GamificationService`, leaves `GameModeService` untouched |
-| "Escape the rat race" rule | **User-configurable** (strict Kiyosaki / FIRE 4% / hybrid) |
-| Scoring inputs | Cashflow events + net-worth Δ + habit streaks + passive-income ratio |
-| Privacy | All state encrypted via existing `CrypticService` + `writeAndSync` |
-| Modes | Must work in Firebase **and** Selfhosted, identically |
-| Delivery (this iteration) | Documentation only, no code |
-| Scope (final feature) | Light layer + Cashflow mirror + Quests + Deal cards + Coach + Multiplayer |
+| Decision                   | Value                                                                     |
+| -------------------------- | ------------------------------------------------------------------------- |
+| Architecture               | New `GamificationService`, leaves `GameModeService` untouched             |
+| "Escape the rat race" rule | **User-configurable** (strict Kiyosaki / FIRE 4% / hybrid)                |
+| Scoring inputs             | Cashflow events + net-worth Δ + habit streaks + passive-income ratio      |
+| Privacy                    | All state encrypted via existing `CrypticService` + `writeAndSync`        |
+| Modes                      | Must work in Firebase **and** Selfhosted, identically                     |
+| Delivery (this iteration)  | Documentation only, no code                                               |
+| Scope (final feature)      | Light layer + Cashflow mirror + Quests + Deal cards + Coach + Multiplayer |
 
 ---
 
@@ -124,7 +124,7 @@ backend changes** for single-player.
 Each phase is independently shippable. Earlier phases unblock later
 ones; later phases can be cancelled without rollback.
 
-### Phase 1 — Foundation & Light Layer  *(MVP)*
+### Phase 1 — Foundation & Light Layer _(MVP)_
 
 Goal: users see a **score**, a **level**, and **streaks** on Home.
 Zero new behavior; pure read of existing data.
@@ -145,6 +145,7 @@ Zero new behavior; pure read of existing data.
 - Translations: add `Game.*` keys to all 6 locales (`en, de, es, fr, cn, ar`)
 
 Acceptance:
+
 - Existing flows untouched if `gamification.enabled === false` (default)
 - Toggle in Settings opts in; state survives reload, sync, and logout/login
 - Works offline (PWA service worker already caches the bundle)
@@ -163,9 +164,9 @@ phase they're in.
     excluding investments-bought-this-month
   - **Ratio** = `passiveIncome / expenses`
   - Phases:
-    - `rat-race`        ratio < 0.5
-    - `near-escape`     0.5 ≤ ratio < 1.0
-    - `fast-track`      ratio ≥ 1.0
+    - `rat-race` ratio < 0.5
+    - `near-escape` 0.5 ≤ ratio < 1.0
+    - `fast-track` ratio ≥ 1.0
 - The "rule" is user-configurable in Settings → Game:
   - **Kiyosaki strict** — uses ratio above
   - **FIRE 4%** — `(netWorth × swr) / annualExpenses ≥ 1`
@@ -250,8 +251,7 @@ purpose so we can ship Phases 1–5 without it.
   - `GET  /api/groups/:id/leaderboard` — returns **derived metrics
     only**, no raw transactions:
     ```json
-    [{ "alias": "...", "level": 7, "ratio": 0.42,
-       "streakDays": 12, "lastActiveAt": "..." }]
+    [{ "alias": "...", "level": 7, "ratio": 0.42, "streakDays": 12, "lastActiveAt": "..." }]
     ```
 - Frontend opt-in: Settings → Game → "Share progress with group".
   Sets `social.shareDream = true`. Until the user explicitly enables
@@ -269,17 +269,17 @@ purpose so we can ship Phases 1–5 without it.
 
 ## 5. UX surfaces
 
-| Surface | Where | Phase |
-|---|---|---|
-| Score badge in toolbar | `AppComponent` toolbar | 1 |
-| Game panel | `panels/game/` (lazy import like other panels) | 1+ |
-| Streak indicator | Home (next to mojo) | 1 |
-| Rat-race ring | Home + Cashflow | 2 |
-| Active quests | Game panel + bottom-nav badge | 3 |
-| Deal card carousel | Home, dismissible | 4 |
-| Coach line | Home, single sentence | 5 |
-| Group leaderboard | Game panel "Group" tab | 6 |
-| Settings | Profile → Settings → "Game" group | 1+ |
+| Surface                | Where                                          | Phase |
+| ---------------------- | ---------------------------------------------- | ----- |
+| Score badge in toolbar | `AppComponent` toolbar                         | 1     |
+| Game panel             | `panels/game/` (lazy import like other panels) | 1+    |
+| Streak indicator       | Home (next to mojo)                            | 1     |
+| Rat-race ring          | Home + Cashflow                                | 2     |
+| Active quests          | Game panel + bottom-nav badge                  | 3     |
+| Deal card carousel     | Home, dismissible                              | 4     |
+| Coach line             | Home, single sentence                          | 5     |
+| Group leaderboard      | Game panel "Group" tab                         | 6     |
+| Settings               | Profile → Settings → "Game" group              | 1+    |
 
 All surfaces hidden when `gamification.enabled === false`.
 
@@ -308,13 +308,13 @@ Transactions / Projects / Reports / Settings → +Game).
 
 ## 7. Testing strategy
 
-| Layer | Tests |
-|---|---|
-| `GamificationService` unit | XP math, level curve, streak rollover at midnight, quest condition fns, rat-race phase transitions, deal-trigger rules — pure, no DB |
-| Components | `game.component.spec.ts`, `rat-race.component.spec.ts` follow `templates/component.spec.template.ts` |
-| Integration (backend) | groups route in `backend/tests/integration/` (Phase 6 only) |
-| E2E | `e2e/game.spec.ts` — toggle on, log txns, see XP rise, complete a daily quest, see badge |
-| Performance | Recalc should add < 5 ms to `transactionsUpdated$` cycle (≈10k transactions). Test in `backend/tests/unit/batch-read.test.js`-style perf block |
+| Layer                      | Tests                                                                                                                                          |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GamificationService` unit | XP math, level curve, streak rollover at midnight, quest condition fns, rat-race phase transitions, deal-trigger rules — pure, no DB           |
+| Components                 | `game.component.spec.ts`, `rat-race.component.spec.ts` follow `templates/component.spec.template.ts`                                           |
+| Integration (backend)      | groups route in `backend/tests/integration/` (Phase 6 only)                                                                                    |
+| E2E                        | `e2e/game.spec.ts` — toggle on, log txns, see XP rise, complete a daily quest, see badge                                                       |
+| Performance                | Recalc should add < 5 ms to `transactionsUpdated$` cycle (≈10k transactions). Test in `backend/tests/unit/batch-read.test.js`-style perf block |
 
 Pre-existing Husky pre-commit + Playwright E2E pipeline already covers the regression surface.
 
@@ -322,48 +322,37 @@ Pre-existing Husky pre-commit + Playwright E2E pipeline already covers the regre
 
 ## 8. Risk register
 
-| Risk | Mitigation |
-|---|---|
-| Users gaming XP by spam-logging | Daily cap, idempotent quest conditions, recompute from raw data not from increments |
-| Wrong "passive income" classification | User-editable category → `isPassiveIncome` mapping, default seeded |
-| Breaks Selfhosted parity | Phase 6 designed identical-shape for both backends; Phases 1–5 don't touch backend |
-| Privacy regression in social mode | Opt-in only, derived aggregates only, server stores no raw amounts |
-| Data bloat | Quest history pruned after 90 days, badge list capped at 100 (oldest dropped) |
-| Performance on Pi | All work is sync, in-memory, < 5 ms; no extra HTTP round-trips |
-| Forgot to encrypt new key | Routed through existing `writeAndSync` → server-side encryption applied automatically (the same path as `mojo`, `assets`, etc.) |
+| Risk                                  | Mitigation                                                                                                                      |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| Users gaming XP by spam-logging       | Daily cap, idempotent quest conditions, recompute from raw data not from increments                                             |
+| Wrong "passive income" classification | User-editable category → `isPassiveIncome` mapping, default seeded                                                              |
+| Breaks Selfhosted parity              | Phase 6 designed identical-shape for both backends; Phases 1–5 don't touch backend                                              |
+| Privacy regression in social mode     | Opt-in only, derived aggregates only, server stores no raw amounts                                                              |
+| Data bloat                            | Quest history pruned after 90 days, badge list capped at 100 (oldest dropped)                                                   |
+| Performance on Pi                     | All work is sync, in-memory, < 5 ms; no extra HTTP round-trips                                                                  |
+| Forgot to encrypt new key             | Routed through existing `writeAndSync` → server-side encryption applied automatically (the same path as `mojo`, `assets`, etc.) |
 
 ---
 
 ## 9. Conventional-commit-friendly task breakdown
 
 Phase 1 (`feat(game): foundation`):
+
 1. `feat(game): add gamification service skeleton, settings toggle and persisted state`
 2. `feat(game): xp math, level curve and streak engine`
 3. `feat(game): home toolbar badge and game panel UI`
 4. `feat(i18n): add Game.* keys for all 6 locales`
 5. `test(game): unit tests for xp math, levels, streak rollover`
 
-Phase 2 (`feat(game): rat race`):
-6. `feat(game): rat-race ratio calculation with configurable rule`
-7. `feat(game): rat-race ring on home and cashflow views`
-8. `feat(game): one-time fast-track unlock badge and toast`
+Phase 2 (`feat(game): rat race`): 6. `feat(game): rat-race ratio calculation with configurable rule` 7. `feat(game): rat-race ring on home and cashflow views` 8. `feat(game): one-time fast-track unlock badge and toast`
 
-Phase 3 (`feat(game): quests`):
-9. `feat(game): seeded quest engine, library and reset boundaries`
-10. `feat(game): active-quests UI in game panel + bottom-nav badge`
-11. `test(game): quest condition fns and reset boundaries`
+Phase 3 (`feat(game): quests`): 9. `feat(game): seeded quest engine, library and reset boundaries` 10. `feat(game): active-quests UI in game panel + bottom-nav badge` 11. `test(game): quest condition fns and reset boundaries`
 
-Phase 4 (`feat(game): deal cards`):
-12. `feat(game): derived deal-card generator and triggers`
-13. `feat(game): home deal-card carousel pre-filling existing add panels`
+Phase 4 (`feat(game): deal cards`): 12. `feat(game): derived deal-card generator and triggers` 13. `feat(game): home deal-card carousel pre-filling existing add panels`
 
-Phase 5 (`feat(game): coach`):
-14. `feat(game): heuristic coach focus on home`
+Phase 5 (`feat(game): coach`): 14. `feat(game): heuristic coach focus on home`
 
-Phase 6 (`feat(game): social`):
-15. `feat(backend): groups route with leaderboard aggregates`
-16. `feat(game): opt-in group leaderboard tab`
-17. `test(game): backend integration tests for groups route`
+Phase 6 (`feat(game): social`): 15. `feat(backend): groups route with leaderboard aggregates` 16. `feat(game): opt-in group leaderboard tab` 17. `test(game): backend integration tests for groups route`
 
 Each commit ships independently and respects the rule in
 [docs/VERSIONING.md](VERSIONING.md): one logical change per commit, conventional types, MINOR bumps for `feat`.
@@ -384,4 +373,4 @@ These can be decided per-phase; none block Phase 1.
 
 ---
 
-*Last updated: 2026-04-25*
+_Last updated: 2026-04-25_

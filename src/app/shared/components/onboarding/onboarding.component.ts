@@ -16,7 +16,7 @@ interface OnboardingStep {
   standalone: true,
   imports: [CommonModule, TranslateModule],
   templateUrl: './onboarding.component.html',
-  styleUrls: ['./onboarding.component.css']
+  styleUrls: ['./onboarding.component.css'],
 })
 export class OnboardingComponent implements OnInit, OnDestroy {
   visible = false;
@@ -25,18 +25,53 @@ export class OnboardingComponent implements OnInit, OnDestroy {
   private sub!: Subscription;
 
   steps: OnboardingStep[] = [
-    { icon: '👋', titleKey: 'Onboarding.step1.title', bodyKey: 'Onboarding.step1.body', accent: 'var(--color-primary)' },
-    { icon: '💰', titleKey: 'Onboarding.step2.title', bodyKey: 'Onboarding.step2.body', accent: 'var(--color-cat-daily)' },
-    { icon: '🛍️', titleKey: 'Onboarding.step3.title', bodyKey: 'Onboarding.step3.body', accent: 'var(--color-cat-splurge)' },
-    { icon: '😊', titleKey: 'Onboarding.step4.title', bodyKey: 'Onboarding.step4.body', accent: 'var(--color-cat-smile)' },
-    { icon: '🔥', titleKey: 'Onboarding.step5.title', bodyKey: 'Onboarding.step5.body', accent: 'var(--color-cat-fire)' },
-    { icon: '📊', titleKey: 'Onboarding.step6.title', bodyKey: 'Onboarding.step6.body', accent: 'var(--color-primary)' },
-    { icon: '🚀', titleKey: 'Onboarding.step7.title', bodyKey: 'Onboarding.step7.body', accent: 'var(--color-success)' },
+    {
+      icon: '👋',
+      titleKey: 'Onboarding.step1.title',
+      bodyKey: 'Onboarding.step1.body',
+      accent: 'var(--color-primary)',
+    },
+    {
+      icon: '💰',
+      titleKey: 'Onboarding.step2.title',
+      bodyKey: 'Onboarding.step2.body',
+      accent: 'var(--color-cat-daily)',
+    },
+    {
+      icon: '🛍️',
+      titleKey: 'Onboarding.step3.title',
+      bodyKey: 'Onboarding.step3.body',
+      accent: 'var(--color-cat-splurge)',
+    },
+    {
+      icon: '😊',
+      titleKey: 'Onboarding.step4.title',
+      bodyKey: 'Onboarding.step4.body',
+      accent: 'var(--color-cat-smile)',
+    },
+    {
+      icon: '🔥',
+      titleKey: 'Onboarding.step5.title',
+      bodyKey: 'Onboarding.step5.body',
+      accent: 'var(--color-cat-fire)',
+    },
+    {
+      icon: '📊',
+      titleKey: 'Onboarding.step6.title',
+      bodyKey: 'Onboarding.step6.body',
+      accent: 'var(--color-primary)',
+    },
+    {
+      icon: '🚀',
+      titleKey: 'Onboarding.step7.title',
+      bodyKey: 'Onboarding.step7.body',
+      accent: 'var(--color-success)',
+    },
   ];
 
   constructor(
     private onboardingService: OnboardingService,
-    private translate: TranslateService
+    private translate: TranslateService,
   ) {}
 
   ngOnInit() {

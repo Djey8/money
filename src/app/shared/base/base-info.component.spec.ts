@@ -30,9 +30,12 @@ describe('BaseInfoComponent', () => {
       providers: [
         { provide: ToastService, useValue: { show: jest.fn() } },
         { provide: ConfirmService, useValue: { confirm: jest.fn() } },
-        { provide: TranslateService, useValue: { instant: jest.fn((k: string) => k), get: jest.fn() } },
-        { provide: Router, useValue: { navigate: jest.fn() } }
-      ]
+        {
+          provide: TranslateService,
+          useValue: { instant: jest.fn((k: string) => k), get: jest.fn() },
+        },
+        { provide: Router, useValue: { navigate: jest.fn() } },
+      ],
     });
 
     TestInfoComponent.zIndex = 0;

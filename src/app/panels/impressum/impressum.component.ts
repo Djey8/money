@@ -20,10 +20,9 @@ import { TrapFocusDirective } from 'src/app/shared/directives/trap-focus.directi
   standalone: true,
   imports: [TrapFocusDirective, CommonModule, TranslateModule],
   templateUrl: './impressum.component.html',
-  styleUrls: ['./impressum.component.css']
+  styleUrls: ['./impressum.component.css'],
 })
 export class ImpressumComponent {
-
   /**
    * The z-index value for the Impressum component.
    */
@@ -39,7 +38,12 @@ export class ImpressumComponent {
    */
   public classReference = ImpressumComponent;
 
-  constructor(private router: Router, private localStorage: LocalService, private database: DatabaseService, private afAuth: AngularFireAuth) {
+  constructor(
+    private router: Router,
+    private localStorage: LocalService,
+    private database: DatabaseService,
+    private afAuth: AngularFireAuth,
+  ) {
     ImpressumComponent.isInfo = false;
     ImpressumComponent.zIndex = 0;
   }

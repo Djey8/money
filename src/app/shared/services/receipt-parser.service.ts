@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 export interface ReceiptItem {
   name: string;
   price: number | null;
-  info: string;       // quantity, weight, unit price, discount etc.
+  info: string; // quantity, weight, unit price, discount etc.
 }
 
 export interface ParsedReceipt {
@@ -11,20 +11,24 @@ export interface ParsedReceipt {
   street: string;
   place: string;
   total: number | null;
-  date: string | null;   // YYYY-MM-DD
-  time: string | null;   // HH:MM
+  date: string | null; // YYYY-MM-DD
+  time: string | null; // HH:MM
   items: ReceiptItem[];
-  comment: string;       // formatted output for display
+  comment: string; // formatted output for display
 }
 
 @Injectable({ providedIn: 'root' })
 export class ReceiptParserService {
-
   parse(body: any): ParsedReceipt {
     const empty: ParsedReceipt = {
-      merchant: '', street: '', place: '',
-      total: null, date: null, time: null,
-      items: [], comment: ''
+      merchant: '',
+      street: '',
+      place: '',
+      total: null,
+      date: null,
+      time: null,
+      items: [],
+      comment: '',
     };
     if (!body?.receipts?.length) return empty;
 
@@ -32,11 +36,11 @@ export class ReceiptParserService {
     const ocrText: string = receipt.ocr_text || '';
 
     let parsed: ParsedReceipt;
-    if (this.isParadise(ocrText))       parsed = this.parseParadise(receipt, ocrText);
-    else if (this.isGoAsia(ocrText))    parsed = this.parseGoAsia(receipt, ocrText);
-    else if (this.isRewe(ocrText))      parsed = this.parseRewe(receipt, ocrText);
-    else if (this.isEdeka(ocrText))     parsed = this.parseEdeka(receipt, ocrText);
-    else                                parsed = this.parseGeneric(receipt, ocrText);
+    if (this.isParadise(ocrText)) parsed = this.parseParadise(receipt, ocrText);
+    else if (this.isGoAsia(ocrText)) parsed = this.parseGoAsia(receipt, ocrText);
+    else if (this.isRewe(ocrText)) parsed = this.parseRewe(receipt, ocrText);
+    else if (this.isEdeka(ocrText)) parsed = this.parseEdeka(receipt, ocrText);
+    else parsed = this.parseGeneric(receipt, ocrText);
 
     parsed.comment = this.formatComment(parsed);
     return parsed;
@@ -65,7 +69,10 @@ export class ReceiptParserService {
   // ══════════════════════════════════════════════════════════════
 
   private parseParadise(receipt: any, ocrText: string): ParsedReceipt {
-    const lines = ocrText.split('\n').map(l => l.trim()).filter(l => l);
+    const lines = ocrText
+      .split('\n')
+      .map((l) => l.trim())
+      .filter((l) => l);
     const result = this.emptyResult();
     result.merchant = 'Frische Paradies';
 
@@ -90,9 +97,15 @@ export class ReceiptParserService {
       const line = lines[i];
       const lower = line.toLowerCase();
 
-      if (lower.includes('barverkauf') || lower.includes('kunde:')) { inItems = true; continue; }
+      if (lower.includes('barverkauf') || lower.includes('kunde:')) {
+        inItems = true;
+        continue;
+      }
       if (lower.startsWith('summe')) {
-        if (pendingItem) { result.items.push(pendingItem); pendingItem = null; }
+        if (pendingItem) {
+          result.items.push(pendingItem);
+          pendingItem = null;
+        }
         break;
       }
       if (!inItems) continue;
@@ -120,7 +133,9 @@ export class ReceiptParserService {
       }
 
       // Weight line: "0.5 kg X 28,90 EUR/kg   14.45"
-      const weightMatch = line.match(/([\d.,]+)\s*kg\s*[Xx]\s*([\d.,]+)\s*EUR\s*\/\s*kg\s+([\d.,]+)/);
+      const weightMatch = line.match(
+        /([\d.,]+)\s*kg\s*[Xx]\s*([\d.,]+)\s*EUR\s*\/\s*kg\s+([\d.,]+)/,
+      );
       if (weightMatch) {
         if (pendingItem) {
           pendingItem.price = this.parseNum(weightMatch[3]);
@@ -143,7 +158,7 @@ export class ReceiptParserService {
         pendingItem = {
           name,
           price,
-          info: unit === 'kg' ? '' : (qty !== '1,0' ? `${qty} ${unit}` : '')
+          info: unit === 'kg' ? '' : qty !== '1,0' ? `${qty} ${unit}` : '',
         };
         continue;
       }
@@ -155,7 +170,7 @@ export class ReceiptParserService {
         pendingItem = {
           name: this.cleanItemName(simpleMatch[1]),
           price: this.parseNum(simpleMatch[2]),
-          info: ''
+          info: '',
         };
         continue;
       }
@@ -171,14 +186,17 @@ export class ReceiptParserService {
   // ══════════════════════════════════════════════════════════════
 
   private parseGoAsia(receipt: any, ocrText: string): ParsedReceipt {
-    const lines = ocrText.split('\n').map(l => l.trim()).filter(l => l);
+    const lines = ocrText
+      .split('\n')
+      .map((l) => l.trim())
+      .filter((l) => l);
     const result = this.emptyResult();
     result.merchant = 'go asia Supermarkt';
 
     // Address: "Stachus-Passagen, 80335 München"
     for (const line of lines.slice(0, 6)) {
       const addrMatch = line.match(/^(.+?),?\s+(\d{5})\s+(.+)$/);
-      if (addrMatch && !(/go\s*asia/i.test(line))) {
+      if (addrMatch && !/go\s*asia/i.test(line)) {
         result.street = addrMatch[1].replace(/,\s*$/, '');
         result.place = addrMatch[2] + ' ' + addrMatch[3];
         break;
@@ -196,9 +214,15 @@ export class ReceiptParserService {
       const line = lines[i];
       const lower = line.toLowerCase();
 
-      if (/^\s*EUR\s*$/i.test(line) || /nr\.?\s+artikel/i.test(line)) { inItems = true; continue; }
+      if (/^\s*EUR\s*$/i.test(line) || /nr\.?\s+artikel/i.test(line)) {
+        inItems = true;
+        continue;
+      }
       if (lower.includes('summe')) {
-        if (pendingItem) { result.items.push(pendingItem); pendingItem = null; }
+        if (pendingItem) {
+          result.items.push(pendingItem);
+          pendingItem = null;
+        }
         break;
       }
       if (!inItems) continue;
@@ -210,7 +234,7 @@ export class ReceiptParserService {
         pendingItem = {
           name: itemMatch[1].trim(),
           price: this.parseNum(itemMatch[2]),
-          info: ''
+          info: '',
         };
         continue;
       }
@@ -245,7 +269,10 @@ export class ReceiptParserService {
   // ══════════════════════════════════════════════════════════════
 
   private parseRewe(receipt: any, ocrText: string): ParsedReceipt {
-    const lines = ocrText.split('\n').map(l => l.trim()).filter(l => l);
+    const lines = ocrText
+      .split('\n')
+      .map((l) => l.trim())
+      .filter((l) => l);
     const result = this.emptyResult();
     result.merchant = 'REWE';
 
@@ -269,7 +296,10 @@ export class ReceiptParserService {
       const line = lines[i];
       const lower = line.toLowerCase();
 
-      if (/^\s*EUR\s*$/.test(line)) { inItems = true; continue; }
+      if (/^\s*EUR\s*$/.test(line)) {
+        inItems = true;
+        continue;
+      }
       if (lower.includes('summe') || lower.includes('posten:')) {
         break;
       }
@@ -308,14 +338,20 @@ export class ReceiptParserService {
   // ══════════════════════════════════════════════════════════════
 
   private parseEdeka(receipt: any, ocrText: string): ParsedReceipt {
-    const lines = ocrText.split('\n').map(l => l.trim()).filter(l => l);
+    const lines = ocrText
+      .split('\n')
+      .map((l) => l.trim())
+      .filter((l) => l);
     const result = this.emptyResult();
     result.merchant = 'EDEKA';
 
     let foundEdeka = false;
     for (let i = 0; i < Math.min(10, lines.length); i++) {
       const line = lines[i];
-      if (/^E(DEKA)?$/i.test(line)) { foundEdeka = true; continue; }
+      if (/^E(DEKA)?$/i.test(line)) {
+        foundEdeka = true;
+        continue;
+      }
       if (!foundEdeka) continue;
       if (/str\.|straße|strasse/i.test(line) && !result.street) {
         result.street = line;
@@ -338,7 +374,10 @@ export class ReceiptParserService {
       const line = lines[i];
       const lower = line.toLowerCase();
 
-      if (/^\s*EUR\s*$/.test(line)) { inItems = true; continue; }
+      if (/^\s*EUR\s*$/.test(line)) {
+        inItems = true;
+        continue;
+      }
       if (lower.includes('posten:') || lower.startsWith('summe')) {
         break;
       }
@@ -350,7 +389,7 @@ export class ReceiptParserService {
         result.items.push({
           name: multiMatch[1].trim(),
           price: this.parseNum(multiMatch[4]),
-          info: `${multiMatch[3]} × ${multiMatch[2]}€`
+          info: `${multiMatch[3]} × ${multiMatch[2]}€`,
         });
         continue;
       }
@@ -403,14 +442,18 @@ export class ReceiptParserService {
         for (const item of receipt.items) {
           if (!item.description) continue;
           const desc = item.description.toLowerCase();
-          if (desc.includes('summe') || desc.includes('mastercard') || desc.includes('visa')) continue;
+          if (desc.includes('summe') || desc.includes('mastercard') || desc.includes('visa'))
+            continue;
           result.items.push({ name: item.description, price: item.amount ?? null, info: '' });
         }
       }
       return result;
     }
 
-    const lines = ocrText.split('\n').map(l => l.trim()).filter(l => l);
+    const lines = ocrText
+      .split('\n')
+      .map((l) => l.trim())
+      .filter((l) => l);
 
     // ── Merchant & Address ──
     let merchantFound = false;
@@ -425,7 +468,9 @@ export class ReceiptParserService {
       if (lower.includes('tel') || lower.includes('www.') || lower.includes('fax')) continue;
 
       if (/str\.|straße|strasse|weg\s|allee|platz\s/i.test(line) && !result.street) {
-        const combined = line.match(/^(.+?(?:str\.|straße|strasse|weg|allee|platz)\s*\S*),?\s+(\d{5})\s+(.+)$/i);
+        const combined = line.match(
+          /^(.+?(?:str\.|straße|strasse|weg|allee|platz)\s*\S*),?\s+(\d{5})\s+(.+)$/i,
+        );
         if (combined) {
           result.street = combined[1].replace(/,\s*$/, '');
           result.place = combined[2] + ' ' + combined[3];
@@ -459,7 +504,8 @@ export class ReceiptParserService {
 
     // ── Items ──
     let inItems = false;
-    const stopWords = /summe|zu\s*zahlen|gesamt|total|posten:|mwst|kundenbeleg|kartenzahlung|bezahlung|geg\.\s*(master|visa)/i;
+    const stopWords =
+      /summe|zu\s*zahlen|gesamt|total|posten:|mwst|kundenbeleg|kartenzahlung|bezahlung|geg\.\s*(master|visa)/i;
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
@@ -474,8 +520,9 @@ export class ReceiptParserService {
 
       if (stopWords.test(line)) break;
 
-      const itemMatch = line.match(/^(.+?)\s{2,}([\d.,]+)\s+[A-Z]\s*$/)
-                      || line.match(/^(.+?)\s{2,}([\d.,]+)\s*€\s*[A-Z]?\s*$/);
+      const itemMatch =
+        line.match(/^(.+?)\s{2,}([\d.,]+)\s+[A-Z]\s*$/) ||
+        line.match(/^(.+?)\s{2,}([\d.,]+)\s*€\s*[A-Z]?\s*$/);
       if (itemMatch) {
         const name = itemMatch[1].trim();
         const price = this.parseNum(itemMatch[2]);
@@ -485,8 +532,13 @@ export class ReceiptParserService {
           const next = lines[i + 1].trim();
           const weightInfo = next.match(/^([\d.,]+)\s*kg\s*x\s*([\d.,]+)/i);
           const qtyInfo = next.match(/^(\d+)\s*(?:Stk|ST)\s*x\s*([\d.,]+)/i);
-          if (weightInfo) { info = `${weightInfo[1]} kg × ${weightInfo[2]}`; i++; }
-          else if (qtyInfo) { info = `${qtyInfo[1]} × ${qtyInfo[2]}`; i++; }
+          if (weightInfo) {
+            info = `${weightInfo[1]} kg × ${weightInfo[2]}`;
+            i++;
+          } else if (qtyInfo) {
+            info = `${qtyInfo[1]} × ${qtyInfo[2]}`;
+            i++;
+          }
         }
         result.items.push({ name, price, info });
         continue;
@@ -497,7 +549,7 @@ export class ReceiptParserService {
         result.items.push({
           name: trailingPrice[1].trim(),
           price: this.parseNum(trailingPrice[2]),
-          info: ''
+          info: '',
         });
       }
     }
@@ -529,8 +581,8 @@ export class ReceiptParserService {
     const parts: string[] = [];
 
     if (parsed.merchant) parts.push(parsed.merchant);
-    if (parsed.street)   parts.push(parsed.street);
-    if (parsed.place)    parts.push(parsed.place);
+    if (parsed.street) parts.push(parsed.street);
+    if (parsed.place) parts.push(parsed.place);
     if (parts.length > 0) parts.push('---');
 
     for (const item of parsed.items) {
@@ -546,7 +598,16 @@ export class ReceiptParserService {
   // ── Shared helpers ──
 
   private emptyResult(): ParsedReceipt {
-    return { merchant: '', street: '', place: '', total: null, date: null, time: null, items: [], comment: '' };
+    return {
+      merchant: '',
+      street: '',
+      place: '',
+      total: null,
+      date: null,
+      time: null,
+      items: [],
+      comment: '',
+    };
   }
 
   findAmountOnLine(ocrText: string, keyword: RegExp): number | null {
@@ -577,7 +638,9 @@ export class ReceiptParserService {
       const deMatch = line.match(/(\d{2})\.(\d{2})\.(\d{4})/);
       if (deMatch) {
         const [, day, month, year] = deMatch;
-        const y = +year, m = +month, d = +day;
+        const y = +year,
+          m = +month,
+          d = +day;
         if (y >= 2020 && y <= 2040 && m >= 1 && m <= 12 && d >= 1 && d <= 31) {
           return `${year}-${month}-${day}`;
         }
@@ -585,7 +648,9 @@ export class ReceiptParserService {
       const isoMatch = line.match(/(\d{4})-(\d{2})-(\d{2})/);
       if (isoMatch) {
         const [, year, month, day] = isoMatch;
-        const y = +year, m = +month, d = +day;
+        const y = +year,
+          m = +month,
+          d = +day;
         if (y >= 2020 && y <= 2040 && m >= 1 && m <= 12 && d >= 1 && d <= 31) {
           return `${year}-${month}-${day}`;
         }
@@ -601,7 +666,8 @@ export class ReceiptParserService {
         if (/\b(mo|di|mi|do|fr|sa|so)\b/i.test(line)) continue;
         const match = line.match(/(\d{1,2}):(\d{2})(?::(\d{2}))?/);
         if (match) {
-          const h = +match[1], m = +match[2];
+          const h = +match[1],
+            m = +match[2];
           if (h >= 0 && h <= 23 && m >= 0 && m <= 59) {
             return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
           }

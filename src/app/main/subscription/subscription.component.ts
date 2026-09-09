@@ -5,13 +5,21 @@ import { Router } from '@angular/router';
 import { SettingsComponent } from 'src/app/panels/settings/settings.component';
 import { InfoSubscriptionComponent } from 'src/app/panels/info/info-subscription/info-subscription.component';
 import { MatDividerModule } from '@angular/material/divider';
-import {MatPaginator, MatPaginatorModule} from '@angular/material/paginator';
+import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { Subscription } from 'rxjs';
-import {LiveAnnouncer} from '@angular/cdk/a11y';
-import {AfterViewInit, Component, ViewChild, inject, OnDestroy} from '@angular/core';
-import {MatSort, Sort, MatSortModule} from '@angular/material/sort';
-import {MatTableDataSource, MatTableModule} from '@angular/material/table';
-import {MatFormFieldModule} from '@angular/material/form-field';
+import { LiveAnnouncer } from '@angular/cdk/a11y';
+import {
+  AfterViewInit,
+  Component,
+  ViewChild,
+  inject,
+  OnDestroy,
+  AfterViewChecked,
+  OnInit,
+} from '@angular/core';
+import { MatSort, Sort, MatSortModule } from '@angular/material/sort';
+import { MatTableDataSource, MatTableModule } from '@angular/material/table';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { BalanceComponent } from '../cashflow/balance/balance.component';
 import { ProfileComponent } from 'src/app/panels/profile/profile.component';
@@ -29,18 +37,34 @@ import { FrontendLoggerService } from 'src/app/shared/services/frontend-logger.s
 @Component({
   selector: 'app-subscription',
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslateModule, AppDatePipe, AppNumberPipe, MatTableModule, MatSortModule, MatPaginatorModule, MatFormFieldModule, MatInputModule, RouterModule, InfoSubscriptionComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    TranslateModule,
+    AppDatePipe,
+    AppNumberPipe,
+    MatTableModule,
+    MatSortModule,
+    MatPaginatorModule,
+    MatFormFieldModule,
+    MatInputModule,
+    RouterModule,
+    InfoSubscriptionComponent,
+  ],
   templateUrl: './subscription.component.html',
-  styleUrls: ['./subscription.component.css', '../../app.component.css', '../../shared/styles/table.css' ] // '../../shared/styles/table.css'
+  styleUrls: [
+    './subscription.component.css',
+    '../../app.component.css',
+    '../../shared/styles/table.css',
+  ], // '../../shared/styles/table.css'
 })
-
-export class SubscriptionComponent implements OnDestroy {
+export class SubscriptionComponent implements OnDestroy, AfterViewChecked, OnInit, AfterViewInit {
   private _liveAnnouncer = inject(LiveAnnouncer);
   private tableInitialized = false;
 
   static isSearched = false;
-  static allSubscriptions = []
-  static allSearchedSubscriptions = []
+  static allSubscriptions = [];
+  static allSearchedSubscriptions = [];
 
   displayedColumns: string[] = ['id', 'title', 'account', 'amount', 'startDate'];
   displayedColumnsIn: string[] = ['id', 'title', 'account', 'amount', 'endDate'];
@@ -49,12 +73,14 @@ export class SubscriptionComponent implements OnDestroy {
   static inactiveDataSource = new MatTableDataSource<any>([]);
 
   isChecked = true;
-  frequencyFilter = 'all';  // Frequency filter state
-  isRefreshing = false;  // Refresh button state
+  frequencyFilter = 'all'; // Frequency filter state
+  isRefreshing = false; // Refresh button state
 
-  searchTextField = "";
+  searchTextField = '';
 
-  public get appReference() { return AppComponent; }
+  public get appReference() {
+    return AppComponent;
+  }
   public classReference = SubscriptionComponent;
   public settingsReference = SettingsComponent;
   public profileReference = ProfileComponent;
@@ -71,17 +97,24 @@ export class SubscriptionComponent implements OnDestroy {
     private router: Router,
     private toastService: ToastService,
     private subscriptionProcessingService: SubscriptionProcessingService,
-    private frontendLogger: FrontendLoggerService
+    private frontendLogger: FrontendLoggerService,
   ) {
     SubscriptionComponent.allSubscriptions = AppStateService.instance.allSubscriptions;
-    SubscriptionComponent.activeDataSource = new MatTableDataSource<Subscription>([...SubscriptionComponent.allSubscriptions]);
-    SubscriptionComponent.activeDataSource.data = SubscriptionComponent.activeDataSource.data.map((subscription, index) => {
-      return { ...subscription, id: index };
-    });
-    SubscriptionComponent.inactiveDataSource = new MatTableDataSource<Subscription>([...SubscriptionComponent.allSubscriptions]);
-    SubscriptionComponent.inactiveDataSource.data = SubscriptionComponent.inactiveDataSource.data.map((subscription, index) => {
-      return { ...subscription, id: index };
-    });
+    SubscriptionComponent.activeDataSource = new MatTableDataSource<Subscription>([
+      ...SubscriptionComponent.allSubscriptions,
+    ]);
+    SubscriptionComponent.activeDataSource.data = SubscriptionComponent.activeDataSource.data.map(
+      (subscription, index) => {
+        return { ...subscription, id: index };
+      },
+    );
+    SubscriptionComponent.inactiveDataSource = new MatTableDataSource<Subscription>([
+      ...SubscriptionComponent.allSubscriptions,
+    ]);
+    SubscriptionComponent.inactiveDataSource.data =
+      SubscriptionComponent.inactiveDataSource.data.map((subscription, index) => {
+        return { ...subscription, id: index };
+      });
   }
 
   @ViewChild('activeSort') activeSort!: MatSort;
@@ -90,9 +123,7 @@ export class SubscriptionComponent implements OnDestroy {
   @ViewChild(MatPaginator) paginator!: MatPaginator;
 
   getSubscriptionIndex(subscription: Subscription): number {
-    return SubscriptionComponent.allSubscriptions.findIndex(
-      (sub) => sub === subscription
-    );
+    return SubscriptionComponent.allSubscriptions.findIndex((sub) => sub === subscription);
   }
 
   /**
@@ -103,7 +134,7 @@ export class SubscriptionComponent implements OnDestroy {
    * - Monthly: Current month
    * - Quarterly: Current quarter (Q1, Q2, Q3, Q4)
    * - Yearly: Current year
-   * 
+   *
    * @param subscription - The subscription to check
    * @returns true if current period is paid, false otherwise
    */
@@ -111,7 +142,7 @@ export class SubscriptionComponent implements OnDestroy {
     const frequency = subscription.frequency || 'monthly';
     const today = new Date();
     const commentCompare = subscription.comment
-      ? subscription.title + " + " + subscription.comment
+      ? subscription.title + ' + ' + subscription.comment
       : subscription.title;
 
     // Determine the current period start/end dates based on frequency
@@ -119,33 +150,37 @@ export class SubscriptionComponent implements OnDestroy {
     let periodEnd: Date;
 
     switch (frequency) {
-      case 'weekly':
+      case 'weekly': {
         // Current week: Monday 00:00 to Sunday 23:59
         periodStart = new Date(today);
         const dayOfWeek = today.getDay(); // 0 = Sunday, 1 = Monday, ...
         const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Adjust so Monday = 0
         periodStart.setDate(today.getDate() - daysFromMonday);
         periodStart.setHours(0, 0, 0, 0);
-        
+
         periodEnd = new Date(periodStart);
         periodEnd.setDate(periodStart.getDate() + 6); // Sunday
         periodEnd.setHours(23, 59, 59, 999);
         break;
+      }
 
-      case 'biweekly':
+      case 'biweekly': {
         // Current 2-week period based on subscription start date
         const startDate = new Date(subscription.startDate);
-        const daysSinceStart = Math.floor((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+        const daysSinceStart = Math.floor(
+          (today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
+        );
         const currentBiweekIndex = Math.floor(daysSinceStart / 14);
-        
+
         periodStart = new Date(startDate);
-        periodStart.setDate(startDate.getDate() + (currentBiweekIndex * 14));
+        periodStart.setDate(startDate.getDate() + currentBiweekIndex * 14);
         periodStart.setHours(0, 0, 0, 0);
-        
+
         periodEnd = new Date(periodStart);
         periodEnd.setDate(periodStart.getDate() + 13); // 14 days total (0-13)
         periodEnd.setHours(23, 59, 59, 999);
         break;
+      }
 
       case 'monthly':
         // Current month: 1st 00:00 to last day 23:59
@@ -153,12 +188,13 @@ export class SubscriptionComponent implements OnDestroy {
         periodEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59, 999);
         break;
 
-      case 'quarterly':
+      case 'quarterly': {
         // Current quarter: Q1 (Jan-Mar), Q2 (Apr-Jun), Q3 (Jul-Sep), Q4 (Oct-Dec)
         const currentQuarter = Math.floor(today.getMonth() / 3);
         periodStart = new Date(today.getFullYear(), currentQuarter * 3, 1);
         periodEnd = new Date(today.getFullYear(), (currentQuarter + 1) * 3, 0, 23, 59, 59, 999);
         break;
+      }
 
       case 'yearly':
         // Current year: Jan 1 00:00 to Dec 31 23:59
@@ -175,7 +211,7 @@ export class SubscriptionComponent implements OnDestroy {
     // Check if any transaction exists for this subscription within the current period
     for (const t of AppStateService.instance.allTransactions) {
       const transactionDate = new Date(t.date);
-      
+
       if (
         transactionDate >= periodStart &&
         transactionDate <= periodEnd &&
@@ -211,7 +247,7 @@ export class SubscriptionComponent implements OnDestroy {
         case 'title':
           return item.title.toLowerCase(); // Example: Sort by title case-insensitively
         case 'startDate':
-          if (this.isChecked){
+          if (this.isChecked) {
             return new Date(item.startDate).getDate();
           } else {
             return new Date(item.startDate).getTime();
@@ -222,14 +258,14 @@ export class SubscriptionComponent implements OnDestroy {
     };
   }
 
-  updateFilter(){
+  updateFilter() {
     this.isChecked = !this.isChecked;
     const filterValue = SubscriptionComponent.activeDataSource.filter;
     SubscriptionComponent.activeDataSource.filter = ''; // Reset the filter
     SubscriptionComponent.activeDataSource.filter = filterValue; // Reapply the filter
   }
 
-
+  // eslint-disable-next-line @angular-eslint/no-empty-lifecycle-method -- required by `implements AfterViewInit`; actual work happens in ngAfterViewChecked
   ngAfterViewInit() {
     // Handled by ngAfterViewChecked to support *ngIf="!isLoading" timing
   }
@@ -241,6 +277,7 @@ export class SubscriptionComponent implements OnDestroy {
     }
   }
 
+  // eslint-disable-next-line @angular-eslint/no-empty-lifecycle-method, @typescript-eslint/no-empty-function -- required by `implements OnDestroy`; nothing to clean up here
   ngOnDestroy() {}
 
   private setupTableFeatures() {
@@ -267,7 +304,7 @@ export class SubscriptionComponent implements OnDestroy {
     }
   }
 
-  ngOnInit() { 
+  ngOnInit() {
     // Apply custom sorting
     this.applyCustomSorting(SubscriptionComponent.activeDataSource);
     this.applyCustomSorting(SubscriptionComponent.inactiveDataSource);
@@ -282,9 +319,9 @@ export class SubscriptionComponent implements OnDestroy {
     }
   }
 
-  static getCreditAmount(){
+  static getCreditAmount() {
     let sum = 0;
-    SubscriptionComponent.allSubscriptions.forEach(subscription => {
+    SubscriptionComponent.allSubscriptions.forEach((subscription) => {
       const endDate = new Date(subscription.endDate);
       const today = new Date();
       if (subscription.account === 'Income' && (!subscription.endDate || endDate >= today)) {
@@ -294,9 +331,9 @@ export class SubscriptionComponent implements OnDestroy {
     return sum;
   }
 
-  static getDebitAmount(){
+  static getDebitAmount() {
     let sum = 0;
-    SubscriptionComponent.allSubscriptions.forEach(subscription => {
+    SubscriptionComponent.allSubscriptions.forEach((subscription) => {
       const endDate = new Date(subscription.endDate);
       const today = new Date();
       if (subscription.account != 'Income' && (!subscription.endDate || endDate >= today)) {
@@ -306,9 +343,9 @@ export class SubscriptionComponent implements OnDestroy {
     return sum;
   }
 
-  static getTotalAmount(){
+  static getTotalAmount() {
     let sum = 0;
-    SubscriptionComponent.allSubscriptions.forEach(subscription => {
+    SubscriptionComponent.allSubscriptions.forEach((subscription) => {
       const endDate = new Date(subscription.endDate);
       const today = new Date();
       if (!subscription.endDate || endDate >= today) {
@@ -318,15 +355,15 @@ export class SubscriptionComponent implements OnDestroy {
     return sum;
   }
 
-  static isActive(index){
+  static isActive(index) {
     const endDate = new Date(SubscriptionComponent.allSubscriptions[index].endDate);
     const today = new Date();
     return !(!SubscriptionComponent.allSubscriptions[index].endDate || endDate >= today);
   }
 
-  static noInactiveSubscriptions(){
+  static noInactiveSubscriptions() {
     let noInactive = true;
-    SubscriptionComponent.allSubscriptions.forEach(subscription => {
+    SubscriptionComponent.allSubscriptions.forEach((subscription) => {
       const endDate = new Date(subscription.endDate);
       const today = new Date();
       if (subscription.endDate && endDate < today) {
@@ -336,9 +373,9 @@ export class SubscriptionComponent implements OnDestroy {
     return noInactive;
   }
 
-  static noInactiveSubscriptionsFiltered(){
+  static noInactiveSubscriptionsFiltered() {
     let noInactive = true;
-    SubscriptionComponent.allSearchedSubscriptions.forEach(subscription => {
+    SubscriptionComponent.allSearchedSubscriptions.forEach((subscription) => {
       const endDate = new Date(subscription.endDate);
       const today = new Date();
       if (subscription.endDate && endDate < today && subscription.isFiltered) {
@@ -348,48 +385,50 @@ export class SubscriptionComponent implements OnDestroy {
     return noInactive;
   }
 
-
-
-
   /**
-  * Performs a search based on the searchTextField value.
-  */
+   * Performs a search based on the searchTextField value.
+   */
   search() {
-    const searchTerms = this.searchTextField.toLowerCase().split(',').map(term => term.trim());
+    const searchTerms = this.searchTextField
+      .toLowerCase()
+      .split(',')
+      .map((term) => term.trim());
 
     SubscriptionComponent.activeDataSource.filterPredicate = (data, filter) => {
-      return searchTerms.some(term => 
-      data.title.toLowerCase().includes(term.trim()) ||
-      data.account.toLowerCase().includes(term.trim()) ||
-      data.category.toLowerCase().includes(term.trim()) ||
-      data.comment.toLowerCase().includes(term.trim()) ||
-      data.startDate.toLowerCase().includes(term.trim()) ||
-      String(data.amount).includes(term.trim())
+      return searchTerms.some(
+        (term) =>
+          data.title.toLowerCase().includes(term.trim()) ||
+          data.account.toLowerCase().includes(term.trim()) ||
+          data.category.toLowerCase().includes(term.trim()) ||
+          data.comment.toLowerCase().includes(term.trim()) ||
+          data.startDate.toLowerCase().includes(term.trim()) ||
+          String(data.amount).includes(term.trim()),
       );
     };
 
     SubscriptionComponent.activeDataSource.filter = this.searchTextField.trim().toLowerCase();
 
     SubscriptionComponent.inactiveDataSource.filterPredicate = (data, filter) => {
-      return searchTerms.some(term => 
-      data.title.toLowerCase().includes(term.trim()) ||
-      data.account.toLowerCase().includes(term.trim()) ||
-      data.category.toLowerCase().includes(term.trim()) ||
-      data.comment.toLowerCase().includes(term.trim()) ||
-      data.startDate.toLowerCase().includes(term.trim()) ||
-      String(data.amount).includes(term.trim())
+      return searchTerms.some(
+        (term) =>
+          data.title.toLowerCase().includes(term.trim()) ||
+          data.account.toLowerCase().includes(term.trim()) ||
+          data.category.toLowerCase().includes(term.trim()) ||
+          data.comment.toLowerCase().includes(term.trim()) ||
+          data.startDate.toLowerCase().includes(term.trim()) ||
+          String(data.amount).includes(term.trim()),
       );
     };
 
     SubscriptionComponent.inactiveDataSource.filter = this.searchTextField.trim().toLowerCase();
     SubscriptionComponent.isSearched = true;
   }
-  
+
   /**
    * Clears the search results.
    */
   clearSearch() {
-    this.searchTextField = "";
+    this.searchTextField = '';
     SubscriptionComponent.isSearched = false;
 
     SubscriptionComponent.activeDataSource.filter = '';
@@ -400,7 +439,7 @@ export class SubscriptionComponent implements OnDestroy {
    * Handles the click event on a row in the accounting table.
    * @param index - The index of the clicked row.
    */
-  clickRow(index: number){
+  clickRow(index: number) {
     AppComponent.gotoTop();
     InfoSubscriptionComponent.setInfoSubscriptionComponent(
       index,
@@ -411,7 +450,7 @@ export class SubscriptionComponent implements OnDestroy {
       SubscriptionComponent.allSubscriptions[index].endDate,
       SubscriptionComponent.allSubscriptions[index].category,
       SubscriptionComponent.allSubscriptions[index].comment,
-      SubscriptionComponent.allSubscriptions[index].frequency
+      SubscriptionComponent.allSubscriptions[index].frequency,
     );
   }
 
@@ -419,7 +458,7 @@ export class SubscriptionComponent implements OnDestroy {
    * Adds a new transaction.
    */
   addSubscription() {
-    AppComponent.addSubscription("Daily", "@", "subscription");
+    AppComponent.addSubscription('Daily', '@', 'subscription');
   }
 
   /**
@@ -428,12 +467,12 @@ export class SubscriptionComponent implements OnDestroy {
    * @returns Translated frequency label.
    */
   getFrequencyLabel(frequency: string): string {
-    const labels: { [key: string]: string } = {
+    const labels: Record<string, string> = {
       weekly: 'Weekly',
       biweekly: 'Biweekly',
       monthly: 'Monthly',
       quarterly: 'Quarterly',
-      yearly: 'Yearly'
+      yearly: 'Yearly',
     };
     return labels[frequency] || 'Monthly';
   }
@@ -444,19 +483,24 @@ export class SubscriptionComponent implements OnDestroy {
    */
   applyFrequencyFilter() {
     const filterFrequency = this.frequencyFilter;
-    
+
     if (filterFrequency === 'all') {
       // Show all subscriptions
-      SubscriptionComponent.activeDataSource.data = [...SubscriptionComponent.allSubscriptions].map((subscription, index) => {
-        return { ...subscription, id: index };
-      });
-      SubscriptionComponent.inactiveDataSource.data = [...SubscriptionComponent.allSubscriptions].map((subscription, index) => {
+      SubscriptionComponent.activeDataSource.data = [...SubscriptionComponent.allSubscriptions].map(
+        (subscription, index) => {
+          return { ...subscription, id: index };
+        },
+      );
+      SubscriptionComponent.inactiveDataSource.data = [
+        ...SubscriptionComponent.allSubscriptions,
+      ].map((subscription, index) => {
         return { ...subscription, id: index };
       });
     } else {
       // Filter by selected frequency
       const filtered = SubscriptionComponent.allSubscriptions.filter(
-        sub => sub.frequency === filterFrequency || (!sub.frequency && filterFrequency === 'monthly')
+        (sub) =>
+          sub.frequency === filterFrequency || (!sub.frequency && filterFrequency === 'monthly'),
       );
       SubscriptionComponent.activeDataSource.data = filtered.map((subscription, index) => {
         return { ...subscription, id: index };
@@ -474,29 +518,26 @@ export class SubscriptionComponent implements OnDestroy {
    */
   async refreshSubscriptions() {
     if (this.isRefreshing) return;
-    
+
     this.isRefreshing = true;
     this.frontendLogger.logActivity('subscription_refresh_start', 'info');
-    
+
     try {
       const result = await this.subscriptionProcessingService.setTransactionsForSubscriptions();
-      
+
       // Show success toast with transaction count
       if (result.transactionsCreated > 0) {
         this.toastService.show(
           `${result.transactionsCreated} subscription transaction${result.transactionsCreated !== 1 ? 's' : ''} created`,
-          'success'
+          'success',
         );
       } else {
-        this.toastService.show(
-          'All subscription transactions are up to date',
-          'info'
-        );
+        this.toastService.show('All subscription transactions are up to date', 'info');
       }
-      
+
       this.frontendLogger.logActivity('subscription_refresh_complete', 'info', {
         transactionsCreated: result.transactionsCreated,
-        subscriptionsProcessed: result.subscriptionsProcessed
+        subscriptionsProcessed: result.subscriptionsProcessed,
       });
     } catch (error) {
       console.error('Failed to refresh subscriptions:', error);
@@ -510,12 +551,11 @@ export class SubscriptionComponent implements OnDestroy {
   /**
    * Navigates to the stats page.
    */
-  goToStats(){
-    StatsComponent.resetBIStateIfNeeded("income");
+  goToStats() {
+    StatsComponent.resetBIStateIfNeeded('income');
     this.router.navigate(['/stats']);
-    StatsComponent.modus = "income";
+    StatsComponent.modus = 'income';
     MenuComponent.openStats = true;
     AppComponent.gotoTop();
   }
-
 }

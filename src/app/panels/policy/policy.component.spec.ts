@@ -1,7 +1,6 @@
 import { PolicyComponent } from './policy.component';
 
 describe('PolicyComponent', () => {
-
   beforeEach(() => {
     PolicyComponent.isInfo = false;
     PolicyComponent.zIndex = 0;

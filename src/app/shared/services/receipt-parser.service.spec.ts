@@ -61,7 +61,17 @@ describe('ReceiptParserService', () => {
  Summe EUR                                 74,62
  Mastercard                                    74,62`;
 
-    const body = { receipts: [{ merchant_name: 'NL München Schlachthof', total: 74.62, date: null, time: null, ocr_text: paradiseOcr }] };
+    const body = {
+      receipts: [
+        {
+          merchant_name: 'NL München Schlachthof',
+          total: 74.62,
+          date: null,
+          time: null,
+          ocr_text: paradiseOcr,
+        },
+      ],
+    };
 
     it('should detect Paradise and set merchant', () => {
       const r = service.parse(body);
@@ -86,7 +96,7 @@ describe('ReceiptParserService', () => {
       const r = service.parse(body);
       expect(r.items.length).toBeGreaterThan(5);
 
-      const linguine = r.items.find(i => /linguine/i.test(i.name));
+      const linguine = r.items.find((i) => /linguine/i.test(i.name));
       expect(linguine).toBeDefined();
       expect(linguine!.price).toBe(6.99);
     });
@@ -94,7 +104,7 @@ describe('ReceiptParserService', () => {
     it('should handle MHD discount by adjusting price', () => {
       const r = service.parse(body);
       // EPI BROT (3.99) has MHD -0.80 → 3.19
-      const epi = r.items.find(i => /epi brot/i.test(i.name));
+      const epi = r.items.find((i) => /epi brot/i.test(i.name));
       expect(epi).toBeDefined();
       expect(epi!.price).toBe(3.19);
       expect(epi!.info).toContain('Rabatt');
@@ -102,7 +112,7 @@ describe('ReceiptParserService', () => {
 
     it('should handle weight items with kg price', () => {
       const r = service.parse(body);
-      const forelle = r.items.find(i => /goldforelle/i.test(i.name));
+      const forelle = r.items.find((i) => /goldforelle/i.test(i.name));
       expect(forelle).toBeDefined();
       expect(forelle!.price).toBe(14.45);
       expect(forelle!.info).toContain('kg');
@@ -180,7 +190,17 @@ describe('ReceiptParserService', () => {
                                          95,33
  Kartenzahlung                           95,33`;
 
-    const body = { receipts: [{ merchant_name: 'go asia Supermarkt', total: 100.91, date: '2026-03-30', time: null, ocr_text: goAsiaOcr }] };
+    const body = {
+      receipts: [
+        {
+          merchant_name: 'go asia Supermarkt',
+          total: 100.91,
+          date: '2026-03-30',
+          time: null,
+          ocr_text: goAsiaOcr,
+        },
+      ],
+    };
 
     it('should detect go asia and set merchant', () => {
       expect(service.parse(body).merchant).toBe('go asia Supermarkt');
@@ -211,7 +231,7 @@ describe('ReceiptParserService', () => {
 
     it('should capture CJK info lines', () => {
       const r = service.parse(body);
-      const sui = r.items.find(i => /Sui Kau/i.test(i.name));
+      const sui = r.items.find((i) => /Sui Kau/i.test(i.name));
       expect(sui).toBeDefined();
       expect(sui!.price).toBe(5.99);
       expect(sui!.info).toContain('DELICO');
@@ -219,7 +239,7 @@ describe('ReceiptParserService', () => {
 
     it('should capture multi-line continuation info', () => {
       const r = service.parse(body);
-      const fischkuchen = r.items.find(i => /Quadratischer Fischkuchen/i.test(i.name));
+      const fischkuchen = r.items.find((i) => /Quadratischer Fischkuchen/i.test(i.name));
       expect(fischkuchen).toBeDefined();
       expect(fischkuchen!.info).toContain('Gemüse');
     });
@@ -262,7 +282,17 @@ describe('ReceiptParserService', () => {
                 Contactless
               DEBIT MASTERCARD`;
 
-    const body = { receipts: [{ merchant_name: 'CHINAKOHL BY', total: 43.72, date: '2026-04-13', time: null, ocr_text: reweOcr }] };
+    const body = {
+      receipts: [
+        {
+          merchant_name: 'CHINAKOHL BY',
+          total: 43.72,
+          date: '2026-04-13',
+          time: null,
+          ocr_text: reweOcr,
+        },
+      ],
+    };
 
     it('should detect REWE and override wrong API merchant name', () => {
       expect(service.parse(body).merchant).toBe('REWE');
@@ -292,7 +322,7 @@ describe('ReceiptParserService', () => {
 
     it('should attach weight info to CHINAKOHL', () => {
       const r = service.parse(body);
-      const chinakohl = r.items.find(i => /chinakohl/i.test(i.name));
+      const chinakohl = r.items.find((i) => /chinakohl/i.test(i.name));
       expect(chinakohl).toBeDefined();
       expect(chinakohl!.price).toBe(2.73);
       expect(chinakohl!.info).toContain('1,098 kg');
@@ -301,7 +331,7 @@ describe('ReceiptParserService', () => {
 
     it('should attach quantity info to MOZZARELLA', () => {
       const r = service.parse(body);
-      const mozz = r.items.find(i => /mozzarella/i.test(i.name));
+      const mozz = r.items.find((i) => /mozzarella/i.test(i.name));
       expect(mozz).toBeDefined();
       expect(mozz!.price).toBe(3.98);
       expect(mozz!.info).toContain('2');
@@ -339,7 +369,11 @@ describe('ReceiptParserService', () => {
  SUMME €                    25,02
  Mastercard                    25,02`;
 
-    const body = { receipts: [{ merchant_name: 'EDEKA', total: 25.02, date: null, time: null, ocr_text: edekaOcr }] };
+    const body = {
+      receipts: [
+        { merchant_name: 'EDEKA', total: 25.02, date: null, time: null, ocr_text: edekaOcr },
+      ],
+    };
 
     it('should detect EDEKA', () => {
       expect(service.parse(body).merchant).toBe('EDEKA');
@@ -366,7 +400,7 @@ describe('ReceiptParserService', () => {
 
     it('should handle weight info for Chiquita Bananen', () => {
       const r = service.parse(body);
-      const bananen = r.items.find(i => /bananen/i.test(i.name));
+      const bananen = r.items.find((i) => /bananen/i.test(i.name));
       expect(bananen).toBeDefined();
       expect(bananen!.price).toBe(1.59);
       expect(bananen!.info).toContain('0,590 kg');
@@ -374,7 +408,7 @@ describe('ReceiptParserService', () => {
 
     it('should handle multi-buy "2,99 € x 2" for Herz.Van.scho', () => {
       const r = service.parse(body);
-      const herz = r.items.find(i => /herz\.van/i.test(i.name));
+      const herz = r.items.find((i) => /herz\.van/i.test(i.name));
       expect(herz).toBeDefined();
       expect(herz!.price).toBe(5.98);
       expect(herz!.info).toContain('2');
@@ -386,13 +420,13 @@ describe('ReceiptParserService', () => {
 
   describe('Generic reader', () => {
     it('should extract total from "Zu zahlen" keyword', () => {
-      const body = { receipts: [{ total: 15.50, ocr_text: 'Store\nItem  5,00\nZu zahlen  15,50' }] };
-      expect(service.parse(body).total).toBe(15.50);
+      const body = { receipts: [{ total: 15.5, ocr_text: 'Store\nItem  5,00\nZu zahlen  15,50' }] };
+      expect(service.parse(body).total).toBe(15.5);
     });
 
     it('should check next line for amount when keyword line has no amount', () => {
-      const body = { receipts: [{ total: 50.00, ocr_text: 'Store\nSUMME  EUR\n  50,00' }] };
-      expect(service.parse(body).total).toBe(50.00);
+      const body = { receipts: [{ total: 50.0, ocr_text: 'Store\nSUMME  EUR\n  50,00' }] };
+      expect(service.parse(body).total).toBe(50.0);
     });
 
     it('should fall back to API total when no keyword found', () => {
@@ -401,11 +435,22 @@ describe('ReceiptParserService', () => {
     });
 
     it('should use API data as fallback when no ocr_text', () => {
-      const body = { receipts: [{
-        merchant_name: 'Fallback Store', merchant_address: 'Main St 1, 80337 München',
-        total: 10.00, date: '2026-01-01', time: '14:30', ocr_text: '',
-        items: [{ description: 'Apple', amount: 3.00 }, { description: 'Banana', amount: 7.00 }]
-      }] };
+      const body = {
+        receipts: [
+          {
+            merchant_name: 'Fallback Store',
+            merchant_address: 'Main St 1, 80337 München',
+            total: 10.0,
+            date: '2026-01-01',
+            time: '14:30',
+            ocr_text: '',
+            items: [
+              { description: 'Apple', amount: 3.0 },
+              { description: 'Banana', amount: 7.0 },
+            ],
+          },
+        ],
+      };
       const r = service.parse(body);
       expect(r.merchant).toBe('Fallback Store');
       expect(r.street).toContain('Main St');
@@ -415,7 +460,14 @@ describe('ReceiptParserService', () => {
     });
 
     it('should extract merchant from first meaningful OCR line', () => {
-      const body = { receipts: [{ total: 5.00, ocr_text: 'My Store\nMain Str. 1\n81545 München\nItem  5,00 A\nSumme  5,00' }] };
+      const body = {
+        receipts: [
+          {
+            total: 5.0,
+            ocr_text: 'My Store\nMain Str. 1\n81545 München\nItem  5,00 A\nSumme  5,00',
+          },
+        ],
+      };
       const r = service.parse(body);
       expect(r.merchant).toBe('My Store');
       expect(r.street).toContain('Main Str');
@@ -423,12 +475,19 @@ describe('ReceiptParserService', () => {
     });
 
     it('should extract items with detail lines', () => {
-      const body = { receipts: [{ total: 5.00, ocr_text: `Store
+      const body = {
+        receipts: [
+          {
+            total: 5.0,
+            ocr_text: `Store
                      EUR
 Product A              3,00 B
   0,500 kg x 6,00
 Product B              2,00 B
-Summe  5,00` }] };
+Summe  5,00`,
+          },
+        ],
+      };
       const r = service.parse(body);
       expect(r.items.length).toBe(2);
       expect(r.items[0].name).toBe('Product A');
@@ -495,24 +554,34 @@ Summe  5,00` }] };
   describe('formatComment', () => {
     it('should produce header + separator + items', () => {
       const parsed: ParsedReceipt = {
-        merchant: 'TestStore', street: 'Main St 1', place: '80337 München',
-        total: 10.00, date: null, time: null,
+        merchant: 'TestStore',
+        street: 'Main St 1',
+        place: '80337 München',
+        total: 10.0,
+        date: null,
+        time: null,
         items: [
-          { name: 'Apple', price: 3.50, info: '' },
-          { name: 'Milk', price: 1.99, info: '2 × 0,99' }
+          { name: 'Apple', price: 3.5, info: '' },
+          { name: 'Milk', price: 1.99, info: '2 × 0,99' },
         ],
-        comment: ''
+        comment: '',
       };
       const comment = service.formatComment(parsed);
-      expect(comment).toBe('TestStore\nMain St 1\n80337 München\n---\nApple  3,50\nMilk  1,99\n  2 × 0,99');
+      expect(comment).toBe(
+        'TestStore\nMain St 1\n80337 München\n---\nApple  3,50\nMilk  1,99\n  2 × 0,99',
+      );
     });
 
     it('should skip empty fields', () => {
       const parsed: ParsedReceipt = {
-        merchant: 'Store', street: '', place: '',
-        total: null, date: null, time: null,
-        items: [{ name: 'Item', price: 1.00, info: '' }],
-        comment: ''
+        merchant: 'Store',
+        street: '',
+        place: '',
+        total: null,
+        date: null,
+        time: null,
+        items: [{ name: 'Item', price: 1.0, info: '' }],
+        comment: '',
       };
       const comment = service.formatComment(parsed);
       expect(comment).toBe('Store\n---\nItem  1,00');

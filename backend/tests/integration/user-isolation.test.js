@@ -22,8 +22,7 @@ beforeAll(async () => {
 });
 
 function authedAs(user) {
-  return (method, path) =>
-    request(app)[method](path).set('Authorization', `Bearer ${user.token}`);
+  return (method, path) => request(app)[method](path).set('Authorization', `Bearer ${user.token}`);
 }
 
 const skipIf = (cond, name, fn) => (cond ? it.skip : it)(name, fn);
@@ -40,16 +39,20 @@ describe('User data isolation', () => {
 
   describe('Write data for each user', () => {
     skipIf(!dbAvailable, 'writes info for User A', async () => {
-      const res = await authedAs(userA)('post', '/api/data/write/info')
-        .send({ username: 'Alice', favoriteColor: 'blue' });
+      const res = await authedAs(userA)('post', '/api/data/write/info').send({
+        username: 'Alice',
+        favoriteColor: 'blue',
+      });
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
     });
 
     skipIf(!dbAvailable, 'writes info for User B', async () => {
-      const res = await authedAs(userB)('post', '/api/data/write/info')
-        .send({ username: 'Bob', favoriteColor: 'red' });
+      const res = await authedAs(userB)('post', '/api/data/write/info').send({
+        username: 'Bob',
+        favoriteColor: 'red',
+      });
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -120,8 +123,7 @@ describe('User data isolation', () => {
 
   describe('Writes are isolated', () => {
     skipIf(!dbAvailable, 'User A writing does not affect User B', async () => {
-      await authedAs(userA)('post', '/api/data/write/extra')
-        .send({ secret: 'only-for-alice' });
+      await authedAs(userA)('post', '/api/data/write/extra').send({ secret: 'only-for-alice' });
 
       // User B should not see User A's new field
       const res = await authedAs(userB)('get', '/api/data/read/extra');

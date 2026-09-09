@@ -1,3 +1,3 @@
 import { TaggedAmount } from './tagged-amount';
 
-export interface Property extends TaggedAmount {}
+export type Property = TaggedAmount;

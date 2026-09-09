@@ -21,12 +21,15 @@ describe('PlanComponent', () => {
         PlanComponent,
         TranslateModule.forRoot(),
         HttpClientTestingModule,
-        RouterTestingModule
+        RouterTestingModule,
       ],
       providers: [
         { provide: DatabaseService, useValue: {} },
-        { provide: FIREBASE_OPTIONS, useValue: { projectId: 'test', appId: 'test', apiKey: 'test' } }
-      ]
+        {
+          provide: FIREBASE_OPTIONS,
+          useValue: { projectId: 'test', appId: 'test', apiKey: 'test' },
+        },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(PlanComponent);
@@ -56,7 +59,13 @@ describe('PlanComponent', () => {
       ] as any;
       AppStateService.instance.allTransactions = [
         { account: 'Daily', amount: -80, category: '@Food', date: `${dateStr}-15`, comment: '' },
-        { account: 'Daily', amount: -30, category: '@Transport', date: `${dateStr}-10`, comment: '' },
+        {
+          account: 'Daily',
+          amount: -30,
+          category: '@Transport',
+          date: `${dateStr}-10`,
+          comment: '',
+        },
       ] as any;
 
       PlanComponent.selectedMonthYear = dateStr;
@@ -67,7 +76,7 @@ describe('PlanComponent', () => {
 
       expect(PlanComponent.dataSource.data.length).toBe(2);
 
-      const foodRow = PlanComponent.dataSource.data.find(r => r.tag === '@Food');
+      const foodRow = PlanComponent.dataSource.data.find((r) => r.tag === '@Food');
       expect(foodRow).toBeDefined();
       expect(foodRow!.amount).toBe(200);
       expect(foodRow!.actual).toBe(-80);
@@ -75,9 +84,7 @@ describe('PlanComponent', () => {
     });
 
     it('should have empty dataSource when no budgets match', () => {
-      AppStateService.instance.allBudgets = [
-        { date: '1999-01', tag: '@Food', amount: 200 },
-      ] as any;
+      AppStateService.instance.allBudgets = [{ date: '1999-01', tag: '@Food', amount: 200 }] as any;
 
       PlanComponent.selectedMonthYear = '2024-06';
       fixture = TestBed.createComponent(PlanComponent);

@@ -69,7 +69,10 @@ test.describe('Settings', () => {
     await page.waitForTimeout(500);
 
     // The currency display in settings should now show $
-    const currencyValue = await page.locator('.profile-value').filter({ hasText: '$' }).textContent();
+    const currencyValue = await page
+      .locator('.profile-value')
+      .filter({ hasText: '$' })
+      .textContent();
     expect(currencyValue).toContain('$');
 
     // Close settings
@@ -123,7 +126,7 @@ test.describe('Settings', () => {
     await page.waitForTimeout(2000);
 
     // The date column should contain dates in yyyy-MM-dd format (e.g. 2026-)
-    const bodyText = await page.locator('body').textContent() ?? '';
+    const bodyText = (await page.locator('body').textContent()) ?? '';
     // Current year prefix should appear in the date column
     const yearPrefix = new Date().getFullYear().toString();
     expect(bodyText).toContain(yearPrefix + '-');

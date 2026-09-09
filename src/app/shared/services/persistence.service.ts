@@ -22,10 +22,22 @@ export interface BatchWriteConfig {
   forceWrite?: boolean;
   onSuccess?: () => void;
   onError?: (error: any) => void;
+  /**
+   * Called instead of `onError` when the write was refused because the
+   * server's data changed since our last read (see
+   * docs/adr/0003-api-ui-write-consistency.md) — an agent or another
+   * device wrote in the meantime. This is not a failure to log as an
+   * error: the caller should refresh (e.g. `AppDataService.instance.
+   * loadFromDB()`) and let the user retry, since their in-memory change
+   * may otherwise silently overwrite what was just written elsewhere.
+   * Falls back to `onError` if not provided, so existing callers keep
+   * working without changes.
+   */
+  onConflict?: () => void;
 }
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 /**
  * Unified write service that handles firebase-vs-selfhosted persistence logic.
@@ -33,11 +45,10 @@ export interface BatchWriteConfig {
  * each handling local storage saves, database writes, and frontend logging.
  */
 export class PersistenceService {
-
   constructor(
     private database: DatabaseService,
     private localStorage: LocalService,
-    private frontendLogger: FrontendLoggerService
+    private frontendLogger: FrontendLoggerService,
   ) {}
 
   /**
@@ -62,7 +73,7 @@ export class PersistenceService {
       if (writeResult) {
         writeResult.subscribe({
           next: handleSuccess,
-          error: (error: any) => config.onError(error)
+          error: (error: any) => config.onError(error),
         });
       } else {
         // Fallback for safety (should never happen)
@@ -97,11 +108,17 @@ export class PersistenceService {
 
       if (environment.mode === 'selfhosted') {
         this.database.batchWrite(config.writes, config.forceWrite).subscribe({
-          next: () => handleSuccess(),
-          error: (error: any) => config.onError?.(error)
+          next: (result: any) => {
+            if (result?.conflict) {
+              (config.onConflict ?? config.onError)?.(result);
+              return;
+            }
+            handleSuccess();
+          },
+          error: (error: any) => config.onError?.(error),
         });
       } else {
-        config.writes.forEach(write => {
+        config.writes.forEach((write) => {
           this.database.writeObject(write.tag, write.data);
         });
         handleSuccess();

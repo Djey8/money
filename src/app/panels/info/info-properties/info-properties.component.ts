@@ -10,24 +10,47 @@ import { AppNumberPipe } from 'src/app/shared/pipes/app-number.pipe';
 import { TrapFocusDirective } from 'src/app/shared/directives/trap-focus.directive';
 
 // Deferred imports — resolved after module init to break circular chains
-let AppComponent: any; setTimeout(() => import('src/app/app.component').then(m => AppComponent = m.AppComponent));
-let IncomeComponent: any; setTimeout(() => import('../../../main/cashflow/income/income.component').then(m => IncomeComponent = m.IncomeComponent));
-let InfoComponent: any; setTimeout(() => import('../info.component').then(m => InfoComponent = m.InfoComponent));
-let ProfileComponent: any; setTimeout(() => import('src/app/panels/profile/profile.component').then(m => ProfileComponent = m.ProfileComponent));
-let MenuComponent: any; setTimeout(() => import('src/app/panels/menu/menu.component').then(m => MenuComponent = m.MenuComponent));
-let AddComponent: any; setTimeout(() => import('src/app/panels/add/add.component').then(m => AddComponent = m.AddComponent));
-let AddSmileComponent: any; setTimeout(() => import('src/app/panels/add/add-smile/add-smile.component').then(m => AddSmileComponent = m.AddSmileComponent));
+let AppComponent: any;
+setTimeout(() => import('src/app/app.component').then((m) => (AppComponent = m.AppComponent)));
+let IncomeComponent: any;
+setTimeout(() =>
+  import('../../../main/cashflow/income/income.component').then(
+    (m) => (IncomeComponent = m.IncomeComponent),
+  ),
+);
+let InfoComponent: any;
+setTimeout(() => import('../info.component').then((m) => (InfoComponent = m.InfoComponent)));
+let ProfileComponent: any;
+setTimeout(() =>
+  import('src/app/panels/profile/profile.component').then(
+    (m) => (ProfileComponent = m.ProfileComponent),
+  ),
+);
+let MenuComponent: any;
+setTimeout(() =>
+  import('src/app/panels/menu/menu.component').then((m) => (MenuComponent = m.MenuComponent)),
+);
+let AddComponent: any;
+setTimeout(() =>
+  import('src/app/panels/add/add.component').then((m) => (AddComponent = m.AddComponent)),
+);
+let AddSmileComponent: any;
+setTimeout(() =>
+  import('src/app/panels/add/add-smile/add-smile.component').then(
+    (m) => (AddSmileComponent = m.AddSmileComponent),
+  ),
+);
 @Component({
   selector: 'app-info-properties',
   standalone: true,
   imports: [TrapFocusDirective, CommonModule, FormsModule, TranslateModule, AppNumberPipe],
   templateUrl: './info-properties.component.html',
-  styleUrls: ['../../../shared/styles/info-panel.css', './info-properties.component.css']
+  styleUrls: ['../../../shared/styles/info-panel.css', './info-properties.component.css'],
 })
 export class InfoPropertiesComponent extends BaseInfoComponent {
   static index = 1;
 
-  static title = "Driver Licence";
+  static title = 'Driver Licence';
   static amount = 0.0;
 
   static setInfoPropertiesComponent(id: number, title: string, amount: number) {
@@ -45,7 +68,10 @@ export class InfoPropertiesComponent extends BaseInfoComponent {
   static isInfo;
   static isError;
   public classReference = InfoPropertiesComponent;
-  constructor(router: Router, private persistence: PersistenceService) {
+  constructor(
+    router: Router,
+    private persistence: PersistenceService,
+  ) {
     super(router);
     this.initStatic(InfoPropertiesComponent);
   }
@@ -69,13 +95,15 @@ export class InfoPropertiesComponent extends BaseInfoComponent {
   }
   updateProperties() {
     //Validation (check if Amount is not empty)
-    if (this.titleTextField == "") {
-      this.showError("Please fill out all required fields.");
+    if (this.titleTextField == '') {
+      this.showError('Please fill out all required fields.');
     } else {
       // update existing transaction (PATCH)
       //AppStateService.instance.allSmileProjects[InfoComponent.index].tit
-      AppStateService.instance.allProperties[InfoPropertiesComponent.index].tag = this.titleTextField;
-      AppStateService.instance.allProperties[InfoPropertiesComponent.index].amount = this.amountTextField;
+      AppStateService.instance.allProperties[InfoPropertiesComponent.index].tag =
+        this.titleTextField;
+      AppStateService.instance.allProperties[InfoPropertiesComponent.index].amount =
+        this.amountTextField;
 
       InfoPropertiesComponent.title = this.titleTextField;
       InfoPropertiesComponent.amount = this.amountTextField;
@@ -94,7 +122,7 @@ export class InfoPropertiesComponent extends BaseInfoComponent {
         },
         onError: (error) => {
           this.showError(error.message || 'Database write failed');
-        }
+        },
       });
     }
   }
@@ -102,7 +130,7 @@ export class InfoPropertiesComponent extends BaseInfoComponent {
   deleteProperties(index: number) {
     // Save title before deleting
     const deletedTitle = AppStateService.instance.allProperties[index].tag;
-    
+
     AppStateService.instance.allProperties.splice(index, 1);
     InfoPropertiesComponent.isInfo = false;
     InfoPropertiesComponent.isError = false;
@@ -119,7 +147,7 @@ export class InfoPropertiesComponent extends BaseInfoComponent {
       },
       onError: (error) => {
         this.showError(error.message || 'Database write failed');
-      }
+      },
     });
   }
 }

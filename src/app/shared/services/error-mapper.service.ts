@@ -2,7 +2,8 @@ import { Injectable } from '@angular/core';
 
 const ERROR_MAP: Record<string, string> = {
   // Firebase Auth errors
-  'auth/email-already-in-use': 'This email is already registered. Please log in or use a different email.',
+  'auth/email-already-in-use':
+    'This email is already registered. Please log in or use a different email.',
   'auth/invalid-email': 'Please enter a valid email address.',
   'auth/user-disabled': 'This account has been disabled. Please contact support.',
   'auth/user-not-found': 'No account found with this email. Please register first.',
@@ -15,8 +16,8 @@ const ERROR_MAP: Record<string, string> = {
   'auth/popup-closed-by-user': 'Sign-in was cancelled. Please try again.',
   'auth/operation-not-allowed': 'This sign-in method is not enabled. Please contact support.',
   // HTTP / selfhosted errors
-  'ECONNREFUSED': 'Cannot connect to server. Please check that the server is running.',
-  'ETIMEDOUT': 'Connection timed out. Please try again.',
+  ECONNREFUSED: 'Cannot connect to server. Please check that the server is running.',
+  ETIMEDOUT: 'Connection timed out. Please try again.',
   '401': 'Invalid credentials. Please check your email and password.',
   '403': 'Access denied. You do not have permission for this action.',
   '404': 'Service not found. Please check your server configuration.',
@@ -25,7 +26,6 @@ const ERROR_MAP: Record<string, string> = {
 
 @Injectable({ providedIn: 'root' })
 export class ErrorMapperService {
-
   /** Maps a raw error to a user-friendly message. */
   toUserMessage(error: any, fallback = 'Something went wrong. Please try again.'): string {
     if (!error) return fallback;

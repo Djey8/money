@@ -17,7 +17,7 @@ const {
   logDatabaseOperation,
   logAuthEvent,
   logUserActivity,
-  logSecurityEvent
+  logSecurityEvent,
 } = require('../../middleware/logging');
 
 // Helpers
@@ -30,7 +30,7 @@ function mockReq(overrides = {}) {
     headers: { 'user-agent': 'jest', 'content-type': 'application/json' },
     requestId: undefined,
     userId: undefined,
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -39,7 +39,10 @@ function mockRes() {
     statusCode: 200,
     send: jest.fn().mockReturnThis(),
     json: jest.fn().mockReturnThis(),
-    status: jest.fn(function (code) { this.statusCode = code; return this; })
+    status: jest.fn(function (code) {
+      this.statusCode = code;
+      return this;
+    }),
   };
   return res;
 }
@@ -82,8 +85,8 @@ describe('requestLoggingMiddleware', () => {
       expect.objectContaining({
         method: 'POST',
         path: '/api/auth/login',
-        requestType: 'incoming_request'
-      })
+        requestType: 'incoming_request',
+      }),
     );
   });
 
@@ -124,7 +127,7 @@ describe('requestLoggingMiddleware', () => {
 
     expect(logger.warn).toHaveBeenCalledWith(
       'Client error response',
-      expect.objectContaining({ statusCode: 404 })
+      expect.objectContaining({ statusCode: 404 }),
     );
   });
 
@@ -139,7 +142,7 @@ describe('requestLoggingMiddleware', () => {
 
     expect(logger.error).toHaveBeenCalledWith(
       'Server error response',
-      expect.objectContaining({ statusCode: 500 })
+      expect.objectContaining({ statusCode: 500 }),
     );
   });
 });
@@ -157,8 +160,8 @@ describe('errorLoggingMiddleware', () => {
       'Unhandled error',
       expect.objectContaining({
         requestId: 'req-1',
-        errorType: 'unhandled_exception'
-      })
+        errorType: 'unhandled_exception',
+      }),
     );
     expect(res.status).toHaveBeenCalledWith(500);
   });
@@ -185,8 +188,8 @@ describe('logDatabaseOperation', () => {
       expect.objectContaining({
         operation: 'write',
         userId: 'u1',
-        path: '/data/info'
-      })
+        path: '/data/info',
+      }),
     );
   });
 });
@@ -197,7 +200,7 @@ describe('logAuthEvent', () => {
 
     expect(logger.info).toHaveBeenCalledWith(
       'Authentication event',
-      expect.objectContaining({ event: 'login', success: true })
+      expect.objectContaining({ event: 'login', success: true }),
     );
   });
 
@@ -206,7 +209,7 @@ describe('logAuthEvent', () => {
 
     expect(logger.warn).toHaveBeenCalledWith(
       'Authentication failure',
-      expect.objectContaining({ event: 'login', success: false })
+      expect.objectContaining({ event: 'login', success: false }),
     );
   });
 });
@@ -220,8 +223,8 @@ describe('logUserActivity', () => {
       expect.objectContaining({
         userId: 'u1',
         action: 'created_budget',
-        amount: 500
-      })
+        amount: 500,
+      }),
     );
   });
 });
@@ -232,7 +235,7 @@ describe('logSecurityEvent', () => {
 
     expect(logger.error).toHaveBeenCalledWith(
       'Security event',
-      expect.objectContaining({ event: 'brute_force_detected', severity: 'high' })
+      expect.objectContaining({ event: 'brute_force_detected', severity: 'high' }),
     );
   });
 
@@ -241,7 +244,7 @@ describe('logSecurityEvent', () => {
 
     expect(logger.warn).toHaveBeenCalledWith(
       'Security event',
-      expect.objectContaining({ event: 'suspicious_login', severity: 'medium' })
+      expect.objectContaining({ event: 'suspicious_login', severity: 'medium' }),
     );
   });
 });

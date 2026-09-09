@@ -5,7 +5,6 @@ import { QuarterlyFrequency } from './quarterly-frequency';
 import { YearlyFrequency } from './yearly-frequency';
 
 describe('Frequency Strategies', () => {
-
   describe('WeeklyFrequency', () => {
     let strategy: WeeklyFrequency;
 
@@ -15,20 +14,14 @@ describe('Frequency Strategies', () => {
 
     it('should generate weekly occurrences', () => {
       const dates = strategy.calculateOccurrences('2026-04-05', new Date('2026-05-05'));
-      expect(dates).toEqual([
-        '2026-04-05',
-        '2026-04-12',
-        '2026-04-19',
-        '2026-04-26',
-        '2026-05-03'
-      ]);
+      expect(dates).toEqual(['2026-04-05', '2026-04-12', '2026-04-19', '2026-04-26', '2026-05-03']);
     });
 
     it('should preserve day-of-week', () => {
       // April 5, 2026 is a Sunday
       const dates = strategy.calculateOccurrences('2026-04-05', new Date('2026-05-05'));
-      
-      dates.forEach(dateStr => {
+
+      dates.forEach((dateStr) => {
         const date = new Date(dateStr);
         expect(date.getDay()).toBe(0); // Sunday
       });
@@ -54,13 +47,7 @@ describe('Frequency Strategies', () => {
     it('should handle leap year week', () => {
       // Feb 29, 2024 is a leap day (Thursday)
       const dates = strategy.calculateOccurrences('2024-02-29', new Date('2024-03-28'));
-      expect(dates).toEqual([
-        '2024-02-29',
-        '2024-03-07',
-        '2024-03-14',
-        '2024-03-21',
-        '2024-03-28'
-      ]);
+      expect(dates).toEqual(['2024-02-29', '2024-03-07', '2024-03-14', '2024-03-21', '2024-03-28']);
     });
   });
 
@@ -73,13 +60,7 @@ describe('Frequency Strategies', () => {
 
     it('should generate biweekly occurrences (every 14 days)', () => {
       const dates = strategy.calculateOccurrences('2026-04-05', new Date('2026-06-05'));
-      expect(dates).toEqual([
-        '2026-04-05',
-        '2026-04-19',
-        '2026-05-03',
-        '2026-05-17',
-        '2026-05-31'
-      ]);
+      expect(dates).toEqual(['2026-04-05', '2026-04-19', '2026-05-03', '2026-05-17', '2026-05-31']);
     });
 
     it('should handle year boundary', () => {
@@ -104,7 +85,7 @@ describe('Frequency Strategies', () => {
 
     it('should exactly be 14 days apart', () => {
       const dates = strategy.calculateOccurrences('2026-01-01', new Date('2026-03-01'));
-      
+
       for (let i = 1; i < dates.length; i++) {
         const prev = new Date(dates[i - 1]);
         const curr = new Date(dates[i]);
@@ -124,13 +105,7 @@ describe('Frequency Strategies', () => {
 
     it('should generate monthly occurrences', () => {
       const dates = strategy.calculateOccurrences('2026-01-15', new Date('2026-05-15'));
-      expect(dates).toEqual([
-        '2026-01-15',
-        '2026-02-15',
-        '2026-03-15',
-        '2026-04-15',
-        '2026-05-15'
-      ]);
+      expect(dates).toEqual(['2026-01-15', '2026-02-15', '2026-03-15', '2026-04-15', '2026-05-15']);
     });
 
     it('should handle month-end clamping (Jan 31 → Feb 28)', () => {
@@ -159,12 +134,7 @@ describe('Frequency Strategies', () => {
 
     it('should handle year boundary', () => {
       const dates = strategy.calculateOccurrences('2025-11-15', new Date('2026-02-15'));
-      expect(dates).toEqual([
-        '2025-11-15',
-        '2025-12-15',
-        '2026-01-15',
-        '2026-02-15'
-      ]);
+      expect(dates).toEqual(['2025-11-15', '2025-12-15', '2026-01-15', '2026-02-15']);
     });
 
     it('should handle single occurrence', () => {
@@ -189,12 +159,7 @@ describe('Frequency Strategies', () => {
 
     it('should generate quarterly occurrences (every 3 months)', () => {
       const dates = strategy.calculateOccurrences('2026-01-15', new Date('2026-12-31'));
-      expect(dates).toEqual([
-        '2026-01-15',
-        '2026-04-15',
-        '2026-07-15',
-        '2026-10-15'
-      ]);
+      expect(dates).toEqual(['2026-01-15', '2026-04-15', '2026-07-15', '2026-10-15']);
     });
 
     it('should handle month-end clamping', () => {
@@ -215,12 +180,7 @@ describe('Frequency Strategies', () => {
 
     it('should handle year boundary', () => {
       const dates = strategy.calculateOccurrences('2025-10-15', new Date('2026-07-15'));
-      expect(dates).toEqual([
-        '2025-10-15',
-        '2026-01-15',
-        '2026-04-15',
-        '2026-07-15'
-      ]);
+      expect(dates).toEqual(['2025-10-15', '2026-01-15', '2026-04-15', '2026-07-15']);
     });
 
     it('should handle single occurrence', () => {
@@ -243,13 +203,7 @@ describe('Frequency Strategies', () => {
 
     it('should generate yearly occurrences', () => {
       const dates = strategy.calculateOccurrences('2023-06-15', new Date('2027-06-15'));
-      expect(dates).toEqual([
-        '2023-06-15',
-        '2024-06-15',
-        '2025-06-15',
-        '2026-06-15',
-        '2027-06-15'
-      ]);
+      expect(dates).toEqual(['2023-06-15', '2024-06-15', '2025-06-15', '2026-06-15', '2027-06-15']);
     });
 
     it('should handle Feb 29 leap year edge case', () => {
@@ -259,19 +213,13 @@ describe('Frequency Strategies', () => {
         '2025-02-28', // Non-leap year (clamped)
         '2026-02-28', // Non-leap year (clamped)
         '2027-02-28', // Non-leap year (clamped)
-        '2028-02-29'  // Leap year
+        '2028-02-29', // Leap year
       ]);
     });
 
     it('should handle year boundary', () => {
       const dates = strategy.calculateOccurrences('2020-12-31', new Date('2024-12-31'));
-      expect(dates).toEqual([
-        '2020-12-31',
-        '2021-12-31',
-        '2022-12-31',
-        '2023-12-31',
-        '2024-12-31'
-      ]);
+      expect(dates).toEqual(['2020-12-31', '2021-12-31', '2022-12-31', '2023-12-31', '2024-12-31']);
     });
 
     it('should handle single occurrence', () => {
@@ -291,8 +239,8 @@ describe('Frequency Strategies', () => {
 
     it('should preserve month and day across years', () => {
       const dates = strategy.calculateOccurrences('2023-03-25', new Date('2027-03-25'));
-      
-      dates.forEach(dateStr => {
+
+      dates.forEach((dateStr) => {
         const date = new Date(dateStr);
         expect(date.getMonth()).toBe(2); // March (0-indexed)
         expect(date.getDate()).toBe(25);
@@ -301,17 +249,16 @@ describe('Frequency Strategies', () => {
   });
 
   describe('Edge Cases Across All Strategies', () => {
-    
     it('should handle empty range (start > boundary)', () => {
       const strategies = [
         new WeeklyFrequency(),
         new BiweeklyFrequency(),
         new MonthlyFrequency(),
         new QuarterlyFrequency(),
-        new YearlyFrequency()
+        new YearlyFrequency(),
       ];
 
-      strategies.forEach(strategy => {
+      strategies.forEach((strategy) => {
         const dates = strategy.calculateOccurrences('2027-01-01', new Date('2026-12-31'));
         expect(dates).toEqual([]);
       });
@@ -323,10 +270,10 @@ describe('Frequency Strategies', () => {
         new BiweeklyFrequency(),
         new MonthlyFrequency(),
         new QuarterlyFrequency(),
-        new YearlyFrequency()
+        new YearlyFrequency(),
       ];
 
-      strategies.forEach(strategy => {
+      strategies.forEach((strategy) => {
         const dates = strategy.calculateOccurrences('2026-04-05', new Date('2026-04-05'));
         expect(dates.length).toBe(1);
         expect(dates[0]).toBe('2026-04-05');

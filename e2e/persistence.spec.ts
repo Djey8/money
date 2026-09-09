@@ -92,7 +92,9 @@ test.describe('Data Persistence', () => {
     expect(tableText).toContain(uniqueCategory.replace('@', ''));
   });
 
-  test('tab-back (visibilitychange) should not trigger full reload when data unchanged', async ({ page }) => {
+  test('tab-back (visibilitychange) should not trigger full reload when data unchanged', async ({
+    page,
+  }) => {
     // Login
     await page.goto('/#/authentication');
     await page.locator('#EmailL').fill(user.email);
@@ -104,7 +106,7 @@ test.describe('Data Persistence', () => {
 
     // Instrument the network to count API calls
     const batchRequests: string[] = [];
-    page.on('request', req => {
+    page.on('request', (req) => {
       if (req.url().includes('/api/data/read/batch')) {
         batchRequests.push(req.url());
       }

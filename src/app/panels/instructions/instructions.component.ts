@@ -23,7 +23,7 @@ import { TourService } from 'src/app/shared/services/tour.service';
   standalone: true,
   imports: [TrapFocusDirective, CommonModule, TranslateModule],
   templateUrl: './instructions.component.html',
-  styleUrls: ['./instructions.component.css']
+  styleUrls: ['./instructions.component.css'],
 })
 export class InstructionsComponent {
   static zIndex;
@@ -38,7 +38,14 @@ export class InstructionsComponent {
    * @param database - The database service.
    * @param afAuth - The AngularFireAuth service.
    */
-  constructor(private router: Router, private localStorage: LocalService, private database: DatabaseService, private afAuth: AngularFireAuth, private onboardingService: OnboardingService, private tourService: TourService) {
+  constructor(
+    private router: Router,
+    private localStorage: LocalService,
+    private database: DatabaseService,
+    private afAuth: AngularFireAuth,
+    private onboardingService: OnboardingService,
+    private tourService: TourService,
+  ) {
     InstructionsComponent.isInfo = false;
     InstructionsComponent.zIndex = 0;
   }

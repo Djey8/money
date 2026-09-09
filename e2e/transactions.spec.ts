@@ -104,7 +104,8 @@ test.describe('Core Transaction Flow', () => {
     await page.waitForTimeout(2000);
 
     // Balance should show a positive number
-    const balanceText = await page.locator('.total-amount [class*="grid-value"]').textContent() ?? '';
+    const balanceText =
+      (await page.locator('.total-amount [class*="grid-value"]').textContent()) ?? '';
     // Should not be "0" (we just added 5000 income)
     expect(balanceText.trim()).not.toBe('0');
   });

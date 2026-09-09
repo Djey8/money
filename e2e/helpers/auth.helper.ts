@@ -11,7 +11,9 @@ export async function dismissOnboarding(page: Page) {
   // On slow CI this can take several seconds, so use a generous timeout.
   if (await skipBtn.isVisible({ timeout: 10_000 }).catch(() => false)) {
     await skipBtn.click();
-    await page.waitForSelector('.onboarding-backdrop', { state: 'hidden', timeout: 3_000 }).catch(() => {});
+    await page
+      .waitForSelector('.onboarding-backdrop', { state: 'hidden', timeout: 3_000 })
+      .catch(() => {});
   }
 }
 
@@ -19,7 +21,10 @@ export async function dismissOnboarding(page: Page) {
  * Register a new user and wait for the redirect to the root page.
  * Returns the credentials used.
  */
-export async function registerAndRedirect(page: Page, user: { username: string; email: string; password: string }) {
+export async function registerAndRedirect(
+  page: Page,
+  user: { username: string; email: string; password: string },
+) {
   const reg = new RegistrationPage(page);
   await reg.goto();
   await reg.switchToRegister();
@@ -85,7 +90,7 @@ export async function clickMenuButton(page: Page, text: string) {
  */
 export async function deleteAccount(page: Page) {
   const cookies = await page.context().cookies();
-  const accessCookie = cookies.find(c => c.name === 'access_token');
+  const accessCookie = cookies.find((c) => c.name === 'access_token');
   const token = accessCookie?.value;
   if (!token) return; // not logged in — nothing to clean up
 

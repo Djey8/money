@@ -7,7 +7,11 @@ import { Subscription } from 'rxjs';
 import { AppStateService } from '../../shared/services/app-state.service';
 import { AppNumberPipe } from '../../shared/pipes/app-number.pipe';
 import {
-  StatementPeriodType, FinancialStatement, computeStatement, CategoryAgg, KeyRatios,
+  StatementPeriodType,
+  FinancialStatement,
+  computeStatement,
+  CategoryAgg,
+  KeyRatios,
 } from './statement-calculations';
 
 interface PeriodOption {
@@ -37,11 +41,11 @@ interface RatioMeta {
 })
 export class FinancialStatementComponent implements OnInit, OnDestroy {
   periodTypes: PeriodOption[] = [
-    { type: 'year',     labelKey: 'Statement.periodYear' },
+    { type: 'year', labelKey: 'Statement.periodYear' },
     { type: 'halfyear', labelKey: 'Statement.periodHalfYear' },
-    { type: 'quarter',  labelKey: 'Statement.periodQuarter' },
-    { type: 'month',    labelKey: 'Statement.periodMonth' },
-    { type: 'week',     labelKey: 'Statement.periodWeek' },
+    { type: 'quarter', labelKey: 'Statement.periodQuarter' },
+    { type: 'month', labelKey: 'Statement.periodMonth' },
+    { type: 'week', labelKey: 'Statement.periodWeek' },
   ];
 
   selectedType: StatementPeriodType = 'year';
@@ -49,17 +53,64 @@ export class FinancialStatementComponent implements OnInit, OnDestroy {
   statement!: FinancialStatement;
 
   ratioMeta: RatioMeta[] = [
-    { key: 'savingsRate',      labelKey: 'Statement.savingsRate',      unit: '%', goodThreshold: 10,  formulaKey: 'Statement.savingsRateFormula',      healthyKey: 'Statement.savingsRateHealthy' },
-    { key: 'fixedCostRatio',   labelKey: 'Statement.fixedCostRatio',   unit: '%', goodThreshold: 60,  lowerIsBetter: true, formulaKey: 'Statement.fixedCostRatioFormula', healthyKey: 'Statement.fixedCostRatioHealthy' },
-    { key: 'netMargin',        labelKey: 'Statement.netMargin',        unit: '%', goodThreshold: 0,   formulaKey: 'Statement.netMarginFormula',        healthyKey: 'Statement.netMarginHealthy' },
-    { key: 'debtRatio',        labelKey: 'Statement.debtRatio',        unit: '',  goodThreshold: 1,   lowerIsBetter: true, formulaKey: 'Statement.debtRatioFormula',      healthyKey: 'Statement.debtRatioHealthy' },
-    { key: 'equityRatio',      labelKey: 'Statement.equityRatio',      unit: '%', goodThreshold: 30,  formulaKey: 'Statement.equityRatioFormula',      healthyKey: 'Statement.equityRatioHealthy' },
-    { key: 'interestCoverage', labelKey: 'Statement.interestCoverage', unit: '',  goodThreshold: 1,   formulaKey: 'Statement.interestCoverageFormula', healthyKey: 'Statement.interestCoverageHealthy' },
+    {
+      key: 'savingsRate',
+      labelKey: 'Statement.savingsRate',
+      unit: '%',
+      goodThreshold: 10,
+      formulaKey: 'Statement.savingsRateFormula',
+      healthyKey: 'Statement.savingsRateHealthy',
+    },
+    {
+      key: 'fixedCostRatio',
+      labelKey: 'Statement.fixedCostRatio',
+      unit: '%',
+      goodThreshold: 60,
+      lowerIsBetter: true,
+      formulaKey: 'Statement.fixedCostRatioFormula',
+      healthyKey: 'Statement.fixedCostRatioHealthy',
+    },
+    {
+      key: 'netMargin',
+      labelKey: 'Statement.netMargin',
+      unit: '%',
+      goodThreshold: 0,
+      formulaKey: 'Statement.netMarginFormula',
+      healthyKey: 'Statement.netMarginHealthy',
+    },
+    {
+      key: 'debtRatio',
+      labelKey: 'Statement.debtRatio',
+      unit: '',
+      goodThreshold: 1,
+      lowerIsBetter: true,
+      formulaKey: 'Statement.debtRatioFormula',
+      healthyKey: 'Statement.debtRatioHealthy',
+    },
+    {
+      key: 'equityRatio',
+      labelKey: 'Statement.equityRatio',
+      unit: '%',
+      goodThreshold: 30,
+      formulaKey: 'Statement.equityRatioFormula',
+      healthyKey: 'Statement.equityRatioHealthy',
+    },
+    {
+      key: 'interestCoverage',
+      labelKey: 'Statement.interestCoverage',
+      unit: '',
+      goodThreshold: 1,
+      formulaKey: 'Statement.interestCoverageFormula',
+      healthyKey: 'Statement.interestCoverageHealthy',
+    },
   ];
 
   private langSub?: Subscription;
 
-  constructor(private translate: TranslateService, private cdr: ChangeDetectorRef) {}
+  constructor(
+    private translate: TranslateService,
+    private cdr: ChangeDetectorRef,
+  ) {}
 
   ngOnInit(): void {
     this.recompute();
@@ -81,8 +132,16 @@ export class FinancialStatementComponent implements OnInit, OnDestroy {
   get dateRangeLabel(): string {
     if (!this.statement) return '';
     const fmt = this.translate.currentLang || 'en';
-    const s = this.statement.period.startDate.toLocaleDateString(fmt, { day: '2-digit', month: 'short', year: 'numeric' });
-    const e = this.statement.period.endDate.toLocaleDateString(fmt, { day: '2-digit', month: 'short', year: 'numeric' });
+    const s = this.statement.period.startDate.toLocaleDateString(fmt, {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    });
+    const e = this.statement.period.endDate.toLocaleDateString(fmt, {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    });
     return `${s} — ${e}`;
   }
 

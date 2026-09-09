@@ -24,7 +24,7 @@ beforeAll(async () => {
 
   // Extract token from Set-Cookie header
   const cookies = res.headers['set-cookie'] || [];
-  const accessCookie = cookies.find(c => c.startsWith('access_token='));
+  const accessCookie = cookies.find((c) => c.startsWith('access_token='));
   testToken = accessCookie ? accessCookie.split(';')[0].split('=')[1] : null;
   testUserId = res.body.userId;
 });
@@ -51,8 +51,8 @@ describe('POST /api/auth/login', () => {
     expect(res.body).toHaveProperty('email', testEmail);
     // Token is in Set-Cookie, not in response body
     const cookies = res.headers['set-cookie'] || [];
-    expect(cookies.some(c => c.startsWith('access_token='))).toBe(true);
-    expect(cookies.some(c => c.startsWith('refresh_token='))).toBe(true);
+    expect(cookies.some((c) => c.startsWith('access_token='))).toBe(true);
+    expect(cookies.some((c) => c.startsWith('refresh_token='))).toBe(true);
   });
 
   skipIf(!dbAvailable, 'access token cookie contains correct userId and email', async () => {
@@ -63,7 +63,7 @@ describe('POST /api/auth/login', () => {
     expect(res.status).toBe(200);
 
     const cookies = res.headers['set-cookie'] || [];
-    const accessCookie = cookies.find(c => c.startsWith('access_token='));
+    const accessCookie = cookies.find((c) => c.startsWith('access_token='));
     const token = accessCookie.split(';')[0].split('=')[1];
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     expect(decoded.userId).toBe(testUserId);
@@ -89,18 +89,14 @@ describe('POST /api/auth/login', () => {
   });
 
   it('returns 400 when email is missing', async () => {
-    const res = await request(app)
-      .post('/api/auth/login')
-      .send({ password: 'SomePass123!' });
+    const res = await request(app).post('/api/auth/login').send({ password: 'SomePass123!' });
 
     expect(res.status).toBe(400);
     expect(res.body).toHaveProperty('error', 'Email and password are required');
   });
 
   it('returns 400 when password is missing', async () => {
-    const res = await request(app)
-      .post('/api/auth/login')
-      .send({ email: 'test@test.local' });
+    const res = await request(app).post('/api/auth/login').send({ email: 'test@test.local' });
 
     expect(res.status).toBe(400);
     expect(res.body).toHaveProperty('error', 'Email and password are required');
@@ -138,13 +134,11 @@ describe('GET /api/auth/verify', () => {
   });
 
   it('returns 401 for an expired token', async () => {
-    const expired = jwt.sign(
-      { userId: 'u1', email: 'e@t.com' },
-      process.env.JWT_SECRET,
-      { expiresIn: '0s' }
-    );
+    const expired = jwt.sign({ userId: 'u1', email: 'e@t.com' }, process.env.JWT_SECRET, {
+      expiresIn: '0s',
+    });
     // Small delay to ensure expiry
-    await new Promise(r => setTimeout(r, 50));
+    await new Promise((r) => setTimeout(r, 50));
 
     const res = await request(app)
       .get('/api/auth/verify')
@@ -208,7 +202,7 @@ describe('PUT /api/auth/update-email', () => {
       .send({ email, password: 'UpdatePass123!' });
 
     const cookies = reg.headers['set-cookie'] || [];
-    const accessCookie = cookies.find(c => c.startsWith('access_token='));
+    const accessCookie = cookies.find((c) => c.startsWith('access_token='));
     const regToken = accessCookie.split(';')[0].split('=')[1];
 
     const newEmail = `updated_${Date.now()}@test.local`;
@@ -223,7 +217,7 @@ describe('PUT /api/auth/update-email', () => {
 
     // New access token cookie should contain updated email
     const resCookies = res.headers['set-cookie'] || [];
-    const newAccessCookie = resCookies.find(c => c.startsWith('access_token='));
+    const newAccessCookie = resCookies.find((c) => c.startsWith('access_token='));
     expect(newAccessCookie).toBeDefined();
     const newToken = newAccessCookie.split(';')[0].split('=')[1];
     const decoded = jwt.verify(newToken, process.env.JWT_SECRET);

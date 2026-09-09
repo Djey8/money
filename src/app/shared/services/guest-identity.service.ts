@@ -28,10 +28,11 @@ const ANONYMOUS_PREF_KEY = 'community_anonymous_preference';
  * guests just get a free-text name field that falls back to "Anonymous".
  */
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class GuestIdentityService {
-  private mode: 'firebase' | 'selfhosted' = (environment.mode as 'firebase' | 'selfhosted') || 'firebase';
+  private mode: 'firebase' | 'selfhosted' =
+    (environment.mode as 'firebase' | 'selfhosted') || 'firebase';
   private resolvedAuthorId: string | null = null;
   private resolvedIsAdmin: boolean | null = null;
   private resolvedIsGuest: boolean | null = null;
@@ -41,7 +42,7 @@ export class GuestIdentityService {
     private http: HttpClient,
     private afAuth: AngularFireAuth,
     private database: DatabaseService,
-    private translate: TranslateService
+    private translate: TranslateService,
   ) {}
 
   getDisplayName(): string {
@@ -85,7 +86,11 @@ export class GuestIdentityService {
       this.resolvedIsGuest = user!.isAnonymous;
     } else {
       const response: any = await firstValueFrom(
-        this.http.post(`${environment.selfhosted.apiUrl}/auth/guest`, {}, { withCredentials: true })
+        this.http.post(
+          `${environment.selfhosted.apiUrl}/auth/guest`,
+          {},
+          { withCredentials: true },
+        ),
       );
       this.resolvedAuthorId = response.userId;
       this.resolvedIsGuest = response.role === 'guest';
@@ -125,7 +130,7 @@ export class GuestIdentityService {
     try {
       const snapshot: any = await this.database.getData('info/username');
       const value = snapshot?.val ? snapshot.val() : null;
-      this.resolvedRealUsername = (typeof value === 'string' && value.trim()) ? value.trim() : null;
+      this.resolvedRealUsername = typeof value === 'string' && value.trim() ? value.trim() : null;
     } catch {
       this.resolvedRealUsername = null;
     }
@@ -186,7 +191,7 @@ export class GuestIdentityService {
     } else {
       try {
         const response: any = await firstValueFrom(
-          this.http.get(`${environment.selfhosted.apiUrl}/auth/verify`, { withCredentials: true })
+          this.http.get(`${environment.selfhosted.apiUrl}/auth/verify`, { withCredentials: true }),
         );
         this.resolvedIsAdmin = !!response.isAdmin;
       } catch {

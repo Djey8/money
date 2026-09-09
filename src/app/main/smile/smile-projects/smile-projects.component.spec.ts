@@ -2,7 +2,6 @@ import { SmileProjectsComponent } from './smile-projects.component';
 import { AppStateService } from '../../../shared/services/app-state.service';
 
 describe('SmileProjectsComponent', () => {
-
   beforeEach(() => {
     (AppStateService as any)._instance = undefined;
     SmileProjectsComponent.isSearched = false;
@@ -10,20 +9,24 @@ describe('SmileProjectsComponent', () => {
   });
 
   it('allSmileProjects should delegate getter/setter to AppStateService', () => {
-    AppStateService.instance.allSmileProjects = [{
-      title: 'Vacation',
-      sub: '',
-      phase: 'saving',
-      description: '',
-      buckets: [{ id: 'bucket_1', title: 'Vacation', target: 5000, amount: 1200, notes: '', links: [] }],
-      links: [],
-      actionItems: [],
-      notes: [],
-      createdAt: '',
-      updatedAt: '',
-      targetDate: '',
-      completionDate: ''
-    }];
+    AppStateService.instance.allSmileProjects = [
+      {
+        title: 'Vacation',
+        sub: '',
+        phase: 'saving',
+        description: '',
+        buckets: [
+          { id: 'bucket_1', title: 'Vacation', target: 5000, amount: 1200, notes: '', links: [] },
+        ],
+        links: [],
+        actionItems: [],
+        notes: [],
+        createdAt: '',
+        updatedAt: '',
+        targetDate: '',
+        completionDate: '',
+      },
+    ];
     expect(SmileProjectsComponent.allSmileProjects).toHaveLength(1);
     expect(SmileProjectsComponent.allSmileProjects[0].title).toBe('Vacation');
 
@@ -38,42 +41,48 @@ describe('SmileProjectsComponent', () => {
         sub: '',
         phase: 'saving',
         description: '',
-        buckets: [{ id: 'bucket_1', title: 'Vacation', target: 5000, amount: 1200, notes: '', links: [] }],
+        buckets: [
+          { id: 'bucket_1', title: 'Vacation', target: 5000, amount: 1200, notes: '', links: [] },
+        ],
         links: [],
         actionItems: [],
         notes: [],
         createdAt: '',
         updatedAt: '',
         targetDate: '',
-        completionDate: ''
+        completionDate: '',
       },
       {
         title: 'Car',
         sub: '',
         phase: 'planning',
         description: '',
-        buckets: [{ id: 'bucket_1', title: 'Car', target: 15000, amount: 3000, notes: '', links: [] }],
+        buckets: [
+          { id: 'bucket_1', title: 'Car', target: 15000, amount: 3000, notes: '', links: [] },
+        ],
         links: [],
         actionItems: [],
         notes: [],
         createdAt: '',
         updatedAt: '',
         targetDate: '',
-        completionDate: ''
+        completionDate: '',
       },
       {
         title: 'Laptop',
         sub: '',
         phase: 'planning',
         description: '',
-        buckets: [{ id: 'bucket_1', title: 'Laptop', target: 2000, amount: 500, notes: '', links: [] }],
+        buckets: [
+          { id: 'bucket_1', title: 'Laptop', target: 2000, amount: 500, notes: '', links: [] },
+        ],
         links: [],
         actionItems: [],
         notes: [],
         createdAt: '',
         updatedAt: '',
         targetDate: '',
-        completionDate: ''
+        completionDate: '',
       },
     ];
 
@@ -102,7 +111,7 @@ describe('SmileProjectsComponent', () => {
         createdAt: '',
         updatedAt: '',
         targetDate: '',
-        completionDate: ''
+        completionDate: '',
       },
       {
         title: 'B',
@@ -116,7 +125,7 @@ describe('SmileProjectsComponent', () => {
         createdAt: '',
         updatedAt: '',
         targetDate: '',
-        completionDate: ''
+        completionDate: '',
       },
     ];
 
@@ -135,28 +144,32 @@ describe('SmileProjectsComponent', () => {
         sub: '',
         phase: 'saving',
         description: '',
-        buckets: [{ id: 'bucket_1', title: 'Vacation', target: 5000, amount: 1200, notes: '', links: [] }],
+        buckets: [
+          { id: 'bucket_1', title: 'Vacation', target: 5000, amount: 1200, notes: '', links: [] },
+        ],
         links: [],
         actionItems: [],
         notes: [],
         createdAt: '',
         updatedAt: '',
         targetDate: '',
-        completionDate: ''
+        completionDate: '',
       },
       {
         title: 'Car',
         sub: '',
         phase: 'planning',
         description: '',
-        buckets: [{ id: 'bucket_1', title: 'Car', target: 15000, amount: 3000, notes: '', links: [] }],
+        buckets: [
+          { id: 'bucket_1', title: 'Car', target: 15000, amount: 3000, notes: '', links: [] },
+        ],
         links: [],
         actionItems: [],
         notes: [],
         createdAt: '',
         updatedAt: '',
         targetDate: '',
-        completionDate: ''
+        completionDate: '',
       },
     ];
 

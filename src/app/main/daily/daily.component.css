@@ -1,8 +1,8 @@
-#dailybtn, #statsbtn {
-    border-radius: var(--radius-full);
-    margin-right: 0px;
+#dailybtn,
+#statsbtn {
+  border-radius: var(--radius-full);
+  margin-right: 0px;
 }
-
 
 /* Filter styles now imported from shared/filter-styles.css */
 
@@ -40,16 +40,16 @@
     padding: 0 4px;
     min-height: 40px;
   }
-  
+
   .paginator-compact ::ng-deep .mat-mdc-paginator-page-size-label {
     display: none;
   }
-  
+
   .paginator-compact ::ng-deep .mat-mdc-paginator-range-label {
     margin: 0 4px;
     font-size: 11px;
   }
-  
+
   .paginator-compact ::ng-deep .mdc-button {
     padding: 0;
     min-width: 36px;

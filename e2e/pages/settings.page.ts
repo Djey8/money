@@ -15,6 +15,9 @@ export class SettingsPage {
 
   /** Check if the settings panel is visible. */
   async isVisible(): Promise<boolean> {
-    return this.panel.locator('[id*="settings"], .settings-container, [class*="settings"]').first().isVisible();
+    return this.panel
+      .locator('[id*="settings"], .settings-container, [class*="settings"]')
+      .first()
+      .isVisible();
   }
 }

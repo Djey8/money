@@ -20,7 +20,7 @@ describe('AddBudgetComponent', () => {
 
       AddBudgetComponent.populateCategoryOptions();
 
-      const labels = AddBudgetComponent.categoryOptions.map(o => o.label);
+      const labels = AddBudgetComponent.categoryOptions.map((o) => o.label);
       expect(labels).toContain('Food');
       expect(labels).toContain('Transport');
       expect(labels).not.toContain('Salary');
@@ -31,14 +31,12 @@ describe('AddBudgetComponent', () => {
         { account: 'Daily', amount: -50, category: '@Food', date: '2024-02-01', comment: '' },
         { account: 'Daily', amount: -20, category: '@Transport', date: '2024-02-02', comment: '' },
       ] as any;
-      AppStateService.instance.allBudgets = [
-        { date: '2024-02', tag: '@Food', amount: 100 }
-      ] as any;
+      AppStateService.instance.allBudgets = [{ date: '2024-02', tag: '@Food', amount: 100 }] as any;
       PlanComponent.selectedMonthYear = 'February 2024';
 
       AddBudgetComponent.populateCategoryOptions();
 
-      const labels = AddBudgetComponent.categoryOptions.map(o => o.label);
+      const labels = AddBudgetComponent.categoryOptions.map((o) => o.label);
       expect(labels).not.toContain('Food');
       expect(labels).toContain('Transport');
     });

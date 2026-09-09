@@ -19,7 +19,8 @@ import { AppStateService } from '../../shared/services/app-state.service'; // TO
 // TODO: import your component
 // import { MyComponent } from './my.component';
 
-describe('MyComponent', () => {  // TODO: rename
+describe('MyComponent', () => {
+  // TODO: rename
   let component: any; // TODO: use actual type
   let fixture: ComponentFixture<any>; // TODO: use actual type
   let mockPersistence: jest.Mocked<Partial<PersistenceService>>;
@@ -41,7 +42,10 @@ describe('MyComponent', () => {  // TODO: rename
       providers: [
         { provide: DatabaseService, useValue: {} },
         { provide: PersistenceService, useValue: mockPersistence },
-        { provide: FIREBASE_OPTIONS, useValue: { projectId: 'test', appId: 'test', apiKey: 'test' } },
+        {
+          provide: FIREBASE_OPTIONS,
+          useValue: { projectId: 'test', appId: 'test', apiKey: 'test' },
+        },
         // TODO: add additional providers/mocks
       ],
     }).compileComponents();

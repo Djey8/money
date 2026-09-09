@@ -5,7 +5,7 @@ import { AppStateService } from '../services/app-state.service';
 
 @Pipe({ name: 'appNumber', pure: false, standalone: true })
 export class AppNumberPipe implements PipeTransform {
-  transform(value: any, digitsInfo: string = '1.2-2'): string {
+  transform(value: any, digitsInfo = '1.2-2'): string {
     if (value == null || value === '') return '';
     const num = Number(value);
     const locale = AppStateService.instance.isEuropeanFormat ? 'de-DE' : 'en-US';

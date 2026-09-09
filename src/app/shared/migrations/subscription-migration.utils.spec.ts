@@ -1,13 +1,12 @@
-import { 
-  migrateSubscription, 
-  migrateSubscriptionArray, 
+import {
+  migrateSubscription,
+  migrateSubscriptionArray,
   validateFrequency,
-  getEffectiveValue
+  getEffectiveValue,
 } from './subscription-migration.utils';
 import { Subscription, SubscriptionFrequency } from '../../interfaces/subscription';
 
 describe('Subscription Migration Utils', () => {
-  
   describe('validateFrequency()', () => {
     it('should return valid frequency unchanged', () => {
       expect(validateFrequency('weekly')).toBe('weekly');
@@ -38,11 +37,11 @@ describe('Subscription Migration Utils', () => {
         category: '@Entertainment',
         comment: 'Premium plan',
         frequency: 'monthly',
-        changeHistory: []
+        changeHistory: [],
       };
 
       const result = migrateSubscription(modern);
-      
+
       expect(result.title).toBe('Netflix');
       expect(result.account).toBe('Daily');
       expect(result.amount).toBe(-15.99);
@@ -58,12 +57,12 @@ describe('Subscription Migration Utils', () => {
         startDate: '2023-01-01',
         endDate: '',
         category: '@Music',
-        comment: ''
+        comment: '',
       };
 
       const result = migrateSubscription(legacy);
-      
-      expect(result.frequency).toBe('monthly');  // Default
+
+      expect(result.frequency).toBe('monthly'); // Default
       expect(result.changeHistory).toEqual([]);
       expect(result.title).toBe('Spotify');
     });
@@ -77,7 +76,7 @@ describe('Subscription Migration Utils', () => {
         endDate: '',
         category: '@Fitness',
         comment: '',
-        frequency: 'weekly'
+        frequency: 'weekly',
       };
 
       const result = migrateSubscription(withFrequency);
@@ -93,11 +92,11 @@ describe('Subscription Migration Utils', () => {
         endDate: '',
         category: '@Test',
         comment: '',
-        frequency: 'invalid-frequency'
+        frequency: 'invalid-frequency',
       };
 
       const result = migrateSubscription(invalid);
-      expect(result.frequency).toBe('monthly');  // Defaults to monthly
+      expect(result.frequency).toBe('monthly'); // Defaults to monthly
     });
 
     it('should handle null/undefined subscription', () => {
@@ -113,17 +112,17 @@ describe('Subscription Migration Utils', () => {
 
     it('should handle missing fields with defaults', () => {
       const partial: any = {
-        title: 'Partial'
+        title: 'Partial',
       };
 
       const result = migrateSubscription(partial);
-      
+
       expect(result.title).toBe('Partial');
-      expect(result.account).toBe('Daily');  // Default
-      expect(result.amount).toBe(0);  // Default
-      expect(result.category).toBe('@');  // Default
-      expect(result.frequency).toBe('monthly');  // Default
-      expect(result.startDate).toBeTruthy();  // Today's date
+      expect(result.account).toBe('Daily'); // Default
+      expect(result.amount).toBe(0); // Default
+      expect(result.category).toBe('@'); // Default
+      expect(result.frequency).toBe('monthly'); // Default
+      expect(result.startDate).toBeTruthy(); // Today's date
     });
 
     it('should normalize amount to 2 decimal places', () => {
@@ -134,11 +133,11 @@ describe('Subscription Migration Utils', () => {
         startDate: '2024-01-01',
         endDate: '',
         category: '@Test',
-        comment: ''
+        comment: '',
       };
 
       const result = migrateSubscription(withAmount);
-      expect(result.amount).toBe(-16);  // Rounded
+      expect(result.amount).toBe(-16); // Rounded
     });
 
     it('should parse string amounts', () => {
@@ -149,18 +148,18 @@ describe('Subscription Migration Utils', () => {
         startDate: '2024-01-01',
         endDate: '',
         category: '@Test',
-        comment: ''
+        comment: '',
       };
 
       const result = migrateSubscription(stringAmount);
-      expect(result.amount).toBe(-25.50);
+      expect(result.amount).toBe(-25.5);
     });
 
     it('should handle changeHistory migration', () => {
       const withHistory: any = {
         title: 'MVG',
         account: 'Daily',
-        amount: -60.50,
+        amount: -60.5,
         startDate: '2024-01-01',
         endDate: '',
         category: '@Transport',
@@ -172,20 +171,20 @@ describe('Subscription Migration Utils', () => {
             field: 'amount',
             oldValue: 50,
             newValue: 55,
-            reason: '2025 price increase'
+            reason: '2025 price increase',
           },
           {
             effectiveDate: '2026-01-01',
             field: 'amount',
             oldValue: 55,
-            newValue: 60.50,
-            reason: '2026 price increase'
-          }
-        ]
+            newValue: 60.5,
+            reason: '2026 price increase',
+          },
+        ],
       };
 
       const result = migrateSubscription(withHistory);
-      
+
       expect(result.changeHistory).toHaveLength(2);
       expect(result.changeHistory![0].effectiveDate).toBe('2025-01-01');
       expect(result.changeHistory![0].field).toBe('amount');
@@ -201,7 +200,7 @@ describe('Subscription Migration Utils', () => {
         startDate: '2024-01-01',
         endDate: '',
         category: '@Test',
-        comment: ''
+        comment: '',
       };
 
       const result = migrateSubscription(noHistory);
@@ -220,15 +219,15 @@ describe('Subscription Migration Utils', () => {
         changeHistory: [
           {
             effectiveDate: '2025-01-01',
-            field: 'invalid-field',  // Invalid
+            field: 'invalid-field', // Invalid
             oldValue: 10,
-            newValue: 20
-          }
-        ]
+            newValue: 20,
+          },
+        ],
       };
 
       const result = migrateSubscription(invalidHistory);
-      expect(result.changeHistory![0].field).toBe('amount');  // Defaults to 'amount'
+      expect(result.changeHistory![0].field).toBe('amount'); // Defaults to 'amount'
     });
   });
 
@@ -242,7 +241,7 @@ describe('Subscription Migration Utils', () => {
           startDate: '2024-01-01',
           endDate: '',
           category: '@Entertainment',
-          comment: ''
+          comment: '',
         },
         {
           title: 'Gym',
@@ -252,15 +251,15 @@ describe('Subscription Migration Utils', () => {
           endDate: '',
           category: '@Fitness',
           comment: '',
-          frequency: 'weekly'
-        }
+          frequency: 'weekly',
+        },
       ];
 
       const result = migrateSubscriptionArray(array);
-      
+
       expect(result).toHaveLength(2);
-      expect(result[0].frequency).toBe('monthly');  // Default
-      expect(result[1].frequency).toBe('weekly');  // Preserved
+      expect(result[0].frequency).toBe('monthly'); // Default
+      expect(result[1].frequency).toBe('weekly'); // Preserved
     });
 
     it('should handle empty array', () => {
@@ -291,7 +290,7 @@ describe('Subscription Migration Utils', () => {
         category: '@Entertainment',
         comment: '',
         frequency: 'monthly',
-        changeHistory: []
+        changeHistory: [],
       };
 
       expect(getEffectiveValue(subscription, 'amount', '2024-06-01')).toBe(-15.99);
@@ -302,7 +301,7 @@ describe('Subscription Migration Utils', () => {
       const subscription: Subscription = {
         title: 'MVG',
         account: 'Daily',
-        amount: -60.50,
+        amount: -60.5,
         startDate: '2024-01-01',
         endDate: '',
         category: '@Transport',
@@ -314,9 +313,9 @@ describe('Subscription Migration Utils', () => {
             field: 'amount',
             oldValue: -50,
             newValue: -55,
-            reason: '2025 increase'
-          }
-        ]
+            reason: '2025 increase',
+          },
+        ],
       };
 
       // Before change date
@@ -327,7 +326,7 @@ describe('Subscription Migration Utils', () => {
       const subscription: Subscription = {
         title: 'MVG',
         account: 'Daily',
-        amount: -60.50,
+        amount: -60.5,
         startDate: '2024-01-01',
         endDate: '',
         category: '@Transport',
@@ -339,14 +338,14 @@ describe('Subscription Migration Utils', () => {
             field: 'amount',
             oldValue: -50,
             newValue: -55,
-            reason: '2025 increase'
-          }
-        ]
+            reason: '2025 increase',
+          },
+        ],
       };
 
       // On change date
       expect(getEffectiveValue(subscription, 'amount', '2025-01-01')).toBe(-55);
-      
+
       // After change date
       expect(getEffectiveValue(subscription, 'amount', '2025-06-01')).toBe(-55);
     });
@@ -355,7 +354,7 @@ describe('Subscription Migration Utils', () => {
       const subscription: Subscription = {
         title: 'MVG',
         account: 'Daily',
-        amount: -60.50,
+        amount: -60.5,
         startDate: '2024-01-01',
         endDate: '',
         category: '@Transport',
@@ -367,21 +366,21 @@ describe('Subscription Migration Utils', () => {
             field: 'amount',
             oldValue: -50,
             newValue: -55,
-            reason: '2025 increase'
+            reason: '2025 increase',
           },
           {
             effectiveDate: '2026-01-01',
             field: 'amount',
             oldValue: -55,
-            newValue: -60.50,
-            reason: '2026 increase'
-          }
-        ]
+            newValue: -60.5,
+            reason: '2026 increase',
+          },
+        ],
       };
 
-      expect(getEffectiveValue(subscription, 'amount', '2024-06-01')).toBe(-50);   // Before all changes
-      expect(getEffectiveValue(subscription, 'amount', '2025-06-01')).toBe(-55);   // After first change
-      expect(getEffectiveValue(subscription, 'amount', '2026-06-01')).toBe(-60.50); // After second change
+      expect(getEffectiveValue(subscription, 'amount', '2024-06-01')).toBe(-50); // Before all changes
+      expect(getEffectiveValue(subscription, 'amount', '2025-06-01')).toBe(-55); // After first change
+      expect(getEffectiveValue(subscription, 'amount', '2026-06-01')).toBe(-60.5); // After second change
     });
 
     it('should handle account changes', () => {
@@ -399,9 +398,9 @@ describe('Subscription Migration Utils', () => {
             effectiveDate: '2025-01-01',
             field: 'account',
             oldValue: 'Daily',
-            newValue: 'Splurge'
-          }
-        ]
+            newValue: 'Splurge',
+          },
+        ],
       };
 
       expect(getEffectiveValue(subscription, 'account', '2024-06-01')).toBe('Daily');
@@ -423,9 +422,9 @@ describe('Subscription Migration Utils', () => {
             effectiveDate: '2025-01-01',
             field: 'category',
             oldValue: '@OldCategory',
-            newValue: '@NewCategory'
-          }
-        ]
+            newValue: '@NewCategory',
+          },
+        ],
       };
 
       // Asking for amount should ignore category changes

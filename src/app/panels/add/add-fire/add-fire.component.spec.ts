@@ -26,13 +26,16 @@ describe('AddFireComponent', () => {
         AddFireComponent,
         TranslateModule.forRoot(),
         HttpClientTestingModule,
-        RouterTestingModule
+        RouterTestingModule,
       ],
       providers: [
         { provide: DatabaseService, useValue: {} },
         { provide: PersistenceService, useValue: mockPersistence },
-        { provide: FIREBASE_OPTIONS, useValue: { projectId: 'test', appId: 'test', apiKey: 'test' } }
-      ]
+        {
+          provide: FIREBASE_OPTIONS,
+          useValue: { projectId: 'test', appId: 'test', apiKey: 'test' },
+        },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(AddFireComponent);
@@ -50,16 +53,16 @@ describe('AddFireComponent', () => {
 
     it('should return true for duplicate title', () => {
       AppStateService.instance.allFireEmergencies = [
-        { 
-          title: 'Emergency Fund', 
+        {
+          title: 'Emergency Fund',
           phase: 'saving',
           buckets: [{ id: 'b1', title: 'Main', target: 5000, amount: 0, notes: '', links: [] }],
           links: [],
           actionItems: [],
           notes: [],
           createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        }
+          updatedAt: new Date().toISOString(),
+        },
       ] as any;
       expect(component.invalidTitle('Emergency Fund')).toBe(true);
     });
@@ -76,7 +79,7 @@ describe('AddFireComponent', () => {
 
     it('should show error for duplicate title', () => {
       AppStateService.instance.allFireEmergencies = [
-        { 
+        {
           title: 'Car Repair',
           phase: 'saving',
           buckets: [{ id: 'b1', title: 'Main', target: 3000, amount: 0, notes: '', links: [] }],
@@ -84,8 +87,8 @@ describe('AddFireComponent', () => {
           actionItems: [],
           notes: [],
           createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        }
+          updatedAt: new Date().toISOString(),
+        },
       ] as any;
       component.titleTextField = 'Car Repair';
       component.targetTextField = '3000';
@@ -109,7 +112,7 @@ describe('AddFireComponent', () => {
       expect(fire.buckets[0].target).toBe(2000);
       expect(fire.buckets[0].amount).toBe(500);
       expect(mockPersistence.writeAndSync).toHaveBeenCalledWith(
-        expect.objectContaining({ tag: 'fire', localStorageKey: 'fire' })
+        expect.objectContaining({ tag: 'fire', localStorageKey: 'fire' }),
       );
     });
 

@@ -19,18 +19,20 @@ jest.mock('../../config/db', () => {
   const mockAuthDb = {
     find: jest.fn(),
     insert: jest.fn(),
-    get: jest.fn()
+    // Login/refresh also read the user's encryptionConfig via authDb.get(userId) — default to
+    // an empty doc (no encryptionConfig field) so that lookup resolves safely to defaults.
+    get: jest.fn().mockResolvedValue({}),
   };
   const mockUsersDb = {
     insert: jest.fn(),
-    get: jest.fn()
+    get: jest.fn(),
   };
   return {
     initializeDatabase: jest.fn().mockResolvedValue(),
     getAuthDb: () => mockAuthDb,
     getUsersDb: () => mockUsersDb,
     __mockAuthDb: mockAuthDb,
-    __mockUsersDb: mockUsersDb
+    __mockUsersDb: mockUsersDb,
   };
 });
 
@@ -45,27 +47,21 @@ beforeEach(() => {
 // ============================================================
 describe('POST /api/auth/register — input validation', () => {
   it('returns 400 when email is missing', async () => {
-    const res = await request(app)
-      .post('/api/auth/register')
-      .send({ password: 'StrongP@ss1' });
+    const res = await request(app).post('/api/auth/register').send({ password: 'StrongP@ss1' });
 
     expect(res.status).toBe(400);
     expect(res.body.error).toMatch(/email/i);
   });
 
   it('returns 400 when password is missing', async () => {
-    const res = await request(app)
-      .post('/api/auth/register')
-      .send({ email: 'a@b.com' });
+    const res = await request(app).post('/api/auth/register').send({ email: 'a@b.com' });
 
     expect(res.status).toBe(400);
     expect(res.body.error).toMatch(/password/i);
   });
 
   it('returns 400 when both email and password are missing', async () => {
-    const res = await request(app)
-      .post('/api/auth/register')
-      .send({});
+    const res = await request(app).post('/api/auth/register').send({});
 
     expect(res.status).toBe(400);
   });
@@ -95,7 +91,7 @@ describe('POST /api/auth/register — input validation', () => {
     expect(res.body.email).toBe('new@test.com');
     // Token is now in cookies, not response body
     const cookies = res.headers['set-cookie'] || [];
-    expect(cookies.some(c => c.startsWith('access_token='))).toBe(true);
+    expect(cookies.some((c) => c.startsWith('access_token='))).toBe(true);
   });
 });
 
@@ -104,18 +100,14 @@ describe('POST /api/auth/register — input validation', () => {
 // ============================================================
 describe('POST /api/auth/login — input validation', () => {
   it('returns 400 when email is missing', async () => {
-    const res = await request(app)
-      .post('/api/auth/login')
-      .send({ password: 'p' });
+    const res = await request(app).post('/api/auth/login').send({ password: 'p' });
 
     expect(res.status).toBe(400);
     expect(res.body.error).toMatch(/email/i);
   });
 
   it('returns 400 when password is missing', async () => {
-    const res = await request(app)
-      .post('/api/auth/login')
-      .send({ email: 'a@b.com' });
+    const res = await request(app).post('/api/auth/login').send({ email: 'a@b.com' });
 
     expect(res.status).toBe(400);
     expect(res.body.error).toMatch(/password/i);
@@ -135,7 +127,7 @@ describe('POST /api/auth/login — input validation', () => {
   it('returns 401 for wrong password', async () => {
     const hashed = await bcrypt.hash('correct', 10);
     __mockAuthDb.find.mockResolvedValue({
-      docs: [{ _id: 'u1', email: 'u@t.com', password: hashed }]
+      docs: [{ _id: 'u1', email: 'u@t.com', password: hashed }],
     });
 
     const res = await request(app)
@@ -148,7 +140,7 @@ describe('POST /api/auth/login — input validation', () => {
   it('returns 200 with token for correct credentials', async () => {
     const hashed = await bcrypt.hash('correct', 10);
     __mockAuthDb.find.mockResolvedValue({
-      docs: [{ _id: 'u1', email: 'u@t.com', password: hashed }]
+      docs: [{ _id: 'u1', email: 'u@t.com', password: hashed }],
     });
 
     const res = await request(app)
@@ -160,12 +152,35 @@ describe('POST /api/auth/login — input validation', () => {
 
     // Token is now in cookies
     const cookies = res.headers['set-cookie'] || [];
-    const accessCookie = cookies.find(c => c.startsWith('access_token='));
+    const accessCookie = cookies.find((c) => c.startsWith('access_token='));
     expect(accessCookie).toBeDefined();
     const token = accessCookie.split(';')[0].split('=')[1];
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     expect(decoded.userId).toBe('u1');
     expect(decoded.email).toBe('u@t.com');
+  });
+
+  it('still succeeds and defaults encryptionConfig when reading it hits a real (non-404) DB error', async () => {
+    const hashed = await bcrypt.hash('correct', 10);
+    __mockAuthDb.find.mockResolvedValue({
+      docs: [{ _id: 'u1', email: 'u@t.com', password: hashed }],
+    });
+    // Simulate a transient CouchDB failure on the encryptionConfig enrichment read specifically —
+    // login's own job (issuing session cookies) must not fail because of this non-essential read.
+    __mockAuthDb.get.mockRejectedValueOnce(new Error('ECONNRESET'));
+
+    const res = await request(app)
+      .post('/api/auth/login')
+      .send({ email: 'u@t.com', password: 'correct' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.encryptionConfig).toEqual({
+      key: 'default',
+      encryptLocal: true,
+      encryptDatabase: false,
+    });
+    const cookies = res.headers['set-cookie'] || [];
+    expect(cookies.some((c) => c.startsWith('access_token='))).toBe(true);
   });
 });
 

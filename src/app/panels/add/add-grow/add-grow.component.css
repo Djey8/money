@@ -3,7 +3,7 @@
   left: 50%;
   transform: translate(-50%, 0%);
   width: min(92vw, 700px);
-  border: 1px solid var(--color-border, rgba(255,255,255,0.15));
+  border: 1px solid var(--color-border, rgba(255, 255, 255, 0.15));
   background-color: var(--color-primary);
   border-radius: var(--radius-lg);
   padding: 20px;
@@ -30,7 +30,7 @@
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.8px;
-  color: rgba(255,255,255,0.5);
+  color: rgba(255, 255, 255, 0.5);
   font-weight: 600;
 }
 
@@ -41,19 +41,19 @@
   width: 100%;
   background: none;
   border: none;
-  border-top: 1px solid rgba(255,255,255,0.1);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
   padding: 10px 4px;
   cursor: pointer;
   color: inherit;
 }
 
 .section-toggle:hover .form-section-title {
-  color: rgba(255,255,255,0.8);
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .toggle-chevron {
   font-size: 14px;
-  color: rgba(255,255,255,0.4);
+  color: rgba(255, 255, 255, 0.4);
   transition: transform 0.2s;
 }
 
@@ -64,7 +64,7 @@
 /* Footer */
 .form-footer {
   padding-top: 12px;
-  border-top: 1px solid rgba(255,255,255,0.1);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -370,7 +370,7 @@
   flex-wrap: wrap;
 }
 
-.action-edit input[type="text"] {
+.action-edit input[type='text'] {
   flex: 1 1 60%;
   min-width: 150px;
 }
@@ -379,7 +379,7 @@
   flex: 0 0 auto;
 }
 
-.action-edit input[type="date"] {
+.action-edit input[type='date'] {
   flex: 1 1 auto;
 }
 
@@ -474,8 +474,8 @@
 }
 
 /* Dark mode specific styles */
-[data-theme="dark"] #addSmile-Container .input-sm,
-[data-theme="dark"] .input-sm {
+[data-theme='dark'] #addSmile-Container .input-sm,
+[data-theme='dark'] .input-sm {
   border: 1px solid rgba(255, 255, 255, 0.15) !important;
   background: rgba(255, 255, 255, 0.05) !important;
   background-color: rgba(255, 255, 255, 0.05) !important;
@@ -483,25 +483,25 @@
   color-scheme: dark;
 }
 
-[data-theme="dark"] #addSmile-Container .input-sm:focus,
-[data-theme="dark"] .input-sm:focus {
+[data-theme='dark'] #addSmile-Container .input-sm:focus,
+[data-theme='dark'] .input-sm:focus {
   border-color: rgba(0, 184, 148, 0.6) !important;
   background: rgba(255, 255, 255, 0.08) !important;
   background-color: rgba(255, 255, 255, 0.08) !important;
 }
 
-[data-theme="dark"] #addSmile-Container .input-sm::placeholder,
-[data-theme="dark"] .input-sm::placeholder {
+[data-theme='dark'] #addSmile-Container .input-sm::placeholder,
+[data-theme='dark'] .input-sm::placeholder {
   color: rgba(255, 255, 255, 0.3) !important;
 }
 
 /* Override browser autofill styles - dark mode */
-[data-theme="dark"] #addSmile-Container .input-sm:-webkit-autofill,
-[data-theme="dark"] #addSmile-Container .input-sm:-webkit-autofill:hover,
-[data-theme="dark"] #addSmile-Container .input-sm:-webkit-autofill:focus,
-[data-theme="dark"] .input-sm:-webkit-autofill,
-[data-theme="dark"] .input-sm:-webkit-autofill:hover,
-[data-theme="dark"] .input-sm:-webkit-autofill:focus {
+[data-theme='dark'] #addSmile-Container .input-sm:-webkit-autofill,
+[data-theme='dark'] #addSmile-Container .input-sm:-webkit-autofill:hover,
+[data-theme='dark'] #addSmile-Container .input-sm:-webkit-autofill:focus,
+[data-theme='dark'] .input-sm:-webkit-autofill,
+[data-theme='dark'] .input-sm:-webkit-autofill:hover,
+[data-theme='dark'] .input-sm:-webkit-autofill:focus {
   -webkit-box-shadow: 0 0 0 1000px rgba(255, 255, 255, 0.05) inset !important;
   -webkit-text-fill-color: white !important;
   border: 1px solid rgba(255, 255, 255, 0.15) !important;
@@ -629,7 +629,7 @@ textarea {
   margin: 0 !important;
 }
 
-.risk-input-row input[type="number"] {
+.risk-input-row input[type='number'] {
   width: 70px;
 }
 

@@ -2,7 +2,6 @@ import { ProfileComponent } from './profile.component';
 import { AppStateService } from '../../shared/services/app-state.service';
 
 describe('ProfileComponent', () => {
-
   beforeEach(() => {
     (AppStateService as any)._instance = undefined;
     ProfileComponent.zIndex = 0;

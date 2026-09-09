@@ -10,7 +10,7 @@ process.env.NODE_ENV = 'test';
 jest.mock('../../config/db', () => ({
   initializeDatabase: jest.fn().mockResolvedValue(),
   getAuthDb: () => ({ find: jest.fn(), insert: jest.fn() }),
-  getUsersDb: () => ({ insert: jest.fn(), get: jest.fn() })
+  getUsersDb: () => ({ insert: jest.fn(), get: jest.fn() }),
 }));
 
 const request = require('supertest');

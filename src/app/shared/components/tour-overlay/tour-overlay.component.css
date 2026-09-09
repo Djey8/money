@@ -118,7 +118,9 @@
   cursor: pointer;
   padding: 4px 8px;
   border-radius: var(--radius-sm);
-  transition: color 0.15s ease, background 0.15s ease;
+  transition:
+    color 0.15s ease,
+    background 0.15s ease;
 }
 .tour-skip-btn:hover {
   color: var(--color-text);
@@ -181,11 +183,11 @@
   font-weight: 700;
 }
 
-[dir="rtl"] .tour-section-menu {
+[dir='rtl'] .tour-section-menu {
   left: auto;
   right: 16px;
 }
-[dir="rtl"] .tour-section-item {
+[dir='rtl'] .tour-section-item {
   text-align: right;
 }
 
@@ -355,21 +357,24 @@
   padding: 5px 10px;
   border-radius: var(--radius-md);
   border: 2px solid transparent;
-  background: var(--color-surface-alt, rgba(0,0,0,0.04));
+  background: var(--color-surface-alt, rgba(0, 0, 0, 0.04));
   cursor: pointer;
-  transition: border-color 0.2s, background 0.2s, transform 0.15s;
+  transition:
+    border-color 0.2s,
+    background 0.2s,
+    transform 0.15s;
   font-size: var(--font-xs);
   color: var(--color-text-secondary);
 }
 
 .tour-lang-btn:hover {
-  background: var(--color-surface-hover, rgba(0,0,0,0.08));
+  background: var(--color-surface-hover, rgba(0, 0, 0, 0.08));
   transform: translateY(-1px);
 }
 
 .tour-lang-btn.tour-lang-active {
   border-color: var(--color-primary);
-  background: var(--color-primary-light, rgba(var(--color-primary-rgb, 66,133,244), 0.1));
+  background: var(--color-primary-light, rgba(var(--color-primary-rgb, 66, 133, 244), 0.1));
   color: var(--color-primary);
   font-weight: 600;
 }
@@ -419,7 +424,10 @@
   font-size: var(--font-base);
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.15s ease, transform 0.1s ease, opacity 0.15s ease;
+  transition:
+    background 0.15s ease,
+    transform 0.1s ease,
+    opacity 0.15s ease;
   white-space: nowrap;
 }
 .tour-btn:active {
@@ -459,7 +467,9 @@
   height: 7px;
   border-radius: var(--radius-full);
   background: var(--color-muted);
-  transition: background 0.2s ease, transform 0.2s ease;
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease;
 }
 .tour-dot.active {
   transform: scale(1.4);
@@ -469,12 +479,20 @@
    Animations
    ======================================== */
 @keyframes tour-fade-in {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 @keyframes tour-fade-out {
-  from { opacity: 1; }
-  to   { opacity: 0; }
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
 }
 @keyframes tour-card-in {
   from {

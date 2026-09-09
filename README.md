@@ -3,6 +3,7 @@
 Personal finance management application built with Angular. Tracks income, expenses, budgets, subscriptions, investments, and financial independence progress. Supports client-side AES encryption and multi-language UI (EN, DE, ES, FR, CN, AR).
 
 Runs in two modes:
+
 - **Firebase** (cloud) — Firebase Realtime Database + Firebase Auth. Default for development and hosted production.
 - **Self-hosted** — Node.js/Express backend + CouchDB. Full data ownership on your own hardware.
 
@@ -37,14 +38,14 @@ Firebase  Express API ── CouchDB
 
 ## Tech Stack
 
-| Layer | Firebase Mode | Self-Hosted Mode |
-|-------|--------------|-----------------|
-| Frontend | Angular 19, Angular Material, D3.js | Same |
-| Auth | Firebase Auth | JWT (Express) |
-| Database | Firebase Realtime DB | CouchDB 3.3 |
-| Hosting | Firebase Hosting | Nginx (container) |
-| Orchestration | GitHub Actions | Docker Compose / K3s |
-| Monitoring | — | Grafana + Loki + Promtail |
+| Layer         | Firebase Mode                       | Self-Hosted Mode          |
+| ------------- | ----------------------------------- | ------------------------- |
+| Frontend      | Angular 19, Angular Material, D3.js | Same                      |
+| Auth          | Firebase Auth                       | JWT (Express)             |
+| Database      | Firebase Realtime DB                | CouchDB 3.3               |
+| Hosting       | Firebase Hosting                    | Nginx (container)         |
+| Orchestration | GitHub Actions                      | Docker Compose / K3s      |
+| Monitoring    | —                                   | Grafana + Loki + Promtail |
 
 ## Quick Start
 

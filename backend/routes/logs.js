@@ -19,17 +19,8 @@ router.post('/frontend', authenticateToken, (req, res) => {
     const userEmail = req.userEmail;
 
     // Process each log entry
-    logs.forEach(log => {
-      const {
-        timestamp,
-        action,
-        level,
-        username,
-        details,
-        userAgent,
-        url,
-        mode
-      } = log;
+    logs.forEach((log) => {
+      const { timestamp, action, level, username, details, userAgent, url, mode } = log;
 
       // Create structured log entry
       const logEntry = {
@@ -43,7 +34,7 @@ router.post('/frontend', authenticateToken, (req, res) => {
         url,
         userAgent,
         mode: mode || 'unknown',
-        details: details || {}
+        details: details || {},
       };
 
       // Log to Loki with appropriate level
@@ -65,21 +56,20 @@ router.post('/frontend', authenticateToken, (req, res) => {
       userEmail,
       logCount: logs.length,
       source: 'frontend',
-      endpoint: '/logs/frontend'
+      endpoint: '/logs/frontend',
     });
 
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       received: logs.length,
-      message: 'Logs processed successfully'
+      message: 'Logs processed successfully',
     });
-
   } catch (error) {
     logger.error('Frontend log processing error', {
       error: error.message,
       stack: error.stack,
       userId: req.userId,
-      source: 'frontend'
+      source: 'frontend',
     });
     res.status(500).json({ error: 'Failed to process logs' });
   }
@@ -89,10 +79,10 @@ router.post('/frontend', authenticateToken, (req, res) => {
  * Health check for logging endpoint
  */
 router.get('/health', (req, res) => {
-  res.json({ 
+  res.json({
     status: 'ok',
     endpoint: 'logs',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 });
 

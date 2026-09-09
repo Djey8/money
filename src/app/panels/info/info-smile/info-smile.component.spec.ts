@@ -3,7 +3,6 @@ import { AppStateService } from '../../../shared/services/app-state.service';
 import { Smile } from '../../../interfaces/smile';
 
 describe('InfoSmileComponent', () => {
-
   beforeEach(() => {
     (AppStateService as any)._instance = undefined;
     InfoSmileComponent.index = 1;
@@ -18,7 +17,7 @@ describe('InfoSmileComponent', () => {
       phase: 'planning',
       description: '',
       buckets: [
-        { id: 'bucket_1', title: 'Vacation', target: 5000, amount: 1200, notes: '', links: [] }
+        { id: 'bucket_1', title: 'Vacation', target: 5000, amount: 1200, notes: '', links: [] },
       ],
       links: [],
       actionItems: [],
@@ -26,9 +25,9 @@ describe('InfoSmileComponent', () => {
       createdAt: '',
       updatedAt: '',
       targetDate: '',
-      completionDate: ''
+      completionDate: '',
     };
-    
+
     InfoSmileComponent.setInfoSmileComponent(2, testProject);
 
     expect(InfoSmileComponent.index).toBe(2);
@@ -45,18 +44,16 @@ describe('InfoSmileComponent', () => {
       sub: '',
       phase: 'planning',
       description: '',
-      buckets: [
-        { id: 'bucket_1', title: 'Test', target: 100, amount: 50, notes: '', links: [] }
-      ],
+      buckets: [{ id: 'bucket_1', title: 'Test', target: 100, amount: 50, notes: '', links: [] }],
       links: [],
       actionItems: [],
       notes: [],
       createdAt: '',
       updatedAt: '',
       targetDate: '',
-      completionDate: ''
+      completionDate: '',
     };
-    
+
     InfoSmileComponent.isInfo = false;
     InfoSmileComponent.setInfoSmileComponent(0, testProject);
     expect(InfoSmileComponent.isInfo).toBe(true);

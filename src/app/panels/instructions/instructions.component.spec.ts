@@ -1,7 +1,6 @@
 import { InstructionsComponent } from './instructions.component';
 
 describe('InstructionsComponent', () => {
-
   beforeEach(() => {
     InstructionsComponent.isInfo = false;
     InstructionsComponent.zIndex = 0;

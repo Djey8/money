@@ -13,33 +13,35 @@ import { filter } from 'rxjs/operators';
       <button (click)="reload()">Update now</button>
     </div>
   `,
-  styles: [`
-    .update-banner {
-      position: fixed;
-      bottom: 72px;
-      left: 16px;
-      right: 16px;
-      z-index: 10000;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 12px 16px;
-      background: var(--color-primary, #3f51b5);
-      color: #fff;
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-      font-size: 14px;
-    }
-    button {
-      background: #fff;
-      color: var(--color-primary, #3f51b5);
-      border: none;
-      padding: 6px 16px;
-      border-radius: 4px;
-      font-weight: 600;
-      cursor: pointer;
-    }
-  `]
+  styles: [
+    `
+      .update-banner {
+        position: fixed;
+        bottom: 72px;
+        left: 16px;
+        right: 16px;
+        z-index: 10000;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 16px;
+        background: var(--color-primary, #3f51b5);
+        color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        font-size: 14px;
+      }
+      button {
+        background: #fff;
+        color: var(--color-primary, #3f51b5);
+        border: none;
+        padding: 6px 16px;
+        border-radius: 4px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+    `,
+  ],
 })
 export class SwUpdateComponent implements OnInit {
   updateAvailable = false;

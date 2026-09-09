@@ -80,8 +80,8 @@
 }
 
 :host #input-container select,
-:host #input-container input[type="text"],
-:host #input-container input[type="number"] {
+:host #input-container input[type='text'],
+:host #input-container input[type='number'] {
   margin-top: 4px;
 }
 
@@ -166,7 +166,8 @@
   opacity: 1;
 }
 
-.btn-primary, .btn-secondary {
+.btn-primary,
+.btn-secondary {
   flex: 1;
   padding: 10px;
   border-radius: var(--radius-sm);
@@ -198,11 +199,11 @@
   border-color: var(--color-primary);
 }
 
-.btn-primary:hover { 
+.btn-primary:hover {
   opacity: 0.9;
   transform: translateY(-1px);
 }
-.btn-secondary:hover { 
+.btn-secondary:hover {
   background-color: rgba(255, 255, 255, 0.15);
 }
 
@@ -293,7 +294,9 @@
   color: var(--color-text-secondary);
   font-size: 0.85em;
   cursor: pointer;
-  transition: border-color 0.2s, color 0.2s;
+  transition:
+    border-color 0.2s,
+    color 0.2s;
 }
 .btn-file:hover {
   border-color: var(--color-text);
@@ -350,7 +353,7 @@
   user-select: none;
 }
 
-.checkbox-label input[type="checkbox"] {
+.checkbox-label input[type='checkbox'] {
   cursor: pointer;
   width: 16px;
   height: 16px;
@@ -418,7 +421,9 @@
   margin: 14px 0 6px;
   cursor: pointer;
   text-align: left;
-  transition: border-color 0.2s, color 0.2s;
+  transition:
+    border-color 0.2s,
+    color 0.2s;
 }
 .advanced-toggle:hover {
   border-color: var(--color-primary);
@@ -431,8 +436,14 @@
 }
 
 @keyframes advanced-slide-in {
-  from { opacity: 0; transform: translateY(-6px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Import preview */

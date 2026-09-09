@@ -108,9 +108,11 @@ Change the `github` field to point to the new repo:
 ### Step 2.3 — Update workflow files
 
 Update `.github/workflows/firebase-hosting-merge.yml`:
+
 - No changes needed — it references secrets by name, which you've migrated
 
 Update `.github/workflows/test.yml`:
+
 - Add `--legacy-peer-deps` to `npm ci`:
   ```yaml
   - run: npm ci --legacy-peer-deps
@@ -145,18 +147,18 @@ All commits must follow this format:
 <footer>
 ```
 
-| Type       | Version Bump | Example                                      |
-|------------|-------------|----------------------------------------------|
-| `fix`      | PATCH       | `fix(auth): handle expired tokens gracefully` |
-| `feat`     | MINOR       | `feat(budget): add monthly budget charts`     |
-| `feat!`    | MAJOR       | `feat!: redesign data model (breaking)`       |
-| `docs`     | none        | `docs: update README`                         |
-| `chore`    | none        | `chore: update dependencies`                  |
-| `refactor` | none        | `refactor(settings): simplify theme logic`    |
-| `test`     | none        | `test(cashflow): add income calculations`     |
-| `ci`       | none        | `ci: add e2e to test pipeline`                |
-| `style`    | none        | `style: fix indentation in settings`          |
-| `perf`     | PATCH       | `perf(transactions): optimize list rendering` |
+| Type       | Version Bump | Example                                       |
+| ---------- | ------------ | --------------------------------------------- |
+| `fix`      | PATCH        | `fix(auth): handle expired tokens gracefully` |
+| `feat`     | MINOR        | `feat(budget): add monthly budget charts`     |
+| `feat!`    | MAJOR        | `feat!: redesign data model (breaking)`       |
+| `docs`     | none         | `docs: update README`                         |
+| `chore`    | none         | `chore: update dependencies`                  |
+| `refactor` | none         | `refactor(settings): simplify theme logic`    |
+| `test`     | none         | `test(cashflow): add income calculations`     |
+| `ci`       | none         | `ci: add e2e to test pipeline`                |
+| `style`    | none         | `style: fix indentation in settings`          |
+| `perf`     | PATCH        | `perf(transactions): optimize list rendering` |
 
 Footer `BREAKING CHANGE:` also triggers MAJOR bump.
 
@@ -185,6 +187,7 @@ Create `.gitmessage` in repo root:
 ```
 
 Configure locally:
+
 ```powershell
 git config commit.template .gitmessage
 ```
@@ -194,6 +197,7 @@ git config commit.template .gitmessage
 Using Husky (already installed) + a lightweight commit-msg hook:
 
 **`.husky/commit-msg`:**
+
 ```sh
 #!/bin/sh
 commit_msg=$(cat "$1")
@@ -344,7 +348,7 @@ Add to **`src/environments/environment.ts`** (and all variants):
 import packageJson from '../../package.json';
 export const environment = {
   // ... existing fields ...
-  appVersion: packageJson.version
+  appVersion: packageJson.version,
 };
 ```
 
@@ -366,11 +370,11 @@ Add an "About" section at the bottom of the settings menu in the template:
 ```html
 <!-- About -->
 <div class="settings-category" *ngIf="classReference.isSettings">
-    <h5 class="category-title">{{'Settings.category.about' | translate}}</h5>
-    <div class="version-info">
-        <span class="info-label">Version</span>
-        <span class="info-value">v{{appVersion}}</span>
-    </div>
+  <h5 class="category-title">{{'Settings.category.about' | translate}}</h5>
+  <div class="version-info">
+    <span class="info-label">Version</span>
+    <span class="info-value">v{{appVersion}}</span>
+  </div>
 </div>
 ```
 
@@ -435,12 +439,14 @@ This triggers on any `v*` tag push — runs tests, builds, and creates a GitHub 
 ## Migration Checklist
 
 ### Phase 1: New Repository
+
 - [ ] Create `money` repo on GitHub
 - [ ] Orphan-branch squash migration from `develop`
 - [ ] Push to new repo
 - [ ] Verify all files are present
 
 ### Phase 2: CI/CD Migration
+
 - [ ] Generate new Firebase service account key
 - [ ] Add `FIREBASE_SERVICE_ACCOUNT_MONEY98_B2242` secret to new repo
 - [ ] Update `firebase.json` github field
@@ -450,6 +456,7 @@ This triggers on any `v*` tag push — runs tests, builds, and creates a GitHub 
 - [ ] Verify live site is unchanged
 
 ### Phase 3: Semantic Versioning
+
 - [ ] Set `"version": "1.0.0"` in `package.json` and `backend/package.json`
 - [ ] Add `.gitmessage` commit template
 - [ ] Add `.husky/commit-msg` hook
@@ -460,17 +467,20 @@ This triggers on any `v*` tag push — runs tests, builds, and creates a GitHub 
 - [ ] Tag `v1.0.0`
 
 ### Phase 4: Version in Settings UI
+
 - [ ] Enable `resolveJsonModule` in tsconfig
 - [ ] Add `appVersion` to all environment files
 - [ ] Add version display in settings template
 - [ ] Verify version shows in app
 
 ### Phase 5: Release CI/CD
+
 - [ ] Add `.github/workflows/release.yml`
 - [ ] Push `v1.0.0` tag
 - [ ] Verify GitHub Release is created
 
 ### Post-Migration
+
 - [ ] Archive old `money-temp` repo (Settings → Archive)
 - [ ] Update any bookmarks, deployment references
 - [ ] Inform collaborators of new repo URL

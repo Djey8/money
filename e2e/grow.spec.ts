@@ -69,7 +69,7 @@ test.describe('Grow & Investments', () => {
     await expect(page.locator('#addSmile-Container')).toBeHidden({ timeout: 10_000 });
     await page.waitForTimeout(2000);
 
-    const bodyText = await page.locator('body').textContent() ?? '';
+    const bodyText = (await page.locator('body').textContent()) ?? '';
     expect(bodyText).toContain('Test Project');
   });
 

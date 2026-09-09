@@ -1,5 +1,6 @@
 require('dotenv').config();
 const express = require('express');
+const crypto = require('crypto');
 const cors = require('cors');
 const helmet = require('helmet');
 const cookieParser = require('cookie-parser');
@@ -8,6 +9,7 @@ const authRoutes = require('./routes/auth');
 const dataRoutes = require('./routes/data');
 const logsRoutes = require('./routes/logs');
 const communityRoutes = require('./routes/community');
+const apiRoutes = require('./routes/api');
 const { initializeDatabase } = require('./config/db');
 const logger = require('./config/logger');
 const { requestLoggingMiddleware, errorLoggingMiddleware } = require('./middleware/logging');
@@ -23,10 +25,12 @@ app.use(helmet());
 
 // CORS configuration
 const corsOrigins = process.env.CORS_ORIGINS || 'http://localhost:4200';
-app.use(cors({
-  origin: corsOrigins.split(','),
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: corsOrigins.split(','),
+    credentials: true,
+  }),
+);
 
 // Rate limiting - generous for normal use, auth endpoints are strict separately
 const limiter = rateLimit({
@@ -34,11 +38,42 @@ const limiter = rateLimit({
   max: 10000, // limit each IP to 1010000 requests per windowMs
   standardHeaders: true,
   legacyHeaders: false,
-  skip: (req) => {
+  skip: () => {
     return process.env.SKIP_RATE_LIMIT === 'true';
-  }
+  },
 });
 app.use('/api/', limiter);
+
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 1000,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => {
+    const credential = req.headers.authorization || req.cookies?.access_token || req.ip;
+    return crypto.createHash('sha256').update(credential).digest('hex');
+  },
+  skip: () => process.env.SKIP_RATE_LIMIT === 'true',
+});
+
+// Bulk endpoints (larger blast radius per call) get a stricter limit on top
+// of the general per-token apiLimiter below — docs/adr/0006, "Bulk/:bulk-scoped
+// endpoints get a stricter, separate limit given their larger blast radius."
+const bulkLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => {
+    const credential = req.headers.authorization || req.cookies?.access_token || req.ip;
+    return crypto.createHash('sha256').update(credential).digest('hex');
+  },
+  skip: () => process.env.SKIP_RATE_LIMIT === 'true',
+});
+app.use(
+  ['/api/v1/transactions/batch', '/api/v1/transactions/export', '/api/v1/transactions/import'],
+  bulkLimiter,
+);
 
 // Strict rate limiting for auth endpoints (brute-force protection)
 const authLimiter = rateLimit({
@@ -46,15 +81,16 @@ const authLimiter = rateLimit({
   max: 10, // max 10 login/register attempts per 15 min
   standardHeaders: true,
   legacyHeaders: false,
-  skip: (req) => process.env.SKIP_RATE_LIMIT === 'true'
+  skip: () => process.env.SKIP_RATE_LIMIT === 'true',
 });
 app.use('/api/auth/login', authLimiter);
 app.use('/api/auth/register', authLimiter);
 app.use('/api/auth/guest', authLimiter);
 
-// Body parser — 100mb to support large encrypted batch writes and restore imports
+// Body parser — 100mb to support large encrypted batch writes and restore imports.
+// application/x-ndjson is the newline-delimited-JSON body POST /transactions/import expects.
 app.use(express.json({ limit: '100mb' }));
-app.use(express.text({ limit: '1000mb', type: 'text/plain' }));
+app.use(express.text({ limit: '1000mb', type: ['text/plain', 'application/x-ndjson'] }));
 
 // Cookie parser (for httpOnly auth cookies)
 app.use(cookieParser());
@@ -69,7 +105,7 @@ if (process.env.DEBUG_REQUESTS === 'true') {
       contentType: req.headers['content-type'],
       bodyType: typeof req.body,
       body: req.body,
-      debugType: 'write_request'
+      debugType: 'write_request',
     });
     next();
   });
@@ -87,7 +123,7 @@ app.use('/api/data/write', (req, res, next) => {
 
 // Initialize database (only when run directly — tests handle their own init)
 if (require.main === module) {
-  initializeDatabase().catch(err => {
+  initializeDatabase().catch((err) => {
     logger.logError(err, { context: 'database_initialization' });
     process.exit(1);
   });
@@ -103,6 +139,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/data', dataRoutes);
 app.use('/api/logs', logsRoutes);
 app.use('/api/community', communityRoutes);
+app.use('/api/v1', apiLimiter, apiRoutes);
 
 // Enhanced error handler
 app.use(errorLoggingMiddleware);
@@ -117,7 +154,7 @@ if (require.main === module) {
       port: PORT,
       environment: process.env.NODE_ENV,
       logLevel: logger.level,
-      startupType: 'server_start'
+      startupType: 'server_start',
     });
   });
 }

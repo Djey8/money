@@ -34,9 +34,9 @@ function couchRequest(method, path, body) {
       path: parsed.pathname + parsed.search,
       method,
       headers: {
-        'Authorization': `Basic ${auth}`,
+        Authorization: `Basic ${auth}`,
         'Content-Type': 'application/json',
-        'Accept': 'application/json',
+        Accept: 'application/json',
       },
     };
 

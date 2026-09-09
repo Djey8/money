@@ -1,7 +1,6 @@
 import { ImpressumComponent } from './impressum.component';
 
 describe('ImpressumComponent', () => {
-
   beforeEach(() => {
     ImpressumComponent.isInfo = false;
     ImpressumComponent.zIndex = 0;

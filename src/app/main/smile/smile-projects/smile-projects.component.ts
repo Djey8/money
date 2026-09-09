@@ -15,10 +15,22 @@ import { RouterModule } from '@angular/router';
 import { AiAssistantComponent } from 'src/app/panels/ai-assistant/ai-assistant.component';
 
 // Deferred imports — resolved after module init to break circular chains
-let AppComponent: any; setTimeout(() => import('src/app/app.component').then(m => AppComponent = m.AppComponent));
-let AddComponent: any; setTimeout(() => import('src/app/panels/add/add.component').then(m => AddComponent = m.AddComponent));
-let AddSmileComponent: any; setTimeout(() => import('src/app/panels/add/add-smile/add-smile.component').then(m => AddSmileComponent = m.AddSmileComponent));
-let HomeComponent: any; setTimeout(() => import('../../home/home.component').then(m => HomeComponent = m.HomeComponent));
+let AppComponent: any;
+setTimeout(() => import('src/app/app.component').then((m) => (AppComponent = m.AppComponent)));
+let AddComponent: any;
+setTimeout(() =>
+  import('src/app/panels/add/add.component').then((m) => (AddComponent = m.AddComponent)),
+);
+let AddSmileComponent: any;
+setTimeout(() =>
+  import('src/app/panels/add/add-smile/add-smile.component').then(
+    (m) => (AddSmileComponent = m.AddSmileComponent),
+  ),
+);
+let HomeComponent: any;
+setTimeout(() =>
+  import('../../home/home.component').then((m) => (HomeComponent = m.HomeComponent)),
+);
 
 /**
  * Component for managing Smile Projects.
@@ -26,26 +38,43 @@ let HomeComponent: any; setTimeout(() => import('../../home/home.component').the
 @Component({
   selector: 'app-smile-projects',
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslateModule, AppNumberPipe, AppDatePipe, RouterModule, InfoSmileComponent, AiAssistantComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    TranslateModule,
+    AppNumberPipe,
+    AppDatePipe,
+    RouterModule,
+    InfoSmileComponent,
+    AiAssistantComponent,
+  ],
   templateUrl: './smile-projects.component.html',
-  styleUrls: ['./smile-projects.component.css', '../../../app.component.css', '../../../shared/styles/table.css']
+  styleUrls: [
+    './smile-projects.component.css',
+    '../../../app.component.css',
+    '../../../shared/styles/table.css',
+  ],
 })
 export class SmileProjectsComponent {
-
-  
-  smileAmount = AppStateService.instance.getAmount("Smile", AppStateService.instance.smile/100);
+  smileAmount = AppStateService.instance.getAmount('Smile', AppStateService.instance.smile / 100);
 
   static isSearched = false;
   static phaseFilter: SmilePhase | 'all' = 'all';
-  static get allSmileProjects(): Smile[] { return AppStateService.instance.allSmileProjects; }
-  static set allSmileProjects(v: Smile[]) { AppStateService.instance.allSmileProjects = v; }
+  static get allSmileProjects(): Smile[] {
+    return AppStateService.instance.allSmileProjects;
+  }
+  static set allSmileProjects(v: Smile[]) {
+    AppStateService.instance.allSmileProjects = v;
+  }
   static allSearchedSmileProjects: Smile[] = [];
 
-  searchTextField = "";
+  searchTextField = '';
   phases: (SmilePhase | 'all')[] = ['all', 'idea', 'planning', 'saving', 'ready', 'completed'];
 
   public classReference = SmileProjectsComponent;
-  public get appReference() { return AppComponent; }
+  public get appReference() {
+    return AppComponent;
+  }
   public settingsReference = SettingsComponent;
   public appState = AppStateService.instance;
 
@@ -54,20 +83,28 @@ export class SmileProjectsComponent {
    * @param router - The router service.
    * @param localStorage - The local storage service.
    */
-  constructor(private router:Router, private localStorage: LocalService) {
+  constructor(
+    private router: Router,
+    private localStorage: LocalService,
+  ) {
     // Only reload from localStorage if AppStateService doesn't have data yet
     // This prevents overwriting in-memory updates when navigating between components
-    if (!AppStateService.instance.allSmileProjects || AppStateService.instance.allSmileProjects.length === 0) {
-      const rawSmiles = this.localStorage.getData("smile");
+    if (
+      !AppStateService.instance.allSmileProjects ||
+      AppStateService.instance.allSmileProjects.length === 0
+    ) {
+      const rawSmiles = this.localStorage.getData('smile');
       console.log('[Smile Component] Loading from localStorage');
-      AppStateService.instance.allSmileProjects = rawSmiles === "" 
-        ? [] 
-        : migrateSmileArray(JSON.parse(rawSmiles));
+      AppStateService.instance.allSmileProjects =
+        rawSmiles === '' ? [] : migrateSmileArray(JSON.parse(rawSmiles));
     } else {
       console.log('[Smile Component] Using existing data from AppStateService');
     }
-    
-    this.smileAmount = AppStateService.instance.getAmount("Smile", AppStateService.instance.smile/100);
+
+    this.smileAmount = AppStateService.instance.getAmount(
+      'Smile',
+      AppStateService.instance.smile / 100,
+    );
   }
 
   /**
@@ -76,31 +113,35 @@ export class SmileProjectsComponent {
   search() {
     const searchTerms = this.searchTextField.toLowerCase().split(',');
 
-    SmileProjectsComponent.allSearchedSmileProjects = AppStateService.instance.allSmileProjects.map(smile => {
-      // Perform case-insensitive search on multiple fields
-      const title = smile.title.toLowerCase();
-      const sub = smile.sub?.toLowerCase() || '';
-      const description = smile.description?.toLowerCase() || '';
-      const amount = String(this.getTotalAmount(smile));
-      const target = String(this.getTotalTarget(smile));
-      const phase = smile.phase?.toLowerCase() || '';
+    SmileProjectsComponent.allSearchedSmileProjects = AppStateService.instance.allSmileProjects.map(
+      (smile) => {
+        // Perform case-insensitive search on multiple fields
+        const title = smile.title.toLowerCase();
+        const sub = smile.sub?.toLowerCase() || '';
+        const description = smile.description?.toLowerCase() || '';
+        const amount = String(this.getTotalAmount(smile));
+        const target = String(this.getTotalTarget(smile));
+        const phase = smile.phase?.toLowerCase() || '';
 
-      const isFiltered = searchTerms.some(term => {
-        const t = term.trim();
-        return title.includes(t) || 
-               sub.includes(t) || 
-               description.includes(t) || 
-               amount.includes(t) || 
-               target.includes(t) ||
-               phase.includes(t);
-      });
+        const isFiltered = searchTerms.some((term) => {
+          const t = term.trim();
+          return (
+            title.includes(t) ||
+            sub.includes(t) ||
+            description.includes(t) ||
+            amount.includes(t) ||
+            target.includes(t) ||
+            phase.includes(t)
+          );
+        });
 
-      // Return a new object with the isFiltered field added
-      return {
-        ...smile,
-        isFiltered: isFiltered
-      };
-    });
+        // Return a new object with the isFiltered field added
+        return {
+          ...smile,
+          isFiltered: isFiltered,
+        };
+      },
+    );
     SmileProjectsComponent.isSearched = true;
   }
 
@@ -108,7 +149,7 @@ export class SmileProjectsComponent {
    * Clears the search results.
    */
   clearSearch() {
-    this.searchTextField = "";
+    this.searchTextField = '';
     SmileProjectsComponent.isSearched = false;
     SmileProjectsComponent.allSearchedSmileProjects = [];
   }
@@ -130,7 +171,7 @@ export class SmileProjectsComponent {
     if (phase === 'all') {
       return AppStateService.instance.allSmileProjects.length;
     }
-    return AppStateService.instance.allSmileProjects.filter(p => p.phase === phase).length;
+    return AppStateService.instance.allSmileProjects.filter((p) => p.phase === phase).length;
   }
 
   /**
@@ -138,17 +179,17 @@ export class SmileProjectsComponent {
    * @returns Array of smile projects filtered by current phase.
    */
   getFilteredProjects(): Smile[] {
-    const projects = SmileProjectsComponent.isSearched 
+    const projects = SmileProjectsComponent.isSearched
       ? SmileProjectsComponent.allSearchedSmileProjects.filter((p: any) => p.isFiltered)
       : AppStateService.instance.allSmileProjects;
-    
+
     let filtered: Smile[];
     if (SmileProjectsComponent.phaseFilter === 'all') {
       filtered = projects;
     } else {
-      filtered = projects.filter(p => p.phase === SmileProjectsComponent.phaseFilter);
+      filtered = projects.filter((p) => p.phase === SmileProjectsComponent.phaseFilter);
     }
-    
+
     // Reverse order: newest first
     return filtered.slice().reverse();
   }
@@ -172,7 +213,7 @@ export class SmileProjectsComponent {
       // Legacy format: check if project is completed
       return smile.phase === 'completed' ? 1 : 0;
     }
-    return smile.buckets.filter(b => b.amount >= b.target).length;
+    return smile.buckets.filter((b) => b.amount >= b.target).length;
   }
 
   /**
@@ -212,8 +253,8 @@ export class SmileProjectsComponent {
    * @returns The original index in the unfiltered array.
    */
   getOriginalIndex(smile: Smile): number {
-    return AppStateService.instance.allSmileProjects.findIndex(p => 
-      p.title === smile.title && p.createdAt === smile.createdAt
+    return AppStateService.instance.allSmileProjects.findIndex(
+      (p) => p.title === smile.title && p.createdAt === smile.createdAt,
     );
   }
 
@@ -236,20 +277,20 @@ export class SmileProjectsComponent {
     if (!smile.buckets || smile.buckets.length === 0) {
       return false; // No buckets means no restriction
     }
-    
+
     // Check if ALL buckets are full
-    return smile.buckets.every(bucket => bucket.amount >= bucket.target);
+    return smile.buckets.every((bucket) => bucket.amount >= bucket.target);
   }
 
   /**
    * Handles the click event on a row in the Smile Projects table.
    * @param index - The index of the clicked row.
    */
-  clickRow(index: number){
+  clickRow(index: number) {
     AppComponent.gotoTop();
     InfoSmileComponent.setInfoSmileComponent(
       index,
-      AppStateService.instance.allSmileProjects[index]
+      AppStateService.instance.allSmileProjects[index],
     );
   }
 
@@ -270,7 +311,11 @@ export class SmileProjectsComponent {
    */
   addToProject(index: number) {
     AppComponent.gotoTop();
-    AppComponent.addTransaction("Smile", `@${AppStateService.instance.allSmileProjects[index].title}`, "smileprojects");
+    AppComponent.addTransaction(
+      'Smile',
+      `@${AppStateService.instance.allSmileProjects[index].title}`,
+      'smileprojects',
+    );
     const project = AppStateService.instance.allSmileProjects[index];
     const totalTarget = project.buckets.reduce((sum, b) => sum + (b.target || 0), 0);
     const totalAmount = project.buckets.reduce((sum, b) => sum + (b.amount || 0), 0);

@@ -42,18 +42,37 @@ describe('IncomeStatementService', () => {
 
     it('buckets Income transactions into revenues', () => {
       AppStateService.instance.allTransactions = [
-        { account: 'Income', amount: 3000, date: '2026-01-01', time: '', category: '@Salary', comment: '' },
+        {
+          account: 'Income',
+          amount: 3000,
+          date: '2026-01-01',
+          time: '',
+          category: '@Salary',
+          comment: '',
+        },
       ];
       service.recalculate();
-      expect(AppStateService.instance.allRevenues).toEqual([
-        { tag: 'Salary', amount: 3000 },
-      ]);
+      expect(AppStateService.instance.allRevenues).toEqual([{ tag: 'Salary', amount: 3000 }]);
     });
 
     it('aggregates revenues with same category', () => {
       AppStateService.instance.allTransactions = [
-        { account: 'Income', amount: 1000, date: '2026-01-01', time: '', category: '@Salary', comment: '' },
-        { account: 'Income', amount: 2000, date: '2026-02-01', time: '', category: '@Salary', comment: '' },
+        {
+          account: 'Income',
+          amount: 1000,
+          date: '2026-01-01',
+          time: '',
+          category: '@Salary',
+          comment: '',
+        },
+        {
+          account: 'Income',
+          amount: 2000,
+          date: '2026-02-01',
+          time: '',
+          category: '@Salary',
+          comment: '',
+        },
       ];
       service.recalculate();
       expect(AppStateService.instance.allRevenues).toHaveLength(1);
@@ -62,8 +81,22 @@ describe('IncomeStatementService', () => {
 
     it('buckets Daily expenses', () => {
       AppStateService.instance.allTransactions = [
-        { account: 'Daily', amount: -50, date: '2026-01-10', time: '', category: '@Food', comment: '' },
-        { account: 'Daily', amount: -30, date: '2026-01-15', time: '', category: '@Transport', comment: '' },
+        {
+          account: 'Daily',
+          amount: -50,
+          date: '2026-01-10',
+          time: '',
+          category: '@Food',
+          comment: '',
+        },
+        {
+          account: 'Daily',
+          amount: -30,
+          date: '2026-01-15',
+          time: '',
+          category: '@Transport',
+          comment: '',
+        },
       ];
       service.recalculate();
       expect(AppStateService.instance.dailyExpenses).toHaveLength(2);
@@ -71,7 +104,14 @@ describe('IncomeStatementService', () => {
 
     it('buckets Splurge expenses', () => {
       AppStateService.instance.allTransactions = [
-        { account: 'Splurge', amount: -200, date: '2026-01-10', time: '', category: '@Fun', comment: '' },
+        {
+          account: 'Splurge',
+          amount: -200,
+          date: '2026-01-10',
+          time: '',
+          category: '@Fun',
+          comment: '',
+        },
       ];
       service.recalculate();
       expect(AppStateService.instance.splurgeExpenses).toHaveLength(1);
@@ -80,8 +120,22 @@ describe('IncomeStatementService', () => {
 
     it('aggregates expenses with same category', () => {
       AppStateService.instance.allTransactions = [
-        { account: 'Daily', amount: -20, date: '2026-01-01', time: '', category: '@Food', comment: '' },
-        { account: 'Daily', amount: -30, date: '2026-01-05', time: '', category: '@Food', comment: '' },
+        {
+          account: 'Daily',
+          amount: -20,
+          date: '2026-01-01',
+          time: '',
+          category: '@Food',
+          comment: '',
+        },
+        {
+          account: 'Daily',
+          amount: -30,
+          date: '2026-01-05',
+          time: '',
+          category: '@Food',
+          comment: '',
+        },
       ];
       service.recalculate();
       expect(AppStateService.instance.dailyExpenses).toHaveLength(1);
@@ -90,7 +144,14 @@ describe('IncomeStatementService', () => {
 
     it('skips zero-amount transactions', () => {
       AppStateService.instance.allTransactions = [
-        { account: 'Daily', amount: 0, date: '2026-01-01', time: '', category: '@Food', comment: '' },
+        {
+          account: 'Daily',
+          amount: 0,
+          date: '2026-01-01',
+          time: '',
+          category: '@Food',
+          comment: '',
+        },
       ];
       service.recalculate();
       expect(AppStateService.instance.dailyExpenses).toEqual([]);
@@ -99,7 +160,14 @@ describe('IncomeStatementService', () => {
     it('tracks @Mojo fund contributions up to target', () => {
       AppStateService.instance.mojo = { amount: 0, target: 100 };
       AppStateService.instance.allTransactions = [
-        { account: 'Fire', amount: -80, date: '2026-01-01', time: '', category: '@Mojo', comment: '' },
+        {
+          account: 'Fire',
+          amount: -80,
+          date: '2026-01-01',
+          time: '',
+          category: '@Mojo',
+          comment: '',
+        },
       ];
       service.recalculate();
       expect(AppStateService.instance.mojo.amount).toBe(80);
@@ -108,7 +176,14 @@ describe('IncomeStatementService', () => {
     it('caps @Mojo at target', () => {
       AppStateService.instance.mojo = { amount: 90, target: 100 };
       AppStateService.instance.allTransactions = [
-        { account: 'Fire', amount: -50, date: '2026-01-01', time: '', category: '@Mojo', comment: '' },
+        {
+          account: 'Fire',
+          amount: -50,
+          date: '2026-01-01',
+          time: '',
+          category: '@Mojo',
+          comment: '',
+        },
       ];
       service.recalculate();
       // Mojo already at 90 → recalculate resets to 0, then -(-50) = 50 (not capped)
@@ -118,15 +193,32 @@ describe('IncomeStatementService', () => {
 
     it('tracks Smile project contributions', () => {
       AppStateService.instance.allSmileProjects = [
-        { 
-          title: 'Vacation', 
-          buckets: [{ id: 'bucket_1', title: 'Vacation', target: 500, amount: 0, notes: '', links: [] }],
-          sub: '', phase: 'planning', description: '', links: [], actionItems: [], notes: [],
-          createdAt: '', updatedAt: '', targetDate: '', completionDate: ''
+        {
+          title: 'Vacation',
+          buckets: [
+            { id: 'bucket_1', title: 'Vacation', target: 500, amount: 0, notes: '', links: [] },
+          ],
+          sub: '',
+          phase: 'planning',
+          description: '',
+          links: [],
+          actionItems: [],
+          notes: [],
+          createdAt: '',
+          updatedAt: '',
+          targetDate: '',
+          completionDate: '',
         } as any,
       ];
       AppStateService.instance.allTransactions = [
-        { account: 'Smile', amount: -200, date: '2026-01-01', time: '', category: '@Vacation', comment: '' },
+        {
+          account: 'Smile',
+          amount: -200,
+          date: '2026-01-01',
+          time: '',
+          category: '@Vacation',
+          comment: '',
+        },
       ];
       service.recalculate();
       // Check bucket amount instead of project amount
@@ -134,11 +226,16 @@ describe('IncomeStatementService', () => {
     });
 
     it('creates interest entries for income matching shares', () => {
-      AppStateService.instance.allShares = [
-        { tag: 'AAPL', amount: 0 } as any,
-      ];
+      AppStateService.instance.allShares = [{ tag: 'AAPL', amount: 0 } as any];
       AppStateService.instance.allTransactions = [
-        { account: 'Income', amount: 50, date: '2026-01-01', time: '', category: '@AAPL', comment: '' },
+        {
+          account: 'Income',
+          amount: 50,
+          date: '2026-01-01',
+          time: '',
+          category: '@AAPL',
+          comment: '',
+        },
       ];
       service.recalculate();
       expect(AppStateService.instance.allIntrests).toHaveLength(1);
@@ -161,7 +258,7 @@ describe('IncomeStatementService', () => {
 
     it('includes revenue tags', () => {
       AppStateService.instance.tier2Loaded = true;
-      const tags = service.getWrites().map(w => w.tag);
+      const tags = service.getWrites().map((w) => w.tag);
       expect(tags).toContain('income/revenue/revenues');
       expect(tags).toContain('income/revenue/interests');
       expect(tags).toContain('income/revenue/properties');
@@ -169,7 +266,7 @@ describe('IncomeStatementService', () => {
 
     it('includes expense tags when tier2 loaded', () => {
       AppStateService.instance.tier2Loaded = true;
-      const tags = service.getWrites().map(w => w.tag);
+      const tags = service.getWrites().map((w) => w.tag);
       expect(tags).toContain('income/expenses/daily');
       expect(tags).toContain('income/expenses/splurge');
       expect(tags).toContain('income/expenses/smile');
@@ -179,7 +276,7 @@ describe('IncomeStatementService', () => {
 
     it('excludes smile/fire/mojo tags when tier2 not loaded', () => {
       AppStateService.instance.tier2Loaded = false;
-      const tags = service.getWrites().map(w => w.tag);
+      const tags = service.getWrites().map((w) => w.tag);
       expect(tags).not.toContain('income/expenses/smile');
       expect(tags).not.toContain('income/expenses/fire');
       expect(tags).not.toContain('income/expenses/mojo');
@@ -200,7 +297,10 @@ describe('IncomeStatementService', () => {
     it('saves revenues as JSON', () => {
       AppStateService.instance.allRevenues = [{ tag: 'Salary', amount: 3000 }];
       service.saveToLocalStorage();
-      expect(localService.saveData).toHaveBeenCalledWith('revenues', JSON.stringify([{ tag: 'Salary', amount: 3000 }]));
+      expect(localService.saveData).toHaveBeenCalledWith(
+        'revenues',
+        JSON.stringify([{ tag: 'Salary', amount: 3000 }]),
+      );
     });
   });
 
@@ -213,7 +313,7 @@ describe('IncomeStatementService', () => {
         phase: 'saving',
         buckets: [
           { id: 'b1', title: 'Medical', target: 500, amount: 0, notes: '', links: [] },
-          { id: 'b2', title: 'Car', target: 500, amount: 0, notes: '', links: [] }
+          { id: 'b2', title: 'Car', target: 500, amount: 0, notes: '', links: [] },
         ],
         links: [],
         actionItems: [],
@@ -221,13 +321,27 @@ describe('IncomeStatementService', () => {
         createdAt: '2024-01-01',
         updatedAt: '2024-01-01',
         targetDate: '',
-        completionDate: ''
+        completionDate: '',
       };
 
       AppStateService.instance.allFireEmergencies = [fireEmergency];
       AppStateService.instance.allTransactions = [
-        { category: '@Medical', amount: -500, date: '2024-02-15', time: '10:00', account: 'Checking', comment: '' },
-        { category: '@Car', amount: -500, date: '2024-03-20', time: '10:00', account: 'Checking', comment: '' }
+        {
+          category: '@Medical',
+          amount: -500,
+          date: '2024-02-15',
+          time: '10:00',
+          account: 'Checking',
+          comment: '',
+        },
+        {
+          category: '@Car',
+          amount: -500,
+          date: '2024-03-20',
+          time: '10:00',
+          account: 'Checking',
+          comment: '',
+        },
       ];
 
       service.recalculate();
@@ -244,7 +358,7 @@ describe('IncomeStatementService', () => {
         phase: 'saving',
         buckets: [
           { id: 'b1', title: 'Medical', target: 500, amount: 0, notes: '', links: [] },
-          { id: 'b2', title: 'Car', target: 500, amount: 0, notes: '', links: [] }
+          { id: 'b2', title: 'Car', target: 500, amount: 0, notes: '', links: [] },
         ],
         links: [],
         actionItems: [],
@@ -252,12 +366,19 @@ describe('IncomeStatementService', () => {
         createdAt: '2024-01-01',
         updatedAt: '2024-01-01',
         targetDate: '',
-        completionDate: ''
+        completionDate: '',
       };
 
       AppStateService.instance.allFireEmergencies = [fireEmergency];
       AppStateService.instance.allTransactions = [
-        { category: '@Medical', amount: -300, date: '2024-02-15', time: '10:00', account: 'Checking', comment: '' }
+        {
+          category: '@Medical',
+          amount: -300,
+          date: '2024-02-15',
+          time: '10:00',
+          account: 'Checking',
+          comment: '',
+        },
       ];
 
       service.recalculate();
@@ -272,21 +393,26 @@ describe('IncomeStatementService', () => {
       const fireEmergency: any = {
         title: 'Emergency Fund',
         phase: 'completed',
-        buckets: [
-          { id: 'b1', title: 'Main', target: 1000, amount: 1000, notes: '', links: [] }
-        ],
+        buckets: [{ id: 'b1', title: 'Main', target: 1000, amount: 1000, notes: '', links: [] }],
         links: [],
         actionItems: [],
         notes: [],
         createdAt: '2024-01-01',
         updatedAt: '2024-01-01',
         targetDate: '',
-        completionDate: '2024-02-01'
+        completionDate: '2024-02-01',
       };
 
       AppStateService.instance.allFireEmergencies = [fireEmergency];
       AppStateService.instance.allTransactions = [
-        { category: '@Main', amount: -1000, date: '2024-05-15', time: '10:00', account: 'Checking', comment: '' }
+        {
+          category: '@Main',
+          amount: -1000,
+          date: '2024-05-15',
+          time: '10:00',
+          account: 'Checking',
+          comment: '',
+        },
       ];
 
       service.recalculate();

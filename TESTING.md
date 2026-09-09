@@ -4,20 +4,20 @@ How to run, write, and debug tests in the Money App.
 
 ## Quick Reference
 
-| Command | What it does |
-|---------|-------------|
-| `npm test` | Frontend unit tests (Jest) |
-| `npm run test:watch` | Frontend tests in watch mode |
-| `npm run test:coverage` | Frontend tests + coverage report |
-| `npm run test:backend:unit` | Backend unit tests (no DB needed) |
-| `npm run test:backend:watch` | Backend unit tests in watch mode |
-| `npm run test:backend` | All backend tests (unit + integration, needs CouchDB) |
-| `npm run test:all` | Frontend + backend unit tests |
-| `npm run test:pipeline` | Full CI-equivalent pipeline (unit + integration + E2E) |
-| `npm run test:e2e` | Playwright E2E (needs E2E stack running) |
-| `npm run test:e2e:headed` | E2E with visible browser |
-| `npm run test:e2e:ui` | Playwright interactive UI mode |
-| `npm run test:e2e:full` | Start E2E stack, run tests, tear down |
+| Command                      | What it does                                           |
+| ---------------------------- | ------------------------------------------------------ |
+| `npm test`                   | Frontend unit tests (Jest)                             |
+| `npm run test:watch`         | Frontend tests in watch mode                           |
+| `npm run test:coverage`      | Frontend tests + coverage report                       |
+| `npm run test:backend:unit`  | Backend unit tests (no DB needed)                      |
+| `npm run test:backend:watch` | Backend unit tests in watch mode                       |
+| `npm run test:backend`       | All backend tests (unit + integration, needs CouchDB)  |
+| `npm run test:all`           | Frontend + backend unit tests                          |
+| `npm run test:pipeline`      | Full CI-equivalent pipeline (unit + integration + E2E) |
+| `npm run test:e2e`           | Playwright E2E (needs E2E stack running)               |
+| `npm run test:e2e:headed`    | E2E with visible browser                               |
+| `npm run test:e2e:ui`        | Playwright interactive UI mode                         |
+| `npm run test:e2e:full`      | Start E2E stack, run tests, tear down                  |
 
 ## Running Tests Locally
 
@@ -112,12 +112,12 @@ templates/                             Copy-paste starter templates
 
 ## When to Mock vs. Real Dependencies
 
-| Use mock when... | Use real when... |
-|-----------------|-----------------|
-| Testing component logic in isolation | Testing service integration |
-| External API calls (HTTP, DB) | Pure utility functions |
-| Slow or nondeterministic operations | Simple data transformations |
-| Cross-cutting concerns (auth, logging) | In E2E tests (always real) |
+| Use mock when...                       | Use real when...            |
+| -------------------------------------- | --------------------------- |
+| Testing component logic in isolation   | Testing service integration |
+| External API calls (HTTP, DB)          | Pure utility functions      |
+| Slow or nondeterministic operations    | Simple data transformations |
+| Cross-cutting concerns (auth, logging) | In E2E tests (always real)  |
 
 ### Common mocks in this project
 
@@ -129,6 +129,7 @@ templates/                             Copy-paste starter templates
 ## Pre-commit Hooks
 
 Husky runs `lint-staged` on every commit:
+
 - **`src/**/*.ts`** changes → runs related frontend Jest tests
 - **`backend/**/*.js`** changes → runs backend unit tests
 
@@ -137,6 +138,7 @@ To bypass in emergencies: `git commit --no-verify -m "message"`
 ## CI Pipeline
 
 The GitHub Actions workflow (`.github/workflows/test.yml`) runs on every PR to `main`:
+
 1. Frontend Unit Tests
 2. Backend Unit Tests
 3. Backend Integration Tests (with CouchDB service container)
@@ -159,6 +161,7 @@ npm run test:backend:unit    # runs with the rest of the backend unit tests
 ```
 
 What it tests:
+
 - **Batch-read is faster than 19 individual reads** — a single `POST /api/data/read/batch` with all 19 paths must complete faster than 19 sequential `GET` requests, and under 200ms (mocked DB).
 - **Data equivalence** — batch-read returns the same data as 19 individual reads combined.
 
@@ -171,6 +174,7 @@ npm run test:e2e -- --grep "Performance"
 ```
 
 What it tests:
+
 - **Time-to-interactive after login** — app shell (`#heading`) must appear within 10 seconds (generous for CI; target is <3s on Pi).
 - **Reload time** — page reload must be interactive within 10 seconds.
 - **HTTP request count** — initial load must use at most 2 batch-read requests and 0 individual `/api/data/read/*` requests (verifies that the 19-request pattern does not regress).
@@ -180,16 +184,17 @@ What it tests:
 Located in `e2e/persistence.spec.ts` (the `tab-back (visibilitychange)` test).
 
 What it tests:
+
 - Dispatching a `visibilitychange` event (simulating tab-back) triggers at most 1 batch-read request, not 19 individual reads.
 
 ### Key metrics to track on real hardware
 
 When deploying to a Raspberry Pi, measure these before and after:
 
-| Metric | How to measure | Target |
-|--------|---------------|--------|
-| Time to interactive | Browser DevTools → Performance tab | < 1s (Tier 1) |
-| Total HTTP requests on load | Browser DevTools → Network tab | 1-2 (batch-read) |
-| HTTP requests on tab-back | Network tab after tab-out/tab-back | 0-1 |
-| Container memory usage | `podman stats --no-stream` | < 700 MB total |
-| Backend response time | `curl -w "%{time_total}" -X POST .../api/data/read/batch` | < 200ms |
+| Metric                      | How to measure                                            | Target           |
+| --------------------------- | --------------------------------------------------------- | ---------------- |
+| Time to interactive         | Browser DevTools → Performance tab                        | < 1s (Tier 1)    |
+| Total HTTP requests on load | Browser DevTools → Network tab                            | 1-2 (batch-read) |
+| HTTP requests on tab-back   | Network tab after tab-out/tab-back                        | 0-1              |
+| Container memory usage      | `podman stats --no-stream`                                | < 700 MB total   |
+| Backend response time       | `curl -w "%{time_total}" -X POST .../api/data/read/batch` | < 200ms          |

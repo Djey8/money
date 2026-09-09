@@ -2,7 +2,6 @@ import { InfoMojoComponent } from './info-mojo.component';
 import { AppStateService } from '../../../shared/services/app-state.service';
 
 describe('InfoMojoComponent', () => {
-
   beforeEach(() => {
     (AppStateService as any)._instance = undefined;
     AppStateService.instance.mojo = { target: 2000, amount: 500 };

@@ -11,36 +11,42 @@ import { NgIf } from '@angular/common';
       <span>{{ pullProgress >= 1 ? 'Release to refresh' : 'Pull to refresh' }}</span>
     </div>
   `,
-  styles: [`
-    .pull-indicator {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      z-index: 10000;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      padding: 12px;
-      background: var(--color-surface, #fff);
-      color: var(--color-text, #333);
-      font-size: 14px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      transition: opacity 0.2s;
-    }
-    .pull-spinner {
-      font-size: 20px;
-      transition: transform 0.3s;
-    }
-    .pull-spinner.active {
-      animation: spin 0.6s linear infinite;
-    }
-    @keyframes spin {
-      from { transform: rotate(0deg); }
-      to { transform: rotate(360deg); }
-    }
-  `]
+  styles: [
+    `
+      .pull-indicator {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 10000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 12px;
+        background: var(--color-surface, #fff);
+        color: var(--color-text, #333);
+        font-size: 14px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        transition: opacity 0.2s;
+      }
+      .pull-spinner {
+        font-size: 20px;
+        transition: transform 0.3s;
+      }
+      .pull-spinner.active {
+        animation: spin 0.6s linear infinite;
+      }
+      @keyframes spin {
+        from {
+          transform: rotate(0deg);
+        }
+        to {
+          transform: rotate(360deg);
+        }
+      }
+    `,
+  ],
 })
 export class PullToRefreshComponent implements OnInit, OnDestroy {
   pulling = false;

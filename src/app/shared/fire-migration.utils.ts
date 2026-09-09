@@ -25,44 +25,61 @@ export function migrateFire(raw: any, transactions?: any[]): Fire {
     buckets = raw.buckets.map((b: any) => ({
       id: b.id || generateBucketId(),
       title: b.title || 'Emergency Fund',
-      target: typeof b.target === 'number' ? Math.round(b.target * 100) / 100 : Math.round((parseFloat(b.target) || 0) * 100) / 100,
+      target:
+        typeof b.target === 'number'
+          ? Math.round(b.target * 100) / 100
+          : Math.round((parseFloat(b.target) || 0) * 100) / 100,
       amount: typeof b.amount === 'number' ? Math.round(b.amount * 100) / 100 : 0,
       notes: b.notes || '',
       links: Array.isArray(b.links) ? b.links : [],
       targetDate: b.targetDate || undefined,
-      completionDate: b.completionDate || undefined
+      completionDate: b.completionDate || undefined,
     }));
   } else {
     // Legacy project without buckets → create single default bucket
     // Use the fire emergency's title for the bucket name
     const defaultBucketTitle = raw.title || 'Emergency Fund';
-    buckets = [{
-      id: generateBucketId(),
-      title: defaultBucketTitle,
-      target: typeof raw.target === 'number' ? Math.round(raw.target * 100) / 100 : Math.round((parseFloat(raw.target) || 0) * 100) / 100,
-      amount: typeof raw.amount === 'number' ? Math.round(raw.amount * 100) / 100 : Math.round((parseFloat(raw.amount) || 0) * 100) / 100,
-      notes: '',
-      links: []
-    }];
+    buckets = [
+      {
+        id: generateBucketId(),
+        title: defaultBucketTitle,
+        target:
+          typeof raw.target === 'number'
+            ? Math.round(raw.target * 100) / 100
+            : Math.round((parseFloat(raw.target) || 0) * 100) / 100,
+        amount:
+          typeof raw.amount === 'number'
+            ? Math.round(raw.amount * 100) / 100
+            : Math.round((parseFloat(raw.amount) || 0) * 100) / 100,
+        notes: '',
+        links: [],
+      },
+    ];
   }
 
   // Calculate totals for phase determination
-  const totalTarget = buckets.length > 0 
-    ? buckets.reduce((sum, b) => sum + (b.target || 0), 0)
-    : (typeof raw.target === 'number' ? raw.target : parseFloat(raw.target) || 0);
-  
-  const totalAmount = buckets.length > 0
-    ? buckets.reduce((sum, b) => sum + (b.amount || 0), 0)
-    : (typeof raw.amount === 'number' ? raw.amount : parseFloat(raw.amount) || 0);
+  const totalTarget =
+    buckets.length > 0
+      ? buckets.reduce((sum, b) => sum + (b.target || 0), 0)
+      : typeof raw.target === 'number'
+        ? raw.target
+        : parseFloat(raw.target) || 0;
+
+  const totalAmount =
+    buckets.length > 0
+      ? buckets.reduce((sum, b) => sum + (b.amount || 0), 0)
+      : typeof raw.amount === 'number'
+        ? raw.amount
+        : parseFloat(raw.amount) || 0;
 
   // Auto-determine phase if not set
   let phase: FirePhase = raw.phase || 'planning';
   let completionDate = raw.completionDate || '';
-  
+
   if (!raw.phase) {
-    const progress = totalTarget > 0 ? (totalAmount / totalTarget) : 0;
-    const allBucketsFull = buckets.length > 0 && buckets.every(b => b.amount >= b.target);
-    
+    const progress = totalTarget > 0 ? totalAmount / totalTarget : 0;
+    const allBucketsFull = buckets.length > 0 && buckets.every((b) => b.amount >= b.target);
+
     if (totalAmount === 0) {
       phase = 'planning';
     } else if (allBucketsFull || progress >= 1.0) {
@@ -74,9 +91,9 @@ export function migrateFire(raw: any, transactions?: any[]): Fire {
         const relatedTransactions = transactions.filter((tx: any) => {
           if (tx.category === `@${fireTitle}`) return true;
           // Check if matches any bucket
-          return buckets.some(b => tx.category === `@${b.title}`);
+          return buckets.some((b) => tx.category === `@${b.title}`);
         });
-        
+
         if (relatedTransactions.length > 0) {
           // Sort by date descending and get the most recent
           const sortedTx = relatedTransactions.sort((a: any, b: any) => {
@@ -111,7 +128,7 @@ export function migrateFire(raw: any, transactions?: any[]): Fire {
     createdAt: raw.createdAt || now,
     updatedAt: raw.updatedAt || now,
     targetDate: raw.targetDate || '',
-    completionDate: completionDate
+    completionDate: completionDate,
   };
 }
 
@@ -120,7 +137,7 @@ export function migrateFire(raw: any, transactions?: any[]): Fire {
  * If transactions are provided, uses them to determine completion dates
  */
 export function migrateFireArray(rawArray: any[], transactions?: any[]): Fire[] {
-  return rawArray.map(raw => migrateFire(raw, transactions));
+  return rawArray.map((raw) => migrateFire(raw, transactions));
 }
 
 /**

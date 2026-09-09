@@ -3,16 +3,34 @@ import { Transaction } from '../../interfaces/transaction';
 import { IncomeFilter } from '../../interfaces/income-filter';
 
 function tx(overrides: Partial<Transaction> = {}): Transaction {
-  return { account: 'Daily', amount: -50, date: '2026-01-15', time: '10:30', category: 'Food', comment: '', ...overrides };
+  return {
+    account: 'Daily',
+    amount: -50,
+    date: '2026-01-15',
+    time: '10:30',
+    category: 'Food',
+    comment: '',
+    ...overrides,
+  };
 }
 
 function defaultFilter(overrides: Partial<IncomeFilter> = {}): IncomeFilter {
   return {
-    startDate: '', endDate: '',
-    selectedAccounts: [], selectedTags: [],
-    sortBy: 'none', sortOrder: 'desc',
+    startDate: '',
+    endDate: '',
+    selectedAccounts: [],
+    selectedTags: [],
+    sortBy: 'none',
+    sortOrder: 'desc',
     searchText: '',
-    searchFields: { account: true, amount: true, date: true, time: true, category: true, comment: true },
+    searchFields: {
+      account: true,
+      amount: true,
+      date: true,
+      time: true,
+      category: true,
+      comment: true,
+    },
     ...overrides,
   };
 }
@@ -95,7 +113,14 @@ describe('TransactionFilterService', () => {
   // --- checkSearchTermMatch ------------------------------------------------
 
   describe('checkSearchTermMatch()', () => {
-    const allFields = { account: true, amount: true, date: true, time: true, category: true, comment: true };
+    const allFields = {
+      account: true,
+      amount: true,
+      date: true,
+      time: true,
+      category: true,
+      comment: true,
+    };
 
     it('matches account text', () => {
       const t = tx({ account: 'Daily' });
@@ -131,7 +156,9 @@ describe('TransactionFilterService', () => {
     it('uses > operator for date comparison', () => {
       const t = tx({ date: '2026-01-15' });
       expect(TransactionFilterService.checkSearchTermMatch(t, '>01.01.2026', allFields)).toBe(true);
-      expect(TransactionFilterService.checkSearchTermMatch(t, '>01.02.2026', allFields)).toBe(false);
+      expect(TransactionFilterService.checkSearchTermMatch(t, '>01.02.2026', allFields)).toBe(
+        false,
+      );
     });
 
     it('uses > operator for amount comparison', () => {
@@ -168,9 +195,27 @@ describe('TransactionFilterService', () => {
   describe('applyFilters()', () => {
     const transactions: Transaction[] = [
       tx({ account: 'Daily', amount: -50, date: '2026-01-10', category: 'Food', comment: 'Lunch' }),
-      tx({ account: 'Splurge', amount: -200, date: '2026-01-15', category: 'Fun', comment: 'Concert' }),
-      tx({ account: 'Income', amount: 3000, date: '2026-01-01', category: '@Salary', comment: 'January' }),
-      tx({ account: 'Daily', amount: -30, date: '2026-02-05', category: 'Transport', comment: 'Bus' }),
+      tx({
+        account: 'Splurge',
+        amount: -200,
+        date: '2026-01-15',
+        category: 'Fun',
+        comment: 'Concert',
+      }),
+      tx({
+        account: 'Income',
+        amount: 3000,
+        date: '2026-01-01',
+        category: '@Salary',
+        comment: 'January',
+      }),
+      tx({
+        account: 'Daily',
+        amount: -30,
+        date: '2026-02-05',
+        category: 'Transport',
+        comment: 'Bus',
+      }),
     ];
 
     it('returns all transactions with no filters', () => {
@@ -181,14 +226,14 @@ describe('TransactionFilterService', () => {
       const f = defaultFilter({ startDate: '2026-01-05', endDate: '2026-01-20' });
       const result = service.applyFilters(transactions, f);
       expect(result).toHaveLength(2);
-      expect(result.map(t => t.account)).toEqual(['Daily', 'Splurge']);
+      expect(result.map((t) => t.account)).toEqual(['Daily', 'Splurge']);
     });
 
     it('filters by selectedAccounts', () => {
       const f = defaultFilter({ selectedAccounts: ['Daily'] });
       const result = service.applyFilters(transactions, f);
       expect(result).toHaveLength(2);
-      result.forEach(t => expect(t.account).toBe('Daily'));
+      result.forEach((t) => expect(t.account).toBe('Daily'));
     });
 
     it('filters by selectedTags', () => {
@@ -231,7 +276,11 @@ describe('TransactionFilterService', () => {
     });
 
     it('combines date range + search text', () => {
-      const f = defaultFilter({ startDate: '2026-01-01', endDate: '2026-01-31', searchText: 'daily' });
+      const f = defaultFilter({
+        startDate: '2026-01-01',
+        endDate: '2026-01-31',
+        searchText: 'daily',
+      });
       const result = service.applyFilters(transactions, f);
       expect(result).toHaveLength(1);
       expect(result[0].date).toBe('2026-01-10');

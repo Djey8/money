@@ -5,10 +5,16 @@
 /tmp
 /out-tsc
 /bazel-out
+/packages/*/dist
+/apps/*/dist
+/apps/mcp/src/generated
+/backend/migration-backups
 
 # Node
 /node_modules
 /backend/node_modules
+/packages/*/node_modules
+/apps/*/node_modules
 npm-debug.log
 yarn-error.log
 
@@ -28,6 +34,9 @@ yarn-error.log
 !.vscode/launch.json
 !.vscode/extensions.json
 .history/*
+
+# Claude Code local tooling config (per-machine permissions, not project config)
+.claude/settings.json
 
 # Playwright
 /playwright-report

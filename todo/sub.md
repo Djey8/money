@@ -10,19 +10,20 @@
 
 ## 📊 Implementation Progress Tracker
 
-| Phase | Status | Start Date | Completion Date | Duration | Tasks | Notes |
-|-------|--------|------------|-----------------|----------|-------|-------|
-| **Phase 1: Data Model & Migration** | ✅ Complete | Apr 5, 2026 | Apr 5, 2026 | 1 day | 8/8 | All tasks completed. 23 migration tests passing. Change history support added. |
-| **Phase 2: Frequency Calculation** | ✅ Complete | Apr 6, 2026 | Apr 6, 2026 | 1 day | 10/10 | Strategy pattern implemented. 44 tests passing. All 5 frequencies working. |
-| **Phase 3: UI Changes** | ✅ Complete | Apr 6, 2026 | Apr 6, 2026 | 2 days | 14/14 | Forms, table, legend, filter all implemented. 6-language support. |
-| **Phase 4: Manual Refresh** | ✅ Complete | Apr 6, 2026 | Apr 6, 2026 | 1 day | 6/6 | Toolbar button with loading spinner and toast notifications. |
-| **Phase 5: Auto-Generation** | ✅ Complete | Apr 6, 2026 | Apr 6, 2026 | 1 day | 5/5 | Auto-generation on load in app.component.ts. Success toast shown. |
-| **Phase 6: Testing & Polish** | ✅ Complete | Apr 6, 2026 | Apr 6, 2026 | 1 day | 10/10 | All 656 tests passing. Release notes created. Documentation updated. |
-| **Total Progress** | **100%** | Apr 5, 2026 | Apr 6, 2026 | 2 days | 61/61 | ✅ Feature complete and production-ready |
+| Phase                               | Status      | Start Date  | Completion Date | Duration | Tasks | Notes                                                                          |
+| ----------------------------------- | ----------- | ----------- | --------------- | -------- | ----- | ------------------------------------------------------------------------------ |
+| **Phase 1: Data Model & Migration** | ✅ Complete | Apr 5, 2026 | Apr 5, 2026     | 1 day    | 8/8   | All tasks completed. 23 migration tests passing. Change history support added. |
+| **Phase 2: Frequency Calculation**  | ✅ Complete | Apr 6, 2026 | Apr 6, 2026     | 1 day    | 10/10 | Strategy pattern implemented. 44 tests passing. All 5 frequencies working.     |
+| **Phase 3: UI Changes**             | ✅ Complete | Apr 6, 2026 | Apr 6, 2026     | 2 days   | 14/14 | Forms, table, legend, filter all implemented. 6-language support.              |
+| **Phase 4: Manual Refresh**         | ✅ Complete | Apr 6, 2026 | Apr 6, 2026     | 1 day    | 6/6   | Toolbar button with loading spinner and toast notifications.                   |
+| **Phase 5: Auto-Generation**        | ✅ Complete | Apr 6, 2026 | Apr 6, 2026     | 1 day    | 5/5   | Auto-generation on load in app.component.ts. Success toast shown.              |
+| **Phase 6: Testing & Polish**       | ✅ Complete | Apr 6, 2026 | Apr 6, 2026     | 1 day    | 10/10 | All 656 tests passing. Release notes created. Documentation updated.           |
+| **Total Progress**                  | **100%**    | Apr 5, 2026 | Apr 6, 2026     | 2 days   | 61/61 | ✅ Feature complete and production-ready                                       |
 
 **Legend:** ✅ Complete | 🔄 In Progress | 🔲 Pending | ⚠️ Blocked | ❌ Failed
 
 **Key Milestones Achieved:**
+
 - ✅ Data model extended with `frequency` field and `changeHistory` field
 - ✅ Migration utilities created (145 lines, 5 functions)
 - ✅ 23 migration tests passing
@@ -75,6 +76,7 @@ Currently, subscriptions only support monthly recurrence. Users need flexible fr
 
 **Solution Overview:**
 Enhance subscription system with:
+
 - 5 frequency options: weekly, biweekly, monthly (default), quarterly, yearly
 - Visual frequency indicator in subscription list (color-coded or icon-based)
 - Manual refresh button in toolbar to regenerate transactions on-demand
@@ -83,11 +85,13 @@ Enhance subscription system with:
 - Foundation for Smile/Fire budget planner feature
 
 **Key Benefits:**
+
 - **Users:** Accurate financial modeling, better budgeting, reduced manual transaction entry
 - **Business:** Feature parity with competitors, foundation for advanced budget planning
 - **Technical:** Cleaner architecture, reusable for project-based budgeting
 
 **Estimated Impact:**
+
 - Development: 8-10 days
 - Testing: 3-4 days
 - Migration: Low risk (backward compatible)
@@ -100,15 +104,16 @@ Enhance subscription system with:
 ### 2.1 Current Implementation
 
 **Data Structure:**
+
 ```typescript
 export interface Subscription {
-    title: string;
-    account: string;
-    amount: number;
-    startDate: string;
-    endDate: string;
-    category: string;
-    comment: string;
+  title: string;
+  account: string;
+  amount: number;
+  startDate: string;
+  endDate: string;
+  category: string;
+  comment: string;
 }
 ```
 
@@ -122,6 +127,7 @@ export interface Subscription {
    - Frequency: **Monthly only** (hardcoded in `getOccurrenceDates()`)
 
 2. **Algorithm:**
+
    ```typescript
    private getOccurrenceDates(startDateString: string, boundaryDate: Date): string[] {
      // Generates monthly dates from startDate to boundary
@@ -144,12 +150,14 @@ export interface Subscription {
 ### 2.2 Key Observations
 
 **Strengths:**
+
 - ✅ Robust duplicate prevention
 - ✅ Concurrent run protection
 - ✅ Integration with income statement service
 - ✅ Proper logging via FrontendLoggerService
 
 **Limitations:**
+
 - ❌ Monthly-only frequency (hardcoded)
 - ❌ No frequency visibility in UI
 - ❌ Transaction generation only on app load/visibility change
@@ -157,6 +165,7 @@ export interface Subscription {
 - ❌ Date calculation tightly coupled to monthly logic
 
 **Technical Debt:**
+
 - Date clamping logic (28 days for Feb, 30 for Apr/Jun/Sep/Nov) is fragile
 - No consideration for business days vs calendar days
 - Timezone handling not explicit
@@ -168,12 +177,14 @@ export interface Subscription {
 ### 3.1 Functional Requirements
 
 **FR-1: Frequency Selection**
+
 - User can select frequency when creating/editing subscription
 - Options: Weekly, Biweekly, Monthly (default), Quarterly, Yearly
 - Stored in database, encrypted like other fields
 - Default: Monthly (for backward compatibility)
 
 **FR-2: UI Visualization**
+
 - Subscription list displays frequency indicator
 - Options considered:
   - Color-coded badge/dot (preferred for mobile space constraints)
@@ -182,17 +193,20 @@ export interface Subscription {
 - Legend always visible or tooltip-based
 
 **FR-3: Manual Refresh**
+
 - Button in toolbar (between toggle switch and + button)
 - Icon: ↻ (refresh/sync icon)
 - Action: Calls `setTransactionsForSubscriptions()` manually
 - Feedback: Visual indicator (spinner/success message)
 
 **FR-4: Auto-Generation on Load**
+
 - Transactions auto-generated during `app-data.service.ts` → `applyPathData()`
 - Happens **after** decryption, **before** UI render
 - Smoother UX: no delay between page load and transaction appearance
 
 **FR-5: Migration**
+
 - Existing subscriptions default to "monthly" frequency
 - No data loss, backward compatible
 - Migration utility in new `src/app/shared/migrations/` folder
@@ -200,21 +214,25 @@ export interface Subscription {
 ### 3.2 Non-Functional Requirements
 
 **NFR-1: Performance**
+
 - Transaction generation: < 500ms for 50 subscriptions
 - No blocking UI thread
 - Cached calculations where possible
 
 **NFR-2: Reliability**
+
 - No duplicate transactions (enhanced duplicate check for all frequencies)
 - Idempotent operations (safe to run multiple times)
 - Error handling for edge cases (leap years, DST changes)
 
 **NFR-3: Maintainability**
+
 - Frequency logic abstracted (strategy pattern)
 - Reusable for Smile/Fire budget planner
 - Well-documented date calculations
 
 **NFR-4: Testability**
+
 - Unit tests for each frequency
 - Edge cases: leap years, month boundaries, year boundaries
 - Integration tests for UI interactions
@@ -226,36 +244,42 @@ export interface Subscription {
 ### 4.1 Open Questions
 
 **Q1: Weekly subscriptions - which day of the week?**
+
 - **Option A:** Use the day-of-week from startDate (if startDate is Monday, always Monday)
 - **Option B:** Let user select day-of-week explicitly
 - **Decision:** Option A (simpler, consistent with monthly behavior)
 - **Rationale:** Less cognitive load, matches user's mental model ("I started this on Monday, it recurs on Mondays")
 
 **Q2: Biweekly - every 2 weeks or twice per month?**
+
 - **Option A:** Every 14 days (true biweekly)
 - **Option B:** Twice per month (e.g., 1st and 15th)
 - **Decision:** Option A (every 14 days)
 - **Rationale:** "Biweekly" commonly means every 2 weeks in payroll/billing contexts
 
 **Q3: Quarterly - which months?**
+
 - **Option A:** Calendar quarters (Jan/Apr/Jul/Oct)
 - **Option B:** From startDate + 3 months (e.g., start Feb 14 → May 14, Aug 14, Nov 14)
 - **Decision:** Option B (from startDate)
 - **Rationale:** Consistent with how monthly works, more flexible
 
 **Q4: Year boundary handling - what if startDate is Feb 29 (leap day)?**
+
 - **Option A:** Skip non-leap years
 - **Option B:** Use Feb 28 in non-leap years
 - **Decision:** Option B (clamp to Feb 28)
 - **Rationale:** User expects yearly subscription, don't skip years
 
 **Q5: Manual refresh - should it be globally for all subscriptions or per-subscription?**
+
 - **Option A:** Global refresh button (toolbar)
 - **Option B:** Per-subscription refresh (in detail view)
 - **Decision:** Option A initially, Option B later if needed
 - **Rationale:** Simpler UX, toolbar placement is prominent
 
 **Q6: Transaction generation timing - when exactly?**
+
 - **Current:** On app init and visibility change
 - **Proposed:** Add during database load (`applyPathData`)
 - **Concern:** What if database load is slow? User sees old state?
@@ -263,11 +287,13 @@ export interface Subscription {
 - **Rationale:** Defensive programming, handles slow network/database
 
 **Q7: Color scheme for frequency visualization - accessibility?**
+
 - **Requirement:** WCAG 2.1 AA compliant (contrast ratio ≥ 4.5:1)
 - **Decision:** Use color + shape/icon (not color alone)
 - **Rationale:** Color blindness accessibility
 
 **Q8: What happens when user changes frequency mid-stream?**
+
 - **Scenario:** Monthly subscription (Mar 1, Apr 1, May 1) changes to weekly (May 1)
 - **Option A:** Delete all future transactions, regenerate from last occurrence
 - **Option B:** Keep existing, generate new from today
@@ -275,6 +301,7 @@ export interface Subscription {
 - **Rationale:** Clean slate, predictable behavior (matches current edit flow)
 
 **Q9: Should frequency apply retrospectively?**
+
 - **Scenario:** User creates yearly subscription with startDate = 2020-01-01, today = 2026-04-05
 - **Behavior:** Generate transactions for 2020, 2021, 2022, 2023, 2024, 2025, 2026?
 - **Current behavior:** Yes (see `getOccurrenceDates` - goes from startDate to boundary)
@@ -282,6 +309,7 @@ export interface Subscription {
 - **Rationale:** User may be backfilling old subscriptions, needed for accurate historical data
 
 **Q10: Database encryption - frequency field encrypted?**
+
 - **Current:** All subscription fields encrypted individually
 - **Decision:** Yes, encrypt frequency field
 - **Rationale:** Consistency, defense-in-depth
@@ -289,6 +317,7 @@ export interface Subscription {
 ### 4.2 Architectural Decisions
 
 **AD-1: Strategy Pattern for Frequency Calculation**
+
 ```typescript
 interface FrequencyStrategy {
   calculateOccurrences(startDate: string, boundaryDate: Date): string[];
@@ -300,10 +329,12 @@ class MonthlyFrequency implements FrequencyStrategy { ... }
 class QuarterlyFrequency implements FrequencyStrategy { ... }
 class YearlyFrequency implements FrequencyStrategy { ... }
 ```
+
 - **Benefit:** Testable, extensible, clean separation
 - **Trade-off:** More files, slight complexity increase
 
 **AD-2: Migration Utility Location**
+
 - **Path:** `src/app/shared/migrations/subscription-migration.utils.ts`
 - **Rationale:** New folder for all future migrations, keeps shared/ clean
 - **Structure:**
@@ -316,8 +347,9 @@ class YearlyFrequency implements FrequencyStrategy { ... }
   ```
 
 **AD-3: UI Frequency Indicator**
+
 - **Preferred:** Color-coded dot + tooltip
-- **Layout:** 
+- **Layout:**
   ```
   | ID | ● Title | Account | Amount | Start Date |
        └─ color dot, tooltip on hover shows "Weekly"
@@ -331,6 +363,7 @@ class YearlyFrequency implements FrequencyStrategy { ... }
 - **Alternative:** Icon-based for better accessibility (implement if user feedback demands)
 
 **AD-4: Refresh Button Placement**
+
 - **Location:** Toolbar, after toggle switch, before + button
 - **HTML:**
   ```html
@@ -342,6 +375,7 @@ class YearlyFrequency implements FrequencyStrategy { ... }
   ```
 
 **AD-5: Transaction Generation Timing**
+
 - **Triggers:**
   1. App initialization (`app.component.ts` ngOnInit) - **Keep**
   2. Visibility change - **Keep**
@@ -359,18 +393,21 @@ class YearlyFrequency implements FrequencyStrategy { ... }
 ### 5.1 CTO Perspective: Technical Feasibility & Risk
 
 **Concerns:**
+
 - Migration risk for existing users
 - Performance impact with many subscriptions
 - Timezone edge cases
 - Database schema changes
 
 **Assessment:**
+
 - ✅ **Low Risk:** Additive changes, backward compatible
 - ✅ **Performance:** O(n) where n = subscriptions * occurrences, acceptable for typical use (n < 10,000)
 - ⚠️ **Medium Risk:** Date calculations (leap years, timezone)
 - ✅ **Schema:** Minimal change, encryption already in place
 
 **Recommendations:**
+
 - Unit test coverage ≥ 95% for date calculations
 - Load test with 100 subscriptions, 5 years of history
 - Document timezone assumptions (assume UTC for storage, local for display)
@@ -379,11 +416,13 @@ class YearlyFrequency implements FrequencyStrategy { ... }
 ### 5.2 Lead Developer Perspective: Implementation Strategy
 
 **Concerns:**
+
 - Code maintainability
 - Testing complexity
 - Integration points
 
 **Approach:**
+
 1. **Phase 1:** Data model + migration (Days 1-2)
 2. **Phase 2:** Frequency calculation logic (Days 3-4)
 3. **Phase 3:** UI changes (Days 5-6)
@@ -392,6 +431,7 @@ class YearlyFrequency implements FrequencyStrategy { ... }
 6. **Phase 6:** Testing & polish (Days 9-10)
 
 **Key Principles:**
+
 - Test-driven development for frequency calculators
 - Component isolation (UI changes don't affect business logic)
 - Reuse encryption/decryption patterns from Fire/Smile migrations
@@ -399,12 +439,14 @@ class YearlyFrequency implements FrequencyStrategy { ... }
 ### 5.3 QA Perspective: Testing Challenges
 
 **High-Risk Areas:**
+
 - Date boundary conditions (month/year end)
 - Leap year handling
 - Duplicate transaction detection across frequencies
 - Manual refresh race conditions
 
 **Test Strategy:**
+
 - **Unit Tests:** Each frequency strategy, 20+ test cases per frequency
 - **Integration Tests:** Full flow (create subscription → generate transactions → verify)
 - **E2E Tests:** User journey (add weekly subscription, wait, verify in accounting)
@@ -415,6 +457,7 @@ class YearlyFrequency implements FrequencyStrategy { ... }
   - End date before next occurrence
 
 **Acceptance Criteria:**
+
 - All existing tests pass (589 tests)
 - New tests: +150 (50 per frequency type, + 50 integration)
 - No duplicate transactions in production-like scenarios
@@ -423,17 +466,20 @@ class YearlyFrequency implements FrequencyStrategy { ... }
 ### 5.4 CEO Perspective: Business Value & Prioritization
 
 **ROI Analysis:**
+
 - **Development Cost:** 10 days × developer rate
 - **Maintenance Cost:** Low (well-architected, reusable code)
 - **User Benefit:** High (requested feature, improves accuracy)
 - **Competitive Advantage:** Medium (competitors already have this)
 
 **Strategic Alignment:**
+
 - ✅ Aligns with product vision (comprehensive financial management)
 - ✅ Foundation for budget planner (high-value future feature)
 - ✅ Reduces support tickets (users can model real subscriptions)
 
 **Priority:** **High** (P1)
+
 - Blocking future features (budget planner)
 - Low technical risk
 - High user value
@@ -441,11 +487,13 @@ class YearlyFrequency implements FrequencyStrategy { ... }
 ### 5.5 Customer Perspective: User Experience
 
 **User Pain Points (Current):**
+
 - "I can't add my gym membership (weekly)"
 - "My insurance is quarterly, I have to manually add transactions"
 - "Why do I need to refresh the page to see new subscription transactions?"
 
 **Expected UX Improvements:**
+
 - ✅ Add any real-world subscription frequency
 - ✅ Visual clarity (frequency at a glance)
 - ✅ Manual control (refresh button)
@@ -454,6 +502,7 @@ class YearlyFrequency implements FrequencyStrategy { ... }
 **User Stories:**
 
 **US-1: Weekly Gym Membership**
+
 ```
 As a fitness enthusiast,
 I want to add my weekly gym membership ($10/week),
@@ -468,6 +517,7 @@ Acceptance:
 ```
 
 **US-2: Quarterly Insurance**
+
 ```
 As a homeowner,
 I want to add my quarterly home insurance ($300/quarter),
@@ -482,6 +532,7 @@ Acceptance:
 ```
 
 **US-3: Manual Refresh**
+
 ```
 As a user,
 I want to refresh subscriptions without reloading the page,
@@ -496,6 +547,7 @@ Acceptance:
 ```
 
 **US-4: Filter by Frequency**
+
 ```
 As a user with many subscriptions,
 I want to filter by frequency (e.g., show only weekly),
@@ -509,6 +561,7 @@ Acceptance:
 ```
 
 **US-5: Track Price Changes (MVG Example)**
+
 ```
 As a public transport user,
 I want to track MVG price increases over time,
@@ -525,23 +578,26 @@ Acceptance:
 ### 5.6 Architect Perspective: Long-Term Design
 
 **Future-Proofing:**
+
 - Design supports custom intervals (every 3 weeks, every 2 months)? **No, YAGNI**
 - Extensible to project-based budgeting (Smile/Fire)? **Yes**
 - Timezone-aware for global users? **Future consideration**
 
 **Reusability:**
+
 ```typescript
 // Future: Budget planner for Smile projects
 interface BudgetAllocation {
   projectId: string;
   bucketId?: string;
   amount: number;
-  frequency: SubscriptionFrequency;  // Reuse!
+  frequency: SubscriptionFrequency; // Reuse!
   startDate: string;
 }
 ```
 
 **Performance Optimization:**
+
 - Cache occurrence calculations? **Yes, within session**
 - Lazy-load transaction generation? **No, eager is better for UX**
 - Index subscriptions by frequency? **No, small dataset**
@@ -602,6 +658,7 @@ interface BudgetAllocation {
 ### 6.2 Data Flow
 
 **Scenario 1: Creating a Weekly Subscription**
+
 ```
 User fills form (Weekly, $10, start: 2026-04-05)
   ↓
@@ -629,6 +686,7 @@ UI updates (accounting table shows new transactions)
 ```
 
 **Scenario 2: Manual Refresh**
+
 ```
 User clicks refresh button (↻)
   ↓
@@ -646,6 +704,7 @@ UI updates automatically (AppStateService.transactionsUpdated$)
 ```
 
 **Scenario 3: Database Load with Auto-Generation**
+
 ```
 App starts → app.component.ts ngOnInit()
   ↓
@@ -669,31 +728,33 @@ UI renders with current state (no delays)
 ### 7.1 Subscription Interface
 
 **Before:**
+
 ```typescript
 export interface Subscription {
-    title: string;
-    account: string;
-    amount: number;
-    startDate: string;
-    endDate: string;
-    category: string;
-    comment: string;
+  title: string;
+  account: string;
+  amount: number;
+  startDate: string;
+  endDate: string;
+  category: string;
+  comment: string;
 }
 ```
 
 **After:**
+
 ```typescript
 export type SubscriptionFrequency = 'weekly' | 'biweekly' | 'monthly' | 'quarterly' | 'yearly';
 
 export interface Subscription {
-    title: string;
-    account: string;
-    amount: number;
-    startDate: string;
-    endDate: string;
-    category: string;
-    comment: string;
-    frequency: SubscriptionFrequency;  // NEW: defaults to 'monthly'
+  title: string;
+  account: string;
+  amount: number;
+  startDate: string;
+  endDate: string;
+  category: string;
+  comment: string;
+  frequency: SubscriptionFrequency; // NEW: defaults to 'monthly'
 }
 ```
 
@@ -702,6 +763,7 @@ export interface Subscription {
 **Location:** CouchDB or Firebase (depending on mode)
 
 **Encryption:**
+
 ```typescript
 // database.service.ts writeObject() - subscription tag
 {
@@ -717,6 +779,7 @@ export interface Subscription {
 ```
 
 **Decryption:**
+
 ```typescript
 // app-data.service.ts applyPathData()
 const subscription: Subscription = {
@@ -727,7 +790,7 @@ const subscription: Subscription = {
   endDate: decrypt(raw.endDate),
   category: decrypt(raw.category),
   comment: decrypt(raw.comment),
-  frequency: (decrypt(raw.frequency) || 'monthly') as SubscriptionFrequency  // NEW: default 'monthly'
+  frequency: (decrypt(raw.frequency) || 'monthly') as SubscriptionFrequency, // NEW: default 'monthly'
 };
 ```
 
@@ -736,6 +799,7 @@ const subscription: Subscription = {
 **Key:** `subscriptions`
 
 **Value:**
+
 ```json
 [
   {
@@ -770,6 +834,7 @@ const subscription: Subscription = {
 **Principle:** Zero Downtime, Backward Compatible
 
 **Strategy:**
+
 - **Additive Schema Change:** New `frequency` field, defaults to `'monthly'`
 - **No Breaking Changes:** Existing code works without modification
 - **Migration Utility:** Ensures old data has `frequency` field
@@ -784,7 +849,7 @@ import { Subscription, SubscriptionFrequency } from '../../interfaces/subscripti
 /**
  * Migrates a subscription object to the current schema.
  * Adds 'frequency' field if missing, defaults to 'monthly'.
- * 
+ *
  * @param raw - Raw subscription object from database
  * @returns Migrated subscription with all required fields
  */
@@ -797,15 +862,15 @@ export function migrateSubscription(raw: any): Subscription {
     endDate: raw.endDate || '',
     category: raw.category || '@',
     comment: raw.comment || '',
-    
+
     // Migration: default to 'monthly' if frequency not present
-    frequency: (raw.frequency as SubscriptionFrequency) || 'monthly'
+    frequency: (raw.frequency as SubscriptionFrequency) || 'monthly',
   };
 }
 
 /**
  * Migrates an array of subscriptions.
- * 
+ *
  * @param rawArray - Array of raw subscription objects
  * @returns Array of migrated subscriptions
  */
@@ -813,17 +878,23 @@ export function migrateSubscriptionArray(rawArray: any[]): Subscription[] {
   if (!Array.isArray(rawArray)) {
     return [];
   }
-  return rawArray.map(raw => migrateSubscription(raw));
+  return rawArray.map((raw) => migrateSubscription(raw));
 }
 
 /**
  * Validates frequency value, returns 'monthly' if invalid.
- * 
+ *
  * @param frequency - Frequency value to validate
  * @returns Valid frequency or default 'monthly'
  */
 export function validateFrequency(frequency: any): SubscriptionFrequency {
-  const validFrequencies: SubscriptionFrequency[] = ['weekly', 'biweekly', 'monthly', 'quarterly', 'yearly'];
+  const validFrequencies: SubscriptionFrequency[] = [
+    'weekly',
+    'biweekly',
+    'monthly',
+    'quarterly',
+    'yearly',
+  ];
   return validFrequencies.includes(frequency) ? frequency : 'monthly';
 }
 ```
@@ -831,6 +902,7 @@ export function validateFrequency(frequency: any): SubscriptionFrequency {
 ### 8.3 Migration Points
 
 **Point 1: Database Load (app-data.service.ts)**
+
 ```typescript
 // In applyPathData(), after decrypting subscriptions
 import { migrateSubscriptionArray } from '../migrations/subscription-migration.utils';
@@ -844,19 +916,21 @@ AppStateService.instance.allSubscriptions = migrateSubscriptionArray(rawSubscrip
 ```
 
 **Point 2: LocalStorage Load (various components)**
+
 ```typescript
 // Anywhere we load from localStorage
 import { migrateSubscriptionArray } from 'src/app/shared/migrations/subscription-migration.utils';
 
 // OLD:
-AppStateService.instance.allSubscriptions = JSON.parse(localStorage.getData("subscriptions"));
+AppStateService.instance.allSubscriptions = JSON.parse(localStorage.getData('subscriptions'));
 
 // NEW:
-const rawSubs = JSON.parse(localStorage.getData("subscriptions"));
+const rawSubs = JSON.parse(localStorage.getData('subscriptions'));
 AppStateService.instance.allSubscriptions = migrateSubscriptionArray(rawSubs);
 ```
 
 **Point 3: Component Initialization**
+
 ```typescript
 // In add-subscription.component.ts, info-subscription.component.ts
 // When creating new subscription objects, provide default frequency: 'monthly'
@@ -868,7 +942,7 @@ const newSubscription: Subscription = {
   endDate: this.endDateTextField,
   category: this.categoryTextField,
   comment: this.commentTextField,
-  frequency: this.frequencyField || 'monthly'  // NEW: default if not set
+  frequency: this.frequencyField || 'monthly', // NEW: default if not set
 };
 ```
 
@@ -877,6 +951,7 @@ const newSubscription: Subscription = {
 **Scenario:** Migration causes critical bug, need to rollback
 
 **Steps:**
+
 1. Revert code to previous version (Git)
 2. Database schema is backward compatible (frequency field ignored by old code)
 3. No data loss (frequency field persists in DB)
@@ -893,6 +968,7 @@ const newSubscription: Subscription = {
 **Option 1: Color-Coded Dot (RECOMMENDED)**
 
 **Layout:**
+
 ```
 ┌─────────────────────────────────────────────────────┐
 │ ID  | ● Title          | Account | Amount | Date   │
@@ -906,10 +982,13 @@ Legend: ● Weekly  ● Biweekly  ● Monthly  ● Quarterly  ● Yearly
 ```
 
 **Implementation:**
+
 ```html
 <td>
-  <span class="frequency-indicator frequency-{{subscription.frequency}}" 
-        [title]="getFrequencyLabel(subscription.frequency)">
+  <span
+    class="frequency-indicator frequency-{{subscription.frequency}}"
+    [title]="getFrequencyLabel(subscription.frequency)"
+  >
   </span>
   {{subscription.title}}
 </td>
@@ -924,14 +1003,25 @@ Legend: ● Weekly  ● Biweekly  ● Monthly  ● Quarterly  ● Yearly
   margin-right: 8px;
 }
 
-.frequency-weekly { background-color: #10B981; }    /* Green */
-.frequency-biweekly { background-color: #3B82F6; }  /* Blue */
-.frequency-monthly { background-color: #6B7280; }   /* Gray */
-.frequency-quarterly { background-color: #F59E0B; } /* Orange */
-.frequency-yearly { background-color: #8B5CF6; }    /* Purple */
+.frequency-weekly {
+  background-color: #10b981;
+} /* Green */
+.frequency-biweekly {
+  background-color: #3b82f6;
+} /* Blue */
+.frequency-monthly {
+  background-color: #6b7280;
+} /* Gray */
+.frequency-quarterly {
+  background-color: #f59e0b;
+} /* Orange */
+.frequency-yearly {
+  background-color: #8b5cf6;
+} /* Purple */
 ```
 
 **Accessibility:**
+
 - Tooltip on hover (shows "Weekly", "Quarterly", etc.)
 - ARIA label: `aria-label="Frequency: Weekly"`
 - Legend at bottom of table
@@ -939,6 +1029,7 @@ Legend: ● Weekly  ● Biweekly  ● Monthly  ● Quarterly  ● Yearly
 **Option 2: Icon-Based**
 
 **Icons:**
+
 - Weekly: 📅 (calendar)
 - Biweekly: 🔄 (repeat)
 - Monthly: 📆 (monthly calendar)
@@ -976,7 +1067,9 @@ Legend: ● Weekly  ● Biweekly  ● Monthly  ● Quarterly  ● Yearly
   </label>
   <select id="frequency" [(ngModel)]="frequencyField">
     <option value="weekly" title="Recurs every 7 days">Weekly</option>
-    <option value="biweekly" title="Recurs every 14 days (every 2 weeks)">Biweekly (every 2 weeks)</option>
+    <option value="biweekly" title="Recurs every 14 days (every 2 weeks)">
+      Biweekly (every 2 weeks)
+    </option>
     <option value="monthly" selected title="Recurs on the same day each month">Monthly</option>
     <option value="quarterly" title="Recurs every 3 months">Quarterly (every 3 months)</option>
     <option value="yearly" title="Recurs on the same date each year">Yearly</option>
@@ -1032,7 +1125,7 @@ Legend: ● Weekly  ● Biweekly  ● Monthly  ● Quarterly  ● Yearly
   <img id="profile-pic" ... />
   <div id="heading">Subscriptions</div>
   <div class="spacer"></div>
-  
+
   <!-- NEW: Frequency Filter -->
   <select class="frequency-filter" [(ngModel)]="frequencyFilter" (change)="applyFrequencyFilter()">
     <option value="all">All Frequencies</option>
@@ -1042,23 +1135,25 @@ Legend: ● Weekly  ● Biweekly  ● Monthly  ● Quarterly  ● Yearly
     <option value="quarterly">Quarterly Only</option>
     <option value="yearly">Yearly Only</option>
   </select>
-  
+
   <!-- Existing toggle switch -->
   <label class="switch" style="margin-right: 15px;">
-    <input type="checkbox" [(ngModel)]="isChecked" (click)="updateFilter()">
+    <input type="checkbox" [(ngModel)]="isChecked" (click)="updateFilter()" />
     <span class="slider round"></span>
   </label>
-  
+
   <!-- NEW: Refresh button -->
-  <button class="refresh-btn" 
-          aria-label="Refresh subscriptions" 
-          (click)="refreshSubscriptions()"
-          [disabled]="isRefreshing"
-          title="Manually refresh subscription transactions">
+  <button
+    class="refresh-btn"
+    aria-label="Refresh subscriptions"
+    (click)="refreshSubscriptions()"
+    [disabled]="isRefreshing"
+    title="Manually refresh subscription transactions"
+  >
     <span class="material-icons" *ngIf="!isRefreshing">sync</span>
     <span class="spinner" *ngIf="isRefreshing"></span>
   </button>
-  
+
   <!-- Existing add button -->
   <button class="add-circle-btn" (click)="addSubscription()" title="Add new subscription">+</button>
 </div>
@@ -1114,14 +1209,16 @@ Legend: ● Weekly  ● Biweekly  ● Monthly  ● Quarterly  ● Yearly
   display: inline-block;
   width: 20px;
   height: 20px;
-  border: 3px solid rgba(255,255,255,0.3);
+  border: 3px solid rgba(255, 255, 255, 0.3);
   border-top-color: white;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 ```
 
@@ -1133,17 +1230,17 @@ frequencyFilter = 'all';
 
 async refreshSubscriptions() {
   if (this.isRefreshing) return;
-  
+
   this.isRefreshing = true;
   try {
     const result = await SubscriptionProcessingService.instance.setTransactionsForSubscriptions();
-    
+
     // Show success toast notification
     this.showToast(
       `${result.transactionsCreated} transactions generated from ${result.subscriptionsProcessed} subscriptions`,
       'success'
     );
-    
+
     this.frontendLogger.logActivity('manual_subscription_refresh', 'info', {
       subscriptionsProcessed: result.subscriptionsProcessed,
       transactionsCreated: result.transactionsCreated
@@ -1313,11 +1410,13 @@ showToast(message: string, type: 'success' | 'error') {
 **Phase 1 Deliverables:**
 
 **Files Created:**
+
 1. `src/app/shared/migrations/subscription-migration.utils.ts` (145 lines)
 2. `src/app/shared/migrations/subscription-migration.utils.spec.ts` (23 tests)
 3. `src/app/shared/migrations/index.ts` (6 lines)
 
 **Files Modified:**
+
 1. `src/app/interfaces/subscription.ts` - Extended with frequency + change history support
 2. `src/app/shared/services/app-data.service.ts` - Added migration integration + helper methods
 3. `src/app/app.component.ts` - Added migration wrapper
@@ -1327,6 +1426,7 @@ showToast(message: string, type: 'success' | 'error') {
 7. `src/app/panels/info/info-subscription/info-subscription.component.spec.ts` - Updated tests
 
 **Test Results:**
+
 - ✅ 23 migration utility tests passing
 - ✅ 36 total subscription tests passing
 - ✅ 589 total tests passing (no regressions)
@@ -1334,6 +1434,7 @@ showToast(message: string, type: 'success' | 'error') {
 - ✅ No TypeScript errors
 
 **Migration Strategy Validated:**
+
 - ✅ Backward compatible (existing subscriptions default to 'monthly')
 - ✅ Null-safe (handles undefined/missing fields gracefully)
 - ✅ Data preservation (no data loss during migration)
@@ -1341,6 +1442,7 @@ showToast(message: string, type: 'success' | 'error') {
 - ✅ Change history ready (infrastructure in place for tracking subscription changes over time)
 
 **Changes Made On-The-Fly:**
+
 1. **Bug Fix:** Fixed `getEffectiveValue()` logic for future changes - was accessing last element instead of first
 2. **Helper Methods:** Added `decryptChangeHistory()` and `decryptValue()` helpers in app-data.service.ts for cleaner code
 3. **Enhanced Migration:** Added change history field validation in migration utilities
@@ -1407,7 +1509,7 @@ showToast(message: string, type: 'success' | 'error') {
     - YearlyFrequency: 7 tests (standard, leap year Feb 29, long spans, preservation)
     - Edge Cases: 2 tests (empty range, same-day boundary across all strategies)
   - **Result:** All 33 tests passing
-  - **Bugs Found & Fixed:** 
+  - **Bugs Found & Fixed:**
     - MonthlyFrequency skipping February (Date rollover issue)
     - QuarterlyFrequency skipping months (same Date rollover issue)
   - **Actual Time:** 3.5 hours
@@ -1451,6 +1553,7 @@ showToast(message: string, type: 'success' | 'error') {
 **Phase 2 Deliverables:**
 
 **Files Created (9 files):**
+
 1. `src/app/shared/services/frequency-strategies/frequency-strategy.interface.ts` (22 lines)
 2. `src/app/shared/services/frequency-strategies/weekly-frequency.ts` (48 lines)
 3. `src/app/shared/services/frequency-strategies/biweekly-frequency.ts` (48 lines)
@@ -1463,12 +1566,14 @@ showToast(message: string, type: 'success' | 'error') {
 10. `src/app/shared/services/frequency-calculator.service.spec.ts` (111 lines)
 
 **Files Modified (1 file):**
+
 1. `src/app/shared/services/subscription-processing.service.ts`
    - Lines 1-10: Added imports for FrequencyCalculatorService, Subscription, SubscriptionFrequency
    - Lines 58-77: Replaced `getOccurrenceDates()` with frequency-aware implementation
    - Lines 102-104: Extract frequency from subscription, default to 'monthly'
 
 **Test Results:**
+
 - ✅ 33 frequency strategy tests passing
 - ✅ 11 FrequencyCalculatorService tests passing
 - ✅ 36 subscription integration tests passing
@@ -1476,6 +1581,7 @@ showToast(message: string, type: 'success' | 'error') {
 - ✅ Build successful
 
 **Code Metrics:**
+
 - **Lines Added:** ~900 (strategies, tests, service)
 - **Lines Removed:** ~35 (old hardcoded monthly logic)
 - **Net Change:** +865 lines
@@ -1483,11 +1589,13 @@ showToast(message: string, type: 'success' | 'error') {
 - **Time Spent:** 10 hours (vs 13 estimated = 23% under estimate)
 
 **Bugs Fixed During Phase 2:**
+
 1. **MonthlyFrequency Date Rollover:** JavaScript Date object was auto-rolling invalid dates (e.g., Feb 31 → Mar 3), causing February to be skipped. Fixed by clamping day before Date construction.
 2. **QuarterlyFrequency Same Issue:** Same Date rollover bug; fixed with same approach.
 3. **FrequencyCalculatorService Type Inference:** TypeScript couldn't infer Map generic types from array literal. Fixed with explicit `new Map<SubscriptionFrequency, FrequencyStrategy>()`.
 
 **Architecture Improvements:**
+
 - ✅ Strategy pattern makes adding new frequencies trivial (just add new class + map entry)
 - ✅ Separation of concerns: date calculation decoupled from transaction generation
 - ✅ Testability: Each frequency strategy independently testable
@@ -1495,6 +1603,7 @@ showToast(message: string, type: 'success' | 'error') {
 - ✅ Extensibility: Easy to add custom frequencies in future (e.g., every 3 weeks)
 
 **Migration Validation:**
+
 - ✅ Existing monthly subscriptions continue to work (frequency defaults to 'monthly')
 - ✅ No breaking changes to public APIs
 - ✅ Backward compatible with Phase 1 data model changes
@@ -1639,9 +1748,11 @@ showToast(message: string, type: 'success' | 'error') {
 **Phase 3 Deliverables:**
 
 **Files Created:**
+
 - None (all modifications to existing files)
 
 **Files Modified (13 files):**
+
 1. `src/app/panels/add/add-subscription/add-subscription.component.html` - Frequency dropdown
 2. `src/app/panels/info/info-subscription/info-subscription.component.html` - View/edit frequency
 3. `src/app/panels/info/info-subscription/info-subscription.component.ts` - getFrequencyLabel() helper
@@ -1658,6 +1769,7 @@ showToast(message: string, type: 'success' | 'error') {
 14. `src/assets/i18n/ar.json` - 18 Arabic translation keys
 
 **Test Results:**
+
 - ✅ 626 tests passing (no regressions)
 - ✅ Build successful (34.1s, no errors)
 - ✅ TypeScript compilation clean
@@ -1666,6 +1778,7 @@ showToast(message: string, type: 'success' | 'error') {
 - ✅ Visual indicators display correctly
 
 **Code Metrics:**
+
 - **Lines Added:** ~370 total
   - HTML: ~40 (form fields, indicators, legend, filter dropdown)
   - TypeScript: ~30 (helper methods, filter logic, properties)
@@ -1675,6 +1788,7 @@ showToast(message: string, type: 'success' | 'error') {
 - **Time Spent:** ~8 hours (vs 10 estimated = 20% under estimate)
 
 **Bugs Fixed During Phase 3:**
+
 1. **TypeScript Property Access Error (Build-Blocking):**
    - **Error:** "Property 'frequencyField' does not exist on type 'typeof InfoSubscriptionComponent'"
    - **Location:** info-subscription.component.html:9:71
@@ -1684,6 +1798,7 @@ showToast(message: string, type: 'success' | 'error') {
    - **Result:** Build successful, clean TypeScript compilation
 
 **Architecture Improvements:**
+
 - ✅ Color-coded visual system (dots) for quick frequency scanning
 - ✅ Filter dropdown enables focused views (e.g., "show only weekly subscriptions")
 - ✅ Legend provides clear visual reference for all users
@@ -1693,6 +1808,7 @@ showToast(message: string, type: 'success' | 'error') {
 - ✅ Consistent styling across all components
 
 **User Experience Enhancements:**
+
 - ✅ At-a-glance frequency identification (color dots)
 - ✅ Frequency filter for focused views
 - ✅ Inline help text (no need to check documentation)
@@ -1701,6 +1817,7 @@ showToast(message: string, type: 'success' | 'error') {
 - ✅ Mobile-responsive layouts
 
 **Migration Validation:**
+
 - ✅ Existing subscriptions display with default 'monthly' indicator (gray dot)
 - ✅ No breaking changes to existing functionality
 - ✅ Backward compatible with Phase 1-2 data model
@@ -1746,7 +1863,7 @@ showToast(message: string, type: 'success' | 'error') {
 - [x] **Task 4.4:** Add toast notification integration ✅
   - **Completed:** Created custom `ToastService` using RxJS Subject pattern
   - **Service Location:** `src/app/shared/services/toast.service.ts`
-  - **Interface:** 
+  - **Interface:**
     ```typescript
     interface Toast {
       message: string;
@@ -1786,9 +1903,11 @@ showToast(message: string, type: 'success' | 'error') {
 **Phase 4 Deliverables:**
 
 **Files Created:**
+
 1. `src/app/shared/services/toast.service.ts` - Custom toast notification service
 
 **Files Modified (6 files):**
+
 1. `src/app/main/subscription/subscription.component.html` - Added refresh button HTML
 2. `src/app/main/subscription/subscription.component.ts` - Added refreshSubscriptions() method
 3. `src/app/main/subscription/subscription.component.css` - Refresh button styles + responsive design
@@ -1800,6 +1919,7 @@ showToast(message: string, type: 'success' | 'error') {
 9. `src/assets/i18n/ar.json` - 5 Arabic translation keys
 
 **Test Results:**
+
 - ✅ 626 tests passing (no regressions)
 - ✅ Build successful (32.6s, hash: 7e28a9d35c0b705f)
 - ✅ TypeScript compilation clean
@@ -1808,6 +1928,7 @@ showToast(message: string, type: 'success' | 'error') {
 - ✅ Toast notifications working
 
 **Code Metrics:**
+
 - **Lines Added:** ~150 total
   - HTML: ~8 (refresh button markup)
   - TypeScript: ~40 (refreshSubscriptions method, ToastService)
@@ -1817,6 +1938,7 @@ showToast(message: string, type: 'success' | 'error') {
 - **Time Spent:** ~7 hours (vs 5.5 estimated = 27% over estimate due to UI polish iterations)
 
 **UI Polish Iterations (Rounds 64-71):**
+
 1. **Round 64:** Initial toolbar spacing (filter placement, 15px gaps established)
 2. **Round 65-66:** Switch overlap fixes (attempted margin adjustments)
 3. **Round 67:** **ROOT CAUSE FIXED** - Slider CSS overflow resolved (removed `right: 0; bottom: 0;`)
@@ -1827,6 +1949,7 @@ showToast(message: string, type: 'success' | 'error') {
 8. **Final:** Mobile margin-left optimized at 21px for perfect touch target separation
 
 **Mobile Spacing Progression:**
+
 - Before Round 68: 3px (baseline)
 - After Round 68: 6px (+3px)
 - After Round 70: 10px (+4px additional)
@@ -1834,6 +1957,7 @@ showToast(message: string, type: 'success' | 'error') {
 - **Total:** 3px → 21px (600% increase for optimal mobile UX)
 
 **Architecture Improvements:**
+
 - ✅ RxJS-based ToastService for reactive notifications
 - ✅ Concurrent call protection via `isRefreshing` flag
 - ✅ Clean separation: UI → Component → Service → Processing
@@ -1842,6 +1966,7 @@ showToast(message: string, type: 'success' | 'error') {
 - ✅ Translation system integrated (6 languages)
 
 **User Experience Enhancements:**
+
 - ✅ Visual feedback (spinner during processing)
 - ✅ Success/error notifications (toast messages)
 - ✅ Hover animation (180° rotation for discoverability)
@@ -1850,6 +1975,7 @@ showToast(message: string, type: 'success' | 'error') {
 - ✅ Thicker refresh symbol (bold font-weight) for better visibility
 
 **Migration Validation:**
+
 - ✅ No breaking changes to existing functionality
 - ✅ Backward compatible with Phase 1-3
 - ✅ Works seamlessly with all frequency types
@@ -1875,7 +2001,7 @@ showToast(message: string, type: 'success' | 'error') {
 
 - [x] **Task 5.2:** Handle loading state ✅
   - **Status:** Loading state already handled by existing `AppStateService.instance.isLoading` flag
-  - **Behavior:** 
+  - **Behavior:**
     - UI shows loading spinner during Tier 1 data load
     - Subscription processing runs AFTER `isLoading` set to false
     - Non-blocking: runs asynchronously, doesn't prevent UI rendering
@@ -1924,6 +2050,7 @@ showToast(message: string, type: 'success' | 'error') {
 **Phase 5 Deliverables:**
 
 **Files Modified (2 files):**
+
 1. `src/app/app.component.ts`
    - Line 15: Added `import { ToastService } from './shared/services/toast.service';`
    - Line 61: Injected ToastService in constructor
@@ -1937,15 +2064,18 @@ showToast(message: string, type: 'success' | 'error') {
    - Note: Initially added auto-generation in `applyPathData()`, but reverted due to data dependency issues
 
 **Files Created:**
+
 - None (used existing ToastService from Phase 4)
 
 **Test Results:**
+
 - ✅ 81 tests passing (no regressions)
 - ✅ Build successful (49.987s)
 - ✅ TypeScript compilation clean
-- ⚠️  9 pre-existing E2E failures (fire-emergencies.spec.ts timeouts, unrelated)
+- ⚠️ 9 pre-existing E2E failures (fire-emergencies.spec.ts timeouts, unrelated)
 
 **Code Metrics:**
+
 - **Lines Added:** ~20 total
   - TypeScript: ~19 (autoGenerateSubscriptionTransactions method)
   - Imports: ~1 (ToastService)
@@ -1956,6 +2086,7 @@ showToast(message: string, type: 'success' | 'error') {
 **Performance Characteristics:**
 
 **Algorithm Complexity:**
+
 - Frequency calculation: O(n) linear in number of periods
 - Duplicate checking: O(m) linear in transactions, early exit on match
 - Overall: O(s × p × t) where:
@@ -1964,6 +2095,7 @@ showToast(message: string, type: 'success' | 'error') {
   - t = transactions for duplicate check (~10,000)
 
 **Optimizations:**
+
 - ✅ Concurrent call protection (isProcessing flag)
 - ✅ Early exit duplicate checking (common case: transaction already exists)
 - ✅ Efficient date arithmetic (no string parsing in loops)
@@ -1971,10 +2103,12 @@ showToast(message: string, type: 'success' | 'error') {
 - ✅ Single-pass processing (no redundant iterations)
 
 **Measured Performance:**
+
 - Build time: 49.987s (stable, no regression)
 - Estimated runtime (50 subs, 5 years): < 200ms (well below 500ms target)
 
 **Architecture Improvements:**
+
 - ✅ Toast notifications provide user feedback on data load
 - ✅ Error handling ensures app robustness
 - ✅ Non-blocking async execution maintains responsive UI
@@ -1982,6 +2116,7 @@ showToast(message: string, type: 'success' | 'error') {
 - ✅ Integration with existing loading state mechanism
 
 **User Experience Enhancements:**
+
 - ✅ Instant feedback: toast shows transaction count on load
 - ✅ Silent success: only shows toast if transactions created (no noise)
 - ✅ Silent errors: logs but doesn't alarm users on initial load
@@ -1991,6 +2126,7 @@ showToast(message: string, type: 'success' | 'error') {
 **Design Decisions:**
 
 **Decision 1: Where to Call Auto-Generation**
+
 - **Initial Plan:** Call in `app-data.service.ts` immediately after loading subscriptions
 - **Issue Discovered:** SubscriptionProcessingService needs ALL Tier 1 data:
   - Transactions (for duplicate checking)
@@ -2001,24 +2137,28 @@ showToast(message: string, type: 'success' | 'error') {
 - **Benefit:** All dependencies guaranteed to be loaded
 
 **Decision 2: Toast Notification Strategy**
+
 - **Initial Plan:** Show toast on every load
 - **Implementation:** Only show toast if transactionsCreated > 0
 - **Rationale:** Reduces noise, users only see feedback when something happened
 - **Error Case:** Don't show toast on error during initial load (avoid alarming users)
 
 **Decision 3: Error Handling Philosophy**
+
 - **Strategy:** Graceful degradation
 - **Implementation:** Log error, don't throw or show toast
 - **Rationale:** Subscription generation is non-critical; app should load even if it fails
 - **User Impact:** Minimal - user can manually refresh or add subscriptions later
 
 **Migration Validation:**
+
 - ✅ Backward compatible (works with existing data)
 - ✅ No breaking changes to APIs
 - ✅ Integrates seamlessly with Phases 1-4
 - ✅ Existing subscriptions auto-generate transactions on load
 
 **Known Issues:**
+
 - None (all functionality working as expected)
 
 ---
@@ -2037,7 +2177,7 @@ showToast(message: string, type: 'success' | 'error') {
   - ✅ 78 new tests added (23 migration + 44 frequency + 11 calculator)
   - ✅ Frequency strategies: 33 tests (Weekly, Biweekly, Monthly, Quarterly, Yearly)
   - ✅ FrequencyCalculatorService: 11 tests
-  - ✅ Migration utilities: 23 tests  
+  - ✅ Migration utilities: 23 tests
   - ✅ Integration tests in SubscriptionProcessingService
   - ✅ Component tests updated with new frequency field
   - Actual: Completed in Phases 1-2
@@ -2108,17 +2248,18 @@ showToast(message: string, type: 'success' | 'error') {
 
 ### 10.2 Timeline Summary
 
-| Phase | Duration | Status | Key Deliverable |
-|-------|----------|--------|----------------|
-| Phase 1: Data Model & Migration | 2 days | ✅ COMPLETE (Apr 5, 2026) | Migration utilities, data structure ready, change history model |
-| Phase 2: Frequency Calculation | 2 days | ✅ COMPLETE (Apr 6, 2026) | All 5 frequency strategies implemented & tested |
-| Phase 3: UI Changes | 2 days | ✅ COMPLETE (Apr 6, 2026) | Forms with tooltips, table with filter, legend, frequency indicators |
-| Phase 4: Manual Refresh | 1 day | ✅ COMPLETE (Apr 6, 2026) | Toolbar button with toast notifications functional |
-| Phase 5: Auto-Generation | 1 day | ✅ COMPLETE (Apr 6, 2026) | Transactions generate on app load with toast feedback |
-| Phase 6: Testing & Polish | 3 days | ✅ COMPLETE (Apr 6, 2026) | All 656 tests passing. Release notes created. Documentation updated. |
-| **Total** | **11 days** | **11/11 days (100%)** | **✅ Feature complete and production-ready** |
+| Phase                           | Duration    | Status                    | Key Deliverable                                                      |
+| ------------------------------- | ----------- | ------------------------- | -------------------------------------------------------------------- |
+| Phase 1: Data Model & Migration | 2 days      | ✅ COMPLETE (Apr 5, 2026) | Migration utilities, data structure ready, change history model      |
+| Phase 2: Frequency Calculation  | 2 days      | ✅ COMPLETE (Apr 6, 2026) | All 5 frequency strategies implemented & tested                      |
+| Phase 3: UI Changes             | 2 days      | ✅ COMPLETE (Apr 6, 2026) | Forms with tooltips, table with filter, legend, frequency indicators |
+| Phase 4: Manual Refresh         | 1 day       | ✅ COMPLETE (Apr 6, 2026) | Toolbar button with toast notifications functional                   |
+| Phase 5: Auto-Generation        | 1 day       | ✅ COMPLETE (Apr 6, 2026) | Transactions generate on app load with toast feedback                |
+| Phase 6: Testing & Polish       | 3 days      | ✅ COMPLETE (Apr 6, 2026) | All 656 tests passing. Release notes created. Documentation updated. |
+| **Total**                       | **11 days** | **11/11 days (100%)**     | **✅ Feature complete and production-ready**                         |
 
 **Final Progress:**
+
 - ✅ Phases 1-6 complete: 11/11 days (100%)
 - ✅ All 61 tasks completed successfully
 - ✅ 656 tests passing (78 new tests added, +76 gained from fixes)
@@ -2128,6 +2269,7 @@ showToast(message: string, type: 'success' | 'error') {
 - ✅ Documentation updated: README.md, sub.md
 
 **Actual Timeline:**
+
 - **Started:** April 5, 2026 (Phase 1)
 - **Completed:** April 6, 2026 (Phase 6)
 - **Total Duration:** 2 calendar days (vs. 11-day estimate)
@@ -2139,32 +2281,33 @@ showToast(message: string, type: 'success' | 'error') {
 
 ### ✅ All Acceptance Criteria Met
 
-| Criteria | Target | Actual | Status |
-|----------|--------|--------|--------|
-| Test Coverage | ≥ 95% for new code | ~95% (78 new tests) | ✅ Met |
-| All Tests Passing | 656 tests | 656 tests | ✅ Met |
-| No Regressions | 0 failures | 0 failures | ✅ Met |
-| Performance | < 500ms | < 200ms | ✅ Exceeded |
-| Edge Cases Tested | Leap year, month-end | 12 edge case tests | ✅ Met |
-| Documentation | Updated | README + Release Notes | ✅ Met |
-| Browser Compatibility | Modern browsers | Angular 15 standard | ✅ Met |
-| Accessibility | WCAG 2.1 AA | ARIA labels + tooltips | ✅ Met |
+| Criteria              | Target               | Actual                 | Status      |
+| --------------------- | -------------------- | ---------------------- | ----------- |
+| Test Coverage         | ≥ 95% for new code   | ~95% (78 new tests)    | ✅ Met      |
+| All Tests Passing     | 656 tests            | 656 tests              | ✅ Met      |
+| No Regressions        | 0 failures           | 0 failures             | ✅ Met      |
+| Performance           | < 500ms              | < 200ms                | ✅ Exceeded |
+| Edge Cases Tested     | Leap year, month-end | 12 edge case tests     | ✅ Met      |
+| Documentation         | Updated              | README + Release Notes | ✅ Met      |
+| Browser Compatibility | Modern browsers      | Angular 15 standard    | ✅ Met      |
+| Accessibility         | WCAG 2.1 AA          | ARIA labels + tooltips | ✅ Met      |
 
 ### 📊 Code Metrics
 
-| Metric | Value | Notes |
-|--------|-------|-------|
-| **Lines Added** | ~1,400 | Strategies, tests, UI, services |
-| **Lines Removed** | ~40 | Old monthly-only logic |
-| **Net Change** | +1,360 lines | |
-| **New Files Created** | 10 | 5 strategies + 3 tests + services + utils |
-| **Files Modified** | 15 | Components, services, models |
-| **Test Files** | 3 new | frequency-strategies.spec.ts, frequency-calculator.service.spec.ts, subscription-migration.utils.spec.ts |
-| **Test Coverage** | 656 tests | +78 new, +76 gained from fixes |
+| Metric                | Value        | Notes                                                                                                    |
+| --------------------- | ------------ | -------------------------------------------------------------------------------------------------------- |
+| **Lines Added**       | ~1,400       | Strategies, tests, UI, services                                                                          |
+| **Lines Removed**     | ~40          | Old monthly-only logic                                                                                   |
+| **Net Change**        | +1,360 lines |                                                                                                          |
+| **New Files Created** | 10           | 5 strategies + 3 tests + services + utils                                                                |
+| **Files Modified**    | 15           | Components, services, models                                                                             |
+| **Test Files**        | 3 new        | frequency-strategies.spec.ts, frequency-calculator.service.spec.ts, subscription-migration.utils.spec.ts |
+| **Test Coverage**     | 656 tests    | +78 new, +76 gained from fixes                                                                           |
 
 ### 🎯 Feature Completeness
 
 **Implemented:**
+
 - ✅ 5 frequency types (weekly, biweekly, monthly, quarterly, yearly)
 - ✅ Color-coded visual indicators (green, blue, gray, orange, purple)
 - ✅ Frequency filter dropdown in toolbar
@@ -2179,6 +2322,7 @@ showToast(message: string, type: 'success' | 'error') {
 - ✅ Comprehensive edge case handling
 
 **Not Implemented (Future Enhancements):**
+
 - ⏭️ Custom frequencies (e.g., "every 3 weeks")
 - ⏭️ Smart reminders (notify X days before payment)
 - ⏭️ Budget planner integration with Smile/Fire projects
@@ -2187,6 +2331,7 @@ showToast(message: string, type: 'success' | 'error') {
 ### 🔧 Technical Highlights
 
 **Architecture:**
+
 - **Strategy Pattern:** Clean separation of frequency calculation logic (5 strategies)
 - **Factory Pattern:** FrequencyCalculatorService delegates to appropriate strategy
 - **Singleton Pattern:** Static instance accessors for services (AppDataService, ToastService, SubscriptionProcessingService)
@@ -2194,12 +2339,14 @@ showToast(message: string, type: 'success' | 'error') {
 - **Type Safety:** Strong TypeScript typing with SubscriptionFrequency union type
 
 **Performance:**
+
 - **Early-Exit Duplicate Checking:** 99% of transactions skip generation (already exist)
 - **Cached Calculations:** No redundant date computations
 - **< 200ms:** Estimated runtime for 50 subscriptions over 5 years
 - **No Memory Leaks:** Singleton services with proper cleanup
 
 **Testing:**
+
 - **44 Frequency Tests:** All 5 strategies + calculator service
 - **23 Migration Tests:** Comprehensive backward compatibility coverage
 - **78 New Tests Total:** Strategy, integration, component layers
@@ -2208,6 +2355,7 @@ showToast(message: string, type: 'success' | 'error') {
 ### 🚀 Deployment Readiness
 
 **Pre-Deployment Checklist:**
+
 - [x] All tests passing
 - [x] No TypeScript errors
 - [x] No console warnings (besides TS deprecations)
@@ -2219,6 +2367,7 @@ showToast(message: string, type: 'success' | 'error') {
 - [x] Backward compatibility verified
 
 **Post-Deployment Monitoring:**
+
 - Monitor toast notification frequency (ensure not spammy)
 - Watch for edge case reports (Feb 29, DST transitions)
 - Track user adoption of non-monthly frequencies
@@ -2227,6 +2376,7 @@ showToast(message: string, type: 'success' | 'error') {
 ### 📝 Lessons Learned
 
 **What Went Well:**
+
 - ✅ Strategy pattern made frequency logic clean and testable
 - ✅ Comprehensive testing prevented regressions
 - ✅ Migration utilities handled backward compatibility seamlessly
@@ -2234,6 +2384,7 @@ showToast(message: string, type: 'success' | 'error') {
 - ✅ Auto-generation improved UX without manual button clicks
 
 **What Could Be Improved:**
+
 - ⚠️ Initial dependency ordering issue (Phase 5 auto-generation placement)
   - **Lesson:** Call dependent services AFTER data load completes
 - ⚠️ Test fixture updates needed after schema changes
@@ -2242,6 +2393,7 @@ showToast(message: string, type: 'success' | 'error') {
   - **Lesson:** Update test mocks immediately after service signature changes
 
 **Future Recommendations:**
+
 - Consider custom frequency UI (e.g., "every X weeks/months")
 - Add subscription analytics (spending trends by frequency)
 - Integrate with Smile/Fire budget planner
@@ -2252,15 +2404,18 @@ showToast(message: string, type: 'success' | 'error') {
 ### 10.3 Dependencies & Blockers
 
 **External Dependencies:**
+
 - None (all work internal to codebase)
 
 **Internal Dependencies:**
+
 - Phase 2 depends on Phase 1 (data model must exist) ✅ Satisfied
 - Phase 3 depends on Phase 1 (UI needs frequency field) ✅ Satisfied
 - Phase 4 depends on Phase 2 (refresh button needs calculation logic) ✅ Satisfied
 - Phase 5 depends on Phase 2 (auto-generation needs calculation logic) ✅ Satisfied
 
 **Potential Blockers:**
+
 - Performance issues with large date ranges → Mitigation: Lazy calculation, caching
 - Browser timezone inconsistencies → Mitigation: Use ISO date strings, store in UTC
 - Edge case bugs in date calculations → Mitigation: Comprehensive test coverage
@@ -2328,7 +2483,7 @@ describe('SubscriptionProcessingService', () => {
     };
     AppStateService.instance.allSubscriptions = [subscription];
     service.setTransactionsForSubscriptions();
-    
+
     const transactions = AppStateService.instance.allTransactions.filter(
       t => t.comment.includes('Gym')
     );
@@ -2362,7 +2517,7 @@ describe('AddSubscriptionComponent', () => {
 it('should handle Feb 29 in non-leap year', () => {
   const strategy = new YearlyFrequency();
   const dates = strategy.calculateOccurrences('2024-02-29', new Date('2027-03-01'));
-  expect(dates).toContain('2025-02-28');  // Non-leap year
+  expect(dates).toContain('2025-02-28'); // Non-leap year
   expect(dates).toContain('2026-02-28');
   expect(dates).toContain('2027-02-28');
 });
@@ -2402,6 +2557,7 @@ it('should handle very long date ranges', () => {
 **User Journeys:**
 
 **Journey 1: Add Weekly Gym Membership**
+
 ```gherkin
 Feature: Weekly Subscription
   Scenario: User adds weekly gym membership
@@ -2418,6 +2574,7 @@ Feature: Weekly Subscription
 ```
 
 **Journey 2: Manual Refresh**
+
 ```gherkin
 Feature: Manual Refresh
   Scenario: User refreshes subscriptions
@@ -2429,6 +2586,7 @@ Feature: Manual Refresh
 ```
 
 **Journey 3: Frequency Editing**
+
 ```gherkin
 Feature: Change Frequency
   Scenario: User changes subscription from monthly to quarterly
@@ -2464,31 +2622,31 @@ Feature: Change Frequency
 
 ### 12.1 Technical Risks
 
-| Risk | Probability | Impact | Mitigation |
-|------|------------|--------|------------|
-| **Date calculation bugs** (leap year, DST) | Medium | High | Comprehensive unit tests, edge case testing |
-| **Performance degradation** (many subscriptions) | Low | Medium | Load testing, optimization if needed |
-| **Migration data loss** | Low | Critical | Backward compatible design, rollback plan |
-| **Duplicate transactions** | Medium | High | Enhanced duplicate detection, idempotent operations |
-| **Browser timezone issues** | Medium | Medium | Use ISO strings, store UTC, display local |
-| **Regression in existing features** | Low | High | Full test suite, manual regression testing |
+| Risk                                             | Probability | Impact   | Mitigation                                          |
+| ------------------------------------------------ | ----------- | -------- | --------------------------------------------------- |
+| **Date calculation bugs** (leap year, DST)       | Medium      | High     | Comprehensive unit tests, edge case testing         |
+| **Performance degradation** (many subscriptions) | Low         | Medium   | Load testing, optimization if needed                |
+| **Migration data loss**                          | Low         | Critical | Backward compatible design, rollback plan           |
+| **Duplicate transactions**                       | Medium      | High     | Enhanced duplicate detection, idempotent operations |
+| **Browser timezone issues**                      | Medium      | Medium   | Use ISO strings, store UTC, display local           |
+| **Regression in existing features**              | Low         | High     | Full test suite, manual regression testing          |
 
 ### 12.2 UX Risks
 
-| Risk | Probability | Impact | Mitigation |
-|------|------------|--------|------------|
-| **Color-blind users can't distinguish frequencies** | Medium | Medium | Add shape/icon, not just color |
-| **Refresh button not discoverable** | Low | Low | Prominent placement, tooltip |
-| **Frequency selector confusing** | Low | Medium | Clear labels, tooltips, examples |
-| **Mobile layout cramped** | Low | Medium | Responsive design, test on real devices |
+| Risk                                                | Probability | Impact | Mitigation                              |
+| --------------------------------------------------- | ----------- | ------ | --------------------------------------- |
+| **Color-blind users can't distinguish frequencies** | Medium      | Medium | Add shape/icon, not just color          |
+| **Refresh button not discoverable**                 | Low         | Low    | Prominent placement, tooltip            |
+| **Frequency selector confusing**                    | Low         | Medium | Clear labels, tooltips, examples        |
+| **Mobile layout cramped**                           | Low         | Medium | Responsive design, test on real devices |
 
 ### 12.3 Business Risks
 
-| Risk | Probability | Impact | Mitigation |
-|------|------------|--------|------------|
-| **User confusion with new feature** | Medium | Low | Clear documentation, in-app help |
-| **Negative user feedback** | Low | Medium | Beta testing, gradual rollout |
-| **Feature not used** | Low | Medium | Track usage analytics, gather feedback |
+| Risk                                | Probability | Impact | Mitigation                             |
+| ----------------------------------- | ----------- | ------ | -------------------------------------- |
+| **User confusion with new feature** | Medium      | Low    | Clear documentation, in-app help       |
+| **Negative user feedback**          | Low         | Medium | Beta testing, gradual rollout          |
+| **Feature not used**                | Low         | Medium | Track usage analytics, gather feedback |
 
 ---
 
@@ -2500,19 +2658,21 @@ Feature: Change Frequency
 Users want to automatically allocate money to Smile projects or Fire emergencies on a recurring basis.
 
 **Requirements:**
+
 - Select Smile project or Fire emergency
 - Choose bucket (for multi-bucket projects)
 - Set amount and frequency (weekly/biweekly/monthly/quarterly/yearly)
 - Auto-generate transactions just like subscriptions
 
 **Implementation:**
+
 ```typescript
 interface BudgetAllocation {
   type: 'smile' | 'fire';
   projectId: string;
-  bucketId?: string;  // Optional: specific bucket
+  bucketId?: string; // Optional: specific bucket
   amount: number;
-  frequency: SubscriptionFrequency;  // REUSE!
+  frequency: SubscriptionFrequency; // REUSE!
   startDate: string;
   endDate?: string;
   active: boolean;
@@ -2524,7 +2684,7 @@ class BudgetAllocationService {
     for (const allocation of allAllocations) {
       const strategy = this.frequencyCalculator.getStrategy(allocation.frequency);
       const dates = strategy.calculateOccurrences(allocation.startDate, today);
-      
+
       for (const date of dates) {
         // Create transaction to Smile/Fire account
         this.createAllocationTransaction(allocation, date);
@@ -2535,6 +2695,7 @@ class BudgetAllocationService {
 ```
 
 **Benefit of Current Design:**
+
 - ✅ Frequency strategies are reusable
 - ✅ UI patterns can be copied (frequency selector, indicator)
 - ✅ Same migration approach
@@ -2546,15 +2707,16 @@ class BudgetAllocationService {
 "I want to save every 3 weeks" or "every 2 months"
 
 **Design Consideration:**
+
 ```typescript
 // Extend in future
-type SubscriptionFrequency = 
-  | 'weekly' 
-  | 'biweekly' 
-  | 'monthly' 
-  | 'quarterly' 
+type SubscriptionFrequency =
+  | 'weekly'
+  | 'biweekly'
+  | 'monthly'
+  | 'quarterly'
   | 'yearly'
-  | { custom: { interval: number, unit: 'days' | 'weeks' | 'months' } };
+  | { custom: { interval: number; unit: 'days' | 'weeks' | 'months' } };
 ```
 
 **Current Decision:** Not implementing custom frequencies now (YAGNI), but architecture supports it.
@@ -2565,6 +2727,7 @@ type SubscriptionFrequency =
 Notify user X days before subscription payment
 
 **Implementation Idea:**
+
 ```typescript
 interface SubscriptionReminder {
   subscriptionId: string;
@@ -2583,22 +2746,24 @@ interface SubscriptionReminder {
 ### A. Frequency Calculation Algorithms
 
 **Weekly:**
+
 ```javascript
 function calculateWeeklyOccurrences(startDate, endDate) {
   const dates = [];
   let current = new Date(startDate);
   const boundary = new Date(endDate);
-  
+
   while (current <= boundary) {
     dates.push(current.toISOString().split('T')[0]);
     current.setDate(current.getDate() + 7);
   }
-  
+
   return dates;
 }
 ```
 
 **Biweekly:**
+
 ```javascript
 function calculateBiweeklyOccurrences(startDate, endDate) {
   // Same as weekly, but add 14 days instead of 7
@@ -2607,33 +2772,35 @@ function calculateBiweeklyOccurrences(startDate, endDate) {
 ```
 
 **Monthly:**
+
 ```javascript
 function calculateMonthlyOccurrences(startDate, endDate) {
   const dates = [];
   let current = new Date(startDate);
   const boundary = new Date(endDate);
-  
+
   while (current <= boundary) {
     // Clamp day to valid range for month
     const year = current.getFullYear();
     const month = current.getMonth();
     const day = current.getDate();
-    
+
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const clampedDay = Math.min(day, daysInMonth);
-    
+
     const clampedDate = new Date(year, month, clampedDay);
     dates.push(clampedDate.toISOString().split('T')[0]);
-    
+
     // Increment month
     current.setMonth(current.getMonth() + 1);
   }
-  
+
   return dates;
 }
 ```
 
 **Quarterly:**
+
 ```javascript
 function calculateQuarterlyOccurrences(startDate, endDate) {
   // Same as monthly, but increment by 3 months
@@ -2642,28 +2809,29 @@ function calculateQuarterlyOccurrences(startDate, endDate) {
 ```
 
 **Yearly:**
+
 ```javascript
 function calculateYearlyOccurrences(startDate, endDate) {
   const dates = [];
   let current = new Date(startDate);
   const boundary = new Date(endDate);
-  
+
   while (current <= boundary) {
     const year = current.getFullYear();
     const month = current.getMonth();
     const day = current.getDate();
-    
+
     // Handle Feb 29 → Feb 28 in non-leap years
-    const isLeapYear = (y) => (y % 4 === 0 && y % 100 !== 0) || (y % 400 === 0);
-    const clampedDay = (month === 1 && day === 29 && !isLeapYear(year)) ? 28 : day;
-    
+    const isLeapYear = (y) => (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
+    const clampedDay = month === 1 && day === 29 && !isLeapYear(year) ? 28 : day;
+
     const clampedDate = new Date(year, month, clampedDay);
     dates.push(clampedDate.toISOString().split('T')[0]);
-    
+
     // Increment year
     current.setFullYear(current.getFullYear() + 1);
   }
-  
+
   return dates;
 }
 ```
@@ -2671,6 +2839,7 @@ function calculateYearlyOccurrences(startDate, endDate) {
 ### B. Translation Keys
 
 **English (en.json):**
+
 ```json
 {
   "Subscription": {
@@ -2717,6 +2886,7 @@ function calculateYearlyOccurrences(startDate, endDate) {
 ```
 
 **German (de.json):**
+
 ```json
 {
   "Subscription": {
@@ -2767,12 +2937,14 @@ _(Similar for es, fr, cn, ar)_
 ### C. Performance Benchmarks
 
 **Target Metrics:**
+
 - Transaction generation: < 500ms for 50 subscriptions
 - UI render: < 100ms for frequency indicators
 - Manual refresh: < 1s total (including UI feedback)
 - Memory usage: < 10MB increase for 100 subscriptions
 
 **Profiling Plan:**
+
 1. Use Chrome DevTools Performance tab
 2. Measure `setTransactionsForSubscriptions()` execution time
 3. Measure date calculation overhead
@@ -2790,12 +2962,12 @@ _(Similar for es, fr, cn, ar)_
 
 ### E. Browser Compatibility Matrix
 
-| Feature | Chrome | Firefox | Safari | Edge |
-|---------|--------|---------|--------|------|
-| Frequency selector | ✅ | ✅ | ✅ | ✅ |
-| Color indicators | ✅ | ✅ | ✅ | ✅ |
-| Refresh button | ✅ | ✅ | ✅ | ✅ |
-| Date calculations | ✅ | ✅ | ⚠️ (test DST) | ✅ |
+| Feature            | Chrome | Firefox | Safari        | Edge |
+| ------------------ | ------ | ------- | ------------- | ---- |
+| Frequency selector | ✅     | ✅      | ✅            | ✅   |
+| Color indicators   | ✅     | ✅      | ✅            | ✅   |
+| Refresh button     | ✅     | ✅      | ✅            | ✅   |
+| Date calculations  | ✅     | ✅      | ⚠️ (test DST) | ✅   |
 
 ---
 
@@ -2804,52 +2976,57 @@ _(Similar for es, fr, cn, ar)_
 ### 15.1 Problem Statement
 
 **Real-World Scenario:**
+
 - Munich MVG (public transport) increases prices by 10% annually
 - User currently creates: "MVG I" (€50), "MVG II" (€55), "MVG III" (€60.50) with version numbers
 - This creates multiple subscriptions for the same service
 - Messy UI, historical tracking is difficult
 
 **Desired Behavior:**
+
 - Single subscription: "MVG"
 - Track price changes over time: €50 (2024), €55 (2025), €60.50 (2026)
 - Transactions automatically use correct amount for each time period
 - No version numbers needed
 
 **Distinction:**
+
 - **Same subscription, different terms** → Change history (MVG price increase)
 - **Different subscriptions** → Separate entries (Old phone contract ends, new one starts)
 
 ### 15.2 Proposed Solution: Change Events Architecture
 
 **Data Model:**
+
 ```typescript
 interface SubscriptionChange {
-  effectiveDate: string;  // ISO date when change takes effect
+  effectiveDate: string; // ISO date when change takes effect
   field: 'amount' | 'account' | 'category' | 'frequency';
   oldValue: any;
   newValue: any;
-  reason?: string;  // Optional: "Annual price increase", "Account restructure"
+  reason?: string; // Optional: "Annual price increase", "Account restructure"
 }
 
 interface Subscription {
   title: string;
   account: string;
-  amount: number;  // Current amount
+  amount: number; // Current amount
   startDate: string;
   endDate: string;
   category: string;
   comment: string;
   frequency: SubscriptionFrequency;
-  changeHistory?: SubscriptionChange[];  // NEW: Time-series of changes
+  changeHistory?: SubscriptionChange[]; // NEW: Time-series of changes
 }
 ```
 
 **Example:**
+
 ```json
 {
   "title": "MVG Monthly Pass",
   "account": "Daily",
-  "amount": 60.50,
+  "amount": 60.5,
   "startDate": "2024-01-01",
   "endDate": "",
   "category": "@Transportation",
@@ -2867,7 +3044,7 @@ interface Subscription {
       "effectiveDate": "2026-01-01",
       "field": "amount",
       "oldValue": 55,
-      "newValue": 60.50,
+      "newValue": 60.5,
       "reason": "2026 price increase (10%)"
     }
   ]
@@ -2877,31 +3054,32 @@ interface Subscription {
 ### 15.3 Transaction Generation with Change History
 
 **Algorithm:**
+
 ```typescript
 function getEffectiveValue(subscription: Subscription, field: string, date: string): any {
   if (!subscription.changeHistory || subscription.changeHistory.length === 0) {
-    return subscription[field];  // No history, use current value
+    return subscription[field]; // No history, use current value
   }
-  
+
   // Find all changes for this field, sorted by date (newest first)
   const relevantChanges = subscription.changeHistory
-    .filter(ch => ch.field === field && ch.effectiveDate <= date)
+    .filter((ch) => ch.field === field && ch.effectiveDate <= date)
     .sort((a, b) => b.effectiveDate.localeCompare(a.effectiveDate));
-  
+
   if (relevantChanges.length > 0) {
-    return relevantChanges[0].newValue;  // Most recent change before/on this date
+    return relevantChanges[0].newValue; // Most recent change before/on this date
   }
-  
+
   // No changes before this date, look for oldest change to get original value
   const futureChanges = subscription.changeHistory
-    .filter(ch => ch.field === field && ch.effectiveDate > date)
+    .filter((ch) => ch.field === field && ch.effectiveDate > date)
     .sort((a, b) => a.effectiveDate.localeCompare(b.effectiveDate));
-  
+
   if (futureChanges.length > 0) {
-    return futureChanges[futureChanges.length - 1].oldValue;  // Oldest future change has original value
+    return futureChanges[futureChanges.length - 1].oldValue; // Oldest future change has original value
   }
-  
-  return subscription[field];  // Fallback
+
+  return subscription[field]; // Fallback
 }
 
 // Usage in transaction generation:
@@ -2909,13 +3087,13 @@ for (const date of occurrenceDates) {
   const effectiveAmount = getEffectiveValue(subscription, 'amount', date);
   const effectiveAccount = getEffectiveValue(subscription, 'account', date);
   const effectiveCategory = getEffectiveValue(subscription, 'category', date);
-  
+
   createTransaction({
     date: date,
     amount: effectiveAmount,
     account: effectiveAccount,
     category: effectiveCategory,
-    comment: subscription.comment
+    comment: subscription.comment,
   });
 }
 ```
@@ -2923,13 +3101,17 @@ for (const date of occurrenceDates) {
 ### 15.4 UI Design
 
 **Info Panel - Change History Display:**
+
 ```html
 <div class="view-mode">
   <h3>{{subscription.title}}</h3>
   <p><strong>Current Amount:</strong> {{subscription.amount | appNumber}}</p>
-  
+
   <!-- NEW: Change History Section -->
-  <div class="change-history" *ngIf="subscription.changeHistory && subscription.changeHistory.length > 0">
+  <div
+    class="change-history"
+    *ngIf="subscription.changeHistory && subscription.changeHistory.length > 0"
+  >
     <h4>Change History</h4>
     <table>
       <thead>
@@ -2952,19 +3134,20 @@ for (const date of occurrenceDates) {
       </tbody>
     </table>
   </div>
-  
+
   <button (click)="scheduleChange()">Schedule Change</button>
 </div>
 ```
 
 **Schedule Change Dialog:**
+
 ```html
 <div class="schedule-change-dialog">
   <h3>Schedule Subscription Change</h3>
-  
+
   <label for="effective-date">Effective Date</label>
   <input type="date" id="effective-date" [(ngModel)]="changeEffectiveDate" />
-  
+
   <label for="change-field">What will change?</label>
   <select id="change-field" [(ngModel)]="changeField">
     <option value="amount">Amount</option>
@@ -2972,7 +3155,7 @@ for (const date of occurrenceDates) {
     <option value="category">Category</option>
     <option value="frequency">Frequency</option>
   </select>
-  
+
   <label for="new-value">New Value</label>
   <input *ngIf="changeField === 'amount'" type="number" [(ngModel)]="changeNewValue" />
   <select *ngIf="changeField === 'account'" [(ngModel)]="changeNewValue">
@@ -2986,11 +3169,15 @@ for (const date of occurrenceDates) {
     <option value="quarterly">Quarterly</option>
     <option value="yearly">Yearly</option>
   </select>
-  
+
   <label for="change-reason">Reason (optional)</label>
-  <input type="text" id="change-reason" [(ngModel)]="changeReason" 
-         placeholder="e.g., Annual price increase" />
-  
+  <input
+    type="text"
+    id="change-reason"
+    [(ngModel)]="changeReason"
+    placeholder="e.g., Annual price increase"
+  />
+
   <div class="dialog-actions">
     <button (click)="cancelSchedule()">Cancel</button>
     <button (click)="confirmSchedule()">Schedule Change</button>
@@ -3072,6 +3259,7 @@ for (const date of occurrenceDates) {
 ### 15.6 User Benefits
 
 **Before:**
+
 ```
 Subscriptions:
 - MVG I (€50, ended Dec 2024)
@@ -3080,6 +3268,7 @@ Subscriptions:
 ```
 
 **After:**
+
 ```
 Subscriptions:
 - MVG Monthly Pass (€60.50, active)
@@ -3089,6 +3278,7 @@ Subscriptions:
 ```
 
 **Advantages:**
+
 - ✅ Single subscription in UI
 - ✅ Clear price history
 - ✅ Accurate transaction amounts for each period
@@ -3147,7 +3337,7 @@ Subscriptions:
 **Document Prepared By:** AI Technical Analyst  
 **Date:** April 5, 2026  
 **Version:** 1.1 (Updated with stakeholder feedback)  
-**Status:** Approved - Ready for Implementation  
+**Status:** Approved - Ready for Implementation
 
 **Next Review:** After Phase 2 completion (Day 4)  
 **Implementation Start:** Day 1 - Data Model & Change History
@@ -3159,6 +3349,7 @@ Subscriptions:
 ### Phase 1 Completion - April 5, 2026
 
 **✅ Completed Tasks:**
+
 1. **Data Model Extension**
    - Added `SubscriptionFrequency` type with 5 options
    - Added `SubscriptionChange` interface for change history tracking
@@ -3192,12 +3383,14 @@ Subscriptions:
    - Build successful with no TypeScript errors
 
 **🐛 Bugs Fixed:**
+
 1. **getEffectiveValue() Index Bug**
    - **Issue:** Was accessing `futureChanges[futureChanges.length - 1].oldValue` instead of `futureChanges[0].oldValue`
    - **Fix:** Changed to access earliest future change for correct original value
    - **Impact:** Time-aware value resolution now correctly returns values before first change
 
 **📝 On-The-Fly Changes:**
+
 1. **Helper Methods Added**
    - `decryptChangeHistory()` in app-data.service.ts for cleaner decryption logic
    - `decryptValue()` in app-data.service.ts for handling mixed value types
@@ -3207,6 +3400,7 @@ Subscriptions:
    - Total tests: 23 (originally planned 13)
 
 **📊 Metrics:**
+
 - Lines of code added: ~200
 - Files created: 3
 - Files modified: 7
@@ -3217,6 +3411,7 @@ Subscriptions:
 
 **🎯 Next Phase:**
 Phase 2: Frequency Calculation Logic (Days 3-4)
+
 - Create FrequencyStrategy interface
 - Implement 5 frequency calculators
 - Comprehensive edge case testing
@@ -3226,6 +3421,7 @@ Phase 2: Frequency Calculation Logic (Days 3-4)
 ### Phase 2 Completion - April 6, 2026
 
 **✅ Completed Tasks:**
+
 1. **Strategy Pattern Architecture**
    - Created FrequencyStrategy interface with calculateOccurrences() method
    - Implemented 5 concrete strategies (Weekly, Biweekly, Monthly, Quarterly, Yearly)
@@ -3262,6 +3458,7 @@ Phase 2: Frequency Calculation Logic (Days 3-4)
    - All 626 tests passing (no regressions)
 
 **🐛 Bugs Fixed:**
+
 1. **MonthlyFrequency Date Rollover Bug**
    - **Issue:** JavaScript Date object was auto-rolling invalid dates (e.g., Feb 31 → Mar 3), causing February to be skipped entirely
    - **Root Cause:** Using `setMonth()` on Date object with invalid day caused automatic rollover
@@ -3282,16 +3479,17 @@ Phase 2: Frequency Calculation Logic (Days 3-4)
    - **Impact:** Clean TypeScript compilation, no type errors
 
 **📝 On-The-Fly Changes:**
+
 1. **Enhanced Error Handling**
    - FrequencyCalculatorService.getStrategy() includes fallback to 'monthly' if unknown frequency encountered
    - Defensive programming: should never happen with TypeScript typing, but logs error if it does
 
 2. **Test Coverage Expansion**
    - Added comprehensive edge case tests beyond original plan:
-     * Empty range (start > boundary) for all strategies
-     * Same-day boundary for all strategies
-     * Exact day difference verification (biweekly)
-     * Day-of-week preservation verification (weekly)
+     - Empty range (start > boundary) for all strategies
+     - Same-day boundary for all strategies
+     - Exact day difference verification (biweekly)
+     - Day-of-week preservation verification (weekly)
    - Original plan: 20 tests per frequency type
    - Actual: 33 tests total (optimized by testing common edge cases once)
 
@@ -3302,6 +3500,7 @@ Phase 2: Frequency Calculation Logic (Days 3-4)
    - Added comments explaining Date rollover bug fixes
 
 **📊 Metrics:**
+
 - Lines of code added: ~900 (strategies, service, tests, documentation)
 - Lines of code removed: ~35 (old hardcoded monthly logic)
 - Net change: +865 lines
@@ -3313,6 +3512,7 @@ Phase 2: Frequency Calculation Logic (Days 3-4)
 - Status: ✅ On track, ahead of schedule
 
 **🎯 Architecture Benefits:**
+
 1. **Extensibility:** Adding new frequency (e.g., "every 3 weeks") requires:
    - Create new strategy class (~50 lines)
    - Add to FrequencyCalculatorService map (1 line)
@@ -3329,6 +3529,7 @@ Phase 2: Frequency Calculation Logic (Days 3-4)
 
 **🎯 Next Phase:**
 Phase 3: UI Changes (Days 5-6)
+
 - Add frequency selector to forms
 - Implement frequency visualization in subscription list
 - Create frequency filter and legend
@@ -3372,6 +3573,7 @@ Implemented frequency-aware period checking that determines the current period b
    - Early exit on first match (performance optimization)
 
 **Files Modified:**
+
 - `src/app/main/subscription/subscription.component.ts`
   - Replaced `isPayed(date: Date)` with `isPeriodPaid(subscription: any)`
   - Added comprehensive JSDoc documentation
@@ -3381,6 +3583,7 @@ Implemented frequency-aware period checking that determines the current period b
   - Passes full subscription object instead of just date
 
 **Visual Behavior:**
+
 - When switch is ON (checked):
   - Green bold text = Current period is paid ✅
   - Normal text = Current period is NOT paid (pending)
@@ -3390,30 +3593,35 @@ Implemented frequency-aware period checking that determines the current period b
 **Example Scenarios:**
 
 **Weekly Subscription (Gym):**
+
 - Today: Wednesday, April 6, 2026
 - Current week: Monday April 4 - Sunday April 10
 - Transaction exists for April 5 → Green (paid)
 - No transaction this week → Normal (pending)
 
 **Biweekly Subscription (Paycheck):**
+
 - Start date: January 1, 2026 (Thursday)
 - Today: April 6, 2026 (97 days later)
 - Current biweek: Mar 31 - Apr 13 (biweek index 6)
 - Transaction exists for April 3 → Green (paid)
 
 **Quarterly Subscription (Insurance):**
+
 - Today: April 6, 2026
 - Current quarter: Q2 (Apr 1 - Jun 30)
 - Transaction exists for April 1 → Green (paid)
 - No transaction in Q2 yet → Normal (pending)
 
 **Edge Cases Handled:**
+
 - Subscription started mid-period: Uses natural period boundaries (week start, month start, etc.)
 - Multiple transactions in period: Returns true on first match (performance)
 - Future subscriptions: period calculation still works correctly
 - Ended subscriptions: Still calculates period correctly for historical view
 
 **Benefits:**
+
 - ✅ Accurate "paid" status for all frequency types
 - ✅ Users can quickly see which subscriptions need attention
 - ✅ Weekly gym members see current week status, not month status
@@ -3421,16 +3629,19 @@ Implemented frequency-aware period checking that determines the current period b
 - ✅ Consistent UX across all frequency types
 
 **Testing:**
+
 - Build successful with no TypeScript errors
 - All existing tests pass (no regressions)
 - Manual verification: Logic correctly calculates period boundaries
 
 **Performance:**
+
 - O(n) transaction scan per subscription (acceptable for typical datasets)
 - Early exit on first match (common case: transaction exists)
 - Period calculation: O(1) for all frequency types
 
 **Code Metrics:**
+
 - Lines added: ~100 (isPeriodPaid method with all frequency cases)
 - Lines removed: ~4 (old isPayed method)
 - Net change: +96 lines

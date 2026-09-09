@@ -6,7 +6,7 @@ import { environment } from '../../../environments/environment';
 import { CrypticService } from './cryptic.service';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 /**
  * HTTP client for the selfhosted CouchDB backend API.
@@ -18,44 +18,45 @@ export class SelfhostedService {
   private etagCache: Record<string, string> = {};
   private _authenticated = false;
 
-  constructor(private http: HttpClient, private cryptic: CrypticService) {
+  constructor(
+    private http: HttpClient,
+    private cryptic: CrypticService,
+  ) {
     // Check if we have a userId (indicates a prior session — cookie will be validated by backend)
     this._authenticated = !!localStorage.getItem('selfhosted_userId');
   }
 
   private getHeaders(): HttpHeaders {
     return new HttpHeaders({
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
     });
   }
 
   // Authentication methods
   register(email: string, password: string, username?: string): Observable<any> {
-    return this.http.post(`${this.apiUrl}/auth/register`, { email, password, username })
-      .pipe(
-        map((response: any) => {
-          this._authenticated = true;
-          localStorage.setItem('selfhosted_userId', response.userId);
-          if (response.encryptionConfig) {
-            this.cryptic.loadFromServer(response.encryptionConfig);
-          }
-          return response;
-        })
-      );
+    return this.http.post(`${this.apiUrl}/auth/register`, { email, password, username }).pipe(
+      map((response: any) => {
+        this._authenticated = true;
+        localStorage.setItem('selfhosted_userId', response.userId);
+        if (response.encryptionConfig) {
+          this.cryptic.loadFromServer(response.encryptionConfig);
+        }
+        return response;
+      }),
+    );
   }
 
   login(email: string, password: string): Observable<any> {
-    return this.http.post(`${this.apiUrl}/auth/login`, { email, password })
-      .pipe(
-        map((response: any) => {
-          this._authenticated = true;
-          localStorage.setItem('selfhosted_userId', response.userId);
-          if (response.encryptionConfig) {
-            this.cryptic.loadFromServer(response.encryptionConfig);
-          }
-          return response;
-        })
-      );
+    return this.http.post(`${this.apiUrl}/auth/login`, { email, password }).pipe(
+      map((response: any) => {
+        this._authenticated = true;
+        localStorage.setItem('selfhosted_userId', response.userId);
+        if (response.encryptionConfig) {
+          this.cryptic.loadFromServer(response.encryptionConfig);
+        }
+        return response;
+      }),
+    );
   }
 
   logout(): Observable<any> {
@@ -69,40 +70,54 @@ export class SelfhostedService {
       return of(false);
     }
 
-    return this.http.get(`${this.apiUrl}/auth/verify`)
-      .pipe(
-        map((response: any) => response.valid),
-        catchError(() => of(false))
-      );
+    return this.http.get(`${this.apiUrl}/auth/verify`).pipe(
+      map((response: any) => response.valid),
+      catchError(() => of(false)),
+    );
   }
 
   updateEmail(newEmail: string): Observable<any> {
-    return this.http.put(`${this.apiUrl}/auth/update-email`, { newEmail }, { headers: this.getHeaders() });
+    return this.http.put(
+      `${this.apiUrl}/auth/update-email`,
+      { newEmail },
+      { headers: this.getHeaders() },
+    );
   }
 
   verifyPassword(password: string): Observable<any> {
-    return this.http.post(`${this.apiUrl}/auth/verify-password`, { password }, { headers: this.getHeaders() });
+    return this.http.post(
+      `${this.apiUrl}/auth/verify-password`,
+      { password },
+      { headers: this.getHeaders() },
+    );
   }
 
   /**
    * Fetch encryption config from server and load into CrypticService (for page reload).
    */
   fetchEncryptionConfig(): Observable<any> {
-    return this.http.get(`${this.apiUrl}/auth/encryption-config`, { withCredentials: true })
-      .pipe(
-        tap((config: any) => this.cryptic.loadFromServer(config)),
-        catchError((err) => {
-          console.error('Failed to fetch encryption config:', err);
-          return of(null);
-        })
-      );
+    return this.http.get(`${this.apiUrl}/auth/encryption-config`, { withCredentials: true }).pipe(
+      tap((config: any) => this.cryptic.loadFromServer(config)),
+      catchError((err) => {
+        console.error('Failed to fetch encryption config:', err);
+        return of(null);
+      }),
+    );
   }
 
   /**
    * Save encryption config to server (when user changes settings).
    */
-  saveEncryptionConfig(key: string, encryptLocal: boolean, encryptDatabase: boolean): Observable<any> {
-    return this.http.put(`${this.apiUrl}/auth/encryption-config`, { key, encryptLocal, encryptDatabase }, { withCredentials: true });
+  saveEncryptionConfig(
+    key: string,
+    encryptLocal: boolean,
+    encryptDatabase: boolean,
+  ): Observable<any> {
+    return this.http.put(
+      `${this.apiUrl}/auth/encryption-config`,
+      { key, encryptLocal, encryptDatabase },
+      { withCredentials: true },
+    );
   }
 
   isAuthenticated(): boolean {
@@ -117,11 +132,11 @@ export class SelfhostedService {
   writeObject(tag: string, data: any): Observable<any> {
     // Write data directly to the specified path
     // The backend will handle nested JSON structure
-    
+
     // Determine content type and body based on data type
     let headers = this.getHeaders();
     let body = data;
-    
+
     // For primitive types (string, number, boolean), send as text/plain
     // This avoids JSON serialization issues with standalone primitive values
     if (typeof data === 'string' || typeof data === 'number' || typeof data === 'boolean') {
@@ -129,9 +144,9 @@ export class SelfhostedService {
       body = String(data);
     }
     // For objects and arrays, keep application/json (already set in getHeaders)
-    
-    return this.http.post(`${this.apiUrl}/data/write/${tag}`, body, { 
-      headers: headers
+
+    return this.http.post(`${this.apiUrl}/data/write/${tag}`, body, {
+      headers: headers,
     });
   }
 
@@ -140,22 +155,20 @@ export class SelfhostedService {
    * @param writes - Array of write operations { path, data }
    * @returns Observable of batch write result
    */
-  writeBatch(writes: {path: string, data: any}[]): Observable<any> {
-    return this.http.post(`${this.apiUrl}/data/write/batch`, 
-      { writes }, 
-      { headers: this.getHeaders() }
-    ).pipe(
-      tap({
-        error: (error) => console.error('[SelfhostedService] Batch write failed:', error)
-      })
-    );
+  writeBatch(writes: { path: string; data: any }[]): Observable<any> {
+    return this.http
+      .post(`${this.apiUrl}/data/write/batch`, { writes }, { headers: this.getHeaders() })
+      .pipe(
+        tap({
+          error: (error) => console.error('[SelfhostedService] Batch write failed:', error),
+        }),
+      );
   }
 
   getData(tag: string): Observable<any> {
-    return this.http.get(`${this.apiUrl}/data/read/${tag}`, { headers: this.getHeaders() })
-      .pipe(
-        map((response: any) => response.data)
-      );
+    return this.http
+      .get(`${this.apiUrl}/data/read/${tag}`, { headers: this.getHeaders() })
+      .pipe(map((response: any) => response.data));
   }
 
   getFullDocument(): Observable<any> {
@@ -166,51 +179,57 @@ export class SelfhostedService {
     return this.http.delete(`${this.apiUrl}/data/delete/${tag}`, { headers: this.getHeaders() });
   }
 
-  readBatch(paths: string[]): Observable<{data: Record<string, any>, updatedAt: string | null} | null> {
+  readBatch(
+    paths: string[],
+  ): Observable<{ data: Record<string, any>; updatedAt: string | null } | null> {
     let headers = this.getHeaders();
     const cacheKey = 'batch:' + paths.sort().join(',');
     const etag = this.etagCache[cacheKey];
     if (etag) {
       headers = headers.set('If-None-Match', etag);
     }
-    return this.http.post<{data: Record<string, any>, updatedAt: string | null}>(
-      `${this.apiUrl}/data/read/batch`,
-      { paths },
-      { headers, observe: 'response' }
-    ).pipe(
-      map((resp: HttpResponse<{data: Record<string, any>, updatedAt: string | null}>) => {
-        const serverEtag = resp.headers.get('ETag');
-        if (serverEtag) this.etagCache[cacheKey] = serverEtag;
-        return resp.body;
-      }),
-      catchError(err => {
-        if (err.status === 304) return of(null);  // not modified
-        throw err;
-      })
-    );
+    return this.http
+      .post<{ data: Record<string, any>; updatedAt: string | null }>(
+        `${this.apiUrl}/data/read/batch`,
+        { paths },
+        { headers, observe: 'response' },
+      )
+      .pipe(
+        map((resp: HttpResponse<{ data: Record<string, any>; updatedAt: string | null }>) => {
+          const serverEtag = resp.headers.get('ETag');
+          if (serverEtag) this.etagCache[cacheKey] = serverEtag;
+          return resp.body;
+        }),
+        catchError((err) => {
+          if (err.status === 304) return of(null); // not modified
+          throw err;
+        }),
+      );
   }
 
-  getUpdatedAt(): Observable<{updatedAt: string | null} | null> {
+  getUpdatedAt(): Observable<{ updatedAt: string | null } | null> {
     let headers = this.getHeaders();
     const cacheKey = 'updatedAt';
     const etag = this.etagCache[cacheKey];
     if (etag) {
       headers = headers.set('If-None-Match', etag);
     }
-    return this.http.get<{updatedAt: string | null}>(
-      `${this.apiUrl}/data/updatedAt`,
-      { headers, observe: 'response' }
-    ).pipe(
-      map((resp: HttpResponse<{updatedAt: string | null}>) => {
-        const serverEtag = resp.headers.get('ETag');
-        if (serverEtag) this.etagCache[cacheKey] = serverEtag;
-        return resp.body;
-      }),
-      catchError(err => {
-        if (err.status === 304) return of(null);  // not modified
-        throw err;
+    return this.http
+      .get<{ updatedAt: string | null }>(`${this.apiUrl}/data/updatedAt`, {
+        headers,
+        observe: 'response',
       })
-    );
+      .pipe(
+        map((resp: HttpResponse<{ updatedAt: string | null }>) => {
+          const serverEtag = resp.headers.get('ETag');
+          if (serverEtag) this.etagCache[cacheKey] = serverEtag;
+          return resp.body;
+        }),
+        catchError((err) => {
+          if (err.status === 304) return of(null); // not modified
+          throw err;
+        }),
+      );
   }
 
   /** Clear cached ETags (call after writes so next read fetches fresh data) */

@@ -7,8 +7,8 @@ Object.defineProperty(window, 'getComputedStyle', {
   value: () => ({
     display: 'none',
     appearance: ['-webkit-appearance'],
-    getPropertyValue: () => ''
-  })
+    getPropertyValue: () => '',
+  }),
 });
 
 // Mock localStorage
@@ -16,11 +16,19 @@ const localStorageMock = (() => {
   let store: Record<string, string> = {};
   return {
     getItem: (key: string) => store[key] || null,
-    setItem: (key: string, value: string) => { store[key] = value; },
-    removeItem: (key: string) => { delete store[key]; },
-    clear: () => { store = {}; },
-    get length() { return Object.keys(store).length; },
-    key: (index: number) => Object.keys(store)[index] || null
+    setItem: (key: string, value: string) => {
+      store[key] = value;
+    },
+    removeItem: (key: string) => {
+      delete store[key];
+    },
+    clear: () => {
+      store = {};
+    },
+    get length() {
+      return Object.keys(store).length;
+    },
+    key: (index: number) => Object.keys(store)[index] || null,
   };
 })();
 
@@ -38,18 +46,19 @@ const SUPPRESSED_PATTERNS = [
   /Decryption failed/, // CrypticService — expected in wrong-key tests
   /load error:/, // AppDataService — expected in tier-flag-on-error tests
   /Authentication failed/, // SettingsComponent — expected in auth-failure tests
+  /Write refused: server data changed/, // AppDataService — expected in write-conflict tests (docs/adr/0003)
 ];
 
 console.error = (...args: any[]) => {
   originalError(...args);
-  const msg = args.map(a => (typeof a === 'string' ? a : JSON.stringify(a))).join(' ');
-  if (SUPPRESSED_PATTERNS.some(p => p.test(msg))) return;
+  const msg = args.map((a) => (typeof a === 'string' ? a : JSON.stringify(a))).join(' ');
+  if (SUPPRESSED_PATTERNS.some((p) => p.test(msg))) return;
   throw new Error(`Unexpected console.error in test:\n${msg}`);
 };
 
 console.warn = (...args: any[]) => {
   originalWarn(...args);
-  const msg = args.map(a => (typeof a === 'string' ? a : JSON.stringify(a))).join(' ');
-  if (SUPPRESSED_PATTERNS.some(p => p.test(msg))) return;
+  const msg = args.map((a) => (typeof a === 'string' ? a : JSON.stringify(a))).join(' ');
+  if (SUPPRESSED_PATTERNS.some((p) => p.test(msg))) return;
   throw new Error(`Unexpected console.warn in test:\n${msg}`);
 };

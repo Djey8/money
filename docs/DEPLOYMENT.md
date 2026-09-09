@@ -24,21 +24,21 @@ Usage: ./scripts/deploy.sh [namespace] [options]
 
 ### Flags
 
-| Flag | Default | Description |
-|------|---------|-------------|
-| `--no-cache` | off | Force rebuild without Docker cache (pulls latest git, ensures fresh images) |
-| `--skip-build` | off | Skip building images entirely (use existing images in K3s/containerd) |
-| `--skip-frontend` | off | Skip frontend image build and deployment |
-| `--skip-backend` | off | Skip backend image build and deployment |
-| `--skip-tls` | off | Skip TLS certificate creation |
-| `--no-ingress` | off | Skip Ingress deployment |
-| `--no-backup` | off | Skip **all** backup CronJobs (hourly + daily/NAS) |
-| `--no-local-backup` | off | Skip hourly local backup CronJob only |
-| `--no-nas-backup` | off | Skip daily+NAS backup CronJob only (for setups without NAS) |
-| `--no-logging` | off | Skip logging stack (Loki, Grafana, Promtail) |
-| `--port-forward` | off | Start port-forward after deployment |
-| `--prd` | — | **Preset:** `--no-cache` + `--no-logging` |
-| `--dev` | — | **Preset:** `--no-cache` (logging enabled) |
+| Flag                | Default | Description                                                                 |
+| ------------------- | ------- | --------------------------------------------------------------------------- |
+| `--no-cache`        | off     | Force rebuild without Docker cache (pulls latest git, ensures fresh images) |
+| `--skip-build`      | off     | Skip building images entirely (use existing images in K3s/containerd)       |
+| `--skip-frontend`   | off     | Skip frontend image build and deployment                                    |
+| `--skip-backend`    | off     | Skip backend image build and deployment                                     |
+| `--skip-tls`        | off     | Skip TLS certificate creation                                               |
+| `--no-ingress`      | off     | Skip Ingress deployment                                                     |
+| `--no-backup`       | off     | Skip **all** backup CronJobs (hourly + daily/NAS)                           |
+| `--no-local-backup` | off     | Skip hourly local backup CronJob only                                       |
+| `--no-nas-backup`   | off     | Skip daily+NAS backup CronJob only (for setups without NAS)                 |
+| `--no-logging`      | off     | Skip logging stack (Loki, Grafana, Promtail)                                |
+| `--port-forward`    | off     | Start port-forward after deployment                                         |
+| `--prd`             | —       | **Preset:** `--no-cache` + `--no-logging`                                   |
+| `--dev`             | —       | **Preset:** `--no-cache` (logging enabled)                                  |
 
 ### Examples
 
@@ -66,23 +66,23 @@ Usage: .\scripts\deploy-local.ps1 [flags]
 
 ### Flags
 
-| Flag | Default | Description |
-|------|---------|-------------|
-| `-NoCache` | off | Force rebuild without Docker cache (pulls latest git) |
-| `-SkipBuild` | off | Skip building images entirely |
-| `-SkipFrontend` | off | Skip frontend build and deployment |
-| `-SkipBackend` | off | Skip backend build and deployment |
-| `-SkipTLS` | off | Skip TLS certificate creation |
-| `-NoIngress` | off | Skip Ingress deployment |
-| `-NoBackup` | off | Skip **all** backup CronJobs (hourly + daily/NAS) |
-| `-NoLocalBackup` | off | Skip hourly local backup CronJob only |
-| `-NoNasBackup` | off | Skip daily+NAS backup CronJob only (for setups without NAS) |
-| `-NoLogging` | off | Skip logging stack (Loki, Grafana, Promtail) |
-| `-NoPortForward` | off | Skip automatic port-forwarding |
-| `-NoBrowser` | off | Skip opening browser after deploy |
-| `-CleanImages` | off | Clean up old images before building |
-| `-Prd` | — | **Preset:** `-NoCache` + `-NoLogging` |
-| `-Dev` | — | **Preset:** `-NoCache` (logging enabled) |
+| Flag             | Default | Description                                                 |
+| ---------------- | ------- | ----------------------------------------------------------- |
+| `-NoCache`       | off     | Force rebuild without Docker cache (pulls latest git)       |
+| `-SkipBuild`     | off     | Skip building images entirely                               |
+| `-SkipFrontend`  | off     | Skip frontend build and deployment                          |
+| `-SkipBackend`   | off     | Skip backend build and deployment                           |
+| `-SkipTLS`       | off     | Skip TLS certificate creation                               |
+| `-NoIngress`     | off     | Skip Ingress deployment                                     |
+| `-NoBackup`      | off     | Skip **all** backup CronJobs (hourly + daily/NAS)           |
+| `-NoLocalBackup` | off     | Skip hourly local backup CronJob only                       |
+| `-NoNasBackup`   | off     | Skip daily+NAS backup CronJob only (for setups without NAS) |
+| `-NoLogging`     | off     | Skip logging stack (Loki, Grafana, Promtail)                |
+| `-NoPortForward` | off     | Skip automatic port-forwarding                              |
+| `-NoBrowser`     | off     | Skip opening browser after deploy                           |
+| `-CleanImages`   | off     | Clean up old images before building                         |
+| `-Prd`           | —       | **Preset:** `-NoCache` + `-NoLogging`                       |
+| `-Dev`           | —       | **Preset:** `-NoCache` (logging enabled)                    |
 
 ### Examples
 
@@ -104,18 +104,18 @@ Usage: .\scripts\deploy-local.ps1 [flags]
 
 Two separate Kubernetes CronJobs, each in their own YAML file:
 
-| CronJob | File | Schedule | Storage | Deployed by default |
-|---------|------|----------|---------|---------------------|
-| `couchdb-backup-hourly` | `k8s/backup-cronjob-hourly.yaml` | Every hour | Local only | Yes |
-| `couchdb-backup` | `k8s/backup-cronjob-daily.yaml` | 2:00 AM daily | Local + NAS | Yes |
+| CronJob                 | File                             | Schedule      | Storage     | Deployed by default |
+| ----------------------- | -------------------------------- | ------------- | ----------- | ------------------- |
+| `couchdb-backup-hourly` | `k8s/backup-cronjob-hourly.yaml` | Every hour    | Local only  | Yes                 |
+| `couchdb-backup`        | `k8s/backup-cronjob-daily.yaml`  | 2:00 AM daily | Local + NAS | Yes                 |
 
 ### Skipping backup CronJobs
 
-| Scenario | deploy.sh | deploy-local.ps1 |
-|----------|-----------|-------------------|
-| No NAS mounted | `--no-nas-backup` | `-NoNasBackup` |
+| Scenario                 | deploy.sh           | deploy-local.ps1 |
+| ------------------------ | ------------------- | ---------------- |
+| No NAS mounted           | `--no-nas-backup`   | `-NoNasBackup`   |
 | No hourly backups needed | `--no-local-backup` | `-NoLocalBackup` |
-| No backups at all | `--no-backup` | `-NoBackup` |
+| No backups at all        | `--no-backup`       | `-NoBackup`      |
 
 > **Note:** The daily CronJob checks NAS availability at runtime. If the NAS is offline when the job runs, it gracefully skips NAS writes and logs a warning. So `--no-nas-backup` is only needed to avoid deploying the CronJob entirely (e.g., you will never have a NAS).
 
@@ -128,15 +128,15 @@ kubectl apply -f k8s/backup-cronjob-daily.yaml     # daily local + NAS
 
 ### Retention policy
 
-| Location | Tier | Kept | Promoted when |
-|----------|------|------|---------------|
-| Local | Hourly | 24 hours | Every hour |
-| Local | Daily | 7 days | 2 AM daily |
-| Local | Weekly | 3 months (13 weeks) | Sundays |
-| Local | Monthly | Forever | 1st of month |
-| NAS | Daily | 3 weeks (21 days) | 2 AM daily |
-| NAS | Weekly | 2 years (104 weeks) | Sundays |
-| NAS | Monthly | Forever | 1st of month |
+| Location | Tier    | Kept                | Promoted when |
+| -------- | ------- | ------------------- | ------------- |
+| Local    | Hourly  | 24 hours            | Every hour    |
+| Local    | Daily   | 7 days              | 2 AM daily    |
+| Local    | Weekly  | 3 months (13 weeks) | Sundays       |
+| Local    | Monthly | Forever             | 1st of month  |
+| NAS      | Daily   | 3 weeks (21 days)   | 2 AM daily    |
+| NAS      | Weekly  | 2 years (104 weeks) | Sundays       |
+| NAS      | Monthly | Forever             | 1st of month  |
 
 ### Backup scripts
 
@@ -168,9 +168,9 @@ Each component can be individually skipped with the flags above.
 
 ## Presets
 
-| Preset | Equivalent to | Use case |
-|--------|---------------|----------|
-| `--prd` | `--no-cache --no-logging` | Production deploy: fresh build, no logging overhead |
-| `--dev` | `--no-cache` | Development: fresh build, logging enabled for debugging |
+| Preset  | Equivalent to             | Use case                                                |
+| ------- | ------------------------- | ------------------------------------------------------- |
+| `--prd` | `--no-cache --no-logging` | Production deploy: fresh build, no logging overhead     |
+| `--dev` | `--no-cache`              | Development: fresh build, logging enabled for debugging |
 
 No preset skips backups — both CronJobs always deploy unless explicitly excluded.

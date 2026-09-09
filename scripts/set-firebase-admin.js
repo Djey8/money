@@ -28,7 +28,7 @@ const path = require('path');
 const args = process.argv.slice(2);
 const list = args.includes('--list');
 const revoke = args.includes('--revoke');
-const uid = args.find(a => !a.startsWith('--'));
+const uid = args.find((a) => !a.startsWith('--'));
 
 if (!list && !uid) {
   console.error('Usage: node scripts/set-firebase-admin.js <uid> [--revoke]');
@@ -56,7 +56,7 @@ async function listAdmins() {
     console.log('No users currently have the admin claim.');
   } else {
     console.log(`${admins.length} admin(s):`);
-    admins.forEach(a => console.log(`  ${a.uid}  ${a.email}`));
+    admins.forEach((a) => console.log(`  ${a.uid}  ${a.email}`));
   }
 }
 
@@ -72,7 +72,7 @@ async function run() {
 
 run()
   .then(() => process.exit(0))
-  .catch(err => {
+  .catch((err) => {
     console.error('Failed:', err.message);
     process.exit(1);
   });

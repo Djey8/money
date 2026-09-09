@@ -26,13 +26,16 @@ describe('AddSmileComponent', () => {
         AddSmileComponent,
         TranslateModule.forRoot(),
         HttpClientTestingModule,
-        RouterTestingModule
+        RouterTestingModule,
       ],
       providers: [
         { provide: DatabaseService, useValue: {} },
         { provide: PersistenceService, useValue: mockPersistence },
-        { provide: FIREBASE_OPTIONS, useValue: { projectId: 'test', appId: 'test', apiKey: 'test' } }
-      ]
+        {
+          provide: FIREBASE_OPTIONS,
+          useValue: { projectId: 'test', appId: 'test', apiKey: 'test' },
+        },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(AddSmileComponent);
@@ -61,15 +64,17 @@ describe('AddSmileComponent', () => {
           sub: '',
           phase: 'planning',
           description: '',
-          buckets: [{ id: 'bucket_1', title: 'Vacation', target: 1000, amount: 0, notes: '', links: [] }],
+          buckets: [
+            { id: 'bucket_1', title: 'Vacation', target: 1000, amount: 0, notes: '', links: [] },
+          ],
           links: [],
           actionItems: [],
           notes: [],
           createdAt: '',
           updatedAt: '',
           targetDate: '',
-          completionDate: ''
-        }
+          completionDate: '',
+        },
       ];
       expect(component.invalidTitle('New Car')).toBe(false);
     });
@@ -81,15 +86,17 @@ describe('AddSmileComponent', () => {
           sub: '',
           phase: 'planning',
           description: '',
-          buckets: [{ id: 'bucket_1', title: 'Vacation', target: 1000, amount: 0, notes: '', links: [] }],
+          buckets: [
+            { id: 'bucket_1', title: 'Vacation', target: 1000, amount: 0, notes: '', links: [] },
+          ],
           links: [],
           actionItems: [],
           notes: [],
           createdAt: '',
           updatedAt: '',
           targetDate: '',
-          completionDate: ''
-        }
+          completionDate: '',
+        },
       ];
       expect(component.invalidTitle('Vacation')).toBe(true);
     });
@@ -120,15 +127,17 @@ describe('AddSmileComponent', () => {
           sub: '',
           phase: 'planning',
           description: '',
-          buckets: [{ id: 'bucket_1', title: 'Vacation', target: 1000, amount: 0, notes: '', links: [] }],
+          buckets: [
+            { id: 'bucket_1', title: 'Vacation', target: 1000, amount: 0, notes: '', links: [] },
+          ],
           links: [],
           actionItems: [],
           notes: [],
           createdAt: '',
           updatedAt: '',
           targetDate: '',
-          completionDate: ''
-        }
+          completionDate: '',
+        },
       ];
       component.titleTextField = 'Vacation';
       component.targetTextField = '2000';
@@ -150,7 +159,7 @@ describe('AddSmileComponent', () => {
       expect(project.buckets[0].target).toBe(5000);
       expect(project.buckets[0].amount).toBe(100);
       expect(mockPersistence.writeAndSync).toHaveBeenCalledWith(
-        expect.objectContaining({ tag: 'smile', localStorageKey: 'smile' })
+        expect.objectContaining({ tag: 'smile', localStorageKey: 'smile' }),
       );
     });
 

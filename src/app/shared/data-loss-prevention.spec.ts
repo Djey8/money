@@ -24,7 +24,7 @@ const BALANCE_DB_TAGS = [
   'balance/liabilities',
   'balance/asset/assets',
   'balance/asset/shares',
-  'balance/asset/investments'
+  'balance/asset/investments',
 ];
 const BALANCE_LS_KEYS = ['liabilities', 'assets', 'shares', 'investments'];
 
@@ -35,9 +35,7 @@ const GROW_LS_KEYS = ['grow'];
 /** Tier 2 localStorage keys — must only be written when tier2Loaded === true */
 const TIER2_LS_KEYS = ['smile', 'fire', 'mojo'];
 
-
 describe('Data Loss Prevention', () => {
-
   beforeEach(() => {
     (AppStateService as any)._instance = undefined;
     seedAppState();
@@ -50,11 +48,15 @@ describe('Data Loss Prevention', () => {
     AppStateService.instance.allShares = [{ tag: 'AAPL', quantity: 10, price: 150 }] as any;
     AppStateService.instance.allInvestments = [{ tag: 'ETF', deposit: 500, amount: 10000 }] as any;
     AppStateService.instance.liabilities = [{ tag: 'Mortgage', amount: 200000, credit: 0 }] as any;
-    AppStateService.instance.allGrowProjects = [{ title: 'Portfolio', type: 'income-growth' }] as any;
+    AppStateService.instance.allGrowProjects = [
+      { title: 'Portfolio', type: 'income-growth' },
+    ] as any;
     AppStateService.instance.allSmileProjects = [{ title: 'Vacation' }] as any;
     AppStateService.instance.allFireEmergencies = [{ title: 'Emergency Fund' }] as any;
     AppStateService.instance.mojo = { amount: 1000, target: 5000 };
-    AppStateService.instance.allTransactions = [{ account: 'Daily', amount: -10, date: '2025-01-01' }] as any;
+    AppStateService.instance.allTransactions = [
+      { account: 'Daily', amount: -10, date: '2025-01-01' },
+    ] as any;
     AppStateService.instance.allSubscriptions = [];
     AppStateService.instance.allIntrests = [{ tag: 'Savings', amount: 50 }] as any;
     AppStateService.instance.allProperties = [];
@@ -224,9 +226,9 @@ describe('Data Loss Prevention', () => {
           { tag: 'income/expenses/mojo', data: [] },
           { tag: 'smile', data: AppStateService.instance.allSmileProjects },
           { tag: 'fire', data: AppStateService.instance.allFireEmergencies },
-          { tag: 'mojo', data: AppStateService.instance.mojo }
+          { tag: 'mojo', data: AppStateService.instance.mojo },
         ]),
-        saveToLocalStorage: jest.fn()
+        saveToLocalStorage: jest.fn(),
       };
       component = Object.create(InfoComponent.prototype);
       component.persistence = mockPersistence;
@@ -322,11 +324,11 @@ describe('Data Loss Prevention', () => {
           { tag: 'income/expenses/mojo', data: [] },
           { tag: 'smile', data: AppStateService.instance.allSmileProjects },
           { tag: 'fire', data: AppStateService.instance.allFireEmergencies },
-          { tag: 'mojo', data: AppStateService.instance.mojo }
-        ])
+          { tag: 'mojo', data: AppStateService.instance.mojo },
+        ]),
       };
       mockAuthService = {
-        checkAuthentication: jest.fn().mockResolvedValue({ authenticated: true })
+        checkAuthentication: jest.fn().mockResolvedValue({ authenticated: true }),
       };
       component = Object.create(SettingsComponent.prototype);
       component.persistence = mockPersistence;
@@ -528,7 +530,7 @@ describe('Data Loss Prevention', () => {
       (component as any).saveToLocalStorage();
 
       const liabilitiesCall = mockLocalStorage.saveData.mock.calls.find(
-        (call: any) => call[0] === 'liabilities'
+        (call: any) => call[0] === 'liabilities',
       );
       expect(liabilitiesCall).toBeTruthy();
       const parsed = JSON.parse(liabilitiesCall[1]);
@@ -551,7 +553,7 @@ describe('Data Loss Prevention', () => {
     function safeParse(key: string, fallback: any = []): any {
       try {
         const raw = mockLocalStorage.getData(key);
-        if (raw == null || raw === "") return fallback;
+        if (raw == null || raw === '') return fallback;
         return JSON.parse(raw);
       } catch (e) {
         mockLocalStorage.removeData(key);
@@ -563,7 +565,9 @@ describe('Data Loss Prevention', () => {
       removedKeys = [];
       mockLocalStorage = {
         getData: jest.fn().mockReturnValue(''),
-        removeData: jest.fn((key: string) => { removedKeys.push(key); })
+        removeData: jest.fn((key: string) => {
+          removedKeys.push(key);
+        }),
       };
     });
 
@@ -602,23 +606,23 @@ describe('Data Loss Prevention', () => {
       // Simulate: transactions is corrupt, smile is valid
       const store: Record<string, string> = {
         transactions: 'CORRUPT{{{',
-        smile: '[{"title":"Vacation"}]'
+        smile: '[{"title":"Vacation"}]',
       };
       mockLocalStorage.getData.mockImplementation((key: string) => store[key] || '');
 
       const transactions = safeParse('transactions');
       const smile = safeParse('smile');
 
-      expect(transactions).toEqual([]);           // corrupt → fallback
+      expect(transactions).toEqual([]); // corrupt → fallback
       expect(smile).toEqual([{ title: 'Vacation' }]); // valid → parsed
-      expect(removedKeys).toEqual(['transactions']);    // only corrupt key removed
+      expect(removedKeys).toEqual(['transactions']); // only corrupt key removed
     });
 
     it('should handle multiple corrupt keys independently', () => {
       const store: Record<string, string> = {
         transactions: 'BAD1',
         grow: 'BAD2',
-        smile: '[{"ok":true}]'
+        smile: '[{"ok":true}]',
       };
       mockLocalStorage.getData.mockImplementation((key: string) => store[key] || '');
 
@@ -670,12 +674,12 @@ describe('Data Loss Prevention', () => {
       const mockPersistence = { batchWriteAndSync: jest.fn() };
       const component: any = Object.create(SettingsComponent.prototype);
       component.persistence = mockPersistence;
-      component.authService = { checkAuthentication: jest.fn().mockResolvedValue({ authenticated: true }) };
+      component.authService = {
+        checkAuthentication: jest.fn().mockResolvedValue({ authenticated: true }),
+      };
       component.incomeStatement = {
         recalculate: jest.fn(),
-        getWrites: jest.fn().mockReturnValue([
-          { tag: 'income/revenue/interests', data: [] }
-        ])
+        getWrites: jest.fn().mockReturnValue([{ tag: 'income/revenue/interests', data: [] }]),
       };
 
       await component.updateBasedOnTransaction();

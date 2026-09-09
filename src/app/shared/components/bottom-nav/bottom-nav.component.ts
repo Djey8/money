@@ -6,27 +6,73 @@ import { MatTableDataSource } from '@angular/material/table';
 import { AppStateService } from 'src/app/shared/services/app-state.service';
 
 // Deferred imports — resolved after module init to break circular chains
-let AppComponent: any; setTimeout(() => import('src/app/app.component').then(m => AppComponent = m.AppComponent));
-let MenuComponent: any; setTimeout(() => import('src/app/panels/menu/menu.component').then(m => MenuComponent = m.MenuComponent));
-let StatsComponent: any; setTimeout(() => import('src/app/stats/stats.component').then(m => StatsComponent = m.StatsComponent));
-let AccountingComponent: any; setTimeout(() => import('src/app/main/accounting/accounting.component').then(m => AccountingComponent = m.AccountingComponent));
-let AddSmileComponent: any; setTimeout(() => import('src/app/panels/add/add-smile/add-smile.component').then(m => AddSmileComponent = m.AddSmileComponent));
-let AddFireComponent: any; setTimeout(() => import('src/app/panels/add/add-fire/add-fire.component').then(m => AddFireComponent = m.AddFireComponent));
-let AddSubscriptionComponent: any; setTimeout(() => import('src/app/panels/add/add-subscription/add-subscription.component').then(m => AddSubscriptionComponent = m.AddSubscriptionComponent));
-let AddBudgetComponent: any; setTimeout(() => import('src/app/panels/add/add-budget/add-budget.component').then(m => AddBudgetComponent = m.AddBudgetComponent));
-let AddGrowComponent: any; setTimeout(() => import('src/app/panels/add/add-grow/add-grow.component').then(m => AddGrowComponent = m.AddGrowComponent));
-let ChooseComponent: any; setTimeout(() => import('src/app/panels/menu/choose/choose.component').then(m => ChooseComponent = m.ChooseComponent));
-let AddLiabilitieComponent: any; setTimeout(() => import('src/app/panels/add/add-liabilitie/add-liabilitie.component').then(m => AddLiabilitieComponent = m.AddLiabilitieComponent));
+let AppComponent: any;
+setTimeout(() => import('src/app/app.component').then((m) => (AppComponent = m.AppComponent)));
+let MenuComponent: any;
+setTimeout(() =>
+  import('src/app/panels/menu/menu.component').then((m) => (MenuComponent = m.MenuComponent)),
+);
+let StatsComponent: any;
+setTimeout(() =>
+  import('src/app/stats/stats.component').then((m) => (StatsComponent = m.StatsComponent)),
+);
+let AccountingComponent: any;
+setTimeout(() =>
+  import('src/app/main/accounting/accounting.component').then(
+    (m) => (AccountingComponent = m.AccountingComponent),
+  ),
+);
+let AddSmileComponent: any;
+setTimeout(() =>
+  import('src/app/panels/add/add-smile/add-smile.component').then(
+    (m) => (AddSmileComponent = m.AddSmileComponent),
+  ),
+);
+let AddFireComponent: any;
+setTimeout(() =>
+  import('src/app/panels/add/add-fire/add-fire.component').then(
+    (m) => (AddFireComponent = m.AddFireComponent),
+  ),
+);
+let AddSubscriptionComponent: any;
+setTimeout(() =>
+  import('src/app/panels/add/add-subscription/add-subscription.component').then(
+    (m) => (AddSubscriptionComponent = m.AddSubscriptionComponent),
+  ),
+);
+let AddBudgetComponent: any;
+setTimeout(() =>
+  import('src/app/panels/add/add-budget/add-budget.component').then(
+    (m) => (AddBudgetComponent = m.AddBudgetComponent),
+  ),
+);
+let AddGrowComponent: any;
+setTimeout(() =>
+  import('src/app/panels/add/add-grow/add-grow.component').then(
+    (m) => (AddGrowComponent = m.AddGrowComponent),
+  ),
+);
+let ChooseComponent: any;
+setTimeout(() =>
+  import('src/app/panels/menu/choose/choose.component').then(
+    (m) => (ChooseComponent = m.ChooseComponent),
+  ),
+);
+let AddLiabilitieComponent: any;
+setTimeout(() =>
+  import('src/app/panels/add/add-liabilitie/add-liabilitie.component').then(
+    (m) => (AddLiabilitieComponent = m.AddLiabilitieComponent),
+  ),
+);
 
 @Component({
   selector: 'app-bottom-nav',
   standalone: true,
   imports: [CommonModule, TranslateModule],
   templateUrl: './bottom-nav.component.html',
-  styleUrls: ['./bottom-nav.component.css']
+  styleUrls: ['./bottom-nav.component.css'],
 })
 export class BottomNavComponent {
-
   get statsMode(): boolean {
     return this.router.url === '/stats';
   }
@@ -164,10 +210,14 @@ export class BottomNavComponent {
   goTo(route: string) {
     if (route === '/grow') {
       AccountingComponent.allTransactions = AppStateService.instance.allTransactions;
-      AccountingComponent.dataSource = new MatTableDataSource<any>(AccountingComponent.allTransactions);
-      AccountingComponent.dataSource.data = AccountingComponent.dataSource.data.map((transaction, index) => {
-        return { ...transaction, id: index };
-      });
+      AccountingComponent.dataSource = new MatTableDataSource<any>(
+        AccountingComponent.allTransactions,
+      );
+      AccountingComponent.dataSource.data = AccountingComponent.dataSource.data.map(
+        (transaction, index) => {
+          return { ...transaction, id: index };
+        },
+      );
     }
     this.router.navigate([route]);
   }

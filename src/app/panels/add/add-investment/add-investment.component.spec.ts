@@ -26,13 +26,16 @@ describe('AddInvestmentComponent', () => {
         AddInvestmentComponent,
         TranslateModule.forRoot(),
         HttpClientTestingModule,
-        RouterTestingModule
+        RouterTestingModule,
       ],
       providers: [
         { provide: DatabaseService, useValue: {} },
         { provide: PersistenceService, useValue: mockPersistence },
-        { provide: FIREBASE_OPTIONS, useValue: { projectId: 'test', appId: 'test', apiKey: 'test' } }
-      ]
+        {
+          provide: FIREBASE_OPTIONS,
+          useValue: { projectId: 'test', appId: 'test', apiKey: 'test' },
+        },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(AddInvestmentComponent);
@@ -52,7 +55,9 @@ describe('AddInvestmentComponent', () => {
     });
 
     it('should show error for duplicate title', () => {
-      AppStateService.instance.allInvestments = [{ tag: 'Fund A', amount: 10000, deposit: 500 }] as any;
+      AppStateService.instance.allInvestments = [
+        { tag: 'Fund A', amount: 10000, deposit: 500 },
+      ] as any;
       component.titleTextField = 'Fund A';
       component.addAsset();
       expect(component.color).toBe('red');
