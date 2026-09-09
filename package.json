@@ -74,6 +74,7 @@
     "@angular/compiler-cli": "^20.3.27",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.58.2",
+    "@types/crypto-js": "^4.2.2",
     "@types/jest": "^29.5.14",
     "@types/node": "^20.6.4",
     "angular-eslint": "22.2.0",
