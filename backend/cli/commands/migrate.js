@@ -12,9 +12,13 @@
  *     needed to restore the exact pre-migration document.
  *   - Verified after write by independently re-reading the document back
  *     from CouchDB and re-summing all transaction amounts, comparing
- *     against the same sum computed on the pre-migration data. Any
- *     mismatch triggers an automatic restore from the backup and a
- *     non-zero exit — the migration is never left half-applied.
+ *     against the pre-migration sum with each amount individually rounded
+ *     to the minor unit first (matching what the migration itself does
+ *     per-field — the ADR explicitly allows sub-cent rounding, so the raw
+ *     unrounded sum is not the right baseline). Any mismatch beyond
+ *     floating-point summation noise triggers an automatic restore from
+ *     the backup and a non-zero exit — the migration is never left
+ *     half-applied.
  *   - `--dry-run` never writes or backs up anything.
  *
  * NOTE: the transaction-sum check is a real, independent verification,
@@ -25,7 +29,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { convertDocumentToMinorUnits, fromMinorUnits } = require('@money/domain');
+const { convertDocumentToMinorUnits, toMinorUnits, fromMinorUnits } = require('@money/domain');
 const { getEncryptionSession } = require('../../services/encryption-session');
 
 const DEFAULT_BACKUP_DIR = path.join(__dirname, '..', '..', 'migration-backups');
@@ -45,14 +49,16 @@ function getSchemaVersion(userDoc) {
  * (division distributes over sums, so this is equivalent to converting
  * each value individually before summing).
  */
-function sumTransactionAmounts(data, session) {
+function sumTransactionAmounts(data, session, { roundEach = false } = {}) {
   const transactions = data?.transactions;
   if (!Array.isArray(transactions)) return 0;
   return transactions.reduce((sum, tx) => {
     const raw = tx?.amount;
     const decrypted = session && typeof raw === 'string' ? session.decrypt(raw) : raw;
     const numeric = typeof decrypted === 'number' ? decrypted : parseFloat(decrypted);
-    return Number.isNaN(numeric) ? sum : sum + numeric;
+    if (Number.isNaN(numeric)) return sum;
+    const value = roundEach ? fromMinorUnits(toMinorUnits(numeric)) : numeric;
+    return sum + value;
   }, 0);
 }
 
@@ -154,10 +160,18 @@ async function runMigration(deps, options) {
   const postMigrationSumMinor = sumTransactionAmounts(writtenDoc.data, session);
   const postMigrationSum = fromMinorUnits(postMigrationSumMinor);
 
-  if (Math.abs(postMigrationSum - preMigrationSum) > 1e-9) {
+  // Baseline for comparison: the pre-migration amounts with each one
+  // individually rounded to the minor unit first — i.e. what a correct
+  // migration is expected to produce, matching per-field rounding rather
+  // than the raw (necessarily different, once any field needs rounding)
+  // unrounded sum. Tolerance covers only floating-point summation noise;
+  // a genuine data mismatch is at least a full cent, far above this.
+  const expectedPostMigrationSum = sumTransactionAmounts(userDoc.data, session, { roundEach: true });
+
+  if (Math.abs(postMigrationSum - expectedPostMigrationSum) > 1e-6) {
     await rollback(usersDb, userId, backupFile);
     throw new MigrationError(
-      `Verification failed for user ${userId}: transaction sum before (${preMigrationSum}) != after (${postMigrationSum}). Automatically rolled back from ${backupFile}.`,
+      `Verification failed for user ${userId}: expected transaction sum after rounding (${expectedPostMigrationSum}) != actual (${postMigrationSum}). Automatically rolled back from ${backupFile}.`,
     );
   }
 

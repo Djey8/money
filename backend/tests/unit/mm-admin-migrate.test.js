@@ -151,6 +151,28 @@ describe('mm-admin migrate', () => {
     expect(session.decrypt(writtenTx.amount)).toBe('-1250');
   });
 
+  it('does not roll back solely because rounding a sub-cent amount changes the transaction sum', async () => {
+    // Regression test: found by running the real migration against a
+    // restored copy of production data (docs/adr/0002, D-13). A single
+    // transaction of -91.865 rounds to -91.87 (round-half-away-from-zero
+    // to the cent, per the ADR) — a 0.005 difference from the raw
+    // pre-migration sum that legitimate rounding is expected to produce,
+    // not a sign of data loss. Comparing against the raw unrounded sum
+    // instead of the per-field-rounded expected sum used to trigger a
+    // false-positive rollback on essentially any real account.
+    const usersDb = makeUsersDb({
+      _id: 'user1',
+      _rev: '1-abc',
+      data: { transactions: [{ amount: -91.865 }] },
+    });
+    const authDb = makeAuthDb();
+
+    const result = await runMigration({ usersDb, authDb }, { userId: 'user1', backupDir });
+
+    expect(result.status).toBe('migrated');
+    expect(usersDb._getCurrent().data.transactions[0].amount).toBe(-9187);
+  });
+
   it('automatically rolls back if post-write verification detects a mismatch', async () => {
     const usersDb = makeUsersDb({
       _id: 'user1',
