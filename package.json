@@ -92,7 +92,10 @@
   "overrides": {
     "d3-sankey": {
       "d3-shape": "^3.2.0"
-    }
+    },
+    "hono": "^4.13.7",
+    "qs": "^6.16.0",
+    "fast-uri": "^3.1.7"
   },
   "lint-staged": {
     "src/**/*.ts": [
