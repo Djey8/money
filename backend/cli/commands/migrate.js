@@ -166,7 +166,9 @@ async function runMigration(deps, options) {
   // than the raw (necessarily different, once any field needs rounding)
   // unrounded sum. Tolerance covers only floating-point summation noise;
   // a genuine data mismatch is at least a full cent, far above this.
-  const expectedPostMigrationSum = sumTransactionAmounts(userDoc.data, session, { roundEach: true });
+  const expectedPostMigrationSum = sumTransactionAmounts(userDoc.data, session, {
+    roundEach: true,
+  });
 
   if (Math.abs(postMigrationSum - expectedPostMigrationSum) > 1e-6) {
     await rollback(usersDb, userId, backupFile);
