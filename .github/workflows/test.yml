@@ -82,24 +82,23 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci --legacy-peer-deps
+      - run: npm run build:domain
       - run: cd backend && npm ci
       - run: npm run test:integration --workspace=apps/mcp
 
   backend-unit:
     name: Backend Unit Tests
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: backend
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: backend/package-lock.json
-      - run: npm ci
-      - run: npx jest --ci --forceExit -- tests/unit
+      - run: npm ci --legacy-peer-deps
+      - run: npm run build:domain
+      - run: cd backend && npm ci
+      - run: cd backend && npx jest --ci --forceExit -- tests/unit
 
   backend-integration:
     name: Backend Integration Tests
@@ -117,9 +116,6 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-    defaults:
-      run:
-        working-directory: backend
     env:
       COUCHDB_URL: http://admin:password@localhost:5984
       JWT_SECRET: test-secret-for-ci
@@ -130,9 +126,10 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: backend/package-lock.json
-      - run: npm ci
-      - run: npx jest --ci --forceExit --detectOpenHandles -- tests/integration
+      - run: npm ci --legacy-peer-deps
+      - run: npm run build:domain
+      - run: cd backend && npm ci
+      - run: cd backend && npx jest --ci --forceExit --detectOpenHandles -- tests/integration
 
   e2e:
     name: E2E Tests (Playwright)
