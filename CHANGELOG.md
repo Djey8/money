@@ -1,3 +1,82 @@
+## [1.13.0] - 2026-09-09
+
+### Features
+- feat(mcp): add MCP server exposing the Pro API as agent tools
+- feat(api): add GET/PATCH/DELETE /account, POST /account/verify-password
+- feat(api): add POST /data/import
+- feat(api): add GET /data/export
+- feat(api): add POST /data/recalculate
+- feat(cli): add mm-admin rotate-encryption-key
+- feat(api): add GET/PUT /encryption-config
+- feat(api): add GET/PATCH /settings, starting Slice 6
+- feat(api): add POST /budget/from-subscriptions, completing Slice 5
+- feat(api): add POST /budget/{fill-forward,copy} and DELETE /budget?month=
+- feat(api): add GET/POST /budget and GET/PATCH/DELETE /budget/{id}
+- feat(api): add POST /subscriptions/batch, GET /subscriptions/export, POST /subscriptions/import
+- feat(api): add POST /subscriptions/refresh
+- feat(api): add GET/POST /subscriptions and GET/PATCH/DELETE /subscriptions/{id}
+- feat(api): add subscription repository CRUD
+- feat(domain): add subscription due-transaction generation engine
+- feat(domain): add subscription frequency-occurrence calculators
+- feat(api): add GET /reports/grow/{id}/pnl, closing out Slice 4
+- feat(api): add Grow CRUD and typed actions, completing Slice 4
+- feat(domain): add pure calculators for Grow's typed actions
+- feat(domain): add regex-based Grow comment-DSL parser/generator
+- feat(api): add read-only GET /income/{revenues,interests,properties}
+- feat(api): add GET/POST /balance/shares and GET/PATCH/DELETE /balance/shares/{id}, completing Slice 4
+- feat(api): add GET/POST /balance/investments and GET/PATCH/DELETE /balance/investments/{id}
+- feat(api): add GET/POST /balance/liabilities and GET/PATCH/DELETE /balance/liabilities/{id}
+- feat(api): add GET/POST /balance/assets and GET/PATCH/DELETE /balance/assets/{id}, starting Slice 4
+- feat(api): add POST /{smile,fire}/{id}/payment-plan, completing Slice 3
+- feat(api): add GET /reports/fire-coverage, completing Slice 3's Smile/Fire/Mojo work
+- feat(api): add GET/POST /fire and GET/PATCH/DELETE /fire/{id}
+- feat(api): add GET/PATCH/DELETE /smile/{id}
+- feat(api): add GET/POST /smile
+- feat(domain): add fund project totals aggregate
+- feat(cli): add mm-admin migrate-fund-project-ids
+- feat(api): add GET/PUT /mojo, starting Slice 3
+- feat(api): add GET /reports/kpis, completing Slice 2
+- feat(api): add GET /reports/balance-sheet
+- feat(api): add GET /reports/cashflow
+- feat(api): add GET /reports/income-statement
+- feat(api): add transactions export/import, complete Slice 1
+- feat(api): add POST /transactions/batch
+- feat(api): add POST /transactions/{id}/copy
+- feat(api): add PATCH/DELETE for transactions
+- feat(backend): create transactions and persist derived fund state
+- feat(backend): map transaction derived state
+- feat(domain): rebuild transaction derived state
+- feat(domain): classify transaction income
+- feat(domain): rebuild transaction fund state
+- feat(domain): apply transaction fund allocations
+- feat(domain): summarize transaction accounting
+- feat(api): filter transaction reads
+- feat(api): add transaction detail reads
+- feat(api): add paginated transaction reads
+- feat(backend): add transaction ID backfill command
+- feat(domain): map transactions to API money format
+- feat(domain): add transaction identity normalization
+- feat(api): add v1 identity and token foundation
+- feat(backend): add mm-admin user/token commands (slice 1 groundwork)
+- feat(backend): add the audit log database and write/query helpers
+- feat(frontend): refuse a write when the server data changed underneath it
+- feat(backend): add mm-admin migrate CLI for the money minor-units migration
+- feat(domain): add money minor-units conversion for the migration tool
+- feat(backend): link @money/domain via workspace file dependency
+- feat(domain): scaffold packages/domain workspace and port CrypticService crypto
+
+### Bug Fixes
+- fix(docker): eliminate container-scan HIGH-severity findings
+- fix(migrate): compare rounded, not raw, sums in migration verification
+- fix(deps): declare @types/crypto-js at root so a clean npm ci installs it
+- fix(deploy): build packages/domain into the backend image instead of a dangling symlink
+- fix(backend): add subscriptions/budget to migrate-balance-entity-ids
+- fix(domain): use non-empty time for generated subscription transactions
+- fix(domain): reuse EncryptionSession's salt by default
+- fix(domain): allow empty transaction comments
+- fix(landing): repair malformed opacity declaration
+- fix(splurge): use splurge ratio instead of daily ratio on refresh
+
 ## [1.12.0] - 2026-08-03
 
 ### Features
