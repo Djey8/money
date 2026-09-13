@@ -8,7 +8,7 @@
 
 ## 1. What this feature is
 
-Track **where money physically sits** — bank accounts, cash, a crypto exchange balance — as a first-class object called a **Treasury**. This is orthogonal to the existing Barefoot bucket concept (`Transaction.account` ∈ Daily/Splurge/Smile/Fire/Mojo): a bucket says *what the money is for*, a Treasury says *where it actually is*.
+Track **where money physically sits** — bank accounts, cash, a crypto exchange balance — as a first-class object called a **Treasury**. This is orthogonal to the existing Barefoot bucket concept (`Transaction.account` ∈ Daily/Splurge/Smile/Fire/Mojo): a bucket says _what the money is for_, a Treasury says _where it actually is_.
 
 Three pieces:
 
@@ -27,7 +27,7 @@ Asked as four clarifying questions before writing this plan; answers below are f
 1. **Balance model: freely-editable live counter**, not derived-by-replay. This is a deliberate deviation from how Mojo/Smile/Fire currently work (`packages/domain/src/transactions/fund-state.ts` fully recomputes those by replaying every transaction each time — see Research §3). Treasury instead stores a plain `amount` number that:
    - can be edited directly at any time via the Info modal's CRUD update (a manual correction/adjustment), **and**
    - is also incremented/decremented automatically by linked transactions and transfers.
-   This means the app needs new delta-reconciliation logic it doesn't currently have anywhere else (see §5). This was chosen deliberately over the replay model for simplicity of mental model — be aware it can drift if reconciliation isn't applied consistently at every mutation site (create/edit/delete of a transaction or transfer).
+     This means the app needs new delta-reconciliation logic it doesn't currently have anywhere else (see §5). This was chosen deliberately over the replay model for simplicity of mental model — be aware it can drift if reconciliation isn't applied consistently at every mutation site (create/edit/delete of a transaction or transfer).
 2. **Deleting a Treasury with linked history: allowed, orphans the links.** Deleting a Treasury does not check for or block on existing references. Every Transaction/Transfer that referenced it has that reference reset to `null` (not left dangling, not cascade-deleted) — transaction/transfer history itself is preserved, just loses the "which treasury" attribution. The UI should display such orphaned records with something like "Deleted treasury" rather than a blank/broken field.
 3. **No transfer fees in v1.** A Transfer always moves one exact amount: source `-amount`, destination `+amount`. No fee/spread field. Documented here as a deliberate scope cut — a fee could be added later as an optional field without a breaking change (extra optional field, defaults to zero effect on existing data).
 4. **Audit the existing informal "transfer" convention**, don't leave it silently un-investigated. See §10 — brief, no guaranteed behavior change, just confirming the new Transfer entity doesn't double-count or conflict with the ~10 existing places that guess "this looks like a transfer" from category-name matching.
@@ -47,7 +47,7 @@ Full detail lives in this session's research; key facts condensed here:
   - Nav entry: `src/app/panels/menu/menu.component.html`.
 - **Transaction interface is a flat 6 fields**, no location concept: `{ account, amount, date, time, category, comment }` (`src/app/interfaces/transaction.ts`). `account` is purely the Barefoot bucket, hardcoded to Daily/Splurge/Smile/Fire/Mojo/Income in multiple places (UI dropdowns, `packages/domain/src/transactions/accounting.ts`'s `EXPENSE_ACCOUNTS`). A `treasuryId` field is a genuinely new, orthogonal dimension — nothing to reconcile it against.
 - **`packages/domain`'s derived-state calculators are closed, hardcoded shapes**, not a generic per-dimension accumulator: `FundState = { mojo, smile, fire }` (3 fixed members), `TransactionAccountingSummary`'s `expenses` is a `Record` over exactly 5 literal account names. A treasury-balance accumulator is a **new, additional** calculation, not a plug-in to the existing one.
-- **No Transfer entity exists anywhere** (interface, route, repository — nothing). What exists is an **informal, undocumented convention**: a transaction whose `category` matches another account name is treated as an inter-bucket transfer and excluded from expense math, applied ad hoc in ~10 places: `src/app/stats/bi/bi-dashboard.ts` (multiple line numbers), `src/app/stats/analytics/explorative.ts`, `src/app/stats/analytics/prescriptive.ts`, `src/app/shared/services/prompt-generator.service.ts`. This predates and is unrelated to the new Transfer entity — it's about inter-*bucket* movement (Daily→Splurge), not inter-*treasury* movement (Checking→Savings). Both concepts can coexist. See §10.
+- **No Transfer entity exists anywhere** (interface, route, repository — nothing). What exists is an **informal, undocumented convention**: a transaction whose `category` matches another account name is treated as an inter-bucket transfer and excluded from expense math, applied ad hoc in ~10 places: `src/app/stats/bi/bi-dashboard.ts` (multiple line numbers), `src/app/stats/analytics/explorative.ts`, `src/app/stats/analytics/prescriptive.ts`, `src/app/shared/services/prompt-generator.service.ts`. This predates and is unrelated to the new Transfer entity — it's about inter-_bucket_ movement (Daily→Splurge), not inter-_treasury_ movement (Checking→Savings). Both concepts can coexist. See §10.
 - **Balance (assets/shares/investments/liabilities) is fully distinct from Treasury** — no code-level overlap, purely conceptual risk (a user could double-model "Bank" as both an Asset and a Treasury; that's a user modeling choice, not a system conflict to solve).
 - **Subscription already has an `account` field** (the Barefoot bucket) that generated transactions inherit verbatim, both in the frontend (`subscription-processing.service.ts`) and the domain package (`packages/domain/src/transactions/subscription-generation.ts`). Adding an optional `treasuryId` to Subscription is the same pattern: extend the interface, extend generated-transaction construction, extend the dedup key comparison (`subscription-generation.ts`'s `DedupKey` currently compares 5 fields — a treasury-only difference between two otherwise-identical subscriptions would currently collide as duplicates unless `treasuryId` is added there too), and extend `SubscriptionChange.field`'s closed union (currently `'amount'|'account'|'category'|'frequency'`) to include the new field name for change-history tracking.
 - **Storage layer is fully generic — no schema/rules changes needed for the basic data path.** Both Firebase RTDB (`users/{uid}/<tag>`) and self-hosted CouchDB (`backend/routes/data.js`'s generic `path.split('/')` read/write) will happily store a new `treasuries`/`transfers` tag with zero backend code changes. The real cost is entirely in the **frontend tiered-loading contract**:
@@ -67,8 +67,8 @@ Full detail lives in this session's research; key facts condensed here:
 ```ts
 export interface Treasury {
   id: string; // real synthetic id, not a title/name key — Transactions/Transfers reference this,
-              // and a Treasury must be freely renameable without breaking those references
-              // (unlike Grow, which keys by title today)
+  // and a Treasury must be freely renameable without breaking those references
+  // (unlike Grow, which keys by title today)
   name: string;
   amount: number; // freely-editable live counter — see §2 decision 1 and §5
   createdAt: string;
@@ -141,19 +141,19 @@ export interface Subscription {
 
 Because the balance model is a freely-editable live counter (§2 decision 1), every code path that creates, edits, or deletes a Transaction/Subscription-generated-transaction/Transfer with a treasury link must apply a **delta** to the relevant Treasury's `amount`. This logic needs to exist in every place transactions are currently mutated:
 
-| Mutation | Effect on Treasury balance |
-| --- | --- |
-| Create transaction with `treasuryId` set | `treasury.amount += transaction.amount` (transaction amount is already signed — negative for expense, positive for income, per existing convention) |
-| Edit transaction, `treasuryId` unchanged | `treasury.amount += (newAmount - oldAmount)` |
-| Edit transaction, `treasuryId` changed from A to B | `A.amount -= oldAmount; B.amount += newAmount` |
-| Edit transaction, `treasuryId` cleared (was set) | `treasury.amount -= oldAmount` |
-| Delete transaction with `treasuryId` set | `treasury.amount -= transaction.amount` |
-| Create transfer | `source.amount -= transfer.amount; destination.amount += transfer.amount` |
-| Edit transfer (amount/source/destination changed) | reverse the old effect, apply the new one (same pattern as transaction edit) |
-| Delete transfer | reverse: `source.amount += transfer.amount; destination.amount -= transfer.amount` |
-| Delete a Treasury referenced by a transaction/transfer | no balance effect (the Treasury itself is gone) — just null the reference on the transaction/transfer (§2 decision 2) |
+| Mutation                                                   | Effect on Treasury balance                                                                                                                                                                                 |
+| ---------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Create transaction with `treasuryId` set                   | `treasury.amount += transaction.amount` (transaction amount is already signed — negative for expense, positive for income, per existing convention)                                                        |
+| Edit transaction, `treasuryId` unchanged                   | `treasury.amount += (newAmount - oldAmount)`                                                                                                                                                               |
+| Edit transaction, `treasuryId` changed from A to B         | `A.amount -= oldAmount; B.amount += newAmount`                                                                                                                                                             |
+| Edit transaction, `treasuryId` cleared (was set)           | `treasury.amount -= oldAmount`                                                                                                                                                                             |
+| Delete transaction with `treasuryId` set                   | `treasury.amount -= transaction.amount`                                                                                                                                                                    |
+| Create transfer                                            | `source.amount -= transfer.amount; destination.amount += transfer.amount`                                                                                                                                  |
+| Edit transfer (amount/source/destination changed)          | reverse the old effect, apply the new one (same pattern as transaction edit)                                                                                                                               |
+| Delete transfer                                            | reverse: `source.amount += transfer.amount; destination.amount -= transfer.amount`                                                                                                                         |
+| Delete a Treasury referenced by a transaction/transfer     | no balance effect (the Treasury itself is gone) — just null the reference on the transaction/transfer (§2 decision 2)                                                                                      |
 | Subscription-generated transaction (auto-created due date) | same as "create transaction" above — the generation code path must also apply this delta, in both the frontend (`subscription-processing.service.ts`) and `packages/domain` (`subscription-generation.ts`) |
-| Direct manual edit of `Treasury.amount` via the Info modal | plain overwrite, no reconciliation — this is the user's explicit "correction" mechanism |
+| Direct manual edit of `Treasury.amount` via the Info modal | plain overwrite, no reconciliation — this is the user's explicit "correction" mechanism                                                                                                                    |
 
 This table is the actual functional spec for the feature — implementation should be checked against every row, in every place a transaction can be created/edited/deleted (manual add/info modals, subscription auto-generation, CSV/data import if that path also creates transactions, and the eventual Pro API once that's built).
 
@@ -224,7 +224,7 @@ Before/during implementation, review each of these for whether the new Transfer 
 - `src/app/shared/services/prompt-generator.service.ts`
 - `docs/domain/FIRE_COVERAGE_FORMULA.md` — already documents "no transfer exclusion at all" as a known bug class in one calculation; worth checking whether this plan's work touches that same formula.
 
-Expected outcome: these are about inter-*bucket* transfers (Daily→Splurge), Treasury Transfers are about inter-*treasury* transfers (Checking→Savings) — different concepts that can coexist without conflict, since Transfers never enter the transaction stream these calculators read from at all (§8). Document the audit's conclusion here (or in a follow-up note) once done — if a real conflict is found, it needs its own fix, scoped separately from just "add Treasury."
+Expected outcome: these are about inter-_bucket_ transfers (Daily→Splurge), Treasury Transfers are about inter-_treasury_ transfers (Checking→Savings) — different concepts that can coexist without conflict, since Transfers never enter the transaction stream these calculators read from at all (§8). Document the audit's conclusion here (or in a follow-up note) once done — if a real conflict is found, it needs its own fix, scoped separately from just "add Treasury."
 
 ---
 
