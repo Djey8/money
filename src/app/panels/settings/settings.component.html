@@ -389,6 +389,17 @@
           <span>{{ 'Settings.encryptionbtn' | translate }}</span>
           <span class="menu-chevron">›</span>
         </button>
+        <!-- Pro, self-hosted only — the actual feature lives entirely in a
+             separate route (app.routes.selfhosted.ts), so Firebase ships
+             none of its code; this is just a plain guarded nav link. -->
+        <button
+          *ngIf="appMode === 'selfhosted'"
+          class="settings-menu-item"
+          (click)="goToPersonalAccessTokens()"
+        >
+          <span>Personal Access Tokens</span>
+          <span class="menu-chevron">›</span>
+        </button>
       </div>
       <!-- Auth form for encryption -->
       <div *ngIf="isAuth" class="login-container">

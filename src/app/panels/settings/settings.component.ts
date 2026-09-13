@@ -1262,6 +1262,11 @@ export class SettingsComponent implements DoCheck {
     AppComponent.gotoTop();
   }
 
+  /** Pro, self-hosted only — see settings.component.html's guard on this button. */
+  goToPersonalAccessTokens(): void {
+    this.router.navigate(['/settings/tokens']);
+  }
+
   changeEncryption() {
     // Always require password authentication for encryption settings (sensitive)
     this.isAuth = !this.isAuth;

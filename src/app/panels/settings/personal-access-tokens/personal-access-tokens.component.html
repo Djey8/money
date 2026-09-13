@@ -1,0 +1,167 @@
+<!-- Toolbar -->
+<div class="toolbar" role="banner">
+  <img
+    id="profile-pic"
+    width="40"
+    alt="Profile Logo"
+    src="../../../assets/profile-blank.jpg"
+    role="button"
+    tabindex="0"
+    aria-label="Open profile"
+    (click)="appReference.clickProfile()"
+    (keydown.enter)="appReference.clickProfile()"
+  />
+  <div
+    id="heading"
+    role="button"
+    tabindex="0"
+    (click)="appReference.openNavBar()"
+    (keydown.enter)="appReference.openNavBar()"
+  >
+    Personal Access Tokens
+  </div>
+  <div class="spacer"></div>
+</div>
+
+<div class="pat-page">
+  <p class="pat-intro">
+    Personal access tokens let external tools — the Pro REST API, an MCP client like Claude, a
+    script — act on your account without your login session. Scope each token to only what it needs;
+    revoke it any time.
+  </p>
+
+  <!-- One-time reveal of a freshly created token -->
+  <div class="pat-card reveal-card" *ngIf="newlyCreatedToken">
+    <div class="reveal-header">
+      <span class="reveal-icon">✓</span>
+      <strong>Token created</strong>
+    </div>
+    <p class="reveal-warning">
+      Copy it now — this is the only time it's shown. If you lose it, revoke this token and create a
+      new one.
+    </p>
+    <div class="token-value-row">
+      <code class="token-value">{{ newlyCreatedToken.token }}</code>
+      <button class="copy-btn" (click)="copyToken(newlyCreatedToken.token)">
+        {{ copied ? '✓ Copied' : 'Copy' }}
+      </button>
+    </div>
+    <button class="dismiss-btn" (click)="dismissNewToken()">Done</button>
+  </div>
+
+  <!-- Create form -->
+  <div class="pat-card">
+    <h2 class="pat-card-title">Create a new token</h2>
+
+    <label class="field-label" for="pat-name">Name</label>
+    <input
+      id="pat-name"
+      type="text"
+      class="pat-input"
+      placeholder="e.g. claude, backup-script"
+      [(ngModel)]="nameField"
+    />
+
+    <div class="scopes-header">
+      <span class="field-label">Scopes</span>
+      <div class="scopes-actions">
+        <button type="button" class="link-btn" (click)="applyPreset()">Preset: AI Assistant</button>
+        <button type="button" class="link-btn" (click)="clearScopes()">Clear</button>
+      </div>
+    </div>
+
+    <div class="scopes-grid">
+      <div class="scope-row" *ngFor="let resource of resources">
+        <span class="scope-label">{{ resource.label }}</span>
+        <select class="scope-select" [(ngModel)]="scopeSelections[resource.key]">
+          <option *ngFor="let level of resource.levels" [value]="level">
+            {{
+              level === 'none'
+                ? '— none —'
+                : level === 'r'
+                  ? 'Read'
+                  : level === 'w'
+                    ? 'Write'
+                    : level === 'rw'
+                      ? 'Read + write'
+                      : 'Bulk'
+            }}
+          </option>
+        </select>
+      </div>
+    </div>
+    <p class="scope-hint">
+      {{ selectedScopeCount }} scope(s) selected. Never grant "admin" — the API refuses it to a
+      token anyway.
+    </p>
+
+    <label class="field-label" for="pat-expires">Expires in (days, optional)</label>
+    <input
+      id="pat-expires"
+      type="number"
+      min="1"
+      class="pat-input pat-input-narrow"
+      placeholder="Never"
+      [(ngModel)]="expiresInDaysField"
+    />
+
+    <p class="error-text" *ngIf="createError">{{ createError }}</p>
+
+    <button class="create-btn" (click)="createToken()" [disabled]="creating">
+      {{ creating ? 'Creating…' : 'Create token' }}
+    </button>
+  </div>
+
+  <!-- Token list -->
+  <div class="pat-card">
+    <h2 class="pat-card-title">Your tokens</h2>
+
+    <p *ngIf="loading">Loading…</p>
+    <p class="error-text" *ngIf="loadError">{{ loadError }}</p>
+
+    <table class="pat-table" *ngIf="!loading && tokens.length > 0">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Scopes</th>
+          <th>Created</th>
+          <th>Expires</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let token of tokens" [class.revoked-row]="token.revoked">
+          <td>{{ token.name }}</td>
+          <td>
+            <span class="scope-badge" *ngFor="let scope of token.scopes">{{ scope }}</span>
+          </td>
+          <td>{{ formatDate(token.createdAt) }}</td>
+          <td>{{ formatDate(token.expiresAt) }}</td>
+          <td class="pat-actions">
+            <span *ngIf="token.revoked" class="revoked-badge">Revoked</span>
+            <ng-container *ngIf="!token.revoked">
+              <ng-container *ngIf="confirmingRevoke !== token.tokenId">
+                <button class="revoke-btn" (click)="askRevoke(token.tokenId)">Revoke</button>
+              </ng-container>
+              <ng-container *ngIf="confirmingRevoke === token.tokenId">
+                <span class="confirm-text">Revoke?</span>
+                <button
+                  class="revoke-btn-confirm"
+                  (click)="confirmRevoke(token.tokenId)"
+                  [disabled]="revoking === token.tokenId"
+                >
+                  Yes
+                </button>
+                <button class="link-btn" (click)="cancelRevoke()">Cancel</button>
+              </ng-container>
+            </ng-container>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p *ngIf="!loading && !loadError && tokens.length === 0">
+      No tokens yet — create one above to get started.
+    </p>
+  </div>
+</div>
