@@ -1,3 +1,11 @@
+## [1.15.1] - 2026-09-13
+
+### Bug Fixes
+
+- fix(pwa): exclude OAuth/MCP server routes from service worker navigation interception
+- fix(docs): match the Pro API docs page header to every other public page
+- fix(ci): make auto-release's changelog generator emit blank lines after headers
+
 ## [1.15.0] - 2026-09-13
 
 ### Features
