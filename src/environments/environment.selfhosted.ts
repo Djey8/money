@@ -3,6 +3,7 @@ import packageJson from '../../package.json';
 export const environment = {
   production: true,
   mode: 'selfhosted', // 'firebase' or 'selfhosted'
+  edition: 'selfhosted' as const, // build-time-only, gates Pro routes (docs/adr/0004)
   appVersion: packageJson.version,
 
   // Firebase configuration (not used in selfhosted mode)

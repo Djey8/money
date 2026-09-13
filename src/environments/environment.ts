@@ -3,6 +3,11 @@ import packageJson from '../../package.json';
 export const environment = {
   production: false,
   mode: 'firebase', // 'firebase' or 'selfhosted'
+  // Build-time-only constant for Pro-route tree-shaking (docs/adr/0004) —
+  // never read at runtime by services, that's what `mode` is for. Kept
+  // separate so `mode` (runtime branching) and `edition` (compile-time
+  // route inclusion) can't be conflated even though they share a value.
+  edition: 'firebase' as const, // 'firebase' or 'selfhosted'
   appVersion: packageJson.version,
 
   // Firebase configuration (for cloud mode)
