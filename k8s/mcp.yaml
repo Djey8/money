@@ -1,0 +1,89 @@
+# MCP server (Streamable HTTP transport + OAuth — docs/adr/0008).
+# Holds no secrets of its own — it only ever talks to the `backend` Service
+# over the cluster network, the same way any other API client would.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mcp-config
+  namespace: money-app
+data:
+  MM_API_URL: 'http://backend:3000/api/v1'
+  # The externally-reachable base URL for this deployment — baked into
+  # every OAuth metadata document and redirect URL advertised to clients,
+  # so it must match whatever domain the Ingress actually serves (nginx
+  # proxies /mcp, /oauth, and /.well-known/oauth-* here — see nginx.conf).
+  MM_MCP_PUBLIC_URL: 'https://cashflowhero.uk'
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mcp
+  namespace: money-app
+spec:
+  selector:
+    app: mcp
+  ports:
+    - protocol: TCP
+      port: 3939
+      targetPort: 3939
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mcp
+  namespace: money-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mcp
+  template:
+    metadata:
+      labels:
+        app: mcp
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+      containers:
+        - name: mcp
+          image: localhost/money-mcp:latest
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ['ALL']
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 3939
+          env:
+            - name: MM_API_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: mcp-config
+                  key: MM_API_URL
+            - name: MM_MCP_PUBLIC_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: mcp-config
+                  key: MM_MCP_PUBLIC_URL
+          resources:
+            requests:
+              memory: '64Mi'
+              cpu: '50m'
+            limits:
+              memory: '128Mi'
+              cpu: '150m'
+          livenessProbe:
+            httpGet:
+              path: /.well-known/oauth-authorization-server
+              port: 3939
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /.well-known/oauth-authorization-server
+              port: 3939
+            initialDelaySeconds: 5
+            periodSeconds: 5
