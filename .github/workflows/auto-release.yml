@@ -23,6 +23,7 @@ jobs:
           cache: npm
 
       - run: npm ci --legacy-peer-deps
+      - run: npm run build:domain
 
       # Run tests before releasing
       - name: Frontend tests
