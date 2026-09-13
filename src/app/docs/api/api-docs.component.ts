@@ -16,7 +16,12 @@ setTimeout(() => import('src/app/app.component').then((m) => (AppComponent = m.A
   standalone: true,
   imports: [RouterLink],
   templateUrl: './api-docs.component.html',
-  styleUrls: ['./api-docs.component.css', '../docs.component.css', '../../app.component.css'],
+  styleUrls: [
+    './api-docs.component.css',
+    '../docs.component.css',
+    '../../landing/landing-page.component.css',
+    '../../app.component.css',
+  ],
   encapsulation: ViewEncapsulation.None,
 })
 export class ApiDocsComponent {
