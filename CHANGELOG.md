@@ -1,3 +1,12 @@
+## [1.15.2] - 2026-09-13
+
+### Bug Fixes
+
+- fix(docs): correct prettier formatting in the Treasury plan doc
+- fix(docs): match Pro API page header and layout to the rest of the site
+- fix(oauth): redesign the login page to match the app's Sign In screen
+- fix(oauth): allow the login form's own same-origin POST under CSP
+
 ## [1.15.1] - 2026-09-13
 
 ### Bug Fixes
