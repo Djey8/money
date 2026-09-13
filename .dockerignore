@@ -33,3 +33,15 @@ k8s
 docs
 *.sh
 *.ps1
+# apps/mcp/Dockerfile needs docs/api/openapi.yaml (schema generation) and
+# docs/domain/ (explain_concept's content, loaded at runtime — see that
+# Dockerfile's header comment) despite the blanket `docs`/`*.md` excludes
+# above. Un-ignoring a nested path requires un-ignoring each ancestor
+# directory too, not just the file pattern — an ignored directory is never
+# traversed, so a deeper negation alone has nothing to override. Harmless
+# for the other Dockerfiles for the same reason as the backend/ note above.
+!docs
+!docs/api
+!docs/api/openapi.yaml
+!docs/domain
+!docs/domain/*.md

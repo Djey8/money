@@ -11,6 +11,7 @@
 #   --no-cache            Force rebuild without Docker cache (ensures latest code)
 #   --skip-frontend       Skip frontend build/deploy
 #   --skip-backend        Skip backend build/deploy
+#   --skip-mcp            Skip MCP server (Streamable HTTP + OAuth) build/deploy
 #   --skip-tls            Skip TLS certificate creation
 #   --no-ingress          Skip Ingress deployment
 #   --no-backup           Skip ALL backup CronJob deployment (hourly + daily/NAS)
@@ -43,6 +44,7 @@ SKIP_BUILD=false
 NO_CACHE=false
 SKIP_FRONTEND=false
 SKIP_BACKEND=false
+SKIP_MCP=false
 SKIP_TLS=false
 NO_INGRESS=false
 NO_BACKUP=false
@@ -67,6 +69,10 @@ for arg in "$@"; do
             ;;
         --skip-backend)
             SKIP_BACKEND=true
+            shift
+            ;;
+        --skip-mcp)
+            SKIP_MCP=true
             shift
             ;;
         --skip-tls)
@@ -207,7 +213,7 @@ fi
 log_success "Connected to Kubernetes cluster"
 
 # Check if required manifest files exist
-REQUIRED_FILES=("namespace.yaml" "couchdb.yaml" "backend.yaml" "frontend.yaml" "ingress.yaml")
+REQUIRED_FILES=("namespace.yaml" "couchdb.yaml" "backend.yaml" "mcp.yaml" "frontend.yaml" "ingress.yaml")
 for file in "${REQUIRED_FILES[@]}"; do
     if [ ! -f "${K8S_DIR}/${file}" ]; then
         log_error "Required manifest file not found: ${K8S_DIR}/${file}"
@@ -272,15 +278,18 @@ if [ "${SKIP_BUILD}" = false ]; then
     # Check if images exist in K3s (grep returns 1 if no match, so we use || true)
     FRONTEND_EXISTS=$(sudo k3s crictl images 2>/dev/null | grep "money-frontend" | wc -l || true)
     BACKEND_EXISTS=$(sudo k3s crictl images 2>/dev/null | grep "money-backend" | wc -l || true)
+    MCP_EXISTS=$(sudo k3s crictl images 2>/dev/null | grep "money-mcp" | wc -l || true)
 
     BUILD_FRONTEND=false
     BUILD_BACKEND=false
+    BUILD_MCP=false
 
     # Force rebuild when --no-cache is specified
     if [ "${NO_CACHE}" = true ]; then
         log_info "--no-cache specified, forcing rebuild of all images"
         BUILD_FRONTEND=true
         BUILD_BACKEND=true
+        BUILD_MCP=true
     fi
 
     # Check if images are missing
@@ -294,8 +303,13 @@ if [ "${SKIP_BUILD}" = false ]; then
         BUILD_BACKEND=true
     fi
 
+    if [ "${MCP_EXISTS}" -eq 0 ] && [ "${BUILD_MCP}" = false ]; then
+        log_warning "MCP image not found in K3s"
+        BUILD_MCP=true
+    fi
+
     # If any images need building (missing or --no-cache forced)
-    if [ "${BUILD_FRONTEND}" = true ] || [ "${BUILD_BACKEND}" = true ]; then
+    if [ "${BUILD_FRONTEND}" = true ] || [ "${BUILD_BACKEND}" = true ] || [ "${BUILD_MCP}" = true ]; then
         log_info "Building images..."
         echo ""
         
@@ -360,6 +374,29 @@ if [ "${SKIP_BUILD}" = false ]; then
                 log_info "Skipping backend build (--skip-backend specified)"
             fi
 
+            if [ "${SKIP_MCP}" = false ] && ([ "${BUILD_MCP}" = true ] || [ "${MCP_EXISTS}" -eq 0 ]); then
+                # apps/mcp/Dockerfile needs docs/api/openapi.yaml and docs/domain/
+                # visible in its build context (see its own header comment), so
+                # this build needs the repo root as its context, same as backend.
+                log_info "Building MCP server (tag: ${IMAGE_TAG})..."
+                podman build ${CACHE_FLAG} -t localhost/money-mcp:${IMAGE_TAG} -t localhost/money-mcp:latest -f "${PROJECT_DIR}/apps/mcp/Dockerfile" "${PROJECT_DIR}" || {
+                    log_error "MCP server build failed"
+                    exit 1
+                }
+                # Remove ALL old mcp images from K3s before importing
+                log_info "Removing old MCP images from K3s..."
+                sudo k3s ctr images ls -q 2>/dev/null | grep "money-mcp" | xargs -r sudo k3s ctr images delete 2>/dev/null || true
+                log_info "Loading MCP server into K3s..."
+                podman save localhost/money-mcp:latest | sudo k3s ctr images import - || {
+                    log_error "Failed to load MCP server into K3s"
+                    exit 1
+                }
+                # Clean up Podman — remove all old mcp images except the one we just built
+                podman images --format '{{.ID}} {{.Repository}}:{{.Tag}}' | grep "money-mcp" | grep -v "${IMAGE_TAG}" | grep -v "<none>" | awk '{print $1}' | sort -u | xargs -r podman rmi -f 2>/dev/null || true
+            elif [ "${SKIP_MCP}" = true ]; then
+                log_info "Skipping MCP server build (--skip-mcp specified)"
+            fi
+
             # Final Podman cleanup: remove dangling/intermediate build layers
             DANGLING=$(podman images -f "dangling=true" -q | wc -l)
             if [ "${DANGLING}" -gt 0 ]; then
@@ -385,6 +422,10 @@ if [ "${SKIP_BUILD}" = false ]; then
             BE_SIZE=$(sudo k3s ctr images ls 2>/dev/null | grep "money-backend" | head -1 | awk '{print $4}' || echo "?")
             echo "  Backend:   loaded (${BE_SIZE})"
         fi
+        if sudo k3s ctr images ls -q 2>/dev/null | grep -q "money-mcp"; then
+            MCP_SIZE=$(sudo k3s ctr images ls 2>/dev/null | grep "money-mcp" | head -1 | awk '{print $4}' || echo "?")
+            echo "  MCP:       loaded (${MCP_SIZE})"
+        fi
         PODMAN_TOTAL=$(podman system df --format '{{.Size}}' 2>/dev/null | head -1 || echo "?")
         echo "  Podman:    ${PODMAN_TOTAL} total storage"
         echo ""
@@ -396,7 +437,10 @@ if [ "${SKIP_BUILD}" = false ]; then
         if [ "${BACKEND_EXISTS}" -gt 0 ]; then
             log_info "Backend: $(sudo k3s crictl images 2>/dev/null | grep money-backend | head -1 | awk '{print $1":"$2}' || true)"
         fi
-        
+        if [ "${MCP_EXISTS}" -gt 0 ]; then
+            log_info "MCP: $(sudo k3s crictl images 2>/dev/null | grep money-mcp | head -1 | awk '{print $1":"$2}' || true)"
+        fi
+
         # Ask separately for each image if running interactively
         if [ -t 0 ] && [ -f "${PROJECT_DIR}/scripts/build-k8s.sh" ]; then  # Check if running interactively
             echo ""
@@ -719,6 +763,73 @@ fi
 log_success "Backend is ready"
 
 # ============================================
+# DEPLOY MCP SERVER
+# ============================================
+if [ "${SKIP_MCP}" = false ]; then
+    log_step "Deploying MCP server..."
+    set +e
+    MCP_OUTPUT=$(kubectl apply -f "${K8S_DIR}/mcp.yaml" 2>&1)
+    MCP_EXIT=$?
+    set -e
+
+    if [ ${MCP_EXIT} -eq 0 ]; then
+        echo "${MCP_OUTPUT}" | sed 's/^/  → /'
+        log_success "MCP server manifests applied"
+    else
+        log_error "Failed to apply MCP server manifests"
+        echo "${MCP_OUTPUT}"
+        exit 1
+    fi
+else
+    log_step "Skipping MCP server deployment (--skip-mcp specified)"
+fi
+
+log_info "Waiting for MCP server Deployment to be created..."
+for i in {1..30}; do
+    if kubectl get deployment mcp -n "${NAMESPACE}" &> /dev/null; then
+        break
+    fi
+    if [ $i -eq 30 ]; then
+        log_error "MCP server Deployment was not created after 60 seconds"
+        kubectl get all -n "${NAMESPACE}"
+        exit 1
+    fi
+    sleep 2
+done
+
+log_info "Waiting for MCP server pods to be created..."
+for i in {1..30}; do
+    POD_COUNT=$(kubectl get pod -l app=mcp -n "${NAMESPACE}" --no-headers 2>/dev/null | wc -l)
+    if [ "${POD_COUNT}" -gt 0 ]; then
+        log_info "MCP server pods created: ${POD_COUNT}"
+        break
+    fi
+    if [ $i -eq 30 ]; then
+        log_error "MCP server pods were not created after 60 seconds"
+        kubectl describe deployment mcp -n "${NAMESPACE}"
+        exit 1
+    fi
+    sleep 2
+done
+
+log_info "Waiting for MCP server to be ready (timeout: 5 minutes)..."
+echo "  → Status: Waiting for pods to enter Ready state..."
+if ! kubectl wait --for=condition=ready pod -l app=mcp -n "${NAMESPACE}" --timeout=300s 2>&1 | grep -v "error: no matching resources found" | sed 's/^/     /'; then
+    log_error "MCP server failed to become ready"
+    echo ""
+    log_info "Pod status:"
+    kubectl get pods -n "${NAMESPACE}" -l app=mcp
+    echo ""
+    log_info "Recent events:"
+    kubectl get events -n "${NAMESPACE}" --sort-by='.lastTimestamp' | tail -10
+    echo ""
+    log_info "Pod logs (if available):"
+    kubectl logs -n "${NAMESPACE}" -l app=mcp --tail=20 2>/dev/null || log_warning "No logs available yet"
+    exit 1
+fi
+log_success "MCP server is ready"
+
+# ============================================
 # DEPLOY FRONTEND
 # ============================================
 if [ "${SKIP_FRONTEND}" = false ]; then
@@ -746,6 +857,9 @@ fi
 log_step "Restarting deployments to use new images..."
 if [ "${SKIP_BACKEND}" = false ]; then
     kubectl rollout restart deployment/backend -n "${NAMESPACE}" 2>&1 | sed 's/^/  → /'
+fi
+if [ "${SKIP_MCP}" = false ]; then
+    kubectl rollout restart deployment/mcp -n "${NAMESPACE}" 2>&1 | sed 's/^/  → /'
 fi
 if [ "${SKIP_FRONTEND}" = false ]; then
     kubectl rollout restart deployment/frontend -n "${NAMESPACE}" 2>&1 | sed 's/^/  → /'
@@ -932,6 +1046,12 @@ else
     log_warning "Failed to restart backend deployment"
 fi
 
+if kubectl rollout restart deployment/mcp -n "${NAMESPACE}" 2>&1 | sed 's/^/  → /'; then
+    log_success "MCP server deployment restarted"
+else
+    log_warning "Failed to restart MCP server deployment"
+fi
+
 if kubectl rollout restart deployment/frontend -n "${NAMESPACE}" 2>&1 | sed 's/^/  → /'; then
     log_success "Frontend deployment restarted"
 else
@@ -940,6 +1060,7 @@ fi
 
 log_info "Waiting for rollout to complete..."
 kubectl rollout status deployment/backend -n "${NAMESPACE}" --timeout=120s 2>&1 | sed 's/^/  → /' || log_warning "Backend rollout timeout (may still be starting)"
+kubectl rollout status deployment/mcp -n "${NAMESPACE}" --timeout=120s 2>&1 | sed 's/^/  → /' || log_warning "MCP server rollout timeout (may still be starting)"
 kubectl rollout status deployment/frontend -n "${NAMESPACE}" --timeout=120s 2>&1 | sed 's/^/  → /' || log_warning "Frontend rollout timeout (may still be starting)"
 
 # ============================================
@@ -999,6 +1120,7 @@ log_info "Useful Commands:"
 echo "  View all resources:    kubectl get all -n ${NAMESPACE}"
 echo "  View logs (CouchDB):   kubectl logs -n ${NAMESPACE} -l app=couchdb"
 echo "  View logs (Backend):   kubectl logs -n ${NAMESPACE} -l app=backend"
+echo "  View logs (MCP):       kubectl logs -n ${NAMESPACE} -l app=mcp"
 echo "  View logs (Frontend):  kubectl logs -n ${NAMESPACE} -l app=frontend"
 echo "  Delete deployment:     kubectl delete namespace ${NAMESPACE}"
 echo ""

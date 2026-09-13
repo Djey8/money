@@ -56,6 +56,28 @@ services:
       - money-network
     restart: unless-stopped
 
+  # MCP server (Streamable HTTP transport + OAuth — docs/adr/0008). Holds no
+  # secrets of its own: it only ever talks to `backend` over the network,
+  # the same way any other API client would. MM_MCP_PUBLIC_URL defaults to
+  # localhost for local testing — set it to your real HTTPS domain for any
+  # deployment Claude (or another remote client) needs to reach, since it's
+  # baked into the OAuth issuer/redirect URLs advertised to clients.
+  mcp:
+    build:
+      context: .
+      dockerfile: apps/mcp/Dockerfile
+    container_name: money-mcp
+    ports:
+      - '3939:3939'
+    environment:
+      - MM_API_URL=http://backend:3000/api/v1
+      - MM_MCP_PUBLIC_URL=${MM_MCP_PUBLIC_URL:-http://localhost:3939}
+    depends_on:
+      - backend
+    networks:
+      - money-network
+    restart: unless-stopped
+
 volumes:
   couchdb-data:
 

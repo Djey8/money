@@ -20,7 +20,10 @@
     
 .PARAMETER SkipBackend
     Skip backend build and deployment
-    
+
+.PARAMETER SkipMcp
+    Skip MCP server (Streamable HTTP + OAuth) build and deployment
+
 .PARAMETER NoIngress
     Skip Ingress deployment
     
@@ -108,6 +111,7 @@ param(
     [switch]$NoCache = $false,
     [switch]$SkipFrontend = $false,
     [switch]$SkipBackend = $false,
+    [switch]$SkipMcp = $false,
     [switch]$SkipTLS = $false,
     [switch]$NoPortForward = $false,
     [switch]$NoBrowser = $false,
@@ -307,6 +311,22 @@ if (-not $SkipBuild) {
     } else {
         Write-Host "[INFO] Skipping backend build" -ForegroundColor Cyan
     }
+
+    if (-not $SkipMcp) {
+        # apps/mcp/Dockerfile needs docs/api/openapi.yaml and docs/domain/
+        # visible in its build context (see its own header comment), so this
+        # build needs the repo root as its context, same as backend.
+        Write-Host "Building MCP server (tag: $imageTag)..." -ForegroundColor White
+        $buildCmd = "podman build $cacheFlag --pull=missing -t localhost/money-mcp:$imageTag -t localhost/money-mcp:latest -f $projectDir/apps/mcp/Dockerfile $projectDir"
+        Invoke-Expression $buildCmd
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "[ERROR] MCP server build failed" -ForegroundColor Red
+            exit 1
+        }
+        Write-Host "[OK] MCP server built" -ForegroundColor Green
+    } else {
+        Write-Host "[INFO] Skipping MCP server build" -ForegroundColor Cyan
+    }
     Write-Host ""
 } else {
     Write-Host "[INFO] Skipping image build" -ForegroundColor Cyan
@@ -337,6 +357,15 @@ if (-not $SkipBuild) {
         podman save localhost/money-backend:latest -o "$tempDir\backend.tar"
         if ($LASTEXITCODE -ne 0) {
             Write-Host "[ERROR] Failed to export backend image" -ForegroundColor Red
+            exit 1
+        }
+    }
+
+    if (-not $SkipMcp) {
+        Write-Host "Exporting MCP server image..." -ForegroundColor White
+        podman save localhost/money-mcp:latest -o "$tempDir\mcp.tar"
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "[ERROR] Failed to export MCP server image" -ForegroundColor Red
             exit 1
         }
     }
@@ -372,6 +401,20 @@ if (-not $SkipBuild) {
         if ($oldBe) { $oldBe | ForEach-Object { podman rmi -f $_ 2>$null } }
     }
 
+    if (-not $SkipMcp) {
+        Write-Host "Removing ALL old MCP server images from K3s..." -ForegroundColor White
+        wsl -d Ubuntu bash -c "sudo k3s ctr images ls -q 2>/dev/null | grep money-mcp | xargs -r sudo k3s ctr images delete 2>/dev/null || true"
+        Write-Host "Importing MCP server into K3s..." -ForegroundColor White
+        wsl -d Ubuntu bash -c "sudo k3s ctr images import $wslTempDir/mcp.tar"
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "[ERROR] Failed to import MCP server image" -ForegroundColor Red
+            exit 1
+        }
+        # Clean up old Podman mcp images (keep only current SHA)
+        $oldMcp = podman images --format '{{.ID}} {{.Repository}}:{{.Tag}}' | Select-String 'money-mcp' | Select-String -NotMatch $imageTag | Select-String -NotMatch '<none>' | ForEach-Object { ($_ -split ' ')[0] } | Sort-Object -Unique
+        if ($oldMcp) { $oldMcp | ForEach-Object { podman rmi -f $_ 2>$null } }
+    }
+
     # Cleanup temp files
     Remove-Item -Recurse -Force $tempDir -ErrorAction SilentlyContinue
 
@@ -391,6 +434,8 @@ if (-not $SkipBuild) {
     if ($feInK3s) { Write-Host "  Frontend:  loaded" -ForegroundColor Green }
     $beInK3s = wsl -d Ubuntu bash -c "sudo k3s ctr images ls 2>/dev/null | grep money-backend | head -1" 2>$null
     if ($beInK3s) { Write-Host "  Backend:   loaded" -ForegroundColor Green }
+    $mcpInK3s = wsl -d Ubuntu bash -c "sudo k3s ctr images ls 2>/dev/null | grep money-mcp | head -1" 2>$null
+    if ($mcpInK3s) { Write-Host "  MCP:       loaded" -ForegroundColor Green }
     $podmanDf = podman system df --format '{{.Size}}' 2>$null | Select-Object -First 1
     if ($podmanDf) { Write-Host "  Podman:    $podmanDf total storage" }
 
@@ -571,6 +616,13 @@ if (-not $SkipBackend) {
     Write-Host "[INFO] Skipping backend deployment" -ForegroundColor Cyan
 }
 
+if (-not $SkipMcp) {
+    Write-Host "Deploying MCP server..." -ForegroundColor White
+    wsl -d Ubuntu bash -c "kubectl apply -f $wslProjectDir/k8s/mcp.yaml"
+} else {
+    Write-Host "[INFO] Skipping MCP server deployment" -ForegroundColor Cyan
+}
+
 if (-not $SkipFrontend) {
     Write-Host "Deploying Frontend..." -ForegroundColor White
     wsl -d Ubuntu bash -c "kubectl apply -f $wslProjectDir/k8s/frontend.yaml"
@@ -698,6 +750,9 @@ Write-Host "==> Restarting deployments to use new images..." -ForegroundColor Ye
 if (-not $SkipBackend) {
     wsl -d Ubuntu bash -c "kubectl rollout restart deployment/backend -n money-app"
 }
+if (-not $SkipMcp) {
+    wsl -d Ubuntu bash -c "kubectl rollout restart deployment/mcp -n money-app"
+}
 if (-not $SkipFrontend) {
     wsl -d Ubuntu bash -c "kubectl rollout restart deployment/frontend -n money-app"
 }
@@ -716,6 +771,9 @@ Write-Host ""
 Write-Host "==> Waiting for pods to be ready..." -ForegroundColor Yellow
 if (-not $SkipBackend) {
     wsl -d Ubuntu bash -c "kubectl wait --for=condition=ready pod -l app=backend -n money-app --timeout=120s"
+}
+if (-not $SkipMcp) {
+    wsl -d Ubuntu bash -c "kubectl wait --for=condition=ready pod -l app=mcp -n money-app --timeout=120s"
 }
 if (-not $SkipFrontend) {
     wsl -d Ubuntu bash -c "kubectl wait --for=condition=ready pod -l app=frontend -n money-app --timeout=120s"
@@ -784,6 +842,7 @@ Write-Host "==> Useful Commands:" -ForegroundColor Cyan
 Write-Host "  View all resources:    wsl kubectl get all -n money-app" -ForegroundColor White
 Write-Host "  View logs (CouchDB):   wsl kubectl logs -n money-app -l app=couchdb" -ForegroundColor White
 Write-Host "  View logs (Backend):   wsl kubectl logs -n money-app -l app=backend" -ForegroundColor White
+Write-Host "  View logs (MCP):       wsl kubectl logs -n money-app -l app=mcp" -ForegroundColor White
 Write-Host "  View logs (Frontend):  wsl kubectl logs -n money-app -l app=frontend" -ForegroundColor White
 Write-Host "  Delete deployment:     wsl kubectl delete namespace money-app" -ForegroundColor White
 Write-Host ''

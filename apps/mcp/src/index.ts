@@ -33,6 +33,11 @@ export function buildServer(config?: McpConfig): Server {
 }
 
 async function main(): Promise<void> {
+  if (process.env.MM_MCP_TRANSPORT === 'http') {
+    const { startHttpServer } = await import('./http-server.js');
+    await startHttpServer();
+    return;
+  }
   const config = loadConfig();
   const server = buildServer(config);
   const transport = new StdioServerTransport();

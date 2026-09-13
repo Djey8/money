@@ -95,6 +95,14 @@
                 {
                   "replace": "src/environments/environment.ts",
                   "with": "src/environments/environment.selfhosted.ts"
+                },
+                {
+                  "replace": "src/app/app.routes.ts",
+                  "with": "src/app/app.routes.selfhosted.ts"
+                },
+                {
+                  "replace": "src/app/docs/docs.topics.ts",
+                  "with": "src/app/docs/docs.topics.selfhosted.ts"
                 }
               ],
               "budgets": [
@@ -125,6 +133,14 @@
                 {
                   "replace": "src/environments/environment.ts",
                   "with": "src/environments/environment.e2e.ts"
+                },
+                {
+                  "replace": "src/app/app.routes.ts",
+                  "with": "src/app/app.routes.selfhosted.ts"
+                },
+                {
+                  "replace": "src/app/docs/docs.topics.ts",
+                  "with": "src/app/docs/docs.topics.selfhosted.ts"
                 }
               ],
               "optimization": false,
