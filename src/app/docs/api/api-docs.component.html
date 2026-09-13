@@ -115,40 +115,59 @@ export MM_API_TOKEN="&lt;the PAT from step 1&gt;"</code></pre>
     </p>
   </section>
 
-  <section class="api-doc-section" id="remote-http">
-    <h2>3. Remote access over HTTP (no local process)</h2>
+  <section class="api-doc-section" id="remote-oauth">
+    <h2>3. Connect remotely with your login (recommended)</h2>
     <p>
-      The MCP server also supports a Streamable HTTP transport, for any client that can reach it
-      over the network instead of spawning it as a local process. Run it alongside your backend:
+      The self-hosted stack runs the MCP server as its own always-on service (<code>mcp</code>,
+      alongside <code>backend</code> and <code>frontend</code> in <code>docker-compose.yml</code>/
+      <code>k8s/</code>), reachable at your same domain — <code>docker-compose up</code> or a normal
+      deploy sets this up automatically, nothing extra to run. It supports full OAuth: point a
+      remote MCP client (Claude Code/Desktop's remote-server config, or any other OAuth-capable MCP
+      client) at:
     </p>
-    <pre class="code-block"><code>export MM_MCP_TRANSPORT=http
-export MM_API_URL="https://YOUR-DOMAIN/api/v1"
-export MM_MCP_PORT=3939   # optional, defaults to 3939
-node apps/mcp/dist/index.js</code></pre>
+    <pre class="code-block"><code>https://YOUR-DOMAIN/mcp</code></pre>
     <p>
-      Unlike the local <em>stdio</em> setup above, there's no <code>MM_API_TOKEN</code> environment
-      variable here — each client sends its own PAT as a standard bearer header on every connection,
-      so one running server can serve multiple tokens/devices at once:
+      The client discovers everything else itself (this is standard OAuth 2.1 + dynamic client
+      registration, not a custom scheme) and opens a login page in your browser — sign in with your
+      normal Money Manager email/password, review the scopes being requested, and approve. That
+      mints a PAT behind the scenes with exactly those scopes and hands it to the client — nothing
+      to copy-paste, and no separate token to manage: revoking it later is the same
+      <code>DELETE /api/v1/auth/tokens/&#123;tokenId&#125;</code> call as any other PAT (see "Keep
+      in mind" below).
+    </p>
+    <p>
+      Set <code>MM_MCP_PUBLIC_URL</code> in your deployment's environment to your real public HTTPS
+      domain before relying on this — it's baked into every URL the server advertises to clients, so
+      a wrong value (e.g. left at the internal/local default) breaks discovery for everyone even
+      though the server itself starts fine.
+    </p>
+  </section>
+
+  <section class="api-doc-section" id="remote-manual-token">
+    <h2>Advanced: a manually-minted token instead</h2>
+    <p>
+      Any client that isn't going through the OAuth dance — a script, a CI job, or an MCP client
+      that only supports a plain bearer header — can skip the browser login entirely and use the PAT
+      from step 1 directly against the same URL:
     </p>
     <pre class="code-block"><code>Authorization: Bearer &lt;the PAT from step 1&gt;</code></pre>
     <p>
-      Point Claude Code or Claude Desktop's remote MCP server config at
-      <code>https://YOUR-DOMAIN/mcp</code> with that header and it works the same as the local setup
-      — useful if you want the MCP server running once on your server rather than spawned per
-      device. Put this behind the same TLS-terminating reverse proxy/ingress as the rest of your
-      self-hosted stack; the token travels as a plain bearer header exactly like every other API
-      call.
+      Both paths end up in the same place: an <code>Authorization: Bearer</code> header carrying a
+      PAT, checked the same way either way. Use whichever is more convenient for the client you're
+      configuring.
     </p>
   </section>
 
   <section class="api-doc-section" id="browser-phone">
     <h2>Claude on the web or phone</h2>
     <p>
-      Untested, not guaranteed. The remote HTTP endpoint above will work with any MCP client that
-      lets you supply a custom <code>Authorization</code> header — confirmed for Claude Code and
-      Claude Desktop's remote-server configuration. Whether claude.ai's own web/mobile "custom
-      connector" setup accepts a manually supplied bearer token, versus requiring an OAuth login
-      flow this server doesn't implement, hasn't been verified against the live product.
+      More plausible than before, still not confirmed against the live product. The server now
+      implements the actual mechanism the MCP spec expects for this (OAuth 2.1, PKCE, dynamic client
+      registration, discoverable metadata) rather than a bespoke bearer scheme — that's what a
+      spec-compliant client is supposed to be able to drive unassisted, and it's been verified
+      end-to-end with a real account against a real deployment. Whether claude.ai's own web/mobile
+      "custom connector" setup completes that flow against a small self-hosted server hasn't been
+      checked here.
     </p>
   </section>
 
