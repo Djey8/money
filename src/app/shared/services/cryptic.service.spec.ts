@@ -146,6 +146,15 @@ describe('CrypticService', () => {
       expect(service.decrypt('plain', 'database')).toBe('plain');
     });
 
+    it('passes a non-string value through unchanged instead of throwing', () => {
+      // A schemaVersion-2 account's non-encrypted numeric fields come back
+      // as real numbers from CouchDB (docs/adr/0002-money-minor-units-migration.md)
+      // — not real ciphertext, so decrypt() must not assume a string input.
+      service.updateConfig('testKey', true, false);
+      expect(service.decrypt(4250 as unknown as string, 'database')).toBe(4250);
+      expect(service.decrypt(null as unknown as string, 'database')).toBeNull();
+    });
+
     it('returns empty string when decryption fails (wrong key)', () => {
       const cipher = service.encrypt('secret', 'local');
       service.updateConfig('wrongKey', true, false);

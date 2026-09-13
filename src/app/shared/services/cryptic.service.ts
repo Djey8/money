@@ -194,6 +194,15 @@ export class CrypticService {
 
   public decrypt(txtToDecrypt: string, location: string): string {
     try {
+      // A schemaVersion-2 account's non-encrypted numeric fields come back
+      // from CouchDB as real numbers, not strings — `mm-admin migrate`
+      // (docs/adr/0002-money-minor-units-migration.md) stores them that
+      // way regardless of encryptDatabase. Not real ciphertext, so hand it
+      // back unchanged rather than crashing on `.startsWith` below (every
+      // call site immediately treats the result as opaque or re-parses it
+      // with `parseFloat`, both of which work fine on a non-string value).
+      if (typeof txtToDecrypt !== 'string') return txtToDecrypt;
+
       const shouldDecrypt =
         (location === 'local' && this.encryptionLocalEnabled) ||
         (location === 'database' && this.encryptionDatabaseEnabled);
