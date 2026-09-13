@@ -122,8 +122,9 @@ describe('AppDataService', () => {
 
   // ---- Tier path definitions ----
   describe('Tier path constants', () => {
-    it('TIER1_PATHS should contain 10 critical paths', () => {
-      expect(AppDataService.TIER1_PATHS).toHaveLength(10);
+    it('TIER1_PATHS should contain 11 critical paths, including meta', () => {
+      expect(AppDataService.TIER1_PATHS).toHaveLength(11);
+      expect(AppDataService.TIER1_PATHS).toContain('meta');
       expect(AppDataService.TIER1_PATHS).toContain('transactions');
       expect(AppDataService.TIER1_PATHS).toContain('subscriptions');
       expect(AppDataService.TIER1_PATHS).toContain('income/revenue/revenues');
@@ -144,15 +145,15 @@ describe('AppDataService', () => {
       expect(AppDataService.TIER3_BALANCE_PATHS).toContain('balance/liabilities');
     });
 
-    it('all tiers together should cover all 19 data paths', () => {
+    it('all tiers together should cover all 20 data paths', () => {
       const allPaths = [
         ...AppDataService.TIER1_PATHS,
         ...AppDataService.TIER2_PATHS,
         ...AppDataService.TIER3_GROW_PATHS,
         ...AppDataService.TIER3_BALANCE_PATHS,
       ];
-      expect(allPaths).toHaveLength(19);
-      expect(new Set(allPaths).size).toBe(19);
+      expect(allPaths).toHaveLength(20);
+      expect(new Set(allPaths).size).toBe(20);
     });
   });
 
@@ -208,6 +209,49 @@ describe('AppDataService', () => {
       expect(AppStateService.instance.allTransactions).toHaveLength(1);
       expect(AppStateService.instance.allTransactions[0].account).toBe('Daily');
       expect(AppStateService.instance.allTransactions[0].amount).toBe(100);
+    });
+
+    it('converts minor-units amounts back to decimal for a schemaVersion-2 account (docs/adr/0002)', async () => {
+      const service = createService();
+      mockDatabase.getBatchData.mockResolvedValue({
+        data: {
+          meta: { schemaVersion: 2, currency: 'EUR' },
+          transactions: {
+            '0': {
+              account: 'Daily',
+              amount: 10000, // minor units for 100.00
+              date: '2026-01-01',
+              time: '12:00',
+              category: 'Food',
+              comment: 'Lunch',
+            },
+          },
+        },
+        updatedAt: null,
+      });
+
+      await service.loadTier1();
+
+      expect(AppStateService.instance.schemaVersion).toBe(2);
+      expect(AppStateService.instance.allTransactions).toHaveLength(1);
+      expect(AppStateService.instance.allTransactions[0].amount).toBe(100);
+    });
+
+    it('defaults to schemaVersion 1 (no conversion) when meta is absent', async () => {
+      const service = createService();
+      mockDatabase.getBatchData.mockResolvedValue({
+        data: {
+          transactions: {
+            '0': { account: 'Daily', amount: 100, date: '2026-01-01', time: '12:00' },
+          },
+        },
+        updatedAt: null,
+      });
+
+      await service.loadTier1();
+
+      expect(AppStateService.instance.schemaVersion).toBe(1);
+      expect(AppStateService.instance.allTransactions[0].amount).toBe(100); // unchanged, not divided
     });
 
     it('should apply expense data to AppState', async () => {

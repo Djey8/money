@@ -69,6 +69,17 @@ export class AppStateService {
   isLoading = true;
   isSaving = false;
   lastUpdatedAt: string | null = null;
+  /**
+   * Money storage schema version for the current selfhosted user, from
+   * `meta/schemaVersion` (docs/adr/0002-money-minor-units-migration.md).
+   * `1` (the default here, matching the server's implicit-absent-means-1
+   * convention) is today's decimal-float storage; `2` is integer minor
+   * units. Firebase users never migrate and stay on `1` permanently.
+   * Populated by `AppDataService.loadTier1()` before any other data is
+   * processed, since the money-field read/write conversion in
+   * `AppDataService`/`DatabaseService` depends on it.
+   */
+  schemaVersion = 1;
   tier2Loaded = false;
   tier3GrowLoaded = false;
   tier3BalanceLoaded = false;

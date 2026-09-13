@@ -37,7 +37,7 @@
             ],
             "styles": ["@angular/material/prebuilt-themes/indigo-pink.css", "src/styles.css"],
             "scripts": [],
-            "allowedCommonJsDependencies": ["crypto-js"]
+            "allowedCommonJsDependencies": ["crypto-js", "@money/domain"]
           },
           "configurations": {
             "production": {
@@ -145,6 +145,9 @@
             },
             "e2e": {
               "buildTarget": "money:build:e2e"
+            },
+            "selfhosted": {
+              "buildTarget": "money:build:selfhosted"
             }
           },
           "defaultConfiguration": "development"

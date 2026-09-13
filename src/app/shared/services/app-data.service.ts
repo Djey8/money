@@ -32,6 +32,7 @@ import { SubscriptionComponent } from '../../main/subscription/subscription.comp
 import { FireEmergenciesComponent } from '../../main/fire/fire-emergencies/fire-emergencies.component';
 import { environment } from '../../../environments/environment';
 import { DemoService } from './demo.service';
+import { convertDocumentFromMinorUnits } from '@money/domain';
 
 @Injectable({
   providedIn: 'root',
@@ -46,7 +47,10 @@ export class AppDataService {
   decryptionFailed = false;
 
   // Tier 1: Critical path — blocks UI, loaded on startup
+  // 'meta' must stay first: loadTier1() reads schemaVersion from it before
+  // any other path in the same batch is processed (see applyBatchData).
   static readonly TIER1_PATHS = [
+    'meta',
     'transactions',
     'subscriptions',
     'income/revenue/revenues',
@@ -323,6 +327,12 @@ export class AppDataService {
     try {
       const response = await this.database.getBatchData(AppDataService.TIER1_PATHS);
       if (response === null) return; // 304 Not Modified — data unchanged
+      // Read before applyBatchData, which needs it to decide whether every
+      // other path in this same batch needs minor-units-to-decimal
+      // conversion (docs/adr/0002-money-minor-units-migration.md). 'meta'
+      // is never encrypted (written as plain JSON by mm-admin migrate), so
+      // no decrypt step is needed here.
+      AppStateService.instance.schemaVersion = response.data?.['meta']?.schemaVersion ?? 1;
       this.applyBatchData(response.data);
       AppStateService.instance.lastUpdatedAt = response.updatedAt;
     } catch (err) {
@@ -389,12 +399,30 @@ export class AppDataService {
 
   private applyBatchData(data: Record<string, any>): void {
     for (const path in data) {
+      if (path === 'meta') continue; // handled by loadTier1() before this runs, not a UI data path
       try {
-        this.applyPathData(path, data[path]);
+        this.applyPathData(path, this.convertPathDataForDisplay(data[path]));
       } catch (err) {
         console.error(`Error applying data for path "${path}":`, err);
       }
     }
+  }
+
+  /**
+   * For a schemaVersion-2 user, converts every money field in `raw` from
+   * integer minor units back to decimal, re-encrypting in place — so every
+   * one of this file's existing field-by-field `this.cryptic.decrypt(...)`
+   * call sites below keeps working completely unchanged regardless of
+   * which schema version the account is actually stored in. A no-op for
+   * schemaVersion-1 accounts (the default) and for Firebase users, who
+   * never migrate. See docs/adr/0002-money-minor-units-migration.md.
+   */
+  private convertPathDataForDisplay(raw: any): any {
+    if (AppStateService.instance.schemaVersion !== 2 || raw == null) return raw;
+    return convertDocumentFromMinorUnits(raw, {
+      decrypt: (v) => this.cryptic.decrypt(v, 'database'),
+      encrypt: (v) => this.cryptic.encrypt(v, 'database'),
+    }).data;
   }
 
   private applyPathData(path: string, raw: any): void {
