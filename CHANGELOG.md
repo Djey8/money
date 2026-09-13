@@ -1,10 +1,12 @@
 ## [1.14.0] - 2026-09-13
 
 ### Features
+
 - feat(frontend): scale money fields to minor units on write for schemaVersion-2 accounts
 - feat(domain): add convertDocumentFromMinorUnits
 
 ### Bug Fixes
+
 - fix(frontend): make CrypticService.decrypt tolerant of non-string input
 
 ## [1.13.0] - 2026-09-09
