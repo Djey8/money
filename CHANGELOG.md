@@ -1,6 +1,7 @@
 ## [1.13.0] - 2026-09-09
 
 ### Features
+
 - feat(mcp): add MCP server exposing the Pro API as agent tools
 - feat(api): add GET/PATCH/DELETE /account, POST /account/verify-password
 - feat(api): add POST /data/import
@@ -66,6 +67,7 @@
 - feat(domain): scaffold packages/domain workspace and port CrypticService crypto
 
 ### Bug Fixes
+
 - fix(docker): eliminate container-scan HIGH-severity findings
 - fix(migrate): compare rounded, not raw, sums in migration verification
 - fix(deps): declare @types/crypto-js at root so a clean npm ci installs it
