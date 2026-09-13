@@ -25,6 +25,19 @@
       }
     }
   ],
+  "navigationUrls": [
+    "/**",
+    "!/**/*.*",
+    "!/**/*__*",
+    "!/**/*__*/**",
+    "!/authorize",
+    "!/token",
+    "!/register",
+    "!/oauth/**",
+    "!/.well-known/**",
+    "!/mcp",
+    "!/mcp/**"
+  ],
   "dataGroups": [
     {
       "name": "google-fonts",
