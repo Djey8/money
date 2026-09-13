@@ -53,8 +53,12 @@
   <div class="docs-grid">
     <a *ngFor="let topic of topics" [routerLink]="topic.route" class="docs-card">
       <span class="docs-card-icon">{{ topic.icon }}</span>
-      <h2 class="docs-card-title">{{ 'Docs.topics.' + topic.id + '.title' | translate }}</h2>
-      <p class="docs-card-desc">{{ 'Docs.topics.' + topic.id + '.desc' | translate }}</p>
+      <h2 class="docs-card-title">
+        {{ topic.title || ('Docs.topics.' + topic.id + '.title' | translate) }}
+      </h2>
+      <p class="docs-card-desc">
+        {{ topic.desc || ('Docs.topics.' + topic.id + '.desc' | translate) }}
+      </p>
       <span class="docs-card-arrow">→</span>
     </a>
   </div>

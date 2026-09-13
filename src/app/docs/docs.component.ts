@@ -3,16 +3,13 @@ import { NgFor } from '@angular/common';
 import { RouterLink, Router } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { DemoService } from '../shared/services/demo.service';
+import { DocTopic, docTopics } from './docs.topics';
 
 // Deferred import to break circular chain
 let AppComponent: any;
 setTimeout(() => import('src/app/app.component').then((m) => (AppComponent = m.AppComponent)));
 
-export interface DocTopic {
-  id: string;
-  icon: string;
-  route: string;
-}
+export type { DocTopic };
 
 @Component({
   selector: 'app-docs',
@@ -27,7 +24,7 @@ export interface DocTopic {
   encapsulation: ViewEncapsulation.None,
 })
 export class DocsComponent {
-  topics: DocTopic[] = [{ id: 'selfhosted', icon: '🖥️', route: '/docs/selfhosted' }];
+  topics: DocTopic[] = docTopics;
 
   constructor(
     private demoService: DemoService,
