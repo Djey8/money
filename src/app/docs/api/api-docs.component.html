@@ -115,14 +115,40 @@ export MM_API_TOKEN="&lt;the PAT from step 1&gt;"</code></pre>
     </p>
   </section>
 
+  <section class="api-doc-section" id="remote-http">
+    <h2>3. Remote access over HTTP (no local process)</h2>
+    <p>
+      The MCP server also supports a Streamable HTTP transport, for any client that can reach it
+      over the network instead of spawning it as a local process. Run it alongside your backend:
+    </p>
+    <pre class="code-block"><code>export MM_MCP_TRANSPORT=http
+export MM_API_URL="https://YOUR-DOMAIN/api/v1"
+export MM_MCP_PORT=3939   # optional, defaults to 3939
+node apps/mcp/dist/index.js</code></pre>
+    <p>
+      Unlike the local <em>stdio</em> setup above, there's no <code>MM_API_TOKEN</code> environment
+      variable here — each client sends its own PAT as a standard bearer header on every connection,
+      so one running server can serve multiple tokens/devices at once:
+    </p>
+    <pre class="code-block"><code>Authorization: Bearer &lt;the PAT from step 1&gt;</code></pre>
+    <p>
+      Point Claude Code or Claude Desktop's remote MCP server config at
+      <code>https://YOUR-DOMAIN/mcp</code> with that header and it works the same as the local setup
+      — useful if you want the MCP server running once on your server rather than spawned per
+      device. Put this behind the same TLS-terminating reverse proxy/ingress as the rest of your
+      self-hosted stack; the token travels as a plain bearer header exactly like every other API
+      call.
+    </p>
+  </section>
+
   <section class="api-doc-section" id="browser-phone">
     <h2>Claude on the web or phone</h2>
     <p>
-      Not yet possible. The MCP server currently only supports the <em>stdio</em> transport — a
-      local process Claude Code or Claude Desktop spawns directly — which the claude.ai web and
-      mobile apps can't do; they'd need a remote server reachable over HTTP instead. That's a real,
-      larger piece of work (a second transport, a public endpoint, and a proper login flow in place
-      of an environment-variable token) that hasn't been built yet.
+      Untested, not guaranteed. The remote HTTP endpoint above will work with any MCP client that
+      lets you supply a custom <code>Authorization</code> header — confirmed for Claude Code and
+      Claude Desktop's remote-server configuration. Whether claude.ai's own web/mobile "custom
+      connector" setup accepts a manually supplied bearer token, versus requiring an OAuth login
+      flow this server doesn't implement, hasn't been verified against the live product.
     </p>
   </section>
 
