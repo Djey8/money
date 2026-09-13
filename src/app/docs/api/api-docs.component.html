@@ -1,0 +1,145 @@
+<!-- Toolbar -->
+<div class="toolbar" role="banner">
+  <img
+    id="profile-pic"
+    width="40"
+    alt="Profile Logo"
+    src="../../../assets/profile-blank.jpg"
+    role="button"
+    tabindex="0"
+    aria-label="Open profile"
+    (click)="appReference.clickProfile()"
+    (keydown.enter)="appReference.clickProfile()"
+  />
+  <a routerLink="/" class="logo">Money<span>App</span></a>
+  <div class="spacer"></div>
+  <input type="checkbox" id="nav-toggle" class="nav-toggle" aria-label="Toggle navigation" />
+  <label for="nav-toggle" class="nav-toggle-label" aria-hidden="true"><span></span></label>
+  <label for="nav-toggle" class="nav-backdrop" aria-hidden="true"></label>
+  <ul class="nav-links">
+    <li><a routerLink="/" (click)="closeNav()">Home</a></li>
+    <li><a routerLink="/docs" class="active-nav" (click)="closeNav()">Docs</a></li>
+    <li><a routerLink="/community" (click)="closeNav()">Community</a></li>
+  </ul>
+</div>
+
+<div class="docs-page api-docs">
+  <header class="docs-header">
+    <h1 class="docs-title">Pro API &amp; Connecting an AI Assistant</h1>
+    <p class="docs-subtitle">
+      Self-hosted only. Your instance exposes a full REST API and an MCP server so an AI assistant
+      like Claude can read and manage your finances directly, on your own server, under your own
+      access token.
+    </p>
+  </header>
+
+  <section class="api-doc-section" id="overview">
+    <h2>What this is</h2>
+    <p>
+      The Pro API (<code>/api/v1</code>) is a versioned REST API alongside the app's normal backend
+      — everything the UI can do (transactions, Smile/Fire/Mojo, Grow, budget, reports, and more) is
+      also available as an HTTP API, authenticated with a personal access token (PAT) instead of
+      your login session. On top of that, <code>apps/mcp</code> in the project repo wraps the same
+      API as an <a href="https://modelcontextprotocol.io" rel="noopener">MCP</a>
+      server, so tools like Claude Code and Claude Desktop can call it as native tools rather than
+      raw HTTP requests.
+    </p>
+    <p>
+      This page covers the practical setup. Full technical reference — every endpoint,
+      request/response shape, and scope — lives in
+      <code>docs/api/openapi.yaml</code> and <code>docs/api/MCP.md</code> in your deployment's repo
+      checkout.
+    </p>
+  </section>
+
+  <section class="api-doc-section" id="mint-token">
+    <h2>1. Mint a personal access token</h2>
+    <p>
+      A PAT is scoped and revocable independently of your login — it never expires unless you set
+      <code>expiresInDays</code>, and you can revoke it any time without changing your password.
+      There's no in-app screen for this yet, so it's a one-time API call using your existing
+      session:
+    </p>
+    <pre class="code-block"><code>curl -c cookies.txt -X POST https://YOUR-DOMAIN/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '&#123;"email":"you&#64;example.com","password":"YOUR_PASSWORD"&#125;'
+
+curl -b cookies.txt -X POST https://YOUR-DOMAIN/api/v1/auth/tokens \
+  -H "Content-Type: application/json" \
+  -d '&#123;"name":"claude","scopes":["transactions:rw","reports:r"],"expiresInDays":90&#125;'</code></pre>
+    <p>
+      The second call's response contains the token itself, under <code>token</code> — copy it now,
+      it's shown exactly once and can't be retrieved again (you'd revoke and re-issue instead).
+    </p>
+
+    <h3>Picking scopes</h3>
+    <p>
+      Scopes are <code>&lt;resource&gt;:&lt;r|w|rw|bulk&gt;</code>, one per resource — there's no
+      single "everything" scope. For an assistant that should handle normal day-to-day app usage
+      (transactions, projects, budget, reports) but never touch account settings, your profile, or
+      encryption config, use:
+    </p>
+    <pre
+      class="code-block"
+    ><code>transactions:rw,transactions:bulk,subscriptions:rw,subscriptions:bulk,
+smile:rw,fire:rw,mojo:rw,grow:rw,balance:rw,budget:rw,income:r,reports:r</code></pre>
+    <p>
+      <code>income</code> and <code>reports</code> are read-only by design — there's no write
+      endpoint for either. <code>data:bulk</code> (full plaintext account export/import) is
+      deliberately left out of that list — it's the single highest-blast-radius scope in the system,
+      worth adding only if you actually want an assistant able to export or overwrite your entire
+      account in one call. Never grant <code>admin</code> to a token meant for an assistant — the
+      API refuses to issue it to a PAT at all.
+    </p>
+  </section>
+
+  <section class="api-doc-section" id="connect-claude">
+    <h2>2. Connect Claude Code or Claude Desktop (MCP)</h2>
+    <p>
+      The project repo ships a ready-to-use MCP server (<code>apps/mcp</code>) and a checked-in
+      <code>.mcp.json</code> that reads its configuration from two environment variables — set these
+      in the shell you launch Claude from:
+    </p>
+    <pre class="code-block"><code>export MM_API_URL="https://YOUR-DOMAIN/api/v1"
+export MM_API_TOKEN="&lt;the PAT from step 1&gt;"</code></pre>
+    <p>
+      Restart Claude Code (or reconnect the MCP server) from inside your repo checkout and it will
+      pick up <code>money-manager</code> as an available MCP server automatically — no further
+      configuration. For Claude Desktop, add the same command/args/env to its own MCP server config
+      file (see Anthropic's current Claude Desktop docs for its exact location).
+    </p>
+    <p>
+      Once connected, call <code>get_identity</code> first — it returns exactly which scopes your
+      token has, so the assistant (and you) can confirm what it's actually allowed to do before
+      trying anything else.
+    </p>
+  </section>
+
+  <section class="api-doc-section" id="browser-phone">
+    <h2>Claude on the web or phone</h2>
+    <p>
+      Not yet possible. The MCP server currently only supports the <em>stdio</em> transport — a
+      local process Claude Code or Claude Desktop spawns directly — which the claude.ai web and
+      mobile apps can't do; they'd need a remote server reachable over HTTP instead. That's a real,
+      larger piece of work (a second transport, a public endpoint, and a proper login flow in place
+      of an environment-variable token) that hasn't been built yet.
+    </p>
+  </section>
+
+  <section class="api-doc-section" id="security">
+    <h2>Keep in mind</h2>
+    <ul>
+      <li>Treat a PAT like a password — anyone holding it can act as you within its scopes.</li>
+      <li>
+        Revoke a token you no longer want active with
+        <code>DELETE /api/v1/auth/tokens/&#123;tokenId&#125;</code> rather than just forgetting
+        about it.
+      </li>
+      <li>
+        Any delete, or any <code>:bulk</code>-scoped action (batch/export/import/recalculate),
+        requires the caller to explicitly pass <code>confirm: true</code> — both the MCP tools and
+        the raw API refuse those calls otherwise.
+      </li>
+    </ul>
+  </section>
+</div>
