@@ -12,7 +12,7 @@ import { requireBearerAuth } from '@modelcontextprotocol/sdk/server/auth/middlew
 import { loadHttpConfig } from './config.js';
 import { buildServer } from './index.js';
 import { DEFAULT_SCOPES, MoneyManagerOAuthProvider } from './oauth/provider.js';
-import { renderExpiredPage, renderLoginPage } from './oauth/login-page.js';
+import { renderExpiredPage, renderLoginPage, renderRedirectPage } from './oauth/login-page.js';
 
 function jsonRpcError(res: Response, status: number, code: number, message: string): void {
   res.status(status).json({ jsonrpc: '2.0', error: { code, message }, id: null });
@@ -87,7 +87,7 @@ export async function startHttpServer(env: NodeJS.ProcessEnv = process.env): Pro
 
     provider
       .completeLogin(requestId, email, password)
-      .then((redirectUrl) => res.redirect(redirectUrl))
+      .then((redirectUrl) => res.status(200).type('html').send(renderRedirectPage(redirectUrl)))
       .catch((error: unknown) => {
         const message = error instanceof Error ? error.message : 'Sign-in failed.';
         res

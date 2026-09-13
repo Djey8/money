@@ -151,15 +151,22 @@ describe('MCP OAuth flow (live backend + CouchDB)', () => {
       });
       expect(wrongPasswordResponse.status).toBe(401);
 
+      // Deliberately a 200 + meta-refresh, not an HTTP redirect — see
+      // renderRedirectPage's doc comment (a real 3xx here breaks under a
+      // service worker that intercepts the fetch and auto-follows it into
+      // a cross-origin target, discovered against the real deployment).
       const loginSubmitResponse = await fetch(`${publicUrl}/oauth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({ req: requestId, email, password }),
-        redirect: 'manual',
       });
-      expect(loginSubmitResponse.status).toBeGreaterThanOrEqual(300);
-      expect(loginSubmitResponse.status).toBeLessThan(400);
-      const finalRedirect = new URL(loginSubmitResponse.headers.get('location')!);
+      expect(loginSubmitResponse.status).toBe(200);
+      const redirectPageHtml = await loginSubmitResponse.text();
+      const metaRefreshMatch = /content="0;url=([^"]+)"/.exec(redirectPageHtml);
+      expect(metaRefreshMatch).toBeTruthy();
+      const finalRedirect = new URL(
+        metaRefreshMatch![1].replace(/&amp;/g, '&').replace(/&#39;/g, "'"),
+      );
       expect(finalRedirect.origin + finalRedirect.pathname).toBe(redirectUri);
       expect(finalRedirect.searchParams.get('state')).toBe('e2e-state');
       const code = finalRedirect.searchParams.get('code');
