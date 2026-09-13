@@ -30,6 +30,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): McpConfig {
 export interface McpHttpConfig {
   apiUrl: string;
   port: number;
+  publicUrl: string;
 }
 
 /**
@@ -53,5 +54,12 @@ export function loadHttpConfig(env: NodeJS.ProcessEnv = process.env): McpHttpCon
   if (!Number.isInteger(port) || port < 0) {
     throw new Error(`MM_MCP_PORT must be a non-negative integer, got: ${env.MM_MCP_PORT}`);
   }
-  return { apiUrl, port };
+  // The externally-reachable base URL this server is deployed at — needed
+  // for OAuth (docs/adr/0008): it's the AS issuer and the value every
+  // metadata document/redirect is built from, so a wrong value here breaks
+  // discovery for every client even though the server itself starts fine.
+  // Defaults to localhost for local testing, where nothing outside this
+  // machine ever needs to resolve it.
+  const publicUrl = env.MM_MCP_PUBLIC_URL ?? `http://localhost:${port}`;
+  return { apiUrl, port, publicUrl };
 }

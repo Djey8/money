@@ -1,26 +1,18 @@
-import type { Request, Response } from 'express';
+import express, { type Request, type Response } from 'express';
 import { randomUUID } from 'node:crypto';
 import type { Server as HttpServer } from 'node:http';
 import { createMcpExpressApp } from '@modelcontextprotocol/sdk/server/express.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js';
+import {
+  getOAuthProtectedResourceMetadataUrl,
+  mcpAuthRouter,
+} from '@modelcontextprotocol/sdk/server/auth/router.js';
+import { requireBearerAuth } from '@modelcontextprotocol/sdk/server/auth/middleware/bearerAuth.js';
 import { loadHttpConfig } from './config.js';
 import { buildServer } from './index.js';
-
-/**
- * Extracts the bearer token from an `Authorization: Bearer <token>` header.
- * This IS the auth model for the HTTP transport (docs/adr/0008): no OAuth,
- * no dynamic client registration — a session's PAT is exactly the token a
- * client already has for the REST API (ADR-0006), reused as-is. Deploy this
- * behind TLS (the existing self-hosted ingress/reverse proxy) since the
- * token travels as a plain bearer header, same as every other API call.
- */
-export function extractBearerToken(req: Request): string | undefined {
-  const header = req.headers.authorization;
-  if (!header) return undefined;
-  const match = /^Bearer (.+)$/i.exec(header);
-  return match?.[1];
-}
+import { DEFAULT_SCOPES, MoneyManagerOAuthProvider } from './oauth/provider.js';
+import { renderExpiredPage, renderLoginPage } from './oauth/login-page.js';
 
 function jsonRpcError(res: Response, status: number, code: number, message: string): void {
   res.status(status).json({ jsonrpc: '2.0', error: { code, message }, id: null });
@@ -29,18 +21,91 @@ function jsonRpcError(res: Response, status: number, code: number, message: stri
 /**
  * Starts the Streamable HTTP transport (docs/adr/0008's deferred "remote/
  * multi-user use" transport, e.g. claude.ai connectors) alongside the
- * existing stdio transport used by Claude Code/Desktop. One session per
- * initialize call, each bound to the PAT its own Authorization header
- * carried at session-creation time — sessions never share a client/token.
+ * existing stdio transport used by Claude Code/Desktop. Every caller — one
+ * that went through the browser OAuth flow below, or one that just pastes a
+ * PAT minted via `POST /auth/tokens`/`mm-admin token create` directly —
+ * authenticates the same way: a Bearer token verified against the real
+ * backend (MoneyManagerOAuthProvider.verifyAccessToken calls GET /me), one
+ * MCP session per successfully-verified initialize call.
  */
 export async function startHttpServer(env: NodeJS.ProcessEnv = process.env): Promise<HttpServer> {
-  const { apiUrl, port } = loadHttpConfig(env);
+  const { apiUrl, port, publicUrl } = loadHttpConfig(env);
   const sessions = new Map<string, StreamableHTTPServerTransport>();
+  const provider = new MoneyManagerOAuthProvider(apiUrl);
+  const issuerUrl = new URL(publicUrl);
+  const mcpResourceUrl = new URL('/mcp', publicUrl);
 
   const app = createMcpExpressApp({
     host: '0.0.0.0',
     allowedHosts: env.MM_MCP_ALLOWED_HOSTS?.split(','),
   });
+  app.use(express.urlencoded({ extended: false }));
+
+  // Mounts /authorize, /token, /register, /revoke, and the AS/RS metadata
+  // documents (/.well-known/oauth-authorization-server,
+  // /.well-known/oauth-protected-resource) — see MoneyManagerOAuthProvider's
+  // doc comment for what "authorize"/"token" actually do here.
+  app.use(
+    mcpAuthRouter({
+      provider,
+      issuerUrl,
+      resourceServerUrl: mcpResourceUrl,
+      resourceName: 'Money Manager',
+      scopesSupported: [...DEFAULT_SCOPES, 'admin'],
+    }),
+  );
+
+  app.get('/oauth/login', (req, res) => {
+    const requestId = typeof req.query.req === 'string' ? req.query.req : undefined;
+    const pending = requestId ? provider.getPendingRequest(requestId) : undefined;
+    if (!requestId || !pending) {
+      res.status(400).type('html').send(renderExpiredPage());
+      return;
+    }
+    const scopes = (pending.params.scopes ?? []).filter((scope) => scope !== 'admin');
+    res.type('html').send(
+      renderLoginPage({
+        requestId,
+        clientName: pending.client.client_name ?? pending.client.client_id,
+        scopes: scopes.length > 0 ? scopes : DEFAULT_SCOPES,
+      }),
+    );
+  });
+
+  app.post('/oauth/login', (req, res) => {
+    const body = req.body as { req?: string; email?: string; password?: string };
+    const requestId = body.req;
+    const pending = requestId ? provider.getPendingRequest(requestId) : undefined;
+    if (!requestId || !pending) {
+      res.status(400).type('html').send(renderExpiredPage());
+      return;
+    }
+    const email = body.email ?? '';
+    const password = body.password ?? '';
+    const scopes = (pending.params.scopes ?? []).filter((scope) => scope !== 'admin');
+    const displayScopes = scopes.length > 0 ? scopes : DEFAULT_SCOPES;
+
+    provider
+      .completeLogin(requestId, email, password)
+      .then((redirectUrl) => res.redirect(redirectUrl))
+      .catch((error: unknown) => {
+        const message = error instanceof Error ? error.message : 'Sign-in failed.';
+        res
+          .status(401)
+          .type('html')
+          .send(
+            renderLoginPage({
+              requestId,
+              clientName: pending.client.client_name ?? pending.client.client_id,
+              scopes: displayScopes,
+              error: message,
+            }),
+          );
+      });
+  });
+
+  const resourceMetadataUrl = getOAuthProtectedResourceMetadataUrl(mcpResourceUrl);
+  const requireAuth = requireBearerAuth({ verifier: provider, resourceMetadataUrl });
 
   const handlePost = async (req: Request, res: Response): Promise<void> => {
     const sessionId = req.headers['mcp-session-id'] as string | undefined;
@@ -64,15 +129,11 @@ export async function startHttpServer(env: NodeJS.ProcessEnv = process.env): Pro
       return;
     }
 
-    const apiToken = extractBearerToken(req);
+    // requireBearerAuth (mounted below) already verified req.auth.token
+    // against the backend before this handler ever runs.
+    const apiToken = req.auth?.token;
     if (!apiToken) {
-      jsonRpcError(
-        res,
-        401,
-        -32001,
-        'Missing bearer token: send your Money Manager personal access token as ' +
-          '"Authorization: Bearer <token>" on the initialize request.',
-      );
+      jsonRpcError(res, 401, -32001, 'Missing or invalid bearer token.');
       return;
     }
 
@@ -102,19 +163,19 @@ export async function startHttpServer(env: NodeJS.ProcessEnv = process.env): Pro
     await transport.handleRequest(req, res);
   };
 
-  app.post('/mcp', (req, res) => {
+  app.post('/mcp', requireAuth, (req, res) => {
     handlePost(req, res).catch((error) => {
       console.error('money-manager-mcp: error handling POST /mcp:', error);
       if (!res.headersSent) jsonRpcError(res, 500, -32603, 'Internal server error');
     });
   });
-  app.get('/mcp', (req, res) => {
+  app.get('/mcp', requireAuth, (req, res) => {
     handleSessionRequest(req, res).catch((error) => {
       console.error('money-manager-mcp: error handling GET /mcp:', error);
       if (!res.headersSent) res.status(500).send('Internal server error');
     });
   });
-  app.delete('/mcp', (req, res) => {
+  app.delete('/mcp', requireAuth, (req, res) => {
     handleSessionRequest(req, res).catch((error) => {
       console.error('money-manager-mcp: error handling DELETE /mcp:', error);
       if (!res.headersSent) res.status(500).send('Internal server error');
@@ -127,7 +188,8 @@ export async function startHttpServer(env: NodeJS.ProcessEnv = process.env): Pro
         const address = server.address();
         const boundPort = typeof address === 'object' && address ? address.port : port;
         console.error(
-          `money-manager-mcp: Streamable HTTP transport listening on :${boundPort}/mcp`,
+          `money-manager-mcp: Streamable HTTP transport listening on :${boundPort}/mcp ` +
+            `(OAuth issuer: ${issuerUrl.toString()})`,
         );
         resolve(server);
       })

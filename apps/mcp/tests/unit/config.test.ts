@@ -35,9 +35,13 @@ describe('loadConfig', () => {
 });
 
 describe('loadHttpConfig', () => {
-  it('returns apiUrl and default port when MM_MCP_PORT is unset', () => {
+  it('returns apiUrl, default port, and a localhost publicUrl fallback when unset', () => {
     const config = loadHttpConfig({ MM_API_URL: 'http://backend:3000/api/v1' });
-    expect(config).toEqual({ apiUrl: 'http://backend:3000/api/v1', port: 3939 });
+    expect(config).toEqual({
+      apiUrl: 'http://backend:3000/api/v1',
+      port: 3939,
+      publicUrl: 'http://localhost:3939',
+    });
   });
 
   it('honors MM_MCP_PORT when set', () => {
@@ -46,6 +50,14 @@ describe('loadHttpConfig', () => {
       MM_MCP_PORT: '8080',
     });
     expect(config.port).toBe(8080);
+  });
+
+  it('honors MM_MCP_PUBLIC_URL when set, overriding the localhost fallback', () => {
+    const config = loadHttpConfig({
+      MM_API_URL: 'http://backend:3000/api/v1',
+      MM_MCP_PUBLIC_URL: 'https://money.example.com',
+    });
+    expect(config.publicUrl).toBe('https://money.example.com');
   });
 
   it('throws when MM_API_URL is missing', () => {
