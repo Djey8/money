@@ -236,6 +236,35 @@ describe('DatabaseService (selfhosted mode)', () => {
     });
   });
 
+  // ── Money minor-units conversion on write (docs/adr/0002) ───────────────
+
+  describe('minor-units conversion on write for schemaVersion-2 accounts', () => {
+    afterEach(() => {
+      AppStateService.instance.schemaVersion = 1;
+    });
+
+    it('scales money fields to minor units before encrypting when schemaVersion is 2', () => {
+      AppStateService.instance.schemaVersion = 2;
+      selfhosted.writeObject.mockReturnValue(of({ success: true }));
+
+      service.writeObject('transactions', [{ amount: 42.5, category: '@Food' }]);
+
+      expect(selfhosted.writeObject).toHaveBeenCalledWith('transactions', [
+        { amount: 'enc(4250)', category: 'enc(@Food)' },
+      ]);
+    });
+
+    it('leaves money fields as decimal when schemaVersion is 1 (default)', () => {
+      selfhosted.writeObject.mockReturnValue(of({ success: true }));
+
+      service.writeObject('transactions', [{ amount: 42.5, category: '@Food' }]);
+
+      expect(selfhosted.writeObject).toHaveBeenCalledWith('transactions', [
+        { amount: 'enc(42.5)', category: 'enc(@Food)' },
+      ]);
+    });
+  });
+
   // ── batchWrite() conflict detection (docs/adr/0003) ─────────────────────
 
   describe('batchWrite() conflict detection', () => {

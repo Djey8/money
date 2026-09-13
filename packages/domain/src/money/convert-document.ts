@@ -1,5 +1,5 @@
 import { isEncryptedValue } from '../crypto/cryptic';
-import { isCleanlyRepresentable, toMinorUnits } from './minor-units';
+import { fromMinorUnits, isCleanlyRepresentable, toMinorUnits } from './minor-units';
 
 /**
  * Every field name across the documented data model
@@ -261,6 +261,118 @@ export function convertDocumentToMinorUnits(
       throw new Error(`Value at ${fieldPath} was encrypted but no encrypt callback was provided`);
     }
     return callbacks.encrypt(String(minor));
+  }
+
+  /** Resolves a possibly-encrypted `field` discriminator (SubscriptionChange.field) to its plaintext value, without touching anything else about the record. */
+  function resolveFieldDiscriminator(value: unknown): unknown {
+    if (isEncryptedValue(value)) {
+      return callbacks.decrypt ? callbacks.decrypt(value as string) : value;
+    }
+    return value;
+  }
+
+  function walk(node: unknown, nodePath: string): unknown {
+    if (Array.isArray(node)) {
+      return node.map((item, i) => walk(item, `${nodePath}[${i}]`));
+    }
+    if (node !== null && typeof node === 'object') {
+      const obj = node as Record<string, unknown>;
+      const discriminator = 'field' in obj ? resolveFieldDiscriminator(obj.field) : undefined;
+      const result: Record<string, unknown> = {};
+
+      for (const [key, rawValue] of Object.entries(obj)) {
+        const fieldPath = `${nodePath}.${key}`;
+        const isChangeValueKey =
+          discriminator === 'amount' && (key === 'oldValue' || key === 'newValue');
+
+        if (MONEY_FIELD_NAMES.has(key) || isChangeValueKey) {
+          result[key] = convertField(rawValue, fieldPath);
+        } else if (rawValue !== null && typeof rawValue === 'object') {
+          result[key] = walk(rawValue, fieldPath);
+        } else {
+          result[key] = rawValue;
+        }
+      }
+      return result;
+    }
+    return node;
+  }
+
+  const converted = walk(data, '$');
+  return { data: converted, fieldsConverted, skippedNonNumeric };
+}
+
+export interface ReverseFieldConversion {
+  /** JSONPath-ish location of the field within the document, e.g. `$.transactions[3].amount`. */
+  path: string;
+  from: number;
+  to: number;
+}
+
+export interface ReverseConversionResult {
+  data: unknown;
+  fieldsConverted: ReverseFieldConversion[];
+  /** Fields that looked like a money field by name but didn't hold a parseable number — left untouched, reported for the same reason as `convertDocumentToMinorUnits`'s `skippedNonNumeric`. */
+  skippedNonNumeric: string[];
+}
+
+/**
+ * The inverse of `convertDocumentToMinorUnits`: converts every documented
+ * money field in `data` from integer minor units back to decimal. Exists
+ * for the self-hosted frontend's read boundary — per
+ * docs/adr/0002-money-minor-units-migration.md, the existing UI keeps
+ * operating on decimal floats internally even after a user migrates to
+ * schemaVersion 2, so a schemaVersion-2 document's money fields need to be
+ * converted back to decimal (and re-encrypted, if they were encrypted)
+ * before the existing frontend code reads them — moving the UI's own
+ * internal representation to integers is explicitly out of scope here.
+ *
+ * Money-field matching, nesting behavior, and the `SubscriptionChange`
+ * `field`-discriminator rule are identical to `convertDocumentToMinorUnits`;
+ * only the arithmetic direction differs (`fromMinorUnits` instead of
+ * `toMinorUnits`, and no `cleanlyRepresentable` concept — minor units are
+ * always integers, so the conversion back to decimal has nothing to round).
+ */
+export function convertDocumentFromMinorUnits(
+  data: unknown,
+  callbacks: ConversionCallbacks = {},
+): ReverseConversionResult {
+  const fieldsConverted: ReverseFieldConversion[] = [];
+  const skippedNonNumeric: string[] = [];
+
+  function decryptIfNeeded(value: unknown): { value: unknown; wasEncrypted: boolean } {
+    if (isEncryptedValue(value)) {
+      if (!callbacks.decrypt) {
+        throw new Error(
+          `Encrypted value encountered but no decrypt callback was provided (did you forget encryptDatabase handling?)`,
+        );
+      }
+      return { value: callbacks.decrypt(value as string), wasEncrypted: true };
+    }
+    return { value, wasEncrypted: false };
+  }
+
+  function convertField(rawValue: unknown, fieldPath: string): unknown {
+    const { value: candidate, wasEncrypted } = decryptIfNeeded(rawValue);
+
+    const numeric = typeof candidate === 'number' ? candidate : parseFloat(candidate as string);
+    if (typeof candidate !== 'number' && typeof candidate !== 'string') {
+      skippedNonNumeric.push(fieldPath);
+      return rawValue;
+    }
+    if (Number.isNaN(numeric)) {
+      skippedNonNumeric.push(fieldPath);
+      return rawValue;
+    }
+
+    const decimal = fromMinorUnits(numeric);
+    fieldsConverted.push({ path: fieldPath, from: numeric, to: decimal });
+
+    if (!wasEncrypted) return decimal;
+    if (!callbacks.encrypt) {
+      throw new Error(`Value at ${fieldPath} was encrypted but no encrypt callback was provided`);
+    }
+    return callbacks.encrypt(String(decimal));
   }
 
   /** Resolves a possibly-encrypted `field` discriminator (SubscriptionChange.field) to its plaintext value, without touching anything else about the record. */

@@ -1,5 +1,5 @@
 import { EncryptionSession } from '../crypto/cryptic';
-import { convertDocumentToMinorUnits } from './convert-document';
+import { convertDocumentFromMinorUnits, convertDocumentToMinorUnits } from './convert-document';
 
 describe('convertDocumentToMinorUnits', () => {
   describe('plaintext documents (encryptDatabase off)', () => {
@@ -194,6 +194,124 @@ describe('convertDocumentToMinorUnits', () => {
       for (const f of fieldsConverted) {
         expect(f.to / 100).toBeCloseTo(f.from, 9);
       }
+    });
+  });
+});
+
+describe('convertDocumentFromMinorUnits', () => {
+  describe('plaintext documents (encryptDatabase off)', () => {
+    it('converts a flat transaction array back to decimal', () => {
+      const data = {
+        transactions: [
+          { account: 'Daily', amount: -1250, category: '@Groceries' },
+          { account: 'Income', amount: 300000, category: '@Salary' },
+        ],
+      };
+
+      const { data: result, fieldsConverted } = convertDocumentFromMinorUnits(data);
+      const transactions = (result as any).transactions;
+
+      expect(transactions[0].amount).toBe(-12.5);
+      expect(transactions[1].amount).toBe(3000);
+      expect(transactions[0].category).toBe('@Groceries'); // untouched
+      expect(fieldsConverted).toHaveLength(2);
+      expect(fieldsConverted[0].path).toBe('$.transactions[0].amount');
+    });
+
+    it('leaves non-money numeric fields untouched (Share.quantity)', () => {
+      const data = {
+        balance: { asset: { shares: [{ tag: 'MSFT', quantity: 10, price: 41500 }] } },
+      };
+      const { data: result } = convertDocumentFromMinorUnits(data);
+      const share = (result as any).balance.asset.shares[0];
+
+      expect(share.quantity).toBe(10); // untouched
+      expect(share.price).toBe(415);
+    });
+
+    it('converts SubscriptionChange.oldValue/newValue only when field === "amount"', () => {
+      const data = {
+        subscriptions: [
+          {
+            title: 'Spotify',
+            amount: -999,
+            changeHistory: [
+              { effectiveDate: '2026-01-01', field: 'amount', oldValue: -899, newValue: -999 },
+              {
+                effectiveDate: '2026-02-01',
+                field: 'account',
+                oldValue: 'Daily',
+                newValue: 'Splurge',
+              },
+            ],
+          },
+        ],
+      };
+
+      const { data: result } = convertDocumentFromMinorUnits(data);
+      const sub = (result as any).subscriptions[0];
+
+      expect(sub.amount).toBe(-9.99);
+      expect(sub.changeHistory[0].oldValue).toBe(-8.99);
+      expect(sub.changeHistory[0].newValue).toBe(-9.99);
+      expect(sub.changeHistory[1].oldValue).toBe('Daily');
+      expect(sub.changeHistory[1].newValue).toBe('Splurge');
+    });
+
+    it('reports non-numeric values under a money field name instead of guessing', () => {
+      const data = { budget: [{ tag: '@Groceries', amount: null, date: '2026-01' }] };
+      const { data: result, skippedNonNumeric } = convertDocumentFromMinorUnits(data);
+
+      expect((result as any).budget[0].amount).toBeNull();
+      expect(skippedNonNumeric).toContain('$.budget[0].amount');
+    });
+  });
+
+  describe('encrypted documents (encryptDatabase on)', () => {
+    it("decrypts, converts, and re-encrypts only the money fields, leaving other fields' ciphertext untouched", () => {
+      const session = new EncryptionSession('user-key');
+      const originalCategoryCiphertext = session.encrypt('@Groceries');
+      const data = {
+        transactions: [
+          {
+            account: 'Daily',
+            amount: session.encrypt('-1250'),
+            category: originalCategoryCiphertext,
+          },
+        ],
+      };
+
+      const { data: result, fieldsConverted } = convertDocumentFromMinorUnits(data, {
+        decrypt: (v) => session.decrypt(v),
+        encrypt: (v) => session.encrypt(v),
+      });
+      const tx = (result as any).transactions[0];
+
+      expect(session.decrypt(tx.amount)).toBe('-12.5');
+      expect(tx.category).toBe(originalCategoryCiphertext); // byte-for-byte untouched, not re-encrypted
+      expect(fieldsConverted[0].from).toBe(-1250);
+      expect(fieldsConverted[0].to).toBe(-12.5);
+    });
+
+    it('throws a clear error if an encrypted money field is found but no decrypt callback was given', () => {
+      const session = new EncryptionSession('k');
+      const data = { budget: [{ amount: session.encrypt('10000') }] };
+
+      expect(() => convertDocumentFromMinorUnits(data)).toThrow(/decrypt callback/);
+    });
+  });
+
+  describe('round-trip with convertDocumentToMinorUnits', () => {
+    it('converting to minor units and back reproduces the original decimal values', () => {
+      const data = {
+        transactions: [{ amount: -12.5 }, { amount: 3000 }, { amount: 0.01 }],
+        smile: [{ title: 'Vacation', buckets: [{ id: 'b1', title: 'Flights', target: 1500 }] }],
+      };
+
+      const { data: minorUnits } = convertDocumentToMinorUnits(data);
+      const { data: backToDecimal } = convertDocumentFromMinorUnits(minorUnits);
+
+      expect(backToDecimal).toEqual(data);
     });
   });
 });

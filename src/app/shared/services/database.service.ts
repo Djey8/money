@@ -13,6 +13,7 @@ import { AppStateService } from './app-state.service';
 import { environment } from '../../../environments/environment';
 import { Observable, from, forkJoin, of } from 'rxjs';
 import { map, catchError, tap, switchMap } from 'rxjs/operators';
+import { convertDocumentToMinorUnits } from '@money/domain';
 
 @Injectable({
   providedIn: 'root',
@@ -62,7 +63,7 @@ export class DatabaseService {
     // Skip encryption for username and email
     const isUserInfo = tag === 'info/username' || tag === 'info/email';
 
-    const clonedElement = JSON.parse(JSON.stringify(element));
+    const clonedElement = this.convertForStorage(JSON.parse(JSON.stringify(element)));
 
     const encryptObjectValues = (obj: any): void => {
       for (const key in obj) {
@@ -252,6 +253,23 @@ export class DatabaseService {
   }
 
   /**
+   * For a schemaVersion-2 user, converts every money field in `element`
+   * from decimal to integer minor units before the generic encryption
+   * below runs — the frontend's own internal representation stays decimal
+   * (docs/adr/0002-money-minor-units-migration.md), so this only matters
+   * at the write boundary, mirroring the read-side conversion in
+   * `AppDataService.convertPathDataForDisplay()`. No decrypt/encrypt
+   * callbacks are needed here: `element` is always plaintext at this
+   * point, before `encryptObjectValues` below ever runs on it. A no-op for
+   * schemaVersion-1 accounts (the default) and for Firebase users, who
+   * never migrate.
+   */
+  private convertForStorage(element: any): any {
+    if (AppStateService.instance.schemaVersion !== 2 || element == null) return element;
+    return convertDocumentToMinorUnits(element).data;
+  }
+
+  /**
    * Prepare data for writing (encryption + cloning)
    * @param {string} tag - The tag
    * @param {any} element - The data
@@ -261,7 +279,7 @@ export class DatabaseService {
     // Skip encryption for username and email
     const isUserInfo = tag === 'info/username' || tag === 'info/email';
 
-    const clonedElement = JSON.parse(JSON.stringify(element));
+    const clonedElement = this.convertForStorage(JSON.parse(JSON.stringify(element)));
 
     const encryptObjectValues = (obj: any): void => {
       for (const key in obj) {
