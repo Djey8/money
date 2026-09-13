@@ -113,10 +113,14 @@ jobs:
           FIXES=$(git log $RANGE --pretty=format:"%s" | grep "^fix" | sed 's/^/- /' || true)
           PERFS=$(git log $RANGE --pretty=format:"%s" | grep "^perf" | sed 's/^/- /' || true)
 
+          # Note the \n\n (not \n) after each header: a single newline leaves
+          # the bullet list glued directly under the header with no blank
+          # line, which prettier's markdown formatter rejects — this broke
+          # the Lint & Format CI job on every release until fixed here.
           ENTRY="## [$NEW_VERSION] - $DATE"$'\n'
-          if [ -n "$FEATURES" ]; then ENTRY+=$'\n'"### Features"$'\n'"$FEATURES"$'\n'; fi
-          if [ -n "$FIXES" ];    then ENTRY+=$'\n'"### Bug Fixes"$'\n'"$FIXES"$'\n'; fi
-          if [ -n "$PERFS" ];    then ENTRY+=$'\n'"### Performance"$'\n'"$PERFS"$'\n'; fi
+          if [ -n "$FEATURES" ]; then ENTRY+=$'\n'"### Features"$'\n\n'"$FEATURES"$'\n'; fi
+          if [ -n "$FIXES" ];    then ENTRY+=$'\n'"### Bug Fixes"$'\n\n'"$FIXES"$'\n'; fi
+          if [ -n "$PERFS" ];    then ENTRY+=$'\n'"### Performance"$'\n\n'"$PERFS"$'\n'; fi
 
           if [ -f CHANGELOG.md ]; then
             echo -e "$ENTRY\n$(cat CHANGELOG.md)" > CHANGELOG.md

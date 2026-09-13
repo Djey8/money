@@ -1,6 +1,7 @@
 ## [1.15.0] - 2026-09-13
 
 ### Features
+
 - feat(deploy): wire the MCP server into docker-compose and k8s
 - feat(mcp): add OAuth 2.1 authorization server for the HTTP transport
 - feat(mcp): add Streamable HTTP transport for remote MCP clients
@@ -9,6 +10,7 @@
 - feat: add environment.edition build-time constant
 
 ### Bug Fixes
+
 - fix(changelog): add missing blank lines after v1.14.0 section headers
 
 ## [1.14.0] - 2026-09-13
