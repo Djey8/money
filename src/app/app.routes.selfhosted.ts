@@ -15,4 +15,11 @@ export const routes: Routes = [
     path: 'docs/api',
     loadComponent: () => import('./docs/api/api-docs.component').then((m) => m.ApiDocsComponent),
   },
+  {
+    path: 'settings/tokens',
+    loadComponent: () =>
+      import('./panels/settings/personal-access-tokens/personal-access-tokens.component').then(
+        (m) => m.PersonalAccessTokensComponent,
+      ),
+  },
 ];

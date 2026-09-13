@@ -328,16 +328,22 @@ describe('startHttpServer (OAuth authorization server)', () => {
     expect(loginPageHtml).toContain('transactions:rw');
     expect(loginPageHtml).toContain('Test Claude Client');
 
-    // 3. Submit the login form.
+    // 3. Submit the login form. This is deliberately a 200 + meta-refresh,
+    // not an HTTP redirect — see renderRedirectPage's doc comment for why
+    // (a real 3xx here breaks under a service worker that intercepts the
+    // fetch and auto-follows it into a cross-origin target).
     const loginSubmitResponse = await fetch(`${publicUrl}/oauth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({ req: requestId!, email: 'me@example.com', password: 'hunter2' }),
-      redirect: 'manual',
     });
-    expect(loginSubmitResponse.status).toBeGreaterThanOrEqual(300);
-    expect(loginSubmitResponse.status).toBeLessThan(400);
-    const finalRedirect = new URL(loginSubmitResponse.headers.get('location')!);
+    expect(loginSubmitResponse.status).toBe(200);
+    const redirectPageHtml = await loginSubmitResponse.text();
+    const metaRefreshMatch = /content="0;url=([^"]+)"/.exec(redirectPageHtml);
+    expect(metaRefreshMatch).toBeTruthy();
+    const finalRedirect = new URL(
+      metaRefreshMatch![1].replace(/&amp;/g, '&').replace(/&#39;/g, "'"),
+    );
     expect(finalRedirect.origin + finalRedirect.pathname).toBe(redirectUri);
     expect(finalRedirect.searchParams.get('state')).toBe('xyz123');
     const code = finalRedirect.searchParams.get('code');

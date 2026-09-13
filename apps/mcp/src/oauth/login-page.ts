@@ -191,6 +191,44 @@ export function renderLoginPage(options: {
 </html>`;
 }
 
+/**
+ * Rendered instead of an HTTP 302 for the final hop of a successful login,
+ * which is almost always cross-origin (the client's own redirect_uri, e.g.
+ * claude.ai) — deliberately NOT a real redirect response. Angular's service
+ * worker intercepts every fetch on this origin (including this POST) and
+ * re-issues it via its own internal fetch(), which auto-follows redirects;
+ * when that followed redirect crosses origins, the browser silently cancels
+ * the navigation instead of completing it (observed directly: a valid
+ * code+state reached the SW's fetch of the cross-origin target, then the
+ * whole navigation showed as "(canceled)" in DevTools — the OAuth exchange
+ * itself worked, only the final hop was lost). A 200 response with a
+ * meta-refresh sidesteps this: the SW's re-fetch just gets this same plain
+ * HTML back (nothing to auto-follow), and the actual jump to the
+ * cross-origin URL happens as a brand-new top-level navigation afterward,
+ * entirely outside this origin's service worker scope.
+ */
+export function renderRedirectPage(url: string): string {
+  return `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="refresh" content="0;url=${escapeHtml(url)}">
+<title>Connecting…</title>
+<style>${PAGE_CHROME}</style>
+</head>
+<body>
+  <div class="toolbar" role="banner"><span class="logo">MoneyApp</span></div>
+  <div class="card-container">
+    <h1>Connecting…</h1>
+    <p class="subtitle">
+      If you're not redirected automatically, <a href="${escapeHtml(url)}">click here</a>.
+    </p>
+  </div>
+</body>
+</html>`;
+}
+
 /** Rendered when a `req` id is missing/expired — no form to retry, since the underlying OAuth state is gone. */
 export function renderExpiredPage(): string {
   return `<!doctype html>
