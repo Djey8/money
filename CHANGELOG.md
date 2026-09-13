@@ -1,3 +1,13 @@
+## [1.16.0] - 2026-09-13
+
+### Features
+
+- feat(settings): add Personal Access Tokens page (Pro, self-hosted only)
+
+### Bug Fixes
+
+- fix(oauth): replace the final cross-origin redirect with a meta-refresh page
+
 ## [1.15.2] - 2026-09-13
 
 ### Bug Fixes
