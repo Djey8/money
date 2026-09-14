@@ -1264,6 +1264,11 @@ export class SettingsComponent implements DoCheck {
 
   /** Pro, self-hosted only — see settings.component.html's guard on this button. */
   goToPersonalAccessTokens(): void {
+    // Personal Access Tokens is a routed page, not another stacked overlay —
+    // close both so the user actually sees it instead of it rendering
+    // underneath these two.
+    ProfileComponent.isProfile = false;
+    SettingsComponent.isSettings = false;
     this.router.navigate(['/settings/tokens']);
   }
 
