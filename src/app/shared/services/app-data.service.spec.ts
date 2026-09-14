@@ -77,8 +77,13 @@ const mockIncomeStatement = { recalculate: jest.fn() };
 const mockToastService = { show: jest.fn(), dismiss: jest.fn() };
 const mockSubscriptionProcessing = { setTransactionsForSubscriptions: jest.fn() };
 
+// Every test except the dedicated tier1-ordering ones below assumes tier 1
+// has already completed (the common case — tests aren't about that race),
+// so resolve loadBalanceData()/loadGrowData()'s internal tier1Ready gate by
+// default, the same way this file already reaches into AppStateService's
+// own private `_instance` above.
 function createService(): AppDataService {
-  return new AppDataService(
+  const service = new AppDataService(
     mockLocalStorage as any,
     mockDatabase as any,
     mockAfAuth as any,
@@ -89,6 +94,8 @@ function createService(): AppDataService {
     mockToastService as any,
     mockSubscriptionProcessing as any,
   );
+  (service as any).tier1ReadyResolve();
+  return service;
 }
 
 describe('AppDataService', () => {
@@ -463,6 +470,62 @@ describe('AppDataService', () => {
       expect(AppStateService.instance.allShares[0].tag).toBe('AAPL');
       expect(AppStateService.instance.allShares[0].quantity).toBe(10);
       expect(AppStateService.instance.allShares[0].price).toBe(150);
+    });
+
+    it('converts share price from minor units to decimal for a schemaVersion-2 account', async () => {
+      const service = createService();
+      AppStateService.instance.schemaVersion = 2;
+      mockDatabase.getBatchData.mockResolvedValue({
+        data: {
+          'balance/asset/shares': {
+            '0': { tag: 'IOTA', quantity: '3713', price: '22' },
+          },
+        },
+        updatedAt: null,
+      });
+
+      await service.loadBalanceData();
+
+      expect(AppStateService.instance.allShares[0].price).toBeCloseTo(0.22);
+    });
+
+    it('waits for loadTier1() to determine schemaVersion even when tier 3 resolves first (regression)', async () => {
+      // Bypasses createService()'s auto-resolved tier1Ready on purpose —
+      // this test is specifically about the case createService() doesn't
+      // cover: a component calling loadBalanceData() before loadTier1() has
+      // finished for this session.
+      const service = new AppDataService(
+        mockLocalStorage as any,
+        mockDatabase as any,
+        mockAfAuth as any,
+        mockCryptic as any,
+        mockAuthService as any,
+        mockPersistence as any,
+        mockIncomeStatement as any,
+        mockToastService as any,
+        mockSubscriptionProcessing as any,
+      );
+
+      let resolveTier1Fetch!: (value: unknown) => void;
+      const tier1Fetch = new Promise((resolve) => {
+        resolveTier1Fetch = resolve;
+      });
+      mockDatabase.getBatchData.mockImplementation((paths: string[]) => {
+        if (paths === AppDataService.TIER1_PATHS) return tier1Fetch;
+        return Promise.resolve({
+          data: { 'balance/asset/shares': { '0': { tag: 'IOTA', quantity: '3713', price: '22' } } },
+          updatedAt: null,
+        });
+      });
+
+      // Tier 3's fetch (mocked above to resolve immediately) starts before
+      // tier 1's — the exact ordering that produced the real bug.
+      const balancePromise = service.loadBalanceData();
+      resolveTier1Fetch({ data: { meta: { schemaVersion: 2 } }, updatedAt: null });
+      await service.loadTier1();
+      await balancePromise;
+
+      expect(AppStateService.instance.allShares[0].price).toBeCloseTo(0.22);
     });
 
     it('should apply liabilities data', async () => {
