@@ -1,3 +1,9 @@
+## [1.17.1] - 2026-09-14
+
+### Bug Fixes
+
+- fix(k8s): raise backend CPU/memory limits and health-check tolerance
+
 ## [1.17.0] - 2026-09-14
 
 ### Features
