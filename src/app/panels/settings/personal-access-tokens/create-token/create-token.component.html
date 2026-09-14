@@ -1,0 +1,88 @@
+<div class="pat-card create-token-card">
+  <div class="create-token-header">
+    <h2 class="pat-card-title">Create a new token</h2>
+    <button type="button" class="close-btn" aria-label="Close" (click)="close()">&times;</button>
+  </div>
+
+  <!-- One-time reveal of a freshly created token -->
+  <div class="reveal-card" *ngIf="newlyCreatedToken">
+    <div class="reveal-header">
+      <span class="reveal-icon">✓</span>
+      <strong>Token created</strong>
+    </div>
+    <p class="reveal-warning">
+      Copy it now — this is the only time it's shown. If you lose it, revoke this token and create a
+      new one.
+    </p>
+    <div class="token-value-row">
+      <code class="token-value">{{ newlyCreatedToken.token }}</code>
+      <button class="copy-btn" (click)="copyToken(newlyCreatedToken.token)">
+        {{ copied ? '✓ Copied' : 'Copy' }}
+      </button>
+    </div>
+    <button class="dismiss-btn" (click)="close()">Done</button>
+  </div>
+
+  <ng-container *ngIf="!newlyCreatedToken">
+    <label class="field-label" for="pat-name">Name</label>
+    <input
+      id="pat-name"
+      type="text"
+      class="pat-input"
+      placeholder="e.g. claude, backup-script"
+      [(ngModel)]="nameField"
+    />
+
+    <div class="scopes-header">
+      <span class="field-label">Scopes</span>
+      <div class="scopes-actions">
+        <button type="button" class="link-btn" (click)="applyPreset()">Preset: AI Assistant</button>
+        <button type="button" class="link-btn" (click)="clearScopes()">Clear</button>
+      </div>
+    </div>
+
+    <div class="scopes-grid">
+      <div class="scope-row" *ngFor="let resource of resources">
+        <span class="scope-label">{{ resource.label }}</span>
+        <select class="scope-select" [(ngModel)]="scopeSelections[resource.key]">
+          <option *ngFor="let level of resource.levels" [value]="level">
+            {{
+              level === 'none'
+                ? '— none —'
+                : level === 'r'
+                  ? 'Read'
+                  : level === 'w'
+                    ? 'Write'
+                    : level === 'rw'
+                      ? 'Read + write'
+                      : 'Bulk'
+            }}
+          </option>
+        </select>
+      </div>
+    </div>
+    <p class="scope-hint">
+      {{ selectedScopeCount }} scope(s) selected. Never grant "admin" — the API refuses it to a
+      token anyway.
+    </p>
+
+    <label class="field-label" for="pat-expires">Expires in (days, optional)</label>
+    <input
+      id="pat-expires"
+      type="number"
+      min="1"
+      class="pat-input pat-input-narrow"
+      placeholder="Never"
+      [(ngModel)]="expiresInDaysField"
+    />
+
+    <p class="error-text" *ngIf="createError">{{ createError }}</p>
+
+    <div class="create-token-actions">
+      <button class="create-btn" (click)="createToken()" [disabled]="creating">
+        {{ creating ? 'Creating…' : 'Create token' }}
+      </button>
+      <button type="button" class="dismiss-btn" (click)="close()">Cancel</button>
+    </div>
+  </ng-container>
+</div>
