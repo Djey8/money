@@ -5,7 +5,7 @@ const jwt = require('jsonwebtoken');
 const express = require('express');
 const { getAuditDb } = require('../config/db');
 const { recordAuditEntry, findAuditEntryByIdempotencyKey } = require('../config/audit');
-const { createToken, listTokens, revokeToken } = require('../cli/commands/token');
+const { createToken, listTokens, revokeToken, deleteToken } = require('../cli/commands/token');
 const {
   ACCESS_TOKEN_EXPIRES_IN,
   ACCESS_TOKEN_MAX_AGE_MS,
@@ -2785,6 +2785,38 @@ router.delete('/auth/tokens/:tokenId', requireSession, async (req, res, next) =>
   } catch (error) {
     if (error.code === 'TOKEN_NOT_FOUND' || error.statusCode === 404) {
       return problem(res, 404, 'not_found', 'Token not found', 'No matching token exists.');
+    }
+    return next(error);
+  }
+});
+
+router.delete('/auth/tokens/:tokenId/purge', requireSession, async (req, res, next) => {
+  try {
+    const result = await deleteToken(
+      { authDb: getAuthDb() },
+      { tokenId: req.params.tokenId, userId: req.userId },
+    );
+    await recordAuditEntry(getAuditDb(), {
+      userId: req.userId,
+      actor: { type: 'session' },
+      method: req.method,
+      path: req.baseUrl + req.path,
+      resource: 'auth_tokens',
+      resourceId: result.tokenId,
+    });
+    res.json(result);
+  } catch (error) {
+    if (error.code === 'TOKEN_NOT_FOUND' || error.statusCode === 404) {
+      return problem(res, 404, 'not_found', 'Token not found', 'No matching token exists.');
+    }
+    if (error.code === 'TOKEN_NOT_REVOKED') {
+      return problem(
+        res,
+        409,
+        'conflict_token_not_revoked',
+        'Token is not revoked',
+        'Revoke this token before deleting it.',
+      );
     }
     return next(error);
   }

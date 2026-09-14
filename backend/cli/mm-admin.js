@@ -15,6 +15,7 @@
  *   node cli/mm-admin.js token create --user <id> --name "<name>" --scopes transactions:rw,reports:r [--expires-in-days 90]
  *   node cli/mm-admin.js token list --user <id>
  *   node cli/mm-admin.js token revoke --token-id <id>
+ *   node cli/mm-admin.js token delete --token-id <id> (must already be revoked)
  *   node cli/mm-admin.js migrate-transaction-ids --user <id> [--dry-run]
  *   node cli/mm-admin.js migrate-fund-project-ids --user <id> --collection smile|fire [--dry-run]
  *   node cli/mm-admin.js migrate-balance-entity-ids --user <id> --collection assets|shares|investments|liabilities|grow|subscriptions|budget [--dry-run]
@@ -28,7 +29,7 @@
 const { initializeDatabase, getUsersDb, getAuthDb, getAuditDb } = require('../config/db');
 const { runMigration } = require('./commands/migrate');
 const { createUser, listUsers } = require('./commands/user');
-const { createToken, listTokens, revokeToken } = require('./commands/token');
+const { createToken, listTokens, revokeToken, deleteToken } = require('./commands/token');
 const { backfillTransactionIds } = require('./commands/backfill-transaction-ids');
 const { backfillFundProjectIds } = require('./commands/backfill-fund-project-ids');
 const { backfillBalanceEntityIds } = require('./commands/backfill-balance-entity-ids');
@@ -63,6 +64,7 @@ function printUsage() {
   );
   console.error('  mm-admin token list --user <id>');
   console.error('  mm-admin token revoke --token-id <id>');
+  console.error('  mm-admin token delete --token-id <id> (must already be revoked)');
   console.error('  mm-admin migrate-transaction-ids --user <id> [--dry-run]');
   console.error(
     '  mm-admin migrate-fund-project-ids --user <id> --collection smile|fire [--dry-run]',
@@ -125,6 +127,10 @@ async function handleToken(deps, verb, args) {
   }
   if (verb === 'revoke') {
     print(await revokeToken(deps, { tokenId: args['token-id'] }));
+    return;
+  }
+  if (verb === 'delete') {
+    print(await deleteToken(deps, { tokenId: args['token-id'] }));
     return;
   }
   printUsage();

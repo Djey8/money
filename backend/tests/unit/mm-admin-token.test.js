@@ -8,6 +8,7 @@ const {
   createToken,
   listTokens,
   revokeToken,
+  deleteToken,
   verifyToken,
   validateScope,
   validateScopes,
@@ -37,6 +38,11 @@ function makeMockAuthDb(existingDocs = []) {
       if (selector.userId) matches = matches.filter((d) => d.userId === selector.userId);
       if (selector.tokenHash) matches = matches.filter((d) => d.tokenHash === selector.tokenHash);
       return { docs: matches };
+    }),
+    destroy: jest.fn(async (id) => {
+      const idx = docs.findIndex((d) => d._id === id);
+      if (idx >= 0) docs.splice(idx, 1);
+      return { ok: true };
     }),
     _docs: docs,
   };
@@ -212,6 +218,59 @@ describe('revokeToken', () => {
 
   it('requires a tokenId', async () => {
     await expect(revokeToken({ authDb: makeMockAuthDb() }, {})).rejects.toThrow(/tokenId/);
+  });
+});
+
+describe('deleteToken', () => {
+  it('permanently removes an already-revoked token', async () => {
+    const authDb = makeMockAuthDb([
+      {
+        _id: 'pat_1',
+        _rev: '1-abc',
+        type: 'pat',
+        userId: 'user_1',
+        name: 'n',
+        scopes: [],
+        revoked: true,
+      },
+    ]);
+
+    const result = await deleteToken({ authDb }, { tokenId: 'pat_1' });
+
+    expect(result).toEqual({ tokenId: 'pat_1', deleted: true });
+    expect(authDb.destroy).toHaveBeenCalledWith('pat_1', '1-abc');
+    expect(authDb._docs.find((d) => d._id === 'pat_1')).toBeUndefined();
+  });
+
+  it('refuses to delete a token that is not revoked', async () => {
+    const authDb = makeMockAuthDb([
+      { _id: 'pat_1', _rev: '1-abc', type: 'pat', userId: 'user_1', name: 'n', revoked: false },
+    ]);
+
+    await expect(deleteToken({ authDb }, { tokenId: 'pat_1' })).rejects.toThrow(
+      /Only a revoked token can be deleted/,
+    );
+    expect(authDb.destroy).not.toHaveBeenCalled();
+    expect(authDb._docs.find((d) => d._id === 'pat_1')).toBeDefined();
+  });
+
+  it('refuses to delete a non-PAT document', async () => {
+    const authDb = makeMockAuthDb([{ _id: 'rt_1', type: 'refresh_token', userId: 'user_1' }]);
+    await expect(deleteToken({ authDb }, { tokenId: 'rt_1' })).rejects.toThrow(/not a PAT/);
+  });
+
+  it("refuses to delete another user's token", async () => {
+    const authDb = makeMockAuthDb([
+      { _id: 'pat_1', _rev: '1-abc', type: 'pat', userId: 'user_1', name: 'n', revoked: true },
+    ]);
+
+    await expect(
+      deleteToken({ authDb }, { tokenId: 'pat_1', userId: 'user_2' }),
+    ).rejects.toMatchObject({ code: 'TOKEN_NOT_FOUND' });
+  });
+
+  it('requires a tokenId', async () => {
+    await expect(deleteToken({ authDb: makeMockAuthDb() }, {})).rejects.toThrow(/tokenId/);
   });
 });
 

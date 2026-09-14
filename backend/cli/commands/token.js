@@ -162,6 +162,35 @@ async function revokeToken(deps, { tokenId, userId }) {
 }
 
 /**
+ * Permanently removes an already-revoked token document. Kept separate from
+ * `revokeToken` deliberately: revocation is the durable audit record this
+ * module favors, deletion is a user-initiated cleanup step that only
+ * applies once a token can no longer be used, never a way to make an
+ * active token's existence disappear.
+ */
+async function deleteToken(deps, { tokenId, userId }) {
+  const { authDb } = deps;
+  if (!tokenId) throw new Error('deleteToken: tokenId is required');
+
+  const doc = await authDb.get(tokenId);
+  if (doc.type !== 'pat') {
+    throw new Error(`${tokenId} is not a PAT`);
+  }
+  if (userId && doc.userId !== userId) {
+    const error = new Error('Token not found');
+    error.code = 'TOKEN_NOT_FOUND';
+    throw error;
+  }
+  if (!doc.revoked) {
+    const error = new Error('Only a revoked token can be deleted');
+    error.code = 'TOKEN_NOT_REVOKED';
+    throw error;
+  }
+  await authDb.destroy(doc._id, doc._rev);
+  return { tokenId, deleted: true };
+}
+
+/**
  * Looks up a plaintext token and returns its scopes/owner if valid — the
  * primitive slice 1's PAT-authentication middleware will call on every
  * request. Returns `null` (never throws) for anything invalid: unknown
@@ -189,6 +218,7 @@ module.exports = {
   createToken,
   listTokens,
   revokeToken,
+  deleteToken,
   verifyToken,
   validateScope,
   validateScopes,
