@@ -1,3 +1,10 @@
+## [1.17.2] - 2026-09-14
+
+### Bug Fixes
+
+- fix(api): make legacy collection writes self-healing for stable ids
+- fix(reports): round fractional share cents, fix balance data displaying 100x too small
+
 ## [1.17.1] - 2026-09-14
 
 ### Bug Fixes
