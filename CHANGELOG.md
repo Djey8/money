@@ -1,3 +1,15 @@
+## [1.17.0] - 2026-09-14
+
+### Features
+
+- feat(settings): split token creation into its own toggleable panel, add delete
+- feat(api): add endpoint to permanently delete a revoked personal access token
+
+### Bug Fixes
+
+- fix(ci): update stale MCP operation count, fix unbounded PAT list query
+- fix(api): stop legacy empty-time transactions from 500ing GET /transactions
+
 ## [1.16.0] - 2026-09-13
 
 ### Features
