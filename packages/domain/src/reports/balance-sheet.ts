@@ -65,7 +65,11 @@ function sum<T>(entries: T[], amount: (entry: T) => number): number {
 
 export function computeBalanceSheet(input: BalanceSheetInput): BalanceSheet {
   const cash = sum(input.assets, (a) => a.amountMinor);
-  const shares = sum(input.shares, (s) => s.quantity * s.priceMinor);
+  // Rounded per-entry, not just at the total: a fractional share quantity
+  // (e.g. 3.54) times an integer priceMinor produces a fractional-cent
+  // result, which would violate every minor-unit money field's integer
+  // contract (docs/adr/0002-money-minor-units-migration.md).
+  const shares = sum(input.shares, (s) => Math.round(s.quantity * s.priceMinor));
   const investments = sum(input.investments, (i) => i.amountMinor + i.depositMinor);
   const properties = sum(input.properties, (p) => p.amountMinor);
   const assetsTotal = cash + shares + investments + properties;

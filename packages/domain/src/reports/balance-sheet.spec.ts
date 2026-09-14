@@ -24,6 +24,12 @@ describe('computeBalanceSheet', () => {
     expect(sheet.assets.shares).toBe(415000);
   });
 
+  it('rounds a fractional share quantity to the nearest integer minor unit', () => {
+    const sheet = computeBalanceSheet(input({ shares: [{ quantity: 3.54, priceMinor: 11468 }] }));
+    expect(sheet.assets.shares).toBe(40597); // 40596.72 rounded, never fractional cents
+    expect(Number.isInteger(sheet.assets.shares)).toBe(true);
+  });
+
   it('sums an investment as its amount plus its deposit', () => {
     const sheet = computeBalanceSheet(
       input({ investments: [{ amountMinor: 18000000, depositMinor: 3000000 }] }),

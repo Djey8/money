@@ -73,6 +73,20 @@ export class AppDataService {
     'balance/liabilities',
   ];
 
+  // Resolves once loadTier1() has determined schemaVersion for this session
+  // (docs/adr/0002-money-minor-units-migration.md). loadGrowData()/
+  // loadBalanceData() await this before applying their own batch: a routed
+  // component can call them from ngOnInit() independently of tier 1's own
+  // completion, and tier 3's much smaller batch (4 paths vs. tier 1's 11)
+  // can easily resolve first — running the minor-units conversion while
+  // schemaVersion still sits at its uninitialized default of 1, silently
+  // skipping it. Resolved in a `finally` in loadTier1() so a tier-1 error
+  // can never leave tier 3 callers waiting forever.
+  private tier1ReadyResolve!: () => void;
+  private tier1Ready = new Promise<void>((resolve) => {
+    this.tier1ReadyResolve = resolve;
+  });
+
   constructor(
     private localStorage: LocalService,
     private database: DatabaseService,
@@ -337,6 +351,8 @@ export class AppDataService {
       AppStateService.instance.lastUpdatedAt = response.updatedAt;
     } catch (err) {
       console.error('Tier 1 load error:', err);
+    } finally {
+      this.tier1ReadyResolve();
     }
   }
 
@@ -359,6 +375,7 @@ export class AppDataService {
 
   async loadGrowData(): Promise<void> {
     if (AppStateService.instance.tier3GrowLoaded) return;
+    await this.tier1Ready;
     try {
       const response = await this.database.getBatchData(AppDataService.TIER3_GROW_PATHS);
       if (response === null) {
@@ -376,6 +393,7 @@ export class AppDataService {
 
   async loadBalanceData(): Promise<void> {
     if (AppStateService.instance.tier3BalanceLoaded) return;
+    await this.tier1Ready;
     try {
       const response = await this.database.getBatchData(AppDataService.TIER3_BALANCE_PATHS);
       if (response === null) {
