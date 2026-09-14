@@ -1,3 +1,10 @@
+## [1.17.3] - 2026-09-14
+
+### Bug Fixes
+
+- fix(settings): close profile and settings overlays when opening PAT page
+- fix(mcp): merge path-item-level OpenAPI parameters into each operation
+
 ## [1.17.2] - 2026-09-14
 
 ### Bug Fixes
