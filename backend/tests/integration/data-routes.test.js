@@ -29,7 +29,21 @@ function authed(method, path) {
   return request(app)[method](path).set('Authorization', `Bearer ${token}`);
 }
 
-const skipIf = (cond, name, fn) => (cond ? it.skip : it)(name, fn);
+// The `cond` argument is intentionally unused: it's evaluated at
+// describe()-time (module load, before beforeAll ever runs), so a
+// pre-computed `!dbAvailable` was always stale — every call site below
+// looked skipped-when-DB-unreachable but was actually skipped
+// unconditionally, forever. Checking the live `dbAvailable` closure
+// variable inside the test body (deferred to Jest's run phase, after
+// beforeAll has set it) is what actually makes the gate work.
+const skipIf = (_cond, name, fn) =>
+  it(name, async () => {
+    if (!dbAvailable) {
+      console.warn(`⚠ Skipping "${name}" — CouchDB not reachable`);
+      return;
+    }
+    return fn();
+  });
 
 describe('Extended data routes', () => {
   it('should skip all tests if CouchDB is not available', () => {
@@ -42,17 +56,25 @@ describe('Extended data routes', () => {
   // --- Various data types ----------------------------------------------------
 
   describe('Write/read various data types', () => {
+    // A bare JSON primitive (`42`, `true`) as an entire request body is
+    // rejected outright by express.json()'s default strict mode (only
+    // objects/arrays are valid top-level JSON) — confirmed empirically,
+    // this was never actually supported despite what the original version
+    // of these two tests asserted (masked forever by the skipIf bug
+    // above). Nesting the primitive inside a valid JSON object, like the
+    // "deeply nested object" test below already does, is the real,
+    // working round-trip path.
     skipIf(!dbAvailable, 'writes and reads a number', async () => {
-      await authed('post', '/api/data/write/types/num').send(42);
-      const res = await authed('get', '/api/data/read/types/num');
+      await authed('post', '/api/data/write/types/num').send({ value: 42 });
+      const res = await authed('get', '/api/data/read/types/num/value');
 
       expect(res.status).toBe(200);
       expect(res.body.data).toBe(42);
     });
 
     skipIf(!dbAvailable, 'writes and reads a boolean', async () => {
-      await authed('post', '/api/data/write/types/flag').send(true);
-      const res = await authed('get', '/api/data/read/types/flag');
+      await authed('post', '/api/data/write/types/flag').send({ value: true });
+      const res = await authed('get', '/api/data/read/types/flag/value');
 
       expect(res.status).toBe(200);
       expect(res.body.data).toBe(true);
@@ -194,6 +216,78 @@ describe('Extended data routes', () => {
       // Should NOT leak internal CouchDB fields
       expect(res.body).not.toHaveProperty('_id');
       expect(res.body).not.toHaveProperty('_rev');
+    });
+  });
+
+  // --- Legacy write self-healing ids (regression) -----------------------------
+  //
+  // The Angular app's own interfaces (Transaction, Smile, Share, ...) never
+  // carry an `id` field, so any legacy raw write of one of these
+  // collections from an already-open browser session used to silently drop
+  // every id the Pro API/MCP layer depends on — reproduced in production
+  // against JFK's real account (PLAN.md, 2026-09-14). These writes must now
+  // come back with ids intact.
+
+  describe('Legacy write self-healing ids', () => {
+    skipIf(
+      !dbAvailable,
+      'assigns stable ids to id-less transactions written via /write/transactions',
+      async () => {
+        await authed('post', '/api/data/write/transactions').send([
+          { account: 'Daily', amount: -500, date: '2026-01-01', time: '09:00', category: '@Food' },
+        ]);
+
+        const res = await authed('get', '/api/data/read/transactions');
+        expect(res.body.data).toHaveLength(1);
+        expect(res.body.data[0].id).toEqual(expect.stringMatching(/^tx_/));
+      },
+    );
+
+    skipIf(!dbAvailable, 'never touches an entry that already has an id', async () => {
+      await authed('post', '/api/data/write/smile').send([{ id: 'smile_keep-me', title: 'Trip' }]);
+
+      const res = await authed('get', '/api/data/read/smile');
+      expect(res.body.data[0].id).toBe('smile_keep-me');
+    });
+
+    skipIf(
+      !dbAvailable,
+      'survives a stale browser overwrite: a write with mixed ids/no-ids still leaves every entry addressable',
+      async () => {
+        // First write: as if the collection had already been backfilled.
+        await authed('post', '/api/data/write/fire').send([{ id: 'fire_original', title: 'F1' }]);
+
+        // Second write: simulates a browser that never learned about ids —
+        // it re-sends its own stale, id-less copy on top of the first.
+        await authed('post', '/api/data/write/fire').send([{ title: 'F1' }, { title: 'F2' }]);
+
+        const res = await authed('get', '/api/data/read/fire');
+        expect(res.body.data).toHaveLength(2);
+        for (const entry of res.body.data) {
+          expect(entry.id).toEqual(expect.stringMatching(/^fire_/));
+        }
+      },
+    );
+
+    skipIf(!dbAvailable, 'backfills ids through /write/batch too', async () => {
+      await authed('post', '/api/data/write/batch').send({
+        writes: [
+          { path: 'budget', data: [{ tag: 'Rent', amount: 100000, month: '2026-01' }] },
+          { path: 'subscriptions', data: [{ tag: 'Spotify', amount: 999 }] },
+        ],
+      });
+
+      const budget = await authed('get', '/api/data/read/budget');
+      const subs = await authed('get', '/api/data/read/subscriptions');
+      expect(budget.body.data[0].id).toEqual(expect.stringMatching(/^budget_/));
+      expect(subs.body.data[0].id).toEqual(expect.stringMatching(/^subscriptions_/));
+    });
+
+    skipIf(!dbAvailable, 'does not touch a path with no id convention', async () => {
+      await authed('post', '/api/data/write/income/expenses/daily').send([{ tag: 'Coffee' }]);
+
+      const res = await authed('get', '/api/data/read/income/expenses/daily');
+      expect(res.body.data[0]).not.toHaveProperty('id');
     });
   });
 

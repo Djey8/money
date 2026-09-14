@@ -1,8 +1,9 @@
 const express = require('express');
-const { getUsersDb } = require('../config/db');
+const { getUsersDb, getAuthDb } = require('../config/db');
 const logger = require('../config/logger');
 const { logDatabaseOperation, logUserActivity } = require('../middleware/logging');
 const { authenticateToken } = require('../middleware/auth');
+const { backfillMissingIdsForWrite } = require('../services/legacy-write-id-backfill');
 const router = express.Router();
 
 // Helper function to get or create user document
@@ -175,6 +176,18 @@ router.post('/write/batch', authenticateToken, async (req, res) => {
       return res.status(400).json({ error: 'writes array cannot be empty' });
     }
 
+    for (const write of writes) {
+      if (!write.path) {
+        return res.status(400).json({ error: 'Each write must have a path' });
+      }
+    }
+    // Backfill missing stable ids before the retry loop — a write that gets
+    // retried on conflict should keep the same ids across attempts, not
+    // mint fresh ones each time. See legacy-write-id-backfill.js.
+    for (const write of writes) {
+      write.data = await backfillMissingIdsForWrite(getAuthDb(), userId, write.path, write.data);
+    }
+
     const MAX_RETRIES = 10;
     const RETRY_DELAY_MS = 50;
     let attempt = 0;
@@ -192,10 +205,6 @@ router.post('/write/batch', authenticateToken, async (req, res) => {
         // Apply all writes to the document
         for (const write of writes) {
           const { path, data } = write;
-
-          if (!path) {
-            return res.status(400).json({ error: 'Each write must have a path' });
-          }
 
           if (path === '' || path === '/') {
             // Root level write - replace entire data object
@@ -276,8 +285,13 @@ router.post('/write/*?', authenticateToken, async (req, res) => {
     const userId = req.userId;
     const usersDb = getUsersDb();
 
-    // Handle case where body is empty or invalid
-    if (data === undefined || data === null || data === '') {
+    // Handle case where body is empty or invalid. A genuinely empty
+    // request body (Content-Length: 0) parses to `{}` via express.json(),
+    // indistinguishable from an intentional empty-object write unless
+    // checked here — silently accepting it would let an accidental
+    // no-body request wipe a path with `{}` instead of erroring clearly.
+    const bodyWasEmpty = req.headers['content-length'] === '0';
+    if (data === undefined || data === null || data === '' || bodyWasEmpty) {
       return res.status(400).json({ error: 'Request body is required' });
     }
 
@@ -302,6 +316,14 @@ router.post('/write/*?', authenticateToken, async (req, res) => {
 
     let attempt = 0;
     let lastError = null;
+
+    // Backfill missing stable ids before the retry loop — a write that gets
+    // retried on conflict should keep the same ids across attempts, not
+    // mint fresh ones each time. See legacy-write-id-backfill.js. Skipped
+    // for raw-string writes (encrypted primitives, never a collection).
+    if (!(req.bodyIsRawString && typeof data === 'string')) {
+      data = await backfillMissingIdsForWrite(getAuthDb(), userId, path, data);
+    }
 
     while (attempt < MAX_RETRIES) {
       try {
