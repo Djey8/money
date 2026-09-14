@@ -117,6 +117,12 @@ async function createToken(deps, { userId, name, scopes, expiresInDays }) {
   return { tokenId, token, userId, name, scopes, expiresAt };
 }
 
+// CouchDB's Mango _find defaults `limit` to 25 when omitted — without this,
+// a user with more than 25 tokens (easy to hit through routine agent/CI
+// token churn) would silently lose the rest of their list. Matches
+// config/audit.js's own OVERFETCH_LIMIT convention for the same reason.
+const LIST_LIMIT = 1000;
+
 /** Lists a user's tokens. Never returns the hash — there is nothing that needs it outside `verifyToken`. */
 async function listTokens(deps, { userId }) {
   const { authDb } = deps;
@@ -125,6 +131,7 @@ async function listTokens(deps, { userId }) {
   const result = await authDb.find({
     selector: { type: 'pat', userId },
     fields: ['_id', 'name', 'scopes', 'createdAt', 'expiresAt', 'revoked'],
+    limit: LIST_LIMIT,
   });
   return result.docs.map((d) => ({
     tokenId: d._id,

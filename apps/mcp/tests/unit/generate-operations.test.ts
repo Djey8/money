@@ -13,8 +13,8 @@ describe('extractOperations against the real openapi.yaml', () => {
   const operations = extractOperations(spec);
   const byId = Object.fromEntries(operations.map((op) => [op.operationId, op]));
 
-  it('finds exactly 96 operations', () => {
-    expect(operations).toHaveLength(96);
+  it('finds exactly 97 operations', () => {
+    expect(operations).toHaveLength(97);
   });
 
   it('has no duplicate operationIds', () => {

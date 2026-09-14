@@ -32,12 +32,15 @@ function makeMockAuthDb(existingDocs = []) {
       }
       return { ...doc };
     }),
-    find: jest.fn(async ({ selector }) => {
+    // Mirrors CouchDB Mango's own default: `limit` defaults to 25 when the
+    // caller omits it, so a missing `limit` here reproduces the real
+    // silent-truncation behavior a caller must guard against.
+    find: jest.fn(async ({ selector, limit = 25 }) => {
       let matches = docs;
       if (selector.type) matches = matches.filter((d) => d.type === selector.type);
       if (selector.userId) matches = matches.filter((d) => d.userId === selector.userId);
       if (selector.tokenHash) matches = matches.filter((d) => d.tokenHash === selector.tokenHash);
-      return { docs: matches };
+      return { docs: matches.slice(0, limit) };
     }),
     destroy: jest.fn(async (id) => {
       const idx = docs.findIndex((d) => d._id === id);
@@ -195,6 +198,22 @@ describe('listTokens', () => {
 
   it('requires a userId', async () => {
     await expect(listTokens({ authDb: makeMockAuthDb() }, {})).rejects.toThrow(/userId/);
+  });
+
+  it("returns every token even past CouchDB Mango's default 25-result page", async () => {
+    const docs = Array.from({ length: 30 }, (_, i) => ({
+      _id: `pat_${i}`,
+      type: 'pat',
+      userId: 'user_1',
+      name: `agent-${i}`,
+      scopes: ['transactions:r'],
+      revoked: false,
+    }));
+    const authDb = makeMockAuthDb(docs);
+
+    const result = await listTokens({ authDb }, { userId: 'user_1' });
+
+    expect(result).toHaveLength(30);
   });
 });
 
