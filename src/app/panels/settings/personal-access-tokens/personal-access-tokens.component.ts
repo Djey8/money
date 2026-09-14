@@ -1,64 +1,16 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import {
   CreatedPersonalAccessToken,
   PersonalAccessTokenService,
   PersonalAccessTokenSummary,
 } from 'src/app/shared/services/personal-access-token.service';
+import { CreateTokenComponent } from './create-token/create-token.component';
 
 // Deferred import to break circular chain (same pattern used throughout
 // src/app/panels and src/app/main).
 let AppComponent: any;
 setTimeout(() => import('src/app/app.component').then((m) => (AppComponent = m.AppComponent)));
-
-type ScopeLevel = 'none' | 'r' | 'w' | 'rw' | 'bulk';
-
-interface ScopeResource {
-  key: string;
-  label: string;
-  /** Mirrors backend/cli/commands/token.js's validateScope: most resources
-   * allow r/w/rw, `income`/`reports` are read-only, `data` is bulk-only. */
-  levels: ScopeLevel[];
-}
-
-/** Same resource list/constraints as backend/cli/commands/token.js's SCOPE_RESOURCES —
- * kept in sync by hand since there's no shared package these two share yet. */
-const SCOPE_RESOURCES: ScopeResource[] = [
-  { key: 'transactions', label: 'Transactions', levels: ['none', 'r', 'w', 'rw', 'bulk'] },
-  { key: 'subscriptions', label: 'Subscriptions', levels: ['none', 'r', 'w', 'rw', 'bulk'] },
-  { key: 'smile', label: 'Smile', levels: ['none', 'r', 'w', 'rw'] },
-  { key: 'fire', label: 'Fire', levels: ['none', 'r', 'w', 'rw'] },
-  { key: 'mojo', label: 'Mojo', levels: ['none', 'r', 'w', 'rw'] },
-  { key: 'grow', label: 'Grow', levels: ['none', 'r', 'w', 'rw'] },
-  {
-    key: 'balance',
-    label: 'Balance (assets/shares/investments/liabilities)',
-    levels: ['none', 'r', 'w', 'rw'],
-  },
-  { key: 'budget', label: 'Budget', levels: ['none', 'r', 'w', 'rw'] },
-  { key: 'income', label: 'Income (revenue/interest/property)', levels: ['none', 'r'] },
-  { key: 'reports', label: 'Reports', levels: ['none', 'r'] },
-  { key: 'account', label: 'Account (email/profile)', levels: ['none', 'r', 'w', 'rw'] },
-  { key: 'settings', label: 'Settings', levels: ['none', 'r', 'w', 'rw'] },
-  { key: 'encryption', label: 'Encryption config', levels: ['none', 'r', 'w', 'rw'] },
-  { key: 'data', label: 'Full data export/import', levels: ['none', 'bulk'] },
-];
-
-/** The "AI Assistant" scope bundle documented on the Pro API docs page — every normal
- * day-to-day action, nothing touching settings/account/encryption. */
-const AI_ASSISTANT_PRESET: Record<string, ScopeLevel> = {
-  transactions: 'rw',
-  subscriptions: 'rw',
-  smile: 'rw',
-  fire: 'rw',
-  mojo: 'rw',
-  grow: 'rw',
-  balance: 'rw',
-  budget: 'rw',
-  income: 'r',
-  reports: 'r',
-};
 
 /**
  * Pro-only page: manage personal access tokens from the app itself instead
@@ -71,29 +23,23 @@ const AI_ASSISTANT_PRESET: Record<string, ScopeLevel> = {
 @Component({
   selector: 'app-personal-access-tokens',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, CreateTokenComponent],
   templateUrl: './personal-access-tokens.component.html',
   styleUrls: ['./personal-access-tokens.component.css', '../../../app.component.css'],
 })
 export class PersonalAccessTokensComponent implements OnInit {
-  resources = SCOPE_RESOURCES;
-
   tokens: PersonalAccessTokenSummary[] = [];
   loading = true;
   loadError: string | null = null;
 
-  scopeSelections: Record<string, ScopeLevel> = Object.fromEntries(
-    SCOPE_RESOURCES.map((r) => [r.key, 'none' as ScopeLevel]),
-  );
-  nameField = '';
-  expiresInDaysField: number | null = null;
-  creating = false;
-  createError: string | null = null;
-  newlyCreatedToken: CreatedPersonalAccessToken | null = null;
-  copied = false;
+  showCreateForm = false;
 
   confirmingRevoke: string | null = null;
   revoking: string | null = null;
+
+  confirmingDelete: string | null = null;
+  deleting: string | null = null;
+  deleteError: string | null = null;
 
   constructor(private tokenService: PersonalAccessTokenService) {}
 
@@ -120,66 +66,12 @@ export class PersonalAccessTokensComponent implements OnInit {
     });
   }
 
-  applyPreset(): void {
-    for (const resource of this.resources) {
-      this.scopeSelections[resource.key] = AI_ASSISTANT_PRESET[resource.key] ?? 'none';
-    }
+  onTokenCreated(_token: CreatedPersonalAccessToken): void {
+    this.loadTokens();
   }
 
-  clearScopes(): void {
-    for (const resource of this.resources) {
-      this.scopeSelections[resource.key] = 'none';
-    }
-  }
-
-  get selectedScopeCount(): number {
-    return Object.values(this.scopeSelections).filter((level) => level !== 'none').length;
-  }
-
-  createToken(): void {
-    const scopes = this.resources
-      .filter((r) => this.scopeSelections[r.key] !== 'none')
-      .map((r) => `${r.key}:${this.scopeSelections[r.key]}`);
-
-    if (!this.nameField.trim()) {
-      this.createError = 'Name is required.';
-      return;
-    }
-    if (scopes.length === 0) {
-      this.createError = 'Select at least one scope.';
-      return;
-    }
-
-    this.creating = true;
-    this.createError = null;
-    this.tokenService
-      .create(this.nameField.trim(), scopes, this.expiresInDaysField || undefined)
-      .subscribe({
-        next: (created) => {
-          this.newlyCreatedToken = created;
-          this.creating = false;
-          this.nameField = '';
-          this.expiresInDaysField = null;
-          this.clearScopes();
-          this.loadTokens();
-        },
-        error: (error) => {
-          this.createError = error?.error?.detail || error?.message || 'Failed to create token.';
-          this.creating = false;
-        },
-      });
-  }
-
-  dismissNewToken(): void {
-    this.newlyCreatedToken = null;
-    this.copied = false;
-  }
-
-  copyToken(token: string): void {
-    navigator.clipboard.writeText(token).then(() => {
-      this.copied = true;
-      setTimeout(() => (this.copied = false), 2000);
-    });
+  onCreatePanelClosed(): void {
+    this.showCreateForm = false;
   }
 
   askRevoke(tokenId: string): void {
@@ -200,6 +92,30 @@ export class PersonalAccessTokensComponent implements OnInit {
       },
       error: () => {
         this.revoking = null;
+      },
+    });
+  }
+
+  askDelete(tokenId: string): void {
+    this.deleteError = null;
+    this.confirmingDelete = tokenId;
+  }
+
+  cancelDelete(): void {
+    this.confirmingDelete = null;
+  }
+
+  confirmDelete(tokenId: string): void {
+    this.deleting = tokenId;
+    this.tokenService.delete(tokenId).subscribe({
+      next: () => {
+        this.deleting = null;
+        this.confirmingDelete = null;
+        this.loadTokens();
+      },
+      error: (error) => {
+        this.deleting = null;
+        this.deleteError = error?.error?.detail || error?.message || 'Failed to delete token.';
       },
     });
   }

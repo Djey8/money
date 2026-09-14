@@ -8,6 +8,7 @@ const {
   createToken,
   listTokens,
   revokeToken,
+  deleteToken,
   verifyToken,
   validateScope,
   validateScopes,
@@ -31,12 +32,20 @@ function makeMockAuthDb(existingDocs = []) {
       }
       return { ...doc };
     }),
-    find: jest.fn(async ({ selector }) => {
+    // Mirrors CouchDB Mango's own default: `limit` defaults to 25 when the
+    // caller omits it, so a missing `limit` here reproduces the real
+    // silent-truncation behavior a caller must guard against.
+    find: jest.fn(async ({ selector, limit = 25 }) => {
       let matches = docs;
       if (selector.type) matches = matches.filter((d) => d.type === selector.type);
       if (selector.userId) matches = matches.filter((d) => d.userId === selector.userId);
       if (selector.tokenHash) matches = matches.filter((d) => d.tokenHash === selector.tokenHash);
-      return { docs: matches };
+      return { docs: matches.slice(0, limit) };
+    }),
+    destroy: jest.fn(async (id) => {
+      const idx = docs.findIndex((d) => d._id === id);
+      if (idx >= 0) docs.splice(idx, 1);
+      return { ok: true };
     }),
     _docs: docs,
   };
@@ -190,6 +199,22 @@ describe('listTokens', () => {
   it('requires a userId', async () => {
     await expect(listTokens({ authDb: makeMockAuthDb() }, {})).rejects.toThrow(/userId/);
   });
+
+  it("returns every token even past CouchDB Mango's default 25-result page", async () => {
+    const docs = Array.from({ length: 30 }, (_, i) => ({
+      _id: `pat_${i}`,
+      type: 'pat',
+      userId: 'user_1',
+      name: `agent-${i}`,
+      scopes: ['transactions:r'],
+      revoked: false,
+    }));
+    const authDb = makeMockAuthDb(docs);
+
+    const result = await listTokens({ authDb }, { userId: 'user_1' });
+
+    expect(result).toHaveLength(30);
+  });
 });
 
 describe('revokeToken', () => {
@@ -212,6 +237,59 @@ describe('revokeToken', () => {
 
   it('requires a tokenId', async () => {
     await expect(revokeToken({ authDb: makeMockAuthDb() }, {})).rejects.toThrow(/tokenId/);
+  });
+});
+
+describe('deleteToken', () => {
+  it('permanently removes an already-revoked token', async () => {
+    const authDb = makeMockAuthDb([
+      {
+        _id: 'pat_1',
+        _rev: '1-abc',
+        type: 'pat',
+        userId: 'user_1',
+        name: 'n',
+        scopes: [],
+        revoked: true,
+      },
+    ]);
+
+    const result = await deleteToken({ authDb }, { tokenId: 'pat_1' });
+
+    expect(result).toEqual({ tokenId: 'pat_1', deleted: true });
+    expect(authDb.destroy).toHaveBeenCalledWith('pat_1', '1-abc');
+    expect(authDb._docs.find((d) => d._id === 'pat_1')).toBeUndefined();
+  });
+
+  it('refuses to delete a token that is not revoked', async () => {
+    const authDb = makeMockAuthDb([
+      { _id: 'pat_1', _rev: '1-abc', type: 'pat', userId: 'user_1', name: 'n', revoked: false },
+    ]);
+
+    await expect(deleteToken({ authDb }, { tokenId: 'pat_1' })).rejects.toThrow(
+      /Only a revoked token can be deleted/,
+    );
+    expect(authDb.destroy).not.toHaveBeenCalled();
+    expect(authDb._docs.find((d) => d._id === 'pat_1')).toBeDefined();
+  });
+
+  it('refuses to delete a non-PAT document', async () => {
+    const authDb = makeMockAuthDb([{ _id: 'rt_1', type: 'refresh_token', userId: 'user_1' }]);
+    await expect(deleteToken({ authDb }, { tokenId: 'rt_1' })).rejects.toThrow(/not a PAT/);
+  });
+
+  it("refuses to delete another user's token", async () => {
+    const authDb = makeMockAuthDb([
+      { _id: 'pat_1', _rev: '1-abc', type: 'pat', userId: 'user_1', name: 'n', revoked: true },
+    ]);
+
+    await expect(
+      deleteToken({ authDb }, { tokenId: 'pat_1', userId: 'user_2' }),
+    ).rejects.toMatchObject({ code: 'TOKEN_NOT_FOUND' });
+  });
+
+  it('requires a tokenId', async () => {
+    await expect(deleteToken({ authDb: makeMockAuthDb() }, {})).rejects.toThrow(/tokenId/);
   });
 });
 

@@ -67,6 +67,27 @@ describe('v1 API authentication and PAT management', () => {
     expect(missing.body.code).toBe('not_found');
   });
 
+  it('lists a legacy transaction with an empty time (e.g. subscription-generated) instead of 500ing', async () => {
+    const write = await sessionRequest('post', '/api/data/write/transactions').send([
+      {
+        id: 'tx_integration_empty_time',
+        account: 'Daily',
+        amount: -9.99,
+        date: '2026-09-06',
+        time: '',
+        category: '@music',
+        comment: 'Spotify + Paypal',
+      },
+    ]);
+    expect(write.status).toBe(200);
+
+    const response = await sessionRequest('get', '/api/v1/transactions');
+    expect(response.status).toBe(200);
+    expect(response.body.transactions).toEqual([
+      expect.objectContaining({ id: 'tx_integration_empty_time', time: '00:00' }),
+    ]);
+  });
+
   it('rejects a PAT without transactions:r scope', async () => {
     const created = await sessionRequest('post', '/api/v1/auth/tokens').send({
       name: 'write-only-agent',
@@ -7205,6 +7226,72 @@ describe('v1 API authentication and PAT management', () => {
       scopes: ['transactions:r'],
     });
     const response = await sessionRequest('delete', `/api/v1/auth/tokens/${created.body.tokenId}`);
+    expect(response.status).toBe(404);
+    expect(response.body.code).toBe('not_found');
+  });
+
+  it('refuses to purge a token that has not been revoked yet', async () => {
+    const created = await sessionRequest('post', '/api/v1/auth/tokens').send({
+      name: 'not-yet-revoked',
+      scopes: ['transactions:r'],
+    });
+    const response = await sessionRequest(
+      'delete',
+      `/api/v1/auth/tokens/${created.body.tokenId}/purge`,
+    );
+    expect(response.status).toBe(409);
+    expect(response.body.code).toBe('conflict_token_not_revoked');
+
+    const list = await sessionRequest('get', '/api/v1/auth/tokens');
+    expect(list.body.tokens).toEqual(
+      expect.arrayContaining([expect.objectContaining({ tokenId: created.body.tokenId })]),
+    );
+  });
+
+  it('permanently deletes a revoked token', async () => {
+    const created = await sessionRequest('post', '/api/v1/auth/tokens').send({
+      name: 'to-be-purged',
+      scopes: ['transactions:r'],
+    });
+    await sessionRequest('delete', `/api/v1/auth/tokens/${created.body.tokenId}`);
+
+    const response = await sessionRequest(
+      'delete',
+      `/api/v1/auth/tokens/${created.body.tokenId}/purge`,
+    );
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ tokenId: created.body.tokenId, deleted: true });
+
+    const list = await sessionRequest('get', '/api/v1/auth/tokens');
+    expect(list.body.tokens).not.toEqual(
+      expect.arrayContaining([expect.objectContaining({ tokenId: created.body.tokenId })]),
+    );
+
+    const auditEntries = await queryAuditEntries(getAuditDb(), firstUser.userId, {
+      resource: 'auth_tokens',
+    });
+    expect(auditEntries).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          actor: { type: 'session' },
+          method: 'DELETE',
+          resourceId: created.body.tokenId,
+        }),
+      ]),
+    );
+  });
+
+  it('does not let a session purge another user’s revoked PAT', async () => {
+    const created = await sessionRequest('post', '/api/v1/auth/tokens', secondUser.token).send({
+      name: 'other-user-revoked-agent',
+      scopes: ['transactions:r'],
+    });
+    await sessionRequest('delete', `/api/v1/auth/tokens/${created.body.tokenId}`, secondUser.token);
+
+    const response = await sessionRequest(
+      'delete',
+      `/api/v1/auth/tokens/${created.body.tokenId}/purge`,
+    );
     expect(response.status).toBe(404);
     expect(response.body.code).toBe('not_found');
   });

@@ -15,7 +15,7 @@ curl -X POST http://localhost:3000/api/v1/auth/tokens \
   -d '{"name":"household-agent","scopes":["transactions:rw","reports:r"],"expiresInDays":90}'
 ```
 
-Store the returned `mmpat_...` value in a secret manager. Revoke it through `DELETE /api/v1/auth/tokens/{tokenId}` when no longer needed.
+Store the returned `mmpat_...` value in a secret manager. Revoke it through `DELETE /api/v1/auth/tokens/{tokenId}` when no longer needed, then permanently remove it from your token list (once revoked) with `DELETE /api/v1/auth/tokens/{tokenId}/purge`.
 
 ## Create a transaction
 

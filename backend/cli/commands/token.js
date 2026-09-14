@@ -117,6 +117,12 @@ async function createToken(deps, { userId, name, scopes, expiresInDays }) {
   return { tokenId, token, userId, name, scopes, expiresAt };
 }
 
+// CouchDB's Mango _find defaults `limit` to 25 when omitted — without this,
+// a user with more than 25 tokens (easy to hit through routine agent/CI
+// token churn) would silently lose the rest of their list. Matches
+// config/audit.js's own OVERFETCH_LIMIT convention for the same reason.
+const LIST_LIMIT = 1000;
+
 /** Lists a user's tokens. Never returns the hash — there is nothing that needs it outside `verifyToken`. */
 async function listTokens(deps, { userId }) {
   const { authDb } = deps;
@@ -125,6 +131,7 @@ async function listTokens(deps, { userId }) {
   const result = await authDb.find({
     selector: { type: 'pat', userId },
     fields: ['_id', 'name', 'scopes', 'createdAt', 'expiresAt', 'revoked'],
+    limit: LIST_LIMIT,
   });
   return result.docs.map((d) => ({
     tokenId: d._id,
@@ -162,6 +169,35 @@ async function revokeToken(deps, { tokenId, userId }) {
 }
 
 /**
+ * Permanently removes an already-revoked token document. Kept separate from
+ * `revokeToken` deliberately: revocation is the durable audit record this
+ * module favors, deletion is a user-initiated cleanup step that only
+ * applies once a token can no longer be used, never a way to make an
+ * active token's existence disappear.
+ */
+async function deleteToken(deps, { tokenId, userId }) {
+  const { authDb } = deps;
+  if (!tokenId) throw new Error('deleteToken: tokenId is required');
+
+  const doc = await authDb.get(tokenId);
+  if (doc.type !== 'pat') {
+    throw new Error(`${tokenId} is not a PAT`);
+  }
+  if (userId && doc.userId !== userId) {
+    const error = new Error('Token not found');
+    error.code = 'TOKEN_NOT_FOUND';
+    throw error;
+  }
+  if (!doc.revoked) {
+    const error = new Error('Only a revoked token can be deleted');
+    error.code = 'TOKEN_NOT_REVOKED';
+    throw error;
+  }
+  await authDb.destroy(doc._id, doc._rev);
+  return { tokenId, deleted: true };
+}
+
+/**
  * Looks up a plaintext token and returns its scopes/owner if valid — the
  * primitive slice 1's PAT-authentication middleware will call on every
  * request. Returns `null` (never throws) for anything invalid: unknown
@@ -189,6 +225,7 @@ module.exports = {
   createToken,
   listTokens,
   revokeToken,
+  deleteToken,
   verifyToken,
   validateScope,
   validateScopes,

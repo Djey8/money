@@ -1936,6 +1936,46 @@ paths:
           $ref: '#/components/responses/SessionRequired'
         '404':
           $ref: '#/components/responses/NotFound'
+  /auth/tokens/{tokenId}/purge:
+    delete:
+      operationId: deletePersonalAccessToken
+      summary: Permanently delete a revoked personal access token
+      description: |-
+        Requires an authenticated account session. Only removes the token document outright — unlike
+        `DELETE /auth/tokens/{tokenId}` (revoke), which deliberately keeps a durable record for audit
+        purposes. The token must already be revoked; this never accepts an active token, so revocation
+        remains the only way to immediately stop a token from working. Intended for a user cleaning up
+        their own token list, not as a substitute for revocation.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: tokenId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Token permanently deleted
+          content:
+            application/json:
+              example:
+                tokenId: pat_0123456789abcdef0123456789abcdef
+                deleted: true
+        '403':
+          $ref: '#/components/responses/SessionRequired'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Token is not revoked yet
+          content:
+            application/problem+json:
+              example:
+                type: https://money-manager.dev/problems/conflict_token_not_revoked
+                title: Token is not revoked
+                status: 409
+                detail: Revoke this token before deleting it.
+                code: conflict_token_not_revoked
   /grow:
     get:
       operationId: listGrow

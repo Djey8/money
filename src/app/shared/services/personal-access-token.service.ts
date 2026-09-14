@@ -61,4 +61,11 @@ export class PersonalAccessTokenService {
       `${this.apiUrl}/auth/tokens/${tokenId}`,
     );
   }
+
+  /** Permanently removes an already-revoked token. Refused by the backend for a token that isn't revoked yet. */
+  delete(tokenId: string): Observable<{ tokenId: string; deleted: boolean }> {
+    return this.http.delete<{ tokenId: string; deleted: boolean }>(
+      `${this.apiUrl}/auth/tokens/${tokenId}/purge`,
+    );
+  }
 }
