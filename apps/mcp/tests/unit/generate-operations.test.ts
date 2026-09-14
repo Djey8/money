@@ -32,6 +32,50 @@ describe('extractOperations against the real openapi.yaml', () => {
     });
   });
 
+  // Regression: /grow/{growId} and its buy/sell/dividend/payback/cashflow/
+  // deposit siblings (plus /smile/{projectId}, /fire/{projectId},
+  // /balance/{assets,liabilities,investments,shares}/{id},
+  // /subscriptions/{subscriptionId}, /budget/{budgetId}, and
+  // /reports/grow/{growId}/pnl) declare their id parameter once at the
+  // path-item level, shared across every method under that path, instead
+  // of repeating it in each operation's own `parameters` — both are valid
+  // OpenAPI, but only reading the operation-level list silently dropped
+  // the id parameter for every one of these actions except list/create.
+  // Confirmed live: the generated MCP tool schema had no growId field at
+  // all, so dispatch always sent the literal unsubstituted
+  // "/grow/{growId}" path and every update/buy/sell/etc. call 404'd.
+  it('inherits a path-item-level parameter shared across every method under that path', () => {
+    for (const [operationId, expectedParam] of [
+      ['updateGrow', 'growId'],
+      ['sellGrow', 'growId'],
+      ['buyGrow', 'growId'],
+      ['getGrowPnl', 'growId'],
+      ['updateSmileProject', 'projectId'],
+      ['updateFireProject', 'projectId'],
+      ['updateShare', 'shareId'],
+      ['updateAsset', 'assetId'],
+      ['updateLiability', 'liabilityId'],
+      ['updateInvestment', 'investmentId'],
+      ['updateSubscription', 'subscriptionId'],
+      ['updateBudgetRow', 'budgetId'],
+    ] as const) {
+      expect(byId[operationId].pathParams).toEqual(
+        expect.arrayContaining([expect.objectContaining({ name: expectedParam, required: true })]),
+      );
+    }
+  });
+
+  it('lets an operation-level parameter override a path-item-level one of the same name/location', () => {
+    // copyTransaction declares transactionId on the operation itself
+    // (POST /transactions/{transactionId}/copy) while GET/PATCH/DELETE
+    // /transactions/{transactionId} do not share a path-item-level
+    // parameters block at all — this just confirms the merge doesn't
+    // duplicate or drop a normally-declared operation-level parameter.
+    expect(byId.copyTransaction.pathParams).toEqual([
+      { name: 'transactionId', required: true, schema: { type: 'string' } },
+    ]);
+  });
+
   it('resolves a $ref request body for createTransaction', () => {
     expect(byId.createTransaction.method).toBe('post');
     expect(byId.createTransaction.requestBodySchema).toMatchObject({
@@ -132,6 +176,85 @@ describe('extractOperations — request body composition guard', () => {
       },
     };
     expect(() => extractOperations(specWithPlainBody)).not.toThrow();
+  });
+});
+
+describe('extractOperations — path-item-level parameters', () => {
+  it('inherits a parameter declared once at the path-item level for an operation with none of its own', () => {
+    const spec = {
+      paths: {
+        '/widgets/{widgetId}': {
+          parameters: [
+            { name: 'widgetId', in: 'path', required: true, schema: { type: 'string' } },
+          ],
+          patch: {
+            operationId: 'updateWidget',
+            responses: {
+              '200': { content: { 'application/json': { schema: { type: 'object' } } } },
+            },
+          },
+        },
+      },
+    };
+    const [operation] = extractOperations(spec);
+    expect(operation.pathParams).toEqual([
+      { name: 'widgetId', required: true, schema: { type: 'string' } },
+    ]);
+  });
+
+  it('lets an operation-level parameter override a path-item-level one of the same name and location', () => {
+    const spec = {
+      paths: {
+        '/widgets/{widgetId}': {
+          parameters: [
+            { name: 'widgetId', in: 'path', required: true, schema: { type: 'string' } },
+          ],
+          get: {
+            operationId: 'getWidget',
+            // Overrides the shared param with a narrower schema — the
+            // override must win, not the path-level one.
+            parameters: [
+              {
+                name: 'widgetId',
+                in: 'path',
+                required: true,
+                schema: { type: 'string', format: 'uuid' },
+              },
+            ],
+            responses: {
+              '200': { content: { 'application/json': { schema: { type: 'object' } } } },
+            },
+          },
+        },
+      },
+    };
+    const [operation] = extractOperations(spec);
+    expect(operation.pathParams).toEqual([
+      { name: 'widgetId', required: true, schema: { type: 'string', format: 'uuid' } },
+    ]);
+  });
+
+  it('resolves a $ref inside a path-item-level parameters list', () => {
+    const spec = {
+      components: {
+        parameters: {
+          WidgetId: { name: 'widgetId', in: 'path', required: true, schema: { type: 'string' } },
+        },
+      },
+      paths: {
+        '/widgets/{widgetId}': {
+          parameters: [{ $ref: '#/components/parameters/WidgetId' }],
+          delete: {
+            operationId: 'deleteWidget',
+            responses: { '204': {} },
+          },
+        },
+      },
+    };
+    const [operation] = extractOperations(spec);
+    expect(operation.pathParams).toEqual([
+      { name: 'widgetId', required: true, schema: { type: 'string' } },
+    ]);
   });
 });
 

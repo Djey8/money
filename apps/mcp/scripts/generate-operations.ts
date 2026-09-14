@@ -154,6 +154,17 @@ function extractOperations(spec: Record<string, unknown>): Operation[] {
   const operations: Operation[] = [];
 
   for (const [path, pathItem] of Object.entries(paths)) {
+    // OpenAPI allows a parameter shared by every method under a path (e.g.
+    // /grow/{growId} and its /buy, /sell, /dividend, /payback, /cashflow,
+    // /deposit siblings all declare growId once here) instead of repeating
+    // it in each operation's own `parameters`. Both are valid; only reading
+    // the per-operation list silently dropped growId for every Grow
+    // single-item action except list/create — confirmed live: the MCP tool
+    // schema had no growId field at all, and dispatch sent the literal
+    // unsubstituted "/grow/{growId}" path, always 404ing.
+    const pathLevelParameters =
+      (resolveRefs(pathItem.parameters ?? [], spec, new Set()) as Record<string, unknown>[]) ?? [];
+
     for (const method of HTTP_METHODS) {
       const rawOperation = pathItem[method] as Record<string, unknown> | undefined;
       if (!rawOperation) continue;
@@ -167,8 +178,19 @@ function extractOperations(spec: Record<string, unknown>): Operation[] {
         string,
         unknown
       >;
-      const parameters =
+      const operationLevelParameters =
         (resolvedOperation.parameters as Record<string, unknown>[] | undefined) ?? [];
+      // Per OpenAPI 3.0 semantics, an operation-level parameter overrides a
+      // path-level one sharing the same name+location; anything not
+      // overridden is inherited from the path level.
+      const mergedParameters = new Map<string, Record<string, unknown>>();
+      for (const param of pathLevelParameters) {
+        mergedParameters.set(`${param.in as string}:${param.name as string}`, param);
+      }
+      for (const param of operationLevelParameters) {
+        mergedParameters.set(`${param.in as string}:${param.name as string}`, param);
+      }
+      const parameters = Array.from(mergedParameters.values());
 
       const pathParams: OperationParam[] = [];
       const queryParams: OperationParam[] = [];
