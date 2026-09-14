@@ -24,6 +24,12 @@ function decryptTransaction(transaction, session) {
     decrypted[key] = decryptValue(value, session);
   }
   if (typeof decrypted.amount === 'string') decrypted.amount = Number(decrypted.amount);
+  // Legacy UI-written transactions (notably subscription-generated ones,
+  // see packages/domain/src/transactions/subscription-generation.ts) store
+  // '' for "no specific time of day" — normalizeTransaction requires a
+  // non-empty time for API writes, but a read must still surface this
+  // real, valid legacy data rather than reject it outright.
+  if (!decrypted.time) decrypted.time = '00:00';
   return decrypted;
 }
 

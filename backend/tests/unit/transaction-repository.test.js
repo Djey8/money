@@ -576,6 +576,26 @@ describe('transaction repository', () => {
     });
   });
 
+  it("defaults a legacy transaction's empty time to '00:00' instead of rejecting the whole list", async () => {
+    const deps = dependencies({
+      transactions: [
+        {
+          id: 'tx_1',
+          account: 'Daily',
+          amount: -9.99,
+          date: '2026-09-06',
+          time: '',
+          category: '@music',
+          comment: 'Spotify + Paypal',
+        },
+      ],
+    });
+    await expect(listTransactions(deps, 'user_1')).resolves.toEqual({
+      transactions: [expect.objectContaining({ id: 'tx_1', time: '00:00' })],
+      nextCursor: null,
+    });
+  });
+
   it('decrypts per-field transaction values before mapping', async () => {
     const session = new EncryptionSession('secret');
     const encrypted = Object.fromEntries(

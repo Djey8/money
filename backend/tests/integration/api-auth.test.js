@@ -67,6 +67,27 @@ describe('v1 API authentication and PAT management', () => {
     expect(missing.body.code).toBe('not_found');
   });
 
+  it('lists a legacy transaction with an empty time (e.g. subscription-generated) instead of 500ing', async () => {
+    const write = await sessionRequest('post', '/api/data/write/transactions').send([
+      {
+        id: 'tx_integration_empty_time',
+        account: 'Daily',
+        amount: -9.99,
+        date: '2026-09-06',
+        time: '',
+        category: '@music',
+        comment: 'Spotify + Paypal',
+      },
+    ]);
+    expect(write.status).toBe(200);
+
+    const response = await sessionRequest('get', '/api/v1/transactions');
+    expect(response.status).toBe(200);
+    expect(response.body.transactions).toEqual([
+      expect.objectContaining({ id: 'tx_integration_empty_time', time: '00:00' }),
+    ]);
+  });
+
   it('rejects a PAT without transactions:r scope', async () => {
     const created = await sessionRequest('post', '/api/v1/auth/tokens').send({
       name: 'write-only-agent',
