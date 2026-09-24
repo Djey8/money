@@ -5038,7 +5038,7 @@ components:
       description: >-
         All fields optional — send only what you want to change. Unrecognized fields are rejected. Plan fields
         (kind/share/investment/liabilitie/amountMinor/cashflowMinor) edit planned values only and create no
-        transaction — money moves only through the typed actions. actionItems/notes/links replace the whole array.
+        transaction — money moves only through the typed actions. actionItems/notes/links replace the whole array (each action item then needs an explicit done); to change single items use the *Add/*Update/*Remove fields instead (indices refer to the list before this request; updates apply, then removals, then additions).
       properties:
         title:
           type: string
@@ -5123,6 +5123,81 @@ components:
         cashflowMinor:
           type: integer
           description: Planned periodic cashflow. No transaction is created.
+        actionItemsAdd:
+          type: array
+          description: Action items to append (done defaults to false, priority to medium).
+          items:
+            $ref: '#/components/schemas/GrowActionItem'
+        actionItemsUpdate:
+          type: array
+          description: Edits by index into the current list (dueDate null removes it).
+          items:
+            type: object
+            required: [index]
+            properties:
+              index:
+                type: integer
+              text:
+                type: string
+              done:
+                type: boolean
+              priority:
+                type: string
+                enum: [low, medium, high]
+              dueDate:
+                type: string
+                nullable: true
+        actionItemsRemove:
+          type: array
+          description: Indices into the current list to remove.
+          items:
+            type: integer
+        notesAdd:
+          type: array
+          description: Notes to append (createdAt defaults to now).
+          items:
+            type: object
+            required: [text]
+            properties:
+              text:
+                type: string
+              createdAt:
+                type: string
+                format: date-time
+        notesUpdate:
+          type: array
+          items:
+            type: object
+            required: [index, text]
+            properties:
+              index:
+                type: integer
+              text:
+                type: string
+        notesRemove:
+          type: array
+          items:
+            type: integer
+        linksAdd:
+          type: array
+          items:
+            $ref: '#/components/schemas/GrowLink'
+        linksUpdate:
+          type: array
+          items:
+            type: object
+            required: [index]
+            properties:
+              index:
+                type: integer
+              label:
+                type: string
+              url:
+                type: string
+        linksRemove:
+          type: array
+          items:
+            type: integer
     GrowActionResult:
       type: object
       required: [grow, transaction, effects]

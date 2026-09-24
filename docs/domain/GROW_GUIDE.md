@@ -143,8 +143,11 @@ Correct a mistyped buy (was 2 units, should be 3):
 
 ## 8. Pitfalls
 
-- `actionItems`, `notes` and `links` are replaced **as a whole array** by `update` — send the full list, including
-  items you're not changing, with each action item's current `done`.
+- To change **one** action item, note or link, use `actionItemsAdd` / `actionItemsUpdate` (`[{index, done: true}]`) /
+  `actionItemsRemove` (`[index]`) — likewise `notes*` and `links*` — instead of resending the list. Indices refer to
+  the list as returned by `get`. Sending `actionItems`/`notes`/`links` itself replaces the **whole** list (each action
+  item then needs its `done`). New action items default to `done: false`, `priority: medium`; notes to
+  `createdAt: now`.
 - `status` is legacy free text the actions overwrite with `bought`/`sold`/`paid back`/`paid off`, exactly like the
   app. Track progress in `phase`, and put lasting information in `notes`.
 - `riskScore` above 5 is rejected (the app can't display it).

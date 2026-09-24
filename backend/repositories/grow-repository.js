@@ -419,6 +419,104 @@ function applyPlanFields(project, input) {
   return next;
 }
 
+/** The app's own defaults for a new action item (add-grow/info-grow `addActionItem`). */
+function normalizeActionItem(item) {
+  return {
+    text: item.text,
+    done: item.done ?? false,
+    priority: item.priority ?? 'medium',
+    ...(item.dueDate !== undefined && item.dueDate !== null && { dueDate: item.dueDate }),
+  };
+}
+
+function normalizeNote(note, now) {
+  return { text: note.text, createdAt: note.createdAt ?? now };
+}
+
+function normalizeLink(link) {
+  return { label: link.label, url: link.url };
+}
+
+function listOpError(message) {
+  const error = new Error(message);
+  error.code = 'GROW_INVALID_PLAN';
+  return error;
+}
+
+/**
+ * Item-level edits of one of a project's lists, so a caller changes one
+ * action item/note/link without resending (and risking corrupting) the
+ * whole list. Indices refer to the list as it was before this request;
+ * updates apply first, then removals, then additions are appended.
+ */
+function applyListOps(list, { add, update, remove }, name, { normalizeAdd, mergeUpdate }) {
+  let next = [...list];
+  for (const change of update || []) {
+    if (change.index < 0 || change.index >= list.length) {
+      throw listOpError(
+        `${name}Update index ${change.index} is out of range (0-${list.length - 1}).`,
+      );
+    }
+    next[change.index] = mergeUpdate(next[change.index], change);
+  }
+  if (remove && remove.length > 0) {
+    for (const index of remove) {
+      if (index < 0 || index >= list.length) {
+        throw listOpError(`${name}Remove index ${index} is out of range (0-${list.length - 1}).`);
+      }
+    }
+    const removed = new Set(remove);
+    next = next.filter((_, index) => !removed.has(index));
+  }
+  return [...next, ...(add || []).map(normalizeAdd)];
+}
+
+function applyAllListOps(project, patch, now) {
+  const next = { ...project };
+  if (patch.actionItemsAdd || patch.actionItemsUpdate || patch.actionItemsRemove) {
+    next.actionItems = applyListOps(
+      project.actionItems || [],
+      {
+        add: patch.actionItemsAdd,
+        update: patch.actionItemsUpdate,
+        remove: patch.actionItemsRemove,
+      },
+      'actionItems',
+      {
+        normalizeAdd: normalizeActionItem,
+        mergeUpdate: (item, { index: _index, ...fields }) => {
+          const merged = { ...item, ...fields };
+          if (fields.dueDate === null) delete merged.dueDate;
+          return merged;
+        },
+      },
+    );
+  }
+  if (patch.notesAdd || patch.notesUpdate || patch.notesRemove) {
+    next.notes = applyListOps(
+      project.notes || [],
+      { add: patch.notesAdd, update: patch.notesUpdate, remove: patch.notesRemove },
+      'notes',
+      {
+        normalizeAdd: (note) => normalizeNote(note, now),
+        mergeUpdate: (note, { text }) => ({ ...note, ...(text !== undefined && { text }) }),
+      },
+    );
+  }
+  if (patch.linksAdd || patch.linksUpdate || patch.linksRemove) {
+    next.links = applyListOps(
+      project.links || [],
+      { add: patch.linksAdd, update: patch.linksUpdate, remove: patch.linksRemove },
+      'links',
+      {
+        normalizeAdd: normalizeLink,
+        mergeUpdate: (link, { index: _index, ...fields }) => ({ ...link, ...fields }),
+      },
+    );
+  }
+  return next;
+}
+
 /** Create's legacy `isAsset`/`share: true`/`investment: true` flags, normalized to `kind` (validated mutually exclusive at the route). */
 function createKindFrom(input) {
   if (input.kind !== undefined) return input.kind;
@@ -518,9 +616,9 @@ async function createGrow(deps, userId, input) {
       strategy: input.strategy || '',
       riskScore: input.riskScore || 0,
       risks: input.risks || '',
-      links: input.links || [],
-      actionItems: input.actionItems || [],
-      notes: input.notes || [],
+      links: (input.links || []).map(normalizeLink),
+      actionItems: (input.actionItems || []).map(normalizeActionItem),
+      notes: (input.notes || []).map((note) => normalizeNote(note, now)),
       cashflowMinor: 0,
       amountMinor: 0,
       isAsset: false,
@@ -593,12 +691,19 @@ async function updateGrow(deps, userId, growId, patch) {
       }
     }
 
+    const now = new Date().toISOString();
     const withMetadata = { ...current, title };
     for (const field of EDITABLE_METADATA_FIELDS) {
       if (field !== 'title' && patch[field] !== undefined) withMetadata[field] = patch[field];
     }
-    const updated = applyPlanFields(withMetadata, patch);
-    updated.updatedAt = new Date().toISOString();
+    if (patch.notes !== undefined) {
+      withMetadata.notes = patch.notes.map((note) => normalizeNote(note, now));
+    }
+    if (patch.actionItems !== undefined) {
+      withMetadata.actionItems = patch.actionItems.map(normalizeActionItem);
+    }
+    const updated = applyPlanFields(applyAllListOps(withMetadata, patch, now), patch);
+    updated.updatedAt = now;
 
     // A rename carries over to everything linked by the title (grow-rename.js).
     const baseData =

@@ -504,6 +504,68 @@ describe('updateGrow', () => {
   });
 });
 
+describe('updateGrow — item-level list edits', () => {
+  function projectWithLists() {
+    return writableDeps({
+      _id: 'user_1',
+      _rev: '1-a',
+      data: {
+        grow: [
+          minimalRawGrow({
+            actionItems: [
+              { text: 'Set alerts', done: false, priority: 'high' },
+              { text: 'Sell half', done: false, priority: 'high', dueDate: '2026-09-20' },
+            ],
+            notes: [{ text: 'Old note', createdAt: '2026-09-14T14:00:00Z' }],
+            links: [{ label: 'Chart', url: 'https://example.com/chart' }],
+          }),
+        ],
+      },
+    });
+  }
+
+  it('updates, removes and adds single items without resending the lists', async () => {
+    const { deps } = projectWithLists();
+    const result = await updateGrow(deps, 'user_1', 'grow_1', {
+      actionItemsUpdate: [{ index: 1, done: true, dueDate: null }],
+      actionItemsRemove: [0],
+      actionItemsAdd: [{ text: 'Review in Q4' }],
+      notesAdd: [{ text: 'Sold 1.77 SOL' }],
+      linksUpdate: [{ index: 0, url: 'https://example.com/new' }],
+    });
+
+    expect(result.actionItems).toEqual([
+      { text: 'Sell half', done: true, priority: 'high' },
+      { text: 'Review in Q4', done: false, priority: 'medium' },
+    ]);
+    expect(result.notes).toHaveLength(2);
+    expect(result.notes[0]).toEqual({ text: 'Old note', createdAt: '2026-09-14T14:00:00Z' });
+    expect(result.notes[1].text).toBe('Sold 1.77 SOL');
+    expect(Date.parse(result.notes[1].createdAt)).not.toBeNaN();
+    expect(result.links).toEqual([{ label: 'Chart', url: 'https://example.com/new' }]);
+  });
+
+  it('rejects an index that does not exist', async () => {
+    const { deps } = projectWithLists();
+    await expect(updateGrow(deps, 'user_1', 'grow_1', { notesRemove: [5] })).rejects.toMatchObject({
+      code: 'GROW_INVALID_PLAN',
+    });
+  });
+});
+
+describe('createGrow — list defaults', () => {
+  it("fills the app's defaults for action items and notes", async () => {
+    const { deps } = writableDeps({ _id: 'user_1', _rev: '1-a', data: {} });
+    const project = await createGrow(deps, 'user_1', {
+      title: 'Plan',
+      actionItems: [{ text: 'Do it' }],
+      notes: [{ text: 'Why' }],
+    });
+    expect(project.actionItems).toEqual([{ text: 'Do it', done: false, priority: 'medium' }]);
+    expect(Date.parse(project.notes[0].createdAt)).not.toBeNaN();
+  });
+});
+
 describe('deleteGrow', () => {
   it('removes the grow project and returns its id', async () => {
     const document = { _id: 'user_1', _rev: '1-a', data: { grow: [minimalRawGrow()] } };

@@ -4047,6 +4047,41 @@ describe('v1 API authentication and PAT management', () => {
       expect(unknown.status).toBe(400);
     });
 
+    it('edits single action items and notes, and guards whole-list replacement', async () => {
+      const { token } = await growToken(['grow:r', 'grow:w']);
+      const created = await request(app)
+        .post('/api/v1/grow')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ title: `Lists${Date.now()}`, actionItems: [{ text: 'First' }] });
+      const id = created.body.id;
+
+      const edited = await request(app)
+        .patch(`/api/v1/grow/${id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ actionItemsUpdate: [{ index: 0, done: true }], notesAdd: [{ text: 'Note' }] });
+      expect(edited.status).toBe(200);
+      expect(edited.body.actionItems).toEqual([{ text: 'First', done: true, priority: 'medium' }]);
+      expect(edited.body.notes[0].text).toBe('Note');
+
+      const mixed = await request(app)
+        .patch(`/api/v1/grow/${id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ notes: [], notesAdd: [{ text: 'x' }] });
+      expect(mixed.status).toBe(400);
+
+      const withoutDone = await request(app)
+        .patch(`/api/v1/grow/${id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ actionItems: [{ text: 'First' }] });
+      expect(withoutDone.status).toBe(400);
+
+      const outOfRange = await request(app)
+        .patch(`/api/v1/grow/${id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ notesRemove: [7] });
+      expect(outOfRange.status).toBe(400);
+    });
+
     it('rejects a riskScore outside the 0-5 range the app displays', async () => {
       const { token } = await growToken(['grow:w']);
       const response = await request(app)

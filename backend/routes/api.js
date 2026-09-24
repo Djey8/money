@@ -1290,7 +1290,80 @@ const EDITABLE_GROW_FIELDS = [
   'liabilitie',
   'amountMinor',
   'cashflowMinor',
+  'actionItemsAdd',
+  'actionItemsUpdate',
+  'actionItemsRemove',
+  'notesAdd',
+  'notesUpdate',
+  'notesRemove',
+  'linksAdd',
+  'linksUpdate',
+  'linksRemove',
 ];
+
+const GROW_LIST_OPS = {
+  actionItems: {
+    validateAdd: validateFundActionItem,
+    updateFields: ['text', 'done', 'priority', 'dueDate'],
+  },
+  notes: { validateAdd: validateFundNote, updateFields: ['text'] },
+  links: { validateAdd: validateFundLink, updateFields: ['label', 'url'] },
+};
+
+function validateListUpdateEntry(entry, name, updateFields) {
+  if (!isPlainObject(entry) || !Number.isInteger(entry.index)) {
+    return `Each ${name}Update entry needs an integer index.`;
+  }
+  const unknown = Object.keys(entry).find((key) => key !== 'index' && !updateFields.includes(key));
+  if (unknown)
+    return `${name}Update.${unknown} is not editable (allowed: ${updateFields.join(', ')}).`;
+  for (const field of ['text', 'label', 'url']) {
+    if (entry[field] !== undefined && !isNonEmptyString(entry[field])) {
+      return `${name}Update.${field} must be a non-empty string.`;
+    }
+  }
+  if (entry.done !== undefined && typeof entry.done !== 'boolean') {
+    return `${name}Update.done must be a boolean.`;
+  }
+  if (entry.priority !== undefined && !FUND_ACTION_PRIORITIES.includes(entry.priority)) {
+    return `${name}Update.priority must be one of ${FUND_ACTION_PRIORITIES.join(', ')}.`;
+  }
+  if (entry.dueDate !== undefined && entry.dueDate !== null && typeof entry.dueDate !== 'string') {
+    return `${name}Update.dueDate must be a date string, or null to remove it.`;
+  }
+  return null;
+}
+
+/** Item-level list edits (grow-repository.js's applyListOps); can't be mixed with replacing that same list. */
+function validateGrowListOps(input) {
+  for (const [name, { validateAdd, updateFields }] of Object.entries(GROW_LIST_OPS)) {
+    const add = input[`${name}Add`];
+    const update = input[`${name}Update`];
+    const remove = input[`${name}Remove`];
+    if ((add || update || remove) && input[name] !== undefined) {
+      return `Send either ${name} (replaces the whole list) or ${name}Add/Update/Remove, not both.`;
+    }
+    if (add !== undefined && (!Array.isArray(add) || !add.every(validateAdd))) {
+      return `${name}Add must be an array of valid ${name} entries.`;
+    }
+    if (update !== undefined) {
+      if (!Array.isArray(update)) return `${name}Update must be an array.`;
+      for (const entry of update) {
+        const error = validateListUpdateEntry(entry, name, updateFields);
+        if (error) return error;
+      }
+    }
+    if (
+      remove !== undefined &&
+      (!Array.isArray(remove) ||
+        !remove.every(Number.isInteger) ||
+        new Set(remove).size !== remove.length)
+    ) {
+      return `${name}Remove must be an array of distinct integer indices.`;
+    }
+  }
+  return null;
+}
 
 function validatePatchGrowInput(input) {
   if (!input || typeof input !== 'object' || Array.isArray(input)) {
@@ -1306,7 +1379,17 @@ function validatePatchGrowInput(input) {
       return `${field} must be an object (use kind to change the project's kind).`;
     }
   }
-  return validateGrowPlanFields(input) || validateGrowSharedMetadataFields(input);
+  // Replacing the whole list on PATCH: an omitted `done` can't default to
+  // false the way it can at creation -- it would silently un-complete an
+  // item the caller forgot to echo back (same rule as Smile/Fire).
+  if (Array.isArray(input.actionItems) && !input.actionItems.every(validateUpdateFundActionItem)) {
+    return 'actionItems replaces the whole list, so every item needs text and an explicit done (use actionItemsAdd/Update/Remove to change single items).';
+  }
+  return (
+    validateGrowListOps(input) ||
+    validateGrowPlanFields(input) ||
+    validateGrowSharedMetadataFields(input)
+  );
 }
 
 function validateGrowActionBody(input) {
