@@ -360,7 +360,10 @@ describe('v1 API authentication and PAT management', () => {
     });
     const response = await sessionRequest('delete', `/api/v1/transactions/${created.body.id}`);
     expect(response.status).toBe(200);
-    expect(response.body).toEqual({ id: created.body.id });
+    expect(response.body.id).toBe(created.body.id);
+    expect(response.body.effects.incomeStatement).toEqual([
+      { section: 'revenues', tag: 'ToDelete', beforeMinor: 40000, afterMinor: 0 },
+    ]);
     const missing = await sessionRequest('get', `/api/v1/transactions/${created.body.id}`);
     expect(missing.status).toBe(404);
     const ledger = await sessionRequest('get', '/api/data/read/income/revenue/revenues');
@@ -6736,6 +6739,79 @@ describe('v1 API authentication and PAT management', () => {
         .set('Authorization', `Bearer ${token}`)
         .send({ title: `Token${suffix}` });
       expect(onto.status).toBe(400);
+    });
+
+    it("lists, edits in place, and deletes a project's trades, undoing effects and reporting them", async () => {
+      const { token } = await growToken([
+        'grow:r',
+        'grow:w',
+        'balance:r',
+        'transactions:r',
+        'transactions:w',
+      ]);
+      const title = `Trade${Date.now()}${Math.floor(Math.random() * 1e6)}`;
+      const project = await createGrowProject(token, { title, share: true });
+      const bought = await request(app)
+        .post(`/api/v1/grow/${project.id}/buy`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ quantity: 2, priceMinor: 1000 });
+      expect(bought.status).toBe(201);
+      expect(bought.body.effects.balanceSheet).toEqual([
+        { type: 'share', tag: title, before: null, after: { quantity: 2, priceMinor: 1000 } },
+      ]);
+      const txId = bought.body.transaction.id;
+
+      const listed = await request(app)
+        .get(`/api/v1/grow/${project.id}/transactions`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(listed.status).toBe(200);
+      expect(listed.body.transactions.map((t) => t.id)).toEqual([txId]);
+      expect(listed.body.transactions[0].growStatements[0]).toMatchObject({
+        kind: 'buyShare',
+        quantity: 2,
+      });
+
+      const locked = await request(app)
+        .patch(`/api/v1/transactions/${txId}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ amountMinor: -1 });
+      expect(locked.status).toBe(400);
+
+      const edited = await request(app)
+        .patch(`/api/v1/grow/${project.id}/transactions/${txId}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ quantity: 3 });
+      expect(edited.status).toBe(200);
+      expect(edited.body.transaction).toMatchObject({ id: txId, amountMinor: -3000 });
+
+      const deleted = await request(app)
+        .delete(`/api/v1/grow/${project.id}/transactions/${txId}`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(deleted.status).toBe(200);
+      expect(deleted.body.effects.balanceSheet).toEqual([
+        { type: 'share', tag: title, before: { quantity: 3, priceMinor: 1000 }, after: null },
+      ]);
+      const shares = await request(app)
+        .get('/api/v1/balance/shares')
+        .set('Authorization', `Bearer ${token}`);
+      expect(shares.body.shares.map((share) => share.tag)).not.toContain(title);
+    });
+
+    it('rejects a generic transaction carrying a Grow trade statement', async () => {
+      const { token } = await growToken(['transactions:w']);
+      const response = await request(app)
+        .post('/api/v1/transactions')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          account: 'Fire',
+          amountMinor: -1000,
+          date: '2026-09-24',
+          time: '10:00',
+          category: '@Anything',
+          comment: 'Buy Share Anything 1 x 10;',
+        });
+      expect(response.status).toBe(400);
+      expect(response.body.code).toBe('validation_invalid');
     });
 
     it('buys an asset-kind project by quantity x unit price', async () => {

@@ -104,6 +104,8 @@ const {
   paybackGrow,
   cashflowGrow,
   depositGrow,
+  listGrowTransactions,
+  updateGrowTransaction,
 } = require('../repositories/grow-action-repository');
 const {
   listSubscriptions,
@@ -1309,6 +1311,7 @@ function validateGrowActionBody(input) {
 }
 
 const GROW_ACTION_VALIDATION_CODES = [
+  'GROW_NOT_REVERSIBLE',
   'GROW_INVALID_INPUT',
   'GROW_NO_KIND',
   'GROW_NO_POSITION',
@@ -1317,6 +1320,9 @@ const GROW_ACTION_VALIDATION_CODES = [
 ];
 
 function handleGrowActionError(res, next, error, label) {
+  if (error.code === 'GROW_TRANSACTION_NOT_FOUND') {
+    return problem(res, 404, 'not_found', 'Transaction not found', error.message);
+  }
   if (error.code === 'GROW_NOT_FOUND') {
     return problem(
       res,
@@ -1545,6 +1551,24 @@ router.get('/transactions/export', requireScope('transactions:bulk'), async (req
   }
 });
 
+/**
+ * Grow-trade guard rails on the generic transaction endpoints
+ * (transaction-repository.js): a new Grow trade must use the typed Grow
+ * actions, an existing one's amount/comment/category changes only through
+ * PATCH /grow/{id}/transactions/{txId}, and a legacy trade with a percentage
+ * amount can't be undone exactly. All three are client errors.
+ */
+const TRANSACTION_GROW_ERROR_CODES = [
+  'TRANSACTION_GROW_TRADE',
+  'TRANSACTION_GROW_LOCKED',
+  'GROW_NOT_REVERSIBLE',
+];
+
+function transactionGrowErrorResponse(res, error) {
+  if (!TRANSACTION_GROW_ERROR_CODES.includes(error.code)) return undefined;
+  return problem(res, 400, 'validation_invalid', 'Invalid transaction request', error.message);
+}
+
 router.post('/transactions', requireScope('transactions:w'), async (req, res, next) => {
   const validationError = validateTransactionInput(req.body);
   if (validationError) {
@@ -1566,7 +1590,7 @@ router.post('/transactions', requireScope('transactions:w'), async (req, res, ne
     });
     return res.status(201).json(transaction);
   } catch (error) {
-    return next(error);
+    return transactionGrowErrorResponse(res, error) ?? next(error);
   }
 });
 
@@ -1596,7 +1620,7 @@ router.post('/transactions/batch', requireScope('transactions:bulk'), async (req
     requestBodyForHash: JSON.stringify(req.body),
     itemCount: validation.items.length,
     run: async () => {
-      const results = await batchTransactions(
+      const { results, effects } = await batchTransactions(
         { usersDb: getUsersDb(), authDb: getAuthDb() },
         req.userId,
         validation.items,
@@ -1607,8 +1631,10 @@ router.post('/transactions/batch', requireScope('transactions:bulk'), async (req
         atomic,
         itemCount: validation.items.length,
         results,
+        effects,
       };
     },
+    onError: (error) => transactionGrowErrorResponse(res, error),
   });
 });
 
@@ -1638,7 +1664,7 @@ router.post('/transactions/import', requireScope('transactions:bulk'), async (re
     requestBodyForHash: req.body,
     itemCount: validation.items.length,
     run: async () => {
-      const results = await batchTransactions(
+      const { results, effects } = await batchTransactions(
         { usersDb: getUsersDb(), authDb: getAuthDb() },
         req.userId,
         validation.items,
@@ -1649,8 +1675,10 @@ router.post('/transactions/import', requireScope('transactions:bulk'), async (re
         atomic,
         itemCount: validation.items.length,
         results,
+        effects,
       };
     },
+    onError: (error) => transactionGrowErrorResponse(res, error),
   });
 });
 
@@ -1703,7 +1731,7 @@ router.post(
           error.message,
         );
       }
-      return next(error);
+      return transactionGrowErrorResponse(res, error) ?? next(error);
     }
   },
 );
@@ -1783,7 +1811,7 @@ router.patch(
           error.message,
         );
       }
-      return next(error);
+      return transactionGrowErrorResponse(res, error) ?? next(error);
     }
   },
 );
@@ -1815,9 +1843,9 @@ router.delete(
         resource: 'transactions',
         resourceId: req.params.transactionId,
       });
-      return res.json({ id: req.params.transactionId });
+      return res.json({ id: req.params.transactionId, effects: deleted.effects });
     } catch (error) {
-      return next(error);
+      return transactionGrowErrorResponse(res, error) ?? next(error);
     }
   },
 );
@@ -3227,6 +3255,131 @@ router.post('/grow/:growId/deposit', requireScope('grow:w'), async (req, res, ne
     return handleGrowActionError(res, next, error, 'deposit');
   }
 });
+
+const EDITABLE_GROW_TRADE_FIELDS = [
+  'totalAmountMinor',
+  'quantity',
+  'priceMinor',
+  'depositMinor',
+  'mortgageMinor',
+  'liabilitie',
+  'payback',
+  'amountMinor',
+  'creditMinor',
+  'cashflowMinor',
+  'date',
+  'time',
+];
+
+function validateGrowTradePatch(input) {
+  const bodyError = validateGrowActionBody(input);
+  if (bodyError) return bodyError;
+  const unknownField = Object.keys(input).find((key) => !EDITABLE_GROW_TRADE_FIELDS.includes(key));
+  if (unknownField) {
+    return `${unknownField} is not an editable trade field (allowed: ${EDITABLE_GROW_TRADE_FIELDS.join(', ')}).`;
+  }
+  return null;
+}
+
+router.get('/grow/:growId/transactions', requireScope('grow:r'), async (req, res, next) => {
+  try {
+    const transactions = await listGrowTransactions(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+      req.params.growId,
+    );
+    return res.json({ transactions });
+  } catch (error) {
+    return handleGrowActionError(res, next, error, 'grow transactions');
+  }
+});
+
+router.patch(
+  '/grow/:growId/transactions/:transactionId',
+  requireScope('grow:w'),
+  async (req, res, next) => {
+    const validationError = validateGrowTradePatch(req.body);
+    if (validationError) {
+      return problem(res, 400, 'validation_invalid', 'Invalid trade edit', validationError);
+    }
+    try {
+      const result = await updateGrowTransaction(
+        { usersDb: getUsersDb(), authDb: getAuthDb() },
+        req.userId,
+        req.params.growId,
+        req.params.transactionId,
+        req.body,
+      );
+      await recordAuditEntry(getAuditDb(), {
+        userId: req.userId,
+        actor: auditActor(req.auth),
+        method: req.method,
+        path: req.baseUrl + req.path,
+        resource: 'grow_transaction',
+        resourceId: req.params.transactionId,
+      });
+      return res.json(result);
+    } catch (error) {
+      return handleGrowActionError(res, next, error, 'trade edit');
+    }
+  },
+);
+
+router.delete(
+  '/grow/:growId/transactions/:transactionId',
+  requireScope('grow:w'),
+  async (req, res, next) => {
+    const deps = { usersDb: getUsersDb(), authDb: getAuthDb() };
+    try {
+      const project = await getGrow(deps, req.userId, req.params.growId);
+      if (!project) {
+        return problem(
+          res,
+          404,
+          'not_found',
+          'Grow project not found',
+          'No matching grow project exists.',
+        );
+      }
+      const transaction = await getTransaction(deps, req.userId, req.params.transactionId);
+      const belongs =
+        transaction &&
+        String(transaction.category).toLocaleLowerCase() ===
+          `@${project.title}`.toLocaleLowerCase();
+      if (!belongs) {
+        return problem(
+          res,
+          404,
+          'not_found',
+          'Transaction not found',
+          'No matching transaction exists for this grow project.',
+        );
+      }
+      // The generic delete undoes the trade's Grow/balance-sheet effect.
+      const deleted = await deleteTransaction(deps, req.userId, req.params.transactionId);
+      if (!deleted) {
+        return problem(
+          res,
+          404,
+          'not_found',
+          'Transaction not found',
+          'No matching transaction exists.',
+        );
+      }
+      await recordAuditEntry(getAuditDb(), {
+        userId: req.userId,
+        actor: auditActor(req.auth),
+        method: req.method,
+        path: req.baseUrl + req.path,
+        resource: 'grow_transaction',
+        resourceId: req.params.transactionId,
+      });
+      return res.json({ id: req.params.transactionId, effects: deleted.effects });
+    } catch (error) {
+      return transactionGrowErrorResponse(res, error) ?? next(error);
+    }
+  },
+);
 
 router.get('/subscriptions', requireScope('subscriptions:r'), async (req, res, next) => {
   try {

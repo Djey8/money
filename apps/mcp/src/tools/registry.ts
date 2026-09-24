@@ -219,8 +219,12 @@ export const TOOLS: ToolDefinition[] = [
     description:
       'List, read, create, update, delete a Grow (Rich-Dad-Poor-Dad-style) investment project, or record a ' +
       'typed action against one: buy, sell, dividend, payback, cashflow, deposit. Never write the comment DSL ' +
-      'directly — these typed actions generate it server-side. Requires a PAT with grow:r (list/get) or grow:w ' +
-      '(everything else). delete requires confirm: true.',
+      'directly — these typed actions generate it server-side (the generic transactions tool rejects it). ' +
+      "list_transactions shows a project's recorded trades; update_transaction edits one in place (undoing its " +
+      'old effect and applying the new one); delete_transaction deletes one and undoes its effect. Every write ' +
+      'returns `effects`: everything it changed (income statement, balance sheet, Smile/Fire, Mojo, Grow). ' +
+      'Requires a PAT with grow:r (list/get/list_transactions) or grow:w (everything else). delete and ' +
+      'delete_transaction require confirm: true.',
     actions: {
       list: action('listGrow'),
       get: action('getGrow'),
@@ -233,6 +237,9 @@ export const TOOLS: ToolDefinition[] = [
       payback: action('paybackGrow'),
       cashflow: action('cashflowGrow'),
       deposit: action('depositGrow'),
+      list_transactions: action('listGrowTransactions'),
+      update_transaction: action('updateGrowTransaction'),
+      delete_transaction: action('deleteGrowTransaction', true),
     },
   },
   {

@@ -80,7 +80,11 @@ paths:
     post:
       operationId: createTransaction
       summary: Create a transaction
-      description: Adds a transaction and atomically rebuilds its derived income, expense, Smile, Fire, and Mojo state.
+      description: >-
+        Adds a transaction and atomically rebuilds its derived income, expense, Smile, Fire, and Mojo state. A comment
+        carrying a Grow trade statement (`Buy Share ...`, `Liabilitie ...; Buy Asset ...`, `Payback Liabilitie ...`) is
+        rejected — record trades with the typed Grow actions. The response includes `effects`, everything the write
+        changed.
       security:
         - bearerAuth: []
       requestBody:
@@ -102,7 +106,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiTransaction'
+                $ref: '#/components/schemas/ApiTransactionWithEffects'
               example:
                 id: tx_01234567-89ab-cdef-0123-456789abcdef
                 account: Daily
@@ -325,7 +329,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiTransaction'
+                $ref: '#/components/schemas/ApiTransactionWithEffects'
               example:
                 id: tx_11111111-89ab-cdef-0123-456789abcdef
                 account: Daily
@@ -381,7 +385,15 @@ paths:
     patch:
       operationId: updateTransaction
       summary: Edit a transaction
-      description: Updates one or more fields on an existing transaction and atomically rebuilds its derived income, expense, Smile, Fire, and Mojo state. If the transaction's comment carries a `#bucket:` allocation tag (current or incoming), `amountMinor` and `comment` must be provided together — sending only one is rejected rather than silently applied against the other field's stale value.
+      description: >-
+        Updates one or more fields on an existing transaction and atomically rebuilds its derived income, expense,
+        Smile, Fire, and Mojo state. If the transaction's comment carries a `#bucket:` allocation tag (current or
+        incoming), `amountMinor` and `comment` must be provided together — sending only one is rejected rather than
+        silently applied against the other field's stale value. A Grow trade's `amountMinor`, `comment` and `category`
+        can't be changed here — use `PATCH /grow/{growId}/transactions/{transactionId}`, which also updates the
+        project and balance sheet; its date/time/account can. A comment carrying a Grow trade statement (`Buy Share
+        ...`, `Liabilitie ...; Buy Asset ...`, `Payback Liabilitie ...`) is rejected — record trades with the typed
+        Grow actions. The response includes `effects`: everything the write changed.
       security:
         - bearerAuth: []
       parameters:
@@ -404,7 +416,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiTransaction'
+                $ref: '#/components/schemas/ApiTransactionWithEffects'
               example:
                 id: tx_01234567-89ab-cdef-0123-456789abcdef
                 account: Daily
@@ -425,7 +437,11 @@ paths:
     delete:
       operationId: deleteTransaction
       summary: Delete a transaction
-      description: Removes a transaction and atomically rebuilds its derived income, expense, Smile, Fire, and Mojo state.
+      description: >-
+        Removes a transaction and atomically rebuilds its derived income, expense, Smile, Fire, and Mojo state. Deleting
+        a Grow trade also undoes its effect on the Grow project and balance sheet (position, loan, mortgage) — refused
+        with 400 when later trades depend on it (e.g. its units were already sold). The response's `effects` lists
+        everything the delete changed.
       security:
         - bearerAuth: []
       parameters:
@@ -439,8 +455,23 @@ paths:
           description: Transaction deleted
           content:
             application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteWithEffectsResult'
               example:
                 id: tx_01234567-89ab-cdef-0123-456789abcdef
+                effects:
+                  incomeStatement:
+                    - section: expenses.daily
+                      tag: Food
+                      beforeMinor: -1250
+                      afterMinor: 0
+                  balanceSheet: []
+                  smile: []
+                  fire: []
+                  mojo: null
+                  grow: []
+        '400':
+          $ref: '#/components/responses/ValidationError'
         '401':
           $ref: '#/components/responses/AuthenticationRequired'
         '403':
@@ -2333,6 +2364,107 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/GrowActionResult'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /grow/{growId}/transactions:
+    parameters:
+      - name: growId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: listGrowTransactions
+      summary: List a grow project's transactions
+      description: >-
+        Every transaction whose category is the project's `@<title>`, oldest first, each with its parsed trade
+        statements. Edit or delete one with the `/grow/{growId}/transactions/{transactionId}` endpoints.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The project's transactions
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [transactions]
+                properties:
+                  transactions:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/GrowTransaction'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /grow/{growId}/transactions/{transactionId}:
+    parameters:
+      - name: growId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: transactionId
+        in: path
+        required: true
+        schema:
+          type: string
+    patch:
+      operationId: updateGrowTransaction
+      summary: Edit a recorded grow trade in place
+      description: >-
+        Undoes the trade's old effect on the project and balance sheet and applies the edited one, in one write — the
+        transaction keeps its id. Validated like a new trade (e.g. no overselling); refused when later trades depend on
+        it (its units were already sold). The response's `effects` lists everything that changed.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateGrowTransactionRequest'
+            example:
+              quantity: 3
+      responses:
+        '200':
+          description: The trade was edited
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GrowActionResult'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      operationId: deleteGrowTransaction
+      summary: Delete a grow trade and undo its effect
+      description: >-
+        Deletes one of the project's transactions and undoes its effect on the project and balance sheet (position,
+        loan, mortgage); refused when later trades depend on it. The response's `effects` lists everything that changed.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The trade was deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteWithEffectsResult'
         '400':
           $ref: '#/components/responses/ValidationError'
         '401':
@@ -4610,6 +4742,163 @@ components:
         status:
           type: string
           description: Legacy free-text status ('bought', 'sold', 'paid back', 'paid off') the typed actions set for display parity with the original app — prefer `phase` in new clients.
+    WriteEffects:
+      type: object
+      description: >-
+        Exactly what a write changed, as before → after pairs, so the caller sees transparently what happened. Only
+        entries that changed are listed. Money is integer minor units; a missing entry is 0 / null.
+      required: [incomeStatement, balanceSheet, smile, fire, mojo, grow]
+      properties:
+        incomeStatement:
+          type: array
+          items:
+            type: object
+            required: [section, tag, beforeMinor, afterMinor]
+            properties:
+              section:
+                type: string
+                description: revenues, interests, properties, or expenses.{daily,splurge,smile,fire,mojo}
+              tag:
+                type: string
+              beforeMinor:
+                type: integer
+              afterMinor:
+                type: integer
+        balanceSheet:
+          type: array
+          items:
+            type: object
+            required: [type, tag, before, after]
+            properties:
+              type:
+                type: string
+                enum: [asset, share, investment, liability]
+              tag:
+                type: string
+              before:
+                type: object
+                nullable: true
+                description: The entry's values before (null = it didn't exist).
+              after:
+                type: object
+                nullable: true
+                description: The entry's values after (null = it was removed).
+        smile:
+          type: array
+          items:
+            $ref: '#/components/schemas/WriteEffectsBucketChange'
+        fire:
+          type: array
+          items:
+            $ref: '#/components/schemas/WriteEffectsBucketChange'
+        mojo:
+          type: object
+          nullable: true
+          properties:
+            beforeMinor:
+              type: integer
+            afterMinor:
+              type: integer
+        grow:
+          type: array
+          items:
+            type: object
+            required: [id, title, before, after]
+            properties:
+              id:
+                type: string
+              title:
+                type: string
+              before:
+                type: object
+                nullable: true
+                description: '{amountMinor, share, investment, liabilitie} before.'
+              after:
+                type: object
+                nullable: true
+                description: '{amountMinor, share, investment, liabilitie} after.'
+    WriteEffectsBucketChange:
+      type: object
+      required: [project, bucket, beforeMinor, afterMinor]
+      properties:
+        project:
+          type: string
+        bucket:
+          type: string
+        beforeMinor:
+          type: integer
+        afterMinor:
+          type: integer
+    ApiTransactionWithEffects:
+      allOf:
+        - $ref: '#/components/schemas/ApiTransaction'
+        - type: object
+          required: [effects]
+          properties:
+            effects:
+              $ref: '#/components/schemas/WriteEffects'
+    DeleteWithEffectsResult:
+      type: object
+      required: [id, effects]
+      properties:
+        id:
+          type: string
+        effects:
+          $ref: '#/components/schemas/WriteEffects'
+    GrowTransaction:
+      allOf:
+        - $ref: '#/components/schemas/ApiTransaction'
+        - type: object
+          required: [growStatements]
+          properties:
+            growStatements:
+              type: array
+              description: >-
+                The trade statements parsed from the comment, money in minor units — e.g.
+                `{kind: buyShare, title, quantity, priceMinor}`, `{kind: liabilitie, amount, credit}`.
+              items:
+                type: object
+    UpdateGrowTransactionRequest:
+      type: object
+      description: >-
+        Only the fields to change. Everything else keeps the recorded trade's value (including its date/time,
+        financing loan, and payback). The same fields as the action that recorded it (buy/sell/dividend/payback/
+        cashflow/deposit). An asset trade takes either totalAmountMinor or quantity + priceMinor; giving one drops the
+        recorded other. `liabilitie: null` / `payback: null` remove a recorded loan / payback.
+      properties:
+        totalAmountMinor:
+          type: integer
+        quantity:
+          type: number
+        priceMinor:
+          type: integer
+        depositMinor:
+          type: integer
+        mortgageMinor:
+          type: integer
+        liabilitie:
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/GrowLiabilitieAttachment'
+        payback:
+          type: object
+          nullable: true
+          properties:
+            amountMinor:
+              type: integer
+            creditMinor:
+              type: integer
+        amountMinor:
+          type: integer
+        creditMinor:
+          type: integer
+        cashflowMinor:
+          type: integer
+        date:
+          type: string
+          format: date
+        time:
+          type: string
     GrowPlanShare:
       type: object
       description: >-
@@ -4832,12 +5121,14 @@ components:
           description: Planned periodic cashflow. No transaction is created.
     GrowActionResult:
       type: object
-      required: [grow, transaction]
+      required: [grow, transaction, effects]
       properties:
         grow:
           $ref: '#/components/schemas/Grow'
         transaction:
           $ref: '#/components/schemas/ApiTransaction'
+        effects:
+          $ref: '#/components/schemas/WriteEffects'
     GrowLiabilitieAttachment:
       type: object
       required: [loanMinor, creditMinor]
@@ -5088,6 +5379,11 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/BatchTransactionResult'
+        effects:
+          description: Everything the whole batch changed; null when nothing was written.
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/WriteEffects'
     Subscription:
       type: object
       required: [id, title, account, amountMinor, startDate, endDate, category, comment, frequency]

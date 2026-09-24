@@ -3,12 +3,15 @@
 const crypto = require('crypto');
 const {
   isEncryptedValue,
+  stateChangingGrowStatements,
   parseBucketAllocations,
   transactionFromApi,
   transactionToApi,
 } = require('@money/domain');
 const { getEncryptionSession } = require('../services/encryption-session');
 const { applyDerivedState } = require('../services/transaction-derived-state');
+const { reverseGrowTransaction } = require('../services/grow-reversal');
+const { computeWriteEffects } = require('../services/write-effects');
 
 const MAX_WRITE_RETRIES = 10;
 
@@ -48,6 +51,49 @@ function toApiTransactions(transactions, session, schemaVersion, currency) {
       );
     }),
   );
+}
+
+function transactionError(code, message) {
+  const error = new Error(message);
+  error.code = code;
+  return error;
+}
+
+/**
+ * Grow trades (`Buy Share X 10 x 25;`, `Liabilitie ...; Buy Asset ...`,
+ * `Payback Liabilitie ...`) only ever enter through the typed Grow actions,
+ * which apply their effect to the Grow project and balance sheet in the
+ * same write (PLAN.md D-16). A plain transaction carrying such a statement
+ * would look like a trade in the app but have changed nothing, so it's
+ * refused, pointing the caller at the typed action instead.
+ */
+function assertNoNewGrowTrade(comment) {
+  if (stateChangingGrowStatements(comment).length > 0) {
+    throw transactionError(
+      'TRANSACTION_GROW_TRADE',
+      'This comment contains a Grow trade statement (e.g. "Buy Share ..."). Record Grow trades with the typed Grow actions (POST /grow/{id}/buy, /sell, /payback; MCP manage_grow) so the project and balance sheet stay in sync.',
+    );
+  }
+}
+
+/**
+ * An existing Grow trade's amount, comment, and category are exactly what
+ * its Grow/balance-sheet effect was computed from, so they can only change
+ * through PATCH /grow/{id}/transactions/{txId}, which undoes the old effect
+ * and applies the new one. Other fields (date, time, account) are free.
+ */
+function assertTransactionPatchAllowed(existingTransaction, patch) {
+  const isGrowTrade = stateChangingGrowStatements(existingTransaction.comment).length > 0;
+  const touchesTrade = ['amountMinor', 'comment', 'category'].some((field) =>
+    Object.prototype.hasOwnProperty.call(patch, field),
+  );
+  if (isGrowTrade && touchesTrade) {
+    throw transactionError(
+      'TRANSACTION_GROW_LOCKED',
+      'This is a Grow trade: change its amount, comment, or category with PATCH /grow/{id}/transactions/{transactionId} (MCP manage_grow update_transaction), which also updates the project and balance sheet. Deleting it undoes its effect.',
+    );
+  }
+  if (Object.prototype.hasOwnProperty.call(patch, 'comment')) assertNoNewGrowTrade(patch.comment);
 }
 
 function hasBucketTags(comment) {
@@ -193,14 +239,24 @@ async function withTransactionsWrite(
     if (mutation === null) return null;
     if (mutation.skipWrite) return mutation.buildResult(existingTransactions);
     const { allTransactions, buildResult } = mutation;
-    const derived = applyDerivedState(userDoc.data || {}, allTransactions, session, schemaVersion);
+    // A deleted Grow trade's effect on the project and balance sheet is
+    // undone before the income statement is rebuilt (grow-reversal.js).
+    const remainingIds = new Set(allTransactions.map((transaction) => transaction.id));
+    const baseData = existingTransactions
+      .filter((transaction) => !remainingIds.has(transaction.id))
+      .reduce(
+        (current, removed) => reverseGrowTransaction(current, removed, session, schemaVersion),
+        userDoc.data || {},
+      );
+    const derived = applyDerivedState(baseData, allTransactions, session, schemaVersion);
     const data = derived.data;
     data.transactions = derived.transactions.map((effectiveTransaction) =>
       encryptTransaction(transactionFromApi(effectiveTransaction, schemaVersion), session),
     );
     try {
       await usersDb.insert({ ...userDoc, data, updatedAt: new Date().toISOString() });
-      return buildResult(derived.transactions);
+      const effects = computeWriteEffects(userDoc.data, data, session, schemaVersion);
+      return buildResult(derived.transactions, effects);
     } catch (error) {
       if (error.statusCode !== 409) throw error;
       attempt += 1;
@@ -211,11 +267,14 @@ async function withTransactionsWrite(
 
 async function createTransaction(deps, userId, input) {
   return withTransactionsWrite(deps, userId, ({ existingTransactions, currency }) => {
+    assertNoNewGrowTrade(input.comment);
     const transaction = { ...input, id: `tx_${crypto.randomUUID()}`, currency };
     return {
       allTransactions: [...existingTransactions, transaction],
-      buildResult: (effectiveTransactions) =>
-        effectiveTransactions.find((effective) => effective.id === transaction.id),
+      buildResult: (effectiveTransactions, effects) => ({
+        ...effectiveTransactions.find((effective) => effective.id === transaction.id),
+        effects,
+      }),
     };
   });
 }
@@ -247,10 +306,13 @@ async function copyTransaction({ usersDb, authDb }, userId, transactionId, overr
         id: `tx_${crypto.randomUUID()}`,
         currency,
       };
+      assertNoNewGrowTrade(newTransaction.comment);
       return {
         allTransactions: [...existingTransactions, newTransaction],
-        buildResult: (effectiveTransactions) =>
-          effectiveTransactions.find((effective) => effective.id === newTransaction.id),
+        buildResult: (effectiveTransactions, effects) => ({
+          ...effectiveTransactions.find((effective) => effective.id === newTransaction.id),
+          effects,
+        }),
       };
     },
     { createIfMissing: false },
@@ -266,13 +328,16 @@ async function updateTransaction({ usersDb, authDb }, userId, transactionId, pat
         (transaction) => transaction.id === transactionId,
       );
       if (index === -1) return null;
+      assertTransactionPatchAllowed(existingTransactions[index], patch);
       assertBucketPatchIsConsistent(existingTransactions[index], patch);
       return {
         allTransactions: existingTransactions.map((transaction, candidateIndex) =>
           candidateIndex === index ? { ...transaction, ...patch } : transaction,
         ),
-        buildResult: (effectiveTransactions) =>
-          effectiveTransactions.find((effective) => effective.id === transactionId),
+        buildResult: (effectiveTransactions, effects) => ({
+          ...effectiveTransactions.find((effective) => effective.id === transactionId),
+          effects,
+        }),
       };
     },
     { createIfMissing: false },
@@ -290,7 +355,7 @@ async function deleteTransaction({ usersDb, authDb }, userId, transactionId) {
         allTransactions: existingTransactions.filter(
           (transaction) => transaction.id !== transactionId,
         ),
-        buildResult: () => true,
+        buildResult: (_effectiveTransactions, effects) => ({ effects }),
       };
     },
     { createIfMissing: false },
@@ -321,6 +386,7 @@ async function batchTransactions({ usersDb, authDb }, userId, items, { atomic = 
         if (item.error) return { op: item.op, id: item.id, status: 'error', error: item.error };
         try {
           if (item.op === 'create') {
+            assertNoNewGrowTrade(item.fields.comment);
             const transaction = { ...item.fields, id: `tx_${crypto.randomUUID()}`, currency };
             workingTransactions = [...workingTransactions, transaction];
             anyApplied = true;
@@ -331,6 +397,7 @@ async function batchTransactions({ usersDb, authDb }, userId, items, { atomic = 
               (transaction) => transaction.id === item.id,
             );
             if (index === -1) throw new Error('No matching transaction exists.');
+            assertTransactionPatchAllowed(workingTransactions[index], item.fields);
             assertBucketPatchIsConsistent(workingTransactions[index], item.fields);
             workingTransactions = workingTransactions.map((transaction, candidateIndex) =>
               candidateIndex === index ? { ...transaction, ...item.fields } : transaction,
@@ -356,19 +423,21 @@ async function batchTransactions({ usersDb, authDb }, userId, items, { atomic = 
         const results = outcomes.map((outcome) =>
           outcome.status === 'error' ? outcome : { ...outcome, status: 'not_applied' },
         );
-        return { skipWrite: true, buildResult: () => results };
+        return { skipWrite: true, buildResult: () => ({ results, effects: null }) };
       }
 
       return {
         allTransactions: workingTransactions,
-        buildResult: (effectiveTransactions) =>
-          outcomes.map((outcome) => {
+        buildResult: (effectiveTransactions, effects) => ({
+          results: outcomes.map((outcome) => {
             if (outcome.status === 'error' || outcome.op === 'delete') return outcome;
             const transaction = effectiveTransactions.find(
               (effective) => effective.id === outcome.id,
             );
             return { ...outcome, transaction };
           }),
+          effects,
+        }),
       };
     },
   );
