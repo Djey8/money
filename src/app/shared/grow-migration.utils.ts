@@ -39,6 +39,8 @@ export function migrateGrow(raw: any): Grow {
   }
 
   const result = {
+    // Kept so the app's next save doesn't drop the backend-assigned id.
+    id: raw.id || undefined,
     title: raw.title || '',
     sub: raw.sub || '',
     phase,

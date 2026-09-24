@@ -24,6 +24,8 @@ export interface GrowActionItem {
 }
 
 export interface Grow {
+  /** Stable id assigned by the backend (self-hosted); absent until first saved there. */
+  id?: string;
   title: string;
   sub: string;
   phase: GrowPhase;

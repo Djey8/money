@@ -488,7 +488,9 @@ describe('transaction repository', () => {
         })),
       },
     };
-    await expect(deleteTransaction(deps, 'user_1', 'tx_1')).resolves.toBe(true);
+    await expect(deleteTransaction(deps, 'user_1', 'tx_1')).resolves.toMatchObject({
+      effects: expect.any(Object),
+    });
     expect(document.data.transactions).toEqual([]);
     expect(document.data.income.revenue.revenues).toEqual([]);
   });
@@ -536,7 +538,9 @@ describe('transaction repository', () => {
         })),
       },
     };
-    await expect(deleteTransaction(deps, 'user_1', 'tx_1')).resolves.toBe(true);
+    await expect(deleteTransaction(deps, 'user_1', 'tx_1')).resolves.toMatchObject({
+      effects: expect.any(Object),
+    });
     expect(writes).toBe(2);
     expect(document.data.transactions).toEqual([]);
   });
@@ -728,7 +732,7 @@ describe('batchTransactions', () => {
 
   it('applies a mix of create/update/delete in one document write', async () => {
     const { deps, getDocument } = batchDeps(baseDocument());
-    const results = await batchTransactions(deps, 'user_1', [
+    const { results } = await batchTransactions(deps, 'user_1', [
       {
         op: 'create',
         fields: {
@@ -758,7 +762,7 @@ describe('batchTransactions', () => {
 
   it('applies successful items and reports failures independently in non-atomic mode', async () => {
     const { deps } = batchDeps(baseDocument());
-    const results = await batchTransactions(deps, 'user_1', [
+    const { results } = await batchTransactions(deps, 'user_1', [
       { op: 'update', id: 'tx_missing', fields: { amountMinor: -500 } },
       { op: 'delete', id: 'tx_existing' },
     ]);
@@ -769,7 +773,7 @@ describe('batchTransactions', () => {
 
   it('rolls back everything in atomic mode when any operation fails', async () => {
     const { deps, getDocument } = batchDeps(baseDocument());
-    const results = await batchTransactions(
+    const { results } = await batchTransactions(
       deps,
       'user_1',
       [
@@ -802,7 +806,7 @@ describe('batchTransactions', () => {
       comment: '#bucket:Flights:50.00',
     });
     const { deps, getDocument } = batchDeps(document);
-    const results = await batchTransactions(
+    const { results } = await batchTransactions(
       deps,
       'user_1',
       [
@@ -820,7 +824,7 @@ describe('batchTransactions', () => {
 
   it('never writes when every operation is a pre-existing validation error', async () => {
     const { deps } = batchDeps(baseDocument());
-    const results = await batchTransactions(deps, 'user_1', [
+    const { results } = await batchTransactions(deps, 'user_1', [
       { op: 'create', error: 'amountMinor must be an integer.' },
     ]);
     expect(results[0]).toMatchObject({ status: 'error' });
@@ -845,7 +849,7 @@ describe('batchTransactions', () => {
       comment: '#bucket:Flights:50.00',
     });
     const { deps } = batchDeps(document);
-    const results = await batchTransactions(deps, 'user_1', [
+    const { results } = await batchTransactions(deps, 'user_1', [
       { op: 'update', id: 'tx_bucket', fields: { amountMinor: -7000 } },
       { op: 'delete', id: 'tx_existing' },
     ]);
@@ -867,7 +871,9 @@ describe('batchTransactions', () => {
       }
       return originalInsert(next);
     });
-    const results = await batchTransactions(deps, 'user_1', [{ op: 'delete', id: 'tx_existing' }]);
+    const { results } = await batchTransactions(deps, 'user_1', [
+      { op: 'delete', id: 'tx_existing' },
+    ]);
     expect(results[0]).toMatchObject({ status: 'deleted' });
     expect(writes).toBe(2);
   });

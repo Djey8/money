@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { LocalService } from 'src/app/shared/services/local.service';
 import { PersistenceService } from 'src/app/shared/services/persistence.service';
@@ -18,6 +18,8 @@ import { PlannedSubscription } from 'src/app/interfaces/planned-subscription';
 import { generateBucketId } from 'src/app/shared/smile-migration.utils';
 import { PaymentPlannerService } from 'src/app/shared/services/payment-planner.service';
 import { SubscriptionActivationService } from 'src/app/shared/services/subscription-activation.service';
+import { BucketSettlementService } from 'src/app/shared/services/bucket-settlement.service';
+import { bucketCapacity } from 'src/app/shared/bucket.utils';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
@@ -536,6 +538,87 @@ export class InfoSmileComponent extends BaseInfoComponent {
     InfoComponent.isInfo = false;
     InfoSmileComponent.isInfo = false;
   }
+
+  // --- Bucket settlement (actual cost replaces the plan) ---
+  settlingBucketId: string | null = null;
+  settleActual: number | null = null;
+  settleReceipt = '';
+  settleSurplusTo = '';
+  private bucketSettlement = inject(BucketSettlementService);
+
+  isSettled(bucket: SmileBucket): boolean {
+    return bucket.settledAmount !== undefined;
+  }
+
+  openSettle(bucket: SmileBucket): void {
+    this.settlingBucketId = bucket.id;
+    this.settleActual = bucket.settledAmount ?? bucket.target;
+    this.settleReceipt = '';
+    this.settleSurplusTo = '';
+  }
+
+  cancelSettle(): void {
+    this.settlingBucketId = null;
+  }
+
+  /** Surplus if settled now with the entered cost: savings above the actual cost. */
+  getSettleSurplus(bucket: SmileBucket): number {
+    if (this.settleActual === null || this.isSettled(bucket)) return 0;
+    return Math.max(0, Math.round((bucket.amount - this.settleActual) * 100) / 100);
+  }
+
+  /** Other buckets that can take a surplus (not the settled one, not settled ones). */
+  getSurplusTargets(bucket: SmileBucket): SmileBucket[] {
+    return (InfoSmileComponent.buckets || []).filter(
+      (candidate) => candidate.id !== bucket.id && !this.isSettled(candidate),
+    );
+  }
+
+  confirmSettle(bucket: SmileBucket): void {
+    const actual = Number(this.settleActual);
+    if (!Number.isFinite(actual) || actual < 0) {
+      this.showError(this.translate.instant('Bucket.settleInvalidAmount'));
+      return;
+    }
+    const project = AppStateService.instance.allSmileProjects[InfoSmileComponent.index];
+    this.bucketSettlement.settle(
+      'smile',
+      project.title,
+      {
+        bucket,
+        actual: Math.round(actual * 100) / 100,
+        receipt: this.settleReceipt,
+        moveSurplusTo: this.settleSurplusTo || undefined,
+      },
+      {
+        onSuccess: () => {
+          this.settlingBucketId = null;
+          InfoSmileComponent.buckets = project.buckets;
+          this.toastService.show(this.translate.instant('Bucket.settled'), 'update');
+        },
+        onError: (message) => this.showError(message),
+      },
+    );
+  }
+
+  unsettleBucket(bucket: SmileBucket): void {
+    const project = AppStateService.instance.allSmileProjects[InfoSmileComponent.index];
+    this.confirmService.confirm(
+      this.translate.instant('Bucket.unsettleConfirm', { title: bucket.title }),
+      () =>
+        this.bucketSettlement.unsettle('smile', project.title, bucket.title, {
+          onSuccess: () => {
+            InfoSmileComponent.buckets = project.buckets;
+            this.toastService.show(this.translate.instant('Bucket.unsettled'), 'update');
+          },
+          onError: (message) => this.showError(message),
+        }),
+      'Bucket.unsettle',
+      'primary',
+    );
+  }
+
+  bucketCapacity = bucketCapacity;
 
   getNextPhase(): SmilePhase {
     const phases: SmilePhase[] = ['idea', 'planning', 'saving', 'ready', 'completed'];
@@ -1371,7 +1454,7 @@ export class InfoSmileComponent extends BaseInfoComponent {
     const project = AppStateService.instance.allSmileProjects[InfoSmileComponent.index];
     const plan = project.plannedSubscriptions?.[planIndex];
 
-    if (!plan || plan.status !== 'inactive') return;
+    if (!plan || (plan.status !== 'inactive' && plan.status !== 'completed')) return;
 
     this.confirmService.confirm(
       `Reactivate payment plan "${plan.title}"?`,
@@ -1466,7 +1549,9 @@ export class InfoSmileComponent extends BaseInfoComponent {
    * Get inactive subscriptions only
    */
   getInactiveSubscriptions(): PlannedSubscription[] {
-    return InfoSmileComponent.plannedSubscriptions.filter((p) => p.status === 'inactive');
+    return InfoSmileComponent.plannedSubscriptions.filter(
+      (p) => p.status === 'inactive' || p.status === 'completed',
+    );
   }
 
   /**

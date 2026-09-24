@@ -10,6 +10,42 @@ export interface FundBucket {
   title: string;
   targetMinor: number;
   amountMinor: number;
+  /**
+   * Derived during replay from a `#settle:` transaction (see
+   * `parseSettlements`): the actual cost paid. While set it replaces
+   * `targetMinor` as the bucket's capacity; `targetMinor` stays the planned
+   * amount, so plan vs. actual remains visible.
+   */
+  settledMinor?: number;
+  settledDate?: string;
+}
+
+/** A bucket's effective capacity: the actual cost once settled, else its planned target. */
+export function bucketCapacity(bucket: FundBucket): number {
+  return bucket.settledMinor ?? bucket.targetMinor;
+}
+
+export interface BucketSettlement {
+  bucketTitle: string;
+  actualMinor: number;
+}
+
+const SETTLE_TAG = /#settle:([^:]+):([\d.]+)/g;
+
+/**
+ * `#settle:<Bucket>:<actual>` marks the transaction that settles a bucket:
+ * the real bill was paid, `actual` replaces the planned target, and the
+ * transaction itself carries only the difference to what was saved.
+ */
+export function parseSettlements(comment: string): BucketSettlement[] {
+  const settlements: BucketSettlement[] = [];
+  for (const match of (comment || '').matchAll(SETTLE_TAG)) {
+    const amount = Number(match[2]);
+    if (Number.isFinite(amount) && amount >= 0) {
+      settlements.push({ bucketTitle: match[1], actualMinor: toMinorUnits(amount) });
+    }
+  }
+  return settlements;
 }
 
 const BUCKET_TAG = /#bucket:([^:]+):([\d.]+)/g;
@@ -36,7 +72,7 @@ export function applyBucketAllocations(
       (candidate) => candidate.bucketTitle.toLocaleLowerCase() === bucket.title.toLocaleLowerCase(),
     );
     if (!allocation) return { ...bucket };
-    const remaining = Math.max(0, bucket.targetMinor - bucket.amountMinor);
+    const remaining = Math.max(0, bucketCapacity(bucket) - bucket.amountMinor);
     return {
       ...bucket,
       amountMinor: bucket.amountMinor + Math.min(allocation.amountMinor, remaining),

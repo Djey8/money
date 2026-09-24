@@ -11,7 +11,9 @@ import {
   generateCashflowComment,
   generateDepositComment,
   joinGrowStatements,
+  GrowAssetUnits,
 } from './dsl';
+import { toMinorUnits } from '../money/minor-units';
 
 /**
  * Pure calculators for Grow's six typed actions (PLAN.md D-16), one per
@@ -48,7 +50,25 @@ import {
  *    header comment.
  *
  * Money fields are integer minor units, per this package's convention.
+ * `quantity` is a plain decimal count (fractional for crypto/ETF units),
+ * so a `quantity * priceMinor` product is rounded back to whole minor
+ * units (`multiplyQuantityPrice`) and every resulting quantity is
+ * normalized (`normalizeQuantity`) — otherwise `1.77 * 8833` yields a
+ * non-integer amount the transaction layer rejects, and `0.1 + 0.2`-style
+ * float residue leaves a sold-out position at `5e-17` instead of 0.
  */
+
+/** Decimal places kept on a share quantity — enough for any crypto unit in practice, few enough to absorb float residue. */
+export const QUANTITY_DECIMALS = 8;
+
+export function normalizeQuantity(quantity: number): number {
+  return toMinorUnits(quantity, QUANTITY_DECIMALS) / 10 ** QUANTITY_DECIMALS;
+}
+
+/** `quantity * priceMinor` rounded half-away-from-zero to whole minor units. */
+export function multiplyQuantityPrice(quantity: number, priceMinor: number): number {
+  return toMinorUnits(quantity * priceMinor, 0);
+}
 
 export interface GrowLiabilitieAttachment {
   /** Existing standalone Liability amount (tagged with the Grow project's own title) before this action, or `null` if none exists yet. */
@@ -82,6 +102,8 @@ function applyLiabilitieAttachment(
 export interface BuyAssetInput {
   title: string;
   totalAmountMinor: number;
+  /** When the buy was expressed as units x unit price; `totalAmountMinor` must then equal their rounded product. */
+  units?: GrowAssetUnits;
   existingAssetAmountMinor: number | null;
   existingGrowAmountMinor: number;
   liabilitie?: GrowLiabilitieAttachment;
@@ -101,7 +123,7 @@ export interface AssetPatchResult extends BuyResult {
 
 export function calculateBuyAsset(input: BuyAssetInput): AssetPatchResult {
   const reducedAmountMinor = input.totalAmountMinor - (input.liabilitie?.loanMinor ?? 0);
-  const statement = generateBuyAssetComment(input.title, input.totalAmountMinor);
+  const statement = generateBuyAssetComment(input.title, input.totalAmountMinor, input.units);
   const liabilityPatch = applyLiabilitieAttachment(input.liabilitie);
   if (liabilityPatch) liabilityPatch.tag = input.title;
   return {
@@ -134,7 +156,7 @@ export interface SharePatchResult extends BuyResult {
 }
 
 export function calculateBuyShare(input: BuyShareInput): SharePatchResult {
-  const fullAmountMinor = input.quantity * input.priceMinor;
+  const fullAmountMinor = multiplyQuantityPrice(input.quantity, input.priceMinor);
   const reducedAmountMinor = fullAmountMinor - (input.liabilitie?.loanMinor ?? 0);
   const statement = generateBuyShareComment(input.title, input.quantity, input.priceMinor);
   const liabilityPatch = applyLiabilitieAttachment(input.liabilitie);
@@ -147,7 +169,7 @@ export function calculateBuyShare(input: BuyShareInput): SharePatchResult {
         )
       : statement,
     transactionAmountMinor: -reducedAmountMinor,
-    newShareQuantity: (input.existingShareQuantity ?? 0) + input.quantity,
+    newShareQuantity: normalizeQuantity((input.existingShareQuantity ?? 0) + input.quantity),
     newSharePriceMinor: input.priceMinor,
     newGrowAmountMinor: input.existingGrowAmountMinor + reducedAmountMinor,
     growStatus: 'bought',
@@ -214,9 +236,10 @@ export function calculateSellAsset(
   title: string,
   totalAmountMinor: number,
   existingAssetAmountMinor: number,
+  units?: GrowAssetUnits,
 ): SellResult & { newAssetAmountMinor: number } {
   return {
-    comment: generateSellAssetComment(title, totalAmountMinor),
+    comment: generateSellAssetComment(title, totalAmountMinor, units),
     transactionAmountMinor: totalAmountMinor,
     newAssetAmountMinor: existingAssetAmountMinor - totalAmountMinor,
     growStatus: 'sold',
@@ -231,8 +254,8 @@ export function calculateSellShare(
 ): SellResult & { newShareQuantity: number; newSharePriceMinor: number } {
   return {
     comment: generateSellShareComment(title, quantity, priceMinor),
-    transactionAmountMinor: quantity * priceMinor,
-    newShareQuantity: existingShareQuantity - quantity,
+    transactionAmountMinor: multiplyQuantityPrice(quantity, priceMinor),
+    newShareQuantity: normalizeQuantity(existingShareQuantity - quantity),
     newSharePriceMinor: priceMinor,
     growStatus: 'sold',
   };
@@ -297,7 +320,7 @@ export function calculateDividend(
 ): { comment: string; transactionAmountMinor: number } {
   return {
     comment: generateDividendComment(title, quantity, priceMinor),
-    transactionAmountMinor: quantity * priceMinor,
+    transactionAmountMinor: multiplyQuantityPrice(quantity, priceMinor),
   };
 }
 

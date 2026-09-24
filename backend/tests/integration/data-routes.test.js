@@ -269,6 +269,30 @@ describe('Extended data routes', () => {
       },
     );
 
+    skipIf(
+      !dbAvailable,
+      'hands an id-less entry back the stored id of the entry with the same natural key',
+      async () => {
+        await authed('post', '/api/data/write/grow').send([
+          { id: 'grow_keep', title: 'SOL' },
+          { id: 'grow_other', title: 'IOTA' },
+        ]);
+        // The app re-sends its copy without ids (and in a different order).
+        await authed('post', '/api/data/write/grow').send([
+          { title: 'IOTA' },
+          { title: 'SOL' },
+          { title: 'New' },
+        ]);
+
+        const res = await authed('get', '/api/data/read/grow');
+        const idsByTitle = Object.fromEntries(res.body.data.map((g) => [g.title, g.id]));
+        expect(idsByTitle.SOL).toBe('grow_keep');
+        expect(idsByTitle.IOTA).toBe('grow_other');
+        expect(idsByTitle.New).toEqual(expect.stringMatching(/^grow_/));
+        expect(idsByTitle.New).not.toMatch(/grow_keep|grow_other/);
+      },
+    );
+
     skipIf(!dbAvailable, 'backfills ids through /write/batch too', async () => {
       await authed('post', '/api/data/write/batch').send({
         writes: [
@@ -288,6 +312,56 @@ describe('Extended data routes', () => {
 
       const res = await authed('get', '/api/data/read/income/expenses/daily');
       expect(res.body.data[0]).not.toHaveProperty('id');
+    });
+  });
+
+  describe('Stale-write guard (X-Base-Updated-At)', () => {
+    skipIf(
+      !dbAvailable,
+      'accepts a write based on the current version and returns the new updatedAt',
+      async () => {
+        const base = (await authed('get', '/api/data/updatedAt')).body.updatedAt;
+        const res = await authed('post', '/api/data/write/grow')
+          .set('X-Base-Updated-At', base)
+          .send([{ id: 'grow_a', title: 'A' }]);
+        expect(res.status).toBe(200);
+        expect(res.body.updatedAt).toEqual(expect.any(String));
+        expect(res.body.updatedAt).not.toBe(base);
+
+        const chained = await authed('post', '/api/data/write/batch')
+          .set('X-Base-Updated-At', res.body.updatedAt)
+          .send({ writes: [{ path: 'grow', data: [{ id: 'grow_a', title: 'B' }] }] });
+        expect(chained.status).toBe(200);
+        expect(chained.body.updatedAt).toEqual(expect.any(String));
+      },
+    );
+
+    skipIf(
+      !dbAvailable,
+      'refuses a write based on an outdated version instead of overwriting newer data',
+      async () => {
+        await authed('post', '/api/data/write/grow').send([{ id: 'grow_a', title: 'Newer' }]);
+
+        const single = await authed('post', '/api/data/write/grow')
+          .set('X-Base-Updated-At', '2000-01-01T00:00:00.000Z')
+          .send([{ id: 'grow_a', title: 'Stale' }]);
+        expect(single.status).toBe(409);
+        expect(single.body.conflict).toBe(true);
+
+        const batch = await authed('post', '/api/data/write/batch')
+          .set('X-Base-Updated-At', '2000-01-01T00:00:00.000Z')
+          .send({ writes: [{ path: 'grow', data: [{ id: 'grow_a', title: 'Stale' }] }] });
+        expect(batch.status).toBe(409);
+        expect(batch.body.conflict).toBe(true);
+
+        const res = await authed('get', '/api/data/read/grow');
+        expect(res.body.data[0].title).toBe('Newer');
+      },
+    );
+
+    skipIf(!dbAvailable, 'still accepts a write without the header (older clients)', async () => {
+      const res = await authed('post', '/api/data/write/grow').send([{ id: 'grow_a', title: 'C' }]);
+      expect(res.status).toBe(200);
     });
   });
 

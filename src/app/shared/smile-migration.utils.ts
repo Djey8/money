@@ -36,6 +36,11 @@ export function migrateSmile(raw: any): Smile {
       links: Array.isArray(b.links) ? b.links : [],
       targetDate: b.targetDate || undefined,
       completionDate: b.completionDate || undefined,
+      // Derived settlement — kept so a save doesn't drop it.
+      ...(typeof b.settledAmount === 'number' && {
+        settledAmount: b.settledAmount,
+        settledDate: b.settledDate,
+      }),
     }));
   } else if (raw.target && raw.target > 0) {
     // Legacy project without buckets → create single bucket with project name

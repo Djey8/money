@@ -49,6 +49,7 @@ describe('listFireProjects', () => {
       amountMinor: 20000,
       remainingMinor: 130000,
       percentFilled: (20000 / 150000) * 100,
+      plannedTargetMinor: 150000,
     });
     expect(project.links).toEqual([{ label: 'Flights site', url: 'https://example.com' }]);
     expect(project.actionItems).toEqual([{ text: 'Book flights', done: false, priority: 'high' }]);
@@ -625,11 +626,48 @@ describe('updateFireProject', () => {
   });
 });
 
+describe('renaming a Fire bucket', () => {
+  it("rewrites the @<bucket> category too, so the fund's money stays put", async () => {
+    const document = existingProjectDocument();
+    document.data.meta = { schemaVersion: 2 };
+    const bucketId = document.data.fire[0].buckets[0].id;
+    const oldTitle = document.data.fire[0].buckets[0].title;
+    document.data.fire[0].buckets[0].target = 100000;
+    document.data.transactions = [
+      {
+        id: 'tx_1',
+        account: 'Fire',
+        amount: -20000,
+        date: '2026-09-01',
+        time: '10:00',
+        category: `@${oldTitle}`,
+        comment: '',
+      },
+    ];
+    const { deps, current } = writableDeps(document);
+
+    const result = await updateFireProject(deps, 'user_1', document.data.fire[0].id, {
+      buckets: [{ id: bucketId, title: 'Renamed bucket', targetMinor: 100000 }],
+    });
+
+    expect(result.buckets[0].amountMinor).toBe(20000);
+    expect(current().data.transactions[0].category).toBe('@Renamed bucket');
+  });
+});
+
 describe('deleteFireProject', () => {
+  it('refuses to delete a project that still holds money unless forced', async () => {
+    const { deps, current } = writableDeps(existingProjectDocument());
+    await expect(deleteFireProject(deps, 'user_1', 'fire_1')).rejects.toMatchObject({
+      code: 'FUND_HAS_MONEY',
+    });
+    expect(current().data.fire).toHaveLength(1);
+  });
+
   it('removes the project and returns its id', async () => {
     const { deps, current } = writableDeps(existingProjectDocument());
-    const result = await deleteFireProject(deps, 'user_1', 'fire_1');
-    expect(result).toEqual({ id: 'fire_1' });
+    const result = await deleteFireProject(deps, 'user_1', 'fire_1', { force: true });
+    expect(result).toMatchObject({ id: 'fire_1', effects: expect.any(Object) });
     expect(current().data.fire).toEqual([]);
   });
 
@@ -656,7 +694,7 @@ describe('deleteFireProject', () => {
       updatedAt: '2026-01-01T00:00:00.000Z',
     });
     const { deps, current } = writableDeps(document);
-    await deleteFireProject(deps, 'user_1', 'fire_1');
+    await deleteFireProject(deps, 'user_1', 'fire_1', { force: true });
     expect(current().data.fire.map((p) => p.id)).toEqual(['fire_2']);
   });
 });

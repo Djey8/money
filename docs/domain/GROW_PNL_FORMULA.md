@@ -31,3 +31,24 @@ A share-kind Grow project titled "MSFT" has three transactions on its category, 
 - `returnedMinor` = 5000 + 450000 = 455000.
 - `netCashflowMinor` = 455000 - 415000 = 40000 (€400.00 net profit).
 - Response: `{title: "MSFT", investedMinor: 415000, returnedMinor: 455000, netCashflowMinor: 40000, transactionCount: 3}`.
+
+## Trade breakdown (average cost)
+
+From the project's trade statements, oldest first:
+
+- **Share buys** add `quantity` and `round(quantity × price)` to the running cost.
+- **Share sales** remove `round(cost × soldQuantity / heldQuantity)` from the cost;
+  `realizedGainMinor += proceeds − removedCost`.
+- `dividendsMinor` sums `Dividende Share` statements; `cashflowIncomeMinor` sums `CASHFLOW` statements (cashflow −
+  credit).
+- For a share-kind project, `sharePosition` compares the remaining cost (`costBasisMinor`, `averageCostMinor`) with
+  the balance-sheet Share tagged with the project's title: `marketValueMinor = quantity × lastPriceMinor`,
+  `unrealizedGainMinor = marketValueMinor − costBasisMinor`.
+- `valuationSource: "last-entered-price"` — the price is whatever was last entered (a trade or a revaluation), never
+  market data.
+- `incompleteHistory: true` when units were sold that no recorded buy covers, or the balance-sheet quantity differs
+  from the trades' net quantity (e.g. holdings from before the trades were recorded). The figures are then lower
+  bounds.
+
+Worked example: buy 4 @ 100, buy 2 @ 150 (cost 700, 6 units), sell 3 @ 150 → removed cost 350, realized gain 100;
+3 units left at cost 350 (average 116.67); at a last price of 90 the market value is 270, unrealized gain −80.

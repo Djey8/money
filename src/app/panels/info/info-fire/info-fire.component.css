@@ -1807,3 +1807,59 @@
 .btn-inline-toggle {
   margin-top: 6px;
 }
+
+/* Bucket settlement */
+.bucket-settled {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  font-size: 0.85rem;
+}
+
+.bucket-settled-badge,
+.status-completed {
+  background: #e8f5e9;
+  color: #2e7d32;
+  border: 1px solid #66bb6a;
+}
+
+.bucket-settled-badge {
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+[data-theme='dark'] .bucket-settled-badge,
+[data-theme='dark'] .status-completed {
+  background: rgba(102, 187, 106, 0.2);
+  color: #a5d6a7;
+}
+
+.bucket-settle-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.bucket-settle-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.85rem;
+}
+
+.bucket-settle-hint {
+  margin: 0;
+  font-size: 0.8rem;
+  opacity: 0.75;
+}
+
+.bucket-settle-actions,
+.bucket-settle-buttons {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}

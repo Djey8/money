@@ -1,4 +1,4 @@
-import { FundBucket } from './bucket-allocations';
+import { bucketCapacity, FundBucket } from './bucket-allocations';
 
 /**
  * Read-side aggregate for a Smile/Fire project's buckets — "how far along is
@@ -25,12 +25,15 @@ export interface FundProjectTotals {
    * pre-existing/manually-edited anomaly.
    */
   percentFilled: number;
+  /** Sum of the buckets' planned targets; `targetMinor` uses each settled bucket's actual cost instead. */
+  plannedTargetMinor: number;
 }
 
 export function computeProjectTotals(buckets: FundBucket[]): FundProjectTotals {
-  const targetMinor = buckets.reduce((sum, bucket) => sum + bucket.targetMinor, 0);
+  const targetMinor = buckets.reduce((sum, bucket) => sum + bucketCapacity(bucket), 0);
+  const plannedTargetMinor = buckets.reduce((sum, bucket) => sum + bucket.targetMinor, 0);
   const amountMinor = buckets.reduce((sum, bucket) => sum + bucket.amountMinor, 0);
   const remainingMinor = Math.max(0, targetMinor - amountMinor);
   const percentFilled = targetMinor > 0 ? (amountMinor / targetMinor) * 100 : 0;
-  return { targetMinor, amountMinor, remainingMinor, percentFilled };
+  return { targetMinor, amountMinor, remainingMinor, percentFilled, plannedTargetMinor };
 }

@@ -43,8 +43,10 @@ export function buildExplainTool(
     kind: 'explain',
     name: 'explain_concept',
     description:
-      'Explains a Money Manager domain concept (a calculation formula or worked example) from docs/domain/. ' +
-      'No API call, no scope required. Pass topic: one of ' +
+      'Explains how Money Manager works, from docs/domain/. Start with app_overview (the model and which tool ' +
+      'does what); advisor_playbook for reviews, health metrics and recommendations (Barefoot Investor and Rich ' +
+      'Dad Poor Dad); feature guides and calculation formulas for the rest. No API call, no scope required. ' +
+      'Pass topic: one of ' +
       Object.keys(topics).join(', ') +
       '.',
     topics,

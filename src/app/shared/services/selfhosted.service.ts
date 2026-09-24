@@ -128,13 +128,23 @@ export class SelfhostedService {
     return localStorage.getItem('selfhosted_userId');
   }
 
+  /**
+   * `X-Base-Updated-At` tells the backend which document version this write
+   * was based on, so it can refuse (409 `{conflict: true}`) instead of
+   * overwriting newer data — see backend/routes/data.js's
+   * `staleWriteConflict`.
+   */
+  private withBaseUpdatedAt(headers: HttpHeaders, baseUpdatedAt?: string | null): HttpHeaders {
+    return baseUpdatedAt ? headers.set('X-Base-Updated-At', baseUpdatedAt) : headers;
+  }
+
   // Data methods
-  writeObject(tag: string, data: any): Observable<any> {
+  writeObject(tag: string, data: any, baseUpdatedAt?: string | null): Observable<any> {
     // Write data directly to the specified path
     // The backend will handle nested JSON structure
 
     // Determine content type and body based on data type
-    let headers = this.getHeaders();
+    let headers = this.withBaseUpdatedAt(this.getHeaders(), baseUpdatedAt);
     let body = data;
 
     // For primitive types (string, number, boolean), send as text/plain
@@ -155,12 +165,24 @@ export class SelfhostedService {
    * @param writes - Array of write operations { path, data }
    * @returns Observable of batch write result
    */
-  writeBatch(writes: { path: string; data: any }[]): Observable<any> {
+  writeBatch(
+    writes: { path: string; data: any }[],
+    baseUpdatedAt?: string | null,
+  ): Observable<any> {
     return this.http
-      .post(`${this.apiUrl}/data/write/batch`, { writes }, { headers: this.getHeaders() })
+      .post(
+        `${this.apiUrl}/data/write/batch`,
+        { writes },
+        { headers: this.withBaseUpdatedAt(this.getHeaders(), baseUpdatedAt) },
+      )
       .pipe(
         tap({
-          error: (error) => console.error('[SelfhostedService] Batch write failed:', error),
+          error: (error) => {
+            // 409 {conflict: true} is the stale-write guard, handled by DatabaseService.
+            if (!(error?.status === 409 && error?.error?.conflict)) {
+              console.error('[SelfhostedService] Batch write failed:', error);
+            }
+          },
         }),
       );
   }

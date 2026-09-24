@@ -28,6 +28,9 @@ export interface FireBucket {
   links?: FireLink[]; // Optional links for this bucket
   targetDate?: string; // Target completion date
   completionDate?: string; // Actual completion date
+  /** Derived from the bucket's `#settle:` transaction: the actual cost paid (replaces `target` as its capacity). */
+  settledAmount?: number;
+  settledDate?: string;
 }
 
 export interface Fire {

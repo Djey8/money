@@ -9,6 +9,8 @@ import {
   calculatePayback,
   calculateCashflow,
   calculateDeposit,
+  multiplyQuantityPrice,
+  normalizeQuantity,
 } from './actions';
 
 describe('Grow typed actions', () => {
@@ -248,5 +250,58 @@ describe('Grow typed actions', () => {
     const result = calculateDeposit(30000);
     expect(result.comment).toBe('Deposit 300;');
     expect(result.transactionAmountMinor).toBe(-30000);
+  });
+
+  describe('asset trades as units x unit price', () => {
+    it('Buy Asset writes the <qty> x <price> form while keeping the total', () => {
+      const result = calculateBuyAsset({
+        title: 'Gold',
+        totalAmountMinor: 150000,
+        units: { quantity: 3, priceMinor: 50000 },
+        existingAssetAmountMinor: null,
+        existingGrowAmountMinor: 0,
+      });
+      expect(result.comment).toBe('Buy Asset Gold 3 x 500;');
+      expect(result.newAssetAmountMinor).toBe(150000);
+    });
+
+    it('Sell Asset of part of a holding', () => {
+      const result = calculateSellAsset('Gold', 50000, 150000, { quantity: 1, priceMinor: 50000 });
+      expect(result.comment).toBe('Sell Asset Gold 1 x 500;');
+      expect(result.newAssetAmountMinor).toBe(100000);
+    });
+  });
+
+  describe('fractional share quantities', () => {
+    it('Buy Share rounds quantity * price to whole minor units and normalizes the new quantity', () => {
+      const result = calculateBuyShare({
+        title: 'SOL',
+        quantity: 1.77,
+        priceMinor: 8833,
+        existingShareQuantity: 3.54,
+        existingGrowAmountMinor: 31261,
+      });
+      expect(result.transactionAmountMinor).toBe(-15634);
+      expect(result.newGrowAmountMinor).toBe(31261 + 15634);
+      expect(result.newShareQuantity).toBe(5.31);
+    });
+
+    it('Sell Share rounds the proceeds and leaves exactly 0 when the whole float-accumulated position is sold', () => {
+      const partial = calculateSellShare('SOL', 1.77, 8833, 3.54);
+      expect(partial.transactionAmountMinor).toBe(15634);
+      expect(partial.newShareQuantity).toBe(1.77);
+
+      const full = calculateSellShare('X', 0.3, 100, 0.1 + 0.2);
+      expect(full.newShareQuantity).toBe(0);
+    });
+
+    it('Dividend rounds quantity * per-unit amount to whole minor units', () => {
+      expect(calculateDividend('SOL', 3.54, 5).transactionAmountMinor).toBe(18);
+    });
+
+    it('normalizeQuantity keeps 8 decimals and multiplyQuantityPrice rounds half away from zero', () => {
+      expect(normalizeQuantity(0.123456789)).toBe(0.12345679);
+      expect(multiplyQuantityPrice(0.5, 8833)).toBe(4417);
+    });
   });
 });

@@ -215,14 +215,34 @@ export function assertValidGrowTitle(title: string): void {
   }
 }
 
-export function generateBuyAssetComment(title: string, totalAmountMinor: number): string {
-  assertValidGrowTitle(title);
-  return `Buy Asset ${title} 1 x ${fromMinorUnits(totalAmountMinor)};`;
+/** An asset trade expressed as units x unit price instead of one lump sum (the DSL's `<qty> x <price>` form). */
+export interface GrowAssetUnits {
+  quantity: number;
+  priceMinor: number;
 }
 
-export function generateSellAssetComment(title: string, totalAmountMinor: number): string {
+function assetTradeTerms(totalAmountMinor: number, units?: GrowAssetUnits): string {
+  return units
+    ? `${units.quantity} x ${fromMinorUnits(units.priceMinor)}`
+    : `1 x ${fromMinorUnits(totalAmountMinor)}`;
+}
+
+export function generateBuyAssetComment(
+  title: string,
+  totalAmountMinor: number,
+  units?: GrowAssetUnits,
+): string {
   assertValidGrowTitle(title);
-  return `Sell Asset ${title} 1 x ${fromMinorUnits(totalAmountMinor)};`;
+  return `Buy Asset ${title} ${assetTradeTerms(totalAmountMinor, units)};`;
+}
+
+export function generateSellAssetComment(
+  title: string,
+  totalAmountMinor: number,
+  units?: GrowAssetUnits,
+): string {
+  assertValidGrowTitle(title);
+  return `Sell Asset ${title} ${assetTradeTerms(totalAmountMinor, units)};`;
 }
 
 export function generateBuyShareComment(
@@ -307,4 +327,44 @@ export function generateCashflowComment(cashflowMinor: number, creditMinor?: num
 
 export function generateDepositComment(amountMinor: number): string {
   return `Deposit ${fromMinorUnits(amountMinor)};`;
+}
+
+const TITLED_STATEMENT_PREFIXES = [
+  'Buy Asset',
+  'Sell Asset',
+  'Buy Share',
+  'Sell Share',
+  'Dividende Share',
+  'Buy Investment',
+  'Sell Investment',
+];
+
+function escapeRegExp(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
+ * Renames a Grow project's title inside every statement of a comment that
+ * names it (`Buy Share <title> 10 x 25;`, `Sell Investment <title> 5 3;`,
+ * ...), leaving every other character untouched. The app reads the title
+ * back out of these statements to undo a transaction, so a project rename
+ * must rewrite them too. The title only matches when it's followed by the
+ * statement's fixed numeric suffix, so renaming "SOL" never touches a
+ * statement for "SOL Cash".
+ */
+export function renameGrowTitleInComment(
+  comment: string,
+  oldTitle: string,
+  newTitle: string,
+): string {
+  assertValidGrowTitle(newTitle);
+  if (!comment || oldTitle === newTitle) return comment;
+  const prefixes = TITLED_STATEMENT_PREFIXES.join('|');
+  const statement = new RegExp(
+    `(^|;\\s*)(${prefixes}) ${escapeRegExp(oldTitle)}(?= \\S+ x \\S+\\s*(?:;|$)| \\S+ \\S+\\s*(?:;|$))`,
+    'g',
+  );
+  return comment.replace(statement, (_match, lead: string, prefix: string) => {
+    return `${lead}${prefix} ${newTitle}`;
+  });
 }

@@ -15,6 +15,7 @@ import {
   splitGrowStatements,
   assertValidGrowTitle,
   formatAmountToken,
+  renameGrowTitleInComment,
 } from './dsl';
 
 describe('Grow DSL — generation matches the existing UI-canonical formats', () => {
@@ -251,5 +252,44 @@ describe('Grow DSL — parsing (round-trips + legacy edge cases)', () => {
   it('splits multi-statement comments on ";" and drops empty segments', () => {
     expect(splitGrowStatements('Deposit 300; ')).toEqual(['Deposit 300']);
     expect(splitGrowStatements('Deposit 300')).toEqual(['Deposit 300']);
+  });
+});
+
+describe('renameGrowTitleInComment', () => {
+  it('renames the title in every statement that names it, leaving the rest untouched', () => {
+    expect(
+      renameGrowTitleInComment('Liabilitie 1000 50; Buy Share SOL 1.77 x 88.33;', 'SOL', 'Solana'),
+    ).toBe('Liabilitie 1000 50; Buy Share Solana 1.77 x 88.33;');
+    expect(
+      renameGrowTitleInComment(
+        'Payback Liabilitie 100 5; Sell Investment Old Flat 50000 200000;',
+        'Old Flat',
+        'Flat',
+      ),
+    ).toBe('Payback Liabilitie 100 5; Sell Investment Flat 50000 200000;');
+    expect(renameGrowTitleInComment('Dividende Share SOL 3 x 1;', 'SOL', 'X')).toBe(
+      'Dividende Share X 3 x 1;',
+    );
+  });
+
+  it('never touches a different project whose title merely starts with the old one', () => {
+    expect(renameGrowTitleInComment('Buy Share SOL Cash 1 x 2;', 'SOL', 'X')).toBe(
+      'Buy Share SOL Cash 1 x 2;',
+    );
+  });
+
+  it('treats regex characters in the title literally and leaves unrelated comments alone', () => {
+    expect(renameGrowTitleInComment('Buy Asset A+B (1) 1 x 5;', 'A+B (1)', 'AB')).toBe(
+      'Buy Asset AB 1 x 5;',
+    );
+    expect(renameGrowTitleInComment('Lunch with SOL friends', 'SOL', 'X')).toBe(
+      'Lunch with SOL friends',
+    );
+  });
+
+  it('inserts a new title containing $ literally', () => {
+    expect(renameGrowTitleInComment('Buy Share A 1 x 2;', 'A', 'US$ Fund')).toBe(
+      'Buy Share US$ Fund 1 x 2;',
+    );
   });
 });

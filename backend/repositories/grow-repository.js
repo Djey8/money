@@ -10,9 +10,14 @@
  * string those calculators return, so the existing (untouched) Angular UI
  * keeps reading it correctly.
  *
- * `PATCH /grow/{id}` only accepts metadata fields — `amount`/`cashflow`/
- * `share`/`investment`/`liabilitie` are output-only from PATCH's
- * perspective, changed only by the typed actions below (`assertNoMoneyFields`).
+ * Create/PATCH also accept the project's *plan* — `kind`, the embedded
+ * `share`/`investment`/`liabilitie` copies, `amountMinor`, `cashflowMinor`
+ * — mirroring exactly what the UI's edit panel writes
+ * (`info-grow.component.ts`'s `updateGrowProject()`): these are planned
+ * values that move no money and create no transaction (`applyPlanFields`).
+ * Money only moves through the typed actions in
+ * `grow-action-repository.js`. The embedded copies are always tagged with
+ * the project's title — the title is the link key to the balance sheet.
  *
  * Title uniqueness is scoped to Grow's own list only: confirmed by reading
  * `add-grow.component.ts`'s `invalidTitle()` directly — it calls
@@ -39,10 +44,17 @@
  */
 
 const crypto = require('crypto');
-const { toMinorUnits } = require('@money/domain');
+const { toMinorUnits, normalizeQuantity, multiplyQuantityPrice } = require('@money/domain');
 const { getEncryptionSession } = require('../services/encryption-session');
 const { decryptValue } = require('./transaction-repository');
 const { writeValue, toStoredMoney } = require('../services/transaction-derived-state');
+const { cascadeGrowRename } = require('../services/grow-rename');
+const {
+  normalizeActionItem,
+  normalizeNote,
+  normalizeLink,
+  applyAllListOps,
+} = require('../services/list-ops');
 
 const MAX_WRITE_RETRIES = 10;
 
@@ -314,26 +326,147 @@ function assertNoTitleCollision(title, existingTitles) {
   }
 }
 
-const MONEY_FIELDS_OWNED_BY_TYPED_ACTIONS = [
-  'amountMinor',
-  'cashflowMinor',
-  'share',
-  'investment',
-  'liabilitie',
-];
+function planError(message) {
+  const error = new Error(message);
+  error.code = 'GROW_INVALID_PLAN';
+  return error;
+}
 
-function assertNoMoneyFields(patch) {
-  const found = MONEY_FIELDS_OWNED_BY_TYPED_ACTIONS.find((field) => field in patch);
-  if (found) {
-    const error = new Error(
-      `${found} is only changed via the typed action endpoints (POST /grow/{id}/{buy,sell,dividend,payback,cashflow,deposit}), not PATCH.`,
+function kindOf(project) {
+  if (project.isAsset) return 'asset';
+  if (project.share) return 'share';
+  if (project.investment) return 'investment';
+  return null;
+}
+
+/** Echoing back a read object is fine, but an embedded copy's `tag` can't diverge from the title — that's what links it to the balance sheet. */
+function assertTagMatchesTitle(plan, field, title) {
+  if (plan.tag !== undefined && plan.tag !== title) {
+    throw planError(
+      `${field}.tag must equal the project title ("${title}") — the title is the link key to the balance sheet. Rename the project instead.`,
     );
-    error.code = 'GROW_MONEY_FIELD_NOT_PATCHABLE';
-    throw error;
   }
 }
 
-/** Shared read → mutate → write-with-retry-on-409 loop for CRUD (no transaction, no linked-entity writes). */
+/**
+ * Applies the plan fields (see header comment) onto `project`, mirroring
+ * `info-grow.component.ts`'s `updateGrowProject()`: switching `kind`
+ * initializes an empty embedded copy for the new kind and clears the
+ * others; a changed `share` recomputes `amountMinor` as
+ * `quantity * price - loan` unless `amountMinor` is given explicitly.
+ * Also re-tags every embedded copy with the (possibly just-renamed) title.
+ */
+function applyPlanFields(project, input) {
+  const next = { ...project };
+  const { title } = next;
+  if (input.kind !== undefined) {
+    next.isAsset = input.kind === 'asset';
+    next.share =
+      input.kind === 'share' ? next.share || { tag: title, quantity: 0, priceMinor: 0 } : null;
+    next.investment =
+      input.kind === 'investment'
+        ? next.investment || { tag: title, depositMinor: 0, amountMinor: 0 }
+        : null;
+  }
+  if (input.share !== undefined) {
+    if (!next.share)
+      throw planError('share can only be set on a share-kind project (kind: "share").');
+    assertTagMatchesTitle(input.share, 'share', title);
+    next.share = {
+      ...next.share,
+      ...(input.share.quantity !== undefined && {
+        quantity: normalizeQuantity(input.share.quantity),
+      }),
+      ...(input.share.priceMinor !== undefined && { priceMinor: input.share.priceMinor }),
+    };
+  }
+  if (input.investment !== undefined) {
+    if (!next.investment) {
+      throw planError(
+        'investment can only be set on an investment-kind project (kind: "investment").',
+      );
+    }
+    assertTagMatchesTitle(input.investment, 'investment', title);
+    next.investment = {
+      ...next.investment,
+      ...(input.investment.depositMinor !== undefined && {
+        depositMinor: input.investment.depositMinor,
+      }),
+      ...(input.investment.amountMinor !== undefined && {
+        amountMinor: input.investment.amountMinor,
+      }),
+    };
+  }
+  if (input.liabilitie === null) {
+    next.liabilitie = null;
+  } else if (input.liabilitie !== undefined) {
+    assertTagMatchesTitle(input.liabilitie, 'liabilitie', title);
+    next.liabilitie = {
+      tag: title,
+      amountMinor: input.liabilitie.amountMinor ?? next.liabilitie?.amountMinor ?? 0,
+      creditMinor: input.liabilitie.creditMinor ?? next.liabilitie?.creditMinor ?? 0,
+      investment: false,
+    };
+  }
+  if (input.cashflowMinor !== undefined) next.cashflowMinor = input.cashflowMinor;
+  if (input.amountMinor !== undefined) {
+    next.amountMinor = input.amountMinor;
+  } else if (input.share !== undefined && next.share) {
+    next.amountMinor =
+      multiplyQuantityPrice(next.share.quantity, next.share.priceMinor) -
+      (next.liabilitie?.amountMinor ?? 0);
+  }
+
+  if (next.share) next.share = { ...next.share, tag: title };
+  if (next.investment) next.investment = { ...next.investment, tag: title };
+  if (next.liabilitie) {
+    next.liabilitie = { ...next.liabilitie, tag: title, investment: kindOf(next) !== null };
+  }
+  return next;
+}
+
+/** Create's legacy `isAsset`/`share: true`/`investment: true` flags, normalized to `kind` (validated mutually exclusive at the route). */
+function createKindFrom(input) {
+  if (input.kind !== undefined) return input.kind;
+  if (input.isAsset) return 'asset';
+  if (input.share) return 'share';
+  if (input.investment) return 'investment';
+  return undefined;
+}
+
+function planInputFrom(input) {
+  return {
+    kind: createKindFrom(input),
+    share: typeof input.share === 'object' ? input.share : undefined,
+    investment: typeof input.investment === 'object' ? input.investment : undefined,
+    liabilitie: input.liabilitie,
+    amountMinor: input.amountMinor,
+    cashflowMinor: input.cashflowMinor,
+  };
+}
+
+/**
+ * The UI's edit panel also writes a changed share price through to the
+ * standalone balance-sheet Share tagged with the project's title (never its
+ * quantity — that only moves through buy/sell). Returns `undefined` when
+ * there is nothing to write.
+ */
+function syncBalanceSharePrice(data, project, previous, session, schemaVersion) {
+  if (!project.share || project.share.priceMinor === previous.share?.priceMinor) return undefined;
+  const rawShares = data.balance?.asset?.shares || [];
+  const index = rawShares.findIndex((raw) => decryptValue(raw.tag, session) === project.title);
+  if (index === -1) return undefined;
+  const price = writeValue(toStoredMoney(project.share.priceMinor, schemaVersion), session);
+  return {
+    ...data.balance,
+    asset: {
+      ...data.balance.asset,
+      shares: rawShares.map((raw, i) => (i === index ? { ...raw, price } : raw)),
+    },
+  };
+}
+
+/** Shared read → mutate → write-with-retry-on-409 loop for CRUD (no transaction; at most a balance-sheet share price sync). */
 async function withGrowWrite({ usersDb, authDb }, userId, mutate) {
   let attempt = 0;
   while (attempt < MAX_WRITE_RETRIES) {
@@ -357,8 +490,12 @@ async function withGrowWrite({ usersDb, authDb }, userId, mutate) {
 
     const mutation = mutate({ data, rawGrow, session, schemaVersion });
     if (mutation === null) return null;
-    const { updatedRawGrow, result } = mutation;
-    const updatedData = { ...data, grow: updatedRawGrow };
+    const { updatedRawGrow, updatedBalance, baseData, result } = mutation;
+    const updatedData = {
+      ...(baseData || data),
+      grow: updatedRawGrow,
+      ...(updatedBalance && { balance: updatedBalance }),
+    };
     const now = new Date().toISOString();
     try {
       await usersDb.insert({ ...userDoc, data: updatedData, updatedAt: now });
@@ -378,7 +515,7 @@ async function createGrow(deps, userId, input) {
     assertNoTitleCollision(title, existingTitles);
 
     const now = new Date().toISOString();
-    const newGrow = {
+    const baseGrow = {
       id: `grow_${crypto.randomUUID()}`,
       title,
       sub: input.sub || '',
@@ -387,14 +524,14 @@ async function createGrow(deps, userId, input) {
       strategy: input.strategy || '',
       riskScore: input.riskScore || 0,
       risks: input.risks || '',
-      links: input.links || [],
-      actionItems: input.actionItems || [],
-      notes: input.notes || [],
+      links: (input.links || []).map(normalizeLink),
+      actionItems: (input.actionItems || []).map(normalizeActionItem),
+      notes: (input.notes || []).map((note) => normalizeNote(note, now)),
       cashflowMinor: 0,
       amountMinor: 0,
-      isAsset: Boolean(input.isAsset),
-      share: input.share ? { tag: title, quantity: 0, priceMinor: 0 } : null,
-      investment: input.investment ? { tag: title, depositMinor: 0, amountMinor: 0 } : null,
+      isAsset: false,
+      share: null,
+      investment: null,
       liabilitie: null,
       createdAt: now,
       updatedAt: now,
@@ -409,7 +546,9 @@ async function createGrow(deps, userId, input) {
       alternativeCostMinor: input.alternativeCostMinor,
       pattern: input.pattern,
       insights: input.insights,
+      status: input.status,
     };
+    const newGrow = applyPlanFields(baseGrow, planInputFrom(input));
     return {
       updatedRawGrow: [...rawGrow, encryptGrow(newGrow, session, schemaVersion)],
       result: newGrow,
@@ -443,8 +582,7 @@ const EDITABLE_METADATA_FIELDS = [
 ];
 
 async function updateGrow(deps, userId, growId, patch) {
-  assertNoMoneyFields(patch);
-  return withGrowWrite(deps, userId, ({ rawGrow, session, schemaVersion }) => {
+  return withGrowWrite(deps, userId, ({ data, rawGrow, session, schemaVersion }) => {
     const existing = decryptAllGrow(rawGrow, session, schemaVersion);
     const index = existing.findIndex((project) => project.id === growId);
     if (index === -1) return null;
@@ -461,16 +599,34 @@ async function updateGrow(deps, userId, growId, patch) {
       }
     }
 
-    const updated = { ...current, title };
+    const now = new Date().toISOString();
+    const withMetadata = { ...current, title };
     for (const field of EDITABLE_METADATA_FIELDS) {
-      if (field !== 'title' && patch[field] !== undefined) updated[field] = patch[field];
+      if (field !== 'title' && patch[field] !== undefined) withMetadata[field] = patch[field];
     }
-    updated.updatedAt = new Date().toISOString();
+    if (patch.notes !== undefined) {
+      withMetadata.notes = patch.notes.map((note) => normalizeNote(note, now));
+    }
+    if (patch.actionItems !== undefined) {
+      withMetadata.actionItems = patch.actionItems.map(normalizeActionItem);
+    }
+    const updated = applyPlanFields(applyAllListOps(withMetadata, patch, now), patch);
+    updated.updatedAt = now;
 
+    // A rename carries over to everything linked by the title (grow-rename.js).
+    const baseData =
+      title === current.title
+        ? data
+        : cascadeGrowRename(data, current.title, title, session, schemaVersion);
     const updatedRawGrow = rawGrow.map((raw, i) =>
       i === index ? encryptGrow(updated, session, schemaVersion) : raw,
     );
-    return { updatedRawGrow, result: updated };
+    return {
+      updatedRawGrow,
+      baseData,
+      updatedBalance: syncBalanceSharePrice(baseData, updated, current, session, schemaVersion),
+      result: updated,
+    };
   });
 }
 

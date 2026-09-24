@@ -360,7 +360,10 @@ describe('v1 API authentication and PAT management', () => {
     });
     const response = await sessionRequest('delete', `/api/v1/transactions/${created.body.id}`);
     expect(response.status).toBe(200);
-    expect(response.body).toEqual({ id: created.body.id });
+    expect(response.body.id).toBe(created.body.id);
+    expect(response.body.effects.incomeStatement).toEqual([
+      { section: 'revenues', tag: 'ToDelete', beforeMinor: 40000, afterMinor: 0 },
+    ]);
     const missing = await sessionRequest('get', `/api/v1/transactions/${created.body.id}`);
     expect(missing.status).toBe(404);
     const ledger = await sessionRequest('get', '/api/data/read/income/revenue/revenues');
@@ -1650,7 +1653,7 @@ describe('v1 API authentication and PAT management', () => {
       });
     });
 
-    it('updates only the target, leaving the derived amount untouched, and audit logs the write', async () => {
+    it('updates the target, rebuilds the balance from transactions, reports effects, and audit logs the write', async () => {
       const { token, tokenId } = await mojoToken(['mojo:r', 'mojo:w']);
       await setMojo(firstUser.userId, { amount: 1500, target: 2000 });
       const response = await request(app)
@@ -1658,14 +1661,12 @@ describe('v1 API authentication and PAT management', () => {
         .set('Authorization', `Bearer ${token}`)
         .send({ targetMinor: 300000 });
       expect(response.status).toBe(200);
-      expect(response.body).toEqual({
-        amountMinor: 150000,
-        targetMinor: 300000,
-        remainingMinor: 150000,
-        percentFilled: 50,
-      });
+      expect(response.body.targetMinor).toBe(300000);
+      expect(response.body.amountMinor).toBeLessThanOrEqual(300000);
+      expect(response.body.effects).toHaveProperty('mojo');
+      const reread = await request(app).get('/api/v1/mojo').set('Authorization', `Bearer ${token}`);
+      expect(reread.body.amountMinor).toBe(response.body.amountMinor);
       const stored = await getUsersDb().get(firstUser.userId);
-      expect(stored.data.mojo.amount).toBe(1500);
       expect(stored.data.mojo.target).toBe(3000);
       const auditEntries = await queryAuditEntries(getAuditDb(), firstUser.userId, {
         resource: 'mojo',
@@ -1976,6 +1977,158 @@ describe('v1 API authentication and PAT management', () => {
       );
     });
 
+    it('settles a bucket with its actual cost, re-settles, and unsettles', async () => {
+      const { token } = await smileToken(['smile:r', 'smile:w']);
+      const created = await createProject(token, { title: `Smile Settle ${Date.now()}` });
+      const bucket = created.buckets[0];
+      await request(app)
+        .post(`/api/v1/smile/${created.id}/contribute`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ amountMinor: 50000 })
+        .expect(201);
+
+      const settled = await request(app)
+        .post(`/api/v1/smile/${created.id}/buckets/${bucket.id}/settle`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ actualMinor: 65000, receipt: 'Invoice 1' });
+      expect(settled.status).toBe(201);
+      expect(settled.body.differenceMinor).toBe(-15000);
+      expect(settled.body.bucket).toMatchObject({ status: 'settled', settledMinor: 65000 });
+
+      const bad = await request(app)
+        .post(`/api/v1/smile/${created.id}/buckets/${bucket.id}/settle`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ actualMinor: 1, receipt: '#settle:X:1.00' });
+      expect(bad.status).toBe(400);
+
+      const reopened = await request(app)
+        .post(`/api/v1/smile/${created.id}/buckets/${bucket.id}/unsettle`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(reopened.status).toBe(200);
+      expect(reopened.body.bucket).toMatchObject({ status: 'open', amountMinor: 50000 });
+    });
+
+    it('manages a payment plan: edit, activate (creates the subscription), deactivate, delete', async () => {
+      const { token } = await smileToken(['smile:r', 'smile:w']);
+      const created = await createProject(token, { title: `Smile Plan ${Date.now()}` });
+      const plan = await request(app)
+        .post(`/api/v1/smile/${created.id}/payment-plan`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          planTitle: 'Monthly',
+          startDate: '2026-10-01',
+          targetDate: '2027-09-01',
+          frequency: 'monthly',
+          account: 'Smile',
+        });
+      expect(plan.status).toBe(201);
+      const base = `/api/v1/smile/${created.id}/payment-plans/${plan.body.id}`;
+
+      const edited = await request(app)
+        .patch(base)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ manualAmountMinor: 12345 });
+      expect(edited.status).toBe(200);
+      expect(edited.body.amountMinor).toBe(12345);
+
+      const activated = await request(app)
+        .post(`${base}/activate`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(activated.status).toBe(200);
+      expect(activated.body.status).toBe('active');
+
+      const again = await request(app)
+        .post(`${base}/activate`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(again.status).toBe(400);
+
+      const deactivated = await request(app)
+        .post(`${base}/deactivate`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(deactivated.body.status).toBe('inactive');
+
+      const deleted = await request(app).delete(base).set('Authorization', `Bearer ${token}`);
+      expect(deleted.status).toBe(200);
+      const gone = await request(app)
+        .post(`${base}/activate`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(gone.status).toBe(404);
+    });
+
+    it('edits buckets by id and guards removing or deleting money', async () => {
+      const { token } = await smileToken(['smile:r', 'smile:w']);
+      const created = await createProject(token, { title: `Smile Guard ${Date.now()}` });
+      const bucket = created.buckets[0];
+      await request(app)
+        .post(`/api/v1/smile/${created.id}/contribute`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ amountMinor: 1000 })
+        .expect(201);
+
+      const edited = await request(app)
+        .patch(`/api/v1/smile/${created.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          bucketsUpdate: [{ id: bucket.id, notes: 'Main pot' }],
+          bucketsAdd: [{ title: 'Extra', targetMinor: 5000 }],
+        });
+      expect(edited.status).toBe(200);
+      expect(edited.body.buckets[0]).toMatchObject({ notes: 'Main pot', amountMinor: 1000 });
+
+      const setAmount = await request(app)
+        .patch(`/api/v1/smile/${created.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ bucketsUpdate: [{ id: bucket.id, amountMinor: 5 }] });
+      expect(setAmount.status).toBe(400);
+
+      const removeFunded = await request(app)
+        .patch(`/api/v1/smile/${created.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ bucketsRemove: [bucket.id] });
+      expect(removeFunded.status).toBe(400);
+
+      const deleteFunded = await request(app)
+        .delete(`/api/v1/smile/${created.id}`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(deleteFunded.status).toBe(400);
+      const forced = await request(app)
+        .delete(`/api/v1/smile/${created.id}?force=true`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(forced.status).toBe(200);
+    });
+
+    it('contributes through a typed action, capped and reported, and lists the project transactions', async () => {
+      const { token } = await smileToken(['smile:r', 'smile:w']);
+      const created = await createProject(token, { title: `Smile Contribute ${Date.now()}` });
+      const bucket = created.buckets[0];
+
+      const contributed = await request(app)
+        .post(`/api/v1/smile/${created.id}/contribute`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ buckets: [{ bucketId: bucket.id, amountMinor: bucket.targetMinor + 500 }] });
+      expect(contributed.status).toBe(201);
+      expect(contributed.body.appliedMinor).toBe(bucket.targetMinor);
+      expect(contributed.body.project.buckets[0].amountMinor).toBe(bucket.targetMinor);
+      expect(contributed.body.effects.smile).toHaveLength(1);
+
+      const listed = await request(app)
+        .get(`/api/v1/smile/${created.id}/transactions`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(listed.body.transactions.map((t) => t.id)).toEqual([contributed.body.transaction.id]);
+
+      const full = await request(app)
+        .post(`/api/v1/smile/${created.id}/contribute`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ amountMinor: 100 });
+      expect(full.status).toBe(400);
+
+      const handTagged = await request(app)
+        .post(`/api/v1/smile/${created.id}/contribute`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ amountMinor: 100, comment: '#bucket:X:1.00' });
+      expect(handTagged.status).toBe(400);
+    });
+
     it('replaces buckets wholesale, preserving an echoed-back id and minting one for a new bucket', async () => {
       const { token } = await smileToken(['smile:r', 'smile:w']);
       const created = await createProject(token, { title: `Smile Bucket Patch ${Date.now()}` });
@@ -1989,7 +2142,6 @@ describe('v1 API authentication and PAT management', () => {
               id: existingBucketId,
               title: created.buckets[0].title,
               targetMinor: 200000,
-              amountMinor: 50000,
             },
             { title: 'New Bucket', targetMinor: 30000 },
           ],
@@ -1998,10 +2150,16 @@ describe('v1 API authentication and PAT management', () => {
       expect(response.body.buckets[0]).toMatchObject({
         id: existingBucketId,
         targetMinor: 200000,
-        amountMinor: 50000,
+        amountMinor: 0,
       });
       expect(response.body.buckets[1].id).not.toBe(existingBucketId);
       expect(response.body.totals.targetMinor).toBe(230000);
+
+      const withAmount = await request(app)
+        .patch(`/api/v1/smile/${created.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ buckets: [{ title: 'X', targetMinor: 100, amountMinor: 50 }] });
+      expect(withAmount.status).toBe(400);
     });
 
     it('rejects an unrecognized field', async () => {
@@ -2607,7 +2765,6 @@ describe('v1 API authentication and PAT management', () => {
               id: existingBucketId,
               title: created.buckets[0].title,
               targetMinor: 200000,
-              amountMinor: 50000,
             },
             { title: 'New Bucket', targetMinor: 30000 },
           ],
@@ -2616,10 +2773,16 @@ describe('v1 API authentication and PAT management', () => {
       expect(response.body.buckets[0]).toMatchObject({
         id: existingBucketId,
         targetMinor: 200000,
-        amountMinor: 50000,
+        amountMinor: 0,
       });
       expect(response.body.buckets[1].id).not.toBe(existingBucketId);
       expect(response.body.totals.targetMinor).toBe(230000);
+
+      const withAmount = await request(app)
+        .patch(`/api/v1/fire/${created.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ buckets: [{ title: 'X', targetMinor: 100, amountMinor: 50 }] });
+      expect(withAmount.status).toBe(400);
     });
 
     it('rejects an unrecognized field', async () => {
@@ -4017,16 +4180,83 @@ describe('v1 API authentication and PAT management', () => {
       );
     });
 
-    it('rejects a PATCH touching a money-moving field', async () => {
+    it('PATCHes plan fields, and rejects a share plan on a non-share project or an unknown field', async () => {
       const { token } = await growToken(['grow:r', 'grow:w']);
       const created = await request(app)
         .post('/api/v1/grow')
         .set('Authorization', `Bearer ${token}`)
-        .send({ title: `RejectPatch${Date.now()}`, isAsset: true });
-      const response = await request(app)
+        .send({ title: `PlanPatch${Date.now()}`, isAsset: true });
+      const planned = await request(app)
         .patch(`/api/v1/grow/${created.body.id}`)
         .set('Authorization', `Bearer ${token}`)
-        .send({ amountMinor: 100 });
+        .send({ amountMinor: 100, cashflowMinor: 20 });
+      expect(planned.status).toBe(200);
+      expect(planned.body).toMatchObject({ amountMinor: 100, cashflowMinor: 20 });
+
+      const wrongKind = await request(app)
+        .patch(`/api/v1/grow/${created.body.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ share: { quantity: 1 } });
+      expect(wrongKind.status).toBe(400);
+      expect(wrongKind.body.code).toBe('validation_invalid');
+
+      const unknown = await request(app)
+        .patch(`/api/v1/grow/${created.body.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ currentAmountMinor: 100 });
+      expect(unknown.status).toBe(400);
+    });
+
+    it('edits single action items and notes, and guards whole-list replacement', async () => {
+      const { token } = await growToken(['grow:r', 'grow:w']);
+      const created = await request(app)
+        .post('/api/v1/grow')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ title: `Lists${Date.now()}`, actionItems: [{ text: 'First' }] });
+      const id = created.body.id;
+
+      const edited = await request(app)
+        .patch(`/api/v1/grow/${id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ actionItemsUpdate: [{ index: 0, done: true }], notesAdd: [{ text: 'Note' }] });
+      expect(edited.status).toBe(200);
+      expect(edited.body.actionItems).toEqual([{ text: 'First', done: true, priority: 'medium' }]);
+      expect(edited.body.notes[0].text).toBe('Note');
+
+      const mixed = await request(app)
+        .patch(`/api/v1/grow/${id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ notes: [], notesAdd: [{ text: 'x' }] });
+      expect(mixed.status).toBe(400);
+
+      const withoutDone = await request(app)
+        .patch(`/api/v1/grow/${id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ actionItems: [{ text: 'First' }] });
+      expect(withoutDone.status).toBe(400);
+
+      const outOfRange = await request(app)
+        .patch(`/api/v1/grow/${id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ notesRemove: [7] });
+      expect(outOfRange.status).toBe(400);
+    });
+
+    it('rejects a riskScore outside the 0-5 range the app displays', async () => {
+      const { token } = await growToken(['grow:w']);
+      const response = await request(app)
+        .post('/api/v1/grow')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ title: `Risky${Date.now()}`, riskScore: 8 });
+      expect(response.status).toBe(400);
+    });
+
+    it('rejects an unknown field on create instead of silently dropping it', async () => {
+      const { token } = await growToken(['grow:w']);
+      const response = await request(app)
+        .post('/api/v1/grow')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ title: `UnknownField${Date.now()}`, currentAmountMinor: 100 });
       expect(response.status).toBe(400);
       expect(response.body.code).toBe('validation_invalid');
     });
@@ -6659,7 +6889,7 @@ describe('v1 API authentication and PAT management', () => {
       expect(response.body.code).toBe('validation_invalid');
     });
 
-    it('rejects a share-shaped body sent to an asset-kind project instead of silently producing NaN', async () => {
+    it('rejects an investment-shaped body sent to an asset-kind project instead of silently producing NaN', async () => {
       const { token } = await growToken(['grow:w']);
       const project = await createGrowProject(token, {
         title: `KindMismatch${Date.now()}`,
@@ -6668,9 +6898,138 @@ describe('v1 API authentication and PAT management', () => {
       const response = await request(app)
         .post(`/api/v1/grow/${project.id}/buy`)
         .set('Authorization', `Bearer ${token}`)
-        .send({ quantity: 10, priceMinor: 25000 });
+        .send({ depositMinor: 10, mortgageMinor: 25000 });
       expect(response.status).toBe(400);
       expect(response.body.code).toBe('validation_invalid');
+    });
+
+    it('renaming a share project carries over to its share, transactions, and income; a colliding rename is refused', async () => {
+      const { token } = await growToken(['grow:r', 'grow:w', 'balance:r', 'transactions:r']);
+      const suffix = `${Date.now()}${Math.floor(Math.random() * 1e6)}`;
+      const project = await createGrowProject(token, { title: `Coin${suffix}`, share: true });
+      await request(app)
+        .post(`/api/v1/grow/${project.id}/buy`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ quantity: 2, priceMinor: 1000 })
+        .expect(201);
+
+      const renamed = await request(app)
+        .patch(`/api/v1/grow/${project.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ title: `Token${suffix}` });
+      expect(renamed.status).toBe(200);
+
+      const shares = await request(app)
+        .get('/api/v1/balance/shares')
+        .set('Authorization', `Bearer ${token}`);
+      const tags = shares.body.shares.map((share) => share.tag);
+      expect(tags).toContain(`Token${suffix}`);
+      expect(tags).not.toContain(`Coin${suffix}`);
+
+      const transactions = await request(app)
+        .get('/api/v1/transactions')
+        .set('Authorization', `Bearer ${token}`);
+      const buy = transactions.body.transactions.find((t) => t.category === `@Token${suffix}`);
+      expect(buy.comment).toBe(`Buy Share Token${suffix} 2 x 10;`);
+
+      const other = await createGrowProject(token, { title: `Other${suffix}`, share: true });
+      const collision = await request(app)
+        .patch(`/api/v1/grow/${other.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ title: `Token${suffix}x` });
+      expect(collision.status).toBe(200);
+      const onto = await request(app)
+        .patch(`/api/v1/grow/${other.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ title: `Token${suffix}` });
+      expect(onto.status).toBe(400);
+    });
+
+    it("lists, edits in place, and deletes a project's trades, undoing effects and reporting them", async () => {
+      const { token } = await growToken([
+        'grow:r',
+        'grow:w',
+        'balance:r',
+        'transactions:r',
+        'transactions:w',
+      ]);
+      const title = `Trade${Date.now()}${Math.floor(Math.random() * 1e6)}`;
+      const project = await createGrowProject(token, { title, share: true });
+      const bought = await request(app)
+        .post(`/api/v1/grow/${project.id}/buy`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ quantity: 2, priceMinor: 1000 });
+      expect(bought.status).toBe(201);
+      expect(bought.body.effects.balanceSheet).toEqual([
+        { type: 'share', tag: title, before: null, after: { quantity: 2, priceMinor: 1000 } },
+      ]);
+      const txId = bought.body.transaction.id;
+
+      const listed = await request(app)
+        .get(`/api/v1/grow/${project.id}/transactions`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(listed.status).toBe(200);
+      expect(listed.body.transactions.map((t) => t.id)).toEqual([txId]);
+      expect(listed.body.transactions[0].growStatements[0]).toMatchObject({
+        kind: 'buyShare',
+        quantity: 2,
+      });
+
+      const locked = await request(app)
+        .patch(`/api/v1/transactions/${txId}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ amountMinor: -1 });
+      expect(locked.status).toBe(400);
+
+      const edited = await request(app)
+        .patch(`/api/v1/grow/${project.id}/transactions/${txId}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ quantity: 3 });
+      expect(edited.status).toBe(200);
+      expect(edited.body.transaction).toMatchObject({ id: txId, amountMinor: -3000 });
+
+      const deleted = await request(app)
+        .delete(`/api/v1/grow/${project.id}/transactions/${txId}`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(deleted.status).toBe(200);
+      expect(deleted.body.effects.balanceSheet).toEqual([
+        { type: 'share', tag: title, before: { quantity: 3, priceMinor: 1000 }, after: null },
+      ]);
+      const shares = await request(app)
+        .get('/api/v1/balance/shares')
+        .set('Authorization', `Bearer ${token}`);
+      expect(shares.body.shares.map((share) => share.tag)).not.toContain(title);
+    });
+
+    it('rejects a generic transaction carrying a Grow trade statement', async () => {
+      const { token } = await growToken(['transactions:w']);
+      const response = await request(app)
+        .post('/api/v1/transactions')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          account: 'Fire',
+          amountMinor: -1000,
+          date: '2026-09-24',
+          time: '10:00',
+          category: '@Anything',
+          comment: 'Buy Share Anything 1 x 10;',
+        });
+      expect(response.status).toBe(400);
+      expect(response.body.code).toBe('validation_invalid');
+    });
+
+    it('buys an asset-kind project by quantity x unit price', async () => {
+      const { token } = await growToken(['grow:w']);
+      const project = await createGrowProject(token, {
+        title: `Gold${Date.now()}`,
+        isAsset: true,
+      });
+      const response = await request(app)
+        .post(`/api/v1/grow/${project.id}/buy`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ quantity: 2.5, priceMinor: 6000 });
+      expect(response.status).toBe(201);
+      expect(response.body.transaction.amountMinor).toBe(-15000);
     });
 
     it('sell on an asset-kind project removes the asset when the sale zeroes it out', async () => {

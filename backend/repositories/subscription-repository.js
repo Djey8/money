@@ -42,6 +42,7 @@ const {
   generateDueSubscriptionTransactions,
 } = require('@money/domain');
 const { getEncryptionSession } = require('../services/encryption-session');
+const { assertNotPlanOwned } = require('../services/payment-plan-links');
 const { decryptValue, toApiTransactions, encryptTransaction } = require('./transaction-repository');
 const {
   writeValue,
@@ -250,6 +251,7 @@ async function updateSubscription(deps, userId, subscriptionId, patch) {
       const existing = decryptAllSubscriptions(rawSubscriptions, session, schemaVersion);
       const index = existing.findIndex((subscription) => subscription.id === subscriptionId);
       if (index === -1) return null;
+      assertNotPlanOwned(data, rawSubscriptions[index], session);
       const current = existing[index];
       const updated = { ...current, ...patch };
 
@@ -311,6 +313,7 @@ async function deleteSubscription(
       const existing = decryptAllSubscriptions(rawSubscriptions, session, schemaVersion);
       const index = existing.findIndex((subscription) => subscription.id === subscriptionId);
       if (index === -1) return null;
+      assertNotPlanOwned(data, rawSubscriptions[index], session);
       const current = existing[index];
       const updatedRawSubscriptions = rawSubscriptions.filter((_, i) => i !== index);
 
@@ -451,15 +454,18 @@ async function batchSubscriptions(deps, userId, items, { atomic = false } = {}) 
           if (item.op === 'update') {
             const index = working.findIndex((subscription) => subscription.id === item.id);
             if (index === -1) throw new Error('No matching subscription exists.');
+            assertNotPlanOwned(data, working[index], session);
             working = working.map((subscription, candidateIndex) =>
               candidateIndex === index ? { ...subscription, ...item.fields } : subscription,
             );
             anyApplied = true;
             return { op: 'update', status: 'updated', id: item.id };
           }
-          if (!working.some((subscription) => subscription.id === item.id)) {
+          const target = working.find((subscription) => subscription.id === item.id);
+          if (!target) {
             throw new Error('No matching subscription exists.');
           }
+          assertNotPlanOwned(data, target, session);
           working = working.filter((subscription) => subscription.id !== item.id);
           anyApplied = true;
           return { op: 'delete', status: 'deleted', id: item.id };

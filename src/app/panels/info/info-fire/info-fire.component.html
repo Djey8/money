@@ -202,7 +202,7 @@
           <h5 class="bucket-title">{{ bucket.title }}</h5>
           <div class="bucket-progress">
             <span class="bucket-amount"
-              >{{ bucket.amount | appNumber }} / {{ bucket.target | appNumber }}
+              >{{ bucket.amount | appNumber }} / {{ bucketCapacity(bucket) | appNumber }}
               {{ currency }}</span
             >
             <div class="progress-bar-container">
@@ -234,10 +234,62 @@
             >
           </div>
 
+          <!-- Settlement: the actual cost replaces the plan -->
+          <div class="bucket-settled" *ngIf="isSettled(bucket)">
+            <span class="bucket-settled-badge">{{ 'Bucket.settledBadge' | translate }}</span>
+            <span class="bucket-settled-detail">
+              {{ 'Bucket.planned' | translate }}: {{ bucket.target | appNumber }} ·
+              {{ 'Bucket.actual' | translate }}: {{ bucket.settledAmount | appNumber }} ·
+              {{ 'Bucket.variance' | translate }}:
+              {{ bucket.settledAmount! - bucket.target | appNumber }} {{ currency }}
+              <ng-container *ngIf="bucket.settledDate">
+                ({{ bucket.settledDate | date: 'mediumDate' }})
+              </ng-container>
+            </span>
+          </div>
+
+          <div class="bucket-settle-form" *ngIf="settlingBucketId === bucket.id">
+            <label>
+              {{ 'Bucket.actualCost' | translate }} ({{ currency }})
+              <input type="number" min="0" step="0.01" [(ngModel)]="settleActual" />
+            </label>
+            <label>
+              {{ 'Bucket.receipt' | translate }}
+              <input type="text" [(ngModel)]="settleReceipt" />
+            </label>
+            <label *ngIf="getSettleSurplus(bucket) > 0 && getSurplusTargets(bucket).length">
+              {{ 'Bucket.surplus' | translate: { amount: (getSettleSurplus(bucket) | appNumber) } }}
+              <select [(ngModel)]="settleSurplusTo">
+                <option value="">{{ 'Bucket.surplusRelease' | translate }}</option>
+                <option *ngFor="let target of getSurplusTargets(bucket)" [value]="target.title">
+                  {{ 'Bucket.surplusMoveTo' | translate: { title: target.title } }}
+                </option>
+              </select>
+            </label>
+            <p class="bucket-settle-hint">{{ 'Bucket.settleHint' | translate }}</p>
+            <div class="bucket-settle-actions">
+              <button class="btn btn--sm btn--fire" (click)="confirmSettle(bucket)">
+                {{ 'Bucket.settle' | translate }}
+              </button>
+              <button class="btn btn--sm" (click)="cancelSettle()">
+                {{ 'Common.cancel' | translate }}
+              </button>
+            </div>
+          </div>
+
+          <div class="bucket-settle-buttons" *ngIf="settlingBucketId !== bucket.id">
+            <button class="btn btn--sm" (click)="openSettle(bucket)">
+              {{ (isSettled(bucket) ? 'Bucket.resettle' : 'Bucket.settle') | translate }}
+            </button>
+            <button class="btn btn--sm" *ngIf="isSettled(bucket)" (click)="unsettleBucket(bucket)">
+              {{ 'Bucket.unsettle' | translate }}
+            </button>
+          </div>
+
           <!-- Add to This Bucket Button -->
           <button
             class="btn btn--sm btn--fire bucket-add-btn"
-            *ngIf="bucket.amount < bucket.target"
+            *ngIf="!isSettled(bucket) && bucket.amount < bucket.target"
             (click)="addBucketToTransaction(bucket.id, bucket.title, bucket.target - bucket.amount)"
           >
             + {{ 'Fire.addToBucket' | translate }}
@@ -557,7 +609,10 @@
           >
             <div class="plan-header">
               <h4>{{ plan.title }}</h4>
-              <span class="status-badge status-inactive">{{
+              <span class="status-badge status-completed" *ngIf="plan.status === 'completed'">{{
+                'Fire.paymentPlans.statusCompleted' | translate
+              }}</span>
+              <span class="status-badge status-inactive" *ngIf="plan.status !== 'completed'">{{
                 'Fire.paymentPlans.statusInactive' | translate
               }}</span>
             </div>

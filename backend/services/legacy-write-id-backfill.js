@@ -23,6 +23,7 @@
 
 const crypto = require('crypto');
 const { getEncryptionSession } = require('./encryption-session');
+const { decryptValue } = require('../repositories/transaction-repository');
 
 const ID_PREFIX_BY_PATH = {
   transactions: 'tx',
@@ -42,13 +43,60 @@ function hasStableId(entry) {
 }
 
 /**
+ * The natural key the Angular app itself matches each collection's entries
+ * by (see CLAUDE.md's "entities are keyed by string" note) — used to hand an
+ * id-less incoming entry back the id its stored counterpart already has,
+ * rather than minting a new one. Minting on every write broke every id an
+ * agent was holding the moment the app saved: confirmed in production when a
+ * Grow save from the app re-keyed all three Grow projects.
+ */
+const NATURAL_KEY_FIELDS_BY_PATH = {
+  transactions: ['account', 'amount', 'date', 'time', 'category', 'comment'],
+  smile: ['title'],
+  fire: ['title'],
+  subscriptions: ['title'],
+  budget: ['tag', 'date'],
+  grow: ['title'],
+  'balance/asset/assets': ['tag'],
+  'balance/asset/shares': ['tag'],
+  'balance/asset/investments': ['tag'],
+  'balance/liabilities': ['tag'],
+};
+
+function naturalKey(entry, fields, session) {
+  return JSON.stringify(
+    fields.map((field) => {
+      const value = decryptValue(entry[field], session);
+      return value === undefined || value === null ? '' : String(value);
+    }),
+  );
+}
+
+/**
+ * Stored ids by natural key, each list in stored order. Every id is handed
+ * out at most once, so two incoming entries sharing a key (e.g. two
+ * identical transactions) can't both claim the same stored id.
+ */
+function storedIdsByKey(existing, fields, session) {
+  const byKey = new Map();
+  for (const entry of Array.isArray(existing) ? existing : []) {
+    if (entry === null || typeof entry !== 'object' || !hasStableId(entry)) continue;
+    const key = naturalKey(entry, fields, session);
+    if (!byKey.has(key)) byKey.set(key, []);
+    byKey.get(key).push({ stored: entry.id, plain: decryptValue(entry.id, session) });
+  }
+  return byKey;
+}
+
+/**
  * @param {object} authDb
  * @param {string} userId
  * @param {string} path - the write path as given to /write/{path} or a /write/batch entry
  * @param {unknown} data - the request body for that path
+ * @param {unknown} [existing] - what is currently stored at `path`, if known — an id-less entry whose natural key matches a stored one gets that stored id back instead of a new one
  * @returns {Promise<unknown>} `data` unchanged unless it's an array at a known id-bearing path with at least one entry missing an id
  */
-async function backfillMissingIdsForWrite(authDb, userId, path, data) {
+async function backfillMissingIdsForWrite(authDb, userId, path, data, existing) {
   const prefix = ID_PREFIX_BY_PATH[path];
   if (!prefix || !Array.isArray(data)) return data;
 
@@ -58,8 +106,23 @@ async function backfillMissingIdsForWrite(authDb, userId, path, data) {
   if (!needsBackfill) return data;
 
   const session = await getEncryptionSession(authDb, userId);
+  const fields = NATURAL_KEY_FIELDS_BY_PATH[path];
+  const available = storedIdsByKey(existing, fields, session);
+  // Ids the incoming write already carries explicitly are taken (compared
+  // decrypted — the same id encrypts to a different ciphertext each time).
+  const taken = new Set(
+    data.filter((e) => e && hasStableId(e)).map((e) => decryptValue(e.id, session)),
+  );
   return data.map((entry) => {
     if (entry === null || typeof entry !== 'object' || hasStableId(entry)) return entry;
+    const candidates = available.get(naturalKey(entry, fields, session)) || [];
+    while (candidates.length > 0) {
+      const reused = candidates.shift();
+      if (!taken.has(reused.plain)) {
+        taken.add(reused.plain);
+        return { ...entry, id: reused.stored };
+      }
+    }
     const id = `${prefix}_${crypto.randomUUID()}`;
     return { ...entry, id: session ? session.encrypt(id) : id };
   });

@@ -30,6 +30,8 @@ const { getEncryptionSession } = require('../services/encryption-session');
 const { decryptValue } = require('./transaction-repository');
 const { writeValue, toStoredMoney } = require('../services/transaction-derived-state');
 
+const { assertRenameKeepsGrowLink, syncGrowEmbedded } = require('../services/grow-links');
+
 const MAX_WRITE_RETRIES = 10;
 
 function decryptMoney(value, session, schemaVersion) {
@@ -151,13 +153,14 @@ async function withInvestmentsWrite({ usersDb, authDb }, userId, mutate) {
 
     const mutation = mutate({ data, rawInvestments, session, schemaVersion });
     if (mutation === null) return null;
-    const { updatedRawInvestments, updatedRawProperties, result } = mutation;
+    const { updatedRawInvestments, updatedRawProperties, updatedRawGrow, result } = mutation;
     const updatedData = {
       ...data,
       balance: {
         ...data.balance,
         asset: { ...data.balance?.asset, investments: updatedRawInvestments },
       },
+      ...(updatedRawGrow !== undefined && { grow: updatedRawGrow }),
     };
     if (updatedRawProperties !== undefined) {
       updatedData.income = {
@@ -217,6 +220,7 @@ async function updateInvestment(deps, userId, investmentId, patch) {
     if (patch.tag !== undefined) {
       tag = patch.tag.trim();
       if (tag !== current.tag) {
+        assertRenameKeepsGrowLink(data, current.tag, tag, session);
         const otherTags = loadExistingTags(data, session).filter(
           (existing) => existing !== current.tag,
         );
@@ -241,7 +245,22 @@ async function updateInvestment(deps, userId, investmentId, patch) {
       updatedRawProperties = renamePropertyTag(rawProperties, current.tag, tag, session);
     }
 
-    return { updatedRawInvestments, updatedRawProperties, result: updatedInvestment };
+    // A linked Grow project's embedded investment copy follows the edit.
+    const rawGrow = data.grow || [];
+    const syncedGrow = syncGrowEmbedded(
+      rawGrow,
+      tag,
+      'investment',
+      { deposit: updatedInvestment.depositMinor, amount: updatedInvestment.amountMinor },
+      session,
+      schemaVersion,
+    );
+    return {
+      updatedRawInvestments,
+      updatedRawProperties,
+      updatedRawGrow: syncedGrow === rawGrow ? undefined : syncedGrow,
+      result: updatedInvestment,
+    };
   });
 }
 

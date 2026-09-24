@@ -5,6 +5,7 @@ const {
   recalculateTransactionDerivedState,
   toMinorUnits,
 } = require('@money/domain');
+const { reconcilePaymentPlans } = require('./payment-plan-links');
 
 function readValue(value, session) {
   return session && typeof value === 'string' ? session.decrypt(value) : value;
@@ -82,12 +83,18 @@ function applyFundProjects(storedProjects, projects, session, schemaVersion) {
       buckets: (storedProject.buckets || []).map((storedBucket) => {
         const bucketId = readValue(storedBucket.id, session);
         const bucket = project.buckets.find((candidate) => candidate.id === bucketId);
-        return bucket
-          ? {
-              ...storedBucket,
-              amount: writeValue(toStoredMoney(bucket.amountMinor, schemaVersion), session),
-            }
-          : storedBucket;
+        if (!bucket) return storedBucket;
+        // Settlement is derived like the amount (a #settle: transaction), so
+        // it's written — or cleared — on every rebuild.
+        const { settledAmount: _amount, settledDate: _date, ...rest } = storedBucket;
+        return {
+          ...rest,
+          amount: writeValue(toStoredMoney(bucket.amountMinor, schemaVersion), session),
+          ...(bucket.settledMinor !== undefined && {
+            settledAmount: writeValue(toStoredMoney(bucket.settledMinor, schemaVersion), session),
+            settledDate: writeValue(bucket.settledDate, session),
+          }),
+        };
       }),
     };
   });
@@ -100,7 +107,7 @@ function applyDerivedState(data, transactions, session, schemaVersion) {
   );
   const income = data.income || {};
   const expenses = income.expenses || {};
-  return {
+  const rebuilt = {
     transactions: derived.transactions,
     data: {
       ...data,
@@ -128,6 +135,11 @@ function applyDerivedState(data, transactions, session, schemaVersion) {
       smile: applyFundProjects(data.smile, derived.funds.smile, session, schemaVersion),
       fire: applyFundProjects(data.fire, derived.funds.fire, session, schemaVersion),
     },
+  };
+  // Payment plans follow their subscriptions and goals (payment-plan-links.js).
+  return {
+    ...rebuilt,
+    data: reconcilePaymentPlans(rebuilt.data, derived.funds, session),
   };
 }
 

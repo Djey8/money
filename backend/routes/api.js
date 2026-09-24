@@ -40,6 +40,16 @@ const {
 } = require('../repositories/report-repository');
 const { getMojoStatus, updateMojoTarget } = require('../repositories/mojo-repository');
 const {
+  settleBucket,
+  unsettleBucket,
+  contributeToProject,
+  contributeToMojo,
+  listProjectTransactions,
+  listMojoTransactions,
+} = require('../repositories/fund-contribution-repository');
+const { repository: smileRepository } = require('../repositories/smile-repository');
+const { repository: fireRepository } = require('../repositories/fire-repository');
+const {
   SMILE_PHASES,
   listSmileProjects,
   getSmileProject,
@@ -104,6 +114,8 @@ const {
   paybackGrow,
   cashflowGrow,
   depositGrow,
+  listGrowTransactions,
+  updateGrowTransaction,
 } = require('../repositories/grow-action-repository');
 const {
   listSubscriptions,
@@ -309,17 +321,95 @@ function validateFundBucketInput(bucket) {
   if (!Number.isInteger(bucket.targetMinor) || bucket.targetMinor <= 0) {
     return 'Each bucket requires a positive integer targetMinor.';
   }
-  if (
-    bucket.amountMinor !== undefined &&
-    (!Number.isInteger(bucket.amountMinor) || bucket.amountMinor < 0)
-  ) {
-    return "Each bucket's amountMinor must be a non-negative integer.";
+  if (bucket.amountMinor !== undefined) {
+    return "Bucket amounts can't be set directly: they're rebuilt from the project's transactions. Put money in with POST /{smile|fire}/{id}/contribute (MCP contribute).";
   }
   // `id` is only meaningful on PATCH (preserves an existing bucket's identity
   // across the update); create always mints a fresh one regardless, so this
   // is validated here once for both callers rather than in two places.
   if (bucket.id !== undefined && !isNonEmptyString(bucket.id)) {
     return "Each bucket's id, if given, must be a non-empty string.";
+  }
+  return validateOptionalBucketFields(bucket, { allowNull: false });
+}
+
+/** A bucket's optional fields; on bucketsUpdate, `null` removes one. */
+function validateOptionalBucketFields(bucket, { allowNull }) {
+  for (const field of ['notes', 'targetDate', 'completionDate']) {
+    const value = bucket[field];
+    if (value === undefined || (allowNull && value === null)) continue;
+    if (typeof value !== 'string') {
+      return `A bucket's ${field} must be a string${allowNull ? ', or null to remove it' : ''}.`;
+    }
+  }
+  if (bucket.links !== undefined && !(allowNull && bucket.links === null)) {
+    if (!Array.isArray(bucket.links) || !bucket.links.every(validateFundLink)) {
+      return "A bucket's links must be an array of {label, url} objects.";
+    }
+  }
+  return null;
+}
+
+const BUCKET_UPDATE_FIELDS = [
+  'id',
+  'title',
+  'targetMinor',
+  'notes',
+  'links',
+  'targetDate',
+  'completionDate',
+];
+
+/** bucketsAdd/bucketsUpdate/bucketsRemove (fund-project-repository.js's applyBucketOps) and force. */
+function validateBucketOps(input) {
+  const { bucketsAdd, bucketsUpdate, bucketsRemove } = input;
+  if ((bucketsAdd || bucketsUpdate || bucketsRemove) && input.buckets !== undefined) {
+    return 'Send either buckets (replaces the whole list) or bucketsAdd/Update/Remove, not both.';
+  }
+  if (bucketsAdd !== undefined) {
+    if (!Array.isArray(bucketsAdd)) return 'bucketsAdd must be an array.';
+    for (const bucket of bucketsAdd) {
+      if (isPlainObject(bucket) && bucket.id !== undefined) {
+        return 'bucketsAdd entries get a new id; use bucketsUpdate to edit an existing bucket.';
+      }
+      const error = validateFundBucketInput(bucket);
+      if (error) return error;
+    }
+  }
+  if (bucketsUpdate !== undefined) {
+    if (!Array.isArray(bucketsUpdate)) return 'bucketsUpdate must be an array.';
+    for (const change of bucketsUpdate) {
+      if (!isPlainObject(change) || !isNonEmptyString(change.id)) {
+        return 'Each bucketsUpdate entry needs the id of the bucket to change.';
+      }
+      if (change.amountMinor !== undefined) {
+        return "Bucket amounts can't be set directly: they're rebuilt from the project's transactions. Put money in with POST /{smile|fire}/{id}/contribute (MCP contribute).";
+      }
+      const unknown = Object.keys(change).find((key) => !BUCKET_UPDATE_FIELDS.includes(key));
+      if (unknown) return `bucketsUpdate.${unknown} is not an editable bucket field.`;
+      if (change.title !== undefined && !isNonEmptyString(change.title)) {
+        return 'bucketsUpdate.title must be a non-empty string.';
+      }
+      if (
+        change.targetMinor !== undefined &&
+        (!Number.isInteger(change.targetMinor) || change.targetMinor <= 0)
+      ) {
+        return 'bucketsUpdate.targetMinor must be a positive integer.';
+      }
+      const error = validateOptionalBucketFields(change, { allowNull: true });
+      if (error) return error;
+    }
+  }
+  if (
+    bucketsRemove !== undefined &&
+    (!Array.isArray(bucketsRemove) ||
+      !bucketsRemove.every(isNonEmptyString) ||
+      new Set(bucketsRemove).size !== bucketsRemove.length)
+  ) {
+    return 'bucketsRemove must be an array of distinct bucket ids.';
+  }
+  if (input.force !== undefined && typeof input.force !== 'boolean') {
+    return 'force must be a boolean.';
   }
   return null;
 }
@@ -358,11 +448,8 @@ function validateCreateSmileProjectInput(input) {
     if (!Number.isInteger(input.targetMinor) || input.targetMinor <= 0) {
       return 'targetMinor must be a positive integer.';
     }
-    if (
-      input.amountMinor !== undefined &&
-      (!Number.isInteger(input.amountMinor) || input.amountMinor < 0)
-    ) {
-      return 'amountMinor must be a non-negative integer.';
+    if (input.amountMinor !== undefined) {
+      return "Bucket amounts can't be set directly: they're rebuilt from the project's transactions. Put money in with POST /{smile|fire}/{id}/contribute (MCP contribute).";
     }
   }
   if (input.buckets !== undefined) {
@@ -415,6 +502,19 @@ const EDITABLE_SMILE_FIELDS = [
   'links',
   'actionItems',
   'notes',
+  'bucketsAdd',
+  'bucketsUpdate',
+  'bucketsRemove',
+  'actionItemsAdd',
+  'actionItemsUpdate',
+  'actionItemsRemove',
+  'notesAdd',
+  'notesUpdate',
+  'notesRemove',
+  'linksAdd',
+  'linksUpdate',
+  'linksRemove',
+  'force',
 ];
 
 function validatePatchSmileProjectInput(input) {
@@ -463,7 +563,7 @@ function validatePatchSmileProjectInput(input) {
       return 'notes must be an array of {text, createdAt?} objects.';
     }
   }
-  return null;
+  return validateBucketOps(input) || validateGrowListOps(input);
 }
 
 function validateCreateFireProjectInput(input) {
@@ -478,11 +578,8 @@ function validateCreateFireProjectInput(input) {
     if (!Number.isInteger(input.targetMinor) || input.targetMinor <= 0) {
       return 'targetMinor must be a positive integer.';
     }
-    if (
-      input.amountMinor !== undefined &&
-      (!Number.isInteger(input.amountMinor) || input.amountMinor < 0)
-    ) {
-      return 'amountMinor must be a non-negative integer.';
+    if (input.amountMinor !== undefined) {
+      return "Bucket amounts can't be set directly: they're rebuilt from the project's transactions. Put money in with POST /{smile|fire}/{id}/contribute (MCP contribute).";
     }
   }
   if (input.buckets !== undefined) {
@@ -535,6 +632,19 @@ const EDITABLE_FIRE_FIELDS = [
   'links',
   'actionItems',
   'notes',
+  'bucketsAdd',
+  'bucketsUpdate',
+  'bucketsRemove',
+  'actionItemsAdd',
+  'actionItemsUpdate',
+  'actionItemsRemove',
+  'notesAdd',
+  'notesUpdate',
+  'notesRemove',
+  'linksAdd',
+  'linksUpdate',
+  'linksRemove',
+  'force',
 ];
 
 function validatePatchFireProjectInput(input) {
@@ -583,7 +693,7 @@ function validatePatchFireProjectInput(input) {
       return 'notes must be an array of {text, createdAt?} objects.';
     }
   }
-  return null;
+  return validateBucketOps(input) || validateGrowListOps(input);
 }
 
 const PAYMENT_PLAN_FREQUENCIES = ['weekly', 'biweekly', 'monthly', 'quarterly', 'yearly'];
@@ -1092,8 +1202,13 @@ function validateGrowSharedMetadataFields(input) {
   if (input.type !== undefined && !GROW_TYPES.includes(input.type)) {
     return `type must be one of ${GROW_TYPES.join(', ')}.`;
   }
-  if (input.riskScore !== undefined && !Number.isFinite(input.riskScore)) {
-    return 'riskScore must be a number.';
+  // The app clamps riskScore to 0-5 on load (grow-migration.utils.ts), so a
+  // larger value would silently display as 5 -- reject it instead.
+  if (
+    input.riskScore !== undefined &&
+    (!Number.isFinite(input.riskScore) || input.riskScore < 0 || input.riskScore > 5)
+  ) {
+    return 'riskScore must be a number from 0 to 5.';
   }
   if (
     input.links !== undefined &&
@@ -1123,25 +1238,139 @@ function validateGrowSharedMetadataFields(input) {
   return null;
 }
 
+const GROW_KINDS = ['asset', 'share', 'investment'];
+
+function isPlainObject(value) {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function isNonNegativeInteger(value) {
+  return Number.isInteger(value) && value >= 0;
+}
+
+/** Validates one embedded plan object: only `allowed` keys, each a non-negative integer except `tag` (string) and `quantity` (number). */
+function validateGrowPlanObject(value, field, allowed) {
+  if (!isPlainObject(value)) return `${field} must be an object.`;
+  const unknown = Object.keys(value).find((key) => !allowed.includes(key));
+  if (unknown)
+    return `${field}.${unknown} is not a recognized field (allowed: ${allowed.join(', ')}).`;
+  for (const [key, entry] of Object.entries(value)) {
+    if (key === 'tag') {
+      if (typeof entry !== 'string') return `${field}.tag must be a string.`;
+    } else if (key === 'investment') {
+      if (typeof entry !== 'boolean') return `${field}.investment must be a boolean.`;
+    } else if (key === 'quantity') {
+      if (!Number.isFinite(entry) || entry < 0)
+        return `${field}.quantity must be a non-negative number.`;
+    } else if (!isNonNegativeInteger(entry)) {
+      return `${field}.${key} must be a non-negative integer.`;
+    }
+  }
+  return null;
+}
+
+/**
+ * The plan fields shared by create and PATCH (see grow-repository.js's
+ * `applyPlanFields`). `liabilitie.investment` is accepted only so a read
+ * object can be echoed back unchanged — it's always derived from the kind.
+ */
+function validateGrowPlanFields(input) {
+  if (input.kind !== undefined && input.kind !== null && !GROW_KINDS.includes(input.kind)) {
+    return `kind must be one of ${GROW_KINDS.join(', ')}, or null.`;
+  }
+  if (isPlainObject(input.share)) {
+    const error = validateGrowPlanObject(input.share, 'share', ['tag', 'quantity', 'priceMinor']);
+    if (error) return error;
+  }
+  if (isPlainObject(input.investment)) {
+    const error = validateGrowPlanObject(input.investment, 'investment', [
+      'tag',
+      'depositMinor',
+      'amountMinor',
+    ]);
+    if (error) return error;
+  }
+  if (input.liabilitie !== undefined && input.liabilitie !== null) {
+    const error = validateGrowPlanObject(input.liabilitie, 'liabilitie', [
+      'tag',
+      'amountMinor',
+      'creditMinor',
+      'investment',
+    ]);
+    if (error) return error;
+  }
+  for (const field of ['amountMinor', 'cashflowMinor']) {
+    if (input[field] !== undefined && !Number.isInteger(input[field])) {
+      return `${field} must be an integer.`;
+    }
+  }
+  return null;
+}
+
+const CREATE_GROW_FIELDS = [
+  'title',
+  'sub',
+  'phase',
+  'description',
+  'strategy',
+  'riskScore',
+  'risks',
+  'links',
+  'actionItems',
+  'notes',
+  'type',
+  'category',
+  ...GROW_MONEY_MINOR_FIELDS,
+  'reasoning',
+  'alternative',
+  'pattern',
+  'insights',
+  'status',
+  'kind',
+  'isAsset',
+  'share',
+  'investment',
+  'liabilitie',
+  'amountMinor',
+  'cashflowMinor',
+];
+
 function validateCreateGrowInput(input) {
   if (!input || typeof input !== 'object' || Array.isArray(input)) {
     return 'A grow project object is required.';
   }
+  const unknownField = Object.keys(input).find((key) => !CREATE_GROW_FIELDS.includes(key));
+  if (unknownField) return `${unknownField} is not a recognized grow project field.`;
   if (!isNonEmptyString(input.title)) return 'title must be a non-empty string.';
   if (input.isAsset !== undefined && typeof input.isAsset !== 'boolean') {
     return 'isAsset must be a boolean.';
   }
-  if (input.share !== undefined && typeof input.share !== 'boolean') {
-    return 'share must be a boolean (whether this project tracks a Share position).';
+  if (
+    input.share !== undefined &&
+    typeof input.share !== 'boolean' &&
+    !isPlainObject(input.share)
+  ) {
+    return 'share must be a boolean or a {quantity, priceMinor} object.';
   }
-  if (input.investment !== undefined && typeof input.investment !== 'boolean') {
-    return 'investment must be a boolean (whether this project tracks an Investment position).';
+  if (
+    input.investment !== undefined &&
+    typeof input.investment !== 'boolean' &&
+    !isPlainObject(input.investment)
+  ) {
+    return 'investment must be a boolean or a {depositMinor, amountMinor} object.';
   }
-  const kindCount = [input.isAsset, input.share, input.investment].filter(Boolean).length;
-  if (kindCount > 1) {
-    return 'isAsset, share, and investment are mutually exclusive — set at most one to true.';
+  const legacyKinds = [
+    input.isAsset && 'asset',
+    input.share && 'share',
+    input.investment && 'investment',
+  ].filter(Boolean);
+  if (legacyKinds.length > 1) {
+    return 'isAsset, share, and investment are mutually exclusive — set at most one.';
   }
-  return validateGrowSharedMetadataFields(input);
+  if (input.kind !== undefined && legacyKinds.some((kind) => kind !== input.kind)) {
+    return `kind "${input.kind}" conflicts with ${legacyKinds.join(', ')}.`;
+  }
+  return validateGrowPlanFields(input) || validateGrowSharedMetadataFields(input);
 }
 
 const EDITABLE_GROW_FIELDS = [
@@ -1163,20 +1392,112 @@ const EDITABLE_GROW_FIELDS = [
   'pattern',
   'insights',
   'status',
+  'kind',
+  'share',
+  'investment',
+  'liabilitie',
+  'amountMinor',
+  'cashflowMinor',
+  'actionItemsAdd',
+  'actionItemsUpdate',
+  'actionItemsRemove',
+  'notesAdd',
+  'notesUpdate',
+  'notesRemove',
+  'linksAdd',
+  'linksUpdate',
+  'linksRemove',
 ];
+
+const GROW_LIST_OPS = {
+  actionItems: {
+    validateAdd: validateFundActionItem,
+    updateFields: ['text', 'done', 'priority', 'dueDate'],
+  },
+  notes: { validateAdd: validateFundNote, updateFields: ['text'] },
+  links: { validateAdd: validateFundLink, updateFields: ['label', 'url'] },
+};
+
+function validateListUpdateEntry(entry, name, updateFields) {
+  if (!isPlainObject(entry) || !Number.isInteger(entry.index)) {
+    return `Each ${name}Update entry needs an integer index.`;
+  }
+  const unknown = Object.keys(entry).find((key) => key !== 'index' && !updateFields.includes(key));
+  if (unknown)
+    return `${name}Update.${unknown} is not editable (allowed: ${updateFields.join(', ')}).`;
+  for (const field of ['text', 'label', 'url']) {
+    if (entry[field] !== undefined && !isNonEmptyString(entry[field])) {
+      return `${name}Update.${field} must be a non-empty string.`;
+    }
+  }
+  if (entry.done !== undefined && typeof entry.done !== 'boolean') {
+    return `${name}Update.done must be a boolean.`;
+  }
+  if (entry.priority !== undefined && !FUND_ACTION_PRIORITIES.includes(entry.priority)) {
+    return `${name}Update.priority must be one of ${FUND_ACTION_PRIORITIES.join(', ')}.`;
+  }
+  if (entry.dueDate !== undefined && entry.dueDate !== null && typeof entry.dueDate !== 'string') {
+    return `${name}Update.dueDate must be a date string, or null to remove it.`;
+  }
+  return null;
+}
+
+/** Item-level list edits (grow-repository.js's applyListOps); can't be mixed with replacing that same list. */
+function validateGrowListOps(input) {
+  for (const [name, { validateAdd, updateFields }] of Object.entries(GROW_LIST_OPS)) {
+    const add = input[`${name}Add`];
+    const update = input[`${name}Update`];
+    const remove = input[`${name}Remove`];
+    if ((add || update || remove) && input[name] !== undefined) {
+      return `Send either ${name} (replaces the whole list) or ${name}Add/Update/Remove, not both.`;
+    }
+    if (add !== undefined && (!Array.isArray(add) || !add.every(validateAdd))) {
+      return `${name}Add must be an array of valid ${name} entries.`;
+    }
+    if (update !== undefined) {
+      if (!Array.isArray(update)) return `${name}Update must be an array.`;
+      for (const entry of update) {
+        const error = validateListUpdateEntry(entry, name, updateFields);
+        if (error) return error;
+      }
+    }
+    if (
+      remove !== undefined &&
+      (!Array.isArray(remove) ||
+        !remove.every(Number.isInteger) ||
+        new Set(remove).size !== remove.length)
+    ) {
+      return `${name}Remove must be an array of distinct integer indices.`;
+    }
+  }
+  return null;
+}
 
 function validatePatchGrowInput(input) {
   if (!input || typeof input !== 'object' || Array.isArray(input)) {
     return 'A grow project object is required.';
   }
   const unknownField = Object.keys(input).find((key) => !EDITABLE_GROW_FIELDS.includes(key));
-  if (unknownField) {
-    return `${unknownField} is not an editable field (use the typed action endpoints for amount/cashflow/share/investment/liabilitie).`;
-  }
+  if (unknownField) return `${unknownField} is not an editable field.`;
   if (input.title !== undefined && !isNonEmptyString(input.title)) {
     return 'title must be a non-empty string.';
   }
-  return validateGrowSharedMetadataFields(input);
+  for (const field of ['share', 'investment']) {
+    if (input[field] !== undefined && !isPlainObject(input[field])) {
+      return `${field} must be an object (use kind to change the project's kind).`;
+    }
+  }
+  // Replacing the whole list on PATCH: an omitted `done` can't default to
+  // false the way it can at creation -- it would silently un-complete an
+  // item the caller forgot to echo back (same rule as Smile/Fire).
+  if (Array.isArray(input.actionItems) && !input.actionItems.every(validateUpdateFundActionItem)) {
+    return 'actionItems replaces the whole list, so every item needs text and an explicit done (use actionItemsAdd/Update/Remove to change single items).';
+  }
+  return (
+    validateGrowListOps(input) ||
+    validateGrowPlanFields(input) ||
+    validateGrowSharedMetadataFields(input)
+  );
 }
 
 function validateGrowActionBody(input) {
@@ -1186,6 +1507,7 @@ function validateGrowActionBody(input) {
 }
 
 const GROW_ACTION_VALIDATION_CODES = [
+  'GROW_NOT_REVERSIBLE',
   'GROW_INVALID_INPUT',
   'GROW_NO_KIND',
   'GROW_NO_POSITION',
@@ -1194,6 +1516,9 @@ const GROW_ACTION_VALIDATION_CODES = [
 ];
 
 function handleGrowActionError(res, next, error, label) {
+  if (error.code === 'GROW_TRANSACTION_NOT_FOUND') {
+    return problem(res, 404, 'not_found', 'Transaction not found', error.message);
+  }
   if (error.code === 'GROW_NOT_FOUND') {
     return problem(
       res,
@@ -1422,6 +1747,24 @@ router.get('/transactions/export', requireScope('transactions:bulk'), async (req
   }
 });
 
+/**
+ * Grow-trade guard rails on the generic transaction endpoints
+ * (transaction-repository.js): a new Grow trade must use the typed Grow
+ * actions, an existing one's amount/comment/category changes only through
+ * PATCH /grow/{id}/transactions/{txId}, and a legacy trade with a percentage
+ * amount can't be undone exactly. All three are client errors.
+ */
+const TRANSACTION_GROW_ERROR_CODES = [
+  'TRANSACTION_GROW_TRADE',
+  'TRANSACTION_GROW_LOCKED',
+  'GROW_NOT_REVERSIBLE',
+];
+
+function transactionGrowErrorResponse(res, error) {
+  if (!TRANSACTION_GROW_ERROR_CODES.includes(error.code)) return undefined;
+  return problem(res, 400, 'validation_invalid', 'Invalid transaction request', error.message);
+}
+
 router.post('/transactions', requireScope('transactions:w'), async (req, res, next) => {
   const validationError = validateTransactionInput(req.body);
   if (validationError) {
@@ -1443,7 +1786,7 @@ router.post('/transactions', requireScope('transactions:w'), async (req, res, ne
     });
     return res.status(201).json(transaction);
   } catch (error) {
-    return next(error);
+    return transactionGrowErrorResponse(res, error) ?? next(error);
   }
 });
 
@@ -1473,7 +1816,7 @@ router.post('/transactions/batch', requireScope('transactions:bulk'), async (req
     requestBodyForHash: JSON.stringify(req.body),
     itemCount: validation.items.length,
     run: async () => {
-      const results = await batchTransactions(
+      const { results, effects } = await batchTransactions(
         { usersDb: getUsersDb(), authDb: getAuthDb() },
         req.userId,
         validation.items,
@@ -1484,8 +1827,10 @@ router.post('/transactions/batch', requireScope('transactions:bulk'), async (req
         atomic,
         itemCount: validation.items.length,
         results,
+        effects,
       };
     },
+    onError: (error) => transactionGrowErrorResponse(res, error),
   });
 });
 
@@ -1515,7 +1860,7 @@ router.post('/transactions/import', requireScope('transactions:bulk'), async (re
     requestBodyForHash: req.body,
     itemCount: validation.items.length,
     run: async () => {
-      const results = await batchTransactions(
+      const { results, effects } = await batchTransactions(
         { usersDb: getUsersDb(), authDb: getAuthDb() },
         req.userId,
         validation.items,
@@ -1526,8 +1871,10 @@ router.post('/transactions/import', requireScope('transactions:bulk'), async (re
         atomic,
         itemCount: validation.items.length,
         results,
+        effects,
       };
     },
+    onError: (error) => transactionGrowErrorResponse(res, error),
   });
 });
 
@@ -1580,7 +1927,7 @@ router.post(
           error.message,
         );
       }
-      return next(error);
+      return transactionGrowErrorResponse(res, error) ?? next(error);
     }
   },
 );
@@ -1660,7 +2007,7 @@ router.patch(
           error.message,
         );
       }
-      return next(error);
+      return transactionGrowErrorResponse(res, error) ?? next(error);
     }
   },
 );
@@ -1692,9 +2039,9 @@ router.delete(
         resource: 'transactions',
         resourceId: req.params.transactionId,
       });
-      return res.json({ id: req.params.transactionId });
+      return res.json({ id: req.params.transactionId, effects: deleted.effects });
     } catch (error) {
-      return next(error);
+      return transactionGrowErrorResponse(res, error) ?? next(error);
     }
   },
 );
@@ -1738,7 +2085,7 @@ router.post('/smile', requireScope('smile:w'), async (req, res, next) => {
     });
     return res.status(201).json(project);
   } catch (error) {
-    if (error.code === 'SMILE_DUPLICATE_TITLE') {
+    if (['SMILE_DUPLICATE_TITLE', 'FUND_HAS_MONEY', 'FUND_INVALID_INPUT'].includes(error.code)) {
       return problem(
         res,
         400,
@@ -1810,7 +2157,7 @@ router.patch('/smile/:projectId', requireScope('smile:w'), async (req, res, next
     });
     return res.json(project);
   } catch (error) {
-    if (error.code === 'SMILE_DUPLICATE_TITLE') {
+    if (['SMILE_DUPLICATE_TITLE', 'FUND_HAS_MONEY', 'FUND_INVALID_INPUT'].includes(error.code)) {
       return problem(
         res,
         400,
@@ -1829,6 +2176,7 @@ router.delete('/smile/:projectId', requireScope('smile:w'), async (req, res, nex
       { usersDb: getUsersDb(), authDb: getAuthDb() },
       req.userId,
       req.params.projectId,
+      { force: req.query.force === 'true' },
     );
     if (!deleted) {
       return problem(
@@ -1849,6 +2197,9 @@ router.delete('/smile/:projectId', requireScope('smile:w'), async (req, res, nex
     });
     return res.json({ id: req.params.projectId });
   } catch (error) {
+    if (error.code === 'FUND_HAS_MONEY') {
+      return problem(res, 400, 'validation_invalid', 'Project still holds money', error.message);
+    }
     return next(error);
   }
 });
@@ -1924,7 +2275,7 @@ router.post('/fire', requireScope('fire:w'), async (req, res, next) => {
     });
     return res.status(201).json(project);
   } catch (error) {
-    if (error.code === 'FIRE_DUPLICATE_TITLE') {
+    if (['FIRE_DUPLICATE_TITLE', 'FUND_HAS_MONEY', 'FUND_INVALID_INPUT'].includes(error.code)) {
       return problem(res, 400, 'validation_invalid', 'Invalid Fire project request', error.message);
     }
     return next(error);
@@ -1984,7 +2335,7 @@ router.patch('/fire/:projectId', requireScope('fire:w'), async (req, res, next) 
     });
     return res.json(project);
   } catch (error) {
-    if (error.code === 'FIRE_DUPLICATE_TITLE') {
+    if (['FIRE_DUPLICATE_TITLE', 'FUND_HAS_MONEY', 'FUND_INVALID_INPUT'].includes(error.code)) {
       return problem(res, 400, 'validation_invalid', 'Invalid Fire project request', error.message);
     }
     return next(error);
@@ -1997,6 +2348,7 @@ router.delete('/fire/:projectId', requireScope('fire:w'), async (req, res, next)
       { usersDb: getUsersDb(), authDb: getAuthDb() },
       req.userId,
       req.params.projectId,
+      { force: req.query.force === 'true' },
     );
     if (!deleted) {
       return problem(
@@ -2017,6 +2369,9 @@ router.delete('/fire/:projectId', requireScope('fire:w'), async (req, res, next)
     });
     return res.json({ id: req.params.projectId });
   } catch (error) {
+    if (error.code === 'FUND_HAS_MONEY') {
+      return problem(res, 400, 'validation_invalid', 'Project still holds money', error.message);
+    }
     return next(error);
   }
 });
@@ -2089,7 +2444,7 @@ router.post('/balance/assets', requireScope('balance:w'), async (req, res, next)
     });
     return res.status(201).json(asset);
   } catch (error) {
-    if (error.code === 'ASSET_DUPLICATE_TAG') {
+    if (error.code === 'ASSET_DUPLICATE_TAG' || error.code === 'BALANCE_TAG_LINKED_TO_GROW') {
       return problem(res, 400, 'validation_invalid', 'Invalid asset request', error.message);
     }
     return next(error);
@@ -2137,7 +2492,7 @@ router.patch('/balance/assets/:assetId', requireScope('balance:w'), async (req, 
     });
     return res.json(asset);
   } catch (error) {
-    if (error.code === 'ASSET_DUPLICATE_TAG') {
+    if (error.code === 'ASSET_DUPLICATE_TAG' || error.code === 'BALANCE_TAG_LINKED_TO_GROW') {
       return problem(res, 400, 'validation_invalid', 'Invalid asset request', error.message);
     }
     return next(error);
@@ -2201,7 +2556,7 @@ router.post('/balance/liabilities', requireScope('balance:w'), async (req, res, 
     });
     return res.status(201).json(liability);
   } catch (error) {
-    if (error.code === 'LIABILITY_DUPLICATE_TAG') {
+    if (error.code === 'LIABILITY_DUPLICATE_TAG' || error.code === 'BALANCE_TAG_LINKED_TO_GROW') {
       return problem(res, 400, 'validation_invalid', 'Invalid liability request', error.message);
     }
     return next(error);
@@ -2268,7 +2623,7 @@ router.patch(
       });
       return res.json(liability);
     } catch (error) {
-      if (error.code === 'LIABILITY_DUPLICATE_TAG') {
+      if (error.code === 'LIABILITY_DUPLICATE_TAG' || error.code === 'BALANCE_TAG_LINKED_TO_GROW') {
         return problem(res, 400, 'validation_invalid', 'Invalid liability request', error.message);
       }
       return next(error);
@@ -2343,7 +2698,7 @@ router.post('/balance/investments', requireScope('balance:w'), async (req, res, 
     });
     return res.status(201).json(investment);
   } catch (error) {
-    if (error.code === 'INVESTMENT_DUPLICATE_TAG') {
+    if (error.code === 'INVESTMENT_DUPLICATE_TAG' || error.code === 'BALANCE_TAG_LINKED_TO_GROW') {
       return problem(res, 400, 'validation_invalid', 'Invalid investment request', error.message);
     }
     return next(error);
@@ -2410,7 +2765,10 @@ router.patch(
       });
       return res.json(investment);
     } catch (error) {
-      if (error.code === 'INVESTMENT_DUPLICATE_TAG') {
+      if (
+        error.code === 'INVESTMENT_DUPLICATE_TAG' ||
+        error.code === 'BALANCE_TAG_LINKED_TO_GROW'
+      ) {
         return problem(res, 400, 'validation_invalid', 'Invalid investment request', error.message);
       }
       return next(error);
@@ -2482,7 +2840,7 @@ router.post('/balance/shares', requireScope('balance:w'), async (req, res, next)
     });
     return res.status(201).json(share);
   } catch (error) {
-    if (error.code === 'SHARE_DUPLICATE_TAG') {
+    if (error.code === 'SHARE_DUPLICATE_TAG' || error.code === 'BALANCE_TAG_LINKED_TO_GROW') {
       return problem(res, 400, 'validation_invalid', 'Invalid share request', error.message);
     }
     return next(error);
@@ -2530,7 +2888,7 @@ router.patch('/balance/shares/:shareId', requireScope('balance:w'), async (req, 
     });
     return res.json(share);
   } catch (error) {
-    if (error.code === 'SHARE_DUPLICATE_TAG') {
+    if (error.code === 'SHARE_DUPLICATE_TAG' || error.code === 'BALANCE_TAG_LINKED_TO_GROW') {
       return problem(res, 400, 'validation_invalid', 'Invalid share request', error.message);
     }
     return next(error);
@@ -2628,6 +2986,387 @@ router.put('/mojo', requireScope('mojo:w'), async (req, res, next) => {
       resource: 'mojo',
     });
     return res.json(status);
+  } catch (error) {
+    return next(error);
+  }
+});
+
+// --- Contributions (the only way bucket/Mojo amounts change) --------------
+
+const CONTRIBUTION_FIELDS = ['amountMinor', 'account', 'buckets', 'date', 'time', 'comment'];
+
+function validateContribution(input, { allowBuckets }) {
+  if (!isPlainObject(input)) return 'A contribution object is required.';
+  const allowed = allowBuckets
+    ? CONTRIBUTION_FIELDS
+    : CONTRIBUTION_FIELDS.filter((f) => f !== 'buckets');
+  const unknown = Object.keys(input).find((key) => !allowed.includes(key));
+  if (unknown) return `${unknown} is not a contribution field (allowed: ${allowed.join(', ')}).`;
+  const hasBuckets = allowBuckets && Array.isArray(input.buckets) && input.buckets.length > 0;
+  if (input.amountMinor !== undefined || !hasBuckets) {
+    if (!Number.isInteger(input.amountMinor) || input.amountMinor <= 0) {
+      return 'amountMinor must be a positive integer (the amount to put in).';
+    }
+  }
+  if (input.buckets !== undefined) {
+    if (!Array.isArray(input.buckets))
+      return 'buckets must be an array of {bucketId, amountMinor}.';
+    for (const entry of input.buckets) {
+      if (!isPlainObject(entry) || !isNonEmptyString(entry.bucketId)) {
+        return 'Each buckets entry needs a bucketId.';
+      }
+      if (!Number.isInteger(entry.amountMinor) || entry.amountMinor <= 0) {
+        return 'Each buckets entry needs a positive integer amountMinor.';
+      }
+    }
+    const ids = input.buckets.map((entry) => entry.bucketId);
+    if (new Set(ids).size !== ids.length) return 'Each bucket may appear only once.';
+  }
+  if (input.account !== undefined && !isNonEmptyString(input.account)) {
+    return 'account must be a non-empty string.';
+  }
+  for (const field of ['date', 'time', 'comment']) {
+    if (input[field] !== undefined && typeof input[field] !== 'string') {
+      return `${field} must be a string.`;
+    }
+  }
+  if (typeof input.comment === 'string' && /#bucket:/i.test(input.comment)) {
+    return 'Use buckets to split a contribution — the server writes the #bucket: tags itself.';
+  }
+  return null;
+}
+
+const CONTRIBUTION_ERROR_CODES = ['FUND_FULL', 'FUND_INVALID_INPUT', 'TRANSACTION_GROW_TRADE'];
+
+const SETTLE_FIELDS = ['actualMinor', 'account', 'date', 'time', 'receipt', 'surplus'];
+
+function validateSettlement(input) {
+  if (!isPlainObject(input)) return 'A settlement object is required.';
+  const unknown = Object.keys(input).find((key) => !SETTLE_FIELDS.includes(key));
+  if (unknown)
+    return `${unknown} is not a settlement field (allowed: ${SETTLE_FIELDS.join(', ')}).`;
+  if (!Number.isInteger(input.actualMinor) || input.actualMinor < 0) {
+    return 'actualMinor must be a non-negative integer: what the bill actually was.';
+  }
+  if (input.account !== undefined && !isNonEmptyString(input.account)) {
+    return 'account must be a non-empty string.';
+  }
+  for (const field of ['date', 'time', 'receipt']) {
+    if (input[field] !== undefined && typeof input[field] !== 'string') {
+      return `${field} must be a string.`;
+    }
+  }
+  if (typeof input.receipt === 'string' && /#(bucket|settle):/i.test(input.receipt)) {
+    return 'receipt is free text — the server writes the #settle: tag itself.';
+  }
+  if (input.surplus !== undefined) {
+    if (!isPlainObject(input.surplus) || !isNonEmptyString(input.surplus.moveToBucketId)) {
+      return 'surplus must be {moveToBucketId} (omit it to release a surplus back to the account).';
+    }
+  }
+  return null;
+}
+
+function contributionErrorResponse(res, error) {
+  if (!CONTRIBUTION_ERROR_CODES.includes(error.code)) return undefined;
+  return problem(res, 400, 'validation_invalid', 'Invalid contribution', error.message);
+}
+
+for (const [kind, label] of [
+  ['smile', 'Smile'],
+  ['fire', 'Fire'],
+]) {
+  router.post(
+    `/${kind}/:projectId/contribute`,
+    requireScope(`${kind}:w`),
+    async (req, res, next) => {
+      const validationError = validateContribution(req.body, { allowBuckets: true });
+      if (validationError) {
+        return problem(res, 400, 'validation_invalid', 'Invalid contribution', validationError);
+      }
+      try {
+        const result = await contributeToProject(
+          { usersDb: getUsersDb(), authDb: getAuthDb() },
+          req.userId,
+          kind,
+          req.params.projectId,
+          req.body,
+        );
+        if (!result) {
+          return problem(
+            res,
+            404,
+            'not_found',
+            `${label} project not found`,
+            `No matching ${label} project exists.`,
+          );
+        }
+        await recordAuditEntry(getAuditDb(), {
+          userId: req.userId,
+          actor: auditActor(req.auth),
+          method: req.method,
+          path: req.baseUrl + req.path,
+          resource: `${kind}_contribution`,
+          resourceId: result.transaction.id,
+        });
+        return res.status(201).json(result);
+      } catch (error) {
+        return contributionErrorResponse(res, error) ?? next(error);
+      }
+    },
+  );
+
+  router.post(
+    `/${kind}/:projectId/buckets/:bucketId/settle`,
+    requireScope(`${kind}:w`),
+    async (req, res, next) => {
+      const validationError = validateSettlement(req.body);
+      if (validationError) {
+        return problem(res, 400, 'validation_invalid', 'Invalid settlement', validationError);
+      }
+      try {
+        const result = await settleBucket(
+          { usersDb: getUsersDb(), authDb: getAuthDb() },
+          req.userId,
+          kind,
+          req.params.projectId,
+          req.params.bucketId,
+          req.body,
+        );
+        if (!result) {
+          return problem(
+            res,
+            404,
+            'not_found',
+            `${label} project not found`,
+            `No matching ${label} project exists.`,
+          );
+        }
+        await recordAuditEntry(getAuditDb(), {
+          userId: req.userId,
+          actor: auditActor(req.auth),
+          method: req.method,
+          path: req.baseUrl + req.path,
+          resource: `${kind}_settlement`,
+          resourceId: result.settlement.id,
+        });
+        return res.status(201).json(result);
+      } catch (error) {
+        return contributionErrorResponse(res, error) ?? next(error);
+      }
+    },
+  );
+
+  router.post(
+    `/${kind}/:projectId/buckets/:bucketId/unsettle`,
+    requireScope(`${kind}:w`),
+    async (req, res, next) => {
+      try {
+        const result = await unsettleBucket(
+          { usersDb: getUsersDb(), authDb: getAuthDb() },
+          req.userId,
+          kind,
+          req.params.projectId,
+          req.params.bucketId,
+        );
+        if (!result) {
+          return problem(
+            res,
+            404,
+            'not_found',
+            `${label} project not found`,
+            `No matching ${label} project exists.`,
+          );
+        }
+        await recordAuditEntry(getAuditDb(), {
+          userId: req.userId,
+          actor: auditActor(req.auth),
+          method: req.method,
+          path: req.baseUrl + req.path,
+          resource: `${kind}_settlement`,
+          resourceId: result.removedSettlementId,
+        });
+        return res.json(result);
+      } catch (error) {
+        return contributionErrorResponse(res, error) ?? next(error);
+      }
+    },
+  );
+
+  router.get(
+    `/${kind}/:projectId/transactions`,
+    requireScope(`${kind}:r`),
+    async (req, res, next) => {
+      try {
+        const transactions = await listProjectTransactions(
+          { usersDb: getUsersDb(), authDb: getAuthDb() },
+          req.userId,
+          kind,
+          req.params.projectId,
+        );
+        if (!transactions) {
+          return problem(
+            res,
+            404,
+            'not_found',
+            `${label} project not found`,
+            `No matching ${label} project exists.`,
+          );
+        }
+        return res.json({ transactions });
+      } catch (error) {
+        return next(error);
+      }
+    },
+  );
+}
+
+// --- Payment plans: edit, activate, deactivate, delete ------------------------
+
+const PAYMENT_PLAN_PATCH_FIELDS = [
+  'title',
+  'account',
+  'startDate',
+  'targetDate',
+  'frequency',
+  'selectedBucketIds',
+  'manualAmountMinor',
+];
+
+function validatePaymentPlanPatch(input) {
+  if (!isPlainObject(input)) return 'A payment plan object is required.';
+  const unknown = Object.keys(input).find((key) => !PAYMENT_PLAN_PATCH_FIELDS.includes(key));
+  if (unknown) {
+    return `${unknown} is not an editable payment plan field (allowed: ${PAYMENT_PLAN_PATCH_FIELDS.join(', ')}).`;
+  }
+  for (const field of ['title', 'account']) {
+    if (input[field] !== undefined && !isNonEmptyString(input[field])) {
+      return `${field} must be a non-empty string.`;
+    }
+  }
+  for (const field of ['startDate', 'targetDate']) {
+    if (input[field] !== undefined && !/^\d{4}-\d{2}-\d{2}$/.test(String(input[field]))) {
+      return `${field} must use YYYY-MM-DD format.`;
+    }
+  }
+  if (input.frequency !== undefined && !PAYMENT_PLAN_FREQUENCIES.includes(input.frequency)) {
+    return `frequency must be one of ${PAYMENT_PLAN_FREQUENCIES.join(', ')}.`;
+  }
+  if (
+    input.selectedBucketIds !== undefined &&
+    (!Array.isArray(input.selectedBucketIds) || !input.selectedBucketIds.every(isNonEmptyString))
+  ) {
+    return 'selectedBucketIds must be an array of bucket ids ([] = all buckets).';
+  }
+  if (
+    input.manualAmountMinor !== undefined &&
+    input.manualAmountMinor !== null &&
+    (!Number.isInteger(input.manualAmountMinor) || input.manualAmountMinor <= 0)
+  ) {
+    return 'manualAmountMinor must be a positive integer, or null to use the calculated amount.';
+  }
+  return null;
+}
+
+function paymentPlanErrorResponse(res, error) {
+  if (error.code === 'PAYMENT_PLAN_NOT_FOUND') {
+    return problem(res, 404, 'not_found', 'Payment plan not found', error.message);
+  }
+  if (error.code === 'PAYMENT_PLAN_INVALID') {
+    return problem(res, 400, 'validation_invalid', 'Invalid payment plan request', error.message);
+  }
+  return undefined;
+}
+
+for (const [kind, label, repository] of [
+  ['smile', 'Smile', smileRepository],
+  ['fire', 'Fire', fireRepository],
+]) {
+  const planRoute = (method, path, operation, { validate, status = 200 } = {}) => {
+    router[method](
+      `/${kind}/:projectId/payment-plans/:planId${path}`,
+      requireScope(`${kind}:w`),
+      async (req, res, next) => {
+        const validationError = validate ? validate(req.body) : null;
+        if (validationError) {
+          return problem(
+            res,
+            400,
+            'validation_invalid',
+            'Invalid payment plan request',
+            validationError,
+          );
+        }
+        try {
+          const result = await operation(
+            { usersDb: getUsersDb(), authDb: getAuthDb() },
+            req.userId,
+            req.params.projectId,
+            req.params.planId,
+            req.body,
+          );
+          if (!result) {
+            return problem(
+              res,
+              404,
+              'not_found',
+              `${label} project not found`,
+              `No matching ${label} project exists.`,
+            );
+          }
+          await recordAuditEntry(getAuditDb(), {
+            userId: req.userId,
+            actor: auditActor(req.auth),
+            method: req.method,
+            path: req.baseUrl + req.path,
+            resource: `${kind}_payment_plan`,
+            resourceId: req.params.planId,
+          });
+          return res.status(status).json(result);
+        } catch (error) {
+          return paymentPlanErrorResponse(res, error) ?? next(error);
+        }
+      },
+    );
+  };
+  planRoute('patch', '', repository.updatePaymentPlan, { validate: validatePaymentPlanPatch });
+  planRoute('post', '/activate', repository.activatePaymentPlan);
+  planRoute('post', '/deactivate', repository.deactivatePaymentPlan);
+  planRoute('delete', '', repository.deletePaymentPlan);
+}
+
+router.post('/mojo/contribute', requireScope('mojo:w'), async (req, res, next) => {
+  const validationError = validateContribution(req.body, { allowBuckets: false });
+  if (validationError) {
+    return problem(res, 400, 'validation_invalid', 'Invalid contribution', validationError);
+  }
+  try {
+    const result = await contributeToMojo(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+      req.body,
+    );
+    await recordAuditEntry(getAuditDb(), {
+      userId: req.userId,
+      actor: auditActor(req.auth),
+      method: req.method,
+      path: req.baseUrl + req.path,
+      resource: 'mojo_contribution',
+      resourceId: result.transaction.id,
+    });
+    return res.status(201).json(result);
+  } catch (error) {
+    return contributionErrorResponse(res, error) ?? next(error);
+  }
+});
+
+router.get('/mojo/transactions', requireScope('mojo:r'), async (req, res, next) => {
+  try {
+    const transactions = await listMojoTransactions(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+    );
+    return res.json({ transactions });
   } catch (error) {
     return next(error);
   }
@@ -2852,7 +3591,7 @@ router.post('/grow', requireScope('grow:w'), async (req, res, next) => {
     });
     return res.status(201).json(project);
   } catch (error) {
-    if (error.code === 'GROW_DUPLICATE_TITLE') {
+    if (error.code === 'GROW_DUPLICATE_TITLE' || error.code === 'GROW_INVALID_PLAN') {
       return problem(res, 400, 'validation_invalid', 'Invalid grow project request', error.message);
     }
     return next(error);
@@ -2912,7 +3651,7 @@ router.patch('/grow/:growId', requireScope('grow:w'), async (req, res, next) => 
     });
     return res.json(project);
   } catch (error) {
-    if (error.code === 'GROW_DUPLICATE_TITLE' || error.code === 'GROW_MONEY_FIELD_NOT_PATCHABLE') {
+    if (error.code === 'GROW_DUPLICATE_TITLE' || error.code === 'GROW_INVALID_PLAN') {
       return problem(res, 400, 'validation_invalid', 'Invalid grow project request', error.message);
     }
     return next(error);
@@ -3105,6 +3844,131 @@ router.post('/grow/:growId/deposit', requireScope('grow:w'), async (req, res, ne
   }
 });
 
+const EDITABLE_GROW_TRADE_FIELDS = [
+  'totalAmountMinor',
+  'quantity',
+  'priceMinor',
+  'depositMinor',
+  'mortgageMinor',
+  'liabilitie',
+  'payback',
+  'amountMinor',
+  'creditMinor',
+  'cashflowMinor',
+  'date',
+  'time',
+];
+
+function validateGrowTradePatch(input) {
+  const bodyError = validateGrowActionBody(input);
+  if (bodyError) return bodyError;
+  const unknownField = Object.keys(input).find((key) => !EDITABLE_GROW_TRADE_FIELDS.includes(key));
+  if (unknownField) {
+    return `${unknownField} is not an editable trade field (allowed: ${EDITABLE_GROW_TRADE_FIELDS.join(', ')}).`;
+  }
+  return null;
+}
+
+router.get('/grow/:growId/transactions', requireScope('grow:r'), async (req, res, next) => {
+  try {
+    const transactions = await listGrowTransactions(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+      req.params.growId,
+    );
+    return res.json({ transactions });
+  } catch (error) {
+    return handleGrowActionError(res, next, error, 'grow transactions');
+  }
+});
+
+router.patch(
+  '/grow/:growId/transactions/:transactionId',
+  requireScope('grow:w'),
+  async (req, res, next) => {
+    const validationError = validateGrowTradePatch(req.body);
+    if (validationError) {
+      return problem(res, 400, 'validation_invalid', 'Invalid trade edit', validationError);
+    }
+    try {
+      const result = await updateGrowTransaction(
+        { usersDb: getUsersDb(), authDb: getAuthDb() },
+        req.userId,
+        req.params.growId,
+        req.params.transactionId,
+        req.body,
+      );
+      await recordAuditEntry(getAuditDb(), {
+        userId: req.userId,
+        actor: auditActor(req.auth),
+        method: req.method,
+        path: req.baseUrl + req.path,
+        resource: 'grow_transaction',
+        resourceId: req.params.transactionId,
+      });
+      return res.json(result);
+    } catch (error) {
+      return handleGrowActionError(res, next, error, 'trade edit');
+    }
+  },
+);
+
+router.delete(
+  '/grow/:growId/transactions/:transactionId',
+  requireScope('grow:w'),
+  async (req, res, next) => {
+    const deps = { usersDb: getUsersDb(), authDb: getAuthDb() };
+    try {
+      const project = await getGrow(deps, req.userId, req.params.growId);
+      if (!project) {
+        return problem(
+          res,
+          404,
+          'not_found',
+          'Grow project not found',
+          'No matching grow project exists.',
+        );
+      }
+      const transaction = await getTransaction(deps, req.userId, req.params.transactionId);
+      const belongs =
+        transaction &&
+        String(transaction.category).toLocaleLowerCase() ===
+          `@${project.title}`.toLocaleLowerCase();
+      if (!belongs) {
+        return problem(
+          res,
+          404,
+          'not_found',
+          'Transaction not found',
+          'No matching transaction exists for this grow project.',
+        );
+      }
+      // The generic delete undoes the trade's Grow/balance-sheet effect.
+      const deleted = await deleteTransaction(deps, req.userId, req.params.transactionId);
+      if (!deleted) {
+        return problem(
+          res,
+          404,
+          'not_found',
+          'Transaction not found',
+          'No matching transaction exists.',
+        );
+      }
+      await recordAuditEntry(getAuditDb(), {
+        userId: req.userId,
+        actor: auditActor(req.auth),
+        method: req.method,
+        path: req.baseUrl + req.path,
+        resource: 'grow_transaction',
+        resourceId: req.params.transactionId,
+      });
+      return res.json({ id: req.params.transactionId, effects: deleted.effects });
+    } catch (error) {
+      return transactionGrowErrorResponse(res, error) ?? next(error);
+    }
+  },
+);
+
 router.get('/subscriptions', requireScope('subscriptions:r'), async (req, res, next) => {
   try {
     const subscriptions = await listSubscriptions(
@@ -3231,6 +4095,15 @@ router.patch(
       });
       return res.json(subscription);
     } catch (error) {
+      if (error.code === 'SUBSCRIPTION_PLAN_OWNED') {
+        return problem(
+          res,
+          400,
+          'validation_invalid',
+          'Subscription belongs to a payment plan',
+          error.message,
+        );
+      }
       return next(error);
     }
   },
@@ -3267,6 +4140,15 @@ router.delete(
       });
       return res.json({ id: req.params.subscriptionId });
     } catch (error) {
+      if (error.code === 'SUBSCRIPTION_PLAN_OWNED') {
+        return problem(
+          res,
+          400,
+          'validation_invalid',
+          'Subscription belongs to a payment plan',
+          error.message,
+        );
+      }
       return next(error);
     }
   },

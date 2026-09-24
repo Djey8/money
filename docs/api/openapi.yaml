@@ -80,7 +80,11 @@ paths:
     post:
       operationId: createTransaction
       summary: Create a transaction
-      description: Adds a transaction and atomically rebuilds its derived income, expense, Smile, Fire, and Mojo state.
+      description: >-
+        Adds a transaction and atomically rebuilds its derived income, expense, Smile, Fire, and Mojo state. A comment
+        carrying a Grow trade statement (`Buy Share ...`, `Liabilitie ...; Buy Asset ...`, `Payback Liabilitie ...`) is
+        rejected — record trades with the typed Grow actions. The response includes `effects`, everything the write
+        changed.
       security:
         - bearerAuth: []
       requestBody:
@@ -102,7 +106,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiTransaction'
+                $ref: '#/components/schemas/ApiTransactionWithEffects'
               example:
                 id: tx_01234567-89ab-cdef-0123-456789abcdef
                 account: Daily
@@ -325,7 +329,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiTransaction'
+                $ref: '#/components/schemas/ApiTransactionWithEffects'
               example:
                 id: tx_11111111-89ab-cdef-0123-456789abcdef
                 account: Daily
@@ -381,7 +385,15 @@ paths:
     patch:
       operationId: updateTransaction
       summary: Edit a transaction
-      description: Updates one or more fields on an existing transaction and atomically rebuilds its derived income, expense, Smile, Fire, and Mojo state. If the transaction's comment carries a `#bucket:` allocation tag (current or incoming), `amountMinor` and `comment` must be provided together — sending only one is rejected rather than silently applied against the other field's stale value.
+      description: >-
+        Updates one or more fields on an existing transaction and atomically rebuilds its derived income, expense,
+        Smile, Fire, and Mojo state. If the transaction's comment carries a `#bucket:` allocation tag (current or
+        incoming), `amountMinor` and `comment` must be provided together — sending only one is rejected rather than
+        silently applied against the other field's stale value. A Grow trade's `amountMinor`, `comment` and `category`
+        can't be changed here — use `PATCH /grow/{growId}/transactions/{transactionId}`, which also updates the
+        project and balance sheet; its date/time/account can. A comment carrying a Grow trade statement (`Buy Share
+        ...`, `Liabilitie ...; Buy Asset ...`, `Payback Liabilitie ...`) is rejected — record trades with the typed
+        Grow actions. The response includes `effects`: everything the write changed.
       security:
         - bearerAuth: []
       parameters:
@@ -404,7 +416,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiTransaction'
+                $ref: '#/components/schemas/ApiTransactionWithEffects'
               example:
                 id: tx_01234567-89ab-cdef-0123-456789abcdef
                 account: Daily
@@ -425,7 +437,11 @@ paths:
     delete:
       operationId: deleteTransaction
       summary: Delete a transaction
-      description: Removes a transaction and atomically rebuilds its derived income, expense, Smile, Fire, and Mojo state.
+      description: >-
+        Removes a transaction and atomically rebuilds its derived income, expense, Smile, Fire, and Mojo state. Deleting
+        a Grow trade also undoes its effect on the Grow project and balance sheet (position, loan, mortgage) — refused
+        with 400 when later trades depend on it (e.g. its units were already sold). The response's `effects` lists
+        everything the delete changed.
       security:
         - bearerAuth: []
       parameters:
@@ -439,8 +455,23 @@ paths:
           description: Transaction deleted
           content:
             application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteWithEffectsResult'
               example:
                 id: tx_01234567-89ab-cdef-0123-456789abcdef
+                effects:
+                  incomeStatement:
+                    - section: expenses.daily
+                      tag: Food
+                      beforeMinor: -1250
+                      afterMinor: 0
+                  balanceSheet: []
+                  smile: []
+                  fire: []
+                  mojo: null
+                  grow: []
+        '400':
+          $ref: '#/components/responses/ValidationError'
         '401':
           $ref: '#/components/responses/AuthenticationRequired'
         '403':
@@ -904,6 +935,9 @@ paths:
       operationId: updateSmileProject
       summary: Update a Smile project
       description: >-
+        Renaming the project or a bucket (kept by its id) carries over, in the same write, to every transaction and
+        subscription that counts toward the project (`@<title>` category, Fire's `@<bucket>` category, `#bucket:` tags)
+        and to the project's payment plans, so no money is orphaned; bucket amounts are then rebuilt from transactions.
         Accepts a partial body — only the fields you send are changed. `buckets`/`links`/`actionItems`/`notes`, when
         sent, each REPLACE the entire array (not a per-item merge) — send the complete list you want, including
         unchanged entries. For `buckets`, echo back an existing bucket's `id` to edit it in place; omit `id` (or use
@@ -944,6 +978,13 @@ paths:
       description: Not reversible through the API.
       security:
         - bearerAuth: []
+      parameters:
+        - name: force
+          in: query
+          required: false
+          schema:
+            type: boolean
+          description: Required to delete a project that still holds money; its contributions stay as transactions but no longer count toward any project, and active payment plans' subscriptions end today.
       responses:
         '200':
           description: Project deleted
@@ -1097,6 +1138,9 @@ paths:
       operationId: updateFireProject
       summary: Update a Fire project
       description: >-
+        Renaming the project or a bucket (kept by its id) carries over, in the same write, to every transaction and
+        subscription that counts toward the project (`@<title>` category, Fire's `@<bucket>` category, `#bucket:` tags)
+        and to the project's payment plans, so no money is orphaned; bucket amounts are then rebuilt from transactions.
         Accepts a partial body — only the fields you send are changed. `buckets`/`links`/`actionItems`/`notes`, when
         sent, each REPLACE the entire array (not a per-item merge) — send the complete list you want, including
         unchanged entries. For `buckets`, echo back an existing bucket's `id` to edit it in place; omit `id` (or use
@@ -1139,6 +1183,13 @@ paths:
       description: Not reversible through the API.
       security:
         - bearerAuth: []
+      parameters:
+        - name: force
+          in: query
+          required: false
+          schema:
+            type: boolean
+          description: Required to delete a project that still holds money; its contributions stay as transactions but no longer count toward any project, and active payment plans' subscriptions end today.
       responses:
         '200':
           description: Project deleted
@@ -2341,6 +2392,756 @@ paths:
           $ref: '#/components/responses/InsufficientScope'
         '404':
           $ref: '#/components/responses/NotFound'
+  /grow/{growId}/transactions:
+    parameters:
+      - name: growId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: listGrowTransactions
+      summary: List a grow project's transactions
+      description: >-
+        Every transaction whose category is the project's `@<title>`, oldest first, each with its parsed trade
+        statements. Edit or delete one with the `/grow/{growId}/transactions/{transactionId}` endpoints.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The project's transactions
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [transactions]
+                properties:
+                  transactions:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/GrowTransaction'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /grow/{growId}/transactions/{transactionId}:
+    parameters:
+      - name: growId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: transactionId
+        in: path
+        required: true
+        schema:
+          type: string
+    patch:
+      operationId: updateGrowTransaction
+      summary: Edit a recorded grow trade in place
+      description: >-
+        Undoes the trade's old effect on the project and balance sheet and applies the edited one, in one write — the
+        transaction keeps its id. Validated like a new trade (e.g. no overselling); refused when later trades depend on
+        it (its units were already sold). The response's `effects` lists everything that changed.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateGrowTransactionRequest'
+            example:
+              quantity: 3
+      responses:
+        '200':
+          description: The trade was edited
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GrowActionResult'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      operationId: deleteGrowTransaction
+      summary: Delete a grow trade and undo its effect
+      description: >-
+        Deletes one of the project's transactions and undoes its effect on the project and balance sheet (position,
+        loan, mortgage); refused when later trades depend on it. The response's `effects` lists everything that changed.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The trade was deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteWithEffectsResult'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /smile/{projectId}/contribute:
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      operationId: contributeSmile
+      summary: Put money into a Smile project (the only way its bucket amounts change)
+      description: >-
+        Records one contribution transaction in the app's own convention: money leaves `account` (default
+        `Smile`, so the stored amount is negative), category `@<project title>`, and — when `buckets` is
+        given — `#bucket:<title>:<amount>` tags the server writes itself. Without `buckets`, it is split evenly across the buckets that still have room — and that split is written as explicit `#bucket:` tags, so it never shifts when buckets are added later. The contribution is
+        capped at the room left (the stored amount is rewritten; compare `requestedMinor` and `appliedMinor`); a full
+        target is a 400. The response's `effects` lists everything that changed.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectContributionRequest'
+            example:
+              buckets:
+                - bucketId: bucket_01234567-89ab-cdef-0123-456789abcdef
+                  amountMinor: 15000
+      responses:
+        '201':
+          description: The contribution was recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectContributionResult'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /smile/{projectId}/transactions:
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: listSmileTransactions
+      summary: List the transactions that count toward a Smile project
+      description: >-
+        Oldest first, each with its parsed `bucketAllocations` (from `#bucket:` tags). These are exactly the
+        transactions the bucket amounts are rebuilt from.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The project's transactions
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [transactions]
+                properties:
+                  transactions:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FundTransaction'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /fire/{projectId}/contribute:
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      operationId: contributeFire
+      summary: Put money into a Fire project (the only way its bucket amounts change)
+      description: >-
+        Records one contribution transaction in the app's own convention: money leaves `account` (default
+        `Fire`, so the stored amount is negative), category `@<project title>`, and — when `buckets` is
+        given — `#bucket:<title>:<amount>` tags the server writes itself. Without `buckets`, it goes to the first bucket (Fire funds fill in order). The contribution is
+        capped at the room left (the stored amount is rewritten; compare `requestedMinor` and `appliedMinor`); a full
+        target is a 400. The response's `effects` lists everything that changed.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectContributionRequest'
+            example:
+              buckets:
+                - bucketId: bucket_01234567-89ab-cdef-0123-456789abcdef
+                  amountMinor: 15000
+      responses:
+        '201':
+          description: The contribution was recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectContributionResult'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /fire/{projectId}/transactions:
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: listFireTransactions
+      summary: List the transactions that count toward a Fire project
+      description: >-
+        Oldest first, each with its parsed `bucketAllocations` (from `#bucket:` tags). These are exactly the
+        transactions the bucket amounts are rebuilt from.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The project's transactions
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [transactions]
+                properties:
+                  transactions:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FundTransaction'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /mojo/contribute:
+    post:
+      operationId: contributeMojo
+      summary: Put money into Mojo (the only way its balance changes)
+      description: >-
+        Records one `@Mojo` transaction from `account` (default `Fire`; stored negative, money leaves the account). The
+        Mojo balance is capped at its target, so the stored amount may be lower than requested. The response's
+        `effects` lists everything that changed.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MojoContributionRequest'
+            example:
+              amountMinor: 20000
+      responses:
+        '201':
+          description: The contribution was recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MojoContributionResult'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+  /mojo/transactions:
+    get:
+      operationId: listMojoTransactions
+      summary: List the transactions the Mojo balance is rebuilt from
+      description: Every `@Mojo` transaction and every transaction on the `Mojo` account, oldest first.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Mojo's transactions
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [transactions]
+                properties:
+                  transactions:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ApiTransaction'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+  /smile/{projectId}/payment-plans/{planId}:
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: planId
+        in: path
+        required: true
+        schema:
+          type: string
+    patch:
+      operationId: updateSmilePaymentPlan
+      summary: Edit a Smile payment plan (recalculated against the current buckets)
+      description: >-
+        Only the given fields change; the plan is then recalculated exactly like creating one, against the project's
+        current bucket amounts. `manualAmountMinor: null` returns to the calculated amount. An active plan's
+        subscription follows the edit.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePaymentPlanRequest'
+            example:
+              manualAmountMinor: 15000
+      responses:
+        '200':
+          description: The updated payment plan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentPlan'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      operationId: deleteSmilePaymentPlan
+      summary: Delete a Smile payment plan
+      description: An active plan is deactivated first — its subscription ends today (kept for the transactions it already made).
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The plan was deleted
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /smile/{projectId}/payment-plans/{planId}/activate:
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: planId
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      operationId: activateSmilePaymentPlan
+      summary: Activate a Smile payment plan (creates its recurring subscription)
+      description: >-
+        Creates the plan's real subscription — money leaves the plan's account every period (negative amount) into
+        `@<project>` with the plan's `#bucket:` tags. Reactivating an inactive plan restarts that subscription today.
+        Transactions are generated by POST /subscriptions/refresh, as for any subscription.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The updated payment plan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentPlan'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /smile/{projectId}/payment-plans/{planId}/deactivate:
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: planId
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      operationId: deactivateSmilePaymentPlan
+      summary: Deactivate a Smile payment plan
+      description: Its subscription ends today (kept, so the transactions it already made still match it).
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The updated payment plan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentPlan'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /fire/{projectId}/payment-plans/{planId}:
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: planId
+        in: path
+        required: true
+        schema:
+          type: string
+    patch:
+      operationId: updateFirePaymentPlan
+      summary: Edit a Fire payment plan (recalculated against the current buckets)
+      description: >-
+        Only the given fields change; the plan is then recalculated exactly like creating one, against the project's
+        current bucket amounts. `manualAmountMinor: null` returns to the calculated amount. An active plan's
+        subscription follows the edit.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePaymentPlanRequest'
+            example:
+              manualAmountMinor: 15000
+      responses:
+        '200':
+          description: The updated payment plan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentPlan'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      operationId: deleteFirePaymentPlan
+      summary: Delete a Fire payment plan
+      description: An active plan is deactivated first — its subscription ends today (kept for the transactions it already made).
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The plan was deleted
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /fire/{projectId}/payment-plans/{planId}/activate:
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: planId
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      operationId: activateFirePaymentPlan
+      summary: Activate a Fire payment plan (creates its recurring subscription)
+      description: >-
+        Creates the plan's real subscription — money leaves the plan's account every period (negative amount) into
+        `@<project>` with the plan's `#bucket:` tags. Reactivating an inactive plan restarts that subscription today.
+        Transactions are generated by POST /subscriptions/refresh, as for any subscription.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The updated payment plan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentPlan'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /fire/{projectId}/payment-plans/{planId}/deactivate:
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: planId
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      operationId: deactivateFirePaymentPlan
+      summary: Deactivate a Fire payment plan
+      description: Its subscription ends today (kept, so the transactions it already made still match it).
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The updated payment plan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentPlan'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /smile/{projectId}/buckets/{bucketId}/settle:
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: bucketId
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      operationId: settleSmileBucket
+      summary: Settle a Smile bucket — the real bill was paid
+      description: >-
+        Records one transaction tagged `#settle:<bucket>:<actual>` (plus your receipt text) whose amount is the
+        difference to what the bucket had saved: negative = topped up from `account`, positive = surplus released back
+        to it (or moved into `surplus.moveToBucketId`), 0 = exact. The bucket then shows `status: settled`,
+        `settledMinor` (actual) next to its planned `targetMinor`, and `varianceMinor`; it takes no further
+        contributions. Settling a settled bucket again edits the same settlement. The response's `effects` lists
+        everything that changed.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SettleBucketRequest'
+            example:
+              actualMinor: 65000
+              receipt: Mountain guide invoice 123
+      responses:
+        '201':
+          description: The bucket was settled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SettleBucketResult'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /smile/{projectId}/buckets/{bucketId}/unsettle:
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: bucketId
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      operationId: unsettleSmileBucket
+      summary: Remove a Smile bucket's settlement (reopen it)
+      description: Deletes the bucket's settlement transaction; the bucket reopens with the savings it had before.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The bucket was reopened
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  removedSettlementId:
+                    type: string
+                  bucket:
+                    type: object
+                  project:
+                    type: object
+                  effects:
+                    $ref: '#/components/schemas/WriteEffects'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /fire/{projectId}/buckets/{bucketId}/settle:
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: bucketId
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      operationId: settleFireBucket
+      summary: Settle a Fire bucket — the real bill was paid
+      description: >-
+        Records one transaction tagged `#settle:<bucket>:<actual>` (plus your receipt text) whose amount is the
+        difference to what the bucket had saved: negative = topped up from `account`, positive = surplus released back
+        to it (or moved into `surplus.moveToBucketId`), 0 = exact. The bucket then shows `status: settled`,
+        `settledMinor` (actual) next to its planned `targetMinor`, and `varianceMinor`; it takes no further
+        contributions. Settling a settled bucket again edits the same settlement. The response's `effects` lists
+        everything that changed.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SettleBucketRequest'
+            example:
+              actualMinor: 65000
+              receipt: Mountain guide invoice 123
+      responses:
+        '201':
+          description: The bucket was settled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SettleBucketResult'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /fire/{projectId}/buckets/{bucketId}/unsettle:
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: bucketId
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      operationId: unsettleFireBucket
+      summary: Remove a Fire bucket's settlement (reopen it)
+      description: Deletes the bucket's settlement transaction; the bucket reopens with the savings it had before.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The bucket was reopened
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  removedSettlementId:
+                    type: string
+                  bucket:
+                    type: object
+                  project:
+                    type: object
+                  effects:
+                    $ref: '#/components/schemas/WriteEffects'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
   /subscriptions:
     get:
       operationId: listSubscriptions
@@ -2571,6 +3372,7 @@ paths:
       operationId: updateSubscription
       summary: Update a subscription (SUB-2)
       description: >-
+        A subscription owned by an active Smile/Fire payment plan is refused (400) — change it through the plan.
         Accepts a partial body. If any of title/category/amountMinor/account/comment/startDate/frequency actually
         changes, cascades a cleanup that deletes every existing transaction matching the subscription's OLD identity
         (account+amountMinor+category+comment) — a tighter 4-field match than the original app's 3-field
@@ -2605,7 +3407,9 @@ paths:
     delete:
       operationId: deleteSubscription
       summary: Delete a subscription (SUB-3)
-      description: Leaves already-generated transactions untouched by default. Pass `?deleteTransactions=true` to also delete every transaction matching this subscription's identity.
+      description: >-
+        A subscription owned by an active Smile/Fire payment plan is refused (400) — deactivate or delete the plan instead.
+        Leaves already-generated transactions untouched by default. Pass `?deleteTransactions=true` to also delete every transaction matching this subscription's identity.
       security:
         - bearerAuth: []
       parameters:
@@ -3678,6 +4482,10 @@ components:
       type: object
       required: [amountMinor, targetMinor, remainingMinor, percentFilled]
       properties:
+        effects:
+          description: Present on write responses only — everything the write changed (bucket/Mojo amounts are rebuilt from transactions on every write).
+          allOf:
+            - $ref: '#/components/schemas/WriteEffects'
         amountMinor:
           type: integer
           description: Derived from transaction history — not directly writable.
@@ -3707,7 +4515,20 @@ components:
           description: Distinct calendar months, excluding the current one, with at least one qualifying expense — the denominator's sample size.
     GrowPnl:
       type: object
-      required: [title, netCashflowMinor, investedMinor, returnedMinor, transactionCount]
+      required:
+        [
+          title,
+          netCashflowMinor,
+          investedMinor,
+          returnedMinor,
+          transactionCount,
+          realizedGainMinor,
+          dividendsMinor,
+          cashflowIncomeMinor,
+          sharePosition,
+          valuationSource,
+          incompleteHistory,
+        ]
       properties:
         title:
           type: string
@@ -3722,10 +4543,49 @@ components:
           description: Sum of every matching transaction's positive amountMinor.
         transactionCount:
           type: integer
+        realizedGainMinor:
+          type: integer
+          description: Share sale proceeds minus the average cost of the units sold, over the project's recorded trades.
+        dividendsMinor:
+          type: integer
+        cashflowIncomeMinor:
+          type: integer
+          description: Net of CASHFLOW statements (cashflow minus credit).
+        sharePosition:
+          type: object
+          nullable: true
+          description: A share-kind project's current position (the balance-sheet Share tagged with its title).
+          properties:
+            quantity:
+              type: number
+            costBasisMinor:
+              type: integer
+              description: Remaining cost of the units still held (average-cost method).
+            averageCostMinor:
+              type: integer
+            lastPriceMinor:
+              type: integer
+            marketValueMinor:
+              type: integer
+            unrealizedGainMinor:
+              type: integer
+        valuationSource:
+          type: string
+          enum: [last-entered-price]
+          description: Valuation uses the price last entered in the app/API, never live market data.
+        incompleteHistory:
+          type: boolean
+          description: >-
+            True when the recorded trades can't explain the position (units sold that no recorded buy covers, or a
+            balance-sheet quantity that differs from the trades' net quantity) — cost basis and gains are then lower
+            bounds.
     FundProjectTotals:
       type: object
       required: [targetMinor, amountMinor, remainingMinor, percentFilled]
       properties:
+        plannedTargetMinor:
+          type: integer
+          description: Sum of the buckets' planned targets (targetMinor uses settled buckets' actual costs).
         targetMinor:
           type: integer
         amountMinor:
@@ -3771,6 +4631,18 @@ components:
       type: object
       required: [id, title, targetMinor, amountMinor]
       properties:
+        status:
+          type: string
+          enum: [open, settled]
+          description: Derived — settled once a `#settle:` transaction records the bucket's actual cost.
+        settledMinor:
+          type: integer
+          description: The actual cost (settled buckets only); replaces targetMinor as the bucket's capacity.
+        settledDate:
+          type: string
+        varianceMinor:
+          type: integer
+          description: settledMinor − targetMinor (positive = cost more than planned).
         id:
           type: string
         title:
@@ -3808,6 +4680,10 @@ components:
         - createdAt
         - updatedAt
       properties:
+        effects:
+          description: Present on write responses only — everything the write changed (bucket/Mojo amounts are rebuilt from transactions on every write).
+          allOf:
+            - $ref: '#/components/schemas/WriteEffects'
         id:
           type: string
         title:
@@ -3874,9 +4750,6 @@ components:
         targetMinor:
           type: integer
           description: Creates a single default bucket named after `title`. Either this or a non-empty `buckets` is required.
-        amountMinor:
-          type: integer
-          description: Only used together with `targetMinor`; defaults to 0.
         buckets:
           type: array
           items:
@@ -3887,9 +4760,6 @@ components:
                 type: string
               targetMinor:
                 type: integer
-              amountMinor:
-                type: integer
-                default: 0
               notes:
                 type: string
               targetDate:
@@ -3939,14 +4809,17 @@ components:
           type: string
         targetMinor:
           type: integer
-        amountMinor:
-          type: integer
-          default: 0
         notes:
           type: string
         targetDate:
           type: string
           format: date
+        completionDate:
+          type: string
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/FundLink'
     UpdateFundNote:
       type: object
       required: [text]
@@ -4012,10 +4885,131 @@ components:
           description: Replaces the entire notes array.
           items:
             $ref: '#/components/schemas/UpdateFundNote'
+        bucketsAdd:
+          type: array
+          description: New buckets to append (they get a new id; amounts come only from contributions).
+          items:
+            $ref: '#/components/schemas/UpdateFundBucket'
+        bucketsUpdate:
+          type: array
+          description: Edits by bucket id; only the given fields change, `null` removes an optional field. Renaming carries over to the money (see title).
+          items:
+            type: object
+            required: [id]
+            properties:
+              id:
+                type: string
+              title:
+                type: string
+              targetMinor:
+                type: integer
+                minimum: 1
+              notes:
+                type: string
+                nullable: true
+              links:
+                type: array
+                nullable: true
+                items:
+                  $ref: '#/components/schemas/FundLink'
+              targetDate:
+                type: string
+                nullable: true
+              completionDate:
+                type: string
+                nullable: true
+        bucketsRemove:
+          type: array
+          description: Bucket ids to remove. A bucket still holding money is refused unless force is true.
+          items:
+            type: string
+        force:
+          type: boolean
+          description: >-
+            Allow removing a bucket that holds money (also by leaving it out of a whole `buckets` replace). Its
+            `#bucket:` tags are stripped so the engine redistributes that money across the remaining buckets by the
+            project's default rule (Fire: a removed bucket's `@<bucket>` contributions move to the fund itself).
+        actionItemsAdd:
+          type: array
+          items:
+            $ref: '#/components/schemas/UpdateFundActionItem'
+        actionItemsUpdate:
+          type: array
+          description: Edits by index into the current list.
+          items:
+            type: object
+            required: [index]
+            properties:
+              index:
+                type: integer
+              text:
+                type: string
+              done:
+                type: boolean
+              priority:
+                type: string
+                enum: [low, medium, high]
+              dueDate:
+                type: string
+                nullable: true
+        actionItemsRemove:
+          type: array
+          items:
+            type: integer
+        notesAdd:
+          type: array
+          items:
+            $ref: '#/components/schemas/UpdateFundNote'
+        notesUpdate:
+          type: array
+          items:
+            type: object
+            required: [index, text]
+            properties:
+              index:
+                type: integer
+              text:
+                type: string
+        notesRemove:
+          type: array
+          items:
+            type: integer
+        linksAdd:
+          type: array
+          items:
+            $ref: '#/components/schemas/FundLink'
+        linksUpdate:
+          type: array
+          items:
+            type: object
+            required: [index]
+            properties:
+              index:
+                type: integer
+              label:
+                type: string
+              url:
+                type: string
+        linksRemove:
+          type: array
+          items:
+            type: integer
     FireBucket:
       type: object
       required: [id, title, targetMinor, amountMinor]
       properties:
+        status:
+          type: string
+          enum: [open, settled]
+          description: Derived — settled once a `#settle:` transaction records the bucket's actual cost.
+        settledMinor:
+          type: integer
+          description: The actual cost (settled buckets only); replaces targetMinor as the bucket's capacity.
+        settledDate:
+          type: string
+        varianceMinor:
+          type: integer
+          description: settledMinor − targetMinor (positive = cost more than planned).
         id:
           type: string
         title:
@@ -4053,6 +5047,10 @@ components:
         - createdAt
         - updatedAt
       properties:
+        effects:
+          description: Present on write responses only — everything the write changed (bucket/Mojo amounts are rebuilt from transactions on every write).
+          allOf:
+            - $ref: '#/components/schemas/WriteEffects'
         id:
           type: string
         title:
@@ -4119,9 +5117,6 @@ components:
         targetMinor:
           type: integer
           description: Creates a single default bucket named after `title`. Either this or a non-empty `buckets` is required.
-        amountMinor:
-          type: integer
-          description: Only used together with `targetMinor`; defaults to 0.
         buckets:
           type: array
           items:
@@ -4132,9 +5127,6 @@ components:
                 type: string
               targetMinor:
                 type: integer
-              amountMinor:
-                type: integer
-                default: 0
               notes:
                 type: string
               targetDate:
@@ -4192,6 +5184,115 @@ components:
           description: Replaces the entire notes array.
           items:
             $ref: '#/components/schemas/UpdateFundNote'
+        bucketsAdd:
+          type: array
+          description: New buckets to append (they get a new id; amounts come only from contributions).
+          items:
+            $ref: '#/components/schemas/UpdateFundBucket'
+        bucketsUpdate:
+          type: array
+          description: Edits by bucket id; only the given fields change, `null` removes an optional field. Renaming carries over to the money (see title).
+          items:
+            type: object
+            required: [id]
+            properties:
+              id:
+                type: string
+              title:
+                type: string
+              targetMinor:
+                type: integer
+                minimum: 1
+              notes:
+                type: string
+                nullable: true
+              links:
+                type: array
+                nullable: true
+                items:
+                  $ref: '#/components/schemas/FundLink'
+              targetDate:
+                type: string
+                nullable: true
+              completionDate:
+                type: string
+                nullable: true
+        bucketsRemove:
+          type: array
+          description: Bucket ids to remove. A bucket still holding money is refused unless force is true.
+          items:
+            type: string
+        force:
+          type: boolean
+          description: >-
+            Allow removing a bucket that holds money (also by leaving it out of a whole `buckets` replace). Its
+            `#bucket:` tags are stripped so the engine redistributes that money across the remaining buckets by the
+            project's default rule (Fire: a removed bucket's `@<bucket>` contributions move to the fund itself).
+        actionItemsAdd:
+          type: array
+          items:
+            $ref: '#/components/schemas/UpdateFundActionItem'
+        actionItemsUpdate:
+          type: array
+          description: Edits by index into the current list.
+          items:
+            type: object
+            required: [index]
+            properties:
+              index:
+                type: integer
+              text:
+                type: string
+              done:
+                type: boolean
+              priority:
+                type: string
+                enum: [low, medium, high]
+              dueDate:
+                type: string
+                nullable: true
+        actionItemsRemove:
+          type: array
+          items:
+            type: integer
+        notesAdd:
+          type: array
+          items:
+            $ref: '#/components/schemas/UpdateFundNote'
+        notesUpdate:
+          type: array
+          items:
+            type: object
+            required: [index, text]
+            properties:
+              index:
+                type: integer
+              text:
+                type: string
+        notesRemove:
+          type: array
+          items:
+            type: integer
+        linksAdd:
+          type: array
+          items:
+            $ref: '#/components/schemas/FundLink'
+        linksUpdate:
+          type: array
+          items:
+            type: object
+            required: [index]
+            properties:
+              index:
+                type: integer
+              label:
+                type: string
+              url:
+                type: string
+        linksRemove:
+          type: array
+          items:
+            type: integer
     CreatePaymentPlanRequest:
       type: object
       required: [planTitle, startDate, targetDate, frequency, account]
@@ -4246,8 +5347,11 @@ components:
           type: string
         status:
           type: string
-          enum: [planned]
-          description: Always "planned" for a freshly-created plan — activating a plan into a real recurring subscription isn't exposed by this API.
+          enum: [planned, active, inactive, completed]
+          description: >-
+            planned (created), active (its subscription is running), inactive (deactivated, or its subscription
+            disappeared), completed (its target buckets are all full or settled — its subscription ended that day).
+            Reconciled on every write.
         projectType:
           type: string
           enum: [smile, fire]
@@ -4292,6 +5396,13 @@ components:
         updatedAt:
           type: string
           format: date-time
+        completedAt:
+          type: string
+          format: date-time
+        activeSubscriptionId:
+          type: string
+          description: The subscription an API activation created.
+
     Asset:
       type: object
       required: [id, tag, amountMinor]
@@ -4474,7 +5585,7 @@ components:
     GrowEmbeddedShare:
       type: object
       nullable: true
-      description: A denormalized copy of the linked Share, kept in sync by the typed actions (and by `PATCH /balance/shares/{shareId}`) — `null` unless this project's kind is `share`.
+      description: A denormalized copy of the linked Share (the balance-sheet Share whose `tag` equals this project's title), kept in sync by the typed actions (and by `PATCH /balance/shares/{shareId}`) — `null` unless this project's kind is `share`. Its quantity/price can also be set as a plan via create/PATCH.
       properties:
         tag:
           type: string
@@ -4493,10 +5604,11 @@ components:
           type: integer
         amountMinor:
           type: integer
+          description: The mortgage amount.
     GrowEmbeddedLiabilitie:
       type: object
       nullable: true
-      description: A denormalized copy of an attached Liability, kept in sync by `buy`/`sell`/`payback` — `null` until one is attached.
+      description: A denormalized copy of an attached Liability (a loan financing the project, distinct from an Investment's `M-<title>` mortgage), kept in sync by `buy`/`sell`/`payback`, or set as a plan via create/PATCH — `null` until one is attached. `investment` is derived (true whenever the project has a kind).
       properties:
         tag:
           type: string
@@ -4563,7 +5675,7 @@ components:
           description: Only ever changed by `POST /grow/{growId}/cashflow` — see that endpoint's own description (it currently does not, matching the source app).
         amountMinor:
           type: integer
-          description: This project's own cash-invested total — only ever changed by the typed action endpoints.
+          description: This project's own cash-invested total. Changed by the typed actions; can also be set as a plan via create/PATCH (for a share-kind project, a PATCH that changes `share` without `amountMinor` recomputes it as quantity * price - loan, like the app's edit panel).
         isAsset:
           type: boolean
           description: This project's fixed kind is asset-tracking. Mutually exclusive with `share`/`investment` being non-null.
@@ -4609,6 +5721,359 @@ components:
         status:
           type: string
           description: Legacy free-text status ('bought', 'sold', 'paid back', 'paid off') the typed actions set for display parity with the original app — prefer `phase` in new clients.
+    UpdatePaymentPlanRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        account:
+          type: string
+        startDate:
+          type: string
+          format: date
+        targetDate:
+          type: string
+          format: date
+        frequency:
+          type: string
+          enum: [weekly, biweekly, monthly, quarterly, yearly]
+        selectedBucketIds:
+          type: array
+          description: Buckets to fund; [] = all buckets.
+          items:
+            type: string
+        manualAmountMinor:
+          type: integer
+          nullable: true
+          description: Overrides the calculated per-period amount; null returns to the calculated one.
+    SettleBucketRequest:
+      type: object
+      required: [actualMinor]
+      properties:
+        actualMinor:
+          type: integer
+          minimum: 0
+          description: What the bill actually was.
+        account:
+          type: string
+          description: The account the difference is booked on (default Smile/Fire, or the existing settlement's).
+        date:
+          type: string
+          format: date
+        time:
+          type: string
+        receipt:
+          type: string
+          description: Free text kept on the settlement (must not contain #bucket:/#settle: tags).
+        surplus:
+          type: object
+          description: Move a surplus into another bucket of the project instead of releasing it to the account.
+          properties:
+            moveToBucketId:
+              type: string
+    SettleBucketResult:
+      type: object
+      required: [settlement, differenceMinor, bucket, project, effects]
+      properties:
+        settlement:
+          $ref: '#/components/schemas/ApiTransaction'
+        surplusContribution:
+          $ref: '#/components/schemas/ApiTransaction'
+        differenceMinor:
+          type: integer
+          description: The settlement's amount — negative = topped up, positive = released, 0 = exact.
+        bucket:
+          type: object
+        project:
+          type: object
+        effects:
+          $ref: '#/components/schemas/WriteEffects'
+    ProjectContributionRequest:
+      type: object
+      description: Either amountMinor (default split), or buckets (explicit split; amountMinor may be omitted or must equal their sum).
+      properties:
+        amountMinor:
+          type: integer
+          minimum: 1
+        buckets:
+          type: array
+          items:
+            type: object
+            required: [bucketId, amountMinor]
+            properties:
+              bucketId:
+                type: string
+              amountMinor:
+                type: integer
+                minimum: 1
+        account:
+          type: string
+          description: The account the money leaves (default Smile for Smile, Fire for Fire).
+        date:
+          type: string
+          format: date
+        time:
+          type: string
+        comment:
+          type: string
+          description: Free text; must not contain `#bucket:` tags (use buckets).
+    ProjectContributionResult:
+      type: object
+      required: [transaction, requestedMinor, appliedMinor, project, effects]
+      properties:
+        transaction:
+          $ref: '#/components/schemas/ApiTransaction'
+        requestedMinor:
+          type: integer
+        appliedMinor:
+          type: integer
+          description: What was actually recorded after capping at the room left.
+        project:
+          type: object
+          description: The project after the contribution (SmileProject or FireProject).
+        effects:
+          $ref: '#/components/schemas/WriteEffects'
+    MojoContributionRequest:
+      type: object
+      required: [amountMinor]
+      properties:
+        amountMinor:
+          type: integer
+          minimum: 1
+        account:
+          type: string
+          description: The account the money leaves (default Fire).
+        date:
+          type: string
+          format: date
+        time:
+          type: string
+        comment:
+          type: string
+    MojoContributionResult:
+      type: object
+      required: [transaction, requestedMinor, effects]
+      properties:
+        transaction:
+          $ref: '#/components/schemas/ApiTransaction'
+        requestedMinor:
+          type: integer
+        effects:
+          $ref: '#/components/schemas/WriteEffects'
+    FundTransaction:
+      allOf:
+        - $ref: '#/components/schemas/ApiTransaction'
+        - type: object
+          required: [bucketAllocations]
+          properties:
+            bucketAllocations:
+              type: array
+              items:
+                type: object
+                properties:
+                  bucketTitle:
+                    type: string
+                  amountMinor:
+                    type: integer
+    WriteEffects:
+      type: object
+      description: >-
+        Exactly what a write changed, as before → after pairs, so the caller sees transparently what happened. Only
+        entries that changed are listed. Money is integer minor units; a missing entry is 0 / null.
+      required: [incomeStatement, balanceSheet, smile, fire, mojo, grow]
+      properties:
+        incomeStatement:
+          type: array
+          items:
+            type: object
+            required: [section, tag, beforeMinor, afterMinor]
+            properties:
+              section:
+                type: string
+                description: revenues, interests, properties, or expenses.{daily,splurge,smile,fire,mojo}
+              tag:
+                type: string
+              beforeMinor:
+                type: integer
+              afterMinor:
+                type: integer
+        balanceSheet:
+          type: array
+          items:
+            type: object
+            required: [type, tag, before, after]
+            properties:
+              type:
+                type: string
+                enum: [asset, share, investment, liability]
+              tag:
+                type: string
+              before:
+                type: object
+                nullable: true
+                description: The entry's values before (null = it didn't exist).
+              after:
+                type: object
+                nullable: true
+                description: The entry's values after (null = it was removed).
+        smile:
+          type: array
+          items:
+            $ref: '#/components/schemas/WriteEffectsBucketChange'
+        fire:
+          type: array
+          items:
+            $ref: '#/components/schemas/WriteEffectsBucketChange'
+        mojo:
+          type: object
+          nullable: true
+          properties:
+            beforeMinor:
+              type: integer
+            afterMinor:
+              type: integer
+        grow:
+          type: array
+          items:
+            type: object
+            required: [id, title, before, after]
+            properties:
+              id:
+                type: string
+              title:
+                type: string
+              before:
+                type: object
+                nullable: true
+                description: '{amountMinor, share, investment, liabilitie} before.'
+              after:
+                type: object
+                nullable: true
+                description: '{amountMinor, share, investment, liabilitie} after.'
+    WriteEffectsBucketChange:
+      type: object
+      required: [project, bucket, beforeMinor, afterMinor]
+      properties:
+        project:
+          type: string
+        bucket:
+          type: string
+        beforeMinor:
+          type: integer
+        afterMinor:
+          type: integer
+    ApiTransactionWithEffects:
+      allOf:
+        - $ref: '#/components/schemas/ApiTransaction'
+        - type: object
+          required: [effects]
+          properties:
+            effects:
+              $ref: '#/components/schemas/WriteEffects'
+    DeleteWithEffectsResult:
+      type: object
+      required: [id, effects]
+      properties:
+        id:
+          type: string
+        effects:
+          $ref: '#/components/schemas/WriteEffects'
+    GrowTransaction:
+      allOf:
+        - $ref: '#/components/schemas/ApiTransaction'
+        - type: object
+          required: [growStatements]
+          properties:
+            growStatements:
+              type: array
+              description: >-
+                The trade statements parsed from the comment, money in minor units — e.g.
+                `{kind: buyShare, title, quantity, priceMinor}`, `{kind: liabilitie, amount, credit}`.
+              items:
+                type: object
+    UpdateGrowTransactionRequest:
+      type: object
+      description: >-
+        Only the fields to change. Everything else keeps the recorded trade's value (including its date/time,
+        financing loan, and payback). The same fields as the action that recorded it (buy/sell/dividend/payback/
+        cashflow/deposit). An asset trade takes either totalAmountMinor or quantity + priceMinor; giving one drops the
+        recorded other. `liabilitie: null` / `payback: null` remove a recorded loan / payback.
+      properties:
+        totalAmountMinor:
+          type: integer
+        quantity:
+          type: number
+        priceMinor:
+          type: integer
+        depositMinor:
+          type: integer
+        mortgageMinor:
+          type: integer
+        liabilitie:
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/GrowLiabilitieAttachment'
+        payback:
+          type: object
+          nullable: true
+          properties:
+            amountMinor:
+              type: integer
+            creditMinor:
+              type: integer
+        amountMinor:
+          type: integer
+        creditMinor:
+          type: integer
+        cashflowMinor:
+          type: integer
+        date:
+          type: string
+          format: date
+        time:
+          type: string
+    GrowPlanShare:
+      type: object
+      description: >-
+        Planned share position. Changing priceMinor also updates the balance-sheet Share tagged with the project title
+        (its quantity only changes through buy/sell). `tag` is accepted only when it equals the project title.
+      properties:
+        tag:
+          type: string
+        quantity:
+          type: number
+          minimum: 0
+        priceMinor:
+          type: integer
+          minimum: 0
+    GrowPlanInvestment:
+      type: object
+      description: Planned investment. `tag` is accepted only when it equals the project title.
+      properties:
+        tag:
+          type: string
+        depositMinor:
+          type: integer
+          minimum: 0
+        amountMinor:
+          type: integer
+          minimum: 0
+          description: The mortgage amount.
+    GrowPlanLiabilitie:
+      type: object
+      nullable: true
+      description: Planned financing loan; null removes it. `tag` is accepted only when it equals the project title; `investment` is ignored (derived).
+      properties:
+        tag:
+          type: string
+        amountMinor:
+          type: integer
+          minimum: 0
+        creditMinor:
+          type: integer
+          minimum: 0
+        investment:
+          type: boolean
     CreateGrowRequest:
       type: object
       required: [title]
@@ -4626,6 +6091,8 @@ components:
           type: string
         riskScore:
           type: number
+          minimum: 0
+          maximum: 5
         risks:
           type: string
         links:
@@ -4644,11 +6111,32 @@ components:
           type: boolean
           description: Marks this project's fixed kind as asset-tracking (mutually exclusive with share/investment).
         share:
-          type: boolean
-          description: Marks this project's fixed kind as share-tracking (mutually exclusive with isAsset/investment).
+          description: >-
+            `true` (legacy) marks the kind as share, or pass the plan object directly (implies kind share).
+          oneOf:
+            - type: boolean
+            - $ref: '#/components/schemas/GrowPlanShare'
         investment:
-          type: boolean
-          description: Marks this project's fixed kind as investment-tracking (mutually exclusive with isAsset/share).
+          description: >-
+            `true` (legacy) marks the kind as investment, or pass the plan object directly (implies kind investment).
+          oneOf:
+            - type: boolean
+            - $ref: '#/components/schemas/GrowPlanInvestment'
+        kind:
+          type: string
+          nullable: true
+          enum: [asset, share, investment]
+          description: >-
+            The project's kind — which balance-sheet entity (tagged with this project's title) buy/sell act on.
+            Switching kind initializes an empty embedded copy for the new kind and clears the others; null removes the kind.
+        liabilitie:
+          $ref: '#/components/schemas/GrowPlanLiabilitie'
+        amountMinor:
+          type: integer
+          description: Planned/current cash-invested total. No transaction is created.
+        cashflowMinor:
+          type: integer
+          description: Planned periodic cashflow. No transaction is created.
         type:
           type: string
           enum: [income-growth, budget-optimization, subscription-action, expense-insight]
@@ -4676,12 +6164,23 @@ components:
           type: string
         insights:
           type: string
+        status:
+          type: string
     PatchGrowRequest:
       type: object
-      description: All fields optional — send only what you want to change. Unrecognized fields (including amountMinor/cashflowMinor/share/investment/liabilitie) are rejected.
+      description: >-
+        All fields optional — send only what you want to change. Unrecognized fields are rejected. Plan fields
+        (kind/share/investment/liabilitie/amountMinor/cashflowMinor) edit planned values only and create no
+        transaction — money moves only through the typed actions. actionItems/notes/links replace the whole array (each action item then needs an explicit done); to change single items use the *Add/*Update/*Remove fields instead (indices refer to the list before this request; updates apply, then removals, then additions).
       properties:
         title:
           type: string
+          description: >-
+            Renaming carries over to everything linked by the title, in the same write: the balance-sheet
+            Asset/Share/Investment and Liability tagged with it (and an Investment's `M-<title>` mortgage), every
+            `@<title>` transaction category and the title inside Grow statements in transaction comments,
+            `@<title>` subscription categories, and the income statement rebuilt from those transactions. Refused
+            (400) if the new title is already a balance-sheet tag.
         sub:
           type: string
         phase:
@@ -4693,6 +6192,8 @@ components:
           type: string
         riskScore:
           type: number
+          minimum: 0
+          maximum: 5
         risks:
           type: string
         links:
@@ -4736,14 +6237,110 @@ components:
           type: string
         status:
           type: string
+        share:
+          $ref: '#/components/schemas/GrowPlanShare'
+        investment:
+          $ref: '#/components/schemas/GrowPlanInvestment'
+        kind:
+          type: string
+          nullable: true
+          enum: [asset, share, investment]
+          description: >-
+            The project's kind — which balance-sheet entity (tagged with this project's title) buy/sell act on.
+            Switching kind initializes an empty embedded copy for the new kind and clears the others; null removes the kind.
+        liabilitie:
+          $ref: '#/components/schemas/GrowPlanLiabilitie'
+        amountMinor:
+          type: integer
+          description: Planned/current cash-invested total. No transaction is created.
+        cashflowMinor:
+          type: integer
+          description: Planned periodic cashflow. No transaction is created.
+        actionItemsAdd:
+          type: array
+          description: Action items to append (done defaults to false, priority to medium).
+          items:
+            $ref: '#/components/schemas/GrowActionItem'
+        actionItemsUpdate:
+          type: array
+          description: Edits by index into the current list (dueDate null removes it).
+          items:
+            type: object
+            required: [index]
+            properties:
+              index:
+                type: integer
+              text:
+                type: string
+              done:
+                type: boolean
+              priority:
+                type: string
+                enum: [low, medium, high]
+              dueDate:
+                type: string
+                nullable: true
+        actionItemsRemove:
+          type: array
+          description: Indices into the current list to remove.
+          items:
+            type: integer
+        notesAdd:
+          type: array
+          description: Notes to append (createdAt defaults to now).
+          items:
+            type: object
+            required: [text]
+            properties:
+              text:
+                type: string
+              createdAt:
+                type: string
+                format: date-time
+        notesUpdate:
+          type: array
+          items:
+            type: object
+            required: [index, text]
+            properties:
+              index:
+                type: integer
+              text:
+                type: string
+        notesRemove:
+          type: array
+          items:
+            type: integer
+        linksAdd:
+          type: array
+          items:
+            $ref: '#/components/schemas/GrowLink'
+        linksUpdate:
+          type: array
+          items:
+            type: object
+            required: [index]
+            properties:
+              index:
+                type: integer
+              label:
+                type: string
+              url:
+                type: string
+        linksRemove:
+          type: array
+          items:
+            type: integer
     GrowActionResult:
       type: object
-      required: [grow, transaction]
+      required: [grow, transaction, effects]
       properties:
         grow:
           $ref: '#/components/schemas/Grow'
         transaction:
           $ref: '#/components/schemas/ApiTransaction'
+        effects:
+          $ref: '#/components/schemas/WriteEffects'
     GrowLiabilitieAttachment:
       type: object
       required: [loanMinor, creditMinor]
@@ -4756,9 +6353,12 @@ components:
     BuyGrowRequest:
       type: object
       description: >-
-        Required fields depend on the grow project's own fixed kind: `asset` needs `totalAmountMinor`; `share`
-        needs `quantity` and `priceMinor`; `investment` needs `depositMinor` and `mortgageMinor`. A body shaped
-        for the wrong kind is rejected with `validation_invalid`.
+        Required fields depend on the grow project's own fixed kind: `asset` needs either `totalAmountMinor` or
+        `quantity` + `priceMinor` (units x unit price, e.g. to sell part of a holding — not both); `share`
+        needs `quantity` (may be fractional, e.g. crypto) and `priceMinor` (per unit); `investment` needs
+        `depositMinor`, plus an optional `mortgageMinor` (default 0 — a cash-only purchase). `quantity * priceMinor`
+        is rounded half away from zero to whole minor units. A body shaped for the wrong kind is rejected with
+        `validation_invalid`.
       properties:
         totalAmountMinor:
           type: integer
@@ -4782,7 +6382,8 @@ components:
     SellGrowRequest:
       type: object
       description: >-
-        Same kind-dependent shape as BuyGrowRequest for totalAmountMinor / quantity+priceMinor / depositMinor+mortgageMinor.
+        Same kind-dependent shape as BuyGrowRequest for totalAmountMinor (or quantity+priceMinor) / quantity+priceMinor / depositMinor+mortgageMinor.
+        For an investment-kind sell, `depositMinor` and `mortgageMinor` each default to 0 but must not both be 0.
         An investment-kind sell may also include `payback` to settle an attached liability atomically with the sale.
       properties:
         totalAmountMinor:
@@ -4990,6 +6591,11 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/BatchTransactionResult'
+        effects:
+          description: Everything the whole batch changed; null when nothing was written.
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/WriteEffects'
     Subscription:
       type: object
       required: [id, title, account, amountMinor, startDate, endDate, category, comment, frequency]

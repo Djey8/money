@@ -41,6 +41,9 @@ const {
   calculatePayback,
   calculateCashflow,
   calculateDeposit,
+  multiplyQuantityPrice,
+  normalizeQuantity,
+  parseGrowComment,
 } = require('@money/domain');
 const { getEncryptionSession } = require('../services/encryption-session');
 const { decryptValue, toApiTransactions, encryptTransaction } = require('./transaction-repository');
@@ -53,8 +56,11 @@ const {
   decryptMoney,
   decryptAllGrow,
   encryptGrow,
+  getGrow,
   MAX_WRITE_RETRIES,
 } = require('./grow-repository');
+const { reverseGrowTransaction } = require('../services/grow-reversal');
+const { computeWriteEffects } = require('../services/write-effects');
 
 function findIndexByTag(rawEntries, tag, session) {
   return rawEntries.findIndex((raw) => decryptValue(raw.tag, session) === tag);
@@ -134,6 +140,8 @@ function applyLiabilityPatch(rawLiabilities, liabilityPatch, session, schemaVers
 function applyMortgagePatch(rawLiabilities, mortgagePatch, session, schemaVersion) {
   const index = findIndexByTag(rawLiabilities, mortgagePatch.tag, session);
   if (index === -1) {
+    // A cash-only investment (mortgage 0) has no mortgage to track — don't create an empty `M-<title>` liability.
+    if (mortgagePatch.amountMinor === 0) return rawLiabilities;
     return [
       ...rawLiabilities,
       {
@@ -229,15 +237,43 @@ function assertLiabilitieAttachmentShape(liabilitie) {
   assertNonNegativeInteger(liabilitie.creditMinor, 'liabilitie.creditMinor');
 }
 
+/**
+ * An asset trade is either one lump sum (`totalAmountMinor`) or units x unit
+ * price (`quantity` + `priceMinor`, e.g. selling part of a holding) — the
+ * DSL's `Buy/Sell Asset <title> <qty> x <price>` form. The balance-sheet
+ * Asset itself only stores an amount, so both resolve to a total.
+ */
+function resolveAssetTrade(input) {
+  const hasUnits = input.quantity !== undefined || input.priceMinor !== undefined;
+  if (input.totalAmountMinor !== undefined && hasUnits) {
+    throw growError(
+      'GROW_INVALID_INPUT',
+      'Send either totalAmountMinor or quantity + priceMinor for an asset, not both.',
+    );
+  }
+  if (!hasUnits) {
+    assertPositiveInteger(input.totalAmountMinor, 'totalAmountMinor');
+    return { totalAmountMinor: input.totalAmountMinor, units: undefined };
+  }
+  assertPositiveNumber(input.quantity, 'quantity');
+  assertPositiveInteger(input.priceMinor, 'priceMinor');
+  const units = { quantity: normalizeQuantity(input.quantity), priceMinor: input.priceMinor };
+  return {
+    totalAmountMinor: multiplyQuantityPrice(units.quantity, units.priceMinor),
+    units,
+  };
+}
+
 function assertBuyInputMatchesKind(current, input) {
   if (current.isAsset) {
-    assertPositiveInteger(input.totalAmountMinor, 'totalAmountMinor');
+    resolveAssetTrade(input);
   } else if (current.share) {
     assertPositiveNumber(input.quantity, 'quantity');
     assertPositiveInteger(input.priceMinor, 'priceMinor');
   } else if (current.investment) {
     assertPositiveInteger(input.depositMinor, 'depositMinor');
-    assertPositiveInteger(input.mortgageMinor, 'mortgageMinor');
+    // Optional: a cash-only purchase has no mortgage.
+    assertNonNegativeInteger(input.mortgageMinor ?? 0, 'mortgageMinor');
   } else {
     throw growError('GROW_NO_KIND', 'This grow project has no asset/share/investment kind to buy.');
   }
@@ -246,7 +282,7 @@ function assertBuyInputMatchesKind(current, input) {
 
 function assertSellInputMatchesKind(current, input) {
   if (current.isAsset) {
-    assertPositiveInteger(input.totalAmountMinor, 'totalAmountMinor');
+    resolveAssetTrade(input);
     return;
   }
   if (current.share) {
@@ -255,8 +291,14 @@ function assertSellInputMatchesKind(current, input) {
     return;
   }
   if (current.investment) {
-    assertPositiveInteger(input.depositMinor, 'depositMinor');
-    assertPositiveInteger(input.mortgageMinor, 'mortgageMinor');
+    // Either side may be 0 (a cash-only investment, or a mortgage already paid off), but not both.
+    const depositMinor = input.depositMinor ?? 0;
+    const mortgageMinor = input.mortgageMinor ?? 0;
+    assertNonNegativeInteger(depositMinor, 'depositMinor');
+    assertNonNegativeInteger(mortgageMinor, 'mortgageMinor');
+    if (depositMinor === 0 && mortgageMinor === 0) {
+      throw growError('GROW_INVALID_INPUT', 'depositMinor and mortgageMinor must not both be 0.');
+    }
     if (input.payback !== undefined) {
       if (!input.payback || typeof input.payback !== 'object') {
         throw growError('GROW_INVALID_INPUT', 'payback must be an object.');
@@ -275,14 +317,40 @@ function assertSellInputMatchesKind(current, input) {
   throw growError('GROW_NO_KIND', 'This grow project has no asset/share/investment kind to sell.');
 }
 
+function isCategoryFor(category, title) {
+  return (
+    typeof category === 'string' && category.toLocaleLowerCase() === `@${title}`.toLocaleLowerCase()
+  );
+}
+
+function growTransactionNotFoundError() {
+  return growError(
+    'GROW_TRANSACTION_NOT_FOUND',
+    'No matching transaction exists for this grow project.',
+  );
+}
+
 /**
  * Shared read → mutate → write-with-retry-on-409 loop for every typed
- * action. `mutate({current, data, session, schemaVersion, currency})` must
- * return `{transactionFields, growPatch, updatedRawAssets?, updatedRawShares?,
- * updatedRawInvestments?, updatedRawLiabilities?}` or throw a `.code`-tagged
- * error for the route layer to map to a Problem Details response.
+ * action. `mutate({current, data, session, schemaVersion, currency, replaced})`
+ * must return `{transactionFields, growPatch, updatedRawAssets?,
+ * updatedRawShares?, updatedRawInvestments?, updatedRawLiabilities?}` or
+ * throw a `.code`-tagged error for the route layer to map to a Problem
+ * Details response.
+ *
+ * With `replaceTransactionId` (editing a recorded trade), that trade's
+ * effect is undone first (grow-reversal.js) and `mutate` runs against the
+ * restored state, receiving the old trade as `replaced`; the new
+ * transaction keeps the old one's id and position. Every write returns the
+ * `effects` report (write-effects.js) of what it changed.
  */
-async function withGrowActionWrite({ usersDb, authDb }, userId, growId, mutate) {
+async function withGrowActionWrite(
+  { usersDb, authDb },
+  userId,
+  growId,
+  mutate,
+  { replaceTransactionId } = {},
+) {
   let attempt = 0;
   while (attempt < MAX_WRITE_RETRIES) {
     let userDoc;
@@ -292,10 +360,30 @@ async function withGrowActionWrite({ usersDb, authDb }, userId, growId, mutate) 
       if (error.statusCode !== 404) throw error;
       throw growNotFoundError();
     }
-    const data = userDoc.data || {};
+    const storedData = userDoc.data || {};
     const session = await getEncryptionSession(authDb, userId);
-    const schemaVersion = data.meta?.schemaVersion || 1;
-    const currency = data.meta?.currency || 'EUR';
+    const schemaVersion = storedData.meta?.schemaVersion || 1;
+    const currency = storedData.meta?.currency || 'EUR';
+    const existingTransactions = toApiTransactions(
+      storedData.transactions || [],
+      session,
+      schemaVersion,
+      currency,
+    );
+
+    let data = storedData;
+    let replaced = null;
+    if (replaceTransactionId) {
+      const storedGrow = decryptAllGrow(storedData.grow || [], session, schemaVersion);
+      const project = storedGrow.find((candidate) => candidate.id === growId);
+      if (!project) throw growNotFoundError();
+      replaced = existingTransactions.find((t) => t.id === replaceTransactionId) || null;
+      if (!replaced || !isCategoryFor(replaced.category, project.title)) {
+        throw growTransactionNotFoundError();
+      }
+      data = reverseGrowTransaction(storedData, replaced, session, schemaVersion);
+    }
+
     const rawGrow = data.grow || [];
     if (!Array.isArray(rawGrow)) throw new Error('Stored grow projects must be an array');
     const allGrow = decryptAllGrow(rawGrow, session, schemaVersion);
@@ -303,7 +391,7 @@ async function withGrowActionWrite({ usersDb, authDb }, userId, growId, mutate) 
     if (index === -1) throw growNotFoundError();
     const current = allGrow[index];
 
-    const mutation = mutate({ current, data, session, schemaVersion, currency });
+    const mutation = mutate({ current, data, session, schemaVersion, currency, replaced });
     const {
       transactionFields,
       growPatch,
@@ -318,15 +406,14 @@ async function withGrowActionWrite({ usersDb, authDb }, userId, growId, mutate) 
       i === index ? encryptGrow(updatedGrow, session, schemaVersion) : raw,
     );
 
-    const existingRawTransactions = data.transactions || [];
-    const existingTransactions = toApiTransactions(
-      existingRawTransactions,
-      session,
-      schemaVersion,
+    const newTransaction = {
+      ...transactionFields,
+      id: replaced ? replaced.id : `tx_${crypto.randomUUID()}`,
       currency,
-    );
-    const newTransaction = { ...transactionFields, id: `tx_${crypto.randomUUID()}`, currency };
-    const allTransactions = [...existingTransactions, newTransaction];
+    };
+    const allTransactions = replaced
+      ? existingTransactions.map((t) => (t.id === replaced.id ? newTransaction : t))
+      : [...existingTransactions, newTransaction];
     const derived = applyDerivedState(data, allTransactions, session, schemaVersion);
 
     const updatedData = derived.data;
@@ -361,6 +448,7 @@ async function withGrowActionWrite({ usersDb, authDb }, userId, growId, mutate) 
       return {
         grow: updatedGrow,
         transaction: derived.transactions.find((t) => t.id === newTransaction.id),
+        effects: computeWriteEffects(storedData, updatedData, session, schemaVersion),
       };
     } catch (error) {
       if (error.statusCode !== 409) throw error;
@@ -370,8 +458,8 @@ async function withGrowActionWrite({ usersDb, authDb }, userId, growId, mutate) 
   throw new Error('Failed to write grow action after maximum retries due to write conflicts');
 }
 
-async function buyGrow(deps, userId, growId, input) {
-  return withGrowActionWrite(deps, userId, growId, ({ current, data, session, schemaVersion }) => {
+function buyMutation(input) {
+  return ({ current, data, session, schemaVersion }) => {
     assertBuyInputMatchesKind(current, input);
     const { date, time } = resolveDateTime(input);
     const rawLiabilities = data.balance?.liabilities || [];
@@ -386,9 +474,11 @@ async function buyGrow(deps, userId, growId, input) {
     if (current.isAsset) {
       const rawAssets = data.balance?.asset?.assets || [];
       const assetIndex = findIndexByTag(rawAssets, current.title, session);
+      const trade = resolveAssetTrade(input);
       const calc = calculateBuyAsset({
         title: current.title,
-        totalAmountMinor: input.totalAmountMinor,
+        totalAmountMinor: trade.totalAmountMinor,
+        units: trade.units,
         existingAssetAmountMinor:
           assetIndex === -1
             ? null
@@ -481,8 +571,8 @@ async function buyGrow(deps, userId, growId, input) {
       const mortgageIndex = findIndexByTag(rawLiabilities, mortgageTag, session);
       const calc = calculateBuyInvestment({
         title: current.title,
-        depositMinor: input.depositMinor,
-        mortgageMinor: input.mortgageMinor,
+        depositMinor: input.depositMinor ?? 0,
+        mortgageMinor: input.mortgageMinor ?? 0,
         existingInvestmentDepositMinor:
           investmentIndex === -1
             ? null
@@ -545,11 +635,15 @@ async function buyGrow(deps, userId, growId, input) {
     }
 
     throw growError('GROW_NO_KIND', 'This grow project has no asset/share/investment kind to buy.');
-  });
+  };
 }
 
-async function sellGrow(deps, userId, growId, input) {
-  return withGrowActionWrite(deps, userId, growId, ({ current, data, session, schemaVersion }) => {
+async function buyGrow(deps, userId, growId, input) {
+  return withGrowActionWrite(deps, userId, growId, buyMutation(input));
+}
+
+function sellMutation(input) {
+  return ({ current, data, session, schemaVersion }) => {
     assertSellInputMatchesKind(current, input);
     const { date, time } = resolveDateTime(input);
 
@@ -562,11 +656,13 @@ async function sellGrow(deps, userId, growId, input) {
         session,
         schemaVersion,
       );
-      assertDoesNotExceed(input.totalAmountMinor, existingAssetAmountMinor, 'totalAmountMinor');
+      const trade = resolveAssetTrade(input);
+      assertDoesNotExceed(trade.totalAmountMinor, existingAssetAmountMinor, 'totalAmountMinor');
       const calc = calculateSellAsset(
         current.title,
-        input.totalAmountMinor,
+        trade.totalAmountMinor,
         existingAssetAmountMinor,
+        trade.units,
       );
       const updatedRawAssets =
         calc.newAssetAmountMinor === 0
@@ -658,8 +754,8 @@ async function sellGrow(deps, userId, growId, input) {
         session,
         schemaVersion,
       );
-      assertDoesNotExceed(input.depositMinor, existingInvestmentDepositMinor, 'depositMinor');
-      assertDoesNotExceed(input.mortgageMinor, existingInvestmentAmountMinor, 'mortgageMinor');
+      assertDoesNotExceed(input.depositMinor ?? 0, existingInvestmentDepositMinor, 'depositMinor');
+      assertDoesNotExceed(input.mortgageMinor ?? 0, existingInvestmentAmountMinor, 'mortgageMinor');
       const payback = input.payback
         ? {
             amountMinor: input.payback.amountMinor,
@@ -686,8 +782,8 @@ async function sellGrow(deps, userId, growId, input) {
       }
       const calc = calculateSellInvestment({
         title: current.title,
-        depositMinor: input.depositMinor,
-        mortgageMinor: input.mortgageMinor,
+        depositMinor: input.depositMinor ?? 0,
+        mortgageMinor: input.mortgageMinor ?? 0,
         existingInvestmentDepositMinor,
         existingInvestmentAmountMinor,
         existingMortgageLiabilityAmountMinor:
@@ -770,11 +866,15 @@ async function sellGrow(deps, userId, growId, input) {
       'GROW_NO_KIND',
       'This grow project has no asset/share/investment kind to sell.',
     );
-  });
+  };
 }
 
-async function dividendGrow(deps, userId, growId, input) {
-  return withGrowActionWrite(deps, userId, growId, ({ current }) => {
+async function sellGrow(deps, userId, growId, input) {
+  return withGrowActionWrite(deps, userId, growId, sellMutation(input));
+}
+
+function dividendMutation(input) {
+  return ({ current }) => {
     if (!current.share) {
       throw growError(
         'GROW_NOT_SHARE_KIND',
@@ -796,11 +896,15 @@ async function dividendGrow(deps, userId, growId, input) {
       },
       growPatch: {},
     };
-  });
+  };
 }
 
-async function paybackGrow(deps, userId, growId, input) {
-  return withGrowActionWrite(deps, userId, growId, ({ current, data, session, schemaVersion }) => {
+async function dividendGrow(deps, userId, growId, input) {
+  return withGrowActionWrite(deps, userId, growId, dividendMutation(input));
+}
+
+function paybackMutation(input) {
+  return ({ current, data, session, schemaVersion }) => {
     if (!current.liabilitie) {
       throw growError(
         'GROW_NO_LIABILITY',
@@ -875,11 +979,15 @@ async function paybackGrow(deps, userId, growId, input) {
               : raw,
           ),
     };
-  });
+  };
 }
 
-async function cashflowGrow(deps, userId, growId, input) {
-  return withGrowActionWrite(deps, userId, growId, ({ current }) => {
+async function paybackGrow(deps, userId, growId, input) {
+  return withGrowActionWrite(deps, userId, growId, paybackMutation(input));
+}
+
+function cashflowMutation(input) {
+  return ({ current }) => {
     assertInteger(input.cashflowMinor, 'cashflowMinor');
     if (input.creditMinor !== undefined) {
       assertNonNegativeInteger(input.creditMinor, 'creditMinor');
@@ -897,11 +1005,15 @@ async function cashflowGrow(deps, userId, growId, input) {
       },
       growPatch: {},
     };
-  });
+  };
 }
 
-async function depositGrow(deps, userId, growId, input) {
-  return withGrowActionWrite(deps, userId, growId, ({ current }) => {
+async function cashflowGrow(deps, userId, growId, input) {
+  return withGrowActionWrite(deps, userId, growId, cashflowMutation(input));
+}
+
+function depositMutation(input) {
+  return ({ current }) => {
     assertPositiveInteger(input.amountMinor, 'amountMinor');
     const { date, time } = resolveDateTime(input);
     const calc = calculateDeposit(input.amountMinor);
@@ -916,7 +1028,177 @@ async function depositGrow(deps, userId, growId, input) {
       },
       growPatch: {},
     };
-  });
+  };
+}
+
+async function depositGrow(deps, userId, growId, input) {
+  return withGrowActionWrite(deps, userId, growId, depositMutation(input));
+}
+
+// --- A project's recorded trades: list, edit in place, delete ---
+
+const MUTATIONS = {
+  buy: buyMutation,
+  sell: sellMutation,
+  dividend: dividendMutation,
+  payback: paybackMutation,
+  cashflow: cashflowMutation,
+  deposit: depositMutation,
+};
+
+const ACTION_BY_STATEMENT = {
+  buyAsset: 'buy',
+  buyShare: 'buy',
+  buyInvestment: 'buy',
+  sellAsset: 'sell',
+  sellShare: 'sell',
+  sellInvestment: 'sell',
+  dividendShare: 'dividend',
+  cashflow: 'cashflow',
+  deposit: 'deposit',
+};
+
+function absoluteMinor(token, field) {
+  if (token.kind !== 'absolute') {
+    throw growError(
+      'GROW_NOT_REVERSIBLE',
+      `This trade's ${field} is a percentage from an older app version and can't be edited exactly — edit it in the app instead.`,
+    );
+  }
+  return token.minor;
+}
+
+/** Which typed action a recorded trade came from, and the input that reproduces it. */
+function tradeFromTransaction(transaction) {
+  const statements = parseGrowComment(transaction.comment || '').filter(
+    (statement) => statement.kind !== 'unknown',
+  );
+  const main =
+    statements.find((statement) => ACTION_BY_STATEMENT[statement.kind]) ||
+    statements.find((statement) => statement.kind === 'paybackLiabilitie');
+  if (!main) {
+    throw growError('GROW_INVALID_INPUT', 'This transaction is not a Grow trade.');
+  }
+  const action = ACTION_BY_STATEMENT[main.kind] || 'payback';
+  const input = { date: transaction.date, time: transaction.time };
+  switch (main.kind) {
+    case 'buyAsset':
+    case 'sellAsset':
+      Object.assign(
+        input,
+        main.quantity === 1
+          ? { totalAmountMinor: main.priceMinor }
+          : { quantity: main.quantity, priceMinor: main.priceMinor },
+      );
+      break;
+    case 'buyShare':
+    case 'sellShare':
+    case 'dividendShare':
+      Object.assign(input, { quantity: main.quantity, priceMinor: main.priceMinor });
+      break;
+    case 'buyInvestment':
+    case 'sellInvestment':
+      Object.assign(input, { depositMinor: main.depositMinor, mortgageMinor: main.mortgageMinor });
+      break;
+    case 'cashflow':
+      Object.assign(input, {
+        cashflowMinor: main.cashflowMinor,
+        ...(main.creditMinor !== null && { creditMinor: main.creditMinor }),
+      });
+      break;
+    case 'deposit':
+      input.amountMinor = main.amountMinor;
+      break;
+    case 'paybackLiabilitie':
+      input.amountMinor = absoluteMinor(main.amount, 'payback amount');
+      input.creditMinor = absoluteMinor(main.credit, 'payback credit');
+      break;
+    default:
+      break;
+  }
+  const loan = statements.find((statement) => statement.kind === 'liabilitie');
+  if (loan && action === 'buy') {
+    input.liabilitie = {
+      loanMinor: absoluteMinor(loan.amount, 'loan amount'),
+      creditMinor: absoluteMinor(loan.credit, 'loan credit'),
+    };
+  }
+  const payback = statements.find((statement) => statement.kind === 'paybackLiabilitie');
+  if (payback && main.kind === 'sellInvestment') {
+    input.payback = {
+      amountMinor: absoluteMinor(payback.amount, 'payback amount'),
+      creditMinor: absoluteMinor(payback.credit, 'payback credit'),
+    };
+  }
+  return { action, input };
+}
+
+/**
+ * The edited trade's input: the recorded trade's values, overridden by
+ * `patch`. An asset trade is either a total or units x unit price, so
+ * giving one form drops the recorded other; `liabilitie: null` /
+ * `payback: null` remove the recorded loan / payback.
+ */
+function mergeTradeInput(recorded, patch) {
+  const input = { ...recorded };
+  if (patch.totalAmountMinor !== undefined) {
+    delete input.quantity;
+    delete input.priceMinor;
+  }
+  if (
+    (patch.quantity !== undefined || patch.priceMinor !== undefined) &&
+    'totalAmountMinor' in input
+  ) {
+    delete input.totalAmountMinor;
+  }
+  Object.assign(input, patch);
+  if (patch.liabilitie === null) delete input.liabilitie;
+  if (patch.payback === null) delete input.payback;
+  return input;
+}
+
+async function listGrowTransactions(deps, userId, growId) {
+  const project = await getGrow(deps, userId, growId);
+  if (!project) throw growNotFoundError();
+  const { usersDb, authDb } = deps;
+  let userDoc;
+  try {
+    userDoc = await usersDb.get(userId);
+  } catch (error) {
+    if (error.statusCode !== 404) throw error;
+    return [];
+  }
+  const data = userDoc.data || {};
+  const session = await getEncryptionSession(authDb, userId);
+  const transactions = toApiTransactions(
+    data.transactions || [],
+    session,
+    data.meta?.schemaVersion || 1,
+    data.meta?.currency || 'EUR',
+  );
+  return transactions
+    .filter((transaction) => isCategoryFor(transaction.category, project.title))
+    .sort((a, b) => `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`))
+    .map((transaction) => ({
+      ...transaction,
+      growStatements: parseGrowComment(transaction.comment || '').filter(
+        (statement) => statement.kind !== 'unknown',
+      ),
+    }));
+}
+
+/** Edits a recorded trade in place: undoes its old effect and applies the edited one, in one write. */
+async function updateGrowTransaction(deps, userId, growId, transactionId, patch) {
+  return withGrowActionWrite(
+    deps,
+    userId,
+    growId,
+    (context) => {
+      const { action, input } = tradeFromTransaction(context.replaced);
+      return MUTATIONS[action](mergeTradeInput(input, patch))(context);
+    },
+    { replaceTransactionId: transactionId },
+  );
 }
 
 module.exports = {
@@ -926,4 +1208,7 @@ module.exports = {
   paybackGrow,
   cashflowGrow,
   depositGrow,
+  listGrowTransactions,
+  updateGrowTransaction,
+  tradeFromTransaction,
 };

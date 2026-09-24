@@ -26,6 +26,8 @@ const { getEncryptionSession } = require('../services/encryption-session');
 const { decryptValue } = require('./transaction-repository');
 const { writeValue, toStoredMoney } = require('../services/transaction-derived-state');
 
+const { assertRenameKeepsGrowLink, syncGrowEmbedded } = require('../services/grow-links');
+
 const MAX_WRITE_RETRIES = 10;
 
 function decryptMoney(value, session, schemaVersion) {
@@ -124,12 +126,13 @@ async function withLiabilitiesWrite({ usersDb, authDb }, userId, mutate) {
     const rawLiabilities = data.balance?.liabilities || [];
     if (!Array.isArray(rawLiabilities)) throw new Error('Stored liabilities must be an array');
 
-    const mutation = mutate({ rawLiabilities, session, schemaVersion });
+    const mutation = mutate({ data, rawLiabilities, session, schemaVersion });
     if (mutation === null) return null;
-    const { updatedRawLiabilities, result } = mutation;
+    const { updatedRawLiabilities, updatedRawGrow, result } = mutation;
     const updatedData = {
       ...data,
       balance: { ...data.balance, liabilities: updatedRawLiabilities },
+      ...(updatedRawGrow !== undefined && { grow: updatedRawGrow }),
     };
     const now = new Date().toISOString();
     try {
@@ -178,7 +181,7 @@ async function createLiability(deps, userId, input) {
 }
 
 async function updateLiability(deps, userId, liabilityId, patch) {
-  return withLiabilitiesWrite(deps, userId, ({ rawLiabilities, session, schemaVersion }) => {
+  return withLiabilitiesWrite(deps, userId, ({ data, rawLiabilities, session, schemaVersion }) => {
     const existingLiabilities = decryptAllLiabilities(rawLiabilities, session, schemaVersion);
     const index = existingLiabilities.findIndex((liability) => liability.id === liabilityId);
     if (index === -1) return null;
@@ -188,6 +191,7 @@ async function updateLiability(deps, userId, liabilityId, patch) {
     if (patch.tag !== undefined) {
       tag = patch.tag.trim();
       if (tag !== current.tag) {
+        assertRenameKeepsGrowLink(data, current.tag, tag, session, { mortgage: true });
         const otherTags = existingLiabilities
           .filter((liability) => liability.id !== current.id)
           .map((liability) => liability.tag);
@@ -206,7 +210,21 @@ async function updateLiability(deps, userId, liabilityId, patch) {
     const updatedRawLiabilities = rawLiabilities.map((raw, i) =>
       i === index ? encryptLiability(updatedLiability, session, schemaVersion) : raw,
     );
-    return { updatedRawLiabilities, result: updatedLiability };
+    // A linked Grow project's embedded loan copy follows the edit.
+    const rawGrow = data.grow || [];
+    const syncedGrow = syncGrowEmbedded(
+      rawGrow,
+      tag,
+      'liabilitie',
+      { amount: updatedLiability.amountMinor, credit: updatedLiability.creditMinor },
+      session,
+      schemaVersion,
+    );
+    return {
+      updatedRawLiabilities,
+      updatedRawGrow: syncedGrow === rawGrow ? undefined : syncedGrow,
+      result: updatedLiability,
+    };
   });
 }
 

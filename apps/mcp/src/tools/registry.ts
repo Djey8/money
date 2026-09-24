@@ -98,7 +98,8 @@ export const TOOLS: ToolDefinition[] = [
     name: 'get_reports',
     description:
       'Read-only calculation reports: income statement, cashflow, balance sheet, KPIs, Fire coverage, or a ' +
-      "single Grow project's P&L. Requires a PAT with reports:r. grow_pnl needs a growId argument.",
+      "single Grow project's P&L. Requires a PAT with reports:r. grow_pnl needs a growId argument. " +
+      'To review finances or give advice, read explain_concept topic advisor_playbook first.',
     actions: {
       income_statement: action('getIncomeStatement'),
       cashflow: action('getCashflow'),
@@ -112,20 +113,29 @@ export const TOOLS: ToolDefinition[] = [
     kind: 'simple',
     name: 'manage_mojo',
     description:
-      'Read the Mojo emergency-fund state or update its target amount. Requires a PAT with mojo:r (get) or ' +
-      'mojo:w (update_target).',
+      'Read explain_concept topic smile_fire_mojo_guide first. Read the Mojo long-term reserve, update its target, ' +
+      'contribute to it, or list the transactions its balance is rebuilt from. The balance only ever comes from ' +
+      'transactions (@Mojo contributions, capped at the target). Every write returns `effects`. Requires a PAT ' +
+      'with mojo:r (get/list_transactions) or mojo:w (update_target/contribute).',
     actions: {
       get: action('getMojo'),
       update_target: action('updateMojoTarget'),
+      contribute: action('contributeMojo'),
+      list_transactions: action('listMojoTransactions'),
     },
   },
   {
     kind: 'simple',
     name: 'manage_smile',
     description:
-      'List, read, create, update, delete a Smile (short/medium-term savings) project, or attach a payment ' +
-      'plan to one. Requires a PAT with smile:r (list/get) or smile:w (create/update/delete/create_payment_plan). ' +
-      'delete requires confirm: true.',
+      'Read explain_concept topic smile_fire_mojo_guide first — it explains buckets. Manage Smile (medium-term ' +
+      'savings goal) projects: list, get, create, update (incl. bucketsAdd/Update/Remove by id and single list ' +
+      'entries), delete; contribute money (the only way bucket amounts change — they are rebuilt from ' +
+      'transactions, never set); list_transactions; settle_bucket when the real bill is paid (records only the difference to what was ' +
+      'saved; unsettle_bucket reopens); and payment plans (create, update, activate, deactivate, delete — a ' +
+      'plan owns its subscription and completes when its buckets are full). Every write returns `effects`. Removing money-holding buckets/projects needs force. Requires a ' +
+      'PAT with smile:r (list/get/list_transactions) or smile:w (everything else). delete and ' +
+      'delete_payment_plan require confirm: true.',
     actions: {
       list: action('listSmileProjects'),
       get: action('getSmileProject'),
@@ -133,15 +143,28 @@ export const TOOLS: ToolDefinition[] = [
       update: action('updateSmileProject'),
       delete: action('deleteSmileProject', true),
       create_payment_plan: action('createSmilePaymentPlan'),
+      contribute: action('contributeSmile'),
+      settle_bucket: action('settleSmileBucket'),
+      unsettle_bucket: action('unsettleSmileBucket'),
+      update_payment_plan: action('updateSmilePaymentPlan'),
+      activate_payment_plan: action('activateSmilePaymentPlan'),
+      deactivate_payment_plan: action('deactivateSmilePaymentPlan'),
+      delete_payment_plan: action('deleteSmilePaymentPlan', true),
+      list_transactions: action('listSmileTransactions'),
     },
   },
   {
     kind: 'simple',
     name: 'manage_fire',
     description:
-      'List, read, create, update, delete a Fire (retirement) project, or attach a payment plan to one. ' +
-      'Requires a PAT with fire:r (list/get) or fire:w (create/update/delete/create_payment_plan). delete ' +
-      'requires confirm: true.',
+      'Read explain_concept topic smile_fire_mojo_guide first — it explains buckets. Manage Fire (emergency fund, ' +
+      'not retirement) projects: list, get, create, update (incl. bucketsAdd/Update/Remove by id and single list ' +
+      'entries), delete; contribute money (the only way bucket amounts change — untagged money fills the first ' +
+      'bucket; a fund auto-completes when every bucket is full); list_transactions; settle_bucket when the real bill is paid (records only the difference to what was ' +
+      'saved; unsettle_bucket reopens); and payment plans (create, update, activate, deactivate, delete — a ' +
+      'plan owns its subscription and completes when its buckets are full). Every write returns `effects`. Removing money-holding ' +
+      'buckets/projects needs force. Requires a PAT with fire:r (list/get/list_transactions) or fire:w ' +
+      '(everything else). delete and delete_payment_plan require confirm: true.',
     actions: {
       list: action('listFireProjects'),
       get: action('getFireProject'),
@@ -149,6 +172,14 @@ export const TOOLS: ToolDefinition[] = [
       update: action('updateFireProject'),
       delete: action('deleteFireProject', true),
       create_payment_plan: action('createFirePaymentPlan'),
+      contribute: action('contributeFire'),
+      settle_bucket: action('settleFireBucket'),
+      unsettle_bucket: action('unsettleFireBucket'),
+      update_payment_plan: action('updateFirePaymentPlan'),
+      activate_payment_plan: action('activateFirePaymentPlan'),
+      deactivate_payment_plan: action('deactivateFirePaymentPlan'),
+      delete_payment_plan: action('deleteFirePaymentPlan', true),
+      list_transactions: action('listFireTransactions'),
     },
   },
   {
@@ -217,10 +248,16 @@ export const TOOLS: ToolDefinition[] = [
     kind: 'simple',
     name: 'manage_grow',
     description:
+      'Read explain_concept topic grow_guide first — it documents every field, the kind/plan/action model, and ' +
+      'worked examples. ' +
       'List, read, create, update, delete a Grow (Rich-Dad-Poor-Dad-style) investment project, or record a ' +
       'typed action against one: buy, sell, dividend, payback, cashflow, deposit. Never write the comment DSL ' +
-      'directly — these typed actions generate it server-side. Requires a PAT with grow:r (list/get) or grow:w ' +
-      '(everything else). delete requires confirm: true.',
+      'directly — these typed actions generate it server-side (the generic transactions tool rejects it). ' +
+      "list_transactions shows a project's recorded trades; update_transaction edits one in place (undoing its " +
+      'old effect and applying the new one); delete_transaction deletes one and undoes its effect. Every write ' +
+      'returns `effects`: everything it changed (income statement, balance sheet, Smile/Fire, Mojo, Grow). ' +
+      'Requires a PAT with grow:r (list/get/list_transactions) or grow:w (everything else). delete and ' +
+      'delete_transaction require confirm: true.',
     actions: {
       list: action('listGrow'),
       get: action('getGrow'),
@@ -233,6 +270,9 @@ export const TOOLS: ToolDefinition[] = [
       payback: action('paybackGrow'),
       cashflow: action('cashflowGrow'),
       deposit: action('depositGrow'),
+      list_transactions: action('listGrowTransactions'),
+      update_transaction: action('updateGrowTransaction'),
+      delete_transaction: action('deleteGrowTransaction', true),
     },
   },
   {
@@ -260,7 +300,8 @@ export const TOOLS: ToolDefinition[] = [
     description:
       'List budget rows, upsert a (month, category) row, get/update/delete a single row, delete a whole ' +
       "month's rows, fill forward from the nearest prior populated month, copy a month, or seed a month from " +
-      'active subscriptions. Requires a PAT with budget:r (list/get_row) or budget:w (everything else). ' +
+      'active subscriptions. Rows hold the plan only; advisor_playbook explains rebuilding budget vs actual from ' +
+      'transactions. Requires a PAT with budget:r (list/get_row) or budget:w (everything else). ' +
       'delete_month and delete_row require confirm: true.',
     actions: {
       list: action('listBudget'),

@@ -1,3 +1,5 @@
+import { Subject } from 'rxjs';
+
 // Mock heavy dependencies BEFORE they get resolved via AppDataService imports.
 // jest.mock() calls are hoisted above imports by Jest.
 jest.mock('@angular/fire/compat/auth', () => ({ AngularFireAuth: class {} }));
@@ -64,6 +66,7 @@ const mockCryptic = {
 };
 
 const mockDatabase = {
+  staleWrite$: new Subject<void>(),
   clearReadCache: jest.fn(),
   getBatchData: jest.fn(),
   getUpdatedAt: jest.fn(),
@@ -105,20 +108,56 @@ describe('AppDataService', () => {
   });
 
   describe('updateDatabase()', () => {
-    it('reloads from the server via onConflict when the write is refused as stale (docs/adr/0003)', () => {
+    it('shows a notice and reloads when a write is refused as stale (docs/adr/0003)', () => {
       const service = createService();
-      AppStateService.instance.allTransactions = [];
+      const reload = jest.spyOn(service, 'loadFromDB').mockResolvedValue();
 
-      service.updateDatabase();
+      mockDatabase.staleWrite$.next();
 
-      expect(mockPersistence.batchWriteAndSync).toHaveBeenCalledTimes(1);
-      const config = mockPersistence.batchWriteAndSync.mock.calls[0][0];
-      expect(typeof config.onConflict).toBe('function');
+      expect(mockToastService.show).toHaveBeenCalledWith('Sync.staleWrite', 'info');
+      expect(reload).toHaveBeenCalledTimes(1);
+    });
+  });
 
-      mockDatabase.getBatchData.mockResolvedValue(null);
-      config.onConflict();
+  describe('server version tracking (docs/adr/0003)', () => {
+    afterEach(() => {
+      AppStateService.instance.lastUpdatedAt = null;
+    });
 
-      expect(mockDatabase.clearReadCache).toHaveBeenCalled();
+    it('adopts the version of the first load', async () => {
+      const service = createService();
+      mockDatabase.getBatchData.mockResolvedValue({ data: {}, updatedAt: 'v1' });
+
+      await service.loadTier1();
+
+      expect(AppStateService.instance.lastUpdatedAt).toBe('v1');
+    });
+
+    it('reloads every loaded tier before adopting a version someone else produced', async () => {
+      const service = createService();
+      AppStateService.instance.lastUpdatedAt = 'v1';
+      AppStateService.instance.tier3GrowLoaded = true;
+      AppStateService.instance.tier3BalanceLoaded = false;
+      mockDatabase.getBatchData.mockResolvedValue({ data: {}, updatedAt: 'v2' });
+
+      await service.loadTier1();
+
+      const loadedPaths = mockDatabase.getBatchData.mock.calls.map((call: any[]) => call[0]);
+      expect(loadedPaths).toContainEqual(AppDataService.TIER2_PATHS);
+      expect(loadedPaths).toContainEqual(AppDataService.TIER3_GROW_PATHS);
+      expect(loadedPaths).not.toContainEqual(AppDataService.TIER3_BALANCE_PATHS);
+      expect(AppStateService.instance.lastUpdatedAt).toBe('v2');
+    });
+
+    it("never moves the version backwards when a read raced this session's own write", async () => {
+      const service = createService();
+      AppStateService.instance.lastUpdatedAt = 'v3';
+      mockDatabase.getBatchData.mockResolvedValue({ data: {}, updatedAt: 'v2' });
+
+      await service.loadTier1();
+
+      expect(AppStateService.instance.lastUpdatedAt).toBe('v3');
+      expect(mockDatabase.getBatchData).toHaveBeenCalledTimes(1);
     });
   });
 

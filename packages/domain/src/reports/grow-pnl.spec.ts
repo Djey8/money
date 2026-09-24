@@ -39,6 +39,12 @@ describe('computeGrowPnl', () => {
       investedMinor: 0,
       returnedMinor: 0,
       transactionCount: 0,
+      realizedGainMinor: 0,
+      dividendsMinor: 0,
+      cashflowIncomeMinor: 0,
+      sharePosition: null,
+      valuationSource: 'last-entered-price',
+      incompleteHistory: false,
     });
   });
 
@@ -48,5 +54,77 @@ describe('computeGrowPnl', () => {
       { category: '@MSFT', amountMinor: 50 },
     ]);
     expect(pnl.transactionCount).toBe(2);
+  });
+
+  describe('trade breakdown (average cost)', () => {
+    const trades = [
+      {
+        category: '@SOL',
+        amountMinor: -40000,
+        date: '2026-03-01',
+        time: '10:00',
+        comment: 'Buy Share SOL 4 x 100;',
+      },
+      {
+        category: '@SOL',
+        amountMinor: -30000,
+        date: '2026-04-01',
+        time: '10:00',
+        comment: 'Buy Share SOL 2 x 150;',
+      },
+      {
+        category: '@SOL',
+        amountMinor: 45000,
+        date: '2026-05-01',
+        time: '10:00',
+        comment: 'Sell Share SOL 3 x 150;',
+      },
+      {
+        category: '@SOL',
+        amountMinor: 300,
+        date: '2026-05-02',
+        time: '10:00',
+        comment: 'Dividende Share SOL 3 x 1;',
+      },
+    ];
+
+    it('realizes gains against the average cost and values the rest at the last entered price', () => {
+      // 6 units cost 700 (avg 116.67); selling 3 at 150 removes cost 350 -> gain 100.
+      const pnl = computeGrowPnl('SOL', trades, { quantity: 3, priceMinor: 9000 });
+      expect(pnl.realizedGainMinor).toBe(10000);
+      expect(pnl.dividendsMinor).toBe(300);
+      expect(pnl.sharePosition).toEqual({
+        quantity: 3,
+        costBasisMinor: 35000,
+        averageCostMinor: 11667,
+        lastPriceMinor: 9000,
+        marketValueMinor: 27000,
+        unrealizedGainMinor: -8000,
+      });
+      expect(pnl.incompleteHistory).toBe(false);
+    });
+
+    it('flags history the trades cannot explain instead of inventing a cost basis', () => {
+      const sellOnly = [
+        {
+          category: '@SOL',
+          amountMinor: 1000,
+          date: '2026-05-01',
+          time: '10:00',
+          comment: 'Sell Share SOL 1 x 10;',
+        },
+      ];
+      const pnl = computeGrowPnl('SOL', sellOnly, { quantity: 3.54, priceMinor: 8833 });
+      expect(pnl.incompleteHistory).toBe(true);
+      expect(pnl.realizedGainMinor).toBe(1000);
+      expect(pnl.sharePosition?.costBasisMinor).toBe(0);
+    });
+
+    it('nets CASHFLOW statements, credit included', () => {
+      const pnl = computeGrowPnl('Flat', [
+        { category: '@Flat', amountMinor: 13000, comment: 'CASHFLOW 150 - CREDIT 20;' },
+      ]);
+      expect(pnl.cashflowIncomeMinor).toBe(13000);
+    });
   });
 });

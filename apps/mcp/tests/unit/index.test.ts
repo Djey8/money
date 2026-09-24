@@ -1,6 +1,8 @@
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
-import { buildServer } from '../../src/index';
+import { buildServer, SERVER_INSTRUCTIONS } from '../../src/index';
+import { loadExplainTopics } from '../../src/tools/explain';
+import { join } from 'node:path';
 import { TOOLS } from '../../src/tools/registry';
 
 async function connectedClient(config?: { apiUrl: string; apiToken: string }) {
@@ -12,6 +14,22 @@ async function connectedClient(config?: { apiUrl: string; apiToken: string }) {
 }
 
 describe('buildServer', () => {
+  it('sends instructions pointing at explain_concept topics that exist', async () => {
+    const client = await connectedClient();
+    expect(client.getInstructions()).toBe(SERVER_INSTRUCTIONS);
+
+    const topics = loadExplainTopics(join(__dirname, '..', '..', '..', '..', 'docs', 'domain'));
+    for (const topic of [
+      'app_overview',
+      'advisor_playbook',
+      'smile_fire_mojo_guide',
+      'grow_guide',
+    ]) {
+      expect(SERVER_INSTRUCTIONS).toContain(topic);
+      expect(topics[topic]).toBeDefined();
+    }
+  });
+
   it('lists the registry tools plus explain_concept', async () => {
     const client = await connectedClient();
     const result = await client.listTools();
