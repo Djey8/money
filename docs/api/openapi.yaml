@@ -3839,7 +3839,20 @@ components:
           description: Distinct calendar months, excluding the current one, with at least one qualifying expense — the denominator's sample size.
     GrowPnl:
       type: object
-      required: [title, netCashflowMinor, investedMinor, returnedMinor, transactionCount]
+      required:
+        [
+          title,
+          netCashflowMinor,
+          investedMinor,
+          returnedMinor,
+          transactionCount,
+          realizedGainMinor,
+          dividendsMinor,
+          cashflowIncomeMinor,
+          sharePosition,
+          valuationSource,
+          incompleteHistory,
+        ]
       properties:
         title:
           type: string
@@ -3854,6 +3867,42 @@ components:
           description: Sum of every matching transaction's positive amountMinor.
         transactionCount:
           type: integer
+        realizedGainMinor:
+          type: integer
+          description: Share sale proceeds minus the average cost of the units sold, over the project's recorded trades.
+        dividendsMinor:
+          type: integer
+        cashflowIncomeMinor:
+          type: integer
+          description: Net of CASHFLOW statements (cashflow minus credit).
+        sharePosition:
+          type: object
+          nullable: true
+          description: A share-kind project's current position (the balance-sheet Share tagged with its title).
+          properties:
+            quantity:
+              type: number
+            costBasisMinor:
+              type: integer
+              description: Remaining cost of the units still held (average-cost method).
+            averageCostMinor:
+              type: integer
+            lastPriceMinor:
+              type: integer
+            marketValueMinor:
+              type: integer
+            unrealizedGainMinor:
+              type: integer
+        valuationSource:
+          type: string
+          enum: [last-entered-price]
+          description: Valuation uses the price last entered in the app/API, never live market data.
+        incompleteHistory:
+          type: boolean
+          description: >-
+            True when the recorded trades can't explain the position (units sold that no recorded buy covers, or a
+            balance-sheet quantity that differs from the trades' net quantity) — cost basis and gains are then lower
+            bounds.
     FundProjectTotals:
       type: object
       required: [targetMinor, amountMinor, remainingMinor, percentFilled]

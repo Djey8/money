@@ -681,12 +681,43 @@ describe('getGrowPnl', () => {
       ],
     });
     const report = await getGrowPnl(deps, 'user_1', 'grow_1');
-    expect(report).toEqual({
+    expect(report).toMatchObject({
       title: 'MSFT',
       netCashflowMinor: 0,
       investedMinor: 0,
       returnedMinor: 0,
       transactionCount: 0,
+      realizedGainMinor: 0,
+      sharePosition: null,
     });
+  });
+
+  it("values a share project's balance-sheet position against its recorded cost", async () => {
+    const deps = dependencies({
+      meta: { schemaVersion: 2 },
+      grow: [minimalRawGrow({ share: { tag: 'MSFT', quantity: 2, price: 30000 } })],
+      balance: { asset: { shares: [{ id: 'shares_1', tag: 'MSFT', quantity: 2, price: 30000 }] } },
+      transactions: [
+        {
+          id: 'tx_1',
+          account: 'Fire',
+          amount: -50000,
+          date: '2026-08-06',
+          time: '09:00',
+          category: '@MSFT',
+          comment: 'Buy Share MSFT 2 x 250;',
+        },
+      ],
+    });
+    const report = await getGrowPnl(deps, 'user_1', 'grow_1');
+    expect(report.sharePosition).toEqual({
+      quantity: 2,
+      costBasisMinor: 50000,
+      averageCostMinor: 25000,
+      lastPriceMinor: 30000,
+      marketValueMinor: 60000,
+      unrealizedGainMinor: 10000,
+    });
+    expect(report.incompleteHistory).toBe(false);
   });
 });

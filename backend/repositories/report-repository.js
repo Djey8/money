@@ -216,7 +216,17 @@ async function getGrowPnl(deps, userId, growId) {
   const rawTransactions = data.transactions || [];
   if (!Array.isArray(rawTransactions)) throw new Error('Stored transactions must be an array');
   const transactions = toApiTransactions(rawTransactions, session, schemaVersion, currency);
-  return computeGrowPnl(grow.title, transactions);
+  // A share project's current position: the balance-sheet Share tagged with its title.
+  const share = grow.share
+    ? (data.balance?.asset?.shares || [])
+        .map((entry) => decryptEntry(entry, session, schemaVersion))
+        .find((entry) => entry.tag === grow.title)
+    : undefined;
+  return computeGrowPnl(
+    grow.title,
+    transactions,
+    share ? { quantity: share.quantity || 0, priceMinor: share.price || 0 } : null,
+  );
 }
 
 module.exports = {

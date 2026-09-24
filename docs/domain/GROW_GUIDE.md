@@ -97,7 +97,14 @@ in the app, not only the gain.
 - Every write returns `effects`: before → after for each income-statement line, balance-sheet entry, Smile/Fire
   bucket, Mojo and Grow project it changed. Read it instead of re-fetching.
 
-## 7. Worked examples
+## 7. Profit and loss
+
+`get_reports` → `grow_pnl` (`growId`) returns the project's cash totals plus average-cost `realizedGainMinor`,
+`dividendsMinor`, `cashflowIncomeMinor`, and for a share project a `sharePosition` (cost basis, average cost, market
+value at the last entered price, unrealized gain). Check `incompleteHistory`: if the trades don't explain the whole
+position (holdings from before trades were recorded), the gains are lower bounds. Details: `grow_pnl_formula`.
+
+## 8. Worked examples
 
 Sell half of a 3.54 SOL position at €88.33:
 
@@ -141,7 +148,7 @@ Correct a mistyped buy (was 2 units, should be 3):
 { "action": "update_transaction", "growId": "grow_…", "transactionId": "tx_…", "quantity": 3 }
 ```
 
-## 8. Pitfalls
+## 9. Pitfalls
 
 - To change **one** action item, note or link, use `actionItemsAdd` / `actionItemsUpdate` (`[{index, done: true}]`) /
   `actionItemsRemove` (`[index]`) — likewise `notes*` and `links*` — instead of resending the list. Indices refer to
