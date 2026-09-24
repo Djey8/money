@@ -2204,5 +2204,6 @@
   "Statement.interestCoverage": "利息覆盖率",
   "Statement.interestCoverageFormula": "净利润 ÷ 利息支出",
   "Statement.interestCoverageHealthy": "≥ 1 为健康：收入可支付利息。",
-  "Sync.staleWrite": "您的数据已在其他地方被更改（其他设备或代理）。已重新加载最新版本——请重新执行您的上一次更改。"
+  "Sync.staleWrite": "您的数据已在其他地方被更改（其他设备或代理）。已重新加载最新版本——请重新执行您的上一次更改。",
+  "Grow.noPosition": "没有可卖出的内容：资产负债表中没有标签与该项目标题完全一致的持仓。"
 }

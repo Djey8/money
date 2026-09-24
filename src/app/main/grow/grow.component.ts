@@ -17,6 +17,8 @@ import { MatInputModule } from '@angular/material/input';
 import { Transaction } from 'src/app/interfaces/transaction';
 import { AppStateService } from 'src/app/shared/services/app-state.service';
 import { AppDataService } from 'src/app/shared/services/app-data.service';
+import { ToastService } from 'src/app/shared/services/toast.service';
+import { buildBuyComment, buildSellComment, GrowBalancePositions } from './grow-prefill.utils';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
@@ -123,6 +125,7 @@ export class GrowComponent implements OnInit, AfterViewInit {
   constructor(
     private router: Router,
     private localStorage: LocalService,
+    private toastService: ToastService,
   ) {
     AppStateService.instance.allGrowProjects =
       this.localStorage.getData('grow') == ''
@@ -139,6 +142,10 @@ export class GrowComponent implements OnInit, AfterViewInit {
     // Tier 3: Load fresh data from server if not yet loaded
     if (AppDataService.instance && !AppStateService.instance.tier3GrowLoaded) {
       AppDataService.instance.loadGrowData();
+    }
+    // Buy/Sell/value actions act on the balance-sheet positions too.
+    if (AppDataService.instance && !AppStateService.instance.tier3BalanceLoaded) {
+      AppDataService.instance.loadBalanceData();
     }
   }
 
@@ -246,45 +253,41 @@ export class GrowComponent implements OnInit, AfterViewInit {
     GrowComponent.isSearched = true;
   }
 
-  buyProject(index: number) {
+  /**
+   * Buy/Sell read the balance-sheet positions (shares/assets/investments),
+   * which load lazily with the balance page — without this, the Grow page
+   * worked from whatever localStorage last held (empty on a fresh device),
+   * pre-filling `0 x 0` and risking a save based on an outdated position.
+   */
+  private async ensureBalanceLoaded(): Promise<void> {
+    await AppDataService.instance?.loadBalanceData();
+  }
+
+  private balancePositions(): GrowBalancePositions {
+    return {
+      assets: AppStateService.instance.allAssets,
+      shares: AppStateService.instance.allShares,
+      investments: AppStateService.instance.allInvestments,
+    };
+  }
+
+  async buyProject(index: number) {
+    await this.ensureBalanceLoaded();
+    const project = AppStateService.instance.allGrowProjects[index];
     AppComponent.gotoTop();
-    AddComponent.categoryTextField = `@${AppStateService.instance.allGrowProjects[index].title}`;
+    AddComponent.categoryTextField = `@${project.title}`;
     AddComponent.selectedOption = 'Fire';
     AddComponent.loanTextField = '';
     AddComponent.creditTextField = '';
-    if (AppStateService.instance.allGrowProjects[index].liabilitie) {
+    if (project.liabilitie) {
       AddComponent.isLiabilitie = true;
-      AddComponent.creditTextField = String(
-        AppStateService.instance.allGrowProjects[index].liabilitie.credit,
-      );
-      AddComponent.loanTextField = String(
-        AppStateService.instance.allGrowProjects[index].liabilitie.amount,
-      );
+      AddComponent.creditTextField = String(project.liabilitie.credit);
+      AddComponent.loanTextField = String(project.liabilitie.amount);
     }
-    let found = false;
-    if (AppStateService.instance.allGrowProjects[index].isAsset) {
-      found = true;
-      const totalAmount =
-        (AppStateService.instance.allGrowProjects[index].amount
-          ? Number(AppStateService.instance.allGrowProjects[index].amount)
-          : 0) +
-        (AppStateService.instance.allGrowProjects[index].liabilitie &&
-        AppStateService.instance.allGrowProjects[index].liabilitie.amount
-          ? Number(AppStateService.instance.allGrowProjects[index].liabilitie.amount)
-          : 0);
+    const comment = buildBuyComment(project, this.balancePositions());
+    if (comment !== null) {
       AddComponent.amountTextField = '-1';
-      AddComponent.commentTextField = `Buy Asset ${AppStateService.instance.allGrowProjects[index].title} 1 x ${totalAmount};`;
-    } else if (AppStateService.instance.allGrowProjects[index].share) {
-      found = true;
-      const quantity = AppStateService.instance.allGrowProjects[index].share.quantity;
-      const price = AppStateService.instance.allGrowProjects[index].share.price;
-
-      AddComponent.amountTextField = '-1';
-      AddComponent.commentTextField = `Buy Share ${AppStateService.instance.allGrowProjects[index].title} ${quantity} x ${price};`;
-    } else if (AppStateService.instance.allGrowProjects[index].investment) {
-      found = true;
-      AddComponent.amountTextField = '-1';
-      AddComponent.commentTextField = `Buy Investment ${AppStateService.instance.allGrowProjects[index].title} ${AppStateService.instance.allGrowProjects[index].investment.deposit} ${AppStateService.instance.allGrowProjects[index].investment.amount};`;
+      AddComponent.commentTextField = comment;
     }
     AddComponent.url = '/grow';
     InfoGrowComponent.isInfo = false;
@@ -294,48 +297,22 @@ export class GrowComponent implements OnInit, AfterViewInit {
     AddComponent.isAdd = true;
   }
 
-  sellProject(index: number) {
+  async sellProject(index: number) {
+    await this.ensureBalanceLoaded();
+    const project = AppStateService.instance.allGrowProjects[index];
+    const comment = buildSellComment(project, this.balancePositions());
+    if (comment === null) {
+      // Nothing tagged with this project's title to sell — say so instead
+      // of opening a `0 x 0` transaction that would change nothing.
+      this.toastService.show('Grow.noPosition', 'error');
+      return;
+    }
     AppComponent.gotoTop();
     InfoGrowComponent.isInfo = false;
-    AddComponent.categoryTextField = `@${AppStateService.instance.allGrowProjects[index].title}`;
+    AddComponent.categoryTextField = `@${project.title}`;
     AddComponent.selectedOption = 'Income';
     AddComponent.amountTextField = '1';
-    let found = false;
-    if (AppStateService.instance.allGrowProjects[index].isAsset) {
-      found = true;
-      AddComponent.commentTextField = `Sell Asset ${AppStateService.instance.allGrowProjects[index].title} 1 x ${this.getAssetAmount(index)};`;
-    } else if (AppStateService.instance.allGrowProjects[index].share) {
-      found = true;
-      let quantity = 0;
-      let price = 0;
-      for (let i = 0; i < AppStateService.instance.allShares.length; i++) {
-        if (
-          AppStateService.instance.allGrowProjects[index].title ==
-          AppStateService.instance.allShares[i].tag
-        ) {
-          quantity = AppStateService.instance.allShares[i].quantity;
-          price = AppStateService.instance.allShares[i].price;
-        }
-      }
-      AddComponent.commentTextField = `Sell Share ${AppStateService.instance.allGrowProjects[index].title} ${quantity} x ${price};`;
-    } else if (AppStateService.instance.allGrowProjects[index].investment) {
-      found = true;
-      let deposit = 0;
-      let mortage = 0;
-      for (let i = 0; i < AppStateService.instance.allInvestments.length; i++) {
-        if (
-          AppStateService.instance.allGrowProjects[index].title ==
-          AppStateService.instance.allInvestments[i].tag
-        ) {
-          deposit = AppStateService.instance.allInvestments[i].deposit;
-          mortage = AppStateService.instance.allInvestments[i].amount;
-        }
-      }
-      if (AppStateService.instance.allGrowProjects[index].liabilitie) {
-        AddComponent.commentTextField = `Payback Liabilitie ${AppStateService.instance.allGrowProjects[index].liabilitie.amount} ${AppStateService.instance.allGrowProjects[index].liabilitie.credit}; `;
-      }
-      AddComponent.commentTextField += `Sell Investment ${AppStateService.instance.allGrowProjects[index].title} ${deposit} ${mortage};`;
-    }
+    AddComponent.commentTextField = comment;
     AddComponent.url = '/grow';
     AddComponent.isLiabilitie = false;
     InfoGrowComponent.isInfo = false;

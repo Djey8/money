@@ -2204,5 +2204,6 @@
   "Statement.interestCoverage": "Couverture des intérêts",
   "Statement.interestCoverageFormula": "Résultat net ÷ charges d'intérêts",
   "Statement.interestCoverageHealthy": "Sain ≥ 1 : revenus couvrent les intérêts.",
-  "Sync.staleWrite": "Vos données ont été modifiées ailleurs (autre appareil ou un agent). La dernière version a été rechargée — veuillez refaire votre dernière modification."
+  "Sync.staleWrite": "Vos données ont été modifiées ailleurs (autre appareil ou un agent). La dernière version a été rechargée — veuillez refaire votre dernière modification.",
+  "Grow.noPosition": "Rien à vendre : aucune position du bilan n'a d'étiquette correspondant exactement au titre de ce projet."
 }

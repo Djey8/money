@@ -2204,5 +2204,6 @@
   "Statement.interestCoverage": "Interest coverage",
   "Statement.interestCoverageFormula": "Net result ÷ interest expenses",
   "Statement.interestCoverageHealthy": "Healthy when ≥ 1: earnings cover interest payments.",
-  "Sync.staleWrite": "Your data was changed elsewhere (another device or an agent). Reloaded the latest version — please redo your last change."
+  "Sync.staleWrite": "Your data was changed elsewhere (another device or an agent). Reloaded the latest version — please redo your last change.",
+  "Grow.noPosition": "Nothing to sell: no balance-sheet position has a tag exactly matching this project's title."
 }
