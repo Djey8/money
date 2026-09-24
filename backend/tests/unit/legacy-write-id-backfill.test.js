@@ -86,4 +86,71 @@ describe('backfillMissingIdsForWrite', () => {
     await backfillMissingIdsForWrite(makeAuthDb(), 'u1', 'transactions', input);
     expect(entry).not.toHaveProperty('id');
   });
+  describe('reusing stored ids by natural key', () => {
+    it('gives an id-less entry the stored id of the entry with the same title', async () => {
+      const result = await backfillMissingIdsForWrite(
+        makeAuthDb(),
+        'u1',
+        'grow',
+        [{ title: 'IOTA' }, { title: 'SOL' }, { title: 'New' }],
+        [
+          { id: 'grow_sol', title: 'SOL' },
+          { id: 'grow_iota', title: 'IOTA' },
+        ],
+      );
+      expect(result.map((g) => g.id)).toEqual([
+        'grow_iota',
+        'grow_sol',
+        expect.stringMatching(/^grow_(?!sol|iota)/),
+      ]);
+    });
+
+    it('matches transactions on every identifying field and hands each stored id out only once', async () => {
+      const tx = {
+        account: 'Daily',
+        amount: -500,
+        date: '2026-01-01',
+        time: '09:00',
+        category: '@Food',
+        comment: '',
+      };
+      const result = await backfillMissingIdsForWrite(
+        makeAuthDb(),
+        'u1',
+        'transactions',
+        [{ ...tx }, { ...tx }, { ...tx, amount: -600 }],
+        [{ id: 'tx_one', ...tx }],
+      );
+      expect(result[0].id).toBe('tx_one');
+      expect(result[1].id).not.toBe('tx_one');
+      expect(result[2].id).not.toBe('tx_one');
+    });
+
+    it('does not reuse a stored id the incoming write already assigns to another entry', async () => {
+      const result = await backfillMissingIdsForWrite(
+        makeAuthDb(),
+        'u1',
+        'smile',
+        [{ id: 'smile_1', title: 'Renamed' }, { title: 'Trip' }],
+        [{ id: 'smile_1', title: 'Trip' }],
+      );
+      expect(result[0].id).toBe('smile_1');
+      expect(result[1].id).not.toBe('smile_1');
+    });
+
+    it('matches across encryption, where the same value encrypts differently every time', async () => {
+      const { EncryptionSession } = require('@money/domain');
+      const session = new EncryptionSession('secret-passphrase');
+      const authDb = makeAuthDb({ key: 'secret-passphrase', encryptDatabase: true });
+      const storedId = session.encrypt('grow_sol');
+      const result = await backfillMissingIdsForWrite(
+        authDb,
+        'u1',
+        'grow',
+        [{ title: session.encrypt('SOL') }],
+        [{ id: storedId, title: session.encrypt('SOL') }],
+      );
+      expect(result[0].id).toBe(storedId);
+    });
+  });
 });

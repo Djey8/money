@@ -158,6 +158,27 @@ router.post('/read/batch', authenticateToken, async (req, res) => {
   }
 });
 
+/**
+ * Optimistic-concurrency guard for the legacy whole-collection writes
+ * (docs/adr/0003-api-ui-write-consistency.md). The app sends the document
+ * `updatedAt` its in-memory copy was loaded at (or last wrote) as
+ * `X-Base-Updated-At`; if anything else — the Pro API, an agent, another tab
+ * — has written since, the write is refused with 409 instead of silently
+ * replacing newer data with the app's stale copy. Checked inside the retry
+ * loop against the revision actually being replaced, so there is no gap
+ * between check and write. Requests without the header (older clients) are
+ * accepted exactly as before.
+ */
+function staleWriteConflict(req, userDoc) {
+  const base = req.get('X-Base-Updated-At');
+  if (!base || !userDoc.updatedAt || userDoc.updatedAt === base) return null;
+  return {
+    error: 'The data changed since it was loaded. Reload and retry.',
+    conflict: true,
+    updatedAt: userDoc.updatedAt,
+  };
+}
+
 // Batch write endpoint - write multiple objects in a single transaction
 // IMPORTANT: Must be defined BEFORE /write/*? route to prevent wildcard matching
 // This significantly reduces HTTP overhead and improves performance for selfhosted mode
@@ -184,8 +205,15 @@ router.post('/write/batch', authenticateToken, async (req, res) => {
     // Backfill missing stable ids before the retry loop — a write that gets
     // retried on conflict should keep the same ids across attempts, not
     // mint fresh ones each time. See legacy-write-id-backfill.js.
+    const storedDoc = await getUserDocument(usersDb, userId);
     for (const write of writes) {
-      write.data = await backfillMissingIdsForWrite(getAuthDb(), userId, write.path, write.data);
+      write.data = await backfillMissingIdsForWrite(
+        getAuthDb(),
+        userId,
+        write.path,
+        write.data,
+        getNestedProperty(storedDoc.data || {}, write.path),
+      );
     }
 
     const MAX_RETRIES = 10;
@@ -197,6 +225,8 @@ router.post('/write/batch', authenticateToken, async (req, res) => {
       try {
         // Get latest user document
         let userDoc = await getUserDocument(usersDb, userId);
+        const staleConflict = staleWriteConflict(req, userDoc);
+        if (staleConflict) return res.status(409).json(staleConflict);
 
         if (!userDoc.data) {
           userDoc.data = {};
@@ -234,6 +264,7 @@ router.post('/write/batch', authenticateToken, async (req, res) => {
           success: true,
           id: response.id,
           rev: response.rev,
+          updatedAt: userDoc.updatedAt,
           writesProcessed: writes.length,
           operations: writes.length,
         });
@@ -322,13 +353,22 @@ router.post('/write/*?', authenticateToken, async (req, res) => {
     // mint fresh ones each time. See legacy-write-id-backfill.js. Skipped
     // for raw-string writes (encrypted primitives, never a collection).
     if (!(req.bodyIsRawString && typeof data === 'string')) {
-      data = await backfillMissingIdsForWrite(getAuthDb(), userId, path, data);
+      const storedDoc = await getUserDocument(usersDb, userId);
+      data = await backfillMissingIdsForWrite(
+        getAuthDb(),
+        userId,
+        path,
+        data,
+        getNestedProperty(storedDoc.data || {}, path),
+      );
     }
 
     while (attempt < MAX_RETRIES) {
       try {
         // Get or create user document with latest revision
         let userDoc = await getUserDocument(usersDb, userId);
+        const staleConflict = staleWriteConflict(req, userDoc);
+        if (staleConflict) return res.status(409).json(staleConflict);
 
         if (!path || path === '') {
           // Replace entire data object
@@ -355,7 +395,12 @@ router.post('/write/*?', authenticateToken, async (req, res) => {
           operation: 'write',
           success: true,
         });
-        res.json({ success: true, id: response.id, rev: response.rev });
+        res.json({
+          success: true,
+          id: response.id,
+          rev: response.rev,
+          updatedAt: userDoc.updatedAt,
+        });
         return;
       } catch (error) {
         lastError = error;
