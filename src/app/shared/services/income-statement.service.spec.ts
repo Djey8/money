@@ -28,6 +28,73 @@ describe('IncomeStatementService', () => {
     service = new IncomeStatementService(localService as any);
   });
 
+  // --- recalculate: funds via the shared domain engine -----------------------
+
+  describe('recalculate() — Smile/Fire/Mojo through the shared fund engine', () => {
+    function alps(): any {
+      return {
+        title: 'Alps',
+        phase: 'saving',
+        buckets: [
+          { id: 'b_guide', title: 'Mountain guide', target: 500, amount: 0 },
+          { id: 'b_petrol', title: 'Petrol', target: 60, amount: 0 },
+        ],
+      };
+    }
+
+    it('applies a settlement: the bucket takes the actual cost, the settlement is the difference', () => {
+      AppStateService.instance.allSmileProjects = [alps()];
+      AppStateService.instance.allTransactions = [
+        {
+          account: 'Smile',
+          amount: -500,
+          date: '2026-09-01',
+          time: '10:00',
+          category: '@Alps',
+          comment: '#bucket:Mountain guide:500.00',
+        },
+        {
+          account: 'Smile',
+          amount: 0,
+          date: '2026-09-20',
+          time: '10:00',
+          category: '@Alps',
+          comment: 'Invoice\n#settle:Mountain guide:650.00',
+        },
+      ] as any;
+
+      service.recalculate();
+
+      const guide: any = AppStateService.instance.allSmileProjects[0].buckets[0];
+      expect(guide).toMatchObject({ amount: 650, settledAmount: 650, settledDate: '2026-09-20' });
+      expect(AppStateService.instance.allTransactions[1].amount).toBe(-150);
+      // The income statement sees the settled total: 500 + 150.
+      expect(AppStateService.instance.smileExpenses).toEqual([{ tag: 'Alps', amount: -650 }]);
+    });
+
+    it('caps a contribution at the room left and rewrites it, like the server', () => {
+      AppStateService.instance.allSmileProjects = [alps()];
+      AppStateService.instance.allTransactions = [
+        {
+          account: 'Smile',
+          amount: -100,
+          date: '2026-09-01',
+          time: '10:00',
+          category: '@Alps',
+          comment: '#bucket:Petrol:100.00',
+        },
+      ] as any;
+
+      service.recalculate();
+
+      expect(AppStateService.instance.allSmileProjects[0].buckets[1].amount).toBe(60);
+      expect(AppStateService.instance.allTransactions[0]).toMatchObject({
+        amount: -60,
+        comment: '#bucket:Petrol:60.00',
+      });
+    });
+  });
+
   // --- recalculate ---------------------------------------------------------
 
   describe('recalculate()', () => {
