@@ -217,6 +217,8 @@ export const TOOLS: ToolDefinition[] = [
     kind: 'simple',
     name: 'manage_grow',
     description:
+      'Read explain_concept topic grow_guide first — it documents every field, the kind/plan/action model, and ' +
+      'worked examples. ' +
       'List, read, create, update, delete a Grow (Rich-Dad-Poor-Dad-style) investment project, or record a ' +
       'typed action against one: buy, sell, dividend, payback, cashflow, deposit. Never write the comment DSL ' +
       'directly — these typed actions generate it server-side (the generic transactions tool rejects it). ' +
