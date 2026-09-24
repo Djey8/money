@@ -215,14 +215,34 @@ export function assertValidGrowTitle(title: string): void {
   }
 }
 
-export function generateBuyAssetComment(title: string, totalAmountMinor: number): string {
-  assertValidGrowTitle(title);
-  return `Buy Asset ${title} 1 x ${fromMinorUnits(totalAmountMinor)};`;
+/** An asset trade expressed as units x unit price instead of one lump sum (the DSL's `<qty> x <price>` form). */
+export interface GrowAssetUnits {
+  quantity: number;
+  priceMinor: number;
 }
 
-export function generateSellAssetComment(title: string, totalAmountMinor: number): string {
+function assetTradeTerms(totalAmountMinor: number, units?: GrowAssetUnits): string {
+  return units
+    ? `${units.quantity} x ${fromMinorUnits(units.priceMinor)}`
+    : `1 x ${fromMinorUnits(totalAmountMinor)}`;
+}
+
+export function generateBuyAssetComment(
+  title: string,
+  totalAmountMinor: number,
+  units?: GrowAssetUnits,
+): string {
   assertValidGrowTitle(title);
-  return `Sell Asset ${title} 1 x ${fromMinorUnits(totalAmountMinor)};`;
+  return `Buy Asset ${title} ${assetTradeTerms(totalAmountMinor, units)};`;
+}
+
+export function generateSellAssetComment(
+  title: string,
+  totalAmountMinor: number,
+  units?: GrowAssetUnits,
+): string {
+  assertValidGrowTitle(title);
+  return `Sell Asset ${title} ${assetTradeTerms(totalAmountMinor, units)};`;
 }
 
 export function generateBuyShareComment(

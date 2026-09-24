@@ -6682,7 +6682,7 @@ describe('v1 API authentication and PAT management', () => {
       expect(response.body.code).toBe('validation_invalid');
     });
 
-    it('rejects a share-shaped body sent to an asset-kind project instead of silently producing NaN', async () => {
+    it('rejects an investment-shaped body sent to an asset-kind project instead of silently producing NaN', async () => {
       const { token } = await growToken(['grow:w']);
       const project = await createGrowProject(token, {
         title: `KindMismatch${Date.now()}`,
@@ -6691,9 +6691,23 @@ describe('v1 API authentication and PAT management', () => {
       const response = await request(app)
         .post(`/api/v1/grow/${project.id}/buy`)
         .set('Authorization', `Bearer ${token}`)
-        .send({ quantity: 10, priceMinor: 25000 });
+        .send({ depositMinor: 10, mortgageMinor: 25000 });
       expect(response.status).toBe(400);
       expect(response.body.code).toBe('validation_invalid');
+    });
+
+    it('buys an asset-kind project by quantity x unit price', async () => {
+      const { token } = await growToken(['grow:w']);
+      const project = await createGrowProject(token, {
+        title: `Gold${Date.now()}`,
+        isAsset: true,
+      });
+      const response = await request(app)
+        .post(`/api/v1/grow/${project.id}/buy`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ quantity: 2.5, priceMinor: 6000 });
+      expect(response.status).toBe(201);
+      expect(response.body.transaction.amountMinor).toBe(-15000);
     });
 
     it('sell on an asset-kind project removes the asset when the sale zeroes it out', async () => {

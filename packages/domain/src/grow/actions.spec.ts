@@ -252,6 +252,26 @@ describe('Grow typed actions', () => {
     expect(result.transactionAmountMinor).toBe(-30000);
   });
 
+  describe('asset trades as units x unit price', () => {
+    it('Buy Asset writes the <qty> x <price> form while keeping the total', () => {
+      const result = calculateBuyAsset({
+        title: 'Gold',
+        totalAmountMinor: 150000,
+        units: { quantity: 3, priceMinor: 50000 },
+        existingAssetAmountMinor: null,
+        existingGrowAmountMinor: 0,
+      });
+      expect(result.comment).toBe('Buy Asset Gold 3 x 500;');
+      expect(result.newAssetAmountMinor).toBe(150000);
+    });
+
+    it('Sell Asset of part of a holding', () => {
+      const result = calculateSellAsset('Gold', 50000, 150000, { quantity: 1, priceMinor: 50000 });
+      expect(result.comment).toBe('Sell Asset Gold 1 x 500;');
+      expect(result.newAssetAmountMinor).toBe(100000);
+    });
+  });
+
   describe('fractional share quantities', () => {
     it('Buy Share rounds quantity * price to whole minor units and normalizes the new quantity', () => {
       const result = calculateBuyShare({

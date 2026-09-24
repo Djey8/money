@@ -41,6 +41,8 @@ const {
   calculatePayback,
   calculateCashflow,
   calculateDeposit,
+  multiplyQuantityPrice,
+  normalizeQuantity,
 } = require('@money/domain');
 const { getEncryptionSession } = require('../services/encryption-session');
 const { decryptValue, toApiTransactions, encryptTransaction } = require('./transaction-repository');
@@ -231,9 +233,36 @@ function assertLiabilitieAttachmentShape(liabilitie) {
   assertNonNegativeInteger(liabilitie.creditMinor, 'liabilitie.creditMinor');
 }
 
+/**
+ * An asset trade is either one lump sum (`totalAmountMinor`) or units x unit
+ * price (`quantity` + `priceMinor`, e.g. selling part of a holding) — the
+ * DSL's `Buy/Sell Asset <title> <qty> x <price>` form. The balance-sheet
+ * Asset itself only stores an amount, so both resolve to a total.
+ */
+function resolveAssetTrade(input) {
+  const hasUnits = input.quantity !== undefined || input.priceMinor !== undefined;
+  if (input.totalAmountMinor !== undefined && hasUnits) {
+    throw growError(
+      'GROW_INVALID_INPUT',
+      'Send either totalAmountMinor or quantity + priceMinor for an asset, not both.',
+    );
+  }
+  if (!hasUnits) {
+    assertPositiveInteger(input.totalAmountMinor, 'totalAmountMinor');
+    return { totalAmountMinor: input.totalAmountMinor, units: undefined };
+  }
+  assertPositiveNumber(input.quantity, 'quantity');
+  assertPositiveInteger(input.priceMinor, 'priceMinor');
+  const units = { quantity: normalizeQuantity(input.quantity), priceMinor: input.priceMinor };
+  return {
+    totalAmountMinor: multiplyQuantityPrice(units.quantity, units.priceMinor),
+    units,
+  };
+}
+
 function assertBuyInputMatchesKind(current, input) {
   if (current.isAsset) {
-    assertPositiveInteger(input.totalAmountMinor, 'totalAmountMinor');
+    resolveAssetTrade(input);
   } else if (current.share) {
     assertPositiveNumber(input.quantity, 'quantity');
     assertPositiveInteger(input.priceMinor, 'priceMinor');
@@ -249,7 +278,7 @@ function assertBuyInputMatchesKind(current, input) {
 
 function assertSellInputMatchesKind(current, input) {
   if (current.isAsset) {
-    assertPositiveInteger(input.totalAmountMinor, 'totalAmountMinor');
+    resolveAssetTrade(input);
     return;
   }
   if (current.share) {
@@ -395,9 +424,11 @@ async function buyGrow(deps, userId, growId, input) {
     if (current.isAsset) {
       const rawAssets = data.balance?.asset?.assets || [];
       const assetIndex = findIndexByTag(rawAssets, current.title, session);
+      const trade = resolveAssetTrade(input);
       const calc = calculateBuyAsset({
         title: current.title,
-        totalAmountMinor: input.totalAmountMinor,
+        totalAmountMinor: trade.totalAmountMinor,
+        units: trade.units,
         existingAssetAmountMinor:
           assetIndex === -1
             ? null
@@ -571,11 +602,13 @@ async function sellGrow(deps, userId, growId, input) {
         session,
         schemaVersion,
       );
-      assertDoesNotExceed(input.totalAmountMinor, existingAssetAmountMinor, 'totalAmountMinor');
+      const trade = resolveAssetTrade(input);
+      assertDoesNotExceed(trade.totalAmountMinor, existingAssetAmountMinor, 'totalAmountMinor');
       const calc = calculateSellAsset(
         current.title,
-        input.totalAmountMinor,
+        trade.totalAmountMinor,
         existingAssetAmountMinor,
+        trade.units,
       );
       const updatedRawAssets =
         calc.newAssetAmountMinor === 0

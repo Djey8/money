@@ -221,6 +221,35 @@ describe('buyGrow', () => {
     expect(current().data.balance.liabilities || []).toHaveLength(0);
   });
 
+  it('asset kind: buys by quantity x unit price', async () => {
+    const document = {
+      _id: 'user_1',
+      _rev: '1-a',
+      data: {
+        meta: { schemaVersion: 2 },
+        grow: [minimalRawGrow({ isAsset: true, title: 'Gold' })],
+      },
+    };
+    const { deps, current } = writableDeps(document);
+    const result = await buyGrow(deps, 'user_1', 'grow_1', { quantity: 2.5, priceMinor: 6000 });
+
+    expect(result.transaction.amountMinor).toBe(-15000);
+    expect(result.transaction.comment).toBe('Buy Asset Gold 2.5 x 60;');
+    expect(current().data.balance.asset.assets[0]).toMatchObject({ tag: 'Gold', amount: 15000 });
+  });
+
+  it('asset kind: rejects a body giving both totalAmountMinor and quantity/priceMinor', async () => {
+    const document = {
+      _id: 'user_1',
+      _rev: '1-a',
+      data: { grow: [minimalRawGrow({ isAsset: true, title: 'Gold' })] },
+    };
+    const { deps } = writableDeps(document);
+    await expect(
+      buyGrow(deps, 'user_1', 'grow_1', { totalAmountMinor: 100, quantity: 1, priceMinor: 100 }),
+    ).rejects.toMatchObject({ code: 'GROW_INVALID_INPUT' });
+  });
+
   it('rejects a buy on a grow project with no kind', async () => {
     const document = { _id: 'user_1', _rev: '1-a', data: { grow: [minimalRawGrow()] } };
     const { deps } = writableDeps(document);
@@ -239,7 +268,7 @@ describe('buyGrow', () => {
     ).rejects.toMatchObject({ code: 'GROW_NOT_FOUND' });
   });
 
-  it('rejects a share-shaped body sent to an asset-kind grow project instead of silently producing NaN', async () => {
+  it('rejects an investment-shaped body sent to an asset-kind grow project instead of silently producing NaN', async () => {
     const document = {
       _id: 'user_1',
       _rev: '1-a',
@@ -247,7 +276,7 @@ describe('buyGrow', () => {
     };
     const { deps } = writableDeps(document);
     await expect(
-      buyGrow(deps, 'user_1', 'grow_1', { quantity: 10, priceMinor: 25000 }),
+      buyGrow(deps, 'user_1', 'grow_1', { depositMinor: 10, mortgageMinor: 25000 }),
     ).rejects.toMatchObject({ code: 'GROW_INVALID_INPUT' });
   });
 
@@ -326,6 +355,24 @@ describe('sellGrow', () => {
     expect(result.transaction.amountMinor).toBe(120000);
     expect(result.transaction.account).toBe('Income');
     expect(current().data.balance.asset.assets).toEqual([]);
+  });
+
+  it('asset kind: sells part of a holding by quantity x unit price', async () => {
+    const document = {
+      _id: 'user_1',
+      _rev: '1-a',
+      data: {
+        meta: { schemaVersion: 2 },
+        grow: [minimalRawGrow({ isAsset: true, title: 'Gold' })],
+        balance: { asset: { assets: [{ id: 'assets_1', tag: 'Gold', amount: 30000 }] } },
+      },
+    };
+    const { deps, current } = writableDeps(document);
+    const result = await sellGrow(deps, 'user_1', 'grow_1', { quantity: 1, priceMinor: 7000 });
+
+    expect(result.transaction.amountMinor).toBe(7000);
+    expect(result.transaction.comment).toBe('Sell Asset Gold 1 x 70;');
+    expect(current().data.balance.asset.assets[0]).toMatchObject({ amount: 23000 });
   });
 
   it('asset kind: rejects overselling past the current position instead of persisting a negative balance', async () => {

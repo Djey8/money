@@ -4844,7 +4844,8 @@ components:
     BuyGrowRequest:
       type: object
       description: >-
-        Required fields depend on the grow project's own fixed kind: `asset` needs `totalAmountMinor`; `share`
+        Required fields depend on the grow project's own fixed kind: `asset` needs either `totalAmountMinor` or
+        `quantity` + `priceMinor` (units x unit price, e.g. to sell part of a holding — not both); `share`
         needs `quantity` (may be fractional, e.g. crypto) and `priceMinor` (per unit); `investment` needs
         `depositMinor`, plus an optional `mortgageMinor` (default 0 — a cash-only purchase). `quantity * priceMinor`
         is rounded half away from zero to whole minor units. A body shaped for the wrong kind is rejected with
@@ -4872,7 +4873,7 @@ components:
     SellGrowRequest:
       type: object
       description: >-
-        Same kind-dependent shape as BuyGrowRequest for totalAmountMinor / quantity+priceMinor / depositMinor+mortgageMinor.
+        Same kind-dependent shape as BuyGrowRequest for totalAmountMinor (or quantity+priceMinor) / quantity+priceMinor / depositMinor+mortgageMinor.
         For an investment-kind sell, `depositMinor` and `mortgageMinor` each default to 0 but must not both be 0.
         An investment-kind sell may also include `payback` to settle an attached liability atomically with the sale.
       properties:

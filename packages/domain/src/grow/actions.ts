@@ -11,6 +11,7 @@ import {
   generateCashflowComment,
   generateDepositComment,
   joinGrowStatements,
+  GrowAssetUnits,
 } from './dsl';
 import { toMinorUnits } from '../money/minor-units';
 
@@ -101,6 +102,8 @@ function applyLiabilitieAttachment(
 export interface BuyAssetInput {
   title: string;
   totalAmountMinor: number;
+  /** When the buy was expressed as units x unit price; `totalAmountMinor` must then equal their rounded product. */
+  units?: GrowAssetUnits;
   existingAssetAmountMinor: number | null;
   existingGrowAmountMinor: number;
   liabilitie?: GrowLiabilitieAttachment;
@@ -120,7 +123,7 @@ export interface AssetPatchResult extends BuyResult {
 
 export function calculateBuyAsset(input: BuyAssetInput): AssetPatchResult {
   const reducedAmountMinor = input.totalAmountMinor - (input.liabilitie?.loanMinor ?? 0);
-  const statement = generateBuyAssetComment(input.title, input.totalAmountMinor);
+  const statement = generateBuyAssetComment(input.title, input.totalAmountMinor, input.units);
   const liabilityPatch = applyLiabilitieAttachment(input.liabilitie);
   if (liabilityPatch) liabilityPatch.tag = input.title;
   return {
@@ -233,9 +236,10 @@ export function calculateSellAsset(
   title: string,
   totalAmountMinor: number,
   existingAssetAmountMinor: number,
+  units?: GrowAssetUnits,
 ): SellResult & { newAssetAmountMinor: number } {
   return {
-    comment: generateSellAssetComment(title, totalAmountMinor),
+    comment: generateSellAssetComment(title, totalAmountMinor, units),
     transactionAmountMinor: totalAmountMinor,
     newAssetAmountMinor: existingAssetAmountMinor - totalAmountMinor,
     growStatus: 'sold',
