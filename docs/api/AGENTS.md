@@ -4,6 +4,8 @@ A self-hosted PAT is explicit consent for an agent to access only its granted sc
 
 This guidance describes the raw HTTP API. If you're running inside Claude Code/Desktop with the Money Manager MCP server configured, use its tools directly instead of these curl-shaped calls — see [MCP.md](MCP.md) for setup and the tool list; the underlying scopes, idempotency, and confirm-before-destructive-action rules described below still apply.
 
+**Start with the domain docs** in [`docs/domain/`](../domain/) (served by the MCP tool `explain_concept`): [`APP_OVERVIEW.md`](../domain/APP_OVERVIEW.md) explains how the app works (accounts, income split, what's derived from transactions, which endpoint does what), and [`ADVISOR_PLAYBOOK.md`](../domain/ADVISOR_PLAYBOOK.md) how to review the user's finances and give recommendations through the Barefoot Investor and Rich Dad Poor Dad lenses. This file is the endpoint-by-endpoint reference.
+
 Before making financial requests, call `GET /api/v1/me` with the PAT and inspect the exact scope list. Stop and report the missing scope rather than attempting unrelated endpoints.
 
 PATs cannot create, list, or revoke tokens. Token lifecycle calls require the user's authenticated browser session or a human operator using `mm-admin` directly on the server. The API never issues `admin` scope tokens; use the CLI only for documented break-glass administration.
@@ -83,7 +85,7 @@ Every Pro API write is audit logged. Prefer narrowly scoped, expiring tokens and
 1. `GET /api/v1/reports/balance-sheet` requires `reports:r` and takes **no** query parameters — unlike the other report endpoints, this is a current snapshot with no period/previous-period comparison, matching the original app's own lack of historical balance-sheet tracking.
 2. `assets.shares` is the sum of each share's `quantity × price`; `assets.investments` is the sum of each investment's `amount + deposit` (a mortgage-financed investment counts its own cash deposit as an asset, not just the financed value). `assets.cash` and `assets.properties` are plain sums.
 3. `equity`/`netWorth` (the same value under two names, matching the original) is total assets minus total liabilities and can be negative.
-4. This reads entity data that has no write endpoint yet (`balance/asset/*`, `balance/liabilities`, `income/revenue/properties` — Slice 4 on the project roadmap); until then the only way to change these values is through the UI.
+4. The entities it totals are managed through the balance-sheet endpoints below (assets, liabilities, investments, shares) and Grow projects; income sources are derived from `Income` transactions (see `APP_OVERVIEW.md` §3).
 5. This is a read; it is not audit logged.
 
 ## Read key ratios, top categories, and KPI-dashboard ratios for a period
