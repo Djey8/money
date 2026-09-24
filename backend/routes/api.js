@@ -4095,6 +4095,15 @@ router.patch(
       });
       return res.json(subscription);
     } catch (error) {
+      if (error.code === 'SUBSCRIPTION_PLAN_OWNED') {
+        return problem(
+          res,
+          400,
+          'validation_invalid',
+          'Subscription belongs to a payment plan',
+          error.message,
+        );
+      }
       return next(error);
     }
   },
@@ -4131,6 +4140,15 @@ router.delete(
       });
       return res.json({ id: req.params.subscriptionId });
     } catch (error) {
+      if (error.code === 'SUBSCRIPTION_PLAN_OWNED') {
+        return problem(
+          res,
+          400,
+          'validation_invalid',
+          'Subscription belongs to a payment plan',
+          error.message,
+        );
+      }
       return next(error);
     }
   },

@@ -3372,6 +3372,7 @@ paths:
       operationId: updateSubscription
       summary: Update a subscription (SUB-2)
       description: >-
+        A subscription owned by an active Smile/Fire payment plan is refused (400) — change it through the plan.
         Accepts a partial body. If any of title/category/amountMinor/account/comment/startDate/frequency actually
         changes, cascades a cleanup that deletes every existing transaction matching the subscription's OLD identity
         (account+amountMinor+category+comment) — a tighter 4-field match than the original app's 3-field
@@ -3406,7 +3407,9 @@ paths:
     delete:
       operationId: deleteSubscription
       summary: Delete a subscription (SUB-3)
-      description: Leaves already-generated transactions untouched by default. Pass `?deleteTransactions=true` to also delete every transaction matching this subscription's identity.
+      description: >-
+        A subscription owned by an active Smile/Fire payment plan is refused (400) — deactivate or delete the plan instead.
+        Leaves already-generated transactions untouched by default. Pass `?deleteTransactions=true` to also delete every transaction matching this subscription's identity.
       security:
         - bearerAuth: []
       parameters:
@@ -5344,8 +5347,11 @@ components:
           type: string
         status:
           type: string
-          enum: [planned]
-          description: Always "planned" for a freshly-created plan — activating a plan into a real recurring subscription isn't exposed by this API.
+          enum: [planned, active, inactive, completed]
+          description: >-
+            planned (created), active (its subscription is running), inactive (deactivated, or its subscription
+            disappeared), completed (its target buckets are all full or settled — its subscription ended that day).
+            Reconciled on every write.
         projectType:
           type: string
           enum: [smile, fire]
@@ -5390,6 +5396,13 @@ components:
         updatedAt:
           type: string
           format: date-time
+        completedAt:
+          type: string
+          format: date-time
+        activeSubscriptionId:
+          type: string
+          description: The subscription an API activation created.
+
     Asset:
       type: object
       required: [id, tag, amountMinor]

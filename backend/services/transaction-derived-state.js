@@ -5,6 +5,7 @@ const {
   recalculateTransactionDerivedState,
   toMinorUnits,
 } = require('@money/domain');
+const { reconcilePaymentPlans } = require('./payment-plan-links');
 
 function readValue(value, session) {
   return session && typeof value === 'string' ? session.decrypt(value) : value;
@@ -106,7 +107,7 @@ function applyDerivedState(data, transactions, session, schemaVersion) {
   );
   const income = data.income || {};
   const expenses = income.expenses || {};
-  return {
+  const rebuilt = {
     transactions: derived.transactions,
     data: {
       ...data,
@@ -134,6 +135,11 @@ function applyDerivedState(data, transactions, session, schemaVersion) {
       smile: applyFundProjects(data.smile, derived.funds.smile, session, schemaVersion),
       fire: applyFundProjects(data.fire, derived.funds.fire, session, schemaVersion),
     },
+  };
+  // Payment plans follow their subscriptions and goals (payment-plan-links.js).
+  return {
+    ...rebuilt,
+    data: reconcilePaymentPlans(rebuilt.data, derived.funds, session),
   };
 }
 

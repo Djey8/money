@@ -77,6 +77,54 @@ function upsertPlanSubscription(rawSubscriptions, plan, fields, session, schemaV
   };
 }
 
+function bucketTargetsChanged(before, after) {
+  if (before.length !== after.length) return true;
+  return after.some((bucket) => {
+    const previous = before.find((candidate) => candidate.id === bucket.id);
+    return !previous || previous.targetMinor !== bucket.targetMinor;
+  });
+}
+
+/**
+ * Recalculates a plan that follows its calculated amount (not
+ * `manuallyAdjusted`) after its project's bucket targets changed: what's
+ * still missing, spread over the periods from today (or its start, if
+ * later) to its target date. Plans past their target date, manual plans,
+ * and finished (inactive/completed) plans are left as they are.
+ */
+function recalculatedPlan(plan, project, kind) {
+  if (plan.manuallyAdjusted || !['planned', 'active'].includes(plan.status)) return plan;
+  const today = todayDate();
+  if (plan.targetDate <= today) return plan;
+  const bucketIds = new Set(project.buckets.map((bucket) => bucket.id));
+  const selectedBucketIds = plan.targetBucketIds.filter((id) => bucketIds.has(id));
+  const recalculated = calculatePaymentPlan({
+    projectType: kind,
+    projectTitle: project.title,
+    planTitle: plan.title,
+    buckets: project.buckets.map((bucket) => ({
+      id: bucket.id,
+      title: bucket.title,
+      targetMinor: bucket.settledMinor ?? bucket.targetMinor,
+      amountMinor: bucket.amountMinor,
+    })),
+    selectedBucketIds,
+    startDate: plan.startDate > today ? plan.startDate : today,
+    targetDate: plan.targetDate,
+    frequency: plan.frequency,
+    account: plan.account,
+  });
+  if (!validatePaymentPlan(recalculated).valid) return plan;
+  return {
+    ...plan,
+    amountMinor: recalculated.amountMinor,
+    originalCalculatedAmountMinor: recalculated.originalCalculatedAmountMinor,
+    comment: recalculated.comment,
+    targetBucketIds: selectedBucketIds,
+    updatedAt: new Date().toISOString(),
+  };
+}
+
 function subscriptionFieldsFor(plan, startDate) {
   return {
     title: plan.title,
@@ -276,6 +324,7 @@ function decryptPlan(raw, session, schemaVersion) {
   if (raw.activeSubscriptionId !== undefined) {
     plan.activeSubscriptionId = decryptValue(raw.activeSubscriptionId, session);
   }
+  if (raw.completedAt !== undefined) plan.completedAt = decryptValue(raw.completedAt, session);
   return plan;
 }
 
@@ -373,6 +422,7 @@ function encryptPlan(plan, session, schemaVersion) {
   if (plan.activeSubscriptionId !== undefined) {
     encrypted.activeSubscriptionId = writeValue(plan.activeSubscriptionId, session);
   }
+  if (plan.completedAt !== undefined) encrypted.completedAt = writeValue(plan.completedAt, session);
   return encrypted;
 }
 
@@ -678,14 +728,33 @@ function createFundProjectRepository({ kind, label, codePrefix }) {
           renamePlan(plan, renamer, updatedProject),
         );
       }
-      const baseData = cascadeFundRename(
-        data,
-        kind,
-        current,
-        updatedProject,
-        session,
-        schemaVersion,
-      );
+      let baseData = cascadeFundRename(data, kind, current, updatedProject, session, schemaVersion);
+      // Changed targets: plans following their calculated amount are
+      // recalculated, and an active one's subscription follows.
+      if (bucketTargetsChanged(current.buckets, updatedProject.buckets)) {
+        let subscriptions = baseData.subscriptions || [];
+        updatedProject.plannedSubscriptions = (updatedProject.plannedSubscriptions || []).map(
+          (plan) => {
+            const next = recalculatedPlan(plan, updatedProject, kind);
+            if (next === plan || next.status !== 'active') return next;
+            // Only an existing subscription follows; a missing one is left to
+            // reconciliation (which marks the plan inactive).
+            if (findPlanSubscriptionIndex(subscriptions, plan, session, schemaVersion) === -1) {
+              return next;
+            }
+            const upserted = upsertPlanSubscription(
+              subscriptions,
+              plan,
+              { amountMinor: -next.amountMinor, comment: next.comment },
+              session,
+              schemaVersion,
+            );
+            subscriptions = upserted.subscriptions;
+            return { ...next, activeSubscriptionId: upserted.subscriptionId };
+          },
+        );
+        baseData = { ...baseData, subscriptions };
+      }
       const updatedRawProjects = rawProjects.map((raw, i) =>
         i === index ? encryptProject(updatedProject, session, schemaVersion) : raw,
       );
