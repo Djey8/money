@@ -2203,5 +2203,6 @@
   "Statement.equityRatioHealthy": "Healthy when ≥ 30%: financial resilience.",
   "Statement.interestCoverage": "Interest coverage",
   "Statement.interestCoverageFormula": "Net result ÷ interest expenses",
-  "Statement.interestCoverageHealthy": "Healthy when ≥ 1: earnings cover interest payments."
+  "Statement.interestCoverageHealthy": "Healthy when ≥ 1: earnings cover interest payments.",
+  "Sync.staleWrite": "Your data was changed elsewhere (another device or an agent). Reloaded the latest version — please redo your last change."
 }

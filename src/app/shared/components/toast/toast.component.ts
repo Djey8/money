@@ -1,16 +1,17 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { TranslateModule } from '@ngx-translate/core';
 import { Subscription } from 'rxjs';
 import { Toast, ToastService } from '../../services/toast.service';
 
 @Component({
   selector: 'app-toast',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, TranslateModule],
   template: `
     <div class="toast-container" aria-live="polite" aria-atomic="true">
       <div *ngFor="let toast of toasts" class="toast toast--{{ toast.type }}" role="status">
-        <span class="toast__message">{{ toast.message }}</span>
+        <span class="toast__message">{{ toast.message | translate }}</span>
         <button class="toast__close" (click)="remove(toast.id)" aria-label="Dismiss">
           &times;
         </button>

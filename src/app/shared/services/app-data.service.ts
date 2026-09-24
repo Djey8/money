@@ -99,6 +99,13 @@ export class AppDataService {
     private subscriptionProcessing: SubscriptionProcessingService,
   ) {
     AppDataService.instance = this;
+    // Any self-hosted write refused as stale (docs/adr/0003): tell the user
+    // and reload, so their next change operates on current data instead of
+    // this session's outdated copy.
+    this.database.staleWrite$?.subscribe(() => {
+      this.toastService.show('Sync.staleWrite', 'info');
+      this.loadFromDB();
+    });
   }
 
   async checkAuthentication(): Promise<boolean> {
@@ -298,13 +305,11 @@ export class AppDataService {
       ],
       onConflict: () => {
         // Someone else (another device, tab, or an agent via the Pro API)
-        // wrote since we last read — refuse to overwrite blindly. Refresh
-        // from the server so the next attempt to change something operates
-        // on current data. See docs/adr/0003-api-ui-write-consistency.md.
-        console.warn(
-          '[updateDatabase] Write refused: server data changed since last read. Reloading.',
-        );
-        this.loadFromDB();
+        // wrote since we last read — the backend refused to overwrite
+        // blindly. DatabaseService.staleWrite$ (subscribed in this
+        // service's constructor) already notifies the user and reloads.
+        // See docs/adr/0003-api-ui-write-consistency.md.
+        console.warn('[updateDatabase] Write refused: server data changed since last read.');
       },
       localStorageSaves: [
         { key: 'interests', data: JSON.stringify(AppStateService.instance.allIntrests) },
@@ -348,7 +353,7 @@ export class AppDataService {
       // no decrypt step is needed here.
       AppStateService.instance.schemaVersion = response.data?.['meta']?.schemaVersion ?? 1;
       this.applyBatchData(response.data);
-      AppStateService.instance.lastUpdatedAt = response.updatedAt;
+      await this.observeServerVersion(response.updatedAt);
     } catch (err) {
       console.error('Tier 1 load error:', err);
     } finally {
@@ -366,6 +371,7 @@ export class AppDataService {
       }
       this.applyBatchData(response.data);
       AppStateService.instance.tier2Loaded = true;
+      await this.observeServerVersion(response.updatedAt);
     } catch (err) {
       console.error('Tier 2 load error:', err);
       // Still mark as loaded so unloaded-state guards don't write empty arrays
@@ -385,6 +391,7 @@ export class AppDataService {
       }
       this.applyBatchData(response.data);
       AppStateService.instance.tier3GrowLoaded = true;
+      await this.observeServerVersion(response.updatedAt);
     } catch (err) {
       console.error('Grow data load error:', err);
       AppStateService.instance.tier3GrowLoaded = true;
@@ -403,10 +410,39 @@ export class AppDataService {
       }
       this.applyBatchData(response.data);
       AppStateService.instance.tier3BalanceLoaded = true;
+      await this.observeServerVersion(response.updatedAt);
     } catch (err) {
       console.error('Balance data load error:', err);
       AppStateService.instance.tier3BalanceLoaded = true;
     }
+  }
+
+  /**
+   * The write guard's baseline (`lastUpdatedAt`) is one version for the
+   * whole document, but data loads in tiers at different times. A read
+   * that reveals a version newer than the baseline means someone else
+   * (another device, or an agent via the Pro API) changed data: every tier
+   * already in memory may be stale, so all of them are reloaded before the
+   * newer version is adopted — otherwise a later write could pass the
+   * backend's stale check while still carrying an outdated tier (exactly
+   * how an app save once replaced newer Grow edits). The nested reloads see
+   * the already-adopted version, so this doesn't recurse.
+   */
+  private async observeServerVersion(updatedAt: string | null | undefined): Promise<void> {
+    const state = AppStateService.instance;
+    if (!updatedAt) return;
+    const externalChange = state.lastUpdatedAt !== null && updatedAt > state.lastUpdatedAt;
+    state.adoptUpdatedAt(updatedAt);
+    if (!externalChange) return;
+    const reloadGrow = state.tier3GrowLoaded;
+    const reloadBalance = state.tier3BalanceLoaded;
+    state.tier3GrowLoaded = false;
+    state.tier3BalanceLoaded = false;
+    this.database.clearReadCache();
+    await this.loadTier1();
+    await this.loadTier2();
+    if (reloadGrow) await this.loadGrowData();
+    if (reloadBalance) await this.loadBalanceData();
   }
 
   async checkUpdatedAt(): Promise<boolean> {

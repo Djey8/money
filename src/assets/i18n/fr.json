@@ -2203,5 +2203,6 @@
   "Statement.equityRatioHealthy": "Sain ≥ 30% : résilience financière.",
   "Statement.interestCoverage": "Couverture des intérêts",
   "Statement.interestCoverageFormula": "Résultat net ÷ charges d'intérêts",
-  "Statement.interestCoverageHealthy": "Sain ≥ 1 : revenus couvrent les intérêts."
+  "Statement.interestCoverageHealthy": "Sain ≥ 1 : revenus couvrent les intérêts.",
+  "Sync.staleWrite": "Vos données ont été modifiées ailleurs (autre appareil ou un agent). La dernière version a été rechargée — veuillez refaire votre dernière modification."
 }

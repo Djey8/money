@@ -11,8 +11,8 @@ import { DirtyTrackerService } from './dirty-tracker.service';
 import { CacheService } from './cache.service';
 import { AppStateService } from './app-state.service';
 import { environment } from '../../../environments/environment';
-import { Observable, from, forkJoin, of } from 'rxjs';
-import { map, catchError, tap, switchMap } from 'rxjs/operators';
+import { Observable, Subject, from, forkJoin, lastValueFrom, of, throwError } from 'rxjs';
+import { map, catchError, tap } from 'rxjs/operators';
 import { convertDocumentToMinorUnits } from '@money/domain';
 
 @Injectable({
@@ -39,6 +39,18 @@ export class DatabaseService {
    * @param dirtyTracker - The DirtyTrackerService instance (for selfhosted optimization).
    * @param cacheService - The CacheService instance (for selfhosted optimization).
    */
+  /**
+   * Emits whenever the backend refused a self-hosted write because the data
+   * changed since this session loaded it (another tab, device, or an agent
+   * via the Pro API). `AppDataService` listens and reloads, so the user
+   * redoes their change on current data instead of silently overwriting it.
+   * See docs/adr/0003-api-ui-write-consistency.md.
+   */
+  readonly staleWrite$ = new Subject<void>();
+
+  /** Self-hosted writes run one at a time — see `queueSelfhostedWrite`. */
+  private selfhostedWriteQueue: Promise<unknown> = Promise.resolve();
+
   constructor(
     private db: AngularFireDatabase,
     private localStorage: LocalService,
@@ -113,8 +125,13 @@ export class DatabaseService {
       );
       return from(promise); // Convert Promise to Observable for consistent API
     } else {
-      // Self-hosted mode with optimization
-      const result = this.selfhosted.writeObject(tag, dataToWrite);
+      // Self-hosted mode with optimization. The queued write starts
+      // immediately and runs exactly once no matter how many callers
+      // subscribe — the previous cold `http.post` was subscribed both here
+      // and by the caller, silently sending every write twice.
+      const result = this.queueSelfhostedWrite((base) =>
+        this.selfhosted.writeObject(tag, dataToWrite, base),
+      );
 
       // Mark as clean and take snapshot after successful write
       result.subscribe({
@@ -125,12 +142,44 @@ export class DatabaseService {
           this.selfhosted.clearEtagCache(); // Invalidate ETags so next read fetches fresh data
         },
         error: (error) => {
-          console.error(`[Write] Failed: ${tag}`, error);
+          // A stale-write refusal is handled via staleWrite$, not a failure.
+          if (!DatabaseService.isStaleWriteConflict(error)) {
+            console.error(`[Write] Failed: ${tag}`, error);
+          }
         },
       });
 
       return result;
     }
+  }
+
+  /**
+   * Runs a self-hosted write after every previously queued one, sending the
+   * document version this session last saw (`lastUpdatedAt`) and adopting
+   * the version the server returns. Serializing matters: one UI action often
+   * fires several writes back to back, and each must be based on the version
+   * the previous one produced — otherwise the backend would refuse the
+   * second as stale. A 409 `{conflict: true}` means someone else wrote in
+   * between: `staleWrite$` fires and the error propagates to the caller.
+   */
+  private queueSelfhostedWrite(send: (base: string | null) => Observable<any>): Observable<any> {
+    const run = async () => {
+      try {
+        const response = await lastValueFrom(send(AppStateService.instance.lastUpdatedAt));
+        AppStateService.instance.adoptUpdatedAt(response?.updatedAt);
+        return response;
+      } catch (error: any) {
+        if (DatabaseService.isStaleWriteConflict(error)) this.staleWrite$.next();
+        throw error;
+      }
+    };
+    const pending = this.selfhostedWriteQueue.then(run, run);
+    this.selfhostedWriteQueue = pending.catch(() => undefined);
+    return from(pending);
+  }
+
+  static isStaleWriteConflict(error: any): boolean {
+    return error?.status === 409 && error?.error?.conflict === true;
   }
 
   /**
@@ -185,22 +234,15 @@ export class DatabaseService {
         return of({ success: true, skipped: true, totalWrites: 0 });
       }
 
-      // No baseline to compare against yet (e.g. nothing loaded this
-      // session) — nothing meaningful to conflict with, so skip the
-      // extra round-trip and write immediately.
-      if (AppStateService.instance.lastUpdatedAt === null) {
-        return this.performDirtyWrites(dirtyWrites);
-      }
-
-      return from(this.getUpdatedAt()).pipe(
-        switchMap((serverUpdatedAt) => {
-          const conflict =
-            serverUpdatedAt !== null && serverUpdatedAt !== AppStateService.instance.lastUpdatedAt;
-          if (conflict) {
-            return of({ success: false, skipped: true, conflict: true, totalWrites: 0 });
-          }
-          return this.performDirtyWrites(dirtyWrites);
-        }),
+      // The stale check itself happens server-side, atomically with the
+      // write (`X-Base-Updated-At`, see `queueSelfhostedWrite`); a refusal
+      // is reported to the caller as `{ conflict: true }`.
+      return this.performDirtyWrites(dirtyWrites).pipe(
+        catchError((error) =>
+          DatabaseService.isStaleWriteConflict(error)
+            ? of({ success: false, skipped: true, conflict: true, totalWrites: 0 })
+            : throwError(() => error),
+        ),
       );
     }
   }
@@ -208,35 +250,34 @@ export class DatabaseService {
   private performDirtyWrites(dirtyWrites: { tag: string; data: any }[]): Observable<any> {
     // Use backend batch endpoint if available (more efficient)
     if (dirtyWrites.length > 1) {
-      return this.selfhosted
-        .writeBatch(
-          dirtyWrites.map((w) => ({
-            path: w.tag,
-            data: this.prepareDataForWrite(w.tag, w.data),
-          })),
-        )
-        .pipe(
-          tap({
-            next: () => {
-              // Mark all as clean and take snapshots
-              dirtyWrites.forEach((w) => {
-                this.dirtyTracker.markClean(w.tag);
-                this.dirtyTracker.takeSnapshot(w.tag, w.data);
-                this.cacheService.invalidate(w.tag);
-              });
-              this.selfhosted.clearEtagCache(); // Invalidate ETags so next read fetches fresh data
-            },
-            error: (error) => {
+      const batch = dirtyWrites.map((w) => ({
+        path: w.tag,
+        data: this.prepareDataForWrite(w.tag, w.data),
+      }));
+      return this.queueSelfhostedWrite((base) => this.selfhosted.writeBatch(batch, base)).pipe(
+        tap({
+          next: () => {
+            // Mark all as clean and take snapshots
+            dirtyWrites.forEach((w) => {
+              this.dirtyTracker.markClean(w.tag);
+              this.dirtyTracker.takeSnapshot(w.tag, w.data);
+              this.cacheService.invalidate(w.tag);
+            });
+            this.selfhosted.clearEtagCache(); // Invalidate ETags so next read fetches fresh data
+          },
+          error: (error) => {
+            if (!DatabaseService.isStaleWriteConflict(error)) {
               console.error('[BatchWrite] Failed:', error);
-            },
-          }),
-          map((response) => ({
-            success: true,
-            skipped: false,
-            totalWrites: dirtyWrites.length,
-            response,
-          })),
-        );
+            }
+          },
+        }),
+        map((response) => ({
+          success: true,
+          skipped: false,
+          totalWrites: dirtyWrites.length,
+          response,
+        })),
+      );
     } else {
       // Single write, use regular write
       const observables = dirtyWrites.map(

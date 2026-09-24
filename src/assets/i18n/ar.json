@@ -2203,5 +2203,6 @@
   "Statement.equityRatioHealthy": "صحي عند ≥ 30%: مرونة مالية.",
   "Statement.interestCoverage": "تغطية الفائدة",
   "Statement.interestCoverageFormula": "صافي النتيجة ÷ مصروفات الفوائد",
-  "Statement.interestCoverageHealthy": "صحي عند ≥ 1: الإيرادات تغطي الفوائد."
+  "Statement.interestCoverageHealthy": "صحي عند ≥ 1: الإيرادات تغطي الفوائد.",
+  "Sync.staleWrite": "تم تغيير بياناتك في مكان آخر (جهاز آخر أو وكيل). تمت إعادة تحميل أحدث نسخة — يرجى إعادة تنفيذ تغييرك الأخير."
 }

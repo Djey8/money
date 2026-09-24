@@ -24,7 +24,7 @@ jest.mock('../../../environments/environment', () => ({
   },
 }));
 
-import { of, throwError } from 'rxjs';
+import { defer, lastValueFrom, of, throwError } from 'rxjs';
 import { DatabaseService } from './database.service';
 import { AppStateService } from './app-state.service';
 
@@ -206,32 +206,29 @@ describe('DatabaseService (selfhosted mode)', () => {
   // ── ETag cache clearing ─────────────────────────────────────────────────
 
   describe('ETag cache clearing on writes', () => {
-    it('clears ETag cache after writeObject succeeds', () => {
+    it('clears ETag cache after writeObject succeeds', async () => {
       selfhosted.writeObject.mockReturnValue(of({ success: true }));
-      const result = service.writeObject('transactions', [{ a: 1 }]);
-
-      // Subscribe to trigger the side effects
-      (result as any).subscribe();
+      await lastValueFrom(service.writeObject('transactions', [{ a: 1 }]));
       expect(selfhosted.clearEtagCache).toHaveBeenCalled();
     });
 
-    it('clears ETag cache after batchWrite succeeds', () => {
+    it('clears ETag cache after batchWrite succeeds', async () => {
       dirtyTracker.hasChanged.mockReturnValue(true);
       selfhosted.writeBatch.mockReturnValue(of({ success: true }));
 
-      const obs = service.batchWrite([
-        { tag: 'transactions', data: [] },
-        { tag: 'budget', data: [] },
-      ]);
-      obs.subscribe();
+      await lastValueFrom(
+        service.batchWrite([
+          { tag: 'transactions', data: [] },
+          { tag: 'budget', data: [] },
+        ]),
+      );
       expect(selfhosted.clearEtagCache).toHaveBeenCalled();
     });
 
-    it('does NOT clear ETag cache when batchWrite is skipped (no dirty)', () => {
+    it('does NOT clear ETag cache when batchWrite is skipped (no dirty)', async () => {
       dirtyTracker.hasChanged.mockReturnValue(false);
 
-      const obs = service.batchWrite([{ tag: 'transactions', data: [] }]);
-      obs.subscribe();
+      await lastValueFrom(service.batchWrite([{ tag: 'transactions', data: [] }]));
       expect(selfhosted.clearEtagCache).not.toHaveBeenCalled();
     });
   });
@@ -243,96 +240,141 @@ describe('DatabaseService (selfhosted mode)', () => {
       AppStateService.instance.schemaVersion = 1;
     });
 
-    it('scales money fields to minor units before encrypting when schemaVersion is 2', () => {
+    it('scales money fields to minor units before encrypting when schemaVersion is 2', async () => {
       AppStateService.instance.schemaVersion = 2;
       selfhosted.writeObject.mockReturnValue(of({ success: true }));
 
-      service.writeObject('transactions', [{ amount: 42.5, category: '@Food' }]);
+      await lastValueFrom(
+        service.writeObject('transactions', [{ amount: 42.5, category: '@Food' }]),
+      );
 
-      expect(selfhosted.writeObject).toHaveBeenCalledWith('transactions', [
-        { amount: 'enc(4250)', category: 'enc(@Food)' },
-      ]);
+      expect(selfhosted.writeObject).toHaveBeenCalledWith(
+        'transactions',
+        [{ amount: 'enc(4250)', category: 'enc(@Food)' }],
+        null,
+      );
     });
 
-    it('leaves money fields as decimal when schemaVersion is 1 (default)', () => {
+    it('leaves money fields as decimal when schemaVersion is 1 (default)', async () => {
       selfhosted.writeObject.mockReturnValue(of({ success: true }));
 
-      service.writeObject('transactions', [{ amount: 42.5, category: '@Food' }]);
+      await lastValueFrom(
+        service.writeObject('transactions', [{ amount: 42.5, category: '@Food' }]),
+      );
 
-      expect(selfhosted.writeObject).toHaveBeenCalledWith('transactions', [
-        { amount: 'enc(42.5)', category: 'enc(@Food)' },
-      ]);
+      expect(selfhosted.writeObject).toHaveBeenCalledWith(
+        'transactions',
+        [{ amount: 'enc(42.5)', category: 'enc(@Food)' }],
+        null,
+      );
     });
   });
 
-  // ── batchWrite() conflict detection (docs/adr/0003) ─────────────────────
+  // ── Stale-write guard (docs/adr/0003) ───────────────────────────────────
 
-  describe('batchWrite() conflict detection', () => {
+  describe('stale-write guard', () => {
+    const conflict = { status: 409, error: { conflict: true, updatedAt: 'later' } };
+
     afterEach(() => {
       AppStateService.instance.lastUpdatedAt = null;
     });
 
-    it('writes immediately, without checking the server, when there is no local baseline yet', async () => {
-      AppStateService.instance.lastUpdatedAt = null;
+    it('sends no base version when this session has no baseline yet', async () => {
       dirtyTracker.hasChanged.mockReturnValue(true);
       selfhosted.writeBatch.mockReturnValue(of({ success: true }));
 
-      const result = await service
-        .batchWrite([
+      const result = await lastValueFrom(
+        service.batchWrite([
           { tag: 'transactions', data: [] },
           { tag: 'budget', data: [] },
-        ])
-        .toPromise();
+        ]),
+      );
 
-      expect(selfhosted.getUpdatedAt).not.toHaveBeenCalled();
+      expect(selfhosted.writeBatch).toHaveBeenCalledWith(expect.any(Array), null);
       expect(result.success).toBe(true);
-      expect(result.conflict).toBeUndefined();
     });
 
-    it('writes when the server updatedAt still matches the local baseline', async () => {
+    it('sends the baseline as the base version and adopts the version the write produced', async () => {
       AppStateService.instance.lastUpdatedAt = '2026-03-29T10:00:00.000Z';
       dirtyTracker.hasChanged.mockReturnValue(true);
-      selfhosted.getUpdatedAt.mockReturnValue(of({ updatedAt: '2026-03-29T10:00:00.000Z' }));
-      selfhosted.writeBatch.mockReturnValue(of({ success: true }));
+      selfhosted.writeBatch.mockReturnValue(
+        of({ success: true, updatedAt: '2026-03-29T10:05:00.000Z' }),
+      );
 
-      const result = await service
-        .batchWrite([
+      await lastValueFrom(
+        service.batchWrite([
           { tag: 'transactions', data: [] },
           { tag: 'budget', data: [] },
-        ])
-        .toPromise();
+        ]),
+      );
 
-      expect(result.success).toBe(true);
-      expect(selfhosted.writeBatch).toHaveBeenCalled();
+      expect(selfhosted.writeBatch).toHaveBeenCalledWith(
+        expect.any(Array),
+        '2026-03-29T10:00:00.000Z',
+      );
+      expect(AppStateService.instance.lastUpdatedAt).toBe('2026-03-29T10:05:00.000Z');
     });
 
-    it('refuses to write and reports a conflict when the server updatedAt has moved on', async () => {
+    it('reports a refused (stale) batch write as a conflict and notifies staleWrite$', async () => {
       AppStateService.instance.lastUpdatedAt = '2026-03-29T10:00:00.000Z';
       dirtyTracker.hasChanged.mockReturnValue(true);
-      selfhosted.getUpdatedAt.mockReturnValue(of({ updatedAt: '2026-03-29T11:00:00.000Z' }));
+      selfhosted.writeBatch.mockReturnValue(throwError(() => conflict));
+      const stale = jest.fn();
+      service.staleWrite$.subscribe(stale);
 
-      const result = await service
-        .batchWrite([
+      const result = await lastValueFrom(
+        service.batchWrite([
           { tag: 'transactions', data: [] },
           { tag: 'budget', data: [] },
-        ])
-        .toPromise();
+        ]),
+      );
 
-      expect(result.conflict).toBe(true);
-      expect(result.success).toBe(false);
-      expect(selfhosted.writeBatch).not.toHaveBeenCalled();
+      expect(result).toMatchObject({ success: false, conflict: true });
+      expect(stale).toHaveBeenCalledTimes(1);
       expect(selfhosted.clearEtagCache).not.toHaveBeenCalled();
+      expect(AppStateService.instance.lastUpdatedAt).toBe('2026-03-29T10:00:00.000Z');
     });
 
-    it('writes when the server has no updatedAt to compare (treated as no conflict, not blocked)', async () => {
-      AppStateService.instance.lastUpdatedAt = '2026-03-29T10:00:00.000Z';
-      dirtyTracker.hasChanged.mockReturnValue(true);
-      selfhosted.getUpdatedAt.mockReturnValue(of(null));
-      selfhosted.writeBatch.mockReturnValue(of({ success: true }));
+    it('notifies staleWrite$ and errors a refused single write', async () => {
+      selfhosted.writeObject.mockReturnValue(throwError(() => conflict));
+      const stale = jest.fn();
+      service.staleWrite$.subscribe(stale);
+      jest.spyOn(console, 'error').mockImplementation(() => undefined);
 
-      const result = await service.batchWrite([{ tag: 'transactions', data: [] }]).toPromise();
+      await expect(lastValueFrom(service.writeObject('grow', []))).rejects.toBe(conflict);
+      expect(stale).toHaveBeenCalledTimes(1);
+    });
 
-      expect(result.success).toBe(true);
+    it('runs writes one at a time, each based on the version the previous one produced', async () => {
+      AppStateService.instance.lastUpdatedAt = 'v1';
+      selfhosted.writeObject
+        .mockReturnValueOnce(of({ success: true, updatedAt: 'v2' }))
+        .mockReturnValueOnce(of({ success: true, updatedAt: 'v3' }));
+
+      const first = service.writeObject('grow', []);
+      const second = service.writeObject('smile', []);
+      await lastValueFrom(second);
+      await lastValueFrom(first);
+
+      expect(selfhosted.writeObject.mock.calls[0][2]).toBe('v1');
+      expect(selfhosted.writeObject.mock.calls[1][2]).toBe('v2');
+      expect(AppStateService.instance.lastUpdatedAt).toBe('v3');
+    });
+
+    it('sends a write exactly once even when both the service and the caller subscribe', async () => {
+      let posts = 0;
+      selfhosted.writeObject.mockReturnValue(
+        defer(() => {
+          posts += 1;
+          return of({ success: true });
+        }),
+      );
+
+      const result = service.writeObject('grow', []);
+      await lastValueFrom(result);
+      await lastValueFrom(result);
+
+      expect(posts).toBe(1);
     });
   });
 

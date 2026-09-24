@@ -2203,5 +2203,6 @@
   "Statement.equityRatioHealthy": "Gesund bei ≥ 30%: finanzielle Widerstandsfähigkeit.",
   "Statement.interestCoverage": "Zinsdeckung",
   "Statement.interestCoverageFormula": "Nettoergebnis ÷ Zinsaufwand",
-  "Statement.interestCoverageHealthy": "Gesund bei ≥ 1: Einnahmen decken Zinszahlungen."
+  "Statement.interestCoverageHealthy": "Gesund bei ≥ 1: Einnahmen decken Zinszahlungen.",
+  "Sync.staleWrite": "Deine Daten wurden an anderer Stelle geändert (anderes Gerät oder ein Agent). Die neueste Version wurde geladen — bitte wiederhole deine letzte Änderung."
 }

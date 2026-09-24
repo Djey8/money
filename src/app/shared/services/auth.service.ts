@@ -7,6 +7,8 @@ import { firstValueFrom } from 'rxjs';
 /**
  * Centralized authentication service that handles both Firebase and selfhosted authentication
  */
+import { AppStateService } from './app-state.service';
+
 @Injectable({
   providedIn: 'root',
 })
@@ -107,6 +109,9 @@ export class AuthService {
     } else {
       // Selfhosted mode - call logout endpoint to revoke refresh token + clear cookies
       localStorage.removeItem('selfhosted_userId');
+      // The next account's data has its own version; the write guard's
+      // baseline must not carry over (it only ever advances otherwise).
+      AppStateService.instance.lastUpdatedAt = null;
       try {
         await firstValueFrom(
           this.http.post(

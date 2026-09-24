@@ -69,6 +69,19 @@ export class AppStateService {
   isLoading = true;
   isSaving = false;
   lastUpdatedAt: string | null = null;
+
+  /**
+   * Advances `lastUpdatedAt` — never moves it backwards. A read that started
+   * before this session's own write committed can return an older version
+   * after that write already adopted the newer one; going back would make
+   * the next write look stale to the backend and be refused.
+   */
+  adoptUpdatedAt(updatedAt: string | null | undefined): void {
+    if (!updatedAt) return;
+    if (this.lastUpdatedAt === null || updatedAt > this.lastUpdatedAt) {
+      this.lastUpdatedAt = updatedAt;
+    }
+  }
   /**
    * Money storage schema version for the current selfhosted user, from
    * `meta/schemaVersion` (docs/adr/0002-money-minor-units-migration.md).
