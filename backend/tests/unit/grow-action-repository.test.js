@@ -175,6 +175,52 @@ describe('buyGrow', () => {
     expect(current().data.balance.asset.shares[0]).toMatchObject({ price: 25000 });
   });
 
+  it('share kind: a fractional quantity (crypto) rounds the amount to whole minor units instead of failing', async () => {
+    const document = {
+      _id: 'user_1',
+      _rev: '1-a',
+      data: {
+        meta: { schemaVersion: 2 },
+        grow: [
+          minimalRawGrow({ title: 'SOL', share: { tag: 'SOL', quantity: 3.54, price: 8833 } }),
+        ],
+        balance: {
+          asset: { shares: [{ id: 'shares_1', tag: 'SOL', quantity: 3.54, price: 8833 }] },
+        },
+      },
+    };
+    const { deps, current } = writableDeps(document);
+    const result = await buyGrow(deps, 'user_1', 'grow_1', { quantity: 1.77, priceMinor: 8833 });
+
+    expect(result.transaction.amountMinor).toBe(-15634);
+    expect(result.grow.share.quantity).toBe(5.31);
+    expect(current().data.balance.asset.shares[0]).toMatchObject({ quantity: 5.31 });
+  });
+
+  it('investment kind: a cash-only buy (no mortgage) creates no empty M-<title> liability', async () => {
+    const document = {
+      _id: 'user_1',
+      _rev: '1-a',
+      data: {
+        meta: { schemaVersion: 2 },
+        grow: [
+          minimalRawGrow({ title: 'Garage', investment: { tag: 'Garage', deposit: 0, amount: 0 } }),
+        ],
+      },
+    };
+    const { deps, current } = writableDeps(document);
+    const result = await buyGrow(deps, 'user_1', 'grow_1', { depositMinor: 2500000 });
+
+    expect(result.grow.investment).toEqual({
+      tag: 'Garage',
+      depositMinor: 2500000,
+      amountMinor: 0,
+    });
+    expect(result.transaction.amountMinor).toBe(-2500000);
+    expect(current().data.balance.asset.investments[0]).toMatchObject({ deposit: 2500000 });
+    expect(current().data.balance.liabilities || []).toHaveLength(0);
+  });
+
   it('rejects a buy on a grow project with no kind', async () => {
     const document = { _id: 'user_1', _rev: '1-a', data: { grow: [minimalRawGrow()] } };
     const { deps } = writableDeps(document);
@@ -327,6 +373,70 @@ describe('sellGrow', () => {
     const { deps } = writableDeps(document);
     await expect(
       sellGrow(deps, 'user_1', 'grow_1', { quantity: 10, priceMinor: 20000 }),
+    ).rejects.toMatchObject({ code: 'GROW_INVALID_INPUT' });
+  });
+
+  it('share kind: a fractional partial sell rounds the proceeds and keeps the remainder', async () => {
+    const document = {
+      _id: 'user_1',
+      _rev: '1-a',
+      data: {
+        meta: { schemaVersion: 2 },
+        grow: [
+          minimalRawGrow({ title: 'SOL', share: { tag: 'SOL', quantity: 3.54, price: 8833 } }),
+        ],
+        balance: {
+          asset: { shares: [{ id: 'shares_1', tag: 'SOL', quantity: 3.54, price: 8833 }] },
+        },
+      },
+    };
+    const { deps, current } = writableDeps(document);
+    const result = await sellGrow(deps, 'user_1', 'grow_1', { quantity: 1.77, priceMinor: 8833 });
+
+    expect(result.transaction.amountMinor).toBe(15634);
+    expect(result.grow.share.quantity).toBe(1.77);
+    expect(current().data.balance.asset.shares[0]).toMatchObject({ quantity: 1.77 });
+  });
+
+  it('investment kind: sells a position whose mortgage is already 0', async () => {
+    const document = {
+      _id: 'user_1',
+      _rev: '1-a',
+      data: {
+        meta: { schemaVersion: 2 },
+        grow: [
+          minimalRawGrow({
+            title: 'Garage',
+            amount: 2500000,
+            investment: { tag: 'Garage', deposit: 2500000, amount: 0 },
+          }),
+        ],
+        balance: {
+          asset: {
+            investments: [{ id: 'investments_1', tag: 'Garage', deposit: 2500000, amount: 0 }],
+          },
+        },
+      },
+    };
+    const { deps, current } = writableDeps(document);
+    const result = await sellGrow(deps, 'user_1', 'grow_1', { depositMinor: 2500000 });
+
+    expect(result.transaction.amountMinor).toBe(2500000);
+    expect(current().data.balance.asset.investments).toHaveLength(0);
+    expect(current().data.balance.liabilities || []).toHaveLength(0);
+  });
+
+  it('investment kind: rejects a sell where depositMinor and mortgageMinor are both 0', async () => {
+    const document = {
+      _id: 'user_1',
+      _rev: '1-a',
+      data: {
+        grow: [minimalRawGrow({ investment: { tag: 'MSFT', deposit: 100, amount: 0 } })],
+      },
+    };
+    const { deps } = writableDeps(document);
+    await expect(
+      sellGrow(deps, 'user_1', 'grow_1', { depositMinor: 0, mortgageMinor: 0 }),
     ).rejects.toMatchObject({ code: 'GROW_INVALID_INPUT' });
   });
 

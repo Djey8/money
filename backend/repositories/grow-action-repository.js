@@ -134,6 +134,8 @@ function applyLiabilityPatch(rawLiabilities, liabilityPatch, session, schemaVers
 function applyMortgagePatch(rawLiabilities, mortgagePatch, session, schemaVersion) {
   const index = findIndexByTag(rawLiabilities, mortgagePatch.tag, session);
   if (index === -1) {
+    // A cash-only investment (mortgage 0) has no mortgage to track — don't create an empty `M-<title>` liability.
+    if (mortgagePatch.amountMinor === 0) return rawLiabilities;
     return [
       ...rawLiabilities,
       {
@@ -237,7 +239,8 @@ function assertBuyInputMatchesKind(current, input) {
     assertPositiveInteger(input.priceMinor, 'priceMinor');
   } else if (current.investment) {
     assertPositiveInteger(input.depositMinor, 'depositMinor');
-    assertPositiveInteger(input.mortgageMinor, 'mortgageMinor');
+    // Optional: a cash-only purchase has no mortgage.
+    assertNonNegativeInteger(input.mortgageMinor ?? 0, 'mortgageMinor');
   } else {
     throw growError('GROW_NO_KIND', 'This grow project has no asset/share/investment kind to buy.');
   }
@@ -255,8 +258,14 @@ function assertSellInputMatchesKind(current, input) {
     return;
   }
   if (current.investment) {
-    assertPositiveInteger(input.depositMinor, 'depositMinor');
-    assertPositiveInteger(input.mortgageMinor, 'mortgageMinor');
+    // Either side may be 0 (a cash-only investment, or a mortgage already paid off), but not both.
+    const depositMinor = input.depositMinor ?? 0;
+    const mortgageMinor = input.mortgageMinor ?? 0;
+    assertNonNegativeInteger(depositMinor, 'depositMinor');
+    assertNonNegativeInteger(mortgageMinor, 'mortgageMinor');
+    if (depositMinor === 0 && mortgageMinor === 0) {
+      throw growError('GROW_INVALID_INPUT', 'depositMinor and mortgageMinor must not both be 0.');
+    }
     if (input.payback !== undefined) {
       if (!input.payback || typeof input.payback !== 'object') {
         throw growError('GROW_INVALID_INPUT', 'payback must be an object.');
@@ -481,8 +490,8 @@ async function buyGrow(deps, userId, growId, input) {
       const mortgageIndex = findIndexByTag(rawLiabilities, mortgageTag, session);
       const calc = calculateBuyInvestment({
         title: current.title,
-        depositMinor: input.depositMinor,
-        mortgageMinor: input.mortgageMinor,
+        depositMinor: input.depositMinor ?? 0,
+        mortgageMinor: input.mortgageMinor ?? 0,
         existingInvestmentDepositMinor:
           investmentIndex === -1
             ? null
@@ -658,8 +667,8 @@ async function sellGrow(deps, userId, growId, input) {
         session,
         schemaVersion,
       );
-      assertDoesNotExceed(input.depositMinor, existingInvestmentDepositMinor, 'depositMinor');
-      assertDoesNotExceed(input.mortgageMinor, existingInvestmentAmountMinor, 'mortgageMinor');
+      assertDoesNotExceed(input.depositMinor ?? 0, existingInvestmentDepositMinor, 'depositMinor');
+      assertDoesNotExceed(input.mortgageMinor ?? 0, existingInvestmentAmountMinor, 'mortgageMinor');
       const payback = input.payback
         ? {
             amountMinor: input.payback.amountMinor,
@@ -686,8 +695,8 @@ async function sellGrow(deps, userId, growId, input) {
       }
       const calc = calculateSellInvestment({
         title: current.title,
-        depositMinor: input.depositMinor,
-        mortgageMinor: input.mortgageMinor,
+        depositMinor: input.depositMinor ?? 0,
+        mortgageMinor: input.mortgageMinor ?? 0,
         existingInvestmentDepositMinor,
         existingInvestmentAmountMinor,
         existingMortgageLiabilityAmountMinor:
