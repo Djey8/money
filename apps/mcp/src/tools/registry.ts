@@ -130,8 +130,9 @@ export const TOOLS: ToolDefinition[] = [
       'Read explain_concept topic smile_fire_mojo_guide first — it explains buckets. Manage Smile (medium-term ' +
       'savings goal) projects: list, get, create, update (incl. bucketsAdd/Update/Remove by id and single list ' +
       'entries), delete; contribute money (the only way bucket amounts change — they are rebuilt from ' +
-      'transactions, never set); list_transactions; and payment plans (create, update, activate, deactivate, ' +
-      'delete). Every write returns `effects`. Removing money-holding buckets/projects needs force. Requires a ' +
+      'transactions, never set); list_transactions; settle_bucket when the real bill is paid (records only the difference to what was ' +
+      'saved; unsettle_bucket reopens); and payment plans (create, update, activate, deactivate, delete — a ' +
+      'plan owns its subscription and completes when its buckets are full). Every write returns `effects`. Removing money-holding buckets/projects needs force. Requires a ' +
       'PAT with smile:r (list/get/list_transactions) or smile:w (everything else). delete and ' +
       'delete_payment_plan require confirm: true.',
     actions: {
@@ -158,8 +159,9 @@ export const TOOLS: ToolDefinition[] = [
       'Read explain_concept topic smile_fire_mojo_guide first — it explains buckets. Manage Fire (emergency fund, ' +
       'not retirement) projects: list, get, create, update (incl. bucketsAdd/Update/Remove by id and single list ' +
       'entries), delete; contribute money (the only way bucket amounts change — untagged money fills the first ' +
-      'bucket; a fund auto-completes when every bucket is full); list_transactions; and payment plans (create, ' +
-      'update, activate, deactivate, delete). Every write returns `effects`. Removing money-holding ' +
+      'bucket; a fund auto-completes when every bucket is full); list_transactions; settle_bucket when the real bill is paid (records only the difference to what was ' +
+      'saved; unsettle_bucket reopens); and payment plans (create, update, activate, deactivate, delete — a ' +
+      'plan owns its subscription and completes when its buckets are full). Every write returns `effects`. Removing money-holding ' +
       'buckets/projects needs force. Requires a PAT with fire:r (list/get/list_transactions) or fire:w ' +
       '(everything else). delete and delete_payment_plan require confirm: true.',
     actions: {

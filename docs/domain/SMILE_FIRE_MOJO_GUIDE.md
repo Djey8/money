@@ -33,8 +33,8 @@ contribution (`contribute`, section 4). Consequences you must know:
   | Mojo  | `@Mojo` (capped) — or any transaction **on** the Mojo account (uncapped, adds or removes) | —                  |
 
 - **Direction doesn't matter** for Smile/Fire: the amount's absolute value fills buckets. So **never record a
-  purchase with the project's category** — buying the flight as `@Vacation` would _add_ to the buckets. Record
-  spending with its own category (e.g. `@Travel`) and move the project's `phase` to `completed`.
+  purchase as an ordinary transaction with the project's category** — buying the flight as `@Vacation` would _add_
+  to the buckets. When the real bill for a bucket is paid, **settle** the bucket (section 5).
 - **Where the money goes inside a project**:
   - with `#bucket:<Title>:<amount>` tags in the comment: to exactly those buckets (title match is
     case-insensitive);
@@ -87,7 +87,43 @@ contribution (`contribute`, section 4). Consequences you must know:
 - `list_transactions` shows exactly the transactions a project's (or Mojo's) amounts are rebuilt from, each with
   parsed `bucketAllocations`. Edit or delete them with the transactions tool; the amounts rebuild automatically.
 
-## 5. Payment plans (recurring contributions)
+## 5. Paying the real bill: settle a bucket
+
+When you actually pay for what a bucket saved for, **settle** it with the actual cost:
+
+```json
+{
+  "action": "settle_bucket",
+  "projectId": "smile_…",
+  "bucketId": "bucket_…",
+  "actualMinor": 65000,
+  "receipt": "Mountain guide invoice 123"
+}
+```
+
+The server records one transaction tagged `#settle:<bucket>:<actual>` (with your receipt text) whose amount is the
+**difference** to what the bucket had saved — the savings were already booked when you contributed, so only the
+difference moves:
+
+| Saved | Actual | Settlement transaction            | Bucket afterwards       |
+| ----- | ------ | --------------------------------- | ----------------------- |
+| 500   | 650    | −150 (topped up from `account`)   | settled, 650 (plan 500) |
+| 40    | 50     | −10                               | settled, 50 (plan 40)   |
+| 60    | 50     | +10 released back to `account`    | settled, 50 (plan 60)   |
+| 0     | 50     | −50                               | settled, 50             |
+| 500   | 500    | 0 (kept — it carries the receipt) | settled, 500            |
+
+- The bucket shows `status: "settled"`, `settledMinor` (actual), `settledDate` and `varianceMinor` (actual − plan)
+  next to its planned `targetMinor`. Totals: `targetMinor` uses actual costs, `plannedTargetMinor` the plan.
+- `surplus: { "moveToBucketId": "…" }` moves a surplus into another bucket of the project instead of releasing it.
+- A settled bucket takes no more contributions; payment plans treat it as done; a Fire fund whose last bucket is
+  settled completes.
+- **Settle again** to correct the actual cost (it edits the same settlement). **`unsettle_bucket`** removes the
+  settlement: the bucket reopens with the savings it had. Deleting the settlement transaction does the same.
+- It's all derived from the settlement transaction, so editing an earlier contribution recomputes the difference.
+- Never write `#settle:` tags yourself — they're refused on ordinary transactions.
+
+## 6. Payment plans (recurring contributions)
 
 1. `create_payment_plan` computes a per-period amount to fill the chosen buckets (`selectedBucketIds`, `[]` = all)
    by `targetDate` — status `planned`, nothing happens yet.
@@ -99,13 +135,21 @@ contribution (`contribute`, section 4). Consequences you must know:
 4. `deactivate_payment_plan` ends the subscription today (reactivating restarts it today);
    `delete_payment_plan` (`confirm: true`) deactivates first.
 
-## 6. Mojo
+Statuses: `planned` → `active` → `completed` (target buckets all full or settled: its subscription ends that day) or
+`inactive` (deactivated, or its subscription was deleted). This is **reconciled on every write**, so changes made in
+the app are picked up. A completed or inactive plan can be activated again.
+
+- **The plan owns its subscription**: `manage_subscriptions` refuses to update or delete it — use the plan actions.
+- When bucket targets change, plans that follow their calculated amount (no `manualAmountMinor`) are recalculated
+  over the time left, and an active plan's subscription follows.
+
+## 7. Mojo
 
 - `get` → `{amountMinor, targetMinor, remainingMinor, percentFilled}`; `update_target` re-caps immediately.
 - `@Mojo` contributions fill up to the target; transactions **on** the `Mojo` account change it directly (spending
   from Mojo reduces it). `contribute` records an `@Mojo` contribution.
 
-## 7. Worked example
+## 8. Worked example
 
 Save €1,000 for a trip, €600 flight and €400 hotel, €150 a month from October:
 
@@ -117,12 +161,14 @@ Save €1,000 for a trip, €600 flight and €400 hotel, €150 a month from Oc
 ```
 
 The first contribution splits €100/€100 (written as tags); the plan then funds both buckets monthly until they're
-full. When you book the trip, record the purchase as e.g. `@Travel` from the Smile account and set `phase:
-completed` — not as `@Lisbon`.
+full (the plan then completes on its own). When you pay the flight — say €640 — `settle_bucket` Flight with
+`actualMinor: 64000`: the settlement tops up the missing €40. Not an ordinary `@Lisbon` purchase.
 
-## 8. Pitfalls
+## 9. Pitfalls
 
 - Setting `amountMinor` on a bucket is refused — use `contribute`.
-- A purchase recorded with the project's category fills it instead of spending it.
+- A purchase recorded as an ordinary transaction with the project's category fills it instead of spending it —
+  settle the bucket instead.
+- A plan-owned subscription can't be edited through `manage_subscriptions` — change the plan.
 - Fire is emergencies, not retirement; Fire untagged `@<project>` money always lands in the first bucket.
 - Deleting a funded bucket/project needs `force` — read `effects` afterwards.
