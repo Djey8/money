@@ -1108,6 +1108,9 @@ export class AppDataService {
               }
             }
             const newG = {
+              // Stable id assigned by the backend — kept so the app's next
+              // save doesn't drop it (the Pro API/MCP address projects by id).
+              id: raw[k].id ? this.cryptic.decrypt(raw[k].id, 'database') : undefined,
               title: this.cryptic.decrypt(raw[k].title, 'database'),
               sub: this.cryptic.decrypt(raw[k].sub, 'database'),
               status: this.cryptic.decrypt(raw[k].status, 'database'),
