@@ -45,6 +45,8 @@ const {
   listProjectTransactions,
   listMojoTransactions,
 } = require('../repositories/fund-contribution-repository');
+const { repository: smileRepository } = require('../repositories/smile-repository');
+const { repository: fireRepository } = require('../repositories/fire-repository');
 const {
   SMILE_PHASES,
   listSmileProjects,
@@ -3109,6 +3111,120 @@ for (const [kind, label] of [
       }
     },
   );
+}
+
+// --- Payment plans: edit, activate, deactivate, delete ------------------------
+
+const PAYMENT_PLAN_PATCH_FIELDS = [
+  'title',
+  'account',
+  'startDate',
+  'targetDate',
+  'frequency',
+  'selectedBucketIds',
+  'manualAmountMinor',
+];
+
+function validatePaymentPlanPatch(input) {
+  if (!isPlainObject(input)) return 'A payment plan object is required.';
+  const unknown = Object.keys(input).find((key) => !PAYMENT_PLAN_PATCH_FIELDS.includes(key));
+  if (unknown) {
+    return `${unknown} is not an editable payment plan field (allowed: ${PAYMENT_PLAN_PATCH_FIELDS.join(', ')}).`;
+  }
+  for (const field of ['title', 'account']) {
+    if (input[field] !== undefined && !isNonEmptyString(input[field])) {
+      return `${field} must be a non-empty string.`;
+    }
+  }
+  for (const field of ['startDate', 'targetDate']) {
+    if (input[field] !== undefined && !/^\d{4}-\d{2}-\d{2}$/.test(String(input[field]))) {
+      return `${field} must use YYYY-MM-DD format.`;
+    }
+  }
+  if (input.frequency !== undefined && !PAYMENT_PLAN_FREQUENCIES.includes(input.frequency)) {
+    return `frequency must be one of ${PAYMENT_PLAN_FREQUENCIES.join(', ')}.`;
+  }
+  if (
+    input.selectedBucketIds !== undefined &&
+    (!Array.isArray(input.selectedBucketIds) || !input.selectedBucketIds.every(isNonEmptyString))
+  ) {
+    return 'selectedBucketIds must be an array of bucket ids ([] = all buckets).';
+  }
+  if (
+    input.manualAmountMinor !== undefined &&
+    input.manualAmountMinor !== null &&
+    (!Number.isInteger(input.manualAmountMinor) || input.manualAmountMinor <= 0)
+  ) {
+    return 'manualAmountMinor must be a positive integer, or null to use the calculated amount.';
+  }
+  return null;
+}
+
+function paymentPlanErrorResponse(res, error) {
+  if (error.code === 'PAYMENT_PLAN_NOT_FOUND') {
+    return problem(res, 404, 'not_found', 'Payment plan not found', error.message);
+  }
+  if (error.code === 'PAYMENT_PLAN_INVALID') {
+    return problem(res, 400, 'validation_invalid', 'Invalid payment plan request', error.message);
+  }
+  return undefined;
+}
+
+for (const [kind, label, repository] of [
+  ['smile', 'Smile', smileRepository],
+  ['fire', 'Fire', fireRepository],
+]) {
+  const planRoute = (method, path, operation, { validate, status = 200 } = {}) => {
+    router[method](
+      `/${kind}/:projectId/payment-plans/:planId${path}`,
+      requireScope(`${kind}:w`),
+      async (req, res, next) => {
+        const validationError = validate ? validate(req.body) : null;
+        if (validationError) {
+          return problem(
+            res,
+            400,
+            'validation_invalid',
+            'Invalid payment plan request',
+            validationError,
+          );
+        }
+        try {
+          const result = await operation(
+            { usersDb: getUsersDb(), authDb: getAuthDb() },
+            req.userId,
+            req.params.projectId,
+            req.params.planId,
+            req.body,
+          );
+          if (!result) {
+            return problem(
+              res,
+              404,
+              'not_found',
+              `${label} project not found`,
+              `No matching ${label} project exists.`,
+            );
+          }
+          await recordAuditEntry(getAuditDb(), {
+            userId: req.userId,
+            actor: auditActor(req.auth),
+            method: req.method,
+            path: req.baseUrl + req.path,
+            resource: `${kind}_payment_plan`,
+            resourceId: req.params.planId,
+          });
+          return res.status(status).json(result);
+        } catch (error) {
+          return paymentPlanErrorResponse(res, error) ?? next(error);
+        }
+      },
+    );
+  };
+  planRoute('patch', '', repository.updatePaymentPlan, { validate: validatePaymentPlanPatch });
+  planRoute('post', '/activate', repository.activatePaymentPlan);
+  planRoute('post', '/deactivate', repository.deactivatePaymentPlan);
+  planRoute('delete', '', repository.deletePaymentPlan);
 }
 
 router.post('/mojo/contribute', requireScope('mojo:w'), async (req, res, next) => {

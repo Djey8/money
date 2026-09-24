@@ -1977,6 +1977,53 @@ describe('v1 API authentication and PAT management', () => {
       );
     });
 
+    it('manages a payment plan: edit, activate (creates the subscription), deactivate, delete', async () => {
+      const { token } = await smileToken(['smile:r', 'smile:w']);
+      const created = await createProject(token, { title: `Smile Plan ${Date.now()}` });
+      const plan = await request(app)
+        .post(`/api/v1/smile/${created.id}/payment-plan`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          planTitle: 'Monthly',
+          startDate: '2026-10-01',
+          targetDate: '2027-09-01',
+          frequency: 'monthly',
+          account: 'Smile',
+        });
+      expect(plan.status).toBe(201);
+      const base = `/api/v1/smile/${created.id}/payment-plans/${plan.body.id}`;
+
+      const edited = await request(app)
+        .patch(base)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ manualAmountMinor: 12345 });
+      expect(edited.status).toBe(200);
+      expect(edited.body.amountMinor).toBe(12345);
+
+      const activated = await request(app)
+        .post(`${base}/activate`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(activated.status).toBe(200);
+      expect(activated.body.status).toBe('active');
+
+      const again = await request(app)
+        .post(`${base}/activate`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(again.status).toBe(400);
+
+      const deactivated = await request(app)
+        .post(`${base}/deactivate`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(deactivated.body.status).toBe('inactive');
+
+      const deleted = await request(app).delete(base).set('Authorization', `Bearer ${token}`);
+      expect(deleted.status).toBe(200);
+      const gone = await request(app)
+        .post(`${base}/activate`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(gone.status).toBe(404);
+    });
+
     it('edits buckets by id and guards removing or deleting money', async () => {
       const { token } = await smileToken(['smile:r', 'smile:w']);
       const created = await createProject(token, { title: `Smile Guard ${Date.now()}` });

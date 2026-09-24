@@ -27,6 +27,79 @@ const { rebuildDerivedState } = require('../services/rebuild-derived');
 const { computeWriteEffects } = require('../services/write-effects');
 const { cascadeFundRename, createRenamer, renamePlan } = require('../services/fund-rename');
 const { applyAllListOps, normalizeActionItem, normalizeNote } = require('../services/list-ops');
+const { decryptSubscription, encryptSubscription } = require('./subscription-repository');
+
+function todayDate() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+/**
+ * The real subscription behind an active payment plan: by the id recorded
+ * at activation, else by title + category + frequency — the app's own
+ * matching (subscription-activation.service.ts), for plans it activated.
+ */
+function findPlanSubscriptionIndex(rawSubscriptions, plan, session, schemaVersion) {
+  const subscriptions = rawSubscriptions.map((raw) =>
+    decryptSubscription(raw, session, schemaVersion),
+  );
+  if (plan.activeSubscriptionId) {
+    const byId = subscriptions.findIndex((sub) => sub.id === plan.activeSubscriptionId);
+    if (byId !== -1) return byId;
+  }
+  return subscriptions.findIndex(
+    (sub) =>
+      sub.title === plan.title &&
+      sub.category === plan.category &&
+      sub.frequency === plan.frequency,
+  );
+}
+
+/** Writes `fields` into the plan's subscription (money leaves the account: negative amount), creating one if none exists. */
+function upsertPlanSubscription(rawSubscriptions, plan, fields, session, schemaVersion) {
+  const index = findPlanSubscriptionIndex(rawSubscriptions, plan, session, schemaVersion);
+  if (index === -1) {
+    const subscription = { id: `subscriptions_${crypto.randomUUID()}`, ...fields };
+    return {
+      subscriptions: [
+        ...rawSubscriptions,
+        encryptSubscription(subscription, session, schemaVersion),
+      ],
+      subscriptionId: subscription.id,
+    };
+  }
+  const current = decryptSubscription(rawSubscriptions[index], session, schemaVersion);
+  const updated = { ...current, ...fields };
+  return {
+    subscriptions: rawSubscriptions.map((raw, i) =>
+      i === index ? encryptSubscription(updated, session, schemaVersion) : raw,
+    ),
+    subscriptionId: current.id,
+  };
+}
+
+function subscriptionFieldsFor(plan, startDate) {
+  return {
+    title: plan.title,
+    account: plan.account,
+    amountMinor: -plan.amountMinor,
+    startDate,
+    endDate: plan.endDate,
+    category: plan.category,
+    comment: plan.comment,
+    frequency: plan.frequency,
+  };
+}
+
+function endPlanSubscription(rawSubscriptions, plan, session, schemaVersion) {
+  const index = findPlanSubscriptionIndex(rawSubscriptions, plan, session, schemaVersion);
+  if (index === -1) return rawSubscriptions;
+  const current = decryptSubscription(rawSubscriptions[index], session, schemaVersion);
+  return rawSubscriptions.map((raw, i) =>
+    i === index
+      ? encryptSubscription({ ...current, endDate: todayDate() }, session, schemaVersion)
+      : raw,
+  );
+}
 
 function fundError(code, message) {
   const error = new Error(message);
@@ -723,7 +796,171 @@ function createFundProjectRepository({ kind, label, codePrefix }) {
     });
   }
 
+  /**
+   * Shared shape of every payment-plan operation: finds the project and
+   * plan, lets `change` return the updated plan (or `null` to remove it)
+   * and the updated raw subscriptions, and writes both in one write.
+   */
+  function withPlanWrite(deps, userId, projectId, planId, change) {
+    return withProjectWrite(deps, userId, ({ data, rawProjects, session, schemaVersion }) => {
+      const existingProjects = decryptAllProjects(rawProjects, session, schemaVersion);
+      const index = existingProjects.findIndex((project) => project.id === projectId);
+      if (index === -1) return null;
+      const project = existingProjects[index];
+      const plans = project.plannedSubscriptions || [];
+      const plan = plans.find((candidate) => candidate.id === planId);
+      if (!plan) throw fundError('PAYMENT_PLAN_NOT_FOUND', 'No matching payment plan exists.');
+      const now = new Date().toISOString();
+      const { plan: updatedPlan, subscriptions } = change({
+        project,
+        plan,
+        rawSubscriptions: data.subscriptions || [],
+        session,
+        schemaVersion,
+        now,
+      });
+      const updatedProject = {
+        ...project,
+        plannedSubscriptions:
+          updatedPlan === null
+            ? plans.filter((candidate) => candidate.id !== planId)
+            : plans.map((candidate) => (candidate.id === planId ? updatedPlan : candidate)),
+        updatedAt: now,
+      };
+      return {
+        updatedRawProjects: rawProjects.map((raw, i) =>
+          i === index ? encryptProject(updatedProject, session, schemaVersion) : raw,
+        ),
+        result: updatedPlan === null ? { id: planId } : updatedPlan,
+        baseData: { ...data, subscriptions },
+      };
+    });
+  }
+
+  /** Activates a planned or inactive plan: creates (or, on reactivation, refreshes to start today) its real subscription. */
+  function activatePaymentPlan(deps, userId, projectId, planId) {
+    return withPlanWrite(deps, userId, projectId, planId, (ctx) => {
+      if (ctx.plan.status === 'active') {
+        throw fundError('PAYMENT_PLAN_INVALID', 'This payment plan is already active.');
+      }
+      const startDate = ctx.plan.status === 'planned' ? ctx.plan.startDate : todayDate();
+      const { subscriptions, subscriptionId } = upsertPlanSubscription(
+        ctx.rawSubscriptions,
+        ctx.plan,
+        subscriptionFieldsFor(ctx.plan, startDate),
+        ctx.session,
+        ctx.schemaVersion,
+      );
+      return {
+        plan: {
+          ...ctx.plan,
+          status: 'active',
+          activatedAt: ctx.now,
+          activeSubscriptionId: subscriptionId,
+          updatedAt: ctx.now,
+        },
+        subscriptions,
+      };
+    });
+  }
+
+  /** Deactivates an active plan: its subscription ends today (kept, so past transactions still match it). */
+  function deactivatePaymentPlan(deps, userId, projectId, planId) {
+    return withPlanWrite(deps, userId, projectId, planId, (ctx) => {
+      if (ctx.plan.status !== 'active') {
+        throw fundError('PAYMENT_PLAN_INVALID', 'Only an active payment plan can be deactivated.');
+      }
+      const { activeSubscriptionId: _cleared, ...rest } = ctx.plan;
+      return {
+        plan: { ...rest, status: 'inactive', deactivatedAt: ctx.now, updatedAt: ctx.now },
+        subscriptions: endPlanSubscription(
+          ctx.rawSubscriptions,
+          ctx.plan,
+          ctx.session,
+          ctx.schemaVersion,
+        ),
+      };
+    });
+  }
+
+  /** Deletes a plan; an active one is deactivated first (its subscription ends today). */
+  function deletePaymentPlan(deps, userId, projectId, planId) {
+    return withPlanWrite(deps, userId, projectId, planId, (ctx) => ({
+      plan: null,
+      subscriptions:
+        ctx.plan.status === 'active'
+          ? endPlanSubscription(ctx.rawSubscriptions, ctx.plan, ctx.session, ctx.schemaVersion)
+          : ctx.rawSubscriptions,
+    }));
+  }
+
+  /**
+   * Edits a plan and recalculates it against the project's current buckets
+   * (the same calculation as creating one). `manualAmountMinor: null`
+   * returns to the calculated amount. An active plan's subscription follows.
+   */
+  function updatePaymentPlan(deps, userId, projectId, planId, patch) {
+    return withPlanWrite(deps, userId, projectId, planId, (ctx) => {
+      const { project, plan } = ctx;
+      const selectedBucketIds = patch.selectedBucketIds ?? plan.targetBucketIds;
+      const knownBucketIds = new Set(project.buckets.map((bucket) => bucket.id));
+      if (selectedBucketIds.some((id) => !knownBucketIds.has(id))) {
+        throw fundError(
+          'PAYMENT_PLAN_INVALID',
+          'selectedBucketIds must reference existing buckets on this project.',
+        );
+      }
+      const manualAmountMinor =
+        patch.manualAmountMinor !== undefined
+          ? (patch.manualAmountMinor ?? undefined)
+          : plan.manuallyAdjusted
+            ? plan.amountMinor
+            : undefined;
+      const recalculated = calculatePaymentPlan({
+        projectType: kind,
+        projectTitle: project.title,
+        planTitle: patch.title ?? plan.title,
+        buckets: project.buckets.map((bucket) => ({
+          id: bucket.id,
+          title: bucket.title,
+          targetMinor: bucket.targetMinor,
+          amountMinor: bucket.amountMinor,
+        })),
+        selectedBucketIds,
+        startDate: patch.startDate ?? plan.startDate,
+        targetDate: patch.targetDate ?? plan.targetDate,
+        frequency: patch.frequency ?? plan.frequency,
+        account: patch.account ?? plan.account,
+        manualAmountMinor,
+      });
+      const validation = validatePaymentPlan(recalculated);
+      if (!validation.valid) {
+        throw fundError('PAYMENT_PLAN_INVALID', validation.errors.join(', '));
+      }
+      const updatedPlan = {
+        ...plan,
+        ...recalculated,
+        status: plan.status,
+        updatedAt: ctx.now,
+      };
+      if (plan.status !== 'active')
+        return { plan: updatedPlan, subscriptions: ctx.rawSubscriptions };
+      const { subscriptions, subscriptionId } = upsertPlanSubscription(
+        ctx.rawSubscriptions,
+        plan,
+        subscriptionFieldsFor(updatedPlan, updatedPlan.startDate),
+        ctx.session,
+        ctx.schemaVersion,
+      );
+      return { plan: { ...updatedPlan, activeSubscriptionId: subscriptionId }, subscriptions };
+    });
+  }
+
   return {
+    activatePaymentPlan,
+    deactivatePaymentPlan,
+    deletePaymentPlan,
+    updatePaymentPlan,
     listProjects,
     getProject,
     createProject,
