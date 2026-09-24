@@ -1,3 +1,39 @@
+## [1.18.0] - 2026-09-24
+
+### Features
+
+- feat(mcp): point agents at the app overview and advisor playbook
+- feat(ui): settle smile/fire buckets and show completed payment plans
+- feat(api): keep smile/fire payment plans in line with their subscriptions
+- feat(api): settle and unsettle smile/fire buckets
+- feat(domain): settle a smile/fire bucket with its actual cost
+- feat(api): manage smile/fire payment plans after creation
+- feat(api): edit single smile/fire buckets and list items, and guard saved money
+- feat(api): carry smile/fire project and bucket renames over to their money
+- feat(api): contribute to smile, fire and mojo through a typed action
+- feat(reports): add cost basis and realized/unrealized gain to the grow P&L
+- feat(api): edit single grow action items, notes and links
+- feat(api): keep balance-sheet edits in sync with linked grow projects
+- feat(api): keep grow trades consistent on every transaction write and report effects
+- feat(domain): undo a recorded grow trade exactly
+- feat(api): carry a grow project rename over to everything linked by its title
+- feat(api): buy or sell a grow asset by quantity x unit price
+- feat(api): set and edit a grow project's kind and plan via create/PATCH
+
+### Bug Fixes
+
+- fix(ui): rebuild smile/fire buckets and mojo with the shared fund engine
+- fix(domain): stop funded fire plans from generating zero-amount transactions
+- fix(api): rebuild smile/fire buckets and mojo on every write, never store amounts
+- fix(api): reject a grow riskScore outside 0-5
+- fix(grow): pre-fill Buy/Sell from the loaded balance sheet, never 0 x 0
+- fix(ui): keep a grow project's id through load and save
+- fix(ui): refuse to save over newer data, and stop sending every save twice
+- fix(backend): stop legacy app saves from clobbering newer data and re-keying ids
+- fix(mcp): accept every action's shape for a shared tool argument
+- fix(api): allow cash-only grow investments without a mortgage
+- fix(domain): round fractional share amounts to whole minor units
+
 ## [1.17.3] - 2026-09-14
 
 ### Bug Fixes
