@@ -26,6 +26,8 @@ export const MONEY_FIELD_NAMES = new Set([
   'annualSavings',
   'alternativeCost',
   'originalCalculatedAmount',
+  // A settled Smile/Fire bucket's actual cost (derived from its #settle: transaction).
+  'settledAmount',
 ]);
 
 /**

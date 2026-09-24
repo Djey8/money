@@ -1,6 +1,6 @@
 import { ApiTransaction } from './transaction';
 import { FundState, recalculateFundState } from './fund-state';
-import { FundBucket, parseBucketAllocations } from './bucket-allocations';
+import { bucketCapacity, FundBucket, parseBucketAllocations } from './bucket-allocations';
 import { calculateOccurrences, SubscriptionFrequency } from './frequency-strategies';
 
 /**
@@ -92,7 +92,7 @@ function transactionExists(transactions: DedupKey[], candidate: DedupKey): boole
 }
 
 function hasRoom(bucket: FundBucket): boolean {
-  return bucket.amountMinor < bucket.targetMinor;
+  return bucket.amountMinor < bucketCapacity(bucket);
 }
 
 /**

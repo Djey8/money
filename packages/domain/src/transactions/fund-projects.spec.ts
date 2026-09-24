@@ -37,6 +37,7 @@ describe('computeProjectTotals', () => {
       amountMinor: 0,
       remainingMinor: 0,
       percentFilled: 0,
+      plannedTargetMinor: 0,
     });
   });
 
