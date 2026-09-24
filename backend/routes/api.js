@@ -1094,8 +1094,13 @@ function validateGrowSharedMetadataFields(input) {
   if (input.type !== undefined && !GROW_TYPES.includes(input.type)) {
     return `type must be one of ${GROW_TYPES.join(', ')}.`;
   }
-  if (input.riskScore !== undefined && !Number.isFinite(input.riskScore)) {
-    return 'riskScore must be a number.';
+  // The app clamps riskScore to 0-5 on load (grow-migration.utils.ts), so a
+  // larger value would silently display as 5 -- reject it instead.
+  if (
+    input.riskScore !== undefined &&
+    (!Number.isFinite(input.riskScore) || input.riskScore < 0 || input.riskScore > 5)
+  ) {
+    return 'riskScore must be a number from 0 to 5.';
   }
   if (
     input.links !== undefined &&

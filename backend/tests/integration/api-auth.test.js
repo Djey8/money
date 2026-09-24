@@ -4047,6 +4047,15 @@ describe('v1 API authentication and PAT management', () => {
       expect(unknown.status).toBe(400);
     });
 
+    it('rejects a riskScore outside the 0-5 range the app displays', async () => {
+      const { token } = await growToken(['grow:w']);
+      const response = await request(app)
+        .post('/api/v1/grow')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ title: `Risky${Date.now()}`, riskScore: 8 });
+      expect(response.status).toBe(400);
+    });
+
     it('rejects an unknown field on create instead of silently dropping it', async () => {
       const { token } = await growToken(['grow:w']);
       const response = await request(app)
