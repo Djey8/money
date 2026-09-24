@@ -1,6 +1,6 @@
 # Smile/Fire: plan↔subscription sync and bucket settlement — Feature Plan
 
-**Status:** In progress (started 2026-09-24).
+**Status:** Done (2026-09-24). Steps 1–6 committed on `develop`. The app UI lives in components shared by both editions, so Firebase got the same settle UI (the fund engine and persistence already branch per edition).
 **Scope:** Self-hosted API + app UI first; Firebase UI afterwards (it needs the app to compute buckets with the shared domain engine, since Firebase has no server). Not Pro-gated for the UI parts.
 
 ---
@@ -36,12 +36,12 @@ Motivating example (mountain guide): planned 500, saved 500, the guide actually 
 
 ## 4. Part 1 — plan ↔ subscription
 
-| Step | Change |
-| ---- | ------ |
-| 1a | Fix `isTargetAlreadyFull`: cover Fire (`@<project>` and `@<bucket>`), and when the subscription's comment has `#bucket:` tags, check those buckets (full = no room left). |
-| 1b | New plan status `completed` (+ `completedAt`). Every rebuild reconciles plans: target buckets all full/settled → `completed`, subscription `endDate` = the day it filled; subscription missing → `inactive`. |
-| 1c | Generic subscription endpoints refuse PATCH/DELETE of a plan-owned subscription (`activeSubscriptionId`, or title+category+frequency match) with a pointer to the plan endpoints. |
-| 1d | A bucket target change recalculates active plans without `manuallyAdjusted` (amount, tags, subscription), reported in `effects`. |
+| Step | Change                                                                                                                                                                                                       |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1a   | Fix `isTargetAlreadyFull`: cover Fire (`@<project>` and `@<bucket>`), and when the subscription's comment has `#bucket:` tags, check those buckets (full = no room left).                                    |
+| 1b   | New plan status `completed` (+ `completedAt`). Every rebuild reconciles plans: target buckets all full/settled → `completed`, subscription `endDate` = the day it filled; subscription missing → `inactive`. |
+| 1c   | Generic subscription endpoints refuse PATCH/DELETE of a plan-owned subscription (`activeSubscriptionId`, or title+category+frequency match) with a pointer to the plan endpoints.                            |
+| 1d   | A bucket target change recalculates active plans without `manuallyAdjusted` (amount, tags, subscription), reported in `effects`.                                                                             |
 
 ---
 
@@ -68,4 +68,4 @@ Motivating example (mountain guide): planned 500, saved 500, the guide actually 
 3. API: settle/unsettle, 0-amount settlement transactions, contribute refuses settled buckets.
 4. 1b/1c/1d plan reconciliation + plan-owned subscriptions.
 5. Docs: guide section, OpenAPI, AGENTS.md, MCP.
-6. App UI (self-hosted), then Firebase UI.
+6. App UI (self-hosted), then Firebase UI. — shared components, so both editions got it together.
