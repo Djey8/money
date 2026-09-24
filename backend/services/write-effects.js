@@ -100,9 +100,12 @@ function fundSnapshot(projects, session, schemaVersion) {
   const entries = new Map();
   for (const project of projects || []) {
     const title = text(project.title, session);
+    // Keyed by stable ids when present, so a renamed project or bucket is one
+    // change, not a removal plus an addition.
+    const projectKey = text(project.id, session) || title;
     for (const bucket of project.buckets || []) {
       const id = text(bucket.id, session);
-      entries.set(`${title}\u0000${id}`, {
+      entries.set(`${projectKey}\u0000${id}`, {
         project: title,
         bucket: text(bucket.title, session) || id,
         amountMinor: money(bucket.amount, session, schemaVersion),

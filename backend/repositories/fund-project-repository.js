@@ -25,6 +25,7 @@ const { decryptValue } = require('./transaction-repository');
 const { writeValue, toStoredMoney } = require('../services/transaction-derived-state');
 const { rebuildDerivedState } = require('../services/rebuild-derived');
 const { computeWriteEffects } = require('../services/write-effects');
+const { cascadeFundRename, createRenamer, renamePlan } = require('../services/fund-rename');
 
 const MAX_WRITE_RETRIES = 10;
 const FUND_PHASES = ['idea', 'planning', 'saving', 'ready', 'completed'];
@@ -440,7 +441,7 @@ function createFundProjectRepository({ kind, label, codePrefix }) {
   }
 
   async function updateProject(deps, userId, projectId, patch) {
-    return withProjectWrite(deps, userId, ({ rawProjects, session, schemaVersion }) => {
+    return withProjectWrite(deps, userId, ({ data, rawProjects, session, schemaVersion }) => {
       const existingProjects = decryptAllProjects(rawProjects, session, schemaVersion);
       const index = existingProjects.findIndex((project) => project.id === projectId);
       if (index === -1) return null;
@@ -496,10 +497,26 @@ function createFundProjectRepository({ kind, label, codePrefix }) {
         updatedProject.completionDate = now;
       }
 
+      // A rename carries over to transactions, subscriptions and the
+      // project's own payment plans (fund-rename.js).
+      const renamer = createRenamer(kind, current, updatedProject);
+      if (renamer.changed) {
+        updatedProject.plannedSubscriptions = (current.plannedSubscriptions || []).map((plan) =>
+          renamePlan(plan, renamer, updatedProject.title),
+        );
+      }
+      const baseData = cascadeFundRename(
+        data,
+        kind,
+        current,
+        updatedProject,
+        session,
+        schemaVersion,
+      );
       const updatedRawProjects = rawProjects.map((raw, i) =>
         i === index ? encryptProject(updatedProject, session, schemaVersion) : raw,
       );
-      return { updatedRawProjects, result: updatedProject };
+      return { updatedRawProjects, result: updatedProject, baseData };
     });
   }
 

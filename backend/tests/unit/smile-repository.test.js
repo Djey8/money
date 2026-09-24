@@ -664,6 +664,98 @@ describe('bucket amounts are rebuilt from transactions on every write', () => {
   });
 });
 
+describe('renaming a project or bucket keeps its money', () => {
+  it('rewrites categories, #bucket tags, subscriptions and plans so the rebuilt amounts stay put', async () => {
+    const document = existingProjectDocument();
+    document.data.meta = { schemaVersion: 2 };
+    document.data.smile[0].buckets = [
+      { id: 'b1', title: 'Flights', target: 150000, amount: 30000 },
+      { id: 'b2', title: 'Hotel', target: 100000, amount: 0 },
+    ];
+    document.data.smile[0].plannedSubscriptions = [
+      {
+        id: 'plan_1',
+        title: 'Monthly',
+        status: 'active',
+        projectType: 'smile',
+        projectTitle: 'Vacation',
+        account: 'Smile',
+        amount: 5000,
+        startDate: '2026-09-01',
+        endDate: '2027-01-01',
+        category: '@Vacation',
+        comment: '#bucket:Flights:50.00',
+        frequency: 'monthly',
+        targetDate: '2027-01-01',
+        targetBucketIds: ['b1'],
+        originalCalculatedAmount: 5000,
+        manuallyAdjusted: false,
+        createdAt: '2026-09-01T00:00:00.000Z',
+        updatedAt: '2026-09-01T00:00:00.000Z',
+      },
+    ];
+    document.data.transactions = [
+      {
+        id: 'tx_1',
+        account: 'Smile',
+        amount: -30000,
+        date: '2026-09-01',
+        time: '10:00',
+        category: '@Vacation',
+        comment: 'note\n#bucket:flights:300.00',
+      },
+      {
+        id: 'tx_2',
+        account: 'Daily',
+        amount: -500,
+        date: '2026-09-02',
+        time: '10:00',
+        category: '@Food',
+        comment: '#bucket:Flights:5.00',
+      },
+    ];
+    document.data.subscriptions = [
+      {
+        id: 'subscriptions_1',
+        title: 'Monthly',
+        category: '@Vacation',
+        comment: '#bucket:Flights:50.00',
+        amount: -5000,
+      },
+    ];
+    const { deps, current } = writableDeps(document);
+
+    const result = await updateSmileProject(deps, 'user_1', 'smile_1', {
+      title: 'Summer Trip',
+      buckets: [
+        { id: 'b1', title: 'Flight tickets', targetMinor: 150000 },
+        { id: 'b2', title: 'Hotel', targetMinor: 100000 },
+      ],
+    });
+
+    expect(result.buckets.map((b) => b.amountMinor)).toEqual([30000, 0]);
+    const data = current().data;
+    expect(data.transactions[0]).toMatchObject({
+      category: '@Summer Trip',
+      comment: 'note\n#bucket:Flight tickets:300.00',
+    });
+    expect(data.transactions[1]).toMatchObject({
+      category: '@Food',
+      comment: '#bucket:Flights:5.00',
+    });
+    expect(data.subscriptions[0]).toMatchObject({
+      category: '@Summer Trip',
+      comment: '#bucket:Flight tickets:50.00',
+    });
+    expect(result.plannedSubscriptions[0]).toMatchObject({
+      projectTitle: 'Summer Trip',
+      category: '@Summer Trip',
+      comment: '#bucket:Flight tickets:50.00',
+    });
+    expect(result.effects.smile).toEqual([]);
+  });
+});
+
 describe('deleteSmileProject', () => {
   it('removes the project and returns its id', async () => {
     const { deps, current } = writableDeps(existingProjectDocument());

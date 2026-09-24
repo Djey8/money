@@ -625,6 +625,35 @@ describe('updateFireProject', () => {
   });
 });
 
+describe('renaming a Fire bucket', () => {
+  it("rewrites the @<bucket> category too, so the fund's money stays put", async () => {
+    const document = existingProjectDocument();
+    document.data.meta = { schemaVersion: 2 };
+    const bucketId = document.data.fire[0].buckets[0].id;
+    const oldTitle = document.data.fire[0].buckets[0].title;
+    document.data.fire[0].buckets[0].target = 100000;
+    document.data.transactions = [
+      {
+        id: 'tx_1',
+        account: 'Fire',
+        amount: -20000,
+        date: '2026-09-01',
+        time: '10:00',
+        category: `@${oldTitle}`,
+        comment: '',
+      },
+    ];
+    const { deps, current } = writableDeps(document);
+
+    const result = await updateFireProject(deps, 'user_1', document.data.fire[0].id, {
+      buckets: [{ id: bucketId, title: 'Renamed bucket', targetMinor: 100000 }],
+    });
+
+    expect(result.buckets[0].amountMinor).toBe(20000);
+    expect(current().data.transactions[0].category).toBe('@Renamed bucket');
+  });
+});
+
 describe('deleteFireProject', () => {
   it('removes the project and returns its id', async () => {
     const { deps, current } = writableDeps(existingProjectDocument());

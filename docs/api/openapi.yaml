@@ -935,6 +935,9 @@ paths:
       operationId: updateSmileProject
       summary: Update a Smile project
       description: >-
+        Renaming the project or a bucket (kept by its id) carries over, in the same write, to every transaction and
+        subscription that counts toward the project (`@<title>` category, Fire's `@<bucket>` category, `#bucket:` tags)
+        and to the project's payment plans, so no money is orphaned; bucket amounts are then rebuilt from transactions.
         Accepts a partial body — only the fields you send are changed. `buckets`/`links`/`actionItems`/`notes`, when
         sent, each REPLACE the entire array (not a per-item merge) — send the complete list you want, including
         unchanged entries. For `buckets`, echo back an existing bucket's `id` to edit it in place; omit `id` (or use
@@ -1128,6 +1131,9 @@ paths:
       operationId: updateFireProject
       summary: Update a Fire project
       description: >-
+        Renaming the project or a bucket (kept by its id) carries over, in the same write, to every transaction and
+        subscription that counts toward the project (`@<title>` category, Fire's `@<bucket>` category, `#bucket:` tags)
+        and to the project's payment plans, so no money is orphaned; bucket amounts are then rebuilt from transactions.
         Accepts a partial body — only the fields you send are changed. `buckets`/`links`/`actionItems`/`notes`, when
         sent, each REPLACE the entire array (not a per-item merge) — send the complete list you want, including
         unchanged entries. For `buckets`, echo back an existing bucket's `id` to edit it in place; omit `id` (or use
