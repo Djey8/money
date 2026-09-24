@@ -8,10 +8,22 @@ import { TOOLS, type ToolDefinition } from './tools/registry.js';
 import { buildExplainTool } from './tools/explain.js';
 import { buildToolList, dispatchToolCall } from './tools/dispatch.js';
 
+/**
+ * Sent to the client on initialize: where an agent should start. The detail
+ * lives in docs/domain (served by explain_concept), not here.
+ */
+export const SERVER_INSTRUCTIONS =
+  "Money Manager is the user's personal finance app: the Barefoot Investor account system " +
+  '(Daily/Splurge/Smile/Fire/Mojo) plus Rich-Dad-Poor-Dad investing (Grow, balance sheet). ' +
+  'Before anything else, read explain_concept topic app_overview (how the app works and which tool does what). ' +
+  'To review finances, give insights or recommendations, read advisor_playbook. Read a feature guide ' +
+  '(smile_fire_mojo_guide, grow_guide) before writing to that feature. Reviews are read-only; confirm every ' +
+  'write with the user first and show the returned effects.';
+
 export function buildServer(config?: McpConfig): Server {
   const server = new Server(
     { name: 'money-manager', version: '0.1.0' },
-    { capabilities: { tools: {} } },
+    { capabilities: { tools: {} }, instructions: SERVER_INSTRUCTIONS },
   );
 
   const allTools: ToolDefinition[] = [...TOOLS, buildExplainTool()];

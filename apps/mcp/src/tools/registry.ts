@@ -98,7 +98,8 @@ export const TOOLS: ToolDefinition[] = [
     name: 'get_reports',
     description:
       'Read-only calculation reports: income statement, cashflow, balance sheet, KPIs, Fire coverage, or a ' +
-      "single Grow project's P&L. Requires a PAT with reports:r. grow_pnl needs a growId argument.",
+      "single Grow project's P&L. Requires a PAT with reports:r. grow_pnl needs a growId argument. " +
+      'To review finances or give advice, read explain_concept topic advisor_playbook first.',
     actions: {
       income_statement: action('getIncomeStatement'),
       cashflow: action('getCashflow'),
@@ -299,7 +300,8 @@ export const TOOLS: ToolDefinition[] = [
     description:
       'List budget rows, upsert a (month, category) row, get/update/delete a single row, delete a whole ' +
       "month's rows, fill forward from the nearest prior populated month, copy a month, or seed a month from " +
-      'active subscriptions. Requires a PAT with budget:r (list/get_row) or budget:w (everything else). ' +
+      'active subscriptions. Rows hold the plan only; advisor_playbook explains rebuilding budget vs actual from ' +
+      'transactions. Requires a PAT with budget:r (list/get_row) or budget:w (everything else). ' +
       'delete_month and delete_row require confirm: true.',
     actions: {
       list: action('listBudget'),
