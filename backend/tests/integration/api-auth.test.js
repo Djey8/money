@@ -4017,16 +4017,39 @@ describe('v1 API authentication and PAT management', () => {
       );
     });
 
-    it('rejects a PATCH touching a money-moving field', async () => {
+    it('PATCHes plan fields, and rejects a share plan on a non-share project or an unknown field', async () => {
       const { token } = await growToken(['grow:r', 'grow:w']);
       const created = await request(app)
         .post('/api/v1/grow')
         .set('Authorization', `Bearer ${token}`)
-        .send({ title: `RejectPatch${Date.now()}`, isAsset: true });
-      const response = await request(app)
+        .send({ title: `PlanPatch${Date.now()}`, isAsset: true });
+      const planned = await request(app)
         .patch(`/api/v1/grow/${created.body.id}`)
         .set('Authorization', `Bearer ${token}`)
-        .send({ amountMinor: 100 });
+        .send({ amountMinor: 100, cashflowMinor: 20 });
+      expect(planned.status).toBe(200);
+      expect(planned.body).toMatchObject({ amountMinor: 100, cashflowMinor: 20 });
+
+      const wrongKind = await request(app)
+        .patch(`/api/v1/grow/${created.body.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ share: { quantity: 1 } });
+      expect(wrongKind.status).toBe(400);
+      expect(wrongKind.body.code).toBe('validation_invalid');
+
+      const unknown = await request(app)
+        .patch(`/api/v1/grow/${created.body.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ currentAmountMinor: 100 });
+      expect(unknown.status).toBe(400);
+    });
+
+    it('rejects an unknown field on create instead of silently dropping it', async () => {
+      const { token } = await growToken(['grow:w']);
+      const response = await request(app)
+        .post('/api/v1/grow')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ title: `UnknownField${Date.now()}`, currentAmountMinor: 100 });
       expect(response.status).toBe(400);
       expect(response.body.code).toBe('validation_invalid');
     });

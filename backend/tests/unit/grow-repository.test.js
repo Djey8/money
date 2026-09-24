@@ -193,6 +193,35 @@ describe('createGrow', () => {
     expect(project.investment).toBeNull();
   });
 
+  it('creates a share-kind project with a full plan and status in one call', async () => {
+    const { deps } = writableDeps({ _id: 'user_1', _rev: '1-a', data: {} });
+    const project = await createGrow(deps, 'user_1', {
+      title: 'IOTA',
+      kind: 'share',
+      share: { quantity: 3713, priceMinor: 22 },
+      cashflowMinor: 0,
+      status: 'Active - Start Oct 1',
+    });
+    expect(project.share).toEqual({ tag: 'IOTA', quantity: 3713, priceMinor: 22 });
+    expect(project.amountMinor).toBe(81686);
+    expect(project.status).toBe('Active - Start Oct 1');
+  });
+
+  it('creates an investment-kind project with a planned deposit, mortgage, and loan', async () => {
+    const { deps } = writableDeps({ _id: 'user_1', _rev: '1-a', data: {} });
+    const project = await createGrow(deps, 'user_1', {
+      title: 'Rental Flat',
+      investment: { depositMinor: 5000000, amountMinor: 20000000 },
+      liabilitie: { amountMinor: 1000000, creditMinor: 50000 },
+    });
+    expect(project.investment).toEqual({
+      tag: 'Rental Flat',
+      depositMinor: 5000000,
+      amountMinor: 20000000,
+    });
+    expect(project.liabilitie).toMatchObject({ tag: 'Rental Flat', investment: true });
+  });
+
   it('rejects a title that collides with an existing grow project', async () => {
     const document = { _id: 'user_1', _rev: '1-a', data: { grow: [minimalRawGrow()] } };
     const { deps } = writableDeps(document);
@@ -238,19 +267,111 @@ describe('updateGrow', () => {
     });
   });
 
-  it.each(['amountMinor', 'cashflowMinor', 'share', 'investment', 'liabilitie'])(
-    'rejects a PATCH touching %s — only the typed actions may change it',
-    async (field) => {
-      const { deps } = writableDeps({
-        _id: 'user_1',
-        _rev: '1-a',
-        data: { grow: [minimalRawGrow()] },
-      });
-      await expect(updateGrow(deps, 'user_1', 'grow_1', { [field]: 1 })).rejects.toMatchObject({
-        code: 'GROW_MONEY_FIELD_NOT_PATCHABLE',
-      });
-    },
-  );
+  it('switches kind, initializing the new embedded copy and clearing the old one', async () => {
+    const { deps } = writableDeps({
+      _id: 'user_1',
+      _rev: '1-a',
+      data: { grow: [minimalRawGrow({ isAsset: true, share: null })] },
+    });
+    const result = await updateGrow(deps, 'user_1', 'grow_1', { kind: 'share' });
+    expect(result.isAsset).toBe(false);
+    expect(result.share).toEqual({ tag: 'MSFT', quantity: 0, priceMinor: 0 });
+    expect(result.investment).toBeNull();
+  });
+
+  it('sets the share plan, derives amountMinor as quantity * price - loan, and syncs the balance-sheet share price (not quantity)', async () => {
+    const { deps, current } = writableDeps({
+      _id: 'user_1',
+      _rev: '1-a',
+      data: {
+        meta: { schemaVersion: 2 },
+        grow: [
+          minimalRawGrow({
+            share: { tag: 'MSFT', quantity: 1, price: 100 },
+            liabilitie: { tag: 'MSFT', amount: 5000, investment: true, credit: 0 },
+          }),
+        ],
+        balance: { asset: { shares: [{ id: 'shares_1', tag: 'MSFT', quantity: 7, price: 100 }] } },
+      },
+    });
+    const result = await updateGrow(deps, 'user_1', 'grow_1', {
+      share: { tag: 'MSFT', quantity: 3.54, priceMinor: 8833 },
+    });
+    expect(result.share).toEqual({ tag: 'MSFT', quantity: 3.54, priceMinor: 8833 });
+    expect(result.amountMinor).toBe(31269 - 5000);
+    expect(current().data.balance.asset.shares[0]).toMatchObject({ quantity: 7, price: 8833 });
+  });
+
+  it('an explicit amountMinor wins over the derived share amount', async () => {
+    const { deps } = writableDeps({
+      _id: 'user_1',
+      _rev: '1-a',
+      data: { grow: [minimalRawGrow({ share: { tag: 'MSFT', quantity: 1, price: 1 } })] },
+    });
+    const result = await updateGrow(deps, 'user_1', 'grow_1', {
+      share: { quantity: 2, priceMinor: 100 },
+      amountMinor: 999,
+    });
+    expect(result.amountMinor).toBe(999);
+  });
+
+  it('sets and clears the planned loan, tagging it with the title and flagging it as an investment loan', async () => {
+    const { deps } = writableDeps({
+      _id: 'user_1',
+      _rev: '1-a',
+      data: {
+        grow: [minimalRawGrow({ share: null, investment: { tag: 'MSFT', deposit: 0, amount: 0 } })],
+      },
+    });
+    const set = await updateGrow(deps, 'user_1', 'grow_1', {
+      investment: { depositMinor: 5000000, amountMinor: 20000000 },
+      liabilitie: { amountMinor: 1000000, creditMinor: 50000 },
+      cashflowMinor: 80000,
+    });
+    expect(set.investment).toEqual({ tag: 'MSFT', depositMinor: 5000000, amountMinor: 20000000 });
+    expect(set.liabilitie).toEqual({
+      tag: 'MSFT',
+      amountMinor: 1000000,
+      creditMinor: 50000,
+      investment: true,
+    });
+    expect(set.cashflowMinor).toBe(80000);
+
+    const cleared = await updateGrow(deps, 'user_1', 'grow_1', { liabilitie: null });
+    expect(cleared.liabilitie).toBeNull();
+  });
+
+  it('re-tags every embedded copy when the project is renamed', async () => {
+    const { deps } = writableDeps({
+      _id: 'user_1',
+      _rev: '1-a',
+      data: { grow: [minimalRawGrow({ share: { tag: 'MSFT', quantity: 1, price: 1 } })] },
+    });
+    const result = await updateGrow(deps, 'user_1', 'grow_1', { title: 'Microsoft' });
+    expect(result.share.tag).toBe('Microsoft');
+  });
+
+  it('rejects a share plan on a project that is not share-kind', async () => {
+    const { deps } = writableDeps({
+      _id: 'user_1',
+      _rev: '1-a',
+      data: { grow: [minimalRawGrow({ isAsset: true, share: null })] },
+    });
+    await expect(
+      updateGrow(deps, 'user_1', 'grow_1', { share: { quantity: 1 } }),
+    ).rejects.toMatchObject({ code: 'GROW_INVALID_PLAN' });
+  });
+
+  it('rejects an embedded tag that differs from the title', async () => {
+    const { deps } = writableDeps({
+      _id: 'user_1',
+      _rev: '1-a',
+      data: { grow: [minimalRawGrow({ share: { tag: 'MSFT', quantity: 1, price: 1 } })] },
+    });
+    await expect(
+      updateGrow(deps, 'user_1', 'grow_1', { share: { tag: 'SLO', quantity: 1 } }),
+    ).rejects.toMatchObject({ code: 'GROW_INVALID_PLAN' });
+  });
 });
 
 describe('deleteGrow', () => {

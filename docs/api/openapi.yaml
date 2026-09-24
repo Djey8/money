@@ -4474,7 +4474,7 @@ components:
     GrowEmbeddedShare:
       type: object
       nullable: true
-      description: A denormalized copy of the linked Share, kept in sync by the typed actions (and by `PATCH /balance/shares/{shareId}`) — `null` unless this project's kind is `share`.
+      description: A denormalized copy of the linked Share (the balance-sheet Share whose `tag` equals this project's title), kept in sync by the typed actions (and by `PATCH /balance/shares/{shareId}`) — `null` unless this project's kind is `share`. Its quantity/price can also be set as a plan via create/PATCH.
       properties:
         tag:
           type: string
@@ -4493,10 +4493,11 @@ components:
           type: integer
         amountMinor:
           type: integer
+          description: The mortgage amount.
     GrowEmbeddedLiabilitie:
       type: object
       nullable: true
-      description: A denormalized copy of an attached Liability, kept in sync by `buy`/`sell`/`payback` — `null` until one is attached.
+      description: A denormalized copy of an attached Liability (a loan financing the project, distinct from an Investment's `M-<title>` mortgage), kept in sync by `buy`/`sell`/`payback`, or set as a plan via create/PATCH — `null` until one is attached. `investment` is derived (true whenever the project has a kind).
       properties:
         tag:
           type: string
@@ -4563,7 +4564,7 @@ components:
           description: Only ever changed by `POST /grow/{growId}/cashflow` — see that endpoint's own description (it currently does not, matching the source app).
         amountMinor:
           type: integer
-          description: This project's own cash-invested total — only ever changed by the typed action endpoints.
+          description: This project's own cash-invested total. Changed by the typed actions; can also be set as a plan via create/PATCH (for a share-kind project, a PATCH that changes `share` without `amountMinor` recomputes it as quantity * price - loan, like the app's edit panel).
         isAsset:
           type: boolean
           description: This project's fixed kind is asset-tracking. Mutually exclusive with `share`/`investment` being non-null.
@@ -4609,6 +4610,48 @@ components:
         status:
           type: string
           description: Legacy free-text status ('bought', 'sold', 'paid back', 'paid off') the typed actions set for display parity with the original app — prefer `phase` in new clients.
+    GrowPlanShare:
+      type: object
+      description: >-
+        Planned share position. Changing priceMinor also updates the balance-sheet Share tagged with the project title
+        (its quantity only changes through buy/sell). `tag` is accepted only when it equals the project title.
+      properties:
+        tag:
+          type: string
+        quantity:
+          type: number
+          minimum: 0
+        priceMinor:
+          type: integer
+          minimum: 0
+    GrowPlanInvestment:
+      type: object
+      description: Planned investment. `tag` is accepted only when it equals the project title.
+      properties:
+        tag:
+          type: string
+        depositMinor:
+          type: integer
+          minimum: 0
+        amountMinor:
+          type: integer
+          minimum: 0
+          description: The mortgage amount.
+    GrowPlanLiabilitie:
+      type: object
+      nullable: true
+      description: Planned financing loan; null removes it. `tag` is accepted only when it equals the project title; `investment` is ignored (derived).
+      properties:
+        tag:
+          type: string
+        amountMinor:
+          type: integer
+          minimum: 0
+        creditMinor:
+          type: integer
+          minimum: 0
+        investment:
+          type: boolean
     CreateGrowRequest:
       type: object
       required: [title]
@@ -4644,11 +4687,32 @@ components:
           type: boolean
           description: Marks this project's fixed kind as asset-tracking (mutually exclusive with share/investment).
         share:
-          type: boolean
-          description: Marks this project's fixed kind as share-tracking (mutually exclusive with isAsset/investment).
+          description: >-
+            `true` (legacy) marks the kind as share, or pass the plan object directly (implies kind share).
+          oneOf:
+            - type: boolean
+            - $ref: '#/components/schemas/GrowPlanShare'
         investment:
-          type: boolean
-          description: Marks this project's fixed kind as investment-tracking (mutually exclusive with isAsset/share).
+          description: >-
+            `true` (legacy) marks the kind as investment, or pass the plan object directly (implies kind investment).
+          oneOf:
+            - type: boolean
+            - $ref: '#/components/schemas/GrowPlanInvestment'
+        kind:
+          type: string
+          nullable: true
+          enum: [asset, share, investment]
+          description: >-
+            The project's kind — which balance-sheet entity (tagged with this project's title) buy/sell act on.
+            Switching kind initializes an empty embedded copy for the new kind and clears the others; null removes the kind.
+        liabilitie:
+          $ref: '#/components/schemas/GrowPlanLiabilitie'
+        amountMinor:
+          type: integer
+          description: Planned/current cash-invested total. No transaction is created.
+        cashflowMinor:
+          type: integer
+          description: Planned periodic cashflow. No transaction is created.
         type:
           type: string
           enum: [income-growth, budget-optimization, subscription-action, expense-insight]
@@ -4676,9 +4740,14 @@ components:
           type: string
         insights:
           type: string
+        status:
+          type: string
     PatchGrowRequest:
       type: object
-      description: All fields optional — send only what you want to change. Unrecognized fields (including amountMinor/cashflowMinor/share/investment/liabilitie) are rejected.
+      description: >-
+        All fields optional — send only what you want to change. Unrecognized fields are rejected. Plan fields
+        (kind/share/investment/liabilitie/amountMinor/cashflowMinor) edit planned values only and create no
+        transaction — money moves only through the typed actions. actionItems/notes/links replace the whole array.
       properties:
         title:
           type: string
@@ -4736,6 +4805,25 @@ components:
           type: string
         status:
           type: string
+        share:
+          $ref: '#/components/schemas/GrowPlanShare'
+        investment:
+          $ref: '#/components/schemas/GrowPlanInvestment'
+        kind:
+          type: string
+          nullable: true
+          enum: [asset, share, investment]
+          description: >-
+            The project's kind — which balance-sheet entity (tagged with this project's title) buy/sell act on.
+            Switching kind initializes an empty embedded copy for the new kind and clears the others; null removes the kind.
+        liabilitie:
+          $ref: '#/components/schemas/GrowPlanLiabilitie'
+        amountMinor:
+          type: integer
+          description: Planned/current cash-invested total. No transaction is created.
+        cashflowMinor:
+          type: integer
+          description: Planned periodic cashflow. No transaction is created.
     GrowActionResult:
       type: object
       required: [grow, transaction]

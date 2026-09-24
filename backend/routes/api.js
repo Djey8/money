@@ -1123,25 +1123,139 @@ function validateGrowSharedMetadataFields(input) {
   return null;
 }
 
+const GROW_KINDS = ['asset', 'share', 'investment'];
+
+function isPlainObject(value) {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function isNonNegativeInteger(value) {
+  return Number.isInteger(value) && value >= 0;
+}
+
+/** Validates one embedded plan object: only `allowed` keys, each a non-negative integer except `tag` (string) and `quantity` (number). */
+function validateGrowPlanObject(value, field, allowed) {
+  if (!isPlainObject(value)) return `${field} must be an object.`;
+  const unknown = Object.keys(value).find((key) => !allowed.includes(key));
+  if (unknown)
+    return `${field}.${unknown} is not a recognized field (allowed: ${allowed.join(', ')}).`;
+  for (const [key, entry] of Object.entries(value)) {
+    if (key === 'tag') {
+      if (typeof entry !== 'string') return `${field}.tag must be a string.`;
+    } else if (key === 'investment') {
+      if (typeof entry !== 'boolean') return `${field}.investment must be a boolean.`;
+    } else if (key === 'quantity') {
+      if (!Number.isFinite(entry) || entry < 0)
+        return `${field}.quantity must be a non-negative number.`;
+    } else if (!isNonNegativeInteger(entry)) {
+      return `${field}.${key} must be a non-negative integer.`;
+    }
+  }
+  return null;
+}
+
+/**
+ * The plan fields shared by create and PATCH (see grow-repository.js's
+ * `applyPlanFields`). `liabilitie.investment` is accepted only so a read
+ * object can be echoed back unchanged — it's always derived from the kind.
+ */
+function validateGrowPlanFields(input) {
+  if (input.kind !== undefined && input.kind !== null && !GROW_KINDS.includes(input.kind)) {
+    return `kind must be one of ${GROW_KINDS.join(', ')}, or null.`;
+  }
+  if (isPlainObject(input.share)) {
+    const error = validateGrowPlanObject(input.share, 'share', ['tag', 'quantity', 'priceMinor']);
+    if (error) return error;
+  }
+  if (isPlainObject(input.investment)) {
+    const error = validateGrowPlanObject(input.investment, 'investment', [
+      'tag',
+      'depositMinor',
+      'amountMinor',
+    ]);
+    if (error) return error;
+  }
+  if (input.liabilitie !== undefined && input.liabilitie !== null) {
+    const error = validateGrowPlanObject(input.liabilitie, 'liabilitie', [
+      'tag',
+      'amountMinor',
+      'creditMinor',
+      'investment',
+    ]);
+    if (error) return error;
+  }
+  for (const field of ['amountMinor', 'cashflowMinor']) {
+    if (input[field] !== undefined && !Number.isInteger(input[field])) {
+      return `${field} must be an integer.`;
+    }
+  }
+  return null;
+}
+
+const CREATE_GROW_FIELDS = [
+  'title',
+  'sub',
+  'phase',
+  'description',
+  'strategy',
+  'riskScore',
+  'risks',
+  'links',
+  'actionItems',
+  'notes',
+  'type',
+  'category',
+  ...GROW_MONEY_MINOR_FIELDS,
+  'reasoning',
+  'alternative',
+  'pattern',
+  'insights',
+  'status',
+  'kind',
+  'isAsset',
+  'share',
+  'investment',
+  'liabilitie',
+  'amountMinor',
+  'cashflowMinor',
+];
+
 function validateCreateGrowInput(input) {
   if (!input || typeof input !== 'object' || Array.isArray(input)) {
     return 'A grow project object is required.';
   }
+  const unknownField = Object.keys(input).find((key) => !CREATE_GROW_FIELDS.includes(key));
+  if (unknownField) return `${unknownField} is not a recognized grow project field.`;
   if (!isNonEmptyString(input.title)) return 'title must be a non-empty string.';
   if (input.isAsset !== undefined && typeof input.isAsset !== 'boolean') {
     return 'isAsset must be a boolean.';
   }
-  if (input.share !== undefined && typeof input.share !== 'boolean') {
-    return 'share must be a boolean (whether this project tracks a Share position).';
+  if (
+    input.share !== undefined &&
+    typeof input.share !== 'boolean' &&
+    !isPlainObject(input.share)
+  ) {
+    return 'share must be a boolean or a {quantity, priceMinor} object.';
   }
-  if (input.investment !== undefined && typeof input.investment !== 'boolean') {
-    return 'investment must be a boolean (whether this project tracks an Investment position).';
+  if (
+    input.investment !== undefined &&
+    typeof input.investment !== 'boolean' &&
+    !isPlainObject(input.investment)
+  ) {
+    return 'investment must be a boolean or a {depositMinor, amountMinor} object.';
   }
-  const kindCount = [input.isAsset, input.share, input.investment].filter(Boolean).length;
-  if (kindCount > 1) {
-    return 'isAsset, share, and investment are mutually exclusive — set at most one to true.';
+  const legacyKinds = [
+    input.isAsset && 'asset',
+    input.share && 'share',
+    input.investment && 'investment',
+  ].filter(Boolean);
+  if (legacyKinds.length > 1) {
+    return 'isAsset, share, and investment are mutually exclusive — set at most one.';
   }
-  return validateGrowSharedMetadataFields(input);
+  if (input.kind !== undefined && legacyKinds.some((kind) => kind !== input.kind)) {
+    return `kind "${input.kind}" conflicts with ${legacyKinds.join(', ')}.`;
+  }
+  return validateGrowPlanFields(input) || validateGrowSharedMetadataFields(input);
 }
 
 const EDITABLE_GROW_FIELDS = [
@@ -1163,6 +1277,12 @@ const EDITABLE_GROW_FIELDS = [
   'pattern',
   'insights',
   'status',
+  'kind',
+  'share',
+  'investment',
+  'liabilitie',
+  'amountMinor',
+  'cashflowMinor',
 ];
 
 function validatePatchGrowInput(input) {
@@ -1170,13 +1290,16 @@ function validatePatchGrowInput(input) {
     return 'A grow project object is required.';
   }
   const unknownField = Object.keys(input).find((key) => !EDITABLE_GROW_FIELDS.includes(key));
-  if (unknownField) {
-    return `${unknownField} is not an editable field (use the typed action endpoints for amount/cashflow/share/investment/liabilitie).`;
-  }
+  if (unknownField) return `${unknownField} is not an editable field.`;
   if (input.title !== undefined && !isNonEmptyString(input.title)) {
     return 'title must be a non-empty string.';
   }
-  return validateGrowSharedMetadataFields(input);
+  for (const field of ['share', 'investment']) {
+    if (input[field] !== undefined && !isPlainObject(input[field])) {
+      return `${field} must be an object (use kind to change the project's kind).`;
+    }
+  }
+  return validateGrowPlanFields(input) || validateGrowSharedMetadataFields(input);
 }
 
 function validateGrowActionBody(input) {
@@ -2852,7 +2975,7 @@ router.post('/grow', requireScope('grow:w'), async (req, res, next) => {
     });
     return res.status(201).json(project);
   } catch (error) {
-    if (error.code === 'GROW_DUPLICATE_TITLE') {
+    if (error.code === 'GROW_DUPLICATE_TITLE' || error.code === 'GROW_INVALID_PLAN') {
       return problem(res, 400, 'validation_invalid', 'Invalid grow project request', error.message);
     }
     return next(error);
@@ -2912,7 +3035,7 @@ router.patch('/grow/:growId', requireScope('grow:w'), async (req, res, next) => 
     });
     return res.json(project);
   } catch (error) {
-    if (error.code === 'GROW_DUPLICATE_TITLE' || error.code === 'GROW_MONEY_FIELD_NOT_PATCHABLE') {
+    if (error.code === 'GROW_DUPLICATE_TITLE' || error.code === 'GROW_INVALID_PLAN') {
       return problem(res, 400, 'validation_invalid', 'Invalid grow project request', error.message);
     }
     return next(error);
