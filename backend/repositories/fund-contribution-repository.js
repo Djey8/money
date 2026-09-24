@@ -15,8 +15,18 @@
  * room left and reports `effects`.
  */
 
-const { parseBucketAllocations, fromMinorUnits, distributeEvenly } = require('@money/domain');
-const { createTransaction, listTransactions } = require('./transaction-repository');
+const {
+  parseBucketAllocations,
+  parseSettlements,
+  fromMinorUnits,
+  distributeEvenly,
+  bucketCapacity,
+} = require('@money/domain');
+const {
+  createTransaction,
+  listTransactions,
+  replaceTransactions,
+} = require('./transaction-repository');
 const smile = require('./smile-repository');
 const fire = require('./fire-repository');
 
@@ -43,8 +53,9 @@ function dateTime(input) {
   return { date: input.date || defaults.date, time: input.time || defaults.time };
 }
 
+/** Room left in a bucket: a settled bucket's capacity is its actual cost, so it has none. */
 function roomLeft(bucket) {
-  return Math.max(0, bucket.targetMinor - bucket.amountMinor);
+  return Math.max(0, bucketCapacity(bucket) - bucket.amountMinor);
 }
 
 function tagsFor(buckets, amountsById) {
@@ -91,6 +102,12 @@ function resolveSplit(kind, project, input) {
       throw contributionError(
         'FUND_INVALID_INPUT',
         `Bucket ${bucketId} doesn't exist on "${project.title}".`,
+      );
+    }
+    if (bucket.status === 'settled') {
+      throw contributionError(
+        'FUND_FULL',
+        `Bucket "${bucket.title}" is settled (paid ${bucket.settledMinor}); unsettle it first to save more.`,
       );
     }
     if (roomLeft(bucket) === 0) {
@@ -174,7 +191,135 @@ async function listMojoTransactions(deps, userId) {
   );
 }
 
+// --- Settling a bucket: the real bill was paid ---------------------------------
+
+/** The transaction that currently settles `bucket` (by its #settle: tag), if any. */
+function findSettlement(transactions, project, bucket) {
+  return transactions.find(
+    (transaction) =>
+      transaction.category === `@${project.title}` &&
+      parseSettlements(transaction.comment || '').some(
+        (settlement) =>
+          settlement.bucketTitle.toLocaleLowerCase() === bucket.title.toLocaleLowerCase(),
+      ),
+  );
+}
+
+async function loadBucket(deps, userId, kind, projectId, bucketId) {
+  const project = await REPOSITORIES[kind].getProject(deps, userId, projectId);
+  if (!project) return null;
+  const bucket = project.buckets.find((candidate) => candidate.id === bucketId);
+  if (!bucket) {
+    throw contributionError(
+      'FUND_INVALID_INPUT',
+      `Bucket ${bucketId} doesn't exist on "${project.title}".`,
+    );
+  }
+  return { project, bucket };
+}
+
+/**
+ * Records the settlement of a bucket: one transaction tagged
+ * `#settle:<Bucket>:<actual>` whose amount the fund engine sets to the
+ * difference against what was saved (top-up negative, surplus released
+ * positive, 0 when exact). Settling a settled bucket again edits that same
+ * transaction in place. With `surplus.moveToBucketId`, a surplus is moved
+ * into another bucket of the project (a matching contribution) instead of
+ * being released to the account.
+ */
+async function settleBucket(deps, userId, kind, projectId, bucketId, input) {
+  const found = await loadBucket(deps, userId, kind, projectId, bucketId);
+  if (!found) return null;
+  const { project, bucket } = found;
+  const existing = findSettlement(await allTransactions(deps, userId), project, bucket);
+  // What was saved before this settlement: a settled bucket's amount is its
+  // previous actual cost, so look at the contributions' total instead.
+  // (the existing settlement's amount is -(previous actual - saved)).
+  const savedMinor = existing ? bucket.amountMinor + existing.amountMinor : bucket.amountMinor;
+  const surplusMinor = Math.max(0, savedMinor - input.actualMinor);
+
+  let moveTo = null;
+  if (input.surplus?.moveToBucketId) {
+    moveTo = project.buckets.find((candidate) => candidate.id === input.surplus.moveToBucketId);
+    if (!moveTo || moveTo.id === bucket.id) {
+      throw contributionError(
+        'FUND_INVALID_INPUT',
+        'surplus.moveToBucketId must be another bucket of this project.',
+      );
+    }
+    if (moveTo.status === 'settled') {
+      throw contributionError(
+        'FUND_INVALID_INPUT',
+        `Bucket "${moveTo.title}" is settled and can't take the surplus.`,
+      );
+    }
+  }
+
+  const when = dateTime(input);
+  const account = input.account || existing?.account || DEFAULT_ACCOUNT[kind];
+  const settlement = {
+    ...(existing && { id: existing.id }),
+    account,
+    amountMinor: -(input.actualMinor - savedMinor),
+    date: input.date || existing?.date || when.date,
+    time: input.time || existing?.time || when.time,
+    category: `@${project.title}`,
+    comment: [
+      input.receipt,
+      `#settle:${bucket.title}:${fromMinorUnits(input.actualMinor).toFixed(2)}`,
+    ]
+      .filter(Boolean)
+      .join('\n'),
+  };
+  const add = [settlement];
+  if (moveTo && surplusMinor > 0) {
+    add.push({
+      account,
+      amountMinor: -surplusMinor,
+      date: settlement.date,
+      time: settlement.time,
+      category: `@${project.title}`,
+      comment: `Surplus from ${bucket.title}\n#bucket:${moveTo.title}:${fromMinorUnits(surplusMinor).toFixed(2)}`,
+    });
+  }
+  const { transactions, effects } = await replaceTransactions(deps, userId, {
+    removeIds: existing ? [existing.id] : [],
+    add,
+  });
+  const updated = await REPOSITORIES[kind].getProject(deps, userId, projectId);
+  return {
+    settlement: transactions[0],
+    ...(transactions[1] && { surplusContribution: transactions[1] }),
+    // Negative: topped up from the account; positive: released back to it.
+    differenceMinor: transactions[0].amountMinor,
+    bucket: updated.buckets.find((candidate) => candidate.id === bucketId),
+    project: updated,
+    effects,
+  };
+}
+
+/** Removes a bucket's settlement; it reopens with the savings it had before. */
+async function unsettleBucket(deps, userId, kind, projectId, bucketId) {
+  const found = await loadBucket(deps, userId, kind, projectId, bucketId);
+  if (!found) return null;
+  const { project, bucket } = found;
+  const existing = findSettlement(await allTransactions(deps, userId), project, bucket);
+  if (!existing) {
+    throw contributionError('FUND_INVALID_INPUT', `Bucket "${bucket.title}" isn't settled.`);
+  }
+  const { effects } = await replaceTransactions(deps, userId, { removeIds: [existing.id] });
+  const updated = await REPOSITORIES[kind].getProject(deps, userId, projectId);
+  return {
+    removedSettlementId: existing.id,
+    bucket: updated.buckets.find((candidate) => candidate.id === bucketId),
+    project: updated,
+    effects,
+  };
+}
+
 module.exports = {
+  settleBucket,
+  unsettleBucket,
   contributeToProject,
   contributeToMojo,
   listProjectTransactions,

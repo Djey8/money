@@ -82,12 +82,18 @@ function applyFundProjects(storedProjects, projects, session, schemaVersion) {
       buckets: (storedProject.buckets || []).map((storedBucket) => {
         const bucketId = readValue(storedBucket.id, session);
         const bucket = project.buckets.find((candidate) => candidate.id === bucketId);
-        return bucket
-          ? {
-              ...storedBucket,
-              amount: writeValue(toStoredMoney(bucket.amountMinor, schemaVersion), session),
-            }
-          : storedBucket;
+        if (!bucket) return storedBucket;
+        // Settlement is derived like the amount (a #settle: transaction), so
+        // it's written — or cleared — on every rebuild.
+        const { settledAmount: _amount, settledDate: _date, ...rest } = storedBucket;
+        return {
+          ...rest,
+          amount: writeValue(toStoredMoney(bucket.amountMinor, schemaVersion), session),
+          ...(bucket.settledMinor !== undefined && {
+            settledAmount: writeValue(toStoredMoney(bucket.settledMinor, schemaVersion), session),
+            settledDate: writeValue(bucket.settledDate, session),
+          }),
+        };
       }),
     };
   });

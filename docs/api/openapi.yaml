@@ -2962,6 +2962,186 @@ paths:
           $ref: '#/components/responses/InsufficientScope'
         '404':
           $ref: '#/components/responses/NotFound'
+  /smile/{projectId}/buckets/{bucketId}/settle:
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: bucketId
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      operationId: settleSmileBucket
+      summary: Settle a Smile bucket — the real bill was paid
+      description: >-
+        Records one transaction tagged `#settle:<bucket>:<actual>` (plus your receipt text) whose amount is the
+        difference to what the bucket had saved: negative = topped up from `account`, positive = surplus released back
+        to it (or moved into `surplus.moveToBucketId`), 0 = exact. The bucket then shows `status: settled`,
+        `settledMinor` (actual) next to its planned `targetMinor`, and `varianceMinor`; it takes no further
+        contributions. Settling a settled bucket again edits the same settlement. The response's `effects` lists
+        everything that changed.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SettleBucketRequest'
+            example:
+              actualMinor: 65000
+              receipt: Mountain guide invoice 123
+      responses:
+        '201':
+          description: The bucket was settled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SettleBucketResult'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /smile/{projectId}/buckets/{bucketId}/unsettle:
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: bucketId
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      operationId: unsettleSmileBucket
+      summary: Remove a Smile bucket's settlement (reopen it)
+      description: Deletes the bucket's settlement transaction; the bucket reopens with the savings it had before.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The bucket was reopened
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  removedSettlementId:
+                    type: string
+                  bucket:
+                    type: object
+                  project:
+                    type: object
+                  effects:
+                    $ref: '#/components/schemas/WriteEffects'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /fire/{projectId}/buckets/{bucketId}/settle:
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: bucketId
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      operationId: settleFireBucket
+      summary: Settle a Fire bucket — the real bill was paid
+      description: >-
+        Records one transaction tagged `#settle:<bucket>:<actual>` (plus your receipt text) whose amount is the
+        difference to what the bucket had saved: negative = topped up from `account`, positive = surplus released back
+        to it (or moved into `surplus.moveToBucketId`), 0 = exact. The bucket then shows `status: settled`,
+        `settledMinor` (actual) next to its planned `targetMinor`, and `varianceMinor`; it takes no further
+        contributions. Settling a settled bucket again edits the same settlement. The response's `effects` lists
+        everything that changed.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SettleBucketRequest'
+            example:
+              actualMinor: 65000
+              receipt: Mountain guide invoice 123
+      responses:
+        '201':
+          description: The bucket was settled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SettleBucketResult'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /fire/{projectId}/buckets/{bucketId}/unsettle:
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: bucketId
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      operationId: unsettleFireBucket
+      summary: Remove a Fire bucket's settlement (reopen it)
+      description: Deletes the bucket's settlement transaction; the bucket reopens with the savings it had before.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The bucket was reopened
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  removedSettlementId:
+                    type: string
+                  bucket:
+                    type: object
+                  project:
+                    type: object
+                  effects:
+                    $ref: '#/components/schemas/WriteEffects'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
   /subscriptions:
     get:
       operationId: listSubscriptions
@@ -4400,6 +4580,9 @@ components:
       type: object
       required: [targetMinor, amountMinor, remainingMinor, percentFilled]
       properties:
+        plannedTargetMinor:
+          type: integer
+          description: Sum of the buckets' planned targets (targetMinor uses settled buckets' actual costs).
         targetMinor:
           type: integer
         amountMinor:
@@ -4445,6 +4628,18 @@ components:
       type: object
       required: [id, title, targetMinor, amountMinor]
       properties:
+        status:
+          type: string
+          enum: [open, settled]
+          description: Derived — settled once a `#settle:` transaction records the bucket's actual cost.
+        settledMinor:
+          type: integer
+          description: The actual cost (settled buckets only); replaces targetMinor as the bucket's capacity.
+        settledDate:
+          type: string
+        varianceMinor:
+          type: integer
+          description: settledMinor − targetMinor (positive = cost more than planned).
         id:
           type: string
         title:
@@ -4800,6 +4995,18 @@ components:
       type: object
       required: [id, title, targetMinor, amountMinor]
       properties:
+        status:
+          type: string
+          enum: [open, settled]
+          description: Derived — settled once a `#settle:` transaction records the bucket's actual cost.
+        settledMinor:
+          type: integer
+          description: The actual cost (settled buckets only); replaces targetMinor as the bucket's capacity.
+        settledDate:
+          type: string
+        varianceMinor:
+          type: integer
+          description: settledMinor − targetMinor (positive = cost more than planned).
         id:
           type: string
         title:
@@ -5526,6 +5733,48 @@ components:
           type: integer
           nullable: true
           description: Overrides the calculated per-period amount; null returns to the calculated one.
+    SettleBucketRequest:
+      type: object
+      required: [actualMinor]
+      properties:
+        actualMinor:
+          type: integer
+          minimum: 0
+          description: What the bill actually was.
+        account:
+          type: string
+          description: The account the difference is booked on (default Smile/Fire, or the existing settlement's).
+        date:
+          type: string
+          format: date
+        time:
+          type: string
+        receipt:
+          type: string
+          description: Free text kept on the settlement (must not contain #bucket:/#settle: tags).
+        surplus:
+          type: object
+          description: Move a surplus into another bucket of the project instead of releasing it to the account.
+          properties:
+            moveToBucketId:
+              type: string
+    SettleBucketResult:
+      type: object
+      required: [settlement, differenceMinor, bucket, project, effects]
+      properties:
+        settlement:
+          $ref: '#/components/schemas/ApiTransaction'
+        surplusContribution:
+          $ref: '#/components/schemas/ApiTransaction'
+        differenceMinor:
+          type: integer
+          description: The settlement's amount — negative = topped up, positive = released, 0 = exact.
+        bucket:
+          type: object
+        project:
+          type: object
+        effects:
+          $ref: '#/components/schemas/WriteEffects'
     ProjectContributionRequest:
       type: object
       description: Either amountMinor (default split), or buckets (explicit split; amountMinor may be omitted or must equal their sum).

@@ -220,6 +220,15 @@ function decryptBucket(raw, session, schemaVersion) {
   if (raw.targetDate !== undefined) bucket.targetDate = decryptValue(raw.targetDate, session);
   if (raw.completionDate !== undefined)
     bucket.completionDate = decryptValue(raw.completionDate, session);
+  // Derived from the bucket's #settle: transaction (see the fund engine).
+  if (raw.settledAmount !== undefined) {
+    bucket.status = 'settled';
+    bucket.settledMinor = decryptMoney(raw.settledAmount, session, schemaVersion);
+    bucket.settledDate = decryptValue(raw.settledDate, session);
+    bucket.varianceMinor = bucket.settledMinor - bucket.targetMinor;
+  } else {
+    bucket.status = 'open';
+  }
   return bucket;
 }
 

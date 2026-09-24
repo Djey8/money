@@ -1977,6 +1977,37 @@ describe('v1 API authentication and PAT management', () => {
       );
     });
 
+    it('settles a bucket with its actual cost, re-settles, and unsettles', async () => {
+      const { token } = await smileToken(['smile:r', 'smile:w']);
+      const created = await createProject(token, { title: `Smile Settle ${Date.now()}` });
+      const bucket = created.buckets[0];
+      await request(app)
+        .post(`/api/v1/smile/${created.id}/contribute`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ amountMinor: 50000 })
+        .expect(201);
+
+      const settled = await request(app)
+        .post(`/api/v1/smile/${created.id}/buckets/${bucket.id}/settle`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ actualMinor: 65000, receipt: 'Invoice 1' });
+      expect(settled.status).toBe(201);
+      expect(settled.body.differenceMinor).toBe(-15000);
+      expect(settled.body.bucket).toMatchObject({ status: 'settled', settledMinor: 65000 });
+
+      const bad = await request(app)
+        .post(`/api/v1/smile/${created.id}/buckets/${bucket.id}/settle`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ actualMinor: 1, receipt: '#settle:X:1.00' });
+      expect(bad.status).toBe(400);
+
+      const reopened = await request(app)
+        .post(`/api/v1/smile/${created.id}/buckets/${bucket.id}/unsettle`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(reopened.status).toBe(200);
+      expect(reopened.body.bucket).toMatchObject({ status: 'open', amountMinor: 50000 });
+    });
+
     it('manages a payment plan: edit, activate (creates the subscription), deactivate, delete', async () => {
       const { token } = await smileToken(['smile:r', 'smile:w']);
       const created = await createProject(token, { title: `Smile Plan ${Date.now()}` });

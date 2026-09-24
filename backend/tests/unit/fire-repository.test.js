@@ -49,6 +49,7 @@ describe('listFireProjects', () => {
       amountMinor: 20000,
       remainingMinor: 130000,
       percentFilled: (20000 / 150000) * 100,
+      plannedTargetMinor: 150000,
     });
     expect(project.links).toEqual([{ label: 'Flights site', url: 'https://example.com' }]);
     expect(project.actionItems).toEqual([{ text: 'Book flights', done: false, priority: 'high' }]);

@@ -4,6 +4,7 @@ const crypto = require('crypto');
 const {
   isEncryptedValue,
   stateChangingGrowStatements,
+  parseSettlements,
   parseBucketAllocations,
   transactionFromApi,
   transactionToApi,
@@ -68,6 +69,14 @@ function transactionError(code, message) {
  * refused, pointing the caller at the typed action instead.
  */
 function assertNoNewGrowTrade(comment) {
+  // Bucket settlements are the same kind of typed-only statement: the
+  // difference they carry is computed by the server.
+  if (parseSettlements(comment || '').length > 0) {
+    throw transactionError(
+      'TRANSACTION_GROW_TRADE',
+      'This comment contains a #settle: tag. Settle a bucket with POST /{smile|fire}/{id}/buckets/{bucketId}/settle (MCP settle_bucket), which computes the difference to what was saved.',
+    );
+  }
   if (stateChangingGrowStatements(comment).length > 0) {
     throw transactionError(
       'TRANSACTION_GROW_TRADE',
@@ -363,6 +372,36 @@ async function deleteTransaction({ usersDb, authDb }, userId, transactionId) {
   return result === null ? false : result;
 }
 
+/**
+ * Trusted internal write for typed actions that compose transactions
+ * themselves (bucket settlement): removes `removeIds` and appends `add`
+ * (`add[i].id` may reuse a removed id, to edit in place) in one write,
+ * without the public endpoints' guards. Returns the effective added
+ * transactions and `effects`.
+ */
+async function replaceTransactions(deps, userId, { removeIds = [], add = [] }) {
+  return withTransactionsWrite(deps, userId, ({ existingTransactions, currency }) => {
+    const removed = new Set(removeIds);
+    const added = add.map((fields) => ({
+      ...fields,
+      id: fields.id || `tx_${crypto.randomUUID()}`,
+      currency,
+    }));
+    return {
+      allTransactions: [
+        ...existingTransactions.filter((transaction) => !removed.has(transaction.id)),
+        ...added,
+      ],
+      buildResult: (effectiveTransactions, effects) => ({
+        transactions: added.map((transaction) =>
+          effectiveTransactions.find((effective) => effective.id === transaction.id),
+        ),
+        effects,
+      }),
+    };
+  });
+}
+
 const MAX_BATCH_OPERATIONS = 100;
 
 /**
@@ -451,6 +490,7 @@ module.exports = {
   updateTransaction,
   deleteTransaction,
   batchTransactions,
+  replaceTransactions,
   MAX_BATCH_OPERATIONS,
   decryptTransaction,
   encryptTransaction,

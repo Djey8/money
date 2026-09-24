@@ -40,6 +40,8 @@ const {
 } = require('../repositories/report-repository');
 const { getMojoStatus, updateMojoTarget } = require('../repositories/mojo-repository');
 const {
+  settleBucket,
+  unsettleBucket,
   contributeToProject,
   contributeToMojo,
   listProjectTransactions,
@@ -3036,6 +3038,35 @@ function validateContribution(input, { allowBuckets }) {
 
 const CONTRIBUTION_ERROR_CODES = ['FUND_FULL', 'FUND_INVALID_INPUT', 'TRANSACTION_GROW_TRADE'];
 
+const SETTLE_FIELDS = ['actualMinor', 'account', 'date', 'time', 'receipt', 'surplus'];
+
+function validateSettlement(input) {
+  if (!isPlainObject(input)) return 'A settlement object is required.';
+  const unknown = Object.keys(input).find((key) => !SETTLE_FIELDS.includes(key));
+  if (unknown)
+    return `${unknown} is not a settlement field (allowed: ${SETTLE_FIELDS.join(', ')}).`;
+  if (!Number.isInteger(input.actualMinor) || input.actualMinor < 0) {
+    return 'actualMinor must be a non-negative integer: what the bill actually was.';
+  }
+  if (input.account !== undefined && !isNonEmptyString(input.account)) {
+    return 'account must be a non-empty string.';
+  }
+  for (const field of ['date', 'time', 'receipt']) {
+    if (input[field] !== undefined && typeof input[field] !== 'string') {
+      return `${field} must be a string.`;
+    }
+  }
+  if (typeof input.receipt === 'string' && /#(bucket|settle):/i.test(input.receipt)) {
+    return 'receipt is free text — the server writes the #settle: tag itself.';
+  }
+  if (input.surplus !== undefined) {
+    if (!isPlainObject(input.surplus) || !isNonEmptyString(input.surplus.moveToBucketId)) {
+      return 'surplus must be {moveToBucketId} (omit it to release a surplus back to the account).';
+    }
+  }
+  return null;
+}
+
 function contributionErrorResponse(res, error) {
   if (!CONTRIBUTION_ERROR_CODES.includes(error.code)) return undefined;
   return problem(res, 400, 'validation_invalid', 'Invalid contribution', error.message);
@@ -3079,6 +3110,83 @@ for (const [kind, label] of [
           resourceId: result.transaction.id,
         });
         return res.status(201).json(result);
+      } catch (error) {
+        return contributionErrorResponse(res, error) ?? next(error);
+      }
+    },
+  );
+
+  router.post(
+    `/${kind}/:projectId/buckets/:bucketId/settle`,
+    requireScope(`${kind}:w`),
+    async (req, res, next) => {
+      const validationError = validateSettlement(req.body);
+      if (validationError) {
+        return problem(res, 400, 'validation_invalid', 'Invalid settlement', validationError);
+      }
+      try {
+        const result = await settleBucket(
+          { usersDb: getUsersDb(), authDb: getAuthDb() },
+          req.userId,
+          kind,
+          req.params.projectId,
+          req.params.bucketId,
+          req.body,
+        );
+        if (!result) {
+          return problem(
+            res,
+            404,
+            'not_found',
+            `${label} project not found`,
+            `No matching ${label} project exists.`,
+          );
+        }
+        await recordAuditEntry(getAuditDb(), {
+          userId: req.userId,
+          actor: auditActor(req.auth),
+          method: req.method,
+          path: req.baseUrl + req.path,
+          resource: `${kind}_settlement`,
+          resourceId: result.settlement.id,
+        });
+        return res.status(201).json(result);
+      } catch (error) {
+        return contributionErrorResponse(res, error) ?? next(error);
+      }
+    },
+  );
+
+  router.post(
+    `/${kind}/:projectId/buckets/:bucketId/unsettle`,
+    requireScope(`${kind}:w`),
+    async (req, res, next) => {
+      try {
+        const result = await unsettleBucket(
+          { usersDb: getUsersDb(), authDb: getAuthDb() },
+          req.userId,
+          kind,
+          req.params.projectId,
+          req.params.bucketId,
+        );
+        if (!result) {
+          return problem(
+            res,
+            404,
+            'not_found',
+            `${label} project not found`,
+            `No matching ${label} project exists.`,
+          );
+        }
+        await recordAuditEntry(getAuditDb(), {
+          userId: req.userId,
+          actor: auditActor(req.auth),
+          method: req.method,
+          path: req.baseUrl + req.path,
+          resource: `${kind}_settlement`,
+          resourceId: result.removedSettlementId,
+        });
+        return res.json(result);
       } catch (error) {
         return contributionErrorResponse(res, error) ?? next(error);
       }
