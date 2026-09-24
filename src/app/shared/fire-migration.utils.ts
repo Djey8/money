@@ -34,6 +34,11 @@ export function migrateFire(raw: any, transactions?: any[]): Fire {
       links: Array.isArray(b.links) ? b.links : [],
       targetDate: b.targetDate || undefined,
       completionDate: b.completionDate || undefined,
+      // Derived settlement — kept so a save doesn't drop it.
+      ...(typeof b.settledAmount === 'number' && {
+        settledAmount: b.settledAmount,
+        settledDate: b.settledDate,
+      }),
     }));
   } else {
     // Legacy project without buckets → create single default bucket

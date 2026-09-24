@@ -797,6 +797,11 @@ export class AppDataService {
                 completionDate: bucket.completionDate
                   ? this.cryptic.decrypt(bucket.completionDate, 'database')
                   : undefined,
+                // Derived settlement (the bucket's #settle: transaction).
+                ...(bucket.settledAmount !== undefined && {
+                  settledAmount: parseFloat(this.cryptic.decrypt(bucket.settledAmount, 'database')),
+                  settledDate: this.cryptic.decrypt(bucket.settledDate, 'database'),
+                }),
               }));
             }
 
@@ -863,6 +868,9 @@ export class AppDataService {
                 activeSubscriptionId: plan.activeSubscriptionId
                   ? this.cryptic.decrypt(plan.activeSubscriptionId, 'database')
                   : undefined,
+                completedAt: plan.completedAt
+                  ? this.cryptic.decrypt(plan.completedAt, 'database')
+                  : undefined,
               }));
             }
 
@@ -916,6 +924,11 @@ export class AppDataService {
                 completionDate: bucket.completionDate
                   ? this.cryptic.decrypt(bucket.completionDate, 'database')
                   : undefined,
+                // Derived settlement (the bucket's #settle: transaction).
+                ...(bucket.settledAmount !== undefined && {
+                  settledAmount: parseFloat(this.cryptic.decrypt(bucket.settledAmount, 'database')),
+                  settledDate: this.cryptic.decrypt(bucket.settledDate, 'database'),
+                }),
               }));
             }
             if (raw[k].sub) {
@@ -996,6 +1009,9 @@ export class AppDataService {
                   : undefined,
                 activeSubscriptionId: plan.activeSubscriptionId
                   ? this.cryptic.decrypt(plan.activeSubscriptionId, 'database')
+                  : undefined,
+                completedAt: plan.completedAt
+                  ? this.cryptic.decrypt(plan.completedAt, 'database')
                   : undefined,
               }));
             }

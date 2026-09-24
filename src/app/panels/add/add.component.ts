@@ -1,3 +1,4 @@
+import { bucketCapacity } from 'src/app/shared/bucket.utils';
 import {
   Component,
   ɵNOT_FOUND_CHECK_ONLY_ELEMENT_INJECTOR,
@@ -1802,7 +1803,7 @@ export class AddComponent extends BaseAddComponent implements OnInit, AfterViewI
     // Calculate remaining capacity for each bucket
     const bucketInfo = buckets.map((bucket) => ({
       bucket,
-      remaining: Math.max(0, bucket.target - bucket.amount),
+      remaining: Math.max(0, bucketCapacity(bucket) - bucket.amount),
       allocated: 0,
     }));
 
@@ -1956,7 +1957,7 @@ export class AddComponent extends BaseAddComponent implements OnInit, AfterViewI
             const bucket = project.buckets.find((b) => b.title === allocation.bucketName);
             if (bucket) {
               // Calculate remaining capacity
-              const remaining = Math.max(0, bucket.target - bucket.amount);
+              const remaining = Math.max(0, bucketCapacity(bucket) - bucket.amount);
               const cappedAmount = Math.min(allocation.amount, remaining);
 
               // Update bucket with capped amount
@@ -2073,7 +2074,7 @@ export class AddComponent extends BaseAddComponent implements OnInit, AfterViewI
             const bucket = emergency.buckets.find((b) => b.title === allocation.bucketName);
             if (bucket) {
               // Calculate remaining capacity
-              const remaining = Math.max(0, bucket.target - bucket.amount);
+              const remaining = Math.max(0, bucketCapacity(bucket) - bucket.amount);
               const cappedAmount = Math.min(allocation.amount, remaining);
 
               // Update bucket with capped amount
@@ -2364,7 +2365,7 @@ export class AddComponent extends BaseAddComponent implements OnInit, AfterViewI
         AddComponent.categoryTextField
       ) {
         const project = AppStateService.instance.allSmileProjects[i];
-        const totalTarget = project.buckets.reduce((sum, b) => sum + (b.target || 0), 0);
+        const totalTarget = project.buckets.reduce((sum, b) => sum + (bucketCapacity(b) || 0), 0);
         const totalAmount = project.buckets.reduce((sum, b) => sum + (b.amount || 0), 0);
 
         if (totalAmount - result > totalTarget) {

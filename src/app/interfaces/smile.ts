@@ -28,6 +28,9 @@ export interface SmileBucket {
   links?: SmileLink[]; // Optional links for this bucket
   targetDate?: string; // Target completion date
   completionDate?: string; // Actual completion date
+  /** Derived from the bucket's `#settle:` transaction: the actual cost paid (replaces `target` as its capacity). */
+  settledAmount?: number;
+  settledDate?: string;
 }
 
 export interface Smile {

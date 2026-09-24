@@ -5,8 +5,9 @@ import { SubscriptionFrequency } from './subscription';
  * - planned: Created but not yet activated
  * - active: Activated and appears in main subscription list
  * - inactive: Deactivated/paused but not deleted
+ * - completed: its target buckets are all full or settled; its subscription ended
  */
-export type PlannedSubscriptionStatus = 'planned' | 'active' | 'inactive';
+export type PlannedSubscriptionStatus = 'planned' | 'active' | 'inactive' | 'completed';
 
 /**
  * Planned Subscription interface
@@ -47,6 +48,7 @@ export interface PlannedSubscription {
   updatedAt: string; // Last modification (ISO timestamp)
   activatedAt?: string; // When plan was activated (ISO timestamp)
   deactivatedAt?: string; // When plan was deactivated (ISO timestamp)
+  completedAt?: string; // When its buckets were full and it completed (ISO timestamp)
 
   // Optional: Link to real subscription if activated
   activeSubscriptionId?: string; // Reference to actual subscription in main list (if active)

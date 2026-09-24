@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { LocalService } from 'src/app/shared/services/local.service';
 import { PersistenceService } from 'src/app/shared/services/persistence.service';
@@ -17,6 +17,8 @@ import {
 import { PlannedSubscription } from 'src/app/interfaces/planned-subscription';
 import { PaymentPlannerService } from 'src/app/shared/services/payment-planner.service';
 import { SubscriptionActivationService } from 'src/app/shared/services/subscription-activation.service';
+import { BucketSettlementService } from 'src/app/shared/services/bucket-settlement.service';
+import { bucketCapacity } from 'src/app/shared/bucket.utils';
 import { generateBucketId } from 'src/app/shared/fire-migration.utils';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -436,7 +438,8 @@ export class InfoFireComponent extends BaseInfoComponent {
   }
 
   getBucketProgress(bucket: FireBucket): number {
-    return bucket.target > 0 ? (bucket.amount / bucket.target) * 100 : 0;
+    const capacity = bucketCapacity(bucket);
+    return capacity > 0 ? (bucket.amount / capacity) * 100 : 0;
   }
 
   deleteTransactionsChecked = true;
@@ -1059,6 +1062,87 @@ export class InfoFireComponent extends BaseInfoComponent {
     this.editingActionDueDate = '';
   }
 
+  // --- Bucket settlement (actual cost replaces the plan) ---
+  settlingBucketId: string | null = null;
+  settleActual: number | null = null;
+  settleReceipt = '';
+  settleSurplusTo = '';
+  private bucketSettlement = inject(BucketSettlementService);
+
+  isSettled(bucket: FireBucket): boolean {
+    return bucket.settledAmount !== undefined;
+  }
+
+  openSettle(bucket: FireBucket): void {
+    this.settlingBucketId = bucket.id;
+    this.settleActual = bucket.settledAmount ?? bucket.target;
+    this.settleReceipt = '';
+    this.settleSurplusTo = '';
+  }
+
+  cancelSettle(): void {
+    this.settlingBucketId = null;
+  }
+
+  /** Surplus if settled now with the entered cost: savings above the actual cost. */
+  getSettleSurplus(bucket: FireBucket): number {
+    if (this.settleActual === null || this.isSettled(bucket)) return 0;
+    return Math.max(0, Math.round((bucket.amount - this.settleActual) * 100) / 100);
+  }
+
+  /** Other buckets that can take a surplus (not the settled one, not settled ones). */
+  getSurplusTargets(bucket: FireBucket): FireBucket[] {
+    return (InfoFireComponent.buckets || []).filter(
+      (candidate) => candidate.id !== bucket.id && !this.isSettled(candidate),
+    );
+  }
+
+  confirmSettle(bucket: FireBucket): void {
+    const actual = Number(this.settleActual);
+    if (!Number.isFinite(actual) || actual < 0) {
+      this.showError(this.translate.instant('Bucket.settleInvalidAmount'));
+      return;
+    }
+    const project = this.getCurrentFire();
+    this.bucketSettlement.settle(
+      'fire',
+      project.title,
+      {
+        bucket,
+        actual: Math.round(actual * 100) / 100,
+        receipt: this.settleReceipt,
+        moveSurplusTo: this.settleSurplusTo || undefined,
+      },
+      {
+        onSuccess: () => {
+          this.settlingBucketId = null;
+          InfoFireComponent.buckets = project.buckets;
+          this.toastService.show(this.translate.instant('Bucket.settled'), 'update');
+        },
+        onError: (message) => this.showError(message),
+      },
+    );
+  }
+
+  unsettleBucket(bucket: FireBucket): void {
+    const project = this.getCurrentFire();
+    this.confirmService.confirm(
+      this.translate.instant('Bucket.unsettleConfirm', { title: bucket.title }),
+      () =>
+        this.bucketSettlement.unsettle('fire', project.title, bucket.title, {
+          onSuccess: () => {
+            InfoFireComponent.buckets = project.buckets;
+            this.toastService.show(this.translate.instant('Bucket.unsettled'), 'update');
+          },
+          onError: (message) => this.showError(message),
+        }),
+      'Bucket.unsettle',
+      'primary',
+    );
+  }
+
+  bucketCapacity = bucketCapacity;
+
   addBucketToTransaction(bucketId: string, bucketTitle: string, bucketRemaining: number) {
     // Add to specific bucket with pre-filled comment using bucket name and amount
     bucketRemaining = Math.round(bucketRemaining * 100) / 100;
@@ -1340,7 +1424,9 @@ export class InfoFireComponent extends BaseInfoComponent {
 
   getInactiveSubscriptions(): PlannedSubscription[] {
     const fire = this.getCurrentFire();
-    return (fire.plannedSubscriptions || []).filter((p) => p.status === 'inactive');
+    return (fire.plannedSubscriptions || []).filter(
+      (p) => p.status === 'inactive' || p.status === 'completed',
+    );
   }
 
   /**
