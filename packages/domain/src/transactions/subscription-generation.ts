@@ -1,5 +1,6 @@
 import { ApiTransaction } from './transaction';
 import { FundState, recalculateFundState } from './fund-state';
+import { FundBucket, parseBucketAllocations } from './bucket-allocations';
 import { calculateOccurrences, SubscriptionFrequency } from './frequency-strategies';
 
 /**
@@ -90,16 +91,53 @@ function transactionExists(transactions: DedupKey[], candidate: DedupKey): boole
   );
 }
 
-/** `true` when generating a transaction for `category` would have no effect because its target (Mojo, or a matching Smile project's buckets) is already fully funded — matches the original's own pre-generation skip check, which only ever looks at whether the target is *already* at/over capacity, not whether this specific contribution would be. */
-function isTargetAlreadyFull(category: string, fundState: FundState): boolean {
+function hasRoom(bucket: FundBucket): boolean {
+  return bucket.amountMinor < bucket.targetMinor;
+}
+
+/**
+ * `true` when generating a transaction would have no effect because every
+ * bucket it would fill is already full — mirroring exactly where the fund
+ * engine (`fund-state.ts`) would route it, so a skipped occurrence is one
+ * the engine would have capped to zero anyway:
+ * - Mojo (`@Mojo`): at/over target;
+ * - with `#bucket:` tags (payment-plan subscriptions): the tagged buckets;
+ * - untagged Smile (`@<project>`): all of the project's buckets;
+ * - untagged Fire: `@<bucket>` → that bucket, `@<project>` → its first bucket.
+ * The original only checked Mojo and whole Smile projects, so a funded Fire
+ * plan (or a plan whose own buckets were full while another had room) kept
+ * generating transactions that were capped to €0.
+ */
+function isTargetAlreadyFull(category: string, comment: string, fundState: FundState): boolean {
   if (category === '@Mojo') {
     return fundState.mojo.amountMinor >= fundState.mojo.targetMinor;
   }
-  const project = fundState.smile.find((p) => `@${p.title}` === category);
-  if (!project) return false;
-  const totalTargetMinor = project.buckets.reduce((sum, b) => sum + b.targetMinor, 0);
-  const totalAmountMinor = project.buckets.reduce((sum, b) => sum + b.amountMinor, 0);
-  return totalAmountMinor >= totalTargetMinor;
+  const allocations = parseBucketAllocations(comment);
+  const tagged = (buckets: FundBucket[]) =>
+    buckets.filter((bucket) =>
+      allocations.some(
+        (allocation) =>
+          allocation.bucketTitle.toLocaleLowerCase() === bucket.title.toLocaleLowerCase(),
+      ),
+    );
+  const smile = fundState.smile.find((project) => `@${project.title}` === category);
+  if (smile) {
+    const targets = allocations.length > 0 ? tagged(smile.buckets) : smile.buckets;
+    return !targets.some(hasRoom);
+  }
+  const fire = fundState.fire.find(
+    (project) =>
+      `@${project.title}` === category ||
+      project.buckets.some((bucket) => `@${bucket.title}` === category),
+  );
+  if (fire) {
+    let targets: FundBucket[];
+    if (allocations.length > 0) targets = tagged(fire.buckets);
+    else if (category === `@${fire.title}`) targets = fire.buckets.slice(0, 1);
+    else targets = fire.buckets.filter((bucket) => `@${bucket.title}` === category);
+    return !targets.some(hasRoom);
+  }
+  return false;
 }
 
 export function generateDueSubscriptionTransactions(
@@ -133,7 +171,7 @@ export function generateDueSubscriptionTransactions(
         comment: buildComment(subscription.title, subscription.comment),
       };
       if (transactionExists(simulatedTransactions, candidate)) continue;
-      if (isTargetAlreadyFull(subscription.category, runningFundState)) continue;
+      if (isTargetAlreadyFull(candidate.category, candidate.comment, runningFundState)) continue;
 
       const newTransaction: GeneratedTransaction = {
         account: candidate.account,

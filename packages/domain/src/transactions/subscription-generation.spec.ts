@@ -209,6 +209,76 @@ describe('generateDueSubscriptionTransactions', () => {
     expect(result.transactionsCreated).toBe(0);
   });
 
+  it('skips a Fire fund whose target bucket is full (the original never checked Fire)', () => {
+    const fireState: FundState = {
+      mojo: { amountMinor: 0, targetMinor: 100000 },
+      smile: [],
+      fire: [
+        {
+          title: 'Car',
+          buckets: [
+            { id: 'b1', title: 'Repair', targetMinor: 30000, amountMinor: 0 },
+            { id: 'b2', title: 'Tyres', targetMinor: 20000, amountMinor: 0 },
+          ],
+        },
+      ],
+    };
+    const prior = tx({ id: 'tx_prior', category: '@Car', amountMinor: -30000, date: '2026-01-01' });
+    const untagged = generateDueSubscriptionTransactions(
+      [subscription({ category: '@Car', startDate: '2026-04-01', frequency: 'monthly' })],
+      [prior],
+      fireState,
+      NOW,
+    );
+    // Untagged @Car money only ever fills the first bucket, which is full.
+    expect(untagged.transactionsCreated).toBe(0);
+
+    const tyres = generateDueSubscriptionTransactions(
+      [subscription({ category: '@Tyres', startDate: '2026-04-01', frequency: 'monthly' })],
+      [prior],
+      fireState,
+      NOW,
+    );
+    expect(tyres.transactionsCreated).toBeGreaterThan(0);
+  });
+
+  it('skips a plan whose own tagged bucket is full even though another bucket has room', () => {
+    const smileState: FundState = {
+      mojo: { amountMinor: 0, targetMinor: 100000 },
+      smile: [
+        {
+          title: 'Holiday',
+          buckets: [
+            { id: 'b1', title: 'Flights', targetMinor: 50000, amountMinor: 0 },
+            { id: 'b2', title: 'Hotel', targetMinor: 50000, amountMinor: 0 },
+          ],
+        },
+      ],
+      fire: [],
+    };
+    const prior = tx({
+      id: 'tx_prior',
+      category: '@Holiday',
+      amountMinor: -50000,
+      date: '2026-01-01',
+      comment: '#bucket:Flights:500.00',
+    });
+    const result = generateDueSubscriptionTransactions(
+      [
+        subscription({
+          category: '@Holiday',
+          comment: '#bucket:Flights:50.00',
+          startDate: '2026-04-01',
+          frequency: 'monthly',
+        }),
+      ],
+      [prior],
+      smileState,
+      NOW,
+    );
+    expect(result.transactionsCreated).toBe(0);
+  });
+
   it('still generates a transaction for a Smile project that is under target', () => {
     const smileState: FundState = {
       mojo: { amountMinor: 0, targetMinor: 100000 },
