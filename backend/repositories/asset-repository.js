@@ -25,6 +25,8 @@ const { getEncryptionSession } = require('../services/encryption-session');
 const { decryptValue } = require('./transaction-repository');
 const { writeValue, toStoredMoney } = require('../services/transaction-derived-state');
 
+const { assertRenameKeepsGrowLink } = require('../services/grow-links');
+
 const MAX_WRITE_RETRIES = 10;
 
 function decryptMoney(value, session, schemaVersion) {
@@ -189,6 +191,7 @@ async function updateAsset(deps, userId, assetId, patch) {
     if (patch.tag !== undefined) {
       tag = patch.tag.trim();
       if (tag !== current.tag) {
+        assertRenameKeepsGrowLink(data, current.tag, tag, session);
         const otherTags = loadExistingTags(data, session).filter(
           (existing) => existing !== current.tag,
         );

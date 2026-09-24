@@ -2245,7 +2245,7 @@ router.post('/balance/assets', requireScope('balance:w'), async (req, res, next)
     });
     return res.status(201).json(asset);
   } catch (error) {
-    if (error.code === 'ASSET_DUPLICATE_TAG') {
+    if (error.code === 'ASSET_DUPLICATE_TAG' || error.code === 'BALANCE_TAG_LINKED_TO_GROW') {
       return problem(res, 400, 'validation_invalid', 'Invalid asset request', error.message);
     }
     return next(error);
@@ -2293,7 +2293,7 @@ router.patch('/balance/assets/:assetId', requireScope('balance:w'), async (req, 
     });
     return res.json(asset);
   } catch (error) {
-    if (error.code === 'ASSET_DUPLICATE_TAG') {
+    if (error.code === 'ASSET_DUPLICATE_TAG' || error.code === 'BALANCE_TAG_LINKED_TO_GROW') {
       return problem(res, 400, 'validation_invalid', 'Invalid asset request', error.message);
     }
     return next(error);
@@ -2357,7 +2357,7 @@ router.post('/balance/liabilities', requireScope('balance:w'), async (req, res, 
     });
     return res.status(201).json(liability);
   } catch (error) {
-    if (error.code === 'LIABILITY_DUPLICATE_TAG') {
+    if (error.code === 'LIABILITY_DUPLICATE_TAG' || error.code === 'BALANCE_TAG_LINKED_TO_GROW') {
       return problem(res, 400, 'validation_invalid', 'Invalid liability request', error.message);
     }
     return next(error);
@@ -2424,7 +2424,7 @@ router.patch(
       });
       return res.json(liability);
     } catch (error) {
-      if (error.code === 'LIABILITY_DUPLICATE_TAG') {
+      if (error.code === 'LIABILITY_DUPLICATE_TAG' || error.code === 'BALANCE_TAG_LINKED_TO_GROW') {
         return problem(res, 400, 'validation_invalid', 'Invalid liability request', error.message);
       }
       return next(error);
@@ -2499,7 +2499,7 @@ router.post('/balance/investments', requireScope('balance:w'), async (req, res, 
     });
     return res.status(201).json(investment);
   } catch (error) {
-    if (error.code === 'INVESTMENT_DUPLICATE_TAG') {
+    if (error.code === 'INVESTMENT_DUPLICATE_TAG' || error.code === 'BALANCE_TAG_LINKED_TO_GROW') {
       return problem(res, 400, 'validation_invalid', 'Invalid investment request', error.message);
     }
     return next(error);
@@ -2566,7 +2566,10 @@ router.patch(
       });
       return res.json(investment);
     } catch (error) {
-      if (error.code === 'INVESTMENT_DUPLICATE_TAG') {
+      if (
+        error.code === 'INVESTMENT_DUPLICATE_TAG' ||
+        error.code === 'BALANCE_TAG_LINKED_TO_GROW'
+      ) {
         return problem(res, 400, 'validation_invalid', 'Invalid investment request', error.message);
       }
       return next(error);
@@ -2638,7 +2641,7 @@ router.post('/balance/shares', requireScope('balance:w'), async (req, res, next)
     });
     return res.status(201).json(share);
   } catch (error) {
-    if (error.code === 'SHARE_DUPLICATE_TAG') {
+    if (error.code === 'SHARE_DUPLICATE_TAG' || error.code === 'BALANCE_TAG_LINKED_TO_GROW') {
       return problem(res, 400, 'validation_invalid', 'Invalid share request', error.message);
     }
     return next(error);
@@ -2686,7 +2689,7 @@ router.patch('/balance/shares/:shareId', requireScope('balance:w'), async (req, 
     });
     return res.json(share);
   } catch (error) {
-    if (error.code === 'SHARE_DUPLICATE_TAG') {
+    if (error.code === 'SHARE_DUPLICATE_TAG' || error.code === 'BALANCE_TAG_LINKED_TO_GROW') {
       return problem(res, 400, 'validation_invalid', 'Invalid share request', error.message);
     }
     return next(error);

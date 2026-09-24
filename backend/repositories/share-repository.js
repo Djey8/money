@@ -51,6 +51,8 @@ const { getEncryptionSession } = require('../services/encryption-session');
 const { decryptValue } = require('./transaction-repository');
 const { writeValue, toStoredMoney } = require('../services/transaction-derived-state');
 
+const { assertRenameKeepsGrowLink } = require('../services/grow-links');
+
 const MAX_WRITE_RETRIES = 10;
 
 function normalizeShareTag(tag) {
@@ -256,6 +258,7 @@ async function updateShare(deps, userId, shareId, patch) {
     if (patch.tag !== undefined) {
       tag = normalizeShareTag(patch.tag);
       if (tag !== current.tag) {
+        assertRenameKeepsGrowLink(data, current.tag, tag, session);
         const otherTags = loadExistingTags(data, session).filter(
           (existing) => existing !== current.tag,
         );

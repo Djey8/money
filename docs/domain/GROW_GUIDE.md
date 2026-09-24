@@ -38,6 +38,10 @@ A financing loan is the Liability tagged with the title. Consequences:
   loan, the `M-` mortgage, every `@<title>` transaction category and the title inside trade comments, and
   `@<title>` subscriptions. It is refused if the new title is already a balance-sheet tag.
 
+From the balance-sheet side: editing a linked Investment or loan updates the project's embedded copy (as share edits
+already do), and renaming a linked balance-sheet entry away from the project's title is refused — rename the project
+instead. Renaming an unlinked entry to match a project (e.g. fixing a typo) is fine.
+
 Set the kind at create (`kind: "share"`, or legacy `share: true`) or later with `update {kind}` — switching
 initializes an empty embedded copy for the new kind and clears the others.
 
