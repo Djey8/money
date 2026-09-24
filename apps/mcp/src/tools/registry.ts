@@ -112,8 +112,10 @@ export const TOOLS: ToolDefinition[] = [
     kind: 'simple',
     name: 'manage_mojo',
     description:
-      'Read the Mojo emergency-fund state or update its target amount. Requires a PAT with mojo:r (get) or ' +
-      'mojo:w (update_target).',
+      'Read explain_concept topic smile_fire_mojo_guide first. Read the Mojo long-term reserve, update its target, ' +
+      'contribute to it, or list the transactions its balance is rebuilt from. The balance only ever comes from ' +
+      'transactions (@Mojo contributions, capped at the target). Every write returns `effects`. Requires a PAT ' +
+      'with mojo:r (get/list_transactions) or mojo:w (update_target/contribute).',
     actions: {
       get: action('getMojo'),
       update_target: action('updateMojoTarget'),
@@ -125,9 +127,13 @@ export const TOOLS: ToolDefinition[] = [
     kind: 'simple',
     name: 'manage_smile',
     description:
-      'List, read, create, update, delete a Smile (short/medium-term savings) project, or attach a payment ' +
-      'plan to one. Requires a PAT with smile:r (list/get) or smile:w (create/update/delete/create_payment_plan). ' +
-      'delete requires confirm: true.',
+      'Read explain_concept topic smile_fire_mojo_guide first — it explains buckets. Manage Smile (medium-term ' +
+      'savings goal) projects: list, get, create, update (incl. bucketsAdd/Update/Remove by id and single list ' +
+      'entries), delete; contribute money (the only way bucket amounts change — they are rebuilt from ' +
+      'transactions, never set); list_transactions; and payment plans (create, update, activate, deactivate, ' +
+      'delete). Every write returns `effects`. Removing money-holding buckets/projects needs force. Requires a ' +
+      'PAT with smile:r (list/get/list_transactions) or smile:w (everything else). delete and ' +
+      'delete_payment_plan require confirm: true.',
     actions: {
       list: action('listSmileProjects'),
       get: action('getSmileProject'),
@@ -147,9 +153,13 @@ export const TOOLS: ToolDefinition[] = [
     kind: 'simple',
     name: 'manage_fire',
     description:
-      'List, read, create, update, delete a Fire (retirement) project, or attach a payment plan to one. ' +
-      'Requires a PAT with fire:r (list/get) or fire:w (create/update/delete/create_payment_plan). delete ' +
-      'requires confirm: true.',
+      'Read explain_concept topic smile_fire_mojo_guide first — it explains buckets. Manage Fire (emergency fund, ' +
+      'not retirement) projects: list, get, create, update (incl. bucketsAdd/Update/Remove by id and single list ' +
+      'entries), delete; contribute money (the only way bucket amounts change — untagged money fills the first ' +
+      'bucket; a fund auto-completes when every bucket is full); list_transactions; and payment plans (create, ' +
+      'update, activate, deactivate, delete). Every write returns `effects`. Removing money-holding ' +
+      'buckets/projects needs force. Requires a PAT with fire:r (list/get/list_transactions) or fire:w ' +
+      '(everything else). delete and delete_payment_plan require confirm: true.',
     actions: {
       list: action('listFireProjects'),
       get: action('getFireProject'),
