@@ -328,3 +328,43 @@ export function generateCashflowComment(cashflowMinor: number, creditMinor?: num
 export function generateDepositComment(amountMinor: number): string {
   return `Deposit ${fromMinorUnits(amountMinor)};`;
 }
+
+const TITLED_STATEMENT_PREFIXES = [
+  'Buy Asset',
+  'Sell Asset',
+  'Buy Share',
+  'Sell Share',
+  'Dividende Share',
+  'Buy Investment',
+  'Sell Investment',
+];
+
+function escapeRegExp(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
+ * Renames a Grow project's title inside every statement of a comment that
+ * names it (`Buy Share <title> 10 x 25;`, `Sell Investment <title> 5 3;`,
+ * ...), leaving every other character untouched. The app reads the title
+ * back out of these statements to undo a transaction, so a project rename
+ * must rewrite them too. The title only matches when it's followed by the
+ * statement's fixed numeric suffix, so renaming "SOL" never touches a
+ * statement for "SOL Cash".
+ */
+export function renameGrowTitleInComment(
+  comment: string,
+  oldTitle: string,
+  newTitle: string,
+): string {
+  assertValidGrowTitle(newTitle);
+  if (!comment || oldTitle === newTitle) return comment;
+  const prefixes = TITLED_STATEMENT_PREFIXES.join('|');
+  const statement = new RegExp(
+    `(^|;\\s*)(${prefixes}) ${escapeRegExp(oldTitle)}(?= \\S+ x \\S+\\s*(?:;|$)| \\S+ \\S+\\s*(?:;|$))`,
+    'g',
+  );
+  return comment.replace(statement, (_match, lead: string, prefix: string) => {
+    return `${lead}${prefix} ${newTitle}`;
+  });
+}

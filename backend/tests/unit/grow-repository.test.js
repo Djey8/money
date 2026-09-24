@@ -351,6 +351,136 @@ describe('updateGrow', () => {
     expect(result.share.tag).toBe('Microsoft');
   });
 
+  it('carries a rename over to the balance sheet, transactions, subscriptions, and derived income', async () => {
+    const { deps, current } = writableDeps({
+      _id: 'user_1',
+      _rev: '1-a',
+      data: {
+        meta: { schemaVersion: 2 },
+        grow: [
+          minimalRawGrow({
+            title: 'SOL',
+            share: { tag: 'SOL', quantity: 3.54, price: 8833 },
+            liabilitie: { tag: 'SOL', amount: 5000, investment: true, credit: 100 },
+          }),
+        ],
+        balance: {
+          asset: { shares: [{ id: 'shares_1', tag: 'SOL', quantity: 3.54, price: 8833 }] },
+          liabilities: [
+            { id: 'liabilities_1', tag: 'SOL', amount: 5000, credit: 100, investment: true },
+            { id: 'liabilities_2', tag: 'Car loan', amount: 1, credit: 0, investment: false },
+          ],
+        },
+        transactions: [
+          {
+            id: 'tx_buy',
+            account: 'Fire',
+            amount: -31268,
+            date: '2026-09-01',
+            time: '10:00',
+            category: '@SOL',
+            comment: 'Liabilitie 50 1; Buy Share SOL 3.54 x 88.33;',
+          },
+          {
+            id: 'tx_sale',
+            account: 'Income',
+            amount: 1000,
+            date: '2026-09-02',
+            time: '10:00',
+            category: '@sol',
+            comment: 'Sell Share SOL 0.1 x 100;',
+          },
+          {
+            id: 'tx_other',
+            account: 'Daily',
+            amount: -500,
+            date: '2026-09-03',
+            time: '12:00',
+            category: '@Food',
+            comment: 'SOL lunch',
+          },
+        ],
+        subscriptions: [
+          { id: 'subscriptions_1', title: 'Monthly SOL', category: '@SOL', amount: -1000 },
+          { id: 'subscriptions_2', title: 'Rent', category: '@Rent', amount: -50000 },
+        ],
+      },
+    });
+
+    const result = await updateGrow(deps, 'user_1', 'grow_1', { title: 'Solana' });
+
+    expect(result.share.tag).toBe('Solana');
+    expect(result.liabilitie.tag).toBe('Solana');
+    const data = current().data;
+    expect(data.balance.asset.shares[0]).toMatchObject({ id: 'shares_1', tag: 'Solana' });
+    expect(data.balance.liabilities.map((l) => l.tag)).toEqual(['Solana', 'Car loan']);
+    const byId = Object.fromEntries(data.transactions.map((t) => [t.id, t]));
+    expect(byId.tx_buy).toMatchObject({
+      category: '@Solana',
+      comment: 'Liabilitie 50 1; Buy Share Solana 3.54 x 88.33;',
+    });
+    expect(byId.tx_sale).toMatchObject({
+      category: '@Solana',
+      comment: 'Sell Share Solana 0.1 x 100;',
+    });
+    expect(byId.tx_other).toMatchObject({ category: '@Food', comment: 'SOL lunch' });
+    expect(data.subscriptions.map((sub) => sub.category)).toEqual(['@Solana', '@Rent']);
+    // The sale is interest income on the (renamed) share, rebuilt from the transactions.
+    expect(data.income.revenue.interests).toEqual([{ tag: 'Solana', amount: 1000 }]);
+  });
+
+  it("renames an investment's M-<title> mortgage too", async () => {
+    const { deps, current } = writableDeps({
+      _id: 'user_1',
+      _rev: '1-a',
+      data: {
+        grow: [
+          minimalRawGrow({
+            title: 'Flat',
+            share: null,
+            investment: { tag: 'Flat', deposit: 500, amount: 2000 },
+          }),
+        ],
+        balance: {
+          asset: {
+            investments: [{ id: 'investments_1', tag: 'Flat', deposit: 500, amount: 2000 }],
+          },
+          liabilities: [
+            { id: 'liabilities_1', tag: 'M-Flat', amount: 2000, credit: 0, investment: true },
+          ],
+        },
+      },
+    });
+
+    await updateGrow(deps, 'user_1', 'grow_1', { title: 'Rental Flat' });
+
+    const { balance } = current().data;
+    expect(balance.asset.investments[0].tag).toBe('Rental Flat');
+    expect(balance.liabilities[0].tag).toBe('M-Rental Flat');
+  });
+
+  it('refuses a rename onto a balance-sheet tag that already exists', async () => {
+    const { deps } = writableDeps({
+      _id: 'user_1',
+      _rev: '1-a',
+      data: {
+        grow: [minimalRawGrow({ title: 'SOL', share: { tag: 'SOL', quantity: 1, price: 1 } })],
+        balance: {
+          asset: {
+            shares: [
+              { id: 'shares_1', tag: 'SOL', quantity: 1, price: 1 },
+              { id: 'shares_2', tag: 'IOTA', quantity: 1, price: 1 },
+            ],
+          },
+        },
+      },
+    });
+
+    await expect(updateGrow(deps, 'user_1', 'grow_1', { title: 'IOTA' })).rejects.toMatchObject({
+      code: 'GROW_DUPLICATE_TITLE',
+    });
+  });
+
   it('rejects a share plan on a project that is not share-kind', async () => {
     const { deps } = writableDeps({
       _id: 'user_1',

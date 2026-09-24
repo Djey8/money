@@ -4751,6 +4751,12 @@ components:
       properties:
         title:
           type: string
+          description: >-
+            Renaming carries over to everything linked by the title, in the same write: the balance-sheet
+            Asset/Share/Investment and Liability tagged with it (and an Investment's `M-<title>` mortgage), every
+            `@<title>` transaction category and the title inside Grow statements in transaction comments,
+            `@<title>` subscription categories, and the income statement rebuilt from those transactions. Refused
+            (400) if the new title is already a balance-sheet tag.
         sub:
           type: string
         phase:

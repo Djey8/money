@@ -6696,6 +6696,48 @@ describe('v1 API authentication and PAT management', () => {
       expect(response.body.code).toBe('validation_invalid');
     });
 
+    it('renaming a share project carries over to its share, transactions, and income; a colliding rename is refused', async () => {
+      const { token } = await growToken(['grow:r', 'grow:w', 'balance:r', 'transactions:r']);
+      const suffix = `${Date.now()}${Math.floor(Math.random() * 1e6)}`;
+      const project = await createGrowProject(token, { title: `Coin${suffix}`, share: true });
+      await request(app)
+        .post(`/api/v1/grow/${project.id}/buy`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ quantity: 2, priceMinor: 1000 })
+        .expect(201);
+
+      const renamed = await request(app)
+        .patch(`/api/v1/grow/${project.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ title: `Token${suffix}` });
+      expect(renamed.status).toBe(200);
+
+      const shares = await request(app)
+        .get('/api/v1/balance/shares')
+        .set('Authorization', `Bearer ${token}`);
+      const tags = shares.body.shares.map((share) => share.tag);
+      expect(tags).toContain(`Token${suffix}`);
+      expect(tags).not.toContain(`Coin${suffix}`);
+
+      const transactions = await request(app)
+        .get('/api/v1/transactions')
+        .set('Authorization', `Bearer ${token}`);
+      const buy = transactions.body.transactions.find((t) => t.category === `@Token${suffix}`);
+      expect(buy.comment).toBe(`Buy Share Token${suffix} 2 x 10;`);
+
+      const other = await createGrowProject(token, { title: `Other${suffix}`, share: true });
+      const collision = await request(app)
+        .patch(`/api/v1/grow/${other.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ title: `Token${suffix}x` });
+      expect(collision.status).toBe(200);
+      const onto = await request(app)
+        .patch(`/api/v1/grow/${other.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ title: `Token${suffix}` });
+      expect(onto.status).toBe(400);
+    });
+
     it('buys an asset-kind project by quantity x unit price', async () => {
       const { token } = await growToken(['grow:w']);
       const project = await createGrowProject(token, {

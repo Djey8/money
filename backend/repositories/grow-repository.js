@@ -48,6 +48,7 @@ const { toMinorUnits, normalizeQuantity, multiplyQuantityPrice } = require('@mon
 const { getEncryptionSession } = require('../services/encryption-session');
 const { decryptValue } = require('./transaction-repository');
 const { writeValue, toStoredMoney } = require('../services/transaction-derived-state');
+const { cascadeGrowRename } = require('../services/grow-rename');
 
 const MAX_WRITE_RETRIES = 10;
 
@@ -483,9 +484,9 @@ async function withGrowWrite({ usersDb, authDb }, userId, mutate) {
 
     const mutation = mutate({ data, rawGrow, session, schemaVersion });
     if (mutation === null) return null;
-    const { updatedRawGrow, updatedBalance, result } = mutation;
+    const { updatedRawGrow, updatedBalance, baseData, result } = mutation;
     const updatedData = {
-      ...data,
+      ...(baseData || data),
       grow: updatedRawGrow,
       ...(updatedBalance && { balance: updatedBalance }),
     };
@@ -599,12 +600,18 @@ async function updateGrow(deps, userId, growId, patch) {
     const updated = applyPlanFields(withMetadata, patch);
     updated.updatedAt = new Date().toISOString();
 
+    // A rename carries over to everything linked by the title (grow-rename.js).
+    const baseData =
+      title === current.title
+        ? data
+        : cascadeGrowRename(data, current.title, title, session, schemaVersion);
     const updatedRawGrow = rawGrow.map((raw, i) =>
       i === index ? encryptGrow(updated, session, schemaVersion) : raw,
     );
     return {
       updatedRawGrow,
-      updatedBalance: syncBalanceSharePrice(data, updated, current, session, schemaVersion),
+      baseData,
+      updatedBalance: syncBalanceSharePrice(baseData, updated, current, session, schemaVersion),
       result: updated,
     };
   });
