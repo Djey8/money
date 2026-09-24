@@ -26,13 +26,21 @@ function decryptValue(value, session) {
   return session.decrypt(value);
 }
 
-/** Bucket renames by lower-cased old title (tags match bucket titles case-insensitively). */
+/**
+ * Bucket renames by lower-cased old title (tags match bucket titles
+ * case-insensitively). A removed bucket (its id gone from `after`) maps to
+ * `to: null`: its tags are stripped, so the engine distributes that money
+ * under the project's default rule instead of re-capping it to zero.
+ */
 function bucketRenamesOf(before, after) {
   const renames = new Map();
   for (const bucket of before.buckets) {
     const renamed = after.buckets.find((candidate) => candidate.id === bucket.id);
-    if (renamed && renamed.title !== bucket.title) {
-      renames.set(bucket.title.toLocaleLowerCase(), { from: bucket.title, to: renamed.title });
+    if (!renamed || renamed.title !== bucket.title) {
+      renames.set(bucket.title.toLocaleLowerCase(), {
+        from: bucket.title,
+        to: renamed ? renamed.title : null,
+      });
     }
   }
   return renames;
@@ -40,10 +48,12 @@ function bucketRenamesOf(before, after) {
 
 function renameBucketTags(comment, renames) {
   if (!comment || renames.size === 0) return comment;
-  return comment.replace(/#bucket:([^:]+):([\d.]+)/g, (tag, title, amount) => {
+  const renamed = comment.replace(/#bucket:([^:]+):([\d.]+)/g, (tag, title, amount) => {
     const rename = renames.get(title.toLocaleLowerCase());
-    return rename ? `#bucket:${rename.to}:${amount}` : tag;
+    if (!rename) return tag;
+    return rename.to === null ? '' : `#bucket:${rename.to}:${amount}`;
   });
+  return renamed === comment ? comment : renamed.replace(/[ \t]{2,}/g, ' ').trim();
 }
 
 function createRenamer(kind, before, after) {
@@ -55,7 +65,8 @@ function createRenamer(kind, before, after) {
     if (category === `@${before.title}`) return `@${after.title}`;
     if (kind === 'fire') {
       const rename = [...bucketRenames.values()].find(({ from }) => category === `@${from}`);
-      if (rename) return `@${rename.to}`;
+      // A removed Fire bucket's own category moves to the fund itself (its first bucket).
+      if (rename) return `@${rename.to ?? after.title}`;
     }
     return category;
   };
@@ -74,12 +85,14 @@ function createRenamer(kind, before, after) {
 }
 
 /** The project's own payment plan, renamed along with it (the plan stays attached to the project either way). */
-function renamePlan(plan, renamer, newTitle) {
+function renamePlan(plan, renamer, after) {
+  const bucketIds = new Set(after.buckets.map((bucket) => bucket.id));
   return {
     ...plan,
-    projectTitle: newTitle,
-    category: `@${newTitle}`,
+    projectTitle: after.title,
+    category: `@${after.title}`,
     comment: renamer.renameComment(plan.comment),
+    targetBucketIds: plan.targetBucketIds.filter((id) => bucketIds.has(id)),
   };
 }
 

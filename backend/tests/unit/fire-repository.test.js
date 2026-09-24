@@ -655,9 +655,17 @@ describe('renaming a Fire bucket', () => {
 });
 
 describe('deleteFireProject', () => {
+  it('refuses to delete a project that still holds money unless forced', async () => {
+    const { deps, current } = writableDeps(existingProjectDocument());
+    await expect(deleteFireProject(deps, 'user_1', 'fire_1')).rejects.toMatchObject({
+      code: 'FUND_HAS_MONEY',
+    });
+    expect(current().data.fire).toHaveLength(1);
+  });
+
   it('removes the project and returns its id', async () => {
     const { deps, current } = writableDeps(existingProjectDocument());
-    const result = await deleteFireProject(deps, 'user_1', 'fire_1');
+    const result = await deleteFireProject(deps, 'user_1', 'fire_1', { force: true });
     expect(result).toMatchObject({ id: 'fire_1', effects: expect.any(Object) });
     expect(current().data.fire).toEqual([]);
   });
@@ -685,7 +693,7 @@ describe('deleteFireProject', () => {
       updatedAt: '2026-01-01T00:00:00.000Z',
     });
     const { deps, current } = writableDeps(document);
-    await deleteFireProject(deps, 'user_1', 'fire_1');
+    await deleteFireProject(deps, 'user_1', 'fire_1', { force: true });
     expect(current().data.fire.map((p) => p.id)).toEqual(['fire_2']);
   });
 });

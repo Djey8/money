@@ -34,7 +34,7 @@ function emptyProjects(projects: FundProject[]): FundProject[] {
  * the total applied only falls short of the requested amount when every
  * bucket combined lacks the capacity for it.
  */
-function distributeEvenly(buckets: FundBucket[], amountMinor: number): FundBucket[] {
+export function distributeEvenly(buckets: FundBucket[], amountMinor: number): FundBucket[] {
   if (buckets.length === 0) return buckets;
   const applied = buckets.map(() => 0);
   const room = buckets.map((bucket) => Math.max(0, bucket.targetMinor - bucket.amountMinor));

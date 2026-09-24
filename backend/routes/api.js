@@ -326,6 +326,87 @@ function validateFundBucketInput(bucket) {
   if (bucket.id !== undefined && !isNonEmptyString(bucket.id)) {
     return "Each bucket's id, if given, must be a non-empty string.";
   }
+  return validateOptionalBucketFields(bucket, { allowNull: false });
+}
+
+/** A bucket's optional fields; on bucketsUpdate, `null` removes one. */
+function validateOptionalBucketFields(bucket, { allowNull }) {
+  for (const field of ['notes', 'targetDate', 'completionDate']) {
+    const value = bucket[field];
+    if (value === undefined || (allowNull && value === null)) continue;
+    if (typeof value !== 'string') {
+      return `A bucket's ${field} must be a string${allowNull ? ', or null to remove it' : ''}.`;
+    }
+  }
+  if (bucket.links !== undefined && !(allowNull && bucket.links === null)) {
+    if (!Array.isArray(bucket.links) || !bucket.links.every(validateFundLink)) {
+      return "A bucket's links must be an array of {label, url} objects.";
+    }
+  }
+  return null;
+}
+
+const BUCKET_UPDATE_FIELDS = [
+  'id',
+  'title',
+  'targetMinor',
+  'notes',
+  'links',
+  'targetDate',
+  'completionDate',
+];
+
+/** bucketsAdd/bucketsUpdate/bucketsRemove (fund-project-repository.js's applyBucketOps) and force. */
+function validateBucketOps(input) {
+  const { bucketsAdd, bucketsUpdate, bucketsRemove } = input;
+  if ((bucketsAdd || bucketsUpdate || bucketsRemove) && input.buckets !== undefined) {
+    return 'Send either buckets (replaces the whole list) or bucketsAdd/Update/Remove, not both.';
+  }
+  if (bucketsAdd !== undefined) {
+    if (!Array.isArray(bucketsAdd)) return 'bucketsAdd must be an array.';
+    for (const bucket of bucketsAdd) {
+      if (isPlainObject(bucket) && bucket.id !== undefined) {
+        return 'bucketsAdd entries get a new id; use bucketsUpdate to edit an existing bucket.';
+      }
+      const error = validateFundBucketInput(bucket);
+      if (error) return error;
+    }
+  }
+  if (bucketsUpdate !== undefined) {
+    if (!Array.isArray(bucketsUpdate)) return 'bucketsUpdate must be an array.';
+    for (const change of bucketsUpdate) {
+      if (!isPlainObject(change) || !isNonEmptyString(change.id)) {
+        return 'Each bucketsUpdate entry needs the id of the bucket to change.';
+      }
+      if (change.amountMinor !== undefined) {
+        return "Bucket amounts can't be set directly: they're rebuilt from the project's transactions. Put money in with POST /{smile|fire}/{id}/contribute (MCP contribute).";
+      }
+      const unknown = Object.keys(change).find((key) => !BUCKET_UPDATE_FIELDS.includes(key));
+      if (unknown) return `bucketsUpdate.${unknown} is not an editable bucket field.`;
+      if (change.title !== undefined && !isNonEmptyString(change.title)) {
+        return 'bucketsUpdate.title must be a non-empty string.';
+      }
+      if (
+        change.targetMinor !== undefined &&
+        (!Number.isInteger(change.targetMinor) || change.targetMinor <= 0)
+      ) {
+        return 'bucketsUpdate.targetMinor must be a positive integer.';
+      }
+      const error = validateOptionalBucketFields(change, { allowNull: true });
+      if (error) return error;
+    }
+  }
+  if (
+    bucketsRemove !== undefined &&
+    (!Array.isArray(bucketsRemove) ||
+      !bucketsRemove.every(isNonEmptyString) ||
+      new Set(bucketsRemove).size !== bucketsRemove.length)
+  ) {
+    return 'bucketsRemove must be an array of distinct bucket ids.';
+  }
+  if (input.force !== undefined && typeof input.force !== 'boolean') {
+    return 'force must be a boolean.';
+  }
   return null;
 }
 
@@ -417,6 +498,19 @@ const EDITABLE_SMILE_FIELDS = [
   'links',
   'actionItems',
   'notes',
+  'bucketsAdd',
+  'bucketsUpdate',
+  'bucketsRemove',
+  'actionItemsAdd',
+  'actionItemsUpdate',
+  'actionItemsRemove',
+  'notesAdd',
+  'notesUpdate',
+  'notesRemove',
+  'linksAdd',
+  'linksUpdate',
+  'linksRemove',
+  'force',
 ];
 
 function validatePatchSmileProjectInput(input) {
@@ -465,7 +559,7 @@ function validatePatchSmileProjectInput(input) {
       return 'notes must be an array of {text, createdAt?} objects.';
     }
   }
-  return null;
+  return validateBucketOps(input) || validateGrowListOps(input);
 }
 
 function validateCreateFireProjectInput(input) {
@@ -534,6 +628,19 @@ const EDITABLE_FIRE_FIELDS = [
   'links',
   'actionItems',
   'notes',
+  'bucketsAdd',
+  'bucketsUpdate',
+  'bucketsRemove',
+  'actionItemsAdd',
+  'actionItemsUpdate',
+  'actionItemsRemove',
+  'notesAdd',
+  'notesUpdate',
+  'notesRemove',
+  'linksAdd',
+  'linksUpdate',
+  'linksRemove',
+  'force',
 ];
 
 function validatePatchFireProjectInput(input) {
@@ -582,7 +689,7 @@ function validatePatchFireProjectInput(input) {
       return 'notes must be an array of {text, createdAt?} objects.';
     }
   }
-  return null;
+  return validateBucketOps(input) || validateGrowListOps(input);
 }
 
 const PAYMENT_PLAN_FREQUENCIES = ['weekly', 'biweekly', 'monthly', 'quarterly', 'yearly'];
@@ -1974,7 +2081,7 @@ router.post('/smile', requireScope('smile:w'), async (req, res, next) => {
     });
     return res.status(201).json(project);
   } catch (error) {
-    if (error.code === 'SMILE_DUPLICATE_TITLE') {
+    if (['SMILE_DUPLICATE_TITLE', 'FUND_HAS_MONEY', 'FUND_INVALID_INPUT'].includes(error.code)) {
       return problem(
         res,
         400,
@@ -2046,7 +2153,7 @@ router.patch('/smile/:projectId', requireScope('smile:w'), async (req, res, next
     });
     return res.json(project);
   } catch (error) {
-    if (error.code === 'SMILE_DUPLICATE_TITLE') {
+    if (['SMILE_DUPLICATE_TITLE', 'FUND_HAS_MONEY', 'FUND_INVALID_INPUT'].includes(error.code)) {
       return problem(
         res,
         400,
@@ -2065,6 +2172,7 @@ router.delete('/smile/:projectId', requireScope('smile:w'), async (req, res, nex
       { usersDb: getUsersDb(), authDb: getAuthDb() },
       req.userId,
       req.params.projectId,
+      { force: req.query.force === 'true' },
     );
     if (!deleted) {
       return problem(
@@ -2085,6 +2193,9 @@ router.delete('/smile/:projectId', requireScope('smile:w'), async (req, res, nex
     });
     return res.json({ id: req.params.projectId });
   } catch (error) {
+    if (error.code === 'FUND_HAS_MONEY') {
+      return problem(res, 400, 'validation_invalid', 'Project still holds money', error.message);
+    }
     return next(error);
   }
 });
@@ -2160,7 +2271,7 @@ router.post('/fire', requireScope('fire:w'), async (req, res, next) => {
     });
     return res.status(201).json(project);
   } catch (error) {
-    if (error.code === 'FIRE_DUPLICATE_TITLE') {
+    if (['FIRE_DUPLICATE_TITLE', 'FUND_HAS_MONEY', 'FUND_INVALID_INPUT'].includes(error.code)) {
       return problem(res, 400, 'validation_invalid', 'Invalid Fire project request', error.message);
     }
     return next(error);
@@ -2220,7 +2331,7 @@ router.patch('/fire/:projectId', requireScope('fire:w'), async (req, res, next) 
     });
     return res.json(project);
   } catch (error) {
-    if (error.code === 'FIRE_DUPLICATE_TITLE') {
+    if (['FIRE_DUPLICATE_TITLE', 'FUND_HAS_MONEY', 'FUND_INVALID_INPUT'].includes(error.code)) {
       return problem(res, 400, 'validation_invalid', 'Invalid Fire project request', error.message);
     }
     return next(error);
@@ -2233,6 +2344,7 @@ router.delete('/fire/:projectId', requireScope('fire:w'), async (req, res, next)
       { usersDb: getUsersDb(), authDb: getAuthDb() },
       req.userId,
       req.params.projectId,
+      { force: req.query.force === 'true' },
     );
     if (!deleted) {
       return problem(
@@ -2253,6 +2365,9 @@ router.delete('/fire/:projectId', requireScope('fire:w'), async (req, res, next)
     });
     return res.json({ id: req.params.projectId });
   } catch (error) {
+    if (error.code === 'FUND_HAS_MONEY') {
+      return problem(res, 400, 'validation_invalid', 'Project still holds money', error.message);
+    }
     return next(error);
   }
 });

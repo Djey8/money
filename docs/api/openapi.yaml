@@ -978,6 +978,13 @@ paths:
       description: Not reversible through the API.
       security:
         - bearerAuth: []
+      parameters:
+        - name: force
+          in: query
+          required: false
+          schema:
+            type: boolean
+          description: Required to delete a project that still holds money; its contributions stay as transactions but no longer count toward any project, and active payment plans' subscriptions end today.
       responses:
         '200':
           description: Project deleted
@@ -1176,6 +1183,13 @@ paths:
       description: Not reversible through the API.
       security:
         - bearerAuth: []
+      parameters:
+        - name: force
+          in: query
+          required: false
+          schema:
+            type: boolean
+          description: Required to delete a project that still holds money; its contributions stay as transactions but no longer count toward any project, and active payment plans' subscriptions end today.
       responses:
         '200':
           description: Project deleted
@@ -2492,7 +2506,7 @@ paths:
       description: >-
         Records one contribution transaction in the app's own convention: money leaves `account` (default
         `Smile`, so the stored amount is negative), category `@<project title>`, and — when `buckets` is
-        given — `#bucket:<title>:<amount>` tags the server writes itself. Without `buckets`, it is split evenly across the buckets that still have room. The contribution is
+        given — `#bucket:<title>:<amount>` tags the server writes itself. Without `buckets`, it is split evenly across the buckets that still have room — and that split is written as explicit `#bucket:` tags, so it never shifts when buckets are added later. The contribution is
         capped at the room left (the stored amount is rewritten; compare `requestedMinor` and `appliedMinor`); a full
         target is a 400. The response's `effects` lists everything that changed.
       security:
@@ -4342,6 +4356,12 @@ components:
         targetDate:
           type: string
           format: date
+        completionDate:
+          type: string
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/FundLink'
     UpdateFundNote:
       type: object
       required: [text]
@@ -4407,6 +4427,115 @@ components:
           description: Replaces the entire notes array.
           items:
             $ref: '#/components/schemas/UpdateFundNote'
+        bucketsAdd:
+          type: array
+          description: New buckets to append (they get a new id; amounts come only from contributions).
+          items:
+            $ref: '#/components/schemas/UpdateFundBucket'
+        bucketsUpdate:
+          type: array
+          description: Edits by bucket id; only the given fields change, `null` removes an optional field. Renaming carries over to the money (see title).
+          items:
+            type: object
+            required: [id]
+            properties:
+              id:
+                type: string
+              title:
+                type: string
+              targetMinor:
+                type: integer
+                minimum: 1
+              notes:
+                type: string
+                nullable: true
+              links:
+                type: array
+                nullable: true
+                items:
+                  $ref: '#/components/schemas/FundLink'
+              targetDate:
+                type: string
+                nullable: true
+              completionDate:
+                type: string
+                nullable: true
+        bucketsRemove:
+          type: array
+          description: Bucket ids to remove. A bucket still holding money is refused unless force is true.
+          items:
+            type: string
+        force:
+          type: boolean
+          description: >-
+            Allow removing a bucket that holds money (also by leaving it out of a whole `buckets` replace). Its
+            `#bucket:` tags are stripped so the engine redistributes that money across the remaining buckets by the
+            project's default rule (Fire: a removed bucket's `@<bucket>` contributions move to the fund itself).
+        actionItemsAdd:
+          type: array
+          items:
+            $ref: '#/components/schemas/UpdateFundActionItem'
+        actionItemsUpdate:
+          type: array
+          description: Edits by index into the current list.
+          items:
+            type: object
+            required: [index]
+            properties:
+              index:
+                type: integer
+              text:
+                type: string
+              done:
+                type: boolean
+              priority:
+                type: string
+                enum: [low, medium, high]
+              dueDate:
+                type: string
+                nullable: true
+        actionItemsRemove:
+          type: array
+          items:
+            type: integer
+        notesAdd:
+          type: array
+          items:
+            $ref: '#/components/schemas/UpdateFundNote'
+        notesUpdate:
+          type: array
+          items:
+            type: object
+            required: [index, text]
+            properties:
+              index:
+                type: integer
+              text:
+                type: string
+        notesRemove:
+          type: array
+          items:
+            type: integer
+        linksAdd:
+          type: array
+          items:
+            $ref: '#/components/schemas/FundLink'
+        linksUpdate:
+          type: array
+          items:
+            type: object
+            required: [index]
+            properties:
+              index:
+                type: integer
+              label:
+                type: string
+              url:
+                type: string
+        linksRemove:
+          type: array
+          items:
+            type: integer
     FireBucket:
       type: object
       required: [id, title, targetMinor, amountMinor]
@@ -4585,6 +4714,115 @@ components:
           description: Replaces the entire notes array.
           items:
             $ref: '#/components/schemas/UpdateFundNote'
+        bucketsAdd:
+          type: array
+          description: New buckets to append (they get a new id; amounts come only from contributions).
+          items:
+            $ref: '#/components/schemas/UpdateFundBucket'
+        bucketsUpdate:
+          type: array
+          description: Edits by bucket id; only the given fields change, `null` removes an optional field. Renaming carries over to the money (see title).
+          items:
+            type: object
+            required: [id]
+            properties:
+              id:
+                type: string
+              title:
+                type: string
+              targetMinor:
+                type: integer
+                minimum: 1
+              notes:
+                type: string
+                nullable: true
+              links:
+                type: array
+                nullable: true
+                items:
+                  $ref: '#/components/schemas/FundLink'
+              targetDate:
+                type: string
+                nullable: true
+              completionDate:
+                type: string
+                nullable: true
+        bucketsRemove:
+          type: array
+          description: Bucket ids to remove. A bucket still holding money is refused unless force is true.
+          items:
+            type: string
+        force:
+          type: boolean
+          description: >-
+            Allow removing a bucket that holds money (also by leaving it out of a whole `buckets` replace). Its
+            `#bucket:` tags are stripped so the engine redistributes that money across the remaining buckets by the
+            project's default rule (Fire: a removed bucket's `@<bucket>` contributions move to the fund itself).
+        actionItemsAdd:
+          type: array
+          items:
+            $ref: '#/components/schemas/UpdateFundActionItem'
+        actionItemsUpdate:
+          type: array
+          description: Edits by index into the current list.
+          items:
+            type: object
+            required: [index]
+            properties:
+              index:
+                type: integer
+              text:
+                type: string
+              done:
+                type: boolean
+              priority:
+                type: string
+                enum: [low, medium, high]
+              dueDate:
+                type: string
+                nullable: true
+        actionItemsRemove:
+          type: array
+          items:
+            type: integer
+        notesAdd:
+          type: array
+          items:
+            $ref: '#/components/schemas/UpdateFundNote'
+        notesUpdate:
+          type: array
+          items:
+            type: object
+            required: [index, text]
+            properties:
+              index:
+                type: integer
+              text:
+                type: string
+        notesRemove:
+          type: array
+          items:
+            type: integer
+        linksAdd:
+          type: array
+          items:
+            $ref: '#/components/schemas/FundLink'
+        linksUpdate:
+          type: array
+          items:
+            type: object
+            required: [index]
+            properties:
+              index:
+                type: integer
+              label:
+                type: string
+              url:
+                type: string
+        linksRemove:
+          type: array
+          items:
+            type: integer
     CreatePaymentPlanRequest:
       type: object
       required: [planTitle, startDate, targetDate, frequency, account]

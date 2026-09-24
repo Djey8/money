@@ -134,6 +134,22 @@ describe('contributeToProject (Smile)', () => {
   });
 });
 
+describe('a default Smile split is pinned with tags', () => {
+  it('so adding a bucket later does not move money already saved', async () => {
+    const { deps } = writableDeps({ smile: [vacation()] });
+    const result = await contributeToProject(deps, 'user_1', 'smile', 'smile_1', {
+      amountMinor: 20000,
+    });
+    expect(result.transaction.comment).toBe('#bucket:Flight:100.00 #bucket:Hotel:100.00');
+
+    const { updateSmileProject } = require('../../repositories/smile-repository');
+    const updated = await updateSmileProject(deps, 'user_1', 'smile_1', {
+      bucketsAdd: [{ title: 'Food', targetMinor: 30000 }],
+    });
+    expect(updated.buckets.map((b) => b.amountMinor)).toEqual([10000, 10000, 0]);
+  });
+});
+
 describe('contributeToProject (Fire)', () => {
   it('goes to the first bucket by default and completes the fund when every bucket is full', async () => {
     const { deps } = writableDeps({

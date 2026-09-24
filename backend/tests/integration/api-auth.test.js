@@ -1977,6 +1977,48 @@ describe('v1 API authentication and PAT management', () => {
       );
     });
 
+    it('edits buckets by id and guards removing or deleting money', async () => {
+      const { token } = await smileToken(['smile:r', 'smile:w']);
+      const created = await createProject(token, { title: `Smile Guard ${Date.now()}` });
+      const bucket = created.buckets[0];
+      await request(app)
+        .post(`/api/v1/smile/${created.id}/contribute`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ amountMinor: 1000 })
+        .expect(201);
+
+      const edited = await request(app)
+        .patch(`/api/v1/smile/${created.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          bucketsUpdate: [{ id: bucket.id, notes: 'Main pot' }],
+          bucketsAdd: [{ title: 'Extra', targetMinor: 5000 }],
+        });
+      expect(edited.status).toBe(200);
+      expect(edited.body.buckets[0]).toMatchObject({ notes: 'Main pot', amountMinor: 1000 });
+
+      const setAmount = await request(app)
+        .patch(`/api/v1/smile/${created.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ bucketsUpdate: [{ id: bucket.id, amountMinor: 5 }] });
+      expect(setAmount.status).toBe(400);
+
+      const removeFunded = await request(app)
+        .patch(`/api/v1/smile/${created.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ bucketsRemove: [bucket.id] });
+      expect(removeFunded.status).toBe(400);
+
+      const deleteFunded = await request(app)
+        .delete(`/api/v1/smile/${created.id}`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(deleteFunded.status).toBe(400);
+      const forced = await request(app)
+        .delete(`/api/v1/smile/${created.id}?force=true`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(forced.status).toBe(200);
+    });
+
     it('contributes through a typed action, capped and reported, and lists the project transactions', async () => {
       const { token } = await smileToken(['smile:r', 'smile:w']);
       const created = await createProject(token, { title: `Smile Contribute ${Date.now()}` });

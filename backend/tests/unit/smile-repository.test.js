@@ -757,9 +757,17 @@ describe('renaming a project or bucket keeps its money', () => {
 });
 
 describe('deleteSmileProject', () => {
+  it('refuses to delete a project that still holds money unless forced', async () => {
+    const { deps, current } = writableDeps(existingProjectDocument());
+    await expect(deleteSmileProject(deps, 'user_1', 'smile_1')).rejects.toMatchObject({
+      code: 'FUND_HAS_MONEY',
+    });
+    expect(current().data.smile).toHaveLength(1);
+  });
+
   it('removes the project and returns its id', async () => {
     const { deps, current } = writableDeps(existingProjectDocument());
-    const result = await deleteSmileProject(deps, 'user_1', 'smile_1');
+    const result = await deleteSmileProject(deps, 'user_1', 'smile_1', { force: true });
     expect(result).toMatchObject({ id: 'smile_1', effects: expect.any(Object) });
     expect(current().data.smile).toEqual([]);
   });
@@ -787,7 +795,7 @@ describe('deleteSmileProject', () => {
       updatedAt: '2026-01-01T00:00:00.000Z',
     });
     const { deps, current } = writableDeps(document);
-    await deleteSmileProject(deps, 'user_1', 'smile_1');
+    await deleteSmileProject(deps, 'user_1', 'smile_1', { force: true });
     expect(current().data.smile.map((p) => p.id)).toEqual(['smile_2']);
   });
 });

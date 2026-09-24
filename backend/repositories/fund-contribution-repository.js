@@ -15,7 +15,7 @@
  * room left and reports `effects`.
  */
 
-const { parseBucketAllocations, fromMinorUnits } = require('@money/domain');
+const { parseBucketAllocations, fromMinorUnits, distributeEvenly } = require('@money/domain');
 const { createTransaction, listTransactions } = require('./transaction-repository');
 const smile = require('./smile-repository');
 const fire = require('./fire-repository');
@@ -47,18 +47,41 @@ function roomLeft(bucket) {
   return Math.max(0, bucket.targetMinor - bucket.amountMinor);
 }
 
+function tagsFor(buckets, amountsById) {
+  return buckets
+    .filter((bucket) => (amountsById.get(bucket.id) || 0) > 0)
+    .map(
+      (bucket) =>
+        `#bucket:${bucket.title}:${fromMinorUnits(amountsById.get(bucket.id)).toFixed(2)}`,
+    )
+    .join(' ');
+}
+
 /**
- * Resolves the requested split to `{totalMinor, tags}`. Without `buckets`,
- * the engine's own default applies (Smile: even split across buckets with
- * room; Fire: the first bucket) — so no tags.
+ * Resolves the requested split to `{totalMinor, tags}`.
+ *
+ * Without `buckets`, the engine's default applies — but for Smile it's
+ * computed now and written as explicit tags: an untagged Smile
+ * contribution is re-split across whatever buckets exist each time amounts
+ * are rebuilt, so adding a bucket later would silently move money that was
+ * already saved. Fire's default (the first bucket) doesn't shift, so it
+ * stays untagged, exactly like the app writes it.
  */
-function resolveSplit(project, input) {
+function resolveSplit(kind, project, input) {
   if (!input.buckets || input.buckets.length === 0) {
     const room = project.buckets.reduce((sum, bucket) => sum + roomLeft(bucket), 0);
     if (room === 0) {
       throw contributionError('FUND_FULL', `Every bucket of "${project.title}" is already full.`);
     }
-    return { totalMinor: input.amountMinor, tags: '' };
+    if (kind === 'fire') return { totalMinor: input.amountMinor, tags: '' };
+    const split = distributeEvenly(project.buckets, input.amountMinor);
+    const applied = new Map(
+      split.map((bucket, index) => [
+        bucket.id,
+        bucket.amountMinor - project.buckets[index].amountMinor,
+      ]),
+    );
+    return { totalMinor: input.amountMinor, tags: tagsFor(project.buckets, applied) };
   }
   const tags = [];
   let totalMinor = 0;
@@ -89,7 +112,7 @@ async function contributeToProject(deps, userId, kind, projectId, input) {
   const repository = REPOSITORIES[kind];
   const project = await repository.getProject(deps, userId, projectId);
   if (!project) return null;
-  const { totalMinor, tags } = resolveSplit(project, input);
+  const { totalMinor, tags } = resolveSplit(kind, project, input);
   const transaction = await createTransaction(deps, userId, {
     account: input.account || DEFAULT_ACCOUNT[kind],
     amountMinor: -totalMinor,

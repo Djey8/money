@@ -26,6 +26,87 @@ const { writeValue, toStoredMoney } = require('../services/transaction-derived-s
 const { rebuildDerivedState } = require('../services/rebuild-derived');
 const { computeWriteEffects } = require('../services/write-effects');
 const { cascadeFundRename, createRenamer, renamePlan } = require('../services/fund-rename');
+const { applyAllListOps, normalizeActionItem, normalizeNote } = require('../services/list-ops');
+
+function fundError(code, message) {
+  const error = new Error(message);
+  error.code = code;
+  return error;
+}
+
+/** Optional bucket fields: `null` removes one on update. */
+const OPTIONAL_BUCKET_FIELDS = ['notes', 'links', 'targetDate', 'completionDate'];
+
+function withOptionalBucketFields(bucket, input) {
+  const next = { ...bucket };
+  for (const field of OPTIONAL_BUCKET_FIELDS) {
+    if (input[field] === null) delete next[field];
+    else if (input[field] !== undefined) next[field] = input[field];
+  }
+  return next;
+}
+
+/**
+ * Item-level bucket edits by bucket id: updates, then removals, then
+ * additions. Amounts are never input (rebuilt from transactions).
+ */
+function applyBucketOps(buckets, patch, newBucket) {
+  let next = buckets;
+  for (const change of patch.bucketsUpdate || []) {
+    const index = next.findIndex((bucket) => bucket.id === change.id);
+    if (index === -1) throw fundError('FUND_INVALID_INPUT', `Bucket ${change.id} doesn't exist.`);
+    const updated = withOptionalBucketFields(next[index], change);
+    if (change.title !== undefined) updated.title = change.title.trim();
+    if (change.targetMinor !== undefined) updated.targetMinor = change.targetMinor;
+    next = next.map((bucket, i) => (i === index ? updated : bucket));
+  }
+  for (const id of patch.bucketsRemove || []) {
+    if (!next.some((bucket) => bucket.id === id)) {
+      throw fundError('FUND_INVALID_INPUT', `Bucket ${id} doesn't exist.`);
+    }
+    next = next.filter((bucket) => bucket.id !== id);
+  }
+  return [...next, ...(patch.bucketsAdd || []).map((input) => newBucket(input))];
+}
+
+function assertValidBuckets(buckets) {
+  if (buckets.length === 0) {
+    throw fundError('FUND_INVALID_INPUT', 'A project needs at least one bucket.');
+  }
+  const seen = new Set();
+  for (const bucket of buckets) {
+    const key = bucket.title.trim().toLocaleLowerCase();
+    if (seen.has(key)) {
+      throw fundError(
+        'FUND_INVALID_INPUT',
+        'Bucket titles must be unique within a project (case-insensitive).',
+      );
+    }
+    seen.add(key);
+  }
+}
+
+/**
+ * Removing a bucket that holds money (or deleting a project with
+ * contributions) is refused unless `force`: the money's routing depends on
+ * that bucket/project by name. With force, a removed bucket's tags are
+ * stripped (fund-rename.js) so the engine redistributes that money under
+ * the project's default rule; `effects` shows the result.
+ */
+function assertNoMoneyLost(current, buckets, force) {
+  if (force) return;
+  const remaining = new Set(buckets.map((bucket) => bucket.id));
+  const funded = current.buckets.filter(
+    (bucket) => !remaining.has(bucket.id) && bucket.amountMinor > 0,
+  );
+  if (funded.length > 0) {
+    const list = funded.map((bucket) => `"${bucket.title}" (${bucket.amountMinor})`).join(', ');
+    throw fundError(
+      'FUND_HAS_MONEY',
+      `Removing ${list} would move money already saved in it. Send force: true to remove anyway — its contributions are then redistributed across the remaining buckets by the project's default rule.`,
+    );
+  }
+}
 
 const MAX_WRITE_RETRIES = 10;
 const FUND_PHASES = ['idea', 'planning', 'saving', 'ready', 'completed'];
@@ -317,9 +398,7 @@ function createFundProjectRepository({ kind, label, codePrefix }) {
       // Never input: bucket amounts are rebuilt from transactions on every write.
       amountMinor: 0,
     };
-    if (bucketInput.notes !== undefined) bucket.notes = bucketInput.notes;
-    if (bucketInput.targetDate !== undefined) bucket.targetDate = bucketInput.targetDate;
-    return bucket;
+    return withOptionalBucketFields(bucket, bucketInput);
   }
 
   /**
@@ -466,6 +545,11 @@ function createFundProjectRepository({ kind, label, codePrefix }) {
         const existingBucketIds = new Set(current.buckets.map((bucket) => bucket.id));
         buckets = patch.buckets.map((bucketInput) => buildBucket(bucketInput, existingBucketIds));
       }
+      if (patch.bucketsAdd || patch.bucketsUpdate || patch.bucketsRemove) {
+        buckets = applyBucketOps(buckets, patch, (input) => buildBucket(input));
+      }
+      assertValidBuckets(buckets);
+      assertNoMoneyLost(current, buckets, patch.force === true);
 
       const updatedProject = {
         ...current,
@@ -476,17 +560,24 @@ function createFundProjectRepository({ kind, label, codePrefix }) {
         buckets,
         totals: computeProjectTotals(buckets),
         links: patch.links !== undefined ? patch.links : current.links,
-        // `done` is required (not defaulted) here by validatePatchSmileProjectInput
+        // `done` is required (not defaulted) here by the route validator
         // — this replaces the whole array, so a missing `done` on an
         // already-done item the caller forgot to echo back must never
         // silently un-complete it the way defaulting to false would.
-        actionItems: patch.actionItems !== undefined ? patch.actionItems : current.actionItems,
+        actionItems:
+          patch.actionItems !== undefined
+            ? patch.actionItems.map(normalizeActionItem)
+            : current.actionItems,
         notes:
           patch.notes !== undefined
-            ? patch.notes.map((note) => ({ text: note.text, createdAt: note.createdAt || now }))
+            ? patch.notes.map((note) => normalizeNote(note, now))
             : current.notes,
         updatedAt: now,
       };
+      Object.assign(
+        updatedProject,
+        applyAllListOps(updatedProject, patch, now, 'FUND_INVALID_INPUT'),
+      );
       if (patch.targetDate !== undefined) updatedProject.targetDate = patch.targetDate;
       if (patch.completionDate !== undefined) updatedProject.completionDate = patch.completionDate;
       // Mirrors info-smile.component.ts's advancePhase(): moving to 'completed'
@@ -502,7 +593,7 @@ function createFundProjectRepository({ kind, label, codePrefix }) {
       const renamer = createRenamer(kind, current, updatedProject);
       if (renamer.changed) {
         updatedProject.plannedSubscriptions = (current.plannedSubscriptions || []).map((plan) =>
-          renamePlan(plan, renamer, updatedProject.title),
+          renamePlan(plan, renamer, updatedProject),
         );
       }
       const baseData = cascadeFundRename(
@@ -591,14 +682,43 @@ function createFundProjectRepository({ kind, label, codePrefix }) {
     });
   }
 
-  async function deleteProject(deps, userId, projectId) {
-    return withProjectWrite(deps, userId, ({ rawProjects, session, schemaVersion }) => {
+  /**
+   * Refused while transactions still count toward the project unless
+   * `force` — they keep their amounts either way (nothing matches their
+   * category any more), but the saved money no longer shows in any project.
+   * With force, active payment plans' subscriptions are ended today, as the
+   * app does when a plan is deleted (subscription-activation.service.ts).
+   */
+  async function deleteProject(deps, userId, projectId, { force = false } = {}) {
+    return withProjectWrite(deps, userId, ({ data, rawProjects, session, schemaVersion }) => {
       const existingProjects = decryptAllProjects(rawProjects, session, schemaVersion);
       const index = existingProjects.findIndex((project) => project.id === projectId);
       if (index === -1) return null;
+      const project = existingProjects[index];
+      const saved = project.buckets.reduce((sum, bucket) => sum + bucket.amountMinor, 0);
+      if (saved > 0 && !force) {
+        throw fundError(
+          'FUND_HAS_MONEY',
+          `"${project.title}" still holds ${saved} (minor units) from its contributions. Send force: true to delete it anyway — the contributions stay as transactions but no longer count toward any project.`,
+        );
+      }
+      const today = new Date().toISOString().slice(0, 10);
+      const activePlans = (project.plannedSubscriptions || []).filter(
+        (plan) => plan.status === 'active',
+      );
+      const subscriptions = (data.subscriptions || []).map((raw) => {
+        const matches = activePlans.some(
+          (plan) =>
+            decryptValue(raw.title, session) === plan.title &&
+            decryptValue(raw.category, session) === plan.category &&
+            decryptValue(raw.frequency, session) === plan.frequency,
+        );
+        return matches ? { ...raw, endDate: writeValue(today, session) } : raw;
+      });
       return {
         updatedRawProjects: rawProjects.filter((_, i) => i !== index),
         result: { id: projectId },
+        ...(activePlans.length > 0 && { baseData: { ...data, subscriptions } }),
       };
     });
   }
