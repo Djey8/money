@@ -625,11 +625,50 @@ describe('updateSmileProject', () => {
   });
 });
 
+describe('bucket amounts are rebuilt from transactions on every write', () => {
+  function withContribution() {
+    const document = existingProjectDocument();
+    document.data.meta = { schemaVersion: 2 };
+    document.data.smile[0].buckets = [{ id: 'b1', title: 'Flights', target: 150000, amount: 999 }];
+    document.data.transactions = [
+      {
+        id: 'tx_1',
+        account: 'Smile',
+        amount: -30000,
+        date: '2026-09-01',
+        time: '10:00',
+        category: '@Vacation',
+        comment: '',
+      },
+    ];
+    return document;
+  }
+
+  it('replaces a stale stored amount with what the transactions add up to', async () => {
+    const { deps } = writableDeps(withContribution());
+    const result = await updateSmileProject(deps, 'user_1', 'smile_1', { sub: 'Summer' });
+    expect(result.buckets[0].amountMinor).toBe(30000);
+    expect(result.totals).toMatchObject({ amountMinor: 30000 });
+  });
+
+  it('lowering a target re-caps the bucket and the stored transaction, and reports it', async () => {
+    const { deps, current } = writableDeps(withContribution());
+    const result = await updateSmileProject(deps, 'user_1', 'smile_1', {
+      buckets: [{ id: 'b1', title: 'Flights', targetMinor: 20000 }],
+    });
+    expect(result.buckets[0].amountMinor).toBe(20000);
+    expect(current().data.transactions[0].amount).toBe(-20000);
+    expect(result.effects.smile).toEqual([
+      { project: 'Vacation', bucket: 'Flights', beforeMinor: 999, afterMinor: 20000 },
+    ]);
+  });
+});
+
 describe('deleteSmileProject', () => {
   it('removes the project and returns its id', async () => {
     const { deps, current } = writableDeps(existingProjectDocument());
     const result = await deleteSmileProject(deps, 'user_1', 'smile_1');
-    expect(result).toEqual({ id: 'smile_1' });
+    expect(result).toMatchObject({ id: 'smile_1', effects: expect.any(Object) });
     expect(current().data.smile).toEqual([]);
   });
 

@@ -311,11 +311,8 @@ function validateFundBucketInput(bucket) {
   if (!Number.isInteger(bucket.targetMinor) || bucket.targetMinor <= 0) {
     return 'Each bucket requires a positive integer targetMinor.';
   }
-  if (
-    bucket.amountMinor !== undefined &&
-    (!Number.isInteger(bucket.amountMinor) || bucket.amountMinor < 0)
-  ) {
-    return "Each bucket's amountMinor must be a non-negative integer.";
+  if (bucket.amountMinor !== undefined) {
+    return "Bucket amounts can't be set directly: they're rebuilt from the project's transactions. Put money in with POST /{smile|fire}/{id}/contribute (MCP contribute).";
   }
   // `id` is only meaningful on PATCH (preserves an existing bucket's identity
   // across the update); create always mints a fresh one regardless, so this
@@ -360,11 +357,8 @@ function validateCreateSmileProjectInput(input) {
     if (!Number.isInteger(input.targetMinor) || input.targetMinor <= 0) {
       return 'targetMinor must be a positive integer.';
     }
-    if (
-      input.amountMinor !== undefined &&
-      (!Number.isInteger(input.amountMinor) || input.amountMinor < 0)
-    ) {
-      return 'amountMinor must be a non-negative integer.';
+    if (input.amountMinor !== undefined) {
+      return "Bucket amounts can't be set directly: they're rebuilt from the project's transactions. Put money in with POST /{smile|fire}/{id}/contribute (MCP contribute).";
     }
   }
   if (input.buckets !== undefined) {
@@ -480,11 +474,8 @@ function validateCreateFireProjectInput(input) {
     if (!Number.isInteger(input.targetMinor) || input.targetMinor <= 0) {
       return 'targetMinor must be a positive integer.';
     }
-    if (
-      input.amountMinor !== undefined &&
-      (!Number.isInteger(input.amountMinor) || input.amountMinor < 0)
-    ) {
-      return 'amountMinor must be a non-negative integer.';
+    if (input.amountMinor !== undefined) {
+      return "Bucket amounts can't be set directly: they're rebuilt from the project's transactions. Put money in with POST /{smile|fire}/{id}/contribute (MCP contribute).";
     }
   }
   if (input.buckets !== undefined) {

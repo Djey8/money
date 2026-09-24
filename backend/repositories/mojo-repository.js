@@ -4,6 +4,8 @@ const { computeMojoStatus, toMinorUnits, MONEY_FIELD_NAMES } = require('@money/d
 const { getEncryptionSession } = require('../services/encryption-session');
 const { decryptValue } = require('./transaction-repository');
 const { writeValue, toStoredMoney } = require('../services/transaction-derived-state');
+const { rebuildDerivedState } = require('../services/rebuild-derived');
+const { computeWriteEffects } = require('../services/write-effects');
 
 const MAX_WRITE_RETRIES = 10;
 
@@ -67,13 +69,17 @@ async function updateMojoTarget({ usersDb, authDb }, userId, targetMinor) {
     const data = userDoc.data || {};
     const session = await getEncryptionSession(authDb, userId);
     const schemaVersion = data.meta?.schemaVersion || 1;
-    const existingBalance = toMojoBalance(data.mojo, session, schemaVersion);
     const rawTarget = toStoredMoney(targetMinor, schemaVersion);
     const updatedMojo = { ...(data.mojo || {}), target: writeValue(rawTarget, session) };
-    const updatedData = { ...data, mojo: updatedMojo };
+    // The Mojo balance is capped at the target while it's rebuilt from
+    // transactions, so a new target changes it: rebuild right away.
+    const updatedData = rebuildDerivedState({ ...data, mojo: updatedMojo }, session, schemaVersion);
     try {
       await usersDb.insert({ ...userDoc, data: updatedData, updatedAt: new Date().toISOString() });
-      return computeMojoStatus({ amountMinor: existingBalance.amountMinor, targetMinor });
+      return {
+        ...computeMojoStatus(toMojoBalance(updatedData.mojo, session, schemaVersion)),
+        effects: computeWriteEffects(data, updatedData, session, schemaVersion),
+      };
     } catch (error) {
       if (error.statusCode !== 409) throw error;
       attempt += 1;

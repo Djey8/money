@@ -3810,6 +3810,10 @@ components:
       type: object
       required: [amountMinor, targetMinor, remainingMinor, percentFilled]
       properties:
+        effects:
+          description: Present on write responses only — everything the write changed (bucket/Mojo amounts are rebuilt from transactions on every write).
+          allOf:
+            - $ref: '#/components/schemas/WriteEffects'
         amountMinor:
           type: integer
           description: Derived from transaction history — not directly writable.
@@ -3989,6 +3993,10 @@ components:
         - createdAt
         - updatedAt
       properties:
+        effects:
+          description: Present on write responses only — everything the write changed (bucket/Mojo amounts are rebuilt from transactions on every write).
+          allOf:
+            - $ref: '#/components/schemas/WriteEffects'
         id:
           type: string
         title:
@@ -4055,9 +4063,6 @@ components:
         targetMinor:
           type: integer
           description: Creates a single default bucket named after `title`. Either this or a non-empty `buckets` is required.
-        amountMinor:
-          type: integer
-          description: Only used together with `targetMinor`; defaults to 0.
         buckets:
           type: array
           items:
@@ -4068,9 +4073,6 @@ components:
                 type: string
               targetMinor:
                 type: integer
-              amountMinor:
-                type: integer
-                default: 0
               notes:
                 type: string
               targetDate:
@@ -4120,9 +4122,6 @@ components:
           type: string
         targetMinor:
           type: integer
-        amountMinor:
-          type: integer
-          default: 0
         notes:
           type: string
         targetDate:
@@ -4234,6 +4233,10 @@ components:
         - createdAt
         - updatedAt
       properties:
+        effects:
+          description: Present on write responses only — everything the write changed (bucket/Mojo amounts are rebuilt from transactions on every write).
+          allOf:
+            - $ref: '#/components/schemas/WriteEffects'
         id:
           type: string
         title:
@@ -4300,9 +4303,6 @@ components:
         targetMinor:
           type: integer
           description: Creates a single default bucket named after `title`. Either this or a non-empty `buckets` is required.
-        amountMinor:
-          type: integer
-          description: Only used together with `targetMinor`; defaults to 0.
         buckets:
           type: array
           items:
@@ -4313,9 +4313,6 @@ components:
                 type: string
               targetMinor:
                 type: integer
-              amountMinor:
-                type: integer
-                default: 0
               notes:
                 type: string
               targetDate:

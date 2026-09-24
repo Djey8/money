@@ -629,7 +629,7 @@ describe('deleteFireProject', () => {
   it('removes the project and returns its id', async () => {
     const { deps, current } = writableDeps(existingProjectDocument());
     const result = await deleteFireProject(deps, 'user_1', 'fire_1');
-    expect(result).toEqual({ id: 'fire_1' });
+    expect(result).toMatchObject({ id: 'fire_1', effects: expect.any(Object) });
     expect(current().data.fire).toEqual([]);
   });
 

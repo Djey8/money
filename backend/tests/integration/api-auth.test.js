@@ -1653,7 +1653,7 @@ describe('v1 API authentication and PAT management', () => {
       });
     });
 
-    it('updates only the target, leaving the derived amount untouched, and audit logs the write', async () => {
+    it('updates the target, rebuilds the balance from transactions, reports effects, and audit logs the write', async () => {
       const { token, tokenId } = await mojoToken(['mojo:r', 'mojo:w']);
       await setMojo(firstUser.userId, { amount: 1500, target: 2000 });
       const response = await request(app)
@@ -1661,14 +1661,12 @@ describe('v1 API authentication and PAT management', () => {
         .set('Authorization', `Bearer ${token}`)
         .send({ targetMinor: 300000 });
       expect(response.status).toBe(200);
-      expect(response.body).toEqual({
-        amountMinor: 150000,
-        targetMinor: 300000,
-        remainingMinor: 150000,
-        percentFilled: 50,
-      });
+      expect(response.body.targetMinor).toBe(300000);
+      expect(response.body.amountMinor).toBeLessThanOrEqual(300000);
+      expect(response.body.effects).toHaveProperty('mojo');
+      const reread = await request(app).get('/api/v1/mojo').set('Authorization', `Bearer ${token}`);
+      expect(reread.body.amountMinor).toBe(response.body.amountMinor);
       const stored = await getUsersDb().get(firstUser.userId);
-      expect(stored.data.mojo.amount).toBe(1500);
       expect(stored.data.mojo.target).toBe(3000);
       const auditEntries = await queryAuditEntries(getAuditDb(), firstUser.userId, {
         resource: 'mojo',
@@ -1992,7 +1990,6 @@ describe('v1 API authentication and PAT management', () => {
               id: existingBucketId,
               title: created.buckets[0].title,
               targetMinor: 200000,
-              amountMinor: 50000,
             },
             { title: 'New Bucket', targetMinor: 30000 },
           ],
@@ -2001,10 +1998,16 @@ describe('v1 API authentication and PAT management', () => {
       expect(response.body.buckets[0]).toMatchObject({
         id: existingBucketId,
         targetMinor: 200000,
-        amountMinor: 50000,
+        amountMinor: 0,
       });
       expect(response.body.buckets[1].id).not.toBe(existingBucketId);
       expect(response.body.totals.targetMinor).toBe(230000);
+
+      const withAmount = await request(app)
+        .patch(`/api/v1/smile/${created.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ buckets: [{ title: 'X', targetMinor: 100, amountMinor: 50 }] });
+      expect(withAmount.status).toBe(400);
     });
 
     it('rejects an unrecognized field', async () => {
@@ -2610,7 +2613,6 @@ describe('v1 API authentication and PAT management', () => {
               id: existingBucketId,
               title: created.buckets[0].title,
               targetMinor: 200000,
-              amountMinor: 50000,
             },
             { title: 'New Bucket', targetMinor: 30000 },
           ],
@@ -2619,10 +2621,16 @@ describe('v1 API authentication and PAT management', () => {
       expect(response.body.buckets[0]).toMatchObject({
         id: existingBucketId,
         targetMinor: 200000,
-        amountMinor: 50000,
+        amountMinor: 0,
       });
       expect(response.body.buckets[1].id).not.toBe(existingBucketId);
       expect(response.body.totals.targetMinor).toBe(230000);
+
+      const withAmount = await request(app)
+        .patch(`/api/v1/fire/${created.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ buckets: [{ title: 'X', targetMinor: 100, amountMinor: 50 }] });
+      expect(withAmount.status).toBe(400);
     });
 
     it('rejects an unrecognized field', async () => {

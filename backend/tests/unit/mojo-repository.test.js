@@ -63,11 +63,24 @@ describe('getMojoStatus', () => {
 });
 
 describe('updateMojoTarget', () => {
-  it('updates only the target, leaving the derived amount untouched', async () => {
+  it('updates the target and rebuilds the balance from @Mojo transactions, capped at the target', async () => {
     let document = {
       _id: 'user_1',
       _rev: '1-a',
-      data: { mojo: { amount: 1500, target: 2000 } },
+      data: {
+        mojo: { amount: 1500, target: 2000 },
+        transactions: [
+          {
+            id: 'tx_1',
+            account: 'Daily',
+            amount: -1500,
+            date: '2026-09-01',
+            time: '10:00',
+            category: '@Mojo',
+            comment: '',
+          },
+        ],
+      },
     };
     const deps = {
       usersDb: {
@@ -83,14 +96,19 @@ describe('updateMojoTarget', () => {
       },
     };
     const status = await updateMojoTarget(deps, 'user_1', 300000);
-    expect(status).toEqual({
+    expect(status).toMatchObject({
       amountMinor: 150000,
       targetMinor: 300000,
       remainingMinor: 150000,
       percentFilled: 50,
     });
+    expect(status.effects.mojo).toBeNull();
     expect(document.data.mojo.amount).toBe(1500);
     expect(document.data.mojo.target).toBe(3000);
+
+    const lowered = await updateMojoTarget(deps, 'user_1', 100000);
+    expect(lowered.amountMinor).toBe(100000);
+    expect(lowered.effects.mojo).toEqual({ beforeMinor: 150000, afterMinor: 100000 });
   });
 
   it('creates a fresh document for a user with none yet', async () => {
@@ -107,7 +125,7 @@ describe('updateMojoTarget', () => {
       authDb: { get: jest.fn(async () => Promise.reject(notFound)) },
     };
     const status = await updateMojoTarget(deps, 'user_1', 200000);
-    expect(status).toEqual({
+    expect(status).toMatchObject({
       amountMinor: 0,
       targetMinor: 200000,
       remainingMinor: 200000,

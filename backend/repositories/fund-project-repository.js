@@ -23,6 +23,8 @@ const {
 const { getEncryptionSession } = require('../services/encryption-session');
 const { decryptValue } = require('./transaction-repository');
 const { writeValue, toStoredMoney } = require('../services/transaction-derived-state');
+const { rebuildDerivedState } = require('../services/rebuild-derived');
+const { computeWriteEffects } = require('../services/write-effects');
 
 const MAX_WRITE_RETRIES = 10;
 const FUND_PHASES = ['idea', 'planning', 'saving', 'ready', 'completed'];
@@ -311,7 +313,8 @@ function createFundProjectRepository({ kind, label, codePrefix }) {
       id,
       title: bucketInput.title.trim(),
       targetMinor: bucketInput.targetMinor,
-      amountMinor: bucketInput.amountMinor || 0,
+      // Never input: bucket amounts are rebuilt from transactions on every write.
+      amountMinor: 0,
     };
     if (bucketInput.notes !== undefined) bucket.notes = bucketInput.notes;
     if (bucketInput.targetDate !== undefined) bucket.targetDate = bucketInput.targetDate;
@@ -327,6 +330,21 @@ function createFundProjectRepository({ kind, label, codePrefix }) {
    * either `null` (nothing to do — e.g. the target id doesn't exist, no write
    * happens) or `{ updatedRawProjects, result }`.
    */
+  /**
+   * A returned project is re-read from the rebuilt data, so its bucket
+   * amounts (and a Fire project's auto-completion) reflect the rebuild, not
+   * the pre-rebuild values the mutation built; every result carries `effects`.
+   */
+  function withRebuiltResult(result, updatedData, session, schemaVersion, effects) {
+    if (result && Array.isArray(result.buckets) && result.id) {
+      const raw = (updatedData[kind] || []).find(
+        (candidate) => decryptValue(candidate.id, session) === result.id,
+      );
+      if (raw) return { ...decryptProject(raw, session, schemaVersion), effects };
+    }
+    return { ...result, effects };
+  }
+
   async function withProjectWrite({ usersDb, authDb }, userId, mutate) {
     let attempt = 0;
     while (attempt < MAX_WRITE_RETRIES) {
@@ -348,14 +366,21 @@ function createFundProjectRepository({ kind, label, codePrefix }) {
       const rawProjects = data[kind] || [];
       if (!Array.isArray(rawProjects)) throw new Error(`Stored ${kind} projects must be an array`);
 
-      const mutation = mutate({ rawProjects, session, schemaVersion });
+      const mutation = mutate({ data, rawProjects, session, schemaVersion });
       if (mutation === null) return null;
-      const { updatedRawProjects, result } = mutation;
-      const updatedData = { ...data, [kind]: updatedRawProjects };
+      const { updatedRawProjects, result, baseData } = mutation;
+      // Bucket amounts are derived from transactions (rebuild-derived.js):
+      // any change to titles or targets must rebuild them right away.
+      const updatedData = rebuildDerivedState(
+        { ...(baseData || data), [kind]: updatedRawProjects },
+        session,
+        schemaVersion,
+      );
       const now = new Date().toISOString();
       try {
         await usersDb.insert({ ...userDoc, data: updatedData, updatedAt: now });
-        return result;
+        const effects = computeWriteEffects(data, updatedData, session, schemaVersion);
+        return withRebuiltResult(result, updatedData, session, schemaVersion, effects);
       } catch (error) {
         if (error.statusCode !== 409) throw error;
         attempt += 1;
@@ -380,9 +405,7 @@ function createFundProjectRepository({ kind, label, codePrefix }) {
       const now = new Date().toISOString();
       const buckets = [];
       if (input.targetMinor !== undefined) {
-        buckets.push(
-          buildBucket({ title, targetMinor: input.targetMinor, amountMinor: input.amountMinor }),
-        );
+        buckets.push(buildBucket({ title, targetMinor: input.targetMinor }));
       }
       for (const bucketInput of input.buckets || []) {
         buckets.push(buildBucket(bucketInput));
