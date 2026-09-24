@@ -408,8 +408,8 @@ async function withGrowActionWrite({ usersDb, authDb }, userId, growId, mutate) 
   throw new Error('Failed to write grow action after maximum retries due to write conflicts');
 }
 
-async function buyGrow(deps, userId, growId, input) {
-  return withGrowActionWrite(deps, userId, growId, ({ current, data, session, schemaVersion }) => {
+function buyMutation(input) {
+  return ({ current, data, session, schemaVersion }) => {
     assertBuyInputMatchesKind(current, input);
     const { date, time } = resolveDateTime(input);
     const rawLiabilities = data.balance?.liabilities || [];
@@ -585,11 +585,15 @@ async function buyGrow(deps, userId, growId, input) {
     }
 
     throw growError('GROW_NO_KIND', 'This grow project has no asset/share/investment kind to buy.');
-  });
+  };
 }
 
-async function sellGrow(deps, userId, growId, input) {
-  return withGrowActionWrite(deps, userId, growId, ({ current, data, session, schemaVersion }) => {
+async function buyGrow(deps, userId, growId, input) {
+  return withGrowActionWrite(deps, userId, growId, buyMutation(input));
+}
+
+function sellMutation(input) {
+  return ({ current, data, session, schemaVersion }) => {
     assertSellInputMatchesKind(current, input);
     const { date, time } = resolveDateTime(input);
 
@@ -812,11 +816,15 @@ async function sellGrow(deps, userId, growId, input) {
       'GROW_NO_KIND',
       'This grow project has no asset/share/investment kind to sell.',
     );
-  });
+  };
 }
 
-async function dividendGrow(deps, userId, growId, input) {
-  return withGrowActionWrite(deps, userId, growId, ({ current }) => {
+async function sellGrow(deps, userId, growId, input) {
+  return withGrowActionWrite(deps, userId, growId, sellMutation(input));
+}
+
+function dividendMutation(input) {
+  return ({ current }) => {
     if (!current.share) {
       throw growError(
         'GROW_NOT_SHARE_KIND',
@@ -838,11 +846,15 @@ async function dividendGrow(deps, userId, growId, input) {
       },
       growPatch: {},
     };
-  });
+  };
 }
 
-async function paybackGrow(deps, userId, growId, input) {
-  return withGrowActionWrite(deps, userId, growId, ({ current, data, session, schemaVersion }) => {
+async function dividendGrow(deps, userId, growId, input) {
+  return withGrowActionWrite(deps, userId, growId, dividendMutation(input));
+}
+
+function paybackMutation(input) {
+  return ({ current, data, session, schemaVersion }) => {
     if (!current.liabilitie) {
       throw growError(
         'GROW_NO_LIABILITY',
@@ -917,11 +929,15 @@ async function paybackGrow(deps, userId, growId, input) {
               : raw,
           ),
     };
-  });
+  };
 }
 
-async function cashflowGrow(deps, userId, growId, input) {
-  return withGrowActionWrite(deps, userId, growId, ({ current }) => {
+async function paybackGrow(deps, userId, growId, input) {
+  return withGrowActionWrite(deps, userId, growId, paybackMutation(input));
+}
+
+function cashflowMutation(input) {
+  return ({ current }) => {
     assertInteger(input.cashflowMinor, 'cashflowMinor');
     if (input.creditMinor !== undefined) {
       assertNonNegativeInteger(input.creditMinor, 'creditMinor');
@@ -939,11 +955,15 @@ async function cashflowGrow(deps, userId, growId, input) {
       },
       growPatch: {},
     };
-  });
+  };
 }
 
-async function depositGrow(deps, userId, growId, input) {
-  return withGrowActionWrite(deps, userId, growId, ({ current }) => {
+async function cashflowGrow(deps, userId, growId, input) {
+  return withGrowActionWrite(deps, userId, growId, cashflowMutation(input));
+}
+
+function depositMutation(input) {
+  return ({ current }) => {
     assertPositiveInteger(input.amountMinor, 'amountMinor');
     const { date, time } = resolveDateTime(input);
     const calc = calculateDeposit(input.amountMinor);
@@ -958,7 +978,11 @@ async function depositGrow(deps, userId, growId, input) {
       },
       growPatch: {},
     };
-  });
+  };
+}
+
+async function depositGrow(deps, userId, growId, input) {
+  return withGrowActionWrite(deps, userId, growId, depositMutation(input));
 }
 
 module.exports = {
