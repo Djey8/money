@@ -1977,6 +1977,38 @@ describe('v1 API authentication and PAT management', () => {
       );
     });
 
+    it('contributes through a typed action, capped and reported, and lists the project transactions', async () => {
+      const { token } = await smileToken(['smile:r', 'smile:w']);
+      const created = await createProject(token, { title: `Smile Contribute ${Date.now()}` });
+      const bucket = created.buckets[0];
+
+      const contributed = await request(app)
+        .post(`/api/v1/smile/${created.id}/contribute`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ buckets: [{ bucketId: bucket.id, amountMinor: bucket.targetMinor + 500 }] });
+      expect(contributed.status).toBe(201);
+      expect(contributed.body.appliedMinor).toBe(bucket.targetMinor);
+      expect(contributed.body.project.buckets[0].amountMinor).toBe(bucket.targetMinor);
+      expect(contributed.body.effects.smile).toHaveLength(1);
+
+      const listed = await request(app)
+        .get(`/api/v1/smile/${created.id}/transactions`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(listed.body.transactions.map((t) => t.id)).toEqual([contributed.body.transaction.id]);
+
+      const full = await request(app)
+        .post(`/api/v1/smile/${created.id}/contribute`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ amountMinor: 100 });
+      expect(full.status).toBe(400);
+
+      const handTagged = await request(app)
+        .post(`/api/v1/smile/${created.id}/contribute`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ amountMinor: 100, comment: '#bucket:X:1.00' });
+      expect(handTagged.status).toBe(400);
+    });
+
     it('replaces buckets wholesale, preserving an echoed-back id and minting one for a new bucket', async () => {
       const { token } = await smileToken(['smile:r', 'smile:w']);
       const created = await createProject(token, { title: `Smile Bucket Patch ${Date.now()}` });

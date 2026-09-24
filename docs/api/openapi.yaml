@@ -2473,6 +2473,215 @@ paths:
           $ref: '#/components/responses/InsufficientScope'
         '404':
           $ref: '#/components/responses/NotFound'
+  /smile/{projectId}/contribute:
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      operationId: contributeSmile
+      summary: Put money into a Smile project (the only way its bucket amounts change)
+      description: >-
+        Records one contribution transaction in the app's own convention: money leaves `account` (default
+        `Smile`, so the stored amount is negative), category `@<project title>`, and — when `buckets` is
+        given — `#bucket:<title>:<amount>` tags the server writes itself. Without `buckets`, it is split evenly across the buckets that still have room. The contribution is
+        capped at the room left (the stored amount is rewritten; compare `requestedMinor` and `appliedMinor`); a full
+        target is a 400. The response's `effects` lists everything that changed.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectContributionRequest'
+            example:
+              buckets:
+                - bucketId: bucket_01234567-89ab-cdef-0123-456789abcdef
+                  amountMinor: 15000
+      responses:
+        '201':
+          description: The contribution was recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectContributionResult'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /smile/{projectId}/transactions:
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: listSmileTransactions
+      summary: List the transactions that count toward a Smile project
+      description: >-
+        Oldest first, each with its parsed `bucketAllocations` (from `#bucket:` tags). These are exactly the
+        transactions the bucket amounts are rebuilt from.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The project's transactions
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [transactions]
+                properties:
+                  transactions:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FundTransaction'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /fire/{projectId}/contribute:
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      operationId: contributeFire
+      summary: Put money into a Fire project (the only way its bucket amounts change)
+      description: >-
+        Records one contribution transaction in the app's own convention: money leaves `account` (default
+        `Fire`, so the stored amount is negative), category `@<project title>`, and — when `buckets` is
+        given — `#bucket:<title>:<amount>` tags the server writes itself. Without `buckets`, it goes to the first bucket (Fire funds fill in order). The contribution is
+        capped at the room left (the stored amount is rewritten; compare `requestedMinor` and `appliedMinor`); a full
+        target is a 400. The response's `effects` lists everything that changed.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectContributionRequest'
+            example:
+              buckets:
+                - bucketId: bucket_01234567-89ab-cdef-0123-456789abcdef
+                  amountMinor: 15000
+      responses:
+        '201':
+          description: The contribution was recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectContributionResult'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /fire/{projectId}/transactions:
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: listFireTransactions
+      summary: List the transactions that count toward a Fire project
+      description: >-
+        Oldest first, each with its parsed `bucketAllocations` (from `#bucket:` tags). These are exactly the
+        transactions the bucket amounts are rebuilt from.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The project's transactions
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [transactions]
+                properties:
+                  transactions:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FundTransaction'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /mojo/contribute:
+    post:
+      operationId: contributeMojo
+      summary: Put money into Mojo (the only way its balance changes)
+      description: >-
+        Records one `@Mojo` transaction from `account` (default `Fire`; stored negative, money leaves the account). The
+        Mojo balance is capped at its target, so the stored amount may be lower than requested. The response's
+        `effects` lists everything that changed.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MojoContributionRequest'
+            example:
+              amountMinor: 20000
+      responses:
+        '201':
+          description: The contribution was recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MojoContributionResult'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+  /mojo/transactions:
+    get:
+      operationId: listMojoTransactions
+      summary: List the transactions the Mojo balance is rebuilt from
+      description: Every `@Mojo` transaction and every transaction on the `Mojo` account, oldest first.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Mojo's transactions
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [transactions]
+                properties:
+                  transactions:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ApiTransaction'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
   /subscriptions:
     get:
       operationId: listSubscriptions
@@ -4788,6 +4997,93 @@ components:
         status:
           type: string
           description: Legacy free-text status ('bought', 'sold', 'paid back', 'paid off') the typed actions set for display parity with the original app — prefer `phase` in new clients.
+    ProjectContributionRequest:
+      type: object
+      description: Either amountMinor (default split), or buckets (explicit split; amountMinor may be omitted or must equal their sum).
+      properties:
+        amountMinor:
+          type: integer
+          minimum: 1
+        buckets:
+          type: array
+          items:
+            type: object
+            required: [bucketId, amountMinor]
+            properties:
+              bucketId:
+                type: string
+              amountMinor:
+                type: integer
+                minimum: 1
+        account:
+          type: string
+          description: The account the money leaves (default Smile for Smile, Fire for Fire).
+        date:
+          type: string
+          format: date
+        time:
+          type: string
+        comment:
+          type: string
+          description: Free text; must not contain `#bucket:` tags (use buckets).
+    ProjectContributionResult:
+      type: object
+      required: [transaction, requestedMinor, appliedMinor, project, effects]
+      properties:
+        transaction:
+          $ref: '#/components/schemas/ApiTransaction'
+        requestedMinor:
+          type: integer
+        appliedMinor:
+          type: integer
+          description: What was actually recorded after capping at the room left.
+        project:
+          type: object
+          description: The project after the contribution (SmileProject or FireProject).
+        effects:
+          $ref: '#/components/schemas/WriteEffects'
+    MojoContributionRequest:
+      type: object
+      required: [amountMinor]
+      properties:
+        amountMinor:
+          type: integer
+          minimum: 1
+        account:
+          type: string
+          description: The account the money leaves (default Fire).
+        date:
+          type: string
+          format: date
+        time:
+          type: string
+        comment:
+          type: string
+    MojoContributionResult:
+      type: object
+      required: [transaction, requestedMinor, effects]
+      properties:
+        transaction:
+          $ref: '#/components/schemas/ApiTransaction'
+        requestedMinor:
+          type: integer
+        effects:
+          $ref: '#/components/schemas/WriteEffects'
+    FundTransaction:
+      allOf:
+        - $ref: '#/components/schemas/ApiTransaction'
+        - type: object
+          required: [bucketAllocations]
+          properties:
+            bucketAllocations:
+              type: array
+              items:
+                type: object
+                properties:
+                  bucketTitle:
+                    type: string
+                  amountMinor:
+                    type: integer
     WriteEffects:
       type: object
       description: >-

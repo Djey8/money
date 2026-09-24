@@ -117,6 +117,8 @@ export const TOOLS: ToolDefinition[] = [
     actions: {
       get: action('getMojo'),
       update_target: action('updateMojoTarget'),
+      contribute: action('contributeMojo'),
+      list_transactions: action('listMojoTransactions'),
     },
   },
   {
@@ -133,6 +135,8 @@ export const TOOLS: ToolDefinition[] = [
       update: action('updateSmileProject'),
       delete: action('deleteSmileProject', true),
       create_payment_plan: action('createSmilePaymentPlan'),
+      contribute: action('contributeSmile'),
+      list_transactions: action('listSmileTransactions'),
     },
   },
   {
@@ -149,6 +153,8 @@ export const TOOLS: ToolDefinition[] = [
       update: action('updateFireProject'),
       delete: action('deleteFireProject', true),
       create_payment_plan: action('createFirePaymentPlan'),
+      contribute: action('contributeFire'),
+      list_transactions: action('listFireTransactions'),
     },
   },
   {

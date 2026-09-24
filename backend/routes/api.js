@@ -40,6 +40,12 @@ const {
 } = require('../repositories/report-repository');
 const { getMojoStatus, updateMojoTarget } = require('../repositories/mojo-repository');
 const {
+  contributeToProject,
+  contributeToMojo,
+  listProjectTransactions,
+  listMojoTransactions,
+} = require('../repositories/fund-contribution-repository');
+const {
   SMILE_PHASES,
   listSmileProjects,
   getSmileProject,
@@ -2861,6 +2867,167 @@ router.put('/mojo', requireScope('mojo:w'), async (req, res, next) => {
       resource: 'mojo',
     });
     return res.json(status);
+  } catch (error) {
+    return next(error);
+  }
+});
+
+// --- Contributions (the only way bucket/Mojo amounts change) --------------
+
+const CONTRIBUTION_FIELDS = ['amountMinor', 'account', 'buckets', 'date', 'time', 'comment'];
+
+function validateContribution(input, { allowBuckets }) {
+  if (!isPlainObject(input)) return 'A contribution object is required.';
+  const allowed = allowBuckets
+    ? CONTRIBUTION_FIELDS
+    : CONTRIBUTION_FIELDS.filter((f) => f !== 'buckets');
+  const unknown = Object.keys(input).find((key) => !allowed.includes(key));
+  if (unknown) return `${unknown} is not a contribution field (allowed: ${allowed.join(', ')}).`;
+  const hasBuckets = allowBuckets && Array.isArray(input.buckets) && input.buckets.length > 0;
+  if (input.amountMinor !== undefined || !hasBuckets) {
+    if (!Number.isInteger(input.amountMinor) || input.amountMinor <= 0) {
+      return 'amountMinor must be a positive integer (the amount to put in).';
+    }
+  }
+  if (input.buckets !== undefined) {
+    if (!Array.isArray(input.buckets))
+      return 'buckets must be an array of {bucketId, amountMinor}.';
+    for (const entry of input.buckets) {
+      if (!isPlainObject(entry) || !isNonEmptyString(entry.bucketId)) {
+        return 'Each buckets entry needs a bucketId.';
+      }
+      if (!Number.isInteger(entry.amountMinor) || entry.amountMinor <= 0) {
+        return 'Each buckets entry needs a positive integer amountMinor.';
+      }
+    }
+    const ids = input.buckets.map((entry) => entry.bucketId);
+    if (new Set(ids).size !== ids.length) return 'Each bucket may appear only once.';
+  }
+  if (input.account !== undefined && !isNonEmptyString(input.account)) {
+    return 'account must be a non-empty string.';
+  }
+  for (const field of ['date', 'time', 'comment']) {
+    if (input[field] !== undefined && typeof input[field] !== 'string') {
+      return `${field} must be a string.`;
+    }
+  }
+  if (typeof input.comment === 'string' && /#bucket:/i.test(input.comment)) {
+    return 'Use buckets to split a contribution — the server writes the #bucket: tags itself.';
+  }
+  return null;
+}
+
+const CONTRIBUTION_ERROR_CODES = ['FUND_FULL', 'FUND_INVALID_INPUT', 'TRANSACTION_GROW_TRADE'];
+
+function contributionErrorResponse(res, error) {
+  if (!CONTRIBUTION_ERROR_CODES.includes(error.code)) return undefined;
+  return problem(res, 400, 'validation_invalid', 'Invalid contribution', error.message);
+}
+
+for (const [kind, label] of [
+  ['smile', 'Smile'],
+  ['fire', 'Fire'],
+]) {
+  router.post(
+    `/${kind}/:projectId/contribute`,
+    requireScope(`${kind}:w`),
+    async (req, res, next) => {
+      const validationError = validateContribution(req.body, { allowBuckets: true });
+      if (validationError) {
+        return problem(res, 400, 'validation_invalid', 'Invalid contribution', validationError);
+      }
+      try {
+        const result = await contributeToProject(
+          { usersDb: getUsersDb(), authDb: getAuthDb() },
+          req.userId,
+          kind,
+          req.params.projectId,
+          req.body,
+        );
+        if (!result) {
+          return problem(
+            res,
+            404,
+            'not_found',
+            `${label} project not found`,
+            `No matching ${label} project exists.`,
+          );
+        }
+        await recordAuditEntry(getAuditDb(), {
+          userId: req.userId,
+          actor: auditActor(req.auth),
+          method: req.method,
+          path: req.baseUrl + req.path,
+          resource: `${kind}_contribution`,
+          resourceId: result.transaction.id,
+        });
+        return res.status(201).json(result);
+      } catch (error) {
+        return contributionErrorResponse(res, error) ?? next(error);
+      }
+    },
+  );
+
+  router.get(
+    `/${kind}/:projectId/transactions`,
+    requireScope(`${kind}:r`),
+    async (req, res, next) => {
+      try {
+        const transactions = await listProjectTransactions(
+          { usersDb: getUsersDb(), authDb: getAuthDb() },
+          req.userId,
+          kind,
+          req.params.projectId,
+        );
+        if (!transactions) {
+          return problem(
+            res,
+            404,
+            'not_found',
+            `${label} project not found`,
+            `No matching ${label} project exists.`,
+          );
+        }
+        return res.json({ transactions });
+      } catch (error) {
+        return next(error);
+      }
+    },
+  );
+}
+
+router.post('/mojo/contribute', requireScope('mojo:w'), async (req, res, next) => {
+  const validationError = validateContribution(req.body, { allowBuckets: false });
+  if (validationError) {
+    return problem(res, 400, 'validation_invalid', 'Invalid contribution', validationError);
+  }
+  try {
+    const result = await contributeToMojo(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+      req.body,
+    );
+    await recordAuditEntry(getAuditDb(), {
+      userId: req.userId,
+      actor: auditActor(req.auth),
+      method: req.method,
+      path: req.baseUrl + req.path,
+      resource: 'mojo_contribution',
+      resourceId: result.transaction.id,
+    });
+    return res.status(201).json(result);
+  } catch (error) {
+    return contributionErrorResponse(res, error) ?? next(error);
+  }
+});
+
+router.get('/mojo/transactions', requireScope('mojo:r'), async (req, res, next) => {
+  try {
+    const transactions = await listMojoTransactions(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+    );
+    return res.json({ transactions });
   } catch (error) {
     return next(error);
   }
