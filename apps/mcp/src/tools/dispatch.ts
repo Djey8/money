@@ -18,6 +18,21 @@ function operationProperties(operation: Operation): Record<string, JsonSchema> {
   return properties;
 }
 
+/**
+ * A tool's actions share one flat argument namespace, but two actions can
+ * give the same argument a different shape (e.g. manage_grow's `liabilitie`
+ * is a planned `{amountMinor, creditMinor}` on create/update but a
+ * `{loanMinor, creditMinor}` financing attachment on buy). Accept either
+ * rather than letting the last action silently win — the server validates
+ * each action's own shape.
+ */
+function mergePropertySchema(existing: JsonSchema | undefined, next: JsonSchema): JsonSchema {
+  if (!existing || JSON.stringify(existing) === JSON.stringify(next)) return next;
+  const variants = Array.isArray(existing.anyOf) ? (existing.anyOf as JsonSchema[]) : [existing];
+  if (variants.some((variant) => JSON.stringify(variant) === JSON.stringify(next))) return existing;
+  return { anyOf: [...variants, next] };
+}
+
 function collectActionProperties(actions: ToolAction[]): {
   properties: Record<string, JsonSchema>;
   hasConfirm: boolean;
@@ -32,7 +47,9 @@ function collectActionProperties(actions: ToolAction[]): {
           'the registry has drifted from the generated OpenAPI manifest. Run `npm run generate`.',
       );
     }
-    Object.assign(properties, operationProperties(operation));
+    for (const [name, schema] of Object.entries(operationProperties(operation))) {
+      properties[name] = mergePropertySchema(properties[name], schema);
+    }
     if (toolAction.ndjsonBodyArg) {
       properties[toolAction.ndjsonBodyArg] = {
         type: 'string',

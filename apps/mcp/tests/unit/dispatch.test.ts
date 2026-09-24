@@ -44,6 +44,16 @@ describe('buildToolList', () => {
     expect(balanceSheet.inputSchema.required).toContain('entityType');
   });
 
+  it('accepts either shape when two actions give the same argument different schemas, instead of the last action winning', () => {
+    const tools = buildToolList(TOOLS);
+    const grow = tools.find((t) => t.name === 'manage_grow')!;
+    const properties = grow.inputSchema.properties as Record<string, { anyOf?: unknown[] }>;
+    const liabilitieVariants = JSON.stringify(properties.liabilitie.anyOf);
+    expect(liabilitieVariants).toContain('loanMinor');
+    expect(liabilitieVariants).toContain('amountMinor');
+    expect(JSON.stringify(properties.share)).toContain('priceMinor');
+  });
+
   it('does not require "action" for a single-action tool', () => {
     const tools = buildToolList(TOOLS);
     const identity = tools.find((t) => t.name === 'get_identity')!;
