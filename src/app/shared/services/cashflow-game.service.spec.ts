@@ -123,7 +123,114 @@ describe('CashflowGameService', () => {
       started();
       const onError = jest.fn();
       service.undoLastPayday({ onSuccess: jest.fn(), onError });
-      expect(onError).toHaveBeenCalledWith(expect.stringContaining('Nothing to undo'));
+      expect(onError).toHaveBeenCalledWith(
+        expect.stringContaining('Only the most recent Payday can be undone'),
+      );
+    });
+  });
+
+  describe('resolveBaby', () => {
+    function started() {
+      service.pickProfession('placeholder', 'placeholder-profession', {
+        onSuccess: jest.fn(),
+        onError: jest.fn(),
+      });
+    }
+
+    it('adds a child and a scaled children-expense subscription, included from the next Payday', () => {
+      started();
+      service.resolveBaby({ onSuccess: jest.fn(), onError: jest.fn() });
+
+      const state = AppStateService.instance;
+      expect(state.cashflowGame.children).toBe(1);
+      expect(state.allSubscriptions).toHaveLength(3);
+      const childExpense = state.allSubscriptions.find((s) =>
+        s.title.includes('Children Expenses'),
+      );
+      expect(childExpense).toMatchObject({ account: 'Daily', amount: -60 });
+
+      service.payday({ onSuccess: jest.fn(), onError: jest.fn() });
+      expect(state.allTransactions.some((t) => t.amount === -60)).toBe(true);
+    });
+
+    it('refuses a fourth child rather than throwing', () => {
+      started();
+      const onError = jest.fn();
+      for (let i = 0; i < 3; i++) {
+        service.resolveBaby({ onSuccess: jest.fn(), onError: jest.fn() });
+      }
+      service.resolveBaby({ onSuccess: jest.fn(), onError });
+      expect(onError).toHaveBeenCalledWith(expect.stringContaining('maximum of 3 children'));
+    });
+  });
+
+  describe('resolveCharity and resolveDownsized', () => {
+    function started() {
+      service.pickProfession('placeholder', 'placeholder-profession', {
+        onSuccess: jest.fn(),
+        onError: jest.fn(),
+      });
+    }
+
+    it('charity charges 10% of income and unlocks the dice choice for 3 rounds', () => {
+      started();
+      service.resolveCharity({ onSuccess: jest.fn(), onError: jest.fn() });
+
+      const state = AppStateService.instance;
+      expect(state.cashflowGame.charityRoundsLeft).toBe(3);
+      expect(state.allTransactions.some((t) => t.account === 'Daily' && t.amount === -300)).toBe(
+        true,
+      );
+    });
+
+    it('downsized charges total expenses once and makes the next 2 Paydays skip', () => {
+      started();
+      service.resolveDownsized({ onSuccess: jest.fn(), onError: jest.fn() });
+
+      const state = AppStateService.instance;
+      expect(state.cashflowGame.unemployedRoundsLeft).toBe(2);
+      const before = state.allTransactions.length;
+      service.payday({ onSuccess: jest.fn(), onError: jest.fn() });
+      expect(state.allTransactions).toHaveLength(before); // skipped: nothing created
+      expect(state.cashflowGame.unemployedRoundsLeft).toBe(1);
+    });
+  });
+
+  describe('adjustBankLoan', () => {
+    function started() {
+      service.pickProfession('placeholder', 'placeholder-profession', {
+        onSuccess: jest.fn(),
+        onError: jest.fn(),
+      });
+    }
+
+    it('borrowing creates the liability and a 10% interest subscription', () => {
+      started();
+      service.adjustBankLoan(2000, { onSuccess: jest.fn(), onError: jest.fn() });
+
+      const state = AppStateService.instance;
+      expect(state.liabilities).toContainEqual(
+        expect.objectContaining({ tag: 'Bank loan', amount: 2000 }),
+      );
+      const interest = state.allSubscriptions.find((s) => s.title === 'Bank loan interest');
+      expect(interest).toMatchObject({ account: 'Daily', amount: -200 });
+    });
+
+    it('repaying in full removes the liability and the interest subscription', () => {
+      started();
+      service.adjustBankLoan(1000, { onSuccess: jest.fn(), onError: jest.fn() });
+      service.adjustBankLoan(-1000, { onSuccess: jest.fn(), onError: jest.fn() });
+
+      const state = AppStateService.instance;
+      expect(state.liabilities.find((l) => l.tag === 'Bank loan')).toBeUndefined();
+      expect(state.allSubscriptions.find((s) => s.title === 'Bank loan interest')).toBeUndefined();
+    });
+
+    it('reports an error rather than throwing for a non-increment amount', () => {
+      started();
+      const onError = jest.fn();
+      service.adjustBankLoan(500, { onSuccess: jest.fn(), onError });
+      expect(onError).toHaveBeenCalledWith(expect.stringContaining('steps of'));
     });
   });
 });

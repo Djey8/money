@@ -1,10 +1,17 @@
 import { Injectable } from '@angular/core';
 import {
+  adjustCashflowBankLoan,
   CASHFLOW_GAME_SETS,
+  CashflowGameSet,
   CashflowGameSubscription,
+  CashflowProfession,
+  CashflowStarterKitSubscription,
   CashflowTransactionRecord,
   fromMinorUnits,
   pickCashflowProfession,
+  resolveCashflowBaby,
+  resolveCashflowCharity,
+  resolveCashflowDownsized,
   runCashflowPayday,
   toMinorUnits,
   undoLastCashflowPayday,
@@ -144,6 +151,158 @@ export class CashflowGameService {
     this.removeCreatedTransactions(result.removedTransactions);
     state.cashflowGame = result.state;
     this.persistAll('cashflow_undo_payday', { round: result.state.round }, callbacks);
+  }
+
+  /** Resolves a Baby space: +1 child (max 3), scales the children-expense Subscription. */
+  resolveBaby(callbacks: CashflowGameCallbacks): void {
+    const state = AppStateService.instance;
+    const profession = this.currentProfession();
+    if (!profession) {
+      callbacks.onError('Pick a profession first.');
+      return;
+    }
+    let result: ReturnType<typeof resolveCashflowBaby>;
+    try {
+      result = resolveCashflowBaby(state.cashflowGame, profession);
+    } catch (err: unknown) {
+      callbacks.onError(errorMessage(err, 'Could not resolve Baby.'));
+      return;
+    }
+    this.upsertSubscription(result.subscriptionUpsert);
+    state.cashflowGame = result.state;
+    this.persistAll('cashflow_baby', { children: result.state.children }, callbacks, {
+      includeSubscriptions: true,
+    });
+  }
+
+  /** Resolves a Charity space: pays 10% of total income now, unlocks the dice choice for 3 Paydays. */
+  resolveCharity(callbacks: CashflowGameCallbacks): void {
+    const state = AppStateService.instance;
+    let result: ReturnType<typeof resolveCashflowCharity>;
+    try {
+      result = resolveCashflowCharity(state.cashflowGame, this.gameSubscriptions());
+    } catch (err: unknown) {
+      callbacks.onError(errorMessage(err, 'Could not resolve Charity.'));
+      return;
+    }
+    state.allTransactions.push(toFloatTransaction(result.transaction));
+    state.cashflowGame = result.state;
+    this.persistAll('cashflow_charity', {}, callbacks);
+  }
+
+  /** Resolves a Downsized space: pays total expenses once, sits out 2 Paydays (ends an active charity bonus). */
+  resolveDownsized(callbacks: CashflowGameCallbacks): void {
+    const state = AppStateService.instance;
+    let result: ReturnType<typeof resolveCashflowDownsized>;
+    try {
+      result = resolveCashflowDownsized(state.cashflowGame, this.gameSubscriptions());
+    } catch (err: unknown) {
+      callbacks.onError(errorMessage(err, 'Could not resolve Downsized.'));
+      return;
+    }
+    state.allTransactions.push(toFloatTransaction(result.transaction));
+    state.cashflowGame = result.state;
+    this.persistAll('cashflow_downsized', {}, callbacks);
+  }
+
+  /** Takes (`delta > 0`) or repays (`< 0`) a bank loan in the game set's increment (a decimal amount, like everywhere else in the app); upserts the Liability + interest Subscription, recomputed from the new principal every time. */
+  adjustBankLoan(delta: number, callbacks: CashflowGameCallbacks): void {
+    const state = AppStateService.instance;
+    const gameSet = this.currentGameSet();
+    if (!gameSet) {
+      callbacks.onError('Pick a profession first.');
+      return;
+    }
+    const currentPrincipalMinor = toMinorUnits(
+      state.liabilities.find((liability) => liability.tag === 'Bank loan')?.amount ?? 0,
+    );
+    let result: ReturnType<typeof adjustCashflowBankLoan>;
+    try {
+      result = adjustCashflowBankLoan(
+        state.cashflowGame,
+        gameSet,
+        currentPrincipalMinor,
+        toMinorUnits(delta),
+      );
+    } catch (err: unknown) {
+      callbacks.onError(errorMessage(err, 'Could not adjust the bank loan.'));
+      return;
+    }
+    if (result.liabilityUpsert) {
+      this.upsertLiability(result.liabilityUpsert.tag, result.liabilityUpsert.amountMinor);
+    } else {
+      this.removeLiabilityByTag('Bank loan');
+    }
+    if (result.subscriptionUpsert) {
+      this.upsertSubscription(result.subscriptionUpsert);
+    } else {
+      this.removeSubscriptionByTitle('Bank loan interest');
+    }
+    state.cashflowGame = result.state;
+    this.persistAll('cashflow_bank_loan', { delta }, callbacks, {
+      includeSubscriptions: true,
+      includeBalanceSheet: true,
+    });
+  }
+
+  private currentGameSet(): CashflowGameSet | undefined {
+    const { gameSetId } = AppStateService.instance.cashflowGame;
+    return gameSetId ? this.gameSets.find((set) => set.id === gameSetId) : undefined;
+  }
+
+  private currentProfession(): CashflowProfession | undefined {
+    const { professionId } = AppStateService.instance.cashflowGame;
+    if (!professionId) return undefined;
+    return this.currentGameSet()?.professions.find((profession) => profession.id === professionId);
+  }
+
+  /** Creates or updates a Subscription by title — the "recomputed every time, never hand-edited" pattern Baby/Bank loan both use. */
+  private upsertSubscription(upsert: CashflowStarterKitSubscription): void {
+    const subscriptions = AppStateService.instance.allSubscriptions;
+    const existing = subscriptions.find((sub) => sub.title === upsert.title);
+    const amount = fromMinorUnits(upsert.amountMinor);
+    if (existing) {
+      existing.account = upsert.account;
+      existing.amount = amount;
+      existing.frequency = upsert.frequency;
+      if (!existing.comment.includes('#cashflow')) {
+        existing.comment = existing.comment ? `${existing.comment}\n#cashflow` : '#cashflow';
+      }
+    } else {
+      subscriptions.push({
+        title: upsert.title,
+        account: upsert.account,
+        amount,
+        startDate: todayIso(),
+        endDate: '',
+        category: upsert.category ?? '',
+        comment: upsert.comment ? `${upsert.comment}\n#cashflow` : '#cashflow',
+        frequency: upsert.frequency,
+      });
+    }
+  }
+
+  private removeSubscriptionByTitle(title: string): void {
+    const subscriptions = AppStateService.instance.allSubscriptions;
+    const index = subscriptions.findIndex((sub) => sub.title === title);
+    if (index >= 0) subscriptions.splice(index, 1);
+  }
+
+  private upsertLiability(tag: string, amountMinor: number): void {
+    const liabilities = AppStateService.instance.liabilities;
+    const existing = liabilities.find((liability) => liability.tag === tag);
+    const amount = fromMinorUnits(amountMinor);
+    if (existing) {
+      existing.amount = amount;
+    } else {
+      liabilities.push({ tag, amount, investment: false, credit: 0 });
+    }
+  }
+
+  private removeLiabilityByTag(tag: string): void {
+    const liabilities = AppStateService.instance.liabilities;
+    const index = liabilities.findIndex((liability) => liability.tag === tag);
+    if (index >= 0) liabilities.splice(index, 1);
   }
 
   private gameSubscriptions(): CashflowGameSubscription[] {

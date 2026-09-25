@@ -40,6 +40,7 @@ export class CashflowGameComponent implements OnInit {
   selectedGameSetId = this.gameSets[0]?.id ?? '';
   selectedProfessionId = '';
   isBusy = false;
+  loanIncrements = 1;
 
   constructor(
     private router: Router,
@@ -98,6 +99,25 @@ export class CashflowGameComponent implements OnInit {
     return this.appState.cashflowGame.history.length > 0;
   }
 
+  get currentGameSet() {
+    const { gameSetId } = this.appState.cashflowGame;
+    return this.gameSets.find((set) => set.id === gameSetId);
+  }
+
+  get loanIncrementAmount(): number {
+    return fromMinorUnits(this.currentGameSet?.loanRule.incrementMinor ?? 0);
+  }
+
+  get currentLoanPrincipal(): number {
+    return (
+      this.appState.liabilities.find((liability) => liability.tag === 'Bank loan')?.amount ?? 0
+    );
+  }
+
+  get canLandOnBaby(): boolean {
+    return this.appState.cashflowGame.children < 3;
+  }
+
   /** `cashflowGame`'s history is stored in minor units (decision 6); the template displays decimal. */
   toDisplayAmount(amountMinor: number): number {
     return fromMinorUnits(amountMinor);
@@ -138,6 +158,64 @@ export class CashflowGameComponent implements OnInit {
       onSuccess: () => {
         this.isBusy = false;
         this.toastService.show(this.translate.instant('CashflowGame.undoDone'), 'update');
+      },
+      onError: (message) => {
+        this.isBusy = false;
+        this.toastService.show(message, 'error');
+      },
+    });
+  }
+
+  /** "Which space did you land on?" — companion mode (todo/cashflow-game.md decision 8). */
+  landOnBaby(): void {
+    this.runAction((callbacks) => this.cashflowGameService.resolveBaby(callbacks), 'baby');
+  }
+
+  landOnCharity(): void {
+    this.runAction((callbacks) => this.cashflowGameService.resolveCharity(callbacks), 'charity');
+  }
+
+  landOnDownsized(): void {
+    this.runAction(
+      (callbacks) => this.cashflowGameService.resolveDownsized(callbacks),
+      'downsized',
+    );
+  }
+
+  borrowLoan(): void {
+    this.adjustLoan(this.loanIncrements * this.loanIncrementAmount);
+  }
+
+  repayLoan(): void {
+    this.adjustLoan(
+      -Math.min(this.loanIncrements * this.loanIncrementAmount, this.currentLoanPrincipal),
+    );
+  }
+
+  private adjustLoan(delta: number): void {
+    if (!delta) return;
+    this.isBusy = true;
+    this.cashflowGameService.adjustBankLoan(delta, {
+      onSuccess: () => {
+        this.isBusy = false;
+        this.toastService.show(this.translate.instant('CashflowGame.loanUpdated'), 'success');
+      },
+      onError: (message) => {
+        this.isBusy = false;
+        this.toastService.show(message, 'error');
+      },
+    });
+  }
+
+  private runAction(
+    action: (callbacks: { onSuccess: () => void; onError: (message: string) => void }) => void,
+    kind: 'baby' | 'charity' | 'downsized',
+  ): void {
+    this.isBusy = true;
+    action({
+      onSuccess: () => {
+        this.isBusy = false;
+        this.toastService.show(this.translate.instant(`CashflowGame.${kind}Done`), 'success');
       },
       onError: (message) => {
         this.isBusy = false;

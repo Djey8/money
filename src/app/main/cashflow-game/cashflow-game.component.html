@@ -73,6 +73,31 @@
         </div>
       </div>
 
+      <div
+        class="cf-badges"
+        *ngIf="
+          appState.cashflowGame.unemployedRoundsLeft ||
+          appState.cashflowGame.charityRoundsLeft ||
+          appState.cashflowGame.children
+        "
+      >
+        <span class="cf-badge" *ngIf="appState.cashflowGame.unemployedRoundsLeft">
+          {{
+            'CashflowGame.unemployedBadge'
+              | translate: { count: appState.cashflowGame.unemployedRoundsLeft }
+          }}
+        </span>
+        <span class="cf-badge" *ngIf="appState.cashflowGame.charityRoundsLeft">
+          {{
+            'CashflowGame.charityBadge'
+              | translate: { count: appState.cashflowGame.charityRoundsLeft }
+          }}
+        </span>
+        <span class="cf-badge" *ngIf="appState.cashflowGame.children">
+          {{ 'CashflowGame.childrenBadge' | translate: { count: appState.cashflowGame.children } }}
+        </span>
+      </div>
+
       <div class="cf-actions">
         <button class="btn btn--primary" [disabled]="isBusy" (click)="payday()">
           {{ 'CashflowGame.payday' | translate }}
@@ -83,14 +108,65 @@
       </div>
     </div>
 
+    <!-- "Which space did you land on?" — companion mode: you moved your own token on the -->
+    <!-- physical board, this simulates the consequence (todo/cashflow-game.md decision 8). -->
+    <div class="cf-card">
+      <h3>{{ 'CashflowGame.landedOn' | translate }}</h3>
+      <div class="cf-actions">
+        <button class="btn btn--sm" [disabled]="isBusy || !canLandOnBaby" (click)="landOnBaby()">
+          {{ 'CashflowGame.baby' | translate }}
+        </button>
+        <button class="btn btn--sm" [disabled]="isBusy" (click)="landOnCharity()">
+          {{ 'CashflowGame.charity' | translate }}
+        </button>
+        <button class="btn btn--sm" [disabled]="isBusy" (click)="landOnDownsized()">
+          {{ 'CashflowGame.downsized' | translate }}
+        </button>
+      </div>
+    </div>
+
+    <div class="cf-card" *ngIf="currentGameSet">
+      <h3>{{ 'CashflowGame.bankLoan' | translate }}</h3>
+      <p class="cf-loan-current">
+        {{ 'CashflowGame.loanOutstanding' | translate }}: {{ currentLoanPrincipal | appNumber }}
+        {{ appState.currency }}
+      </p>
+      <label class="cf-field">
+        {{
+          'CashflowGame.loanIncrements' | translate: { amount: (loanIncrementAmount | appNumber) }
+        }}
+        <input type="number" min="1" step="1" [(ngModel)]="loanIncrements" />
+      </label>
+      <div class="cf-actions">
+        <button
+          class="btn btn--sm"
+          [disabled]="isBusy || loanIncrements < 1"
+          (click)="borrowLoan()"
+        >
+          {{ 'CashflowGame.loanBorrow' | translate }}
+        </button>
+        <button
+          class="btn btn--sm"
+          [disabled]="isBusy || loanIncrements < 1 || currentLoanPrincipal <= 0"
+          (click)="repayLoan()"
+        >
+          {{ 'CashflowGame.loanRepay' | translate }}
+        </button>
+      </div>
+    </div>
+
     <div class="cf-card" *ngIf="appState.cashflowGame.history.length">
       <h3>{{ 'CashflowGame.history' | translate }}</h3>
       <ul class="cf-history">
         <li *ngFor="let entry of appState.cashflowGame.history">
           <span class="cf-history-round"
-            >{{ 'CashflowGame.Round' | translate }} {{ entry.round }}</span
+            >{{ 'CashflowGame.Round' | translate }} {{ entry.round }} ·
+            {{ 'CashflowGame.' + entry.kind | translate }}</span
           >
           <span class="cf-history-date">{{ entry.virtualDateBefore | appDate }}</span>
+          <span class="cf-history-skipped" *ngIf="entry.skipped">{{
+            'CashflowGame.skippedBadge' | translate
+          }}</span>
           <ul class="cf-history-transactions">
             <li *ngFor="let tx of entry.createdTransactions">
               {{ tx.account }} · {{ toDisplayAmount(tx.amountMinor) | appNumber }}

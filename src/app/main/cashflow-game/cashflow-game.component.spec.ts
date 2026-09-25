@@ -12,6 +12,10 @@ function makeComponent(overrides: Partial<Record<string, jest.Mock>> = {}) {
     pickProfession: jest.fn(),
     payday: jest.fn(),
     undoLastPayday: jest.fn(),
+    resolveBaby: jest.fn(),
+    resolveCharity: jest.fn(),
+    resolveDownsized: jest.fn(),
+    adjustBankLoan: jest.fn(),
     ...overrides,
   };
   const toastService = { show: jest.fn() };
@@ -121,6 +125,76 @@ describe('CashflowGameComponent', () => {
       component.startGame();
       cashflowGameService.pickProfession.mock.calls[0][2].onError('Could not start the game.');
       expect(toastService.show).toHaveBeenCalledWith('Could not start the game.', 'error');
+    });
+  });
+
+  describe('landing on a space (companion mode)', () => {
+    it('delegates baby/charity/downsized to the service and toasts on success', () => {
+      const { component, cashflowGameService, toastService } = makeComponent();
+
+      component.landOnBaby();
+      cashflowGameService.resolveBaby.mock.calls[0][0].onSuccess();
+      expect(toastService.show).toHaveBeenCalledWith('CashflowGame.babyDone', 'success');
+
+      component.landOnCharity();
+      cashflowGameService.resolveCharity.mock.calls[0][0].onSuccess();
+      expect(toastService.show).toHaveBeenCalledWith('CashflowGame.charityDone', 'success');
+
+      component.landOnDownsized();
+      cashflowGameService.resolveDownsized.mock.calls[0][0].onSuccess();
+      expect(toastService.show).toHaveBeenCalledWith('CashflowGame.downsizedDone', 'success');
+    });
+
+    it('canLandOnBaby is false once there are already 3 children', () => {
+      const { component } = makeComponent();
+      AppStateService.instance.cashflowGame = {
+        ...AppStateService.instance.cashflowGame,
+        children: 3,
+      };
+      expect(component.canLandOnBaby).toBe(false);
+    });
+  });
+
+  describe('bank loan', () => {
+    it('borrowLoan multiplies the increments by the game set’s increment amount', () => {
+      const { component, cashflowGameService } = makeComponent();
+      AppStateService.instance.cashflowGame = {
+        ...AppStateService.instance.cashflowGame,
+        gameSetId: 'placeholder',
+      };
+      component.loanIncrements = 2;
+
+      component.borrowLoan();
+
+      expect(cashflowGameService.adjustBankLoan).toHaveBeenCalledWith(
+        2 * component.loanIncrementAmount,
+        expect.anything(),
+      );
+    });
+
+    it('repayLoan never offers to repay more than what is outstanding', () => {
+      const { component, cashflowGameService } = makeComponent();
+      AppStateService.instance.cashflowGame = {
+        ...AppStateService.instance.cashflowGame,
+        gameSetId: 'placeholder',
+      };
+      AppStateService.instance.liabilities = [
+        { tag: 'Bank loan', amount: 500, investment: false, credit: 0 },
+      ];
+      component.loanIncrements = 5; // 5 * 1000 = 5000, far more than the 500 owed
+
+      component.repayLoan();
+
+      expect(cashflowGameService.adjustBankLoan).toHaveBeenCalledWith(-500, expect.anything());
+    });
+
+    it('does nothing when there is no loan to repay', () => {
+      const { component, cashflowGameService } = makeComponent();
+      component.loanIncrements = 1;
+
+      component.repayLoan();
+
+      expect(cashflowGameService.adjustBankLoan).not.toHaveBeenCalled();
     });
   });
 });

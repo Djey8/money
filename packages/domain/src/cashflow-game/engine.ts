@@ -1,14 +1,16 @@
 /**
- * The Cashflow game MVP engine: pure functions over `CashflowGameState` plus
- * plain descriptions of the real entities to create/remove — this module
- * never touches Angular state itself, the frontend's `CashflowGameService`
- * applies its output to `AppStateService`. See todo/cashflow-game.md.
+ * The Cashflow game engine: pure functions over `CashflowGameState` plus
+ * plain descriptions of the real entities to create/update/remove — this
+ * module never touches Angular state itself, the frontend's
+ * `CashflowGameService` applies its output to `AppStateService`. See
+ * todo/cashflow-game.md.
  */
 import {
   CashflowGameSet,
   CashflowGameState,
   CashflowProfession,
   CashflowStarterKit,
+  CashflowStarterKitSubscription,
   CashflowTransactionRecord,
   initialCashflowGameState,
 } from './types';
@@ -35,6 +37,13 @@ export function addMonthsToIsoDate(isoDate: string, months: number): string {
   return formatIsoDate(new Date(targetYear, targetMonth, clampedDay));
 }
 
+function requireStarted(state: CashflowGameState, action: string): string {
+  if (!state.virtualDate) {
+    throw new Error(`Pick a profession before ${action}.`);
+  }
+  return state.virtualDate;
+}
+
 export interface PickProfessionResult {
   state: CashflowGameState;
   profession: CashflowProfession;
@@ -49,7 +58,7 @@ export interface PickProfessionResult {
  * Subscription/Asset/Investment/Share/Liability entities, plus one starting
  * Transaction for the profession's starting cash. Never touches anything the
  * previous game may have created — Phase 1 decides whether picking a new
- * profession mid-game is even allowed; for the MVP this is only meant to run
+ * profession mid-game is even allowed; for now this is only meant to run
  * once, from a fresh (or freshly reset) game.
  */
 export function pickCashflowProfession(
@@ -57,6 +66,7 @@ export function pickCashflowProfession(
   gameSetId: string,
   professionId: string,
   today: string,
+  mode: 'companion' | 'solo' = 'companion',
 ): PickProfessionResult {
   const gameSet = findCashflowGameSet(gameSets, gameSetId);
   const profession = findCashflowProfession(gameSet, professionId);
@@ -67,6 +77,8 @@ export function pickCashflowProfession(
       ...initialCashflowGameState(),
       gameSetId,
       professionId,
+      mode,
+      boardPosition: mode === 'solo' ? 0 : null,
       virtualDate: today,
       gameSubscriptionTitles,
     },
@@ -91,38 +103,58 @@ export interface CashflowGameSubscription {
   comment?: string;
 }
 
+/** The real Subscriptions matching `state.gameSubscriptionTitles`, in that order — what Payday/Charity/Downsized act on. */
+function ownedSubscriptions(
+  state: CashflowGameState,
+  subscriptions: CashflowGameSubscription[],
+): CashflowGameSubscription[] {
+  const byTitle = new Map(subscriptions.map((sub) => [sub.title, sub]));
+  return state.gameSubscriptionTitles
+    .map((title) => byTitle.get(title))
+    .filter((sub): sub is CashflowGameSubscription => sub !== undefined);
+}
+
+function cashflowTransaction(
+  account: string,
+  amountMinor: number,
+  date: string,
+  comment: string,
+): CashflowTransactionRecord {
+  return {
+    account,
+    amountMinor,
+    date,
+    time: '',
+    category: '',
+    comment: comment ? `${comment}\n#cashflow` : '#cashflow',
+  };
+}
+
 export interface PaydayResult {
   state: CashflowGameState;
   transactions: CashflowTransactionRecord[];
 }
 
 /**
- * Runs one payday: creates exactly one Transaction per real Subscription the
+ * Runs one Payday: creates exactly one Transaction per real Subscription the
  * game owns (`state.gameSubscriptionTitles`), dated at the game's own
  * `virtualDate` — never at real "today", and never touching any other
  * transaction's date (the bug in the mechanism this replaces,
- * `GameModeService`). Advances `virtualDate` by one month and `round` by one.
+ * `GameModeService`). Advances `virtualDate` by one month and `round` by
+ * one, ticks down an active charity bonus, and — while `unemployedRoundsLeft`
+ * is active — skips creating anything at all (todo/cashflow-game.md §4).
  */
 export function runCashflowPayday(
   state: CashflowGameState,
   subscriptions: CashflowGameSubscription[],
 ): PaydayResult {
-  if (!state.virtualDate) {
-    throw new Error('Pick a profession before running Payday.');
-  }
-  const date = state.virtualDate;
-  const byTitle = new Map(subscriptions.map((sub) => [sub.title, sub]));
-  const transactions: CashflowTransactionRecord[] = state.gameSubscriptionTitles
-    .map((title) => byTitle.get(title))
-    .filter((sub): sub is CashflowGameSubscription => sub !== undefined)
-    .map((sub) => ({
-      account: sub.account,
-      amountMinor: sub.amountMinor,
-      date,
-      time: '',
-      category: sub.category ?? '',
-      comment: sub.comment ? `${sub.comment}\n#cashflow` : '#cashflow',
-    }));
+  const date = requireStarted(state, 'running Payday');
+  const isSkipped = state.unemployedRoundsLeft > 0;
+  const transactions: CashflowTransactionRecord[] = isSkipped
+    ? []
+    : ownedSubscriptions(state, subscriptions).map((sub) =>
+        cashflowTransaction(sub.account, sub.amountMinor, date, sub.comment ? sub.comment : ''),
+      );
 
   const nextRound = state.round + 1;
   const nextVirtualDate = addMonthsToIsoDate(date, 1);
@@ -131,6 +163,11 @@ export function runCashflowPayday(
       ...state,
       round: nextRound,
       virtualDate: nextVirtualDate,
+      unemployedRoundsLeft: isSkipped ? state.unemployedRoundsLeft - 1 : state.unemployedRoundsLeft,
+      charityRoundsLeft:
+        !isSkipped && state.charityRoundsLeft > 0
+          ? state.charityRoundsLeft - 1
+          : state.charityRoundsLeft,
       history: [
         ...state.history,
         {
@@ -138,6 +175,9 @@ export function runCashflowPayday(
           virtualDateBefore: date,
           virtualDateAfter: nextVirtualDate,
           kind: 'payday',
+          skipped: isSkipped || undefined,
+          unemployedRoundsLeftBefore: state.unemployedRoundsLeft,
+          charityRoundsLeftBefore: state.charityRoundsLeft,
           createdTransactions: transactions,
         },
       ],
@@ -151,19 +191,204 @@ export interface UndoCashflowPaydayResult {
   removedTransactions: CashflowTransactionRecord[];
 }
 
-/** Reverses the most recent Payday: rewinds round/virtualDate and returns the exact transactions it created, for the caller to remove. */
+/** Reverses the most recent Payday: rewinds round/virtualDate/counters and returns the exact transactions it created, for the caller to remove. Refuses if the most recent action wasn't a Payday. */
 export function undoLastCashflowPayday(state: CashflowGameState): UndoCashflowPaydayResult {
   const lastEntry = state.history[state.history.length - 1];
-  if (!lastEntry) {
-    throw new Error('Nothing to undo.');
+  if (!lastEntry || lastEntry.kind !== 'payday') {
+    throw new Error('Only the most recent Payday can be undone.');
   }
   return {
     state: {
       ...state,
       round: state.round - 1,
       virtualDate: lastEntry.virtualDateBefore,
+      unemployedRoundsLeft: lastEntry.unemployedRoundsLeftBefore ?? state.unemployedRoundsLeft,
+      charityRoundsLeft: lastEntry.charityRoundsLeftBefore ?? state.charityRoundsLeft,
       history: state.history.slice(0, -1),
     },
     removedTransactions: lastEntry.createdTransactions,
+  };
+}
+
+export interface BabyResult {
+  state: CashflowGameState;
+  /** Create-or-update this Subscription so the child-expense total is included from the next Payday on. */
+  subscriptionUpsert: CashflowStarterKitSubscription;
+}
+
+/** Resolves a Baby space: +1 child (max 3), the profession's per-child expense scales a dedicated Subscription. */
+export function resolveCashflowBaby(
+  state: CashflowGameState,
+  profession: CashflowProfession,
+): BabyResult {
+  const date = requireStarted(state, 'landing on Baby');
+  if (state.children >= 3) {
+    throw new Error('Already at the maximum of 3 children.');
+  }
+  const children = state.children + 1;
+  const title = `${profession.title} Children Expenses`;
+  const gameSubscriptionTitles = state.gameSubscriptionTitles.includes(title)
+    ? state.gameSubscriptionTitles
+    : [...state.gameSubscriptionTitles, title];
+
+  return {
+    state: {
+      ...state,
+      children,
+      gameSubscriptionTitles,
+      history: [
+        ...state.history,
+        {
+          round: state.round,
+          virtualDateBefore: date,
+          virtualDateAfter: date,
+          kind: 'baby',
+          createdTransactions: [],
+        },
+      ],
+    },
+    subscriptionUpsert: {
+      title,
+      account: 'Daily',
+      amountMinor: children * profession.perChildExpenseMinor,
+      frequency: 'monthly',
+    },
+  };
+}
+
+export interface CharityResult {
+  state: CashflowGameState;
+  transaction: CashflowTransactionRecord;
+}
+
+/** Resolves a Charity space: pay 10% of total income now, may choose 1 or 2 dice for the next 3 Paydays. */
+export function resolveCashflowCharity(
+  state: CashflowGameState,
+  subscriptions: CashflowGameSubscription[],
+): CharityResult {
+  const date = requireStarted(state, 'landing on Charity');
+  const totalIncomeMinor = ownedSubscriptions(state, subscriptions)
+    .filter((sub) => sub.amountMinor > 0)
+    .reduce((sum, sub) => sum + sub.amountMinor, 0);
+  const transaction = cashflowTransaction(
+    'Daily',
+    -Math.round(totalIncomeMinor * 0.1),
+    date,
+    'Charity',
+  );
+
+  return {
+    state: {
+      ...state,
+      charityRoundsLeft: 3,
+      history: [
+        ...state.history,
+        {
+          round: state.round,
+          virtualDateBefore: date,
+          virtualDateAfter: date,
+          kind: 'charity',
+          createdTransactions: [transaction],
+        },
+      ],
+    },
+    transaction,
+  };
+}
+
+export interface DownsizedResult {
+  state: CashflowGameState;
+  transaction: CashflowTransactionRecord;
+}
+
+/** Resolves a Downsized space: pay total expenses once, sit out 2 Paydays (which also ends an active charity bonus). */
+export function resolveCashflowDownsized(
+  state: CashflowGameState,
+  subscriptions: CashflowGameSubscription[],
+): DownsizedResult {
+  const date = requireStarted(state, 'landing on Downsized');
+  const totalExpensesMinor = ownedSubscriptions(state, subscriptions)
+    .filter((sub) => sub.amountMinor < 0)
+    .reduce((sum, sub) => sum + Math.abs(sub.amountMinor), 0);
+  const transaction = cashflowTransaction('Daily', -totalExpensesMinor, date, 'Downsized');
+
+  return {
+    state: {
+      ...state,
+      unemployedRoundsLeft: 2,
+      charityRoundsLeft: 0,
+      history: [
+        ...state.history,
+        {
+          round: state.round,
+          virtualDateBefore: date,
+          virtualDateAfter: date,
+          kind: 'downsized',
+          createdTransactions: [transaction],
+        },
+      ],
+    },
+    transaction,
+  };
+}
+
+export interface BankLoanResult {
+  state: CashflowGameState;
+  /** `null` once the loan is fully repaid — the caller should remove the Liability/Subscription instead of upserting. */
+  liabilityUpsert: { tag: string; amountMinor: number } | null;
+  subscriptionUpsert: CashflowStarterKitSubscription | null;
+}
+
+const BANK_LOAN_TAG = 'Bank loan';
+const BANK_LOAN_SUBSCRIPTION_TITLE = 'Bank loan interest';
+
+/**
+ * Takes or repays a bank loan in the game set's `loanRule.incrementMinor`
+ * steps: `deltaMinor` is positive to borrow, negative to repay. The interest
+ * Subscription is fully recomputed from the new principal every time, never
+ * hand-edited — the one fully automated financial mechanic
+ * (todo/cashflow-game.md §4). `currentPrincipalMinor` is read by the caller
+ * from the real "Bank loan" Liability (0 if none exists yet).
+ */
+export function adjustCashflowBankLoan(
+  state: CashflowGameState,
+  gameSet: CashflowGameSet,
+  currentPrincipalMinor: number,
+  deltaMinor: number,
+): BankLoanResult {
+  requireStarted(state, 'taking a bank loan');
+  if (deltaMinor === 0) {
+    throw new Error('Enter a non-zero amount to borrow or repay.');
+  }
+  if (Math.abs(deltaMinor) % gameSet.loanRule.incrementMinor !== 0) {
+    throw new Error(
+      `Bank loans only move in steps of ${gameSet.loanRule.incrementMinor} minor units.`,
+    );
+  }
+  const nextPrincipalMinor = currentPrincipalMinor + deltaMinor;
+  if (nextPrincipalMinor < 0) {
+    throw new Error('Cannot repay more than the outstanding loan.');
+  }
+
+  const paidOff = nextPrincipalMinor === 0;
+  const gameSubscriptionTitles = paidOff
+    ? state.gameSubscriptionTitles.filter((title) => title !== BANK_LOAN_SUBSCRIPTION_TITLE)
+    : state.gameSubscriptionTitles.includes(BANK_LOAN_SUBSCRIPTION_TITLE)
+      ? state.gameSubscriptionTitles
+      : [...state.gameSubscriptionTitles, BANK_LOAN_SUBSCRIPTION_TITLE];
+
+  return {
+    state: { ...state, gameSubscriptionTitles },
+    liabilityUpsert: paidOff ? null : { tag: BANK_LOAN_TAG, amountMinor: nextPrincipalMinor },
+    subscriptionUpsert: paidOff
+      ? null
+      : {
+          title: BANK_LOAN_SUBSCRIPTION_TITLE,
+          account: 'Daily',
+          amountMinor: -Math.round(
+            (nextPrincipalMinor * gameSet.loanRule.monthlyInterestPercent) / 100,
+          ),
+          frequency: 'monthly',
+        },
   };
 }

@@ -520,13 +520,20 @@ export class AppDataService {
     const str = (v: any): string => this.cryptic.decrypt(v, 'database');
     const num = (v: any): number => parseInt(str(v), 10) || 0;
     const nullableStr = (v: any): string | null => (v == null ? null : str(v));
+    const nullableNum = (v: any): number | null => (v == null ? null : num(v));
+    const optionalBool = (v: any): boolean | undefined =>
+      v == null ? undefined : str(v) === 'true';
+    const optionalNum = (v: any): number | undefined => (v == null ? undefined : num(v));
 
-    const history = Array.isArray(raw.history)
+    const history: CashflowGameState['history'] = Array.isArray(raw.history)
       ? raw.history.map((entry: any) => ({
           round: num(entry.round),
           virtualDateBefore: str(entry.virtualDateBefore),
           virtualDateAfter: str(entry.virtualDateAfter),
-          kind: str(entry.kind) as 'payday',
+          kind: str(entry.kind) as CashflowGameState['history'][number]['kind'],
+          skipped: optionalBool(entry.skipped),
+          unemployedRoundsLeftBefore: optionalNum(entry.unemployedRoundsLeftBefore),
+          charityRoundsLeftBefore: optionalNum(entry.charityRoundsLeftBefore),
           createdTransactions: Array.isArray(entry.createdTransactions)
             ? entry.createdTransactions.map((t: any) => ({
                 account: str(t.account),
@@ -543,6 +550,8 @@ export class AppDataService {
     return {
       gameSetId: nullableStr(raw.gameSetId),
       professionId: nullableStr(raw.professionId),
+      mode: raw.mode != null ? (str(raw.mode) as CashflowGameState['mode']) : 'companion',
+      boardPosition: nullableNum(raw.boardPosition),
       round: num(raw.round),
       virtualDate: nullableStr(raw.virtualDate),
       children: num(raw.children),

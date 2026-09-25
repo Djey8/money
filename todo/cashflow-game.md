@@ -1,7 +1,8 @@
 # Cashflow (board game) automation — Feature Plan
 
-**Status:** Planning — awaiting sign-off on the one new storage path (section 4) before any code lands. Not
-started. Revised twice on 2026-09-25 after JFK's corrections mid-planning — see section 2 for what changed and why.
+**Status:** MVP committed (`f1c1910`). Phase 1's companion-mode resolutions (Baby/Charity/Downsized, bank loan,
+Payday's skip/charity-tick fix) are built but not yet committed — see the status notes under Phase 1 below. Not yet
+playtested with real profession/board/card data.
 
 ## 1. What this is
 
@@ -42,6 +43,19 @@ same as `todo/fund-settlement.md` was.
    ships until real data arrives, so the mechanic is testable early.
 7. **Money**: the new game-meta state uses integer minor units (`docs/adr/0002`, new code); the real entities it
    creates use their existing float convention, unchanged.
+8. **Two play modes, one shared resolution engine** (2026-09-26): a "turn" is landing on a **space**, not just
+   clicking Payday. JFK's primary use case is playing the physical board with a real die and (optionally) another
+   person, using the app only to simulate what a space does and, later, to reveal its card:
+   - **Companion mode** (build first): the player moves their own token on the physical board. In the app they
+     just say which space they landed on; the app resolves it (Payday's math today, Baby/Charity/Downsized next,
+     Deal/Market/Doodad once Phase 2's card data exists). No token position is tracked.
+   - **Solo mode** (later, tied to a game set that actually provides a `board` — "mit weiteren Gamesets" per JFK):
+     the app itself rolls the die and moves a token around a digitized board, landing on and resolving spaces
+     automatically — playing a whole life with no physical board and no second person.
+   - Both modes call the same per-space resolution function; solo mode is only an extra layer (dice + position) on
+     top of what companion mode already needs. A game set's `board` (the space sequence) is real physical-game
+     content, so it's provided by JFK the same as professions and cards (decision 6) — a small placeholder board
+     ships meanwhile.
 
 ## 3. The one new thing: a small game-meta state
 
@@ -50,12 +64,22 @@ home for, plus the pluggable game-set concept (decision 5):
 
 ```ts
 // packages/domain — new module, minor units
+type CashflowSpaceKind =
+  'payday' | 'dealBig' | 'dealSmall' | 'market' | 'doodad' | 'baby' | 'charity' | 'downsized';
+
 interface CashflowGameSet {
   // static catalog, shipped in code — one now, more later, never per-user stored
   id: string;
   title: string;
   loanRule: { incrementMinor: number; monthlyInterestPercent: number }; // e.g. 100000 / 10 — but not hardcoded
   professions: CashflowProfession[];
+  /**
+   * The physical board's space sequence, in order — real game content from
+   * JFK, like professions. Optional: a game set with no board can still be
+   * played in companion mode (the player says what they landed on); solo
+   * mode (decision 8) needs it to roll a die and move a token.
+   */
+  board?: CashflowSpaceKind[];
 }
 
 interface CashflowProfession {
@@ -82,18 +106,25 @@ interface CashflowGameState {
   // per-user, the one new storage path
   gameSetId: string | null; // null until chosen
   professionId: string | null; // null until picked
+  mode: 'companion' | 'solo'; // decision 8 — chosen when the game starts
+  boardPosition: number | null; // solo mode only; null in companion mode (no token tracked)
   round: number; // paydays taken
   virtualDate: string; // the game's own calendar (ISO date). Starts when the profession is picked, advances
-  // by exactly one month per Payday click. Independent of the real wall-clock date and
-  // NEVER applied to any transaction the game didn't itself just create — the fix for
-  // today's bug of shifting every unrelated transaction's date.
+  // by exactly one month per Payday. Independent of the real wall-clock date and NEVER
+  // applied to any transaction the game didn't itself just create — the fix for today's
+  // bug of shifting every unrelated transaction's date.
   children: number; // 0-3
   charityRoundsLeft: number; // dice-choice rounds remaining
   unemployedRoundsLeft: number; // paydays skipped
   gameSubscriptionTitles: string[]; // which real Subscriptions belong to this game (see below)
-  history: CashflowLogEntry[]; // one entry per payday/loan/quick-action, for undo + a visible audit trail
+  history: CashflowLogEntry[]; // one entry per resolved space/loan action, for undo + a visible audit trail
 }
 ```
+
+Today only `payday` is a resolvable space kind (the MVP); `baby`/`charity`/`downsized` are next (Phase 1, no card
+data needed), `dealBig`/`dealSmall`/`market`/`doodad` need Phase 2's real card catalog first. Companion mode calls
+the resolver directly with whichever kind the player says they landed on; solo mode (Phase "board simulation"
+below) calls it after rolling and moving.
 
 **Marking which real entities are "the game's"**: game-created Subscriptions get a `#cashflow` marker in their
 `comment` (the same established convention as `#bucket:`/`#settle:` elsewhere in this codebase — not the fragile
@@ -107,14 +138,18 @@ Game sets themselves need no storage path at all — they're code.
 
 ## 4. How the pieces behave
 
-- **Choose a game set, then a profession**: creates the starter kit as real entities (Subscriptions,
-  Asset/Investment/Share/Liability rows) exactly as if entered by hand, sets `professionId`/`gameSetId` and
-  `virtualDate` to today.
-- **Payday**: for each subscription in `gameSubscriptionTitles`, create exactly one Transaction dated at
-  `virtualDate`, then advance `virtualDate` by one month and `round` by one. This does **not** call the generic
-  subscription auto-generation machinery (which walks a subscription's own date window up to real "today") — that
-  machinery is already skipped for cashflow accounts today (`app.component.ts`'s
-  `!GameModeService.isCashflowGame()` guard), and stays skipped.
+- **Choose a game set, a profession, and a mode** (companion or solo, decision 8): creates the starter kit as real
+  entities (Subscriptions, Asset/Investment/Share/Liability rows) exactly as if entered by hand, sets
+  `professionId`/`gameSetId`/`mode` and `virtualDate` to today; `boardPosition` starts at 0 in solo mode.
+- **A turn = landing on (or crossing) a space.** In companion mode the player rolled their physical die and moved
+  their own token, then tells the app which space kind they landed on. In solo mode the app rolls and moves the
+  token itself, then resolves whatever it landed on the same way. Per JFK's original rules, Payday fires **on
+  landing or on crossing** — solo mode's move step checks every space passed over, not just the final one.
+- **Payday** (the only resolvable kind today — MVP): for each subscription in `gameSubscriptionTitles`, create
+  exactly one Transaction dated at `virtualDate`, then advance `virtualDate` by one month and `round` by one. This
+  does **not** call the generic subscription auto-generation machinery (which walks a subscription's own date
+  window up to real "today") — that machinery is already skipped for cashflow accounts today
+  (`app.component.ts`'s `!CashflowGameService.isCashflowGame()` guard), and stays skipped.
 - **Undo**: pop the last history entry, delete the transactions it created, rewind `round`/`virtualDate`.
 - **Bank loan** (the one fully automated financial mechanic): a dedicated action using the active game set's
   `loanRule`. Taking/repaying upserts one `Liability {tag: "Bank loan"}` and one matching
@@ -123,8 +158,9 @@ Game sets themselves need no storage path at all — they're code.
 - **Buying/selling other assets, a mortgage/car loan/etc., a Doodad card's cost**: the player uses the existing Add
   Asset / Add Investment / Add Share / Add Liability / Add Transaction panels directly for the MVP/Phase 1 — no new
   dialogs needed yet.
-- **Baby / Charity / Downsized**: three quick-action buttons adjusting `children`/`charityRoundsLeft`/
-  `unemployedRoundsLeft`, posting a one-off Transaction where the rule requires a payment.
+- **Baby / Charity / Downsized**: resolving one of these spaces (companion: the player says they landed on it;
+  solo: the board move lands on it) adjusts `children`/`charityRoundsLeft`/`unemployedRoundsLeft`, posting a
+  one-off Transaction where the rule requires a payment.
 - **Rat-race-exit indicator**: passive income (asset cashflow only) vs. total expenses, computed from the real
   entities the game already created.
 
@@ -149,41 +185,64 @@ deleted), `AppStateService.cashflowGame` + a tier-3-style on-demand loader, the 
 dashboard component, all 6 locales. `accounting.component`'s old round counter and its CSS are removed. Domain,
 service and component tests all green; not yet played through by hand.
 
-### Phase 1 (v1) — the playable core
+### Phase 1 (v1) — companion mode, the playable core
 
-- Real profession/game-set data (from you) replaces the placeholder.
-- Bank loan automation (take/repay in the game set's increment, auto Subscription+Liability).
-- Quick actions: baby, charity, downsized.
+Targets JFK's primary use case: play the physical board with a real die (and optionally another person), use the
+app to simulate what each space does.
+
+- Real profession/game-set data, and a real board space sequence (from you) replaces the placeholders.
+- A "which space did you land on?" trigger (companion mode) — one shared resolver behind Payday and the three
+  below, instead of disconnected buttons.
+- Baby / Charity / Downsized resolutions (no card data needed).
+- Bank loan automation (take/repay in the game set's increment, auto Subscription+Liability) — usable any time,
+  not tied to a space.
 - Rat-race-exit indicator.
 - Full 6-language i18n.
 - Domain + component test coverage.
-- **Exit criteria**: a live playtest with you, end to end, signed off.
+- **Exit criteria**: a live playtest with you, end to end, signed off — playing the physical board, using the app
+  only for Payday/Baby/Charity/Downsized/loans (Deal/Market/Doodad spaces are noted but not yet resolved).
+
+**Status: mostly built, not yet committed.** Baby/Charity/Downsized resolutions and bank loan automation are done
+in the engine (`resolveCashflowBaby/Charity/Downsized`, `adjustCashflowBankLoan`, 9 new domain tests), the service
+(`CashflowGameService.resolveBaby/Charity/Downsized/adjustBankLoan`, 7 new tests) and the dashboard (a "which space
+did you land on?" section, a bank-loan form, status badges, all 6 locales). Payday now correctly skips outright
+during an active `unemployedRoundsLeft` and ticks `charityRoundsLeft` down, both reversibly by Undo. Still
+placeholder data (no real professions/board/cards from you yet), and the rat-race-exit indicator isn't built —
+it needs a clean way to tell salary from passive income that the engine doesn't have yet.
 
 ### Phase 2 — digital card deck
 
-- Deal/Market/Doodad cards: draw, resolve (buy/sell/pass), once you provide the real card catalog for this game
-  set. Still one game set.
+- Deal/Market/Doodad spaces fully resolvable: draw, reveal, resolve (buy/sell/pass), once you provide the real
+  card catalog for this game set. Still companion mode, still one game set.
 - **Exit criteria**: a full round playable without touching any existing Add panel by hand, another playtest.
 
-### Phase 3 — multiple game sets
+### Phase 3 — solo board simulation
+
+- The mode JFK described as "mit weiteren Gamesets": the app rolls the die itself, moves a token along the game
+  set's `board`, and resolves whatever it lands on (or crosses, for Payday) — a whole life playable with no
+  physical board and no second person. Needs a game set that actually supplies `board`.
+- **Exit criteria**: a full solo game playable end to end, another playtest.
+
+### Phase 4 — multiple game sets
 
 - Generalize the "choose game set" step (already modeled in section 3, just one set populated until now) to
-  actually offer more than one: a different profession catalog, different loan terms, a different card deck — a
-  new data file, no engine changes.
+  actually offer more than one: a different profession catalog, board, loan terms, card deck — a new data file, no
+  engine changes.
 - **Exit criteria**: a second game set exists (even a small/house-rules one) and plays correctly alongside the
-  first.
+  first, in both modes.
 
-### Phase 4 — self-hosted Pro API + MCP for the game
+### Phase 5 — self-hosted Pro API + MCP for the game
 
 - A dedicated REST resource group and MCP tool set for the Cashflow game (its own scopes, its own tools) — separate
   from, and not layered onto, today's generic Money Manager MCP tools (decision 2). Lets an agent play or track a
   game on your behalf.
 - **Exit criteria**: playable end to end through the MCP tools, same as the UI.
 
-### Phase 5 — stretch, not started until asked for
+### Phase 6 — stretch, not started until asked for
 
 - Fast track (Kiyosaki's Phase 2 of the actual game).
-- Any multiplayer/Auditor tracking beyond one player's own bookkeeping.
+- Multiplayer tracking beyond one player's own bookkeeping (today: each player is simply their own "cashflow"
+  account).
 
 ## 6. Open, not blocking the MVP
 

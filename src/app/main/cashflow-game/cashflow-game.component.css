@@ -22,12 +22,33 @@
   font-size: 0.9rem;
 }
 
-.cf-field select {
+.cf-field select,
+.cf-field input {
   padding: 8px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--color-border);
   background-color: var(--color-background);
   color: var(--color-text);
+}
+
+.cf-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 8px 0;
+}
+
+.cf-badge {
+  background-color: var(--color-warning-bg, rgba(255, 193, 7, 0.15));
+  color: var(--color-text);
+  border-radius: var(--radius-full);
+  padding: 4px 10px;
+  font-size: 0.8rem;
+}
+
+.cf-loan-current {
+  margin: 0 0 12px;
+  font-size: 0.95rem;
 }
 
 .cf-stat-row {
@@ -76,6 +97,13 @@
 .cf-history-date {
   color: var(--color-text-secondary);
   font-size: 0.85rem;
+}
+
+.cf-history-skipped {
+  margin-left: 8px;
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+  font-style: italic;
 }
 
 .cf-history-transactions {
