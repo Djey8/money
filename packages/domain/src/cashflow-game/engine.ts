@@ -141,20 +141,24 @@ export interface PaydayResult {
  * `virtualDate` — never at real "today", and never touching any other
  * transaction's date (the bug in the mechanism this replaces,
  * `GameModeService`). Advances `virtualDate` by one month and `round` by
- * one, ticks down an active charity bonus, and — while `unemployedRoundsLeft`
- * is active — skips creating anything at all (todo/cashflow-game.md §4).
+ * one.
+ *
+ * Payday always runs, unconditionally — `charityRoundsLeft`/
+ * `unemployedRoundsLeft` (Baby/Charity/Downsized) are about the physical
+ * board's **turn order** ("your next 3 turns" / "sit out while opponents
+ * play 2 rounds"), which this single-player companion tool has no
+ * visibility into and must not guess at. It does not skip or gate Payday —
+ * see `clearCashflowStatus`.
  */
 export function runCashflowPayday(
   state: CashflowGameState,
   subscriptions: CashflowGameSubscription[],
 ): PaydayResult {
   const date = requireStarted(state, 'running Payday');
-  const isSkipped = state.unemployedRoundsLeft > 0;
-  const transactions: CashflowTransactionRecord[] = isSkipped
-    ? []
-    : ownedSubscriptions(state, subscriptions).map((sub) =>
-        cashflowTransaction(sub.account, sub.amountMinor, date, sub.comment ? sub.comment : ''),
-      );
+  const transactions: CashflowTransactionRecord[] = ownedSubscriptions(state, subscriptions).map(
+    (sub) =>
+      cashflowTransaction(sub.account, sub.amountMinor, date, sub.comment ? sub.comment : ''),
+  );
 
   const nextRound = state.round + 1;
   const nextVirtualDate = addMonthsToIsoDate(date, 1);
@@ -163,11 +167,6 @@ export function runCashflowPayday(
       ...state,
       round: nextRound,
       virtualDate: nextVirtualDate,
-      unemployedRoundsLeft: isSkipped ? state.unemployedRoundsLeft - 1 : state.unemployedRoundsLeft,
-      charityRoundsLeft:
-        !isSkipped && state.charityRoundsLeft > 0
-          ? state.charityRoundsLeft - 1
-          : state.charityRoundsLeft,
       history: [
         ...state.history,
         {
@@ -175,9 +174,6 @@ export function runCashflowPayday(
           virtualDateBefore: date,
           virtualDateAfter: nextVirtualDate,
           kind: 'payday',
-          skipped: isSkipped || undefined,
-          unemployedRoundsLeftBefore: state.unemployedRoundsLeft,
-          charityRoundsLeftBefore: state.charityRoundsLeft,
           createdTransactions: transactions,
         },
       ],
@@ -191,7 +187,7 @@ export interface UndoCashflowPaydayResult {
   removedTransactions: CashflowTransactionRecord[];
 }
 
-/** Reverses the most recent Payday: rewinds round/virtualDate/counters and returns the exact transactions it created, for the caller to remove. Refuses if the most recent action wasn't a Payday. */
+/** Reverses the most recent Payday: rewinds round/virtualDate and returns the exact transactions it created, for the caller to remove. Refuses if the most recent action wasn't a Payday. */
 export function undoLastCashflowPayday(state: CashflowGameState): UndoCashflowPaydayResult {
   const lastEntry = state.history[state.history.length - 1];
   if (!lastEntry || lastEntry.kind !== 'payday') {
@@ -202,12 +198,26 @@ export function undoLastCashflowPayday(state: CashflowGameState): UndoCashflowPa
       ...state,
       round: state.round - 1,
       virtualDate: lastEntry.virtualDateBefore,
-      unemployedRoundsLeft: lastEntry.unemployedRoundsLeftBefore ?? state.unemployedRoundsLeft,
-      charityRoundsLeft: lastEntry.charityRoundsLeftBefore ?? state.charityRoundsLeft,
       history: state.history.slice(0, -1),
     },
     removedTransactions: lastEntry.createdTransactions,
   };
+}
+
+/**
+ * Clears an active Charity (dice-choice) or Downsized (sitting out) status
+ * once the player's own physical turns have played out — the player is the
+ * only one who knows when that is (todo/cashflow-game.md §4), so this is a
+ * plain reminder dismissal, not a financial action: no history entry, not
+ * undoable, same as ticking a checkbox.
+ */
+export function clearCashflowStatus(
+  state: CashflowGameState,
+  status: 'charity' | 'unemployed',
+): CashflowGameState {
+  return status === 'charity'
+    ? { ...state, charityRoundsLeft: 0 }
+    : { ...state, unemployedRoundsLeft: 0 };
 }
 
 export interface BabyResult {
@@ -330,6 +340,20 @@ export function resolveCashflowDownsized(
     },
     transaction,
   };
+}
+
+/**
+ * The recurring "Gesamteinkommen − Gesamtausgaben" the original rules use as
+ * the loss condition: once this goes negative, every future Payday drains
+ * cash — JFK's rule (2026-09-26): "the moment we go on a negative cashflow
+ * for the next months, game is over." The caller decides how to surface
+ * that (a warning badge today; nothing here enforces it).
+ */
+export function computeMonthlyCashflowMinor(
+  state: CashflowGameState,
+  subscriptions: CashflowGameSubscription[],
+): number {
+  return ownedSubscriptions(state, subscriptions).reduce((sum, sub) => sum + sub.amountMinor, 0);
 }
 
 export interface BankLoanResult {

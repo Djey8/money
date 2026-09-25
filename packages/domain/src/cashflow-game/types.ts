@@ -86,11 +86,6 @@ export interface CashflowLogEntry {
   virtualDateBefore: string;
   virtualDateAfter: string;
   kind: CashflowSpaceKind;
-  /** True for a Payday that was skipped outright (an active `unemployedRoundsLeft`) — round/date still advance, but nothing was created. */
-  skipped?: boolean;
-  /** Payday only — a snapshot so `undoLastCashflowPayday` can restore these exactly rather than trying to infer the reversal. */
-  unemployedRoundsLeftBefore?: number;
-  charityRoundsLeftBefore?: number;
   createdTransactions: CashflowTransactionRecord[];
 }
 
@@ -105,7 +100,9 @@ export interface CashflowGameState {
   /** The game's own calendar (ISO date), independent of the real wall-clock date. Null until a profession is picked. */
   virtualDate: string | null;
   children: number;
+  /** A reminder, not a countdown the app drives: "choose 1 or 2 dice for your next N turns." Cleared by `clearCashflowStatus` when the player's own turns have played out — never by Payday. */
   charityRoundsLeft: number;
+  /** A reminder, not a countdown the app drives: "sit out while opponents play N turns." Cleared by `clearCashflowStatus` — never by Payday, which always runs regardless. */
   unemployedRoundsLeft: number;
   /** Which real Subscription titles belong to this game — Payday only ever acts on these. */
   gameSubscriptionTitles: string[];

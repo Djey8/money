@@ -118,6 +118,11 @@ export class CashflowGameComponent implements OnInit {
     return this.appState.cashflowGame.children < 3;
   }
 
+  /** The loss condition JFK described 2026-09-26: once this goes negative, every future Payday drains cash. */
+  get monthlyCashflow(): number {
+    return this.cashflowGameService.monthlyCashflow;
+  }
+
   /** `cashflowGame`'s history is stored in minor units (decision 6); the template displays decimal. */
   toDisplayAmount(amountMinor: number): number {
     return fromMinorUnits(amountMinor);
@@ -180,6 +185,23 @@ export class CashflowGameComponent implements OnInit {
       (callbacks) => this.cashflowGameService.resolveDownsized(callbacks),
       'downsized',
     );
+  }
+
+  /** The player, not the app, knows when their own next turns have played out (todo/cashflow-game.md §4). */
+  clearCharity(): void {
+    this.dismissStatus('charity');
+  }
+
+  clearUnemployed(): void {
+    this.dismissStatus('unemployed');
+  }
+
+  private dismissStatus(status: 'charity' | 'unemployed'): void {
+    this.cashflowGameService.clearStatus(status, {
+      onSuccess: () =>
+        this.toastService.show(this.translate.instant('CashflowGame.dismiss'), 'update'),
+      onError: (message) => this.toastService.show(message, 'error'),
+    });
   }
 
   borrowLoan(): void {

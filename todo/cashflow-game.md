@@ -1,8 +1,10 @@
 # Cashflow (board game) automation — Feature Plan
 
-**Status:** MVP committed (`f1c1910`). Phase 1's companion-mode resolutions (Baby/Charity/Downsized, bank loan,
-Payday's skip/charity-tick fix) are built but not yet committed — see the status notes under Phase 1 below. Not yet
-playtested with real profession/board/card data.
+**Status:** MVP committed (`f1c1910`), companion-mode resolutions committed (`459fe21`). A further correction
+landed 2026-09-26 after JFK's feedback (Downsized was wrong — see decision 8b) plus a major scope clarification:
+Deal-card purchases are **not** a new feature, they're the app's existing Grow feature (decision 9). Not yet
+committed — see the status notes under Phase 1. Not yet playtested (JFK can't sit at a computer right now; we're
+developing ahead theoretically, per his explicit go-ahead, until he can).
 
 ## 1. What this is
 
@@ -56,6 +58,34 @@ same as `todo/fund-settlement.md` was.
      top of what companion mode already needs. A game set's `board` (the space sequence) is real physical-game
      content, so it's provided by JFK the same as professions and cards (decision 6) — a small placeholder board
      ships meanwhile.
+9. **Baby/Charity/Downsized's "N rounds" are the physical board's turn order, not Paydays** (correction,
+   2026-09-26 — JFK: _"it's not that you have to skip two salaries"_). Downsized pays total expenses once, then the
+   player sits out while **opponents** take their next 2 turns; Charity lets the player choose 1 or 2 dice for
+   their own next 3 turns. A single-player companion tool has no visibility into other players' turns, so
+   `charityRoundsLeft`/`unemployedRoundsLeft` are **reminders the player manages themselves** (a dismiss action,
+   `clearCashflowStatus`) — **Payday is never gated or skipped by them.** This reverses the MVP's first (wrong)
+   implementation, which auto-skipped Payday.
+10. **Deal-card purchases (shares, property) are not a new feature — they're the app's existing Grow feature**
+    (2026-09-26, JFK: _"you already know with our app all the... how to calculate the passive income... what is
+    different here?"_). A Small Deal share purchase is a Grow project (`kind: share`); a property (Small or Big
+    Deal) is a Grow project (`kind: investment`) with its deposit, mortgage and periodic cashflow — Grow's existing
+    buy/sell/deposit/cashflow/payback actions already do everything the game needs: deposit paid now, mortgage as a
+    real Liability, cashflow added to the real income statement and a Subscription automatically. **No new buy/sell
+    UI, no new entity types.** The Cashflow game only adds a decision-support layer on top (Deal card context, the
+    debt-vs-cashflow tradeoff — see `docs/domain/CASHFLOW_GAME_GUIDE.md`), never the mechanics themselves. Shares
+    are a **liquidity/capital-gains tool** here, not passive income — only property cashflow counts as passive
+    income (relevant once the rat-race indicator is built). Every Grow project/Asset/Investment/Share/Liability on
+    a cashflow account belongs to the game outright (decision 2 — the whole account is the game), no `#cashflow`
+    marker needed, unlike Subscriptions.
+11. **Losing**: JFK, 2026-09-26: _"the moment we go on a negative cashflow for the next months, game is over."_ A
+    `monthlyCashflow` figure (income minus expenses across every Subscription the game owns) is shown live on the
+    dashboard, with a warning once it's negative. Advisory, like everything else here — it doesn't lock the UI.
+12. **Rules and strategy are documented for the player, not just the agent**: `docs/domain/CASHFLOW_GAME_GUIDE.md`
+    (JFK: _"I would like to have a page describing the basic rules of this game... you as a user, you have a way
+    to read all of this"_). It's picked up by `explain_concept` automatically like every other `docs/domain/*.md`
+    file, and is readable directly as a file/on GitHub. **Open point**: whether it should also render in-app (the
+    existing `docs.component.ts` is hand-authored TS content for self-hosted setup docs, a different thing, and
+    isn't a markdown viewer) — not built; flag if you want that specifically.
 
 ## 3. The one new thing: a small game-meta state
 
@@ -150,19 +180,28 @@ Game sets themselves need no storage path at all — they're code.
   does **not** call the generic subscription auto-generation machinery (which walks a subscription's own date
   window up to real "today") — that machinery is already skipped for cashflow accounts today
   (`app.component.ts`'s `!CashflowGameService.isCashflowGame()` guard), and stays skipped.
-- **Undo**: pop the last history entry, delete the transactions it created, rewind `round`/`virtualDate`.
+- **Undo**: pop the last history entry, delete the transactions it created, rewind `round`. Payday only (undoing
+  Baby/Charity/Downsized isn't built — see §6 open points).
 - **Bank loan** (the one fully automated financial mechanic): a dedicated action using the active game set's
   `loanRule`. Taking/repaying upserts one `Liability {tag: "Bank loan"}` and one matching
   `Subscription {title: "Bank loan interest", category: "@Bank loan", amount, #cashflow}`, recomputed on every
   change, never hand-edited.
-- **Buying/selling other assets, a mortgage/car loan/etc., a Doodad card's cost**: the player uses the existing Add
-  Asset / Add Investment / Add Share / Add Liability / Add Transaction panels directly for the MVP/Phase 1 — no new
-  dialogs needed yet.
-- **Baby / Charity / Downsized**: resolving one of these spaces (companion: the player says they landed on it;
-  solo: the board move lands on it) adjusts `children`/`charityRoundsLeft`/`unemployedRoundsLeft`, posting a
-  one-off Transaction where the rule requires a payment.
-- **Rat-race-exit indicator**: passive income (asset cashflow only) vs. total expenses, computed from the real
-  entities the game already created.
+- **Deal-card purchases (shares, property)**: not a Cashflow-game feature at all — the existing Grow feature,
+  used exactly as any personal account would (decision 10, `docs/domain/CASHFLOW_GAME_GUIDE.md` §4). A Doodad
+  card's one-off cost: the existing Add Transaction panel.
+- **Baby**: +1 child (max 3), scales a dedicated "Children Expenses" Subscription that then feeds every future
+  Payday.
+- **Charity**: pay 10% of current income once; sets a `charityRoundsLeft` reminder (not auto-decremented by
+  Payday — decision 9).
+- **Downsized**: pay total expenses once; sets an `unemployedRoundsLeft` reminder and clears any active charity
+  reminder. **Never gates or skips Payday** (decision 9 — this was the MVP's bug, now fixed).
+- **Dismissing a reminder** (`clearCashflowStatus`): the player says their own physical turns have played out;
+  zeroes the counter, no financial effect, not logged to history.
+- **Monthly cashflow / bankruptcy warning**: `computeMonthlyCashflowMinor` sums every Subscription the game owns;
+  shown live on the dashboard, a warning banner once negative (decision 11).
+- **Rat-race-exit indicator**: passive income (property/`investment`-kind Grow cashflow only, **not** share
+  trades — decision 10) vs. total expenses. Not built yet — needs a clean way to read only investment-kind Grow
+  cashflow for a cashflow account's projects.
 
 ## 5. Phase roadmap
 
@@ -200,21 +239,28 @@ app to simulate what each space does.
 - Full 6-language i18n.
 - Domain + component test coverage.
 - **Exit criteria**: a live playtest with you, end to end, signed off — playing the physical board, using the app
-  only for Payday/Baby/Charity/Downsized/loans (Deal/Market/Doodad spaces are noted but not yet resolved).
+  for Payday/Baby/Charity/Downsized/loans/Deal-card purchases (the last via the existing Grow feature, decision
+  10 — Market/Doodad spaces still need real card data, Phase 2).
 
-**Status: mostly built, not yet committed.** Baby/Charity/Downsized resolutions and bank loan automation are done
-in the engine (`resolveCashflowBaby/Charity/Downsized`, `adjustCashflowBankLoan`, 9 new domain tests), the service
-(`CashflowGameService.resolveBaby/Charity/Downsized/adjustBankLoan`, 7 new tests) and the dashboard (a "which space
-did you land on?" section, a bank-loan form, status badges, all 6 locales). Payday now correctly skips outright
-during an active `unemployedRoundsLeft` and ticks `charityRoundsLeft` down, both reversibly by Undo. Still
-placeholder data (no real professions/board/cards from you yet), and the rat-race-exit indicator isn't built —
-it needs a clean way to tell salary from passive income that the engine doesn't have yet.
+**Status: built, being committed across two commits.** Commit 1 (`459fe21`): Baby/Charity/Downsized resolutions
+and bank loan automation in the engine, service and dashboard (a "which space did you land on?" section, a
+bank-loan form, status badges), all 6 locales. Commit 2 (in progress, 2026-09-26): the Downsized/Payday-skip
+correction (decision 9 — Payday is unconditional again, `clearCashflowStatus` lets the player dismiss a
+reminder themselves), `computeMonthlyCashflowMinor` + a bankruptcy warning on the dashboard (decision 11), and
+`docs/domain/CASHFLOW_GAME_GUIDE.md` (decision 12). Deal-card purchases need no new code (decision 10) — the
+existing Grow page already does everything; the guide documents how to use it for this game. Still placeholder
+profession/board/card data. The rat-race-exit indicator still isn't built (now well-defined — property-cashflow
+Grow projects only, decision 10 — just not wired up yet).
 
 ### Phase 2 — digital card deck
 
-- Deal/Market/Doodad spaces fully resolvable: draw, reveal, resolve (buy/sell/pass), once you provide the real
-  card catalog for this game set. Still companion mode, still one game set.
-- **Exit criteria**: a full round playable without touching any existing Add panel by hand, another playtest.
+- Deal/Market/Doodad **cards** (the text/values/context — a Deal card's asking price, a Market event, a Doodad's
+  cost) fully resolvable: draw, reveal, resolve, once you provide the real card catalog for this game set. The
+  Deal mechanics themselves need no new code (decision 10) — this phase is the card catalog plus a thin "here's
+  what you drew, here's the affordability/debt-vs-cashflow context" layer in front of the existing Grow actions,
+  not a new buy/sell system.
+- **Exit criteria**: a full round playable without touching the Grow page's own forms _unprompted_ — the game
+  still routes you there for the actual purchase, but tells you what to enter.
 
 ### Phase 3 — solo board simulation
 
@@ -250,3 +296,9 @@ it needs a clean way to tell salary from passive income that the engine doesn't 
   rather than simply not being designed around it — flag if you want that enforced rather than assumed.
 - Whether professions/card decks ever get an in-app editor instead of shipped-in-code data — not needed while
   you're the source of the data.
+- Undo is Payday-only. Baby/Charity/Downsized aren't undoable yet (fix by hand: delete the transaction, adjust
+  `children`/edit the Subscription) — flag if this needs building before the playtest.
+- `docs/domain/CASHFLOW_GAME_GUIDE.md` isn't rendered in-app — readable as a file/on GitHub today. Say if you want
+  an in-app "Rules" view; the app has no markdown viewer to reuse for that yet.
+- The rat-race-exit indicator (decision 10/11): reading only investment-kind Grow project cashflow cleanly isn't
+  built.

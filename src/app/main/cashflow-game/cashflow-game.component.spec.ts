@@ -16,6 +16,8 @@ function makeComponent(overrides: Partial<Record<string, jest.Mock>> = {}) {
     resolveCharity: jest.fn(),
     resolveDownsized: jest.fn(),
     adjustBankLoan: jest.fn(),
+    clearStatus: jest.fn(),
+    monthlyCashflow: 0,
     ...overrides,
   };
   const toastService = { show: jest.fn() };
@@ -152,6 +154,27 @@ describe('CashflowGameComponent', () => {
         children: 3,
       };
       expect(component.canLandOnBaby).toBe(false);
+    });
+  });
+
+  describe('dismissing a Charity/Downsized reminder', () => {
+    it('clearCharity/clearUnemployed delegate to the service and toast on success', () => {
+      const { component, cashflowGameService, toastService } = makeComponent();
+
+      component.clearCharity();
+      expect(cashflowGameService.clearStatus).toHaveBeenCalledWith('charity', expect.anything());
+      cashflowGameService.clearStatus.mock.calls[0][1].onSuccess();
+      expect(toastService.show).toHaveBeenCalledWith('CashflowGame.dismiss', 'update');
+
+      component.clearUnemployed();
+      expect(cashflowGameService.clearStatus).toHaveBeenCalledWith('unemployed', expect.anything());
+    });
+  });
+
+  describe('monthlyCashflow', () => {
+    it('reads straight from the service', () => {
+      const { component } = makeComponent({ monthlyCashflow: -50 } as any);
+      expect(component.monthlyCashflow).toBe(-50);
     });
   });
 

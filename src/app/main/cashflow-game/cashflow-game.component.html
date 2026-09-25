@@ -71,7 +71,17 @@
           <span class="cf-stat-label">{{ 'CashflowGame.virtualDate' | translate }}</span>
           <span class="cf-stat-value">{{ appState.cashflowGame.virtualDate | appDate }}</span>
         </div>
+        <div class="cf-stat">
+          <span class="cf-stat-label">{{ 'CashflowGame.monthlyCashflow' | translate }}</span>
+          <span class="cf-stat-value" [class.cf-negative]="monthlyCashflow < 0"
+            >{{ monthlyCashflow | appNumber }} {{ appState.currency }}</span
+          >
+        </div>
       </div>
+
+      <p class="cf-bankruptcy-warning" *ngIf="monthlyCashflow < 0">
+        {{ 'CashflowGame.bankruptcyWarning' | translate }}
+      </p>
 
       <div
         class="cf-badges"
@@ -86,12 +96,26 @@
             'CashflowGame.unemployedBadge'
               | translate: { count: appState.cashflowGame.unemployedRoundsLeft }
           }}
+          <button
+            class="cf-badge-dismiss"
+            [attr.aria-label]="'CashflowGame.dismiss' | translate"
+            (click)="clearUnemployed()"
+          >
+            ×
+          </button>
         </span>
         <span class="cf-badge" *ngIf="appState.cashflowGame.charityRoundsLeft">
           {{
             'CashflowGame.charityBadge'
               | translate: { count: appState.cashflowGame.charityRoundsLeft }
           }}
+          <button
+            class="cf-badge-dismiss"
+            [attr.aria-label]="'CashflowGame.dismiss' | translate"
+            (click)="clearCharity()"
+          >
+            ×
+          </button>
         </span>
         <span class="cf-badge" *ngIf="appState.cashflowGame.children">
           {{ 'CashflowGame.childrenBadge' | translate: { count: appState.cashflowGame.children } }}
@@ -164,9 +188,6 @@
             {{ 'CashflowGame.' + entry.kind | translate }}</span
           >
           <span class="cf-history-date">{{ entry.virtualDateBefore | appDate }}</span>
-          <span class="cf-history-skipped" *ngIf="entry.skipped">{{
-            'CashflowGame.skippedBadge' | translate
-          }}</span>
           <ul class="cf-history-transactions">
             <li *ngFor="let tx of entry.createdTransactions">
               {{ tx.account }} · {{ toDisplayAmount(tx.amountMinor) | appNumber }}

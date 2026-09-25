@@ -5,7 +5,7 @@ import { ProfileComponent } from '../../panels/profile/profile.component';
 
 describe('CashflowGameService', () => {
   let service: CashflowGameService;
-  let persistence: { batchWriteAndSync: jest.Mock };
+  let persistence: { batchWriteAndSync: jest.Mock; writeAndSync: jest.Mock };
 
   beforeEach(() => {
     (AppStateService as any)._instance = undefined;
@@ -32,7 +32,10 @@ describe('CashflowGameService', () => {
     state.smile = 10;
     state.fire = 20;
 
-    persistence = { batchWriteAndSync: jest.fn((config) => config.onSuccess()) };
+    persistence = {
+      batchWriteAndSync: jest.fn((config) => config.onSuccess()),
+      writeAndSync: jest.fn((config) => config.onSuccess()),
+    };
     const incomeStatement = new IncomeStatementService({ saveData: jest.fn() } as any);
     service = new CashflowGameService(persistence as any, incomeStatement);
   });
@@ -183,7 +186,9 @@ describe('CashflowGameService', () => {
       );
     });
 
-    it('downsized charges total expenses once and makes the next 2 Paydays skip', () => {
+    it('downsized charges total expenses once, and never blocks a later Payday', () => {
+      // JFK, 2026-09-26: "it's not that you have to skip two salaries" — the
+      // 2 rounds are the physical board's turn order, invisible to this tool.
       started();
       service.resolveDownsized({ onSuccess: jest.fn(), onError: jest.fn() });
 
@@ -191,8 +196,39 @@ describe('CashflowGameService', () => {
       expect(state.cashflowGame.unemployedRoundsLeft).toBe(2);
       const before = state.allTransactions.length;
       service.payday({ onSuccess: jest.fn(), onError: jest.fn() });
-      expect(state.allTransactions).toHaveLength(before); // skipped: nothing created
-      expect(state.cashflowGame.unemployedRoundsLeft).toBe(1);
+      expect(state.allTransactions.length).toBeGreaterThan(before);
+      expect(state.cashflowGame.unemployedRoundsLeft).toBe(2); // untouched by Payday
+    });
+  });
+
+  describe('clearStatus', () => {
+    it('dismisses charity or unemployed independently, without touching finances', () => {
+      service.pickProfession('placeholder', 'placeholder-profession', {
+        onSuccess: jest.fn(),
+        onError: jest.fn(),
+      });
+      service.resolveCharity({ onSuccess: jest.fn(), onError: jest.fn() });
+      service.resolveDownsized({ onSuccess: jest.fn(), onError: jest.fn() });
+      const state = AppStateService.instance;
+      const transactionsBefore = state.allTransactions.length;
+
+      service.clearStatus('unemployed', { onSuccess: jest.fn(), onError: jest.fn() });
+
+      expect(state.cashflowGame.unemployedRoundsLeft).toBe(0);
+      expect(state.allTransactions).toHaveLength(transactionsBefore);
+    });
+  });
+
+  describe('monthlyCashflow', () => {
+    it('sums the game’s subscriptions — negative once expenses exceed income', () => {
+      service.pickProfession('placeholder', 'placeholder-profession', {
+        onSuccess: jest.fn(),
+        onError: jest.fn(),
+      });
+      expect(service.monthlyCashflow).toBe(1200); // salary 3000 - expenses 1800
+
+      service.adjustBankLoan(15000, { onSuccess: jest.fn(), onError: jest.fn() });
+      expect(service.monthlyCashflow).toBeLessThan(0);
     });
   });
 

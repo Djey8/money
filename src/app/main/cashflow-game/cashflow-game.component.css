@@ -51,6 +51,30 @@
   font-size: 0.95rem;
 }
 
+.cf-badge-dismiss {
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  font-size: 0.9rem;
+  margin-left: 4px;
+  padding: 0 2px;
+  line-height: 1;
+}
+
+.cf-negative {
+  color: var(--color-danger, #d32f2f);
+}
+
+.cf-bankruptcy-warning {
+  background-color: var(--color-danger-bg, rgba(211, 47, 47, 0.12));
+  color: var(--color-danger, #d32f2f);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  margin: 8px 0;
+  font-size: 0.9rem;
+}
+
 .cf-stat-row {
   display: flex;
   flex-wrap: wrap;
@@ -97,13 +121,6 @@
 .cf-history-date {
   color: var(--color-text-secondary);
   font-size: 0.85rem;
-}
-
-.cf-history-skipped {
-  margin-left: 8px;
-  font-size: 0.8rem;
-  color: var(--color-text-secondary);
-  font-style: italic;
 }
 
 .cf-history-transactions {

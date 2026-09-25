@@ -7,6 +7,8 @@ import {
   CashflowProfession,
   CashflowStarterKitSubscription,
   CashflowTransactionRecord,
+  clearCashflowStatus,
+  computeMonthlyCashflowMinor,
   fromMinorUnits,
   pickCashflowProfession,
   resolveCashflowBaby,
@@ -243,6 +245,38 @@ export class CashflowGameService {
       includeSubscriptions: true,
       includeBalanceSheet: true,
     });
+  }
+
+  /**
+   * Dismisses an active Charity/Downsized reminder once the player's own
+   * physical turns have played out — the app can't know when that is
+   * (JFK, 2026-09-26: the "N rounds" are the board's turn order, other
+   * players' turns for Downsized), so this is a plain acknowledgement, not
+   * a financial action: no recalculation, just the one field.
+   */
+  clearStatus(status: 'charity' | 'unemployed', callbacks: CashflowGameCallbacks): void {
+    const state = AppStateService.instance;
+    state.cashflowGame = clearCashflowStatus(state.cashflowGame, status);
+    this.persistence.writeAndSync({
+      tag: 'cashflowGame',
+      data: state.cashflowGame,
+      localStorageKey: 'cashflowGame',
+      logEvent: `cashflow_clear_${status}`,
+      logMetadata: {},
+      onSuccess: callbacks.onSuccess,
+      onError: (error: any) => callbacks.onError(error?.message || 'Database write failed'),
+    });
+  }
+
+  /**
+   * The recurring "Gesamteinkommen − Gesamtausgaben" — the loss condition:
+   * once negative, every future Payday drains cash (JFK, 2026-09-26).
+   */
+  get monthlyCashflow(): number {
+    const state = AppStateService.instance;
+    return fromMinorUnits(
+      computeMonthlyCashflowMinor(state.cashflowGame, this.gameSubscriptions()),
+    );
   }
 
   private currentGameSet(): CashflowGameSet | undefined {

@@ -2,6 +2,8 @@ import { CASHFLOW_GAME_SETS } from './game-sets';
 import {
   addMonthsToIsoDate,
   adjustCashflowBankLoan,
+  clearCashflowStatus,
+  computeMonthlyCashflowMinor,
   pickCashflowProfession,
   resolveCashflowBaby,
   resolveCashflowCharity,
@@ -133,25 +135,10 @@ describe('undoLastCashflowPayday', () => {
       'Only the most recent Payday can be undone',
     );
   });
-
-  it('rewinds an active charity bonus and an unemployment skip together with undo', () => {
-    const { state: started } = pickCashflowProfession(
-      CASHFLOW_GAME_SETS,
-      'placeholder',
-      'placeholder-profession',
-      '2026-09-25',
-    );
-    const { state: charitied } = resolveCashflowCharity(started, gameSubscriptions);
-    const { state: afterPayday } = runCashflowPayday(charitied, gameSubscriptions);
-    expect(afterPayday.charityRoundsLeft).toBe(2); // ticked down by the payday
-
-    const { state: undone } = undoLastCashflowPayday(afterPayday);
-    expect(undone.charityRoundsLeft).toBe(3); // restored, not just re-incremented
-  });
 });
 
-describe('runCashflowPayday — unemployment skips a round entirely', () => {
-  it('creates nothing, but still advances round/virtualDate and ticks the counter down', () => {
+describe('runCashflowPayday — never gated by Charity/Downsized status', () => {
+  it('still creates every transaction while an active Downsized/Charity status is showing', () => {
     const { state: started } = pickCashflowProfession(
       CASHFLOW_GAME_SETS,
       'placeholder',
@@ -161,25 +148,64 @@ describe('runCashflowPayday — unemployment skips a round entirely', () => {
     const { state: downsized } = resolveCashflowDownsized(started, gameSubscriptions);
     expect(downsized.unemployedRoundsLeft).toBe(2);
 
-    const { state: afterFirst, transactions: firstTransactions } = runCashflowPayday(
-      downsized,
+    const { state: afterPayday, transactions } = runCashflowPayday(downsized, gameSubscriptions);
+
+    // JFK, 2026-09-26: "it's not that you have to skip two salaries" — the
+    // 2 rounds are the physical board's turn order (opponents playing),
+    // which this single-player tool can't see and must not guess at.
+    expect(transactions.length).toBeGreaterThan(0);
+    expect(afterPayday.round).toBe(1);
+    expect(afterPayday.unemployedRoundsLeft).toBe(2); // untouched by Payday
+  });
+});
+
+describe('clearCashflowStatus', () => {
+  it('clears charity or unemployed independently, once the player says their own turns are done', () => {
+    const { state: started } = pickCashflowProfession(
+      CASHFLOW_GAME_SETS,
+      'placeholder',
+      'placeholder-profession',
+      '2026-09-25',
+    );
+    const { state: both } = resolveCashflowDownsized(
+      resolveCashflowCharity(started, gameSubscriptions).state,
       gameSubscriptions,
     );
-    expect(firstTransactions).toEqual([]);
-    expect(afterFirst.round).toBe(1);
-    expect(afterFirst.unemployedRoundsLeft).toBe(1);
-    expect(afterFirst.history[afterFirst.history.length - 1]).toMatchObject({ skipped: true });
+    expect(both.charityRoundsLeft).toBe(0); // Downsized already ended it
+    expect(both.unemployedRoundsLeft).toBe(2);
 
-    const { state: afterSecond, transactions: secondTransactions } = runCashflowPayday(
-      afterFirst,
-      gameSubscriptions,
+    const clearedUnemployed = clearCashflowStatus(both, 'unemployed');
+    expect(clearedUnemployed.unemployedRoundsLeft).toBe(0);
+
+    const { state: charitied } = resolveCashflowCharity(started, gameSubscriptions);
+    const clearedCharity = clearCashflowStatus(charitied, 'charity');
+    expect(clearedCharity.charityRoundsLeft).toBe(0);
+  });
+});
+
+describe('computeMonthlyCashflowMinor', () => {
+  it('sums every owned subscription — the loss condition once it goes negative', () => {
+    const { state: started } = pickCashflowProfession(
+      CASHFLOW_GAME_SETS,
+      'placeholder',
+      'placeholder-profession',
+      '2026-09-25',
     );
-    expect(secondTransactions).toEqual([]);
-    expect(afterSecond.unemployedRoundsLeft).toBe(0);
+    // salary 300000 + expenses -180000
+    expect(computeMonthlyCashflowMinor(started, gameSubscriptions)).toBe(120000);
 
-    // back to normal on the third payday
-    const { transactions: thirdTransactions } = runCashflowPayday(afterSecond, gameSubscriptions);
-    expect(thirdTransactions.length).toBeGreaterThan(0);
+    const { state: borrowed } = adjustCashflowBankLoan(
+      started,
+      CASHFLOW_GAME_SETS[0],
+      0,
+      1500000, // borrowing enough that its 10%/month interest outweighs the surplus
+    );
+    expect(
+      computeMonthlyCashflowMinor(borrowed, [
+        ...gameSubscriptions,
+        { title: 'Bank loan interest', account: 'Daily', amountMinor: -150000 },
+      ]),
+    ).toBe(-30000);
   });
 });
 
