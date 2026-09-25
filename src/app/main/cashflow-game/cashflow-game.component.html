@@ -1,0 +1,104 @@
+<!-- Toolbar -->
+<div class="toolbar" role="banner">
+  <img
+    id="profile-pic"
+    width="40"
+    alt="Profile Logo"
+    src="../assets/profile-blank.jpg"
+    role="button"
+    tabindex="0"
+    aria-label="Open profile"
+    (click)="appReference.clickProfile()"
+    (keydown.enter)="appReference.clickProfile()"
+  />
+  <div
+    id="heading"
+    role="button"
+    tabindex="0"
+    (click)="appReference.openNavBar()"
+    (keydown.enter)="appReference.openNavBar()"
+  >
+    {{ 'CashflowGame.title' | translate }}
+  </div>
+  <div class="spacer"></div>
+</div>
+
+<div class="cashflow-game-page">
+  <!-- No game started yet: pick a profession -->
+  <div class="cf-card" *ngIf="!hasActiveGame">
+    <h2>{{ 'CashflowGame.chooseProfession' | translate }}</h2>
+
+    <label class="cf-field">
+      {{ 'CashflowGame.gameSet' | translate }}
+      <select [(ngModel)]="selectedGameSetId">
+        <option *ngFor="let set of gameSets" [value]="set.id">{{ set.title }}</option>
+      </select>
+    </label>
+
+    <label class="cf-field" *ngIf="selectedGameSet">
+      {{ 'CashflowGame.profession' | translate }}
+      <select [(ngModel)]="selectedProfessionId">
+        <option *ngFor="let profession of selectedGameSet.professions" [value]="profession.id">
+          {{ profession.title }}
+        </option>
+      </select>
+    </label>
+
+    <button
+      class="btn btn--primary"
+      [disabled]="isBusy || !selectedProfessionId"
+      (click)="startGame()"
+    >
+      {{ 'CashflowGame.start' | translate }}
+    </button>
+  </div>
+
+  <!-- Active game dashboard -->
+  <div class="cf-dashboard" *ngIf="hasActiveGame">
+    <div class="cf-card cf-summary">
+      <h2>{{ currentProfession?.title }}</h2>
+
+      <div class="cf-stat-row">
+        <div class="cf-stat">
+          <span class="cf-stat-label">{{ 'CashflowGame.cash' | translate }}</span>
+          <span class="cf-stat-value">{{ cash | appNumber }} {{ appState.currency }}</span>
+        </div>
+        <div class="cf-stat">
+          <span class="cf-stat-label">{{ 'CashflowGame.Round' | translate }}</span>
+          <span class="cf-stat-value">{{ appState.cashflowGame.round }}</span>
+        </div>
+        <div class="cf-stat">
+          <span class="cf-stat-label">{{ 'CashflowGame.virtualDate' | translate }}</span>
+          <span class="cf-stat-value">{{ appState.cashflowGame.virtualDate | appDate }}</span>
+        </div>
+      </div>
+
+      <div class="cf-actions">
+        <button class="btn btn--primary" [disabled]="isBusy" (click)="payday()">
+          {{ 'CashflowGame.payday' | translate }}
+        </button>
+        <button class="btn btn--sm" [disabled]="isBusy || !canUndo" (click)="undoPayday()">
+          {{ 'CashflowGame.undo' | translate }}
+        </button>
+      </div>
+    </div>
+
+    <div class="cf-card" *ngIf="appState.cashflowGame.history.length">
+      <h3>{{ 'CashflowGame.history' | translate }}</h3>
+      <ul class="cf-history">
+        <li *ngFor="let entry of appState.cashflowGame.history">
+          <span class="cf-history-round"
+            >{{ 'CashflowGame.Round' | translate }} {{ entry.round }}</span
+          >
+          <span class="cf-history-date">{{ entry.virtualDateBefore | appDate }}</span>
+          <ul class="cf-history-transactions">
+            <li *ngFor="let tx of entry.createdTransactions">
+              {{ tx.account }} · {{ toDisplayAmount(tx.amountMinor) | appNumber }}
+              {{ appState.currency }}
+            </li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+  </div>
+</div>

@@ -24,3 +24,6 @@ export * from './reports/grow-pnl';
 export * from './transactions/frequency-strategies';
 export * from './transactions/subscription-generation';
 export * from './transactions/budget-from-subscriptions';
+export * from './cashflow-game/types';
+export * from './cashflow-game/game-sets';
+export * from './cashflow-game/engine';

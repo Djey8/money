@@ -112,6 +112,11 @@ export const baseRoutes: Routes = [
     loadComponent: () => import('./main/grow/grow.component').then((m) => m.GrowComponent),
   },
   {
+    path: 'cashflow-game',
+    loadComponent: () =>
+      import('./main/cashflow-game/cashflow-game.component').then((m) => m.CashflowGameComponent),
+  },
+  {
     path: 'budget',
     loadComponent: () => import('./main/budget/budget.component').then((m) => m.BudgetComponent),
   },

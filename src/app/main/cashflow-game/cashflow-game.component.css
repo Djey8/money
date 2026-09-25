@@ -1,0 +1,87 @@
+.cashflow-game-page {
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.cf-card {
+  background-color: var(--color-background);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  padding: 20px;
+}
+
+.cf-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 16px;
+  font-size: 0.9rem;
+}
+
+.cf-field select {
+  padding: 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background-color: var(--color-background);
+  color: var(--color-text);
+}
+
+.cf-stat-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  margin: 16px 0;
+}
+
+.cf-stat {
+  display: flex;
+  flex-direction: column;
+  min-width: 100px;
+}
+
+.cf-stat-label {
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+}
+
+.cf-stat-value {
+  font-size: 1.4rem;
+  font-weight: bold;
+  color: var(--color-text);
+}
+
+.cf-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.cf-history {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cf-history-round {
+  font-weight: 600;
+  margin-right: 8px;
+}
+
+.cf-history-date {
+  color: var(--color-text-secondary);
+  font-size: 0.85rem;
+}
+
+.cf-history-transactions {
+  list-style: none;
+  padding-left: 12px;
+  margin: 4px 0 0;
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+}

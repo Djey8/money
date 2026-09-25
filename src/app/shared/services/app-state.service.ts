@@ -15,6 +15,7 @@ import { Grow } from '../../interfaces/grow';
 import { Smile } from '../../interfaces/smile';
 import { Fire } from '../../interfaces/fire';
 import { Mojo } from '../../interfaces/mojo';
+import { CashflowGameState, initialCashflowGameState } from '@money/domain';
 
 @Injectable({ providedIn: 'root' })
 /**
@@ -63,6 +64,12 @@ export class AppStateService {
   allSmileProjects: Smile[] = [];
   allFireEmergencies: Fire[] = [];
   mojo: Mojo = { amount: 0, target: 0 };
+  // The Cashflow (board game) MVP — only ever loaded/used for an account whose
+  // email contains "cashflow" (CashflowGameService.isCashflowGame()). See
+  // todo/cashflow-game.md. Everything financial the game creates lives in the
+  // arrays above (allTransactions, allSubscriptions, ...); this is only the
+  // small game-meta state (profession, round, virtual date, history).
+  cashflowGame: CashflowGameState = initialCashflowGameState();
 
   // Phase C: Settings
   currency = '€';
@@ -96,6 +103,7 @@ export class AppStateService {
   tier2Loaded = false;
   tier3GrowLoaded = false;
   tier3BalanceLoaded = false;
+  tier3CashflowGameLoaded = false;
   daily = 60.0;
   splurge = 10.0;
   smile = 10.0;

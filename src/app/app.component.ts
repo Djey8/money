@@ -15,7 +15,7 @@ import { PersistenceService } from './shared/services/persistence.service';
 import { IncomeStatementService } from './shared/services/income-statement.service';
 import { AppStateService } from './shared/services/app-state.service';
 import { AppDataService } from './shared/services/app-data.service';
-import { GameModeService } from './shared/services/game-mode.service';
+import { CashflowGameService } from './shared/services/cashflow-game.service';
 import { SubscriptionProcessingService } from './shared/services/subscription-processing.service';
 import { ToastService } from './shared/services/toast.service';
 import { migrateGrowArray } from './shared/grow-migration.utils';
@@ -211,7 +211,6 @@ export class AppComponent {
     private incomeStatement: IncomeStatementService,
     public appState: AppStateService,
     private appData: AppDataService,
-    private gameMode: GameModeService,
     private subscriptionProcessing: SubscriptionProcessingService,
     private onboardingService: OnboardingService,
     private toastService: ToastService,
@@ -348,7 +347,7 @@ export class AppComponent {
           AppStateService.instance.isLoading = false;
           // Recalculate home amounts now that data is loaded
           if (HomeComponent) HomeComponent.getAmounts();
-          if (!GameModeService.isCashflowGame()) {
+          if (!CashflowGameService.isCashflowGame()) {
             // Auto-generate subscription transactions on load
             this.autoGenerateSubscriptionTransactions();
           }
