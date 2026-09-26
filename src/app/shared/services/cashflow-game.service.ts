@@ -589,7 +589,8 @@ export class CashflowGameService {
     }
   }
 
-  private removeSubscriptionByTitle(title: string): void {
+  /** Public: also used by `add.component.ts`'s Sell Investment handling to drop a closed position's cashflow Subscription (`grow_guide`'s sell action has no way to know it exists). */
+  removeSubscriptionByTitle(title: string): void {
     const subscriptions = AppStateService.instance.allSubscriptions;
     const index = subscriptions.findIndex((sub) => sub.title === title);
     if (index >= 0) subscriptions.splice(index, 1);

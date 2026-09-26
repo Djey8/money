@@ -102,10 +102,11 @@ same as `todo/fund-settlement.md` was.
     entry yet is "planned, not bought" (`plannedDeals`) — buying more later is just planning the extra amount and
     executing again; the calculators already add to whatever position exists. **Selling needs no new code either**
     (2026-09-26, JFK: _"sell we already have, once I bought the grow project, I have the option to sell"_) — the
-    existing Grow page's `sellProject` already pays off the mortgage correctly (`calculateSellInvestment`). One
-    known gap, to confirm at playtest rather than guess at now: it has no way to know about the `<Title> Cashflow`
-    Subscription `executeDeal` created, so that keeps paying out after a sale until it's removed by hand — a small
-    fix if playtest confirms it matters, not a redesign.
+    existing Grow page's `sellProject` already pays off the mortgage correctly (`calculateSellInvestment`). It had
+    no way to know about the `<Title> Cashflow` Subscription `executeDeal` created, though, so it would have kept
+    paying out after a sale — JFK confirmed this needed fixing outright rather than waiting for playtest: fixed in
+    `add.component.ts`'s existing "Sell Investment" handling (the one place that already detects a fully-closed
+    position), gated behind `CashflowGameService.isCashflowGame()` so a normal account's sell is untouched.
 15. **The whole truth of the game lives in Transactions, Subscriptions (for the current setup) and the Balance
     Sheet/Grow** (2026-09-26, JFK, restating decision 1 explicitly). `CashflowGameState` holds no financial fact —
     only bookkeeping metadata that isn't itself money (`round`, `professionId`, the reminder counters). If a number
@@ -280,9 +281,10 @@ Sheet/Stats/Budget, one shared `cash` getter); and the Deal feature, `planDeal`/
 `CashflowGameService` (decision 14) — a Deal card becomes a real Grow project's plan, the player decides whether
 to execute it, execution auto-borrows any shortfall and buys through the exact same Grow mechanics a personal
 account uses. Still placeholder profession/board/card data. Selling needs no new code (decision 14) — the
-existing Grow page's `sellProject` already does it, a stale `<Title> Cashflow` Subscription after a sale is a
-playtest-confirm item, not built preemptively. Not built: the rat-race-exit indicator (well-defined now —
-property-cashflow Grow projects only, decision 10 — just not wired up).
+existing Grow page's `sellProject` already does it; the one gap it had, a stale `<Title> Cashflow` Subscription
+surviving a sale, is fixed (`add.component.ts`'s existing Sell Investment handling now also removes it, gated to
+cashflow accounts). Not built: the rat-race-exit indicator (well-defined now — property-cashflow Grow projects
+only, decision 10 — just not wired up).
 
 ### Phase 2 — digital card deck
 
@@ -293,8 +295,6 @@ property-cashflow Grow projects only, decision 10 — just not wired up).
   not a new buy/sell system.
 - **Exit criteria**: a full round playable without touching the Grow page's own forms _unprompted_ — the game
   still routes you there for the actual purchase, but tells you what to enter.
-- **If playtest confirms the stale-cashflow-Subscription gap (decision 14) matters**: remove `<Title> Cashflow`
-  when a sale (via the existing Grow `sellProject`) brings that position to zero.
 
 ### Phase 3 — solo board simulation
 

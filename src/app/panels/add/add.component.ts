@@ -24,6 +24,7 @@ import { forkJoin, of } from 'rxjs';
 import { AuthService } from 'src/app/shared/services/auth.service';
 import { BaseAddComponent } from 'src/app/shared/base/base-add.component';
 import { AppStateService } from 'src/app/shared/services/app-state.service';
+import { CashflowGameService } from 'src/app/shared/services/cashflow-game.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
@@ -146,6 +147,7 @@ export class AddComponent extends BaseAddComponent implements OnInit, AfterViewI
     private authService: AuthService,
     private frontendLogger: FrontendLoggerService,
     private receiptParser: ReceiptParserService,
+    private cashflowGameService: CashflowGameService,
   ) {
     super(router);
     AddComponent.isAdd = false;
@@ -1048,6 +1050,14 @@ export class AddComponent extends BaseAddComponent implements OnInit, AfterViewI
                 AppStateService.instance.allInvestments[i].amount == 0
               ) {
                 AppStateService.instance.allInvestments.splice(i, 1);
+                // The position is fully closed. On a Cashflow-game account, that
+                // investment's cashflow may have a real Subscription behind it
+                // (CashflowGameService.executeDeal) — Grow's own sell logic has
+                // no way to know about it, so it has to be cleaned up here or it
+                // keeps paying out after the sale (todo/cashflow-game.md §4).
+                if (CashflowGameService.isCashflowGame()) {
+                  this.cashflowGameService.removeSubscriptionByTitle(`${title} Cashflow`);
+                }
               }
             }
           }
@@ -1557,6 +1567,13 @@ export class AddComponent extends BaseAddComponent implements OnInit, AfterViewI
                 ]
               : []),
             { tag: 'transactions', data: AppStateService.instance.allTransactions },
+            // A Cashflow-game account's Sell Investment can remove a cashflow
+            // Subscription above (add.component.ts's own Sell Investment
+            // handling) — write it back too. Harmless to include even when
+            // nothing changed; never runs for a normal account.
+            ...(CashflowGameService.isCashflowGame()
+              ? [{ tag: 'subscriptions', data: AppStateService.instance.allSubscriptions }]
+              : []),
             ...(AppStateService.instance.tier3BalanceLoaded
               ? [
                   { tag: 'balance/liabilities', data: AppStateService.instance.liabilities },
