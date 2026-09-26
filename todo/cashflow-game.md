@@ -125,6 +125,14 @@ same as `todo/fund-settlement.md` was.
       event, a special case) to model generically without the real catalog; the player acts on it through the
       app's existing features. One placeholder card per deck ships now (decision 6), same spirit as the
       placeholder profession.
+17. **Reset everything, with no confirmation prompt beyond the one destructive-action confirm** (2026-09-26, JFK:
+    _"a reset button where everything is cleaned... for now we don't have to save the history or status of the
+    game"_). `CashflowGameService.resetGame` wipes every real entity the game touches (Transactions,
+    Subscriptions, Grow/Share/Investment/Asset/Liability, Smile/Fire/Mojo) and `CashflowGameState` itself back to
+    blank — a testing/playtest convenience, not a feature of the physical game. Double-gated behind
+    `isCashflowGame()` even though the whole page already is, since this is the single most destructive action in
+    the app. No soft-delete, no undo — decision 15 already means nothing here needs to survive a reset except the
+    real entities that were there.
 
 ## 3. The one new thing: a small game-meta state
 
@@ -296,13 +304,13 @@ Sheet/Stats/Budget, one shared `cash` getter); and the Deal feature, `planDeal`/
 to execute it, execution auto-borrows any shortfall and buys through the exact same Grow mechanics a personal
 account uses. Selling needs no new code (decision 14) — the existing Grow page's `sellProject` already does it;
 the one gap it had, a stale `<Title> Cashflow` Subscription surviving a sale, is fixed (`add.component.ts`'s
-existing Sell Investment handling now also removes it, gated to cashflow accounts). Commit 4 (in progress,
-2026-09-26): find/draw a card (decision 16) — `packages/domain/src/cashflow-game/cards.ts`
-(`drawRandomCard`/`findCards`, deck-agnostic, 7 tests), `CashflowGameService.findCardsInDeck`/`drawCard`/
-`applyDealCard`/`applyDoodadCard`, a "Cards" dashboard section (pick a deck, draw or search, apply what you get),
-one placeholder card per deck, all 6 locales. Still placeholder profession/board/full card data. Not built: the
-rat-race-exit indicator (well-defined now — property-cashflow Grow projects only, decision 10 — just not wired
-up).
+existing Sell Investment handling now also removes it, gated to cashflow accounts). Find/draw a card (decision 16) — `packages/domain/src/cashflow-game/cards.ts` (`drawRandomCard`/`findCards`, deck-agnostic, 7 tests),
+`CashflowGameService.findCardsInDeck`/`drawCard`/`applyDealCard`/`applyDoodadCard`, a "Cards" dashboard section,
+one placeholder card per deck. A menu entry (`f1c1910` shipped the route with nothing linking to it — fixed).
+`resetGame` (decision 17): wipes every real entity plus the game-meta state, one confirm, gated to cashflow
+accounts. All of the above across commits `459fe21`..`c529ecf`. Still placeholder profession/board/full card
+data. Not built: the rat-race-exit indicator (well-defined now — property-cashflow Grow projects only, decision
+10 — just not wired up).
 
 ### Phase 2 — the real card catalog
 

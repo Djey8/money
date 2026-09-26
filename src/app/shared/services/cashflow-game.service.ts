@@ -18,6 +18,7 @@ import {
   drawRandomCard,
   findCards,
   fromMinorUnits,
+  initialCashflowGameState,
   multiplyQuantityPrice,
   pickCashflowProfession,
   resolveCashflowBaby,
@@ -515,6 +516,40 @@ export class CashflowGameService {
         return !state.allShares.some((share) => share.tag === project.title);
       }
       return false;
+    });
+  }
+
+  /**
+   * Wipes every real entity the game touches — Transactions, Subscriptions,
+   * Grow/Share/Investment/Asset/Liability, Smile/Fire/Mojo — and the
+   * game-meta state itself, back to a blank slate. JFK, 2026-09-26: a fast
+   * way to start over while playtesting; history/status don't need to
+   * survive a reset. Double-gated (the whole page already is) since this is
+   * the most destructive action here — never touches a non-cashflow
+   * account even if somehow called on one.
+   */
+  resetGame(callbacks: CashflowGameCallbacks): void {
+    if (!CashflowGameService.isCashflowGame()) {
+      callbacks.onError('This is only available for a Cashflow game account.');
+      return;
+    }
+    const state = AppStateService.instance;
+    state.allTransactions = [];
+    state.allSubscriptions = [];
+    state.allGrowProjects = [];
+    state.allShares = [];
+    state.allInvestments = [];
+    state.allAssets = [];
+    state.liabilities = [];
+    state.allSmileProjects = [];
+    state.allFireEmergencies = [];
+    state.mojo = { amount: 0, target: 0 };
+    state.cashflowGame = initialCashflowGameState();
+
+    this.persistAll('cashflow_reset', {}, callbacks, {
+      includeSubscriptions: true,
+      includeBalanceSheet: true,
+      includeGrow: true,
     });
   }
 

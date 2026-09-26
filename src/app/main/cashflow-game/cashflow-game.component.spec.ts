@@ -23,6 +23,7 @@ function makeComponent(overrides: Partial<Record<string, jest.Mock>> = {}) {
     drawCard: jest.fn(),
     applyDealCard: jest.fn(),
     applyDoodadCard: jest.fn(),
+    resetGame: jest.fn(),
     monthlyCashflow: 0,
     cash: 0,
     plannedDeals: [],
@@ -30,6 +31,9 @@ function makeComponent(overrides: Partial<Record<string, jest.Mock>> = {}) {
   };
   const toastService = { show: jest.fn() };
   const translate = { instant: (key: string) => key };
+  const confirmService = {
+    confirm: jest.fn((_message: string, onConfirm: () => void) => onConfirm()),
+  };
 
   const component = new CashflowGameComponent(
     router as any,
@@ -37,8 +41,9 @@ function makeComponent(overrides: Partial<Record<string, jest.Mock>> = {}) {
     cashflowGameService as any,
     toastService as any,
     translate as any,
+    confirmService as any,
   );
-  return { component, router, appData, cashflowGameService, toastService };
+  return { component, router, appData, cashflowGameService, toastService, confirmService };
 }
 
 describe('CashflowGameComponent', () => {
@@ -360,6 +365,53 @@ describe('CashflowGameComponent', () => {
 
       expect(component.activeCard).toBeNull();
       expect(toastService.show).toHaveBeenCalledWith('CashflowGame.cardApplied', 'success');
+    });
+  });
+
+  describe('resetGame', () => {
+    it('confirms before resetting, then delegates to the service and toasts on success', () => {
+      const { component, cashflowGameService, confirmService, toastService } = makeComponent();
+      component.dealTitle = 'Whatever';
+      component.activeCard = { id: '1', title: 'Gadget' } as any;
+
+      component.resetGame();
+
+      expect(confirmService.confirm).toHaveBeenCalledWith(
+        'CashflowGame.resetConfirm',
+        expect.anything(),
+        'CashflowGame.resetConfirmButton',
+        'delete',
+      );
+      expect(cashflowGameService.resetGame).toHaveBeenCalled();
+      cashflowGameService.resetGame.mock.calls[0][0].onSuccess();
+      expect(toastService.show).toHaveBeenCalledWith('CashflowGame.resetDone', 'delete');
+      expect(component.dealTitle).toBe('');
+      expect(component.activeCard).toBeNull();
+    });
+
+    it('does not reset when the confirmation is declined', () => {
+      const { component, cashflowGameService } = makeComponent({
+        // Simulate the user dismissing the confirm dialog: onConfirm never runs.
+      } as any);
+      (component as any).confirmService = { confirm: jest.fn() };
+
+      component.resetGame();
+
+      expect(cashflowGameService.resetGame).not.toHaveBeenCalled();
+    });
+
+    it('shows the error message on failure instead of throwing', () => {
+      const { component, cashflowGameService, toastService } = makeComponent();
+
+      component.resetGame();
+      cashflowGameService.resetGame.mock.calls[0][0].onError(
+        'This is only available for a Cashflow game account.',
+      );
+
+      expect(toastService.show).toHaveBeenCalledWith(
+        'This is only available for a Cashflow game account.',
+        'error',
+      );
     });
   });
 });

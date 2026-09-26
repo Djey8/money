@@ -21,6 +21,9 @@
     {{ 'CashflowGame.title' | translate }}
   </div>
   <div class="spacer"></div>
+  <button class="cf-reset-btn" [disabled]="isBusy" (click)="resetGame()">
+    {{ 'CashflowGame.resetGame' | translate }}
+  </button>
 </div>
 
 <div class="cashflow-game-page">

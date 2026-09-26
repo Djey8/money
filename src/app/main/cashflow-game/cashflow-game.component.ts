@@ -15,6 +15,7 @@ import { AppStateService } from 'src/app/shared/services/app-state.service';
 import { AppDataService } from 'src/app/shared/services/app-data.service';
 import { CashflowGameService } from 'src/app/shared/services/cashflow-game.service';
 import { ToastService } from 'src/app/shared/services/toast.service';
+import { ConfirmService } from 'src/app/shared/services/confirm.service';
 import { AppNumberPipe } from 'src/app/shared/pipes/app-number.pipe';
 import { AppDatePipe } from 'src/app/shared/pipes/app-date.pipe';
 
@@ -71,6 +72,7 @@ export class CashflowGameComponent implements OnInit {
     private cashflowGameService: CashflowGameService,
     private toastService: ToastService,
     private translate: TranslateService,
+    private confirmService: ConfirmService,
   ) {}
 
   ngOnInit(): void {
@@ -386,5 +388,36 @@ export class CashflowGameComponent implements OnInit {
         this.toastService.show(message, 'error');
       },
     });
+  }
+
+  /** Wipes every real entity the game touches back to a blank slate (JFK, 2026-09-26) — confirmed first, this can't be undone. */
+  resetGame(): void {
+    this.confirmService.confirm(
+      this.translate.instant('CashflowGame.resetConfirm'),
+      () => {
+        this.isBusy = true;
+        this.cashflowGameService.resetGame({
+          onSuccess: () => {
+            this.isBusy = false;
+            this.dealTitle = '';
+            this.dealQuantity = null;
+            this.dealPrice = null;
+            this.dealDeposit = null;
+            this.dealMortgage = null;
+            this.dealCashflow = null;
+            this.activeCard = null;
+            this.cardQuery = '';
+            this.selectedProfessionId = this.selectedGameSet?.professions[0]?.id ?? '';
+            this.toastService.show(this.translate.instant('CashflowGame.resetDone'), 'delete');
+          },
+          onError: (message) => {
+            this.isBusy = false;
+            this.toastService.show(message, 'error');
+          },
+        });
+      },
+      'CashflowGame.resetConfirmButton',
+      'delete',
+    );
   }
 }

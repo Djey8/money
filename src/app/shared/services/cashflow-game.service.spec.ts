@@ -479,4 +479,49 @@ describe('CashflowGameService', () => {
       );
     });
   });
+
+  describe('resetGame', () => {
+    it('wipes every real entity the game touched, and the game-meta state itself', () => {
+      ProfileComponent.mail = 'player@cashflow.example';
+      service.pickProfession('placeholder', 'placeholder-profession', {
+        onSuccess: jest.fn(),
+        onError: jest.fn(),
+      });
+      service.payday({ onSuccess: jest.fn(), onError: jest.fn() });
+      service.planDeal(
+        { kind: 'share', title: 'TestCo', quantity: 10, price: 100 },
+        { onSuccess: jest.fn(), onError: jest.fn() },
+      );
+      service.adjustBankLoan(1000, { onSuccess: jest.fn(), onError: jest.fn() });
+      const state = AppStateService.instance;
+      expect(state.allTransactions.length).toBeGreaterThan(0);
+      expect(state.allSubscriptions.length).toBeGreaterThan(0);
+      expect(state.allGrowProjects.length).toBeGreaterThan(0);
+      expect(state.liabilities.length).toBeGreaterThan(0);
+
+      const onSuccess = jest.fn();
+      service.resetGame({ onSuccess, onError: jest.fn() });
+
+      expect(onSuccess).toHaveBeenCalled();
+      expect(state.allTransactions).toEqual([]);
+      expect(state.allSubscriptions).toEqual([]);
+      expect(state.allGrowProjects).toEqual([]);
+      expect(state.allShares).toEqual([]);
+      expect(state.allInvestments).toEqual([]);
+      expect(state.liabilities).toEqual([]);
+      expect(state.cashflowGame.professionId).toBeNull();
+      expect(state.cashflowGame.round).toBe(0);
+      expect(state.cashflowGame.history).toEqual([]);
+    });
+
+    it('refuses on a non-cashflow account rather than wiping their real data', () => {
+      ProfileComponent.mail = 'jfk@example.com';
+      const onError = jest.fn();
+
+      service.resetGame({ onSuccess: jest.fn(), onError });
+
+      expect(onError).toHaveBeenCalledWith(expect.stringContaining('Cashflow game account'));
+      expect(persistence.batchWriteAndSync).not.toHaveBeenCalled();
+    });
+  });
 });
