@@ -39,6 +39,46 @@ const PLACEHOLDER_GAME_SET: CashflowGameSet = {
       },
     },
   ],
+  // Obviously-fake placeholder cards, just enough to exercise both the
+  // "find this card" and "draw a card" flows before JFK sends the real
+  // catalog (todo/cashflow-game.md decision 16).
+  decks: {
+    dealSmall: [
+      {
+        id: 'placeholder-deal-small-1',
+        title: 'Placeholder Co. shares',
+        assetKind: 'share',
+        quantity: 10,
+        priceMinor: 10000,
+      },
+      {
+        id: 'placeholder-deal-small-2',
+        title: 'Placeholder Duplex',
+        assetKind: 'investment',
+        depositMinor: 100000,
+        mortgageMinor: 400000,
+        cashflowMinor: 20000,
+      },
+    ],
+    dealBig: [
+      {
+        id: 'placeholder-deal-big-1',
+        title: 'Placeholder Office Building',
+        assetKind: 'investment',
+        depositMinor: 500000,
+        mortgageMinor: 2000000,
+        cashflowMinor: 80000,
+      },
+    ],
+    market: [
+      {
+        id: 'placeholder-market-1',
+        title: 'Placeholder Co. buyout offer',
+        description: 'Anyone holding Placeholder Co. shares may sell at 150% of the last price.',
+      },
+    ],
+    doodad: [{ id: 'placeholder-doodad-1', title: 'Placeholder gadget', costMinor: 15000 }],
+  },
 };
 
 export const CASHFLOW_GAME_SETS: CashflowGameSet[] = [PLACEHOLDER_GAME_SET];

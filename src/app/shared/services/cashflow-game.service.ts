@@ -2,8 +2,12 @@ import { Injectable } from '@angular/core';
 import {
   adjustCashflowBankLoan,
   CASHFLOW_GAME_SETS,
+  CashflowDealCard,
+  CashflowDeckKind,
+  CashflowDoodadCard,
   CashflowGameSet,
   CashflowGameSubscription,
+  CashflowMarketCard,
   CashflowProfession,
   CashflowStarterKitSubscription,
   CashflowTransactionRecord,
@@ -11,6 +15,8 @@ import {
   calculateBuyShare,
   clearCashflowStatus,
   computeMonthlyCashflowMinor,
+  drawRandomCard,
+  findCards,
   fromMinorUnits,
   multiplyQuantityPrice,
   pickCashflowProfession,
@@ -50,6 +56,19 @@ export interface CashflowDealInvestmentInput {
   cashflow: number;
 }
 export type CashflowDealInput = CashflowDealShareInput | CashflowDealInvestmentInput;
+
+/** Which card shape each deck holds — gives `drawCard`/`findCardsInDeck` a properly narrowed return per deck (todo/cashflow-game.md decision 16). */
+interface CashflowDeckCardMap {
+  dealSmall: CashflowDealCard;
+  dealBig: CashflowDealCard;
+  market: CashflowMarketCard;
+  doodad: CashflowDoodadCard;
+}
+
+export interface CashflowCardCallbacks<T> {
+  onSuccess: (card: T) => void;
+  onError: (message: string) => void;
+}
 
 function todayIso(): string {
   const now = new Date();
@@ -497,6 +516,99 @@ export class CashflowGameService {
       }
       return false;
     });
+  }
+
+  /**
+   * "Find this card" (todo/cashflow-game.md decision 16): the player drew a
+   * real card from their physical deck and searches the digitized deck by
+   * title to load its numbers. A pure, synchronous read — nothing to
+   * persist, unlike drawing.
+   */
+  findCardsInDeck<K extends CashflowDeckKind>(
+    deckKind: K,
+    query: string,
+  ): CashflowDeckCardMap[K][] {
+    const deck = this.currentGameSet()?.decks?.[deckKind] ?? [];
+    return findCards(deck as CashflowDeckCardMap[K][], query);
+  }
+
+  /**
+   * "Draw a card" (todo/cashflow-game.md decision 16): no physical deck in
+   * hand — the app picks at random from whatever this deck hasn't already
+   * given out since its last reshuffle, and remembers the pick so the same
+   * card doesn't come up twice in a row.
+   */
+  drawCard<K extends CashflowDeckKind>(
+    deckKind: K,
+    callbacks: CashflowCardCallbacks<CashflowDeckCardMap[K]>,
+  ): void {
+    const state = AppStateService.instance;
+    const deck = this.currentGameSet()?.decks?.[deckKind];
+    if (!deck) {
+      callbacks.onError(`This game set has no ${deckKind} cards yet.`);
+      return;
+    }
+    let result: ReturnType<typeof drawRandomCard<CashflowDeckCardMap[K]>>;
+    try {
+      result = drawRandomCard(
+        deck as CashflowDeckCardMap[K][],
+        state.cashflowGame.drawnCardIds[deckKind],
+      );
+    } catch (err: unknown) {
+      callbacks.onError(errorMessage(err, 'Could not draw a card.'));
+      return;
+    }
+    state.cashflowGame = {
+      ...state.cashflowGame,
+      drawnCardIds: { ...state.cashflowGame.drawnCardIds, [deckKind]: result.drawnIds },
+    };
+    this.persistence.writeAndSync({
+      tag: 'cashflowGame',
+      data: state.cashflowGame,
+      localStorageKey: 'cashflowGame',
+      logEvent: 'cashflow_draw_card',
+      logMetadata: { deckKind, cardId: result.card.id },
+      onSuccess: () => callbacks.onSuccess(result.card),
+      onError: (error: any) => callbacks.onError(error?.message || 'Database write failed'),
+    });
+  }
+
+  /** Plans a drawn/found Deal card exactly as `planDeal` would from the manual form — its numbers, not re-typed. */
+  applyDealCard(card: CashflowDealCard, callbacks: CashflowGameCallbacks): void {
+    const input: CashflowDealInput =
+      card.assetKind === 'share'
+        ? {
+            kind: 'share',
+            title: card.title,
+            quantity: card.quantity ?? 0,
+            price: fromMinorUnits(card.priceMinor ?? 0),
+          }
+        : {
+            kind: 'investment',
+            title: card.title,
+            deposit: fromMinorUnits(card.depositMinor ?? 0),
+            mortgage: fromMinorUnits(card.mortgageMinor ?? 0),
+            cashflow: fromMinorUnits(card.cashflowMinor ?? 0),
+          };
+    this.planDeal(input, callbacks);
+  }
+
+  /** A Doodad's mandatory one-off cost — a single Transaction, nothing else (todo/cashflow-game.md §4). */
+  applyDoodadCard(card: CashflowDoodadCard, callbacks: CashflowGameCallbacks): void {
+    const state = AppStateService.instance;
+    if (!state.cashflowGame.virtualDate) {
+      callbacks.onError('Pick a profession first.');
+      return;
+    }
+    state.allTransactions.push({
+      account: 'Daily',
+      amount: -fromMinorUnits(card.costMinor),
+      date: state.cashflowGame.virtualDate,
+      time: '',
+      category: '',
+      comment: `${card.title}\n#cashflow`,
+    });
+    this.persistAll('cashflow_doodad', { title: card.title }, callbacks);
   }
 
   /** Returns the conflicting kind only when the existing project is clearly the other one — never blocks on missing/ambiguous legacy data. */

@@ -111,6 +111,20 @@ same as `todo/fund-settlement.md` was.
     Sheet/Grow** (2026-09-26, JFK, restating decision 1 explicitly). `CashflowGameState` holds no financial fact —
     only bookkeeping metadata that isn't itself money (`round`, `professionId`, the reminder counters). If a number
     matters financially, it must be reconstructable from those real entities alone, never from the game-meta state.
+16. **A card comes into play two ways** (2026-09-26, JFK: _"1) if I play with the real board, I pick a card and in
+    the app I want to select (find) this card. 2) in this app we pick randomly a card"_). Both apply to any of the
+    four physical decks (`dealSmall`/`dealBig`/`market`/`doodad`):
+    - **Find** (`findCardsInDeck`, a real physical deck in hand): case-insensitive substring search on title — real
+      cards aren't numbered, so title is what a player can actually search by.
+    - **Draw** (`drawCard`, no physical deck): picks at random from whatever this deck hasn't already given out
+      since its last reshuffle (`state.drawnCardIds`, per deck); reshuffles automatically once exhausted.
+    - **Resolving what you found/drew**: a Deal card (`assetKind: share | investment`) plans it exactly like the
+      manual form (`applyDealCard` → `planDeal`, decision 14) — the player still separately decides whether to
+      execute it. A Doodad card is a single mandatory expense (`applyDoodadCard`, its own account/amount, not
+      routed through Grow). A Market card is text only — real Market cards vary too much (a sale offer, a global
+      event, a special case) to model generically without the real catalog; the player acts on it through the
+      app's existing features. One placeholder card per deck ships now (decision 6), same spirit as the
+      placeholder profession.
 
 ## 3. The one new thing: a small game-meta state
 
@@ -280,21 +294,24 @@ the app's own views instead of duplicating them (decision 13 — links to Subscr
 Sheet/Stats/Budget, one shared `cash` getter); and the Deal feature, `planDeal`/`executeDeal`/`plannedDeals` on
 `CashflowGameService` (decision 14) — a Deal card becomes a real Grow project's plan, the player decides whether
 to execute it, execution auto-borrows any shortfall and buys through the exact same Grow mechanics a personal
-account uses. Still placeholder profession/board/card data. Selling needs no new code (decision 14) — the
-existing Grow page's `sellProject` already does it; the one gap it had, a stale `<Title> Cashflow` Subscription
-surviving a sale, is fixed (`add.component.ts`'s existing Sell Investment handling now also removes it, gated to
-cashflow accounts). Not built: the rat-race-exit indicator (well-defined now — property-cashflow Grow projects
-only, decision 10 — just not wired up).
+account uses. Selling needs no new code (decision 14) — the existing Grow page's `sellProject` already does it;
+the one gap it had, a stale `<Title> Cashflow` Subscription surviving a sale, is fixed (`add.component.ts`'s
+existing Sell Investment handling now also removes it, gated to cashflow accounts). Commit 4 (in progress,
+2026-09-26): find/draw a card (decision 16) — `packages/domain/src/cashflow-game/cards.ts`
+(`drawRandomCard`/`findCards`, deck-agnostic, 7 tests), `CashflowGameService.findCardsInDeck`/`drawCard`/
+`applyDealCard`/`applyDoodadCard`, a "Cards" dashboard section (pick a deck, draw or search, apply what you get),
+one placeholder card per deck, all 6 locales. Still placeholder profession/board/full card data. Not built: the
+rat-race-exit indicator (well-defined now — property-cashflow Grow projects only, decision 10 — just not wired
+up).
 
-### Phase 2 — digital card deck
+### Phase 2 — the real card catalog
 
-- Deal/Market/Doodad **cards** (the text/values/context — a Deal card's asking price, a Market event, a Doodad's
-  cost) fully resolvable: draw, reveal, resolve, once you provide the real card catalog for this game set. The
-  Deal mechanics themselves need no new code (decision 10) — this phase is the card catalog plus a thin "here's
-  what you drew, here's the affordability/debt-vs-cashflow context" layer in front of the existing Grow actions,
-  not a new buy/sell system.
-- **Exit criteria**: a full round playable without touching the Grow page's own forms _unprompted_ — the game
-  still routes you there for the actual purchase, but tells you what to enter.
+- Find/draw/resolve is already built (decision 16) — this phase is just replacing the one placeholder card per
+  deck with JFK's real catalog. A Deal card's exact numbers, a Market event's real text, a Doodad's real cost.
+  No new mechanism needed, only data.
+- A debt-vs-cashflow context note shown alongside a Deal card before planning it (decision 10's strategy point,
+  `CASHFLOW_GAME_GUIDE.md` §4) — the one still-open piece of UI work, everything else here is data entry.
+- **Exit criteria**: a full round playable with the real deck, another playtest.
 
 ### Phase 3 — solo board simulation
 

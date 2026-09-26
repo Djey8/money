@@ -407,4 +407,76 @@ describe('CashflowGameService', () => {
       expect(onError).toHaveBeenCalledWith(expect.stringContaining('different kind'));
     });
   });
+
+  describe('cards: find, draw, apply', () => {
+    function started() {
+      service.pickProfession('placeholder', 'placeholder-profession', {
+        onSuccess: jest.fn(),
+        onError: jest.fn(),
+      });
+    }
+
+    it('findCardsInDeck matches by title within the chosen deck only', () => {
+      started();
+      expect(service.findCardsInDeck('dealSmall', 'duplex')).toHaveLength(1);
+      expect(service.findCardsInDeck('dealBig', 'duplex')).toHaveLength(0);
+    });
+
+    it('drawCard hands back a real card from that deck and persists the draw', () => {
+      started();
+      const onSuccess = jest.fn();
+      service.drawCard('dealSmall', { onSuccess, onError: jest.fn() });
+
+      expect(onSuccess).toHaveBeenCalled();
+      const card = onSuccess.mock.calls[0][0];
+      expect(['Placeholder Co. shares', 'Placeholder Duplex']).toContain(card.title);
+      expect(AppStateService.instance.cashflowGame.drawnCardIds.dealSmall).toEqual([card.id]);
+      expect(persistence.writeAndSync).toHaveBeenCalled();
+    });
+
+    it('drawCard reshuffles a single-card deck rather than erroring on the second draw', () => {
+      started();
+      const first = jest.fn();
+      service.drawCard('dealBig', { onSuccess: first, onError: jest.fn() });
+      const second = jest.fn();
+      service.drawCard('dealBig', { onSuccess: second, onError: jest.fn() });
+
+      expect(first.mock.calls[0][0].id).toBe(second.mock.calls[0][0].id);
+    });
+
+    it('applyDealCard plans a share card exactly as the manual form would', () => {
+      started();
+      const [shareCard] = service.findCardsInDeck('dealSmall', 'Placeholder Co.');
+
+      service.applyDealCard(shareCard, { onSuccess: jest.fn(), onError: jest.fn() });
+
+      const planned = service.plannedDeals.find((p) => p.title === 'Placeholder Co. shares');
+      expect(planned?.share).toMatchObject({ quantity: 10, price: 100 });
+    });
+
+    it('applyDealCard plans an investment card with deposit/mortgage/cashflow', () => {
+      started();
+      const [investmentCard] = service.findCardsInDeck('dealSmall', 'Duplex');
+
+      service.applyDealCard(investmentCard, { onSuccess: jest.fn(), onError: jest.fn() });
+
+      const planned = service.plannedDeals.find((p) => p.title === 'Placeholder Duplex');
+      expect(planned).toMatchObject({
+        cashflow: 200,
+        investment: { deposit: 1000, amount: 4000 },
+      });
+    });
+
+    it('applyDoodadCard charges its cost once, from Daily, dated at the game’s virtual date', () => {
+      started();
+      const [doodad] = service.findCardsInDeck('doodad', 'gadget');
+      const virtualDate = AppStateService.instance.cashflowGame.virtualDate;
+
+      service.applyDoodadCard(doodad, { onSuccess: jest.fn(), onError: jest.fn() });
+
+      expect(AppStateService.instance.allTransactions).toContainEqual(
+        expect.objectContaining({ account: 'Daily', amount: -150, date: virtualDate }),
+      );
+    });
+  });
 });

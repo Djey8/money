@@ -4,7 +4,13 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
-import { fromMinorUnits } from '@money/domain';
+import {
+  CashflowDealCard,
+  CashflowDeckKind,
+  CashflowDoodadCard,
+  CashflowMarketCard,
+  fromMinorUnits,
+} from '@money/domain';
 import { AppStateService } from 'src/app/shared/services/app-state.service';
 import { AppDataService } from 'src/app/shared/services/app-data.service';
 import { CashflowGameService } from 'src/app/shared/services/cashflow-game.service';
@@ -52,6 +58,12 @@ export class CashflowGameComponent implements OnInit {
   dealDeposit: number | null = null;
   dealMortgage: number | null = null;
   dealCashflow: number | null = null;
+
+  // Bringing a card into play, two ways (todo/cashflow-game.md decision 16):
+  // find one you drew from a real physical deck, or have the app draw one.
+  activeDeckKind: CashflowDeckKind = 'dealSmall';
+  cardQuery = '';
+  activeCard: CashflowDealCard | CashflowMarketCard | CashflowDoodadCard | null = null;
 
   constructor(
     private router: Router,
@@ -218,6 +230,68 @@ export class CashflowGameComponent implements OnInit {
 
   get plannedDeals() {
     return this.cashflowGameService.plannedDeals;
+  }
+
+  get isDealDeck(): boolean {
+    return this.activeDeckKind === 'dealSmall' || this.activeDeckKind === 'dealBig';
+  }
+
+  get cardSearchResults(): (CashflowDealCard | CashflowMarketCard | CashflowDoodadCard)[] {
+    if (!this.cardQuery.trim()) return [];
+    return this.cashflowGameService.findCardsInDeck(this.activeDeckKind, this.cardQuery);
+  }
+
+  changeDeck(): void {
+    this.activeCard = null;
+    this.cardQuery = '';
+  }
+
+  selectCard(card: CashflowDealCard | CashflowMarketCard | CashflowDoodadCard): void {
+    this.activeCard = card;
+    this.cardQuery = '';
+  }
+
+  clearActiveCard(): void {
+    this.activeCard = null;
+  }
+
+  /** "In this app we pick randomly a card" (JFK, 2026-09-26) — no physical deck needed. */
+  drawActiveCard(): void {
+    this.isBusy = true;
+    this.cashflowGameService.drawCard(this.activeDeckKind, {
+      onSuccess: (card) => {
+        this.isBusy = false;
+        this.activeCard = card;
+      },
+      onError: (message) => {
+        this.isBusy = false;
+        this.toastService.show(message, 'error');
+      },
+    });
+  }
+
+  /** Deal: plans it. Doodad: pays its cost now. Market: nothing to apply — see CASHFLOW_GAME_GUIDE.md §4/§6. */
+  applyActiveCard(): void {
+    if (!this.activeCard) return;
+    const callbacks = {
+      onSuccess: () => {
+        this.isBusy = false;
+        this.activeCard = null;
+        this.toastService.show(this.translate.instant('CashflowGame.cardApplied'), 'success');
+      },
+      onError: (message: string) => {
+        this.isBusy = false;
+        this.toastService.show(message, 'error');
+      },
+    };
+    this.isBusy = true;
+    if (this.isDealDeck) {
+      this.cashflowGameService.applyDealCard(this.activeCard as CashflowDealCard, callbacks);
+    } else if (this.activeDeckKind === 'doodad') {
+      this.cashflowGameService.applyDoodadCard(this.activeCard as CashflowDoodadCard, callbacks);
+    } else {
+      this.isBusy = false;
+    }
   }
 
   /** Saves the deal's numbers as a Grow project's plan — no money moves yet (todo/cashflow-game.md decision 12). */

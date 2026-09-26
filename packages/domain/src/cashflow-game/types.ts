@@ -57,6 +57,46 @@ export interface CashflowLoanRule {
 export type CashflowSpaceKind =
   'payday' | 'dealBig' | 'dealSmall' | 'market' | 'doodad' | 'baby' | 'charity' | 'downsized';
 
+/** Small/Big Deal: the numbers `planDeal` needs, straight off the card. */
+export interface CashflowDealCard {
+  id: string;
+  title: string;
+  assetKind: 'share' | 'investment';
+  quantity?: number;
+  priceMinor?: number;
+  depositMinor?: number;
+  mortgageMinor?: number;
+  cashflowMinor?: number;
+}
+
+/** A mandatory one-off cost — resolved as a single Transaction. */
+export interface CashflowDoodadCard {
+  id: string;
+  title: string;
+  costMinor: number;
+}
+
+/**
+ * Real Market cards vary too much (a sale offer, a global event, a special
+ * case) to model generically without the real catalog — shown as text only,
+ * the player acts on it through the app's existing features (todo/
+ * cashflow-game.md decision 16).
+ */
+export interface CashflowMarketCard {
+  id: string;
+  title: string;
+  description: string;
+}
+
+export type CashflowDeckKind = 'dealSmall' | 'dealBig' | 'market' | 'doodad';
+
+export interface CashflowDecks {
+  dealSmall?: CashflowDealCard[];
+  dealBig?: CashflowDealCard[];
+  market?: CashflowMarketCard[];
+  doodad?: CashflowDoodadCard[];
+}
+
 export interface CashflowGameSet {
   id: string;
   title: string;
@@ -69,6 +109,12 @@ export interface CashflowGameSet {
    * mode needs it to roll a die and move a token (not yet built).
    */
   board?: CashflowSpaceKind[];
+  /**
+   * The four physical card decks — real game content from JFK, like
+   * professions and the board. Optional, and independently so per deck: a
+   * game set can ship Deal cards before Market/Doodad content exists.
+   */
+  decks?: CashflowDecks;
 }
 
 export interface CashflowTransactionRecord {
@@ -106,6 +152,8 @@ export interface CashflowGameState {
   unemployedRoundsLeft: number;
   /** Which real Subscription titles belong to this game — Payday only ever acts on these. */
   gameSubscriptionTitles: string[];
+  /** Card ids drawn since the deck's last reshuffle, per deck — the "discard pile" a random draw skips and a reshuffle clears. */
+  drawnCardIds: Record<CashflowDeckKind, string[]>;
   history: CashflowLogEntry[];
 }
 
@@ -121,6 +169,7 @@ export function initialCashflowGameState(): CashflowGameState {
     charityRoundsLeft: 0,
     unemployedRoundsLeft: 0,
     gameSubscriptionTitles: [],
+    drawnCardIds: { dealSmall: [], dealBig: [], market: [], doodad: [] },
     history: [],
   };
 }

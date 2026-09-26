@@ -129,6 +129,40 @@
   gap: 8px;
 }
 
+.cf-card-results {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cf-card-result {
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+  text-align: left;
+  cursor: pointer;
+  color: var(--color-text);
+}
+
+.cf-card-result:hover {
+  background-color: var(--color-background);
+}
+
+.cf-card-active {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.cf-card-active h4 {
+  margin: 0 0 6px;
+}
+
 .cf-planned-deals {
   list-style: none;
   padding: 0;

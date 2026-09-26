@@ -19,6 +19,10 @@ function makeComponent(overrides: Partial<Record<string, jest.Mock>> = {}) {
     clearStatus: jest.fn(),
     planDeal: jest.fn(),
     executeDeal: jest.fn(),
+    findCardsInDeck: jest.fn(() => []),
+    drawCard: jest.fn(),
+    applyDealCard: jest.fn(),
+    applyDoodadCard: jest.fn(),
     monthlyCashflow: 0,
     cash: 0,
     plannedDeals: [],
@@ -273,6 +277,89 @@ describe('CashflowGameComponent', () => {
       const projects = [{ title: 'TestCo' }];
       const { component } = makeComponent({ plannedDeals: projects } as any);
       expect(component.plannedDeals).toBe(projects);
+    });
+  });
+
+  describe('cards: find, draw, apply', () => {
+    it('cardSearchResults is empty until a query is typed, then delegates to the service', () => {
+      const results = [{ id: '1', title: 'Duplex' }];
+      const { component, cashflowGameService } = makeComponent({
+        findCardsInDeck: jest.fn(() => results),
+      } as any);
+      component.activeDeckKind = 'dealSmall';
+
+      expect(component.cardSearchResults).toEqual([]);
+      component.cardQuery = 'dup';
+      expect(component.cardSearchResults).toBe(results);
+      expect(cashflowGameService.findCardsInDeck).toHaveBeenCalledWith('dealSmall', 'dup');
+    });
+
+    it('selectCard sets the active card and clears the search', () => {
+      const { component } = makeComponent();
+      component.cardQuery = 'dup';
+      const card = { id: '1', title: 'Duplex' };
+
+      component.selectCard(card as any);
+
+      expect(component.activeCard).toBe(card);
+      expect(component.cardQuery).toBe('');
+    });
+
+    it('changeDeck clears whatever was found/active for the previous deck', () => {
+      const { component } = makeComponent();
+      component.activeCard = { id: '1', title: 'Duplex' } as any;
+      component.cardQuery = 'dup';
+
+      component.changeDeck();
+
+      expect(component.activeCard).toBeNull();
+      expect(component.cardQuery).toBe('');
+    });
+
+    it('drawActiveCard sets the drawn card as active on success', () => {
+      const card = { id: '1', title: 'Duplex' };
+      const { component, cashflowGameService } = makeComponent();
+      cashflowGameService.drawCard.mockImplementation((_kind: string, callbacks: any) =>
+        callbacks.onSuccess(card),
+      );
+
+      component.drawActiveCard();
+
+      expect(component.activeCard).toBe(card);
+    });
+
+    it('applyActiveCard plans a Deal-deck card', () => {
+      const { component, cashflowGameService } = makeComponent();
+      component.activeDeckKind = 'dealSmall';
+      const card = { id: '1', title: 'Duplex', assetKind: 'investment' };
+      component.activeCard = card as any;
+
+      component.applyActiveCard();
+
+      expect(cashflowGameService.applyDealCard).toHaveBeenCalledWith(card, expect.anything());
+    });
+
+    it('applyActiveCard pays a Doodad-deck card', () => {
+      const { component, cashflowGameService } = makeComponent();
+      component.activeDeckKind = 'doodad';
+      const card = { id: '1', title: 'Gadget', costMinor: 1000 };
+      component.activeCard = card as any;
+
+      component.applyActiveCard();
+
+      expect(cashflowGameService.applyDoodadCard).toHaveBeenCalledWith(card, expect.anything());
+    });
+
+    it('applyActiveCard clears the active card and toasts on success', () => {
+      const { component, cashflowGameService, toastService } = makeComponent();
+      component.activeDeckKind = 'doodad';
+      component.activeCard = { id: '1', title: 'Gadget', costMinor: 1000 } as any;
+
+      component.applyActiveCard();
+      cashflowGameService.applyDoodadCard.mock.calls[0][1].onSuccess();
+
+      expect(component.activeCard).toBeNull();
+      expect(toastService.show).toHaveBeenCalledWith('CashflowGame.cardApplied', 'success');
     });
   });
 });

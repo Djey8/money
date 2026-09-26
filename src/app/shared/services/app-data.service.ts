@@ -531,9 +531,6 @@ export class AppDataService {
           virtualDateBefore: str(entry.virtualDateBefore),
           virtualDateAfter: str(entry.virtualDateAfter),
           kind: str(entry.kind) as CashflowGameState['history'][number]['kind'],
-          skipped: optionalBool(entry.skipped),
-          unemployedRoundsLeftBefore: optionalNum(entry.unemployedRoundsLeftBefore),
-          charityRoundsLeftBefore: optionalNum(entry.charityRoundsLeftBefore),
           createdTransactions: Array.isArray(entry.createdTransactions)
             ? entry.createdTransactions.map((t: any) => ({
                 account: str(t.account),
@@ -546,6 +543,11 @@ export class AppDataService {
             : [],
         }))
       : [];
+
+    const drawnIds = (deckKind: keyof CashflowGameState['drawnCardIds']): string[] =>
+      Array.isArray(raw.drawnCardIds?.[deckKind])
+        ? raw.drawnCardIds[deckKind].map((v: any) => str(v))
+        : [];
 
     return {
       gameSetId: nullableStr(raw.gameSetId),
@@ -560,6 +562,12 @@ export class AppDataService {
       gameSubscriptionTitles: Array.isArray(raw.gameSubscriptionTitles)
         ? raw.gameSubscriptionTitles.map((t: any) => str(t))
         : [],
+      drawnCardIds: {
+        dealSmall: drawnIds('dealSmall'),
+        dealBig: drawnIds('dealBig'),
+        market: drawnIds('market'),
+        doodad: drawnIds('doodad'),
+      },
       history,
     };
   }
