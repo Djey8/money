@@ -17,26 +17,11 @@ const PLACEHOLDER_GAME_SET: CashflowGameSet = {
     {
       id: 'placeholder-profession',
       title: 'Placeholder profession',
-      startingCashMinor: 300000,
       salaryMinor: 300000,
-      taxesAndExpensesMinor: -180000,
-      perChildExpenseMinor: -6000,
-      starterKit: {
-        subscriptions: [
-          {
-            title: 'Placeholder profession Salary',
-            account: 'Income',
-            amountMinor: 300000,
-            frequency: 'monthly',
-          },
-          {
-            title: 'Placeholder profession Taxes & Expenses',
-            account: 'Daily',
-            amountMinor: -180000,
-            frequency: 'monthly',
-          },
-        ],
-      },
+      expenses: [{ title: 'Placeholder Expenses', amountMinor: 180000 }],
+      perChildExpenseMinor: 6000,
+      savingsMinor: 0,
+      starterKit: {},
     },
   ],
   // Obviously-fake placeholder cards, just enough to exercise both the
@@ -81,7 +66,52 @@ const PLACEHOLDER_GAME_SET: CashflowGameSet = {
   },
 };
 
-export const CASHFLOW_GAME_SETS: CashflowGameSet[] = [PLACEHOLDER_GAME_SET];
+/**
+ * JFK's real physical card set, filled in profession by profession as he
+ * sends each card (2026-09-26 note: "I give you all of the professions I
+ * have here as cards... currently, let's play like this"). Still fully
+ * placeholder `board`/`decks` — only the profession pool is real so far.
+ */
+const CASHFLOW_GAME_SET: CashflowGameSet = {
+  id: 'cashflow',
+  title: 'Cashflow (real professions, board/cards still to come)',
+  loanRule: { incrementMinor: 100000, monthlyInterestPercent: 10 },
+  professions: [
+    {
+      // From the physical "Hausmeister/in" profession card, transcribed
+      // exactly — every expense line keeps the card's own label as its
+      // Subscription title *and* category (todo/cashflow-game.md decision
+      // 16's category fix). A zero-amount line (BAföG, Bankdarlehen) is
+      // skipped by the engine automatically.
+      id: 'hausmeister',
+      title: 'Hausmeister/in',
+      salaryMinor: 160000, // Gehalt: 1.600 €
+      expenses: [
+        { title: 'Steuern', amountMinor: 30000 }, // 300 €
+        { title: 'Eigenheim-Hypothek / Miete', amountMinor: 20000 }, // 200 €
+        { title: 'BAföG Darlehenszahlung', amountMinor: 0 },
+        { title: 'Autokreditzahlung', amountMinor: 10000 }, // 100 €
+        { title: 'Kreditkartenzahlung', amountMinor: 10000 }, // 100 €
+        { title: 'Sonstige Ausgaben', amountMinor: 30000 }, // 300 €
+        { title: 'Bankdarlehenszahlungen', amountMinor: 0 }, // automated by the Bank loan feature instead
+      ],
+      perChildExpenseMinor: 10000, // Ausgaben pro Kind: 100 €
+      savingsMinor: 60000, // Ersparnisse: 600 €
+      starterKit: {
+        // Bilanzblatt §4 Verbindlichkeiten — the balance, separate from the
+        // matching expense line's *payment* above. BAföG Darlehen (0 €) is
+        // skipped.
+        liabilities: [
+          { tag: 'Eigenheim-Hypothek', amountMinor: 2000000 }, // 20.000 €
+          { tag: 'Autokredit', amountMinor: 400000 }, // 4.000 €
+          { tag: 'Kreditkartenschulden', amountMinor: 300000 }, // 3.000 €
+        ],
+      },
+    },
+  ],
+};
+
+export const CASHFLOW_GAME_SETS: CashflowGameSet[] = [CASHFLOW_GAME_SET, PLACEHOLDER_GAME_SET];
 
 export function findCashflowGameSet(
   gameSets: CashflowGameSet[],

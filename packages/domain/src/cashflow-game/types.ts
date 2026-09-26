@@ -23,24 +23,43 @@ export interface CashflowStarterKitEntry {
   amountMinor: number;
 }
 
+/**
+ * A starting balance-sheet position — real estate, a mortgage/loan, a
+ * position already owned — that isn't derived from `expenses`. Not needed
+ * for a profession whose card has none (e.g. Hausmeister/in).
+ */
 export interface CashflowStarterKit {
-  subscriptions: CashflowStarterKitSubscription[];
   assets?: CashflowStarterKitEntry[];
   investments?: Array<CashflowStarterKitEntry & { depositMinor: number }>;
   shares?: Array<{ tag: string; quantity: number; priceMinor: number }>;
+  /** The card's own "Verbindlichkeiten"/liabilities section — a balance-sheet fact, separate from the matching expense line's *payment* (see `CashflowProfession.expenses`). */
   liabilities?: CashflowStarterKitEntry[];
+}
+
+/**
+ * One line of the profession card's "Ausgaben" (expenses) section — e.g.
+ * `{ title: 'Eigenheim-Hypothek / Miete', amountMinor: 20000 }`. `title`
+ * doubles as the real Subscription's title *and* its `@`-category
+ * (JFK, 2026-09-26: "it could be exactly the name of the expense... we
+ * have exactly these names with the correct amount"), so Budget/Stats can
+ * break spending down the same way the card does. Positive, matching how
+ * it's printed on the card — the engine negates it when posting.
+ */
+export interface CashflowExpenseLine {
+  title: string;
+  amountMinor: number;
 }
 
 export interface CashflowProfession {
   id: string;
   title: string;
-  /** One-off cash a profession starts with, materialized as a single starting Transaction. */
-  startingCashMinor: number;
   salaryMinor: number;
-  /** A single lump "taxes and other expenses" figure straight off the profession card; signed (negative). */
-  taxesAndExpensesMinor: number;
-  /** Signed (negative); multiplied by `CashflowGameState.children` for the "children expenses" subscription. */
+  /** The card's itemized "Ausgaben" — each becomes its own Subscription, categorized by its own name. A zero-amount line is skipped. */
+  expenses: CashflowExpenseLine[];
+  /** "Ausgaben pro Kind" — positive, per child, matching the card; multiplied by `CashflowGameState.children` for the "Children Expenses" subscription (`resolveCashflowBaby` negates it). */
   perChildExpenseMinor: number;
+  /** "Ersparnisse" — the card's starting savings figure. Starting cash is computed, not stored: savings plus one month's cashflow (salary minus `expenses`) — JFK, 2026-09-26. */
+  savingsMinor: number;
   starterKit: CashflowStarterKit;
 }
 

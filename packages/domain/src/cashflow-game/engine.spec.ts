@@ -36,16 +36,14 @@ describe('pickCashflowProfession', () => {
       professionId: 'placeholder-profession',
       round: 0,
       virtualDate: '2026-09-25',
-      gameSubscriptionTitles: [
-        'Placeholder profession Salary',
-        'Placeholder profession Taxes & Expenses',
-      ],
+      gameSubscriptionTitles: ['Placeholder profession Salary', 'Placeholder Expenses'],
       history: [],
     });
-    expect(result.starterKit.subscriptions).toHaveLength(2);
+    expect(result.subscriptions).toHaveLength(2);
+    // starting cash = savings (0) + one month's cashflow (salary 300000 - expenses 180000)
     expect(result.startingCashTransaction).toMatchObject({
       account: 'Income',
-      amountMinor: 300000,
+      amountMinor: 120000,
       date: '2026-09-25',
     });
   });
@@ -62,7 +60,7 @@ describe('pickCashflowProfession', () => {
 
 const gameSubscriptions: CashflowGameSubscription[] = [
   { title: 'Placeholder profession Salary', account: 'Income', amountMinor: 300000 },
-  { title: 'Placeholder profession Taxes & Expenses', account: 'Daily', amountMinor: -180000 },
+  { title: 'Placeholder Expenses', account: 'Daily', amountMinor: -180000 },
   { title: 'Unrelated subscription the player also has', account: 'Daily', amountMinor: -999 },
 ];
 
@@ -210,7 +208,7 @@ describe('computeMonthlyCashflowMinor', () => {
 });
 
 describe('resolveCashflowBaby', () => {
-  const profession = CASHFLOW_GAME_SETS[0].professions[0];
+  const profession = CASHFLOW_GAME_SETS.find((gs) => gs.id === 'placeholder')!.professions[0];
 
   it('adds a child and upserts a scaled children-expense subscription', () => {
     const { state: started } = pickCashflowProfession(
@@ -225,13 +223,13 @@ describe('resolveCashflowBaby', () => {
     expect(state.gameSubscriptionTitles).toContain(subscriptionUpsert.title);
     expect(subscriptionUpsert).toMatchObject({
       account: 'Daily',
-      amountMinor: profession.perChildExpenseMinor, // 1 child
+      amountMinor: -profession.perChildExpenseMinor, // 1 child
       frequency: 'monthly',
     });
 
     const second = resolveCashflowBaby(state, profession);
     expect(second.state.children).toBe(2);
-    expect(second.subscriptionUpsert.amountMinor).toBe(profession.perChildExpenseMinor * 2);
+    expect(second.subscriptionUpsert.amountMinor).toBe(-profession.perChildExpenseMinor * 2);
     // still one title, not duplicated
     expect(
       second.state.gameSubscriptionTitles.filter((t) => t === subscriptionUpsert.title),
@@ -293,7 +291,7 @@ describe('resolveCashflowDownsized', () => {
 });
 
 describe('adjustCashflowBankLoan', () => {
-  const gameSet = CASHFLOW_GAME_SETS[0]; // incrementMinor 100000, monthlyInterestPercent 10
+  const gameSet = CASHFLOW_GAME_SETS.find((gs) => gs.id === 'placeholder')!; // incrementMinor 100000, monthlyInterestPercent 10
 
   it('borrowing upserts the liability and a 10%/increment interest subscription', () => {
     const { state: started } = pickCashflowProfession(

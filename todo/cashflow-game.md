@@ -1,10 +1,12 @@
 # Cashflow (board game) automation — Feature Plan
 
 **Status:** MVP committed (`f1c1910`), companion-mode resolutions committed (`459fe21`), the Downsized fix + Grow
-reuse + docs guide committed (`106affd`). A Deal-card feature (plan, then decide, then buy — decisions 10/14) is
-built, not yet committed — see the status notes under Phase 1. Not yet playtested (JFK can't sit at a computer right
-now; we're
-developing ahead theoretically, per his explicit go-ahead, until he can).
+reuse + docs guide committed (`106affd`), find/draw-a-card + the menu entry + `resetGame` committed
+(`459fe21`..`eae5cfb`). The decision-18 data-model redesign (itemized categorized expenses, computed starting cash,
+the real `cashflow` game set with the Hausmeister/in profession) is built and green (domain + frontend tests, full
+typecheck), not yet committed — see the status note under Phase 1. The overlay/panel UI conversion from decision 18
+is not started yet, next up. Not yet playtested (JFK can't sit at a computer right now; we're developing ahead
+theoretically, per his explicit go-ahead, until he can).
 
 ## 1. What this is
 
@@ -133,6 +135,44 @@ same as `todo/fund-settlement.md` was.
     `isCashflowGame()` even though the whole page already is, since this is the single most destructive action in
     the app. No soft-delete, no undo — decision 15 already means nothing here needs to survive a reset except the
     real entities that were there.
+18. **The Cashflow game becomes a slide-in overlay panel, not a routed page — and every profession card gets its
+    own real profession data, not one lump figure** (2026-09-26, JFK, giving the real "Hausmeister/in" card as the
+    first example, with more to follow: _"this feature cash flow is just a component and I would say it should be
+    an add-on component you open up and then close... we never put any category in... it could be exactly the name
+    of the expense. So Steuern, it's category Steuern... we begin with Ersparnisse as a start amount and we add one
+    time the current cash flow and that's how you start with game zero"_). Concretely:
+    - `CashflowProfession.expenses: CashflowExpenseLine[]` replaces the old single `taxesAndExpensesMinor` lump —
+      one `{title, amountMinor}` per line straight off the card, each becoming its own Subscription **and**
+      `@`-category of that same title (a zero-amount line, e.g. an unused loan type, is skipped). This is what
+      makes Budget/Stats break spending down exactly the way the physical card does.
+    - Starting cash is **computed, never hand-entered**: `savingsMinor` (the card's "Ersparnisse") plus one month's
+      cashflow (salary minus the sum of `expenses`) — `computeCashflowProfessionMonthlyCashflowMinor` in
+      `engine.ts`. `PickProfessionResult.startingCashTransaction` is derived from this, same as before.
+    - `CashflowStarterKit.subscriptions` is gone — `pickCashflowProfession` now builds the salary + per-expense-line
+      Subscriptions itself (from `expenses`) and returns them as a new top-level `PickProfessionResult.subscriptions`
+      field, sibling to `starterKit` (which now only ever holds non-derived balance-sheet facts: `assets`,
+      `investments`, `shares`, `liabilities`). Card/profession figures are stored **positive**, matching how
+      they're printed — the engine negates each one (salary is the exception, staying positive as income) at the
+      point it becomes a Subscription/Transaction; `perChildExpenseMinor` flipped from negative to positive to
+      match, and `resolveCashflowBaby` now negates it explicitly.
+    - A new real game set, `id: 'cashflow'` (title still says "board/cards still to come"), holds JFK's real
+      professions as he sends each one — Hausmeister/in is the first, transcribed exactly (salary 1.600€, seven
+      itemized expense lines with two currently zero, "Ausgaben pro Kind" 100€, Ersparnisse 600€, three starting
+      liabilities). It's first in `CASHFLOW_GAME_SETS`, ahead of the placeholder, so it's the default. Explicitly
+      scoped by JFK to just this one profession for now: _"just implement the Hausmeister and later we have our own
+      game sets. And I give you also for this game set all the professions we have."_ More real professions, and
+      eventually a friendlier way to manage this data (JFK: "later on... it could be completely different ones
+      where we could modify a bit more"), are deliberately deferred.
+    - **UI architecture change**: the game moves from its own route (`/cashflow-game`) into an always-hosted overlay
+      panel matching the app's existing Add/Info modal-dialog pattern (`isOpen`/`highlight()`/`closeWindow()`,
+      `role="dialog"`, hosted directly in `app.component.html`) — "not the main place to play the game." Starting a
+      game closes the overlay and lands on `/home` with everything already posted, so the player browses
+      Balance/Stats/etc. through the normal app immediately. Profession selection supports both a direct pick and a
+      "shuffle" (random pick), and shows the full card (income, itemized expenses, liabilities, starting cash) —
+      with an info affordance to reopen that same card view later, during the game, not just at selection time. The
+      menu entry becomes a full-row-width button (it's alone in its row) that toggles the panel instead of routing.
+      **Not yet done as of this decision being recorded** — the data-model half (this decision's first four bullets)
+      landed first; the UI/panel conversion is the very next slice of work.
 
 ## 3. The one new thing: a small game-meta state
 
@@ -160,18 +200,16 @@ interface CashflowGameSet {
 }
 
 interface CashflowProfession {
+  // decision 18 — itemized expenses, computed starting cash, positive card-printed figures
   id: string;
   title: string;
   salaryMinor: number;
-  taxesAndExpensesMinor: number; // one lump "other expenses" figure straight off the profession card
-  perChildExpenseMinor: number;
+  expenses: Array<{ title: string; amountMinor: number }>; // one line per card expense; title doubles as
+  // the real Subscription's title AND its `@`-category; a zero-amount line is skipped
+  perChildExpenseMinor: number; // "Ausgaben pro Kind", positive as printed
+  savingsMinor: number; // "Ersparnisse" — starting cash = this + one month's cashflow (salary - expenses)
   starterKit: {
-    subscriptions: Array<{
-      title: string;
-      account: string;
-      amountMinor: number;
-      frequency: SubscriptionFrequency;
-    }>;
+    // non-derived balance-sheet facts only — the Subscriptions above are derived, not stored here
     assets?: Array<{ tag: string; amountMinor: number }>;
     investments?: Array<{ tag: string; amountMinor: number; depositMinor: number }>;
     shares?: Array<{ tag: string; quantity: number; priceMinor: number }>;

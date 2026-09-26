@@ -47,9 +47,18 @@ function requireStarted(state: CashflowGameState, action: string): string {
 export interface PickProfessionResult {
   state: CashflowGameState;
   profession: CashflowProfession;
+  /** One Subscription per `expenses` line (categorized by its own name) plus one for the salary — JFK, 2026-09-26. */
+  subscriptions: CashflowStarterKitSubscription[];
+  /** Whatever the card's "Verbindlichkeiten"/starting positions add beyond what `subscriptions` covers. */
   starterKit: CashflowStarterKit;
-  /** One starting Transaction to materialize alongside the starter kit's entities. */
+  /** One starting Transaction: `savingsMinor` plus one month's cashflow (salary minus expenses) — JFK, 2026-09-26. */
   startingCashTransaction: CashflowTransactionRecord;
+}
+
+/** Salary minus every `expenses` line — "the current cashflow" the starting-cash rule adds once. */
+export function computeCashflowProfessionMonthlyCashflowMinor(profession: CashflowProfession): number {
+  const totalExpensesMinor = profession.expenses.reduce((sum, line) => sum + line.amountMinor, 0);
+  return profession.salaryMinor - totalExpensesMinor;
 }
 
 /**
@@ -70,7 +79,27 @@ export function pickCashflowProfession(
 ): PickProfessionResult {
   const gameSet = findCashflowGameSet(gameSets, gameSetId);
   const profession = findCashflowProfession(gameSet, professionId);
-  const gameSubscriptionTitles = profession.starterKit.subscriptions.map((sub) => sub.title);
+
+  const salarySubscription: CashflowStarterKitSubscription = {
+    title: `${profession.title} Salary`,
+    account: 'Income',
+    amountMinor: profession.salaryMinor,
+    frequency: 'monthly',
+  };
+  const expenseSubscriptions: CashflowStarterKitSubscription[] = profession.expenses
+    .filter((line) => line.amountMinor !== 0)
+    .map((line) => ({
+      title: line.title,
+      account: 'Daily',
+      amountMinor: -line.amountMinor,
+      frequency: 'monthly',
+      category: `@${line.title}`,
+    }));
+  const subscriptions = [salarySubscription, ...expenseSubscriptions];
+  const gameSubscriptionTitles = subscriptions.map((sub) => sub.title);
+
+  const startingCashMinor =
+    profession.savingsMinor + computeCashflowProfessionMonthlyCashflowMinor(profession);
 
   return {
     state: {
@@ -83,10 +112,11 @@ export function pickCashflowProfession(
       gameSubscriptionTitles,
     },
     profession,
+    subscriptions,
     starterKit: profession.starterKit,
     startingCashTransaction: {
       account: 'Income',
-      amountMinor: profession.startingCashMinor,
+      amountMinor: startingCashMinor,
       date: today,
       time: '',
       category: '',
@@ -260,7 +290,7 @@ export function resolveCashflowBaby(
     subscriptionUpsert: {
       title,
       account: 'Daily',
-      amountMinor: children * profession.perChildExpenseMinor,
+      amountMinor: -(children * profession.perChildExpenseMinor),
       frequency: 'monthly',
     },
   };

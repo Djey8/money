@@ -120,7 +120,7 @@ export class CashflowGameService {
 
     state.allTransactions.push(toFloatTransaction(result.startingCashTransaction));
 
-    result.starterKit.subscriptions.forEach((sub) => {
+    result.subscriptions.forEach((sub) => {
       const subscription: Subscription = {
         title: sub.title,
         account: sub.account,

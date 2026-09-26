@@ -65,9 +65,9 @@ describe('CashflowGameService', () => {
       expect(state.allSubscriptions[0]).toMatchObject({ account: 'Income', amount: 3000 });
       expect(state.allSubscriptions[1]).toMatchObject({ account: 'Daily', amount: -1800 });
       expect(state.allSubscriptions.every((s) => s.comment.includes('#cashflow'))).toBe(true);
-      // Starting cash transaction
+      // Starting cash = savings (0) + one month's cashflow (salary 3000 - expenses 1800)
       expect(state.allTransactions).toHaveLength(1);
-      expect(state.allTransactions[0]).toMatchObject({ account: 'Income', amount: 3000 });
+      expect(state.allTransactions[0]).toMatchObject({ account: 'Income', amount: 1200 });
       expect(onSuccess).toHaveBeenCalled();
     });
 
@@ -333,7 +333,7 @@ describe('CashflowGameService', () => {
 
     it('auto-borrows the rounded-up shortfall before completing a purchase it can’t otherwise afford', () => {
       started();
-      // Cash is 3000; this share purchase costs 5000 — a 2000 shortfall, one 1000 increment short of it.
+      // Cash is 1200 (starting cash); this share purchase costs 5000 — a 3800 shortfall, rounded up to a 4000 increment.
       service.planDeal(
         { kind: 'share', title: 'Expensive', quantity: 1, price: 5000 },
         { onSuccess: jest.fn(), onError: jest.fn() },
@@ -342,10 +342,10 @@ describe('CashflowGameService', () => {
 
       const state = AppStateService.instance;
       expect(state.liabilities).toContainEqual(
-        expect.objectContaining({ tag: 'Bank loan', amount: 2000 }),
+        expect.objectContaining({ tag: 'Bank loan', amount: 4000 }),
       );
       expect(state.allSubscriptions).toContainEqual(
-        expect.objectContaining({ title: 'Bank loan interest', amount: -200 }),
+        expect.objectContaining({ title: 'Bank loan interest', amount: -400 }),
       );
       expect(state.allTransactions).toContainEqual(
         expect.objectContaining({ account: 'Fire', amount: -5000, category: '@Expensive' }),
