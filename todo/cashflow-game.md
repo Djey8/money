@@ -4,10 +4,11 @@
 reuse + docs guide committed (`106affd`), find/draw-a-card + the menu entry + `resetGame` committed
 (`459fe21`..`eae5cfb`). Decision 18 (itemized categorized expenses, computed starting cash, the real `cashflow`
 game set with the Hausmeister/in profession, AND the overlay/panel UI conversion) committed across `dd416e7` and
-`dd82039`. Decisions 19–20 (hiding the `placeholder` fixture from players, completing the View Card stats, moving
-the reset button into Settings → Advanced) are built and green (domain + frontend tests, full typecheck, both
-editions build), not yet committed as of this note. Not yet playtested (JFK can't sit at a computer right now;
-we're developing ahead theoretically, per his explicit go-ahead, until he can).
+`dd82039`. Decisions 19–21 (hiding the `placeholder` fixture from players, completing the View Card stats, moving
+the reset button into Settings → Advanced, and fixing the bootstrap-timing bug that made Start Game a no-op) are
+built and green (domain + frontend tests, full typecheck, both editions build), not yet committed as of this note.
+Not yet playtested (JFK can't sit at a computer right now; we're developing ahead theoretically, per his explicit
+go-ahead, until he can).
 
 ## 1. What this is
 
@@ -203,6 +204,23 @@ same as `todo/fund-settlement.md` was.
     `*ngIf="isCashflowGameActive"` — visible only once `AppStateService.instance.cashflowGame.professionId` is set
     (double-gated with `CashflowGameService.isCashflowGame()`, same defensive pattern as everywhere else in this
     feature).
+21. **Bug fix: nothing showed and Start did nothing, for every player** (2026-09-26, JFK: _"I cant start a game and
+    I dont see the data for out dataset, there is no profession to be selected"_ / _"Start game is not doing
+    anything"_). Root cause: converting the panel to be hosted eagerly at app bootstrap (decision 18) meant
+    `CashflowGameComponent`'s constructor now runs before login/profile data has loaded — but `selectedProfessionId`
+    was only ever populated inside `ngOnInit()`, gated behind `CashflowGameService.isCashflowGame()` (itself gated
+    on `ProfileComponent.mail`, populated asynchronously by auth). That gate failed at construction time, and since
+    `ngOnInit()` only runs once, `selectedProfessionId` stayed `''` forever — `startGame()`'s own guard
+    (`if (!selectedProfessionId) return`) then made the button silently do nothing. Fixed by removing the
+    auth-timing dependency entirely: `selectedGameSetId`/`selectedProfessionId` are now plain field initializers
+    (no gate, since picking a default profession is harmless for anyone and the whole panel is invisible to a
+    non-cashflow account regardless), and the one thing that _does_ need to wait for auth — loading the persisted
+    `cashflowGame` state — moved out of `ngOnInit` into a new `static CashflowGameComponent.open()`, called only
+    from `MenuComponent.clickedCashflowGame()`. By the time a player can actually click that menu entry, the menu's
+    own `*ngIf="isCashflowGame()"` binding has already re-evaluated correctly (unlike a one-shot lifecycle hook),
+    so the auth race is structurally gone, not just delayed. `CashflowGameComponent.instance` (a static
+    self-reference set in the constructor, same pattern `AppComponent`/`AppStateService` already use) is what lets
+    a static method reach the one open instance's injected `AppDataService`.
 
 ## 3. The one new thing: a small game-meta state
 

@@ -378,7 +378,7 @@ export class MenuComponent {
   }
 
   clickedCashflowGame() {
-    CashflowGameComponent.isOpen = true;
+    CashflowGameComponent.open();
     MenuComponent.isMenu = false;
   }
 

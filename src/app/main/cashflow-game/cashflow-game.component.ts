@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
@@ -26,9 +26,15 @@ import { TrapFocusDirective } from 'src/app/shared/directives/trap-focus.directi
  * 18. An always-hosted overlay panel (same pattern as Add/Info/Menu), not a
  * routed page — "not the main place to play the game" (JFK, 2026-09-26).
  * Only reachable for an account whose email contains "cashflow"
- * (CashflowGameService.isCashflowGame()); the menu only shows the trigger to
- * open it for such an account, and `ngOnInit` refuses to load any data for
- * anyone else as a defensive backstop.
+ * (CashflowGameService.isCashflowGame()). Because it's now hosted eagerly at
+ * app bootstrap (like every other panel) rather than created when a route
+ * activates, its constructor can run before login/profile data has loaded —
+ * so nothing here may depend on `isCashflowGame()` being accurate at
+ * construction time. Defaults that don't need auth (game-set/profession
+ * pre-selection) are plain field initializers; the one thing that does need
+ * auth (loading the persisted game state) is deferred to `open()`, called
+ * only once the player actually clicks the menu entry — by which point the
+ * menu's own `*ngIf="isCashflowGame()"` has already re-evaluated correctly.
  */
 @Component({
   selector: 'app-cashflow-game',
@@ -45,16 +51,17 @@ import { TrapFocusDirective } from 'src/app/shared/directives/trap-focus.directi
   templateUrl: './cashflow-game.component.html',
   styleUrls: ['./cashflow-game.component.css'],
 })
-export class CashflowGameComponent implements OnInit {
+export class CashflowGameComponent {
   static isOpen = false;
   static zIndex = 0;
+  static instance: CashflowGameComponent;
   public classReference = CashflowGameComponent;
 
   public appState = AppStateService.instance;
   public gameSets = this.cashflowGameService.gameSets;
 
   selectedGameSetId = this.playableGameSets[0]?.id ?? '';
-  selectedProfessionId = '';
+  selectedProfessionId = this.selectedGameSet?.professions[0]?.id ?? '';
   isBusy = false;
   loanIncrements = 1;
 
@@ -83,12 +90,15 @@ export class CashflowGameComponent implements OnInit {
     private cashflowGameService: CashflowGameService,
     private toastService: ToastService,
     private translate: TranslateService,
-  ) {}
+  ) {
+    CashflowGameComponent.instance = this;
+  }
 
-  ngOnInit(): void {
+  /** Opens the panel and loads the persisted game state — called from the menu entry, by which point login has definitely finished (unlike this component's own construction, which happens at app bootstrap). */
+  static open(): void {
     if (!CashflowGameService.isCashflowGame()) return;
-    this.appData.loadCashflowGameData();
-    this.selectedProfessionId = this.selectedGameSet?.professions[0]?.id ?? '';
+    CashflowGameComponent.isOpen = true;
+    CashflowGameComponent.instance?.appData.loadCashflowGameData();
   }
 
   /** Bumps this panel above every other panel, same convention as Add/Info/Menu. */

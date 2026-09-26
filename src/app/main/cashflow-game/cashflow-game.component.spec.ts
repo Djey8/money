@@ -46,27 +46,43 @@ describe('CashflowGameComponent', () => {
   beforeEach(() => {
     (AppStateService as any)._instance = undefined;
     ProfileComponent.mail = '';
+    CashflowGameComponent.isOpen = false;
+    CashflowGameComponent.zIndex = 0;
   });
 
-  describe('ngOnInit', () => {
-    it('loads nothing for a non-cashflow account — a defensive backstop, the panel just never opens for them', () => {
+  describe('field defaults', () => {
+    it('pre-selects the first playable profession at construction time, independent of auth/profile timing', () => {
+      // This component is hosted eagerly at app bootstrap (like every other panel), so its
+      // constructor can run before login/profile data has loaded — defaults must not depend on
+      // `ProfileComponent.mail`/`isCashflowGame()` being accurate yet.
+      ProfileComponent.mail = '';
+      const { component } = makeComponent();
+
+      const cashflowSet = CASHFLOW_GAME_SETS.find((set) => set.id === 'cashflow')!;
+      expect(component.selectedGameSetId).toBe(cashflowSet.id);
+      expect(component.selectedProfessionId).toBe(cashflowSet.professions[0].id);
+    });
+  });
+
+  describe('static open()', () => {
+    it('does nothing for a non-cashflow account', () => {
       ProfileComponent.mail = 'jfk@example.com';
-      const { component, router, appData } = makeComponent();
+      const { appData } = makeComponent();
 
-      component.ngOnInit();
+      CashflowGameComponent.open();
 
-      expect(router.navigate).not.toHaveBeenCalled();
+      expect(CashflowGameComponent.isOpen).toBe(false);
       expect(appData.loadCashflowGameData).not.toHaveBeenCalled();
     });
 
-    it('loads the game state for a cashflow account and pre-selects the first profession', () => {
+    it('opens the panel and loads the persisted game state for a cashflow account', () => {
       ProfileComponent.mail = 'player@cashflow.example';
-      const { component, appData } = makeComponent();
+      const { appData } = makeComponent();
 
-      component.ngOnInit();
+      CashflowGameComponent.open();
 
+      expect(CashflowGameComponent.isOpen).toBe(true);
       expect(appData.loadCashflowGameData).toHaveBeenCalled();
-      expect(component.selectedProfessionId).toBe(CASHFLOW_GAME_SETS[0].professions[0].id);
     });
   });
 
