@@ -46,6 +46,12 @@ setTimeout(() =>
 );
 let AppComponent: any;
 setTimeout(() => import('src/app/app.component').then((m) => (AppComponent = m.AppComponent)));
+let CashflowGameComponent: any;
+setTimeout(() =>
+  import('src/app/main/cashflow-game/cashflow-game.component').then(
+    (m) => (CashflowGameComponent = m.CashflowGameComponent),
+  ),
+);
 @Component({
   selector: 'app-menu',
   standalone: true,
@@ -98,6 +104,7 @@ export class MenuComponent {
     AddComponent.zIndex = 0;
     ProfileComponent.zIndex = 0;
     InfoComponent.zIndex = 0;
+    if (CashflowGameComponent) CashflowGameComponent.zIndex = 0;
   }
 
   /**
@@ -371,7 +378,7 @@ export class MenuComponent {
   }
 
   clickedCashflowGame() {
-    this.router.navigate([`/cashflow-game`]);
+    CashflowGameComponent.isOpen = true;
     MenuComponent.isMenu = false;
   }
 

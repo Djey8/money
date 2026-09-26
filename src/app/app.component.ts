@@ -46,6 +46,7 @@ import { ImpressumComponent as ImpressumComp } from './panels/impressum/impressu
 import { PolicyComponent as PolicyComp } from './panels/policy/policy.component';
 import { InstructionsComponent as InstructionsComp } from './panels/instructions/instructions.component';
 import { InfoComponent as InfoComp } from './panels/info/info.component';
+import { CashflowGameComponent as CashflowGameComp } from './main/cashflow-game/cashflow-game.component';
 import { ToastComponent } from './shared/components/toast/toast.component';
 import { ConfirmDialogComponent } from './shared/components/confirm-dialog/confirm-dialog.component';
 import { BottomNavComponent } from './shared/components/bottom-nav/bottom-nav.component';
@@ -168,6 +169,7 @@ setTimeout(() =>
     PolicyComp,
     InstructionsComp,
     InfoComp,
+    CashflowGameComp,
     ToastComponent,
     ConfirmDialogComponent,
     BottomNavComponent,

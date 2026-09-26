@@ -1,3 +1,71 @@
+/* ---- Backdrop + panel — same convention as the Menu overlay ---- */
+.cf-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 1000;
+}
+
+.cf-panel {
+  position: fixed;
+  top: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(94vw, 640px);
+  max-height: calc(100vh - 80px);
+  overflow-y: auto;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  padding: var(--space-md);
+  z-index: 1001;
+  box-shadow: var(--shadow-lg);
+}
+
+.cf-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-md);
+  padding-bottom: var(--space-sm);
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.cf-panel-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cf-panel-title {
+  margin: 0;
+  font-size: var(--font-lg);
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.cf-panel-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: var(--color-background);
+  color: var(--color-text-secondary);
+  border-radius: var(--radius-full);
+  font-size: var(--font-md);
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+.cf-panel-close:hover {
+  background: var(--color-border-light);
+  color: var(--color-text);
+}
+
 .cf-reset-btn {
   background: none;
   border: 1px solid var(--color-danger, #d32f2f);
@@ -14,9 +82,6 @@
 }
 
 .cashflow-game-page {
-  max-width: 700px;
-  margin: 0 auto;
-  padding: 16px;
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -229,4 +294,52 @@
   margin: 4px 0 0;
   font-size: 0.85rem;
   color: var(--color-text-secondary);
+}
+
+/* ---- Profession card (todo/cashflow-game.md decision 18) ---- */
+.cf-profession-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.cf-profession-card-header h3 {
+  margin: 0;
+}
+
+.cf-profession-card-note {
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+}
+
+.cf-info-btn {
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  width: 28px;
+  height: 28px;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--color-text-secondary);
+}
+
+.cf-info-btn:hover {
+  background-color: var(--color-background);
+}
+
+.cf-line-list {
+  list-style: none;
+  padding: 0;
+  margin: 4px 0 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cf-line-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 0.9rem;
 }

@@ -56,7 +56,9 @@ export interface PickProfessionResult {
 }
 
 /** Salary minus every `expenses` line — "the current cashflow" the starting-cash rule adds once. */
-export function computeCashflowProfessionMonthlyCashflowMinor(profession: CashflowProfession): number {
+export function computeCashflowProfessionMonthlyCashflowMinor(
+  profession: CashflowProfession,
+): number {
   const totalExpensesMinor = profession.expenses.reduce((sum, line) => sum + line.amountMinor, 0);
   return profession.salaryMinor - totalExpensesMinor;
 }

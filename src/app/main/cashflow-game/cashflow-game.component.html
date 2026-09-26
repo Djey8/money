@@ -1,378 +1,465 @@
-<!-- Toolbar -->
-<div class="toolbar" role="banner">
-  <img
-    id="profile-pic"
-    width="40"
-    alt="Profile Logo"
-    src="../assets/profile-blank.jpg"
-    role="button"
-    tabindex="0"
-    aria-label="Open profile"
-    (click)="appReference.clickProfile()"
-    (keydown.enter)="appReference.clickProfile()"
-  />
-  <div
-    id="heading"
-    role="button"
-    tabindex="0"
-    (click)="appReference.openNavBar()"
-    (keydown.enter)="appReference.openNavBar()"
-  >
-    {{ 'CashflowGame.title' | translate }}
-  </div>
-  <div class="spacer"></div>
-  <button class="cf-reset-btn" [disabled]="isBusy" (click)="resetGame()">
-    {{ 'CashflowGame.resetGame' | translate }}
-  </button>
-</div>
+<div class="cf-backdrop" *ngIf="classReference.isOpen" (click)="closeWindow()"></div>
 
-<div class="cashflow-game-page">
-  <!-- No game started yet: pick a profession -->
-  <div class="cf-card" *ngIf="!hasActiveGame">
-    <h2>{{ 'CashflowGame.chooseProfession' | translate }}</h2>
-
-    <label class="cf-field">
-      {{ 'CashflowGame.gameSet' | translate }}
-      <select [(ngModel)]="selectedGameSetId">
-        <option *ngFor="let set of gameSets" [value]="set.id">{{ set.title }}</option>
-      </select>
-    </label>
-
-    <label class="cf-field" *ngIf="selectedGameSet">
-      {{ 'CashflowGame.profession' | translate }}
-      <select [(ngModel)]="selectedProfessionId">
-        <option *ngFor="let profession of selectedGameSet.professions" [value]="profession.id">
-          {{ profession.title }}
-        </option>
-      </select>
-    </label>
-
-    <button
-      class="btn btn--primary"
-      [disabled]="isBusy || !selectedProfessionId"
-      (click)="startGame()"
-    >
-      {{ 'CashflowGame.start' | translate }}
-    </button>
+<div
+  class="cf-panel"
+  role="dialog"
+  aria-modal="true"
+  appTrapFocus
+  *ngIf="classReference.isOpen"
+  [style.z-index]="classReference.zIndex + 1001"
+  (click)="highlight()"
+>
+  <div class="cf-panel-header">
+    <h2 class="cf-panel-title">{{ 'CashflowGame.title' | translate }}</h2>
+    <div class="cf-panel-header-actions">
+      <button class="cf-reset-btn" *ngIf="hasActiveGame" [disabled]="isBusy" (click)="resetGame()">
+        {{ 'CashflowGame.resetGame' | translate }}
+      </button>
+      <button class="cf-panel-close" aria-label="Close" (click)="closeWindow()">✕</button>
+    </div>
   </div>
 
-  <!-- Active game dashboard -->
-  <div class="cf-dashboard" *ngIf="hasActiveGame">
-    <div class="cf-card cf-summary">
-      <h2>{{ currentProfession?.title }}</h2>
-
+  <div class="cashflow-game-page">
+    <!-- Profession card detail — shown at selection time and reopenable during the game -->
+    <!-- (todo/cashflow-game.md decision 18). -->
+    <div class="cf-card cf-profession-card" *ngIf="viewedProfession as profession">
+      <div class="cf-profession-card-header">
+        <h3>{{ profession.title }}</h3>
+        <button class="cf-panel-close" aria-label="Close" (click)="closeProfessionCard()">✕</button>
+      </div>
       <div class="cf-stat-row">
         <div class="cf-stat">
-          <span class="cf-stat-label">{{ 'CashflowGame.cash' | translate }}</span>
-          <span class="cf-stat-value">{{ cash | appNumber }} {{ appState.currency }}</span>
+          <span class="cf-stat-label">{{ 'CashflowGame.salary' | translate }}</span>
+          <span class="cf-stat-value"
+            >{{ toDisplayAmount(profession.salaryMinor) | appNumber }} {{ appState.currency }}</span
+          >
         </div>
         <div class="cf-stat">
-          <span class="cf-stat-label">{{ 'CashflowGame.Round' | translate }}</span>
-          <span class="cf-stat-value">{{ appState.cashflowGame.round }}</span>
+          <span class="cf-stat-label">{{ 'CashflowGame.savings' | translate }}</span>
+          <span class="cf-stat-value"
+            >{{ toDisplayAmount(profession.savingsMinor) | appNumber }}
+            {{ appState.currency }}</span
+          >
         </div>
         <div class="cf-stat">
-          <span class="cf-stat-label">{{ 'CashflowGame.virtualDate' | translate }}</span>
-          <span class="cf-stat-value">{{ appState.cashflowGame.virtualDate | appDate }}</span>
+          <span class="cf-stat-label">{{ 'CashflowGame.startingCash' | translate }}</span>
+          <span class="cf-stat-value"
+            >{{ professionStartingCash(profession) | appNumber }} {{ appState.currency }}</span
+          >
         </div>
       </div>
 
-      <!-- Monthly cashflow already has a view — the Subscriptions page's own total
-           (JFK, 2026-09-26: "use the normal app as much as possible"). Only the
-           losing-condition warning is specific to this page. -->
-      <p class="cf-bankruptcy-warning" *ngIf="monthlyCashflow < 0">
-        {{ 'CashflowGame.bankruptcyWarning' | translate }}
-        <a routerLink="/subscription">{{ 'CashflowGame.viewSubscriptions' | translate }}</a>
-      </p>
-
-      <div
-        class="cf-badges"
-        *ngIf="
-          appState.cashflowGame.unemployedRoundsLeft ||
-          appState.cashflowGame.charityRoundsLeft ||
-          appState.cashflowGame.children
-        "
-      >
-        <span class="cf-badge" *ngIf="appState.cashflowGame.unemployedRoundsLeft">
-          {{
-            'CashflowGame.unemployedBadge'
-              | translate: { count: appState.cashflowGame.unemployedRoundsLeft }
-          }}
-          <button
-            class="cf-badge-dismiss"
-            [attr.aria-label]="'CashflowGame.dismiss' | translate"
-            (click)="clearUnemployed()"
-          >
-            ×
-          </button>
-        </span>
-        <span class="cf-badge" *ngIf="appState.cashflowGame.charityRoundsLeft">
-          {{
-            'CashflowGame.charityBadge'
-              | translate: { count: appState.cashflowGame.charityRoundsLeft }
-          }}
-          <button
-            class="cf-badge-dismiss"
-            [attr.aria-label]="'CashflowGame.dismiss' | translate"
-            (click)="clearCharity()"
-          >
-            ×
-          </button>
-        </span>
-        <span class="cf-badge" *ngIf="appState.cashflowGame.children">
-          {{ 'CashflowGame.childrenBadge' | translate: { count: appState.cashflowGame.children } }}
-        </span>
-      </div>
-
-      <div class="cf-actions">
-        <button class="btn btn--primary" [disabled]="isBusy" (click)="payday()">
-          {{ 'CashflowGame.payday' | translate }}
-        </button>
-        <button class="btn btn--sm" [disabled]="isBusy || !canUndo" (click)="undoPayday()">
-          {{ 'CashflowGame.undo' | translate }}
-        </button>
-      </div>
-
-      <!-- Everything else — cashflow, stats, budget — is the app's own pages, unchanged. -->
-      <nav class="cf-app-links">
-        <a routerLink="/subscription">{{ 'CashflowGame.viewSubscriptions' | translate }}</a>
-        <a routerLink="/grow">{{ 'CashflowGame.viewGrow' | translate }}</a>
-        <a routerLink="/balance">{{ 'CashflowGame.viewBalanceSheet' | translate }}</a>
-        <a routerLink="/stats">{{ 'CashflowGame.viewStats' | translate }}</a>
-        <a routerLink="/budget">{{ 'CashflowGame.viewBudget' | translate }}</a>
-      </nav>
-    </div>
-
-    <!-- "Which space did you land on?" — companion mode: you moved your own token on the -->
-    <!-- physical board, this simulates the consequence (todo/cashflow-game.md decision 8). -->
-    <div class="cf-card">
-      <h3>{{ 'CashflowGame.landedOn' | translate }}</h3>
-      <div class="cf-actions">
-        <button class="btn btn--sm" [disabled]="isBusy || !canLandOnBaby" (click)="landOnBaby()">
-          {{ 'CashflowGame.baby' | translate }}
-        </button>
-        <button class="btn btn--sm" [disabled]="isBusy" (click)="landOnCharity()">
-          {{ 'CashflowGame.charity' | translate }}
-        </button>
-        <button class="btn btn--sm" [disabled]="isBusy" (click)="landOnDownsized()">
-          {{ 'CashflowGame.downsized' | translate }}
-        </button>
-      </div>
-    </div>
-
-    <!-- Bringing a card into play, two ways (todo/cashflow-game.md decision 16): -->
-    <!-- find one you drew from your real physical deck, or have the app draw one. -->
-    <div class="cf-card">
-      <h3>{{ 'CashflowGame.cards' | translate }}</h3>
-
-      <label class="cf-field">
-        {{ 'CashflowGame.cardDeck' | translate }}
-        <select [(ngModel)]="activeDeckKind" (ngModelChange)="changeDeck()">
-          <option value="dealSmall">{{ 'CashflowGame.deckDealSmall' | translate }}</option>
-          <option value="dealBig">{{ 'CashflowGame.deckDealBig' | translate }}</option>
-          <option value="market">{{ 'CashflowGame.deckMarket' | translate }}</option>
-          <option value="doodad">{{ 'CashflowGame.deckDoodad' | translate }}</option>
-        </select>
-      </label>
-
-      <div class="cf-actions">
-        <button class="btn btn--sm" [disabled]="isBusy" (click)="drawActiveCard()">
-          {{ 'CashflowGame.cardDraw' | translate }}
-        </button>
-      </div>
-
-      <label class="cf-field">
-        {{ 'CashflowGame.cardFind' | translate }}
-        <input
-          type="text"
-          [(ngModel)]="cardQuery"
-          [placeholder]="'CashflowGame.cardFindHint' | translate"
-        />
-      </label>
-      <ul class="cf-card-results" *ngIf="cardSearchResults.length">
-        <li *ngFor="let card of cardSearchResults">
-          <button class="cf-card-result" (click)="selectCard(card)">{{ card.title }}</button>
+      <h4>{{ 'CashflowGame.expenses' | translate }}</h4>
+      <ul class="cf-line-list">
+        <li *ngFor="let line of profession.expenses">
+          <span>{{ line.title }}</span>
+          <span>{{ toDisplayAmount(line.amountMinor) | appNumber }} {{ appState.currency }}</span>
         </li>
       </ul>
 
-      <div class="cf-card-active" *ngIf="activeCard">
-        <h4>{{ activeCard.title }}</h4>
-        <ng-container *ngIf="isDealDeck">
-          <p *ngIf="$any(activeCard).assetKind === 'share'">
-            {{ 'CashflowGame.dealQuantity' | translate }}: {{ $any(activeCard).quantity }} ·
-            {{ 'CashflowGame.dealPrice' | translate }}:
-            {{ toDisplayAmount($any(activeCard).priceMinor) | appNumber }} {{ appState.currency }}
-          </p>
-          <p *ngIf="$any(activeCard).assetKind === 'investment'">
-            {{ 'CashflowGame.dealDeposit' | translate }}:
-            {{ toDisplayAmount($any(activeCard).depositMinor) | appNumber }}
-            {{ appState.currency }} · {{ 'CashflowGame.dealMortgage' | translate }}:
-            {{ toDisplayAmount($any(activeCard).mortgageMinor) | appNumber }}
-            {{ appState.currency }} · {{ 'CashflowGame.dealCashflow' | translate }}:
-            {{ toDisplayAmount($any(activeCard).cashflowMinor) | appNumber }}
-            {{ appState.currency }}
-          </p>
-        </ng-container>
-        <p *ngIf="activeDeckKind === 'doodad'">
-          {{ 'CashflowGame.dealCost' | translate }}:
-          {{ toDisplayAmount($any(activeCard).costMinor) | appNumber }} {{ appState.currency }}
+      <p class="cf-profession-card-note">
+        {{ 'CashflowGame.perChildExpense' | translate }}:
+        {{ toDisplayAmount(profession.perChildExpenseMinor) | appNumber }} {{ appState.currency }}
+      </p>
+
+      <ng-container *ngIf="profession.starterKit.liabilities?.length">
+        <h4>{{ 'CashflowGame.liabilities' | translate }}</h4>
+        <ul class="cf-line-list">
+          <li *ngFor="let liability of profession.starterKit.liabilities">
+            <span>{{ liability.tag }}</span>
+            <span
+              >{{ toDisplayAmount(liability.amountMinor) | appNumber }}
+              {{ appState.currency }}</span
+            >
+          </li>
+        </ul>
+      </ng-container>
+    </div>
+
+    <!-- No game started yet: pick a profession -->
+    <div class="cf-card" *ngIf="!hasActiveGame">
+      <h3>{{ 'CashflowGame.chooseProfession' | translate }}</h3>
+
+      <label class="cf-field">
+        {{ 'CashflowGame.gameSet' | translate }}
+        <select [(ngModel)]="selectedGameSetId">
+          <option *ngFor="let set of gameSets" [value]="set.id">{{ set.title }}</option>
+        </select>
+      </label>
+
+      <label class="cf-field" *ngIf="selectedGameSet">
+        {{ 'CashflowGame.profession' | translate }}
+        <select [(ngModel)]="selectedProfessionId">
+          <option *ngFor="let profession of selectedGameSet.professions" [value]="profession.id">
+            {{ profession.title }}
+          </option>
+        </select>
+      </label>
+
+      <div class="cf-actions" *ngIf="selectedGameSet">
+        <button class="btn btn--sm" (click)="shuffleProfession()">
+          {{ 'CashflowGame.shuffle' | translate }}
+        </button>
+        <button
+          class="btn btn--sm"
+          *ngIf="selectedProfession"
+          (click)="openProfessionCard(selectedProfession)"
+        >
+          {{ 'CashflowGame.viewCard' | translate }}
+        </button>
+      </div>
+
+      <button
+        class="btn btn--primary"
+        [disabled]="isBusy || !selectedProfessionId"
+        (click)="startGame()"
+      >
+        {{ 'CashflowGame.start' | translate }}
+      </button>
+    </div>
+
+    <!-- Active game dashboard -->
+    <div class="cf-dashboard" *ngIf="hasActiveGame">
+      <div class="cf-card cf-summary">
+        <div class="cf-profession-card-header">
+          <h3>{{ currentProfession?.title }}</h3>
+          <button
+            class="cf-info-btn"
+            *ngIf="currentProfession"
+            [attr.aria-label]="'CashflowGame.viewCard' | translate"
+            (click)="openProfessionCard(currentProfession)"
+          >
+            ℹ
+          </button>
+        </div>
+
+        <div class="cf-stat-row">
+          <div class="cf-stat">
+            <span class="cf-stat-label">{{ 'CashflowGame.cash' | translate }}</span>
+            <span class="cf-stat-value">{{ cash | appNumber }} {{ appState.currency }}</span>
+          </div>
+          <div class="cf-stat">
+            <span class="cf-stat-label">{{ 'CashflowGame.Round' | translate }}</span>
+            <span class="cf-stat-value">{{ appState.cashflowGame.round }}</span>
+          </div>
+          <div class="cf-stat">
+            <span class="cf-stat-label">{{ 'CashflowGame.virtualDate' | translate }}</span>
+            <span class="cf-stat-value">{{ appState.cashflowGame.virtualDate | appDate }}</span>
+          </div>
+        </div>
+
+        <!-- Monthly cashflow already has a view — the Subscriptions page's own total
+             (JFK, 2026-09-26: "use the normal app as much as possible"). Only the
+             losing-condition warning is specific to this page. -->
+        <p class="cf-bankruptcy-warning" *ngIf="monthlyCashflow < 0">
+          {{ 'CashflowGame.bankruptcyWarning' | translate }}
+          <a routerLink="/subscription" (click)="closeWindow()">{{
+            'CashflowGame.viewSubscriptions' | translate
+          }}</a>
         </p>
-        <p *ngIf="activeDeckKind === 'market'">{{ $any(activeCard).description }}</p>
+
+        <div
+          class="cf-badges"
+          *ngIf="
+            appState.cashflowGame.unemployedRoundsLeft ||
+            appState.cashflowGame.charityRoundsLeft ||
+            appState.cashflowGame.children
+          "
+        >
+          <span class="cf-badge" *ngIf="appState.cashflowGame.unemployedRoundsLeft">
+            {{
+              'CashflowGame.unemployedBadge'
+                | translate: { count: appState.cashflowGame.unemployedRoundsLeft }
+            }}
+            <button
+              class="cf-badge-dismiss"
+              [attr.aria-label]="'CashflowGame.dismiss' | translate"
+              (click)="clearUnemployed()"
+            >
+              ×
+            </button>
+          </span>
+          <span class="cf-badge" *ngIf="appState.cashflowGame.charityRoundsLeft">
+            {{
+              'CashflowGame.charityBadge'
+                | translate: { count: appState.cashflowGame.charityRoundsLeft }
+            }}
+            <button
+              class="cf-badge-dismiss"
+              [attr.aria-label]="'CashflowGame.dismiss' | translate"
+              (click)="clearCharity()"
+            >
+              ×
+            </button>
+          </span>
+          <span class="cf-badge" *ngIf="appState.cashflowGame.children">
+            {{
+              'CashflowGame.childrenBadge' | translate: { count: appState.cashflowGame.children }
+            }}
+          </span>
+        </div>
+
+        <div class="cf-actions">
+          <button class="btn btn--primary" [disabled]="isBusy" (click)="payday()">
+            {{ 'CashflowGame.payday' | translate }}
+          </button>
+          <button class="btn btn--sm" [disabled]="isBusy || !canUndo" (click)="undoPayday()">
+            {{ 'CashflowGame.undo' | translate }}
+          </button>
+        </div>
+
+        <!-- Everything else — cashflow, stats, budget — is the app's own pages, unchanged. -->
+        <nav class="cf-app-links">
+          <a routerLink="/subscription" (click)="closeWindow()">{{
+            'CashflowGame.viewSubscriptions' | translate
+          }}</a>
+          <a routerLink="/grow" (click)="closeWindow()">{{
+            'CashflowGame.viewGrow' | translate
+          }}</a>
+          <a routerLink="/balance" (click)="closeWindow()">{{
+            'CashflowGame.viewBalanceSheet' | translate
+          }}</a>
+          <a routerLink="/stats" (click)="closeWindow()">{{
+            'CashflowGame.viewStats' | translate
+          }}</a>
+          <a routerLink="/budget" (click)="closeWindow()">{{
+            'CashflowGame.viewBudget' | translate
+          }}</a>
+        </nav>
+      </div>
+
+      <!-- "Which space did you land on?" — companion mode: you moved your own token on the -->
+      <!-- physical board, this simulates the consequence (todo/cashflow-game.md decision 8). -->
+      <div class="cf-card">
+        <h3>{{ 'CashflowGame.landedOn' | translate }}</h3>
+        <div class="cf-actions">
+          <button class="btn btn--sm" [disabled]="isBusy || !canLandOnBaby" (click)="landOnBaby()">
+            {{ 'CashflowGame.baby' | translate }}
+          </button>
+          <button class="btn btn--sm" [disabled]="isBusy" (click)="landOnCharity()">
+            {{ 'CashflowGame.charity' | translate }}
+          </button>
+          <button class="btn btn--sm" [disabled]="isBusy" (click)="landOnDownsized()">
+            {{ 'CashflowGame.downsized' | translate }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Bringing a card into play, two ways (todo/cashflow-game.md decision 16): -->
+      <!-- find one you drew from your real physical deck, or have the app draw one. -->
+      <div class="cf-card">
+        <h3>{{ 'CashflowGame.cards' | translate }}</h3>
+
+        <label class="cf-field">
+          {{ 'CashflowGame.cardDeck' | translate }}
+          <select [(ngModel)]="activeDeckKind" (ngModelChange)="changeDeck()">
+            <option value="dealSmall">{{ 'CashflowGame.deckDealSmall' | translate }}</option>
+            <option value="dealBig">{{ 'CashflowGame.deckDealBig' | translate }}</option>
+            <option value="market">{{ 'CashflowGame.deckMarket' | translate }}</option>
+            <option value="doodad">{{ 'CashflowGame.deckDoodad' | translate }}</option>
+          </select>
+        </label>
+
+        <div class="cf-actions">
+          <button class="btn btn--sm" [disabled]="isBusy" (click)="drawActiveCard()">
+            {{ 'CashflowGame.cardDraw' | translate }}
+          </button>
+        </div>
+
+        <label class="cf-field">
+          {{ 'CashflowGame.cardFind' | translate }}
+          <input
+            type="text"
+            [(ngModel)]="cardQuery"
+            [placeholder]="'CashflowGame.cardFindHint' | translate"
+          />
+        </label>
+        <ul class="cf-card-results" *ngIf="cardSearchResults.length">
+          <li *ngFor="let card of cardSearchResults">
+            <button class="cf-card-result" (click)="selectCard(card)">{{ card.title }}</button>
+          </li>
+        </ul>
+
+        <div class="cf-card-active" *ngIf="activeCard">
+          <h4>{{ activeCard.title }}</h4>
+          <ng-container *ngIf="isDealDeck">
+            <p *ngIf="$any(activeCard).assetKind === 'share'">
+              {{ 'CashflowGame.dealQuantity' | translate }}: {{ $any(activeCard).quantity }} ·
+              {{ 'CashflowGame.dealPrice' | translate }}:
+              {{ toDisplayAmount($any(activeCard).priceMinor) | appNumber }} {{ appState.currency }}
+            </p>
+            <p *ngIf="$any(activeCard).assetKind === 'investment'">
+              {{ 'CashflowGame.dealDeposit' | translate }}:
+              {{ toDisplayAmount($any(activeCard).depositMinor) | appNumber }}
+              {{ appState.currency }} · {{ 'CashflowGame.dealMortgage' | translate }}:
+              {{ toDisplayAmount($any(activeCard).mortgageMinor) | appNumber }}
+              {{ appState.currency }} · {{ 'CashflowGame.dealCashflow' | translate }}:
+              {{ toDisplayAmount($any(activeCard).cashflowMinor) | appNumber }}
+              {{ appState.currency }}
+            </p>
+          </ng-container>
+          <p *ngIf="activeDeckKind === 'doodad'">
+            {{ 'CashflowGame.dealCost' | translate }}:
+            {{ toDisplayAmount($any(activeCard).costMinor) | appNumber }} {{ appState.currency }}
+          </p>
+          <p *ngIf="activeDeckKind === 'market'">{{ $any(activeCard).description }}</p>
+
+          <div class="cf-actions">
+            <button
+              class="btn btn--sm btn--primary"
+              *ngIf="activeDeckKind !== 'market'"
+              [disabled]="isBusy"
+              (click)="applyActiveCard()"
+            >
+              {{
+                (isDealDeck ? 'CashflowGame.cardPlanThis' : 'CashflowGame.cardPayThis') | translate
+              }}
+            </button>
+            <button class="btn btn--sm" (click)="clearActiveCard()">
+              {{ 'CashflowGame.cardDismiss' | translate }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Deal card: resolved through the app's own Grow feature, not a new buy/sell -->
+      <!-- system (todo/cashflow-game.md decision 10) — shares are a liquidity tool, -->
+      <!-- property is the passive-income vehicle; see CASHFLOW_GAME_GUIDE.md §4. -->
+      <div class="cf-card">
+        <h3>{{ 'CashflowGame.deal' | translate }}</h3>
+
+        <label class="cf-field">
+          {{ 'CashflowGame.dealKind' | translate }}
+          <select [(ngModel)]="dealKind">
+            <option value="share">{{ 'CashflowGame.dealKindShare' | translate }}</option>
+            <option value="investment">{{ 'CashflowGame.dealKindInvestment' | translate }}</option>
+          </select>
+        </label>
+
+        <label class="cf-field">
+          {{ 'CashflowGame.dealTitle' | translate }}
+          <input type="text" [(ngModel)]="dealTitle" />
+        </label>
+
+        <ng-container *ngIf="dealKind === 'share'">
+          <label class="cf-field">
+            {{ 'CashflowGame.dealQuantity' | translate }}
+            <input type="number" min="0" [(ngModel)]="dealQuantity" />
+          </label>
+          <label class="cf-field">
+            {{ 'CashflowGame.dealPrice' | translate }}
+            <input type="number" min="0" step="0.01" [(ngModel)]="dealPrice" />
+          </label>
+        </ng-container>
+
+        <ng-container *ngIf="dealKind === 'investment'">
+          <label class="cf-field">
+            {{ 'CashflowGame.dealDeposit' | translate }}
+            <input type="number" min="0" step="0.01" [(ngModel)]="dealDeposit" />
+          </label>
+          <label class="cf-field">
+            {{ 'CashflowGame.dealMortgage' | translate }}
+            <input type="number" min="0" step="0.01" [(ngModel)]="dealMortgage" />
+          </label>
+          <label class="cf-field">
+            {{ 'CashflowGame.dealCashflow' | translate }}
+            <input type="number" step="0.01" [(ngModel)]="dealCashflow" />
+          </label>
+        </ng-container>
+
+        <p class="cf-deal-preview" *ngIf="dealCost > 0">
+          {{ 'CashflowGame.dealCost' | translate }}: {{ dealCost | appNumber }}
+          {{ appState.currency }}
+          <ng-container *ngIf="dealShortfall > 0">
+            — {{ 'CashflowGame.dealWillBorrow' | translate }}
+          </ng-container>
+        </p>
 
         <div class="cf-actions">
           <button
-            class="btn btn--sm btn--primary"
-            *ngIf="activeDeckKind !== 'market'"
-            [disabled]="isBusy"
-            (click)="applyActiveCard()"
+            class="btn btn--primary"
+            [disabled]="isBusy || !canSubmitDeal"
+            (click)="submitDeal()"
           >
-            {{
-              (isDealDeck ? 'CashflowGame.cardPlanThis' : 'CashflowGame.cardPayThis') | translate
-            }}
-          </button>
-          <button class="btn btn--sm" (click)="clearActiveCard()">
-            {{ 'CashflowGame.cardDismiss' | translate }}
+            {{ 'CashflowGame.dealPlan' | translate }}
           </button>
         </div>
       </div>
-    </div>
 
-    <!-- Deal card: resolved through the app's own Grow feature, not a new buy/sell -->
-    <!-- system (todo/cashflow-game.md decision 10) — shares are a liquidity tool, -->
-    <!-- property is the passive-income vehicle; see CASHFLOW_GAME_GUIDE.md §4. -->
-    <div class="cf-card">
-      <h3>{{ 'CashflowGame.deal' | translate }}</h3>
-
-      <label class="cf-field">
-        {{ 'CashflowGame.dealKind' | translate }}
-        <select [(ngModel)]="dealKind">
-          <option value="share">{{ 'CashflowGame.dealKindShare' | translate }}</option>
-          <option value="investment">{{ 'CashflowGame.dealKindInvestment' | translate }}</option>
-        </select>
-      </label>
-
-      <label class="cf-field">
-        {{ 'CashflowGame.dealTitle' | translate }}
-        <input type="text" [(ngModel)]="dealTitle" />
-      </label>
-
-      <ng-container *ngIf="dealKind === 'share'">
-        <label class="cf-field">
-          {{ 'CashflowGame.dealQuantity' | translate }}
-          <input type="number" min="0" [(ngModel)]="dealQuantity" />
-        </label>
-        <label class="cf-field">
-          {{ 'CashflowGame.dealPrice' | translate }}
-          <input type="number" min="0" step="0.01" [(ngModel)]="dealPrice" />
-        </label>
-      </ng-container>
-
-      <ng-container *ngIf="dealKind === 'investment'">
-        <label class="cf-field">
-          {{ 'CashflowGame.dealDeposit' | translate }}
-          <input type="number" min="0" step="0.01" [(ngModel)]="dealDeposit" />
-        </label>
-        <label class="cf-field">
-          {{ 'CashflowGame.dealMortgage' | translate }}
-          <input type="number" min="0" step="0.01" [(ngModel)]="dealMortgage" />
-        </label>
-        <label class="cf-field">
-          {{ 'CashflowGame.dealCashflow' | translate }}
-          <input type="number" step="0.01" [(ngModel)]="dealCashflow" />
-        </label>
-      </ng-container>
-
-      <p class="cf-deal-preview" *ngIf="dealCost > 0">
-        {{ 'CashflowGame.dealCost' | translate }}: {{ dealCost | appNumber }}
-        {{ appState.currency }}
-        <ng-container *ngIf="dealShortfall > 0">
-          — {{ 'CashflowGame.dealWillBorrow' | translate }}
-        </ng-container>
-      </p>
-
-      <div class="cf-actions">
-        <button
-          class="btn btn--primary"
-          [disabled]="isBusy || !canSubmitDeal"
-          (click)="submitDeal()"
-        >
-          {{ 'CashflowGame.dealPlan' | translate }}
-        </button>
-      </div>
-    </div>
-
-    <!-- Planned deals: the option to buy, decided each turn (JFK, 2026-09-26). -->
-    <div class="cf-card" *ngIf="plannedDeals.length">
-      <h3>{{ 'CashflowGame.plannedDeals' | translate }}</h3>
-      <ul class="cf-planned-deals">
-        <li *ngFor="let project of plannedDeals">
-          <span class="cf-planned-deal-title">{{ project.title }}</span>
-          <span class="cf-planned-deal-detail" *ngIf="project.share?.tag">
-            {{ project.share.quantity }} × {{ project.share.price | appNumber }}
-            {{ appState.currency }}
-          </span>
-          <span class="cf-planned-deal-detail" *ngIf="project.investment?.tag">
-            {{ 'CashflowGame.dealDeposit' | translate }}:
-            {{ project.investment.deposit | appNumber }}
-            {{ appState.currency }}
-          </span>
-          <button
-            class="btn btn--sm btn--primary"
-            [disabled]="isBusy"
-            (click)="executeDeal(project.title)"
-          >
-            {{ 'CashflowGame.dealBuy' | translate }}
-          </button>
-        </li>
-      </ul>
-    </div>
-
-    <div class="cf-card" *ngIf="currentGameSet">
-      <h3>{{ 'CashflowGame.bankLoan' | translate }}</h3>
-      <p class="cf-loan-current">
-        {{ 'CashflowGame.loanOutstanding' | translate }}: {{ currentLoanPrincipal | appNumber }}
-        {{ appState.currency }}
-      </p>
-      <label class="cf-field">
-        {{
-          'CashflowGame.loanIncrements' | translate: { amount: (loanIncrementAmount | appNumber) }
-        }}
-        <input type="number" min="1" step="1" [(ngModel)]="loanIncrements" />
-      </label>
-      <div class="cf-actions">
-        <button
-          class="btn btn--sm"
-          [disabled]="isBusy || loanIncrements < 1"
-          (click)="borrowLoan()"
-        >
-          {{ 'CashflowGame.loanBorrow' | translate }}
-        </button>
-        <button
-          class="btn btn--sm"
-          [disabled]="isBusy || loanIncrements < 1 || currentLoanPrincipal <= 0"
-          (click)="repayLoan()"
-        >
-          {{ 'CashflowGame.loanRepay' | translate }}
-        </button>
-      </div>
-    </div>
-
-    <div class="cf-card" *ngIf="appState.cashflowGame.history.length">
-      <h3>{{ 'CashflowGame.history' | translate }}</h3>
-      <ul class="cf-history">
-        <li *ngFor="let entry of appState.cashflowGame.history">
-          <span class="cf-history-round"
-            >{{ 'CashflowGame.Round' | translate }} {{ entry.round }} ·
-            {{ 'CashflowGame.' + entry.kind | translate }}</span
-          >
-          <span class="cf-history-date">{{ entry.virtualDateBefore | appDate }}</span>
-          <ul class="cf-history-transactions">
-            <li *ngFor="let tx of entry.createdTransactions">
-              {{ tx.account }} · {{ toDisplayAmount(tx.amountMinor) | appNumber }}
+      <!-- Planned deals: the option to buy, decided each turn (JFK, 2026-09-26). -->
+      <div class="cf-card" *ngIf="plannedDeals.length">
+        <h3>{{ 'CashflowGame.plannedDeals' | translate }}</h3>
+        <ul class="cf-planned-deals">
+          <li *ngFor="let project of plannedDeals">
+            <span class="cf-planned-deal-title">{{ project.title }}</span>
+            <span class="cf-planned-deal-detail" *ngIf="project.share?.tag">
+              {{ project.share.quantity }} × {{ project.share.price | appNumber }}
               {{ appState.currency }}
-            </li>
-          </ul>
-        </li>
-      </ul>
+            </span>
+            <span class="cf-planned-deal-detail" *ngIf="project.investment?.tag">
+              {{ 'CashflowGame.dealDeposit' | translate }}:
+              {{ project.investment.deposit | appNumber }}
+              {{ appState.currency }}
+            </span>
+            <button
+              class="btn btn--sm btn--primary"
+              [disabled]="isBusy"
+              (click)="executeDeal(project.title)"
+            >
+              {{ 'CashflowGame.dealBuy' | translate }}
+            </button>
+          </li>
+        </ul>
+      </div>
+
+      <div class="cf-card" *ngIf="currentGameSet">
+        <h3>{{ 'CashflowGame.bankLoan' | translate }}</h3>
+        <p class="cf-loan-current">
+          {{ 'CashflowGame.loanOutstanding' | translate }}: {{ currentLoanPrincipal | appNumber }}
+          {{ appState.currency }}
+        </p>
+        <label class="cf-field">
+          {{
+            'CashflowGame.loanIncrements' | translate: { amount: (loanIncrementAmount | appNumber) }
+          }}
+          <input type="number" min="1" step="1" [(ngModel)]="loanIncrements" />
+        </label>
+        <div class="cf-actions">
+          <button
+            class="btn btn--sm"
+            [disabled]="isBusy || loanIncrements < 1"
+            (click)="borrowLoan()"
+          >
+            {{ 'CashflowGame.loanBorrow' | translate }}
+          </button>
+          <button
+            class="btn btn--sm"
+            [disabled]="isBusy || loanIncrements < 1 || currentLoanPrincipal <= 0"
+            (click)="repayLoan()"
+          >
+            {{ 'CashflowGame.loanRepay' | translate }}
+          </button>
+        </div>
+      </div>
+
+      <div class="cf-card" *ngIf="appState.cashflowGame.history.length">
+        <h3>{{ 'CashflowGame.history' | translate }}</h3>
+        <ul class="cf-history">
+          <li *ngFor="let entry of appState.cashflowGame.history">
+            <span class="cf-history-round"
+              >{{ 'CashflowGame.Round' | translate }} {{ entry.round }} ·
+              {{ 'CashflowGame.' + entry.kind | translate }}</span
+            >
+            <span class="cf-history-date">{{ entry.virtualDateBefore | appDate }}</span>
+            <ul class="cf-history-transactions">
+              <li *ngFor="let tx of entry.createdTransactions">
+                {{ tx.account }} · {{ toDisplayAmount(tx.amountMinor) | appNumber }}
+                {{ appState.currency }}
+              </li>
+            </ul>
+          </li>
+        </ul>
+      </div>
     </div>
   </div>
 </div>

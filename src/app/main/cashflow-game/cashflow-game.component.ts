@@ -9,6 +9,8 @@ import {
   CashflowDeckKind,
   CashflowDoodadCard,
   CashflowMarketCard,
+  CashflowProfession,
+  computeCashflowProfessionMonthlyCashflowMinor,
   fromMinorUnits,
 } from '@money/domain';
 import { AppStateService } from 'src/app/shared/services/app-state.service';
@@ -18,30 +20,37 @@ import { ToastService } from 'src/app/shared/services/toast.service';
 import { ConfirmService } from 'src/app/shared/services/confirm.service';
 import { AppNumberPipe } from 'src/app/shared/pipes/app-number.pipe';
 import { AppDatePipe } from 'src/app/shared/pipes/app-date.pipe';
-
-// Deferred import to break the circular chain with AppComponent, same
-// pattern as every other main/ page (e.g. home.component.ts).
-let AppComponent: any;
-setTimeout(() => import('src/app/app.component').then((m) => (AppComponent = m.AppComponent)));
+import { TrapFocusDirective } from 'src/app/shared/directives/trap-focus.directive';
 
 /**
- * The Cashflow (board game) dashboard — see todo/cashflow-game.md. Only
- * reachable for an account whose email contains "cashflow"
- * (CashflowGameService.isCashflowGame()); the route itself is still
- * reachable by URL for anyone, so this page checks and redirects rather
- * than relying on the menu simply not showing a link.
+ * The Cashflow (board game) companion — see todo/cashflow-game.md decision
+ * 18. An always-hosted overlay panel (same pattern as Add/Info/Menu), not a
+ * routed page — "not the main place to play the game" (JFK, 2026-09-26).
+ * Only reachable for an account whose email contains "cashflow"
+ * (CashflowGameService.isCashflowGame()); the menu only shows the trigger to
+ * open it for such an account, and `ngOnInit` refuses to load any data for
+ * anyone else as a defensive backstop.
  */
 @Component({
   selector: 'app-cashflow-game',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, TranslateModule, AppNumberPipe, AppDatePipe],
+  imports: [
+    TrapFocusDirective,
+    CommonModule,
+    FormsModule,
+    RouterModule,
+    TranslateModule,
+    AppNumberPipe,
+    AppDatePipe,
+  ],
   templateUrl: './cashflow-game.component.html',
-  styleUrls: ['./cashflow-game.component.css', '../../app.component.css'],
+  styleUrls: ['./cashflow-game.component.css'],
 })
 export class CashflowGameComponent implements OnInit {
-  public get appReference() {
-    return AppComponent;
-  }
+  static isOpen = false;
+  static zIndex = 0;
+  public classReference = CashflowGameComponent;
+
   public appState = AppStateService.instance;
   public gameSets = this.cashflowGameService.gameSets;
 
@@ -49,6 +58,9 @@ export class CashflowGameComponent implements OnInit {
   selectedProfessionId = '';
   isBusy = false;
   loanIncrements = 1;
+
+  /** The full profession card, shown at selection time and reopenable during the game (todo/cashflow-game.md decision 18). */
+  viewedProfession: CashflowProfession | null = null;
 
   // A Deal card — resolved through the app's own Grow feature, not a new
   // purchase system (todo/cashflow-game.md decision 10).
@@ -76,16 +88,30 @@ export class CashflowGameComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    if (!CashflowGameService.isCashflowGame()) {
-      this.router.navigate(['/home']);
-      return;
-    }
+    if (!CashflowGameService.isCashflowGame()) return;
     this.appData.loadCashflowGameData();
     this.selectedProfessionId = this.selectedGameSet?.professions[0]?.id ?? '';
   }
 
+  /** Bumps this panel above every other panel, same convention as Add/Info/Menu. */
+  highlight(): void {
+    CashflowGameComponent.zIndex = CashflowGameComponent.zIndex + 1;
+  }
+
+  closeWindow(): void {
+    CashflowGameComponent.isOpen = false;
+    CashflowGameComponent.zIndex = 0;
+    this.viewedProfession = null;
+  }
+
   get selectedGameSet() {
     return this.gameSets.find((set) => set.id === this.selectedGameSetId);
+  }
+
+  get selectedProfession(): CashflowProfession | undefined {
+    return this.selectedGameSet?.professions.find(
+      (profession) => profession.id === this.selectedProfessionId,
+    );
   }
 
   get hasActiveGame(): boolean {
@@ -154,6 +180,31 @@ export class CashflowGameComponent implements OnInit {
     return fromMinorUnits(amountMinor);
   }
 
+  /** Ersparnisse + one month's cashflow — the computed starting-cash figure shown on the profession card. */
+  professionStartingCash(profession: CashflowProfession): number {
+    return fromMinorUnits(
+      profession.savingsMinor + computeCashflowProfessionMonthlyCashflowMinor(profession),
+    );
+  }
+
+  /** "you can also just take one and it would be very nice to also see the attributes" (JFK, 2026-09-26). */
+  openProfessionCard(profession: CashflowProfession): void {
+    this.viewedProfession = profession;
+  }
+
+  closeProfessionCard(): void {
+    this.viewedProfession = null;
+  }
+
+  /** "you pick one of the professions, or you shuffle for a profession" (JFK, 2026-09-26). */
+  shuffleProfession(): void {
+    const professions = this.selectedGameSet?.professions ?? [];
+    if (!professions.length) return;
+    const pick = professions[Math.floor(Math.random() * professions.length)];
+    this.selectedProfessionId = pick.id;
+    this.viewedProfession = pick;
+  }
+
   startGame(): void {
     if (!this.selectedGameSetId || !this.selectedProfessionId) return;
     this.isBusy = true;
@@ -161,6 +212,8 @@ export class CashflowGameComponent implements OnInit {
       onSuccess: () => {
         this.isBusy = false;
         this.toastService.show(this.translate.instant('CashflowGame.started'), 'success');
+        this.closeWindow();
+        this.router.navigate(['/home']);
       },
       onError: (message) => {
         this.isBusy = false;

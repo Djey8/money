@@ -53,13 +53,13 @@ describe('CashflowGameComponent', () => {
   });
 
   describe('ngOnInit', () => {
-    it('redirects home for a non-cashflow account without loading anything', () => {
+    it('loads nothing for a non-cashflow account — a defensive backstop, the panel just never opens for them', () => {
       ProfileComponent.mail = 'jfk@example.com';
       const { component, router, appData } = makeComponent();
 
       component.ngOnInit();
 
-      expect(router.navigate).toHaveBeenCalledWith(['/home']);
+      expect(router.navigate).not.toHaveBeenCalled();
       expect(appData.loadCashflowGameData).not.toHaveBeenCalled();
     });
 
@@ -71,6 +71,56 @@ describe('CashflowGameComponent', () => {
 
       expect(appData.loadCashflowGameData).toHaveBeenCalled();
       expect(component.selectedProfessionId).toBe(CASHFLOW_GAME_SETS[0].professions[0].id);
+    });
+  });
+
+  describe('overlay panel: highlight / closeWindow', () => {
+    it('highlight bumps its own zIndex; closeWindow resets it and clears the viewed profession', () => {
+      const { component } = makeComponent();
+      CashflowGameComponent.zIndex = 0;
+      component.viewedProfession = CASHFLOW_GAME_SETS[0].professions[0];
+
+      component.highlight();
+      expect(CashflowGameComponent.zIndex).toBe(1);
+
+      component.closeWindow();
+      expect(CashflowGameComponent.isOpen).toBe(false);
+      expect(CashflowGameComponent.zIndex).toBe(0);
+      expect(component.viewedProfession).toBeNull();
+    });
+  });
+
+  describe('profession card: view / shuffle', () => {
+    it('openProfessionCard/closeProfessionCard toggle the viewed profession', () => {
+      const { component } = makeComponent();
+      const profession = CASHFLOW_GAME_SETS[0].professions[0];
+
+      component.openProfessionCard(profession);
+      expect(component.viewedProfession).toBe(profession);
+
+      component.closeProfessionCard();
+      expect(component.viewedProfession).toBeNull();
+    });
+
+    it('shuffleProfession picks a profession from the selected game set and opens its card', () => {
+      const { component } = makeComponent();
+      component.selectedGameSetId = CASHFLOW_GAME_SETS[0].id;
+
+      component.shuffleProfession();
+
+      const picked = CASHFLOW_GAME_SETS[0].professions.find(
+        (p) => p.id === component.selectedProfessionId,
+      );
+      expect(picked).toBeDefined();
+      expect(component.viewedProfession).toBe(picked);
+    });
+
+    it('professionStartingCash is savings plus one month of cashflow, in decimal', () => {
+      const { component } = makeComponent();
+      const profession = CASHFLOW_GAME_SETS.find((set) => set.id === 'placeholder')!.professions[0];
+
+      // salary 3000 - expenses 1800 + savings 0
+      expect(component.professionStartingCash(profession)).toBe(1200);
     });
   });
 
@@ -99,10 +149,11 @@ describe('CashflowGameComponent', () => {
   });
 
   describe('startGame / payday / undoPayday', () => {
-    it('delegates to the service and shows a toast on success', () => {
-      const { component, cashflowGameService, toastService } = makeComponent();
+    it('delegates to the service, closes the overlay and lands on Home on success', () => {
+      const { component, cashflowGameService, toastService, router } = makeComponent();
       component.selectedGameSetId = 'placeholder';
       component.selectedProfessionId = 'placeholder-profession';
+      CashflowGameComponent.isOpen = true;
 
       component.startGame();
       const startCall = cashflowGameService.pickProfession.mock.calls[0];
@@ -110,6 +161,8 @@ describe('CashflowGameComponent', () => {
       expect(startCall[1]).toBe('placeholder-profession');
       startCall[2].onSuccess();
       expect(toastService.show).toHaveBeenCalledWith('CashflowGame.started', 'success');
+      expect(CashflowGameComponent.isOpen).toBe(false);
+      expect(router.navigate).toHaveBeenCalledWith(['/home']);
 
       component.payday();
       cashflowGameService.payday.mock.calls[0][0].onSuccess();

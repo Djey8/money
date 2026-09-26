@@ -2,11 +2,11 @@
 
 **Status:** MVP committed (`f1c1910`), companion-mode resolutions committed (`459fe21`), the Downsized fix + Grow
 reuse + docs guide committed (`106affd`), find/draw-a-card + the menu entry + `resetGame` committed
-(`459fe21`..`eae5cfb`). The decision-18 data-model redesign (itemized categorized expenses, computed starting cash,
-the real `cashflow` game set with the Hausmeister/in profession) is built and green (domain + frontend tests, full
-typecheck), not yet committed — see the status note under Phase 1. The overlay/panel UI conversion from decision 18
-is not started yet, next up. Not yet playtested (JFK can't sit at a computer right now; we're developing ahead
-theoretically, per his explicit go-ahead, until he can).
+(`459fe21`..`eae5cfb`). Decision 18 (itemized categorized expenses, computed starting cash, the real `cashflow`
+game set with the Hausmeister/in profession, AND the overlay/panel UI conversion) is fully built and green (domain +
+frontend tests, full typecheck, both editions build) — the data-model half is committed (`dd416e7`), the UI/panel
+conversion is built but not yet committed as of this note. Not yet playtested (JFK can't sit at a computer right
+now; we're developing ahead theoretically, per his explicit go-ahead, until he can).
 
 ## 1. What this is
 
@@ -171,8 +171,15 @@ same as `todo/fund-settlement.md` was.
       "shuffle" (random pick), and shows the full card (income, itemized expenses, liabilities, starting cash) —
       with an info affordance to reopen that same card view later, during the game, not just at selection time. The
       menu entry becomes a full-row-width button (it's alone in its row) that toggles the panel instead of routing.
-      **Not yet done as of this decision being recorded** — the data-model half (this decision's first four bullets)
-      landed first; the UI/panel conversion is the very next slice of work.
+      **Built**, alongside the data-model half: `CashflowGameComponent` now carries `static isOpen`/`zIndex`,
+      `highlight()`/`closeWindow()` exactly matching Add/Info/Menu, is hosted directly in `app.component.html`
+      (`<app-cashflow-game>`), and the `/cashflow-game` route is gone. `MenuComponent.clickedCashflowGame()` sets
+      `CashflowGameComponent.isOpen = true` instead of navigating; the menu button spans the full row
+      (`.menu-item--full-row`, `grid-column: 1 / -1`). `startGame()` closes the panel and navigates to `/home` on
+      success. `shuffleProfession()` picks a random profession from the selected game set; `openProfessionCard`/
+      `closeProfessionCard` show the full card (salary, itemized expenses, per-child expense, savings, computed
+      starting cash, liabilities) both at selection time and via an "ℹ" button next to the active profession's
+      title during the game.
 
 ## 3. The one new thing: a small game-meta state
 

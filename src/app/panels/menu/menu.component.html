@@ -214,10 +214,8 @@
         <span>{{ 'Menu.grow' | translate }}</span>
       </button>
       <button
-        class="menu-item menu-item--compact"
+        class="menu-item menu-item--compact menu-item--full-row"
         *ngIf="isCashflowGame()"
-        data-tour-route="/cashflow-game"
-        [class.menu-item--active]="router.url === '/cashflow-game'"
         (click)="clickedCashflowGame()"
       >
         <span class="menu-icon">🎲</span>
