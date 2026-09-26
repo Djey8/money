@@ -51,8 +51,15 @@ export interface PickProfessionResult {
   subscriptions: CashflowStarterKitSubscription[];
   /** Whatever the card's "Verbindlichkeiten"/starting positions add beyond what `subscriptions` covers. */
   starterKit: CashflowStarterKit;
-  /** One starting Transaction: `savingsMinor` plus one month's cashflow (salary minus expenses) — JFK, 2026-09-26. */
-  startingCashTransaction: CashflowTransactionRecord;
+  /**
+   * The game's opening transactions, itemized rather than one lump sum (JFK, 2026-09-26: "you get your savings
+   * as Income (category Savings), you get your first salary (category Salary) and you have to pay all your
+   * expenses once, so you are left with savings + cashflow"): Savings and Salary post to `Income` (so they're
+   * split across Daily/Splurge/Smile/Fire exactly like a real Payday would), then one payment per non-zero
+   * `expenses` line posts to `Daily`, categorized the same way its matching Subscription is. Net effect —
+   * `savingsMinor` plus one month's cashflow — is unchanged from the single lump transaction this replaces.
+   */
+  startingTransactions: CashflowTransactionRecord[];
 }
 
 /** Salary minus every `expenses` line — "the current cashflow" the starting-cash rule adds once. */
@@ -100,8 +107,34 @@ export function pickCashflowProfession(
   const subscriptions = [salarySubscription, ...expenseSubscriptions];
   const gameSubscriptionTitles = subscriptions.map((sub) => sub.title);
 
-  const startingCashMinor =
-    profession.savingsMinor + computeCashflowProfessionMonthlyCashflowMinor(profession);
+  const startingTransactions: CashflowTransactionRecord[] = [
+    {
+      account: 'Income',
+      amountMinor: profession.savingsMinor,
+      date: today,
+      time: '',
+      category: '@Savings',
+      comment: `${profession.title} savings\n#cashflow`,
+    },
+    {
+      account: 'Income',
+      amountMinor: profession.salaryMinor,
+      date: today,
+      time: '',
+      category: '@Salary',
+      comment: `${profession.title} salary\n#cashflow`,
+    },
+    ...profession.expenses
+      .filter((line) => line.amountMinor !== 0)
+      .map((line) => ({
+        account: 'Daily',
+        amountMinor: -line.amountMinor,
+        date: today,
+        time: '',
+        category: `@${line.title}`,
+        comment: `${line.title}\n#cashflow`,
+      })),
+  ];
 
   return {
     state: {
@@ -116,14 +149,7 @@ export function pickCashflowProfession(
     profession,
     subscriptions,
     starterKit: profession.starterKit,
-    startingCashTransaction: {
-      account: 'Income',
-      amountMinor: startingCashMinor,
-      date: today,
-      time: '',
-      category: '',
-      comment: `${profession.title} starting cash\n#cashflow`,
-    },
+    startingTransactions,
   };
 }
 

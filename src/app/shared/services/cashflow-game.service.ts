@@ -118,7 +118,9 @@ export class CashflowGameService {
       return;
     }
 
-    state.allTransactions.push(toFloatTransaction(result.startingCashTransaction));
+    result.startingTransactions.forEach((record) =>
+      state.allTransactions.push(toFloatTransaction(record)),
+    );
 
     result.subscriptions.forEach((sub) => {
       const subscription: Subscription = {

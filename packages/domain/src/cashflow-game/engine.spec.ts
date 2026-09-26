@@ -40,12 +40,28 @@ describe('pickCashflowProfession', () => {
       history: [],
     });
     expect(result.subscriptions).toHaveLength(2);
-    // starting cash = savings (0) + one month's cashflow (salary 300000 - expenses 180000)
-    expect(result.startingCashTransaction).toMatchObject({
-      account: 'Income',
-      amountMinor: 120000,
-      date: '2026-09-25',
-    });
+    // Savings (0) + Salary (300000) to Income, then the one expense line (-180000) from Daily —
+    // net effect is the same savings + one month's cashflow as before, now itemized.
+    expect(result.startingTransactions).toEqual([
+      expect.objectContaining({
+        account: 'Income',
+        amountMinor: 0,
+        category: '@Savings',
+        date: '2026-09-25',
+      }),
+      expect.objectContaining({
+        account: 'Income',
+        amountMinor: 300000,
+        category: '@Salary',
+        date: '2026-09-25',
+      }),
+      expect.objectContaining({
+        account: 'Daily',
+        amountMinor: -180000,
+        category: '@Placeholder Expenses',
+        date: '2026-09-25',
+      }),
+    ]);
   });
 
   it('rejects an unknown game set or profession', () => {

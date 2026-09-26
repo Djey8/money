@@ -8,9 +8,11 @@ game set with the Hausmeister/in profession, AND the overlay/panel UI conversion
 the reset button into Settings → Advanced, and fixing the bootstrap-timing bug that made Start Game a no-op) are
 built and green. Decision 22 (the board-space color-coded selector, quiet monthly-cashflow stat, single Menu link
 replacing the app-links nav) is also built and green (domain + frontend tests, full typecheck, both editions
-build), not yet committed as of this note. Playtest is finally underway — JFK started a real game and confirmed
-Start Game works end to end; the framework in decision 22 is what's needed before wiring up the first real Card
-Deck (Phase 2, next).
+build), not yet committed as of this note. Decisions 23–24 (itemized Savings/Salary/expense starting transactions,
+and reloading the page after a reset so the rest of the app doesn't show stale data) are also built and green —
+both found during JFK's first real playtest, which is underway: he started a game and confirmed Start Game works
+end to end. The framework in decision 22 is what's needed before wiring up the first real Card Deck (Phase 2,
+next).
 
 ## 1. What this is
 
@@ -151,7 +153,8 @@ same as `todo/fund-settlement.md` was.
       makes Budget/Stats break spending down exactly the way the physical card does.
     - Starting cash is **computed, never hand-entered**: `savingsMinor` (the card's "Ersparnisse") plus one month's
       cashflow (salary minus the sum of `expenses`) — `computeCashflowProfessionMonthlyCashflowMinor` in
-      `engine.ts`. `PickProfessionResult.startingCashTransaction` is derived from this, same as before.
+      `engine.ts`. `PickProfessionResult.startingTransactions` realizes this net figure as itemized transactions,
+      not one lump sum — see decision 23.
     - `CashflowStarterKit.subscriptions` is gone — `pickCashflowProfession` now builds the salary + per-expense-line
       Subscriptions itself (from `expenses`) and returns them as a new top-level `PickProfessionResult.subscriptions`
       field, sibling to `starterKit` (which now only ever holds non-derived balance-sheet facts: `assets`,
@@ -255,6 +258,24 @@ same as `todo/fund-settlement.md` was.
     - This is explicitly a framework/scaffolding change, not new card content — JFK: _"Implement this framework
       and then we start with the first Card Deck (one Example)"_. The real Small/Big Deal, Market and Doodad card
       catalogs (Phase 2) are still the placeholder data from decision 6, one deck at a time, next.
+23. **Starting cash is itemized into real transactions, not one lump sum** (2026-09-26, JFK: _"With start game you
+    get your savings as Income (category Savings), you get your first salary (category Salary) and you have to
+    pay all your expenses once, so you are left with savings + cashflow"_). `PickProfessionResult
+.startingCashTransaction` (one opaque, uncategorized `Income` transaction) is replaced by `.startingTransactions:
+CashflowTransactionRecord[]` — Savings (`@Savings`) and Salary (`@Salary`) each post to `Income` (so they're
+    ratio-split across Daily/Splurge/Smile/Fire exactly like a real Payday), then one payment per non-zero
+    `expenses` line posts to `Daily`, categorized `@${line.title}` — the exact same shape as that line's own
+    Subscription, just a one-off. The net total (savings + one month's cashflow) is unchanged; only its
+    transparency to Budget/Stats/Balance changed, matching decision 16's expense-categorization philosophy.
+24. **Bug fix: resetting the game left every other page showing stale data until a manual page refresh**
+    (2026-09-26, JFK: _"when I reset the game the already loaded data is not refreshed, I need to refresh the page
+    to see the effect. The whole app should be wiped and clean to start another game"_). `resetCashflowGame()`
+    (Settings → Advanced, decision 20) now reloads the page (`window.location.reload()`) 1.5s after
+    `CashflowGameService.resetGame` succeeds — long enough for the confirmation toast to show first. This is the
+    same guaranteed-correct pattern already used elsewhere in `settings.component.ts` (e.g. after a successful
+    migration import) for exactly this class of problem: other pages (Home, Balance Sheet, Subscriptions...) may
+    have already read `AppStateService`'s arrays into their own local component state by the time a reset fires
+    from a completely different panel, and nothing notifies them to re-read it short of starting fresh.
 
 ## 3. The one new thing: a small game-meta state
 
