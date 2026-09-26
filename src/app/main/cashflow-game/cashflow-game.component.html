@@ -71,16 +71,14 @@
           <span class="cf-stat-label">{{ 'CashflowGame.virtualDate' | translate }}</span>
           <span class="cf-stat-value">{{ appState.cashflowGame.virtualDate | appDate }}</span>
         </div>
-        <div class="cf-stat">
-          <span class="cf-stat-label">{{ 'CashflowGame.monthlyCashflow' | translate }}</span>
-          <span class="cf-stat-value" [class.cf-negative]="monthlyCashflow < 0"
-            >{{ monthlyCashflow | appNumber }} {{ appState.currency }}</span
-          >
-        </div>
       </div>
 
+      <!-- Monthly cashflow already has a view — the Subscriptions page's own total
+           (JFK, 2026-09-26: "use the normal app as much as possible"). Only the
+           losing-condition warning is specific to this page. -->
       <p class="cf-bankruptcy-warning" *ngIf="monthlyCashflow < 0">
         {{ 'CashflowGame.bankruptcyWarning' | translate }}
+        <a routerLink="/subscription">{{ 'CashflowGame.viewSubscriptions' | translate }}</a>
       </p>
 
       <div
@@ -130,6 +128,15 @@
           {{ 'CashflowGame.undo' | translate }}
         </button>
       </div>
+
+      <!-- Everything else — cashflow, stats, budget — is the app's own pages, unchanged. -->
+      <nav class="cf-app-links">
+        <a routerLink="/subscription">{{ 'CashflowGame.viewSubscriptions' | translate }}</a>
+        <a routerLink="/grow">{{ 'CashflowGame.viewGrow' | translate }}</a>
+        <a routerLink="/balance">{{ 'CashflowGame.viewBalanceSheet' | translate }}</a>
+        <a routerLink="/stats">{{ 'CashflowGame.viewStats' | translate }}</a>
+        <a routerLink="/budget">{{ 'CashflowGame.viewBudget' | translate }}</a>
+      </nav>
     </div>
 
     <!-- "Which space did you land on?" — companion mode: you moved your own token on the -->
@@ -147,6 +154,96 @@
           {{ 'CashflowGame.downsized' | translate }}
         </button>
       </div>
+    </div>
+
+    <!-- Deal card: resolved through the app's own Grow feature, not a new buy/sell -->
+    <!-- system (todo/cashflow-game.md decision 10) — shares are a liquidity tool, -->
+    <!-- property is the passive-income vehicle; see CASHFLOW_GAME_GUIDE.md §4. -->
+    <div class="cf-card">
+      <h3>{{ 'CashflowGame.deal' | translate }}</h3>
+
+      <label class="cf-field">
+        {{ 'CashflowGame.dealKind' | translate }}
+        <select [(ngModel)]="dealKind">
+          <option value="share">{{ 'CashflowGame.dealKindShare' | translate }}</option>
+          <option value="investment">{{ 'CashflowGame.dealKindInvestment' | translate }}</option>
+        </select>
+      </label>
+
+      <label class="cf-field">
+        {{ 'CashflowGame.dealTitle' | translate }}
+        <input type="text" [(ngModel)]="dealTitle" />
+      </label>
+
+      <ng-container *ngIf="dealKind === 'share'">
+        <label class="cf-field">
+          {{ 'CashflowGame.dealQuantity' | translate }}
+          <input type="number" min="0" [(ngModel)]="dealQuantity" />
+        </label>
+        <label class="cf-field">
+          {{ 'CashflowGame.dealPrice' | translate }}
+          <input type="number" min="0" step="0.01" [(ngModel)]="dealPrice" />
+        </label>
+      </ng-container>
+
+      <ng-container *ngIf="dealKind === 'investment'">
+        <label class="cf-field">
+          {{ 'CashflowGame.dealDeposit' | translate }}
+          <input type="number" min="0" step="0.01" [(ngModel)]="dealDeposit" />
+        </label>
+        <label class="cf-field">
+          {{ 'CashflowGame.dealMortgage' | translate }}
+          <input type="number" min="0" step="0.01" [(ngModel)]="dealMortgage" />
+        </label>
+        <label class="cf-field">
+          {{ 'CashflowGame.dealCashflow' | translate }}
+          <input type="number" step="0.01" [(ngModel)]="dealCashflow" />
+        </label>
+      </ng-container>
+
+      <p class="cf-deal-preview" *ngIf="dealCost > 0">
+        {{ 'CashflowGame.dealCost' | translate }}: {{ dealCost | appNumber }}
+        {{ appState.currency }}
+        <ng-container *ngIf="dealShortfall > 0">
+          — {{ 'CashflowGame.dealWillBorrow' | translate }}
+        </ng-container>
+      </p>
+
+      <div class="cf-actions">
+        <button
+          class="btn btn--primary"
+          [disabled]="isBusy || !canSubmitDeal"
+          (click)="submitDeal()"
+        >
+          {{ 'CashflowGame.dealPlan' | translate }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Planned deals: the option to buy, decided each turn (JFK, 2026-09-26). -->
+    <div class="cf-card" *ngIf="plannedDeals.length">
+      <h3>{{ 'CashflowGame.plannedDeals' | translate }}</h3>
+      <ul class="cf-planned-deals">
+        <li *ngFor="let project of plannedDeals">
+          <span class="cf-planned-deal-title">{{ project.title }}</span>
+          <span class="cf-planned-deal-detail" *ngIf="project.share?.tag">
+            {{ project.share.quantity }} × {{ project.share.price | appNumber }}
+            {{ appState.currency }}
+          </span>
+          <span class="cf-planned-deal-detail" *ngIf="project.investment?.tag">
+            {{ 'CashflowGame.dealDeposit' | translate }}:
+            {{ project.investment.deposit | appNumber }}
+            {{ appState.currency }}
+          </span>
+          <button
+            class="btn btn--sm btn--primary"
+            [disabled]="isBusy"
+            (click)="executeDeal(project.title)"
+          >
+            {{ 'CashflowGame.dealBuy' | translate }}
+          </button>
+        </li>
+      </ul>
     </div>
 
     <div class="cf-card" *ngIf="currentGameSet">

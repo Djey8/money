@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { fromMinorUnits } from '@money/domain';
@@ -26,7 +27,7 @@ setTimeout(() => import('src/app/app.component').then((m) => (AppComponent = m.A
 @Component({
   selector: 'app-cashflow-game',
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslateModule, AppNumberPipe, AppDatePipe],
+  imports: [CommonModule, FormsModule, RouterModule, TranslateModule, AppNumberPipe, AppDatePipe],
   templateUrl: './cashflow-game.component.html',
   styleUrls: ['./cashflow-game.component.css', '../../app.component.css'],
 })
@@ -41,6 +42,16 @@ export class CashflowGameComponent implements OnInit {
   selectedProfessionId = '';
   isBusy = false;
   loanIncrements = 1;
+
+  // A Deal card — resolved through the app's own Grow feature, not a new
+  // purchase system (todo/cashflow-game.md decision 10).
+  dealKind: 'share' | 'investment' = 'share';
+  dealTitle = '';
+  dealQuantity: number | null = null;
+  dealPrice: number | null = null;
+  dealDeposit: number | null = null;
+  dealMortgage: number | null = null;
+  dealCashflow: number | null = null;
 
   constructor(
     private router: Router,
@@ -75,24 +86,8 @@ export class CashflowGameComponent implements OnInit {
       ?.professions.find((profession) => profession.id === game.professionId);
   }
 
-  /**
-   * Total cash on hand: the same Daily+Splurge+Smile+Fire total
-   * `HomeComponent.getAmounts()` shows (each account's own transactions plus
-   * its ratio-share of Income) — ratio-independent since the four shares of
-   * an Income transaction always sum back to its full amount, so this is
-   * accurate whatever the account's allocation setting is.
-   */
   get cash(): number {
-    const state = this.appState;
-    return (
-      Math.round(
-        (state.getAmount('Daily', state.daily / 100) +
-          state.getAmount('Splurge', state.splurge / 100) +
-          state.getAmount('Smile', state.smile / 100) +
-          state.getAmount('Fire', state.fire / 100)) *
-          100,
-      ) / 100
-    );
+    return this.cashflowGameService.cash;
   }
 
   get canUndo(): boolean {
@@ -116,6 +111,23 @@ export class CashflowGameComponent implements OnInit {
 
   get canLandOnBaby(): boolean {
     return this.appState.cashflowGame.children < 3;
+  }
+
+  /** What you need in hand right now for the deal as entered — the deposit for a property, the full price for shares. */
+  get dealCost(): number {
+    if (this.dealKind === 'share') return (this.dealQuantity ?? 0) * (this.dealPrice ?? 0);
+    return this.dealDeposit ?? 0;
+  }
+
+  get dealShortfall(): number {
+    return Math.max(0, this.dealCost - this.cash);
+  }
+
+  get canSubmitDeal(): boolean {
+    if (!this.dealTitle.trim()) return false;
+    return this.dealKind === 'share'
+      ? Boolean(this.dealQuantity) && Boolean(this.dealPrice)
+      : this.dealDeposit !== null && this.dealMortgage !== null && this.dealCashflow !== null;
   }
 
   /** The loss condition JFK described 2026-09-26: once this goes negative, every future Payday drains cash. */
@@ -201,6 +213,62 @@ export class CashflowGameComponent implements OnInit {
       onSuccess: () =>
         this.toastService.show(this.translate.instant('CashflowGame.dismiss'), 'update'),
       onError: (message) => this.toastService.show(message, 'error'),
+    });
+  }
+
+  get plannedDeals() {
+    return this.cashflowGameService.plannedDeals;
+  }
+
+  /** Saves the deal's numbers as a Grow project's plan — no money moves yet (todo/cashflow-game.md decision 12). */
+  submitDeal(): void {
+    if (!this.canSubmitDeal) return;
+    const input =
+      this.dealKind === 'share'
+        ? {
+            kind: 'share' as const,
+            title: this.dealTitle.trim(),
+            quantity: this.dealQuantity as number,
+            price: this.dealPrice as number,
+          }
+        : {
+            kind: 'investment' as const,
+            title: this.dealTitle.trim(),
+            deposit: this.dealDeposit as number,
+            mortgage: this.dealMortgage as number,
+            cashflow: this.dealCashflow as number,
+          };
+    this.isBusy = true;
+    this.cashflowGameService.planDeal(input, {
+      onSuccess: () => {
+        this.isBusy = false;
+        this.dealTitle = '';
+        this.dealQuantity = null;
+        this.dealPrice = null;
+        this.dealDeposit = null;
+        this.dealMortgage = null;
+        this.dealCashflow = null;
+        this.toastService.show(this.translate.instant('CashflowGame.dealPlanned'), 'success');
+      },
+      onError: (message) => {
+        this.isBusy = false;
+        this.toastService.show(message, 'error');
+      },
+    });
+  }
+
+  /** "You have the option" (JFK, 2026-09-26) — buys a planned deal, auto-borrowing any shortfall. */
+  executeDeal(title: string): void {
+    this.isBusy = true;
+    this.cashflowGameService.executeDeal(title, {
+      onSuccess: () => {
+        this.isBusy = false;
+        this.toastService.show(this.translate.instant('CashflowGame.dealDone'), 'success');
+      },
+      onError: (message) => {
+        this.isBusy = false;
+        this.toastService.show(message, 'error');
+      },
     });
   }
 

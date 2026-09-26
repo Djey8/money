@@ -46,7 +46,8 @@
   font-size: 0.8rem;
 }
 
-.cf-loan-current {
+.cf-loan-current,
+.cf-deal-preview {
   margin: 0 0 12px;
   font-size: 0.95rem;
 }
@@ -73,6 +74,30 @@
   padding: 8px 12px;
   margin: 8px 0;
   font-size: 0.9rem;
+}
+
+.cf-bankruptcy-warning a {
+  color: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  margin-left: 6px;
+}
+
+.cf-app-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 12px;
+  font-size: 0.85rem;
+}
+
+.cf-app-links a {
+  color: var(--color-info);
+  text-decoration: none;
+}
+
+.cf-app-links a:hover {
+  text-decoration: underline;
 }
 
 .cf-stat-row {
@@ -102,6 +127,32 @@
 .cf-actions {
   display: flex;
   gap: 8px;
+}
+
+.cf-planned-deals {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cf-planned-deals li {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.cf-planned-deal-title {
+  font-weight: 600;
+}
+
+.cf-planned-deal-detail {
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+  flex: 1;
 }
 
 .cf-history {

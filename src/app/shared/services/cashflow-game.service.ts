@@ -7,9 +7,12 @@ import {
   CashflowProfession,
   CashflowStarterKitSubscription,
   CashflowTransactionRecord,
+  calculateBuyInvestment,
+  calculateBuyShare,
   clearCashflowStatus,
   computeMonthlyCashflowMinor,
   fromMinorUnits,
+  multiplyQuantityPrice,
   pickCashflowProfession,
   resolveCashflowBaby,
   resolveCashflowCharity,
@@ -24,11 +27,29 @@ import { PersistenceService } from './persistence.service';
 import { ProfileComponent } from '../../panels/profile/profile.component';
 import { Transaction } from '../../interfaces/transaction';
 import { Subscription } from '../../interfaces/subscription';
+import { Grow } from '../../interfaces/grow';
 
 export interface CashflowGameCallbacks {
   onSuccess: () => void;
   onError: (message: string) => void;
 }
+
+/** A Deal card resolved through the app's existing Grow feature (todo/cashflow-game.md decision 10) — not a new entity type, just the two shapes Grow's own buy actions need. */
+export interface CashflowDealShareInput {
+  kind: 'share';
+  title: string;
+  quantity: number;
+  price: number;
+}
+export interface CashflowDealInvestmentInput {
+  kind: 'investment';
+  title: string;
+  deposit: number;
+  mortgage: number;
+  /** The property's periodic income — becomes the Grow project's planned `cashflow` and a real Subscription. */
+  cashflow: number;
+}
+export type CashflowDealInput = CashflowDealShareInput | CashflowDealInvestmentInput;
 
 function todayIso(): string {
   const now = new Date();
@@ -209,27 +230,32 @@ export class CashflowGameService {
 
   /** Takes (`delta > 0`) or repays (`< 0`) a bank loan in the game set's increment (a decimal amount, like everywhere else in the app); upserts the Liability + interest Subscription, recomputed from the new principal every time. */
   adjustBankLoan(delta: number, callbacks: CashflowGameCallbacks): void {
-    const state = AppStateService.instance;
-    const gameSet = this.currentGameSet();
-    if (!gameSet) {
-      callbacks.onError('Pick a profession first.');
-      return;
-    }
-    const currentPrincipalMinor = toMinorUnits(
-      state.liabilities.find((liability) => liability.tag === 'Bank loan')?.amount ?? 0,
-    );
-    let result: ReturnType<typeof adjustCashflowBankLoan>;
     try {
-      result = adjustCashflowBankLoan(
-        state.cashflowGame,
-        gameSet,
-        currentPrincipalMinor,
-        toMinorUnits(delta),
-      );
+      this.applyBankLoanAdjustment(delta);
     } catch (err: unknown) {
       callbacks.onError(errorMessage(err, 'Could not adjust the bank loan.'));
       return;
     }
+    this.persistAll('cashflow_bank_loan', { delta }, callbacks, {
+      includeSubscriptions: true,
+      includeBalanceSheet: true,
+    });
+  }
+
+  /** The mutation `adjustBankLoan` and `dealBuy`'s auto-borrow both need — throws instead of using callbacks so a caller can chain it with other mutations before persisting once. */
+  private applyBankLoanAdjustment(delta: number): void {
+    const state = AppStateService.instance;
+    const gameSet = this.currentGameSet();
+    if (!gameSet) throw new Error('Pick a profession first.');
+    const currentPrincipalMinor = toMinorUnits(
+      state.liabilities.find((liability) => liability.tag === 'Bank loan')?.amount ?? 0,
+    );
+    const result = adjustCashflowBankLoan(
+      state.cashflowGame,
+      gameSet,
+      currentPrincipalMinor,
+      toMinorUnits(delta),
+    );
     if (result.liabilityUpsert) {
       this.upsertLiability(result.liabilityUpsert.tag, result.liabilityUpsert.amountMinor);
     } else {
@@ -241,10 +267,6 @@ export class CashflowGameService {
       this.removeSubscriptionByTitle('Bank loan interest');
     }
     state.cashflowGame = result.state;
-    this.persistAll('cashflow_bank_loan', { delta }, callbacks, {
-      includeSubscriptions: true,
-      includeBalanceSheet: true,
-    });
   }
 
   /**
@@ -277,6 +299,257 @@ export class CashflowGameService {
     return fromMinorUnits(
       computeMonthlyCashflowMinor(state.cashflowGame, this.gameSubscriptions()),
     );
+  }
+
+  /**
+   * Total cash on hand: the same Daily+Splurge+Smile+Fire total the Home
+   * dashboard shows (each account's own transactions plus its ratio-share
+   * of Income) — ratio-independent since the four shares of an Income
+   * transaction always sum back to its full amount, so this is accurate
+   * whatever the account's allocation setting is. The single source of
+   * truth `dealBuy`'s auto-borrow decision and the dashboard both use —
+   * JFK, 2026-09-26: reuse the app's own views, don't duplicate them.
+   */
+  get cash(): number {
+    const state = AppStateService.instance;
+    return (
+      Math.round(
+        (state.getAmount('Daily', state.daily / 100) +
+          state.getAmount('Splurge', state.splurge / 100) +
+          state.getAmount('Smile', state.smile / 100) +
+          state.getAmount('Fire', state.fire / 100)) *
+          100,
+      ) / 100
+    );
+  }
+
+  /**
+   * Saves a Deal's numbers as a Grow project's **plan** — no money moves
+   * yet, exactly Grow's own "plan" step (`docs/domain/GROW_GUIDE.md` §3).
+   * JFK, 2026-09-26: "first plan (you have the option), then you make it
+   * reality" — call `executeDeal` once you've decided to actually buy it.
+   * Every card becomes a real Grow project this way, planned or not.
+   */
+  planDeal(input: CashflowDealInput, callbacks: CashflowGameCallbacks): void {
+    const state = AppStateService.instance;
+    if (!state.cashflowGame.professionId) {
+      callbacks.onError('Pick a profession first.');
+      return;
+    }
+    const existingProject = state.allGrowProjects.find((project) => project.title === input.title);
+    if (existingProject && this.conflictingGrowKind(existingProject, input.kind)) {
+      callbacks.onError(`"${input.title}" already exists as a different kind of Grow project.`);
+      return;
+    }
+    this.upsertGrowProject(
+      input.title,
+      existingProject,
+      input.kind === 'share'
+        ? { share: { tag: input.title, quantity: input.quantity, price: input.price } }
+        : {
+            cashflow: input.cashflow,
+            investment: { tag: input.title, deposit: input.deposit, amount: input.mortgage },
+          },
+    );
+    this.persistAll('cashflow_deal_plan', { kind: input.kind, title: input.title }, callbacks, {
+      includeGrow: true,
+    });
+  }
+
+  /**
+   * Buys a **planned** Deal, using exactly the app's existing Grow buy
+   * mechanics (`calculateBuyShare`/`calculateBuyInvestment`), the same
+   * account (`Fire`, matching `grow.component.ts`'s own `buyProject`) and
+   * the same DSL comment format, not a parallel purchase system (decision
+   * 10). If cash on hand doesn't cover the plan's cost, it auto-borrows the
+   * shortfall (rounded up to the game set's increment) via the Bank loan
+   * mechanic first — never Grow's own generic financing attachment, which
+   * has no fixed interest rate to automate correctly.
+   *
+   * A property (`kind: investment`) additionally gets a real Subscription
+   * for its cashflow, so it feeds every future Payday automatically — the
+   * one thing this game adds on top of "just use Grow": JFK, 2026-09-26,
+   * "the cashflow should be automatically added to your income statement
+   * and a subscription." Buying more of an already-owned title later is
+   * just planning the extra amount and executing again — the calculators
+   * already add to whatever position exists.
+   */
+  executeDeal(title: string, callbacks: CashflowGameCallbacks): void {
+    const state = AppStateService.instance;
+    if (!state.cashflowGame.professionId) {
+      callbacks.onError('Pick a profession first.');
+      return;
+    }
+    const project = state.allGrowProjects.find((candidate) => candidate.title === title);
+    if (!project) {
+      callbacks.onError(`No planned deal called "${title}" — plan it first.`);
+      return;
+    }
+    const virtualDate = state.cashflowGame.virtualDate as string;
+    const kind: 'share' | 'investment' = project.investment?.tag ? 'investment' : 'share';
+
+    const costMinor =
+      kind === 'share'
+        ? multiplyQuantityPrice(project.share.quantity, toMinorUnits(project.share.price))
+        : toMinorUnits(project.investment.deposit);
+    const shortfallMinor = costMinor - toMinorUnits(this.cash);
+    try {
+      if (shortfallMinor > 0) {
+        const gameSet = this.currentGameSet();
+        if (!gameSet) throw new Error('Pick a profession first.');
+        const incrementMinor = gameSet.loanRule.incrementMinor;
+        const borrowMinor = Math.ceil(shortfallMinor / incrementMinor) * incrementMinor;
+        this.applyBankLoanAdjustment(fromMinorUnits(borrowMinor));
+      }
+
+      const buyResult =
+        kind === 'share'
+          ? calculateBuyShare({
+              title,
+              quantity: project.share.quantity,
+              priceMinor: toMinorUnits(project.share.price),
+              existingShareQuantity:
+                state.allShares.find((share) => share.tag === title)?.quantity ?? null,
+              existingGrowAmountMinor: toMinorUnits(project.amount ?? 0),
+            })
+          : calculateBuyInvestment({
+              title,
+              depositMinor: toMinorUnits(project.investment.deposit),
+              mortgageMinor: toMinorUnits(project.investment.amount),
+              existingInvestmentDepositMinor: this.existingMinor(
+                state.allInvestments.find((investment) => investment.tag === title)?.deposit,
+              ),
+              existingInvestmentAmountMinor: this.existingMinor(
+                state.allInvestments.find((investment) => investment.tag === title)?.amount,
+              ),
+              existingMortgageLiabilityAmountMinor: this.existingMinor(
+                state.liabilities.find((liability) => liability.tag === `M-${title}`)?.amount,
+              ),
+              existingGrowAmountMinor: toMinorUnits(project.amount ?? 0),
+            });
+
+      state.allTransactions.push({
+        account: 'Fire',
+        amount: fromMinorUnits(buyResult.transactionAmountMinor),
+        date: virtualDate,
+        time: '',
+        category: `@${title}`,
+        comment: buyResult.comment,
+      });
+
+      if (kind === 'share') {
+        const share = buyResult as ReturnType<typeof calculateBuyShare>;
+        const patch = {
+          tag: title,
+          quantity: share.newShareQuantity,
+          price: fromMinorUnits(share.newSharePriceMinor),
+        };
+        this.upsertEntity(state.allShares, title, () => patch);
+        this.upsertGrowProject(title, project, {
+          amount: fromMinorUnits(buyResult.newGrowAmountMinor),
+          share: patch,
+        });
+      } else {
+        const investment = buyResult as ReturnType<typeof calculateBuyInvestment>;
+        const patch = {
+          tag: title,
+          deposit: fromMinorUnits(investment.newInvestmentDepositMinor),
+          amount: fromMinorUnits(investment.newInvestmentAmountMinor),
+        };
+        this.upsertEntity(state.allInvestments, title, () => patch);
+        this.upsertLiability(
+          investment.mortgageLiabilityPatch.tag,
+          investment.mortgageLiabilityPatch.amountMinor,
+          true,
+        );
+        this.upsertGrowProject(title, project, {
+          amount: fromMinorUnits(buyResult.newGrowAmountMinor),
+          investment: patch,
+        });
+        this.upsertSubscription({
+          title: `${title} Cashflow`,
+          account: 'Income',
+          amountMinor: toMinorUnits(project.cashflow),
+          frequency: 'monthly',
+        });
+      }
+    } catch (err: unknown) {
+      callbacks.onError(errorMessage(err, 'Could not complete this deal.'));
+      return;
+    }
+
+    this.persistAll('cashflow_deal_execute', { kind, title }, callbacks, {
+      includeSubscriptions: true,
+      includeBalanceSheet: true,
+      includeGrow: true,
+    });
+  }
+
+  /** Grow projects not yet bought — planned only (todo/cashflow-game.md decision 12): the deal's plan exists, but no real Share/Investment position backs it yet. */
+  get plannedDeals(): Grow[] {
+    const state = AppStateService.instance;
+    return state.allGrowProjects.filter((project) => {
+      if (project.investment?.tag) {
+        return !state.allInvestments.some((investment) => investment.tag === project.title);
+      }
+      if (project.share?.tag) {
+        return !state.allShares.some((share) => share.tag === project.title);
+      }
+      return false;
+    });
+  }
+
+  /** Returns the conflicting kind only when the existing project is clearly the other one — never blocks on missing/ambiguous legacy data. */
+  private conflictingGrowKind(project: Grow, kind: 'share' | 'investment'): boolean {
+    if (kind === 'share') return Boolean(project.investment?.tag) && !project.share?.tag;
+    return Boolean(project.share?.tag) && !project.investment?.tag;
+  }
+
+  private existingMinor(amount: number | undefined): number | null {
+    return amount === undefined ? null : toMinorUnits(amount);
+  }
+
+  private upsertEntity<T extends { tag: string }>(
+    list: T[],
+    tag: string,
+    build: (existing: T | undefined) => T,
+  ): void {
+    const index = list.findIndex((item) => item.tag === tag);
+    const next = build(index >= 0 ? list[index] : undefined);
+    if (index >= 0) list.splice(index, 1, next);
+    else list.push(next);
+  }
+
+  private upsertGrowProject(title: string, existing: Grow | undefined, patch: Partial<Grow>): void {
+    const state = AppStateService.instance;
+    if (existing) {
+      Object.assign(existing, patch, { updatedAt: new Date().toISOString() });
+      return;
+    }
+    const now = new Date().toISOString();
+    const project: Grow = {
+      title,
+      sub: '',
+      phase: 'execute',
+      description: '',
+      strategy: '',
+      riskScore: 0,
+      risks: '',
+      links: [],
+      actionItems: [],
+      notes: [],
+      cashflow: 0,
+      amount: 0,
+      isAsset: false,
+      share: null as any,
+      investment: null as any,
+      liabilitie: null as any,
+      createdAt: now,
+      updatedAt: now,
+      type: 'income-growth',
+      ...patch,
+    };
+    state.allGrowProjects.push(project);
   }
 
   private currentGameSet(): CashflowGameSet | undefined {
@@ -322,14 +595,14 @@ export class CashflowGameService {
     if (index >= 0) subscriptions.splice(index, 1);
   }
 
-  private upsertLiability(tag: string, amountMinor: number): void {
+  private upsertLiability(tag: string, amountMinor: number, isInvestment = false): void {
     const liabilities = AppStateService.instance.liabilities;
     const existing = liabilities.find((liability) => liability.tag === tag);
     const amount = fromMinorUnits(amountMinor);
     if (existing) {
       existing.amount = amount;
     } else {
-      liabilities.push({ tag, amount, investment: false, credit: 0 });
+      liabilities.push({ tag, amount, investment: isInvestment, credit: 0 });
     }
   }
 
@@ -371,7 +644,11 @@ export class CashflowGameService {
     logEvent: string,
     logMetadata: Record<string, unknown>,
     callbacks: CashflowGameCallbacks,
-    options: { includeSubscriptions?: boolean; includeBalanceSheet?: boolean } = {},
+    options: {
+      includeSubscriptions?: boolean;
+      includeBalanceSheet?: boolean;
+      includeGrow?: boolean;
+    } = {},
   ): void {
     const state = AppStateService.instance;
     this.incomeStatement.recalculate();
@@ -392,6 +669,7 @@ export class CashflowGameService {
             { tag: 'balance/liabilities', data: state.liabilities },
           ]
         : []),
+      ...(options.includeGrow ? [{ tag: 'grow', data: state.allGrowProjects }] : []),
     ];
     const localStorageSaves: { key: string; data: unknown }[] = [
       { key: 'transactions', data: state.allTransactions },
@@ -407,6 +685,7 @@ export class CashflowGameService {
             { key: 'liabilities', data: state.liabilities },
           ]
         : []),
+      ...(options.includeGrow ? [{ key: 'grow', data: state.allGrowProjects }] : []),
     ];
 
     this.persistence.batchWriteAndSync({

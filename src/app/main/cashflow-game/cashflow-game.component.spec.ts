@@ -17,7 +17,11 @@ function makeComponent(overrides: Partial<Record<string, jest.Mock>> = {}) {
     resolveDownsized: jest.fn(),
     adjustBankLoan: jest.fn(),
     clearStatus: jest.fn(),
+    planDeal: jest.fn(),
+    executeDeal: jest.fn(),
     monthlyCashflow: 0,
+    cash: 0,
+    plannedDeals: [],
     ...overrides,
   };
   const toastService = { show: jest.fn() };
@@ -79,20 +83,8 @@ describe('CashflowGameComponent', () => {
   });
 
   describe('cash', () => {
-    it('sums Daily/Splurge/Smile/Fire the same way the Home dashboard does', () => {
-      const { component } = makeComponent();
-      const state = AppStateService.instance;
-      state.daily = 60;
-      state.splurge = 10;
-      state.smile = 10;
-      state.fire = 20;
-      state.allTransactions = [
-        { account: 'Income', amount: 1000, category: 'Salary', date: '2026-01-01', comment: '' },
-        { account: 'Daily', amount: -50, category: '@Rent', date: '2026-01-02', comment: '' },
-      ] as any;
-
-      // Income splits fully across the four buckets regardless of ratio, so
-      // the total is the income (1000) plus the direct Daily expense (-50).
+    it('reads straight from the service — the single source of truth (JFK, 2026-09-26)', () => {
+      const { component } = makeComponent({ cash: 950 } as any);
       expect(component.cash).toBe(950);
     });
   });
@@ -218,6 +210,69 @@ describe('CashflowGameComponent', () => {
       component.repayLoan();
 
       expect(cashflowGameService.adjustBankLoan).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Deal card: plan then execute', () => {
+    it('submitDeal plans a share and clears the form on success', () => {
+      const { component, cashflowGameService, toastService } = makeComponent();
+      component.dealKind = 'share';
+      component.dealTitle = 'TestCo';
+      component.dealQuantity = 10;
+      component.dealPrice = 100;
+
+      component.submitDeal();
+
+      expect(cashflowGameService.planDeal).toHaveBeenCalledWith(
+        { kind: 'share', title: 'TestCo', quantity: 10, price: 100 },
+        expect.anything(),
+      );
+      cashflowGameService.planDeal.mock.calls[0][1].onSuccess();
+      expect(toastService.show).toHaveBeenCalledWith('CashflowGame.dealPlanned', 'success');
+      expect(component.dealTitle).toBe('');
+    });
+
+    it('submitDeal plans an investment with all its fields', () => {
+      const { component, cashflowGameService } = makeComponent();
+      component.dealKind = 'investment';
+      component.dealTitle = 'Villa';
+      component.dealDeposit = 1000;
+      component.dealMortgage = 5000;
+      component.dealCashflow = 600;
+
+      component.submitDeal();
+
+      expect(cashflowGameService.planDeal).toHaveBeenCalledWith(
+        { kind: 'investment', title: 'Villa', deposit: 1000, mortgage: 5000, cashflow: 600 },
+        expect.anything(),
+      );
+    });
+
+    it('does nothing when the form is incomplete', () => {
+      const { component, cashflowGameService } = makeComponent();
+      component.dealKind = 'share';
+      component.dealTitle = 'TestCo';
+      // quantity/price left unset
+
+      component.submitDeal();
+
+      expect(cashflowGameService.planDeal).not.toHaveBeenCalled();
+    });
+
+    it('executeDeal delegates to the service and toasts on success', () => {
+      const { component, cashflowGameService, toastService } = makeComponent();
+
+      component.executeDeal('TestCo');
+
+      expect(cashflowGameService.executeDeal).toHaveBeenCalledWith('TestCo', expect.anything());
+      cashflowGameService.executeDeal.mock.calls[0][1].onSuccess();
+      expect(toastService.show).toHaveBeenCalledWith('CashflowGame.dealDone', 'success');
+    });
+
+    it('plannedDeals reads straight from the service', () => {
+      const projects = [{ title: 'TestCo' }];
+      const { component } = makeComponent({ plannedDeals: projects } as any);
+      expect(component.plannedDeals).toBe(projects);
     });
   });
 });

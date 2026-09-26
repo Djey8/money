@@ -22,6 +22,7 @@ describe('CashflowGameService', () => {
     state.allFireEmergencies = [];
     state.allShares = [];
     state.allInvestments = [];
+    state.allGrowProjects = [];
     state.allAssets = [];
     state.liabilities = [];
     state.allSubscriptions = [];
@@ -267,6 +268,143 @@ describe('CashflowGameService', () => {
       const onError = jest.fn();
       service.adjustBankLoan(500, { onSuccess: jest.fn(), onError });
       expect(onError).toHaveBeenCalledWith(expect.stringContaining('steps of'));
+    });
+  });
+
+  describe('planDeal / executeDeal / plannedDeals', () => {
+    function started() {
+      service.pickProfession('placeholder', 'placeholder-profession', {
+        onSuccess: jest.fn(),
+        onError: jest.fn(),
+      });
+    }
+
+    it('planDeal only saves the Grow project — no money moves, and it shows up as a planned deal', () => {
+      started();
+      const onSuccess = jest.fn();
+      service.planDeal(
+        { kind: 'share', title: 'TestCo', quantity: 10, price: 100 },
+        { onSuccess, onError: jest.fn() },
+      );
+
+      const state = AppStateService.instance;
+      expect(onSuccess).toHaveBeenCalled();
+      expect(state.allShares).toHaveLength(0);
+      expect(state.allTransactions).toHaveLength(1); // only the starting-cash transaction
+      expect(state.allGrowProjects[0]).toMatchObject({
+        title: 'TestCo',
+        share: { tag: 'TestCo', quantity: 10, price: 100 },
+      });
+      expect(service.plannedDeals.map((p) => p.title)).toEqual(['TestCo']);
+    });
+
+    it('executeDeal buys the plan — real Grow project, Share, and Fire transaction, no longer "planned"', () => {
+      started();
+      service.planDeal(
+        { kind: 'share', title: 'TestCo', quantity: 10, price: 100 },
+        { onSuccess: jest.fn(), onError: jest.fn() },
+      );
+      const onSuccess = jest.fn();
+
+      service.executeDeal('TestCo', { onSuccess, onError: jest.fn() });
+
+      const state = AppStateService.instance;
+      expect(onSuccess).toHaveBeenCalled();
+      expect(state.allShares).toContainEqual({ tag: 'TestCo', quantity: 10, price: 100 });
+      expect(state.allGrowProjects[0]).toMatchObject({ title: 'TestCo', amount: 1000 });
+      expect(state.allTransactions).toContainEqual(
+        expect.objectContaining({
+          account: 'Fire',
+          amount: -1000,
+          category: '@TestCo',
+          comment: 'Buy Share TestCo 10 x 100;',
+        }),
+      );
+      expect(state.liabilities.find((l) => l.tag === 'Bank loan')).toBeUndefined();
+      expect(service.plannedDeals).toHaveLength(0); // bought — no longer just a plan
+    });
+
+    it('refuses to execute a title that was never planned', () => {
+      started();
+      const onError = jest.fn();
+      service.executeDeal('Nope', { onSuccess: jest.fn(), onError });
+      expect(onError).toHaveBeenCalledWith(expect.stringContaining('plan it first'));
+    });
+
+    it('auto-borrows the rounded-up shortfall before completing a purchase it can’t otherwise afford', () => {
+      started();
+      // Cash is 3000; this share purchase costs 5000 — a 2000 shortfall, one 1000 increment short of it.
+      service.planDeal(
+        { kind: 'share', title: 'Expensive', quantity: 1, price: 5000 },
+        { onSuccess: jest.fn(), onError: jest.fn() },
+      );
+      service.executeDeal('Expensive', { onSuccess: jest.fn(), onError: jest.fn() });
+
+      const state = AppStateService.instance;
+      expect(state.liabilities).toContainEqual(
+        expect.objectContaining({ tag: 'Bank loan', amount: 2000 }),
+      );
+      expect(state.allSubscriptions).toContainEqual(
+        expect.objectContaining({ title: 'Bank loan interest', amount: -200 }),
+      );
+      expect(state.allTransactions).toContainEqual(
+        expect.objectContaining({ account: 'Fire', amount: -5000, category: '@Expensive' }),
+      );
+    });
+
+    it('buys a property: deposit paid now, mortgage as a real Liability, cashflow as a real Subscription', () => {
+      started();
+      service.planDeal(
+        { kind: 'investment', title: 'Villa', deposit: 1000, mortgage: 5000, cashflow: 600 },
+        { onSuccess: jest.fn(), onError: jest.fn() },
+      );
+      service.executeDeal('Villa', { onSuccess: jest.fn(), onError: jest.fn() });
+
+      const state = AppStateService.instance;
+      expect(state.allInvestments).toContainEqual({ tag: 'Villa', deposit: 1000, amount: 5000 });
+      expect(state.liabilities).toContainEqual(
+        expect.objectContaining({ tag: 'M-Villa', amount: 5000, investment: true }),
+      );
+      expect(state.allGrowProjects[0]).toMatchObject({ title: 'Villa', cashflow: 600 });
+      expect(state.allTransactions).toContainEqual(
+        expect.objectContaining({ account: 'Fire', amount: -1000, category: '@Villa' }),
+      );
+      // JFK, 2026-09-26: the cashflow must show up as a real Subscription, feeding every future Payday.
+      expect(state.allSubscriptions).toContainEqual(
+        expect.objectContaining({ title: 'Villa Cashflow', account: 'Income', amount: 600 }),
+      );
+    });
+
+    it('buying more later just plans the extra amount and executes again, adding to the existing position', () => {
+      started();
+      service.planDeal(
+        { kind: 'share', title: 'TestCo', quantity: 10, price: 100 },
+        { onSuccess: jest.fn(), onError: jest.fn() },
+      );
+      service.executeDeal('TestCo', { onSuccess: jest.fn(), onError: jest.fn() });
+
+      service.planDeal(
+        { kind: 'share', title: 'TestCo', quantity: 5, price: 120 },
+        { onSuccess: jest.fn(), onError: jest.fn() },
+      );
+      service.executeDeal('TestCo', { onSuccess: jest.fn(), onError: jest.fn() });
+
+      const state = AppStateService.instance;
+      expect(state.allShares).toContainEqual({ tag: 'TestCo', quantity: 15, price: 120 });
+    });
+
+    it('refuses a deal whose title already exists as the other kind of Grow project', () => {
+      started();
+      service.planDeal(
+        { kind: 'share', title: 'Ambiguous', quantity: 1, price: 10 },
+        { onSuccess: jest.fn(), onError: jest.fn() },
+      );
+      const onError = jest.fn();
+      service.planDeal(
+        { kind: 'investment', title: 'Ambiguous', deposit: 100, mortgage: 0, cashflow: 0 },
+        { onSuccess: jest.fn(), onError },
+      );
+      expect(onError).toHaveBeenCalledWith(expect.stringContaining('different kind'));
     });
   });
 });

@@ -1,9 +1,9 @@
 # Cashflow (board game) automation — Feature Plan
 
-**Status:** MVP committed (`f1c1910`), companion-mode resolutions committed (`459fe21`). A further correction
-landed 2026-09-26 after JFK's feedback (Downsized was wrong — see decision 8b) plus a major scope clarification:
-Deal-card purchases are **not** a new feature, they're the app's existing Grow feature (decision 9). Not yet
-committed — see the status notes under Phase 1. Not yet playtested (JFK can't sit at a computer right now; we're
+**Status:** MVP committed (`f1c1910`), companion-mode resolutions committed (`459fe21`), the Downsized fix + Grow
+reuse + docs guide committed (`106affd`). A Deal-card feature (plan, then decide, then buy — decisions 10/14) is
+built, not yet committed — see the status notes under Phase 1. Not yet playtested (JFK can't sit at a computer right
+now; we're
 developing ahead theoretically, per his explicit go-ahead, until he can).
 
 ## 1. What this is
@@ -77,15 +77,36 @@ same as `todo/fund-settlement.md` was.
     income (relevant once the rat-race indicator is built). Every Grow project/Asset/Investment/Share/Liability on
     a cashflow account belongs to the game outright (decision 2 — the whole account is the game), no `#cashflow`
     marker needed, unlike Subscriptions.
-11. **Losing**: JFK, 2026-09-26: _"the moment we go on a negative cashflow for the next months, game is over."_ A
-    `monthlyCashflow` figure (income minus expenses across every Subscription the game owns) is shown live on the
-    dashboard, with a warning once it's negative. Advisory, like everything else here — it doesn't lock the UI.
+11. **Losing**: JFK, 2026-09-26: _"the moment we go on a negative cashflow for the next months, game is over."_
+    `computeMonthlyCashflowMinor` (income minus expenses across every Subscription the game owns) — surfaced only
+    as a warning banner once negative (decision 13 says don't duplicate the number itself). Advisory, like
+    everything else here — it doesn't lock the UI.
 12. **Rules and strategy are documented for the player, not just the agent**: `docs/domain/CASHFLOW_GAME_GUIDE.md`
     (JFK: _"I would like to have a page describing the basic rules of this game... you as a user, you have a way
     to read all of this"_). It's picked up by `explain_concept` automatically like every other `docs/domain/*.md`
     file, and is readable directly as a file/on GitHub. **Open point**: whether it should also render in-app (the
     existing `docs.component.ts` is hand-authored TS content for self-hosted setup docs, a different thing, and
     isn't a markdown viewer) — not built; flag if you want that specifically.
+13. **Reuse the app's own views; don't duplicate them** (2026-09-26, JFK: _"I want to use the normal app as much
+    as possible... in Subscription we already have the monthly cashflow view... stats, even budget if you want"_).
+    The dashboard dropped its own "cash" and "monthly cashflow" tiles in favor of a single shared `cash` getter
+    (used internally for deal affordability too) and plain links out to Subscriptions/Grow/Balance
+    Sheet/Stats/Budget. Only what has no home elsewhere — Payday, space resolutions, the bank loan, Deal
+    plan/execute — gets its own UI here.
+14. **A Deal card is a Grow project, planned then decided, not bought in one step** (2026-09-26, JFK: _"every card
+    we add this as a grow feature... first plan (you have the option), then you make it reality"_).
+    `planDeal` saves the numbers as a Grow project's **plan** — exactly Grow's own existing plan/action split
+    (`docs/domain/GROW_GUIDE.md` §3–4) — with no money moved. `executeDeal` is the moment the player says yes: it
+    reads the plan's numbers and runs the same automated buy as before (auto-borrow any shortfall, `Fire` account,
+    real Grow/Share/Investment/Liability/Subscription). A Grow project with a plan but no matching Share/Investment
+    entry yet is "planned, not bought" (`plannedDeals`) — buying more later is just planning the extra amount and
+    executing again; the calculators already add to whatever position exists. **Selling with cleanup** (remove the
+    cashflow Subscription, the mortgage, the position) is explicit future work — JFK: "later we have cards to...
+    sell with profit... need to clean up the data" — not built yet.
+15. **The whole truth of the game lives in Transactions, Subscriptions (for the current setup) and the Balance
+    Sheet/Grow** (2026-09-26, JFK, restating decision 1 explicitly). `CashflowGameState` holds no financial fact —
+    only bookkeeping metadata that isn't itself money (`round`, `professionId`, the reminder counters). If a number
+    matters financially, it must be reconstructable from those real entities alone, never from the game-meta state.
 
 ## 3. The one new thing: a small game-meta state
 
@@ -186,9 +207,14 @@ Game sets themselves need no storage path at all — they're code.
   `loanRule`. Taking/repaying upserts one `Liability {tag: "Bank loan"}` and one matching
   `Subscription {title: "Bank loan interest", category: "@Bank loan", amount, #cashflow}`, recomputed on every
   change, never hand-edited.
-- **Deal-card purchases (shares, property)**: not a Cashflow-game feature at all — the existing Grow feature,
-  used exactly as any personal account would (decision 10, `docs/domain/CASHFLOW_GAME_GUIDE.md` §4). A Doodad
-  card's one-off cost: the existing Add Transaction panel.
+- **Deal card (`planDeal` then `executeDeal`)**: `planDeal` saves the deal's numbers as a Grow project's plan — no
+  money moves, matching Grow's own plan/action split (decision 14). `executeDeal` is the decision to actually buy:
+  auto-borrows any shortfall via the Bank loan mechanic, then runs the exact same Grow buy calculators/DSL/account
+  (`Fire`) a personal account's own Grow page would (decision 10). A property (`kind: investment`) additionally
+  gets a real Subscription for its cashflow. `plannedDeals` lists projects with a plan but no matching
+  Share/Investment yet — "you have the option" until you call `executeDeal`. Selling (with cleanup — the
+  cashflow Subscription, the mortgage, the position) is future work, not built. A Doodad card's one-off cost: the
+  existing Add Transaction panel.
 - **Baby**: +1 child (max 3), scales a dedicated "Children Expenses" Subscription that then feeds every future
   Payday.
 - **Charity**: pay 10% of current income once; sets a `charityRoundsLeft` reminder (not auto-decremented by
@@ -242,15 +268,17 @@ app to simulate what each space does.
   for Payday/Baby/Charity/Downsized/loans/Deal-card purchases (the last via the existing Grow feature, decision
   10 — Market/Doodad spaces still need real card data, Phase 2).
 
-**Status: built, being committed across two commits.** Commit 1 (`459fe21`): Baby/Charity/Downsized resolutions
-and bank loan automation in the engine, service and dashboard (a "which space did you land on?" section, a
-bank-loan form, status badges), all 6 locales. Commit 2 (in progress, 2026-09-26): the Downsized/Payday-skip
-correction (decision 9 — Payday is unconditional again, `clearCashflowStatus` lets the player dismiss a
-reminder themselves), `computeMonthlyCashflowMinor` + a bankruptcy warning on the dashboard (decision 11), and
-`docs/domain/CASHFLOW_GAME_GUIDE.md` (decision 12). Deal-card purchases need no new code (decision 10) — the
-existing Grow page already does everything; the guide documents how to use it for this game. Still placeholder
-profession/board/card data. The rat-race-exit indicator still isn't built (now well-defined — property-cashflow
-Grow projects only, decision 10 — just not wired up yet).
+**Status: built across three commits, a fourth pending.** Commit 1 (`459fe21`): Baby/Charity/Downsized resolutions
+and bank loan automation. Commit 2 (`106affd`): the Downsized/Payday-skip correction (decision 9 — Payday is
+unconditional again, `clearCashflowStatus` lets the player dismiss a reminder themselves), `computeMonthlyCashflowMinor`,
+and `docs/domain/CASHFLOW_GAME_GUIDE.md` (decision 12). Commit 3 (in progress, 2026-09-26): the dashboard now reuses
+the app's own views instead of duplicating them (decision 13 — links to Subscriptions/Grow/Balance
+Sheet/Stats/Budget, one shared `cash` getter); and the Deal feature, `planDeal`/`executeDeal`/`plannedDeals` on
+`CashflowGameService` (decision 14) — a Deal card becomes a real Grow project's plan, the player decides whether
+to execute it, execution auto-borrows any shortfall and buys through the exact same Grow mechanics a personal
+account uses. Still placeholder profession/board/card data. Not built: the rat-race-exit indicator (well-defined
+now — property-cashflow Grow projects only, decision 10 — just not wired up), and selling with cleanup
+(decision 14, explicitly deferred by JFK).
 
 ### Phase 2 — digital card deck
 
@@ -259,6 +287,10 @@ Grow projects only, decision 10 — just not wired up yet).
   Deal mechanics themselves need no new code (decision 10) — this phase is the card catalog plus a thin "here's
   what you drew, here's the affordability/debt-vs-cashflow context" layer in front of the existing Grow actions,
   not a new buy/sell system.
+- **Selling with cleanup** (decision 14, JFK: _"later we have cards to buy again more or sell with profit... if
+  we sell we need to clean up the data, remove eventual cashflow, remove mortgage, remove asset"_): a `sellDeal`
+  using the existing `calculateSellShare`/`calculateSellInvestment`, plus removing the position's cashflow
+  Subscription and mortgage Liability, not just recording the sale transaction.
 - **Exit criteria**: a full round playable without touching the Grow page's own forms _unprompted_ — the game
   still routes you there for the actual purchase, but tells you what to enter.
 
