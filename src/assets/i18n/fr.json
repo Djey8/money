@@ -1418,6 +1418,8 @@
   "CashflowGame.viewCard": "Voir la carte",
   "CashflowGame.salary": "Salaire",
   "CashflowGame.savings": "Épargne",
+  "CashflowGame.totalExpenses": "Dépenses totales",
+  "CashflowGame.monthlyCashflow": "Cashflow mensuel",
   "CashflowGame.startingCash": "Capital de départ",
   "CashflowGame.expenses": "Dépenses",
   "CashflowGame.perChildExpense": "Dépense par enfant",

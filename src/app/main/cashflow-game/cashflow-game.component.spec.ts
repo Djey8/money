@@ -31,9 +31,6 @@ function makeComponent(overrides: Partial<Record<string, jest.Mock>> = {}) {
   };
   const toastService = { show: jest.fn() };
   const translate = { instant: (key: string) => key };
-  const confirmService = {
-    confirm: jest.fn((_message: string, onConfirm: () => void) => onConfirm()),
-  };
 
   const component = new CashflowGameComponent(
     router as any,
@@ -41,9 +38,8 @@ function makeComponent(overrides: Partial<Record<string, jest.Mock>> = {}) {
     cashflowGameService as any,
     toastService as any,
     translate as any,
-    confirmService as any,
   );
-  return { component, router, appData, cashflowGameService, toastService, confirmService };
+  return { component, router, appData, cashflowGameService, toastService };
 }
 
 describe('CashflowGameComponent', () => {
@@ -121,6 +117,31 @@ describe('CashflowGameComponent', () => {
 
       // salary 3000 - expenses 1800 + savings 0
       expect(component.professionStartingCash(profession)).toBe(1200);
+    });
+
+    it('professionTotalExpenses sums every expense line, in decimal', () => {
+      const { component } = makeComponent();
+      const profession = CASHFLOW_GAME_SETS.find((set) => set.id === 'cashflow')!.professions[0];
+
+      // Hausmeister/in: 300 + 200 + 0 + 100 + 100 + 300 + 0
+      expect(component.professionTotalExpenses(profession)).toBe(1000);
+    });
+
+    it('professionMonthlyCashflow is salary minus total expenses, in decimal', () => {
+      const { component } = makeComponent();
+      const profession = CASHFLOW_GAME_SETS.find((set) => set.id === 'cashflow')!.professions[0];
+
+      // salary 1600 - expenses 1000
+      expect(component.professionMonthlyCashflow(profession)).toBe(600);
+    });
+  });
+
+  describe('playableGameSets', () => {
+    it('never offers the domain package’s "placeholder" test fixture to a player', () => {
+      const { component } = makeComponent();
+
+      expect(component.playableGameSets.some((set) => set.id === 'placeholder')).toBe(false);
+      expect(component.playableGameSets.some((set) => set.id === 'cashflow')).toBe(true);
     });
   });
 
@@ -418,53 +439,6 @@ describe('CashflowGameComponent', () => {
 
       expect(component.activeCard).toBeNull();
       expect(toastService.show).toHaveBeenCalledWith('CashflowGame.cardApplied', 'success');
-    });
-  });
-
-  describe('resetGame', () => {
-    it('confirms before resetting, then delegates to the service and toasts on success', () => {
-      const { component, cashflowGameService, confirmService, toastService } = makeComponent();
-      component.dealTitle = 'Whatever';
-      component.activeCard = { id: '1', title: 'Gadget' } as any;
-
-      component.resetGame();
-
-      expect(confirmService.confirm).toHaveBeenCalledWith(
-        'CashflowGame.resetConfirm',
-        expect.anything(),
-        'CashflowGame.resetConfirmButton',
-        'delete',
-      );
-      expect(cashflowGameService.resetGame).toHaveBeenCalled();
-      cashflowGameService.resetGame.mock.calls[0][0].onSuccess();
-      expect(toastService.show).toHaveBeenCalledWith('CashflowGame.resetDone', 'delete');
-      expect(component.dealTitle).toBe('');
-      expect(component.activeCard).toBeNull();
-    });
-
-    it('does not reset when the confirmation is declined', () => {
-      const { component, cashflowGameService } = makeComponent({
-        // Simulate the user dismissing the confirm dialog: onConfirm never runs.
-      } as any);
-      (component as any).confirmService = { confirm: jest.fn() };
-
-      component.resetGame();
-
-      expect(cashflowGameService.resetGame).not.toHaveBeenCalled();
-    });
-
-    it('shows the error message on failure instead of throwing', () => {
-      const { component, cashflowGameService, toastService } = makeComponent();
-
-      component.resetGame();
-      cashflowGameService.resetGame.mock.calls[0][0].onError(
-        'This is only available for a Cashflow game account.',
-      );
-
-      expect(toastService.show).toHaveBeenCalledWith(
-        'This is only available for a Cashflow game account.',
-        'error',
-      );
     });
   });
 });

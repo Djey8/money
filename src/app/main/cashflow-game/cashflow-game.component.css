@@ -31,12 +31,6 @@
   border-bottom: 1px solid var(--color-border-light);
 }
 
-.cf-panel-header-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
 .cf-panel-title {
   margin: 0;
   font-size: var(--font-lg);
@@ -64,21 +58,6 @@
 .cf-panel-close:hover {
   background: var(--color-border-light);
   color: var(--color-text);
-}
-
-.cf-reset-btn {
-  background: none;
-  border: 1px solid var(--color-danger, #d32f2f);
-  color: var(--color-danger, #d32f2f);
-  border-radius: var(--radius-sm);
-  padding: 6px 12px;
-  font-size: 0.85rem;
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.cf-reset-btn:hover {
-  background-color: var(--color-danger-bg, rgba(211, 47, 47, 0.12));
 }
 
 .cashflow-game-page {

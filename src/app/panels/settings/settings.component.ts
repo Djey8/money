@@ -22,6 +22,8 @@ import { IncomeStatementService } from 'src/app/shared/services/income-statement
 import { ErrorMapperService } from 'src/app/shared/services/error-mapper.service';
 import { AppStateService } from 'src/app/shared/services/app-state.service';
 import { ToastService } from 'src/app/shared/services/toast.service';
+import { CashflowGameService } from 'src/app/shared/services/cashflow-game.service';
+import { ConfirmService } from 'src/app/shared/services/confirm.service';
 import { migrateGrowArray } from 'src/app/shared/grow-migration.utils';
 import { migrateSmileArray } from 'src/app/shared/smile-migration.utils';
 import { CommonModule } from '@angular/common';
@@ -312,6 +314,8 @@ export class SettingsComponent implements DoCheck {
     private incomeStatement: IncomeStatementService,
     private errorMapper: ErrorMapperService,
     private toastService: ToastService,
+    private cashflowGameService: CashflowGameService,
+    private confirmService: ConfirmService,
   ) {
     this.translate.setDefaultLang('en');
     SettingsComponent.isInfo = false;
@@ -634,6 +638,33 @@ export class SettingsComponent implements DoCheck {
 
   switchLanguage(language: string) {
     this.translate.use(language);
+  }
+
+  /** Only a Cashflow game account with a game actually running ever sees the reset entry (JFK, 2026-09-26). */
+  get isCashflowGameActive(): boolean {
+    return (
+      CashflowGameService.isCashflowGame() &&
+      AppStateService.instance.cashflowGame.professionId !== null
+    );
+  }
+
+  /** Wipes every real entity the Cashflow game touches back to a blank slate — confirmed first, this can't be undone. */
+  resetCashflowGame() {
+    this.confirmService.confirm(
+      this.translate.instant('CashflowGame.resetConfirm'),
+      () => {
+        this.cashflowGameService.resetGame({
+          onSuccess: () => {
+            this.toastService.show(this.translate.instant('CashflowGame.resetDone'), 'delete');
+          },
+          onError: (message) => {
+            this.toastService.show(message, 'error');
+          },
+        });
+      },
+      'CashflowGame.resetConfirmButton',
+      'delete',
+    );
   }
 
   toggleDeleteAuth() {

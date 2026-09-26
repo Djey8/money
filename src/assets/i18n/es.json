@@ -1362,6 +1362,8 @@
   "CashflowGame.viewCard": "Ver ficha",
   "CashflowGame.salary": "Salario",
   "CashflowGame.savings": "Ahorros",
+  "CashflowGame.totalExpenses": "Gastos totales",
+  "CashflowGame.monthlyCashflow": "Flujo de caja mensual",
   "CashflowGame.startingCash": "Efectivo inicial",
   "CashflowGame.expenses": "Gastos",
   "CashflowGame.perChildExpense": "Gasto por hijo",

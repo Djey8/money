@@ -1393,6 +1393,8 @@
   "CashflowGame.viewCard": "View card",
   "CashflowGame.salary": "Salary",
   "CashflowGame.savings": "Savings",
+  "CashflowGame.totalExpenses": "Total expenses",
+  "CashflowGame.monthlyCashflow": "Monthly cashflow",
   "CashflowGame.startingCash": "Starting cash",
   "CashflowGame.expenses": "Expenses",
   "CashflowGame.perChildExpense": "Expense per child",

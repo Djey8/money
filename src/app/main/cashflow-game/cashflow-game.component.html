@@ -11,12 +11,7 @@
 >
   <div class="cf-panel-header">
     <h2 class="cf-panel-title">{{ 'CashflowGame.title' | translate }}</h2>
-    <div class="cf-panel-header-actions">
-      <button class="cf-reset-btn" *ngIf="hasActiveGame" [disabled]="isBusy" (click)="resetGame()">
-        {{ 'CashflowGame.resetGame' | translate }}
-      </button>
-      <button class="cf-panel-close" aria-label="Close" (click)="closeWindow()">✕</button>
-    </div>
+    <button class="cf-panel-close" aria-label="Close" (click)="closeWindow()">✕</button>
   </div>
 
   <div class="cashflow-game-page">
@@ -39,6 +34,18 @@
           <span class="cf-stat-value"
             >{{ toDisplayAmount(profession.savingsMinor) | appNumber }}
             {{ appState.currency }}</span
+          >
+        </div>
+        <div class="cf-stat">
+          <span class="cf-stat-label">{{ 'CashflowGame.totalExpenses' | translate }}</span>
+          <span class="cf-stat-value"
+            >{{ professionTotalExpenses(profession) | appNumber }} {{ appState.currency }}</span
+          >
+        </div>
+        <div class="cf-stat">
+          <span class="cf-stat-label">{{ 'CashflowGame.monthlyCashflow' | translate }}</span>
+          <span class="cf-stat-value"
+            >{{ professionMonthlyCashflow(profession) | appNumber }} {{ appState.currency }}</span
           >
         </div>
         <div class="cf-stat">
@@ -80,10 +87,10 @@
     <div class="cf-card" *ngIf="!hasActiveGame">
       <h3>{{ 'CashflowGame.chooseProfession' | translate }}</h3>
 
-      <label class="cf-field">
+      <label class="cf-field" *ngIf="playableGameSets.length > 1">
         {{ 'CashflowGame.gameSet' | translate }}
         <select [(ngModel)]="selectedGameSetId">
-          <option *ngFor="let set of gameSets" [value]="set.id">{{ set.title }}</option>
+          <option *ngFor="let set of playableGameSets" [value]="set.id">{{ set.title }}</option>
         </select>
       </label>
 

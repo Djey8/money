@@ -1418,6 +1418,8 @@
   "CashflowGame.viewCard": "查看卡片",
   "CashflowGame.salary": "薪水",
   "CashflowGame.savings": "储蓄",
+  "CashflowGame.totalExpenses": "总支出",
+  "CashflowGame.monthlyCashflow": "每月现金流",
   "CashflowGame.startingCash": "起始现金",
   "CashflowGame.expenses": "支出",
   "CashflowGame.perChildExpense": "每个孩子的支出",

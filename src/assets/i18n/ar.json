@@ -1393,6 +1393,8 @@
   "CashflowGame.viewCard": "عرض البطاقة",
   "CashflowGame.salary": "الراتب",
   "CashflowGame.savings": "المدخرات",
+  "CashflowGame.totalExpenses": "إجمالي المصروفات",
+  "CashflowGame.monthlyCashflow": "التدفق النقدي الشهري",
   "CashflowGame.startingCash": "النقد الابتدائي",
   "CashflowGame.expenses": "المصروفات",
   "CashflowGame.perChildExpense": "مصروفات لكل طفل",

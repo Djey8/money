@@ -17,7 +17,6 @@ import { AppStateService } from 'src/app/shared/services/app-state.service';
 import { AppDataService } from 'src/app/shared/services/app-data.service';
 import { CashflowGameService } from 'src/app/shared/services/cashflow-game.service';
 import { ToastService } from 'src/app/shared/services/toast.service';
-import { ConfirmService } from 'src/app/shared/services/confirm.service';
 import { AppNumberPipe } from 'src/app/shared/pipes/app-number.pipe';
 import { AppDatePipe } from 'src/app/shared/pipes/app-date.pipe';
 import { TrapFocusDirective } from 'src/app/shared/directives/trap-focus.directive';
@@ -54,7 +53,7 @@ export class CashflowGameComponent implements OnInit {
   public appState = AppStateService.instance;
   public gameSets = this.cashflowGameService.gameSets;
 
-  selectedGameSetId = this.gameSets[0]?.id ?? '';
+  selectedGameSetId = this.playableGameSets[0]?.id ?? '';
   selectedProfessionId = '';
   isBusy = false;
   loanIncrements = 1;
@@ -84,7 +83,6 @@ export class CashflowGameComponent implements OnInit {
     private cashflowGameService: CashflowGameService,
     private toastService: ToastService,
     private translate: TranslateService,
-    private confirmService: ConfirmService,
   ) {}
 
   ngOnInit(): void {
@@ -102,6 +100,16 @@ export class CashflowGameComponent implements OnInit {
     CashflowGameComponent.isOpen = false;
     CashflowGameComponent.zIndex = 0;
     this.viewedProfession = null;
+  }
+
+  /**
+   * The `placeholder` game set (`packages/domain/src/cashflow-game/game-sets.ts`) is a test fixture only —
+   * obviously-fake numbers kept around so engine/service tests stay decoupled from JFK's real, still-growing card
+   * data (todo/cashflow-game.md decision 6). A player must never be able to pick it or see "Placeholder
+   * profession" in this panel.
+   */
+  get playableGameSets() {
+    return this.gameSets.filter((set) => set.id !== 'placeholder');
   }
 
   get selectedGameSet() {
@@ -178,6 +186,16 @@ export class CashflowGameComponent implements OnInit {
   /** `cashflowGame`'s history is stored in minor units (decision 6); the template displays decimal. */
   toDisplayAmount(amountMinor: number): number {
     return fromMinorUnits(amountMinor);
+  }
+
+  /** Sum of every "Ausgaben" line on the card — shown as its own figure alongside the itemized list. */
+  professionTotalExpenses(profession: CashflowProfession): number {
+    return fromMinorUnits(profession.expenses.reduce((sum, line) => sum + line.amountMinor, 0));
+  }
+
+  /** Salary minus total expenses — what the starting-cash rule adds once (JFK, 2026-09-26). */
+  professionMonthlyCashflow(profession: CashflowProfession): number {
+    return fromMinorUnits(computeCashflowProfessionMonthlyCashflowMinor(profession));
   }
 
   /** Ersparnisse + one month's cashflow — the computed starting-cash figure shown on the profession card. */
@@ -441,36 +459,5 @@ export class CashflowGameComponent implements OnInit {
         this.toastService.show(message, 'error');
       },
     });
-  }
-
-  /** Wipes every real entity the game touches back to a blank slate (JFK, 2026-09-26) — confirmed first, this can't be undone. */
-  resetGame(): void {
-    this.confirmService.confirm(
-      this.translate.instant('CashflowGame.resetConfirm'),
-      () => {
-        this.isBusy = true;
-        this.cashflowGameService.resetGame({
-          onSuccess: () => {
-            this.isBusy = false;
-            this.dealTitle = '';
-            this.dealQuantity = null;
-            this.dealPrice = null;
-            this.dealDeposit = null;
-            this.dealMortgage = null;
-            this.dealCashflow = null;
-            this.activeCard = null;
-            this.cardQuery = '';
-            this.selectedProfessionId = this.selectedGameSet?.professions[0]?.id ?? '';
-            this.toastService.show(this.translate.instant('CashflowGame.resetDone'), 'delete');
-          },
-          onError: (message) => {
-            this.isBusy = false;
-            this.toastService.show(message, 'error');
-          },
-        });
-      },
-      'CashflowGame.resetConfirmButton',
-      'delete',
-    );
   }
 }

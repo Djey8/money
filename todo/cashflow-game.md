@@ -3,10 +3,11 @@
 **Status:** MVP committed (`f1c1910`), companion-mode resolutions committed (`459fe21`), the Downsized fix + Grow
 reuse + docs guide committed (`106affd`), find/draw-a-card + the menu entry + `resetGame` committed
 (`459fe21`..`eae5cfb`). Decision 18 (itemized categorized expenses, computed starting cash, the real `cashflow`
-game set with the Hausmeister/in profession, AND the overlay/panel UI conversion) is fully built and green (domain +
-frontend tests, full typecheck, both editions build) — the data-model half is committed (`dd416e7`), the UI/panel
-conversion is built but not yet committed as of this note. Not yet playtested (JFK can't sit at a computer right
-now; we're developing ahead theoretically, per his explicit go-ahead, until he can).
+game set with the Hausmeister/in profession, AND the overlay/panel UI conversion) committed across `dd416e7` and
+`dd82039`. Decisions 19–20 (hiding the `placeholder` fixture from players, completing the View Card stats, moving
+the reset button into Settings → Advanced) are built and green (domain + frontend tests, full typecheck, both
+editions build), not yet committed as of this note. Not yet playtested (JFK can't sit at a computer right now;
+we're developing ahead theoretically, per his explicit go-ahead, until he can).
 
 ## 1. What this is
 
@@ -134,7 +135,7 @@ same as `todo/fund-settlement.md` was.
     blank — a testing/playtest convenience, not a feature of the physical game. Double-gated behind
     `isCashflowGame()` even though the whole page already is, since this is the single most destructive action in
     the app. No soft-delete, no undo — decision 15 already means nothing here needs to survive a reset except the
-    real entities that were there.
+    real entities that were there. **The trigger button itself later moved into Settings** — see decision 19.
 18. **The Cashflow game becomes a slide-in overlay panel, not a routed page — and every profession card gets its
     own real profession data, not one lump figure** (2026-09-26, JFK, giving the real "Hausmeister/in" card as the
     first example, with more to follow: _"this feature cash flow is just a component and I would say it should be
@@ -180,6 +181,28 @@ same as `todo/fund-settlement.md` was.
       `closeProfessionCard` show the full card (salary, itemized expenses, per-child expense, savings, computed
       starting cash, liabilities) both at selection time and via an "ℹ" button next to the active profession's
       title during the game.
+19. **A player must never see the internal "placeholder" test fixture, and the profession card must show every
+    derivable figure, not just the ones already needed elsewhere** (2026-09-26, JFK: _"can you replace the
+    Placeholder profession with hausmeister and add all the values this card has, and please finish the View Card
+    fields, with all the attributes"_). The `placeholder` game set (decision 6) stays exactly as-is in
+    `packages/domain` — deleting it would re-couple engine/service tests to JFK's real, still-growing card data,
+    exactly what decision 6 was written to avoid. Instead `CashflowGameComponent.playableGameSets` filters it out
+    of the "Game set" dropdown (and that field is hidden entirely while only one playable set exists), so a real
+    account can never select it or see "Placeholder profession" — `cashflow`/Hausmeister is the only thing a
+    player can ever reach. The View Card modal gained two stats it was missing — `professionTotalExpenses` (sum of
+    every `expenses` line) and `professionMonthlyCashflow` (salary minus that sum, the same figure
+    `computeCashflowProfessionMonthlyCashflowMinor` already fed into starting cash) — so every figure the physical
+    card implies is now shown explicitly, not just the ones the starting-cash formula happened to need.
+20. **The reset button moved out of the game panel and into Settings → Advanced, styled and gated like account
+    deletion** (2026-09-26, JFK: _"the reset game button should be in the settings component under advanced above
+    delete, in the same design as the delete button. And the button should only appear if a game is already
+    running"_). `SettingsComponent.resetCashflowGame()` (same `ConfirmService.confirm` + `CashflowGameService
+.resetGame` call the panel used to make) replaces `CashflowGameComponent.resetGame()`, which is deleted —
+    the panel no longer has a reset entry point at all. The settings-page button reuses the exact
+    `settings-menu-item delete-item` class the account-deletion button uses, sits directly above it, and is
+    `*ngIf="isCashflowGameActive"` — visible only once `AppStateService.instance.cashflowGame.professionId` is set
+    (double-gated with `CashflowGameService.isCashflowGame()`, same defensive pattern as everywhere else in this
+    feature).
 
 ## 3. The one new thing: a small game-meta state
 
