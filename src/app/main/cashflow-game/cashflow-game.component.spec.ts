@@ -246,6 +246,75 @@ describe('CashflowGameComponent', () => {
       };
       expect(component.canLandOnBaby).toBe(false);
     });
+
+    it('landOnDeals asks which pile, and chooseDealPile sets the active deck and clears any stale card', () => {
+      const { component } = makeComponent();
+      component.activeCard = { id: '1', title: 'Stale' } as any;
+      component.cardQuery = 'stale';
+
+      component.landOnDeals();
+      expect(component.showDealPileChoice).toBe(true);
+
+      component.chooseDealPile('dealBig');
+
+      expect(component.showDealPileChoice).toBe(false);
+      expect(component.activeDeckKind).toBe('dealBig');
+      expect(component.activeCard).toBeNull();
+      expect(component.cardQuery).toBe('');
+    });
+
+    it('landOnDoodad and landOnMarket set the active deck directly, no pile choice needed', () => {
+      const { component } = makeComponent();
+
+      component.landOnDeals(); // opens the pile choice
+      component.landOnDoodad();
+      expect(component.showDealPileChoice).toBe(false);
+      expect(component.activeDeckKind).toBe('doodad');
+
+      component.landOnMarket();
+      expect(component.activeDeckKind).toBe('market');
+    });
+
+    it('baby/charity/downsized/payday each dismiss a pending deal-pile choice', () => {
+      const { component } = makeComponent();
+
+      component.landOnDeals();
+      component.landOnBaby();
+      expect(component.showDealPileChoice).toBe(false);
+
+      component.landOnDeals();
+      component.landOnCharity();
+      expect(component.showDealPileChoice).toBe(false);
+
+      component.landOnDeals();
+      component.landOnDownsized();
+      expect(component.showDealPileChoice).toBe(false);
+
+      component.landOnDeals();
+      component.payday();
+      expect(component.showDealPileChoice).toBe(false);
+    });
+
+    it('activeDeckLabel translates the currently active deck', () => {
+      const { component } = makeComponent();
+
+      component.activeDeckKind = 'dealSmall';
+      expect(component.activeDeckLabel).toBe('CashflowGame.deckDealSmall');
+
+      component.activeDeckKind = 'doodad';
+      expect(component.activeDeckLabel).toBe('CashflowGame.deckDoodad');
+    });
+  });
+
+  describe('openMenu', () => {
+    it('closes the panel and opens the app menu', () => {
+      const { component } = makeComponent();
+      CashflowGameComponent.isOpen = true;
+
+      component.openMenu();
+
+      expect(CashflowGameComponent.isOpen).toBe(false);
+    });
   });
 
   describe('dismissing a Charity/Downsized reminder', () => {

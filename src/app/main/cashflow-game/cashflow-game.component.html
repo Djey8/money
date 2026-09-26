@@ -155,6 +155,13 @@
           </div>
         </div>
 
+        <p class="cf-stat cf-stat--secondary">
+          <span class="cf-stat-label">{{ 'CashflowGame.monthlyCashflow' | translate }}</span>
+          <span class="cf-stat-value cf-stat-value--sm" [class.cf-negative]="monthlyCashflow < 0">
+            {{ monthlyCashflow | appNumber }} {{ appState.currency }}
+          </span>
+        </p>
+
         <!-- Monthly cashflow already has a view — the Subscriptions page's own total
              (JFK, 2026-09-26: "use the normal app as much as possible"). Only the
              losing-condition warning is specific to this page. -->
@@ -215,57 +222,80 @@
           </button>
         </div>
 
-        <!-- Everything else — cashflow, stats, budget — is the app's own pages, unchanged. -->
-        <nav class="cf-app-links">
-          <a routerLink="/subscription" (click)="closeWindow()">{{
-            'CashflowGame.viewSubscriptions' | translate
-          }}</a>
-          <a routerLink="/grow" (click)="closeWindow()">{{
-            'CashflowGame.viewGrow' | translate
-          }}</a>
-          <a routerLink="/balance" (click)="closeWindow()">{{
-            'CashflowGame.viewBalanceSheet' | translate
-          }}</a>
-          <a routerLink="/stats" (click)="closeWindow()">{{
-            'CashflowGame.viewStats' | translate
-          }}</a>
-          <a routerLink="/budget" (click)="closeWindow()">{{
-            'CashflowGame.viewBudget' | translate
-          }}</a>
-        </nav>
+        <!-- Everything else — cashflow, stats, budget — is the app's own pages, reached via the -->
+        <!-- app's own Menu rather than a duplicated list of links here. -->
+        <button class="cf-menu-link" (click)="openMenu()">{{ 'Menu.title' | translate }} ›</button>
       </div>
 
       <!-- "Which space did you land on?" — companion mode: you moved your own token on the -->
       <!-- physical board, this simulates the consequence (todo/cashflow-game.md decision 8). -->
+      <!-- Colors match the physical board (JFK, 2026-09-26). -->
       <div class="cf-card">
         <h3>{{ 'CashflowGame.landedOn' | translate }}</h3>
-        <div class="cf-actions">
-          <button class="btn btn--sm" [disabled]="isBusy || !canLandOnBaby" (click)="landOnBaby()">
-            {{ 'CashflowGame.baby' | translate }}
+        <div class="cf-space-grid">
+          <button
+            class="cf-space-btn cf-space-btn--deals"
+            [disabled]="isBusy"
+            (click)="landOnDeals()"
+          >
+            {{ 'CashflowGame.spaceDeals' | translate }}
           </button>
-          <button class="btn btn--sm" [disabled]="isBusy" (click)="landOnCharity()">
+          <button
+            class="cf-space-btn cf-space-btn--doodad"
+            [disabled]="isBusy"
+            (click)="landOnDoodad()"
+          >
+            {{ 'CashflowGame.deckDoodad' | translate }}
+          </button>
+          <button
+            class="cf-space-btn cf-space-btn--charity"
+            [disabled]="isBusy"
+            (click)="landOnCharity()"
+          >
             {{ 'CashflowGame.charity' | translate }}
           </button>
-          <button class="btn btn--sm" [disabled]="isBusy" (click)="landOnDownsized()">
+          <button class="cf-space-btn cf-space-btn--payday" [disabled]="isBusy" (click)="payday()">
+            {{ 'CashflowGame.payday' | translate }}
+          </button>
+          <button
+            class="cf-space-btn cf-space-btn--market"
+            [disabled]="isBusy"
+            (click)="landOnMarket()"
+          >
+            {{ 'CashflowGame.deckMarket' | translate }}
+          </button>
+          <button
+            class="cf-space-btn cf-space-btn--downsized"
+            [disabled]="isBusy"
+            (click)="landOnDownsized()"
+          >
             {{ 'CashflowGame.downsized' | translate }}
+          </button>
+          <button
+            class="cf-space-btn cf-space-btn--baby"
+            [disabled]="isBusy || !canLandOnBaby"
+            (click)="landOnBaby()"
+          >
+            {{ 'CashflowGame.baby' | translate }}
+          </button>
+        </div>
+
+        <!-- Small/Big Deal share the same green space — say which pile you drew from. -->
+        <div class="cf-actions" *ngIf="showDealPileChoice">
+          <button class="btn btn--sm" (click)="chooseDealPile('dealSmall')">
+            {{ 'CashflowGame.deckDealSmall' | translate }}
+          </button>
+          <button class="btn btn--sm" (click)="chooseDealPile('dealBig')">
+            {{ 'CashflowGame.deckDealBig' | translate }}
           </button>
         </div>
       </div>
 
       <!-- Bringing a card into play, two ways (todo/cashflow-game.md decision 16): -->
       <!-- find one you drew from your real physical deck, or have the app draw one. -->
+      <!-- Which deck is active is set by the space buttons above, not a separate picker. -->
       <div class="cf-card">
-        <h3>{{ 'CashflowGame.cards' | translate }}</h3>
-
-        <label class="cf-field">
-          {{ 'CashflowGame.cardDeck' | translate }}
-          <select [(ngModel)]="activeDeckKind" (ngModelChange)="changeDeck()">
-            <option value="dealSmall">{{ 'CashflowGame.deckDealSmall' | translate }}</option>
-            <option value="dealBig">{{ 'CashflowGame.deckDealBig' | translate }}</option>
-            <option value="market">{{ 'CashflowGame.deckMarket' | translate }}</option>
-            <option value="doodad">{{ 'CashflowGame.deckDoodad' | translate }}</option>
-          </select>
-        </label>
+        <h3>{{ 'CashflowGame.cards' | translate }}: {{ activeDeckLabel }}</h3>
 
         <div class="cf-actions">
           <button class="btn btn--sm" [disabled]="isBusy" (click)="drawActiveCard()">

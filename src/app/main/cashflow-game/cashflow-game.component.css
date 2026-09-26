@@ -142,20 +142,17 @@
   margin-left: 6px;
 }
 
-.cf-app-links {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
+.cf-menu-link {
+  background: none;
+  border: none;
+  padding: 0;
   margin-top: 12px;
-  font-size: 0.85rem;
-}
-
-.cf-app-links a {
   color: var(--color-info);
-  text-decoration: none;
+  font-size: 0.9rem;
+  cursor: pointer;
 }
 
-.cf-app-links a:hover {
+.cf-menu-link:hover {
   text-decoration: underline;
 }
 
@@ -181,6 +178,19 @@
   font-size: 1.4rem;
   font-weight: bold;
   color: var(--color-text);
+}
+
+/* The always-visible monthly-cashflow figure — same labeling as the main stat row, just quieter. */
+.cf-stat--secondary {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0 0 8px;
+}
+
+.cf-stat-value--sm {
+  font-size: 1rem;
+  font-weight: 600;
 }
 
 .cf-actions {
@@ -321,4 +331,61 @@
   justify-content: space-between;
   gap: 12px;
   font-size: 0.9rem;
+}
+
+/* ---- Board-space selector — colors match the physical board (JFK, 2026-09-26) ---- */
+.cf-space-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 8px;
+}
+
+.cf-space-btn {
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  padding: 8px 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cf-space-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.cf-space-btn--deals {
+  border-color: var(--color-success);
+  color: var(--color-success);
+  background-color: var(--color-success-bg, rgba(76, 175, 80, 0.12));
+}
+
+.cf-space-btn--doodad {
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+  background-color: var(--color-danger-bg, rgba(211, 47, 47, 0.12));
+}
+
+.cf-space-btn--payday {
+  border-color: var(--color-warning);
+  color: var(--color-warning);
+  background-color: var(--color-warning-bg, rgba(255, 152, 0, 0.12));
+}
+
+.cf-space-btn--market {
+  border-color: var(--color-info);
+  color: var(--color-info);
+  background-color: var(--color-info-surface, rgba(0, 123, 255, 0.12));
+}
+
+.cf-space-btn--charity,
+.cf-space-btn--downsized,
+.cf-space-btn--baby {
+  border-color: var(--color-cf-purple, #8e44ad);
+  color: var(--color-cf-purple, #8e44ad);
+  background-color: rgba(142, 68, 173, 0.12);
+}
+
+.cf-space-btn:not(:disabled):hover {
+  filter: brightness(0.95);
 }

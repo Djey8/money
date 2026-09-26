@@ -21,6 +21,10 @@ import { AppNumberPipe } from 'src/app/shared/pipes/app-number.pipe';
 import { AppDatePipe } from 'src/app/shared/pipes/app-date.pipe';
 import { TrapFocusDirective } from 'src/app/shared/directives/trap-focus.directive';
 
+// Deferred import to break the circular chain with AppComponent, same pattern as every other panel.
+let AppComponent: any;
+setTimeout(() => import('src/app/app.component').then((m) => (AppComponent = m.AppComponent)));
+
 /**
  * The Cashflow (board game) companion — see todo/cashflow-game.md decision
  * 18. An always-hosted overlay panel (same pattern as Add/Info/Menu), not a
@@ -83,6 +87,9 @@ export class CashflowGameComponent {
   activeDeckKind: CashflowDeckKind = 'dealSmall';
   cardQuery = '';
   activeCard: CashflowDealCard | CashflowMarketCard | CashflowDoodadCard | null = null;
+
+  /** Shown after landing on the green "Deals" space, until the player says which pile they drew from. */
+  showDealPileChoice = false;
 
   constructor(
     private router: Router,
@@ -250,7 +257,14 @@ export class CashflowGameComponent {
     });
   }
 
+  /** A short hop out to the app's own hamburger menu, instead of duplicating a list of links here. */
+  openMenu(): void {
+    this.closeWindow();
+    AppComponent?.openNavBar();
+  }
+
   payday(): void {
+    this.showDealPileChoice = false;
     this.isBusy = true;
     this.cashflowGameService.payday({
       onSuccess: () => {
@@ -278,20 +292,60 @@ export class CashflowGameComponent {
     });
   }
 
-  /** "Which space did you land on?" — companion mode (todo/cashflow-game.md decision 8). */
+  /** "Which space did you land on?" — companion mode (todo/cashflow-game.md decision 8). Baby/Charity/Downsized apply immediately; the card spaces (Deals/Doodad/Market) below need the player to say which card they got first. */
   landOnBaby(): void {
+    this.showDealPileChoice = false;
     this.runAction((callbacks) => this.cashflowGameService.resolveBaby(callbacks), 'baby');
   }
 
   landOnCharity(): void {
+    this.showDealPileChoice = false;
     this.runAction((callbacks) => this.cashflowGameService.resolveCharity(callbacks), 'charity');
   }
 
   landOnDownsized(): void {
+    this.showDealPileChoice = false;
     this.runAction(
       (callbacks) => this.cashflowGameService.resolveDownsized(callbacks),
       'downsized',
     );
+  }
+
+  /** Green "Deals" space — the physical board doesn't distinguish Small/Big, so ask which pile first. */
+  landOnDeals(): void {
+    this.showDealPileChoice = true;
+  }
+
+  /** Small/Big Deal are the same green space on the board — the player says which pile they drew from. */
+  chooseDealPile(kind: 'dealSmall' | 'dealBig'): void {
+    this.showDealPileChoice = false;
+    this.activeDeckKind = kind;
+    this.changeDeck();
+  }
+
+  /** Red "Schnickschnack" space. */
+  landOnDoodad(): void {
+    this.showDealPileChoice = false;
+    this.activeDeckKind = 'doodad';
+    this.changeDeck();
+  }
+
+  /** Blue "Der Markt" space. */
+  landOnMarket(): void {
+    this.showDealPileChoice = false;
+    this.activeDeckKind = 'market';
+    this.changeDeck();
+  }
+
+  /** The active deck's translated name, next to the Cards section heading — the deck picker is now the space buttons above, not a separate dropdown. */
+  get activeDeckLabel(): string {
+    const key: Record<CashflowDeckKind, string> = {
+      dealSmall: 'CashflowGame.deckDealSmall',
+      dealBig: 'CashflowGame.deckDealBig',
+      market: 'CashflowGame.deckMarket',
+      doodad: 'CashflowGame.deckDoodad',
+    };
+    return this.translate.instant(key[this.activeDeckKind]);
   }
 
   /** The player, not the app, knows when their own next turns have played out (todo/cashflow-game.md §4). */

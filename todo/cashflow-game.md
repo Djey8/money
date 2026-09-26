@@ -6,9 +6,11 @@ reuse + docs guide committed (`106affd`), find/draw-a-card + the menu entry + `r
 game set with the Hausmeister/in profession, AND the overlay/panel UI conversion) committed across `dd416e7` and
 `dd82039`. Decisions 19–21 (hiding the `placeholder` fixture from players, completing the View Card stats, moving
 the reset button into Settings → Advanced, and fixing the bootstrap-timing bug that made Start Game a no-op) are
-built and green (domain + frontend tests, full typecheck, both editions build), not yet committed as of this note.
-Not yet playtested (JFK can't sit at a computer right now; we're developing ahead theoretically, per his explicit
-go-ahead, until he can).
+built and green. Decision 22 (the board-space color-coded selector, quiet monthly-cashflow stat, single Menu link
+replacing the app-links nav) is also built and green (domain + frontend tests, full typecheck, both editions
+build), not yet committed as of this note. Playtest is finally underway — JFK started a real game and confirmed
+Start Game works end to end; the framework in decision 22 is what's needed before wiring up the first real Card
+Deck (Phase 2, next).
 
 ## 1. What this is
 
@@ -221,6 +223,38 @@ same as `todo/fund-settlement.md` was.
     so the auth race is structurally gone, not just delayed. `CashflowGameComponent.instance` (a static
     self-reference set in the constructor, same pattern `AppComponent`/`AppStateService` already use) is what lets
     a static method reach the one open instance's injected `AppDataService`.
+22. **The active-game dashboard becomes a board-space selector, colored to match the physical board, and drops the
+    duplicated app-links nav for a single link to the Menu** (2026-09-26, JFK: _"below I would like to place the
+    monthly cashflow calculation... choice of the fields you can land on with the color we have on the board Green
+    Deals, Red Schnickschnack, Purple Charity, Orange Zahltag (Payday), Blue Der Markt, Purple Arbeitslos
+    (Downsized), Purple Baby... each of these field buttons trigger the event. Baby, Charity and Downsize directly
+    apply and for the cards (Deals, Schnickschnack and Markt) you have the choice (select the card you picked, or
+    pull random) for Deals you can choose from which pile you picked (Großer Deal oder Kleiner Deal)... below I
+    would like to have a short link to the Menu (so remove the View Subscription, View Grow...)"_).
+    - A quiet, always-visible "monthly cashflow" figure sits right under the Cash/Round/Game-date row (same
+      `cf-stat` styling, smaller font — `.cf-stat-value--sm`) — the bankruptcy warning banner still only shows
+      once it goes negative, this is just the number itself, visible at a glance every turn.
+    - The "which space did you land on?" card is now 7 color-coded buttons, one per physical board space kind,
+      instead of just Baby/Charity/Downsized: green **Deals**, red **Doodad** (Schnickschnack), purple
+      **Charity**, orange **Payday** (Zahltag), blue **Market** (Der Markt), purple **Downsized** (Arbeitslos),
+      purple **Baby** — English names reused from existing deck/space translation keys wherever one already
+      existed (`deckDoodad`, `deckMarket`, `charity`, `payday`, `downsized`, `baby`); only `spaceDeals` ("Deals")
+      is new. Colors use existing tokens (`--color-success`/`--color-danger`/`--color-warning`/`--color-info`)
+      plus a new one, `--color-cf-purple` (`src/styles.css`, light+dark), since nothing else in the app needed
+      purple before.
+    - Baby/Charity/Downsized/Payday **apply immediately** on click (unchanged handlers, just moved/re-skinned).
+      Deals/Doodad/Market **don't** — clicking one sets `activeDeckKind` (and, for Deals, first asks which pile —
+      `showDealPileChoice`, resolved by `chooseDealPile('dealSmall' | 'dealBig')`) and the existing find-or-draw UI
+      (decision 16, unchanged) does the rest. The Cards section's old manual deck `<select>` is gone — the space
+      buttons _are_ the deck picker now; its heading shows the active deck's translated name instead
+      (`activeDeckLabel`).
+    - The dashboard's `cf-app-links` nav (View Subscriptions/Grow/Balance Sheet/Stats/Budget) is replaced by one
+      `openMenu()` button that closes this panel and calls `AppComponent.openNavBar()` — the same hamburger menu
+      every other page already has, rather than a second, duplicated list of links (decision 13, taken further).
+      The bankruptcy warning's own "View Subscriptions" link is untouched, it isn't part of that nav.
+    - This is explicitly a framework/scaffolding change, not new card content — JFK: _"Implement this framework
+      and then we start with the first Card Deck (one Example)"_. The real Small/Big Deal, Market and Doodad card
+      catalogs (Phase 2) are still the placeholder data from decision 6, one deck at a time, next.
 
 ## 3. The one new thing: a small game-meta state
 
