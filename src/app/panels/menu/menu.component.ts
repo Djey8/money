@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 import { MatTableDataSource } from '@angular/material/table';
 import { AppStateService } from 'src/app/shared/services/app-state.service';
+import { CashflowGameService } from 'src/app/shared/services/cashflow-game.service';
 import { CommonModule } from '@angular/common';
 import { TranslateModule } from '@ngx-translate/core';
 import { TrapFocusDirective } from 'src/app/shared/directives/trap-focus.directive';
@@ -361,6 +362,16 @@ export class MenuComponent {
    */
   clickedIncomeStatement() {
     this.router.navigate([`/income`]);
+    MenuComponent.isMenu = false;
+  }
+
+  /** Only an account whose email contains "cashflow" ever sees this entry (todo/cashflow-game.md decision 2). */
+  isCashflowGame(): boolean {
+    return CashflowGameService.isCashflowGame();
+  }
+
+  clickedCashflowGame() {
+    this.router.navigate([`/cashflow-game`]);
     MenuComponent.isMenu = false;
   }
 

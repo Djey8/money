@@ -213,6 +213,16 @@
         <span class="menu-icon">↗</span>
         <span>{{ 'Menu.grow' | translate }}</span>
       </button>
+      <button
+        class="menu-item menu-item--compact"
+        *ngIf="isCashflowGame()"
+        data-tour-route="/cashflow-game"
+        [class.menu-item--active]="router.url === '/cashflow-game'"
+        (click)="clickedCashflowGame()"
+      >
+        <span class="menu-icon">🎲</span>
+        <span>{{ 'Menu.cashflowGame' | translate }}</span>
+      </button>
     </div>
   </div>
 </div>
