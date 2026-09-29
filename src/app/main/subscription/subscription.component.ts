@@ -33,6 +33,7 @@ import { RouterModule } from '@angular/router';
 import { ToastService } from 'src/app/shared/services/toast.service';
 import { SubscriptionProcessingService } from 'src/app/shared/services/subscription-processing.service';
 import { FrontendLoggerService } from 'src/app/shared/services/frontend-logger.service';
+import { CashflowGameService } from 'src/app/shared/services/cashflow-game.service';
 
 @Component({
   selector: 'app-subscription',
@@ -280,6 +281,11 @@ export class SubscriptionComponent implements OnDestroy, AfterViewChecked, OnIni
 
   ngOnDestroy() {
     this.subUpdateSub?.unsubscribe();
+  }
+
+  /** A cashflow-game account's Subscriptions only ever become Transactions via Payday — the manual refresh button doesn't apply and would silently no-op (todo/cashflow-game.md decision 31). */
+  isCashflowGame(): boolean {
+    return CashflowGameService.isCashflowGame();
   }
 
   private setupTableFeatures() {

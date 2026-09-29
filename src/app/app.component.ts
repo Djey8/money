@@ -352,6 +352,15 @@ export class AppComponent {
           if (!CashflowGameService.isCashflowGame()) {
             // Auto-generate subscription transactions on load
             this.autoGenerateSubscriptionTransactions();
+          } else {
+            // A cashflow account's game state was only ever loaded on-demand, when the game
+            // panel itself was opened — so a page that needs to know "is a game running"
+            // (Settings' reset button) couldn't rely on it before that (JFK, 2026-09-29: "the
+            // component does not know we started a game"). Load it as part of normal bootstrap
+            // instead, same as tier 1, since for this account type it effectively is tier 1.
+            AppDataService.instance
+              .loadCashflowGameData()
+              .catch((err) => console.error('Cashflow game data load error:', err));
           }
           // Auto-start interactive tour for new users
           if (window.localStorage.getItem('onboarding_pending') === 'true') {

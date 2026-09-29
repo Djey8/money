@@ -4,6 +4,7 @@ import { AppDataService } from './app-data.service';
 import { AuthService } from './auth.service';
 import { FrontendLoggerService } from './frontend-logger.service';
 import { FrequencyCalculatorService } from './frequency-calculator.service';
+import { CashflowGameService } from './cashflow-game.service';
 import { AccountingComponent } from '../../main/accounting/accounting.component';
 import { Transaction } from '../../interfaces/transaction';
 import { Revenue } from '../../interfaces/revenue';
@@ -75,6 +76,14 @@ export class SubscriptionProcessingService {
   }
 
   async setTransactionsForSubscriptions() {
+    // A cashflow-game account's Subscriptions only ever get turned into Transactions by Payday,
+    // dated at the game's own virtual date — never by the real wall-clock date this generic
+    // machinery uses (JFK, 2026-09-29: "the normal behaviour of the subscription auto add should
+    // be disabled for a game account"). Guarded here, not just at each call site, so no future
+    // caller can accidentally bypass it.
+    if (CashflowGameService.isCashflowGame()) {
+      return { transactionsCreated: 0, subscriptionsProcessed: 0 };
+    }
     // Prevent concurrent runs — if already processing, skip.
     // This avoids duplicate transactions from overlapping calls
     // (e.g. init + visibility change firing close together).

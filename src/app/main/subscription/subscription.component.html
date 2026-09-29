@@ -27,6 +27,7 @@
   </label>
   <button
     class="refresh-btn"
+    *ngIf="!isCashflowGame()"
     [attr.aria-label]="'Subscription.refreshButton.tooltip' | translate"
     [title]="'Subscription.refreshButton.tooltip' | translate"
     [disabled]="isRefreshing"
