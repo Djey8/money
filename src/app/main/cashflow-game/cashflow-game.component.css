@@ -66,6 +66,14 @@
   gap: 16px;
 }
 
+/* Space between the profession card, the space grid, planned deals, bank loan, history, and the
+   menu row — was flush before (JFK, 2026-09-29: "add space between the different components"). */
+.cf-dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
 .cf-card {
   background-color: var(--color-background);
   border-radius: var(--radius-md);
@@ -141,10 +149,71 @@
   margin-left: 6px;
 }
 
-/* Last in the dashboard, a real button rather than a plain underlined link (JFK, 2026-09-29). */
-.cf-menu-btn {
+/* Bank Loan / Payback Loan triggers: their own button, not the global .btn (its 80%-width/
+   10%-margin-left box model assumes one standalone button per row, not two side by side — that
+   combined with an earlier full-width override is what made the Menu button look broken too).
+   Reuses the warning/amber color the space grid no longer needs since Payday isn't in it anymore. */
+.cf-loan-triggers {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.cf-loan-btn {
+  flex: 1;
+  min-width: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid var(--color-warning, #f0ad4e);
+  color: var(--color-warning, #f0ad4e);
+  background-color: var(--color-warning-bg, rgba(255, 152, 0, 0.12));
+  border-radius: var(--radius-md);
+  padding: 14px 12px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.cf-loan-btn:not(:disabled):hover {
+  filter: brightness(0.95);
+}
+
+.cf-loan-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.cf-loan-btn-icon {
+  font-size: 1.1rem;
+}
+
+/* History / Menu: a "go see more" row, own styling rather than the global .btn — full width without
+   fighting its 10%-margin-left assumption (JFK, 2026-09-29: "the style should fit more to this
+   component, not only a text with underline a real button"). */
+.cf-row-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   width: 100%;
-  margin-top: 4px;
+  padding: 14px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cf-row-btn:hover {
+  background-color: var(--color-background);
+}
+
+.cf-row-btn-chevron {
+  color: var(--color-text-secondary);
+  font-size: 1.1rem;
 }
 
 .cf-stat-row {

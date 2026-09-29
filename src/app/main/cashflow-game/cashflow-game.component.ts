@@ -80,10 +80,10 @@ export class CashflowGameComponent {
   /**
    * Which focused sub-view the active-game dashboard shows (JFK, 2026-09-26: "when you click one then the panel
    * cleans from the current view and only shows this the selection of dealing the card"). `'main'` is the normal
-   * dashboard (stats, the space grid, planned deals, bank loan, history); `'dealPile'`, `'cards'`, `'bankLoan'`
-   * and `'payLoan'` each hide everything else and show only that step, with a way back.
+   * dashboard (stats, the space grid, planned deals, bank loan, history); `'dealPile'`, `'cards'`, `'bankLoan'`,
+   * `'payLoan'` and `'history'` each hide everything else and show only that step, with a way back.
    */
-  dashboardView: 'main' | 'dealPile' | 'cards' | 'bankLoan' | 'payLoan' = 'main';
+  dashboardView: 'main' | 'dealPile' | 'cards' | 'bankLoan' | 'payLoan' | 'history' = 'main';
 
   /** The find-a-specific-card UI starts collapsed — Draw is the primary action, find is secondary (JFK, 2026-09-26). */
   showCardFind = false;
@@ -507,6 +507,11 @@ export class CashflowGameComponent {
   /** Only reachable once there's actually a loan to pay back — the trigger button itself is `*ngIf`'d on that. */
   openPayLoan(): void {
     this.dashboardView = 'payLoan';
+  }
+
+  /** History is hidden behind its own trigger too, same pattern (JFK, 2026-09-29: "can you hide the history behind a button"). */
+  openHistory(): void {
+    this.dashboardView = 'history';
   }
 
   borrowLoan(): void {

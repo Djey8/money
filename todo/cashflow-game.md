@@ -25,9 +25,12 @@ from its own Subscription's `startDate` day, not an auto-computed spread) is com
 40–41 (a general full-state "undo the last action" replacing the Payday-only undo that silently refused to undo
 Baby/Charity/Downsized/loan actions; missing categories filled in — Salary, Children Expenses, Bank loan interest,
 a bought property's Cashflow subscription, a Doodad's transaction; and smart non-overlapping default dates for
-every auto-created Subscription, not just Payday's own) are built and green (frontend + domain tests, full
-typecheck, both editions build), not yet committed as of this note. The framework in decision 27 is what's needed
-before wiring up the first real Card Deck (Phase 2, next).
+every auto-created Subscription, not just Payday's own) are committed (`7230577`). Decision 42 (spacing between the
+dashboard's cards, a redesigned Bank Loan trigger and Menu row — the actual bug behind the "messed up" look was the
+global `.btn` class's 80%-width/10%-margin-left box model fighting a width override — and History hidden behind its
+own trigger with a Category column) is built and green (frontend tests, full typecheck, both editions build), not
+yet committed as of this note. The framework in decision 27 is what's needed before wiring up the first real Card
+Deck (Phase 2, next).
 
 ## 1. What this is
 
@@ -581,6 +584,35 @@ Cashflow`) is never added to `state.cashflowGame.gameSubscriptionTitles`. `liveP
       asked, through the one shared code path rather than three separate implementations. `upsertSubscription`'s
       *existing* branch also now refreshes `category` (previously only account/amount/frequency were "recomputed
       every time" — category joins that existing pattern rather than getting special-cased).
+
+42. **Dashboard polish: spacing between cards, a redesigned Bank Loan trigger, History hidden behind a button
+    with its Category column, and the real bug behind the "messed up" Menu button** (2026-09-29+, JFK: _"can you
+    add space between the different components — Persona to Field/buttons to Bank loan to History to Menu"_ /
+    _"can you design better the Bank loan button and the Menu button (especially the menu button is css messed
+    up)"_ / _"can you hide the history behind a button... show Account · Category · Amount (so add the
+    Category)"_). Three changes:
+    - **Spacing.** `.cf-dashboard` had no layout rules of its own — its `*ngIf="dashboardView === 'main'"`
+      `ng-container` has no DOM node, so every card inside it (summary, space grid, planned deals, loan triggers,
+      history/menu rows) rendered as a *direct* child of `.cf-dashboard`, flush against each other with none of
+      `.cashflow-game-page`'s own `gap: 16px` (that gap only applies to *its own* direct children, and
+      `.cf-dashboard` is the only one of those inside the active-game view). Given `display: flex; flex-direction:
+      column; gap: 16px`, matching `.cashflow-game-page`'s own convention.
+    - **The Menu button bug, found while designing "better."** The global `.btn` class (`src/styles.css`) sets
+      `width: 80%; margin-left: 10%` — a box model built for exactly one standalone button per row (see "Start
+      Game"), not something meant to be widened. Decision 38's `.cf-menu-btn { width: 100%; }` fought that without
+      touching `margin-left`, so the rendered button was effectively 110% wide, pushed right off the card — the
+      actual "css messed up" JFK saw. Same risk existed for the Bank Loan trigger's two `btn btn--sm` buttons side
+      by side (two 80%-wide flex items in one row). Fixed by giving both their own dedicated classes instead of
+      layering onto `.btn`: `.cf-loan-btn` (bordered/colored like the space-grid buttons, reusing the amber/warning
+      color the grid no longer needs since Payday isn't in it — decision 38) for Bank Loan/Payback Loan, and
+      `.cf-row-btn` (a full-width bordered "go see more" row with a trailing `›`) for both History and Menu, which
+      share the same "opens something else" shape.
+    - **History hidden behind its own trigger**, exactly the Deal-pile/Cards/Bank-loan pattern: a `.cf-row-btn`
+      shown only when `appState.cashflowGame.history.length`, opening `dashboardView: 'history'` with a Back
+      button. Each transaction line now reads `Account · Category · Amount` instead of just `Account · Amount` —
+      `CashflowTransactionRecord.category` was already recorded in `createdTransactions`, just never shown; the
+      category is only printed when non-empty (older history entries predating decision 41 may still have a blank
+      one, from before every automation path filled one in).
 
 ## 3. The one new thing: a small game-meta state
 

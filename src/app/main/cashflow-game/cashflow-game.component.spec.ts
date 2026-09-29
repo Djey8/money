@@ -516,6 +516,14 @@ describe('CashflowGameComponent', () => {
       expect(component.dashboardView).toBe('payLoan');
     });
 
+    it('openHistory switches to the history sub-view, same pattern', () => {
+      const { component } = makeComponent();
+
+      component.openHistory();
+
+      expect(component.dashboardView).toBe('history');
+    });
+
     it('borrowLoan/repayLoan return to the main dashboard once the service confirms success', () => {
       const { component, cashflowGameService } = makeComponent();
       AppStateService.instance.cashflowGame = {

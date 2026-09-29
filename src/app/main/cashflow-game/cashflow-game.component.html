@@ -402,47 +402,39 @@
         </div>
 
         <!-- Bank Loan / Payback Loan: each hidden behind its own trigger — Payback only once there's -->
-        <!-- actually a loan to pay back (JFK, 2026-09-29). -->
+        <!-- actually a loan to pay back (JFK, 2026-09-29). Dedicated button styling, not the global -->
+        <!-- .btn (its 80%-width/10%-margin-left box model is meant for one standalone button, not two -->
+        <!-- side by side — JFK, 2026-09-29: "can you design better the Bank loan button"). -->
         <div class="cf-card cf-loan-triggers" *ngIf="currentGameSet">
-          <div class="cf-actions">
-            <button class="btn btn--sm" [disabled]="isBusy" (click)="openBankLoan()">
-              {{ 'CashflowGame.bankLoan' | translate }}
-            </button>
-            <button
-              class="btn btn--sm"
-              *ngIf="currentLoanPrincipal > 0"
-              [disabled]="isBusy"
-              (click)="openPayLoan()"
-            >
-              {{ 'CashflowGame.loanRepay' | translate }}
-            </button>
-          </div>
+          <button class="cf-loan-btn" [disabled]="isBusy" (click)="openBankLoan()">
+            <span class="cf-loan-btn-icon">🏦</span>
+            <span>{{ 'CashflowGame.bankLoan' | translate }}</span>
+          </button>
+          <button
+            class="cf-loan-btn"
+            *ngIf="currentLoanPrincipal > 0"
+            [disabled]="isBusy"
+            (click)="openPayLoan()"
+          >
+            <span class="cf-loan-btn-icon">💳</span>
+            <span>{{ 'CashflowGame.loanRepay' | translate }}</span>
+          </button>
         </div>
 
-        <div class="cf-card" *ngIf="appState.cashflowGame.history.length">
-          <h3>{{ 'CashflowGame.history' | translate }}</h3>
-          <ul class="cf-history">
-            <li *ngFor="let entry of appState.cashflowGame.history">
-              <span class="cf-history-round"
-                >{{ 'CashflowGame.Round' | translate }} {{ entry.round }} ·
-                {{ 'CashflowGame.' + entry.kind | translate }}</span
-              >
-              <span class="cf-history-date">{{ entry.virtualDateBefore | appDate }}</span>
-              <ul class="cf-history-transactions">
-                <li *ngFor="let tx of entry.createdTransactions">
-                  {{ tx.account }} · {{ toDisplayAmount(tx.amountMinor) | appNumber }}
-                  {{ appState.currency }}
-                </li>
-              </ul>
-            </li>
-          </ul>
-        </div>
+        <!-- History and Menu: both "go see more elsewhere" rows, same treatment (JFK, 2026-09-29: -->
+        <!-- "can you hide the history behind a button" / "the menu button... a real button"). -->
+        <button
+          class="cf-row-btn"
+          *ngIf="appState.cashflowGame.history.length"
+          (click)="openHistory()"
+        >
+          <span>{{ 'CashflowGame.history' | translate }}</span>
+          <span class="cf-row-btn-chevron">›</span>
+        </button>
 
-        <!-- Everything else — cashflow, stats, budget — is the app's own pages, reached via the app's -->
-        <!-- own Menu rather than a duplicated list of links here. Last in the dashboard, styled like the -->
-        <!-- component's other buttons rather than a plain underlined link (JFK, 2026-09-29). -->
-        <button class="btn btn--sm cf-menu-btn" (click)="openMenu()">
-          {{ 'Menu.title' | translate }} ›
+        <button class="cf-row-btn" (click)="openMenu()">
+          <span>{{ 'Menu.title' | translate }}</span>
+          <span class="cf-row-btn-chevron">›</span>
         </button>
       </ng-container>
 
@@ -517,6 +509,31 @@
             {{ 'CashflowGame.loanRepay' | translate }}
           </button>
         </div>
+      </div>
+
+      <!-- History: hidden behind its own trigger, Back button included, same pattern as Deal pile/Cards/Bank -->
+      <!-- loan (JFK, 2026-09-29). Account · Category · Amount, so a payout's category is visible here too. -->
+      <div class="cf-card" *ngIf="dashboardView === 'history'">
+        <button class="cf-back-btn" (click)="backToMain()">
+          ‹ {{ 'CashflowGame.back' | translate }}
+        </button>
+        <h3>{{ 'CashflowGame.history' | translate }}</h3>
+        <ul class="cf-history">
+          <li *ngFor="let entry of appState.cashflowGame.history">
+            <span class="cf-history-round"
+              >{{ 'CashflowGame.Round' | translate }} {{ entry.round }} ·
+              {{ 'CashflowGame.' + entry.kind | translate }}</span
+            >
+            <span class="cf-history-date">{{ entry.virtualDateBefore | appDate }}</span>
+            <ul class="cf-history-transactions">
+              <li *ngFor="let tx of entry.createdTransactions">
+                {{ tx.account
+                }}<ng-container *ngIf="tx.category"> · {{ tx.category }}</ng-container> ·
+                {{ toDisplayAmount(tx.amountMinor) | appNumber }} {{ appState.currency }}
+              </li>
+            </ul>
+          </li>
+        </ul>
       </div>
 
       <!-- Bringing a card into play, two ways (todo/cashflow-game.md decision 16): draw at random -->
