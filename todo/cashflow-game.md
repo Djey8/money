@@ -7,11 +7,13 @@ game set with the Hausmeister/in profession, AND the overlay/panel UI conversion
 `dd82039`. Decisions 19–28 (hiding the `placeholder` fixture from players, completing the View Card stats, moving
 the reset button into Settings → Advanced, the bootstrap-timing fix, itemized Savings/Salary/expense starting
 transactions, the missing-category bug in Payday/Charity, Downsized paying real per-line expenses, and the
-step-by-step dashboard flow) are committed across `80f0b13`/`6508774` and earlier. JFK's first real playtest is
-underway. Decision 29 (the real fix for stale visuals after Cashflow actions — `transactionsUpdated$`/
-`subscriptionsUpdated$` instead of the page reloads decisions 24/28 had used) is built and green (domain +
-frontend tests, full typecheck, both editions build), not yet committed as of this note. The framework in
-decision 27 is what's needed before wiring up the first real Card Deck (Phase 2, next).
+step-by-step dashboard flow) are committed across `80f0b13`/`6508774` and earlier. Decision 29 (the real fix for
+stale visuals after Cashflow actions — `transactionsUpdated$`/`subscriptionsUpdated$` instead of the page reloads
+decisions 24/28 had used) is committed (`d2c4b5f`). JFK's first real playtest is underway. Decision 30 (the
+profession card's compact Income Statement/Balance Sheet plus its live, current-game equivalent — and the
+`gameSubscriptionTitles` bug found while building it, flagged not fixed) is built and green (domain + frontend
+tests, full typecheck, both editions build), not yet committed as of this note. The framework in decision 27 is
+what's needed before wiring up the first real Card Deck (Phase 2, next).
 
 ## 1. What this is
 
@@ -348,6 +350,36 @@ CashflowTransactionRecord[]` — Savings (`@Savings`) and Salary (`@Salary`) eac
     back to plain `router.navigate(['/home'])` (now harmless even as a same-URL no-op, since Home refreshes itself
     reactively regardless of whether the navigation itself did anything), and `resetCashflowGame()`'s
     `window.location.reload()` was removed outright.
+30. **The profession card becomes a compact Income Statement/Balance Sheet, the same shape as the physical board's
+    own player sheet — plus, once a game is running, the live equivalent read from the actual game** (2026-09-29,
+    JFK: _"salary + passive = income - expense = cashflow in a small version... two lines from passive to
+    expenses describing that the goal is to have more passive than expenses and thats how you leave the rat
+    race... first Income with the element salary... then before the Liabilities we have Assets where the only
+    point is Ersparnisse... This should be the same if while the game is running you click on the ?... at the
+    start you see there the start scenario and then the live data from the actual data on the app"_).
+    - A compact one-line summary (`Salary + Passive = Income`, `Income − Expenses = Cashflow`) plus two
+      horizontal bars comparing Passive Income against Expenses — the rat-race exit condition made visual
+      (`ratRaceBarWidth`, scaled to whichever of the two is larger, clamped to a visible 2% sliver so a zero value
+      never fully disappears).
+    - Below that, the card's full breakdown reordered into **Income** (Salary) → **Expenses** (itemized, as
+      before) → **Assets** (Savings — the only asset a profession ever starts with) → **Liabilities** (itemized,
+      as before).
+    - **While a game is running**, the same structure repeats a second time below a divider, labeled "Live —
+      Current Game," reading actual current data instead of the frozen card: `liveSalary` (the Salary
+      subscription's current amount — the player can edit it and it sticks, decision 16), `livePassiveIncome`
+      (investment-kind Grow project `cashflow` summed — shares don't count, decision 10/11; this is the rat-race
+      indicator flagged as "not built yet" in decision 11, now built), `liveExpenseLines` (every current game
+      subscription with `amountMinor < 0`, itemized by its own title/category), `liveLiabilities` (the account's
+      real, current `liabilities` array — no game-specific filtering needed, decision 2).
+    - **Found in the process, not yet fixed**: `executeDeal()`'s property-cashflow Subscription (`${title}
+Cashflow`) is never added to `state.cashflowGame.gameSubscriptionTitles`. `livePassiveIncome` reads Grow
+      projects directly, sidestepping this for display — but Payday itself only ever acts on subscriptions listed
+      in `gameSubscriptionTitles` (`ownedSubscriptions` in `engine.ts`), so **a bought property's monthly cashflow
+      is never actually paid out by Payday today**, and the existing `monthlyCashflow`/"Monthly cashflow" dashboard
+      stat (which sums `gameSubscriptions()`, not Grow projects) silently excludes it too. Flagged for JFK to
+      prioritize next rather than fixed as a drive-by (his own "fix issues one by one," 2026-09-29) — likely fix:
+      have `executeDeal()` append the new subscription's title to `gameSubscriptionTitles` the same way
+      `resolveCashflowBaby`/`pickCashflowProfession` already do for the subscriptions they create.
 
 ## 3. The one new thing: a small game-meta state
 

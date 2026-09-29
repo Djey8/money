@@ -150,6 +150,92 @@ describe('CashflowGameComponent', () => {
       // salary 1600 - expenses 1000
       expect(component.professionMonthlyCashflow(profession)).toBe(600);
     });
+
+    it('ratRaceBarWidth scales both bars to the larger of the two, never below a visible sliver', () => {
+      const { component } = makeComponent();
+
+      expect(component.ratRaceBarWidth(0, 1000)).toBe(2); // clamped up from 0%, still a sliver
+      expect(component.ratRaceBarWidth(1000, 0)).toBe(100);
+      expect(component.ratRaceBarWidth(500, 1000)).toBe(50);
+      expect(component.ratRaceBarWidth(0, 0)).toBe(2); // both zero — no divide-by-zero
+    });
+  });
+
+  describe('live financial statement (todo/cashflow-game.md decision 30)', () => {
+    function startGame() {
+      const hausmeister = CASHFLOW_GAME_SETS.find((set) => set.id === 'cashflow')!.professions[0];
+      AppStateService.instance.cashflowGame = {
+        ...AppStateService.instance.cashflowGame,
+        gameSetId: 'cashflow',
+        professionId: hausmeister.id,
+        gameSubscriptionTitles: ['Hausmeister/in Salary', 'Steuern', 'Autokreditzahlung'],
+      };
+    }
+
+    it('liveSalary reads the current amount of the Salary subscription, even if the player edited it', () => {
+      const { component } = makeComponent();
+      startGame();
+      AppStateService.instance.allSubscriptions = [
+        { title: 'Hausmeister/in Salary', account: 'Income', amount: 1700 } as any,
+      ];
+
+      expect(component.liveSalary).toBe(1700);
+    });
+
+    it('liveSalary is 0 when there is no active game or no matching subscription', () => {
+      const { component } = makeComponent();
+      expect(component.liveSalary).toBe(0);
+    });
+
+    it('livePassiveIncome sums only investment-kind (property) Grow project cashflow, not shares', () => {
+      const { component } = makeComponent();
+      AppStateService.instance.allGrowProjects = [
+        { title: 'Villa', investment: { tag: 'Villa' }, cashflow: 600 } as any,
+        { title: 'TestCo', share: { tag: 'TestCo' }, cashflow: 999 } as any, // a share, ignored
+      ];
+
+      expect(component.livePassiveIncome).toBe(600);
+    });
+
+    it('liveExpenseLines only includes negative game subscriptions, itemized with their own titles', () => {
+      const { component } = makeComponent();
+      startGame();
+      AppStateService.instance.allSubscriptions = [
+        { title: 'Hausmeister/in Salary', account: 'Income', amount: 1600 } as any,
+        { title: 'Steuern', account: 'Daily', amount: -300 } as any,
+        { title: 'Autokreditzahlung', account: 'Daily', amount: -100 } as any,
+        { title: 'Not part of this game', account: 'Daily', amount: -50 } as any,
+      ];
+
+      expect(component.liveExpenseLines).toEqual([
+        { title: 'Steuern', amount: -300 },
+        { title: 'Autokreditzahlung', amount: -100 },
+      ]);
+      expect(component.liveTotalExpenses).toBe(400);
+    });
+
+    it('liveTotalIncome and liveCashflow combine salary, passive income, and expenses', () => {
+      const { component } = makeComponent();
+      startGame();
+      AppStateService.instance.allSubscriptions = [
+        { title: 'Hausmeister/in Salary', account: 'Income', amount: 1600 } as any,
+        { title: 'Steuern', account: 'Daily', amount: -300 } as any,
+      ];
+      AppStateService.instance.allGrowProjects = [
+        { title: 'Villa', investment: { tag: 'Villa' }, cashflow: 600 } as any,
+      ];
+
+      expect(component.liveTotalIncome).toBe(2200); // 1600 salary + 600 passive
+      expect(component.liveCashflow).toBe(1900); // 2200 - 300 expenses
+    });
+
+    it('liveLiabilities reads straight from AppStateService — the whole account is the game', () => {
+      const { component } = makeComponent();
+      const liabilities = [{ tag: 'Bank loan', amount: 2000, investment: false, credit: 0 }];
+      AppStateService.instance.liabilities = liabilities;
+
+      expect(component.liveLiabilities).toBe(liabilities);
+    });
   });
 
   describe('playableGameSets', () => {

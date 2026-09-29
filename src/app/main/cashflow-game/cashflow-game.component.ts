@@ -238,6 +238,65 @@ export class CashflowGameComponent {
     );
   }
 
+  /**
+   * The card's Income Statement/Balance Sheet, compact, the same idea as the physical board's own player sheet —
+   * Salary + Passive = Income, Income − Expenses = Cashflow, Passive vs. Expenses is literally the rat-race exit
+   * condition (JFK, 2026-09-26: "the goal is to have more passive than expenses and thats how you leave the rat
+   * race"). A profession always starts with zero passive income — no investments owned yet.
+   */
+  readonly professionStartingPassive = 0;
+
+  /** Widest of the two bars in the passive-vs-expenses comparison, so both scale to the same track (min 1 to avoid divide-by-zero when both are 0). */
+  ratRaceBarWidth(value: number, other: number): number {
+    const max = Math.max(value, other, 1);
+    return Math.max(2, Math.min(100, (value / max) * 100));
+  }
+
+  /**
+   * Live Income Statement/Balance Sheet — the same shape as the printed starting card, but read from the actual
+   * running game, since the player's numbers move as they play (JFK, 2026-09-26: "on a live game you can have
+   * more Incomes or more expenses and maybe you payed back some Liabilities... so the live data from the current
+   * game"). Only meaningful once a game is running.
+   */
+
+  /** The Salary subscription's current amount — may differ from the printed card if the player edited its category/amount (decision 16), which is allowed and persists. */
+  get liveSalary(): number {
+    const title = `${this.currentProfession?.title} Salary`;
+    return this.appState.allSubscriptions.find((sub) => sub.title === title)?.amount ?? 0;
+  }
+
+  /** Property (investment-kind) Grow project cashflow only — shares/trading are a liquidity tool here, not passive income (decision 10/11). */
+  get livePassiveIncome(): number {
+    return this.appState.allGrowProjects
+      .filter((project) => project.investment?.tag)
+      .reduce((sum, project) => sum + (project.cashflow ?? 0), 0);
+  }
+
+  get liveTotalIncome(): number {
+    return this.liveSalary + this.livePassiveIncome;
+  }
+
+  /** Every current game expense subscription, itemized — mirrors the profession card's own expense lines, live. */
+  get liveExpenseLines(): { title: string; amount: number }[] {
+    const gameTitles = this.appState.cashflowGame.gameSubscriptionTitles;
+    return this.appState.allSubscriptions
+      .filter((sub) => gameTitles.includes(sub.title) && sub.amount < 0)
+      .map((sub) => ({ title: sub.title, amount: sub.amount }));
+  }
+
+  get liveTotalExpenses(): number {
+    return this.liveExpenseLines.reduce((sum, line) => sum + Math.abs(line.amount), 0);
+  }
+
+  get liveCashflow(): number {
+    return this.liveTotalIncome - this.liveTotalExpenses;
+  }
+
+  /** Every current liability — the whole account is the game (decision 2), no filtering needed. */
+  get liveLiabilities() {
+    return this.appState.liabilities;
+  }
+
   /** "you can also just take one and it would be very nice to also see the attributes" (JFK, 2026-09-26). */
   openProfessionCard(profession: CashflowProfession): void {
     this.viewedProfession = profession;

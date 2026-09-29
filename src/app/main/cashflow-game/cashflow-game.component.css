@@ -406,3 +406,75 @@
   color: var(--color-text);
   text-decoration: underline;
 }
+
+/* ---- Profession card: Income Statement/Balance Sheet, same idea as the physical board's own player sheet ---- */
+.cf-profession-card-divider {
+  border: none;
+  border-top: 1px solid var(--color-border);
+  margin: 20px 0 16px;
+}
+
+.cf-statement-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+  margin: 8px 0 16px;
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+}
+
+.cf-statement-summary-total {
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.cf-statement-summary-break {
+  flex-basis: 100%;
+  height: 0;
+}
+
+.cf-rat-race {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0 0 16px;
+}
+
+.cf-rat-race-row {
+  display: grid;
+  grid-template-columns: 90px 1fr 70px;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+}
+
+.cf-rat-race-label {
+  color: var(--color-text-secondary);
+}
+
+.cf-rat-race-track {
+  background-color: var(--color-background);
+  border-radius: var(--radius-full);
+  height: 10px;
+  overflow: hidden;
+}
+
+.cf-rat-race-bar {
+  height: 100%;
+  border-radius: var(--radius-full);
+  transition: width 0.2s ease;
+}
+
+.cf-rat-race-bar--passive {
+  background-color: var(--color-success);
+}
+
+.cf-rat-race-bar--expenses {
+  background-color: var(--color-danger);
+}
+
+.cf-rat-race-value {
+  text-align: right;
+  font-weight: 600;
+}

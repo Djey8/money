@@ -16,45 +16,82 @@
 
   <div class="cashflow-game-page">
     <!-- Profession card detail — shown at selection time and reopenable during the game -->
-    <!-- (todo/cashflow-game.md decision 18). -->
+    <!-- (todo/cashflow-game.md decision 18/30): the card's own Income Statement/Balance Sheet, -->
+    <!-- plus — while a game is running — the same shape read live from the actual game. -->
     <div class="cf-card cf-profession-card" *ngIf="viewedProfession as profession">
       <div class="cf-profession-card-header">
         <h3>{{ profession.title }}</h3>
         <button class="cf-panel-close" aria-label="Close" (click)="closeProfessionCard()">✕</button>
       </div>
-      <div class="cf-stat-row">
-        <div class="cf-stat">
-          <span class="cf-stat-label">{{ 'CashflowGame.salary' | translate }}</span>
-          <span class="cf-stat-value"
-            >{{ toDisplayAmount(profession.salaryMinor) | appNumber }} {{ appState.currency }}</span
-          >
+
+      <h4>{{ 'CashflowGame.startingScenario' | translate }}</h4>
+
+      <div class="cf-statement-summary">
+        <span
+          >{{ 'CashflowGame.salary' | translate }}
+          {{ toDisplayAmount(profession.salaryMinor) | appNumber }}</span
+        >
+        <span>+</span>
+        <span
+          >{{ 'CashflowGame.passiveIncome' | translate }}
+          {{ professionStartingPassive | appNumber }}</span
+        >
+        <span>=</span>
+        <span class="cf-statement-summary-total"
+          >{{ 'CashflowGame.income' | translate }}
+          {{ toDisplayAmount(profession.salaryMinor) | appNumber }}</span
+        >
+        <span class="cf-statement-summary-break"></span>
+        <span
+          >{{ 'CashflowGame.totalExpenses' | translate }}
+          {{ professionTotalExpenses(profession) | appNumber }}</span
+        >
+        <span>=</span>
+        <span class="cf-statement-summary-total"
+          >{{ 'CashflowGame.monthlyCashflow' | translate }}
+          {{ professionMonthlyCashflow(profession) | appNumber }}</span
+        >
+      </div>
+
+      <!-- The rat-race exit condition: passive income vs. expenses (JFK, 2026-09-26). -->
+      <div class="cf-rat-race">
+        <div class="cf-rat-race-row">
+          <span class="cf-rat-race-label">{{ 'CashflowGame.passiveIncome' | translate }}</span>
+          <div class="cf-rat-race-track">
+            <div
+              class="cf-rat-race-bar cf-rat-race-bar--passive"
+              [style.width.%]="
+                ratRaceBarWidth(professionStartingPassive, professionTotalExpenses(profession))
+              "
+            ></div>
+          </div>
+          <span class="cf-rat-race-value">{{ professionStartingPassive | appNumber }}</span>
         </div>
-        <div class="cf-stat">
-          <span class="cf-stat-label">{{ 'CashflowGame.savings' | translate }}</span>
-          <span class="cf-stat-value"
-            >{{ toDisplayAmount(profession.savingsMinor) | appNumber }}
-            {{ appState.currency }}</span
-          >
-        </div>
-        <div class="cf-stat">
-          <span class="cf-stat-label">{{ 'CashflowGame.totalExpenses' | translate }}</span>
-          <span class="cf-stat-value"
-            >{{ professionTotalExpenses(profession) | appNumber }} {{ appState.currency }}</span
-          >
-        </div>
-        <div class="cf-stat">
-          <span class="cf-stat-label">{{ 'CashflowGame.monthlyCashflow' | translate }}</span>
-          <span class="cf-stat-value"
-            >{{ professionMonthlyCashflow(profession) | appNumber }} {{ appState.currency }}</span
-          >
-        </div>
-        <div class="cf-stat">
-          <span class="cf-stat-label">{{ 'CashflowGame.startingCash' | translate }}</span>
-          <span class="cf-stat-value"
-            >{{ professionStartingCash(profession) | appNumber }} {{ appState.currency }}</span
-          >
+        <div class="cf-rat-race-row">
+          <span class="cf-rat-race-label">{{ 'CashflowGame.totalExpenses' | translate }}</span>
+          <div class="cf-rat-race-track">
+            <div
+              class="cf-rat-race-bar cf-rat-race-bar--expenses"
+              [style.width.%]="
+                ratRaceBarWidth(professionTotalExpenses(profession), professionStartingPassive)
+              "
+            ></div>
+          </div>
+          <span class="cf-rat-race-value">{{
+            professionTotalExpenses(profession) | appNumber
+          }}</span>
         </div>
       </div>
+
+      <h4>{{ 'CashflowGame.income' | translate }}</h4>
+      <ul class="cf-line-list">
+        <li>
+          <span>{{ 'CashflowGame.salary' | translate }}</span>
+          <span
+            >{{ toDisplayAmount(profession.salaryMinor) | appNumber }} {{ appState.currency }}</span
+          >
+        </li>
+      </ul>
 
       <h4>{{ 'CashflowGame.expenses' | translate }}</h4>
       <ul class="cf-line-list">
@@ -69,6 +106,17 @@
         {{ toDisplayAmount(profession.perChildExpenseMinor) | appNumber }} {{ appState.currency }}
       </p>
 
+      <h4>{{ 'CashflowGame.assets' | translate }}</h4>
+      <ul class="cf-line-list">
+        <li>
+          <span>{{ 'CashflowGame.savings' | translate }}</span>
+          <span
+            >{{ toDisplayAmount(profession.savingsMinor) | appNumber }}
+            {{ appState.currency }}</span
+          >
+        </li>
+      </ul>
+
       <ng-container *ngIf="profession.starterKit.liabilities?.length">
         <h4>{{ 'CashflowGame.liabilities' | translate }}</h4>
         <ul class="cf-line-list">
@@ -80,6 +128,97 @@
             >
           </li>
         </ul>
+      </ng-container>
+
+      <!-- The same shape, read live from the actual running game — salary/expenses may have been -->
+      <!-- edited, property cashflow may now count as passive, liabilities may be paid down -->
+      <!-- (JFK, 2026-09-26: "on a live game you can have more Incomes or more expenses..."). -->
+      <ng-container *ngIf="hasActiveGame">
+        <hr class="cf-profession-card-divider" />
+        <h4>{{ 'CashflowGame.liveScenario' | translate }}</h4>
+
+        <div class="cf-statement-summary">
+          <span>{{ 'CashflowGame.salary' | translate }} {{ liveSalary | appNumber }}</span>
+          <span>+</span>
+          <span
+            >{{ 'CashflowGame.passiveIncome' | translate }}
+            {{ livePassiveIncome | appNumber }}</span
+          >
+          <span>=</span>
+          <span class="cf-statement-summary-total"
+            >{{ 'CashflowGame.income' | translate }} {{ liveTotalIncome | appNumber }}</span
+          >
+          <span class="cf-statement-summary-break"></span>
+          <span
+            >{{ 'CashflowGame.totalExpenses' | translate }}
+            {{ liveTotalExpenses | appNumber }}</span
+          >
+          <span>=</span>
+          <span class="cf-statement-summary-total"
+            >{{ 'CashflowGame.monthlyCashflow' | translate }} {{ liveCashflow | appNumber }}</span
+          >
+        </div>
+
+        <div class="cf-rat-race">
+          <div class="cf-rat-race-row">
+            <span class="cf-rat-race-label">{{ 'CashflowGame.passiveIncome' | translate }}</span>
+            <div class="cf-rat-race-track">
+              <div
+                class="cf-rat-race-bar cf-rat-race-bar--passive"
+                [style.width.%]="ratRaceBarWidth(livePassiveIncome, liveTotalExpenses)"
+              ></div>
+            </div>
+            <span class="cf-rat-race-value">{{ livePassiveIncome | appNumber }}</span>
+          </div>
+          <div class="cf-rat-race-row">
+            <span class="cf-rat-race-label">{{ 'CashflowGame.totalExpenses' | translate }}</span>
+            <div class="cf-rat-race-track">
+              <div
+                class="cf-rat-race-bar cf-rat-race-bar--expenses"
+                [style.width.%]="ratRaceBarWidth(liveTotalExpenses, livePassiveIncome)"
+              ></div>
+            </div>
+            <span class="cf-rat-race-value">{{ liveTotalExpenses | appNumber }}</span>
+          </div>
+        </div>
+
+        <h4>{{ 'CashflowGame.income' | translate }}</h4>
+        <ul class="cf-line-list">
+          <li>
+            <span>{{ 'CashflowGame.salary' | translate }}</span>
+            <span>{{ liveSalary | appNumber }} {{ appState.currency }}</span>
+          </li>
+          <li *ngIf="livePassiveIncome">
+            <span>{{ 'CashflowGame.passiveIncome' | translate }}</span>
+            <span>{{ livePassiveIncome | appNumber }} {{ appState.currency }}</span>
+          </li>
+        </ul>
+
+        <h4>{{ 'CashflowGame.expenses' | translate }}</h4>
+        <ul class="cf-line-list">
+          <li *ngFor="let line of liveExpenseLines">
+            <span>{{ line.title }}</span>
+            <span>{{ line.amount | appNumber }} {{ appState.currency }}</span>
+          </li>
+        </ul>
+
+        <h4>{{ 'CashflowGame.assets' | translate }}</h4>
+        <ul class="cf-line-list">
+          <li>
+            <span>{{ 'CashflowGame.cashOnHand' | translate }}</span>
+            <span>{{ cash | appNumber }} {{ appState.currency }}</span>
+          </li>
+        </ul>
+
+        <ng-container *ngIf="liveLiabilities.length">
+          <h4>{{ 'CashflowGame.liabilities' | translate }}</h4>
+          <ul class="cf-line-list">
+            <li *ngFor="let liability of liveLiabilities">
+              <span>{{ liability.tag }}</span>
+              <span>{{ liability.amount | appNumber }} {{ appState.currency }}</span>
+            </li>
+          </ul>
+        </ng-container>
       </ng-container>
     </div>
 
