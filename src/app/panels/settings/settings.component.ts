@@ -650,11 +650,11 @@ export class SettingsComponent implements DoCheck {
 
   /**
    * Wipes every real entity the Cashflow game touches back to a blank slate — confirmed first, this can't be
-   * undone. Reloads the page afterward (JFK, 2026-09-26: "the already loaded data is not refreshed, I need to
-   * refresh the page to see the effect. The whole app should be wiped and clean") — every other page in the app
-   * (Home, Balance Sheet, Subscriptions...) has already read `AppStateService`'s arrays into its own local state
-   * by the time a reset fires from Settings, and nothing here re-notifies them; a reload is the same guaranteed-
-   * correct fix already used elsewhere in this file (e.g. the migration-import success path above).
+   * undone. No page reload needed: `CashflowGameService.persistAll` fires `transactionsUpdated$`/
+   * `subscriptionsUpdated$` on every successful write, which Home, the account list pages, and the Subscriptions
+   * page all subscribe to; Grow/Balance/Smile/Fire read `AppStateService` through live getters already, so a
+   * global change-detection pass (triggered by those same signals firing) is all they need (JFK, 2026-09-26:
+   * "can we refresh just the tables, variables, values on the page").
    */
   resetCashflowGame() {
     this.confirmService.confirm(
@@ -663,9 +663,6 @@ export class SettingsComponent implements DoCheck {
         this.cashflowGameService.resetGame({
           onSuccess: () => {
             this.toastService.show(this.translate.instant('CashflowGame.resetDone'), 'delete');
-            setTimeout(() => {
-              window.location.reload();
-            }, 1500);
           },
           onError: (message) => {
             this.toastService.show(message, 'error');

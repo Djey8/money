@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import {
@@ -99,6 +99,7 @@ export class CashflowGameComponent {
   showCardFind = false;
 
   constructor(
+    private router: Router,
     private appData: AppDataService,
     private cashflowGameService: CashflowGameService,
     private toastService: ToastService,
@@ -262,11 +263,12 @@ export class CashflowGameComponent {
       onSuccess: () => {
         this.isBusy = false;
         this.toastService.show(this.translate.instant('CashflowGame.started'), 'success');
-        // A full navigation, not router.navigate — other already-rendered pages (Home included) may have
-        // read AppStateService's arrays into their own local state before this fired, and nothing notifies
-        // them to re-read it; router.navigate to the page you're already on is also a no-op in Angular by
-        // default (JFK, 2026-09-26: "I needed to reload the page to see the initial transactions").
-        window.location.href = '/home';
+        this.closeWindow();
+        // A plain router.navigate — no reload needed. Home and the other pages that hold their own
+        // snapshot subscribe to transactionsUpdated$/subscriptionsUpdated$ (fired by
+        // CashflowGameService.persistAll on every successful write), so they refresh whether or not
+        // this navigation itself is a no-op (e.g. already being on /home).
+        this.router.navigate(['/home']);
       },
       onError: (message) => {
         this.isBusy = false;

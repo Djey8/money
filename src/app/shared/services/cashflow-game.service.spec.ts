@@ -92,6 +92,24 @@ describe('CashflowGameService', () => {
       expect(onError).toHaveBeenCalledWith(expect.stringContaining('Unknown Cashflow profession'));
       expect(persistence.batchWriteAndSync).not.toHaveBeenCalled();
     });
+
+    it('notifies pages holding their own snapshot instead of a live binding, without a page reload', () => {
+      // JFK, 2026-09-26: "can we refresh just the tables, variables, values on the page" — Home and the
+      // Subscriptions page (unlike Grow/Balance, which read AppStateService live) need an explicit nudge.
+      const state = AppStateService.instance;
+      const transactionsSpy = jest.fn();
+      const subscriptionsSpy = jest.fn();
+      state.transactionsUpdated$.subscribe(transactionsSpy);
+      state.subscriptionsUpdated$.subscribe(subscriptionsSpy);
+
+      service.pickProfession('placeholder', 'placeholder-profession', {
+        onSuccess: jest.fn(),
+        onError: jest.fn(),
+      });
+
+      expect(transactionsSpy).toHaveBeenCalledTimes(1);
+      expect(subscriptionsSpy).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe('payday and undo', () => {
@@ -137,6 +155,19 @@ describe('CashflowGameService', () => {
       expect(state.allTransactions).toHaveLength(3); // only the starting transactions remain
       expect(state.cashflowGame.round).toBe(0);
       expect(state.cashflowGame.history).toHaveLength(0);
+    });
+
+    it('payday notifies transactionsUpdated$ but not subscriptionsUpdated$ — it never touches subscriptions', () => {
+      started();
+      const transactionsSpy = jest.fn();
+      const subscriptionsSpy = jest.fn();
+      AppStateService.instance.transactionsUpdated$.subscribe(transactionsSpy);
+      AppStateService.instance.subscriptionsUpdated$.subscribe(subscriptionsSpy);
+
+      service.payday({ onSuccess: jest.fn(), onError: jest.fn() });
+
+      expect(transactionsSpy).toHaveBeenCalledTimes(1);
+      expect(subscriptionsSpy).not.toHaveBeenCalled();
     });
 
     it('reports an error rather than throwing when there is nothing to undo', () => {

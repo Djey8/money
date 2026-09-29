@@ -846,6 +846,15 @@ export class CashflowGameService {
       onSuccess: () => {
         state.isSaving = false;
         this.incomeStatement.saveToLocalStorage();
+        // Every cashflow-game action touches transactions; notify pages that hold their own
+        // snapshot (Home, the Daily/Splurge/Smile/Fire/Mojo account lists) instead of a live
+        // binding, so they refresh without a page reload (JFK, 2026-09-26: "can we refresh just
+        // the tables, variables, values on the page"). Grow/Balance/Smile/Fire-project pages
+        // already read AppStateService live and don't need a signal.
+        state.transactionsUpdated$.next();
+        if (options.includeSubscriptions) {
+          state.subscriptionsUpdated$.next();
+        }
         callbacks.onSuccess();
       },
       onError: (error: any) => {

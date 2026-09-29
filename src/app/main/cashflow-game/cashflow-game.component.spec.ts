@@ -5,6 +5,7 @@ import { CashflowGameService } from '../../shared/services/cashflow-game.service
 import { ProfileComponent } from '../../panels/profile/profile.component';
 
 function makeComponent(overrides: Partial<Record<string, jest.Mock>> = {}) {
+  const router = { navigate: jest.fn() };
   const appData = { loadCashflowGameData: jest.fn() };
   const cashflowGameService = {
     gameSets: CASHFLOW_GAME_SETS,
@@ -32,12 +33,13 @@ function makeComponent(overrides: Partial<Record<string, jest.Mock>> = {}) {
   const translate = { instant: (key: string) => key };
 
   const component = new CashflowGameComponent(
+    router as any,
     appData as any,
     cashflowGameService as any,
     toastService as any,
     translate as any,
   );
-  return { component, appData, cashflowGameService, toastService };
+  return { component, router, appData, cashflowGameService, toastService };
 }
 
 describe('CashflowGameComponent', () => {
@@ -184,17 +186,11 @@ describe('CashflowGameComponent', () => {
   });
 
   describe('startGame / payday / undoPayday', () => {
-    it('delegates to the service and does a full navigation to Home on success', () => {
-      const { component, cashflowGameService, toastService } = makeComponent();
+    it('delegates to the service, closes the panel, and navigates to Home on success', () => {
+      const { component, cashflowGameService, toastService, router } = makeComponent();
       component.selectedGameSetId = 'placeholder';
       component.selectedProfessionId = 'placeholder-profession';
       CashflowGameComponent.isOpen = true;
-      const originalLocation = window.location;
-      // A full navigation, not router.navigate — other already-rendered pages may have snapshotted
-      // AppStateService's arrays before this fired (JFK, 2026-09-26). Replace window.location so the
-      // assignment below doesn't trigger a real (unsupported-in-jsdom) navigation.
-      delete (window as any).location;
-      (window as any).location = { href: '' };
 
       component.startGame();
       const startCall = cashflowGameService.pickProfession.mock.calls[0];
@@ -202,9 +198,8 @@ describe('CashflowGameComponent', () => {
       expect(startCall[1]).toBe('placeholder-profession');
       startCall[2].onSuccess();
       expect(toastService.show).toHaveBeenCalledWith('CashflowGame.started', 'success');
-      expect(window.location.href).toBe('/home');
-
-      Object.defineProperty(window, 'location', { value: originalLocation, writable: true });
+      expect(CashflowGameComponent.isOpen).toBe(false);
+      expect(router.navigate).toHaveBeenCalledWith(['/home']);
 
       component.payday();
       cashflowGameService.payday.mock.calls[0][0].onSuccess();

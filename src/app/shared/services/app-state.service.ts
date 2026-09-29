@@ -37,6 +37,8 @@ export class AppStateService {
 
   // Signals
   transactionsUpdated$ = new Subject<void>();
+  /** Fired whenever `allSubscriptions` changes from somewhere that doesn't itself hold a reference to the Subscriptions list page (e.g. the Cashflow game panel) — mirrors `transactionsUpdated$`. */
+  subscriptionsUpdated$ = new Subject<void>();
 
   // Phase A: Transaction data
   allTransactions: Transaction[] = [];

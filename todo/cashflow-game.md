@@ -4,15 +4,14 @@
 reuse + docs guide committed (`106affd`), find/draw-a-card + the menu entry + `resetGame` committed
 (`459fe21`..`eae5cfb`). Decision 18 (itemized categorized expenses, computed starting cash, the real `cashflow`
 game set with the Hausmeister/in profession, AND the overlay/panel UI conversion) committed across `dd416e7` and
-`dd82039`. Decisions 19–21 (hiding the `placeholder` fixture from players, completing the View Card stats, moving
-the reset button into Settings → Advanced, and fixing the bootstrap-timing bug that made Start Game a no-op) are
-built and green. JFK's first real playtest is underway — decisions 23–28 (itemized Savings/Salary/expense starting
-transactions, reload-after-reset, the missing-category bug in Payday/Charity, Downsized paying real per-line
-expenses instead of one lump category, the step-by-step dashboard flow with bigger space buttons and a way back
-from every sub-view, and reload-after-start for the same stale-page reason as reset) all came out of that playtest
-and are built and green (domain + frontend tests, full typecheck, both editions build), not yet committed as of
-this note. The framework in decision 27 is what's needed before wiring up the first real Card Deck (Phase 2,
-next).
+`dd82039`. Decisions 19–28 (hiding the `placeholder` fixture from players, completing the View Card stats, moving
+the reset button into Settings → Advanced, the bootstrap-timing fix, itemized Savings/Salary/expense starting
+transactions, the missing-category bug in Payday/Charity, Downsized paying real per-line expenses, and the
+step-by-step dashboard flow) are committed across `80f0b13`/`6508774` and earlier. JFK's first real playtest is
+underway. Decision 29 (the real fix for stale visuals after Cashflow actions — `transactionsUpdated$`/
+`subscriptionsUpdated$` instead of the page reloads decisions 24/28 had used) is built and green (domain +
+frontend tests, full typecheck, both editions build), not yet committed as of this note. The framework in
+decision 27 is what's needed before wiring up the first real Card Deck (Phase 2, next).
 
 ## 1. What this is
 
@@ -275,7 +274,8 @@ CashflowTransactionRecord[]` — Savings (`@Savings`) and Salary (`@Salary`) eac
     same guaranteed-correct pattern already used elsewhere in `settings.component.ts` (e.g. after a successful
     migration import) for exactly this class of problem: other pages (Home, Balance Sheet, Subscriptions...) may
     have already read `AppStateService`'s arrays into their own local component state by the time a reset fires
-    from a completely different panel, and nothing notifies them to re-read it short of starting fresh.
+    from a completely different panel, and nothing notifies them to re-read it short of starting fresh. **The
+    reload itself turned out to be the wrong fix, and was removed** — see decision 29.
 25. **Bug fix: Payday/Charity/Downsized transactions were created with no category at all** (2026-09-26, JFK,
     after his first live Payday click: _"when I clicked it right now, the correct categories where missing please
     fix this"_). The `cashflowTransaction()` helper in `engine.ts` hardcoded `category: ''` and had no parameter
@@ -322,9 +322,32 @@ CashflowTransactionRecord[]` — Savings (`@Savings`) and Salary (`@Salary`) eac
     itemized starting transactions were in fact created correctly — the bug was purely that `startGame()`
     navigated with `router.navigate(['/home'])`, which is a no-op in Angular when you're already on `/home` (the
     common case, since the panel is opened from wherever you are), so `HomeComponent` never re-ran its own data
-    load and kept showing whatever it had snapshotted before the game started. Fixed the same way decision 24
-    fixed the identical class of problem for reset: `startGame()`'s success handler now does
-    `window.location.href = '/home'`, a real full navigation, instead of `router.navigate`.
+    load and kept showing whatever it had snapshotted before the game started. First patched with a full
+    `window.location.href` navigation (matching decision 24's reload-based fix for reset) — both were replaced a
+    session later by decision 29's real fix, once JFK flagged the reload itself as the actual complaint.
+29. **The real fix: notify the pages that hold a stale snapshot, instead of reloading the page** (2026-09-29, JFK:
+    _"one thing that I really dont like is the refresh of the visuals... can we refresh just the tables,
+    variables, values on the page!! as a general rule, when we add, update data the visuals should be updated as
+    well across this whole feature cashflow feature!... it works for the normal app, but for the new cashflow
+    feature its not always working"_). Investigation found the real, narrow cause, and it wasn't a change-
+    detection problem: most core pages (Grow, Balance Sheet, Smile/Fire projects, Mojo) already read
+    `AppStateService.instance` through **live getters**, so they were already reactive to any mutation without any
+    special signal — decisions 24/28's reloads were never fixing those. The two genuine offenders both use a
+    **static snapshot captured once**, not a live binding: `HomeComponent.allTransactions` (used by its own
+    `getAmounts()` totals) and `SubscriptionComponent.allSubscriptions`/its two Material `dataSource`s. Home
+    already had the fix for this shape of problem — `AppStateService.transactionsUpdated$`, a `Subject<void>`
+    triggered today only by `subscription-processing.service.ts`, that `HomeComponent` and the shared
+    `base-account.component.ts` (the Daily/Splurge/Smile/Fire/Mojo account list pages) already subscribe to,
+    re-snapshotting and calling `cdr.markForCheck()` on emission. `SubscriptionComponent` had no equivalent, so a
+    matching `subscriptionsUpdated$` was added and wired into its `ngOnInit` the same way. `CashflowGameService
+.persistAll` — the one funnel nearly every mutation in this service already goes through — now calls
+    `state.transactionsUpdated$.next()` unconditionally and `state.subscriptionsUpdated$.next()` whenever
+    `options.includeSubscriptions` was set, right before `callbacks.onSuccess()`. This one change point covers
+    Start Game, Payday, Undo, Baby/Charity/Downsized, the Deal/Doodad/Market flow, the bank loan, and Reset — every
+    action that funnels through `persistAll` — for free, with no reload anywhere. `startGame()`'s navigation went
+    back to plain `router.navigate(['/home'])` (now harmless even as a same-URL no-op, since Home refreshes itself
+    reactively regardless of whether the navigation itself did anything), and `resetCashflowGame()`'s
+    `window.location.reload()` was removed outright.
 
 ## 3. The one new thing: a small game-meta state
 

@@ -61,6 +61,7 @@ import { FrontendLoggerService } from 'src/app/shared/services/frontend-logger.s
 export class SubscriptionComponent implements OnDestroy, AfterViewChecked, OnInit, AfterViewInit {
   private _liveAnnouncer = inject(LiveAnnouncer);
   private tableInitialized = false;
+  private subUpdateSub?: Subscription;
 
   static isSearched = false;
   static allSubscriptions = [];
@@ -277,8 +278,9 @@ export class SubscriptionComponent implements OnDestroy, AfterViewChecked, OnIni
     }
   }
 
-  // eslint-disable-next-line @angular-eslint/no-empty-lifecycle-method, @typescript-eslint/no-empty-function -- required by `implements OnDestroy`; nothing to clean up here
-  ngOnDestroy() {}
+  ngOnDestroy() {
+    this.subUpdateSub?.unsubscribe();
+  }
 
   private setupTableFeatures() {
     this.applyCustomSorting(SubscriptionComponent.activeDataSource);
@@ -308,6 +310,20 @@ export class SubscriptionComponent implements OnDestroy, AfterViewChecked, OnIni
     // Apply custom sorting
     this.applyCustomSorting(SubscriptionComponent.activeDataSource);
     this.applyCustomSorting(SubscriptionComponent.inactiveDataSource);
+
+    // Refresh when subscriptions change from somewhere that doesn't already hold a reference to
+    // this page (e.g. the Cashflow game panel, which can create/remove many at once).
+    this.subUpdateSub = AppStateService.instance.subscriptionsUpdated$.subscribe(() => {
+      SubscriptionComponent.allSubscriptions = AppStateService.instance.allSubscriptions;
+      SubscriptionComponent.activeDataSource.data = SubscriptionComponent.allSubscriptions.map(
+        (subscription, index) => ({ ...subscription, id: index }),
+      );
+      SubscriptionComponent.inactiveDataSource.data = SubscriptionComponent.allSubscriptions.map(
+        (subscription, index) => ({ ...subscription, id: index }),
+      );
+      this.applyCustomSorting(SubscriptionComponent.activeDataSource);
+      this.applyCustomSorting(SubscriptionComponent.inactiveDataSource);
+    });
   }
 
   /** Announce the change in sort state for assistive technology. */
