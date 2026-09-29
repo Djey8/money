@@ -423,14 +423,33 @@ describe('CashflowGameService', () => {
       expect(interest).toMatchObject({ account: 'Daily', amount: -200, category: '@Bank loan' });
     });
 
-    it('repaying in full removes the liability and the interest subscription', () => {
+    it('borrowing actually pays out — an income transaction credits the borrowed amount — JFK, 2026-09-29+: "when I take a loan with the loan button can you add an income transaction adding this amount to my balance"', () => {
+      started();
+      const before = AppStateService.instance.allTransactions.length;
+
+      service.adjustBankLoan(2000, { onSuccess: jest.fn(), onError: jest.fn() });
+
+      const state = AppStateService.instance;
+      expect(state.allTransactions).toHaveLength(before + 1);
+      expect(state.allTransactions).toContainEqual(
+        expect.objectContaining({ account: 'Daily', amount: 2000, category: '@Bank loan' }),
+      );
+    });
+
+    it('repaying in full removes the liability and the interest subscription, and costs real cash', () => {
       started();
       service.adjustBankLoan(1000, { onSuccess: jest.fn(), onError: jest.fn() });
+      const before = AppStateService.instance.allTransactions.length;
+
       service.adjustBankLoan(-1000, { onSuccess: jest.fn(), onError: jest.fn() });
 
       const state = AppStateService.instance;
       expect(state.liabilities.find((l) => l.tag === 'Bank loan')).toBeUndefined();
       expect(state.allSubscriptions.find((s) => s.title === 'Bank loan interest')).toBeUndefined();
+      expect(state.allTransactions).toHaveLength(before + 1);
+      expect(state.allTransactions).toContainEqual(
+        expect.objectContaining({ account: 'Daily', amount: -1000, category: '@Bank loan' }),
+      );
     });
 
     it('reports an error rather than throwing for a non-increment amount', () => {
@@ -524,6 +543,13 @@ describe('CashflowGameService', () => {
       expect(state.allTransactions).toContainEqual(
         expect.objectContaining({ account: 'Fire', amount: -5000, category: '@Expensive' }),
       );
+      // The auto-borrow must actually pay out too — otherwise the purchase transaction alone would
+      // have driven cash negative by the shortfall, an invisible version of the same bug the
+      // standalone Borrow button had.
+      expect(state.allTransactions).toContainEqual(
+        expect.objectContaining({ account: 'Daily', amount: 5000, category: '@Bank loan' }),
+      );
+      expect(service.cash).toBe(0); // borrowed exactly the shortfall, spent exactly the shortfall
     });
 
     it('buys a property: deposit paid now, mortgage as a real Liability, cashflow as a real Subscription', () => {

@@ -427,6 +427,8 @@ export interface BankLoanResult {
   /** `null` once the loan is fully repaid — the caller should remove the Liability/Subscription instead of upserting. */
   liabilityUpsert: { tag: string; amountMinor: number } | null;
   subscriptionUpsert: CashflowStarterKitSubscription | null;
+  /** The cash that actually changed hands — credited for a borrow, debited for a repayment (JFK, 2026-09-29+: "when I take a loan with the loan button can you add an income transaction adding this amount to my balance"). Without this, borrowing raised the Liability and started the interest Subscription but never actually paid out, and repaying erased debt for free. */
+  transaction: CashflowTransactionRecord;
 }
 
 const BANK_LOAN_TAG = 'Bank loan';
@@ -446,7 +448,7 @@ export function adjustCashflowBankLoan(
   currentPrincipalMinor: number,
   deltaMinor: number,
 ): BankLoanResult {
-  requireStarted(state, 'taking a bank loan');
+  const date = requireStarted(state, 'taking a bank loan');
   if (deltaMinor === 0) {
     throw new Error('Enter a non-zero amount to borrow or repay.');
   }
@@ -467,6 +469,14 @@ export function adjustCashflowBankLoan(
       ? state.gameSubscriptionTitles
       : [...state.gameSubscriptionTitles, BANK_LOAN_SUBSCRIPTION_TITLE];
 
+  const transaction = cashflowTransaction(
+    'Daily',
+    deltaMinor,
+    date,
+    deltaMinor > 0 ? 'Bank loan' : 'Bank loan repayment',
+    `@${BANK_LOAN_TAG}`,
+  );
+
   return {
     state: { ...state, gameSubscriptionTitles },
     liabilityUpsert: paidOff ? null : { tag: BANK_LOAN_TAG, amountMinor: nextPrincipalMinor },
@@ -481,5 +491,6 @@ export function adjustCashflowBankLoan(
           frequency: 'monthly',
           category: `@${BANK_LOAN_TAG}`,
         },
+    transaction,
   };
 }

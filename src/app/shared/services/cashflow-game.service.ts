@@ -524,6 +524,7 @@ export class CashflowGameService {
     } else {
       this.removeSubscriptionByTitle('Bank loan interest');
     }
+    state.allTransactions.push(toFloatTransaction(result.transaction));
     state.cashflowGame = result.state;
   }
 

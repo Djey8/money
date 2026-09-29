@@ -32,8 +32,9 @@ own trigger with a Category column) is committed (`4740fcd`). Decision 43 (persi
 `localStorage` so it survives a reload/`npm start` restart, explicitly cleared on logout in both editions) is
 committed (`591f5e0`). Decision 44 (a Category column on the Subscriptions page, previously missing for every
 subscription, not just Cashflow ones — decision 41's category fixes were correct the whole time, just invisible)
-is built and green (frontend tests, full typecheck, both editions build), not yet committed as of this note. The
-framework
+is committed (`2552029`). Decision 45 (borrowing/repaying a bank loan now actually moves cash via a real
+Transaction, fixing a real bug that also silently broke `executeDeal`'s auto-borrow) is built and green (domain +
+frontend tests, full typecheck, both editions build), not yet committed as of this note. The framework
 in decision 27 is what's needed before wiring up the first real Card Deck (Phase 2, next).
 
 ## 1. What this is
@@ -664,6 +665,25 @@ Cashflow`) is never added to `state.cashflowGame.gameSubscriptionTitles`. `liveP
     every other account page (Daily/Splurge/Smile/Fire/Accounting) already uses for its own transaction category
     column — reuses the existing `Common.category` translation key (all 6 locales already had it), no new i18n
     needed.
+
+45. **Taking or repaying a bank loan now actually moves cash, not just the Liability and interest Subscription**
+    (2026-09-29+, JFK, once decision 44's Category column let the real bug from decision 41 be ruled out: _"ok
+    seems to work. when I take a loan with the loan button can you add an income transaction adding this amount to
+    my balance"_). Real bug, not a regression: `adjustCashflowBankLoan` never created a Transaction at all — only
+    a Liability upsert and an interest Subscription upsert — so borrowing raised your debt and started a recurring
+    interest payment without ever actually paying out the cash, and repaying erased that debt for free (no
+    transaction meant no cost either). Also silently broke `executeDeal`'s auto-borrow path (`todo/cashflow-game
+    .md` §4, `applyBankLoanAdjustment` is shared by both the standalone Borrow button and the auto-borrow-when-you-
+    can't-afford-a-deal flow): buying something you couldn't afford would auto-borrow the shortfall and then still
+    post the full purchase cost as a debit with nothing offsetting it, driving cash negative by the shortfall —
+    the exact same missing-transaction bug, just invisible until you actually checked your balance. Fixed in the
+    domain engine (`adjustCashflowBankLoan`, `packages/domain/src/cashflow-game/engine.ts`): `BankLoanResult`
+    gains a `transaction` field — `+deltaMinor` to `Daily`, categorized `@Bank loan`, commented "Bank loan" or
+    "Bank loan repayment" depending on sign, dated at the game's `virtualDate` like every other one-off action
+    (Charity/Downsized/Doodad) — and `applyBankLoanAdjustment` (`cashflow-game.service.ts`) pushes it alongside
+    the Liability/Subscription updates, for both callers. Verified the auto-borrow math now actually nets to zero
+    cash left over when a purchase exactly exhausts an exact-increment loan (a new test asserts `service.cash ===
+    0` after the fact, where before this fix it would have been silently negative).
 
 ## 3. The one new thing: a small game-meta state
 

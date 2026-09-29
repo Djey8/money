@@ -337,9 +337,17 @@ describe('adjustCashflowBankLoan', () => {
       category: '@Bank loan',
     });
     expect(result.state.gameSubscriptionTitles).toContain('Bank loan interest');
+    // JFK, 2026-09-29+: "when I take a loan with the loan button can you add an income
+    // transaction adding this amount to my balance" — borrowing must actually pay out.
+    expect(result.transaction).toMatchObject({
+      account: 'Daily',
+      amountMinor: 200000,
+      date: '2026-09-25',
+      category: '@Bank loan',
+    });
   });
 
-  it('repaying in full removes the liability and the interest subscription', () => {
+  it('repaying in full removes the liability and the interest subscription, and debits the repayment', () => {
     const { state: started } = pickCashflowProfession(
       CASHFLOW_GAME_SETS,
       'placeholder',
@@ -352,6 +360,12 @@ describe('adjustCashflowBankLoan', () => {
     expect(repaid.liabilityUpsert).toBeNull();
     expect(repaid.subscriptionUpsert).toBeNull();
     expect(repaid.state.gameSubscriptionTitles).not.toContain('Bank loan interest');
+    // Repaying must cost real cash — otherwise debt could be erased for free.
+    expect(repaid.transaction).toMatchObject({
+      account: 'Daily',
+      amountMinor: -100000,
+      category: '@Bank loan',
+    });
   });
 
   it('refuses an amount that is not a multiple of the increment, or repaying more than owed', () => {
