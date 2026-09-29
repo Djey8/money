@@ -216,9 +216,11 @@
   font-size: 1.1rem;
 }
 
+/* Date left, Round centered, Cash right (JFK, 2026-09-29). */
 .cf-stat-row {
   display: flex;
   flex-wrap: wrap;
+  justify-content: space-between;
   gap: 20px;
   margin: 16px 0;
 }
@@ -227,6 +229,16 @@
   display: flex;
   flex-direction: column;
   min-width: 100px;
+}
+
+.cf-stat--center {
+  align-items: center;
+  text-align: center;
+}
+
+.cf-stat--end {
+  align-items: flex-end;
+  text-align: right;
 }
 
 .cf-stat-label {

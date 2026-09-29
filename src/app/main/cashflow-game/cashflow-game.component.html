@@ -243,16 +243,16 @@
 
           <div class="cf-stat-row">
             <div class="cf-stat">
-              <span class="cf-stat-label">{{ 'CashflowGame.cash' | translate }}</span>
-              <span class="cf-stat-value">{{ cash | appNumber }} {{ appState.currency }}</span>
+              <span class="cf-stat-label">{{ 'CashflowGame.virtualDate' | translate }}</span>
+              <span class="cf-stat-value">{{ appState.cashflowGame.virtualDate | appDate }}</span>
             </div>
-            <div class="cf-stat">
+            <div class="cf-stat cf-stat--center">
               <span class="cf-stat-label">{{ 'CashflowGame.Round' | translate }}</span>
               <span class="cf-stat-value">{{ appState.cashflowGame.round }}</span>
             </div>
-            <div class="cf-stat">
-              <span class="cf-stat-label">{{ 'CashflowGame.virtualDate' | translate }}</span>
-              <span class="cf-stat-value">{{ appState.cashflowGame.virtualDate | appDate }}</span>
+            <div class="cf-stat cf-stat--end">
+              <span class="cf-stat-label">{{ 'CashflowGame.cash' | translate }}</span>
+              <span class="cf-stat-value">{{ cash | appNumber }} {{ appState.currency }}</span>
             </div>
           </div>
 

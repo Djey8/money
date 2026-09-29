@@ -33,8 +33,9 @@ own trigger with a Category column) is committed (`4740fcd`). Decision 43 (persi
 committed (`591f5e0`). Decision 44 (a Category column on the Subscriptions page, previously missing for every
 subscription, not just Cashflow ones — decision 41's category fixes were correct the whole time, just invisible)
 is committed (`2552029`). Decision 45 (borrowing/repaying a bank loan now actually moves cash via a real
-Transaction, fixing a real bug that also silently broke `executeDeal`'s auto-borrow) is built and green (domain +
-frontend tests, full typecheck, both editions build), not yet committed as of this note. The framework
+Transaction, fixing a real bug that also silently broke `executeDeal`'s auto-borrow) is committed (`5fe7e18`).
+Decision 46 (the summary card's stat row reordered to Date/Round/Cash, spread edge-to-edge) is built and green
+(frontend tests, full typecheck, both editions build), not yet committed as of this note. The framework
 in decision 27 is what's needed before wiring up the first real Card Deck (Phase 2, next).
 
 ## 1. What this is
@@ -684,6 +685,14 @@ Cashflow`) is never added to `state.cashflowGame.gameSubscriptionTitles`. `liveP
     the Liability/Subscription updates, for both callers. Verified the auto-borrow math now actually nets to zero
     cash left over when a purchase exactly exhausts an exact-increment loan (a new test asserts `service.cash ===
     0` after the fact, where before this fix it would have been silently negative).
+
+46. **The summary card's stat row reorders to Date/Round/Cash, spread edge-to-edge** (2026-09-29, JFK: "can you
+    center those three elements in the row, so the game date is left, cash is right and Round in the middle").
+    Was Cash/Round/Date, left-packed (`.cf-stat-row` had no `justify-content`). Reordered the three `.cf-stat`
+    divs in the template to Date/Round/Cash and added `justify-content: space-between` — with exactly three flex
+    items this puts the first flush left, the last flush right, and the middle one centered between them, which is
+    what "center... game date left, cash right, Round in the middle" means for a three-item row. `.cf-stat--center`
+    /`.cf-stat--end` align Round's and Cash's own label/value text to match their position.
 
 ## 3. The one new thing: a small game-meta state
 
