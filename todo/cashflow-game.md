@@ -20,9 +20,10 @@ generic subscription auto-generation machinery for cashflow accounts everywhere 
 amount pills, then putting Passive Income back as a row inside that same box) are committed (`0f764b2`, `97fad4f`).
 Decision 38 (removing the manual Deal-card form, dropping Payday from the space grid and fixing it to two rows of
 three, hiding Bank Loan/Payback Loan behind their own triggers with a Back button, and moving the Menu button to
-the end of the dashboard as a real button) is built and green (frontend tests, full typecheck, both editions
-build), not yet committed as of this note. The framework in decision 27 is what's needed before wiring up the
-first real Card Deck (Phase 2, next).
+the end of the dashboard as a real button) is committed (`36242c9`). Decision 39 (Payday dates each transaction
+from its own Subscription's `startDate` day, not an auto-computed spread) is built and green (frontend tests, full
+typecheck, both editions build), not yet committed as of this note. The framework in decision 27 is what's needed
+before wiring up the first real Card Deck (Phase 2, next).
 
 ## 1. What this is
 
@@ -485,6 +486,31 @@ Cashflow`) is never added to `state.cashflowGame.gameSubscriptionTitles`. `liveP
     - The Menu link moves from inside the `cf-summary` card (right after Payday/Undo) to the very end of the
       dashboard, after History — and changes from a plain underlined text link (`.cf-menu-link`) to a real button
       (`btn btn--sm cf-menu-btn`, matching every other action button in this component).
+
+39. **Payday dates each transaction from its own Subscription's `startDate` day-of-month, not an auto-computed
+    spread** (2026-09-29, JFK: _"this should be handled with the Date in the Subscription, the date we have there
+    is what will be used, so the user can modify it. When you start the game, you current dates are used for these
+    ones and if the user wants to change them he can by modifying the subscription date we just need to make sure
+    the highest day used is the 28th, because of February as all of these transactions go back in time, moving
+    through february at one point. We can just make sure once a transaction is moved into a february and its
+    currently 31 we will adjust to the last day of the month, and its ok that from that onwards we will move it
+    back on 28 february. same for 31 to 30 month"_). Supersedes decision 33's `spreadDateAcrossMonth` (auto-spread
+    by index/total) — that gave the player no control at all, and decision 33's own framing ("so the user can
+    modify it") was really always about Subscriptions, not a computed spread. `pickCashflowProfession`/
+    `upsertSubscription` already set a new game Subscription's `startDate` to `todayIso()` (unchanged — "your
+    current dates are used for these ones" was already true), so the player can freely edit each Subscription's
+    date on the Subscriptions page before the first real Payday, exactly like they can already edit its
+    account/category/amount. `payday()` now pairs each of `runCashflowPayday`'s output transactions with its
+    source Subscription (`ownedGameSubscriptions()` — replicates the engine's own `ownedSubscriptions` title
+    filter/order so the zip-by-index is guaranteed correct) and dates it via `dateFromSubscriptionDay`: the
+    Subscription's `startDate` day-of-month, placed in the current real year/month, clamped to
+    `min(day, daysInMonth(year, month))`. No separate "cap at 28" rule was added — that clamp already produces
+    exactly the day-28-in-February outcome JFK described, without needlessly truncating a Subscription dated the
+    29th/30th in every month that actually has that day. The clamp only fires once a transaction's day doesn't fit
+    that month; from then on the transaction's own stored date carries the reduced day forward, so it never jumps
+    back up in a later month with more days — `shiftGameTransactionDates`/`addMonthsToIsoDate` (decision 33)
+    already worked this way for the *backward* aging shift and needed no change; this decision only changes how
+    the *new* round's date is picked in the first place.
 
 ## 3. The one new thing: a small game-meta state
 

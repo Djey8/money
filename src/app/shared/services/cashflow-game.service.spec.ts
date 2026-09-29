@@ -170,7 +170,7 @@ describe('CashflowGameService', () => {
     });
   });
 
-  describe('payday date handling (todo/cashflow-game.md decision 33)', () => {
+  describe('payday date handling (todo/cashflow-game.md decisions 33/39)', () => {
     function started() {
       service.pickProfession('placeholder', 'placeholder-profession', {
         onSuccess: jest.fn(),
@@ -186,15 +186,40 @@ describe('CashflowGameService', () => {
       jest.useRealTimers();
     });
 
-    it("spreads this round's transactions across the current real month, in order", () => {
-      started(); // Savings dated 2026-09-15 (today at pickProfession time)
+    it("each transaction is dated from its own Subscription's startDate day, in the current real month", () => {
+      started(); // Salary/Expenses Subscriptions both start dated 2026-09-15 (today at pickProfession time)
+
+      service.payday({ onSuccess: jest.fn(), onError: jest.fn() });
+
+      const state = AppStateService.instance;
+      const [salaryTx, expenseTx] = state.allTransactions.slice(1);
+      expect(salaryTx.date).toBe('2026-09-15');
+      expect(expenseTx.date).toBe('2026-09-15');
+    });
+
+    it('the player controls the spread by editing a Subscription date — JFK, 2026-09-29: "the date we have there is what will be used, so the user can modify it"', () => {
+      started();
+      // The player moves the Salary subscription to the 1st before running the first real Payday.
+      AppStateService.instance.allSubscriptions[0].startDate = '2026-01-01';
 
       service.payday({ onSuccess: jest.fn(), onError: jest.fn() });
 
       const state = AppStateService.instance;
       const [salaryTx, expenseTx] = state.allTransactions.slice(1);
       expect(salaryTx.date).toBe('2026-09-01');
-      expect(expenseTx.date).toBe('2026-09-16');
+      expect(expenseTx.date).toBe('2026-09-15'); // untouched — still its own startDate's day
+    });
+
+    it("clamps a Subscription day that doesn't exist in the current month to that month's actual last day", () => {
+      started();
+      // The player sets Salary to the 31st; Payday itself runs in a 30-day month.
+      AppStateService.instance.allSubscriptions[0].startDate = '2026-01-31';
+      jest.setSystemTime(new Date('2026-09-15T12:00:00Z')); // September has 30 days
+
+      service.payday({ onSuccess: jest.fn(), onError: jest.fn() });
+
+      const [salaryTx] = AppStateService.instance.allTransactions.slice(1);
+      expect(salaryTx.date).toBe('2026-09-30');
     });
 
     it('shifts every existing #cashflow transaction back a month before posting the new round', () => {

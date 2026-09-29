@@ -169,18 +169,23 @@ export class CashflowGameService {
     });
   }
 
-  /** Runs one Payday: one Transaction per real Subscription the game owns, dated at the game's own virtual date. */
   /**
    * Runs Payday: every prior game transaction ages back a month first, then this round's
-   * transactions land spread across the current real month — so each Payday reads like a month
-   * actually passed once you look at Stats (JFK, 2026-09-29: "spread these subscriptions dates
-   * over the current month... all already existing transactions should be moved back by a
-   * month... so while you play the game your transactions are moved into the past"). The
-   * engine's own `virtualDate` still advances forward as before — it's only ever used for
-   * round-tracking/loan math, not for what date actually gets persisted.
+   * transactions each land on their own Subscription's own `startDate` day-of-month, within the
+   * current real month — so the player controls the spread by editing Subscription dates, same as
+   * they'd edit the account/category/amount (JFK, 2026-09-29: "this should be handled with the
+   * Date in the Subscription, the date we have there is what will be used, so the user can modify
+   * it... if the user wants to change them he can by modifying the subscription date"). A day that
+   * doesn't exist in the current month (e.g. a Subscription dated the 31st, posted in a 30-day
+   * month) clamps to that month's actual last day — the same clamp `shiftGameTransactionDates`
+   * already applies every round after, so once a transaction has been clamped once it just keeps
+   * that shorter day going forward (JFK: "its ok that from that onwards we will move it back on 28
+   * february"). The engine's own `virtualDate` still advances forward as before — it's only ever
+   * used for round-tracking/loan math, not for what date actually gets persisted.
    */
   payday(callbacks: CashflowGameCallbacks): void {
     const state = AppStateService.instance;
+    const ownedSubscriptions = this.ownedGameSubscriptions();
     let result: ReturnType<typeof runCashflowPayday>;
     try {
       result = runCashflowPayday(state.cashflowGame, this.gameSubscriptions());
@@ -191,10 +196,10 @@ export class CashflowGameService {
 
     this.shiftGameTransactionDates(-1);
 
-    const today = todayIso();
+    const [year, month] = todayIso().split('-').map(Number);
     const datedTransactions = result.transactions.map((record, index) => ({
       ...record,
-      date: this.spreadDateAcrossMonth(today, index, result.transactions.length),
+      date: this.dateFromSubscriptionDay(ownedSubscriptions[index], year, month),
     }));
     datedTransactions.forEach((record) => state.allTransactions.push(toFloatTransaction(record)));
 
@@ -235,12 +240,24 @@ export class CashflowGameService {
     }
   }
 
-  /** Spreads `total` same-day transactions across the real days of `anchorIso`'s month, in order. */
-  private spreadDateAcrossMonth(anchorIso: string, index: number, total: number): string {
-    const [year, month] = anchorIso.split('-').map(Number);
-    const daysInMonth = new Date(year, month, 0).getDate();
-    const day = Math.min(daysInMonth, 1 + Math.floor((index * daysInMonth) / Math.max(total, 1)));
-    return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  /** The real Subscriptions Payday owns, in the exact order the engine paired them with `result.transactions` (`ownedSubscriptions` in engine.ts — same titles, same filter, same order) — lets each transaction pick up its own Subscription's `startDate`. */
+  private ownedGameSubscriptions(): Subscription[] {
+    const state = AppStateService.instance;
+    const byTitle = new Map(state.allSubscriptions.map((sub) => [sub.title, sub]));
+    return state.cashflowGame.gameSubscriptionTitles
+      .map((title) => byTitle.get(title))
+      .filter((sub): sub is Subscription => sub !== undefined);
+  }
+
+  /** One Subscription's own `startDate` day-of-month, placed in the given real year/month — clamped to that month's actual length (JFK, 2026-09-29: "we just need to make sure the highest day used is the 28th, because of February", "same for 31 to 30 month"). */
+  private dateFromSubscriptionDay(
+    subscription: Subscription | undefined,
+    year: number,
+    month: number,
+  ): string {
+    const day = subscription ? Number(subscription.startDate.split('-')[2]) || 1 : 1;
+    const clampedDay = Math.min(day, new Date(year, month, 0).getDate());
+    return `${year}-${String(month).padStart(2, '0')}-${String(clampedDay).padStart(2, '0')}`;
   }
 
   /** Resolves a Baby space: +1 child (max 3), scales the children-expense Subscription. */
