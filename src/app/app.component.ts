@@ -218,6 +218,7 @@ export class AppComponent {
     private toastService: ToastService,
     private tourService: TourService,
     private selfhosted: SelfhostedService,
+    private cashflowGameService: CashflowGameService,
   ) {
     AppComponent.instance = this;
 
@@ -536,6 +537,12 @@ export class AppComponent {
     this.localStorage.removeData('liabilities');
     this.localStorage.removeData('grow');
     this.localStorage.removeData('budget');
+
+    // The Cashflow game's undo history is a same-session/reload safety net, deliberately not
+    // synced to the DB — but it must never leak into a different login (JFK, 2026-09-29+: "when we
+    // logout we remove also this part for the localStorage"). Clears both the in-memory stack on
+    // this running singleton and its localStorage copy.
+    this.cashflowGameService.clearPersistedUndoStack();
 
     AppStateService.instance.allTransactions = [];
     AppStateService.instance.allSubscriptions = [];

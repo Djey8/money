@@ -28,9 +28,10 @@ a bought property's Cashflow subscription, a Doodad's transaction; and smart non
 every auto-created Subscription, not just Payday's own) are committed (`7230577`). Decision 42 (spacing between the
 dashboard's cards, a redesigned Bank Loan trigger and Menu row — the actual bug behind the "messed up" look was the
 global `.btn` class's 80%-width/10%-margin-left box model fighting a width override — and History hidden behind its
-own trigger with a Category column) is built and green (frontend tests, full typecheck, both editions build), not
-yet committed as of this note. The framework in decision 27 is what's needed before wiring up the first real Card
-Deck (Phase 2, next).
+own trigger with a Category column) is committed (`4740fcd`). Decision 43 (persisting the undo stack to raw
+`localStorage` so it survives a reload/`npm start` restart, explicitly cleared on logout in both editions) is built
+and green (frontend tests, full typecheck, both editions build), not yet committed as of this note. The framework
+in decision 27 is what's needed before wiring up the first real Card Deck (Phase 2, next).
 
 ## 1. What this is
 
@@ -613,6 +614,35 @@ Cashflow`) is never added to `state.cashflowGame.gameSubscriptionTitles`. `liveP
       `CashflowTransactionRecord.category` was already recorded in `createdTransactions`, just never shown; the
       category is only printed when non-empty (older history entries predating decision 41 may still have a blank
       one, from before every automation path filled one in).
+
+43. **The undo stack (decision 40) is persisted to raw `localStorage`, surviving a reload/`npm start` restart —
+    but explicitly cleared on logout** (2026-09-29+, JFK, after being told decision 40's stack was in-memory only:
+    _"but can we at least persist the history in the local Storage of the browser? so it survives a reload,
+    refresh, npm start... but not a clear browser cache..., we just need to make sure that when we logout we
+    remove also this part for the localStorage. So logout login we dont have a history, just refresh we still
+    have the current game history"_). Deliberately **not** routed through `PersistenceService`/`LocalService` —
+    those encrypt and sync to the DB, which the undo stack must never do (still same-session-scoped in spirit,
+    just surviving a reload now, not a whole new login) — a plain `localStorage.getItem`/`setItem` under
+    `'cashflowUndoStack'`, mirroring `CrypticService.loadConfig()`'s guarded-read pattern (corrupt/missing JSON
+    just starts empty, never throws). `CashflowGameService`'s `undoStack` field now initializes from
+    `loadPersistedUndoStack()` instead of `[]`, and every mutation (`pushUndoSnapshot`, `undoLastAction`, the
+    no-op cleanup in `adjustBankLoan`'s catch) calls `persistUndoStack()` to keep the localStorage copy in sync.
+    A cleared browser cache/site-data wipes it same as everything else in localStorage — no extra code needed for
+    that part, exactly as JFK expected.
+    - **Logout, both editions.** A new `clearPersistedUndoStack()` resets the in-memory `undoStack` to `[]` *and*
+      removes the localStorage key — both matter: since neither logout flow does a hard page reload (`AppComponent`
+      navigates via `router.navigate`, `ProfileComponent` likewise), the `CashflowGameService` singleton survives
+      logout and would otherwise carry a stale in-memory stack into the next login even after storage is cleared.
+      `AppComponent.logOut()` (`app.component.ts`, the forced/interceptor-driven path) now injects
+      `CashflowGameService` and calls it alongside its other ~22 targeted `localStorage.removeData(...)` calls.
+      `ProfileComponent.logOut()` (the user-facing Sign Out button) already did a blanket `localStorage.clear()`
+      that incidentally wipes the storage side for free, but never touched any in-memory service state — it now
+      also calls `clearPersistedUndoStack()` explicitly, for the in-memory half.
+    - **Found, flagged, not fixed while researching this** (pre-existing, unrelated to the undo stack):
+      `ProfileComponent.logOut()` never branches on `environment.mode`/`appMode` and never calls
+      `AuthService.signOut()` or the selfhosted logout endpoint, unlike `AppComponent.logOut()` — a selfhosted
+      user clicking "Sign Out" in the Profile panel never hits the server's `/auth/logout` to revoke the
+      refresh-token cookie, only clears local state. Worth a look separately; out of scope here.
 
 ## 3. The one new thing: a small game-meta state
 

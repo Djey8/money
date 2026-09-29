@@ -6,6 +6,7 @@ import { AngularFireAuth } from '@angular/fire/compat/auth';
 import { HttpClient } from '@angular/common/http';
 import { CrypticService } from 'src/app/shared/services/cryptic.service';
 import { AppStateService } from 'src/app/shared/services/app-state.service';
+import { CashflowGameService } from 'src/app/shared/services/cashflow-game.service';
 import { CommonModule } from '@angular/common';
 import { TranslateModule } from '@ngx-translate/core';
 import { SettingsComponent } from '../settings/settings.component';
@@ -103,6 +104,7 @@ export class ProfileComponent implements OnInit {
     private afAuth: AngularFireAuth,
     private http: HttpClient,
     private cryptic: CrypticService,
+    private cashflowGameService: CashflowGameService,
   ) {
     ProfileComponent.isProfile = false;
     ProfileComponent.isImport = false;
@@ -278,6 +280,12 @@ export class ProfileComponent implements OnInit {
     AppStateService.instance.allSmileProjects = [];
     AppStateService.instance.allFireEmergencies = [];
     AppStateService.instance.mojo = { amount: 0, target: 0 };
+
+    // The upcoming localStorage.clear() below wipes the Cashflow game's undo history from storage
+    // either way, but this running singleton's in-memory undo stack survives this SPA navigation
+    // unless reset explicitly — a different login must never see it (JFK, 2026-09-29+: "when we
+    // logout we remove also this part for the localStorage").
+    this.cashflowGameService.clearPersistedUndoStack();
 
     const savedTheme = localStorage.getItem('theme');
     const savedLang = ['isEng', 'isDe', 'isEs', 'isFr', 'isCn', 'isAr'].find(

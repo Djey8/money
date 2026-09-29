@@ -118,6 +118,15 @@ function deepClone<T>(value: T): T {
 const UNDO_STACK_LIMIT = 50;
 
 /**
+ * Raw `localStorage`, deliberately not `LocalService`/`PersistenceService` — those encrypt and sync
+ * to the DB, which the undo stack must never do (JFK, 2026-09-29+: "can we at least persist the
+ * history in the local storage of the browser? so it survives a reload, refresh, npm start... but
+ * not a clear browser cache"). A page reload/dev-server restart reads it straight back; clearing
+ * the browser's site data removes it same as everything else — no extra code needed for that part.
+ */
+const UNDO_STACK_STORAGE_KEY = 'cashflowUndoStack';
+
+/**
  * Replaces `GameModeService`'s two date-shifting methods with automation
  * scoped to only what the game itself creates — see todo/cashflow-game.md.
  * Everything financial (Subscription/Transaction/Asset/Investment/Share/
@@ -128,8 +137,12 @@ const UNDO_STACK_LIMIT = 50;
 export class CashflowGameService {
   readonly gameSets = CASHFLOW_GAME_SETS;
 
-  /** In-memory only, not persisted (JFK, 2026-09-29+: "keep track of the history of inputs... revert each move"). A page reload starts a fresh stack — the game data itself is always safely persisted normally, this is just a same-session safety net for a wrong click. */
-  private undoStack: CashflowGameSnapshot[] = [];
+  /**
+   * Not synced to the DB — see `UNDO_STACK_STORAGE_KEY`'s own comment. Starts from whatever's in
+   * localStorage (a prior reload/restart's leftovers), so it survives across those; `logOut()`
+   * (both editions) calls `clearPersistedUndoStack()` so a different login never inherits it.
+   */
+  private undoStack: CashflowGameSnapshot[] = this.loadPersistedUndoStack();
 
   constructor(
     private persistence: PersistenceService,
@@ -142,6 +155,25 @@ export class CashflowGameService {
 
   get canUndo(): boolean {
     return this.undoStack.length > 0;
+  }
+
+  /** Guarded like `CrypticService.loadConfig()` — a corrupt or missing entry just starts empty rather than breaking the app. */
+  private loadPersistedUndoStack(): CashflowGameSnapshot[] {
+    try {
+      const raw = localStorage.getItem(UNDO_STACK_STORAGE_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  }
+
+  /** `localStorage.setItem` can throw (quota, private-browsing) — the in-memory stack still works for the rest of this session either way. */
+  private persistUndoStack(): void {
+    try {
+      localStorage.setItem(UNDO_STACK_STORAGE_KEY, JSON.stringify(this.undoStack));
+    } catch {
+      // best-effort only
+    }
   }
 
   /** Snapshots every real entity a game action can touch, right before that action mutates anything — one call per public mutating method, always before its first mutation. */
@@ -163,6 +195,22 @@ export class CashflowGameService {
       }),
     );
     if (this.undoStack.length > UNDO_STACK_LIMIT) this.undoStack.shift();
+    this.persistUndoStack();
+  }
+
+  /**
+   * Called from both editions' logout flows — a different login must never see the previous
+   * session's undo history, neither in memory on this running singleton nor in localStorage (JFK,
+   * 2026-09-29+: "when we logout we remove also this part for the localStorage. So logout login we
+   * dont have a history, just refresh we still have the current game history").
+   */
+  clearPersistedUndoStack(): void {
+    this.undoStack = [];
+    try {
+      localStorage.removeItem(UNDO_STACK_STORAGE_KEY);
+    } catch {
+      // best-effort only
+    }
   }
 
   /**
@@ -179,6 +227,7 @@ export class CashflowGameService {
       callbacks.onError('Nothing to undo.');
       return;
     }
+    this.persistUndoStack();
     const state = AppStateService.instance;
     state.allTransactions = snapshot.allTransactions;
     state.allSubscriptions = snapshot.allSubscriptions;
@@ -441,6 +490,7 @@ export class CashflowGameService {
       this.applyBankLoanAdjustment(delta);
     } catch (err: unknown) {
       this.undoStack.pop(); // nothing actually changed — don't leave a no-op entry behind
+      this.persistUndoStack();
       callbacks.onError(errorMessage(err, 'Could not adjust the bank loan.'));
       return;
     }

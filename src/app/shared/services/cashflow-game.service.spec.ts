@@ -9,6 +9,7 @@ describe('CashflowGameService', () => {
 
   beforeEach(() => {
     (AppStateService as any)._instance = undefined;
+    localStorage.clear(); // the undo stack now persists there — isolate each test from the last
     const state = AppStateService.instance;
     state.allRevenues = [];
     state.allIntrests = [];
@@ -755,6 +756,53 @@ describe('CashflowGameService', () => {
 
       service.undoLastAction({ onSuccess: jest.fn(), onError: jest.fn() });
       expect(service.canUndo).toBe(false);
+    });
+  });
+
+  describe('undo stack persistence in localStorage (todo/cashflow-game.md decision 43)', () => {
+    function started() {
+      service.pickProfession('placeholder', 'placeholder-profession', {
+        onSuccess: jest.fn(),
+        onError: jest.fn(),
+      });
+    }
+
+    it('a fresh service instance picks the stack back up from localStorage — survives a reload/npm start restart', () => {
+      started();
+      service.resolveBaby({ onSuccess: jest.fn(), onError: jest.fn() });
+      expect(service.canUndo).toBe(true);
+
+      // A page reload/dev-server restart creates a brand-new service instance from scratch.
+      const incomeStatement = new IncomeStatementService({ saveData: jest.fn() } as any);
+      const reloaded = new CashflowGameService(persistence as any, incomeStatement);
+
+      expect(reloaded.canUndo).toBe(true);
+      reloaded.undoLastAction({ onSuccess: jest.fn(), onError: jest.fn() });
+      expect(AppStateService.instance.cashflowGame.children).toBe(0); // Baby really did get undone
+    });
+
+    it('clearPersistedUndoStack empties the in-memory stack and localStorage — JFK, 2026-09-29+: "when we logout we remove also this part for the localStorage. So logout login we dont have a history"', () => {
+      started();
+      expect(service.canUndo).toBe(true);
+      expect(localStorage.getItem('cashflowUndoStack')).not.toBeNull();
+
+      service.clearPersistedUndoStack();
+
+      expect(service.canUndo).toBe(false);
+      expect(localStorage.getItem('cashflowUndoStack')).toBeNull();
+      // A fresh instance after "logout, login" must not pick anything back up either.
+      const incomeStatement = new IncomeStatementService({ saveData: jest.fn() } as any);
+      const afterLogin = new CashflowGameService(persistence as any, incomeStatement);
+      expect(afterLogin.canUndo).toBe(false);
+    });
+
+    it('starts empty rather than throwing when localStorage holds corrupt JSON', () => {
+      localStorage.setItem('cashflowUndoStack', '{not valid json');
+
+      const incomeStatement = new IncomeStatementService({ saveData: jest.fn() } as any);
+      const corrupted = new CashflowGameService(persistence as any, incomeStatement);
+
+      expect(corrupted.canUndo).toBe(false);
     });
   });
 
