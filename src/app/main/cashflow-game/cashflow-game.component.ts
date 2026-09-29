@@ -161,8 +161,9 @@ export class CashflowGameComponent {
     return this.cashflowGameService.cash;
   }
 
+  /** Whether there's any past action left to undo — not tied to Payday specifically (todo/cashflow-game.md decision 40). */
   get canUndo(): boolean {
-    return this.appState.cashflowGame.history.length > 0;
+    return this.cashflowGameService.canUndo;
   }
 
   get currentGameSet() {
@@ -327,9 +328,10 @@ export class CashflowGameComponent {
     });
   }
 
-  undoPayday(): void {
+  /** Reverts the single most recent action, whichever one it was — Payday, Baby, Charity, Downsized, a bank loan move, a Deal, a Doodad, or Reset (todo/cashflow-game.md decision 40). */
+  undoLastAction(): void {
     this.isBusy = true;
-    this.cashflowGameService.undoLastPayday({
+    this.cashflowGameService.undoLastAction({
       onSuccess: () => {
         this.isBusy = false;
         this.toastService.show(this.translate.instant('CashflowGame.undoDone'), 'update');

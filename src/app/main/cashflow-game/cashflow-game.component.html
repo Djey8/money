@@ -318,7 +318,7 @@
             <button class="btn btn--primary" [disabled]="isBusy" (click)="payday()">
               {{ 'CashflowGame.payday' | translate }}
             </button>
-            <button class="btn btn--sm" [disabled]="isBusy || !canUndo" (click)="undoPayday()">
+            <button class="btn btn--sm" [disabled]="isBusy || !canUndo" (click)="undoLastAction()">
               {{ 'CashflowGame.undo' | translate }}
             </button>
           </div>

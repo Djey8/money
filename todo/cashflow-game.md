@@ -21,7 +21,11 @@ amount pills, then putting Passive Income back as a row inside that same box) ar
 Decision 38 (removing the manual Deal-card form, dropping Payday from the space grid and fixing it to two rows of
 three, hiding Bank Loan/Payback Loan behind their own triggers with a Back button, and moving the Menu button to
 the end of the dashboard as a real button) is committed (`36242c9`). Decision 39 (Payday dates each transaction
-from its own Subscription's `startDate` day, not an auto-computed spread) is built and green (frontend tests, full
+from its own Subscription's `startDate` day, not an auto-computed spread) is committed (`c99e655`). Decisions
+40–41 (a general full-state "undo the last action" replacing the Payday-only undo that silently refused to undo
+Baby/Charity/Downsized/loan actions; missing categories filled in — Salary, Children Expenses, Bank loan interest,
+a bought property's Cashflow subscription, a Doodad's transaction; and smart non-overlapping default dates for
+every auto-created Subscription, not just Payday's own) are built and green (frontend + domain tests, full
 typecheck, both editions build), not yet committed as of this note. The framework in decision 27 is what's needed
 before wiring up the first real Card Deck (Phase 2, next).
 
@@ -511,6 +515,72 @@ Cashflow`) is never added to `state.cashflowGame.gameSubscriptionTitles`. `liveP
     back up in a later month with more days — `shiftGameTransactionDates`/`addMonthsToIsoDate` (decision 33)
     already worked this way for the *backward* aging shift and needed no change; this decision only changes how
     the *new* round's date is picked in the first place.
+
+40. **A general "undo the last action" replaces the Payday-only undo, which silently refused to undo anything
+    else** (2026-09-29+, JFK: _"I realized that we need a back button that can revert actions we did. For example
+    I press Baby and I add the subscription for having a baby. I accidentally pressed the wrong button, I need to
+    revert. Same for loan or anything else. so we need to keep track of the history of inputs the user is giving
+    us and we need to make sure we can revert each move, so after a revert the game is in a state before he did
+    the action"_). Bug found while building this: `undoLastPayday()`/the engine's `undoLastCashflowPayday()`
+    explicitly throw `"Only the most recent Payday can be undone"` whenever the last history entry isn't
+    `kind: 'payday'` — but Baby/Charity/Downsized *also* push their own `history` entries, so the pre-existing
+    "Undo" button was already enabled (`history.length > 0`) right after any of those, and clicking it just
+    errored instead of doing anything. Replaced with a full-state undo stack, frontend-only
+    (`CashflowGameService.undoStack: CashflowGameSnapshot[]`, capped at `UNDO_STACK_LIMIT = 50`): every public
+    mutating method (`pickProfession`, `payday`, `resolveBaby`, `resolveCharity`, `resolveDownsized`,
+    `adjustBankLoan`, `planDeal`, `executeDeal`, `applyDoodadCard`, `resetGame`) calls `pushUndoSnapshot()` right
+    after its own validation succeeds and before its first mutation — a deep (JSON round-trip) copy of every real
+    entity a game action can touch: Transactions, Subscriptions, Grow projects, Shares, Investments, Assets,
+    Liabilities, Smile/Fire/Mojo (only `resetGame` touches the last three, but undoing a reset should restore them
+    too), and `cashflowGame` itself. `undoLastAction()` just pops the top snapshot and restores every field from
+    it wholesale — correct by construction for *any* action, current or future, without a bespoke reversal
+    written per action kind. Calling it repeatedly walks back further, one action at a time. Deliberately **not
+    persisted** — a page reload starts a fresh (empty) stack; the game's real data is always safely persisted
+    normally regardless, this is only a same-session safety net for a wrong click, and persisting it would mean
+    a CouchDB/Firebase schema change (`CLAUDE.md`: "Ask before... changing the storage schema"), which nothing
+    here needed. `clearStatus` and `drawCard` deliberately stay out of the stack — dismissing a reminder and
+    drawing a card were already documented as not financial actions worth tracking. The component's `canUndo`
+    getter and "Undo" button (previously `undoPayday()`) now read `CashflowGameService.canUndo`/call
+    `undoLastAction()` instead. Found, flagged, not fixed while here: `resetGame()`'s own `persistAll` call never
+    writes the `smile`/`fire`/`mojo` tags at all (only transactions/cashflowGame/subscriptions/balance-sheet/grow),
+    so a reset's wipe of `allSmileProjects`/`allFireEmergencies`/`mojo` was already silently memory-only before
+    this decision — a page reload right after a reset would bring the old Smile/Fire/Mojo data back from the DB.
+    Undoing a reset happens to paper over this within the same session (the snapshot restores the in-memory values
+    either way), but the underlying gap in `resetGame()`'s persistence is untouched.
+
+41. **New profession Subscriptions get a real category (Salary was blank) and spread-out default dates instead of
+    all landing on today; the same applies to every other auto-created Subscription** (2026-09-29+, JFK: _"can you
+    fix that when we start a game with the profession that the subscriptions have the correct data, please fill in
+    the correct Categories (currently Salary is missing) and the dates are still today, can you spread out as
+    before these transactions (salary on the first, tax on third ...) just do it in the initial subscriptions...
+    also I tried the loan feature and also here the Category is missing for that subscription (can we also have
+    here a logical position for the date? ... in general we need a rule that if our automation is creating
+    subscriptions (adding income passive cashflow or having a kid expenses) we add them with a good category AND
+    we fill the date smart so it looks good in the stats, general rule each transaction should have its own date
+    in the month, if possible not overlapping"_). Two independent fixes:
+    - **Categories.** `pickCashflowProfession`'s Salary subscription gets `category: '@Salary'` (every expense
+      line already had one). `resolveCashflowBaby`'s Children Expenses subscription gets `'@Children Expenses'`.
+      `adjustCashflowBankLoan`'s interest subscription gets `'@Bank loan'` (matching the Liability's own tag —
+      a real, meaningful `@`-link, not just a display label). `executeDeal`'s property-cashflow subscription gets
+      `` `@${title}` `` (matching the Fire purchase transaction's own category). `applyDoodadCard`'s transaction
+      gets `` `@${card.title}` `` too — same bug class (an automation-created financial record with no category),
+      found while auditing every place this game creates one, even though Doodad creates a transaction, not a
+      subscription.
+    - **Dates.** `pickCashflowProfession`'s date-spreading (decision 33's `spreadDateAcrossMonth`, removed by
+      decision 39 for a different reason — Payday reading dates *from* Subscriptions rather than computing them)
+      comes back, but now at Subscription-*creation* time instead of at every Payday: two new private helpers in
+      `cashflow-game.service.ts`, `currentMonthGameSubscriptionDays()` (every day-of-month already used by another
+      `#cashflow` Subscription this real month) and `nextSmartSubscriptionDate(usedDays)` (every-other-day — 1st,
+      3rd, 5th, ... — before any day already taken, falling back to any free day, then to the least-crowded day
+      rather than ever refusing to create the Subscription). `pickProfession()` threads one `usedDays` Set through
+      all of a profession's starter Subscriptions in order, so Salary lands on the 1st and the first expense line
+      on the 3rd, matching JFK's own example exactly. `upsertSubscription()`'s "new" branch (Baby, Bank loan
+      interest, a property's Cashflow subscription — every other auto-creation path, all funneled through this one
+      function already) uses the same helper, so **every** newly auto-created game Subscription gets a
+      non-overlapping date this way, not just the ones created at game start — satisfying the "general rule" as
+      asked, through the one shared code path rather than three separate implementations. `upsertSubscription`'s
+      *existing* branch also now refreshes `category` (previously only account/amount/frequency were "recomputed
+      every time" — category joins that existing pattern rather than getting special-cased).
 
 ## 3. The one new thing: a small game-meta state
 

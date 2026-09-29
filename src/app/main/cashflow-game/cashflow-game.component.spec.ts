@@ -11,7 +11,8 @@ function makeComponent(overrides: Partial<Record<string, jest.Mock>> = {}) {
     gameSets: CASHFLOW_GAME_SETS,
     pickProfession: jest.fn(),
     payday: jest.fn(),
-    undoLastPayday: jest.fn(),
+    undoLastAction: jest.fn(),
+    canUndo: false,
     resolveBaby: jest.fn(),
     resolveCharity: jest.fn(),
     resolveDownsized: jest.fn(),
@@ -288,7 +289,7 @@ describe('CashflowGameComponent', () => {
     });
   });
 
-  describe('startGame / payday / undoPayday', () => {
+  describe('startGame / payday / undoLastAction', () => {
     it('delegates to the service, closes the panel, and navigates to Home on success', () => {
       const { component, cashflowGameService, toastService, router } = makeComponent();
       component.selectedGameSetId = 'placeholder';
@@ -311,8 +312,8 @@ describe('CashflowGameComponent', () => {
       // The main Payday button never closes the panel — it stays open for running several rounds in a row.
       expect(CashflowGameComponent.isOpen).toBe(true);
 
-      component.undoPayday();
-      cashflowGameService.undoLastPayday.mock.calls[0][0].onSuccess();
+      component.undoLastAction();
+      cashflowGameService.undoLastAction.mock.calls[0][0].onSuccess();
       expect(toastService.show).toHaveBeenCalledWith('CashflowGame.undoDone', 'update');
     });
 
@@ -324,6 +325,11 @@ describe('CashflowGameComponent', () => {
       component.startGame();
       cashflowGameService.pickProfession.mock.calls[0][2].onError('Could not start the game.');
       expect(toastService.show).toHaveBeenCalledWith('Could not start the game.', 'error');
+    });
+
+    it('canUndo reads straight from the service — not tied to Payday specifically', () => {
+      const { component } = makeComponent({ canUndo: true } as any);
+      expect(component.canUndo).toBe(true);
     });
   });
 

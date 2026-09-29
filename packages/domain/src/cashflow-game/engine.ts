@@ -93,6 +93,7 @@ export function pickCashflowProfession(
     account: 'Income',
     amountMinor: profession.salaryMinor,
     frequency: 'monthly',
+    category: '@Salary',
   };
   const expenseSubscriptions: CashflowStarterKitSubscription[] = profession.expenses
     .filter((line) => line.amountMinor !== 0)
@@ -313,6 +314,7 @@ export function resolveCashflowBaby(
       account: 'Daily',
       amountMinor: -(children * profession.perChildExpenseMinor),
       frequency: 'monthly',
+      category: '@Children Expenses',
     },
   };
 }
@@ -477,6 +479,7 @@ export function adjustCashflowBankLoan(
             (nextPrincipalMinor * gameSet.loanRule.monthlyInterestPercent) / 100,
           ),
           frequency: 'monthly',
+          category: `@${BANK_LOAN_TAG}`,
         },
   };
 }

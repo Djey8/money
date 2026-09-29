@@ -7,6 +7,7 @@ import {
   CashflowDeckKind,
   CashflowDoodadCard,
   CashflowGameSet,
+  CashflowGameState,
   CashflowGameSubscription,
   CashflowMarketCard,
   CashflowProfession,
@@ -27,7 +28,6 @@ import {
   resolveCashflowDownsized,
   runCashflowPayday,
   toMinorUnits,
-  undoLastCashflowPayday,
 } from '@money/domain';
 import { AppStateService } from './app-state.service';
 import { IncomeStatementService } from './income-statement.service';
@@ -36,6 +36,13 @@ import { ProfileComponent } from '../../panels/profile/profile.component';
 import { Transaction } from '../../interfaces/transaction';
 import { Subscription } from '../../interfaces/subscription';
 import { Grow } from '../../interfaces/grow';
+import { Asset } from '../../interfaces/asset';
+import { Share } from '../../interfaces/share';
+import { Investment } from '../../interfaces/investment';
+import { Liability } from '../../interfaces/liability';
+import { Smile } from '../../interfaces/smile';
+import { Fire } from '../../interfaces/fire';
+import { Mojo } from '../../interfaces/mojo';
 
 export interface CashflowGameCallbacks {
   onSuccess: () => void;
@@ -88,6 +95,28 @@ function toFloatTransaction(record: CashflowTransactionRecord): Transaction {
   };
 }
 
+/** Every real entity a cashflow-game action can touch — a full copy of this is one undo step (JFK, 2026-09-29+: "we need to keep track of the history of inputs... we need to make sure we can revert each move"). Includes Smile/Fire/Mojo even though only `resetGame` ever touches them, so undoing a reset restores those too, not just the game's own bookkeeping. Plain JSON data throughout, so a deep clone is just a stringify/parse round-trip. */
+interface CashflowGameSnapshot {
+  allTransactions: Transaction[];
+  allSubscriptions: Subscription[];
+  allGrowProjects: Grow[];
+  allShares: Share[];
+  allInvestments: Investment[];
+  allAssets: Asset[];
+  liabilities: Liability[];
+  allSmileProjects: Smile[];
+  allFireEmergencies: Fire[];
+  mojo: Mojo;
+  cashflowGame: CashflowGameState;
+}
+
+function deepClone<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value));
+}
+
+/** How many past actions can be undone in a row — comfortably more than one play session needs, cheap to keep since a snapshot is just this small game's own data. */
+const UNDO_STACK_LIMIT = 50;
+
 /**
  * Replaces `GameModeService`'s two date-shifting methods with automation
  * scoped to only what the game itself creates — see todo/cashflow-game.md.
@@ -99,6 +128,9 @@ function toFloatTransaction(record: CashflowTransactionRecord): Transaction {
 export class CashflowGameService {
   readonly gameSets = CASHFLOW_GAME_SETS;
 
+  /** In-memory only, not persisted (JFK, 2026-09-29+: "keep track of the history of inputs... revert each move"). A page reload starts a fresh stack — the game data itself is always safely persisted normally, this is just a same-session safety net for a wrong click. */
+  private undoStack: CashflowGameSnapshot[] = [];
+
   constructor(
     private persistence: PersistenceService,
     private incomeStatement: IncomeStatementService,
@@ -106,6 +138,64 @@ export class CashflowGameService {
 
   static isCashflowGame(): boolean {
     return Boolean(ProfileComponent.mail && ProfileComponent.mail.includes('cashflow'));
+  }
+
+  get canUndo(): boolean {
+    return this.undoStack.length > 0;
+  }
+
+  /** Snapshots every real entity a game action can touch, right before that action mutates anything — one call per public mutating method, always before its first mutation. */
+  private pushUndoSnapshot(): void {
+    const state = AppStateService.instance;
+    this.undoStack.push(
+      deepClone({
+        allTransactions: state.allTransactions,
+        allSubscriptions: state.allSubscriptions,
+        allGrowProjects: state.allGrowProjects,
+        allShares: state.allShares,
+        allInvestments: state.allInvestments,
+        allAssets: state.allAssets,
+        liabilities: state.liabilities,
+        allSmileProjects: state.allSmileProjects,
+        allFireEmergencies: state.allFireEmergencies,
+        mojo: state.mojo,
+        cashflowGame: state.cashflowGame,
+      }),
+    );
+    if (this.undoStack.length > UNDO_STACK_LIMIT) this.undoStack.shift();
+  }
+
+  /**
+   * Reverts the single most recent cashflow-game action — Start Game, Payday, Baby, Charity,
+   * Downsized, a bank loan borrow/repay, planning/executing a Deal, a Doodad, or a Reset — back to
+   * exactly the state before it ran, whichever one it was (JFK, 2026-09-29+: "I accidentally
+   * pressed the wrong button... we need to make sure we can revert each move, so after a revert
+   * the game is in a state before he did the action"). Calling it repeatedly walks back further,
+   * one action at a time. Replaces the old Payday-only undo, which refused to undo anything else.
+   */
+  undoLastAction(callbacks: CashflowGameCallbacks): void {
+    const snapshot = this.undoStack.pop();
+    if (!snapshot) {
+      callbacks.onError('Nothing to undo.');
+      return;
+    }
+    const state = AppStateService.instance;
+    state.allTransactions = snapshot.allTransactions;
+    state.allSubscriptions = snapshot.allSubscriptions;
+    state.allGrowProjects = snapshot.allGrowProjects;
+    state.allShares = snapshot.allShares;
+    state.allInvestments = snapshot.allInvestments;
+    state.allAssets = snapshot.allAssets;
+    state.liabilities = snapshot.liabilities;
+    state.allSmileProjects = snapshot.allSmileProjects;
+    state.allFireEmergencies = snapshot.allFireEmergencies;
+    state.mojo = snapshot.mojo;
+    state.cashflowGame = snapshot.cashflowGame;
+    this.persistAll('cashflow_undo_action', {}, callbacks, {
+      includeSubscriptions: true,
+      includeBalanceSheet: true,
+      includeGrow: true,
+    });
   }
 
   /** Starts a new game: materializes the profession's starter kit as real entities. */
@@ -118,17 +208,19 @@ export class CashflowGameService {
       callbacks.onError(errorMessage(err, 'Could not start the game.'));
       return;
     }
+    this.pushUndoSnapshot();
 
     result.startingTransactions.forEach((record) =>
       state.allTransactions.push(toFloatTransaction(record)),
     );
 
+    const usedDays = this.currentMonthGameSubscriptionDays();
     result.subscriptions.forEach((sub) => {
       const subscription: Subscription = {
         title: sub.title,
         account: sub.account,
         amount: fromMinorUnits(sub.amountMinor),
-        startDate: todayIso(),
+        startDate: this.nextSmartSubscriptionDate(usedDays),
         endDate: '',
         category: sub.category ?? '',
         comment: sub.comment ? `${sub.comment}\n#cashflow` : '#cashflow',
@@ -193,6 +285,7 @@ export class CashflowGameService {
       callbacks.onError(errorMessage(err, 'Could not run Payday.'));
       return;
     }
+    this.pushUndoSnapshot();
 
     this.shiftGameTransactionDates(-1);
 
@@ -203,8 +296,8 @@ export class CashflowGameService {
     }));
     datedTransactions.forEach((record) => state.allTransactions.push(toFloatTransaction(record)));
 
-    // Keep history's own copy in sync with the dates actually persisted, so undo can find them
-    // again by exact match (removeCreatedTransactions matches on date, among other fields).
+    // Keep history's own copy in sync with the dates actually persisted, so the History list shows
+    // the dates that actually got saved.
     const history = [...result.state.history];
     history[history.length - 1] = {
       ...history[history.length - 1],
@@ -213,22 +306,6 @@ export class CashflowGameService {
 
     state.cashflowGame = { ...result.state, history };
     this.persistAll('cashflow_payday', { round: result.state.round }, callbacks);
-  }
-
-  /** Reverses the most recent Payday: removes exactly the transactions it created, and undoes the backward date shift. */
-  undoLastPayday(callbacks: CashflowGameCallbacks): void {
-    const state = AppStateService.instance;
-    let result: ReturnType<typeof undoLastCashflowPayday>;
-    try {
-      result = undoLastCashflowPayday(state.cashflowGame);
-    } catch (err: unknown) {
-      callbacks.onError(errorMessage(err, 'Nothing to undo.'));
-      return;
-    }
-    this.removeCreatedTransactions(result.removedTransactions);
-    this.shiftGameTransactionDates(1);
-    state.cashflowGame = result.state;
-    this.persistAll('cashflow_undo_payday', { round: result.state.round }, callbacks);
   }
 
   /** Every `#cashflow`-tagged transaction — never anything from the player's own (non-game) bookkeeping. */
@@ -260,6 +337,48 @@ export class CashflowGameService {
     return `${year}-${String(month).padStart(2, '0')}-${String(clampedDay).padStart(2, '0')}`;
   }
 
+  /**
+   * Every day-of-month already used by another `#cashflow` Subscription this real month — what a
+   * newly auto-created Subscription's date needs to avoid (JFK, 2026-09-29+: "each transaction
+   * should have its own date in the month, if possible not overlapping").
+   */
+  private currentMonthGameSubscriptionDays(): Set<number> {
+    const prefix = `${todayIso().slice(0, 7)}-`;
+    const days = new Set<number>();
+    for (const sub of AppStateService.instance.allSubscriptions) {
+      if (sub.comment?.includes('#cashflow') && sub.startDate?.startsWith(prefix)) {
+        days.add(Number(sub.startDate.split('-')[2]));
+      }
+    }
+    return days;
+  }
+
+  /** A day-of-month for a newly auto-created Subscription: every other day (1st, 3rd, 5th, ...) before any day already taken, so a profession's Salary/expenses land spread out by default — JFK, 2026-09-29+: "spread out as before these transactions (salary on the first, tax on third ...)". Falls back to any free day, then to reusing whichever day is least crowded, rather than ever refusing to create the Subscription. */
+  private nextSmartSubscriptionDate(usedDays: Set<number>): string {
+    const [year, month] = todayIso().split('-').map(Number);
+    const daysInMonth = new Date(year, month, 0).getDate();
+    let day: number | undefined;
+    for (let candidate = 1; candidate <= daysInMonth; candidate += 2) {
+      if (!usedDays.has(candidate)) {
+        day = candidate;
+        break;
+      }
+    }
+    if (day === undefined) {
+      for (let candidate = 1; candidate <= daysInMonth; candidate++) {
+        if (!usedDays.has(candidate)) {
+          day = candidate;
+          break;
+        }
+      }
+    }
+    if (day === undefined) {
+      day = Math.min(daysInMonth, usedDays.size + 1);
+    }
+    usedDays.add(day);
+    return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  }
+
   /** Resolves a Baby space: +1 child (max 3), scales the children-expense Subscription. */
   resolveBaby(callbacks: CashflowGameCallbacks): void {
     const state = AppStateService.instance;
@@ -275,6 +394,7 @@ export class CashflowGameService {
       callbacks.onError(errorMessage(err, 'Could not resolve Baby.'));
       return;
     }
+    this.pushUndoSnapshot();
     this.upsertSubscription(result.subscriptionUpsert);
     state.cashflowGame = result.state;
     this.persistAll('cashflow_baby', { children: result.state.children }, callbacks, {
@@ -292,6 +412,7 @@ export class CashflowGameService {
       callbacks.onError(errorMessage(err, 'Could not resolve Charity.'));
       return;
     }
+    this.pushUndoSnapshot();
     state.allTransactions.push(toFloatTransaction(result.transaction));
     state.cashflowGame = result.state;
     this.persistAll('cashflow_charity', {}, callbacks);
@@ -307,6 +428,7 @@ export class CashflowGameService {
       callbacks.onError(errorMessage(err, 'Could not resolve Downsized.'));
       return;
     }
+    this.pushUndoSnapshot();
     result.transactions.forEach((record) => state.allTransactions.push(toFloatTransaction(record)));
     state.cashflowGame = result.state;
     this.persistAll('cashflow_downsized', {}, callbacks);
@@ -314,9 +436,11 @@ export class CashflowGameService {
 
   /** Takes (`delta > 0`) or repays (`< 0`) a bank loan in the game set's increment (a decimal amount, like everywhere else in the app); upserts the Liability + interest Subscription, recomputed from the new principal every time. */
   adjustBankLoan(delta: number, callbacks: CashflowGameCallbacks): void {
+    this.pushUndoSnapshot();
     try {
       this.applyBankLoanAdjustment(delta);
     } catch (err: unknown) {
+      this.undoStack.pop(); // nothing actually changed — don't leave a no-op entry behind
       callbacks.onError(errorMessage(err, 'Could not adjust the bank loan.'));
       return;
     }
@@ -425,6 +549,7 @@ export class CashflowGameService {
       callbacks.onError(`"${input.title}" already exists as a different kind of Grow project.`);
       return;
     }
+    this.pushUndoSnapshot();
     this.upsertGrowProject(
       input.title,
       existingProject,
@@ -477,6 +602,7 @@ export class CashflowGameService {
         ? multiplyQuantityPrice(project.share.quantity, toMinorUnits(project.share.price))
         : toMinorUnits(project.investment.deposit);
     const shortfallMinor = costMinor - toMinorUnits(this.cash);
+    this.pushUndoSnapshot();
     try {
       if (shortfallMinor > 0) {
         const gameSet = this.currentGameSet();
@@ -555,6 +681,7 @@ export class CashflowGameService {
           account: 'Income',
           amountMinor: toMinorUnits(project.cashflow),
           frequency: 'monthly',
+          category: `@${title}`,
         });
       }
     } catch (err: unknown) {
@@ -597,6 +724,7 @@ export class CashflowGameService {
       callbacks.onError('This is only available for a Cashflow game account.');
       return;
     }
+    this.pushUndoSnapshot();
     const state = AppStateService.instance;
     state.allTransactions = [];
     state.allSubscriptions = [];
@@ -699,12 +827,13 @@ export class CashflowGameService {
       callbacks.onError('Pick a profession first.');
       return;
     }
+    this.pushUndoSnapshot();
     state.allTransactions.push({
       account: 'Daily',
       amount: -fromMinorUnits(card.costMinor),
       date: state.cashflowGame.virtualDate,
       time: '',
-      category: '',
+      category: `@${card.title}`,
       comment: `${card.title}\n#cashflow`,
     });
     this.persistAll('cashflow_doodad', { title: card.title }, callbacks);
@@ -783,6 +912,7 @@ export class CashflowGameService {
       existing.account = upsert.account;
       existing.amount = amount;
       existing.frequency = upsert.frequency;
+      existing.category = upsert.category ?? existing.category;
       if (!existing.comment.includes('#cashflow')) {
         existing.comment = existing.comment ? `${existing.comment}\n#cashflow` : '#cashflow';
       }
@@ -791,7 +921,7 @@ export class CashflowGameService {
         title: upsert.title,
         account: upsert.account,
         amount,
-        startDate: todayIso(),
+        startDate: this.nextSmartSubscriptionDate(this.currentMonthGameSubscriptionDays()),
         endDate: '',
         category: upsert.category ?? '',
         comment: upsert.comment ? `${upsert.comment}\n#cashflow` : '#cashflow',

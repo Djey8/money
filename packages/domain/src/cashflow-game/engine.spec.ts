@@ -40,6 +40,12 @@ describe('pickCashflowProfession', () => {
       history: [],
     });
     expect(result.subscriptions).toHaveLength(2);
+    // Salary gets a category too, same as every expense line — JFK, 2026-09-29+: "please fill in
+    // the correct Categories (currently Salary is missing)".
+    expect(result.subscriptions[0]).toMatchObject({
+      title: 'Placeholder profession Salary',
+      category: '@Salary',
+    });
     // Only Savings posts immediately — Salary/Expenses become real transactions on the first
     // Payday instead, once the player has had a chance to edit their Subscriptions (JFK, 2026-09-29).
     expect(result.startingTransactions).toEqual([
@@ -241,6 +247,7 @@ describe('resolveCashflowBaby', () => {
       account: 'Daily',
       amountMinor: -profession.perChildExpenseMinor, // 1 child
       frequency: 'monthly',
+      category: '@Children Expenses',
     });
 
     const second = resolveCashflowBaby(state, profession);
@@ -327,6 +334,7 @@ describe('adjustCashflowBankLoan', () => {
     expect(result.subscriptionUpsert).toMatchObject({
       title: 'Bank loan interest',
       amountMinor: -20000, // 10% of 200000
+      category: '@Bank loan',
     });
     expect(result.state.gameSubscriptionTitles).toContain('Bank loan interest');
   });
