@@ -297,9 +297,17 @@ export class CashflowGameComponent {
     return this.appState.liabilities;
   }
 
+  /**
+   * Which half of the profession card shows — never both stacked at once (JFK, 2026-09-29: "in a live game the
+   * active view should be just the Current Game panel and we can add a switch to visualize the start data NOT
+   * both at the same time"). Defaults to Live once a game exists; there's nothing to toggle before that.
+   */
+  professionCardView: 'start' | 'live' = 'start';
+
   /** "you can also just take one and it would be very nice to also see the attributes" (JFK, 2026-09-26). */
   openProfessionCard(profession: CashflowProfession): void {
     this.viewedProfession = profession;
+    this.professionCardView = this.hasActiveGame ? 'live' : 'start';
   }
 
   closeProfessionCard(): void {
@@ -312,7 +320,7 @@ export class CashflowGameComponent {
     if (!professions.length) return;
     const pick = professions[Math.floor(Math.random() * professions.length)];
     this.selectedProfessionId = pick.id;
-    this.viewedProfession = pick;
+    this.openProfessionCard(pick);
   }
 
   startGame(): void {

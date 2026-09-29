@@ -65,23 +65,13 @@ describe('CashflowGameService', () => {
       expect(state.allSubscriptions[0]).toMatchObject({ account: 'Income', amount: 3000 });
       expect(state.allSubscriptions[1]).toMatchObject({ account: 'Daily', amount: -1800 });
       expect(state.allSubscriptions.every((s) => s.comment.includes('#cashflow'))).toBe(true);
-      // Itemized starting transactions: Savings (0) + Salary (3000) to Income, Expense (-1800) from Daily —
-      // net effect is the same savings + one month's cashflow as before (JFK, 2026-09-26).
-      expect(state.allTransactions).toHaveLength(3);
+      // Only Savings posts immediately — Salary/Expenses become real transactions on the first
+      // Payday instead, once the player has had a chance to edit their Subscriptions (JFK, 2026-09-29).
+      expect(state.allTransactions).toHaveLength(1);
       expect(state.allTransactions[0]).toMatchObject({
         account: 'Income',
         amount: 0,
         category: '@Savings',
-      });
-      expect(state.allTransactions[1]).toMatchObject({
-        account: 'Income',
-        amount: 3000,
-        category: '@Salary',
-      });
-      expect(state.allTransactions[2]).toMatchObject({
-        account: 'Daily',
-        amount: -1800,
-        category: '@Placeholder Expenses',
       });
       expect(onSuccess).toHaveBeenCalled();
     });
@@ -137,9 +127,9 @@ describe('CashflowGameService', () => {
       service.payday({ onSuccess, onError: jest.fn() });
 
       const state = AppStateService.instance;
-      // starting transactions (3: Savings/Salary/Expense) + payday (2: salary + expenses) = 5;
-      // the unrelated subscription created nothing
-      expect(state.allTransactions).toHaveLength(5);
+      // starting transaction (1: Savings) + payday (2: salary + expenses, for the first time —
+      // decision 31) = 3; the unrelated subscription created nothing
+      expect(state.allTransactions).toHaveLength(3);
       expect(state.cashflowGame.round).toBe(1);
       expect(onSuccess).toHaveBeenCalled();
     });
@@ -147,12 +137,12 @@ describe('CashflowGameService', () => {
     it('undo removes exactly the payday transactions and rewinds the round', () => {
       started();
       service.payday({ onSuccess: jest.fn(), onError: jest.fn() });
-      expect(AppStateService.instance.allTransactions).toHaveLength(5);
+      expect(AppStateService.instance.allTransactions).toHaveLength(3);
 
       service.undoLastPayday({ onSuccess: jest.fn(), onError: jest.fn() });
 
       const state = AppStateService.instance;
-      expect(state.allTransactions).toHaveLength(3); // only the starting transactions remain
+      expect(state.allTransactions).toHaveLength(1); // only the starting transaction remains
       expect(state.cashflowGame.round).toBe(0);
       expect(state.cashflowGame.history).toHaveLength(0);
     });
@@ -177,6 +167,75 @@ describe('CashflowGameService', () => {
       expect(onError).toHaveBeenCalledWith(
         expect.stringContaining('Only the most recent Payday can be undone'),
       );
+    });
+  });
+
+  describe('payday date handling (todo/cashflow-game.md decision 33)', () => {
+    function started() {
+      service.pickProfession('placeholder', 'placeholder-profession', {
+        onSuccess: jest.fn(),
+        onError: jest.fn(),
+      });
+    }
+
+    beforeEach(() => {
+      jest.useFakeTimers().setSystemTime(new Date('2026-09-15T12:00:00Z'));
+    });
+
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
+    it("spreads this round's transactions across the current real month, in order", () => {
+      started(); // Savings dated 2026-09-15 (today at pickProfession time)
+
+      service.payday({ onSuccess: jest.fn(), onError: jest.fn() });
+
+      const state = AppStateService.instance;
+      const [salaryTx, expenseTx] = state.allTransactions.slice(1);
+      expect(salaryTx.date).toBe('2026-09-01');
+      expect(expenseTx.date).toBe('2026-09-16');
+    });
+
+    it('shifts every existing #cashflow transaction back a month before posting the new round', () => {
+      started();
+      expect(AppStateService.instance.allTransactions[0].date).toBe('2026-09-15');
+
+      service.payday({ onSuccess: jest.fn(), onError: jest.fn() });
+
+      // The Savings transaction (already #cashflow-tagged) ages back a month.
+      expect(AppStateService.instance.allTransactions[0].date).toBe('2026-08-15');
+    });
+
+    it('never shifts a transaction that isn’t part of the game', () => {
+      started();
+      AppStateService.instance.allTransactions.push({
+        account: 'Daily',
+        amount: -20,
+        date: '2026-09-10',
+        time: '',
+        category: '@Coffee',
+        comment: '',
+      } as any);
+
+      service.payday({ onSuccess: jest.fn(), onError: jest.fn() });
+
+      const unrelated = AppStateService.instance.allTransactions.find(
+        (t) => t.category === '@Coffee',
+      );
+      expect(unrelated?.date).toBe('2026-09-10');
+    });
+
+    it('undoLastPayday removes the round and shifts everything else forward a month again', () => {
+      started();
+      service.payday({ onSuccess: jest.fn(), onError: jest.fn() });
+      expect(AppStateService.instance.allTransactions[0].date).toBe('2026-08-15');
+
+      service.undoLastPayday({ onSuccess: jest.fn(), onError: jest.fn() });
+
+      const state = AppStateService.instance;
+      expect(state.allTransactions).toHaveLength(1); // only Savings remains
+      expect(state.allTransactions[0].date).toBe('2026-09-15'); // shifted back to where it started
     });
   });
 
@@ -337,7 +396,7 @@ describe('CashflowGameService', () => {
       const state = AppStateService.instance;
       expect(onSuccess).toHaveBeenCalled();
       expect(state.allShares).toHaveLength(0);
-      expect(state.allTransactions).toHaveLength(3); // only the starting transactions
+      expect(state.allTransactions).toHaveLength(1); // only the starting transaction (Savings)
       expect(state.allGrowProjects[0]).toMatchObject({
         title: 'TestCo',
         share: { tag: 'TestCo', quantity: 10, price: 100 },
@@ -367,7 +426,10 @@ describe('CashflowGameService', () => {
           comment: 'Buy Share TestCo 10 x 100;',
         }),
       );
-      expect(state.liabilities.find((l) => l.tag === 'Bank loan')).toBeUndefined();
+      // Cash is 0 before the first Payday (decision 31) — the full 1000 cost is borrowed.
+      expect(state.liabilities).toContainEqual(
+        expect.objectContaining({ tag: 'Bank loan', amount: 1000 }),
+      );
       expect(service.plannedDeals).toHaveLength(0); // bought — no longer just a plan
     });
 
@@ -380,7 +442,8 @@ describe('CashflowGameService', () => {
 
     it('auto-borrows the rounded-up shortfall before completing a purchase it can’t otherwise afford', () => {
       started();
-      // Cash is 1200 (starting cash); this share purchase costs 5000 — a 3800 shortfall, rounded up to a 4000 increment.
+      // Cash is 0 before the first Payday (decision 31); this share purchase costs 5000 — a 5000
+      // shortfall, already an exact multiple of the 1000 increment.
       service.planDeal(
         { kind: 'share', title: 'Expensive', quantity: 1, price: 5000 },
         { onSuccess: jest.fn(), onError: jest.fn() },
@@ -389,10 +452,10 @@ describe('CashflowGameService', () => {
 
       const state = AppStateService.instance;
       expect(state.liabilities).toContainEqual(
-        expect.objectContaining({ tag: 'Bank loan', amount: 4000 }),
+        expect.objectContaining({ tag: 'Bank loan', amount: 5000 }),
       );
       expect(state.allSubscriptions).toContainEqual(
-        expect.objectContaining({ title: 'Bank loan interest', amount: -400 }),
+        expect.objectContaining({ title: 'Bank loan interest', amount: -500 }),
       );
       expect(state.allTransactions).toContainEqual(
         expect.objectContaining({ account: 'Fire', amount: -5000, category: '@Expensive' }),

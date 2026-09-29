@@ -40,25 +40,13 @@ describe('pickCashflowProfession', () => {
       history: [],
     });
     expect(result.subscriptions).toHaveLength(2);
-    // Savings (0) + Salary (300000) to Income, then the one expense line (-180000) from Daily —
-    // net effect is the same savings + one month's cashflow as before, now itemized.
+    // Only Savings posts immediately — Salary/Expenses become real transactions on the first
+    // Payday instead, once the player has had a chance to edit their Subscriptions (JFK, 2026-09-29).
     expect(result.startingTransactions).toEqual([
       expect.objectContaining({
         account: 'Income',
         amountMinor: 0,
         category: '@Savings',
-        date: '2026-09-25',
-      }),
-      expect.objectContaining({
-        account: 'Income',
-        amountMinor: 300000,
-        category: '@Salary',
-        date: '2026-09-25',
-      }),
-      expect.objectContaining({
-        account: 'Daily',
-        amountMinor: -180000,
-        category: '@Placeholder Expenses',
         date: '2026-09-25',
       }),
     ]);

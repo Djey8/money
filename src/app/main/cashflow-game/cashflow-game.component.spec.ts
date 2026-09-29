@@ -114,6 +114,32 @@ describe('CashflowGameComponent', () => {
       expect(component.viewedProfession).toBeNull();
     });
 
+    it('openProfessionCard defaults to the starting scenario with no active game, live once one exists', () => {
+      const { component } = makeComponent();
+      const profession = CASHFLOW_GAME_SETS[0].professions[0];
+
+      component.openProfessionCard(profession);
+      expect(component.professionCardView).toBe('start');
+
+      AppStateService.instance.cashflowGame = {
+        ...AppStateService.instance.cashflowGame,
+        gameSetId: 'cashflow',
+        professionId: profession.id,
+      };
+      component.openProfessionCard(profession);
+      expect(component.professionCardView).toBe('live');
+    });
+
+    it('shuffleProfession also opens the card on the correct default view', () => {
+      const { component } = makeComponent();
+      component.selectedGameSetId = CASHFLOW_GAME_SETS[0].id;
+
+      component.shuffleProfession();
+
+      expect(component.viewedProfession).not.toBeNull();
+      expect(component.professionCardView).toBe('start');
+    });
+
     it('shuffleProfession picks a profession from the selected game set and opens its card', () => {
       const { component } = makeComponent();
       component.selectedGameSetId = CASHFLOW_GAME_SETS[0].id;

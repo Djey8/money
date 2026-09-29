@@ -52,12 +52,11 @@ export interface PickProfessionResult {
   /** Whatever the card's "Verbindlichkeiten"/starting positions add beyond what `subscriptions` covers. */
   starterKit: CashflowStarterKit;
   /**
-   * The game's opening transactions, itemized rather than one lump sum (JFK, 2026-09-26: "you get your savings
-   * as Income (category Savings), you get your first salary (category Salary) and you have to pay all your
-   * expenses once, so you are left with savings + cashflow"): Savings and Salary post to `Income` (so they're
-   * split across Daily/Splurge/Smile/Fire exactly like a real Payday would), then one payment per non-zero
-   * `expenses` line posts to `Daily`, categorized the same way its matching Subscription is. Net effect —
-   * `savingsMinor` plus one month's cashflow — is unchanged from the single lump transaction this replaces.
+   * The game's opening transaction(s) — just Savings, posted to `Income` (JFK, 2026-09-29: "when we start the
+   * game we only add the transaction for the Savings... then I have time as a user to modify the
+   * subscriptions... then I have a button start (current Payday) and that is adding for the first time the
+   * transactions"). Salary/Expenses were itemized transactions here too (decision 23), but that's now the first
+   * Payday's job, not `pickCashflowProfession`'s — giving the player a window to edit Subscriptions first.
    */
   startingTransactions: CashflowTransactionRecord[];
 }
@@ -107,6 +106,11 @@ export function pickCashflowProfession(
   const subscriptions = [salarySubscription, ...expenseSubscriptions];
   const gameSubscriptionTitles = subscriptions.map((sub) => sub.title);
 
+  // Only Savings posts immediately — Salary/Expenses don't, so the player has a window to edit
+  // their Subscriptions (category, account, dates) before anything is charged. The first Payday
+  // then posts them for real, from whatever the Subscriptions look like by then (JFK, 2026-09-29:
+  // "Then I have time as a user to modify the subscriptions... then I have a button start
+  // (current Payday) and that is adding for the first time the transactions").
   const startingTransactions: CashflowTransactionRecord[] = [
     {
       account: 'Income',
@@ -116,24 +120,6 @@ export function pickCashflowProfession(
       category: '@Savings',
       comment: `${profession.title} savings\n#cashflow`,
     },
-    {
-      account: 'Income',
-      amountMinor: profession.salaryMinor,
-      date: today,
-      time: '',
-      category: '@Salary',
-      comment: `${profession.title} salary\n#cashflow`,
-    },
-    ...profession.expenses
-      .filter((line) => line.amountMinor !== 0)
-      .map((line) => ({
-        account: 'Daily',
-        amountMinor: -line.amountMinor,
-        date: today,
-        time: '',
-        category: `@${line.title}`,
-        comment: `${line.title}\n#cashflow`,
-      })),
   ];
 
   return {

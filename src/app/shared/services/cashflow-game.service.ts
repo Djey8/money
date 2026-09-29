@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import {
+  addMonthsToIsoDate,
   adjustCashflowBankLoan,
   CASHFLOW_GAME_SETS,
   CashflowDealCard,
@@ -169,6 +170,15 @@ export class CashflowGameService {
   }
 
   /** Runs one Payday: one Transaction per real Subscription the game owns, dated at the game's own virtual date. */
+  /**
+   * Runs Payday: every prior game transaction ages back a month first, then this round's
+   * transactions land spread across the current real month — so each Payday reads like a month
+   * actually passed once you look at Stats (JFK, 2026-09-29: "spread these subscriptions dates
+   * over the current month... all already existing transactions should be moved back by a
+   * month... so while you play the game your transactions are moved into the past"). The
+   * engine's own `virtualDate` still advances forward as before — it's only ever used for
+   * round-tracking/loan math, not for what date actually gets persisted.
+   */
   payday(callbacks: CashflowGameCallbacks): void {
     const state = AppStateService.instance;
     let result: ReturnType<typeof runCashflowPayday>;
@@ -178,12 +188,29 @@ export class CashflowGameService {
       callbacks.onError(errorMessage(err, 'Could not run Payday.'));
       return;
     }
-    result.transactions.forEach((record) => state.allTransactions.push(toFloatTransaction(record)));
-    state.cashflowGame = result.state;
+
+    this.shiftGameTransactionDates(-1);
+
+    const today = todayIso();
+    const datedTransactions = result.transactions.map((record, index) => ({
+      ...record,
+      date: this.spreadDateAcrossMonth(today, index, result.transactions.length),
+    }));
+    datedTransactions.forEach((record) => state.allTransactions.push(toFloatTransaction(record)));
+
+    // Keep history's own copy in sync with the dates actually persisted, so undo can find them
+    // again by exact match (removeCreatedTransactions matches on date, among other fields).
+    const history = [...result.state.history];
+    history[history.length - 1] = {
+      ...history[history.length - 1],
+      createdTransactions: datedTransactions,
+    };
+
+    state.cashflowGame = { ...result.state, history };
     this.persistAll('cashflow_payday', { round: result.state.round }, callbacks);
   }
 
-  /** Reverses the most recent Payday: removes exactly the transactions it created. */
+  /** Reverses the most recent Payday: removes exactly the transactions it created, and undoes the backward date shift. */
   undoLastPayday(callbacks: CashflowGameCallbacks): void {
     const state = AppStateService.instance;
     let result: ReturnType<typeof undoLastCashflowPayday>;
@@ -194,8 +221,26 @@ export class CashflowGameService {
       return;
     }
     this.removeCreatedTransactions(result.removedTransactions);
+    this.shiftGameTransactionDates(1);
     state.cashflowGame = result.state;
     this.persistAll('cashflow_undo_payday', { round: result.state.round }, callbacks);
+  }
+
+  /** Every `#cashflow`-tagged transaction — never anything from the player's own (non-game) bookkeeping. */
+  private shiftGameTransactionDates(months: number): void {
+    for (const transaction of AppStateService.instance.allTransactions) {
+      if (transaction.comment?.includes('#cashflow')) {
+        transaction.date = addMonthsToIsoDate(transaction.date, months);
+      }
+    }
+  }
+
+  /** Spreads `total` same-day transactions across the real days of `anchorIso`'s month, in order. */
+  private spreadDateAcrossMonth(anchorIso: string, index: number, total: number): string {
+    const [year, month] = anchorIso.split('-').map(Number);
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const day = Math.min(daysInMonth, 1 + Math.floor((index * daysInMonth) / Math.max(total, 1)));
+    return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
   }
 
   /** Resolves a Baby space: +1 child (max 3), scales the children-expense Subscription. */

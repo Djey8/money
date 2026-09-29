@@ -9,11 +9,15 @@ the reset button into Settings → Advanced, the bootstrap-timing fix, itemized 
 transactions, the missing-category bug in Payday/Charity, Downsized paying real per-line expenses, and the
 step-by-step dashboard flow) are committed across `80f0b13`/`6508774` and earlier. Decision 29 (the real fix for
 stale visuals after Cashflow actions — `transactionsUpdated$`/`subscriptionsUpdated$` instead of the page reloads
-decisions 24/28 had used) is committed (`d2c4b5f`). JFK's first real playtest is underway. Decision 30 (the
-profession card's compact Income Statement/Balance Sheet plus its live, current-game equivalent — and the
-`gameSubscriptionTitles` bug found while building it, flagged not fixed) is built and green (domain + frontend
-tests, full typecheck, both editions build), not yet committed as of this note. The framework in decision 27 is
-what's needed before wiring up the first real Card Deck (Phase 2, next).
+decisions 24/28 had used) is committed (`d2c4b5f`). Decision 30 (the profession card's Income Statement/Balance
+Sheet, both starting and live — plus the `gameSubscriptionTitles` bug found while building it, flagged not fixed)
+is committed (`29a433b`). JFK's first real playtest is underway. Decisions 31–35 (reliably detecting an active
+game for the reset button, Start Game posting only Savings so Subscriptions can be edited before the first real
+Payday, Payday spreading transactions across the month and aging older ones back so Stats reads like real time
+passed, the profession card's Starting/Live toggle reusing the app's own Cashflow widget design, and disabling the
+generic subscription auto-generation machinery for cashflow accounts everywhere it could still fire) are built and
+green (domain + frontend tests, full typecheck, both editions build), not yet committed as of this note. The
+framework in decision 27 is what's needed before wiring up the first real Card Deck (Phase 2, next).
 
 ## 1. What this is
 
@@ -380,6 +384,65 @@ Cashflow`) is never added to `state.cashflowGame.gameSubscriptionTitles`. `liveP
       prioritize next rather than fixed as a drive-by (his own "fix issues one by one," 2026-09-29) — likely fix:
       have `executeDeal()` append the new subscription's title to `gameSubscriptionTitles` the same way
       `resolveCashflowBaby`/`pickCashflowProfession` already do for the subscriptions they create.
+31. **Bug fix: Settings' reset button couldn't reliably tell whether a game was running** (2026-09-29, JFK: "its
+    not reliable to detect if a game is running or not. The reset button is currently not available because the
+    component does not know we started a game"). `cashflowGame` was tier-3, on-demand data — loaded only when
+    `CashflowGameComponent.open()` ran, i.e. only once the player had opened the game panel this session. Visiting
+    Settings directly (without opening the panel first) left `AppStateService.instance.cashflowGame` at its
+    never-loaded default (`professionId: null`), so `isCashflowGameActive` read "no game" even when one existed on
+    the server. Fixed in `app.component.ts`'s tier-1 completion handler: a cashflow account now also calls
+    `AppDataService.instance.loadCashflowGameData()` right there, the same point non-cashflow accounts trigger
+    subscription auto-generation — for this account type, the game state is effectively tier-1, not truly
+    deferred.
+32. **Start Game posts only Savings; the first Payday is what posts Salary/Expenses "for real," giving the player
+    a window to edit their Subscriptions first** (2026-09-29, JFK: "when we start the game we only add the
+    transaction for the Savings. Then I have time as a user to modify the subscriptions, like changing the
+    category name or account for the subscription or even the dates... then I have a button start (current
+    Payday) and that is adding for the first time the transactions we have in subscriptions"). Reverts the Salary/
+    Expense half of decision 23's itemized starting transactions — `pickCashflowProfession`'s
+    `startingTransactions` is back down to just the one Savings entry. Nothing else changes: the Salary/expense
+    Subscriptions are still created immediately (so there's something to edit), and the first `payday()` call
+    posts them exactly as `runCashflowPayday` already did before decision 23 existed.
+33. **Payday transactions spread across the current real month, and every earlier game transaction ages back a
+    month first — so each Payday reads like an elapsed month once you look at Stats** (2026-09-29, JFK: "all
+    added transactions from the subscription are from the current date! The idea is to spread these subscriptions
+    dates over the current month and when we add a payday these transactions are added with the dates of the
+    current month, but all already existing transactions should be moved back by a month, so while tho play the
+    game your transactions are moved into the past... it feels like a game round / payday simulates a month went
+    past"). Implemented entirely in `cashflow-game.service.ts` (not the domain engine — `runCashflowPayday`'s own
+    `virtualDate` still advances forward exactly as before, unchanged, and stays the source of truth for
+    round-tracking/loan-interest math; only what actually gets **persisted** as each Transaction's `date` changes):
+    - `shiftGameTransactionDates(months)`: every transaction whose `comment` includes `#cashflow` — and _only_
+      those, the player's own real bookkeeping is never touched — gets `addMonthsToIsoDate(date, months)` applied
+      in place.
+    - `payday()` now calls `shiftGameTransactionDates(-1)` **before** creating this round's transactions, then
+      posts them via `spreadDateAcrossMonth(todayIso(), index, total)`, which distributes `total` same-round
+      transactions evenly across the real days of today's month (`1 + floor(index × daysInMonth / total)`) instead
+      of stacking them all on one date.
+    - `state.cashflowGame.history`'s last entry is patched to record these same actual dates (not the engine's own
+      `virtualDate`-based ones), because `undoLastPayday`'s existing `removeCreatedTransactions` matches
+      transactions by exact field equality including `date` — without this, undo couldn't find what it created.
+    - `undoLastPayday()` mirrors the shift with `shiftGameTransactionDates(+1)` after removing the round's
+      transactions, fully reversing the aging.
+    - **Deliberately out of scope for this pass**: Baby/Charity/Downsized and Deal/Doodad-execution transactions
+      still date themselves at `state.cashflowGame.virtualDate` (the forward-advancing one), not today's spread
+      month — flagged as an inconsistency worth unifying later, not fixed now, to keep this change scoped to what
+      was actually asked ("when we add a payday").
+34. **The profession card toggles between Starting/Live instead of stacking both, and its summary reuses the
+    app's own Cashflow widget design, scaled down** (2026-09-29, correcting decision 30 the same session: "in a
+    live game the active view should be just the Current Game panel and we can add a switch to visualize the
+    start data NOT both at the same time" / "I really meant that below the Hausmeister I would like to add the
+    cashflow component in small. So how we design it in the real app with its design I would like to add this in
+    a small version"). `professionCardView: 'start' | 'live'` replaces showing both sections stacked;
+    `openProfessionCard()`/`shuffleProfession()` default it to `'live'` once `hasActiveGame`, `'start'`
+    otherwise, and a two-button toggle (visible only once a game exists) switches between them. The compact
+    summary that used to be plain text (`Salary + Passive = Income...`) is now `.cf-mini-cashflow-box` — a scaled-
+    down copy of the exact widget `cashflow.component.html`/`subscription.component.html` already use
+    (`.cashflowBox`/`.TextLable`/`.amountLable-positive`/`-negative`, reusing their own `Cashflow.Income`/
+    `Cashflow.Expenses`/`Cashflow.title` translations directly) rather than a bespoke look invented for this
+    panel. The passive-vs-expenses rat-race bars (decision 30) stay, directly below the mini box, since they're a
+    genuinely new visual, not part of that existing widget.
+35. **Bug fix: the generic subscription auto-generation machinery could still fire for a cashflow account, bypassing Payday entirely** (2026-09-29, JFK: "In general the normal behaviour of the subscription auto add should be disabled for a game account"). The login-time trigger (`app.component.ts`) was already guarded (todo/cashflow-game.md's original MVP notes), but `SubscriptionComponent`'s manual "↻ Refresh" button called `SubscriptionProcessingService.setTransactionsForSubscriptions()` directly with no such guard — a cashflow player clicking it would auto-generate transactions up to the real wall-clock date for every Subscription, completely bypassing Payday's controlled, one-round-at-a-time posting. Fixed at the source, not just the one call site: `setTransactionsForSubscriptions()` itself now returns immediately (`{transactionsCreated: 0, subscriptionsProcessed: 0}`) when `CashflowGameService.isCashflowGame()`, so any future caller is automatically safe. The Refresh button is also hidden outright for a cashflow account (`*ngIf="!isCashflowGame()"`) rather than left visible as a silent no-op.
 
 ## 3. The one new thing: a small game-meta state
 
