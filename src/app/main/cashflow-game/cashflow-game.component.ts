@@ -212,6 +212,25 @@ export class CashflowGameComponent {
     );
   }
 
+  /**
+   * The profession card's own printed content, live-translated into the currently-selected
+   * language — safe to translate on the fly since this is static, never-user-edited reference data
+   * from game-sets.ts, unlike the real Subscriptions/Transactions it seeds (todo/cashflow-game.md
+   * decision 48, JFK 2026-09-29+: "can we have all of these values multi language? once you select
+   * a different language everything is translated?").
+   */
+  professionTitle(profession: CashflowProfession): string {
+    return this.cashflowGameService.translateProfessionTitle(profession);
+  }
+
+  expenseLineTitle(profession: CashflowProfession, line: { title: string; key?: string }): string {
+    return this.cashflowGameService.translateExpenseLineTitle(profession, line);
+  }
+
+  liabilityTag(profession: CashflowProfession, liability: { tag: string; key?: string }): string {
+    return this.cashflowGameService.translateLiabilityTag(profession, liability);
+  }
+
   /** A profession always starts with zero passive income — no investments owned yet (2026-09-29). */
   readonly professionStartingPassive = 0;
 

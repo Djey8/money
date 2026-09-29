@@ -34,10 +34,11 @@ committed (`591f5e0`). Decision 44 (a Category column on the Subscriptions page,
 subscription, not just Cashflow ones — decision 41's category fixes were correct the whole time, just invisible)
 is committed (`2552029`). Decision 45 (borrowing/repaying a bank loan now actually moves cash via a real
 Transaction, fixing a real bug that also silently broke `executeDeal`'s auto-borrow) is committed (`5fe7e18`).
-Decision 46 (the summary card's stat row spread edge-to-edge, initially committed Date/Round/Cash as `e6a2525`
-then corrected to Cash/Round/Date) and decision 47 (a short effect summary on the Charity/Downsized/Baby space
-buttons) are built and green (frontend tests, full typecheck, both editions build), not yet committed as of this
-note. The framework
+Decisions 46–47 (the summary card's stat row spread edge-to-edge, Cash/Round/Date; a short effect summary on the
+Charity/Downsized/Baby space buttons) are committed (`e6a2525`, `7c0bd88`). Decision 48 (Cashflow game content —
+profession/expense/liability names — translatable in all 6 languages: new records use the currently-selected
+language going forward, the profession card's Starting Scenario view translates live) is built and green (domain +
+frontend tests, full typecheck, both editions build), not yet committed as of this note. The framework
 in decision 27 is what's needed before wiring up the first real Card Deck (Phase 2, next).
 
 ## 1. What this is
@@ -705,6 +706,56 @@ Cashflow`) is never added to `state.cashflowGame.gameSubscriptionTitles`. `liveP
     of income, pick dice for 3 turns" (`resolveCashflowCharity`); Downsized — "Pay expenses now, skip 2 turns"
     (`resolveCashflowDownsized`); Baby — "+1 child, adds a monthly expense" (`resolveCashflowBaby`). Three new i18n
     keys (`babyHint`/`charityHint`/`downsizedHint`) added to all 6 locales.
+
+48. **Cashflow game content (profession names, expense/liability names) is translatable, in all 6 languages —
+    scoped to the game's own authored content, not a rewrite of how the rest of the app stores categories**
+    (2026-09-29, JFK: _"currently we have a mix of german/english. names, categories and some stuff is still not
+    properly translated. Can we have this in all 6 languages and we translate all of these values. Once you
+    selected a language we write it to the database, when you switch at that moment we write the new language. OR
+    if its possible can we have all of these values multi languages? once you select a different language
+    everything is translated?"_). Two independent behaviors, split by whether the content is ever user-edited —
+    live-translating everything unconditionally would silently overwrite a manually-renamed Subscription, breaking
+    the "the player can edit it and it sticks" principle this whole feature has followed all session:
+    - **New records use the currently-selected language, frozen from then on** (JFK's "write it to the database"
+      idea, minus a retroactive rewrite of history — confirmed explicitly: _"Only new ones going forward"_).
+      `pickCashflowProfession`'s profession title, non-zero expense line names, and starter-kit liability tags now
+      resolve through new i18n keys (`CashflowGame.profession.<profession.id>.title` /
+      `.expense.<line.key>` / `.liability.<entry.key>`) instead of using `game-sets.ts`'s own (German) strings
+      directly — same for the generic Salary/Savings/Children-Expenses labels, now `CashflowGame.
+      salarySubscriptionTitle`/`childrenExpensesSubscriptionTitle`/`savingsTransactionComment` (`{{profession}}`-
+      parameterized, since word order differs per language) instead of hardcoded English concatenation in the
+      engine. `CashflowExpenseLine`/`CashflowStarterKitEntry` gain an optional `key` (`packages/domain/src/
+      cashflow-game/types.ts`) — a stable, language-independent id separate from `title`/`tag`, which stay exactly
+      as authored (German) and now serve only as the *fallback* when no translation key exists yet (a profession/
+      game set not yet translated keeps working exactly as before — the `placeholder` fixture, with no `key`
+      fields and no translation entries, is unaffected). `CashflowGameService.pickProfession()`/`resolveBaby()`
+      resolve the translated strings and use them for what actually gets stored — including
+      `gameSubscriptionTitles`, which must reference the *stored* (translated) title or Payday can never find the
+      Subscription again. `resolveBaby()` specifically computes its translated title *before* checking whether a
+      2nd/3rd child's Children-Expenses Subscription already exists (ignoring the engine's own internal check,
+      which always uses the untranslated title) — otherwise a repeat call would see no match and create a
+      duplicate `gameSubscriptionTitles` entry instead of scaling the existing one. **Deliberately left
+      untranslated**, to avoid touching the app's `@category`-to-entity-tag linking convention anywhere outside
+      this feature: "Bank loan"/"Bank loan interest" (used as literal, language-independent matching keys
+      throughout `engine.ts`/`cashflow-game.service.ts` — `BANK_LOAN_TAG`, `removeSubscriptionByTitle('Bank loan
+      interest')` — translating the *stored* value would break the exact-string matching those rely on); Grow/
+      Deal-card titles (user-entered/card content, not profession-authored); starter-kit assets/investments/shares
+      (no current profession uses them, no translation keys defined yet).
+    - **The profession card's "Starting Scenario" view translates live, on the fly** (JFK's second idea, in
+      full — safe here specifically because this view only ever reads `game-sets.ts`'s own static data via
+      `viewedProfession`/`selectedProfession`, never a real, possibly-user-edited Subscription/Transaction).
+      `CashflowGameService.translateProfessionTitle`/`translateExpenseLineTitle`/`translateLiabilityTag` (made
+      public) resolve the same new i18n keys against whatever language is active *right now*; `cashflow-game.
+      component.ts` exposes thin wrappers (`professionTitle`/`expenseLineTitle`/`liabilityTag`) the template calls
+      directly, replacing every direct `profession.title`/`line.title`/`liability.tag` binding — the profession
+      picker dropdown, the profession-card header (both "Starting"/"Live" scenario, and the active-game summary
+      card, since the profession's own name is never user-edited either way), the itemized expense list, and the
+      itemized liabilities list. The "Live Scenario" view, the Subscriptions page, and History deliberately do
+      *not* get this treatment — they show real Subscriptions/Transactions, which read from whatever was actually
+      stored (translated at creation time, per the point above), same as any other financial record.
+    - Currently only the real "hausmeister" profession has translations authored (11 keys × 6 languages: 1 title +
+      7 expense lines including the two zero-amount ones still shown on the printed card + 3 liability tags); any
+      future profession without translations keeps working via the `title`/`tag` fallback, same as `placeholder`.
 
 ## 3. The one new thing: a small game-meta state
 

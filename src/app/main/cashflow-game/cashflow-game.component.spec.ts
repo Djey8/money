@@ -28,6 +28,9 @@ function makeComponent(overrides: Partial<Record<string, jest.Mock>> = {}) {
     monthlyCashflow: 0,
     cash: 0,
     plannedDeals: [],
+    translateProfessionTitle: jest.fn((profession: any) => profession.title),
+    translateExpenseLineTitle: jest.fn((_profession: any, line: any) => line.title),
+    translateLiabilityTag: jest.fn((_profession: any, liability: any) => liability.tag),
     ...overrides,
   };
   const toastService = { show: jest.fn() };
@@ -176,6 +179,21 @@ describe('CashflowGameComponent', () => {
 
       // salary 1600 - expenses 1000
       expect(component.professionMonthlyCashflow(profession)).toBe(600);
+    });
+
+    it("professionTitle/expenseLineTitle/liabilityTag delegate to the service — live-translates the card's own static content (todo/cashflow-game.md decision 48)", () => {
+      const { component, cashflowGameService } = makeComponent();
+      const profession = CASHFLOW_GAME_SETS.find((set) => set.id === 'cashflow')!.professions[0];
+      const line = profession.expenses[0];
+      const liability = profession.starterKit.liabilities![0];
+
+      component.professionTitle(profession);
+      component.expenseLineTitle(profession, line);
+      component.liabilityTag(profession, liability);
+
+      expect(cashflowGameService.translateProfessionTitle).toHaveBeenCalledWith(profession);
+      expect(cashflowGameService.translateExpenseLineTitle).toHaveBeenCalledWith(profession, line);
+      expect(cashflowGameService.translateLiabilityTag).toHaveBeenCalledWith(profession, liability);
     });
   });
 

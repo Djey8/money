@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { TranslateService } from '@ngx-translate/core';
 import {
   addMonthsToIsoDate,
   adjustCashflowBankLoan,
@@ -147,6 +148,7 @@ export class CashflowGameService {
   constructor(
     private persistence: PersistenceService,
     private incomeStatement: IncomeStatementService,
+    private translate: TranslateService,
   ) {}
 
   static isCashflowGame(): boolean {
@@ -247,7 +249,13 @@ export class CashflowGameService {
     });
   }
 
-  /** Starts a new game: materializes the profession's starter kit as real entities. */
+  /**
+   * Starts a new game: materializes the profession's starter kit as real entities. Every piece of
+   * profession content (title, expense names, liability tags, the Salary/Savings labels) resolves
+   * through the currently-selected language instead of game-sets.ts's own (German) strings — new
+   * records pick up whatever language is active right now (todo/cashflow-game.md decision 48, JFK
+   * 2026-09-29+: "can we have this in all 6 languages and we translate all of these values").
+   */
   pickProfession(gameSetId: string, professionId: string, callbacks: CashflowGameCallbacks): void {
     const state = AppStateService.instance;
     let result: ReturnType<typeof pickCashflowProfession>;
@@ -259,19 +267,42 @@ export class CashflowGameService {
     }
     this.pushUndoSnapshot();
 
+    const professionTitle = this.translateProfessionTitle(result.profession);
+    const salaryWord = this.translate.instant('CashflowGame.salary');
+    const savingsWord = this.translate.instant('CashflowGame.savings');
+    // result.subscriptions is always [salary, ...non-zero expense lines], in that order (see
+    // pickCashflowProfession) — the same order this.currentProfession's own expenses filter to.
+    const nonZeroExpenses = result.profession.expenses.filter((line) => line.amountMinor !== 0);
+    const subscriptionTitles = result.subscriptions.map((_sub, index) =>
+      index === 0
+        ? this.translate.instant('CashflowGame.salarySubscriptionTitle', {
+            profession: professionTitle,
+          })
+        : this.translateExpenseLineTitle(result.profession, nonZeroExpenses[index - 1]),
+    );
+
     result.startingTransactions.forEach((record) =>
-      state.allTransactions.push(toFloatTransaction(record)),
+      state.allTransactions.push(
+        toFloatTransaction({
+          ...record,
+          category: `@${savingsWord}`,
+          comment: `${this.translate.instant('CashflowGame.savingsTransactionComment', {
+            profession: professionTitle,
+          })}\n#cashflow`,
+        }),
+      ),
     );
 
     const usedDays = this.currentMonthGameSubscriptionDays();
-    result.subscriptions.forEach((sub) => {
+    result.subscriptions.forEach((sub, index) => {
+      const translatedTitle = subscriptionTitles[index];
       const subscription: Subscription = {
-        title: sub.title,
+        title: translatedTitle,
         account: sub.account,
         amount: fromMinorUnits(sub.amountMinor),
         startDate: this.nextSmartSubscriptionDate(usedDays),
         endDate: '',
-        category: sub.category ?? '',
+        category: index === 0 ? `@${salaryWord}` : `@${translatedTitle}`,
         comment: sub.comment ? `${sub.comment}\n#cashflow` : '#cashflow',
         frequency: sub.frequency,
       };
@@ -296,18 +327,54 @@ export class CashflowGameService {
     );
     (result.starterKit.liabilities ?? []).forEach((liability) =>
       state.liabilities.push({
-        tag: liability.tag,
+        tag: this.translateLiabilityTag(result.profession, liability),
         amount: fromMinorUnits(liability.amountMinor),
         investment: false,
         credit: 0,
       }),
     );
 
-    state.cashflowGame = result.state;
+    state.cashflowGame = { ...result.state, gameSubscriptionTitles: subscriptionTitles };
     this.persistAll('start_cashflow_game', { gameSetId, professionId }, callbacks, {
       includeSubscriptions: true,
       includeBalanceSheet: true,
     });
+  }
+
+  /** Resolves a translation key against the currently-selected language, falling back to `fallback` (game-sets.ts's own string) if no such key exists yet — the same behavior ngx-translate's own missing-key handler already gives every other key in the app. */
+  private translateOrFallback(key: string, fallback: string): string {
+    const translated = this.translate.instant(key);
+    return translated === key ? fallback : translated;
+  }
+
+  /** Public: also used by the profession card's "Starting Scenario" view (`cashflow-game.component.ts`) to live-translate the card's own static, never-user-edited reference numbers (todo/cashflow-game.md decision 48). */
+  translateProfessionTitle(profession: CashflowProfession): string {
+    return this.translateOrFallback(
+      `CashflowGame.profession.${profession.id}.title`,
+      profession.title,
+    );
+  }
+
+  translateExpenseLineTitle(
+    profession: CashflowProfession,
+    line: { title: string; key?: string },
+  ): string {
+    if (!line.key) return line.title;
+    return this.translateOrFallback(
+      `CashflowGame.profession.${profession.id}.expense.${line.key}`,
+      line.title,
+    );
+  }
+
+  translateLiabilityTag(
+    profession: CashflowProfession,
+    liability: { tag: string; key?: string },
+  ): string {
+    if (!liability.key) return liability.tag;
+    return this.translateOrFallback(
+      `CashflowGame.profession.${profession.id}.liability.${liability.key}`,
+      liability.tag,
+    );
   }
 
   /**
@@ -444,8 +511,31 @@ export class CashflowGameService {
       return;
     }
     this.pushUndoSnapshot();
-    this.upsertSubscription(result.subscriptionUpsert);
-    state.cashflowGame = result.state;
+
+    // Same translation as pickProfession, but computed independently of the engine's own internal
+    // title/gameSubscriptionTitles bookkeeping (always raw German) — ignoring what the engine
+    // returned for that one field and replacing it with our own translated, session-stable title,
+    // so a 2nd/3rd child correctly updates the same Subscription instead of creating a duplicate.
+    const professionTitle = this.translateProfessionTitle(profession);
+    const translatedTitle = this.translate.instant(
+      'CashflowGame.childrenExpensesSubscriptionTitle',
+      {
+        profession: professionTitle,
+      },
+    );
+    const translatedCategory = this.translate.instant('CashflowGame.childrenExpenses');
+    this.upsertSubscription({
+      ...result.subscriptionUpsert,
+      title: translatedTitle,
+      category: `@${translatedCategory}`,
+    });
+    const gameSubscriptionTitles = state.cashflowGame.gameSubscriptionTitles.includes(
+      translatedTitle,
+    )
+      ? state.cashflowGame.gameSubscriptionTitles
+      : [...state.cashflowGame.gameSubscriptionTitles, translatedTitle];
+
+    state.cashflowGame = { ...result.state, gameSubscriptionTitles };
     this.persistAll('cashflow_baby', { children: result.state.children }, callbacks, {
       includeSubscriptions: true,
     });

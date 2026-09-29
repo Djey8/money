@@ -87,13 +87,13 @@ const CASHFLOW_GAME_SET: CashflowGameSet = {
       title: 'Hausmeister/in',
       salaryMinor: 160000, // Gehalt: 1.600 €
       expenses: [
-        { title: 'Steuern', amountMinor: 30000 }, // 300 €
-        { title: 'Eigenheim-Hypothek / Miete', amountMinor: 20000 }, // 200 €
-        { title: 'BAföG Darlehenszahlung', amountMinor: 0 },
-        { title: 'Autokreditzahlung', amountMinor: 10000 }, // 100 €
-        { title: 'Kreditkartenzahlung', amountMinor: 10000 }, // 100 €
-        { title: 'Sonstige Ausgaben', amountMinor: 30000 }, // 300 €
-        { title: 'Bankdarlehenszahlungen', amountMinor: 0 }, // automated by the Bank loan feature instead
+        { title: 'Steuern', amountMinor: 30000, key: 'taxes' }, // 300 €
+        { title: 'Eigenheim-Hypothek / Miete', amountMinor: 20000, key: 'mortgageRent' }, // 200 €
+        { title: 'BAföG Darlehenszahlung', amountMinor: 0, key: 'studentLoan' },
+        { title: 'Autokreditzahlung', amountMinor: 10000, key: 'carLoan' }, // 100 €
+        { title: 'Kreditkartenzahlung', amountMinor: 10000, key: 'creditCard' }, // 100 €
+        { title: 'Sonstige Ausgaben', amountMinor: 30000, key: 'miscExpenses' }, // 300 €
+        { title: 'Bankdarlehenszahlungen', amountMinor: 0, key: 'bankLoanPayment' }, // automated by the Bank loan feature instead
       ],
       perChildExpenseMinor: 10000, // Ausgaben pro Kind: 100 €
       savingsMinor: 60000, // Ersparnisse: 600 €
@@ -102,9 +102,9 @@ const CASHFLOW_GAME_SET: CashflowGameSet = {
         // matching expense line's *payment* above. BAföG Darlehen (0 €) is
         // skipped.
         liabilities: [
-          { tag: 'Eigenheim-Hypothek', amountMinor: 2000000 }, // 20.000 €
-          { tag: 'Autokredit', amountMinor: 400000 }, // 4.000 €
-          { tag: 'Kreditkartenschulden', amountMinor: 300000 }, // 3.000 €
+          { tag: 'Eigenheim-Hypothek', amountMinor: 2000000, key: 'mortgage' }, // 20.000 €
+          { tag: 'Autokredit', amountMinor: 400000, key: 'carLoan' }, // 4.000 €
+          { tag: 'Kreditkartenschulden', amountMinor: 300000, key: 'creditCardDebt' }, // 3.000 €
         ],
       },
     },

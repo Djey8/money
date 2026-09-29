@@ -20,7 +20,7 @@
     <!-- or — while a game is running — the same shape read live, one or the other, never both. -->
     <div class="cf-card cf-profession-card" *ngIf="viewedProfession as profession">
       <div class="cf-profession-card-header">
-        <h3>{{ profession.title }}</h3>
+        <h3>{{ professionTitle(profession) }}</h3>
         <button class="cf-panel-close" aria-label="Close" (click)="closeProfessionCard()">✕</button>
       </div>
 
@@ -81,7 +81,7 @@
         <h4>{{ 'CashflowGame.expenses' | translate }}</h4>
         <ul class="cf-line-list">
           <li *ngFor="let line of profession.expenses">
-            <span>{{ line.title }}</span>
+            <span>{{ expenseLineTitle(profession, line) }}</span>
             <span>{{ toDisplayAmount(line.amountMinor) | appNumber }} {{ appState.currency }}</span>
           </li>
         </ul>
@@ -106,7 +106,7 @@
           <h4>{{ 'CashflowGame.liabilities' | translate }}</h4>
           <ul class="cf-line-list">
             <li *ngFor="let liability of profession.starterKit.liabilities">
-              <span>{{ liability.tag }}</span>
+              <span>{{ liabilityTag(profession, liability) }}</span>
               <span
                 >{{ toDisplayAmount(liability.amountMinor) | appNumber }}
                 {{ appState.currency }}</span
@@ -198,7 +198,7 @@
         {{ 'CashflowGame.profession' | translate }}
         <select [(ngModel)]="selectedProfessionId">
           <option *ngFor="let profession of selectedGameSet.professions" [value]="profession.id">
-            {{ profession.title }}
+            {{ professionTitle(profession) }}
           </option>
         </select>
       </label>
@@ -230,7 +230,7 @@
       <ng-container *ngIf="dashboardView === 'main'">
         <div class="cf-card cf-summary">
           <div class="cf-profession-card-header">
-            <h3>{{ currentProfession?.title }}</h3>
+            <h3>{{ currentProfession ? professionTitle(currentProfession) : '' }}</h3>
             <button
               class="cf-info-btn"
               *ngIf="currentProfession"

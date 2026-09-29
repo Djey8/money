@@ -21,6 +21,8 @@ export interface CashflowStarterKitSubscription {
 export interface CashflowStarterKitEntry {
   tag: string;
   amountMinor: number;
+  /** Stable, language-independent id for this entry — lets the frontend look up a translated label for it without touching `tag` itself, which stays the literal matching/linking value (todo/cashflow-game.md decision 48). Optional: a game set with no translations authored yet just falls back to `tag` as-is. */
+  key?: string;
 }
 
 /**
@@ -48,6 +50,8 @@ export interface CashflowStarterKit {
 export interface CashflowExpenseLine {
   title: string;
   amountMinor: number;
+  /** Stable, language-independent id for this line — lets the frontend look up a translated label without changing `title` itself, which stays the literal value used to build the real Subscription's title/category (todo/cashflow-game.md decision 48). Optional: a game set with no translations authored yet just falls back to `title` as-is. */
+  key?: string;
 }
 
 export interface CashflowProfession {

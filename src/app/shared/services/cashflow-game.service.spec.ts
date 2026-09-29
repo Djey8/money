@@ -3,9 +3,38 @@ import { CashflowGameService } from './cashflow-game.service';
 import { IncomeStatementService } from './income-statement.service';
 import { ProfileComponent } from '../../panels/profile/profile.component';
 
+/**
+ * Simulates the app's real en.json for the small set of generic (non-profession-specific) keys the
+ * service resolves, so tests exercise the same interpolation production does; any other key (every
+ * profession/expense/liability key, since no profession-specific translations are seeded here)
+ * echoes back — same as ngx-translate's own `FallbackMissingTranslationHandler` — so that content
+ * correctly falls back to game-sets.ts's own (German) strings, matching every existing test's
+ * expectations (todo/cashflow-game.md decision 48).
+ */
+function noopTranslate(): { instant: jest.Mock } {
+  const EN_DEFAULTS: Record<string, string> = {
+    'CashflowGame.salary': 'Salary',
+    'CashflowGame.savings': 'Savings',
+    'CashflowGame.childrenExpenses': 'Children Expenses',
+    'CashflowGame.salarySubscriptionTitle': '{{profession}} Salary',
+    'CashflowGame.childrenExpensesSubscriptionTitle': '{{profession}} Children Expenses',
+    'CashflowGame.savingsTransactionComment': '{{profession}} savings',
+  };
+  return {
+    instant: jest.fn((key: string, params?: Record<string, string>) => {
+      const template = EN_DEFAULTS[key];
+      if (!template) return key;
+      return params
+        ? Object.entries(params).reduce((s, [k, v]) => s.replace(`{{${k}}}`, v), template)
+        : template;
+    }),
+  };
+}
+
 describe('CashflowGameService', () => {
   let service: CashflowGameService;
   let persistence: { batchWriteAndSync: jest.Mock; writeAndSync: jest.Mock };
+  let translate: { instant: jest.Mock };
 
   beforeEach(() => {
     (AppStateService as any)._instance = undefined;
@@ -39,7 +68,8 @@ describe('CashflowGameService', () => {
       writeAndSync: jest.fn((config) => config.onSuccess()),
     };
     const incomeStatement = new IncomeStatementService({ saveData: jest.fn() } as any);
-    service = new CashflowGameService(persistence as any, incomeStatement);
+    translate = noopTranslate();
+    service = new CashflowGameService(persistence as any, incomeStatement, translate as any);
   });
 
   describe('isCashflowGame', () => {
@@ -800,7 +830,11 @@ describe('CashflowGameService', () => {
 
       // A page reload/dev-server restart creates a brand-new service instance from scratch.
       const incomeStatement = new IncomeStatementService({ saveData: jest.fn() } as any);
-      const reloaded = new CashflowGameService(persistence as any, incomeStatement);
+      const reloaded = new CashflowGameService(
+        persistence as any,
+        incomeStatement,
+        noopTranslate() as any,
+      );
 
       expect(reloaded.canUndo).toBe(true);
       reloaded.undoLastAction({ onSuccess: jest.fn(), onError: jest.fn() });
@@ -818,7 +852,11 @@ describe('CashflowGameService', () => {
       expect(localStorage.getItem('cashflowUndoStack')).toBeNull();
       // A fresh instance after "logout, login" must not pick anything back up either.
       const incomeStatement = new IncomeStatementService({ saveData: jest.fn() } as any);
-      const afterLogin = new CashflowGameService(persistence as any, incomeStatement);
+      const afterLogin = new CashflowGameService(
+        persistence as any,
+        incomeStatement,
+        noopTranslate() as any,
+      );
       expect(afterLogin.canUndo).toBe(false);
     });
 
@@ -826,9 +864,120 @@ describe('CashflowGameService', () => {
       localStorage.setItem('cashflowUndoStack', '{not valid json');
 
       const incomeStatement = new IncomeStatementService({ saveData: jest.fn() } as any);
-      const corrupted = new CashflowGameService(persistence as any, incomeStatement);
+      const corrupted = new CashflowGameService(
+        persistence as any,
+        incomeStatement,
+        noopTranslate() as any,
+      );
 
       expect(corrupted.canUndo).toBe(false);
+    });
+  });
+
+  describe('profession content translation (todo/cashflow-game.md decision 48)', () => {
+    /** A stand-in for a non-German active language, translating exactly the real "hausmeister" profession's content — proves actual translation happens, not just that the fallback-to-German path (already covered elsewhere) still works. */
+    function fakeTranslate(): { instant: jest.Mock } {
+      const TRANSLATIONS: Record<string, string> = {
+        'CashflowGame.salary': 'Salary',
+        'CashflowGame.savings': 'Savings',
+        'CashflowGame.childrenExpenses': 'Children Expenses',
+        'CashflowGame.salarySubscriptionTitle': '{{profession}} Salary',
+        'CashflowGame.childrenExpensesSubscriptionTitle': '{{profession}} Children Expenses',
+        'CashflowGame.savingsTransactionComment': '{{profession}} savings',
+        'CashflowGame.profession.hausmeister.title': 'Caretaker',
+        'CashflowGame.profession.hausmeister.expense.taxes': 'Taxes',
+        'CashflowGame.profession.hausmeister.expense.mortgageRent': 'Home Mortgage / Rent',
+        'CashflowGame.profession.hausmeister.expense.studentLoan': 'Student Loan Payment',
+        'CashflowGame.profession.hausmeister.expense.carLoan': 'Car Loan Payment',
+        'CashflowGame.profession.hausmeister.expense.creditCard': 'Credit Card Payment',
+        'CashflowGame.profession.hausmeister.expense.miscExpenses': 'Miscellaneous Expenses',
+        'CashflowGame.profession.hausmeister.expense.bankLoanPayment': 'Bank Loan Payments',
+        'CashflowGame.profession.hausmeister.liability.mortgage': 'Home Mortgage',
+        'CashflowGame.profession.hausmeister.liability.carLoan': 'Car Loan',
+        'CashflowGame.profession.hausmeister.liability.creditCardDebt': 'Credit Card Debt',
+      };
+      return {
+        instant: jest.fn((key: string, params?: Record<string, string>) => {
+          const template = TRANSLATIONS[key] ?? key;
+          return params
+            ? Object.entries(params).reduce((s, [k, v]) => s.replace(`{{${k}}}`, v), template)
+            : template;
+        }),
+      };
+    }
+
+    function startHausmeister(): CashflowGameService {
+      const incomeStatement = new IncomeStatementService({ saveData: jest.fn() } as any);
+      const translatedService = new CashflowGameService(
+        persistence as any,
+        incomeStatement,
+        fakeTranslate() as any,
+      );
+      translatedService.pickProfession('cashflow', 'hausmeister', {
+        onSuccess: jest.fn(),
+        onError: jest.fn(),
+      });
+      return translatedService;
+    }
+
+    it('new records use the currently-selected language instead of game-sets.ts’s own German — JFK, 2026-09-29+: "can we have this in all 6 languages and we translate all of these values"', () => {
+      startHausmeister();
+
+      const state = AppStateService.instance;
+      expect(state.allSubscriptions[0]).toMatchObject({
+        title: 'Caretaker Salary',
+        category: '@Salary',
+      });
+      const taxes = state.allSubscriptions.find((s) => s.category === '@Taxes');
+      expect(taxes).toMatchObject({ title: 'Taxes', amount: -300 });
+      expect(state.allTransactions[0]).toMatchObject({
+        category: '@Savings',
+        comment: expect.stringContaining('Caretaker savings'),
+      });
+      expect(state.liabilities).toContainEqual(expect.objectContaining({ tag: 'Home Mortgage' }));
+    });
+
+    it('gameSubscriptionTitles matches the translated titles, so Payday can still find them', () => {
+      const translatedService = startHausmeister();
+
+      translatedService.payday({ onSuccess: jest.fn(), onError: jest.fn() });
+
+      const state = AppStateService.instance;
+      expect(state.allTransactions.some((t) => t.category === '@Salary')).toBe(true);
+      expect(state.allTransactions.some((t) => t.category === '@Taxes')).toBe(true);
+    });
+
+    it('a second Baby scales the same translated Subscription instead of creating a duplicate', () => {
+      const translatedService = startHausmeister();
+
+      translatedService.resolveBaby({ onSuccess: jest.fn(), onError: jest.fn() });
+      translatedService.resolveBaby({ onSuccess: jest.fn(), onError: jest.fn() });
+
+      const state = AppStateService.instance;
+      const childExpenses = state.allSubscriptions.filter((s) =>
+        s.title.includes('Children Expenses'),
+      );
+      expect(childExpenses).toHaveLength(1);
+      expect(childExpenses[0]).toMatchObject({
+        title: 'Caretaker Children Expenses',
+        amount: -200,
+      });
+      expect(
+        state.cashflowGame.gameSubscriptionTitles.filter(
+          (t) => t === 'Caretaker Children Expenses',
+        ),
+      ).toHaveLength(1);
+    });
+
+    it('falls back to game-sets.ts’s own string when a profession has no translation authored yet', () => {
+      service.pickProfession('placeholder', 'placeholder-profession', {
+        onSuccess: jest.fn(),
+        onError: jest.fn(),
+      });
+
+      expect(AppStateService.instance.allSubscriptions[0].title).toBe(
+        'Placeholder profession Salary',
+      );
     });
   });
 
