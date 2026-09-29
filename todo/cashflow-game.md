@@ -37,9 +37,11 @@ Transaction, fixing a real bug that also silently broke `executeDeal`'s auto-bor
 Decisions 46–47 (the summary card's stat row spread edge-to-edge, Cash/Round/Date; a short effect summary on the
 Charity/Downsized/Baby space buttons) are committed (`e6a2525`, `7c0bd88`). Decision 48 (Cashflow game content —
 profession/expense/liability names — translatable in all 6 languages: new records use the currently-selected
-language going forward, the profession card's Starting Scenario view translates live) is built and green (domain +
-frontend tests, full typecheck, both editions build), not yet committed as of this note. The framework
-in decision 27 is what's needed before wiring up the first real Card Deck (Phase 2, next).
+language going forward, the profession card's Starting Scenario view translates live) is committed (`4ee906f`),
+plus the standalone Chinese Smile/Fire fix (`82aebf4`). Decision 49 (all 12 Classic Edition professions, a new
+Custom JFK game set with 3 professions, expense/liability translation refactored to shared keys) is built and
+green (domain + frontend tests, full typecheck, both editions build), not yet committed as of this note. The
+framework in decision 27 is what's needed before wiring up the first real Card Deck (Phase 2, next).
 
 ## 1. What this is
 
@@ -756,6 +758,43 @@ Cashflow`) is never added to `state.cashflowGame.gameSubscriptionTitles`. `liveP
     - Currently only the real "hausmeister" profession has translations authored (11 keys × 6 languages: 1 title +
       7 expense lines including the two zero-amount ones still shown on the printed card + 3 liability tags); any
       future profession without translations keeps working via the `title`/`tag` fallback, same as `placeholder`.
+
+49. **All 12 Classic Edition professions (JFK sent photos of the remaining 11 physical cards), plus a new "Custom
+    JFK" game set with 3 original professions in the same shape** (2026-09-29+, JFK: sent 4 rounds of card photos
+    — "can you read all of this data clearly? ... can you please add all of these professions into our current
+    game set? ... let's just add another data set called custom JFK... create three professions realistically
+    fitting into this concept", then, once shown the classic-vs-live-translation split: "for custom-jfk for the
+    moment Classic with different flavour/numbers, BUT in the future (not today) I want to modify the whole game
+    mechanic with these different sets"). Read every card twice — first pass flagged Ingenieur/in and Arzt/Ärztin
+    as uncertain (a thousands-separator misread: "1.000" as "100"), JFK sent closer photos of just those two,
+    confirmed against the card's own printed "Monatlicher Cashflow" math.
+    - **Refactored expense/liability translation from per-profession to shared keys** before adding 11 more
+      professions made the duplication obvious: `CashflowGame.profession.<id>.expense.<key>` /
+      `.liability.<key>` (decision 48) → `CashflowGame.expenseLine.<key>` / `CashflowGame.liabilityTag.<key>`,
+      since "Steuern" means the same thing on every card — only the profession *title* stays per-profession
+      (genuinely profession-specific content). `translateExpenseLineTitle`/`translateLiabilityTag`
+      (`cashflow-game.service.ts`) still take a `profession` parameter for call-site compatibility, just no
+      longer use it. Two new shared liability keys this added: `studentLoanDebt` (several professions have a
+      non-zero "BAföG Darlehen" balance, unlike Hausmeister/in) and `bankLoan` (Custom JFK's Unternehmer/in,
+      see below). 11 profession-title keys × 6 languages, 11 shared expense/liability keys × 6 languages (2 new
+      + 9 already existed from decision 48).
+    - **Classic Edition kept its id `'cashflow'`** unchanged — only its `title` display string changed (to
+      "Classic Edition...") — specifically so JFK's already-running game (stored with `gameSetId: 'cashflow'`)
+      isn't orphaned by `findCashflowGameSet` failing to find it.
+    - **Custom JFK (`id: 'custom-jfk'`)**: explicitly scoped down mid-task once JFK clarified — same shape/rules
+      as Classic for now (no starterKit assets/investments/shares; `pickProfession()` doesn't create the ongoing
+      passive-income Subscription a bought investment gets via `executeDeal`, so a *starting* investment would
+      render as a static balance-sheet line that never pays out — a half-working feature, not a real capability
+      showcase). The one new thing used is Unternehmer/in's non-zero starting "Bankdarlehen" liability (6.000 €,
+      10% monthly payment = 600 €/month, matching the in-game Bank Loan feature's own interest rate) — every
+      Classic profession's Bankdarlehenszahlungen line is 0, so this is the first profession where that field
+      does anything. Not a new mechanic, just the first profession to use an existing field's non-zero case —
+      the real "modify the whole game mechanic per set" idea JFK flagged is explicitly deferred, not started.
+    - **Data-integrity test** (`packages/domain/src/cashflow-game/engine.spec.ts`): every one of the 15
+      professions' `computeCashflowProfessionMonthlyCashflowMinor` is asserted against its own card's printed
+      cashflow figure — this is what actually caught that the Ingenieur/Arzt reads needed a second look, and
+      guards against a future accidental edit throwing a single line off without the total (and therefore the
+      whole card) becoming visibly wrong.
 
 ## 3. The one new thing: a small game-meta state
 

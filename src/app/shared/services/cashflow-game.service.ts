@@ -355,26 +355,27 @@ export class CashflowGameService {
     );
   }
 
+  /**
+   * Shared across every profession, not namespaced per-profession like the title — "Steuern"
+   * means the same thing on every card, so it only needs translating once (todo/cashflow-game.md
+   * decision 49: went from `CashflowGame.profession.<id>.expense.<key>` to
+   * `CashflowGame.expenseLine.<key>` once more professions made the duplication obvious).
+   */
   translateExpenseLineTitle(
-    profession: CashflowProfession,
+    _profession: CashflowProfession,
     line: { title: string; key?: string },
   ): string {
     if (!line.key) return line.title;
-    return this.translateOrFallback(
-      `CashflowGame.profession.${profession.id}.expense.${line.key}`,
-      line.title,
-    );
+    return this.translateOrFallback(`CashflowGame.expenseLine.${line.key}`, line.title);
   }
 
+  /** Shared across every profession too, same reasoning as `translateExpenseLineTitle`. */
   translateLiabilityTag(
-    profession: CashflowProfession,
+    _profession: CashflowProfession,
     liability: { tag: string; key?: string },
   ): string {
     if (!liability.key) return liability.tag;
-    return this.translateOrFallback(
-      `CashflowGame.profession.${profession.id}.liability.${liability.key}`,
-      liability.tag,
-    );
+    return this.translateOrFallback(`CashflowGame.liabilityTag.${liability.key}`, liability.tag);
   }
 
   /**

@@ -3,6 +3,7 @@ import {
   addMonthsToIsoDate,
   adjustCashflowBankLoan,
   clearCashflowStatus,
+  computeCashflowProfessionMonthlyCashflowMinor,
   computeMonthlyCashflowMinor,
   pickCashflowProfession,
   resolveCashflowBaby,
@@ -13,6 +14,54 @@ import {
 } from './engine';
 import { CashflowGameSubscription } from './engine';
 import { initialCashflowGameState } from './types';
+
+describe('CASHFLOW_GAME_SETS profession data (todo/cashflow-game.md decision 49)', () => {
+  it('every Classic/Custom-JFK profession\'s monthly cashflow matches its own card\'s printed "Monatlicher Cashflow" — catches a transcription slip in any single expense line', () => {
+    // { gameSetId, professionId, expectedCashflowMinor } — expectedCashflowMinor is each card's own
+    // printed result, transcribed alongside every other figure on the card (JFK, 2026-09-29+, sent as
+    // photos of all 12 Classic professions plus the request to add "Custom JFK").
+    const expected: Array<[string, string, number]> = [
+      ['cashflow', 'hausmeister', 60000],
+      ['cashflow', 'lehrer', 120000],
+      ['cashflow', 'pilot', 350000],
+      ['cashflow', 'sekretaer', 80000],
+      ['cashflow', 'manager', 160000],
+      ['cashflow', 'lkwFahrer', 80000],
+      ['cashflow', 'polizist', 110000],
+      ['cashflow', 'mechaniker', 70000],
+      ['cashflow', 'anwalt', 240000],
+      ['cashflow', 'krankenpfleger', 110000],
+      ['cashflow', 'ingenieur', 170000],
+      ['cashflow', 'arzt', 490000],
+      ['custom-jfk', 'softwareentwickler', 150000],
+      ['custom-jfk', 'freiberufler', 90000],
+      ['custom-jfk', 'unternehmer', 160000],
+    ];
+
+    for (const [gameSetId, professionId, expectedCashflowMinor] of expected) {
+      const gameSet = CASHFLOW_GAME_SETS.find((set) => set.id === gameSetId)!;
+      const profession = gameSet.professions.find((p) => p.id === professionId)!;
+      expect(profession).toBeDefined();
+      expect(computeCashflowProfessionMonthlyCashflowMinor(profession)).toBe(expectedCashflowMinor);
+    }
+  });
+
+  it('Classic Edition kept its id ("cashflow") so an already-running game is never orphaned, even though it now shows as "Classic Edition"', () => {
+    const classic = CASHFLOW_GAME_SETS.find((set) => set.id === 'cashflow');
+    expect(classic).toBeDefined();
+    expect(classic!.professions).toHaveLength(12); // hausmeister + the 11 newly added
+  });
+
+  it('Custom JFK exists as its own game set with 3 professions', () => {
+    const customJfk = CASHFLOW_GAME_SETS.find((set) => set.id === 'custom-jfk');
+    expect(customJfk).toBeDefined();
+    expect(customJfk!.professions.map((p) => p.id)).toEqual([
+      'softwareentwickler',
+      'freiberufler',
+      'unternehmer',
+    ]);
+  });
+});
 
 describe('addMonthsToIsoDate', () => {
   it('adds whole months, clamping the day to the target month length', () => {
