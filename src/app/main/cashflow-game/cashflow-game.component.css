@@ -441,7 +441,8 @@
    .amountLable-positive/-negative), scaled down (JFK, 2026-09-29: "how we design it in the real
    app with its design I would like to add this in a small version"). */
 .cf-mini-cashflow-box {
-  margin: 0 0 16px;
+  margin: 0 auto 16px;
+  max-width: 252px;
   background-color: var(--color-primary);
   border: 2px solid white;
   border-radius: var(--radius-lg);
@@ -481,49 +482,4 @@
 
 .cf-mini-amount--negative {
   color: var(--color-danger);
-}
-
-.cf-rat-race {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin: 0 0 16px;
-}
-
-.cf-rat-race-row {
-  display: grid;
-  grid-template-columns: 90px 1fr 70px;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.85rem;
-}
-
-.cf-rat-race-label {
-  color: var(--color-text-secondary);
-}
-
-.cf-rat-race-track {
-  background-color: var(--color-background);
-  border-radius: var(--radius-full);
-  height: 10px;
-  overflow: hidden;
-}
-
-.cf-rat-race-bar {
-  height: 100%;
-  border-radius: var(--radius-full);
-  transition: width 0.2s ease;
-}
-
-.cf-rat-race-bar--passive {
-  background-color: var(--color-success);
-}
-
-.cf-rat-race-bar--expenses {
-  background-color: var(--color-danger);
-}
-
-.cf-rat-race-value {
-  text-align: right;
-  font-weight: 600;
 }

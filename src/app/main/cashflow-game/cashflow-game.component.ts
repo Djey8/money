@@ -239,20 +239,6 @@ export class CashflowGameComponent {
   }
 
   /**
-   * The card's Income Statement/Balance Sheet, compact, the same idea as the physical board's own player sheet —
-   * Salary + Passive = Income, Income − Expenses = Cashflow, Passive vs. Expenses is literally the rat-race exit
-   * condition (JFK, 2026-09-26: "the goal is to have more passive than expenses and thats how you leave the rat
-   * race"). A profession always starts with zero passive income — no investments owned yet.
-   */
-  readonly professionStartingPassive = 0;
-
-  /** Widest of the two bars in the passive-vs-expenses comparison, so both scale to the same track (min 1 to avoid divide-by-zero when both are 0). */
-  ratRaceBarWidth(value: number, other: number): number {
-    const max = Math.max(value, other, 1);
-    return Math.max(2, Math.min(100, (value / max) * 100));
-  }
-
-  /**
    * Live Income Statement/Balance Sheet — the same shape as the printed starting card, but read from the actual
    * running game, since the player's numbers move as they play (JFK, 2026-09-26: "on a live game you can have
    * more Incomes or more expenses and maybe you payed back some Liabilities... so the live data from the current

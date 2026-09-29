@@ -176,15 +176,6 @@ describe('CashflowGameComponent', () => {
       // salary 1600 - expenses 1000
       expect(component.professionMonthlyCashflow(profession)).toBe(600);
     });
-
-    it('ratRaceBarWidth scales both bars to the larger of the two, never below a visible sliver', () => {
-      const { component } = makeComponent();
-
-      expect(component.ratRaceBarWidth(0, 1000)).toBe(2); // clamped up from 0%, still a sliver
-      expect(component.ratRaceBarWidth(1000, 0)).toBe(100);
-      expect(component.ratRaceBarWidth(500, 1000)).toBe(50);
-      expect(component.ratRaceBarWidth(0, 0)).toBe(2); // both zero — no divide-by-zero
-    });
   });
 
   describe('live financial statement (todo/cashflow-game.md decision 30)', () => {
