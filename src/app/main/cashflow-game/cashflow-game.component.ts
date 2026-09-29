@@ -238,6 +238,9 @@ export class CashflowGameComponent {
     );
   }
 
+  /** A profession always starts with zero passive income — no investments owned yet (2026-09-29). */
+  readonly professionStartingPassive = 0;
+
   /**
    * Live Income Statement/Balance Sheet — the same shape as the printed starting card, but read from the actual
    * running game, since the player's numbers move as they play (JFK, 2026-09-26: "on a live game you can have

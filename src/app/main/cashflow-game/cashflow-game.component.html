@@ -49,6 +49,10 @@
           <div class="cf-mini-amount">
             {{ toDisplayAmount(profession.salaryMinor) | appNumber }} {{ appState.currency }}
           </div>
+          <h5 class="cf-mini-text-label">{{ 'CashflowGame.passiveIncome' | translate }}</h5>
+          <div class="cf-mini-amount">
+            {{ professionStartingPassive | appNumber }} {{ appState.currency }}
+          </div>
           <div class="cf-mini-operation">−</div>
           <h5 class="cf-mini-text-label">{{ 'Cashflow.Expenses' | translate }}</h5>
           <div class="cf-mini-amount">
@@ -120,6 +124,10 @@
           <h5 class="cf-mini-text-label">{{ 'Cashflow.Income' | translate }}</h5>
           <div class="cf-mini-amount">
             {{ liveTotalIncome | appNumber }} {{ appState.currency }}
+          </div>
+          <h5 class="cf-mini-text-label">{{ 'CashflowGame.passiveIncome' | translate }}</h5>
+          <div class="cf-mini-amount">
+            {{ livePassiveIncome | appNumber }} {{ appState.currency }}
           </div>
           <div class="cf-mini-operation">−</div>
           <h5 class="cf-mini-text-label">{{ 'Cashflow.Expenses' | translate }}</h5>

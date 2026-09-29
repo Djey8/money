@@ -16,9 +16,10 @@ game for the reset button, Start Game posting only Savings so Subscriptions can 
 Payday, Payday spreading transactions across the month and aging older ones back so Stats reads like real time
 passed, the profession card's Starting/Live toggle reusing the app's own Cashflow widget design, and disabling the
 generic subscription auto-generation machinery for cashflow accounts everywhere it could still fire) are committed
-(`bf0f7d4`, `7aef497`). Decision 36 (dropping the rat-race bars, sizing the mini cashflow box to its own amount
-pills) is built and green (frontend tests, full typecheck, both editions build), not yet committed as of this
-note. The framework in decision 27 is what's needed before wiring up the first real Card Deck (Phase 2, next).
+(`bf0f7d4`, `7aef497`). Decisions 36–37 (dropping the rat-race bars and sizing the mini cashflow box to its own
+amount pills, then putting Passive Income back as a row inside that same box) are built and green (frontend tests,
+full typecheck, both editions build), not yet committed as of this note. The framework in decision 27 is what's
+needed before wiring up the first real Card Deck (Phase 2, next).
 
 ## 1. What this is
 
@@ -445,6 +446,14 @@ Cashflow`) is never added to `state.cashflowGame.gameSubscriptionTitles`. `liveP
     genuinely new visual, not part of that existing widget.
 35. **Bug fix: the generic subscription auto-generation machinery could still fire for a cashflow account, bypassing Payday entirely** (2026-09-29, JFK: "In general the normal behaviour of the subscription auto add should be disabled for a game account"). The login-time trigger (`app.component.ts`) was already guarded (todo/cashflow-game.md's original MVP notes), but `SubscriptionComponent`'s manual "↻ Refresh" button called `SubscriptionProcessingService.setTransactionsForSubscriptions()` directly with no such guard — a cashflow player clicking it would auto-generate transactions up to the real wall-clock date for every Subscription, completely bypassing Payday's controlled, one-round-at-a-time posting. Fixed at the source, not just the one call site: `setTransactionsForSubscriptions()` itself now returns immediately (`{transactionsCreated: 0, subscriptionsProcessed: 0}`) when `CashflowGameService.isCashflowGame()`, so any future caller is automatically safe. The Refresh button is also hidden outright for a cashflow account (`*ngIf="!isCashflowGame()"`) rather than left visible as a silent no-op.
 36. **The rat-race bars are gone; the mini cashflow box is sized to match its own amount pills, not the full panel width** (2026-09-29, JFK, after seeing them render: _"Passive Income 0,00 / Total expenses +1.000,00 — can you remove this part"_ / _"the width of the blue box can be a bit adjusted to the width of amount boxes"_). Decision 30's passive-vs-expenses comparison bars (`.cf-rat-race*`, `ratRaceBarWidth()`) are removed entirely from both the Starting and Live views — the itemized Income/Expenses/Assets/Liabilities lists and the mini `Cashflow.Income`/`Expenses`/`title` box (decision 34) already carry the same information without them. `.cf-mini-cashflow-box` now has `max-width: 252px` (the amount pill's own `220px` plus its `16px` side padding) and is centered, instead of stretching to the card's full width — so the blue box visually hugs the pills inside it rather than dwarfing them.
+37. **A Passive Income row goes back into the mini cashflow box itself, having only just been removed as bars in
+    decision 36** (2026-09-29, JFK, after decision 36 shipped: _"the passive box is missing. Can you add it in the
+    info for start and live card"_). Not a revert of decision 36 — the _bars_ (a separate comparison widget below
+    the box) stay gone; what's back is a third `Cashflow.Income`-style label+pill pair inside
+    `.cf-mini-cashflow-box` itself, between Income and the `−` operator: `CashflowGame.passiveIncome` showing
+    `professionStartingPassive` (always `0`, re-added as a small readonly field) on the Starting view and
+    `livePassiveIncome` on the Live view — same figures decision 30 already computed, just given a place in the
+    box again after decision 36 took away their only visible home.
 
 ## 3. The one new thing: a small game-meta state
 
