@@ -245,7 +245,7 @@ export class CashflowGameService {
       callbacks.onError(errorMessage(err, 'Could not resolve Downsized.'));
       return;
     }
-    state.allTransactions.push(toFloatTransaction(result.transaction));
+    result.transactions.forEach((record) => state.allTransactions.push(toFloatTransaction(record)));
     state.cashflowGame = result.state;
     this.persistAll('cashflow_downsized', {}, callbacks);
   }

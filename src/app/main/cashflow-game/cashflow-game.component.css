@@ -336,17 +336,18 @@
 /* ---- Board-space selector — colors match the physical board (JFK, 2026-09-26) ---- */
 .cf-space-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 10px;
 }
 
 .cf-space-btn {
   border: 1px solid transparent;
-  border-radius: var(--radius-sm);
-  padding: 8px 6px;
-  font-size: 0.85rem;
-  font-weight: 600;
+  border-radius: var(--radius-md);
+  padding: 18px 10px;
+  font-size: 1rem;
+  font-weight: 700;
   cursor: pointer;
+  min-height: 64px;
 }
 
 .cf-space-btn:disabled {
@@ -388,4 +389,20 @@
 
 .cf-space-btn:not(:disabled):hover {
   filter: brightness(0.95);
+}
+
+/* ---- Focused sub-views (Deal pile choice, Cards) — a way back out of every one (JFK, 2026-09-26) ---- */
+.cf-back-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  margin-bottom: 12px;
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.cf-back-btn:hover {
+  color: var(--color-text);
+  text-decoration: underline;
 }

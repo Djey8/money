@@ -5,7 +5,6 @@ import { CashflowGameService } from '../../shared/services/cashflow-game.service
 import { ProfileComponent } from '../../panels/profile/profile.component';
 
 function makeComponent(overrides: Partial<Record<string, jest.Mock>> = {}) {
-  const router = { navigate: jest.fn() };
   const appData = { loadCashflowGameData: jest.fn() };
   const cashflowGameService = {
     gameSets: CASHFLOW_GAME_SETS,
@@ -33,13 +32,12 @@ function makeComponent(overrides: Partial<Record<string, jest.Mock>> = {}) {
   const translate = { instant: (key: string) => key };
 
   const component = new CashflowGameComponent(
-    router as any,
     appData as any,
     cashflowGameService as any,
     toastService as any,
     translate as any,
   );
-  return { component, router, appData, cashflowGameService, toastService };
+  return { component, appData, cashflowGameService, toastService };
 }
 
 describe('CashflowGameComponent', () => {
@@ -186,11 +184,17 @@ describe('CashflowGameComponent', () => {
   });
 
   describe('startGame / payday / undoPayday', () => {
-    it('delegates to the service, closes the overlay and lands on Home on success', () => {
-      const { component, cashflowGameService, toastService, router } = makeComponent();
+    it('delegates to the service and does a full navigation to Home on success', () => {
+      const { component, cashflowGameService, toastService } = makeComponent();
       component.selectedGameSetId = 'placeholder';
       component.selectedProfessionId = 'placeholder-profession';
       CashflowGameComponent.isOpen = true;
+      const originalLocation = window.location;
+      // A full navigation, not router.navigate — other already-rendered pages may have snapshotted
+      // AppStateService's arrays before this fired (JFK, 2026-09-26). Replace window.location so the
+      // assignment below doesn't trigger a real (unsupported-in-jsdom) navigation.
+      delete (window as any).location;
+      (window as any).location = { href: '' };
 
       component.startGame();
       const startCall = cashflowGameService.pickProfession.mock.calls[0];
@@ -198,8 +202,9 @@ describe('CashflowGameComponent', () => {
       expect(startCall[1]).toBe('placeholder-profession');
       startCall[2].onSuccess();
       expect(toastService.show).toHaveBeenCalledWith('CashflowGame.started', 'success');
-      expect(CashflowGameComponent.isOpen).toBe(false);
-      expect(router.navigate).toHaveBeenCalledWith(['/home']);
+      expect(window.location.href).toBe('/home');
+
+      Object.defineProperty(window, 'location', { value: originalLocation, writable: true });
 
       component.payday();
       cashflowGameService.payday.mock.calls[0][0].onSuccess();
@@ -247,52 +252,81 @@ describe('CashflowGameComponent', () => {
       expect(component.canLandOnBaby).toBe(false);
     });
 
-    it('landOnDeals asks which pile, and chooseDealPile sets the active deck and clears any stale card', () => {
+    it('landOnDeals opens the pile-choice sub-view, and chooseDealPile moves on to Cards, clearing any stale card', () => {
       const { component } = makeComponent();
       component.activeCard = { id: '1', title: 'Stale' } as any;
       component.cardQuery = 'stale';
 
       component.landOnDeals();
-      expect(component.showDealPileChoice).toBe(true);
+      expect(component.dashboardView).toBe('dealPile');
 
       component.chooseDealPile('dealBig');
 
-      expect(component.showDealPileChoice).toBe(false);
+      expect(component.dashboardView).toBe('cards');
       expect(component.activeDeckKind).toBe('dealBig');
       expect(component.activeCard).toBeNull();
       expect(component.cardQuery).toBe('');
     });
 
-    it('landOnDoodad and landOnMarket set the active deck directly, no pile choice needed', () => {
+    it('landOnDoodad and landOnMarket open the Cards sub-view directly, no pile choice needed', () => {
       const { component } = makeComponent();
 
-      component.landOnDeals(); // opens the pile choice
       component.landOnDoodad();
-      expect(component.showDealPileChoice).toBe(false);
+      expect(component.dashboardView).toBe('cards');
       expect(component.activeDeckKind).toBe('doodad');
 
       component.landOnMarket();
+      expect(component.dashboardView).toBe('cards');
       expect(component.activeDeckKind).toBe('market');
     });
 
-    it('baby/charity/downsized/payday each dismiss a pending deal-pile choice', () => {
-      const { component } = makeComponent();
+    it('baby/charity/downsized close the panel once the service confirms success', () => {
+      const { component, cashflowGameService } = makeComponent();
+      CashflowGameComponent.isOpen = true;
 
-      component.landOnDeals();
       component.landOnBaby();
-      expect(component.showDealPileChoice).toBe(false);
+      cashflowGameService.resolveBaby.mock.calls[0][0].onSuccess();
+      expect(CashflowGameComponent.isOpen).toBe(false);
 
-      component.landOnDeals();
+      CashflowGameComponent.isOpen = true;
       component.landOnCharity();
-      expect(component.showDealPileChoice).toBe(false);
+      cashflowGameService.resolveCharity.mock.calls[0][0].onSuccess();
+      expect(CashflowGameComponent.isOpen).toBe(false);
 
-      component.landOnDeals();
+      CashflowGameComponent.isOpen = true;
       component.landOnDownsized();
-      expect(component.showDealPileChoice).toBe(false);
+      cashflowGameService.resolveDownsized.mock.calls[0][0].onSuccess();
+      expect(CashflowGameComponent.isOpen).toBe(false);
+    });
 
-      component.landOnDeals();
+    it('landOnPayday runs Payday and closes the panel on success; the main Payday button does not', () => {
+      const { component, cashflowGameService, toastService } = makeComponent();
+      CashflowGameComponent.isOpen = true;
+
+      component.landOnPayday();
+      cashflowGameService.payday.mock.calls[0][0].onSuccess();
+      expect(toastService.show).toHaveBeenCalledWith('CashflowGame.paydayDone', 'success');
+      expect(CashflowGameComponent.isOpen).toBe(false);
+
+      CashflowGameComponent.isOpen = true;
       component.payday();
-      expect(component.showDealPileChoice).toBe(false);
+      cashflowGameService.payday.mock.calls[1][0].onSuccess();
+      expect(CashflowGameComponent.isOpen).toBe(true);
+    });
+
+    it('backToMain resets the dashboard view and clears transient card-selection state', () => {
+      const { component } = makeComponent();
+      component.dashboardView = 'cards';
+      component.activeCard = { id: '1', title: 'Duplex' } as any;
+      component.cardQuery = 'dup';
+      component.showCardFind = true;
+
+      component.backToMain();
+
+      expect(component.dashboardView).toBe('main');
+      expect(component.activeCard).toBeNull();
+      expect(component.cardQuery).toBe('');
+      expect(component.showCardFind).toBe(false);
     });
 
     it('activeDeckLabel translates the currently active deck', () => {
@@ -514,16 +548,18 @@ describe('CashflowGameComponent', () => {
       expect(cashflowGameService.applyDoodadCard).toHaveBeenCalledWith(card, expect.anything());
     });
 
-    it('applyActiveCard clears the active card and toasts on success', () => {
+    it('applyActiveCard clears the active card, toasts, and returns to the main dashboard view', () => {
       const { component, cashflowGameService, toastService } = makeComponent();
       component.activeDeckKind = 'doodad';
       component.activeCard = { id: '1', title: 'Gadget', costMinor: 1000 } as any;
+      component.dashboardView = 'cards';
 
       component.applyActiveCard();
       cashflowGameService.applyDoodadCard.mock.calls[0][1].onSuccess();
 
       expect(component.activeCard).toBeNull();
       expect(toastService.show).toHaveBeenCalledWith('CashflowGame.cardApplied', 'success');
+      expect(component.dashboardView).toBe('main');
     });
   });
 });

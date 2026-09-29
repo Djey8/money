@@ -1,5 +1,4 @@
 import { Component } from '@angular/core';
-import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -88,11 +87,18 @@ export class CashflowGameComponent {
   cardQuery = '';
   activeCard: CashflowDealCard | CashflowMarketCard | CashflowDoodadCard | null = null;
 
-  /** Shown after landing on the green "Deals" space, until the player says which pile they drew from. */
-  showDealPileChoice = false;
+  /**
+   * Which focused sub-view the active-game dashboard shows (JFK, 2026-09-26: "when you click one then the panel
+   * cleans from the current view and only shows this the selection of dealing the card"). `'main'` is the normal
+   * dashboard (stats, the space grid, planned deals, bank loan, history); `'dealPile'` and `'cards'` each hide
+   * everything else and show only that step, with a way back.
+   */
+  dashboardView: 'main' | 'dealPile' | 'cards' = 'main';
+
+  /** The find-a-specific-card UI starts collapsed — Draw is the primary action, find is secondary (JFK, 2026-09-26). */
+  showCardFind = false;
 
   constructor(
-    private router: Router,
     private appData: AppDataService,
     private cashflowGameService: CashflowGameService,
     private toastService: ToastService,
@@ -117,6 +123,15 @@ export class CashflowGameComponent {
     CashflowGameComponent.isOpen = false;
     CashflowGameComponent.zIndex = 0;
     this.viewedProfession = null;
+    this.dashboardView = 'main';
+  }
+
+  /** Leaves a focused sub-view (Deal pile choice, or the Cards find/draw flow) back to the main dashboard. */
+  backToMain(): void {
+    this.dashboardView = 'main';
+    this.activeCard = null;
+    this.cardQuery = '';
+    this.showCardFind = false;
   }
 
   /**
@@ -247,8 +262,11 @@ export class CashflowGameComponent {
       onSuccess: () => {
         this.isBusy = false;
         this.toastService.show(this.translate.instant('CashflowGame.started'), 'success');
-        this.closeWindow();
-        this.router.navigate(['/home']);
+        // A full navigation, not router.navigate — other already-rendered pages (Home included) may have
+        // read AppStateService's arrays into their own local state before this fired, and nothing notifies
+        // them to re-read it; router.navigate to the page you're already on is also a no-op in Angular by
+        // default (JFK, 2026-09-26: "I needed to reload the page to see the initial transactions").
+        window.location.href = '/home';
       },
       onError: (message) => {
         this.isBusy = false;
@@ -263,13 +281,33 @@ export class CashflowGameComponent {
     AppComponent?.openNavBar();
   }
 
+  /** The main, repeated-every-round Payday button — stays open for quickly running several rounds in a row. */
   payday(): void {
-    this.showDealPileChoice = false;
     this.isBusy = true;
     this.cashflowGameService.payday({
       onSuccess: () => {
         this.isBusy = false;
         this.toastService.show(this.translate.instant('CashflowGame.paydayDone'), 'success');
+      },
+      onError: (message) => {
+        this.isBusy = false;
+        this.toastService.show(message, 'error');
+      },
+    });
+  }
+
+  /**
+   * The orange Payday space in "which space did you land on?" — same action as the main button above, but this
+   * one is landed on once per turn like Baby/Charity/Downsized, so it closes the panel the same way they do
+   * (JFK, 2026-09-26: "when you click them and its a direct action you close the cashflow panel").
+   */
+  landOnPayday(): void {
+    this.isBusy = true;
+    this.cashflowGameService.payday({
+      onSuccess: () => {
+        this.isBusy = false;
+        this.toastService.show(this.translate.instant('CashflowGame.paydayDone'), 'success');
+        this.closeWindow();
       },
       onError: (message) => {
         this.isBusy = false;
@@ -292,19 +330,20 @@ export class CashflowGameComponent {
     });
   }
 
-  /** "Which space did you land on?" — companion mode (todo/cashflow-game.md decision 8). Baby/Charity/Downsized apply immediately; the card spaces (Deals/Doodad/Market) below need the player to say which card they got first. */
+  /**
+   * "Which space did you land on?" — companion mode (todo/cashflow-game.md decision 8). Baby/Charity/Downsized/
+   * Payday apply immediately and close the panel; the card spaces (Deals/Doodad/Market) below need the player to
+   * say which card they got first, so they open a focused sub-view instead (JFK, 2026-09-26).
+   */
   landOnBaby(): void {
-    this.showDealPileChoice = false;
     this.runAction((callbacks) => this.cashflowGameService.resolveBaby(callbacks), 'baby');
   }
 
   landOnCharity(): void {
-    this.showDealPileChoice = false;
     this.runAction((callbacks) => this.cashflowGameService.resolveCharity(callbacks), 'charity');
   }
 
   landOnDownsized(): void {
-    this.showDealPileChoice = false;
     this.runAction(
       (callbacks) => this.cashflowGameService.resolveDownsized(callbacks),
       'downsized',
@@ -313,28 +352,28 @@ export class CashflowGameComponent {
 
   /** Green "Deals" space — the physical board doesn't distinguish Small/Big, so ask which pile first. */
   landOnDeals(): void {
-    this.showDealPileChoice = true;
+    this.dashboardView = 'dealPile';
   }
 
   /** Small/Big Deal are the same green space on the board — the player says which pile they drew from. */
   chooseDealPile(kind: 'dealSmall' | 'dealBig'): void {
-    this.showDealPileChoice = false;
     this.activeDeckKind = kind;
     this.changeDeck();
+    this.dashboardView = 'cards';
   }
 
   /** Red "Schnickschnack" space. */
   landOnDoodad(): void {
-    this.showDealPileChoice = false;
     this.activeDeckKind = 'doodad';
     this.changeDeck();
+    this.dashboardView = 'cards';
   }
 
   /** Blue "Der Markt" space. */
   landOnMarket(): void {
-    this.showDealPileChoice = false;
     this.activeDeckKind = 'market';
     this.changeDeck();
+    this.dashboardView = 'cards';
   }
 
   /** The active deck's translated name, next to the Cards section heading — the deck picker is now the space buttons above, not a separate dropdown. */
@@ -413,8 +452,8 @@ export class CashflowGameComponent {
     const callbacks = {
       onSuccess: () => {
         this.isBusy = false;
-        this.activeCard = null;
         this.toastService.show(this.translate.instant('CashflowGame.cardApplied'), 'success');
+        this.backToMain();
       },
       onError: (message: string) => {
         this.isBusy = false;
@@ -517,6 +556,7 @@ export class CashflowGameComponent {
       onSuccess: () => {
         this.isBusy = false;
         this.toastService.show(this.translate.instant(`CashflowGame.${kind}Done`), 'success');
+        this.closeWindow();
       },
       onError: (message) => {
         this.isBusy = false;

@@ -6,12 +6,12 @@ reuse + docs guide committed (`106affd`), find/draw-a-card + the menu entry + `r
 game set with the Hausmeister/in profession, AND the overlay/panel UI conversion) committed across `dd416e7` and
 `dd82039`. Decisions 19–21 (hiding the `placeholder` fixture from players, completing the View Card stats, moving
 the reset button into Settings → Advanced, and fixing the bootstrap-timing bug that made Start Game a no-op) are
-built and green. Decision 22 (the board-space color-coded selector, quiet monthly-cashflow stat, single Menu link
-replacing the app-links nav) is also built and green (domain + frontend tests, full typecheck, both editions
-build), not yet committed as of this note. Decisions 23–24 (itemized Savings/Salary/expense starting transactions,
-and reloading the page after a reset so the rest of the app doesn't show stale data) are also built and green —
-both found during JFK's first real playtest, which is underway: he started a game and confirmed Start Game works
-end to end. The framework in decision 22 is what's needed before wiring up the first real Card Deck (Phase 2,
+built and green. JFK's first real playtest is underway — decisions 23–28 (itemized Savings/Salary/expense starting
+transactions, reload-after-reset, the missing-category bug in Payday/Charity, Downsized paying real per-line
+expenses instead of one lump category, the step-by-step dashboard flow with bigger space buttons and a way back
+from every sub-view, and reload-after-start for the same stale-page reason as reset) all came out of that playtest
+and are built and green (domain + frontend tests, full typecheck, both editions build), not yet committed as of
+this note. The framework in decision 27 is what's needed before wiring up the first real Card Deck (Phase 2,
 next).
 
 ## 1. What this is
@@ -276,6 +276,55 @@ CashflowTransactionRecord[]` — Savings (`@Savings`) and Salary (`@Salary`) eac
     migration import) for exactly this class of problem: other pages (Home, Balance Sheet, Subscriptions...) may
     have already read `AppStateService`'s arrays into their own local component state by the time a reset fires
     from a completely different panel, and nothing notifies them to re-read it short of starting fresh.
+25. **Bug fix: Payday/Charity/Downsized transactions were created with no category at all** (2026-09-26, JFK,
+    after his first live Payday click: _"when I clicked it right now, the correct categories where missing please
+    fix this"_). The `cashflowTransaction()` helper in `engine.ts` hardcoded `category: ''` and had no parameter
+    for one — `runCashflowPayday` passed a subscription's `account`/`amountMinor`/`comment` through but silently
+    dropped its `category`, even though `CashflowGameSubscription.category` and the real Subscription both had it
+    all along. Fixed by giving `cashflowTransaction` a `category` parameter (default `''`, so nothing else
+    calling it changes behavior) and passing `sub.category ?? ''` through at the Payday call site; Charity also
+    gained its own `@Charity` category (previously text only in the comment) for the same reason — every
+    transaction this engine creates should be as traceable in Budget/Stats as its Subscription counterpart.
+26. **Downsized pays the current month's real expense lines, not one lump "Downsized"-categorized transaction**
+    (2026-09-26, JFK, correcting the `@Downsized` category just added the same session: _"Downsized should just
+    trigger the current Expenses for the current month, so skipping any income. not its own category, do you
+    understand?"_). `resolveCashflowDownsized` no longer sums every negative subscription into one `Daily`
+    transaction — it now maps each owned expense subscription (`amountMinor < 0`, i.e. every game subscription
+    except the salary) straight to its own transaction via `cashflowTransaction`, keeping that subscription's own
+    account/category/comment, exactly like `runCashflowPayday` does — just skipping the salary. `DownsizedResult
+.transaction` (singular) is now `.transactions: CashflowTransactionRecord[]`, matching `PaydayResult`'s shape.
+27. **The active-game dashboard becomes a step-by-step flow: one focused view at a time, a way back from every
+    one, bigger space buttons, and closing the panel after a direct action** (2026-09-26, JFK: _"when you click
+    one then the panel cleans from the current view and only shows this the selection of dealing the card...
+    ALSO the load option should be first hidden and we should have another button to load and then this option
+    is present, from all these pages there should be an option to go back. The buttions of the cards should be
+    bigger and when you click them and its a direct action you close the cashflow panel"_).
+    - `CashflowGameComponent.dashboardView: 'main' | 'dealPile' | 'cards'` replaces the old `showDealPileChoice`
+      boolean. `'main'` is the normal dashboard (stats, the space grid, the manual Deal form, planned deals, bank
+      loan, history); landing on Deals/Doodad/Market switches to `'dealPile'` or `'cards'` and hides everything
+      else in the dashboard, showing only that step plus a `‹ Back` button (`backToMain()`, which also clears
+      `activeCard`/`cardQuery`/`showCardFind`).
+    - Inside the Cards step, the find-a-specific-card input+results start collapsed behind their own toggle
+      button (`showCardFind`) — Draw is the primary, prominent action; look-up is secondary and one click away
+      (JFK: "the load option should be first hidden... another button to load").
+    - `.cf-space-btn` padding/font-size increased (`min-height: 64px`, `1rem` font) — "the buttons of the cards
+      should be bigger."
+    - Baby/Charity/Downsized/the space-grid's own Payday button now close the whole panel on success
+      (`runAction`'s `onSuccess` calls `closeWindow()`; a new `landOnPayday()` mirrors the main Payday button but
+      closes afterward). The **main** Payday button above the space grid deliberately does **not** close the
+      panel — it's the repeated, once-per-round action, and auto-closing it every round would be disruptive; only
+      the space-grid's landing buttons (used once per turn) close. `applyActiveCard()` (planning a Deal or paying
+      a Doodad) returns to `'main'` via `backToMain()` on success rather than closing the panel outright, since
+      Deals/Doodad/Market are the "you have a choice" spaces, not "direct" ones (JFK's own distinction).
+28. **Bug fix: Start Game only visibly added the Savings transaction until a manual page reload** (2026-09-26/29,
+    JFK: _"when you pick a profession the game is not directly started... the only transaction that is directly
+    added are the savings... I needed to reload the page to see the initial transactions"_). All of decision 23's
+    itemized starting transactions were in fact created correctly — the bug was purely that `startGame()`
+    navigated with `router.navigate(['/home'])`, which is a no-op in Angular when you're already on `/home` (the
+    common case, since the panel is opened from wherever you are), so `HomeComponent` never re-ran its own data
+    load and kept showing whatever it had snapshotted before the game started. Fixed the same way decision 24
+    fixed the identical class of problem for reset: `startGame()`'s success handler now does
+    `window.location.href = '/home'`, a real full navigation, instead of `router.navigate`.
 
 ## 3. The one new thing: a small game-meta state
 

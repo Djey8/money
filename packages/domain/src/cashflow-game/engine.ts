@@ -177,13 +177,14 @@ function cashflowTransaction(
   amountMinor: number,
   date: string,
   comment: string,
+  category = '',
 ): CashflowTransactionRecord {
   return {
     account,
     amountMinor,
     date,
     time: '',
-    category: '',
+    category,
     comment: comment ? `${comment}\n#cashflow` : '#cashflow',
   };
 }
@@ -215,7 +216,13 @@ export function runCashflowPayday(
   const date = requireStarted(state, 'running Payday');
   const transactions: CashflowTransactionRecord[] = ownedSubscriptions(state, subscriptions).map(
     (sub) =>
-      cashflowTransaction(sub.account, sub.amountMinor, date, sub.comment ? sub.comment : ''),
+      cashflowTransaction(
+        sub.account,
+        sub.amountMinor,
+        date,
+        sub.comment ? sub.comment : '',
+        sub.category ?? '',
+      ),
   );
 
   const nextRound = state.round + 1;
@@ -343,6 +350,7 @@ export function resolveCashflowCharity(
     -Math.round(totalIncomeMinor * 0.1),
     date,
     'Charity',
+    '@Charity',
   );
 
   return {
@@ -366,19 +374,31 @@ export function resolveCashflowCharity(
 
 export interface DownsizedResult {
   state: CashflowGameState;
-  transaction: CashflowTransactionRecord;
+  transactions: CashflowTransactionRecord[];
 }
 
-/** Resolves a Downsized space: pay total expenses once, sit out 2 Paydays (which also ends an active charity bonus). */
+/**
+ * Resolves a Downsized space: pay every current expense once, skipping any income — the same expense lines a
+ * Payday would pay, each keeping its own account/category, just without the salary (JFK, 2026-09-26: "Downsized
+ * should just trigger the current Expenses for the current month, so skipping any income. not its own category").
+ * Sits out 2 Paydays (which also ends an active charity bonus).
+ */
 export function resolveCashflowDownsized(
   state: CashflowGameState,
   subscriptions: CashflowGameSubscription[],
 ): DownsizedResult {
   const date = requireStarted(state, 'landing on Downsized');
-  const totalExpensesMinor = ownedSubscriptions(state, subscriptions)
+  const transactions = ownedSubscriptions(state, subscriptions)
     .filter((sub) => sub.amountMinor < 0)
-    .reduce((sum, sub) => sum + Math.abs(sub.amountMinor), 0);
-  const transaction = cashflowTransaction('Daily', -totalExpensesMinor, date, 'Downsized');
+    .map((sub) =>
+      cashflowTransaction(
+        sub.account,
+        sub.amountMinor,
+        date,
+        sub.comment ? sub.comment : '',
+        sub.category ?? '',
+      ),
+    );
 
   return {
     state: {
@@ -392,11 +412,11 @@ export function resolveCashflowDownsized(
           virtualDateBefore: date,
           virtualDateAfter: date,
           kind: 'downsized',
-          createdTransactions: [transaction],
+          createdTransactions: transactions,
         },
       ],
     },
-    transaction,
+    transactions,
   };
 }
 

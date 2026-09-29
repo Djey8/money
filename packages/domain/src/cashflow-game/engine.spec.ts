@@ -76,7 +76,12 @@ describe('pickCashflowProfession', () => {
 
 const gameSubscriptions: CashflowGameSubscription[] = [
   { title: 'Placeholder profession Salary', account: 'Income', amountMinor: 300000 },
-  { title: 'Placeholder Expenses', account: 'Daily', amountMinor: -180000 },
+  {
+    title: 'Placeholder Expenses',
+    account: 'Daily',
+    amountMinor: -180000,
+    category: '@Placeholder Expenses',
+  },
   { title: 'Unrelated subscription the player also has', account: 'Daily', amountMinor: -999 },
 ];
 
@@ -91,9 +96,16 @@ describe('runCashflowPayday', () => {
 
     const { state, transactions } = runCashflowPayday(started, gameSubscriptions);
 
+    // Each subscription's own category carries through to its Payday transaction — JFK, 2026-09-26:
+    // "when I clicked it right now, the correct categories where missing please fix this."
     expect(transactions).toEqual([
       expect.objectContaining({ account: 'Income', amountMinor: 300000, date: '2026-09-25' }),
-      expect.objectContaining({ account: 'Daily', amountMinor: -180000, date: '2026-09-25' }),
+      expect.objectContaining({
+        account: 'Daily',
+        amountMinor: -180000,
+        date: '2026-09-25',
+        category: '@Placeholder Expenses',
+      }),
     ]);
     // the unrelated subscription is never touched
     expect(transactions.some((t) => t.amountMinor === -999)).toBe(false);
@@ -280,6 +292,7 @@ describe('resolveCashflowCharity', () => {
     // Only the salary (300000) counts as income; the expenses subscription is negative.
     expect(transaction).toMatchObject({
       account: 'Daily',
+      category: '@Charity',
       amountMinor: -30000,
       date: '2026-09-25',
     });
@@ -298,9 +311,13 @@ describe('resolveCashflowDownsized', () => {
     const { state: charitied } = resolveCashflowCharity(started, gameSubscriptions);
     expect(charitied.charityRoundsLeft).toBe(3);
 
-    const { state, transaction } = resolveCashflowDownsized(charitied, gameSubscriptions);
+    const { state, transactions } = resolveCashflowDownsized(charitied, gameSubscriptions);
 
-    expect(transaction).toMatchObject({ account: 'Daily', amountMinor: -180000 });
+    // Skips income (the salary subscription) entirely — only the expense line is paid, keeping its own
+    // category rather than being lumped into one "Downsized" transaction (JFK, 2026-09-26).
+    expect(transactions).toEqual([
+      expect.objectContaining({ account: 'Daily', amountMinor: -180000 }),
+    ]);
     expect(state.unemployedRoundsLeft).toBe(2);
     expect(state.charityRoundsLeft).toBe(0);
   });
