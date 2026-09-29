@@ -243,16 +243,16 @@
 
           <div class="cf-stat-row">
             <div class="cf-stat">
-              <span class="cf-stat-label">{{ 'CashflowGame.virtualDate' | translate }}</span>
-              <span class="cf-stat-value">{{ appState.cashflowGame.virtualDate | appDate }}</span>
+              <span class="cf-stat-label">{{ 'CashflowGame.cash' | translate }}</span>
+              <span class="cf-stat-value">{{ cash | appNumber }} {{ appState.currency }}</span>
             </div>
             <div class="cf-stat cf-stat--center">
               <span class="cf-stat-label">{{ 'CashflowGame.Round' | translate }}</span>
               <span class="cf-stat-value">{{ appState.cashflowGame.round }}</span>
             </div>
             <div class="cf-stat cf-stat--end">
-              <span class="cf-stat-label">{{ 'CashflowGame.cash' | translate }}</span>
-              <span class="cf-stat-value">{{ cash | appNumber }} {{ appState.currency }}</span>
+              <span class="cf-stat-label">{{ 'CashflowGame.virtualDate' | translate }}</span>
+              <span class="cf-stat-value">{{ appState.cashflowGame.virtualDate | appDate }}</span>
             </div>
           </div>
 
@@ -356,21 +356,24 @@
               [disabled]="isBusy"
               (click)="landOnCharity()"
             >
-              {{ 'CashflowGame.charity' | translate }}
+              <span class="cf-space-btn-label">{{ 'CashflowGame.charity' | translate }}</span>
+              <span class="cf-space-btn-hint">{{ 'CashflowGame.charityHint' | translate }}</span>
             </button>
             <button
               class="cf-space-btn cf-space-btn--downsized"
               [disabled]="isBusy"
               (click)="landOnDownsized()"
             >
-              {{ 'CashflowGame.downsized' | translate }}
+              <span class="cf-space-btn-label">{{ 'CashflowGame.downsized' | translate }}</span>
+              <span class="cf-space-btn-hint">{{ 'CashflowGame.downsizedHint' | translate }}</span>
             </button>
             <button
               class="cf-space-btn cf-space-btn--baby"
               [disabled]="isBusy || !canLandOnBaby"
               (click)="landOnBaby()"
             >
-              {{ 'CashflowGame.baby' | translate }}
+              <span class="cf-space-btn-label">{{ 'CashflowGame.baby' | translate }}</span>
+              <span class="cf-space-btn-hint">{{ 'CashflowGame.babyHint' | translate }}</span>
             </button>
           </div>
         </div>

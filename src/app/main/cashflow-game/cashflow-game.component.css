@@ -414,6 +414,11 @@
 }
 
 .cf-space-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
   border: 1px solid transparent;
   border-radius: var(--radius-md);
   padding: 18px 10px;
@@ -426,6 +431,15 @@
 .cf-space-btn:disabled {
   opacity: 0.5;
   cursor: default;
+}
+
+/* A short effect summary for the spaces with no card of their own — Charity/Downsized/Baby
+   (JFK, 2026-09-29: "add the short info/effect... so as a user you know what they do"). */
+.cf-space-btn-hint {
+  font-size: 0.7rem;
+  font-weight: 500;
+  line-height: 1.25;
+  opacity: 0.85;
 }
 
 .cf-space-btn--deals {
