@@ -29,8 +29,11 @@ every auto-created Subscription, not just Payday's own) are committed (`7230577`
 dashboard's cards, a redesigned Bank Loan trigger and Menu row — the actual bug behind the "messed up" look was the
 global `.btn` class's 80%-width/10%-margin-left box model fighting a width override — and History hidden behind its
 own trigger with a Category column) is committed (`4740fcd`). Decision 43 (persisting the undo stack to raw
-`localStorage` so it survives a reload/`npm start` restart, explicitly cleared on logout in both editions) is built
-and green (frontend tests, full typecheck, both editions build), not yet committed as of this note. The framework
+`localStorage` so it survives a reload/`npm start` restart, explicitly cleared on logout in both editions) is
+committed (`591f5e0`). Decision 44 (a Category column on the Subscriptions page, previously missing for every
+subscription, not just Cashflow ones — decision 41's category fixes were correct the whole time, just invisible)
+is built and green (frontend tests, full typecheck, both editions build), not yet committed as of this note. The
+framework
 in decision 27 is what's needed before wiring up the first real Card Deck (Phase 2, next).
 
 ## 1. What this is
@@ -643,6 +646,24 @@ Cashflow`) is never added to `state.cashflowGame.gameSubscriptionTitles`. `liveP
       `AuthService.signOut()` or the selfhosted logout endpoint, unlike `AppComponent.logOut()` — a selfhosted
       user clicking "Sign Out" in the Profile panel never hits the server's `/auth/logout` to revoke the
       refresh-token cookie, only clears local state. Worth a look separately; out of scope here.
+
+44. **The Subscriptions page never had a Category column at all — decision 41's category fixes were working
+    correctly the whole time, just invisible** (2026-09-29+, JFK, after decision 41 shipped, pasting a
+    freshly-created "Hausmeister/in Salary" subscription row with no category showing: _"still as you see there
+    is now [no] category for Salary when we start a new game"_, then, after being walked through verifying the
+    built domain package and Vite's dep cache both already had the fix: _"also loan and baby does not have one in
+    the subscription"_). Not a regression, and not caused by anything in decisions 41–43 — `subscription.component
+    .html`'s `mat-table` (`displayedColumns`/`displayedColumnsIn` in `subscription.component.ts`) only ever
+    defined `id`/`title`/`account`/`amount`/`startDate` (or `endDate`) columns; there was never a `category`
+    column to render one in, for *any* subscription, cashflow-game or not — confirmed by grepping the template for
+    "category" and finding nothing, before this decision added it. Meanwhile `packages/domain/dist/cashflow-game
+    /engine.js` and the dev server's Vite dependency cache (`.angular/cache/*/vite/deps/@money_domain.js`) were
+    both directly inspected and already had `'@Salary'`/`'@Bank loan'`/`'@Children Expenses'` correctly compiled
+    in — the underlying data was right the whole time. Fixed by adding a `category` column to both tables
+    (Active/Inactive), right after Account, following the same `category.replace('@', '')` display convention
+    every other account page (Daily/Splurge/Smile/Fire/Accounting) already uses for its own transaction category
+    column — reuses the existing `Common.category` translation key (all 6 locales already had it), no new i18n
+    needed.
 
 ## 3. The one new thing: a small game-meta state
 

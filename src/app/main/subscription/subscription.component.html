@@ -217,6 +217,21 @@
       </td>
     </ng-container>
 
+    <!-- Category Column -->
+    <ng-container matColumnDef="category">
+      <th class="headder" mat-header-cell *matHeaderCellDef mat-sort-header>
+        {{ 'Common.category' | translate }}
+      </th>
+      <td
+        mat-cell
+        *matCellDef="let sub; let i = index"
+        [hidden]="classReference.isActive(sub.id)"
+        class="text-truncate-cell"
+      >
+        {{ sub.category ? sub.category.replace('@', '') : '' }}
+      </td>
+    </ng-container>
+
     <!-- Amount Column -->
     <ng-container matColumnDef="amount">
       <th class="headder" mat-header-cell *matHeaderCellDef mat-sort-header>
@@ -314,6 +329,19 @@
       <th mat-header-cell *matHeaderCellDef mat-sort-header>{{ 'Common.account' | translate }}</th>
       <td mat-cell *matCellDef="let sub; let i = index" [hidden]="!classReference.isActive(sub.id)">
         {{ sub.account }}
+      </td>
+    </ng-container>
+
+    <!-- Category Column -->
+    <ng-container matColumnDef="category">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>{{ 'Common.category' | translate }}</th>
+      <td
+        mat-cell
+        *matCellDef="let sub; let i = index"
+        [hidden]="!classReference.isActive(sub.id)"
+        class="text-truncate-cell"
+      >
+        {{ sub.category ? sub.category.replace('@', '') : '' }}
       </td>
     </ng-container>
 

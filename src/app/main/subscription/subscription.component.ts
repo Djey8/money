@@ -68,8 +68,8 @@ export class SubscriptionComponent implements OnDestroy, AfterViewChecked, OnIni
   static allSubscriptions = [];
   static allSearchedSubscriptions = [];
 
-  displayedColumns: string[] = ['id', 'title', 'account', 'amount', 'startDate'];
-  displayedColumnsIn: string[] = ['id', 'title', 'account', 'amount', 'endDate'];
+  displayedColumns: string[] = ['id', 'title', 'account', 'category', 'amount', 'startDate'];
+  displayedColumnsIn: string[] = ['id', 'title', 'account', 'category', 'amount', 'endDate'];
 
   static activeDataSource = new MatTableDataSource<any>([]);
   static inactiveDataSource = new MatTableDataSource<any>([]);
