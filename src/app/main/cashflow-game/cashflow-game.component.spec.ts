@@ -304,9 +304,12 @@ describe('CashflowGameComponent', () => {
       expect(CashflowGameComponent.isOpen).toBe(false);
       expect(router.navigate).toHaveBeenCalledWith(['/home']);
 
+      CashflowGameComponent.isOpen = true;
       component.payday();
       cashflowGameService.payday.mock.calls[0][0].onSuccess();
       expect(toastService.show).toHaveBeenCalledWith('CashflowGame.paydayDone', 'success');
+      // The main Payday button never closes the panel — it stays open for running several rounds in a row.
+      expect(CashflowGameComponent.isOpen).toBe(true);
 
       component.undoPayday();
       cashflowGameService.undoLastPayday.mock.calls[0][0].onSuccess();
@@ -395,21 +398,6 @@ describe('CashflowGameComponent', () => {
       component.landOnDownsized();
       cashflowGameService.resolveDownsized.mock.calls[0][0].onSuccess();
       expect(CashflowGameComponent.isOpen).toBe(false);
-    });
-
-    it('landOnPayday runs Payday and closes the panel on success; the main Payday button does not', () => {
-      const { component, cashflowGameService, toastService } = makeComponent();
-      CashflowGameComponent.isOpen = true;
-
-      component.landOnPayday();
-      cashflowGameService.payday.mock.calls[0][0].onSuccess();
-      expect(toastService.show).toHaveBeenCalledWith('CashflowGame.paydayDone', 'success');
-      expect(CashflowGameComponent.isOpen).toBe(false);
-
-      CashflowGameComponent.isOpen = true;
-      component.payday();
-      cashflowGameService.payday.mock.calls[1][0].onSuccess();
-      expect(CashflowGameComponent.isOpen).toBe(true);
     });
 
     it('backToMain resets the dashboard view and clears transient card-selection state', () => {
@@ -511,54 +499,34 @@ describe('CashflowGameComponent', () => {
 
       expect(cashflowGameService.adjustBankLoan).not.toHaveBeenCalled();
     });
+
+    it('openBankLoan/openPayLoan switch to their own focused sub-view, hidden behind their trigger buttons', () => {
+      const { component } = makeComponent();
+
+      component.openBankLoan();
+      expect(component.dashboardView).toBe('bankLoan');
+
+      component.openPayLoan();
+      expect(component.dashboardView).toBe('payLoan');
+    });
+
+    it('borrowLoan/repayLoan return to the main dashboard once the service confirms success', () => {
+      const { component, cashflowGameService } = makeComponent();
+      AppStateService.instance.cashflowGame = {
+        ...AppStateService.instance.cashflowGame,
+        gameSetId: 'placeholder',
+      };
+      component.loanIncrements = 2;
+      component.openBankLoan();
+
+      component.borrowLoan();
+      cashflowGameService.adjustBankLoan.mock.calls[0][1].onSuccess();
+
+      expect(component.dashboardView).toBe('main');
+    });
   });
 
-  describe('Deal card: plan then execute', () => {
-    it('submitDeal plans a share and clears the form on success', () => {
-      const { component, cashflowGameService, toastService } = makeComponent();
-      component.dealKind = 'share';
-      component.dealTitle = 'TestCo';
-      component.dealQuantity = 10;
-      component.dealPrice = 100;
-
-      component.submitDeal();
-
-      expect(cashflowGameService.planDeal).toHaveBeenCalledWith(
-        { kind: 'share', title: 'TestCo', quantity: 10, price: 100 },
-        expect.anything(),
-      );
-      cashflowGameService.planDeal.mock.calls[0][1].onSuccess();
-      expect(toastService.show).toHaveBeenCalledWith('CashflowGame.dealPlanned', 'success');
-      expect(component.dealTitle).toBe('');
-    });
-
-    it('submitDeal plans an investment with all its fields', () => {
-      const { component, cashflowGameService } = makeComponent();
-      component.dealKind = 'investment';
-      component.dealTitle = 'Villa';
-      component.dealDeposit = 1000;
-      component.dealMortgage = 5000;
-      component.dealCashflow = 600;
-
-      component.submitDeal();
-
-      expect(cashflowGameService.planDeal).toHaveBeenCalledWith(
-        { kind: 'investment', title: 'Villa', deposit: 1000, mortgage: 5000, cashflow: 600 },
-        expect.anything(),
-      );
-    });
-
-    it('does nothing when the form is incomplete', () => {
-      const { component, cashflowGameService } = makeComponent();
-      component.dealKind = 'share';
-      component.dealTitle = 'TestCo';
-      // quantity/price left unset
-
-      component.submitDeal();
-
-      expect(cashflowGameService.planDeal).not.toHaveBeenCalled();
-    });
-
+  describe('Deal card: execute a planned deal', () => {
     it('executeDeal delegates to the service and toasts on success', () => {
       const { component, cashflowGameService, toastService } = makeComponent();
 

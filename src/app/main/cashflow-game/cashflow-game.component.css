@@ -105,8 +105,7 @@
   font-size: 0.8rem;
 }
 
-.cf-loan-current,
-.cf-deal-preview {
+.cf-loan-current {
   margin: 0 0 12px;
   font-size: 0.95rem;
 }
@@ -142,18 +141,10 @@
   margin-left: 6px;
 }
 
-.cf-menu-link {
-  background: none;
-  border: none;
-  padding: 0;
-  margin-top: 12px;
-  color: var(--color-info);
-  font-size: 0.9rem;
-  cursor: pointer;
-}
-
-.cf-menu-link:hover {
-  text-decoration: underline;
+/* Last in the dashboard, a real button rather than a plain underlined link (JFK, 2026-09-29). */
+.cf-menu-btn {
+  width: 100%;
+  margin-top: 4px;
 }
 
 .cf-stat-row {
@@ -333,10 +324,11 @@
   font-size: 0.9rem;
 }
 
-/* ---- Board-space selector — colors match the physical board (JFK, 2026-09-26) ---- */
+/* ---- Board-space selector — colors match the physical board (JFK, 2026-09-26). Fixed 3 columns so */
+/* Deals/Doodad/Market and Charity/Downsized/Baby always form their own row (JFK, 2026-09-29). ---- */
 .cf-space-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 10px;
 }
 
@@ -365,12 +357,6 @@
   border-color: var(--color-danger);
   color: var(--color-danger);
   background-color: var(--color-danger-bg, rgba(211, 47, 47, 0.12));
-}
-
-.cf-space-btn--payday {
-  border-color: var(--color-warning);
-  color: var(--color-warning);
-  background-color: var(--color-warning-bg, rgba(255, 152, 0, 0.12));
 }
 
 .cf-space-btn--market {

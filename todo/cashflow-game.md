@@ -17,9 +17,12 @@ Payday, Payday spreading transactions across the month and aging older ones back
 passed, the profession card's Starting/Live toggle reusing the app's own Cashflow widget design, and disabling the
 generic subscription auto-generation machinery for cashflow accounts everywhere it could still fire) are committed
 (`bf0f7d4`, `7aef497`). Decisions 36–37 (dropping the rat-race bars and sizing the mini cashflow box to its own
-amount pills, then putting Passive Income back as a row inside that same box) are built and green (frontend tests,
-full typecheck, both editions build), not yet committed as of this note. The framework in decision 27 is what's
-needed before wiring up the first real Card Deck (Phase 2, next).
+amount pills, then putting Passive Income back as a row inside that same box) are committed (`0f764b2`, `97fad4f`).
+Decision 38 (removing the manual Deal-card form, dropping Payday from the space grid and fixing it to two rows of
+three, hiding Bank Loan/Payback Loan behind their own triggers with a Back button, and moving the Menu button to
+the end of the dashboard as a real button) is built and green (frontend tests, full typecheck, both editions
+build), not yet committed as of this note. The framework in decision 27 is what's needed before wiring up the
+first real Card Deck (Phase 2, next).
 
 ## 1. What this is
 
@@ -454,6 +457,34 @@ Cashflow`) is never added to `state.cashflowGame.gameSubscriptionTitles`. `liveP
     `professionStartingPassive` (always `0`, re-added as a small readonly field) on the Starting view and
     `livePassiveIncome` on the Live view — same figures decision 30 already computed, just given a place in the
     box again after decision 36 took away their only visible home.
+
+38. **The manual Deal-card form is gone; Payday drops out of the space grid; Bank Loan/Payback Loan are each hidden
+    behind their own trigger; the Menu button moves to the end of the dashboard and becomes a real button**
+    (2026-09-29, JFK, verbatim across four asks in one message: _"can you remove this part of the current cashflow
+    component"_ [the Deal card form] / _"can you remove the payday button (as we have it above) and Deals, Doodad
+    and Market in one row and the 3 purply ones in the next row (Charity, Downsize and Baby)"_ / _"Can you hide the
+    Bank loan panel behind a button and this opens when you click with a back button ..., same for Payback loan
+    (here I want to see how much loan I have right now) and this button should only appear once I have a loan"_ /
+    _"the Menu button should be at the end of this component and the style should fit more to this component, not
+    only a text with underline a real button"_). Four independent changes to the active-game dashboard:
+    - The manual "Deal card" form (Kind/Title/Quantity-or-Deposit-Mortgage-Cashflow/"Save as planned") is deleted
+      outright — planning a deal now only happens through the card-draw flow (Deals space → pile choice → draw/find
+      → Apply), which already covers the same `planDeal` call via `applyDealCard`. `dealKind`/`dealTitle`/
+      `dealQuantity`/`dealPrice`/`dealDeposit`/`dealMortgage`/`dealCashflow`/`dealCost`/`dealShortfall`/
+      `canSubmitDeal`/`submitDeal()` are removed from the component entirely (unused by anything else).
+    - The space grid's own Payday button is removed (redundant with the main Payday button above it); the
+      remaining six buttons are reordered into two fixed rows of three — Deals/Doodad/Market, then
+      Charity/Downsized/Baby — via `grid-template-columns: repeat(3, 1fr)` instead of `auto-fill`, so the grouping
+      holds regardless of panel width.
+    - The always-visible Bank Loan card (outstanding amount + increments input + Borrow/Repay buttons together) is
+      replaced with two small trigger buttons ("Bank Loan", always shown when `currentGameSet`; "Payback Loan",
+      only shown once `currentLoanPrincipal > 0`). Each opens its own focused sub-view (`dashboardView: 'bankLoan'`
+      / `'payLoan'`) with a Back button, the same pattern as the Deal-pile/Cards steps — Borrow lives in the first,
+      Repay in the second, both showing the current outstanding amount. `borrowLoan()`/`repayLoan()` now call
+      `backToMain()` on success instead of leaving the player stranded in the sub-view.
+    - The Menu link moves from inside the `cf-summary` card (right after Payday/Undo) to the very end of the
+      dashboard, after History — and changes from a plain underlined text link (`.cf-menu-link`) to a real button
+      (`btn btn--sm cf-menu-btn`, matching every other action button in this component).
 
 ## 3. The one new thing: a small game-meta state
 

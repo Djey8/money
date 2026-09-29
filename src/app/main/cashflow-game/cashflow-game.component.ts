@@ -71,16 +71,6 @@ export class CashflowGameComponent {
   /** The full profession card, shown at selection time and reopenable during the game (todo/cashflow-game.md decision 18). */
   viewedProfession: CashflowProfession | null = null;
 
-  // A Deal card — resolved through the app's own Grow feature, not a new
-  // purchase system (todo/cashflow-game.md decision 10).
-  dealKind: 'share' | 'investment' = 'share';
-  dealTitle = '';
-  dealQuantity: number | null = null;
-  dealPrice: number | null = null;
-  dealDeposit: number | null = null;
-  dealMortgage: number | null = null;
-  dealCashflow: number | null = null;
-
   // Bringing a card into play, two ways (todo/cashflow-game.md decision 16):
   // find one you drew from a real physical deck, or have the app draw one.
   activeDeckKind: CashflowDeckKind = 'dealSmall';
@@ -90,10 +80,10 @@ export class CashflowGameComponent {
   /**
    * Which focused sub-view the active-game dashboard shows (JFK, 2026-09-26: "when you click one then the panel
    * cleans from the current view and only shows this the selection of dealing the card"). `'main'` is the normal
-   * dashboard (stats, the space grid, planned deals, bank loan, history); `'dealPile'` and `'cards'` each hide
-   * everything else and show only that step, with a way back.
+   * dashboard (stats, the space grid, planned deals, bank loan, history); `'dealPile'`, `'cards'`, `'bankLoan'`
+   * and `'payLoan'` each hide everything else and show only that step, with a way back.
    */
-  dashboardView: 'main' | 'dealPile' | 'cards' = 'main';
+  dashboardView: 'main' | 'dealPile' | 'cards' | 'bankLoan' | 'payLoan' = 'main';
 
   /** The find-a-specific-card UI starts collapsed — Draw is the primary action, find is secondary (JFK, 2026-09-26). */
   showCardFind = false;
@@ -192,23 +182,6 @@ export class CashflowGameComponent {
 
   get canLandOnBaby(): boolean {
     return this.appState.cashflowGame.children < 3;
-  }
-
-  /** What you need in hand right now for the deal as entered — the deposit for a property, the full price for shares. */
-  get dealCost(): number {
-    if (this.dealKind === 'share') return (this.dealQuantity ?? 0) * (this.dealPrice ?? 0);
-    return this.dealDeposit ?? 0;
-  }
-
-  get dealShortfall(): number {
-    return Math.max(0, this.dealCost - this.cash);
-  }
-
-  get canSubmitDeal(): boolean {
-    if (!this.dealTitle.trim()) return false;
-    return this.dealKind === 'share'
-      ? Boolean(this.dealQuantity) && Boolean(this.dealPrice)
-      : this.dealDeposit !== null && this.dealMortgage !== null && this.dealCashflow !== null;
   }
 
   /** The loss condition JFK described 2026-09-26: once this goes negative, every future Payday drains cash. */
@@ -354,26 +327,6 @@ export class CashflowGameComponent {
     });
   }
 
-  /**
-   * The orange Payday space in "which space did you land on?" — same action as the main button above, but this
-   * one is landed on once per turn like Baby/Charity/Downsized, so it closes the panel the same way they do
-   * (JFK, 2026-09-26: "when you click them and its a direct action you close the cashflow panel").
-   */
-  landOnPayday(): void {
-    this.isBusy = true;
-    this.cashflowGameService.payday({
-      onSuccess: () => {
-        this.isBusy = false;
-        this.toastService.show(this.translate.instant('CashflowGame.paydayDone'), 'success');
-        this.closeWindow();
-      },
-      onError: (message) => {
-        this.isBusy = false;
-        this.toastService.show(message, 'error');
-      },
-    });
-  }
-
   undoPayday(): void {
     this.isBusy = true;
     this.cashflowGameService.undoLastPayday({
@@ -389,9 +342,10 @@ export class CashflowGameComponent {
   }
 
   /**
-   * "Which space did you land on?" — companion mode (todo/cashflow-game.md decision 8). Baby/Charity/Downsized/
-   * Payday apply immediately and close the panel; the card spaces (Deals/Doodad/Market) below need the player to
-   * say which card they got first, so they open a focused sub-view instead (JFK, 2026-09-26).
+   * "Which space did you land on?" — companion mode (todo/cashflow-game.md decision 8). Baby/Charity/Downsized
+   * apply immediately and close the panel (Payday itself is the main button above, not repeated here — decision
+   * 38); the card spaces (Deals/Doodad/Market) below need the player to say which card they got first, so they
+   * open a focused sub-view instead (JFK, 2026-09-26).
    */
   landOnBaby(): void {
     this.runAction((callbacks) => this.cashflowGameService.resolveBaby(callbacks), 'baby');
@@ -528,43 +482,6 @@ export class CashflowGameComponent {
     }
   }
 
-  /** Saves the deal's numbers as a Grow project's plan — no money moves yet (todo/cashflow-game.md decision 12). */
-  submitDeal(): void {
-    if (!this.canSubmitDeal) return;
-    const input =
-      this.dealKind === 'share'
-        ? {
-            kind: 'share' as const,
-            title: this.dealTitle.trim(),
-            quantity: this.dealQuantity as number,
-            price: this.dealPrice as number,
-          }
-        : {
-            kind: 'investment' as const,
-            title: this.dealTitle.trim(),
-            deposit: this.dealDeposit as number,
-            mortgage: this.dealMortgage as number,
-            cashflow: this.dealCashflow as number,
-          };
-    this.isBusy = true;
-    this.cashflowGameService.planDeal(input, {
-      onSuccess: () => {
-        this.isBusy = false;
-        this.dealTitle = '';
-        this.dealQuantity = null;
-        this.dealPrice = null;
-        this.dealDeposit = null;
-        this.dealMortgage = null;
-        this.dealCashflow = null;
-        this.toastService.show(this.translate.instant('CashflowGame.dealPlanned'), 'success');
-      },
-      onError: (message) => {
-        this.isBusy = false;
-        this.toastService.show(message, 'error');
-      },
-    });
-  }
-
   /** "You have the option" (JFK, 2026-09-26) — buys a planned deal, auto-borrowing any shortfall. */
   executeDeal(title: string): void {
     this.isBusy = true;
@@ -578,6 +495,16 @@ export class CashflowGameComponent {
         this.toastService.show(message, 'error');
       },
     });
+  }
+
+  /** Bank Loan and Payback Loan are each hidden behind their own trigger, with a Back button, like Deal pile/Cards (JFK, 2026-09-29). */
+  openBankLoan(): void {
+    this.dashboardView = 'bankLoan';
+  }
+
+  /** Only reachable once there's actually a loan to pay back — the trigger button itself is `*ngIf`'d on that. */
+  openPayLoan(): void {
+    this.dashboardView = 'payLoan';
   }
 
   borrowLoan(): void {
@@ -597,6 +524,7 @@ export class CashflowGameComponent {
       onSuccess: () => {
         this.isBusy = false;
         this.toastService.show(this.translate.instant('CashflowGame.loanUpdated'), 'success');
+        this.backToMain();
       },
       onError: (message) => {
         this.isBusy = false;
