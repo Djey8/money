@@ -223,6 +223,23 @@ describe('CashflowGameComponent', () => {
       expect(component.liveSalary).toBe(0);
     });
 
+    it('liveSalary finds the Subscription by gameSubscriptionTitles[0], not by reconstructing "<profession.title> Salary" by hand — the reconstructed form breaks once the stored title is translated (JFK, 2026-09-30: "the Salary is not working its showing 0")', () => {
+      const { component } = makeComponent();
+      AppStateService.instance.cashflowGame = {
+        ...AppStateService.instance.cashflowGame,
+        gameSetId: 'cashflow',
+        professionId: 'hausmeister',
+        // A German-translated title — nothing like "Hausmeister/in Salary" (decision 48's
+        // salarySubscriptionTitle key is "{{profession}} Gehalt" in German, not "... Salary").
+        gameSubscriptionTitles: ['Hausmeister/in Gehalt'],
+      };
+      AppStateService.instance.allSubscriptions = [
+        { title: 'Hausmeister/in Gehalt', account: 'Income', amount: 1600 } as any,
+      ];
+
+      expect(component.liveSalary).toBe(1600);
+    });
+
     it('livePassiveIncome sums only investment-kind (property) Grow project cashflow, not shares', () => {
       const { component } = makeComponent();
       AppStateService.instance.allGrowProjects = [

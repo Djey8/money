@@ -1394,7 +1394,7 @@
   "CashflowGame.cardPayThis": "Payer",
   "CashflowGame.cardDismiss": "Ignorer",
   "CashflowGame.cardApplied": "Carte traitée",
-  "CashflowGame.resetGame": "Réinitialiser la partie",
+  "CashflowGame.resetGame": "réinitialiser la partie",
   "CashflowGame.resetConfirm": "Effacer tout ce que cette partie a créé — chaque transaction, abonnement, projet Grow et la partie elle-même — et recommencer ? Cette action est irréversible.",
   "CashflowGame.resetConfirmButton": "Tout réinitialiser",
   "CashflowGame.resetDone": "Partie réinitialisée",

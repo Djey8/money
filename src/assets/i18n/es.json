@@ -1338,7 +1338,7 @@
   "CashflowGame.cardPayThis": "Pagar esto",
   "CashflowGame.cardDismiss": "Descartar",
   "CashflowGame.cardApplied": "Carta resuelta",
-  "CashflowGame.resetGame": "Reiniciar partida",
+  "CashflowGame.resetGame": "reiniciar partida",
   "CashflowGame.resetConfirm": "¿Borrar todo lo que ha creado esta partida — cada transacción, suscripción, proyecto Grow y la partida misma — y empezar de nuevo? Esto no se puede deshacer.",
   "CashflowGame.resetConfirmButton": "Reiniciar todo",
   "CashflowGame.resetDone": "Partida reiniciada",

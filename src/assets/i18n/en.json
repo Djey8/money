@@ -1369,7 +1369,7 @@
   "CashflowGame.cardPayThis": "Pay this",
   "CashflowGame.cardDismiss": "Dismiss",
   "CashflowGame.cardApplied": "Card resolved",
-  "CashflowGame.resetGame": "Reset game",
+  "CashflowGame.resetGame": "reset game",
   "CashflowGame.resetConfirm": "Wipe everything this game has created — every transaction, subscription, Grow project, and the game itself — and start over? This cannot be undone.",
   "CashflowGame.resetConfirmButton": "Reset everything",
   "CashflowGame.resetDone": "Game reset",

@@ -39,8 +39,10 @@ Charity/Downsized/Baby space buttons) are committed (`e6a2525`, `7c0bd88`). Deci
 profession/expense/liability names — translatable in all 6 languages: new records use the currently-selected
 language going forward, the profession card's Starting Scenario view translates live) is committed (`4ee906f`),
 plus the standalone Chinese Smile/Fire fix (`82aebf4`). Decision 49 (all 12 Classic Edition professions, a new
-Custom JFK game set with 3 professions, expense/liability translation refactored to shared keys) is built and
-green (domain + frontend tests, full typecheck, both editions build), not yet committed as of this note. The
+Custom JFK game set with 3 professions, expense/liability translation refactored to shared keys) is committed
+(`31b22b6`). Decisions 50–51 (the Live scenario's Salary-always-0 regression from decision 48; lowercasing the
+Settings "reset game" button to match "delete") are built and green (frontend tests, full typecheck, both editions
+build), not yet committed as of this note. The
 framework in decision 27 is what's needed before wiring up the first real Card Deck (Phase 2, next).
 
 ## 1. What this is
@@ -795,6 +797,30 @@ Cashflow`) is never added to `state.cashflowGame.gameSubscriptionTitles`. `liveP
       cashflow figure — this is what actually caught that the Ingenieur/Arzt reads needed a second look, and
       guards against a future accidental edit throwing a single line off without the total (and therefore the
       whole card) becoming visibly wrong.
+
+50. **Bug fix: the profession card's "Live" scenario showed Salary as always 0,00 €, breaking its own cashflow
+    total** (2026-09-30, JFK: "in the information card for the professions the Live - Current Game the Salary is
+    not working its showing 0. the cashflow calculation (because of the missing salary) is not working"). Real
+    regression from decision 48/49: `liveSalary` (`cashflow-game.component.ts`) reconstructed the Salary
+    Subscription's title by hand — `` `${profession.title} Salary` `` — but decision 48 made the *stored* title
+    `translate.instant('CashflowGame.salarySubscriptionTitle', {profession: translatedProfessionTitle})`, which in
+    German is `"{{profession}} Gehalt"`, not `"... Salary"` — and `profession.title` itself is never translated
+    either, so even in English the reconstructed string never matched what actually got stored. Every game created
+    after decision 48 shipped had a Salary Subscription `liveSalary` could never find, in *any* language. Fixed by
+    reading `state.cashflowGame.gameSubscriptionTitles[0]` instead of reconstructing anything —
+    `pickCashflowProfession` always builds that array as `[salaryTitle, ...expenseTitles]` and Baby/Bank-loan only
+    ever append past index 0, so it's always the Salary Subscription's real stored title, whatever language that
+    happens to be in. `liveExpenseLines` already used `gameSubscriptionTitles` this way and was never affected —
+    only the one getter that skipped it broke.
+
+51. **The Settings "reset game" button now matches "delete"'s lowercase styling** (2026-09-30, JFK: "in the
+    settings the Reset button, can you fit the style to the other buttons for example in english we have delete,
+    so it should be lowercase reset game"). The button already shared the exact same CSS classes as "delete"
+    (`settings-menu-item delete-item`) — the only actual difference was the translation text itself ("Reset game"
+    vs "delete"). Lowercased `CashflowGame.resetGame` in EN/ES/FR (`reset game`/`reiniciar partida`/`réinitialiser
+    la partie`); left DE as-is (`Spiel zurücksetzen` — German capitalizes nouns as a grammar rule, same reason
+    `Löschen`/"delete" is capitalized there too, not a style choice); CN/AR have no letter-case concept, also
+    unchanged.
 
 ## 3. The one new thing: a small game-meta state
 

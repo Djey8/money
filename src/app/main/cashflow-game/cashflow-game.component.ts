@@ -242,8 +242,18 @@ export class CashflowGameComponent {
    */
 
   /** The Salary subscription's current amount — may differ from the printed card if the player edited its category/amount (decision 16), which is allowed and persists. */
+  /**
+   * `pickProfession()` always builds `gameSubscriptionTitles` as
+   * `[salaryTitle, ...expenseTitles]` and Baby/Bank-loan only ever append past that, so index 0 is
+   * always the Salary Subscription's *actual stored* title — reconstructing it by hand
+   * (`${profession.title} Salary`) broke the moment decision 48 made that title translated
+   * (`{{profession}} Salary` in English, `{{profession}} Gehalt` in German, ...), since
+   * `profession.title` itself is never translated and "Salary" was hardcoded English regardless of
+   * language (JFK, 2026-09-30: "the Salary is not working its showing 0... the cashflow calculation
+   * is not working").
+   */
   get liveSalary(): number {
-    const title = `${this.currentProfession?.title} Salary`;
+    const title = this.appState.cashflowGame.gameSubscriptionTitles[0];
     return this.appState.allSubscriptions.find((sub) => sub.title === title)?.amount ?? 0;
   }
 
