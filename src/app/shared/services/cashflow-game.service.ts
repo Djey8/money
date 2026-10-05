@@ -8,7 +8,6 @@ import { Injectable } from '@angular/core';
 import { Subject } from 'rxjs';
 import { TranslateService } from '@ngx-translate/core';
 import {
-  adjustCashflowBankLoan,
   CashflowAssetDeal,
   CashflowDealCard,
   CashflowDeckKind,
@@ -37,6 +36,8 @@ import {
   multiplyQuantityPrice,
   nextSmartDate,
   pickCashflowProfession,
+  planAutoLoan,
+  playBankLoan,
   playBaby,
   playBoostCard,
   playCharity,
@@ -59,6 +60,7 @@ import {
   type Clock,
   type GameEffects,
   type GameStep,
+  type LoanBooks,
   type GameStepKind,
   type RoundBooks,
   type RoundDeps,
@@ -488,11 +490,14 @@ export class CashflowGameService {
     let borrowedMinor = 0;
     let converted = false;
     if (purchase && gameSet) {
-      const shortfallMinor = Math.max(0, purchase.costMinor - toMinorUnits(this.cash));
-      const financedMinor = Math.max(0, toMinorUnits(financedLoan));
-      const wantedMinor = Math.max(shortfallMinor, financedMinor);
-      if (wantedMinor > 0) {
-        const plannedMinor = loanForShortfallMinor(wantedMinor, 0, gameSet.loanRule.incrementMinor);
+      const plan = planAutoLoan({
+        costMinor: purchase.costMinor,
+        cashMinor: toMinorUnits(this.cash),
+        financedMinor: toMinorUnits(financedLoan),
+        incrementMinor: gameSet.loanRule.incrementMinor,
+      });
+      if (plan.loanMinor > 0) {
+        const plannedMinor = plan.loanMinor;
         this.pushUndoSnapshot({
           kind: 'loanAuto',
           detail: this.amountText(fromMinorUnits(plannedMinor)),
@@ -500,7 +505,7 @@ export class CashflowGameService {
         try {
           borrowedMinor = plannedMinor;
           this.applyBankLoanAdjustment(fromMinorUnits(borrowedMinor), loanDate);
-          converted = financedMinor > 0;
+          converted = plan.converted;
         } catch {
           this.undoStack.pop();
           this.persistUndoStack();
@@ -967,16 +972,6 @@ export class CashflowGameService {
     return this.nextSmartSubscriptionDate(this.currentMonthUsedDays());
   }
 
-  /** Books one-off game transactions on the next free slots of this real month instead of the game calendar's date (which runs months ahead as rounds pass). */
-  private pushOneOffTransactions(records: CashflowTransactionRecord[], fixedDate?: string): void {
-    const used = this.currentMonthUsedDays();
-    for (const record of records) {
-      AppStateService.instance.allTransactions.push(
-        toFloatTransaction({ ...record, date: fixedDate ?? this.nextSmartSubscriptionDate(used) }),
-      );
-    }
-  }
-
   /** The next free day-of-month slot of this real month, dated (see `nextSmartDate`). */
   private nextSmartSubscriptionDate(usedDays: Set<number>): string {
     return nextSmartDate(usedDays, this.clock.todayIso());
@@ -1045,50 +1040,41 @@ export class CashflowGameService {
 
   /** Takes (`delta > 0`) or repays (`< 0`) a bank loan in the game set's increment (a decimal amount, like everywhere else in the app); upserts the Liability + interest Subscription, recomputed from the new principal every time. */
   adjustBankLoan(delta: number, callbacks: CashflowGameCallbacks): void {
-    this.pushUndoSnapshot({
-      kind: delta > 0 ? 'loanTaken' : 'loanRepaid',
-      detail: this.amountText(Math.abs(delta)),
-    });
+    let effects: GameEffects;
     try {
-      this.applyBankLoanAdjustment(delta);
+      effects = playBankLoan(this.loanBooks(), toMinorUnits(delta), this.cardDeps);
     } catch (err: unknown) {
-      this.undoStack.pop(); // nothing actually changed — don't leave a no-op entry behind
-      this.persistUndoStack();
       callbacks.onError(errorMessage(err, 'Could not adjust the bank loan.'));
       return;
     }
+    this.pushUndoSnapshot(effects.step as CashflowStepInfo);
+    this.applyGameEffects(effects);
     this.persistAll('cashflow_bank_loan', { delta }, callbacks, {
       includeSubscriptions: true,
       includeBalanceSheet: true,
     });
   }
 
-  /** The mutation `adjustBankLoan` and `dealBuy`'s auto-borrow both need — throws instead of using callbacks so a caller can chain it with other mutations before persisting once. */
-  private applyBankLoanAdjustment(delta: number, date?: string): void {
+  /** The slice of the account the bank loan rule reads, in minor units. */
+  private loanBooks(): LoanBooks {
     const state = AppStateService.instance;
-    const gameSet = this.currentGameSet();
-    if (!gameSet) throw new Error('Pick a profession first.');
-    const currentPrincipalMinor = toMinorUnits(
-      state.liabilities.find((liability) => liability.tag === 'Bank loan')?.amount ?? 0,
+    return {
+      state: state.cashflowGame,
+      subscriptions: state.allSubscriptions.map(toBookSubscription),
+      transactions: state.allTransactions,
+      liabilities: state.liabilities.map((liability) => ({
+        tag: liability.tag,
+        amountMinor: toMinorUnits(Number(liability.amount) || 0),
+      })),
+      gameSet: this.currentGameSet(),
+    };
+  }
+
+  /** The mutation `adjustBankLoan`, the auto-borrow on a Grow buy and `executeDeal` all need - throws instead of using callbacks so a caller can chain it with other mutations (and its own undo steps) before persisting once. */
+  private applyBankLoanAdjustment(delta: number, date?: string): void {
+    this.applyGameEffects(
+      playBankLoan(this.loanBooks(), toMinorUnits(delta), this.cardDeps, { date }),
     );
-    const result = adjustCashflowBankLoan(
-      state.cashflowGame,
-      gameSet,
-      currentPrincipalMinor,
-      toMinorUnits(delta),
-    );
-    if (result.liabilityUpsert) {
-      this.upsertLiability(result.liabilityUpsert.tag, result.liabilityUpsert.amountMinor);
-    } else {
-      this.removeLiabilityByTag('Bank loan');
-    }
-    if (result.subscriptionUpsert) {
-      this.upsertSubscription(result.subscriptionUpsert);
-    } else {
-      this.removeSubscriptionByTitle('Bank loan interest');
-    }
-    this.pushOneOffTransactions([result.transaction], date);
-    state.cashflowGame = result.state;
   }
 
   /**
