@@ -529,8 +529,8 @@ Cashflow`) is never added to `state.cashflowGame.gameSubscriptionTitles`. `liveP
     29th/30th in every month that actually has that day. The clamp only fires once a transaction's day doesn't fit
     that month; from then on the transaction's own stored date carries the reduced day forward, so it never jumps
     back up in a later month with more days — `shiftGameTransactionDates`/`addMonthsToIsoDate` (decision 33)
-    already worked this way for the *backward* aging shift and needed no change; this decision only changes how
-    the *new* round's date is picked in the first place.
+    already worked this way for the _backward_ aging shift and needed no change; this decision only changes how
+    the _new_ round's date is picked in the first place.
 
 40. **A general "undo the last action" replaces the Payday-only undo, which silently refused to undo anything
     else** (2026-09-29+, JFK: _"I realized that we need a back button that can revert actions we did. For example
@@ -539,7 +539,7 @@ Cashflow`) is never added to `state.cashflowGame.gameSubscriptionTitles`. `liveP
     us and we need to make sure we can revert each move, so after a revert the game is in a state before he did
     the action"_). Bug found while building this: `undoLastPayday()`/the engine's `undoLastCashflowPayday()`
     explicitly throw `"Only the most recent Payday can be undone"` whenever the last history entry isn't
-    `kind: 'payday'` — but Baby/Charity/Downsized *also* push their own `history` entries, so the pre-existing
+    `kind: 'payday'` — but Baby/Charity/Downsized _also_ push their own `history` entries, so the pre-existing
     "Undo" button was already enabled (`history.length > 0`) right after any of those, and clicking it just
     errored instead of doing anything. Replaced with a full-state undo stack, frontend-only
     (`CashflowGameService.undoStack: CashflowGameSnapshot[]`, capped at `UNDO_STACK_LIMIT = 50`): every public
@@ -549,7 +549,7 @@ Cashflow`) is never added to `state.cashflowGame.gameSubscriptionTitles`. `liveP
     entity a game action can touch: Transactions, Subscriptions, Grow projects, Shares, Investments, Assets,
     Liabilities, Smile/Fire/Mojo (only `resetGame` touches the last three, but undoing a reset should restore them
     too), and `cashflowGame` itself. `undoLastAction()` just pops the top snapshot and restores every field from
-    it wholesale — correct by construction for *any* action, current or future, without a bespoke reversal
+    it wholesale — correct by construction for _any_ action, current or future, without a bespoke reversal
     written per action kind. Calling it repeatedly walks back further, one action at a time. Deliberately **not
     persisted** — a page reload starts a fresh (empty) stack; the game's real data is always safely persisted
     normally regardless, this is only a same-session safety net for a wrong click, and persisting it would mean
@@ -583,8 +583,8 @@ Cashflow`) is never added to `state.cashflowGame.gameSubscriptionTitles`. `liveP
       found while auditing every place this game creates one, even though Doodad creates a transaction, not a
       subscription.
     - **Dates.** `pickCashflowProfession`'s date-spreading (decision 33's `spreadDateAcrossMonth`, removed by
-      decision 39 for a different reason — Payday reading dates *from* Subscriptions rather than computing them)
-      comes back, but now at Subscription-*creation* time instead of at every Payday: two new private helpers in
+      decision 39 for a different reason — Payday reading dates _from_ Subscriptions rather than computing them)
+      comes back, but now at Subscription-_creation_ time instead of at every Payday: two new private helpers in
       `cashflow-game.service.ts`, `currentMonthGameSubscriptionDays()` (every day-of-month already used by another
       `#cashflow` Subscription this real month) and `nextSmartSubscriptionDate(usedDays)` (every-other-day — 1st,
       3rd, 5th, ... — before any day already taken, falling back to any free day, then to the least-crowded day
@@ -595,7 +595,7 @@ Cashflow`) is never added to `state.cashflowGame.gameSubscriptionTitles`. `liveP
       function already) uses the same helper, so **every** newly auto-created game Subscription gets a
       non-overlapping date this way, not just the ones created at game start — satisfying the "general rule" as
       asked, through the one shared code path rather than three separate implementations. `upsertSubscription`'s
-      *existing* branch also now refreshes `category` (previously only account/amount/frequency were "recomputed
+      _existing_ branch also now refreshes `category` (previously only account/amount/frequency were "recomputed
       every time" — category joins that existing pattern rather than getting special-cased).
 
 42. **Dashboard polish: spacing between cards, a redesigned Bank Loan trigger, History hidden behind a button
@@ -606,10 +606,10 @@ Cashflow`) is never added to `state.cashflowGame.gameSubscriptionTitles`. `liveP
     Category)"_). Three changes:
     - **Spacing.** `.cf-dashboard` had no layout rules of its own — its `*ngIf="dashboardView === 'main'"`
       `ng-container` has no DOM node, so every card inside it (summary, space grid, planned deals, loan triggers,
-      history/menu rows) rendered as a *direct* child of `.cf-dashboard`, flush against each other with none of
-      `.cashflow-game-page`'s own `gap: 16px` (that gap only applies to *its own* direct children, and
+      history/menu rows) rendered as a _direct_ child of `.cf-dashboard`, flush against each other with none of
+      `.cashflow-game-page`'s own `gap: 16px` (that gap only applies to _its own_ direct children, and
       `.cf-dashboard` is the only one of those inside the active-game view). Given `display: flex; flex-direction:
-      column; gap: 16px`, matching `.cashflow-game-page`'s own convention.
+column; gap: 16px`, matching `.cashflow-game-page`'s own convention.
     - **The Menu button bug, found while designing "better."** The global `.btn` class (`src/styles.css`) sets
       `width: 80%; margin-left: 10%` — a box model built for exactly one standalone button per row (see "Start
       Game"), not something meant to be widened. Decision 38's `.cf-menu-btn { width: 100%; }` fought that without
@@ -641,7 +641,7 @@ Cashflow`) is never added to `state.cashflowGame.gameSubscriptionTitles`. `liveP
     no-op cleanup in `adjustBankLoan`'s catch) calls `persistUndoStack()` to keep the localStorage copy in sync.
     A cleared browser cache/site-data wipes it same as everything else in localStorage — no extra code needed for
     that part, exactly as JFK expected.
-    - **Logout, both editions.** A new `clearPersistedUndoStack()` resets the in-memory `undoStack` to `[]` *and*
+    - **Logout, both editions.** A new `clearPersistedUndoStack()` resets the in-memory `undoStack` to `[]` _and_
       removes the localStorage key — both matter: since neither logout flow does a hard page reload (`AppComponent`
       navigates via `router.navigate`, `ProfileComponent` likewise), the `CashflowGameService` singleton survives
       logout and would otherwise carry a stale in-memory stack into the next login even after storage is cleared.
@@ -662,11 +662,11 @@ Cashflow`) is never added to `state.cashflowGame.gameSubscriptionTitles`. `liveP
     is now [no] category for Salary when we start a new game"_, then, after being walked through verifying the
     built domain package and Vite's dep cache both already had the fix: _"also loan and baby does not have one in
     the subscription"_). Not a regression, and not caused by anything in decisions 41–43 — `subscription.component
-    .html`'s `mat-table` (`displayedColumns`/`displayedColumnsIn` in `subscription.component.ts`) only ever
+.html`'s `mat-table` (`displayedColumns`/`displayedColumnsIn` in `subscription.component.ts`) only ever
     defined `id`/`title`/`account`/`amount`/`startDate` (or `endDate`) columns; there was never a `category`
-    column to render one in, for *any* subscription, cashflow-game or not — confirmed by grepping the template for
+    column to render one in, for _any_ subscription, cashflow-game or not — confirmed by grepping the template for
     "category" and finding nothing, before this decision added it. Meanwhile `packages/domain/dist/cashflow-game
-    /engine.js` and the dev server's Vite dependency cache (`.angular/cache/*/vite/deps/@money_domain.js`) were
+/engine.js` and the dev server's Vite dependency cache (`.angular/cache/*/vite/deps/@money_domain.js`) were
     both directly inspected and already had `'@Salary'`/`'@Bank loan'`/`'@Children Expenses'` correctly compiled
     in — the underlying data was right the whole time. Fixed by adding a `category` column to both tables
     (Active/Inactive), right after Account, following the same `category.replace('@', '')` display convention
@@ -681,7 +681,7 @@ Cashflow`) is never added to `state.cashflowGame.gameSubscriptionTitles`. `liveP
     a Liability upsert and an interest Subscription upsert — so borrowing raised your debt and started a recurring
     interest payment without ever actually paying out the cash, and repaying erased that debt for free (no
     transaction meant no cost either). Also silently broke `executeDeal`'s auto-borrow path (`todo/cashflow-game
-    .md` §4, `applyBankLoanAdjustment` is shared by both the standalone Borrow button and the auto-borrow-when-you-
+.md` §4, `applyBankLoanAdjustment` is shared by both the standalone Borrow button and the auto-borrow-when-you-
     can't-afford-a-deal flow): buying something you couldn't afford would auto-borrow the shortfall and then still
     post the full purchase cost as a debit with nothing offsetting it, driving cash negative by the shortfall —
     the exact same missing-transaction bug, just invisible until you actually checked your balance. Fixed in the
@@ -691,7 +691,7 @@ Cashflow`) is never added to `state.cashflowGame.gameSubscriptionTitles`. `liveP
     (Charity/Downsized/Doodad) — and `applyBankLoanAdjustment` (`cashflow-game.service.ts`) pushes it alongside
     the Liability/Subscription updates, for both callers. Verified the auto-borrow math now actually nets to zero
     cash left over when a purchase exactly exhausts an exact-increment loan (a new test asserts `service.cash ===
-    0` after the fact, where before this fix it would have been silently negative).
+0` after the fact, where before this fix it would have been silently negative).
 
 46. **The summary card's stat row is spread edge-to-edge, Cash/Round/Date left-to-right** (2026-09-29, JFK: first
     "can you center those three elements in the row, so the game date is left, cash is right and Round in the
@@ -726,36 +726,36 @@ Cashflow`) is never added to `state.cashflowGame.gameSubscriptionTitles`. `liveP
       resolve through new i18n keys (`CashflowGame.profession.<profession.id>.title` /
       `.expense.<line.key>` / `.liability.<entry.key>`) instead of using `game-sets.ts`'s own (German) strings
       directly — same for the generic Salary/Savings/Children-Expenses labels, now `CashflowGame.
-      salarySubscriptionTitle`/`childrenExpensesSubscriptionTitle`/`savingsTransactionComment` (`{{profession}}`-
+salarySubscriptionTitle`/`childrenExpensesSubscriptionTitle`/`savingsTransactionComment` (`{{profession}}`-
       parameterized, since word order differs per language) instead of hardcoded English concatenation in the
       engine. `CashflowExpenseLine`/`CashflowStarterKitEntry` gain an optional `key` (`packages/domain/src/
-      cashflow-game/types.ts`) — a stable, language-independent id separate from `title`/`tag`, which stay exactly
-      as authored (German) and now serve only as the *fallback* when no translation key exists yet (a profession/
+cashflow-game/types.ts`) — a stable, language-independent id separate from `title`/`tag`, which stay exactly
+      as authored (German) and now serve only as the _fallback_ when no translation key exists yet (a profession/
       game set not yet translated keeps working exactly as before — the `placeholder` fixture, with no `key`
       fields and no translation entries, is unaffected). `CashflowGameService.pickProfession()`/`resolveBaby()`
       resolve the translated strings and use them for what actually gets stored — including
-      `gameSubscriptionTitles`, which must reference the *stored* (translated) title or Payday can never find the
-      Subscription again. `resolveBaby()` specifically computes its translated title *before* checking whether a
+      `gameSubscriptionTitles`, which must reference the _stored_ (translated) title or Payday can never find the
+      Subscription again. `resolveBaby()` specifically computes its translated title _before_ checking whether a
       2nd/3rd child's Children-Expenses Subscription already exists (ignoring the engine's own internal check,
       which always uses the untranslated title) — otherwise a repeat call would see no match and create a
       duplicate `gameSubscriptionTitles` entry instead of scaling the existing one. **Deliberately left
       untranslated**, to avoid touching the app's `@category`-to-entity-tag linking convention anywhere outside
       this feature: "Bank loan"/"Bank loan interest" (used as literal, language-independent matching keys
       throughout `engine.ts`/`cashflow-game.service.ts` — `BANK_LOAN_TAG`, `removeSubscriptionByTitle('Bank loan
-      interest')` — translating the *stored* value would break the exact-string matching those rely on); Grow/
+interest')` — translating the _stored_ value would break the exact-string matching those rely on); Grow/
       Deal-card titles (user-entered/card content, not profession-authored); starter-kit assets/investments/shares
       (no current profession uses them, no translation keys defined yet).
     - **The profession card's "Starting Scenario" view translates live, on the fly** (JFK's second idea, in
       full — safe here specifically because this view only ever reads `game-sets.ts`'s own static data via
       `viewedProfession`/`selectedProfession`, never a real, possibly-user-edited Subscription/Transaction).
       `CashflowGameService.translateProfessionTitle`/`translateExpenseLineTitle`/`translateLiabilityTag` (made
-      public) resolve the same new i18n keys against whatever language is active *right now*; `cashflow-game.
-      component.ts` exposes thin wrappers (`professionTitle`/`expenseLineTitle`/`liabilityTag`) the template calls
+      public) resolve the same new i18n keys against whatever language is active _right now_; `cashflow-game.
+component.ts` exposes thin wrappers (`professionTitle`/`expenseLineTitle`/`liabilityTag`) the template calls
       directly, replacing every direct `profession.title`/`line.title`/`liability.tag` binding — the profession
       picker dropdown, the profession-card header (both "Starting"/"Live" scenario, and the active-game summary
       card, since the profession's own name is never user-edited either way), the itemized expense list, and the
       itemized liabilities list. The "Live Scenario" view, the Subscriptions page, and History deliberately do
-      *not* get this treatment — they show real Subscriptions/Transactions, which read from whatever was actually
+      _not_ get this treatment — they show real Subscriptions/Transactions, which read from whatever was actually
       stored (translated at creation time, per the point above), same as any other financial record.
     - Currently only the real "hausmeister" profession has translations authored (11 keys × 6 languages: 1 title +
       7 expense lines including the two zero-amount ones still shown on the printed card + 3 liability tags); any
@@ -773,19 +773,19 @@ Cashflow`) is never added to `state.cashflowGame.gameSubscriptionTitles`. `liveP
     - **Refactored expense/liability translation from per-profession to shared keys** before adding 11 more
       professions made the duplication obvious: `CashflowGame.profession.<id>.expense.<key>` /
       `.liability.<key>` (decision 48) → `CashflowGame.expenseLine.<key>` / `CashflowGame.liabilityTag.<key>`,
-      since "Steuern" means the same thing on every card — only the profession *title* stays per-profession
+      since "Steuern" means the same thing on every card — only the profession _title_ stays per-profession
       (genuinely profession-specific content). `translateExpenseLineTitle`/`translateLiabilityTag`
       (`cashflow-game.service.ts`) still take a `profession` parameter for call-site compatibility, just no
       longer use it. Two new shared liability keys this added: `studentLoanDebt` (several professions have a
       non-zero "BAföG Darlehen" balance, unlike Hausmeister/in) and `bankLoan` (Custom JFK's Unternehmer/in,
       see below). 11 profession-title keys × 6 languages, 11 shared expense/liability keys × 6 languages (2 new
-      + 9 already existed from decision 48).
+      - 9 already existed from decision 48).
     - **Classic Edition kept its id `'cashflow'`** unchanged — only its `title` display string changed (to
       "Classic Edition...") — specifically so JFK's already-running game (stored with `gameSetId: 'cashflow'`)
       isn't orphaned by `findCashflowGameSet` failing to find it.
     - **Custom JFK (`id: 'custom-jfk'`)**: explicitly scoped down mid-task once JFK clarified — same shape/rules
       as Classic for now (no starterKit assets/investments/shares; `pickProfession()` doesn't create the ongoing
-      passive-income Subscription a bought investment gets via `executeDeal`, so a *starting* investment would
+      passive-income Subscription a bought investment gets via `executeDeal`, so a _starting_ investment would
       render as a static balance-sheet line that never pays out — a half-working feature, not a real capability
       showcase). The one new thing used is Unternehmer/in's non-zero starting "Bankdarlehen" liability (6.000 €,
       10% monthly payment = 600 €/month, matching the in-game Bank Loan feature's own interest rate) — every
@@ -802,11 +802,11 @@ Cashflow`) is never added to `state.cashflowGame.gameSubscriptionTitles`. `liveP
     total** (2026-09-30, JFK: "in the information card for the professions the Live - Current Game the Salary is
     not working its showing 0. the cashflow calculation (because of the missing salary) is not working"). Real
     regression from decision 48/49: `liveSalary` (`cashflow-game.component.ts`) reconstructed the Salary
-    Subscription's title by hand — `` `${profession.title} Salary` `` — but decision 48 made the *stored* title
+    Subscription's title by hand — `` `${profession.title} Salary` `` — but decision 48 made the _stored_ title
     `translate.instant('CashflowGame.salarySubscriptionTitle', {profession: translatedProfessionTitle})`, which in
     German is `"{{profession}} Gehalt"`, not `"... Salary"` — and `profession.title` itself is never translated
     either, so even in English the reconstructed string never matched what actually got stored. Every game created
-    after decision 48 shipped had a Salary Subscription `liveSalary` could never find, in *any* language. Fixed by
+    after decision 48 shipped had a Salary Subscription `liveSalary` could never find, in _any_ language. Fixed by
     reading `state.cashflowGame.gameSubscriptionTitles[0]` instead of reconstructing anything —
     `pickCashflowProfession` always builds that array as `[salaryTitle, ...expenseTitles]` and Baby/Bank-loan only
     ever append past index 0, so it's always the Salary Subscription's real stored title, whatever language that
@@ -818,9 +818,420 @@ Cashflow`) is never added to `state.cashflowGame.gameSubscriptionTitles`. `liveP
     so it should be lowercase reset game"). The button already shared the exact same CSS classes as "delete"
     (`settings-menu-item delete-item`) — the only actual difference was the translation text itself ("Reset game"
     vs "delete"). Lowercased `CashflowGame.resetGame` in EN/ES/FR (`reset game`/`reiniciar partida`/`réinitialiser
-    la partie`); left DE as-is (`Spiel zurücksetzen` — German capitalizes nouns as a grammar rule, same reason
+la partie`); left DE as-is (`Spiel zurücksetzen` — German capitalizes nouns as a grammar rule, same reason
     `Löschen`/"delete" is capitalized there too, not a style choice); CN/AR have no letter-case concept, also
     unchanged.
+
+52. **Real card catalog, one card type at a time — starting with Small Deal stock cards** (2026-09-30, JFK, sent
+    a photo of the OK4U Pharma AG card and asked to work "card by card"). Decisions:
+    - **Card text is split from the app's i18n.** Numbers/symbols are language-neutral typed data in the domain
+      package (`classic-deal-small.ts`); flavor text and notes are per-language files
+      `assets/i18n/cashflow-cards/<lang>.json` keyed by card id, lazy-loaded by `CashflowCardTextService` only
+      when a card pile opens (falls back to English). Text printed on every card of a kind ("Only you may buy at
+      this price…") is stored once under `shared`. The existing `CashflowGame.*` UI keys stay in the main files.
+    - **Stock card = ticker identity.** The Grow project title and Share tag are the `symbol`; the same stock at a
+      different price is a different card id but the same position (Grow's existing price averaging applies).
+      Quantity is not on the card — the player types it in the planned-deal row, which previews cost and the
+      bank loan that would be taken (rounded up to the game set's loan increment).
+    - **Card actions:** _Decline_ stores nothing; _Sell to a friend_ books one-time Daily income categorised
+      `@<SYMBOL> card sale`; _Plan_ creates the Grow project (description, note → Grow notes, trading range → risks).
+    - **Loan and purchase are separate undo steps** — `executeDeal` pushes one snapshot before the auto-borrow and
+      one before the buy; a failure mid-deal rolls back both. Buys/sells made through the Add dialog on a
+      Cashflow account now also push an undo point (`recordUndoPoint`, skipped while balance/Grow tiers aren't
+      loaded, so a snapshot of empty arrays can never wipe data).
+
+53. **The 20 Classic Small Deal stock cards, and a scannable card lookup** (2026-09-30, JFK, photo of 8 cards).
+    Four securities (OK4U Pharma AG 5-30, ON2U Entertainment AG 10-30, MYT4U Electronics Co. 10-30, GRO4US
+    fund 20-30) at five prices each (5/10/20/30/40) = 20 cards, generated from one table in
+    `classic-deal-small.ts`. Flavor text exists so far for the 8 photographed cards (6 languages); the rest show
+    no text until photographed. "Investmentfonds" (GRO4US) is `securityKind: 'fund'` but bought/sold as a share.
+    The lookup is now an always-open search plus a tile grid (symbol, name, price, range), memoised, sorted by
+    symbol then price; every space-separated word must match title, symbol or a price prefix (`ok4u 20`).
+    Planning a card again keeps the existing Grow project and holding, resets the amount to buy, moves the
+    price, and adds a note; after a buy on a Cashflow account the project carries the full held quantity.
+
+54. **Investment cards (Einfamilienhaus in Small Deal, Pizzafranchise in Big Deal)** (2026-09-30, JFK). Every
+    investment card is its own Grow deal, labelled by its abbreviation (`symbol`: EFH, PIZZA) and, for further
+    copies, `-II`, `-III`... (hyphenated: Grow's buy comment is split on spaces, a space would corrupt the buy).
+    Plan opens the project's Financials overview (no edit - every number is on the card); Buy is Grow's normal
+    Buy Investment, which already creates the Investment and the `M-<label>` mortgage liability. New:
+    `registerInvestmentIncome(title)` turns the card's cashflow into the `<label> Cashflow` Subscription and lists
+    it in `gameSubscriptionTitles` - Payday only acts on that list, so before this a bought property's income was
+    created but never paid out (the old `executeDeal` path had the same gap; both now use the helper).
+    Shares: the position is always held quantity x latest price; the project's Financials show held quantity,
+    market value, invested amount and average buy price, so earlier lots at earlier prices stay visible.
+
+55. **Buying a planned share or a property takes the bank loan automatically, as its own undo step** (2026-09-30,
+    JFK). The Add dialog's Buy Share / Buy Investment on a Cashflow account calls
+    `CashflowGameService.beforeGrowTrade`: if cash (Daily+Splurge+Smile+Fire) is below the up-front cost (shares:
+    quantity x price; investments: the deposit, never the mortgage), it books the Bank loan for the shortfall
+    rounded up to the game set's loan step, then takes a second undo snapshot for the trade itself - one Undo
+    reverts the purchase, the next reverts the loan. Skipped when the dialog's own financing option is used, for
+    sells, and while the balance/Grow tiers are unloaded. The dialog now also persists `cashflowGame` and
+    Subscriptions for Cashflow accounts (the loan and `registerInvestmentIncome` both change them).
+
+56. **Cash/loan info is a Grow note, not Grow UI; "Settle all" for the loan; one date-slot rule for every game
+    transaction** (2026-10-03, JFK). (a) The Cash-on-hand / need-to-borrow blocks added to `info-grow` are gone;
+    planning a card now appends a Grow _note_ ("Cash on hand: X - Deposit: Y - Bank loan needed: Z", or just the
+    cash for a share whose count isn't chosen yet). The held-quantity / market value / average price block stays
+    (game accounts only). (b) Payback Loan has a "Settle all" button that pre-fills the steps needed to clear the
+    loan (rounded up); the player still presses Repay. (c) Dates: slots go 1,3,5 ... 27 then 2,4,6 ... 28,
+    skipping used days. A day is used if a `#cashflow` Subscription recurs on it (its day-of-month, whatever month
+    its `startDate` is in - that was why a sale landed on the 3rd) or any transaction is dated this real month.
+    Loan borrow/repay, Charity, Downsized, Doodad, card sales and the legacy `executeDeal` now take the next free
+    slot of the real month instead of the game calendar's date (a repayment had landed two months ahead), and the
+    Add dialog opens on a Cashflow account with that slot pre-filled in its date field (still editable).
+
+57. **Share naming, a self-updating loan note, the loan through the Bank loan, and Grow phases** (2026-10-03,
+    JFK). (a) A card's Grow project keeps the ticker as its _title_ (Grow links a project to its position by exact
+    title) and shows the company / property name in the _subtitle_ (`sub`). (b) A planned card carries one
+    "🏦 ..." note (cost, cash on hand, bank loan needed) that `syncPlanNote` _updates in place_ - when the card is
+    planned and when the Grow edit form saves - never appends a second one; only projects still `status:
+'planned'` are touched. (c) `syncPlanNote` also writes the loan needed into the project's own Loan field
+    (`liabilitie`); on Buy, `beforeGrowTrade` takes that amount (or the cash shortfall, whichever is larger,
+    rounded up to the loan step) as a **Bank loan** - its own undo step - and the Add dialog's per-project loan is
+    switched off, so no liability named after the project is created and the purchase is paid in full. (d) Phases:
+    planning sets `plan`, a buy sets `execute`, selling the _last_ share/property sets `completed` (a partial sell
+    stays `execute`); planning the same card again returns to `plan`. Phase moves only happen on Cashflow
+    accounts (`setPhaseAfterTrade`), the normal Grow never moves phases by itself.
+
+58. **Paying a starting liability off ends its monthly expense; live statement lists investments + totals**
+    (2026-10-03, JFK). The Balance page's Payback on a Cashflow account now also removes the Subscription that
+    paid the debt down (`removeExpenseForPaidLiability`): car loan -> Autokreditzahlung, credit card ->
+    Kreditkartenzahlung, student loan -> BAfoeG, home mortgage -> Eigenheim-Hypothek / Miete, the Unternehmer's
+    Bankdarlehen -> its payment, and the Bank loan -> "Bank loan interest". Only when the liability is gone
+    entirely (a partial payback keeps the expense). It is part of the dialog's existing undo snapshot, so one
+    Undo restores debt and expense; the dialog now also loads balance + Grow data first so that snapshot can
+    never hold empty placeholders. Live statement: Passive Income is itemised per bought investment (from the
+    `<name> Cashflow` Subscriptions, no longer from planned Grow projects), Assets list properties (at full
+    cost), shares and plain assets by name, the cash line is labelled CASHFLOW, and each section shows a Total.
+
+59. **The History is the list of undo steps** (2026-10-03, JFK: "everything we do undo (one point) should be
+    written into the history... each step to go backwards should be on this list"). Every
+    `pushUndoSnapshot` now carries what the step was (`start`, `payday`, `baby`, `charity`, `downsized`,
+    `loanTaken`/`loanRepaid`, `loanAuto` for the loan taken for a purchase, `planDeal`, `buyDeal`, `doodad`,
+    `cardSale`, `reset`, and for the Add dialog `buyShare`/`sellShare`/`buyInvestment`/`sellInvestment`/
+    `payoff`/`transaction`) plus a timestamp, so `historySteps()` is simply the stack newest-first. What a step
+    added to the books is whatever lies between its snapshot and the next one's (so a Payday lists its whole
+    month; nothing is recorded twice). Each line expands to those transactions and has Undo (newest) or "Undo
+    back to here" (`undoSteps(n)` - one write for n steps). Same lifetime as the undo stack: kept in this
+    browser, at most 50 steps, cleared on logout (decision 43); snapshots saved before this are named from what they changed (never "Earlier step"), steps are numbered 1, 2, 3...
+    step", and rounds saved by the old log still show when there are no steps.
+
+60. **All seven Small Deal Einfamilienhaus cards** (2026-10-03, JFK, photo). Cost/Anzahlung/Hypothek/Cashflow:
+    50k/3k/47k/+100 (the original), 65k/5k/60k/+160, 45k/2k/43k/+250 _Super Deal_, 30k/1k/29k/+0 (capital
+    gain only - no income Subscription is created for a +0 card), 35k/2k/33k/+220 _Super Deal_, 50k/2k/48k/+200,
+    50k/4k/46k/+200. Ids are `classic-small-efh` and `classic-small-efh-<cost>k-<deposit>k`. A Super Deal card
+    carries `superDeal: true` and a translated `heading` ("You've found a Super Deal!") that replaces the name
+    on the card face; the lookup grid marks it with a star. Each copy bought still becomes its own project:
+    EFH, EFH-II, EFH-III... Remaining Small/Big Deal categories follow as JFK sends them.
+
+61. **The four Small Deal Eigentumswohnung (ETW) cards** (2026-10-03, JFK, photo): Kosten/Anzahlung/Hypothek/
+    Cashflow 40k/5k/35k/+220 (a foreclosure auction), 40k/1k/39k/+0 (capital gain only), 40k/4k/36k/+140,
+    55k/5k/50k/+160. Symbol `ETW`, ids `classic-small-etw-<cost>k-<deposit>k`; bought copies become ETW,
+    ETW-II, ETW-III... like every other investment card.
+
+62. **The ten Big Deal Mehrfamilienhaus (MFH) cards** (2026-10-03, JFK, photo): 4 or 8 Wohneinheiten (WE).
+    Kosten/Anzahlung/Cashflow - 8 WE: 240k/40k/+1.800, 320k/40k/+1.700, 250k/40k/+2.000, 360k/32k/+1.800;
+    4 WE: 340k/32k/+1.400, 280k/16k/+1.000, 370k/10k/+900, 290k/15k/+800, 300k/20k/+1.100, 225k/15k/+700.
+    Hypothek is Kosten minus Anzahlung on every card (checked against the print). The unit count is in the
+    symbol - `MFH4` / `MFH8` - so a bought copy reads MFH8, MFH8-II... in Grow; ids are
+    `classic-big-mfh<units>-<cost>k-<deposit>k`. They sit in `CLASSIC_DEAL_BIG` next to the pizza franchise.
+
+63. **The eight Big Deal Einfamilienhaus (EFH) cards** (2026-10-03, JFK, photo). Kosten/Anzahlung/Hypothek/
+    Cashflow: 270k/15k/255k/+800, 225k/14k/211k/+750, 300k/20k/280k/+1.000, 300k/12k/288k/+800,
+    325k/18k/307k/+900, 350k/20k/330k/+1.000, 275k/16k/259k/+750, 275k/15k/260k/+800 (a terraced house on a golf
+    course). Same `EFH` label as the Small Deal houses on purpose - a house is a house, so every one bought,
+    small or big, is numbered together (EFH, EFH-II...). Ids `classic-big-efh-<cost>k-<deposit>k`.
+
+64. **Property labels per language** (2026-10-03, JFK: "the abbreviations EFH and the others are German... we
+    don't care about switching languages during a game, but the language you pick in the beginning you set these
+    informations"). The deck keeps its language-neutral key (`EFH`, `ETW`, `MFH4`, `MFH8`, `PIZZA`); each
+    `cashflow-cards/<lang>.json` has a top-level `symbols` map giving the label that language uses
+    (en SFH / CONDO / APT4 / APT8, fr MAI / APPT / IMM4 / IMM8, es CUF / APT / EDF4 / EDF8, cn 独栋 / 公寓 / 多户4 /
+    多户8, ar منزل / شقة / عمارة4 / عمارة8, de unchanged). Planning a card names the Grow project with the label of
+    the language active at that moment (SFH, SFH-II...), so the language picked at the start sets the names for the
+    game; projects already planned keep theirs. Labels never contain whitespace (Grow's buy comment is split on
+    spaces - a domain test enforces it). Share tickers (OK4U...) are made-up and stay the same everywhere. The
+    lookup shows the translated label and name and searches both languages ("sfh" and "efh" find the same
+    card); its tiles are now rebuilt when the language file arrives (they used to keep the German names). The
+    German abbreviations in the translated card texts ("(EFH)", "MFH") were removed or spelled out.
+
+65. **The five Big Deal Doppelhaus (semi-detached house) cards** (2026-10-03, JFK, photo). Kosten/Anzahlung/
+    Hypothek/Cashflow: 260k/12k/248k/+600, 250k/16k/234k/+900, 170k/18k/152k/+900, 245k/12k/233k/+800,
+    260k/10k/250k/+1.100. Key `DH`; labels per language (decision 64): de DH, en SDH, fr JUM, es PAR, cn 双拼,
+    ar مزدوج. Ids `classic-big-dh-<cost>k-<deposit>k`. The Big Deal pile now holds 24 cards.
+
+66. **The four Big Deal Appartementhaus (APH) cards** (2026-10-03, JFK, photo): Kosten/Anzahlung/Hypothek/
+    Cashflow - 12 WE 350k/50k/300k/+3.000; 24 WE 575k/75k/500k/+3.600 (two buildings, one on-site employee);
+    24 WE 550k/50k/500k/+2.400 (fully rented near a state university); 60 WE 1.200k/200k/1.000k/+11.000 (from a
+    pension fund, in-house management). The unit count is in the key (`APH12`/`APH24`/`APH60`); labels per
+    language: en CPX, fr RES, es CPL, cn 公寓楼, ar مجمع (+ the number). Big Deal pile: 28 cards.
+
+67. **The last eight Big Deal cards: businesses** (2026-10-03, JFK, photo). _Geschäftspartner gesucht_ (`GP`) -
+    the whole cost is the Anzahlung, Hypothek 0: 25k/+1.300 (doctor's clinic), 20k/+1.200 (frozen pizza), 30k/
+    +1.500 (car leasing), 30k/+1.700 (sandwich shop). _Automatisiertes Unternehmen_ (`AU`): 180k/20k/160k/
+    +1.600 (arcade), 125k/25k/100k/+1.800 (coin car wash), 150k/30k/120k/+2.500 (laundromat). _Autowaschanlage_
+    (`AWA`): 350k/50k/300k/+2.500. Labels (en PTR/ABIZ/WASH, fr ASSOC/EAUT/LAV, es SOC/NAUT/LAVA, cn 合伙/自动化/
+    洗车, ar شريك/آلي/غسيل). The two 30k partners differ only by Cashflow, so the id carries it. A business with
+    Hypothek 0 no longer leaves an empty `M-...` liability on a Cashflow account (the Add dialog skips it). The
+    Big Deal pile is now complete at 36 cards.
+
+68. **Special assets: the gold-coin cards, and dice decisions** (2026-10-03, JFK, photo; answers: coins kept in the
+    Grow project - no change to the Asset record; Small Deal; the dice decision lives in the game panel). Four
+    `asset` cards, symbol `GOLD` (fr OR, es ORO, cn 黄金, ar ذهب): plain offers 3.000 € for 10 coins and 1.000 €
+    for 5 coins, and two dice gambles - "Was ist in der Box?!" (500 €) and "Wo ein Wille ist..." (750 €): pay, then
+    a 6 wins 10 coins, 1-5 wins nothing / an old cat. Each is its own Grow _asset_ project (GOLD, GOLD-II...), the
+    price as its Deposit, the coins in a note. A plain offer is bought through Grow's normal Buy Asset. A gamble
+    card is paid by the same Buy but the dialog books **no** asset (`beforeAssetBuy`); the deal waits as an _open
+    decision_ on the game dashboard until it is rolled in the app (`rollDie`) or reported from a real die
+    (`resolveGamble`): a win books the coins as an Asset at the price paid, a miss leaves the money spent, the
+    project `completed`/`lost`; both leave a note with the card's own win/miss text. The waiting state is the
+    optional `CashflowGameState.assetDeals` (title, coins, cost, successOn, stage) - the game's own state, so a
+    reload keeps it and Undo takes a roll back. The live balance sheet shows an owned asset as `GOLD · 10`.
+    Selling the coins is for a later card.
+
+69. **Type filters in the card lookup** (2026-10-03, JFK). Under the kind chips (Share / Investment / Asset - the
+    Asset chip appears with the gold coins) a second row of chips lists the _types_ in the open pile: a card's
+    type is its label without the unit count (EFH, ETW, MFH, DH, APH, GP, AU, AWA, PIZZA, GOLD), named per
+    language in each `cashflow-cards/<lang>.json` under `families`. It follows the kind row (only the types of
+    the chosen kind), shows only when there is more than one to choose, combines with the text search, and is
+    cleared on changing pile. The Big Deal has a single kind, so it shows only the types.
+
+70. **A new game asks which language to play in** (2026-10-03, JFK). Pressing Start now opens a "which language do
+    you want to play in?" step (six flags, the current language preselected) between choosing the profession and
+    the game starting - the same idea as the beginner tour's language row. Picking a language switches the whole
+    app at once and waits for its texts (`LanguageService.use`: the translation service, the `isEng`/`isDe`/...
+    flags Settings reads at start-up, Settings' own on-screen toggles, right-to-left for Arabic), so everything
+    the game then names - profession lines, property labels, Grow projects, card texts - is in that language
+    for the rest of the game. Back returns to the profession choice; it is asked again after a reset.
+
+71. **Selling gold coins** (2026-10-03, JFK). The Sell button (Grow's, and the Assets panel's) pre-fills the coins
+    you have: `Sell Asset GOLD 10 x 300;` - all coins, each at its book value. In the comment the first number
+    is the **number of coins** and the second the price per coin, so editing it to `5 x 1000` sells five coins for
+    1.000 each (5.000 comes in as income). The Asset keeps the cost of the coins that are left (proportional: half
+    the coins, half the cost; `sellCoins`), the Grow project says how many remain in a note and stays in
+    _execute_; the last coin removes the Asset from the balance sheet and completes the project (status `sold`).
+    More coins than owned are refused in the dialog (`sellAssetProblem`). Ordinary assets are untouched
+    (`1 x <value>`, reduced by what they sold for). Each sale is an undoable History step. Known limit: editing or
+    deleting an old gold-sale transaction from the Accounting list does not restore coins - use Undo.
+
+72. **Buy / Sell inside a Grow project's info panel** (2026-10-03, JFK: the panel had none, only the grid did). The
+    overview tab and the financials tab each get a Buy and a Sell button for shares, properties and assets
+    (`canTrade`); both go through the new `GrowTradeService`, which the grid's own buttons now use too, so the
+    two can't drift. The service imports the panels and the data service **on use**: a static import of the data
+    service closes a circle (data service -> Accounting page -> ... -> Grow page) and left the Grow page's
+    `imports` list holding `undefined` ("Cannot read properties of undefined (reading 'ɵcmp')"). The new
+    `grow-load-order.spec.ts` loads the page from five entry points and fails on exactly that; keep new static
+    imports in anything the Grow page imports free of the data service and the pages.
+73. **Small Deal "Schwägerin leiht sich Geld"** (2026-10-03, JFK: "another card that triggers a dice after you
+    buy the grow project... pay 5000 and either you get 10000 or nothing"). Same dice flow as the gold gambles
+    (plan -> Grow asset project -> Buy -> open decision -> Roll / reported roll), two differences: it wins on
+    **4-6** (`successOn: 4`, shown as "Win on 4-6") and a win is a **cash payout** (`payoutMinor: 1000000`), not
+    coins. Win = one income Transaction of 10.000 on Daily (`@LOAN`, next free date, `#cashflow`) - no Asset is
+    created and the project completes (stage `paidBack`); miss = nothing comes back, project `lost`/completed.
+    Both are one undoable History step (`diceWon` / `diceLost`). Label `LOAN`; the card face shows "Pays back
+    10.000" instead of coins. No data-schema change beyond two optional fields on the game-meta state.
+74. **Small Deal "Multi-Level-Marketing Einstieg" (x2) - the last Small Deal cards** (2026-10-03, JFK). Two identical
+    cards (`classic-small-mlm-1/-2`, label `MLM`, `MLM-II`), cost 500, `recurring: true`, wins on 4-6 for 500.
+    Planned and bought like a plain asset (booked as an Asset at 500, Grow project in _execute_, never completed;
+    Buy/Sell stay as they are). **Every Payday** then marks the kept cards `rollDue` and opens the same dice
+    decision as the gold gambles - **one roll for all kept cards**: a win books one 500 income per card
+    (`@MLM`, `@MLM-II`, `#cashflow`), a miss books nothing. The roll is its own History step (`diceWon` /
+    `diceLost`) after the Payday step, so each undoes separately. Selling an MLM card clears its pending roll.
+    Optional `recurring` / `rollDue` fields on the game-meta deal; no other schema change. The Small Deal deck
+    is now complete (38 cards).
+75. **The red pile, "Schnickschnack" (Doodads) - first 12 cards** (2026-10-03, JFK). Picked like the Deal piles
+    (search by name or price, tiles show the name in the game's language and the suggested account), but the
+    card face has no Decline: **Add transaction** or **Pick another one**. Add transaction opens the normal Add
+    dialog pre-filled and books nothing itself, so the player can change account, category, date and amount.
+    Pre-fill: the **suggested account** (card field `account`: Smile for the big treats >= 1.000, Splurge for
+    the small stuff - never Daily or Fire), a **category** = the card's spending group in the game's language
+    (`group` -> `doodadGroups` in the card texts: leisure, events, home, wellness, style - so the income
+    statement shows where a life's Schnickschnack went), the cost as a negative amount, the next free date, and
+    a comment of three lines: a light-hearted line per card, the "🏦 cash / cost / bank loan needed" note (same
+    idea as the Grow plan note), and the tag `#doodad` that marks every Schnickschnack payment for later
+    statistics. On a Cashflow account `#doodad` makes `beforeGrowTrade` take the Bank loan when cash is short
+    (own undo step first, the payment second), exactly like a Grow buy. `applyDoodadCard` is gone; the
+    placeholder game set's gadget goes through the same dialog (defaults: Splurge, its title as category).
+    **12 more cards the same day** (24 in total): family vacation, wedding of your child (the one card with both
+    hints - `loanChild`), golf club, sound system -> Smile; sunglasses, console, training wear, house paint, bowling
+    ball, clothes, car air conditioner, watch -> Splurge; new group `car` ("Car and mobility"). 9 Smile / 15 Splurge.
+    **12 more after that** (36 in total): TV, computer, first car for your child, braces, rims, season tickets ->
+    Smile; car radio, date, food processor, golf clubs, private tutoring, tires -> Splurge; new groups `tech`
+    ("Technology and electronics") and `education`. 15 Smile / 21 Splurge.
+    **The last 6** (42 - the Schnickschnack pile is complete): dentist (700, Smile - the card's printed "maybe a shiny
+    gold tooth" line is its `description`), wine-region trip, painting by a local artist -> Smile; casino, dinner
+    with friends, newest phone -> Splurge. 18 Smile / 24 Splurge.
+76. **The blue pile, "Der Markt" - first kind: property buyers** (2026-10-03, JFK). Nine "Einfamilienhaus Käufer" cards
+    (`classic-market-efh-*`): original price + 20% (x2), 15%, 10% (x2), or + 20.000 / 15.000 / 10.000 / 5.000.
+    Picked like the other piles (search by name or offer, tiles are told apart by their offer), the card face
+    shows the printed text with **Play this card** / **Pick another one**. **Playing** it (`playMarketCard`) is
+    one History step ("Market card played") and:
+    - finds every property the player owns of that type (label EFH or the language's SFH, copies -II, -III...),
+    - stores a **market offer** per property in the game state (`marketOffers`: sale price = deposit + mortgage,
+      then + percent or + amount), valid until the **next Payday** (cleared there, with its note) or until that
+      property is sold,
+    - writes one **💰 note** into the property's Grow project (replaced by the next offer): the buyer's price,
+      the mortgage, and the cash left after paying it off,
+    - and sends the player to the **Grow page**; if they own none of that type, the dashboard only shows a
+      dismissible message and nothing else changes (the play is still recorded in History).
+      **Selling** is the normal Sell button of the Grow project: `GrowTradeService.sell` pre-fills the Income amount
+      with the sale's income: the buyer pays the original price (deposit + mortgage) plus the **profit** (a fixed
+      amount, or a percentage of the full cost), the mortgage is paid back out of it, so the income booked is
+      **deposit + profit** (JFK, final version after two corrections) - and the usual
+      `Sell Investment` comment, so the existing Sell Investment logic removes the investment, its mortgage
+      liability and the `<title> Cashflow` subscription (passive income drops) and `setPhaseAfterTrade` drops the
+      offer. Next market kinds (other property types, gold) reuse `sells.family`. Optional `marketOffers` field in
+      the game-meta state; no other schema change.
+      **Same day, follow-up:** the list tile now leads with the type's label like the Deal tiles (SFH in English, name
+      under it, the offer as the tile's last line); the Market pile has quick filters like the Deal side (property
+      type, then Percentage / Fixed amount); and the open card shows the buyer's **offer as a big green figure**
+      (+20% / +20.000 €) next to the type, as prominent as the amounts on Deal and Doodad cards.
+      **Second kind, the same day: "Appartement- und Mehrfamilienhaus Käufer"** (10 cards: +20/15/10/5% and
+      +30.000/20.000/15.000/10.000/5.000/1.000). Same flow - play, offer lands on the fitting Grow projects,
+      sell through Grow. They apply to apartment buildings only (MFH4/8 - not complexes (APH), semi-detached
+      houses or condos; `sells.symbols`; JFK clarified that complexes are a later category). The profit is defined exactly like the single-family cards -
+      a fixed amount once per building, or a percentage of the full cost; nothing depends on the unit count (JFK
+      first read it as per unit, then corrected it). `playMarketCard` takes `types: {labels}[]`, one entry per
+      property type that may sell.
+      **Third and fourth kind: condo buyers and apartment-complex buyers** (6 cards, JFK, same day). These name a
+      **price**, not a profit: the buyer pays it, the mortgage is paid back out of it and what is left is booked
+      (`netCash` = price - mortgage; the deposit is not added on top, it is simply part of what is left).
+    - "Eigentumswohnung Käufer": a fixed price for the whole condo (`sells.priceMinor`): 65.000 or 45.000. Below
+      the mortgage the sale costs money: the 💰 note says so (`noteMarketOfferLoss`) and the Sell button pre-fills
+      a negative amount on **Daily** instead of Income; `beforeGrowTrade` now also takes the Bank loan for a
+      Sell Investment that books an expense, so a loss you cannot cover starts with the usual loan step.
+    - "Appartementhaus Käufer": a price per unit (WE) (`sells.pricePerUnitMinor`): 45.000 / 25.000 / 40.000 /
+      30.000 times the building's units - the number in the deck symbol (APH24 = 24) - for apartment
+      **complexes** (APH12/24/60) only.
+      Offer kinds for the quick filter are now Percentage / Fixed amount / Fixed price.
+      **Fifth kind: gold buyers** (3 cards: a collector at 1.000 per coin, the gold price rising at 1.000 and at
+      2.000 per coin; `sells.pricePerCoinMinor`). Same flow for gold projects that still own coins: the offer is
+      stored per project (`pricePerCoinMinor`), the 💰 note names the price and what your coins are worth, and
+      **Sell pre-fills `Sell Asset GOLD <all coins> x <price per coin>`** - edit the count to sell fewer. The total
+      follows the coins still owned, so after a partial sale the offer stays for the rest; selling the last coin
+      removes it. No gold = the card does not apply.
+      **Sixth kind: one-off costs for property owners** (5 cards: tenant damages your property 1.000 / 500 / 500,
+      sewer pipe broken 1.000 / 2.000; `pays`). Played like a Doodad: the card shows its cost and **Pay this** /
+      **Pick another one**. Paying looks for the first property you own (real estate of any type -
+      `PROPERTY_SYMBOLS` - but not the businesses). None = a message on the dashboard, the card does not apply
+      (still a History step). Otherwise the Add dialog opens pre-filled: **Fire**, the cost, the next free date,
+      the first property's label as category and a three-block comment (card title / what happened with the
+      property's name / the cash and loan note) ending in `#market`. `#market` makes `beforeGrowTrade` take the
+      Bank loan when cash is short, and the booked payment is the History step "Market card paid".
+      **Seventh and eighth kind - the last Market cards (the Market pile is complete: 39 cards):**
+    - **Stock splits** (4 cards, one per ticker OK4U / MYT4U / GRO4US / ON2U; `splits`). Playing one checks that
+      you own that share: no = the usual "does not apply" message. Yes = a dice decision opens on the dashboard
+      (the same Roll / reported-roll UI; the roll is `deal.split`): **1-3 doubles** the share's quantity, **4-6
+      halves it** (the half you keep rounds up). Only the quantity changes - price, cash and cost stay - on the
+      share and on its Grow project, with a note, as one History step ("Stock split: shares doubled" / "Reverse
+      split: shares halved"). Nothing is paid.
+    - **Star cards: cashflow boosts** (`star`, `boost`; shown with a ★): "Kleiner Business Boom!" (cashflow up to
+      1.000 gains 250) and "Neues Managementsystem" (up to 2.000 gains 400). **Reading of "alle Geschäfte"
+      (decided by us):** the deck's actual businesses (pizza, partners, automated companies, car wash) all earn
+      more than 1.000, so the small boom would never apply to them; the card therefore boosts **every
+      investment that pays a monthly cashflow** - houses, apartments, condos and businesses alike - at or under
+      the limit (0-cashflow ones excluded). `boost.onlyBusinesses` switches it to the businesses (PIZZA, GP, AU,
+      AWA) only. The Grow project's cashflow and its `<title> Cashflow` Payday subscription are both raised and
+      the project gets a note; one History step; the dashboard says which investments changed.
+77. **A drawn stock card sets the market price; escaping the rat race** (2026-10-03, JFK). A stock card says
+    "only the drawer may buy at this price, everybody may sell at it". For us: when the share already has a
+    Grow project **and the player still holds shares of it**, the card's button is **Update price** instead of
+    Plan card (a planned-only or sold-out share is planned as before; past sales are never touched). It sets the price on the Grow
+    project and on the held share (`updateSharePrice`) - quantity, cash, status and phase stay - writes a
+    stock-market note into the project ("📈 OK4U rises from 10 to 12" / "📉 ... falls", plus the card's flavor
+    text), is one History step ("Share price updated"), and lands on the project's Financials with its Buy /
+    Sell buttons. Buying or selling at the new price (or not) is the player's choice.
+    **Rat-race banner:** on the dashboard, a green banner appears once the passive income (the bought
+    properties' and businesses' `<title> Cashflow` subscriptions) covers every monthly expense; the salary does
+    not count. It does not block anything - the game goes on.
+78. **Isolation audit - the game must not leak into a normal account** (2026-10-04, JFK asked for a sanity check).
+    Result: every place where shared code reaches into the game is behind `CashflowGameService.isCashflowGame()`
+    (the account email contains "cashflow") or is inert for other accounts: Add dialog (all 24 hooks), Grow info
+    Buy / Sell (`marketSaleFor` returns null, `coinsOwned` is 0), menu entry, settings reset, the Subscriptions
+    refresh button, the subscription auto-generation (skipped for game accounts only), the `cashflowGame` data path
+    (loaded and written for game accounts only; backend untouched). Found and fixed: the two **chart markers**
+    (bank loan, Doodad) were detected from category / comment text for every account - they now go through
+    `gameMarkerFor` and need a running game. Guard: `shared/game-isolation.spec.ts` fails when a shared file
+    calls the game service outside an `isCashflowGame()` block, and `charts/game-markers.spec.ts` covers the
+    markers. Not isolated (by size, not by behavior): the game component, service and the domain card catalog are
+    part of the one app bundle every account downloads (about 275 KB of source; ~16 KB of `CashflowGame.*` strings
+    per language file); the card texts are lazy-loaded. Lazy-loading the game is a possible follow-up.
+79. **Several games on one account: save, load, manage** (2026-10-04, JFK; decisions: storage in the user's own data,
+    save on leaving + a Save button, the list inside the game panel, End game saves first).
+    - **Model:** the account's own data is always the game being played. A saved game is a snapshot of it - the
+      same unit Undo uses (`captureGameSnapshot` / `restoreGameSnapshot`) - plus a name and a summary. The live
+      game carries `gameId` / `gameName` (optional fields of the game state; a game already running simply gets
+      them at its first save).
+    - **Storage** (new path, approved): `cashflowGames/index` (summaries, amounts in minor units) and
+      `cashflowGames/games/<id>` (gzip + base64 + encrypted snapshot). See `backend/DATABASE_STRUCTURE.md`.
+      Everything sits in the user's one document, hence compression, a soft limit of 30 games and Export /
+      Import of a game as a file. Deleting overwrites a snapshot with an empty marker (stale-write guard).
+    - **Flows** (`CashflowSavedGamesService`): _Save game_ updates the slot; _New game_ saves the game being played and
+      clears the account for the next; _Continue_ reads and checks the target first (a missing or damaged game
+      changes nothing), saves the game being played, then makes the other one live with its own saved undo history (decision 81)
+      and the language it was played in; _End game_ (Settings) saves with an "ended" mark and clears; the old Reset
+      became _delete game without saving_. Rename, Delete (confirmed) and Export / Import live in the list.
+    - **UI:** a "My games" view in the game panel (and the list on the start screen when no game runs), cards with
+      status (playing / out of the rat race / bankrupt / ended), cash, passive income vs expenses, last saved.
+    - **Bug found on the way:** the reader of the stored game state ignored `assetDeals` and `marketOffers`, so
+      gold coin counts, Multi-Level-Marketing cards, pending dice decisions and market offers vanished after a
+      reload from the database. Fixed (`decryptCashflowGameState`) and covered by a test.
+    - **Later (not built):** statistics over the summaries; a read-only history view of a saved game (its step log
+      is already stored); per-round checkpoints.
+80. **User manual in the docs** (2026-10-04, JFK). A second documentation topic next to the self-hosting guide, route
+    `/docs/cashflow` (`src/app/docs/cashflow/`), 20 sections with sidebar, mobile dropdown and previous / next.
+    - **Access:** only Cashflow game accounts - the hub hides the topic card (`requiresGame`) and the page shows a
+      locked notice (checked live in the component, not a route guard, as the account loads after the page).
+      Shared topic, not Pro, so it ships in both editions (ADR-0004 untouched).
+    - **Content as data:** `assets/i18n/cashflow-manual/{en,de}.json`, lazy loaded per language; other languages
+      show English with a notice. Block types p / h3 / list / callout / steps / table / cards / face / data / glossary.
+    - **Numbers from the catalog:** `manual-data.ts` builds the profession, escape, deal, loan, share, doodad and
+      market-odds tables from `CASHFLOW_GAME_SETS` at runtime; `face` blocks draw real cards with the game's own
+      card texts - nothing is typed twice, so a card change cannot make the manual wrong.
+    - **Tests:** table maths, content integrity for both languages (sections, labels, card ids, markup) and the
+      component (lock, language fallback, navigation).
+    - **Not done:** fr / es / cn / ar manuals; checked in jest only, not yet looked at in a browser.
+81. **A saved game keeps its whole undo history** (2026-10-04, JFK: "save the full history of every move and make it
+    possible that the full undo works after loading a game"). Before, Continue started with an empty history, so a loaded
+    game could only be played on.
+    - The saved blob (`cashflowGames/games/<id>`, same path, additive optional field `undo`; older games simply lack it
+      and load with an empty history, older app versions ignore it) holds every earlier snapshot. Snapshots are full
+      copies of the game, so they are stored as differences (`undo-chain-codec.ts`): per list, how many leading items
+      equal the next newer snapshot's list, plus the rest. Lossless, tested, ~200 steps in well under a second.
+    - The same encoding now backs the browser-local undo stack (reads the old plain format too), and the limit went
+      from 50 to 200 steps so "every move" holds for a long game.
+    - Undo past the first save keeps the game's saved slot (`gameId` / `gameName`); before, stepping back to a step
+      that predates the first save would have dropped it and the next save would have made a duplicate.
+82. **The game is self-hosted only; game accounts need a password to register** (2026-10-05, JFK: "play this myself and with
+    friends, not for the wider public"). Supersedes the Settings password of 2026-10-04 (removed).
+    - **Firebase builds carry no game content.** The printed content (professions, the Classic card piles) moved out
+      of the domain package's main entry into `packages/domain/src/cashflow-content.ts`; the app imports it only via
+      `src/app/shared/cashflow-content.ts`, which the `firebase` and `production` builds swap for an empty stand-in
+      (`cashflow-content.firebase.ts`). The same two configurations leave `assets/i18n/cashflow-cards` and
+      `cashflow-manual` out. With no game sets `CashflowGameService.isCashflowGame()` is false, so the game never
+      appears there, even for a "cashflow" email. The manual's route and topic moved to the self-hosted route and topic
+      files (ADR-0004 mechanism). Verified by building Firebase and searching the output (no card ids or texts, no
+      manual); `edition-guard` lists the markers. `npm start` (development) still has everything.
+    - **Left in the Firebase build:** only the generic UI strings and profession / expense-line _names_ in the shared
+      i18n files, no numbers and no card content.
+    - **Registration gate (self-hosted):** a new account with `cashflow` in the email must send the game password;
+      checked on the server (`backend/services/game-account.js`, 403 `GAME_PASSWORD_REQUIRED` / `_INVALID`), asked for
+      in the form. Existing accounts are unaffected. Only a hash is in the source; `CASHFLOW_GAME_PASSWORD_SHA256`
+      overrides it. Documented in `docs/SELFHOSTED.md`.
+83. **Confirm before Baby / Charity / Downsized, and an undo banner that says what was undone** (2026-10-03, JFK).
+    The three space buttons no longer act at once: they open a confirmation (`dashboardView = 'confirmSpace'`)
+    that explains the space with the real numbers (`spacePreview` - the same engine calls as the real resolve,
+    nothing applied: the monthly expense a baby adds, 10% of income for Charity, all expenses for Downsized)
+    and offers **Play** or **Cancel**. The undo toast used to say "Payday undone" for everything; it now names
+    the undone History steps ("Undone: Dice: no luck · MLM", or "Undone 3 steps: A, B, C"), read from the
+    History before the undo runs.
+84. **A new game has a new history** (2026-10-03, JFK: after a reset the new game's first move showed up as step 6,
+    below "5. Game reset"). **Reset** now clears the undo stack (memory and localStorage) instead of recording
+    itself as a step - nothing is left to undo back into, so a Reset is final (the confirm dialog already said
+    so). **Starting a game** (`pickProfession`) clears it too, so "Game started" is always step 1. Logout
+    already cleared it (a different login never inherits it).
 
 ## 3. The one new thing: a small game-meta state
 
