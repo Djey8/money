@@ -242,3 +242,29 @@ resolved labels as input, so only the lookup has to exist server-side.
 
 **Left for the next slices:** the stock split's _resolution_ (`resolveShareSplit`, reached through `resolveGamble`) and
 the dice cards belong to A1(e); deals and trades to A1(d); the Doodad payment to A1(f).
+
+**A1(d), part 1 results** (`43c0bee`, `d1f6471`, `692f0f8`, `20c2ddc`, `8372b0f`):
+
+- **One parser of the Grow comment (F3, first half).** `trades.ts` replaces the three regex readers the service carried
+  (`tradeStep`, `parsePurchase`, `sellAssetProblem`) and two module-level tag constants with `gameTradeStep`,
+  `tradePurchase` and `sellAssetProblem`, decided from the statements the domain's own Grow parser returns - a title
+  with a space now reads correctly. The typed forms (`purchaseOfStatements`, `sellAssetProblemOf`) are what the API
+  will call; it never writes or parses a comment. One long-standing rule is kept on purpose and documented: only a
+  _single-unit_ special-asset buy counts as a purchase.
+- **One effects type.** `GameEffects` (`effects.ts`) is the single description every rule returns - state, History step,
+  transaction dates and appends, subscription and liability upserts and removals, project updates, share prices, what to
+  persist. `RoundEffects` and `CardEffects` are aliases; the Angular service applies any rule's effects with one
+  `applyGameEffects`.
+- **The bank loan** is `playBankLoan` (borrow / repay in the game set's step, the liability and its recomputed interest
+  subscription, and the cash that really changes hands, dated after the interest subscription - the order the app has
+  always used, which a first draft got wrong and a test caught) and `planAutoLoan` (the larger of the loan the player typed
+  and the cash shortfall, rounded up to the step). `adjustBankLoan`, the Add dialog's auto-loan and `executeDeal` use them;
+  a refused amount no longer needs a "push then pop" of the undo step.
+- 374 existing game tests passed unchanged through all of it.
+
+**Still to do in A1(d), part 2 - the deal lifecycle:** `planDeal` / `applyDealCard` (a card becomes a Grow project in the
+`plan` phase), `executeDeal` (the buy, on the existing Grow calculators), `syncPlanNote`, `registerInvestmentIncome`,
+`setPhaseAfterTrade`, `removeExpenseForPaidLiability`, `sellCardToFriend`. These create and edit whole Grow projects, so
+`GameEffects` needs project creation (and the share / investment / asset positions a buy writes) - the one place the effects
+model grows again. The asset-specific hooks (`beforeAssetBuy`, `afterAssetBuy`, `afterAssetSell`, `sellCoins`) and the dice
+cards stay in A1(e).
