@@ -114,6 +114,12 @@ export function applyEffectsToBooks(books: GameBooks, effects: GameEffects): Gam
     investments = upsertBy(investments, upsert, (investment) => investment.tag);
   }
 
+  let assets = books.assets;
+  for (const upsert of effects.assetUpserts)
+    assets = upsertBy(assets, upsert, (asset) => asset.tag);
+  const removedAssets = new Set(effects.assetRemovals);
+  assets = assets.filter((asset) => !removedAssets.has(asset.tag));
+
   let growProjects = books.growProjects;
   for (const update of effects.growUpdates) {
     const existing = growProjects.find((project) => project.title === update.title);
@@ -150,6 +156,7 @@ export function applyEffectsToBooks(books: GameBooks, effects: GameEffects): Gam
     liabilities,
     shares,
     investments,
+    assets,
     growProjects,
   };
 }

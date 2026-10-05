@@ -111,6 +111,10 @@ export interface GameEffects {
   shareUpserts: BookShare[];
   /** Property / business positions to create or replace, matched by tag. */
   investmentUpserts: BookInvestment[];
+  /** Assets (gold coins, a car) to create or set to this amount, matched by tag. */
+  assetUpserts: BookAsset[];
+  /** Tags of assets to delete (the last coin sold). */
+  assetRemovals: string[];
   /** What the caller has to write besides transactions and the game state. */
   persist: { subscriptions: boolean; grow: boolean; balanceSheet: boolean };
   /** False when the rule changed nothing in the account (the step is still a History entry). */
@@ -134,6 +138,8 @@ export function emptyEffects(state: CashflowGameState, step: GameStep | null): G
     sharePrices: [],
     shareUpserts: [],
     investmentUpserts: [],
+    assetUpserts: [],
+    assetRemovals: [],
     persist: { subscriptions: false, grow: false, balanceSheet: false },
     write: true,
     decisionNeeded: false,

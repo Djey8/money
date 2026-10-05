@@ -42,3 +42,4 @@ export * from './cashflow-game/market-cards';
 export * from './cashflow-game/trades';
 export * from './cashflow-game/loan';
 export * from './cashflow-game/deals';
+export * from './cashflow-game/asset-deals';
