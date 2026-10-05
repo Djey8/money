@@ -26,19 +26,27 @@ import {
   cashOnHandMinor,
   clearCashflowStatus,
   computeMonthlyCashflowMinor,
+  dateFromSubscriptionDay,
   drawRandomCard,
   findCards,
   fromMinorUnits,
+  gameSubscriptionDays,
   initialCashflowGameState,
+  isGameTransaction,
   loanForShortfallMinor,
   multiplyQuantityPrice,
+  nextSmartDate,
   pickCashflowProfession,
   resolveCashflowBaby,
   resolveCashflowCharity,
   resolveCashflowDownsized,
   runCashflowPayday,
+  shiftedGameTransactionDates,
   summarizeGameFinances,
+  systemClock,
   toMinorUnits,
+  usedDaysThisMonth,
+  type Clock,
   type SavedGameSummary,
 } from '@money/domain';
 import { CASHFLOW_GAME_SETS } from '../cashflow-content';
@@ -132,11 +140,6 @@ interface CashflowDeckCardMap {
 export interface CashflowCardCallbacks<T> {
   onSuccess: (card: T) => void;
   onError: (message: string) => void;
-}
-
-function todayIso(): string {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 }
 
 function toFloatTransaction(record: CashflowTransactionRecord): Transaction {
@@ -244,6 +247,9 @@ const UNDO_STACK_STORAGE_KEY = 'cashflowUndoStack';
 export class CashflowGameService {
   readonly gameSets = CASHFLOW_GAME_SETS;
 
+  /** "Now" for everything the game dates and stamps. A property (not a constructor argument) so a test can pin it. */
+  clock: Clock = systemClock;
+
   /**
    * Not synced to the DB — see `UNDO_STACK_STORAGE_KEY`'s own comment. Starts from whatever's in
    * localStorage (a prior reload/restart's leftovers), so it survives across those; `logOut()`
@@ -302,7 +308,7 @@ export class CashflowGameService {
   /** Snapshots every real entity a game action can touch, right before that action mutates anything — one call per public mutating method, always before its first mutation. */
   private pushUndoSnapshot(step: CashflowStepInfo): void {
     this.undoStack.push({
-      step: { ...step, at: new Date().toISOString() },
+      step: { ...step, at: this.clock.nowIso() },
       ...this.captureGameSnapshot(),
     });
     if (this.undoStack.length > UNDO_STACK_LIMIT) this.undoStack.shift();
@@ -717,7 +723,12 @@ export class CashflowGameService {
     const state = AppStateService.instance;
     let result: ReturnType<typeof pickCashflowProfession>;
     try {
-      result = pickCashflowProfession(this.gameSets, gameSetId, professionId, todayIso());
+      result = pickCashflowProfession(
+        this.gameSets,
+        gameSetId,
+        professionId,
+        this.clock.todayIso(),
+      );
     } catch (err: unknown) {
       callbacks.onError(errorMessage(err, 'Could not start the game.'));
       return;
@@ -872,10 +883,10 @@ export class CashflowGameService {
 
     this.shiftGameTransactionDates(-1);
 
-    const [year, month] = todayIso().split('-').map(Number);
+    const today = this.clock.todayIso();
     const datedTransactions = result.transactions.map((record, index) => ({
       ...record,
-      date: this.dateFromSubscriptionDay(ownedSubscriptions[index], year, month),
+      date: dateFromSubscriptionDay(ownedSubscriptions[index]?.startDate, today),
     }));
     datedTransactions.forEach((record) => state.allTransactions.push(toFloatTransaction(record)));
 
@@ -924,10 +935,9 @@ export class CashflowGameService {
    * Paydays ago stayed put).
    */
   private shiftGameTransactionDates(months: number): void {
-    for (const transaction of AppStateService.instance.allTransactions) {
-      if (isGameTransaction(transaction)) {
-        transaction.date = addMonthsToIsoDate(transaction.date, months);
-      }
+    const transactions = AppStateService.instance.allTransactions;
+    for (const { index, date } of shiftedGameTransactionDates(transactions, months)) {
+      transactions[index].date = date;
     }
   }
 
@@ -940,39 +950,15 @@ export class CashflowGameService {
       .filter((sub): sub is Subscription => sub !== undefined);
   }
 
-  /** One Subscription's own `startDate` day-of-month, placed in the given real year/month — clamped to that month's actual length (JFK, 2026-09-29: "we just need to make sure the highest day used is the 28th, because of February", "same for 31 to 30 month"). */
-  private dateFromSubscriptionDay(
-    subscription: Subscription | undefined,
-    year: number,
-    month: number,
-  ): string {
-    const day = subscription ? Number(subscription.startDate.split('-')[2]) || 1 : 1;
-    const clampedDay = Math.min(day, new Date(year, month, 0).getDate());
-    return `${year}-${String(month).padStart(2, '0')}-${String(clampedDay).padStart(2, '0')}`;
-  }
-
-  /**
-   * Every day-of-month a `#cashflow` Subscription recurs on. A Subscription's `startDate` can sit in
-   * an earlier month than today (the game started weeks ago), but it still pays on that day every
-   * month - so only its day counts, not its month.
-   */
+  /** Every day-of-month a `#cashflow` Subscription recurs on (see `gameSubscriptionDays`). */
   private currentMonthGameSubscriptionDays(): Set<number> {
-    const days = new Set<number>();
-    for (const sub of AppStateService.instance.allSubscriptions) {
-      const day = Number(sub.startDate?.split('-')[2]);
-      if (sub.comment?.includes('#cashflow') && day >= 1) days.add(day);
-    }
-    return days;
+    return gameSubscriptionDays(AppStateService.instance.allSubscriptions);
   }
 
   /** Days already taken in this real month: game Subscription days plus any Transaction dated this month. */
   private currentMonthUsedDays(): Set<number> {
-    const days = this.currentMonthGameSubscriptionDays();
-    const prefix = `${todayIso().slice(0, 7)}-`;
-    for (const transaction of AppStateService.instance.allTransactions) {
-      if (transaction.date?.startsWith(prefix)) days.add(Number(transaction.date.split('-')[2]));
-    }
-    return days;
+    const state = AppStateService.instance;
+    return usedDaysThisMonth(state.allSubscriptions, state.allTransactions, this.clock.todayIso());
   }
 
   /** The date the next one-off game transaction (loan move, Doodad, card sale, a Grow trade...) takes: the next free slot of this real month, never the game's own calendar. */
@@ -990,25 +976,9 @@ export class CashflowGameService {
     }
   }
 
-  /**
-   * A day-of-month for a newly dated Subscription or one-off transaction, taken in this order:
-   * 1, 3, 5 ... 27, then 2, 4, 6 ... 28 (nothing past the 28th, because of February), skipping days
-   * already used - so a profession's Salary lands on the 1st, taxes on the 3rd, and so on (JFK,
-   * 2026-09-29+/2026-10-03). Falls back to the 29th-31st, then to reusing the least crowded day,
-   * rather than ever refusing to date something.
-   */
+  /** The next free day-of-month slot of this real month, dated (see `nextSmartDate`). */
   private nextSmartSubscriptionDate(usedDays: Set<number>): string {
-    const [year, month] = todayIso().split('-').map(Number);
-    const daysInMonth = new Date(year, month, 0).getDate();
-    const order: number[] = [];
-    for (let day = 1; day <= 27; day += 2) order.push(day);
-    for (let day = 2; day <= 28; day += 2) order.push(day);
-    for (let day = 29; day <= daysInMonth; day++) order.push(day);
-    const day =
-      order.find((candidate) => candidate <= daysInMonth && !usedDays.has(candidate)) ??
-      Math.min(daysInMonth, (usedDays.size % daysInMonth) + 1);
-    usedDays.add(day);
-    return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    return nextSmartDate(usedDays, this.clock.todayIso());
   }
 
   /** Resolves a Baby space: +1 child (max 3), scales the children-expense Subscription. */
@@ -1258,7 +1228,7 @@ export class CashflowGameService {
         ? [this.translate.instant('CashflowGame.cardDrawnAgain', { price: input.price })]
         : []),
       ...(input.note ? [input.note] : []),
-    ].map((text) => ({ text, createdAt: new Date().toISOString() }));
+    ].map((text) => ({ text, createdAt: this.clock.nowIso() }));
     const notes = [...(existingProject?.notes ?? []), ...newNotes];
     const base = {
       status: 'planned',
@@ -1302,7 +1272,7 @@ export class CashflowGameService {
                   text: this.translate.instant('CashflowGame.assetCoinsNote', {
                     coins: input.coins,
                   }),
-                  createdAt: new Date().toISOString(),
+                  createdAt: this.clock.nowIso(),
                 },
               ]
             : []),
@@ -1498,7 +1468,7 @@ export class CashflowGameService {
             price: this.amountText(price),
             left,
           }),
-          createdAt: new Date().toISOString(),
+          createdAt: this.clock.nowIso(),
         },
       ];
     }
@@ -1569,7 +1539,7 @@ export class CashflowGameService {
           ...(project.notes ?? []),
           {
             text: `🎲 ${outcome.roll ? `${outcome.roll}: ` : ''}${resultText}`,
-            createdAt: new Date().toISOString(),
+            createdAt: this.clock.nowIso(),
           },
         ];
       }
@@ -1648,7 +1618,7 @@ export class CashflowGameService {
         ...(project.notes ?? []),
         {
           text: `🎲 ${outcome.roll ? `${outcome.roll}: ` : ''}${resultText}`,
-          createdAt: new Date().toISOString(),
+          createdAt: this.clock.nowIso(),
         },
       ];
       project.status = outcome.won ? (payout ? 'paid back' : 'bought') : 'lost';
@@ -1806,7 +1776,7 @@ export class CashflowGameService {
         const notes = project.notes ?? (project.notes = []);
         const existing = notes.find((note) => note.text.startsWith(MARKET_NOTE_MARK));
         if (existing) existing.text = text;
-        else notes.push({ text, createdAt: new Date().toISOString() });
+        else notes.push({ text, createdAt: this.clock.nowIso() });
       }
     }
     state.cashflowGame = { ...state.cashflowGame, marketOffers: offers };
@@ -1868,7 +1838,7 @@ export class CashflowGameService {
     });
     if (held) held.price = price;
     project.share.price = price;
-    project.updatedAt = new Date().toISOString();
+    project.updatedAt = this.clock.nowIso();
     project.notes = [
       ...(project.notes ?? []),
       {
@@ -1881,7 +1851,7 @@ export class CashflowGameService {
         ]
           .filter(Boolean)
           .join(' '),
-        createdAt: new Date().toISOString(),
+        createdAt: this.clock.nowIso(),
       },
     ];
     this.persistAll(
@@ -1987,7 +1957,7 @@ export class CashflowGameService {
             outcome.won ? 'CashflowGame.splitDouble' : 'CashflowGame.splitHalve',
             { share: tag, from, to },
           )}`,
-          createdAt: new Date().toISOString(),
+          createdAt: this.clock.nowIso(),
         },
       ];
     }
@@ -2050,7 +2020,7 @@ export class CashflowGameService {
             from: this.amountText(from),
             to: this.amountText(to),
           }),
-          createdAt: new Date().toISOString(),
+          createdAt: this.clock.nowIso(),
         },
       ];
       // The Payday subscription follows the project's cashflow.
@@ -2142,7 +2112,7 @@ export class CashflowGameService {
         const notes = project.notes ?? (project.notes = []);
         const existing = notes.find((note) => note.text.startsWith(MARKET_NOTE_MARK));
         if (existing) existing.text = text;
-        else notes.push({ text, createdAt: new Date().toISOString() });
+        else notes.push({ text, createdAt: this.clock.nowIso() });
       }
     }
     state.cashflowGame = { ...state.cashflowGame, marketOffers: offers };
@@ -2211,7 +2181,7 @@ export class CashflowGameService {
     const notes = project.notes ?? (project.notes = []);
     const existing = notes.find((note) => note.text.startsWith(LOAN_NOTE_MARK));
     if (existing) existing.text = text;
-    else notes.push({ text, createdAt: new Date().toISOString() });
+    else notes.push({ text, createdAt: this.clock.nowIso() });
     // A share's loan needed goes into the project's own Loan field, so Buy carries it - and the buy
     // then takes it as a Bank loan (`beforeGrowTrade`) instead of creating a liability for the
     // project. Grow's own convention holds: Deposit (`amount`) = cost - Loan, and the Loan never
@@ -2757,10 +2727,10 @@ export class CashflowGameService {
   private upsertGrowProject(title: string, existing: Grow | undefined, patch: Partial<Grow>): void {
     const state = AppStateService.instance;
     if (existing) {
-      Object.assign(existing, patch, { updatedAt: new Date().toISOString() });
+      Object.assign(existing, patch, { updatedAt: this.clock.nowIso() });
       return;
     }
-    const now = new Date().toISOString();
+    const now = this.clock.nowIso();
     const project: Grow = {
       title,
       sub: '',
@@ -2982,15 +2952,6 @@ function labelMatches(tag: string, label: string): boolean {
 const DOODAD_MARK = /#doodad\b/;
 /** The tag a Market card's one-off cost (tenant damage, broken pipe) carries in its comment. */
 const MARKET_COST_MARK = /#market\b/;
-
-/** Grow's own trade comments ("Buy Share OK4U 250 x 10;", "Sell Investment EFH ...", "Dividende Share ...") from before the Add dialog tagged game transactions. */
-const GROW_TRADE_COMMENT =
-  /^(Buy|Sell) (Share|Investment|Asset) |^Dividende Share |^Payback Liabilitie /;
-
-function isGameTransaction(transaction: Transaction): boolean {
-  const comment = transaction.comment ?? '';
-  return comment.includes('#cashflow') || GROW_TRADE_COMMENT.test(comment);
-}
 
 function toRoman(value: number): string {
   const numerals: [number, string][] = [
