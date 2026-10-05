@@ -39,3 +39,4 @@ export * from './cashflow-game/rounds';
 export * from './cashflow-game/steps';
 export * from './cashflow-game/market-cards';
 export * from './cashflow-game/trades';
+export * from './cashflow-game/loan';
