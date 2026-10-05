@@ -1,3 +1,11 @@
+## [1.19.2] - 2026-10-05
+
+### Performance
+
+- perf(k8s): stop throttling the app, give CouchDB and the backend more memory
+- perf(selfhosted): only re-encrypt transactions that changed
+- perf(backend): read the user document only when ids need backfilling
+
 ## [1.19.1] - 2026-10-05
 
 ### Performance
