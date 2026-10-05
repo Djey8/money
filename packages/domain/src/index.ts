@@ -30,3 +30,4 @@ export * from './cashflow-game/symbols';
 export * from './cashflow-game/saved-games';
 export * from './cashflow-game/engine';
 export * from './cashflow-game/cards';
+export * from './cashflow-game/cash';
