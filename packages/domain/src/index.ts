@@ -48,3 +48,4 @@ export * from './cashflow-game/undo-chain';
 export * from './cashflow-game/history';
 export * from './cashflow-game/live-history';
 export * from './cashflow-game/rng';
+export * from './cashflow-game/board';

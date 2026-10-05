@@ -383,3 +383,11 @@ Chance is injected like the clock: `rng.ts` has `Rng`, `systemRng` (looks `Math.
 and the API can now play a game from a seed. Left alone on purpose: `Math.random` in id generators (saved-game ids etc.),
 which are not game chance. **Next:** Phase B, the solo engine (board data from the picture, dice and movement, turn state
 machine, game end, simulation tests).
+
+## B1 wrap-up (2026-10-05)
+
+`board.ts`: `RatRaceSpaceKind` (`deal` is one kind - the pile is chosen when landing), `CLASSIC_RAT_RACE_BOARD` (24 frozen
+spaces with the printed German word), `validateRatRaceBoard`, `spaceAt` (wraps both ways) and `spaceAngle` for drawing
+the ring (START sits half a step before space 0). A golden test pins it to the plan §3.1 transcription and to the
+8-space pattern. The game set's old unused `board?: CashflowSpaceKind[]` is left alone. **Next:** B2 (dice, movement,
+passing vs landing a Payday; the additive solo state fields JFK already approved).
