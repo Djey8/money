@@ -318,3 +318,42 @@ unseeded `drawRandomCard`; both become an injected `Rng`.
 
 **Still to do:** A1(f) - the Doodad payment (partly the component's `payActiveDoodad` and the Add dialog), then A2
 (undo, snapshots, reset, saved games, and writing the live history to the account on every step) and A3 (`Rng`).
+
+**A1(f) results - the Doodad and Market-cost payments** (`03b4764` and the page commit after it):
+
+- **`expenses.ts`**: `cardExpenseComment` composes the comment a card payment carries (what was bought, the joke, the
+  cash / bank-loan note, then the `#doodad` or `#market` tag), `doodadAccount` is the suggested account (`Splurge` unless
+  the card says otherwise), `MARKET_COST_ACCOUNT` is `Fire`, and `payCardExpense` is the whole payment as the Pro API
+  will make it: the automatic Bank loan first when cash is short (its own undo step, rounded up to the loan step), then the
+  expense, one step named after its category, on the next free day of the real month - decided before anything is
+  returned, so a refused payment changes nothing.
+- The game page pre-fills the Add dialog with the same comment and account rules instead of composing them inline (F7 for
+  the Doodad and Market-cost dispatch). **The dialog still books the payment** - it is a 1,800-line general-purpose
+  component - so the UI path and `payCardExpense` share the comment, the account, the loan decision (`planAutoLoan` /
+  `playBankLoan`), the step (`gameTradeStep`) and the date slotting, and differ only in the dialog's own transaction
+  construction. Worth a characterization test against the dialog if that ever drifts.
+
+## A1 is complete
+
+Every rule of the game that the Pro API and solo mode need - except undo / snapshots / saved games (A2) and the random
+source (A3) - now lives in `@money/domain` as a pure function over minor-unit books, returning `GameEffects`:
+
+| Module                   | Rules                                                                                                           |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------- |
+| `cash.ts`                | cash on hand (the pinned float arithmetic), the loan for a shortfall                                            |
+| `rounds.ts`              | Payday, Baby, Charity, Downsized, one-off day slots, subscription upserts, space previews                       |
+| `market-cards.ts`        | property and gold buyers, stock splits, boosts, cost cards, a stock's new price, `marketSaleFor`                |
+| `trades.ts`              | what a trade is and costs, read through the domain's Grow parser                                                |
+| `loan.ts`                | the bank loan, the automatic purchase loan                                                                      |
+| `deals.ts`               | plan, plan note, execute (loan then buy), investment income, phase after a trade, paid-off liability, card sale |
+| `asset-deals.ts`         | dice cards, kept cards' Payday roll, stock-split roll, gold coins, the open-decision list                       |
+| `expenses.ts`            | Doodad and Market-cost payments                                                                                 |
+| `effects.ts`, `books.ts` | the single effects type, the full books, `applyEffectsToBooks`                                                  |
+
+The Angular `CashflowGameService` went from **3,026 to 2,121 lines**; its remaining logic is orchestration (build the books,
+call a rule, push the undo step, apply the effects in place, persist), the undo / saved-game machinery that A2 takes, and
+the translation of persisted text. Throughout A1 the existing game tests (374 at the start, 375 now) were never changed to
+make a move pass, and the domain gained ~640 tests of its own.
+
+**Next:** A2 (undo, snapshots, reset, the saved-game snapshot, and writing the live history to the account on every step),
+then A3 (an injected `Rng` for `rollDie`, `drawRandomCard` and `shuffleProfession`), then Phase B (the solo engine).

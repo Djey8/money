@@ -1,6 +1,6 @@
 # Cashflow game — solo mode in the app + Pro API/MCP (an agent plays full games)
 
-**Status:** inputs and open decisions all answered (2026-10-05); **A0 done, A1 in progress.** Master roadmap for Phase 3 (solo board simulation) and Phase 5 (Pro
+**Status:** inputs and open decisions all answered (2026-10-05); **A0 and A1 done, A2 next.** Master roadmap for Phase 3 (solo board simulation) and Phase 5 (Pro
 API + MCP) of [`cashflow-game.md`](cashflow-game.md), merged because both need the same thing: **one rules engine
 that can play a whole game by itself**. Read that file's decisions 1–12 first; this one only adds to them.
 

@@ -14,6 +14,9 @@ import {
   fromMinorUnits,
   buyerCardTypes,
   businessCardLabels,
+  cardExpenseComment,
+  doodadAccount,
+  MARKET_COST_ACCOUNT,
   propertyCardTypes,
   savedGameStatus,
   summarizeGameFinances,
@@ -1631,13 +1634,15 @@ export class CashflowGameComponent {
     const card = this.activeDoodad;
     if (!card) return;
     const text = this.activeCardText;
-    // What was bought, the joke, the cash / loan note, then the tag - each block after a blank line.
-    const comment =
-      [this.activeCardTitle, text.comment, this.cashflowGameService.doodadLoanNote(card.costMinor)]
-        .filter(Boolean)
-        .join('\n\n') + '\n\n#doodad';
+    // What was bought, the joke, the cash / loan note, then the tag - the domain composes them, so the
+    // game page and the Pro API write the same comment.
+    const comment = cardExpenseComment(
+      'doodad',
+      { title: this.activeCardTitle, flavor: text.comment },
+      this.cashflowGameService.doodadLoanNote(card.costMinor),
+    );
     await this.openAddDialog({
-      account: card.account ?? 'Splurge',
+      account: doodadAccount(card),
       category: this.doodadCategory,
       costMinor: card.costMinor,
       comment,
@@ -1696,13 +1701,14 @@ export class CashflowGameComponent {
           }
           const what = (this.activeCardText.comment ?? '').split('{property}').join(property);
           void this.openAddDialog({
-            account: 'Fire',
+            account: MARKET_COST_ACCOUNT,
             category: property,
             costMinor: pays.costMinor,
-            comment:
-              [this.activeCardTitle, what, this.cashflowGameService.doodadLoanNote(pays.costMinor)]
-                .filter(Boolean)
-                .join('\n\n') + '\n\n#market',
+            comment: cardExpenseComment(
+              'marketCost',
+              { title: this.activeCardTitle, flavor: what },
+              this.cashflowGameService.doodadLoanNote(pays.costMinor),
+            ),
           });
         },
         onError: (message) => {
