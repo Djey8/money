@@ -1420,6 +1420,8 @@ data. Not built: the rat-race-exit indicator (well-defined now — property-cash
 
 ### Phase 3 — solo board simulation
 
+> Now planned together with Phase 5 in [`cashflow-game-pro.md`](cashflow-game-pro.md) (Phases A–D there; solo mode is Phase B + C), 2026-10-05.
+
 - The mode JFK described as "mit weiteren Gamesets": the app rolls the die itself, moves a token along the game
   set's `board`, and resolves whatever it lands on (or crosses, for Payday) — a whole life playable with no
   physical board and no second person. Needs a game set that actually supplies `board`.
