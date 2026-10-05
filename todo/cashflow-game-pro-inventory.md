@@ -416,3 +416,22 @@ START for solo (it used to start at 0, unused). The loader (`decryptCashflowGame
 updated. Step kinds `roll` and `skipCard` are new: **the History UI needs labels for them in C-phase.**
 Not yet: game end (B4), the loan-aware cash checks on a card decision (the card flows already do those), simulation
 policies (B5). **Next:** B4.
+
+## B4 + B5 wrap-up (2026-10-05) - Phase B, the solo engine, is complete
+
+**B4, `game-end.ts`:** `gameOutcome`, `endIfOver`, `finalSummary`. Escaping the rat race (passive income >= expenses) and
+bankruptcy (negative monthly cashflow) are exactly the dashboard's and the games list's existing definitions
+(`summarizeGameFinances`), checked after every roll (`playTurn`) and, when the books are passed, when a card decision is
+settled (`settleDecision(state, how, subscriptions)`) - a purchase can win the game. The terminal state is
+`turn.phase: 'over'` with `turn.outcome`; nothing more can be rolled. The loader reads `outcome` back.
+
+**B5, `solo-simulation.spec.ts`:** whole seeded games through the real rules on the Classic set, with two policies. Every
+turn: the input books are deep-frozen (a rule that mutates throws), the token stays on the ring, round == Paydays entered,
+children <= 3, every amount an integer, cash finite. Results: **never buying** plays 150+ turns and never ends (salary
+alone does not escape); **buying affordable investment deals** escapes the rat race on every seed in 78-116 turns; the same
+seed replays identically; a golden game (seed 4: 78 turns, 40 rounds, 7 properties) and its first six rolls are pinned for
+the Pro API's scripted test (D5). `playSoloGame` is exported from that spec file; D5 should move it to a shared helper.
+
+**Phase C next (solo UI):** the History needs labels for the `roll` and `skipCard` steps; the ring + token + dice UI; start
+a solo game; the card decision hands over to the existing find-or-draw flow and then `settleDecision`. Everything the UI
+needs is `playTurn`, `settleDecision`, `endIfOver`, `finalSummary` and the board.

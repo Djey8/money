@@ -128,6 +128,15 @@ describe('AppDataService game state read-back', () => {
     });
   });
 
+  it('brings back how a finished solo game ended', () => {
+    const state = read({
+      ...stored,
+      mode: 'solo',
+      turn: { phase: 'over', count: '31', outcome: 'escaped' },
+    });
+    expect(state.turn).toEqual({ phase: 'over', count: 31, outcome: 'escaped' });
+  });
+
   it('a companion game has no turn', () => {
     expect(read(stored).turn).toBeUndefined();
     expect(read(stored).boardPosition).toBeNull();

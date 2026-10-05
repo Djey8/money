@@ -605,6 +605,9 @@ export class AppDataService {
             turn: {
               phase: str(raw.turn.phase) as NonNullable<CashflowGameState['turn']>['phase'],
               count: num(raw.turn.count),
+              ...(raw.turn.outcome != null
+                ? { outcome: str(raw.turn.outcome) as 'escaped' | 'bankrupt' }
+                : {}),
               ...(Array.isArray(raw.turn.lastRoll)
                 ? { lastRoll: raw.turn.lastRoll.map((die: any) => num(die)) }
                 : {}),

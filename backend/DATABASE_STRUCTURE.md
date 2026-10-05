@@ -292,10 +292,10 @@ Each user document has the following structure:
 
 Solo play (JFK, 2026-10-05) adds one optional field to the game state and uses one that was always there; both are plain leaves like the rest of the state, and games saved before it simply do not have them.
 
-| Field           | Holds                                                                                                                                                                                                       |
-| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `boardPosition` | The token: the ring index (0-23) of its space, empty at START. Always empty in companion mode.                                                                                                              |
-| `turn`          | Absent in companion mode. `{ phase: 'roll' or 'decide', count, lastRoll?: [dice], pending?: { kind: 'deal' or 'market' or 'doodad', spaceIndex } }` - where the turn stands; `decide` while a card is open. |
+| Field           | Holds                                                                                                                                                                                                                                                    |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `boardPosition` | The token: the ring index (0-23) of its space, empty at START. Always empty in companion mode.                                                                                                                                                           |
+| `turn`          | Absent in companion mode. `{ phase: 'roll' or 'decide' or 'over', count, outcome?: 'escaped' or 'bankrupt', lastRoll?: [dice], pending?: { kind: 'deal' or 'market' or 'doodad', spaceIndex } }` - where the turn stands; `decide` while a card is open. |
 
 ### Saved Cashflow games (`cashflowGames/`, Cashflow-game accounts only)
 
