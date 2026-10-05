@@ -1,5 +1,10 @@
-import type { SubscriptionFrequency } from '../transactions/frequency-strategies';
 import type { Clock } from './clock';
+import {
+  emptyEffects,
+  type BookGrowUpdate,
+  type BookSubscription,
+  type GameEffects,
+} from './effects';
 import {
   ownedGameSubscriptions,
   resolveCashflowBaby,
@@ -32,18 +37,6 @@ import type {
  * the Pro API will apply them to the account's - same decisions, two ways of storing them.
  */
 
-/** A subscription as the game reads and writes it, in minor units. */
-export interface BookSubscription {
-  title: string;
-  account: string;
-  amountMinor: number;
-  startDate: string;
-  endDate: string;
-  category: string;
-  comment: string;
-  frequency: SubscriptionFrequency;
-}
-
 /** A Grow project's notes: the one place Payday reaches into Grow (it drops stale market-buyer offers). */
 export interface BookGrowNotes {
   title: string;
@@ -67,37 +60,11 @@ export interface RoundDeps {
 /** One entry of the game's History: what kind of step it was and what it was about. */
 export type RoundStep = GameStep;
 
-/** What a round rule changes. Positions refer to `RoundBooks.transactions`. */
-export interface RoundEffects {
-  state: CashflowGameState;
-  step: RoundStep;
-  /** Existing transactions whose date moves (Payday ages every game transaction back a month). */
-  transactionDates: { index: number; date: string }[];
-  /** New transactions, already dated. */
-  appendedTransactions: CashflowTransactionRecord[];
-  /** Subscriptions to create or update, matched by title, as they should read afterwards. */
-  subscriptionUpserts: BookSubscription[];
-  /** Projects whose notes are replaced (their full note list afterwards). */
-  growNotes: BookGrowNotes[];
-  /** What the caller has to write besides transactions and the game state. */
-  persist: { subscriptions: boolean; grow: boolean };
-  /** A decision is now waiting for the player (a kept dice card is due its Payday roll). */
-  decisionNeeded: boolean;
-}
+/** What a round rule changes: the shared description every game rule returns. */
+export type RoundEffects = GameEffects;
 
 /** The one note a market buyer's offer leaves on a property's Grow project (replaced by the next offer, removed at Payday). */
 export const MARKET_NOTE_MARK = '💰 ';
-
-const noEffects = (state: CashflowGameState, step: RoundStep): RoundEffects => ({
-  state,
-  step,
-  transactionDates: [],
-  appendedTransactions: [],
-  subscriptionUpserts: [],
-  growNotes: [],
-  persist: { subscriptions: false, grow: false },
-  decisionNeeded: false,
-});
 
 /** What the engine reads of a subscription. */
 function engineSubscriptions(subscriptions: BookSubscription[]) {
@@ -198,13 +165,13 @@ export function playPayday(books: RoundBooks, deps: RoundDeps): RoundEffects {
   let next: CashflowGameState = { ...result.state, history };
 
   const hadOffers = (next.marketOffers ?? []).length > 0;
-  const growNotes: BookGrowNotes[] = [];
+  const growUpdates: BookGrowUpdate[] = [];
   if (hadOffers) {
     next = { ...next, marketOffers: [] };
     for (const project of books.growNotes ?? []) {
       const kept = project.notes.filter((note) => !note.text.startsWith(MARKET_NOTE_MARK));
       if (kept.length !== project.notes.length)
-        growNotes.push({ title: project.title, notes: kept });
+        growUpdates.push({ title: project.title, notes: kept });
     }
   }
 
@@ -221,14 +188,14 @@ export function playPayday(books: RoundBooks, deps: RoundDeps): RoundEffects {
   }
 
   return {
-    ...noEffects(next, {
+    ...emptyEffects(next, {
       kind: 'payday',
       detail: `${deps.text('CashflowGame.Round')} ${result.state.round}`,
     }),
     transactionDates: shiftedGameTransactionDates(books.transactions, -1),
     appendedTransactions,
-    growNotes,
-    persist: { subscriptions: false, grow: hadOffers },
+    growUpdates,
+    persist: { subscriptions: false, grow: hadOffers, balanceSheet: false },
     decisionNeeded: recurring.length > 0,
   };
 }
@@ -255,7 +222,7 @@ export function playBaby(
   );
   const titles = books.state.gameSubscriptionTitles;
   return {
-    ...noEffects(
+    ...emptyEffects(
       {
         ...result.state,
         gameSubscriptionTitles: titles.includes(title) ? titles : [...titles, title],
@@ -263,7 +230,7 @@ export function playBaby(
       { kind: 'baby' },
     ),
     subscriptionUpserts: [upsert],
-    persist: { subscriptions: true, grow: false },
+    persist: { subscriptions: true, grow: false, balanceSheet: false },
   };
 }
 
@@ -271,7 +238,7 @@ export function playBaby(
 export function playCharity(books: RoundBooks, deps: RoundDeps): RoundEffects {
   const result = resolveCashflowCharity(books.state, engineSubscriptions(books.subscriptions));
   return {
-    ...noEffects(result.state, { kind: 'charity' }),
+    ...emptyEffects(result.state, { kind: 'charity' }),
     appendedTransactions: placeOneOffTransactions(
       [result.transaction],
       books,
@@ -284,7 +251,7 @@ export function playCharity(books: RoundBooks, deps: RoundDeps): RoundEffects {
 export function playDownsized(books: RoundBooks, deps: RoundDeps): RoundEffects {
   const result = resolveCashflowDownsized(books.state, engineSubscriptions(books.subscriptions));
   return {
-    ...noEffects(result.state, { kind: 'downsized' }),
+    ...emptyEffects(result.state, { kind: 'downsized' }),
     appendedTransactions: placeOneOffTransactions(
       result.transactions,
       books,

@@ -1,9 +1,10 @@
 import {
-  MARKET_NOTE_MARK,
-  upsertBookSubscription,
+  emptyEffects,
+  type BookGrowUpdate,
   type BookSubscription,
-  type RoundDeps,
-} from './rounds';
+  type GameEffects,
+} from './effects';
+import { MARKET_NOTE_MARK, upsertBookSubscription, type RoundDeps } from './rounds';
 import { BUSINESS_SYMBOLS, PROPERTY_SYMBOLS } from './symbols';
 import type { GameStep } from './steps';
 import type {
@@ -63,31 +64,8 @@ export interface CardDeps extends RoundDeps {
   money: (amountMinor: number) => string;
 }
 
-/** A change to one Grow project. Only the fields that are present change. */
-export interface BookGrowUpdate {
-  title: string;
-  /** The project's whole note list afterwards. */
-  notes?: { text: string; createdAt: string }[];
-  cashflowMinor?: number;
-  sharePriceMinor?: number;
-  updatedAt?: string;
-}
-
-export interface CardEffects {
-  state: CashflowGameState;
-  /** The History step; null when nothing is recorded (a cost card that applies is booked by the Add dialog). */
-  step: GameStep | null;
-  growUpdates: BookGrowUpdate[];
-  /** New prices of held shares. */
-  sharePrices: { tag: string; priceMinor: number }[];
-  subscriptionUpserts: BookSubscription[];
-  /** What the caller has to write besides transactions and the game state. */
-  persist: { subscriptions: boolean; grow: boolean; balanceSheet: boolean };
-  /** False when the card changed nothing in the account (the step is still a History entry). */
-  write: boolean;
-  /** A decision is now waiting for the player (a stock split's dice roll). */
-  decisionNeeded: boolean;
-}
+/** What a Market-card rule changes: the shared description every game rule returns. */
+export type CardEffects = GameEffects;
 
 /** One kind of property or asset a card is about: the labels it goes by, and for a building the unit count. */
 export interface CardType {
@@ -95,16 +73,7 @@ export interface CardType {
   units?: number;
 }
 
-const effects = (state: CashflowGameState, step: GameStep | null): CardEffects => ({
-  state,
-  step,
-  growUpdates: [],
-  sharePrices: [],
-  subscriptionUpserts: [],
-  persist: { subscriptions: false, grow: false, balanceSheet: false },
-  write: true,
-  decisionNeeded: false,
-});
+const effects = emptyEffects;
 
 function requireStarted(state: CashflowGameState): void {
   if (!state.virtualDate) throw new Error('Pick a profession first.');

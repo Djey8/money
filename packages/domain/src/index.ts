@@ -34,6 +34,7 @@ export * from './cashflow-game/cash';
 export * from './cashflow-game/clock';
 export * from './cashflow-game/game-text';
 export * from './cashflow-game/scheduling';
+export * from './cashflow-game/effects';
 export * from './cashflow-game/rounds';
 export * from './cashflow-game/steps';
 export * from './cashflow-game/market-cards';

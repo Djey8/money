@@ -1,5 +1,6 @@
 import { CASHFLOW_GAME_SETS } from '../cashflow-content';
 import { fixedClock } from './clock';
+import type { BookSubscription } from './effects';
 import { pickCashflowProfession } from './engine';
 import { identityText, type GameText } from './game-text';
 import {
@@ -12,7 +13,6 @@ import {
   previewSpace,
   professionTitleText,
   upsertBookSubscription,
-  type BookSubscription,
   type RoundBooks,
   type RoundDeps,
 } from './rounds';
@@ -126,7 +126,7 @@ describe('playPayday', () => {
     const effects = playPayday(deepFreeze(books), deps);
 
     expect(effects.state.marketOffers).toEqual([]);
-    expect(effects.growNotes).toEqual([
+    expect(effects.growUpdates).toEqual([
       { title: 'EFH', notes: [{ text: 'my own note', createdAt: 'b' }] },
     ]);
     expect(effects.persist.grow).toBe(true);
@@ -134,8 +134,8 @@ describe('playPayday', () => {
 
   it('does not touch Grow when there were no offers', () => {
     const effects = playPayday(startedBooks(), deps);
-    expect(effects.growNotes).toEqual([]);
-    expect(effects.persist).toEqual({ subscriptions: false, grow: false });
+    expect(effects.growUpdates).toEqual([]);
+    expect(effects.persist).toEqual({ subscriptions: false, grow: false, balanceSheet: false });
   });
 
   it('puts a roll on every kept Multi-Level-Marketing card and flags the decision', () => {

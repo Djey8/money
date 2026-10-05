@@ -16,7 +16,8 @@ import {
   type CardBooks,
   type CardDeps,
 } from './market-cards';
-import { MARKET_NOTE_MARK, type BookSubscription } from './rounds';
+import type { BookSubscription } from './effects';
+import { MARKET_NOTE_MARK } from './rounds';
 import { initialCashflowGameState, type CashflowDealCard, type CashflowMarketCard } from './types';
 
 function deepFreeze<T>(value: T): T {

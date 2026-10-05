@@ -56,13 +56,12 @@ import {
   type BookSubscription,
   type CardBooks,
   type CardDeps,
-  type CardEffects,
   type Clock,
+  type GameEffects,
   type GameStep,
   type GameStepKind,
   type RoundBooks,
   type RoundDeps,
-  type RoundEffects,
   type SavedGameSummary,
 } from '@money/domain';
 import { CASHFLOW_GAME_SETS } from '../cashflow-content';
@@ -810,7 +809,7 @@ export class CashflowGameService {
    * used for round-tracking/loan math, not for what date actually gets persisted.
    */
   payday(callbacks: CashflowGameCallbacks): void {
-    let effects: RoundEffects;
+    let effects: GameEffects;
     try {
       effects = playPayday(this.roundBooks(), this.roundDeps);
     } catch (err: unknown) {
@@ -818,7 +817,7 @@ export class CashflowGameService {
       return;
     }
     this.pushUndoSnapshot(effects.step);
-    this.applyRoundEffects(effects);
+    this.applyGameEffects(effects);
     this.persistAll(
       'cashflow_payday',
       { round: effects.state.round },
@@ -916,9 +915,24 @@ export class CashflowGameService {
     };
   }
 
-  /** Writes a Market-card rule's effects into the live entities (existing entries edited in place). */
-  private applyCardEffects(effects: CardEffects): void {
+  /**
+   * Writes any game rule's effects into the live entities (see `GameEffects` in @money/domain). Existing entries are
+   * edited in place, so nothing else on them (ids, change history) is lost.
+   */
+  private applyGameEffects(effects: GameEffects): void {
     const state = AppStateService.instance;
+    for (const { index, date } of effects.transactionDates) {
+      state.allTransactions[index].date = date;
+    }
+    effects.appendedTransactions.forEach((record) =>
+      state.allTransactions.push(toFloatTransaction(record)),
+    );
+    this.applySubscriptionUpserts(effects.subscriptionUpserts);
+    for (const title of effects.subscriptionRemovals) this.removeSubscriptionByTitle(title);
+    for (const liability of effects.liabilityUpserts) {
+      this.upsertLiability(liability.tag, liability.amountMinor, liability.investment);
+    }
+    for (const tag of effects.liabilityRemovals) this.removeLiabilityByTag(tag);
     for (const update of effects.growUpdates) {
       const project = state.allGrowProjects.find((candidate) => candidate.title === update.title);
       if (!project) continue;
@@ -935,27 +949,8 @@ export class CashflowGameService {
       const held = state.allShares.find((share) => share.tag === tag);
       if (held) held.price = fromMinorUnits(priceMinor);
     }
-    this.applySubscriptionUpserts(effects.subscriptionUpserts);
     state.cashflowGame = effects.state;
   }
-
-  /** Writes a round rule's effects into the live entities. Existing entries are edited in place, so nothing else on them (ids, change history) is lost. */
-  private applyRoundEffects(effects: RoundEffects): void {
-    const state = AppStateService.instance;
-    for (const { index, date } of effects.transactionDates) {
-      state.allTransactions[index].date = date;
-    }
-    effects.appendedTransactions.forEach((record) =>
-      state.allTransactions.push(toFloatTransaction(record)),
-    );
-    this.applySubscriptionUpserts(effects.subscriptionUpserts);
-    for (const { title, notes } of effects.growNotes) {
-      const project = state.allGrowProjects.find((candidate) => candidate.title === title);
-      if (project) project.notes = notes;
-    }
-    state.cashflowGame = effects.state;
-  }
-
   /** Every day-of-month a `#cashflow` Subscription recurs on (see `gameSubscriptionDays`). */
   private currentMonthGameSubscriptionDays(): Set<number> {
     return gameSubscriptionDays(AppStateService.instance.allSubscriptions);
@@ -994,7 +989,7 @@ export class CashflowGameService {
       callbacks.onError('Pick a profession first.');
       return;
     }
-    let effects: RoundEffects;
+    let effects: GameEffects;
     try {
       effects = playBaby(this.roundBooks(), profession, this.roundDeps);
     } catch (err: unknown) {
@@ -1002,7 +997,7 @@ export class CashflowGameService {
       return;
     }
     this.pushUndoSnapshot(effects.step);
-    this.applyRoundEffects(effects);
+    this.applyGameEffects(effects);
     this.persistAll('cashflow_baby', { children: effects.state.children }, callbacks, {
       includeSubscriptions: true,
     });
@@ -1022,7 +1017,7 @@ export class CashflowGameService {
 
   /** Resolves a Charity space: pays 10% of total income now, unlocks the dice choice for 3 turns. */
   resolveCharity(callbacks: CashflowGameCallbacks): void {
-    let effects: RoundEffects;
+    let effects: GameEffects;
     try {
       effects = playCharity(this.roundBooks(), this.roundDeps);
     } catch (err: unknown) {
@@ -1030,13 +1025,13 @@ export class CashflowGameService {
       return;
     }
     this.pushUndoSnapshot(effects.step);
-    this.applyRoundEffects(effects);
+    this.applyGameEffects(effects);
     this.persistAll('cashflow_charity', {}, callbacks);
   }
 
   /** Resolves a Downsized space: pays total expenses once and shows the sitting-out reminder (ends an active charity bonus). */
   resolveDownsized(callbacks: CashflowGameCallbacks): void {
-    let effects: RoundEffects;
+    let effects: GameEffects;
     try {
       effects = playDownsized(this.roundBooks(), this.roundDeps);
     } catch (err: unknown) {
@@ -1044,7 +1039,7 @@ export class CashflowGameService {
       return;
     }
     this.pushUndoSnapshot(effects.step);
-    this.applyRoundEffects(effects);
+    this.applyGameEffects(effects);
     this.persistAll('cashflow_downsized', {}, callbacks);
   }
 
@@ -1642,7 +1637,7 @@ export class CashflowGameService {
       return;
     }
     this.pushUndoSnapshot(result.effects.step as CashflowStepInfo);
-    this.applyCardEffects(result.effects);
+    this.applyGameEffects(result.effects);
     this.persistAll(
       'cashflow_market_card',
       { card: card.id, matched: result.matched.length },
@@ -1691,7 +1686,7 @@ export class CashflowGameService {
       return;
     }
     this.pushUndoSnapshot(result.effects.step as CashflowStepInfo);
-    this.applyCardEffects(result.effects);
+    this.applyGameEffects(result.effects);
     this.persistAll(
       'cashflow_share_price',
       { symbol: result.title, price: fromMinorUnits(card.priceMinor ?? 0) },
@@ -1723,7 +1718,7 @@ export class CashflowGameService {
       callbacks.onSuccess(null);
       return;
     }
-    this.applyCardEffects(result.effects);
+    this.applyGameEffects(result.effects);
     this.persistAll(
       'cashflow_market_split',
       { share: result.share },
@@ -1805,7 +1800,7 @@ export class CashflowGameService {
       return;
     }
     this.pushUndoSnapshot(result.effects.step as CashflowStepInfo);
-    this.applyCardEffects(result.effects);
+    this.applyGameEffects(result.effects);
     const changed = result.changed.map((entry) => ({
       title: entry.title,
       from: fromMinorUnits(entry.fromMinor),
