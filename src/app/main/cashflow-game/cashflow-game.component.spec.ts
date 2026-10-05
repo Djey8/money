@@ -1,4 +1,5 @@
 import { Subject } from 'rxjs';
+import { CLASSIC_RAT_RACE_BOARD } from '@money/domain';
 import { registerLocaleData } from '@angular/common';
 import localeDe from '@angular/common/locales/de';
 import { CASHFLOW_GAME_SETS } from '../../shared/cashflow-content';
@@ -1926,5 +1927,179 @@ describe('CashflowGameComponent', () => {
 
       expect(component.activeCard).toBeNull();
     });
+  });
+});
+
+describe('CashflowGameComponent solo mode (JFK, 2026-10-05)', () => {
+  function soloComponent(extra: Partial<Record<string, unknown>> = {}) {
+    const rollTurn = jest.fn();
+    const settleSoloDecision = jest.fn();
+    const made = makeComponent({
+      rollTurn,
+      settleSoloDecision,
+      board: CLASSIC_RAT_RACE_BOARD,
+      soloTurn: { phase: 'roll', count: 0 },
+      cannotRollBecause: null,
+      soloSummary: jest.fn(() => ({ outcome: 'escaped' })),
+      ...extra,
+    } as any);
+    return { ...made, rollTurn, settleSoloDecision };
+  }
+
+  const setSoloState = (extra: Record<string, unknown> = {}) => {
+    const state = AppStateService.instance;
+    state.cashflowGame = {
+      ...state.cashflowGame,
+      mode: 'solo',
+      professionId: 'hausmeister',
+      gameSetId: 'cashflow',
+      boardPosition: null,
+      turn: { phase: 'roll', count: 0 },
+      ...extra,
+    } as any;
+  };
+
+  const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+  beforeEach(() => {
+    (AppStateService as any)._instance = undefined;
+    ProfileComponent.mail = '';
+    // no waiting between steps in tests: the token jumps straight to the landing
+    (window as any).matchMedia = jest.fn(() => ({ matches: true }));
+  });
+
+  it('starts a game in the mode chosen with the language', () => {
+    const { component, cashflowGameService } = soloComponent();
+    component.playMode = 'solo';
+    component.startGame();
+    expect(cashflowGameService.pickProfession).toHaveBeenCalledWith(
+      component.selectedGameSetId,
+      component.selectedProfessionId,
+      expect.any(Object),
+      'solo',
+    );
+    const companion = soloComponent();
+    companion.component.startGame();
+    expect(companion.cashflowGameService.pickProfession.mock.calls[0][3]).toBe('companion');
+  });
+
+  it('measures the way to the next Payday from the token, START included', () => {
+    const { component } = soloComponent();
+    setSoloState({ boardPosition: null });
+    expect(component.spacesToPayday).toBe(6); // spaces 0..5
+    setSoloState({ boardPosition: 4 });
+    expect(component.spacesToPayday).toBe(1);
+    setSoloState({ boardPosition: 5 });
+    expect(component.spacesToPayday).toBe(8); // the next Payday is space 13
+    setSoloState({ boardPosition: 22 });
+    expect(component.spacesToPayday).toBe(7); // wraps to space 5
+  });
+
+  it('cannot roll while busy, or when the game says no', () => {
+    const blocked = soloComponent({ cannotRollBecause: 'Deal with the card first.' });
+    setSoloState();
+    expect(blocked.component.canRoll).toBe(false);
+    const free = soloComponent();
+    expect(free.component.canRoll).toBe(true);
+    free.component.isBusy = true;
+    expect(free.component.canRoll).toBe(false);
+  });
+
+  it('a roll shows the dice and, landing on a Deals space, opens the pile choice', async () => {
+    const { component, rollTurn, cashflowGameService } = soloComponent();
+    setSoloState();
+    rollTurn.mockImplementation((_dice: number, callbacks: any) => {
+      setSoloState({
+        boardPosition: 2,
+        turn: { phase: 'decide', count: 1, pending: { kind: 'deal', spaceIndex: 2 } },
+      });
+      (cashflowGameService as any).soloTurn = AppStateService.instance.cashflowGame.turn;
+      callbacks.onSuccess();
+      return {
+        roll: { dice: [3], total: 3 },
+        move: {
+          entered: [{ index: 0 }, { index: 1 }, { index: 2, kind: 'deal' }],
+          paydays: 0,
+          landed: { kind: 'deal', index: 2 },
+        },
+      };
+    });
+
+    component.rollSolo();
+    await settle();
+
+    expect(rollTurn.mock.calls[0][0]).toBe(1);
+    expect(component.lastDice).toEqual([3]);
+    expect(component.walking).toBe(false);
+    expect(component.tokenPosition).toBe(2);
+    expect(component.dashboardView).toBe('dealPile');
+  });
+
+  it('two dice are rolled only when Charity runs and they were chosen', () => {
+    const first = soloComponent();
+    setSoloState({ charityRoundsLeft: 3 });
+    first.component.diceChoice = 2;
+    first.rollTurn.mockReturnValue(null);
+    first.component.rollSolo();
+    expect(first.rollTurn.mock.calls[0][0]).toBe(2);
+
+    const plain = soloComponent();
+    setSoloState({ charityRoundsLeft: 0 });
+    plain.component.diceChoice = 2; // a stale choice must not count without Charity
+    plain.rollTurn.mockReturnValue(null);
+    plain.component.rollSolo();
+    expect(plain.rollTurn.mock.calls[0][0]).toBe(1);
+  });
+
+  it('a space resolved on the spot is told in a message; a finished game shows its end', async () => {
+    const { component, rollTurn, toastService } = soloComponent();
+    setSoloState();
+    rollTurn.mockImplementation(() => {
+      setSoloState({ boardPosition: 19, turn: { phase: 'roll', count: 1 } });
+      return {
+        roll: { dice: [4], total: 4 },
+        move: { entered: [{ index: 19 }], paydays: 0, landed: { kind: 'baby', index: 19 } },
+      };
+    });
+    component.rollSolo();
+    await settle();
+    expect(toastService.show).toHaveBeenCalledWith('CashflowGame.solo.landedBaby', 'update');
+
+    setSoloState({ turn: { phase: 'over', count: 5, outcome: 'escaped' } });
+    (component as any).cashflowGameService.soloTurn = AppStateService.instance.cashflowGame.turn;
+    expect(component.gameOver).toBe(true);
+  });
+
+  it('settling the open card goes through the service and returns to the dashboard', () => {
+    const { component, settleSoloDecision } = soloComponent();
+    setSoloState({
+      turn: { phase: 'decide', count: 1, pending: { kind: 'market', spaceIndex: 7 } },
+    });
+    component.dashboardView = 'cards';
+    settleSoloDecision.mockImplementation((_how: string, callbacks: any) => callbacks.onSuccess());
+    component.finishSoloDecision('passed');
+    expect(settleSoloDecision.mock.calls[0][0]).toBe('passed');
+    expect(component.dashboardView).toBe('main');
+  });
+
+  it('an open decision reopens the card flow for its space', () => {
+    const { component, cashflowGameService } = soloComponent();
+    const pending = (kind: string) => {
+      (cashflowGameService as any).soloTurn = {
+        phase: 'decide',
+        count: 1,
+        pending: { kind, spaceIndex: 0 },
+      };
+    };
+    const doodad = jest.spyOn(component, 'landOnDoodad').mockImplementation(() => undefined);
+    const market = jest.spyOn(component, 'landOnMarket').mockImplementation(() => undefined);
+    const deals = jest.spyOn(component, 'landOnDeals').mockImplementation(() => undefined);
+    pending('doodad');
+    component.openSoloDecision();
+    pending('market');
+    component.openSoloDecision();
+    pending('deal');
+    component.openSoloDecision();
+    expect([doodad, market, deals].map((spy) => spy.mock.calls.length)).toEqual([1, 1, 1]);
   });
 });

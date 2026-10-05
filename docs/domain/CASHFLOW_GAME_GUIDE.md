@@ -101,3 +101,35 @@ hand. Pay off any liability in full at any point in the game, exactly like any p
   in Payday); decision 2 already means the whole account is the game.
 - Real card text/values (Deal, Market, Doodad) and the physical board's space sequence are still needed from JFK
   before Phase 2/3 can be built — nothing here invents them.
+
+## 8. Solo mode: the app plays the board
+
+When a game starts, next to the language you choose **how to play**: _with the physical board_ (everything above), or
+**solo in the app**, where the app rolls the dice and walks your token round the rat race. The mode is fixed for that
+game. The board is the German "Cashflow - Verlasse das Hamsterrad!" rat race, drawn as a ring of 24 spaces (12 Deals,
+3 Doodad, 3 Payday, 3 Market, one each of Charity, Downsized and Baby).
+
+- **Start.** The token starts at START, just before the first space: a first roll of _n_ lands on space _n_ (the
+  Deals space next to START for a 1).
+- **A turn is one roll.** The app rolls (the die faces you see are the engine's result - the animation never rolls on
+  its own), the token walks space by space, and what the landing space does happens at once. Press **Skip** to jump
+  to the landing; with "reduce motion" set the token jumps by itself.
+- **Payday** pays whenever you **land on or pass** a Payday space, once per Payday space. It also advances the game's
+  calendar one month, as in the companion.
+- **Baby, Charity, Downsized** resolve on the spot (a Baby space with three children changes nothing). **Charity**
+  donates 10 % of your income, then for the next **3 turns** you may choose **1 or 2 dice** before each roll.
+  **Downsized** pays your expenses; the spanner is only a reminder (playing alone nobody takes a turn in between, so
+  nothing is skipped) and your **next roll removes it**.
+- **Deals, Doodad, Market** hand you the card flow you know (Deals asks for the Small or Big pile first; you draw a
+  random card or look for a specific one). The turn stays open - **you cannot roll again** - until you press **Done**
+  after dealing with the card, or **Pass** to leave it (Pass is a step of its own, so Undo brings the card back).
+- **One roll is one step in the history**, however many Paydays and spaces it touched: one Undo takes back the whole
+  roll, with the token.
+- **The game ends** when you **escape the rat race** (passive income covers all your monthly expenses - the Fast
+  Track is not part of the app) or go **bankrupt** (your monthly cashflow is negative). The end screen shows the
+  rounds, turns, cash and monthly picture and offers to save the game.
+- Solo is for **cashflow game accounts** like the rest of the game, in the self-hosted edition's game content.
+
+The turn logic is the `@money/domain` package's (`board.ts`, `movement.ts`, `turn.ts`, `game-end.ts`); the app only
+shows it and forwards the buttons. A seeded game plays out identically every time, which is how the rules are tested
+(`solo-simulation.spec.ts`).

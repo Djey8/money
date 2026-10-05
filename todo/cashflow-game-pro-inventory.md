@@ -435,3 +435,24 @@ the Pro API's scripted test (D5). `playSoloGame` is exported from that spec file
 **Phase C next (solo UI):** the History needs labels for the `roll` and `skipCard` steps; the ring + token + dice UI; start
 a solo game; the card decision hands over to the existing find-or-draw flow and then `settleDecision`. Everything the UI
 needs is `playTurn`, `settleDecision`, `endIfOver`, `finalSummary` and the board.
+
+## Phase C wrap-up (2026-10-05) - solo mode in the app
+
+- **C1** the language step also asks _how to play_ (companion pre-selected); `pickProfession(..., mode)`; every game set can
+  play solo (the Classic ring is universal board content, not a per-set field).
+- **C2** `rat-race-board.component.ts`: SVG ring of 24 named cells coloured with the existing tokens, START marker, token;
+  `role="img"` with a position label and a `<title>` per cell. **C3/C4** die faces from the engine's roll (existing `cf-die`
+  styling, a short shake while the token walks), the token steps space by space with a Payday flash, Skip, and
+  `prefers-reduced-motion` jumps straight to the landing.
+- **C5** `CashflowGameService.rollTurn` (one snapshot, effects applied in order, persisted, returns the roll and move) and
+  `settleSoloDecision`; the page replaces the Payday button and the "landed on" grid with the solo card in solo games; a
+  card space opens the existing card flow (Deals asks the pile first) and the turn stays open until **Done** or **Pass**;
+  Charity/Downsized badges have no manual dismiss in solo. History labels for `roll` and `skipCard` exist in all six languages.
+- **C6** HUD: position, spaces to the next Payday, last roll, Charity turns left, the Downsized spanner; end screen for
+  escaped / bankrupt with the closing numbers, Save game and New game (the existing flows).
+- **C7** 37 strings in en/de/es/fr/cn/ar, guide section 8, `todo/cashflow-solo-playtest.md` (the manual checklist for JFK's playtest).
+
+Known simplifications, to settle with JFK's playtest: "Done" is a button (the card flows do not yet settle the turn by
+themselves when a card is applied); the dice are shown at once and the token then walks (no separate dice-tumble phase);
+the bank loan and Undo stay available during a turn as in companion mode. Not run in a browser by me - the playtest is the
+first real look at the screen. **Next:** JFK's playtest, then Phase D.

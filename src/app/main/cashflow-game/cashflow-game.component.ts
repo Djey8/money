@@ -23,6 +23,7 @@ import {
   toMinorUnits,
   type SavedGameSummary,
   pickOne,
+  type TurnResult,
 } from '@money/domain';
 import { Grow } from 'src/app/interfaces/grow';
 import { AppStateService } from 'src/app/shared/services/app-state.service';
@@ -46,6 +47,7 @@ import { ConfirmService } from 'src/app/shared/services/confirm.service';
 import { CashflowSavedGamesService } from 'src/app/shared/services/cashflow-saved-games.service';
 import { AppNumberPipe } from 'src/app/shared/pipes/app-number.pipe';
 import { AppDatePipe } from 'src/app/shared/pipes/app-date.pipe';
+import { RatRaceBoardComponent } from './rat-race-board.component';
 import { TrapFocusDirective } from 'src/app/shared/directives/trap-focus.directive';
 
 // Deferred import to break the circular chain with AppComponent, same pattern as every other panel.
@@ -85,6 +87,10 @@ interface CardTile {
 /** How a market card is filed in the quick filter. */
 type MarketKind = 'percent' | 'amount' | 'price' | 'cost' | 'split' | 'boost';
 
+/** How long the token rests on each space while it walks, and how long a Payday flashes. */
+const WALK_STEP_MS = 260;
+const PAYDAY_FLASH_MS = 900;
+
 @Component({
   selector: 'app-cashflow-game',
   standalone: true,
@@ -96,6 +102,7 @@ type MarketKind = 'percent' | 'amount' | 'price' | 'cost' | 'split' | 'boost';
     TranslateModule,
     AppNumberPipe,
     AppDatePipe,
+    RatRaceBoardComponent,
   ],
   templateUrl: './cashflow-game.component.html',
   styleUrls: ['./cashflow-game.component.css'],
@@ -509,17 +516,214 @@ export class CashflowGameComponent {
   startGame(): void {
     if (!this.selectedGameSetId || !this.selectedProfessionId) return;
     this.isBusy = true;
-    this.cashflowGameService.pickProfession(this.selectedGameSetId, this.selectedProfessionId, {
+    const mode = this.playMode;
+    this.cashflowGameService.pickProfession(
+      this.selectedGameSetId,
+      this.selectedProfessionId,
+      {
+        onSuccess: () => {
+          this.isBusy = false;
+          this.choosingLanguage = false;
+          this.toastService.show(this.translate.instant('CashflowGame.started'), 'success');
+          this.closeWindow();
+          // A plain router.navigate — no reload needed. Home and the other pages that hold their own
+          // snapshot subscribe to transactionsUpdated$/subscriptionsUpdated$ (fired by
+          // CashflowGameService.persistAll on every successful write), so they refresh whether or not
+          // this navigation itself is a no-op (e.g. already being on /home).
+          this.router.navigate(['/home']);
+        },
+        onError: (message) => {
+          this.isBusy = false;
+          this.toastService.show(message, 'error');
+        },
+      },
+      mode,
+    );
+  }
+
+  // ── Solo mode: the app rolls and walks the token (todo/cashflow-game-pro.md, Phase C) ─────────────
+
+  /** Chosen with the language when a game starts; a running game keeps the mode it began with. */
+  playMode: 'companion' | 'solo' = 'companion';
+
+  readonly board = this.cashflowGameService.board;
+
+  /** The dice of the last roll, for the die faces on the dashboard. */
+  lastDice: number[] = [];
+  /** How many dice the player rolls while Charity lasts. */
+  diceChoice: 1 | 2 = 1;
+  /** True while the token walks to where the roll took it. */
+  walking = false;
+  /** A "Payday!" flash while the token passes or lands on one. */
+  paydayFlash = false;
+  private skipWalking = false;
+  /** Where the token is drawn while it walks; undefined means "where the game says it is". */
+  private walkingAt: number | null | undefined = undefined;
+
+  get isSolo(): boolean {
+    return this.appState.cashflowGame.mode === 'solo';
+  }
+
+  get soloTurn() {
+    return this.cashflowGameService.soloTurn;
+  }
+
+  get gameOver(): boolean {
+    return this.isSolo && this.soloTurn.phase === 'over';
+  }
+
+  /** The token as shown: stepping along while it walks, otherwise on the game's own position. */
+  get tokenPosition(): number | null {
+    return this.walkingAt !== undefined ? this.walkingAt : this.appState.cashflowGame.boardPosition;
+  }
+
+  get canRoll(): boolean {
+    return !this.isBusy && !this.walking && this.cashflowGameService.cannotRollBecause === null;
+  }
+
+  /** Charity lets the player pick 1 or 2 dice; otherwise it is always one. */
+  get canChooseDice(): boolean {
+    return this.appState.cashflowGame.charityRoundsLeft > 0;
+  }
+
+  /** "Space 7 of 24", or "At START". */
+  get positionText(): string {
+    const position = this.appState.cashflowGame.boardPosition;
+    return position === null
+      ? this.translate.instant('CashflowGame.solo.positionStart')
+      : this.translate.instant('CashflowGame.solo.position', {
+          n: position + 1,
+          total: this.board.length,
+        });
+  }
+
+  /** How many spaces until the token next enters a Payday space. */
+  get spacesToPayday(): number {
+    const position = this.appState.cashflowGame.boardPosition;
+    const first = position === null ? 0 : position + 1;
+    for (let step = 0; step < this.board.length; step++) {
+      if (this.board[(first + step) % this.board.length].kind === 'payday') return step + 1;
+    }
+    return 0;
+  }
+
+  get paydayText(): string {
+    const count = this.spacesToPayday;
+    return count === 1
+      ? this.translate.instant('CashflowGame.solo.nextPaydayOne')
+      : this.translate.instant('CashflowGame.solo.nextPayday', { count });
+  }
+
+  /** The name of the card space the turn is waiting on, in the game's words. */
+  get pendingSpaceName(): string {
+    const kind = this.soloTurn.pending?.kind;
+    const key: Record<string, string> = {
+      deal: 'CashflowGame.spaceDeals',
+      doodad: 'CashflowGame.deckDoodad',
+      market: 'CashflowGame.deckMarket',
+    };
+    return kind ? this.translate.instant(key[kind]) : '';
+  }
+
+  /** How the finished game ended, with its closing numbers. */
+  get soloSummary() {
+    return this.cashflowGameService.soloSummary();
+  }
+
+  /** Rolls the dice: the engine decides, this only shows it - the die faces, then the token walking there. */
+  rollSolo(): void {
+    if (!this.canRoll) return;
+    const from = this.appState.cashflowGame.boardPosition;
+    const dice = this.canChooseDice ? this.diceChoice : 1;
+    this.isBusy = true;
+    const result = this.cashflowGameService.rollTurn(dice, {
       onSuccess: () => {
         this.isBusy = false;
-        this.choosingLanguage = false;
-        this.toastService.show(this.translate.instant('CashflowGame.started'), 'success');
-        this.closeWindow();
-        // A plain router.navigate — no reload needed. Home and the other pages that hold their own
-        // snapshot subscribe to transactionsUpdated$/subscriptionsUpdated$ (fired by
-        // CashflowGameService.persistAll on every successful write), so they refresh whether or not
-        // this navigation itself is a no-op (e.g. already being on /home).
-        this.router.navigate(['/home']);
+      },
+      onError: (message) => {
+        this.isBusy = false;
+        this.toastService.show(message, 'error');
+      },
+    });
+    if (!result) return;
+    this.lastDice = result.roll.dice;
+    void this.walkTo(from, result);
+  }
+
+  /** Skips the rest of the walk. */
+  skipWalk(): void {
+    this.skipWalking = true;
+  }
+
+  private get reducedMotion(): boolean {
+    return (
+      typeof window !== 'undefined' &&
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    );
+  }
+
+  private pause(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  private flashPayday(): void {
+    this.paydayFlash = true;
+    setTimeout(() => (this.paydayFlash = false), PAYDAY_FLASH_MS);
+  }
+
+  /** The token steps along the spaces the roll entered, a Payday flashing as it is entered, then the landing is dealt with. */
+  private async walkTo(from: number | null, result: TurnResult): Promise<void> {
+    this.walking = true;
+    this.skipWalking = this.reducedMotion;
+    this.walkingAt = from;
+    for (const space of result.move.entered) {
+      if (this.skipWalking) break;
+      await this.pause(WALK_STEP_MS);
+      this.walkingAt = space.index;
+      if (space.kind === 'payday') this.flashPayday();
+    }
+    if (this.skipWalking && result.move.paydays > 0) this.flashPayday();
+    this.walkingAt = undefined;
+    this.walking = false;
+    this.afterLanding(result);
+  }
+
+  /** What the landing leaves: the end of the game, a card to deal with, or a space that was resolved on the spot. */
+  private afterLanding(result: TurnResult): void {
+    const turn = this.appState.cashflowGame.turn;
+    if (turn?.phase === 'over') {
+      this.dashboardView = 'main';
+      return;
+    }
+    if (turn?.phase === 'decide' && turn.pending) {
+      this.openSoloDecision();
+      return;
+    }
+    const spoken: Record<string, string> = {
+      baby: 'CashflowGame.solo.landedBaby',
+      charity: 'CashflowGame.solo.landedCharity',
+      downsized: 'CashflowGame.solo.landedDownsized',
+    };
+    const key = spoken[result.move.landed.kind];
+    if (key) this.toastService.show(this.translate.instant(key), 'update');
+  }
+
+  /** Opens the card flow for the space the token is waiting on (Deals asks for the pile first). */
+  openSoloDecision(): void {
+    const kind = this.soloTurn.pending?.kind;
+    if (kind === 'deal') this.landOnDeals();
+    else if (kind === 'doodad') this.landOnDoodad();
+    else if (kind === 'market') this.landOnMarket();
+  }
+
+  /** The card was dealt with (or there was nothing to do): the next roll is open. */
+  finishSoloDecision(how: 'done' | 'passed'): void {
+    this.isBusy = true;
+    this.cashflowGameService.settleSoloDecision(how, {
+      onSuccess: () => {
+        this.isBusy = false;
+        this.backToMain();
       },
       onError: (message) => {
         this.isBusy = false;
