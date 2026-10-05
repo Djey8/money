@@ -23,6 +23,7 @@ import { ErrorMapperService } from 'src/app/shared/services/error-mapper.service
 import { AppStateService } from 'src/app/shared/services/app-state.service';
 import { ToastService } from 'src/app/shared/services/toast.service';
 import { CashflowGameService } from 'src/app/shared/services/cashflow-game.service';
+import { CashflowSavedGamesService } from 'src/app/shared/services/cashflow-saved-games.service';
 import { ConfirmService } from 'src/app/shared/services/confirm.service';
 import { migrateGrowArray } from 'src/app/shared/grow-migration.utils';
 import { migrateSmileArray } from 'src/app/shared/smile-migration.utils';
@@ -315,6 +316,7 @@ export class SettingsComponent implements DoCheck {
     private errorMapper: ErrorMapperService,
     private toastService: ToastService,
     private cashflowGameService: CashflowGameService,
+    private cashflowSavedGames: CashflowSavedGamesService,
     private confirmService: ConfirmService,
   ) {
     this.translate.setDefaultLang('en');
@@ -649,6 +651,30 @@ export class SettingsComponent implements DoCheck {
   }
 
   /**
+   * Ends the game being played the safe way (JFK, 2026-10-04): it is saved to My games with an "ended"
+   * mark, then the account is cleared for the next game.
+   */
+  endCashflowGame() {
+    // The button only shows for a running game; the code does not rely on that alone.
+    if (!this.isCashflowGameActive) return;
+    this.confirmService.confirm(
+      this.translate.instant('CashflowGame.endGameConfirm'),
+      () => {
+        this.cashflowSavedGames
+          .endGame()
+          .then(() =>
+            this.toastService.show(this.translate.instant('CashflowGame.endGameDone'), 'success'),
+          )
+          .catch((err: unknown) =>
+            this.toastService.show(err instanceof Error ? err.message : String(err), 'error'),
+          );
+      },
+      'CashflowGame.endGameButton',
+      'primary',
+    );
+  }
+
+  /**
    * Wipes every real entity the Cashflow game touches back to a blank slate — confirmed first, this can't be
    * undone. No page reload needed: `CashflowGameService.persistAll` fires `transactionsUpdated$`/
    * `subscriptionsUpdated$` on every successful write, which Home, the account list pages, and the Subscriptions
@@ -657,6 +683,7 @@ export class SettingsComponent implements DoCheck {
    * "can we refresh just the tables, variables, values on the page").
    */
   resetCashflowGame() {
+    if (!this.isCashflowGameActive) return;
     this.confirmService.confirm(
       this.translate.instant('CashflowGame.resetConfirm'),
       () => {

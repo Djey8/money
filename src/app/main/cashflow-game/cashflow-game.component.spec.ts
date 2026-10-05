@@ -1,4 +1,7 @@
-import { CASHFLOW_GAME_SETS } from '@money/domain';
+import { Subject } from 'rxjs';
+import { registerLocaleData } from '@angular/common';
+import localeDe from '@angular/common/locales/de';
+import { CASHFLOW_GAME_SETS } from '../../shared/cashflow-content';
 import { CashflowGameComponent } from './cashflow-game.component';
 import { AppStateService } from '../../shared/services/app-state.service';
 import { CashflowGameService } from '../../shared/services/cashflow-game.service';
@@ -12,6 +15,14 @@ function makeComponent(overrides: Partial<Record<string, jest.Mock>> = {}) {
     pickProfession: jest.fn(),
     payday: jest.fn(),
     undoLastAction: jest.fn(),
+    undoSteps: jest.fn(),
+    openDecisions: [],
+    rollDie: jest.fn(() => 6),
+    paydayRollCount: jest.fn(() => 1),
+    spacePreview: jest.fn(() => null),
+    doodadLoanNote: jest.fn(() => '🏦 note'),
+    resolveGamble: jest.fn(),
+    historySteps: jest.fn(() => []),
     canUndo: false,
     resolveBaby: jest.fn(),
     resolveCharity: jest.fn(),
@@ -23,7 +34,6 @@ function makeComponent(overrides: Partial<Record<string, jest.Mock>> = {}) {
     findCardsInDeck: jest.fn(() => []),
     drawCard: jest.fn(),
     applyDealCard: jest.fn(),
-    applyDoodadCard: jest.fn(),
     resetGame: jest.fn(),
     monthlyCashflow: 0,
     cash: 0,
@@ -34,6 +44,21 @@ function makeComponent(overrides: Partial<Record<string, jest.Mock>> = {}) {
     ...overrides,
   };
   const toastService = { show: jest.fn() };
+  const savedGames = {
+    games: [] as any[],
+    currentGameId: undefined as string | undefined,
+    tooMany: false,
+    refresh: jest.fn(async () => undefined),
+    saveCurrent: jest.fn(async () => null),
+    startNewGame: jest.fn(async () => undefined),
+    loadGame: jest.fn(async () => undefined),
+    renameGame: jest.fn(async () => undefined),
+    deleteGame: jest.fn(async () => undefined),
+    exportGame: jest.fn(async () => ({ fileName: 'x.json', text: '{}' })),
+    importGame: jest.fn(async () => ({})),
+  };
+  // The confirm dialog answers yes at once, so tests see what happens after "yes".
+  const confirm = { confirm: jest.fn((_message: string, onConfirm: () => void) => onConfirm()) };
   const translate = { instant: (key: string) => key };
 
   const component = new CashflowGameComponent(
@@ -42,9 +67,38 @@ function makeComponent(overrides: Partial<Record<string, jest.Mock>> = {}) {
     cashflowGameService as any,
     toastService as any,
     translate as any,
+    {
+      ensureLoaded: jest.fn(),
+      textFor: jest.fn(() => ({})),
+      sharedText: jest.fn(() => ''),
+      symbolFor: jest.fn((symbol?: string) => symbol),
+      familyName: jest.fn((family: string) => family),
+      groupName: jest.fn((group: string) => group),
+      version: 0,
+    } as any,
+    { current: 'en', use: jest.fn(async () => undefined) } as any,
+    savedGames as any,
+    confirm as any,
   );
-  return { component, router, appData, cashflowGameService, toastService };
+  const language = (component as any).language;
+  return {
+    component,
+    router,
+    appData,
+    cashflowGameService,
+    toastService,
+    language,
+    savedGames,
+    confirm,
+  };
 }
+
+// Opening a dialog scrolls to the top once the app shell has loaded - a timing that varies with how much
+// the test file imports; jsdom does not implement scrolling and reports it as an error.
+window.scrollTo = jest.fn() as any;
+window.scroll = jest.fn() as any;
+
+registerLocaleData(localeDe); // the app registers it at startup (app.config.ts)
 
 describe('CashflowGameComponent', () => {
   beforeEach(() => {
@@ -240,10 +294,17 @@ describe('CashflowGameComponent', () => {
       expect(component.liveSalary).toBe(1600);
     });
 
-    it('livePassiveIncome sums only investment-kind (property) Grow project cashflow, not shares', () => {
+    it("livePassiveIncome sums the bought properties' Cashflow subscriptions - not planned deals, not shares", () => {
       const { component } = makeComponent();
+      AppStateService.instance.cashflowGame = {
+        ...AppStateService.instance.cashflowGame,
+        gameSubscriptionTitles: ['Villa Cashflow'],
+      };
+      AppStateService.instance.allSubscriptions = [
+        { title: 'Villa Cashflow', account: 'Income', amount: 600 } as any,
+        { title: 'Planned Cashflow', account: 'Income', amount: 999 } as any, // not a game subscription yet
+      ];
       AppStateService.instance.allGrowProjects = [
-        { title: 'Villa', investment: { tag: 'Villa' }, cashflow: 600 } as any,
         { title: 'TestCo', share: { tag: 'TestCo' }, cashflow: 999 } as any, // a share, ignored
       ];
 
@@ -270,12 +331,17 @@ describe('CashflowGameComponent', () => {
     it('liveTotalIncome and liveCashflow combine salary, passive income, and expenses', () => {
       const { component } = makeComponent();
       startGame();
+      AppStateService.instance.cashflowGame = {
+        ...AppStateService.instance.cashflowGame,
+        gameSubscriptionTitles: [
+          ...AppStateService.instance.cashflowGame.gameSubscriptionTitles,
+          'Villa Cashflow',
+        ],
+      };
       AppStateService.instance.allSubscriptions = [
         { title: 'Hausmeister/in Salary', account: 'Income', amount: 1600 } as any,
         { title: 'Steuern', account: 'Daily', amount: -300 } as any,
-      ];
-      AppStateService.instance.allGrowProjects = [
-        { title: 'Villa', investment: { tag: 'Villa' }, cashflow: 600 } as any,
+        { title: 'Villa Cashflow', account: 'Income', amount: 600 } as any,
       ];
 
       expect(component.liveTotalIncome).toBe(2200); // 1600 salary + 600 passive
@@ -362,6 +428,34 @@ describe('CashflowGameComponent', () => {
       expect(toastService.show).toHaveBeenCalledWith('Could not start the game.', 'error');
     });
 
+    it('the undo banner names what was undone, not just Payday', () => {
+      const steps = [
+        { id: 'c', number: 3, kind: 'diceWon', detail: 'MLM · 🎲 5', at: '', transactions: [] },
+        { id: 'b', number: 2, kind: 'payday', detail: 'Round 2', at: '', transactions: [] },
+        { id: 'a', number: 1, kind: 'start', detail: '', at: '', transactions: [] },
+      ];
+      const { component, cashflowGameService, toastService } = makeComponent({
+        historySteps: jest.fn(() => steps),
+      } as any);
+      const translate = (component as any).translate;
+      translate.instant = (key: string, params?: any) =>
+        params ? `${key}:${JSON.stringify(params)}` : key;
+
+      component.undoLastAction();
+      cashflowGameService.undoLastAction.mock.calls[0][0].onSuccess();
+      expect(toastService.show).toHaveBeenCalledWith(
+        'CashflowGame.undoneOne:{"what":"CashflowGame.step.diceWon · MLM · 🎲 5"}',
+        'update',
+      );
+
+      component.undoThrough(1);
+      cashflowGameService.undoSteps.mock.calls[0][1].onSuccess();
+      expect(toastService.show).toHaveBeenCalledWith(
+        'CashflowGame.undoneMany:{"count":2,"what":"CashflowGame.step.diceWon · MLM · 🎲 5, CashflowGame.step.payday · Round 2"}',
+        'update',
+      );
+    });
+
     it('canUndo reads straight from the service — not tied to Payday specifically', () => {
       const { component } = makeComponent({ canUndo: true } as any);
       expect(component.canUndo).toBe(true);
@@ -373,16 +467,68 @@ describe('CashflowGameComponent', () => {
       const { component, cashflowGameService, toastService } = makeComponent();
 
       component.landOnBaby();
+      component.confirmSpace();
       cashflowGameService.resolveBaby.mock.calls[0][0].onSuccess();
       expect(toastService.show).toHaveBeenCalledWith('CashflowGame.babyDone', 'success');
 
       component.landOnCharity();
+      component.confirmSpace();
       cashflowGameService.resolveCharity.mock.calls[0][0].onSuccess();
       expect(toastService.show).toHaveBeenCalledWith('CashflowGame.charityDone', 'success');
 
       component.landOnDownsized();
+      component.confirmSpace();
       cashflowGameService.resolveDownsized.mock.calls[0][0].onSuccess();
       expect(toastService.show).toHaveBeenCalledWith('CashflowGame.downsizedDone', 'success');
+    });
+
+    it('Baby / Charity / Downsized first ask: nothing happens until Play', () => {
+      const { component, cashflowGameService } = makeComponent();
+
+      component.landOnCharity();
+
+      expect(component.dashboardView).toBe('confirmSpace');
+      expect(component.pendingSpace).toBe('charity');
+      expect(cashflowGameService.resolveCharity).not.toHaveBeenCalled();
+    });
+
+    it('Cancel goes back to the dashboard without playing anything', () => {
+      const { component, cashflowGameService } = makeComponent();
+      component.landOnBaby();
+
+      component.cancelSpace();
+
+      expect(component.dashboardView).toBe('main');
+      expect(component.pendingSpace).toBeNull();
+      expect(cashflowGameService.resolveBaby).not.toHaveBeenCalled();
+    });
+
+    it('shows the effect / cost as big figures, like the cards', () => {
+      const { component, cashflowGameService } = makeComponent();
+      (cashflowGameService as any).spacePreview = jest.fn((kind: string) =>
+        kind === 'baby' ? { amountMinor: 50000, children: 2 } : { amountMinor: 120000 },
+      );
+
+      component.landOnBaby();
+      expect(component.spaceFacts.map((fact) => fact.value)).toEqual(['2 / 3', '+500 €']);
+
+      component.landOnCharity();
+      expect(component.spaceFacts.map((fact) => fact.label)).toEqual([
+        'CashflowGame.spaceFactPayNow',
+        'CashflowGame.spaceFactDice',
+      ]);
+
+      component.landOnDownsized();
+      expect(component.spaceFacts[1].value).toBe('CashflowGame.spaceValueSkip');
+    });
+
+    it('the explanation carries the numbers the service previews', () => {
+      const { component, cashflowGameService } = makeComponent();
+      (cashflowGameService as any).spacePreview = jest.fn(() => ({ amountMinor: 120000 }));
+      component.landOnDownsized();
+
+      expect(component.spaceExplanation).toBe('CashflowGame.space.downsized');
+      expect((cashflowGameService as any).spacePreview).toHaveBeenCalledWith('downsized');
     });
 
     it('canLandOnBaby is false once there are already 3 children', () => {
@@ -427,16 +573,19 @@ describe('CashflowGameComponent', () => {
       CashflowGameComponent.isOpen = true;
 
       component.landOnBaby();
+      component.confirmSpace();
       cashflowGameService.resolveBaby.mock.calls[0][0].onSuccess();
       expect(CashflowGameComponent.isOpen).toBe(false);
 
       CashflowGameComponent.isOpen = true;
       component.landOnCharity();
+      component.confirmSpace();
       cashflowGameService.resolveCharity.mock.calls[0][0].onSuccess();
       expect(CashflowGameComponent.isOpen).toBe(false);
 
       CashflowGameComponent.isOpen = true;
       component.landOnDownsized();
+      component.confirmSpace();
       cashflowGameService.resolveDownsized.mock.calls[0][0].onSuccess();
       expect(CashflowGameComponent.isOpen).toBe(false);
     });
@@ -446,14 +595,12 @@ describe('CashflowGameComponent', () => {
       component.dashboardView = 'cards';
       component.activeCard = { id: '1', title: 'Duplex' } as any;
       component.cardQuery = 'dup';
-      component.showCardFind = true;
 
       component.backToMain();
 
       expect(component.dashboardView).toBe('main');
       expect(component.activeCard).toBeNull();
       expect(component.cardQuery).toBe('');
-      expect(component.showCardFind).toBe(false);
     });
 
     it('activeDeckLabel translates the currently active deck', () => {
@@ -464,6 +611,35 @@ describe('CashflowGameComponent', () => {
 
       component.activeDeckKind = 'doodad';
       expect(component.activeDeckLabel).toBe('CashflowGame.deckDoodad');
+    });
+  });
+
+  describe('the list of saved games (collapsed rows)', () => {
+    const game = (id: string) => ({ id, name: id }) as any;
+
+    it('shows every game as one line until it is tapped', () => {
+      const { component } = makeComponent();
+      expect(component.isGameOpen(game('a'))).toBe(false);
+
+      component.toggleGame(game('a'));
+      expect(component.isGameOpen(game('a'))).toBe(true);
+    });
+
+    it('keeps one game open at a time and closes it on a second tap', () => {
+      const { component } = makeComponent();
+      component.toggleGame(game('a'));
+      component.toggleGame(game('b'));
+      expect(component.isGameOpen(game('a'))).toBe(false);
+      expect(component.isGameOpen(game('b'))).toBe(true);
+
+      component.toggleGame(game('b'));
+      expect(component.isGameOpen(game('b'))).toBe(false);
+    });
+
+    it('keeps a game open while it is being renamed', () => {
+      const { component } = makeComponent();
+      component.startRename(game('a'));
+      expect(component.isGameOpen(game('a'))).toBe(true);
     });
   });
 
@@ -575,21 +751,624 @@ describe('CashflowGameComponent', () => {
     });
   });
 
-  describe('Deal card: execute a planned deal', () => {
-    it('executeDeal delegates to the service and toasts on success', () => {
-      const { component, cashflowGameService, toastService } = makeComponent();
-
-      component.executeDeal('TestCo');
-
-      expect(cashflowGameService.executeDeal).toHaveBeenCalledWith('TestCo', expect.anything());
-      cashflowGameService.executeDeal.mock.calls[0][1].onSuccess();
-      expect(toastService.show).toHaveBeenCalledWith('CashflowGame.dealDone', 'success');
+  describe('live scenario: where passive income and assets come from', () => {
+    const subscription = (title: string, amount: number) => ({
+      title,
+      account: 'Income',
+      amount,
+      startDate: '2026-10-01',
+      endDate: '',
+      category: '',
+      comment: '#cashflow',
+      frequency: 'monthly',
     });
 
-    it('plannedDeals reads straight from the service', () => {
-      const projects = [{ title: 'TestCo' }];
-      const { component } = makeComponent({ plannedDeals: projects } as any);
-      expect(component.plannedDeals).toBe(projects);
+    it('lists each bought investment with what it pays, from its Cashflow subscription', () => {
+      const { component } = makeComponent();
+      component.appState.cashflowGame = {
+        ...component.appState.cashflowGame,
+        gameSubscriptionTitles: ['Pilot Salary', 'EFH Cashflow', 'PIZZA Cashflow'],
+      };
+      component.appState.allSubscriptions = [
+        subscription('Pilot Salary', 9500),
+        subscription('EFH Cashflow', 100),
+        subscription('PIZZA Cashflow', 5000),
+        subscription('EFH-II Cashflow', 100), // planned only: not a game subscription yet
+      ] as any;
+
+      expect(component.livePassiveIncomeLines).toEqual([
+        { name: 'EFH', amount: 100 },
+        { name: 'PIZZA', amount: 5000 },
+      ]);
+      expect(component.livePassiveIncome).toBe(5100);
+    });
+
+    it('totals assets (cash included) and liabilities', () => {
+      const { component, cashflowGameService } = makeComponent();
+      (cashflowGameService as any).cash = 1600;
+      component.appState.allInvestments = [{ tag: 'EFH', deposit: 3000, amount: 47000 }];
+      component.appState.allShares = [{ tag: 'OK4U', quantity: 100, price: 10 }];
+      component.appState.allAssets = [];
+      component.appState.liabilities = [
+        { tag: 'M-EFH', amount: 47000, investment: true, credit: 0 },
+        { tag: 'Bank loan', amount: 3000, investment: false, credit: 0 },
+      ];
+
+      expect(component.liveTotalAssets).toBe(1600 + 50000 + 1000);
+      expect(component.liveTotalLiabilities).toBe(50000);
+    });
+
+    it('lists properties at full cost, shares at market value, and plain assets by name', () => {
+      const { component } = makeComponent();
+      component.appState.allInvestments = [{ tag: 'EFH', deposit: 3000, amount: 47000 }];
+      component.appState.allShares = [{ tag: 'OK4U', quantity: 100, price: 10 }];
+      component.appState.allAssets = [{ tag: 'Savings', amount: 600 }];
+
+      expect(component.liveAssetLines).toEqual([
+        { name: 'EFH', amount: 50000 },
+        { name: 'OK4U · 100', amount: 1000 },
+        { name: 'Savings', amount: 600 },
+      ]);
+    });
+  });
+
+  describe('profession card (Starting Scenario)', () => {
+    it('totals the starting liabilities', () => {
+      const { component } = makeComponent();
+      const hausmeister = CASHFLOW_GAME_SETS.find((set) => set.id === 'cashflow')!.professions.find(
+        (profession) => profession.id === 'hausmeister',
+      )!;
+
+      // Eigenheim-Hypothek 20.000 + Autokredit 4.000 + Kreditkartenschulden 3.000
+      expect(component.professionTotalLiabilities(hausmeister)).toBe(27000);
+    });
+
+    it('shows only the persona while it is open: viewing hides the dashboard, Back returns', () => {
+      const { component } = makeComponent();
+      const hausmeister = CASHFLOW_GAME_SETS.find((set) => set.id === 'cashflow')!.professions[0];
+
+      component.openProfessionCard(hausmeister);
+      expect(component.viewedProfession).toBe(hausmeister);
+
+      component.closeProfessionCard();
+      expect(component.viewedProfession).toBeNull();
+    });
+  });
+
+  describe('cardAmount', () => {
+    it('prints whole amounts without ,00 or a sign, and only signs the cashflow', () => {
+      const { component } = makeComponent();
+      component.appState.isEuropeanFormat = true;
+      component.appState.currency = '€';
+
+      expect(component.cardAmount(5000000)).toBe('50.000 €');
+      expect(component.cardAmount(10000)).toBe('100 €');
+      expect(component.cardAmount(10000, true)).toBe('+100 €');
+      expect(component.cardAmount(1250)).toBe('12,5 €');
+    });
+  });
+
+  describe('settle all', () => {
+    it('pre-fills the number of steps that clear the whole loan', () => {
+      const { component } = makeComponent();
+      component.appState.cashflowGame = {
+        ...component.appState.cashflowGame,
+        gameSetId: 'cashflow',
+      };
+      component.appState.liabilities = [
+        { tag: 'Bank loan', amount: 4000, investment: false, credit: 0 },
+      ];
+
+      component.settleAllLoan();
+
+      expect(component.loanIncrements).toBe(4); // 4,000 outstanding in 1,000 steps
+    });
+
+    it('rounds up when the loan is not a whole number of steps', () => {
+      const { component } = makeComponent();
+      component.appState.cashflowGame = {
+        ...component.appState.cashflowGame,
+        gameSetId: 'cashflow',
+      };
+      component.appState.liabilities = [
+        { tag: 'Bank loan', amount: 2500, investment: false, credit: 0 },
+      ];
+
+      component.settleAllLoan();
+
+      expect(component.loanIncrements).toBe(3);
+    });
+  });
+
+  describe('History view', () => {
+    const steps = [
+      { id: 'a-1', kind: 'payday', detail: 'Round 1', at: '', transactions: [{ amount: 1 }] },
+      { id: 'a-0', kind: 'start', detail: 'Pilot', at: '', transactions: [] },
+    ];
+
+    it('opening it loads the steps, and a step with transactions expands and collapses', () => {
+      const { component } = makeComponent({ historySteps: jest.fn(() => steps) });
+
+      component.openHistory();
+      expect(component.dashboardView).toBe('history');
+      expect(component.historySteps).toBe(steps as any);
+
+      expect(component.isStepOpen('a-1')).toBe(false);
+      component.toggleStep('a-1');
+      expect(component.isStepOpen('a-1')).toBe(true);
+      component.toggleStep('a-1');
+      expect(component.isStepOpen('a-1')).toBe(false);
+    });
+
+    it('"undo back to here" undoes this step and everything newer, then refreshes the list', () => {
+      const undoSteps = jest.fn((_count: number, callbacks: any) => callbacks.onSuccess());
+      const historySteps = jest.fn(() => steps);
+      const { component } = makeComponent({ undoSteps, historySteps });
+      component.openHistory();
+
+      component.undoThrough(1); // the second line from the top
+
+      expect(undoSteps).toHaveBeenCalledWith(2, expect.anything());
+      expect(historySteps).toHaveBeenCalledTimes(3); // opened + named for the banner + refreshed
+    });
+  });
+
+  describe('saved games', () => {
+    const game = (id: string, extra: object = {}) =>
+      ({
+        id,
+        name: id,
+        updatedAt: '2026-10-04T10:00:00Z',
+        round: 2,
+        cashMinor: 100000,
+        passiveIncomeMinor: 0,
+        expensesMinor: 100000,
+        escapedRatRace: false,
+        bankrupt: false,
+        language: 'en',
+        ...extra,
+      }) as any;
+    const playing = (made: ReturnType<typeof makeComponent>, id?: string) => {
+      AppStateService.instance.cashflowGame = {
+        ...AppStateService.instance.cashflowGame,
+        professionId: 'hausmeister',
+        gameSetId: 'cashflow',
+      };
+      made.savedGames.currentGameId = id;
+    };
+
+    it('opens the games view and refreshes the list', () => {
+      const { component, savedGames } = makeComponent();
+      component.openGames();
+      expect(component.dashboardView).toBe('games');
+      expect(savedGames.refresh).toHaveBeenCalled();
+    });
+
+    it('Save game saves the running game and says so; a long list gets a warning', async () => {
+      const made = makeComponent();
+      made.savedGames.tooMany = true;
+      made.savedGames.games = new Array(31).fill(game('x'));
+
+      made.component.saveGameNow();
+      await new Promise((resolve) => setTimeout(resolve));
+
+      expect(made.savedGames.saveCurrent).toHaveBeenCalled();
+      expect(made.toastService.show).toHaveBeenCalledWith('CashflowGame.gameSaved', 'success');
+      expect(made.toastService.show).toHaveBeenCalledWith('CashflowGame.tooManyGames', 'update');
+    });
+
+    it('New game asks first, then saves the game being played and clears the account', async () => {
+      const made = makeComponent();
+
+      made.component.newGame();
+      await new Promise((resolve) => setTimeout(resolve));
+
+      expect(made.confirm.confirm).toHaveBeenCalled();
+      expect(made.savedGames.startNewGame).toHaveBeenCalled();
+      expect(made.component.dashboardView).toBe('main');
+    });
+
+    it('Continue loads another game at once - the game being played is saved by the service', async () => {
+      const made = makeComponent();
+      playing(made, 'current');
+
+      made.component.continueGame(game('other'));
+      await new Promise((resolve) => setTimeout(resolve));
+
+      expect(made.confirm.confirm).not.toHaveBeenCalled();
+      expect(made.savedGames.loadGame).toHaveBeenCalledWith('other');
+      expect(made.toastService.show).toHaveBeenCalledWith('CashflowGame.gameLoaded', 'success');
+    });
+
+    it('Continue on the game already being played asks first - it throws away unsaved changes', async () => {
+      const made = makeComponent();
+      playing(made, 'current');
+
+      made.component.continueGame(game('current'));
+      await new Promise((resolve) => setTimeout(resolve));
+
+      expect(made.confirm.confirm).toHaveBeenCalled();
+      expect(made.savedGames.loadGame).toHaveBeenCalledWith('current');
+    });
+
+    it('switches to the language the game was played in', async () => {
+      const made = makeComponent();
+
+      made.component.continueGame(game('de-game', { language: 'de' }));
+      await new Promise((resolve) => setTimeout(resolve));
+
+      expect(made.language.use).toHaveBeenCalledWith('de');
+    });
+
+    it('a game that fails to load shows why and stays where it was', async () => {
+      const made = makeComponent();
+      made.savedGames.loadGame.mockRejectedValueOnce(new Error('This saved game is damaged.'));
+
+      made.component.continueGame(game('bad'));
+      await new Promise((resolve) => setTimeout(resolve));
+
+      expect(made.toastService.show).toHaveBeenCalledWith('This saved game is damaged.', 'error');
+      expect(made.component.isBusy).toBe(false);
+    });
+
+    it('renames in the list and deletes after asking', async () => {
+      const made = makeComponent();
+      made.component.startRename(game('a', { name: 'First' }));
+      expect(made.component.renameText).toBe('First');
+      made.component.renameText = 'Second';
+      made.component.saveRename();
+      await new Promise((resolve) => setTimeout(resolve));
+      expect(made.savedGames.renameGame).toHaveBeenCalledWith('a', 'Second');
+      expect(made.component.renamingId).toBeNull();
+
+      made.component.deleteSavedGame(game('a', { name: 'First' }));
+      await new Promise((resolve) => setTimeout(resolve));
+      expect(made.confirm.confirm).toHaveBeenCalled();
+      expect(made.savedGames.deleteGame).toHaveBeenCalledWith('a');
+    });
+
+    it('labels a game from its numbers, and knows which one is being played', () => {
+      const made = makeComponent();
+      playing(made, 'live');
+
+      expect(made.component.gameStatus(game('x'))).toBe('playing');
+      expect(made.component.gameStatus(game('x', { escapedRatRace: true }))).toBe('escaped');
+      expect(made.component.gameStatus(game('x', { endedAt: '2026-10-04' }))).toBe('ended');
+      expect(made.component.isLiveGame(game('live'))).toBe(true);
+      expect(made.component.isLiveGame(game('other'))).toBe(false);
+    });
+
+    it('exports a game as a downloaded file', async () => {
+      const made = makeComponent();
+      const click = jest.fn();
+      (URL as any).createObjectURL = jest.fn(() => 'blob:x');
+      (URL as any).revokeObjectURL = jest.fn();
+      jest.spyOn(document, 'createElement').mockReturnValueOnce({ click } as any);
+
+      made.component.exportSavedGame(game('a'));
+      await new Promise((resolve) => setTimeout(resolve));
+
+      expect(made.savedGames.exportGame).toHaveBeenCalledWith('a');
+      expect(click).toHaveBeenCalled();
+      jest.restoreAllMocks();
+    });
+  });
+
+  describe('starting from the profession card', () => {
+    it('shuffling opens the card, and Start there picks that profession and moves on to the language question', () => {
+      const { component, cashflowGameService } = makeComponent();
+      component.selectedProfessionId = '';
+      const lehrer = component.selectedGameSet!.professions[1];
+
+      component.openProfessionCard(lehrer); // what shuffle does after picking one
+      component.startFromCard(lehrer);
+
+      expect(component.selectedProfessionId).toBe(lehrer.id);
+      expect(component.viewedProfession).toBeNull(); // the card closes
+      expect(component.choosingLanguage).toBe(true); // next step
+      expect(cashflowGameService.pickProfession).not.toHaveBeenCalled(); // not started yet
+    });
+  });
+
+  describe('asking for the game language before a game starts', () => {
+    it('Start opens the question first - it does not start the game yet', () => {
+      const { component, cashflowGameService } = makeComponent();
+
+      component.askLanguage();
+
+      expect(component.choosingLanguage).toBe(true);
+      expect(cashflowGameService.pickProfession).not.toHaveBeenCalled();
+    });
+
+    it('stays put when no profession is picked', () => {
+      const { component } = makeComponent();
+      component.selectedProfessionId = '';
+      component.askLanguage();
+      expect(component.choosingLanguage).toBe(false);
+    });
+
+    it('picking a language switches the app and waits for it', async () => {
+      const { component, language } = makeComponent();
+
+      await component.chooseLanguage('de');
+
+      expect(language.use).toHaveBeenCalledWith('de');
+      expect(component.isBusy).toBe(false);
+    });
+
+    it('Back closes the question, and Start then starts the game and closes it', () => {
+      const { component, cashflowGameService } = makeComponent();
+      component.askLanguage();
+      component.cancelLanguage();
+      expect(component.choosingLanguage).toBe(false);
+
+      component.askLanguage();
+      component.startGame();
+      cashflowGameService.pickProfession.mock.calls[0][2].onSuccess();
+      expect(component.choosingLanguage).toBe(false);
+    });
+  });
+
+  describe('opening on the decision after a dice card is paid', () => {
+    it('opens the game panel on its main view, whatever it was showing', () => {
+      ProfileComponent.mail = 'player@cashflow.example';
+      const decisionNeeded$ = new Subject<void>();
+      const { component } = makeComponent({ decisionNeeded$ } as any);
+      CashflowGameComponent.isOpen = false;
+      component.dashboardView = 'history';
+      component.activeCard = { id: '1', title: 'x', assetKind: 'asset' } as any;
+
+      decisionNeeded$.next();
+
+      expect(CashflowGameComponent.isOpen).toBe(true);
+      expect(component.dashboardView).toBe('main');
+      expect(component.activeCard).toBeNull();
+    });
+  });
+
+  describe('dice decision for a paid gold card', () => {
+    const deal = {
+      title: 'GOLD',
+      coins: 10,
+      costMinor: 50000,
+      successOn: 6,
+      stage: 'awaitingRoll',
+    };
+
+    it('the app rolls: a 6 wins, anything lower does not, and the roll is recorded', () => {
+      const win = makeComponent({ rollDie: jest.fn(() => 6) });
+      win.component.rollDice(deal as any);
+      expect(win.cashflowGameService.resolveGamble).toHaveBeenCalledWith(
+        'GOLD',
+        { won: true, roll: 6 },
+        expect.anything(),
+      );
+
+      const miss = makeComponent({ rollDie: jest.fn(() => 3) });
+      miss.component.rollDice(deal as any);
+      expect(miss.cashflowGameService.resolveGamble).toHaveBeenCalledWith(
+        'GOLD',
+        { won: false, roll: 3 },
+        expect.anything(),
+      );
+    });
+
+    it('an app roll keeps the die and its result on screen until Continue', () => {
+      const resolveGamble = jest.fn((_t: string, _o: any, callbacks: any) => callbacks.onSuccess());
+      const rich = { ...deal, successText: 'Ten gold coins!', failureText: 'Nothing.' };
+
+      const win = makeComponent({ rollDie: jest.fn(() => 6), resolveGamble });
+      win.component.rollDice(rich as any);
+      expect(win.component.rollResult).toMatchObject({
+        roll: 6,
+        won: true,
+        text: 'Ten gold coins!',
+      });
+      win.component.dismissRollResult();
+      expect(win.component.rollResult).toBeNull();
+
+      const miss = makeComponent({ rollDie: jest.fn(() => 3), resolveGamble });
+      miss.component.rollDice(rich as any);
+      expect(miss.component.rollResult).toMatchObject({ roll: 3, won: false, text: 'Nothing.' });
+    });
+
+    it('a roll reported from a real die shows no die (there is no number)', () => {
+      const resolveGamble = jest.fn((_t: string, _o: any, callbacks: any) => callbacks.onSuccess());
+      const { component } = makeComponent({ resolveGamble });
+      component.reportRoll(deal as any, true);
+      expect(component.rollResult).toBeNull();
+    });
+
+    it('closing the panel clears a result still on screen', () => {
+      const { component } = makeComponent();
+      component.rollResult = { roll: 2, won: false, headline: 'x', text: '' };
+      component.closeWindow();
+      expect(component.rollResult).toBeNull();
+    });
+
+    it('draws each face with the right number of pips', () => {
+      const { component } = makeComponent();
+      for (let face = 1; face <= 6; face++) {
+        const cells = component.dieCells(face);
+        expect(cells).toHaveLength(9);
+        expect(cells.filter(Boolean)).toHaveLength(face);
+      }
+      expect(component.dieCells(1)[4]).toBe(true); // a single pip sits in the middle
+      expect(component.dieCells(99).filter(Boolean)).toHaveLength(0);
+    });
+
+    it('a roll reported from a real die has no number', () => {
+      const { component, cashflowGameService } = makeComponent();
+      component.reportRoll(deal as any, true);
+      expect(cashflowGameService.resolveGamble).toHaveBeenCalledWith(
+        'GOLD',
+        { won: true, roll: undefined },
+        expect.anything(),
+      );
+    });
+
+    it('shows the open decisions the service reports', () => {
+      const { component } = makeComponent({ openDecisions: [deal] } as any);
+      expect(component.openDecisions).toEqual([deal]);
+    });
+  });
+
+  describe('card kind quick filter', () => {
+    const share = { id: 's', title: 'OK4U Pharma AG', assetKind: 'share', symbol: 'OK4U' };
+    const property = { id: 'p', title: 'Einfamilienhaus', assetKind: 'investment', symbol: 'EFH' };
+
+    it('offers Share and Investment when the pile holds both, and filters the grid', () => {
+      const { component } = makeComponent({ browseCards: jest.fn(() => [share, property]) });
+      component.activeDeckKind = 'dealSmall';
+
+      expect(component.cardKinds).toEqual(['share', 'investment']);
+      expect(component.cardTiles.map((tile) => tile.primary)).toEqual(['OK4U', 'EFH']);
+
+      component.toggleCardKind('investment');
+      expect(component.cardTiles.map((tile) => tile.primary)).toEqual(['EFH']);
+
+      component.toggleCardKind('investment'); // tapping it again clears the filter
+      expect(component.cardTiles).toHaveLength(2);
+    });
+
+    it('shows the label of the picked language and finds a card by it or by the German one', () => {
+      const { component, cashflowGameService } = makeComponent({
+        browseCards: jest.fn(() => [share, property]),
+      });
+      const textService = (component as any).cardText;
+      textService.symbolFor = jest.fn((symbol?: string) => (symbol === 'EFH' ? 'SFH' : symbol));
+      textService.textFor = jest.fn((id: string) =>
+        id === 'p' ? { title: 'Single-family home for sale' } : {},
+      );
+      component.activeDeckKind = 'dealSmall';
+      expect(cashflowGameService).toBeDefined();
+
+      expect(component.cardTiles.map((tile) => tile.primary)).toEqual(['OK4U', 'SFH']);
+      expect(component.cardTiles[1].secondary).toBe('Single-family home for sale');
+
+      component.cardQuery = 'sfh'; // the label in the picked language
+      expect(component.cardTiles.map((tile) => tile.primary)).toEqual(['SFH']);
+      component.cardQuery = 'efh'; // the deck's own label still finds it
+      expect(component.cardTiles.map((tile) => tile.primary)).toEqual(['SFH']);
+      component.cardQuery = 'single family'; // and so does the translated name, word by word
+      expect(component.cardTiles.map((tile) => tile.primary)).toEqual(['SFH']);
+    });
+
+    it('rebuilds the tiles once the language file has loaded instead of keeping the German names', () => {
+      const { component } = makeComponent({ browseCards: jest.fn(() => [property]) });
+      const textService = (component as any).cardText;
+      component.activeDeckKind = 'dealSmall';
+      textService.textFor = jest.fn(() => ({}));
+      textService.symbolFor = jest.fn((symbol?: string) => symbol);
+      expect(component.cardTiles[0].primary).toBe('EFH');
+
+      textService.version = 1; // the text arrived
+      textService.symbolFor = jest.fn(() => 'SFH');
+      expect(component.cardTiles[0].primary).toBe('SFH');
+    });
+
+    it('offers Asset next to Share and Investment when the pile holds gold coins', () => {
+      const gold = {
+        id: 'g',
+        title: 'Freund braucht schnell Bargeld',
+        assetKind: 'asset',
+        symbol: 'GOLD',
+      };
+      const { component } = makeComponent({
+        browseCards: jest.fn(() => [share, property, gold]),
+      } as any);
+      component.activeDeckKind = 'dealSmall';
+
+      expect(component.cardKinds).toEqual(['share', 'investment', 'asset']);
+      component.toggleCardKind('asset');
+      expect(component.cardTiles.map((tile) => tile.primary)).toEqual(['GOLD']);
+    });
+
+    describe('type filters (the second row)', () => {
+      const card = (id: string, symbol: string) => ({
+        id,
+        title: symbol,
+        assetKind: 'investment',
+        symbol,
+      });
+      const pile = [
+        card('a', 'MFH4'),
+        card('b', 'MFH8'),
+        card('c', 'EFH'),
+        card('d', 'DH'),
+        share,
+        { id: 'g', title: 'Gold', assetKind: 'asset', symbol: 'GOLD' },
+      ];
+
+      it('lists the types present - the unit count does not split a type - and none for shares', () => {
+        const { component } = makeComponent({ browseCards: jest.fn(() => pile) } as any);
+        component.activeDeckKind = 'dealBig';
+
+        expect(component.cardFamilies).toEqual(['MFH', 'EFH', 'DH', 'GOLD']);
+      });
+
+      it('narrows the grid to one type, and tapping it again clears it', () => {
+        const { component } = makeComponent({ browseCards: jest.fn(() => pile) } as any);
+        component.activeDeckKind = 'dealBig';
+
+        component.toggleCardFamily('MFH');
+        expect(component.cardTiles.map((tile) => tile.primary)).toEqual(['MFH4', 'MFH8']);
+
+        component.toggleCardFamily('MFH');
+        expect(component.cardTiles).toHaveLength(pile.length);
+      });
+
+      it('follows the kind filter: only the types of that kind remain, and a stale type is dropped', () => {
+        const { component } = makeComponent({ browseCards: jest.fn(() => pile) } as any);
+        component.activeDeckKind = 'dealSmall';
+
+        component.toggleCardFamily('GOLD');
+        component.toggleCardKind('investment'); // gold is an asset: no longer offered
+        expect(component.cardFamilies).toEqual(['MFH', 'EFH', 'DH']);
+        expect(component.cardFamilyFilter).toBeNull();
+
+        component.toggleCardKind('asset');
+        expect(component.cardFamilies).toEqual(['GOLD']);
+      });
+
+      it('type filters combine with the text search', () => {
+        const { component } = makeComponent({ browseCards: jest.fn(() => pile) } as any);
+        component.activeDeckKind = 'dealBig';
+        component.toggleCardFamily('MFH');
+        component.cardQuery = 'mfh8';
+        expect(component.cardTiles.map((tile) => tile.primary)).toEqual(['MFH8']);
+      });
+
+      it('changing pile clears both filters', () => {
+        const { component } = makeComponent({ browseCards: jest.fn(() => pile) } as any);
+        component.activeDeckKind = 'dealBig';
+        component.toggleCardFamily('EFH');
+        component.changeDeck();
+        expect(component.cardFamilyFilter).toBeNull();
+      });
+    });
+
+    it('shows no filter for a pile with a single kind (Big Deal)', () => {
+      const { component } = makeComponent({ browseCards: jest.fn(() => [property]) });
+      component.activeDeckKind = 'dealBig';
+
+      expect(component.cardKinds).toEqual(['investment']);
+      // the template hides the chips unless there are at least two kinds to choose from
+      expect(component.cardKinds.length > 1).toBe(false);
+    });
+  });
+
+  describe('declining a Deal card', () => {
+    it('returns to the main dashboard without touching the game', () => {
+      const { component, cashflowGameService } = makeComponent();
+      component.dashboardView = 'cards';
+      component.activeCard = { id: '1', title: 'Duplex', assetKind: 'investment' };
+
+      component.declineActiveCard();
+
+      expect(component.dashboardView).toBe('main');
+      expect(component.activeCard).toBeNull();
+      expect(cashflowGameService.applyDealCard).not.toHaveBeenCalled();
     });
   });
 
@@ -641,6 +1420,78 @@ describe('CashflowGameComponent', () => {
       expect(component.activeCard).toBe(card);
     });
 
+    it('a stock card for a share you still hold updates the price instead of planning', () => {
+      const updateSharePrice = jest.fn((_c: any, _t: any, cb: any) => cb.onSuccess('OK4U'));
+      const { component, cashflowGameService } = makeComponent({
+        updateSharePrice,
+        heldShareProjectFor: jest.fn(() => ({ title: 'OK4U', share: { tag: 'OK4U' } })),
+      });
+      component.activeDeckKind = 'dealSmall';
+      component.activeCard = {
+        id: 'c',
+        title: 'OK4U',
+        symbol: 'OK4U',
+        assetKind: 'share',
+        priceMinor: 500,
+      } as any;
+
+      component.applyActiveCard();
+
+      expect(updateSharePrice).toHaveBeenCalled();
+      expect(cashflowGameService.applyDealCard).not.toHaveBeenCalled();
+    });
+
+    it('a stock card for a new share is planned as before', () => {
+      const { component, cashflowGameService } = makeComponent({
+        heldShareProjectFor: jest.fn(() => undefined),
+      });
+      component.activeDeckKind = 'dealSmall';
+      component.activeCard = {
+        id: 'c',
+        title: 'OK4U',
+        symbol: 'OK4U',
+        assetKind: 'share',
+        priceMinor: 500,
+      } as any;
+
+      component.applyActiveCard();
+
+      expect(cashflowGameService.applyDealCard).toHaveBeenCalled();
+    });
+
+    describe('rat race escape banner', () => {
+      const withGame = (passive: number, expenses: number) => {
+        const { component } = makeComponent();
+        const state = AppStateService.instance;
+        state.cashflowGame = {
+          ...state.cashflowGame,
+          professionId: 'placeholder-profession',
+          gameSetId: 'placeholder',
+          gameSubscriptionTitles: ['Salary', 'Rent', 'OK Cashflow'],
+        };
+        state.allSubscriptions = [
+          { title: 'Salary', amount: 3000 },
+          { title: 'Rent', amount: -expenses },
+          { title: 'OK Cashflow', amount: passive },
+        ] as any;
+        return component;
+      };
+
+      it('shows once passive income covers every monthly expense', () => {
+        expect(withGame(1500, 1500).escapedRatRace).toBe(true);
+        expect(withGame(2000, 1500).escapedRatRace).toBe(true);
+      });
+
+      it('stays hidden while the expenses are higher, and when there is nothing to cover', () => {
+        expect(withGame(1000, 1500).escapedRatRace).toBe(false);
+        expect(withGame(0, 0).escapedRatRace).toBe(false);
+      });
+
+      it('a salary alone never counts as passive income', () => {
+        expect(withGame(0, 1000).escapedRatRace).toBe(false);
+      });
+    });
+
     it('applyActiveCard plans a Deal-deck card', () => {
       const { component, cashflowGameService } = makeComponent();
       component.activeDeckKind = 'dealSmall';
@@ -649,32 +1500,411 @@ describe('CashflowGameComponent', () => {
 
       component.applyActiveCard();
 
-      expect(cashflowGameService.applyDealCard).toHaveBeenCalledWith(card, expect.anything());
+      expect(cashflowGameService.applyDealCard).toHaveBeenCalledWith(
+        card,
+        expect.anything(),
+        expect.anything(),
+      );
     });
 
-    it('applyActiveCard pays a Doodad-deck card', () => {
+    it('a Doodad card is paid through the Add dialog, pre-filled - never booked here', async () => {
       const { component, cashflowGameService } = makeComponent();
       component.activeDeckKind = 'doodad';
-      const card = { id: '1', title: 'Gadget', costMinor: 1000 };
-      component.activeCard = card as any;
+      component.activeCard = {
+        id: 'classic-doodad-boat',
+        title: 'Du kaufst ein Boot',
+        costMinor: 500000,
+        account: 'Smile',
+        group: 'leisure',
+      } as any;
+      const { AddComponent } = await import('../../panels/add/add.component');
 
-      component.applyActiveCard();
+      await component.payActiveDoodad();
 
-      expect(cashflowGameService.applyDoodadCard).toHaveBeenCalledWith(card, expect.anything());
+      expect(AddComponent.isAdd).toBe(true);
+      expect(AddComponent.selectedOption).toBe('Smile');
+      expect(AddComponent.amountTextField).toBe('-5000');
+      expect(AddComponent.categoryTextField).toBe('@leisure');
+      expect(AddComponent.commentTextField).toContain('🏦 note');
+      expect(AddComponent.commentTextField).toBe('Du kaufst ein Boot\n\n🏦 note\n\n#doodad');
+      expect(cashflowGameService.doodadLoanNote).toHaveBeenCalledWith(500000);
     });
 
-    it('applyActiveCard clears the active card, toasts, and returns to the main dashboard view', () => {
-      const { component, cashflowGameService, toastService } = makeComponent();
+    it('a Doodad without a suggested account falls back to Splurge', async () => {
+      const { component, cashflowGameService } = makeComponent();
+      cashflowGameService.doodadLoanNote.mockReturnValue('');
       component.activeDeckKind = 'doodad';
-      component.activeCard = { id: '1', title: 'Gadget', costMinor: 1000 } as any;
-      component.dashboardView = 'cards';
+      component.activeCard = { id: 'x', title: 'Gadget', costMinor: 1000 } as any;
+      const { AddComponent } = await import('../../panels/add/add.component');
 
-      component.applyActiveCard();
-      cashflowGameService.applyDoodadCard.mock.calls[0][1].onSuccess();
+      await component.payActiveDoodad();
+
+      expect(AddComponent.selectedOption).toBe('Splurge');
+      expect(AddComponent.categoryTextField).toBe('@Gadget');
+    });
+
+    describe('market buyer cards', () => {
+      const buyer = {
+        id: 'm1',
+        title: 'Einfamilienhaus Käufer',
+        description: 'x',
+        sells: { family: 'EFH', plusPercent: 20 },
+      };
+      const open = (matched: string[]) => {
+        const made = makeComponent({
+          playMarketCard: jest.fn((_card: any, _opts: any, callbacks: any) =>
+            callbacks.onSuccess(matched),
+          ),
+        });
+        made.component.activeDeckKind = 'market';
+        made.component.activeCard = buyer as any;
+        made.component.dashboardView = 'cards';
+        return made;
+      };
+
+      it('playing it with a fitting property lands on the Grow page', () => {
+        const { component, router, cashflowGameService } = open(['EFH']);
+
+        component.playActiveMarket();
+
+        expect((cashflowGameService as any).playMarketCard).toHaveBeenCalledWith(
+          buyer,
+          expect.objectContaining({ types: [{ labels: ['EFH', 'EFH'] }] }),
+          expect.anything(),
+        );
+        expect(router.navigate).toHaveBeenCalledWith(['/grow']);
+        expect(component.marketNotice).toBeNull();
+      });
+
+      it('playing it without a fitting property only informs the player, on the dashboard', () => {
+        const { component, router } = open([]);
+
+        component.playActiveMarket();
+
+        expect(router.navigate).not.toHaveBeenCalled();
+        expect(component.marketNotice).toBe('CashflowGame.marketNoMatch');
+        expect(component.dashboardView).toBe('main');
+      });
+
+      describe('quick filters', () => {
+        const cards = [
+          { id: 'a', title: 'B', description: '', sells: { family: 'EFH', plusPercent: 20 } },
+          { id: 'b', title: 'B', description: '', sells: { family: 'EFH', plusMinor: 500000 } },
+          { id: 'c', title: 'B', description: '', sells: { family: 'ETW', plusPercent: 10 } },
+        ];
+        const openMarket = () => {
+          const made = makeComponent({ browseCards: jest.fn(() => cards) });
+          made.component.activeDeckKind = 'market';
+          return made.component;
+        };
+
+        it('offers the property types and the offer kinds the pile holds', () => {
+          const component = openMarket();
+          expect(component.marketFamilies).toEqual(['EFH', 'ETW']);
+          expect(component.marketOfferKinds).toEqual(['percent', 'amount']);
+        });
+
+        it('narrows by type, and the offer chips follow the type', () => {
+          const component = openMarket();
+          component.toggleMarketFamily('ETW');
+          expect(component.cardTiles.map((tile) => tile.card.id)).toEqual(['c']);
+          expect(component.marketOfferKinds).toEqual([]);
+        });
+
+        it('narrows by offer kind and a second tap clears it', () => {
+          const component = openMarket();
+          component.toggleMarketOffer('percent');
+          expect(component.cardTiles.map((tile) => tile.card.id)).toEqual(['a', 'c']);
+          component.toggleMarketOffer('percent');
+          expect(component.cardTiles).toHaveLength(3);
+        });
+
+        it('a fixed price is its own offer kind, shown as the price', () => {
+          const { component } = makeComponent({
+            browseCards: jest.fn(() => [
+              {
+                id: 'p',
+                title: 'B',
+                description: '',
+                sells: { family: 'ETW', priceMinor: 6500000 },
+              },
+              { id: 'q', title: 'B', description: '', sells: { family: 'ETW', plusPercent: 10 } },
+            ]),
+          });
+          component.activeDeckKind = 'market';
+
+          expect(component.marketOfferKinds).toEqual(['price', 'percent']);
+          component.toggleMarketOffer('price');
+          expect(component.cardTiles.map((tile) => tile.card.id)).toEqual(['p']);
+          expect(component.cardTiles[0].range).toBe('65.000 €');
+        });
+
+        it('changing the pile resets them', () => {
+          const component = openMarket();
+          component.toggleMarketFamily('EFH');
+          component.changeDeck();
+          expect(component.marketFamilyFilter).toBeNull();
+        });
+      });
+
+      it("shows the type's label (SFH) as the tile heading, with the name under it", () => {
+        const { component } = open([]);
+        (component as any).cardText.symbolFor = (symbol: string) =>
+          symbol === 'EFH' ? 'SFH' : symbol;
+        (component as any).cardText.textFor = () => ({ title: 'Single-family home buyer' });
+        const tile = (component as any).tileFor(buyer);
+        expect(tile.primary).toBe('SFH');
+        expect(tile.secondary).toBe('Single-family home buyer');
+        expect(tile.search).toContain('sfh');
+      });
+
+      it('the "does not apply" message is gone when the panel is opened again', () => {
+        const { component } = open([]);
+        component.playActiveMarket();
+        expect(component.marketNotice).not.toBeNull();
+
+        component.closeWindow();
+
+        expect(component.marketNotice).toBeNull();
+      });
+
+      describe('cost cards (pay it, or it does not apply)', () => {
+        const cost = {
+          id: 'c1',
+          title: 'Abwasserrohr gebrochen',
+          description: 'x',
+          pays: { costMinor: 100000 },
+        };
+        const open = (property: string | null) => {
+          const made = makeComponent({
+            playMarketCostCard: jest.fn((_c: any, _o: any, callbacks: any) =>
+              callbacks.onSuccess(property),
+            ),
+          });
+          made.component.activeDeckKind = 'market';
+          made.component.activeCard = cost as any;
+          (made.component as any).cardText.textFor = () => ({
+            comment: 'The pipe at {property} broke.',
+          });
+          return made;
+        };
+
+        it('without a property it only says so on the dashboard', () => {
+          const { component } = open(null);
+          component.playActiveMarketCost();
+          expect(component.marketNotice).toBe('CashflowGame.marketNoProperty');
+          expect(component.dashboardView).toBe('main');
+        });
+
+        it('with a property it opens the Add dialog on Fire, with the first property as category', async () => {
+          const { component } = open('SFH-II');
+          const { AddComponent } = await import('../../panels/add/add.component');
+
+          component.playActiveMarketCost();
+          await new Promise((resolve) => setTimeout(resolve));
+
+          expect(AddComponent.isAdd).toBe(true);
+          expect(AddComponent.selectedOption).toBe('Fire');
+          expect(AddComponent.categoryTextField).toBe('@SFH-II');
+          expect(AddComponent.amountTextField).toBe('-1000');
+          expect(AddComponent.commentTextField).toBe(
+            'Abwasserrohr gebrochen\n\nThe pipe at SFH-II broke.\n\n🏦 note\n\n#market',
+          );
+        });
+
+        it('shows the cost on the tile and has its own "You pay" filter', () => {
+          const made = makeComponent({ browseCards: jest.fn(() => [cost]) });
+          made.component.activeDeckKind = 'market';
+          expect(made.component.marketOfferKinds).toEqual([]); // only one kind: no choice
+          const tile = (made.component as any).tileFor(cost);
+          expect(tile.value).toBe('1.000');
+          expect(tile.priceText).toBe('1000');
+        });
+      });
+
+      describe('stock splits and cashflow boosts', () => {
+        const split = {
+          id: 's1',
+          title: 'Aktie - OK4U',
+          description: 'x',
+          splits: { symbol: 'OK4U' },
+        };
+        const boost = {
+          id: 'b1',
+          title: 'Kleiner Business Boom!',
+          description: 'x',
+          star: true,
+          boost: { maxCashflowMinor: 100000, addMinor: 25000 },
+        };
+
+        it('a split card without the share only says so; with it, the dice decision takes over', () => {
+          const none = makeComponent({
+            playShareSplitCard: jest.fn((_c: any, _o: any, cb: any) => cb.onSuccess(null)),
+          });
+          none.component.activeDeckKind = 'market';
+          none.component.activeCard = split as any;
+          none.component.playActiveMarketSplit();
+          expect(none.component.marketNotice).toBe('CashflowGame.marketNoShare');
+
+          const owned = makeComponent({
+            playShareSplitCard: jest.fn((_c: any, _o: any, cb: any) => cb.onSuccess('OK4U')),
+          });
+          owned.component.activeDeckKind = 'market';
+          owned.component.activeCard = split as any;
+          owned.component.playActiveMarketSplit();
+          expect(owned.component.marketNotice).toBeNull();
+          expect(owned.component.dashboardView).toBe('main');
+        });
+
+        it('the app die doubles a split on 1-3 and halves it on 4-6', () => {
+          const deal = {
+            title: 'SPLIT-OK4U',
+            split: { shareTag: 'OK4U' },
+            successText: 'x2',
+            failureText: '/2',
+          } as any;
+          const resolveGamble = jest.fn((_t: string, _o: any, cb: any) => cb.onSuccess());
+
+          const low = makeComponent({ rollDie: jest.fn(() => 3), resolveGamble });
+          low.component.rollDice(deal);
+          expect(resolveGamble).toHaveBeenLastCalledWith(
+            'SPLIT-OK4U',
+            { won: true, roll: 3 },
+            expect.anything(),
+          );
+          expect(low.component.rollResult).toMatchObject({ won: true, headline: 'x2' });
+
+          const high = makeComponent({ rollDie: jest.fn(() => 4), resolveGamble });
+          high.component.rollDice(deal);
+          expect(resolveGamble).toHaveBeenLastCalledWith(
+            'SPLIT-OK4U',
+            { won: false, roll: 4 },
+            expect.anything(),
+          );
+          expect(high.component.rollResult).toMatchObject({ won: false, headline: '/2' });
+        });
+
+        it('a boost card reports what it raised - or that it does not apply', () => {
+          const some = makeComponent({
+            playBoostCard: jest.fn((_c: any, _o: any, cb: any) =>
+              cb.onSuccess([{ title: 'SFH', from: 300, to: 550 }]),
+            ),
+          });
+          some.component.activeDeckKind = 'market';
+          some.component.activeCard = boost as any;
+          some.component.playActiveMarketBoost();
+          expect(some.component.marketNotice).toBe('CashflowGame.marketBoostDone');
+
+          const none = makeComponent({
+            playBoostCard: jest.fn((_c: any, _o: any, cb: any) => cb.onSuccess([])),
+          });
+          none.component.activeDeckKind = 'market';
+          none.component.activeCard = boost as any;
+          none.component.playActiveMarketBoost();
+          expect(none.component.marketNotice).toBe('CashflowGame.marketBoostNone');
+        });
+
+        it('a split card is a dice card in the list: it shows the dice and what they do', () => {
+          const { component } = makeComponent();
+          component.activeDeckKind = 'market';
+          expect((component as any).tileFor(split).range).toBe('🎲 ×2 / ÷2');
+        });
+
+        it('a star card carries a star in the list and on its heading', () => {
+          const { component } = makeComponent();
+          component.activeDeckKind = 'market';
+          component.activeCard = boost as any;
+          expect((component as any).tileFor(boost).primary).toContain('★');
+          expect(component.activeCardTitle).toBe('Kleiner Business Boom! ★');
+        });
+
+        it('splits and boosts are their own quick-filter kinds', () => {
+          const { component } = makeComponent({ browseCards: jest.fn(() => [split, boost]) });
+          component.activeDeckKind = 'market';
+          expect(component.marketOfferKinds).toEqual(['split', 'boost']);
+          component.toggleMarketOffer('boost');
+          expect(component.cardTiles.map((tile) => tile.card.id)).toEqual(['b1']);
+        });
+      });
+
+      it('tells the nine buyers apart by their offer in the list', () => {
+        const { component } = open([]);
+        const tile = (component as any).tileFor(buyer);
+        expect(tile.range).toBe('+20%');
+        expect(tile.search).toContain('+20%');
+        expect(tile.priceText).toBe('20');
+      });
+    });
+
+    describe('Schnickschnack quick filters', () => {
+      const cards = [
+        { id: 'a', title: 'Boat', costMinor: 1, account: 'Smile', group: 'leisure' },
+        { id: 'b', title: 'Jet ski', costMinor: 1, account: 'Smile', group: 'leisure' },
+        { id: 'c', title: 'Kitchen', costMinor: 1, account: 'Smile', group: 'home' },
+        { id: 'd', title: 'Chair', costMinor: 1, account: 'Splurge', group: 'home' },
+        { id: 'e', title: 'Watch', costMinor: 1, account: 'Splurge', group: 'style' },
+      ];
+      const open = () => {
+        const made = makeComponent({ browseCards: jest.fn(() => cards) });
+        made.component.activeDeckKind = 'doodad';
+        return made.component;
+      };
+
+      it('offers the accounts and groups the pile holds', () => {
+        const component = open();
+        expect(component.doodadAccounts).toEqual(['Smile', 'Splurge']);
+        expect(component.doodadGroups).toEqual(['leisure', 'home', 'style']);
+      });
+
+      it('narrows the list by account, and the group chips follow the account', () => {
+        const component = open();
+        component.toggleDoodadAccount('Splurge');
+        expect(component.cardTiles.map((tile) => tile.card.id)).toEqual(['d', 'e']);
+        expect(component.doodadGroups).toEqual(['home', 'style']);
+      });
+
+      it('narrows by group, combines with the account, and a tap on the active chip clears it', () => {
+        const component = open();
+        component.toggleDoodadGroup('home');
+        expect(component.cardTiles.map((tile) => tile.card.id)).toEqual(['c', 'd']);
+        component.toggleDoodadAccount('Smile');
+        expect(component.cardTiles.map((tile) => tile.card.id)).toEqual(['c']);
+        component.toggleDoodadGroup('home');
+        expect(component.cardTiles.map((tile) => tile.card.id)).toEqual(['a', 'b', 'c']);
+      });
+
+      it('drops a group that the newly chosen account does not have', () => {
+        const component = open();
+        component.toggleDoodadGroup('leisure');
+        component.toggleDoodadAccount('Splurge');
+        expect(component.doodadGroupFilter).toBeNull();
+      });
+
+      it('changing the pile resets the filters', () => {
+        const component = open();
+        component.toggleDoodadAccount('Smile');
+        component.changeDeck();
+        expect(component.doodadAccountFilter).toBeNull();
+      });
+    });
+
+    it('a Doodad shows its own printed line when it has no loan hint', () => {
+      const { component } = makeComponent();
+      component.activeDeckKind = 'doodad';
+      component.activeCard = { id: 'x', title: 'Zahnarzt', costMinor: 70000 } as any;
+      (component as any).cardText.textFor = () => ({ description: 'Gold tooth!' });
+
+      expect(component.doodadHint).toBe('Gold tooth!');
+    });
+
+    it('pick another one returns to the card list', () => {
+      const { component } = makeComponent();
+      component.activeDeckKind = 'doodad';
+      component.activeCard = { id: 'x', title: 'Gadget', costMinor: 1000 } as any;
+
+      component.clearActiveCard();
 
       expect(component.activeCard).toBeNull();
-      expect(toastService.show).toHaveBeenCalledWith('CashflowGame.cardApplied', 'success');
-      expect(component.dashboardView).toBe('main');
     });
   });
 });

@@ -564,3 +564,628 @@
 .cf-mini-amount--negative {
   color: var(--color-danger);
 }
+
+.cf-qty input {
+  width: 4.5rem;
+  margin-right: 4px;
+}
+
+.cf-planned-loan {
+  color: var(--color-text-secondary);
+}
+
+.cf-card-note {
+  font-weight: 600;
+}
+
+.cf-friend-sale {
+  margin-top: 12px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-background);
+}
+
+.cf-friend-sale-label {
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+}
+
+.cf-amount-input {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.cf-amount-input input {
+  flex: 1;
+  min-width: 0;
+  padding: 12px;
+  border: 0;
+  outline: 0;
+  font-size: 1.4rem;
+  font-weight: 600;
+  background: transparent;
+  color: var(--color-text);
+}
+
+.cf-amount-currency {
+  padding: 0 14px;
+  font-size: 1.2rem;
+  color: var(--color-text-secondary);
+}
+
+.cf-friend-sale-confirm {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 12px;
+  border: 0;
+  border-radius: var(--radius-md);
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  background-color: var(--color-primary);
+  color: var(--color-on-primary, #fff);
+}
+
+.cf-friend-sale-confirm:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cf-friend-sale-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cf-friend-sale-close {
+  border: 0;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+.cf-card-search {
+  margin-top: 12px;
+  margin-bottom: 10px;
+}
+
+.cf-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+  gap: 8px;
+  /* Rows are at least 100px and grow with the longest tile in them, so a long name never pushes the
+     price / account out of its tile; the list scrolls at about three rows (JFK, 2026-10-03). */
+  grid-auto-rows: minmax(100px, auto);
+  max-height: calc(3 * 100px + 2 * 8px + 4px);
+  overflow-y: auto;
+  padding: 2px;
+}
+
+.cf-card-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 10px;
+  text-align: left;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-background);
+  color: var(--color-text);
+  cursor: pointer;
+  overflow-wrap: anywhere; /* a long word wraps inside the tile instead of spilling out */
+}
+
+.cf-card-tile:hover,
+.cf-card-tile:focus-visible {
+  border-color: var(--color-primary);
+  background-color: var(--color-primary-light);
+}
+
+.cf-tile-symbol {
+  font-weight: 700;
+}
+
+.cf-tile-name {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+}
+
+.cf-tile-price {
+  margin-top: 4px;
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.cf-tile-range {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+}
+
+.cf-card-none {
+  color: var(--color-text-secondary);
+}
+
+/* The open card, laid out like the printed one: heading, text, then the amounts that matter. */
+.cf-card-active {
+  padding: 16px;
+  border-radius: var(--radius-md);
+  background-color: var(--color-background);
+}
+
+.cf-card-kind {
+  display: inline-block;
+  margin-bottom: 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+.cf-card-title {
+  margin: 0 0 8px;
+  font-size: 1.25rem;
+}
+
+.cf-card-text {
+  margin: 0 0 10px;
+}
+
+.cf-card-rule {
+  margin: 0 0 14px;
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+}
+
+.cf-facts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 12px;
+  margin: 14px 0 6px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-border);
+}
+
+.cf-fact {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.cf-fact--right {
+  align-items: flex-end;
+  text-align: right;
+}
+
+.cf-fact--center {
+  grid-column: 1 / -1;
+  align-items: center;
+  text-align: center;
+}
+
+.cf-fact-label {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+}
+
+.cf-fact-value {
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.cf-fact-value--big {
+  font-size: 1.5rem;
+}
+
+.cf-fact-value--income {
+  color: var(--color-success);
+}
+
+.cf-filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.cf-chip {
+  padding: 6px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background-color: var(--color-background);
+  color: var(--color-text);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.cf-chip--active {
+  border-color: var(--color-primary);
+  background-color: var(--color-primary);
+  color: var(--color-on-primary, #fff);
+  font-weight: 700;
+}
+
+/* Secondary card actions (Sell to a friend, Decline): a clear dark outline so they read as buttons. */
+.cf-btn-outlined {
+  border: 2px solid var(--color-text);
+}
+
+/* Air between the card's amounts and its action buttons. */
+.cf-card-active .cf-actions {
+  margin-top: 22px;
+  flex-wrap: wrap;
+}
+
+/* An investment's own line under "Passive Income": indented and quieter. */
+.cf-line-list li.cf-line-sub {
+  padding-left: 14px;
+  color: var(--color-text-secondary);
+}
+
+/* The sum under Income / Expenses / Assets / Liabilities. */
+.cf-line-list li.cf-line-total {
+  margin-top: 4px;
+  padding-top: 6px;
+  border-top: 1px solid var(--color-border);
+  font-weight: 800;
+}
+
+/* ---- History: one line per undo step, collapsible (a Payday opens into its whole month) ---- */
+.cf-history-step {
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.cf-history-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.cf-history-toggle {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.cf-history-toggle:disabled {
+  cursor: default;
+}
+
+.cf-history-chevron {
+  width: 1em;
+  color: var(--color-text-secondary);
+}
+
+.cf-history-title {
+  font-weight: 700;
+}
+
+.cf-history-detail {
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cf-history-undo {
+  flex-shrink: 0;
+  padding: 4px 10px;
+  border: 2px solid var(--color-text);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text);
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.cf-history-undo:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cf-history-empty {
+  color: var(--color-text-secondary);
+}
+
+.cf-history-number {
+  min-width: 1.6em;
+  color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* An open dice decision (gold coins) stands out from the rest of the dashboard. */
+.cf-decision {
+  border: 2px solid var(--color-primary);
+}
+
+.cf-decision-real {
+  margin-top: 8px;
+}
+
+/* The "which language do you want to play in?" question. */
+.cf-language-hint {
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+}
+
+.cf-language-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin: 12px 0 16px;
+}
+
+.cf-language-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 2px solid transparent;
+  border-radius: var(--radius-md);
+  background-color: var(--color-background);
+  color: var(--color-text);
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.cf-language-btn:hover {
+  border-color: var(--color-border);
+}
+
+.cf-language-btn--active {
+  border-color: var(--color-primary);
+  font-weight: 700;
+}
+
+.cf-language-flag {
+  width: 24px;
+  height: 17px;
+  object-fit: cover;
+  border-radius: 2px;
+}
+
+/* The Start button under a profession's info: clear of the last line. */
+.cf-profession-start {
+  margin-top: 20px;
+}
+
+/* The die the app rolled, shown big with its result until the player taps Continue. */
+.cf-roll-result {
+  position: relative;
+  text-align: center;
+  border: 2px solid var(--color-border);
+}
+
+.cf-roll-result--won {
+  border-color: #1f9d63;
+}
+
+.cf-roll-result-close {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  border: 0;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+.cf-die {
+  width: 96px;
+  height: 96px;
+  margin: 8px auto 12px;
+  padding: 12px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  place-items: center;
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow:
+    0 4px 14px rgba(0, 0, 0, 0.28),
+    inset 0 -3px 0 rgba(0, 0, 0, 0.08);
+  animation: cf-die-tumble 0.9s cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+
+.cf-pip {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+}
+
+.cf-pip--on {
+  background: #1b1b1f;
+}
+
+@keyframes cf-die-tumble {
+  0% {
+    transform: rotate(-540deg) scale(0.3);
+    opacity: 0;
+  }
+  70% {
+    transform: rotate(14deg) scale(1.08);
+    opacity: 1;
+  }
+  100% {
+    transform: rotate(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cf-die {
+    animation: none;
+  }
+}
+
+.cf-roll-result-rolled {
+  margin: 0;
+  color: var(--color-text-secondary);
+}
+
+.cf-roll-result-headline {
+  margin: 4px 0 8px;
+}
+
+.cf-roll-result-text {
+  margin: 0 0 14px;
+}
+
+/* A short message on the dashboard, e.g. a market card that does not apply to the player. */
+.cf-notice {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  border-left: 4px solid var(--color-primary);
+}
+
+/* Baby / Charity / Downsized: the confirmation wears the purple of the buttons that open it. */
+.cf-space-confirm {
+  border-left: 4px solid var(--color-cf-purple, #8e44ad);
+}
+
+/* Passive income covers the monthly expenses: out of the rat race. A banner, the game goes on. */
+.cf-escape-banner {
+  background-color: var(--color-success-bg, rgba(76, 175, 80, 0.12));
+  color: var(--color-success, #2e7d32);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  margin: 8px 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+/* Saved games: one card per game, the one being played highlighted. */
+.cf-saved-game {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-background);
+}
+
+.cf-saved-game--live {
+  border-color: var(--color-primary);
+}
+
+.cf-saved-game-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.cf-saved-game-name {
+  overflow-wrap: anywhere;
+}
+
+/* The collapsed row is one tap target; the chevron turns when the game is open. */
+.cf-saved-game-toggle {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.cf-saved-game-chevron {
+  display: inline-block;
+  flex-shrink: 0;
+  transition: transform 0.15s ease;
+  color: var(--color-text-secondary);
+}
+
+.cf-saved-game--open .cf-saved-game-chevron {
+  transform: rotate(90deg);
+}
+
+.cf-saved-game-rename {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-surface);
+  color: var(--color-text);
+}
+
+.cf-saved-game-status {
+  flex-shrink: 0;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+}
+
+.cf-saved-game-status--escaped {
+  color: var(--color-success, #2e7d32);
+  border-color: var(--color-success, #2e7d32);
+}
+
+.cf-saved-game-status--bankrupt {
+  color: var(--color-danger, #d32f2f);
+  border-color: var(--color-danger, #d32f2f);
+}
+
+.cf-saved-game-meta,
+.cf-saved-game-numbers {
+  margin-top: 6px;
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+}
+
+.cf-saved-game-numbers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+}
+
+.cf-saved-game-live {
+  margin-right: 6px;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.cf-saved-game-actions {
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.cf-import-btn {
+  cursor: pointer;
+}

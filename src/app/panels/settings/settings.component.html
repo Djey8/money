@@ -457,6 +457,9 @@
         <button class="settings-menu-item" (click)="changeFix()">
           <span>{{ 'Settings.fixaccounting' | translate }}</span>
         </button>
+        <button class="settings-menu-item" *ngIf="isCashflowGameActive" (click)="endCashflowGame()">
+          <span>{{ 'CashflowGame.endGame' | translate }}</span>
+        </button>
         <button
           class="settings-menu-item delete-item"
           *ngIf="isCashflowGameActive"
