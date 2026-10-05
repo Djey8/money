@@ -1032,10 +1032,18 @@ describe('v1 API authentication and PAT management', () => {
 
     it('computes revenues, expenses, and net result for the requested period', async () => {
       const token = await reportsToken();
+      // Dated today (local time, like the report's own 'current month'), so this stays in the
+      // requested period whatever month the suite runs in.
+      const now = new Date();
+      const today = [
+        now.getFullYear(),
+        String(now.getMonth() + 1).padStart(2, '0'),
+        String(now.getDate()).padStart(2, '0'),
+      ].join('-');
       await sessionRequest('post', '/api/v1/transactions').send({
         account: 'Income',
         amountMinor: 200000,
-        date: '2026-09-05',
+        date: today,
         time: '09:00',
         category: '@Report salary',
         comment: '',
@@ -1043,7 +1051,7 @@ describe('v1 API authentication and PAT management', () => {
       await sessionRequest('post', '/api/v1/transactions').send({
         account: 'Daily',
         amountMinor: -50000,
-        date: '2026-09-06',
+        date: today,
         time: '09:00',
         category: '@Report groceries',
         comment: '',
