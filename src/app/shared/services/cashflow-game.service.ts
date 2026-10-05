@@ -30,6 +30,7 @@ import {
   findCards,
   fromMinorUnits,
   gameSubscriptionDays,
+  gameTradeStep,
   initialCashflowGameState,
   loanForShortfallMinor,
   marketSaleFor,
@@ -45,9 +46,11 @@ import {
   playPayday,
   playShareSplitCard,
   previewSpace,
+  sellAssetProblem,
   summarizeGameFinances,
   systemClock,
   toMinorUnits,
+  tradePurchase,
   updateSharePrice,
   usedDaysThisMonth,
   type BookSubscription,
@@ -481,7 +484,7 @@ export class CashflowGameService {
     if (!state.tier3BalanceLoaded || !state.tier3GrowLoaded) {
       return { borrowed: 0, converted: false, nextDate: this.nextGameTransactionDate() };
     }
-    const purchase = this.parsePurchase(comment, expenseAmount);
+    const purchase = tradePurchase(comment, toMinorUnits(expenseAmount));
     const gameSet = this.currentGameSet();
     let borrowedMinor = 0;
     let converted = false;
@@ -513,7 +516,7 @@ export class CashflowGameService {
         if (project) project.liabilitie = null as any;
       }
     }
-    this.pushUndoSnapshot(this.tradeStep(comment, category)); // step 2 (or the only step): the trade itself
+    this.pushUndoSnapshot(gameTradeStep(comment, category)); // step 2 (or the only step): the trade itself
     // The loan comes first: it takes `loanDate` (the day the dialog was opened on), and the purchase
     // that follows gets the next free slot after it.
     return {
@@ -528,64 +531,10 @@ export class CashflowGameService {
     return this.translate.instant('CashflowGame.loanAutoTaken', { amount });
   }
 
-  /** What kind of step a dialog transaction is, read from Grow's own comment text. */
-  private tradeStep(comment: string, category: string): CashflowStepInfo {
-    if (DOODAD_MARK.test(comment)) return { kind: 'doodad', detail: category.replace(/^@/, '') };
-    if (MARKET_COST_MARK.test(comment)) {
-      return { kind: 'marketCost', detail: category.replace(/^@/, '') };
-    }
-    const named = (pattern: RegExp, kind: CashflowStepKind): CashflowStepInfo | null => {
-      const match = pattern.exec(comment);
-      return match ? { kind, detail: match[1] } : null;
-    };
-    return (
-      named(/Buy Share (\S+)/, 'buyShare') ??
-      named(/Sell Share (\S+)/, 'sellShare') ??
-      named(/Buy Investment (\S+)/, 'buyInvestment') ??
-      named(/Sell Investment (\S+)/, 'sellInvestment') ??
-      named(/Buy Asset (\S+)/, 'buyAsset') ??
-      named(/Sell Asset (\S+)/, 'sellAsset') ??
-      (comment.includes('Payback Liabilitie')
-        ? { kind: 'payoff', detail: category.replace(/^@/, '') }
-        : { kind: 'transaction', detail: category.replace(/^@/, '') })
-    );
-  }
-
   /** "4.000" style text for a History line, in the app's number format. */
   private amountText(amount: number): string {
     const state = AppStateService.instance;
     return `${amount.toLocaleString(state.isEuropeanFormat ? 'de-DE' : 'en-US')} ${state.currency}`;
-  }
-
-  /** What a Grow Buy comment is for and costs up front: shares = quantity x price, investments = the deposit. Anything else (sells, dividends, plain transactions) is not a purchase. */
-  private parsePurchase(
-    comment: string,
-    expenseAmount = 0,
-  ): { title: string; costMinor: number } | null {
-    // A Doodad (Schnickschnack) is a plain expense, but it is paid like a purchase: short of cash, the
-    // game takes a Bank loan first.
-    if (
-      (DOODAD_MARK.test(comment) ||
-        MARKET_COST_MARK.test(comment) ||
-        comment.includes('Sell Investment')) &&
-      expenseAmount > 0
-    ) {
-      return { title: '', costMinor: toMinorUnits(expenseAmount) };
-    }
-    const share = /Buy Share (\S+) ([\d.]+) x ([\d.]+)/.exec(comment);
-    if (share) {
-      return {
-        title: share[1],
-        costMinor: Math.round(Number(share[2]) * toMinorUnits(Number(share[3]))),
-      };
-    }
-    const investment = /Buy Investment (\S+) ([\d.]+) [\d.]+/.exec(comment);
-    if (investment) {
-      return { title: investment[1], costMinor: toMinorUnits(Number(investment[2])) };
-    }
-    const asset = /Buy Asset (\S+) 1 x ([\d.]+)/.exec(comment);
-    if (asset) return { title: asset[1], costMinor: toMinorUnits(Number(asset[2])) };
-    return null;
   }
 
   /**
@@ -676,7 +625,7 @@ export class CashflowGameService {
     if (last?.category?.endsWith(' card sale')) {
       return { kind: 'cardSale', detail: last.category.replace(/^@| card sale$/g, '') };
     }
-    if (last) return this.tradeStep(last.comment ?? '', last.category ?? '');
+    if (last) return gameTradeStep(last.comment ?? '', last.category ?? '');
     if (after.allGrowProjects.length > before.allGrowProjects.length) return { kind: 'planDeal' };
     return { kind: 'transaction' };
   }
@@ -1428,15 +1377,7 @@ export class CashflowGameService {
    * 2026-10-03). Returns the message to show, or null when the sale is fine (or isn't a coin asset).
    */
   sellAssetProblem(comment: string): string | null {
-    const match = /Sell Asset (\S+) ([\d.]+) x ([\d.]+)/.exec(comment);
-    if (!match) return null;
-    const owned = this.coinsOwned(match[1]);
-    if (owned <= 0) return null;
-    const quantity = Number(match[2]);
-    if (!(quantity > 0)) return this.translate.instant('CashflowGame.sellNeedCoins');
-    if (quantity > owned)
-      return this.translate.instant('CashflowGame.sellTooManyCoins', { coins: owned });
-    return null;
+    return sellAssetProblem(comment, (title) => this.coinsOwned(title), this.roundDeps.text);
   }
 
   /**
@@ -2701,11 +2642,6 @@ const LIABILITY_EXPENSE_KEYS: Record<string, string> = {
 
 /** Marks the one Grow note a planned card keeps current (bank loan needed for the buy). */
 const LOAN_NOTE_MARK = '🏦 ';
-
-/** The tag a Doodad payment carries in its comment, so they can all be found again later. */
-const DOODAD_MARK = /#doodad\b/;
-/** The tag a Market card's one-off cost (tenant damage, broken pipe) carries in its comment. */
-const MARKET_COST_MARK = /#market\b/;
 
 function toRoman(value: number): string {
   const numerals: [number, string][] = [
