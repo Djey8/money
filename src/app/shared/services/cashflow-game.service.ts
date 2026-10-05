@@ -54,6 +54,7 @@ import {
   tradePurchase,
   updateSharePrice,
   usedDaysThisMonth,
+  type BookGrowUpdate,
   type BookSubscription,
   type CardBooks,
   type CardDeps,
@@ -939,20 +940,31 @@ export class CashflowGameService {
     }
     for (const tag of effects.liabilityRemovals) this.removeLiabilityByTag(tag);
     for (const update of effects.growUpdates) {
-      const project = state.allGrowProjects.find((candidate) => candidate.title === update.title);
-      if (!project) continue;
-      if (update.notes) project.notes = update.notes;
-      if (update.cashflowMinor !== undefined) {
-        project.cashflow = fromMinorUnits(update.cashflowMinor);
+      let project = state.allGrowProjects.find((candidate) => candidate.title === update.title);
+      if (!project) {
+        if (!update.create) continue;
+        project = this.newGrowProject(update.title, update.createdAt ?? this.clock.nowIso());
+        state.allGrowProjects.push(project);
       }
-      if (update.sharePriceMinor !== undefined && project.share) {
-        project.share.price = fromMinorUnits(update.sharePriceMinor);
-      }
-      if (update.updatedAt) project.updatedAt = update.updatedAt;
+      this.applyGrowUpdate(project, update);
     }
     for (const { tag, priceMinor } of effects.sharePrices) {
       const held = state.allShares.find((share) => share.tag === tag);
       if (held) held.price = fromMinorUnits(priceMinor);
+    }
+    for (const upsert of effects.shareUpserts) {
+      this.upsertEntity(state.allShares, upsert.tag, () => ({
+        tag: upsert.tag,
+        quantity: upsert.quantity,
+        price: fromMinorUnits(upsert.priceMinor),
+      }));
+    }
+    for (const upsert of effects.investmentUpserts) {
+      this.upsertEntity(state.allInvestments, upsert.tag, () => ({
+        tag: upsert.tag,
+        deposit: fromMinorUnits(upsert.depositMinor),
+        amount: fromMinorUnits(upsert.amountMinor),
+      }));
     }
     state.cashflowGame = effects.state;
   }
@@ -2407,6 +2419,76 @@ export class CashflowGameService {
     const next = build(index >= 0 ? list[index] : undefined);
     if (index >= 0) list.splice(index, 1, next);
     else list.push(next);
+  }
+
+  /** A fresh Grow project with the defaults the game has always created one with. */
+  private newGrowProject(title: string, createdAt: string): Grow {
+    return {
+      title,
+      sub: '',
+      phase: 'execute',
+      description: '',
+      strategy: '',
+      riskScore: 0,
+      risks: '',
+      links: [],
+      actionItems: [],
+      notes: [],
+      cashflow: 0,
+      amount: 0,
+      isAsset: false,
+      share: null as any,
+      investment: null as any,
+      liabilitie: null as any,
+      createdAt,
+      updatedAt: createdAt,
+      type: 'income-growth',
+    };
+  }
+
+  /** Writes the fields of a rule's project update onto the live project (decimal amounts, Grow's own field names). */
+  private applyGrowUpdate(project: Grow, update: BookGrowUpdate): void {
+    if (update.sub !== undefined) project.sub = update.sub;
+    if (update.phase !== undefined) project.phase = update.phase as Grow['phase'];
+    if (update.status !== undefined) project.status = update.status;
+    if (update.description !== undefined) project.description = update.description;
+    if (update.strategy !== undefined) project.strategy = update.strategy;
+    if (update.isAsset !== undefined) project.isAsset = update.isAsset;
+    if (update.amountMinor !== undefined) project.amount = fromMinorUnits(update.amountMinor);
+    if (update.cashflowMinor !== undefined) project.cashflow = fromMinorUnits(update.cashflowMinor);
+    if (update.share !== undefined) {
+      project.share = update.share
+        ? {
+            tag: update.share.tag,
+            quantity: update.share.quantity,
+            price: fromMinorUnits(update.share.priceMinor),
+          }
+        : (null as any);
+    }
+    if (update.sharePriceMinor !== undefined && project.share) {
+      project.share.price = fromMinorUnits(update.sharePriceMinor);
+    }
+    if (update.investment !== undefined) {
+      project.investment = update.investment
+        ? {
+            tag: update.investment.tag,
+            deposit: fromMinorUnits(update.investment.depositMinor),
+            amount: fromMinorUnits(update.investment.amountMinor),
+          }
+        : (null as any);
+    }
+    if (update.loan !== undefined) {
+      project.liabilitie = update.loan
+        ? {
+            tag: update.loan.tag,
+            amount: fromMinorUnits(update.loan.amountMinor),
+            credit: fromMinorUnits(update.loan.creditMinor),
+            investment: update.loan.investment,
+          }
+        : (null as any);
+    }
+    if (update.notes !== undefined) project.notes = update.notes;
+    if (update.updatedAt !== undefined) project.updatedAt = update.updatedAt;
   }
 
   private upsertGrowProject(title: string, existing: Grow | undefined, patch: Partial<Grow>): void {

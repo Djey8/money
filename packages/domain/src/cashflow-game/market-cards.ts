@@ -1,6 +1,9 @@
 import {
   emptyEffects,
+  type BookAsset,
   type BookGrowUpdate,
+  type BookInvestment,
+  type BookShare,
   type BookSubscription,
   type GameEffects,
 } from './effects';
@@ -25,25 +28,8 @@ import type {
  * the rule only matches them against what the player owns.
  */
 
-export interface BookInvestment {
-  tag: string;
-  depositMinor: number;
-  amountMinor: number;
-}
-
-export interface BookShare {
-  tag: string;
-  quantity: number;
-  priceMinor: number;
-}
-
-export interface BookAsset {
-  tag: string;
-  amountMinor: number;
-}
-
 /** What the card rules read of a Grow project. */
-export interface BookGrowProject {
+export interface CardGrowProject {
   title: string;
   notes: { text: string; createdAt: string }[];
   cashflowMinor: number;
@@ -56,7 +42,7 @@ export interface CardBooks {
   investments: BookInvestment[];
   shares: BookShare[];
   assets: BookAsset[];
-  growProjects: BookGrowProject[];
+  growProjects: CardGrowProject[];
 }
 
 /** The round rules' dependencies plus how this game formats an amount ("4.000 €"). */

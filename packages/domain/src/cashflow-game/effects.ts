@@ -31,13 +31,60 @@ export interface BookLiability {
   investment: boolean;
 }
 
-/** A change to one Grow project. Only the fields that are present change. */
+/** A share position in the balance sheet. */
+export interface BookShare {
+  tag: string;
+  quantity: number;
+  priceMinor: number;
+}
+
+/** A property or business position in the balance sheet: the deposit paid and the mortgage on it. */
+export interface BookInvestment {
+  tag: string;
+  depositMinor: number;
+  amountMinor: number;
+}
+
+/** A plain asset (gold coins, a car) in the balance sheet. */
+export interface BookAsset {
+  tag: string;
+  amountMinor: number;
+}
+
+/** The loan a Grow project carries for its purchase (the project's own Loan field). */
+export interface BookGrowLoan {
+  tag: string;
+  amountMinor: number;
+  creditMinor: number;
+  investment: boolean;
+}
+
+/**
+ * A change to one Grow project. Only the fields that are present change; with `create` a project that does not exist
+ * yet is made (the caller fills in the fields a rule never touches - risks, links, type...).
+ */
 export interface BookGrowUpdate {
   title: string;
+  /** Make the project when it does not exist; otherwise it is only updated. */
+  create?: boolean;
+  createdAt?: string;
+  sub?: string;
+  phase?: string;
+  status?: string;
+  description?: string;
+  strategy?: string;
+  isAsset?: boolean;
+  /** Grow's "Deposit" or amount invested. */
+  amountMinor?: number;
+  cashflowMinor?: number;
+  share?: BookShare | null;
+  /** The share price alone, for a project whose share is otherwise unchanged. */
+  sharePriceMinor?: number;
+  investment?: BookInvestment | null;
+  /** The project's own Loan field; null clears it. */
+  loan?: BookGrowLoan | null;
   /** The project's whole note list afterwards. */
   notes?: { text: string; createdAt: string }[];
-  cashflowMinor?: number;
-  sharePriceMinor?: number;
   updatedAt?: string;
 }
 
@@ -60,6 +107,10 @@ export interface GameEffects {
   growUpdates: BookGrowUpdate[];
   /** New prices of held shares. */
   sharePrices: { tag: string; priceMinor: number }[];
+  /** Share positions to create or replace, matched by tag. */
+  shareUpserts: BookShare[];
+  /** Property / business positions to create or replace, matched by tag. */
+  investmentUpserts: BookInvestment[];
   /** What the caller has to write besides transactions and the game state. */
   persist: { subscriptions: boolean; grow: boolean; balanceSheet: boolean };
   /** False when the rule changed nothing in the account (the step is still a History entry). */
@@ -81,6 +132,8 @@ export function emptyEffects(state: CashflowGameState, step: GameStep | null): G
     liabilityRemovals: [],
     growUpdates: [],
     sharePrices: [],
+    shareUpserts: [],
+    investmentUpserts: [],
     persist: { subscriptions: false, grow: false, balanceSheet: false },
     write: true,
     decisionNeeded: false,
