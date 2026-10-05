@@ -391,3 +391,12 @@ spaces with the printed German word), `validateRatRaceBoard`, `spaceAt` (wraps b
 the ring (START sits half a step before space 0). A golden test pins it to the plan §3.1 transcription and to the
 8-space pattern. The game set's old unused `board?: CashflowSpaceKind[]` is left alone. **Next:** B2 (dice, movement,
 passing vs landing a Payday; the additive solo state fields JFK already approved).
+
+## B2 wrap-up (2026-10-05)
+
+`movement.ts`, pure: `rollDice(count, rng)`, `diceAllowed(charityRoundsLeft, wanted)` (two dice only while Charity runs and
+the player chose them), `moveToken(board, from, steps)` -> `Move` (every space entered, landing, `paydays` = Paydays entered
+landing included - each pays once - plus `passedPaydays` and `landedOnPayday`). A token position is the ring index, `null`
+at START, so the first roll of n lands on n - 1. No turn of up to 12 can cross more than two Paydays. **The saved-state
+fields (last roll, dice, phase, pending decision) are deliberately not added yet:** B2 touches no storage; they arrive
+with B3, where the turn state machine actually writes them (additive and optional, as JFK approved). **Next:** B3.
