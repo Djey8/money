@@ -20,6 +20,8 @@ import {
   CashflowProfession,
   CashflowTransactionRecord,
   cashOnHandMinor,
+  blankGameData,
+  captureGameSnapshot as captureSnapshot,
   coinsOwnedOf,
   decodeUndoChain,
   encodeUndoChain,
@@ -35,11 +37,14 @@ import {
   fromMinorUnits,
   gameSubscriptionDays,
   gameTradeStep,
-  initialCashflowGameState,
+  historySteps as historyStepsOf,
+  isGameSnapshot as isGameSnapshotRule,
+  keepSavedSlot,
   marketSaleFor,
   nextSmartDate,
   pickCashflowProfession,
   planAutoLoan,
+  popUndoSteps,
   planDeal as planDealRule,
   plannedDeals as plannedDealsRule,
   playBankLoan,
@@ -52,6 +57,7 @@ import {
   playPayday,
   playShareSplitCard,
   previewSpace,
+  pushUndoSnapshot as pushSnapshotOnto,
   registerInvestmentIncome as registerInvestmentIncomeRule,
   removeExpenseForPaidLiability as removeExpenseForPaidLiabilityRule,
   sellCardToFriend as sellCardToFriendRule,
@@ -60,6 +66,7 @@ import {
   takenDealLabels,
   sellAssetProblem,
   summarizeGameFinances,
+  UNDO_STACK_LIMIT,
   systemClock,
   toMinorUnits,
   tradePurchase,
@@ -78,6 +85,7 @@ import {
   type GameStep,
   type LoanBooks,
   type GameStepKind,
+  type HistoryStep,
   type RoundBooks,
   type RoundDeps,
   type SavedGameSummary,
@@ -287,18 +295,8 @@ export type CashflowStepKind = GameStepKind;
 
 type CashflowStepInfo = GameStep;
 
-/** One line of the game's History, newest first - exactly one per undo step. */
-export interface CashflowHistoryStep {
-  id: string;
-  /** 1 for the first thing that happened in this game, counting up - stays the same when newer steps are undone. */
-  number: number;
-  kind: CashflowStepKind;
-  detail: string;
-  /** ISO timestamp of when the step was taken (empty for steps saved before history tracking). */
-  at: string;
-  /** What the step added to the books - e.g. a Payday's income and expense lines for the month. */
-  transactions: Transaction[];
-}
+/** One line of the game's History, newest first - exactly one per undo step. Defined in the domain, shared with the Pro API. */
+export type CashflowHistoryStep = HistoryStep<Transaction>;
 
 export interface CashflowGameSnapshot {
   /** Which step this snapshot is the "before" of; absent on snapshots saved before history tracking. */
@@ -319,9 +317,6 @@ export interface CashflowGameSnapshot {
 function deepClone<T>(value: T): T {
   return JSON.parse(JSON.stringify(value));
 }
-
-/** How many past actions can be undone in a row — comfortably more than one play session needs, cheap to keep since a snapshot is just this small game's own data. */
-const UNDO_STACK_LIMIT = 200;
 
 /**
  * Raw `localStorage`, deliberately not `LocalService`/`PersistenceService` — those encrypt and sync
@@ -403,11 +398,10 @@ export class CashflowGameService {
 
   /** Snapshots every real entity a game action can touch, right before that action mutates anything — one call per public mutating method, always before its first mutation. */
   private pushUndoSnapshot(step: CashflowStepInfo): void {
-    this.undoStack.push({
+    this.undoStack = pushSnapshotOnto(this.undoStack, {
       step: { ...step, at: this.clock.nowIso() },
       ...this.captureGameSnapshot(),
     });
-    if (this.undoStack.length > UNDO_STACK_LIMIT) this.undoStack.shift();
     this.persistUndoStack();
   }
 
@@ -417,7 +411,7 @@ export class CashflowGameService {
    */
   captureGameSnapshot(): CashflowGameSnapshot {
     const state = AppStateService.instance;
-    return deepClone({
+    return captureSnapshot({
       allTransactions: state.allTransactions,
       allSubscriptions: state.allSubscriptions,
       allGrowProjects: state.allGrowProjects,
@@ -434,24 +428,7 @@ export class CashflowGameService {
 
   /** Whether a loaded snapshot has the shape of a game (a corrupt or foreign file must never replace a live game). */
   isGameSnapshot(value: unknown): value is CashflowGameSnapshot {
-    const snapshot = value as Partial<CashflowGameSnapshot> | null;
-    return Boolean(
-      snapshot &&
-      [
-        snapshot.allTransactions,
-        snapshot.allSubscriptions,
-        snapshot.allGrowProjects,
-        snapshot.allShares,
-        snapshot.allInvestments,
-        snapshot.allAssets,
-        snapshot.liabilities,
-        snapshot.allSmileProjects,
-        snapshot.allFireEmergencies,
-      ].every(Array.isArray) &&
-      snapshot.mojo &&
-      snapshot.cashflowGame &&
-      Array.isArray(snapshot.cashflowGame.gameSubscriptionTitles),
-    );
+    return isGameSnapshotRule(value);
   }
 
   /**
@@ -605,7 +582,7 @@ export class CashflowGameService {
           this.applyBankLoanAdjustment(fromMinorUnits(borrowedMinor), loanDate);
           converted = plan.converted;
         } catch {
-          this.undoStack.pop();
+          this.undoStack = popUndoSteps(this.undoStack, 1).stack;
           this.persistUndoStack();
           borrowedMinor = 0;
         }
@@ -673,83 +650,23 @@ export class CashflowGameService {
    * be recorded twice.
    */
   historySteps(): CashflowHistoryStep[] {
-    const state = AppStateService.instance;
-    const stack = this.undoStack;
-    return stack
-      .map((snapshot, index) => {
-        const after = index + 1 < stack.length ? stack[index + 1] : state;
-        // Steps saved before history tracking carry no name: work it out from what changed.
-        const step = snapshot.step ?? this.inferStep(snapshot, after);
-        return {
-          id: `${snapshot.step?.at ?? 'saved'}-${index}`,
-          number: index + 1,
-          kind: step.kind,
-          detail: step.detail ?? '',
-          at: snapshot.step?.at ?? '',
-          transactions: after.allTransactions.slice(snapshot.allTransactions.length),
-        };
-      })
-      .reverse();
-  }
-
-  /** Names a step from what it changed in the game: the state before it against the state after. */
-  private inferStep(
-    before: CashflowGameSnapshot,
-    after: Pick<
-      CashflowGameSnapshot,
-      'cashflowGame' | 'liabilities' | 'allGrowProjects' | 'allTransactions'
-    >,
-  ): CashflowStepInfo {
-    const was = before.cashflowGame;
-    const now = after.cashflowGame;
-    if (!was.professionId && now.professionId) return { kind: 'start' };
-    if (was.professionId && !now.professionId) return { kind: 'reset' };
-    if (now.round > was.round) {
-      return {
-        kind: 'payday',
-        detail: `${this.translate.instant('CashflowGame.Round')} ${now.round}`,
-      };
-    }
-    if (now.children > was.children) return { kind: 'baby' };
-    if (now.charityRoundsLeft > was.charityRoundsLeft) return { kind: 'charity' };
-    if (now.unemployedRoundsLeft > was.unemployedRoundsLeft) return { kind: 'downsized' };
-    const bankLoan = (snapshot: Pick<CashflowGameSnapshot, 'liabilities'>) =>
-      snapshot.liabilities.find((liability) => liability.tag === 'Bank loan')?.amount ?? 0;
-    const loanChange = bankLoan(after) - bankLoan(before);
-    if (loanChange !== 0) {
-      return {
-        kind: loanChange > 0 ? 'loanTaken' : 'loanRepaid',
-        detail: this.amountText(Math.abs(loanChange)),
-      };
-    }
-    const added = after.allTransactions.slice(before.allTransactions.length);
-    const last = added[added.length - 1];
-    if (last?.category?.endsWith(' card sale')) {
-      return { kind: 'cardSale', detail: last.category.replace(/^@| card sale$/g, '') };
-    }
-    if (last) return gameTradeStep(last.comment ?? '', last.category ?? '');
-    if (after.allGrowProjects.length > before.allGrowProjects.length) return { kind: 'planDeal' };
-    return { kind: 'transaction' };
+    return historyStepsOf(this.undoStack, AppStateService.instance, {
+      text: this.roundDeps.text,
+      money: (amountMinor) => this.amountText(fromMinorUnits(amountMinor)),
+    });
   }
 
   /** Undoes the newest `count` steps in one go - back to exactly how the game stood before the oldest of them (the History's "undo back to here"). */
   undoSteps(count: number, callbacks: CashflowGameCallbacks): void {
-    let snapshot: CashflowGameSnapshot | undefined;
-    for (let undone = 0; undone < count && this.undoStack.length > 0; undone++) {
-      snapshot = this.undoStack.pop();
-    }
+    const { snapshot, stack } = popUndoSteps(this.undoStack, count);
     if (!snapshot) {
       callbacks.onError('Nothing to undo.');
       return;
     }
+    this.undoStack = stack;
     this.persistUndoStack();
     // A step from before the game was first saved knows nothing of its saved slot: keep the slot.
-    const { gameId, gameName } = AppStateService.instance.cashflowGame;
-    this.applySnapshot(
-      gameId
-        ? { ...snapshot, cashflowGame: { ...snapshot.cashflowGame, gameId, gameName } }
-        : snapshot,
-    );
+    this.applySnapshot(keepSavedSlot(snapshot, AppStateService.instance.cashflowGame));
     this.persistAll('cashflow_undo_action', {}, callbacks, {
       includeSubscriptions: true,
       includeBalanceSheet: true,
@@ -1766,17 +1683,18 @@ export class CashflowGameService {
     // A reset ends the game, history included - there is nothing to undo back into (JFK, 2026-10-03).
     this.clearPersistedUndoStack();
     const state = AppStateService.instance;
-    state.allTransactions = [];
-    state.allSubscriptions = [];
-    state.allGrowProjects = [];
-    state.allShares = [];
-    state.allInvestments = [];
-    state.allAssets = [];
-    state.liabilities = [];
-    state.allSmileProjects = [];
-    state.allFireEmergencies = [];
-    state.mojo = { amount: 0, target: 0 };
-    state.cashflowGame = initialCashflowGameState();
+    const blank = blankGameData();
+    state.allTransactions = blank.allTransactions as Transaction[];
+    state.allSubscriptions = blank.allSubscriptions as Subscription[];
+    state.allGrowProjects = blank.allGrowProjects as Grow[];
+    state.allShares = blank.allShares as Share[];
+    state.allInvestments = blank.allInvestments as Investment[];
+    state.allAssets = blank.allAssets as Asset[];
+    state.liabilities = blank.liabilities as unknown as Liability[];
+    state.allSmileProjects = blank.allSmileProjects as Smile[];
+    state.allFireEmergencies = blank.allFireEmergencies as Fire[];
+    state.mojo = blank.mojo as Mojo;
+    state.cashflowGame = blank.cashflowGame;
 
     this.persistAll('cashflow_reset', {}, callbacks, {
       includeSubscriptions: true,
