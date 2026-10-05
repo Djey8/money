@@ -1,4 +1,4 @@
-import { CASHFLOW_GAME_SETS } from './game-sets';
+import { CASHFLOW_GAME_SETS } from '../cashflow-content';
 import {
   addMonthsToIsoDate,
   adjustCashflowBankLoan,

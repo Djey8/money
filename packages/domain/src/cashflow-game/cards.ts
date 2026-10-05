@@ -42,9 +42,30 @@ export function drawRandomCard<T extends { id: string }>(
   };
 }
 
-/** Case-insensitive substring match on title — what "find this card" searches by, since physical cards aren't numbered. */
-export function findCards<T extends { title: string }>(deck: T[], query: string): T[] {
-  const needle = query.trim().toLocaleLowerCase();
-  if (!needle) return [];
-  return deck.filter((card) => card.title.toLocaleLowerCase().includes(needle));
+/**
+ * Case-insensitive search over title, ticker symbol and price - what "find this card" searches by,
+ * since physical cards aren't numbered. Every space-separated word must match something, so
+ * `ok4u 20` narrows to that stock's 20 card; a word matches a title/symbol anywhere in it, or a
+ * price from its start (`2` finds 20 and 25, not 12).
+ */
+export function findCards<
+  T extends {
+    title: string;
+    symbol?: string;
+    priceMinor?: number;
+    depositMinor?: number;
+    costMinor?: number;
+  },
+>(deck: T[], query: string): T[] {
+  const words = query.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return [];
+  return deck.filter((card) => {
+    const title = card.title.toLocaleLowerCase();
+    const symbol = (card.symbol ?? '').toLocaleLowerCase();
+    const shown = card.priceMinor ?? card.depositMinor ?? card.costMinor;
+    const price = shown === undefined ? '' : String(shown / 100);
+    return words.every(
+      (word) => title.includes(word) || symbol.includes(word) || price.startsWith(word),
+    );
+  });
 }

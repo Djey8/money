@@ -55,3 +55,32 @@ describe('findCards', () => {
     expect(findCards(deck, 'zzz')).toEqual([]);
   });
 });
+
+describe('findCards by symbol', () => {
+  const stocks = [
+    { id: 'a', title: 'OK4U Pharma AG', symbol: 'OK4U' },
+    { id: 'b', title: 'Beispiel AG', symbol: 'BSP' },
+  ];
+
+  it('matches the ticker symbol as well as the name', () => {
+    expect(findCards(stocks, 'ok4u')).toEqual([stocks[0]]);
+    expect(findCards(stocks, 'bsp')).toEqual([stocks[1]]);
+  });
+});
+
+describe('findCards by several words and price', () => {
+  const cards = [
+    { id: '1', title: 'OK4U Pharma AG', symbol: 'OK4U', priceMinor: 500 },
+    { id: '2', title: 'OK4U Pharma AG', symbol: 'OK4U', priceMinor: 2000 },
+    { id: '3', title: 'ON2U Entertainment AG', symbol: 'ON2U', priceMinor: 2000 },
+  ];
+
+  it('needs every word to match, so symbol + price narrows to one card', () => {
+    expect(findCards(cards, 'ok4u 20').map((c) => c.id)).toEqual(['2']);
+  });
+
+  it('matches a price on its own, from its start', () => {
+    expect(findCards(cards, '20').map((c) => c.id)).toEqual(['2', '3']);
+    expect(findCards(cards, '0')).toEqual([]);
+  });
+});

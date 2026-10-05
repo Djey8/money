@@ -83,13 +83,33 @@ export type CashflowSpaceKind =
 /** Small/Big Deal: the numbers `planDeal` needs, straight off the card. */
 export interface CashflowDealCard {
   id: string;
+  /** Language-neutral: a company name or property name, the same in every language. Flavor text and notes live in the lazily loaded per-language card texts, keyed by `id` (`CashflowCardTextService`). */
   title: string;
-  assetKind: 'share' | 'investment';
+  assetKind: 'share' | 'investment' | 'asset';
+  /** Share cards: what the physical card calls itself - "Aktie" (stock) or "Investmentfonds" (fund). Both are bought and sold as shares. */
+  securityKind?: 'stock' | 'fund';
+  /** Investment cards: a "Du findest einen Super Deal!" card - the printed card says you should buy it. */
+  superDeal?: boolean;
+  /** Share cards only: the ticker symbol. Becomes the Grow project title and the Share's tag, so the same stock at a different price lands on the same position. */
+  symbol?: string;
+  /** A fixed share count (placeholder cards) — real stock cards leave it out, the player picks how many to buy. */
   quantity?: number;
+  /** Share cards: today's price per share. */
   priceMinor?: number;
+  /** Share cards: the price range this stock trades in over the game. */
+  rangeMinMinor?: number;
+  rangeMaxMinor?: number;
   depositMinor?: number;
   mortgageMinor?: number;
   cashflowMinor?: number;
+  /** Asset cards (gold coins): the price paid. `quantity` is how many coins (units) it buys. */
+  costMinor?: number;
+  /** Asset cards decided by a die: a roll of at least this wins the asset; absent = a plain purchase. */
+  successOn?: number;
+  /** A dice card that pays cash instead of coins: a winning roll returns this amount (the loan to a relative), and no asset is created. */
+  payoutMinor?: number;
+  /** The card is kept and rolled for at every Payday (Multi-Level-Marketing): each win pays `payoutMinor` again, and it is never "completed". */
+  recurring?: boolean;
 }
 
 /** A mandatory one-off cost — resolved as a single Transaction. */
@@ -97,6 +117,12 @@ export interface CashflowDoodadCard {
   id: string;
   title: string;
   costMinor: number;
+  /** The account the cost is suggested to come out of: a big treat is a Smile, small stuff you just splurge. The player can change it in the Add dialog. */
+  account?: 'Daily' | 'Splurge' | 'Smile' | 'Fire';
+  /** Language-neutral spending group (leisure, events, home...) - its translated name becomes the transaction's category, so the income statement shows where the money goes over a life. */
+  group?: string;
+  /** A line the printed card carries under its title: take a bank loan if you have to, only if you have a child, or both. */
+  hint?: 'loan' | 'child' | 'loanChild';
 }
 
 /**
@@ -109,6 +135,45 @@ export interface CashflowMarketCard {
   id: string;
   title: string;
   description: string;
+  /** A one-off cost that hits a player who owns a property (a tenant's damage, a broken sewer pipe); ignored by anyone without one. */
+  pays?: { costMinor: number };
+  /** A star card: a jackpot for whoever holds the right assets. */
+  star?: boolean;
+  /** A stock split card: one dice roll for the whole table decides - 1-3 doubles the shares of this ticker, 4-6 halves them. */
+  splits?: { symbol: string };
+  /** A cashflow boost: every cash-flowing investment with a monthly cashflow of up to `maxCashflowMinor` gains `addMinor` a month. */
+  boost?: { maxCashflowMinor: number; addMinor: number; onlyBusinesses?: boolean };
+  /**
+   * A buyer card: everyone may sell properties of this type at the offered price. `family` is the
+   * property type's deck label (EFH...); the offer is the original price plus a percentage or a fixed
+   * amount. Cards without it (placeholders) are shown as text only.
+   */
+  sells?: {
+    family: string;
+    /** The deck symbols of the property types that may sell to this buyer (default: just `family`). */
+    symbols?: string[];
+    plusPercent?: number;
+    plusMinor?: number;
+    /** A fixed price for the whole property (condo buyers), whatever it cost. */
+    priceMinor?: number;
+    /** A price for every unit (WE) of the building (apartment complex buyers): this times the unit count, the number in the deck symbol (APH24 = 24). */
+    pricePerUnitMinor?: number;
+    /** Gold buyers: cash for every coin; sell as many as you like. */
+    pricePerCoinMinor?: number;
+  };
+}
+
+/** A market buyer's offer for one of the player's properties - good until the next Payday. */
+export interface CashflowMarketOffer {
+  /** The Grow project / investment label, e.g. EFH, EFH-II. */
+  title: string;
+  /** What the buyer pays in total (original price + the offer); the mortgage is paid off from it. */
+  salePriceMinor: number;
+  cardId: string;
+  /** The offer as printed: "+20%" or "+20.000 €". */
+  label: string;
+  /** Gold buyers: the price for every coin - the total follows the coins still owned. */
+  pricePerCoinMinor?: number;
 }
 
 export type CashflowDeckKind = 'dealSmall' | 'dealBig' | 'market' | 'doodad';
@@ -158,6 +223,33 @@ export interface CashflowLogEntry {
   createdTransactions: CashflowTransactionRecord[];
 }
 
+/**
+ * A special-asset card (gold coins) in play. A plain offer is just bought; a gamble card is paid for
+ * first and then decided by a die roll, so "paid, waiting for the roll" has to survive a reload and be
+ * undoable - which is why it lives in the game's own state and not on the Asset record.
+ */
+export interface CashflowAssetDeal {
+  /** The Grow project's title - the label, e.g. GOLD, GOLD-II. Also the Asset's tag once it is owned. */
+  title: string;
+  /** How many coins the card is about. Tracked here (and in the Grow project), not on the Asset. */
+  coins: number;
+  costMinor: number;
+  /** A die roll of at least this wins the coins; absent for a plain purchase. */
+  successOn?: number;
+  /** A winning roll pays this cash back instead of giving coins (the loan to a relative). */
+  payoutMinor?: number;
+  /** Rolled for at every Payday while owned (Multi-Level-Marketing). */
+  recurring?: boolean;
+  /** A Payday has passed and the roll for this recurring card has not been made yet. */
+  rollDue?: boolean;
+  /** A stock split decision (Market card): not an asset deal at all - the roll doubles (1-3) or halves (4-6) the quantity of this share. */
+  split?: { shareTag: string };
+  stage: 'planned' | 'awaitingRoll' | 'owned' | 'lost' | 'sold' | 'paidBack';
+  /** What the roll reads, translated when the card was planned (the language picked for the game). */
+  successText?: string;
+  failureText?: string;
+}
+
 export interface CashflowGameState {
   gameSetId: string | null;
   professionId: string | null;
@@ -178,6 +270,14 @@ export interface CashflowGameState {
   /** Card ids drawn since the deck's last reshuffle, per deck — the "discard pile" a random draw skips and a reshuffle clears. */
   drawnCardIds: Record<CashflowDeckKind, string[]>;
   history: CashflowLogEntry[];
+  /** Special-asset cards planned, awaiting a roll or owned. Absent on games saved before it existed. */
+  assetDeals?: CashflowAssetDeal[];
+  /** Market buyers' offers for the player's properties, cleared at the next Payday or once sold. */
+  marketOffers?: CashflowMarketOffer[];
+  /** The saved game this live game belongs to (set when it is first saved); a loaded game keeps its slot. */
+  gameId?: string;
+  /** The name it goes by in the games list. */
+  gameName?: string;
 }
 
 export function initialCashflowGameState(): CashflowGameState {
@@ -194,5 +294,7 @@ export function initialCashflowGameState(): CashflowGameState {
     gameSubscriptionTitles: [],
     drawnCardIds: { dealSmall: [], dealBig: [], market: [], doodad: [] },
     history: [],
+    assetDeals: [],
+    marketOffers: [],
   };
 }
