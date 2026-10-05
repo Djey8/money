@@ -51,6 +51,25 @@ describe('buildSellComment', () => {
   });
 });
 
+describe('buildSellComment for coins (gold)', () => {
+  it('names the coins you have and their book value each, so "5 x 1000" sells five', () => {
+    const asset = project({ isAsset: true, title: 'GOLD' } as any);
+    expect(
+      buildSellComment(asset, {
+        ...noPositions,
+        assets: [{ tag: 'GOLD', amount: 3000, coins: 10 }],
+      }),
+    ).toBe('Sell Asset GOLD 10 x 300;');
+  });
+
+  it('keeps the usual "1 x <value>" for an asset without coins', () => {
+    const asset = project({ isAsset: true, title: 'Car' } as any);
+    expect(
+      buildSellComment(asset, { ...noPositions, assets: [{ tag: 'Car', amount: 1500 }] }),
+    ).toBe('Sell Asset Car 1 x 1500;');
+  });
+});
+
 describe('buildBuyComment', () => {
   it('pre-fills the planned share quantity and price', () => {
     expect(buildBuyComment(project({ share: { quantity: 2, price: 90 } }), noPositions)).toBe(

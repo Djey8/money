@@ -1,3 +1,4 @@
+import { assetSellComment } from 'src/app/shared/asset-coins.utils';
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 import { PersistenceService } from 'src/app/shared/services/persistence.service';
@@ -94,7 +95,10 @@ export class InfoAssetComponent extends BaseInfoComponent {
     AddComponent.categoryTextField = `@${InfoAssetComponent.title}`;
     AddComponent.selectedOption = 'Income';
     AddComponent.amountTextField = '1';
-    AddComponent.commentTextField = `Sell Asset ${InfoAssetComponent.title} 1 x ${InfoAssetComponent.amount};`;
+    AddComponent.commentTextField = assetSellComment(
+      InfoAssetComponent.title,
+      InfoAssetComponent.amount,
+    );
     AddComponent.isLiabilitie = false;
     AddComponent.creditTextField = '';
     AddComponent.url = '/balance';

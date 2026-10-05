@@ -4,6 +4,7 @@ import {
   ɵNOT_FOUND_CHECK_ONLY_ELEMENT_INJECTOR,
   OnInit,
   AfterViewInit,
+  DoCheck,
 } from '@angular/core';
 import { Router } from '@angular/router';
 import { LocalService } from 'src/app/shared/services/local.service';
@@ -25,6 +26,7 @@ import { AuthService } from 'src/app/shared/services/auth.service';
 import { BaseAddComponent } from 'src/app/shared/base/base-add.component';
 import { AppStateService } from 'src/app/shared/services/app-state.service';
 import { CashflowGameService } from 'src/app/shared/services/cashflow-game.service';
+import { AppDataService } from 'src/app/shared/services/app-data.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
@@ -94,7 +96,7 @@ setTimeout(() => import('src/app/app.component').then((m) => (AppComponent = m.A
   templateUrl: './add.component.html',
   styleUrls: ['../../shared/styles/add-form.css', './add.component.css'],
 })
-export class AddComponent extends BaseAddComponent implements OnInit, AfterViewInit {
+export class AddComponent extends BaseAddComponent implements OnInit, AfterViewInit, DoCheck {
   static selectedOption = 'Daily';
   static amountTextField = '';
   d = new Date();
@@ -163,6 +165,31 @@ export class AddComponent extends BaseAddComponent implements OnInit, AfterViewI
 
   ngOnInit() {
     AddComponent.populateCategoryOptions();
+  }
+
+  private wasOpen = false;
+  /** The slot the dialog pre-filled when it opened - lets a buy tell whether the player changed the date. */
+  private prefilledDate = '';
+
+  /** A Cashflow-game card-deal's Grow phase follows its trades: plan -> execute (bought) -> completed (all sold). */
+  private growPhaseAfterTrade(title: string, trade: 'buy' | 'sell'): void {
+    if (CashflowGameService.isCashflowGame()) {
+      this.cashflowGameService.setPhaseAfterTrade(title, trade);
+    }
+  }
+
+  /**
+   * On a Cashflow-game account every new transaction starts on the next free date slot of the month
+   * (1st, 3rd, 5th... then 2nd, 4th...) instead of today's date (JFK, 2026-10-03); the date field
+   * stays editable.
+   */
+  ngDoCheck() {
+    const open = Boolean(AddComponent.isAdd);
+    if (open && !this.wasOpen && CashflowGameService.isCashflowGame()) {
+      this.dateTextField = this.cashflowGameService.nextGameTransactionDate();
+      this.prefilledDate = this.dateTextField;
+    }
+    this.wasOpen = open;
   }
 
   // eslint-disable-next-line @angular-eslint/no-empty-lifecycle-method -- required by `implements AfterViewInit`; placeholder hook, no work needed currently
@@ -413,12 +440,63 @@ export class AddComponent extends BaseAddComponent implements OnInit, AfterViewI
       return;
     }
 
+    // A coin asset (gold) can only sell the coins it has.
+    if (CashflowGameService.isCashflowGame()) {
+      const problem = this.cashflowGameService.sellAssetProblem(AddComponent.commentTextField);
+      if (problem) {
+        this.showError(problem);
+        return;
+      }
+    }
+
     // Close dialog immediately for instant UX - processing happens in next event loop
     AddComponent.isAdd = false;
 
     // Defer all processing to next event loop so Angular can update UI (hide dialog) first
-    setTimeout(() => {
+    setTimeout(async () => {
       try {
+        // The undo snapshot below must hold the account's real balance sheet and Grow data, never
+        // empty placeholders - so make sure both are loaded before a Cashflow-game move (only waits
+        // when something is actually missing; e.g. a payback made from the Balance page).
+        if (
+          CashflowGameService.isCashflowGame() &&
+          (!AppStateService.instance.tier3BalanceLoaded ||
+            !AppStateService.instance.tier3GrowLoaded)
+        ) {
+          await AppDataService.instance?.loadBalanceData();
+          await AppDataService.instance?.loadGrowData();
+        }
+        // A Cashflow-game account's Grow buys/sells must be undoable like every other game move.
+        if (CashflowGameService.isCashflowGame()) {
+          // The loan typed into the dialog / carried over from the Grow project is taken through the
+          // game's Bank loan; the dialog's own per-project liability is switched off for this buy.
+          const financedLoan =
+            AddComponent.isLiabilitie && !this.showLoanOptions
+              ? Number(AddComponent.loanTextField) || 0
+              : 0;
+          // The Bank loan is booked first, on the day the dialog opened on; if the player left that
+          // date alone, the purchase then moves to the next free slot after it (loan, then buy).
+          const keepsPrefilledDate = this.dateTextField === this.prefilledDate;
+          const trade = this.cashflowGameService.beforeGrowTrade(
+            AddComponent.commentTextField,
+            financedLoan,
+            this.dateTextField,
+            AddComponent.categoryTextField,
+            Math.max(0, -parseFloat(AddComponent.amountTextField)) || 0,
+          );
+          if (trade.borrowed > 0 && keepsPrefilledDate) this.dateTextField = trade.nextDate;
+          if (trade.converted) {
+            AddComponent.isLiabilitie = false;
+            AddComponent.loanTextField = '';
+            AddComponent.creditTextField = '';
+          }
+          if (trade.borrowed > 0) {
+            this.toastService.show(
+              this.cashflowGameService.autoLoanMessage(trade.borrowed),
+              'update',
+            );
+          }
+        }
         // Only reload from localStorage if data is not already in memory (performance optimization)
         if (
           !AppStateService.instance.allRevenues ||
@@ -576,15 +654,21 @@ export class AddComponent extends BaseAddComponent implements OnInit, AfterViewI
           let amount = parseFloat(quantity) * parseFloat(price);
 
           let found = false;
-          for (let i = 0; i < AppStateService.instance.allAssets.length; i++) {
-            if (AppStateService.instance.allAssets[i].tag === title) {
-              AppStateService.instance.allAssets[i].amount += amount;
-              found = true;
+          // A dice-gamble card (gold coins) is paid for here but only becomes an asset once the roll
+          // is decided - see CashflowGameService.resolveGamble.
+          const gamble =
+            CashflowGameService.isCashflowGame() && this.cashflowGameService.beforeAssetBuy(title);
+          if (!gamble) {
+            for (let i = 0; i < AppStateService.instance.allAssets.length; i++) {
+              if (AppStateService.instance.allAssets[i].tag === title) {
+                AppStateService.instance.allAssets[i].amount += amount;
+                found = true;
+              }
             }
-          }
-          if (!found) {
-            const newAsset = { tag: title, amount: amount };
-            AppStateService.instance.allAssets.push(newAsset);
+            if (!found) {
+              const newAsset = { tag: title, amount: amount };
+              AppStateService.instance.allAssets.push(newAsset);
+            }
           }
           if (AddComponent.isLiabilitie) {
             amount -= parseFloat(AddComponent.loanTextField);
@@ -601,6 +685,7 @@ export class AddComponent extends BaseAddComponent implements OnInit, AfterViewI
               }
             }
           }
+          if (CashflowGameService.isCashflowGame()) this.cashflowGameService.afterAssetBuy(title);
         }
 
         if (AddComponent.commentTextField.includes('Sell Asset')) {
@@ -610,14 +695,21 @@ export class AddComponent extends BaseAddComponent implements OnInit, AfterViewI
           const price = split[5];
           const amount = parseFloat(quantity) * parseFloat(price);
 
-          for (let i = 0; i < AppStateService.instance.allAssets.length; i++) {
-            if (AppStateService.instance.allAssets[i].tag === title) {
-              AppStateService.instance.allAssets[i].amount -= amount;
-              AppStateService.instance.allAssets[i].amount = parseFloat(
-                AppStateService.instance.allAssets[i].amount.toFixed(2),
-              );
-              if (AppStateService.instance.allAssets[i].amount == 0) {
-                AppStateService.instance.allAssets.splice(i, 1);
+          // Coins (gold) sell by the coin - "5 x 1000" is five coins at 1.000 each - and the asset
+          // keeps the cost of the coins left; every other asset is reduced by what it sold for.
+          const soldCoins =
+            CashflowGameService.isCashflowGame() &&
+            this.cashflowGameService.sellCoins(title, parseFloat(quantity), parseFloat(price));
+          if (!soldCoins) {
+            for (let i = 0; i < AppStateService.instance.allAssets.length; i++) {
+              if (AppStateService.instance.allAssets[i].tag === title) {
+                AppStateService.instance.allAssets[i].amount -= amount;
+                AppStateService.instance.allAssets[i].amount = parseFloat(
+                  AppStateService.instance.allAssets[i].amount.toFixed(2),
+                );
+                if (AppStateService.instance.allAssets[i].amount == 0) {
+                  AppStateService.instance.allAssets.splice(i, 1);
+                }
               }
             }
           }
@@ -628,6 +720,7 @@ export class AddComponent extends BaseAddComponent implements OnInit, AfterViewI
               AppStateService.instance.allGrowProjects[i].status = 'sold';
             }
           }
+          if (CashflowGameService.isCashflowGame()) this.cashflowGameService.afterAssetSell(title);
         }
 
         if (AddComponent.commentTextField.includes('Buy Share')) {
@@ -663,6 +756,7 @@ export class AddComponent extends BaseAddComponent implements OnInit, AfterViewI
           for (let i = 0; i < AppStateService.instance.allGrowProjects.length; i++) {
             if (AppStateService.instance.allGrowProjects[i].title === title) {
               AppStateService.instance.allGrowProjects[i].status = 'bought';
+              this.growPhaseAfterTrade(title, 'buy');
               AppStateService.instance.allGrowProjects[i].share.price = parseFloat(price);
               if (found) {
                 AppStateService.instance.allGrowProjects[i].amount =
@@ -675,6 +769,13 @@ export class AddComponent extends BaseAddComponent implements OnInit, AfterViewI
                 AppStateService.instance.allGrowProjects[i].share.quantity = parseFloat(quantity);
                 AppStateService.instance.allGrowProjects[i].amount =
                   parseFloat(quantity) * parseFloat(price);
+              }
+              // A Cashflow-game card can be drawn and bought again and again: afterwards the project
+              // must carry everything held, so selling the whole position stays one click.
+              if (CashflowGameService.isCashflowGame()) {
+                const held = AppStateService.instance.allShares.find((s) => s.tag === title);
+                if (held)
+                  AppStateService.instance.allGrowProjects[i].share.quantity = held.quantity;
               }
             }
           }
@@ -713,6 +814,7 @@ export class AddComponent extends BaseAddComponent implements OnInit, AfterViewI
           for (let i = 0; i < AppStateService.instance.allGrowProjects.length; i++) {
             if (AppStateService.instance.allGrowProjects[i].title === title) {
               AppStateService.instance.allGrowProjects[i].status = 'sold';
+              this.growPhaseAfterTrade(title, 'sell');
               AppStateService.instance.allGrowProjects[i].share.price = parseFloat(price);
               AppStateService.instance.allGrowProjects[i].share.quantity -= parseFloat(quantity);
             }
@@ -754,7 +856,10 @@ export class AddComponent extends BaseAddComponent implements OnInit, AfterViewI
               foundM = true;
             }
           }
-          if (!foundM) {
+          // A Cashflow-game business bought outright ("Geschäftspartner gesucht": Hypothek 0) has no
+          // mortgage - don't leave an empty "M-..." liability on the balance sheet.
+          const noMortgage = CashflowGameService.isCashflowGame() && parseFloat(mortage) === 0;
+          if (!foundM && !noMortgage) {
             const newLiabilitie: Liability = {
               tag: 'M-' + title,
               amount: parseFloat(mortage),
@@ -773,6 +878,7 @@ export class AddComponent extends BaseAddComponent implements OnInit, AfterViewI
           for (let i = 0; i < AppStateService.instance.allGrowProjects.length; i++) {
             if (AppStateService.instance.allGrowProjects[i].title === title) {
               AppStateService.instance.allGrowProjects[i].status = 'bought';
+              this.growPhaseAfterTrade(title, 'buy');
               if (found) {
                 AppStateService.instance.allGrowProjects[i].amount -= parseFloat(
                   AddComponent.amountTextField,
@@ -790,6 +896,10 @@ export class AddComponent extends BaseAddComponent implements OnInit, AfterViewI
                 AppStateService.instance.allGrowProjects[i].investment.amount = parseFloat(mortage);
               }
             }
+          }
+          // A bought card-deal's monthly cashflow becomes a Subscription Payday pays out.
+          if (CashflowGameService.isCashflowGame()) {
+            this.cashflowGameService.registerInvestmentIncome(title);
           }
         }
 
@@ -990,6 +1100,18 @@ export class AddComponent extends BaseAddComponent implements OnInit, AfterViewI
               AppStateService.instance.liabilities.splice(i, 1);
             }
           }
+          // Paying a starting liability off also ends the monthly expense that went with it.
+          if (CashflowGameService.isCashflowGame()) {
+            const removedExpense = this.cashflowGameService.removeExpenseForPaidLiability(
+              AddComponent.categoryTextField.replace(/^@/, ''),
+            );
+            if (removedExpense) {
+              this.toastService.show(
+                this.cashflowGameService.expenseRemovedMessage(removedExpense),
+                'update',
+              );
+            }
+          }
 
           if (!AddComponent.commentTextField.includes('Sell Investment')) {
             AddComponent.amountTextField = String((amount + credit) * -1);
@@ -1084,6 +1206,7 @@ export class AddComponent extends BaseAddComponent implements OnInit, AfterViewI
           for (let i = 0; i < AppStateService.instance.allGrowProjects.length; i++) {
             if (AppStateService.instance.allGrowProjects[i].title === title) {
               AppStateService.instance.allGrowProjects[i].status = 'sold';
+              this.growPhaseAfterTrade(title, 'sell');
               AppStateService.instance.allGrowProjects[i].amount -= parseFloat(deposit);
               if (AppStateService.instance.allGrowProjects[i].amount < 0) {
                 AppStateService.instance.allGrowProjects[i].amount = 0;
@@ -1501,7 +1624,14 @@ export class AddComponent extends BaseAddComponent implements OnInit, AfterViewI
           date: this.dateTextField,
           time: this.timeTextField,
           category: AddComponent.categoryTextField,
-          comment: AddComponent.commentTextField,
+          // On a Cashflow-game account every transaction belongs to the round being played, so it
+          // carries the game's marker: each Payday then ages it back a month like the rest.
+          comment:
+            AddComponent.commentTextField +
+            (CashflowGameService.isCashflowGame() &&
+            !AddComponent.commentTextField.includes('#cashflow')
+              ? '\n#cashflow'
+              : ''),
         };
         AppStateService.instance.allTransactions.push(newTransaction);
 
@@ -1572,7 +1702,10 @@ export class AddComponent extends BaseAddComponent implements OnInit, AfterViewI
             // handling) — write it back too. Harmless to include even when
             // nothing changed; never runs for a normal account.
             ...(CashflowGameService.isCashflowGame()
-              ? [{ tag: 'subscriptions', data: AppStateService.instance.allSubscriptions }]
+              ? [
+                  { tag: 'subscriptions', data: AppStateService.instance.allSubscriptions },
+                  { tag: 'cashflowGame', data: AppStateService.instance.cashflowGame },
+                ]
               : []),
             ...(AppStateService.instance.tier3BalanceLoaded
               ? [
@@ -1694,6 +1827,16 @@ export class AddComponent extends BaseAddComponent implements OnInit, AfterViewI
     }
     if (AppStateService.instance.tier3GrowLoaded) {
       this.localStorage.saveData('grow', JSON.stringify(AppStateService.instance.allGrowProjects));
+    }
+    if (CashflowGameService.isCashflowGame()) {
+      this.localStorage.saveData(
+        'subscriptions',
+        JSON.stringify(AppStateService.instance.allSubscriptions),
+      );
+      this.localStorage.saveData(
+        'cashflowGame',
+        JSON.stringify(AppStateService.instance.cashflowGame),
+      );
     }
   }
 

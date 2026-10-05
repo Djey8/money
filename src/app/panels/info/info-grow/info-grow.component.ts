@@ -16,6 +16,8 @@ import {
 import { isDuplicateTitle } from 'src/app/shared/validation.utils';
 import { BaseInfoComponent } from 'src/app/shared/base/base-info.component';
 import { AppStateService } from 'src/app/shared/services/app-state.service';
+import { GrowTradeService } from 'src/app/main/grow/grow-trade.service';
+import { CashflowGameService } from 'src/app/shared/services/cashflow-game.service';
 import { IncomeStatementService } from 'src/app/shared/services/income-statement.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -216,9 +218,69 @@ export class InfoGrowComponent extends BaseInfoComponent {
     router: Router,
     private persistence: PersistenceService,
     private incomeStatement: IncomeStatementService,
+    private cashflowGame: CashflowGameService,
+    private growTrade: GrowTradeService,
   ) {
     super(router);
     this.initStatic(InfoGrowComponent);
+    InfoGrowComponent.instance = this;
+  }
+
+  /** The project open in this panel. */
+  private get openProject(): Grow | undefined {
+    return AppStateService.instance.allGrowProjects[InfoGrowComponent.index];
+  }
+
+  /** Buy / Sell are offered for shares, properties and assets - the same projects the Grow grid offers them for. */
+  get canTrade(): boolean {
+    return this.growTrade.canTrade(this.openProject);
+  }
+
+  /** The Buy / Sell row sits above Edit on Overview and Financials; Actions and Notes don't show it (JFK, 2026-10-03). */
+  get showTradeButtons(): boolean {
+    return (
+      this.canTrade &&
+      (InfoGrowComponent.activeTab === 'overview' || InfoGrowComponent.activeTab === 'financials')
+    );
+  }
+
+  buyThisProject(): void {
+    const project = this.openProject;
+    if (project) void this.growTrade.buy(project);
+  }
+
+  sellThisProject(): void {
+    const project = this.openProject;
+    if (project) void this.growTrade.sell(project);
+  }
+
+  /** Only Cashflow-game accounts get the held-position summary in Financials. */
+  get isCashflowGameAccount(): boolean {
+    return CashflowGameService.isCashflowGame();
+  }
+
+  /** The balance-sheet position behind this (share) project - what is actually held, at the latest price. */
+  get heldShare(): Share | undefined {
+    return AppStateService.instance.allShares.find(
+      (share) => share.tag === InfoGrowComponent.title,
+    );
+  }
+
+  /** Cost basis per share across every buy (the project's invested amount over the quantity held). */
+  get averageBuyPrice(): number {
+    const held = this.heldShare;
+    return held && Number(held.quantity) ? Number(InfoGrowComponent.amount) / held.quantity : 0;
+  }
+
+  /** The panel's live instance, so code outside it (the Cashflow game) can drive the edit form. */
+  static instance: InfoGrowComponent | undefined;
+
+  /** Opens the edit form for the project already loaded via `setInfoGrowComponent`, with the Financials section expanded (shares, price, loan). */
+  static openEditWithFinancials(): void {
+    const panel = InfoGrowComponent.instance;
+    if (!panel) return;
+    panel.editGrowProject();
+    panel.showFinancialsSection = true;
   }
 
   toggleAsset() {
@@ -486,6 +548,8 @@ export class InfoGrowComponent extends BaseInfoComponent {
         project.links = this.links;
         project.actionItems = this.actionItems;
         project.updatedAt = new Date().toISOString();
+        // A planned Cashflow-game card keeps its "bank loan needed" note in step with the quantity.
+        if (CashflowGameService.isCashflowGame()) this.cashflowGame.syncPlanNote(project);
 
         InfoGrowComponent.title = this.titleTextField;
         InfoGrowComponent.sub = this.subTextField;

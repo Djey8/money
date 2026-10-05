@@ -2,6 +2,7 @@ import { Router } from '@angular/router';
 import { Grow, GrowPhase, GrowType } from 'src/app/interfaces/grow';
 import { LocalService } from 'src/app/shared/services/local.service';
 import { migrateGrowArray } from 'src/app/shared/grow-migration.utils';
+import { GrowTradeService } from './grow-trade.service';
 import { InfoGrowComponent } from 'src/app/panels/info/info-grow/info-grow.component';
 import { InfoComponent } from 'src/app/panels/info/info.component';
 import { InfoAssetComponent } from 'src/app/panels/info/info-asset/info-asset.component';
@@ -18,7 +19,6 @@ import { Transaction } from 'src/app/interfaces/transaction';
 import { AppStateService } from 'src/app/shared/services/app-state.service';
 import { AppDataService } from 'src/app/shared/services/app-data.service';
 import { ToastService } from 'src/app/shared/services/toast.service';
-import { buildBuyComment, buildSellComment, GrowBalancePositions } from './grow-prefill.utils';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
@@ -126,6 +126,7 @@ export class GrowComponent implements OnInit, AfterViewInit {
     private router: Router,
     private localStorage: LocalService,
     private toastService: ToastService,
+    private growTrade: GrowTradeService,
   ) {
     AppStateService.instance.allGrowProjects =
       this.localStorage.getData('grow') == ''
@@ -259,67 +260,12 @@ export class GrowComponent implements OnInit, AfterViewInit {
    * worked from whatever localStorage last held (empty on a fresh device),
    * pre-filling `0 x 0` and risking a save based on an outdated position.
    */
-  private async ensureBalanceLoaded(): Promise<void> {
-    await AppDataService.instance?.loadBalanceData();
-  }
-
-  private balancePositions(): GrowBalancePositions {
-    return {
-      assets: AppStateService.instance.allAssets,
-      shares: AppStateService.instance.allShares,
-      investments: AppStateService.instance.allInvestments,
-    };
-  }
-
   async buyProject(index: number) {
-    await this.ensureBalanceLoaded();
-    const project = AppStateService.instance.allGrowProjects[index];
-    AppComponent.gotoTop();
-    AddComponent.categoryTextField = `@${project.title}`;
-    AddComponent.selectedOption = 'Fire';
-    AddComponent.loanTextField = '';
-    AddComponent.creditTextField = '';
-    if (project.liabilitie) {
-      AddComponent.isLiabilitie = true;
-      AddComponent.creditTextField = String(project.liabilitie.credit);
-      AddComponent.loanTextField = String(project.liabilitie.amount);
-    }
-    const comment = buildBuyComment(project, this.balancePositions());
-    if (comment !== null) {
-      AddComponent.amountTextField = '-1';
-      AddComponent.commentTextField = comment;
-    }
-    AddComponent.url = '/grow';
-    InfoGrowComponent.isInfo = false;
-    AddComponent.isAdd = true;
-    MenuComponent.isMenu = false;
-    InfoComponent.isInfo = false;
-    AddComponent.isAdd = true;
+    await this.growTrade.buy(AppStateService.instance.allGrowProjects[index]);
   }
 
   async sellProject(index: number) {
-    await this.ensureBalanceLoaded();
-    const project = AppStateService.instance.allGrowProjects[index];
-    const comment = buildSellComment(project, this.balancePositions());
-    if (comment === null) {
-      // Nothing tagged with this project's title to sell — say so instead
-      // of opening a `0 x 0` transaction that would change nothing.
-      this.toastService.show('Grow.noPosition', 'error');
-      return;
-    }
-    AppComponent.gotoTop();
-    InfoGrowComponent.isInfo = false;
-    AddComponent.categoryTextField = `@${project.title}`;
-    AddComponent.selectedOption = 'Income';
-    AddComponent.amountTextField = '1';
-    AddComponent.commentTextField = comment;
-    AddComponent.url = '/grow';
-    AddComponent.isLiabilitie = false;
-    InfoGrowComponent.isInfo = false;
-    AddComponent.isAdd = true;
-    MenuComponent.isMenu = false;
-    InfoComponent.isInfo = false;
-    AddComponent.isAdd = true;
+    await this.growTrade.sell(AppStateService.instance.allGrowProjects[index]);
   }
 
   /**

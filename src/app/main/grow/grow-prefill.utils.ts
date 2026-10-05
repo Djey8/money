@@ -10,7 +10,8 @@ import { Grow } from 'src/app/interfaces/grow';
  */
 
 export interface GrowBalancePositions {
-  assets: { tag: string; amount: number }[];
+  /** `coins`: how many coins of a special asset (gold) are owned; the Sell comment then names them. */
+  assets: { tag: string; amount: number; coins?: number }[];
   shares: { tag: string; quantity: number; price: number }[];
   investments: { tag: string; deposit: number; amount: number }[];
 }
@@ -49,7 +50,12 @@ export function buildSellComment(project: Grow, positions: GrowBalancePositions)
   const { title } = project;
   if (project.isAsset) {
     const asset = positionFor(positions.assets, title);
-    return asset ? `Sell Asset ${title} 1 x ${asset.amount};` : null;
+    if (!asset) return null;
+    // Coins (gold): all you have, each at its book value - edit "10 x 300" to e.g. "5 x 1000" to sell five.
+    if (asset.coins) {
+      return `Sell Asset ${title} ${asset.coins} x ${Math.round((asset.amount / asset.coins) * 100) / 100};`;
+    }
+    return `Sell Asset ${title} 1 x ${asset.amount};`;
   }
   if (project.share) {
     const share = positionFor(positions.shares, title);
