@@ -1,3 +1,10 @@
+## [1.19.1] - 2026-10-05
+
+### Performance
+
+- perf(selfhosted): send a stable id with every transaction
+- perf(domain): use native AES-256-CBC and HMAC in EncryptionSession
+
 ## [1.19.0] - 2026-10-05
 
 ### Features
