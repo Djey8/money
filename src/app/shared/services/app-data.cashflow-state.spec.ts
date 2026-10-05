@@ -101,6 +101,38 @@ describe('AppDataService game state read-back', () => {
     expect(state.gameName).toBe('My run');
   });
 
+  it('brings back a solo game’s token and open turn', () => {
+    const state = read({
+      ...stored,
+      mode: 'solo',
+      boardPosition: '7',
+      turn: {
+        phase: 'decide',
+        count: '4',
+        lastRoll: ['3', '4'],
+        pending: { kind: 'market', spaceIndex: '7' },
+      },
+    });
+
+    expect(state.mode).toBe('solo');
+    expect(state.boardPosition).toBe(7);
+    expect(state.turn).toEqual({
+      phase: 'decide',
+      count: 4,
+      lastRoll: [3, 4],
+      pending: { kind: 'market', spaceIndex: 7 },
+    });
+    expect(read({ ...stored, turn: { phase: 'roll', count: '0' } }).turn).toEqual({
+      phase: 'roll',
+      count: 0,
+    });
+  });
+
+  it('a companion game has no turn', () => {
+    expect(read(stored).turn).toBeUndefined();
+    expect(read(stored).boardPosition).toBeNull();
+  });
+
   it('a game saved before these existed still loads, with empty lists and no slot', () => {
     const { assetDeals: _a, marketOffers: _m, gameId: _i, gameName: _n, ...older } = stored;
 

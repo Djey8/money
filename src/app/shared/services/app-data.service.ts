@@ -600,6 +600,27 @@ export class AppDataService {
       history,
       assetDeals,
       marketOffers,
+      ...(raw.turn != null
+        ? {
+            turn: {
+              phase: str(raw.turn.phase) as NonNullable<CashflowGameState['turn']>['phase'],
+              count: num(raw.turn.count),
+              ...(Array.isArray(raw.turn.lastRoll)
+                ? { lastRoll: raw.turn.lastRoll.map((die: any) => num(die)) }
+                : {}),
+              ...(raw.turn.pending != null
+                ? {
+                    pending: {
+                      kind: str(raw.turn.pending.kind) as NonNullable<
+                        NonNullable<CashflowGameState['turn']>['pending']
+                      >['kind'],
+                      spaceIndex: num(raw.turn.pending.spaceIndex),
+                    },
+                  }
+                : {}),
+            },
+          }
+        : {}),
       ...(raw.gameId != null ? { gameId: optionalStr(raw.gameId) } : {}),
       ...(raw.gameName != null ? { gameName: optionalStr(raw.gameName) } : {}),
     };

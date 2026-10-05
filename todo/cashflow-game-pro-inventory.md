@@ -400,3 +400,19 @@ landing included - each pays once - plus `passedPaydays` and `landedOnPayday`). 
 at START, so the first roll of n lands on n - 1. No turn of up to 12 can cross more than two Paydays. **The saved-state
 fields (last roll, dice, phase, pending decision) are deliberately not added yet:** B2 touches no storage; they arrive
 with B3, where the turn state machine actually writes them (additive and optional, as JFK approved). **Next:** B3.
+
+## B3 wrap-up (2026-10-05)
+
+`turn.ts`: `playTurn(books, deps, { dice })` rolls (one die, two while Charity runs), clears Downsized's spanner, moves the
+token, **pays one Payday for every Payday space entered** (passed or landed), then resolves the landing: Baby / Charity /
+Downsized through the existing round rules, a card space (`deal` / `market` / `doodad`) leaves a **pending decision** and
+the turn open (`phase: 'decide'`) until `settleDecision(state, 'done' | 'passed')`. A roll is **one History step**
+(`roll`, e.g. "4 -> market (7)"): the caller takes one snapshot and applies `effects` in order; `passed` is its own step
+(`skipCard`), `done` is not (the card's own steps are already in the history). Charity: each roll while it runs uses up one
+of its 3 turns. A Baby space with 3 children does nothing (found by the seeded simulation: it used to throw).
+
+State (additive, optional - JFK approved): `CashflowGameState.turn` (`CashflowSoloTurn`), `boardPosition` is now `null` at
+START for solo (it used to start at 0, unused). The loader (`decryptCashflowGameState`) reads `turn` back; storage doc
+updated. Step kinds `roll` and `skipCard` are new: **the History UI needs labels for them in C-phase.**
+Not yet: game end (B4), the loan-aware cash checks on a card decision (the card flows already do those), simulation
+policies (B5). **Next:** B4.

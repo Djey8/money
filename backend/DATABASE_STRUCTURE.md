@@ -288,6 +288,15 @@ Each user document has the following structure:
 }
 ```
 
+### Solo mode's fields in the game state (`cashflowGame`, Cashflow-game accounts only)
+
+Solo play (JFK, 2026-10-05) adds one optional field to the game state and uses one that was always there; both are plain leaves like the rest of the state, and games saved before it simply do not have them.
+
+| Field           | Holds                                                                                                                                                                                                       |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `boardPosition` | The token: the ring index (0-23) of its space, empty at START. Always empty in companion mode.                                                                                                              |
+| `turn`          | Absent in companion mode. `{ phase: 'roll' or 'decide', count, lastRoll?: [dice], pending?: { kind: 'deal' or 'market' or 'doodad', spaceIndex } }` - where the turn stands; `decide` while a card is open. |
+
 ### Saved Cashflow games (`cashflowGames/`, Cashflow-game accounts only)
 
 An account whose email contains "cashflow" plays one live game (everything above is that game) and can keep any number of past ones (JFK, 2026-10-04). They live under their own path, next to the rest of the user's data, and are read only when the game panel opens:
