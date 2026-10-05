@@ -1,6 +1,6 @@
 # Cashflow game — solo mode in the app + Pro API/MCP (an agent plays full games)
 
-**Status:** planned, not started (2026-10-05). Master roadmap for Phase 3 (solo board simulation) and Phase 5 (Pro
+**Status:** inputs received (board picture, rule answers, schema approval — 2026-10-05); **slice A0 in progress.** Master roadmap for Phase 3 (solo board simulation) and Phase 5 (Pro
 API + MCP) of [`cashflow-game.md`](cashflow-game.md), merged because both need the same thing: **one rules engine
 that can play a whole game by itself**. Read that file's decisions 1–12 first; this one only adds to them.
 
@@ -39,13 +39,43 @@ New, 2026-10-05:
    — nothing about the board is invented (decision 6 of `cashflow-game.md`).
 6. **Deploy order:** the performance changes are deployed first, independently of all this.
 
-## 3. Inputs needed from JFK
+## 3. Inputs from JFK (received 2026-10-05)
 
-| Needed                                   | For    | Notes                                                                                                                                                                      |
-| ---------------------------------------- | ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **The board picture**                    | B1, C2 | Space order, which kind each is, circle vs. rounded loop, anything printed on spaces. Until it arrives a clearly-fake placeholder board ships behind the placeholder flag. |
-| **Rule confirmations** (§7)              | B2     | Short answers; I propose a default for each so none blocks starting.                                                                                                       |
-| **Playtest after C-slices and after D3** | C7, D3 | The only real acceptance test for a game.                                                                                                                                  |
+- **The board picture** — received and transcribed below. It is the German "Cashflow — Verlasse das Hamsterrad!"
+  board; the rat race is the inner ring. The outer track (professions, numbered ① ② ④ ⑤ markers, the large deck
+  cards) is the Fast Track / deck areas and is out of scope.
+- **Rule answers** — in §7. JFK also approved **adding the schema fields solo mode needs** (§4).
+- **Visual brief**: _"you don't have to visualize it nicely — just a circle with the different fields, and we
+  simulate your token going along it."_ C2/C4 are deliberately simple: a ring of 24 labelled, colored cells and a
+  token, no board art.
+- **Still to come**: JFK's playtest after C7 and after D3.
+
+### 3.1 The rat-race board (24 spaces, clockwise from START)
+
+Transcribed from the picture; `index` 0 is the space the START marker sits next to, and the token moves clockwise
+(the printed arrows). Cells 12 Deals + 3 Doodad + 3 Payday + 3 Market + Charity + Downsized + Baby. The pattern
+repeats every 8 spaces (Doodad, Charity|Downsized|Baby, Payday, Market on the odd positions), which is a good
+check that the transcription is right.
+
+| #   | Printed (DE)   | Kind (`CashflowSpaceKind`) | #   | Printed (DE)   | Kind        | #   | Printed (DE)   | Kind     |
+| --- | -------------- | -------------------------- | --- | -------------- | ----------- | --- | -------------- | -------- |
+| 0   | Deals          | `deal` (pile chosen)       | 8   | Deals          | `deal`      | 16  | Deals          | `deal`   |
+| 1   | Schnickschnack | `doodad`                   | 9   | Schnickschnack | `doodad`    | 17  | Schnickschnack | `doodad` |
+| 2   | Deals          | `deal`                     | 10  | Deals          | `deal`      | 18  | Deals          | `deal`   |
+| 3   | Wohltätigkeit  | `charity`                  | 11  | Arbeitslos     | `downsized` | 19  | Baby           | `baby`   |
+| 4   | Deals          | `deal`                     | 12  | Deals          | `deal`      | 20  | Deals          | `deal`   |
+| 5   | Zahltag        | `payday`                   | 13  | Zahltag        | `payday`    | 21  | Zahltag        | `payday` |
+| 6   | Deals          | `deal`                     | 14  | Deals          | `deal`      | 22  | Deals          | `deal`   |
+| 7   | Der Markt      | `market`                   | 15  | Der Markt      | `market`    | 23  | Der Markt      | `market` |
+
+A Deals space does **not** fix Small vs Big: the player picks the pile when landing (§7). The existing
+`CashflowSpaceKind` has `dealSmall`/`dealBig`; the board stores a single `deal` marker per Deals space and the
+choice is part of the pending decision (B1 decides the exact type — likely a new `deal` kind on the board only,
+leaving `CashflowSpaceKind` as the companion UI uses it).
+
+The printed card texts on the board confirm the existing rules: Charity — _"donate 10% of your total income and
+use 1 or 2 dice for the next 3 turns"_; Baby — _"you get a child, add it to your expenses (maximum 3 children per
+player)"_; Downsized — _"pay the bank the amount of your total expenses and sit out 2 rounds"_.
 
 ## 4. Architecture
 
@@ -99,27 +129,27 @@ is a thin adapter over the domain package.
 
 ### Phase B — Solo-mode engine (domain only, no UI)
 
-| Slice  | What                                                                                                                                                                                                                                                                                                                                     | Size | Needs             |
-| ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- | ----------------- |
-| **B1** | **Board data model + the Classic rat-race board**, transcribed from JFK's picture, validated (every kind present, a Payday exists, ring closes) with a golden test that pins it to the transcription. Placeholder board until the picture arrives. Optional layout hints (x/y or arc position) so the UI draws what the picture shows.   | S    | **picture**       |
-| **B2** | **Dice, movement and landing**: roll 1 die (2 under Charity), advance with wrap-around, detect **passing** vs **landing** on Payday, land → space kind. State additions (§4), **schema OK from JFK first**.                                                                                                                              | M    | B1, A3, schema OK |
-| **B3** | **Turn state machine**: auto-resolve payday/baby/charity/downsized through the existing engine functions, hand card spaces over as a `pending` decision (which deck, which pile for Deals), `endTurn`; Charity's "1 or 2 dice for 3 turns" and Downsized's "sit out 2 turns" implemented as real turn effects (§7).                      | L    | B2, A1            |
-| **B4** | **Game end**: escape the rat race (passive income ≥ expenses, already `summarizeGameFinances`) and bankruptcy as terminal states with their own phase; a final summary object.                                                                                                                                                           | S    | B3                |
-| **B5** | **Simulation tests**: seeded full games with a simple policy (always buy affordable deals / never buy); property tests that no game throws, cash/entity invariants hold, undo returns to the exact prior state at every step, and the same seed replays identically. Also produces the golden "agent plays a game" fixture reused in D5. | M    | B4                |
+| Slice  | What                                                                                                                                                                                                                                                                                                                                                        | Size | Needs             |
+| ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- | ----------------- |
+| **B1** | **Board data model + the Classic rat-race board**, transcribed from JFK's picture, validated (every kind present, a Payday exists, ring closes) with a golden test that pins it to the transcription. Placeholder board until the picture arrives. Optional layout hints (x/y or arc position) so the UI draws what the picture shows.                      | S    | **picture**       |
+| **B2** | **Dice, movement and landing**: roll 1 die (2 under Charity), advance with wrap-around, detect **passing** vs **landing** on Payday, land → space kind. State additions (§4), **schema OK from JFK first**.                                                                                                                                                 | M    | B1, A3, schema OK |
+| **B3** | **Turn state machine**: auto-resolve payday/baby/charity/downsized through the existing engine functions, hand card spaces over as a `pending` decision (which deck, which pile for Deals), `endTurn`; Charity's "1 or 2 dice for 3 turns" as a real turn effect and Downsized's spanner shown until the next roll (§7 — nothing is skipped playing alone). | L    | B2, A1            |
+| **B4** | **Game end**: escape the rat race (passive income ≥ expenses, already `summarizeGameFinances`) and bankruptcy as terminal states with their own phase; a final summary object.                                                                                                                                                                              | S    | B3                |
+| **B5** | **Simulation tests**: seeded full games with a simple policy (always buy affordable deals / never buy); property tests that no game throws, cash/entity invariants hold, undo returns to the exact prior state at every step, and the same seed replays identically. Also produces the golden "agent plays a game" fixture reused in D5.                    | M    | B4                |
 
 **Exit**: a seeded full game runs from start to a terminal state in a unit test, deterministically.
 
 ### Phase C — Solo mode in the app
 
-| Slice  | What                                                                                                                                                                                                                                                                                                                                                                            | Size | Needs      |
-| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- | ---------- |
-| **C1** | **Start-game mode choice**: Companion vs Solo, only offered for game sets that ship a `board`; stored in `mode`; Companion untouched.                                                                                                                                                                                                                                           | S    | B1         |
-| **C2** | **Board component**: the rat race drawn from the board data (SVG), space colors from the existing tokens (green Deals, red Doodad, purple Charity/Baby/Downsized, orange Payday, blue Market), the totem at `boardPosition`. Responsive for phone width (you play on an iPhone), dark/light, accessible names. No animation yet.                                                | M    | B1         |
-| **C3** | **Dice component + roll flow**: tap to roll; the animation **reveals the engine's result** (it never rolls on its own); 1 or 2 dice; honours `prefers-reduced-motion`.                                                                                                                                                                                                          | M    | B2         |
-| **C4** | **Totem animation**: walks space by space along the circle to the landing space, with a "skip animation" option; visually marks the Payday it passes.                                                                                                                                                                                                                           | M    | C2, C3     |
-| **C5** | **Turn flow wiring**: landing opens the existing resolution UIs (Deal pile choice, find-or-draw, doodad pay, market offers, dice cards) as the pending decision; End turn; a skipped turn (Downsized) is shown and passed automatically; Undo rewinds a whole turn; history log gets roll/move lines. The turn logic is the domain's — the component only renders and forwards. | L    | B3, C3, C4 |
-| **C6** | **HUD and end of game**: position, distance to the next Payday, last roll, Charity/Downsized status as turn counters (replacing the manual reminders in solo mode); escape / bankrupt screens with a save-game prompt.                                                                                                                                                          | M    | B4, C5     |
-| **C7** | **Polish and acceptance**: all UI text in the 6 languages (en/de/es/fr/cn/ar), a short "Solo mode" section in `CASHFLOW_GAME_GUIDE.md`, a manual playtest checklist (no Playwright — per the dev-cycle rule it is reserved for deliberate one-off debugging), then **JFK's full playtest**.                                                                                     | M    | C6         |
+| Slice  | What                                                                                                                                                                                                                                                                                                                                                                           | Size | Needs      |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---- | ---------- |
+| **C1** | **Start-game mode choice**: Companion vs Solo, only offered for game sets that ship a `board`; stored in `mode`; Companion untouched.                                                                                                                                                                                                                                          | S    | B1         |
+| **C2** | **Board component**: the rat race drawn from the board data (SVG), space colors from the existing tokens (green Deals, red Doodad, purple Charity/Baby/Downsized, orange Payday, blue Market), the totem at `boardPosition`. Responsive for phone width (you play on an iPhone), dark/light, accessible names. No animation yet.                                               | M    | B1         |
+| **C3** | **Dice component + roll flow**: tap to roll; the animation **reveals the engine's result** (it never rolls on its own); 1 or 2 dice; honours `prefers-reduced-motion`.                                                                                                                                                                                                         | M    | B2         |
+| **C4** | **Totem animation**: walks space by space along the circle to the landing space, with a "skip animation" option; visually marks the Payday it passes.                                                                                                                                                                                                                          | M    | C2, C3     |
+| **C5** | **Turn flow wiring**: landing opens the existing resolution UIs (Deal pile choice, find-or-draw, doodad pay, market offers, dice cards) as the pending decision; End turn; the Downsized spanner is shown and removed by the next roll; Undo rewinds a whole turn; history log gets roll/move lines. The turn logic is the domain's — the component only renders and forwards. | L    | B3, C3, C4 |
+| **C6** | **HUD and end of game**: position, distance to the next Payday, last roll, Charity/Downsized status as turn counters (replacing the manual reminders in solo mode); escape / bankrupt screens with a save-game prompt.                                                                                                                                                         | M    | B4, C5     |
+| **C7** | **Polish and acceptance**: all UI text in the 6 languages (en/de/es/fr/cn/ar), a short "Solo mode" section in `CASHFLOW_GAME_GUIDE.md`, a manual playtest checklist (no Playwright — per the dev-cycle rule it is reserved for deliberate one-off debugging), then **JFK's full playtest**.                                                                                    | M    | C6         |
 
 **Exit**: a full solo game is playable end to end in the app; JFK's playtest findings fixed.
 
@@ -154,19 +184,26 @@ B/C**; D3 needs B.
 the turn model that the API then exposes — freezing API contracts _after_ the UI has proven them is cheaper than
 changing a published OpenAPI later. D1/D2 can be pulled forward whenever agent read-access is wanted sooner.
 
-## 7. Open rule questions (a proposed default for each, so none blocks starting)
+## 7. Rules (answered by JFK, 2026-10-05)
 
-1. **Payday on passing.** Default: you are paid when you **pass or land on** Payday (the physical game). Today's
-   companion Payday button also advances the virtual month — in solo it advances once per pass/landing.
-2. **Downsized "sit out 2 turns".** With no opponents, default: the next 2 turns are skipped automatically (token
-   stays, no roll). Does a skipped turn also advance the game calendar, or only Payday does? Default: only Payday.
-3. **Charity "1 or 2 dice for 3 turns".** Default: the app offers a 1-die/2-dice choice for each of the next 3
-   turns and moves by the sum; the donation itself is the existing Charity resolution.
-4. **Pending decisions that never resolve** (a card the player ignores): default: the turn cannot end until the
-   decision is made or explicitly passed — no silent skipping.
-5. **Insufficient cash on a doodad/deal**: default: the existing auto-bank-loan behaviour (`autoLoanMessage`).
+1. **Payday** — you are paid whenever you **land on or pass** a Payday space. Each pass/landing runs the existing
+   Payday (which also advances the game's calendar one month).
+2. **Downsized** — pay your total expenses (existing resolution) and the **spanner** shows that you are sitting
+   out 2 rounds. Playing alone nobody else takes a turn in between, so **nothing is actually skipped**: the
+   spanner is only the visual reminder, and it is **removed when the player rolls again to continue**
+   (`clearCashflowStatus('unemployed')`, driven by the roll instead of a button). Today's companion-mode spanner
+   and its manual dismiss stay as they are.
+3. **Charity** — after the donation, for the next **3** turns (the board's wording; JFK said "two" in passing —
+   confirm if 2 is intended) the player may choose **1 or 2 dice** before each roll; the move then continues
+   automatically with the sum.
+4. **Baby, Market, Deals, Schnickschnack** — as in companion mode. Deals: the player chooses **Small or Big**
+   pile; for every card space the player either **draws a random card or looks for a specific one** (the existing
+   find-or-draw flow, unchanged). The turn cannot end until the card decision is made or explicitly passed.
+5. **Insufficient cash** on a doodad/deal: the existing auto-bank-loan behaviour (`autoLoanMessage`).
 6. **Fast Track**: out of scope — escaping the rat race ends the game.
-7. **Board shape** (circle, rounded loop, how many spaces): decided by the picture.
+7. **Start**: the token starts at **START**, just before space 0, and the first roll of _n_ lands on space _n − 1_
+   (so a roll of 1 lands on the Deals space next to START). **Open — please confirm with the first playtest;** if
+   the real game starts the token _on_ space 0, it is a one-line change in B2.
 
 ## 8. Risks
 
