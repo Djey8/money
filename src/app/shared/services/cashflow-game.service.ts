@@ -35,18 +35,24 @@ import {
   isGameTransaction,
   loanForShortfallMinor,
   multiplyQuantityPrice,
+  MARKET_NOTE_MARK,
   nextSmartDate,
   pickCashflowProfession,
-  resolveCashflowBaby,
-  resolveCashflowCharity,
-  resolveCashflowDownsized,
-  runCashflowPayday,
+  playBaby,
+  playCharity,
+  playDownsized,
+  playPayday,
+  previewSpace,
   shiftedGameTransactionDates,
   summarizeGameFinances,
   systemClock,
   toMinorUnits,
   usedDaysThisMonth,
+  type BookSubscription,
   type Clock,
+  type RoundBooks,
+  type RoundDeps,
+  type RoundEffects,
   type SavedGameSummary,
 } from '@money/domain';
 import { CASHFLOW_GAME_SETS } from '../cashflow-content';
@@ -140,6 +146,19 @@ interface CashflowDeckCardMap {
 export interface CashflowCardCallbacks<T> {
   onSuccess: (card: T) => void;
   onError: (message: string) => void;
+}
+
+function toBookSubscription(sub: Subscription): BookSubscription {
+  return {
+    title: sub.title,
+    account: sub.account,
+    amountMinor: toMinorUnits(sub.amount),
+    startDate: sub.startDate,
+    endDate: sub.endDate,
+    category: sub.category,
+    comment: sub.comment,
+    frequency: sub.frequency,
+  };
 }
 
 function toFloatTransaction(record: CashflowTransactionRecord): Transaction {
@@ -867,87 +886,81 @@ export class CashflowGameService {
    * used for round-tracking/loan math, not for what date actually gets persisted.
    */
   payday(callbacks: CashflowGameCallbacks): void {
-    const state = AppStateService.instance;
-    const ownedSubscriptions = this.ownedGameSubscriptions();
-    let result: ReturnType<typeof runCashflowPayday>;
+    let effects: RoundEffects;
     try {
-      result = runCashflowPayday(state.cashflowGame, this.gameSubscriptions());
+      effects = playPayday(this.roundBooks(), this.roundDeps);
     } catch (err: unknown) {
       callbacks.onError(errorMessage(err, 'Could not run Payday.'));
       return;
     }
-    this.pushUndoSnapshot({
-      kind: 'payday',
-      detail: `${this.translate.instant('CashflowGame.Round')} ${result.state.round}`,
-    });
-
-    this.shiftGameTransactionDates(-1);
-
-    const today = this.clock.todayIso();
-    const datedTransactions = result.transactions.map((record, index) => ({
-      ...record,
-      date: dateFromSubscriptionDay(ownedSubscriptions[index]?.startDate, today),
-    }));
-    datedTransactions.forEach((record) => state.allTransactions.push(toFloatTransaction(record)));
-
-    // Keep history's own copy in sync with the dates actually persisted, so the History list shows
-    // the dates that actually got saved.
-    const history = [...result.state.history];
-    history[history.length - 1] = {
-      ...history[history.length - 1],
-      createdTransactions: datedTransactions,
-    };
-
-    state.cashflowGame = { ...result.state, history };
-    // Market buyers' offers are good for one round only: gone at Payday, with their notes.
-    const hadOffers = (state.cashflowGame.marketOffers ?? []).length > 0;
-    if (hadOffers) {
-      state.cashflowGame = { ...state.cashflowGame, marketOffers: [] };
-      for (const project of state.allGrowProjects) {
-        project.notes = (project.notes ?? []).filter(
-          (note) => !note.text.startsWith(MARKET_NOTE_MARK),
-        );
-      }
-    }
-    // Every kept Multi-Level-Marketing card now has a roll waiting - one roll for all of them.
-    const hasRecurring = this.recurringOwned().length > 0;
-    if (hasRecurring) {
-      state.cashflowGame = {
-        ...state.cashflowGame,
-        assetDeals: this.assetDeals().map((deal) =>
-          deal.recurring && deal.stage === 'owned' ? { ...deal, rollDue: true } : deal,
-        ),
-      };
-    }
+    this.pushUndoSnapshot(effects.step);
+    this.applyRoundEffects(effects);
     this.persistAll(
       'cashflow_payday',
-      { round: result.state.round },
+      { round: effects.state.round },
       callbacks,
-      hadOffers ? { includeGrow: true } : {},
+      effects.persist.grow ? { includeGrow: true } : {},
     );
-    if (hasRecurring) this.decisionNeeded$.next();
+    if (effects.decisionNeeded) this.decisionNeeded$.next();
   }
 
   /**
-   * Every game transaction: those tagged `#cashflow`, plus Grow trades made through the Add dialog
-   * before it tagged them (their comment is Grow's own "Buy Share ..." / "Sell Investment ..." text) -
-   * so older games age their purchases back at Payday too (JFK, 2026-10-03: a share bought two
-   * Paydays ago stayed put).
+   * The slice of the account the round rules (`@money/domain` rounds.ts) read, in minor units. The rules are pure:
+   * this service only builds their input, applies their effects and persists - the same decisions the Pro API makes.
    */
-  private shiftGameTransactionDates(months: number): void {
-    const transactions = AppStateService.instance.allTransactions;
-    for (const { index, date } of shiftedGameTransactionDates(transactions, months)) {
-      transactions[index].date = date;
-    }
+  private roundBooks(): RoundBooks {
+    const state = AppStateService.instance;
+    return {
+      state: state.cashflowGame,
+      subscriptions: state.allSubscriptions.map(toBookSubscription),
+      transactions: state.allTransactions,
+      growNotes: state.allGrowProjects.map((project) => ({
+        title: project.title,
+        notes: project.notes ?? [],
+      })),
+    };
   }
 
-  /** The real Subscriptions Payday owns, in the exact order the engine paired them with `result.transactions` (`ownedSubscriptions` in engine.ts — same titles, same filter, same order) — lets each transaction pick up its own Subscription's `startDate`. */
-  private ownedGameSubscriptions(): Subscription[] {
+  /** Today's date and the game's text, for the round rules: the injectable clock and the selected language. */
+  private get roundDeps(): RoundDeps {
+    return { clock: this.clock, text: (key, params) => this.translate.instant(key, params) };
+  }
+
+  /** Writes a round rule's effects into the live entities. Existing entries are edited in place, so nothing else on them (ids, change history) is lost. */
+  private applyRoundEffects(effects: RoundEffects): void {
     const state = AppStateService.instance;
-    const byTitle = new Map(state.allSubscriptions.map((sub) => [sub.title, sub]));
-    return state.cashflowGame.gameSubscriptionTitles
-      .map((title) => byTitle.get(title))
-      .filter((sub): sub is Subscription => sub !== undefined);
+    for (const { index, date } of effects.transactionDates) {
+      state.allTransactions[index].date = date;
+    }
+    effects.appendedTransactions.forEach((record) =>
+      state.allTransactions.push(toFloatTransaction(record)),
+    );
+    for (const upsert of effects.subscriptionUpserts) {
+      const existing = state.allSubscriptions.find((sub) => sub.title === upsert.title);
+      if (existing) {
+        existing.account = upsert.account;
+        existing.amount = fromMinorUnits(upsert.amountMinor);
+        existing.frequency = upsert.frequency;
+        existing.category = upsert.category;
+        existing.comment = upsert.comment;
+      } else {
+        state.allSubscriptions.push({
+          title: upsert.title,
+          account: upsert.account,
+          amount: fromMinorUnits(upsert.amountMinor),
+          startDate: upsert.startDate,
+          endDate: upsert.endDate,
+          category: upsert.category,
+          comment: upsert.comment,
+          frequency: upsert.frequency,
+        });
+      }
+    }
+    for (const { title, notes } of effects.growNotes) {
+      const project = state.allGrowProjects.find((candidate) => candidate.title === title);
+      if (project) project.notes = notes;
+    }
+    state.cashflowGame = effects.state;
   }
 
   /** Every day-of-month a `#cashflow` Subscription recurs on (see `gameSubscriptionDays`). */
@@ -983,117 +996,62 @@ export class CashflowGameService {
 
   /** Resolves a Baby space: +1 child (max 3), scales the children-expense Subscription. */
   resolveBaby(callbacks: CashflowGameCallbacks): void {
-    const state = AppStateService.instance;
     const profession = this.currentProfession();
     if (!profession) {
       callbacks.onError('Pick a profession first.');
       return;
     }
-    let result: ReturnType<typeof resolveCashflowBaby>;
+    let effects: RoundEffects;
     try {
-      result = resolveCashflowBaby(state.cashflowGame, profession);
+      effects = playBaby(this.roundBooks(), profession, this.roundDeps);
     } catch (err: unknown) {
       callbacks.onError(errorMessage(err, 'Could not resolve Baby.'));
       return;
     }
-    this.pushUndoSnapshot({ kind: 'baby' });
-
-    // Same translation as pickProfession, but computed independently of the engine's own internal
-    // title/gameSubscriptionTitles bookkeeping (always raw German) — ignoring what the engine
-    // returned for that one field and replacing it with our own translated, session-stable title,
-    // so a 2nd/3rd child correctly updates the same Subscription instead of creating a duplicate.
-    const professionTitle = this.translateProfessionTitle(profession);
-    const translatedTitle = this.translate.instant(
-      'CashflowGame.childrenExpensesSubscriptionTitle',
-      {
-        profession: professionTitle,
-      },
-    );
-    const translatedCategory = this.translate.instant('CashflowGame.childrenExpenses');
-    this.upsertSubscription({
-      ...result.subscriptionUpsert,
-      title: translatedTitle,
-      category: `@${translatedCategory}`,
-    });
-    const gameSubscriptionTitles = state.cashflowGame.gameSubscriptionTitles.includes(
-      translatedTitle,
-    )
-      ? state.cashflowGame.gameSubscriptionTitles
-      : [...state.cashflowGame.gameSubscriptionTitles, translatedTitle];
-
-    state.cashflowGame = { ...result.state, gameSubscriptionTitles };
-    this.persistAll('cashflow_baby', { children: result.state.children }, callbacks, {
+    this.pushUndoSnapshot(effects.step);
+    this.applyRoundEffects(effects);
+    this.persistAll('cashflow_baby', { children: effects.state.children }, callbacks, {
       includeSubscriptions: true,
     });
   }
 
   /**
    * What a Baby / Charity / Downsized space is about to do, for the confirmation shown before it is
-   * played (JFK, 2026-10-03): the same engine calls the real resolve makes, nothing applied. `amountMinor`
+   * played (JFK, 2026-10-03): the same rule the real resolve runs, nothing applied. `amountMinor`
    * is the money involved - the monthly expense a baby adds, the 10% charity pays, all expenses
    * Downsized pays - and `children` the child count after a baby. Null when it cannot be played.
    */
   spacePreview(
     kind: 'baby' | 'charity' | 'downsized',
   ): { amountMinor: number; children?: number } | null {
-    const state = AppStateService.instance;
-    try {
-      if (kind === 'charity') {
-        const result = resolveCashflowCharity(state.cashflowGame, this.gameSubscriptions());
-        return { amountMinor: Math.abs(result.transaction.amountMinor) };
-      }
-      if (kind === 'downsized') {
-        const result = resolveCashflowDownsized(state.cashflowGame, this.gameSubscriptions());
-        return {
-          amountMinor: result.transactions.reduce((sum, t) => sum + Math.abs(t.amountMinor), 0),
-        };
-      }
-      const profession = this.currentProfession();
-      if (!profession) return null;
-      const result = resolveCashflowBaby(state.cashflowGame, profession);
-      const title = this.translate.instant('CashflowGame.childrenExpensesSubscriptionTitle', {
-        profession: this.translateProfessionTitle(profession),
-      });
-      const current = state.allSubscriptions.find((sub) => sub.title === title);
-      const currentMinor = current ? Math.abs(toMinorUnits(current.amount)) : 0;
-      return {
-        amountMinor: Math.max(0, Math.abs(result.subscriptionUpsert.amountMinor) - currentMinor),
-        children: result.state.children,
-      };
-    } catch {
-      return null;
-    }
+    return previewSpace(this.roundBooks(), kind, this.currentProfession(), this.roundDeps.text);
   }
 
-  /** Resolves a Charity space: pays 10% of total income now, unlocks the dice choice for 3 Paydays. */
+  /** Resolves a Charity space: pays 10% of total income now, unlocks the dice choice for 3 turns. */
   resolveCharity(callbacks: CashflowGameCallbacks): void {
-    const state = AppStateService.instance;
-    let result: ReturnType<typeof resolveCashflowCharity>;
+    let effects: RoundEffects;
     try {
-      result = resolveCashflowCharity(state.cashflowGame, this.gameSubscriptions());
+      effects = playCharity(this.roundBooks(), this.roundDeps);
     } catch (err: unknown) {
       callbacks.onError(errorMessage(err, 'Could not resolve Charity.'));
       return;
     }
-    this.pushUndoSnapshot({ kind: 'charity' });
-    this.pushOneOffTransactions([result.transaction]);
-    state.cashflowGame = result.state;
+    this.pushUndoSnapshot(effects.step);
+    this.applyRoundEffects(effects);
     this.persistAll('cashflow_charity', {}, callbacks);
   }
 
-  /** Resolves a Downsized space: pays total expenses once, sits out 2 Paydays (ends an active charity bonus). */
+  /** Resolves a Downsized space: pays total expenses once and shows the sitting-out reminder (ends an active charity bonus). */
   resolveDownsized(callbacks: CashflowGameCallbacks): void {
-    const state = AppStateService.instance;
-    let result: ReturnType<typeof resolveCashflowDownsized>;
+    let effects: RoundEffects;
     try {
-      result = resolveCashflowDownsized(state.cashflowGame, this.gameSubscriptions());
+      effects = playDownsized(this.roundBooks(), this.roundDeps);
     } catch (err: unknown) {
       callbacks.onError(errorMessage(err, 'Could not resolve Downsized.'));
       return;
     }
-    this.pushUndoSnapshot({ kind: 'downsized' });
-    this.pushOneOffTransactions(result.transactions);
-    state.cashflowGame = result.state;
+    this.pushUndoSnapshot(effects.step);
+    this.applyRoundEffects(effects);
     this.persistAll('cashflow_downsized', {}, callbacks);
   }
 
@@ -2938,8 +2896,6 @@ const LIABILITY_EXPENSE_KEYS: Record<string, string> = {
 
 /** Marks the one Grow note a planned card keeps current (bank loan needed for the buy). */
 const LOAN_NOTE_MARK = '🏦 ';
-/** The one note a market buyer's offer leaves on a property's Grow project (replaced by the next offer, removed at Payday). */
-const MARKET_NOTE_MARK = '💰 ';
 
 /** A property / asset label matches a type's label when it is that label or a copy of it (EFH, EFH-II, EFH-III...). */
 function labelMatches(tag: string, label: string): boolean {

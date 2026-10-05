@@ -3428,6 +3428,53 @@ describe('CashflowGameService', () => {
     });
   });
 
+  describe('A1(b): round rules applied through the shared domain functions', () => {
+    const ok = () => ({ onSuccess: jest.fn(), onError: jest.fn() });
+
+    it('a second Baby edits the same subscription in place, keeping what else is on it', () => {
+      service.pickProfession('placeholder', 'placeholder-profession', ok());
+      service.resolveBaby(ok());
+      const state = AppStateService.instance;
+      const children = state.allSubscriptions.find((s) => s.title.includes('Children Expenses'))!;
+      const history = [
+        {
+          effectiveDate: '2026-01-01',
+          field: 'amount' as const,
+          oldValue: 1,
+          newValue: 2,
+        },
+      ];
+      children.changeHistory = history;
+      const startDate = children.startDate;
+
+      service.resolveBaby(ok());
+
+      const after = state.allSubscriptions.filter((s) => s.title.includes('Children Expenses'));
+      expect(after).toHaveLength(1);
+      expect(after[0]).toBe(children); // edited in place, not replaced
+      expect(after[0].changeHistory).toBe(history);
+      expect(after[0].startDate).toBe(startDate);
+      expect(after[0].amount).toBeCloseTo(children.amount, 5);
+    });
+
+    it('Payday uses the injected clock for the month it posts into', () => {
+      service.clock = { todayIso: () => '2030-03-10', nowIso: () => '2030-03-10T08:00:00.000Z' };
+      service.pickProfession('placeholder', 'placeholder-profession', ok());
+
+      service.payday(ok());
+
+      const posted = AppStateService.instance.allTransactions.filter((t) =>
+        t.comment.includes('#cashflow'),
+      );
+      expect(posted.length).toBeGreaterThan(1);
+      expect(
+        AppStateService.instance.allTransactions
+          .slice(1) // the first is the starting Savings transaction
+          .every((t) => t.date.startsWith('2030-03-')),
+      ).toBe(true);
+    });
+  });
+
   describe('A0 characterization: removeSubscriptionByTitle', () => {
     it('removes exactly the subscription with that title and ignores a missing one', () => {
       const state = AppStateService.instance;

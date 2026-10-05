@@ -188,10 +188,11 @@ Still untested and deliberately left for the slice that moves them: `autoLoanMes
 
 ## 7. Progress
 
-| Slice                                           | Status   | Commits                                                                                               |
-| ----------------------------------------------- | -------- | ----------------------------------------------------------------------------------------------------- |
-| A0 — inventory + characterization tests         | done     | `fa6bae6`                                                                                             |
-| A1(a) — cash on hand, finances, loan arithmetic | **done** | `0ccb3f1` (domain `cash.ts`), `9e65a08` (service switched over), the component-totals commit after it |
+| Slice                                                                       | Status   | Commits                                                                                                                                       |
+| --------------------------------------------------------------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| A0 — inventory + characterization tests                                     | done     | `fa6bae6`                                                                                                                                     |
+| A1(a) — cash on hand, finances, loan arithmetic                             | **done** | `0ccb3f1` (domain `cash.ts`), `9e65a08` (service switched over), the component-totals commit after it                                         |
+| A1(b) — Payday, Baby, Charity, Downsized, with the Clock and GameText ports | **done** | `455bbf5` (clock, text, scheduling), `d5d992c` (service dates through them), `e72d82d` (rules as pure functions), the adapter commit after it |
 
 **A1(a) results.** F5 and U1/U3 are resolved: `cashOnHandMinor` and `loanForShortfallMinor` live in the domain, the
 service's `cash` and its four copies of the loan rounding call them, and the game page's salary / passive income /
@@ -207,3 +208,17 @@ the rat race" in whole minor units, so an exact tie between passive income and e
 while the dashboard's `monthlyCashflow` is the sum of _every_ game subscription. They agree for every subscription
 the game itself creates; they would differ only for a positive game subscription that is neither the salary nor a
 `<name> Cashflow` one. Worth unifying when A1(b) moves payday and the status rules.
+
+**A1(b) results.** F1 and F2 are resolved at the engine level: the round rules take a `Clock` and a `GameText` and read
+nothing else. `rounds.ts` holds `playPayday`, `playBaby`, `playCharity`, `playDownsized` and `previewSpace`; each takes
+the books (subscriptions, transaction dates, Grow notes, in minor units) and returns **effects** - the new game
+state, the History step, which existing transactions change date (by position), the new transactions already dated on
+free slots of the real current month, the subscriptions to upsert, the notes to replace, and what to persist. A
+deep-freeze test proves they never mutate their input. The Angular service's methods are now adapters: build the
+books, call the rule, push the undo step, apply the effects **in place** (so ids and change history on existing
+entries survive), persist. The scheduling (smart day slots, clamping, aging) moved with them. All 372 existing game
+tests passed unchanged through the move.
+
+**Left for the next slices:** `upsertSubscription`/`pushOneOffTransactions` are still used by the bank loan and the
+deal code (A1(c)-(f)) - the domain versions (`upsertBookSubscription`, `placeOneOffTransactions`) are ready for them.
+The page's `liveCashflow` vs the dashboard's `monthlyCashflow` divergence is still open.
