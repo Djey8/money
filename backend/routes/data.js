@@ -205,14 +205,15 @@ router.post('/write/batch', authenticateToken, async (req, res) => {
     // Backfill missing stable ids before the retry loop — a write that gets
     // retried on conflict should keep the same ids across attempts, not
     // mint fresh ones each time. See legacy-write-id-backfill.js.
-    const storedDoc = await getUserDocument(usersDb, userId);
+    // The stored document is only read if some entry actually needs an id.
     for (const write of writes) {
       write.data = await backfillMissingIdsForWrite(
         getAuthDb(),
         userId,
         write.path,
         write.data,
-        getNestedProperty(storedDoc.data || {}, write.path),
+        async () =>
+          getNestedProperty((await getUserDocument(usersDb, userId)).data || {}, write.path),
       );
     }
 
@@ -353,13 +354,8 @@ router.post('/write/*?', authenticateToken, async (req, res) => {
     // mint fresh ones each time. See legacy-write-id-backfill.js. Skipped
     // for raw-string writes (encrypted primitives, never a collection).
     if (!(req.bodyIsRawString && typeof data === 'string')) {
-      const storedDoc = await getUserDocument(usersDb, userId);
-      data = await backfillMissingIdsForWrite(
-        getAuthDb(),
-        userId,
-        path,
-        data,
-        getNestedProperty(storedDoc.data || {}, path),
+      data = await backfillMissingIdsForWrite(getAuthDb(), userId, path, data, async () =>
+        getNestedProperty((await getUserDocument(usersDb, userId)).data || {}, path),
       );
     }
 

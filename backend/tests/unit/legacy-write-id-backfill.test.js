@@ -80,6 +80,34 @@ describe('backfillMissingIdsForWrite', () => {
     expect(authDb.get).not.toHaveBeenCalled();
   });
 
+  it('does not read the stored collection (lazy `existing`) when no entry needs an id', async () => {
+    const existing = jest.fn(async () => []);
+    const data = [{ id: 'tx_1', account: 'Daily' }];
+    await backfillMissingIdsForWrite(makeAuthDb(), 'u1', 'transactions', data, existing);
+    expect(existing).not.toHaveBeenCalled();
+  });
+
+  it('reads the stored collection once, only when an entry is missing an id, and reuses its ids', async () => {
+    const entry = {
+      account: 'Daily',
+      amount: 5,
+      date: '2026-01-01',
+      time: '10:00',
+      category: '@A',
+      comment: '',
+    };
+    const existing = jest.fn(async () => [{ ...entry, id: 'tx_stored' }]);
+    const result = await backfillMissingIdsForWrite(
+      makeAuthDb(),
+      'u1',
+      'transactions',
+      [{ ...entry }],
+      existing,
+    );
+    expect(existing).toHaveBeenCalledTimes(1);
+    expect(result[0].id).toBe('tx_stored');
+  });
+
   it('encrypts the generated id when the account has database encryption enabled', async () => {
     const authDb = makeAuthDb({ key: 'secret-passphrase', encryptDatabase: true });
     const result = await backfillMissingIdsForWrite(authDb, 'u1', 'transactions', [

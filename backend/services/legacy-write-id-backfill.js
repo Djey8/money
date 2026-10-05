@@ -93,7 +93,7 @@ function storedIdsByKey(existing, fields, session) {
  * @param {string} userId
  * @param {string} path - the write path as given to /write/{path} or a /write/batch entry
  * @param {unknown} data - the request body for that path
- * @param {unknown} [existing] - what is currently stored at `path`, if known — an id-less entry whose natural key matches a stored one gets that stored id back instead of a new one
+ * @param {unknown | (() => unknown | Promise<unknown>)} [existing] - what is currently stored at `path`, if known — an id-less entry whose natural key matches a stored one gets that stored id back instead of a new one. May be a function, called only when some entry actually needs an id: it spares the caller a ~0.3s read of the whole user document on the (usual) write where every entry already carries one.
  * @returns {Promise<unknown>} `data` unchanged unless it's an array at a known id-bearing path with at least one entry missing an id
  */
 async function backfillMissingIdsForWrite(authDb, userId, path, data, existing) {
@@ -105,9 +105,10 @@ async function backfillMissingIdsForWrite(authDb, userId, path, data, existing) 
   );
   if (!needsBackfill) return data;
 
+  const stored = typeof existing === 'function' ? await existing() : existing;
   const session = await getEncryptionSession(authDb, userId);
   const fields = NATURAL_KEY_FIELDS_BY_PATH[path];
-  const available = storedIdsByKey(existing, fields, session);
+  const available = storedIdsByKey(stored, fields, session);
   // Ids the incoming write already carries explicitly are taken (compared
   // decrypted — the same id encrypts to a different ciphertext each time).
   const taken = new Set(
