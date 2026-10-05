@@ -10,6 +10,7 @@ import { SelfhostedService } from './selfhosted.service';
 import { DirtyTrackerService } from './dirty-tracker.service';
 import { CacheService } from './cache.service';
 import { AppStateService } from './app-state.service';
+import { ensureTransactionIds } from '../transaction-ids';
 import { environment } from '../../../environments/environment';
 import { Observable, Subject, from, forkJoin, lastValueFrom, of, throwError } from 'rxjs';
 import { map, catchError, tap } from 'rxjs/operators';
@@ -72,6 +73,7 @@ export class DatabaseService {
    * The auth database email (backend) remains unencrypted for login matching.
    */
   writeObject(tag: string, element: any): Observable<any> {
+    this.ensureStableIds(tag, element);
     // Skip encryption for username and email
     const isUserInfo = tag === 'info/username' || tag === 'info/email';
 
@@ -294,6 +296,18 @@ export class DatabaseService {
   }
 
   /**
+   * Self-hosted only: gives every transaction an id before it is written, on
+   * the in-memory objects themselves so the id survives into later saves. A
+   * collection where every entry carries an id lets the backend skip its id
+   * backfill, which decrypts the whole stored collection (13-26 s for ~1,900
+   * transactions). Firebase data is left exactly as it was.
+   */
+  private ensureStableIds(tag: string, element: any): void {
+    if (this.mode !== 'selfhosted' || tag !== 'transactions' || !Array.isArray(element)) return;
+    ensureTransactionIds(element);
+  }
+
+  /**
    * For a schemaVersion-2 user, converts every money field in `element`
    * from decimal to integer minor units before the generic encryption
    * below runs — the frontend's own internal representation stays decimal
@@ -317,6 +331,7 @@ export class DatabaseService {
    * @returns {any} - Processed data ready for writing
    */
   private prepareDataForWrite(tag: string, element: any): any {
+    this.ensureStableIds(tag, element);
     // Skip encryption for username and email
     const isUserInfo = tag === 'info/username' || tag === 'info/email';
 

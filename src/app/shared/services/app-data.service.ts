@@ -639,7 +639,12 @@ export class AppDataService {
                 continue; // Skip this transaction
               }
 
+              // Kept so the next save sends it back and the backend can skip
+              // its (slow) id backfill - see shared/transaction-ids.ts.
+              const id = raw[k].id ? this.cryptic.decrypt(raw[k].id, 'database') : '';
+
               const newT: Transaction = {
+                ...(id ? { id } : {}),
                 account,
                 amount: parseFloat(amount) || 0,
                 date: dateStr,
