@@ -19,6 +19,9 @@ export class CrypticService {
   encryptionLocalEnabled: boolean;
   encryptionDatabaseEnabled: boolean;
 
+  /** Bumped whenever the key or session salt is reset, so callers caching ciphertext know it is stale. */
+  public configEpoch = 0;
+
   private derivedKeyCache = new Map<string, CryptoJS.lib.WordArray>();
   private sessionSalt: CryptoJS.lib.WordArray | null = null;
 
@@ -88,6 +91,7 @@ export class CrypticService {
       // Preserve localStorage flags — server has defaults, not the user's real settings
       this.derivedKeyCache.clear();
       this.sessionSalt = null;
+      this.configEpoch++;
       if (this._pendingMigrationEncryptLocal !== null) {
         this.encryptionLocalEnabled = this._pendingMigrationEncryptLocal;
         localStorage.setItem('encryptLocal', this.encryptionLocalEnabled.toString());
@@ -105,6 +109,7 @@ export class CrypticService {
 
       this.derivedKeyCache.clear();
       this.sessionSalt = null;
+      this.configEpoch++;
       this.encryptionLocalEnabled = !!config.encryptLocal;
       localStorage.setItem('encryptLocal', this.encryptionLocalEnabled.toString());
       this.encryptionDatabaseEnabled = !!config.encryptDatabase;
@@ -120,6 +125,7 @@ export class CrypticService {
     this.key = key && key !== 'default' ? key : null;
     this.derivedKeyCache.clear();
     this.sessionSalt = null;
+    this.configEpoch++;
     // Firebase: persist key in localStorage (no backend). Selfhosted: memory-only.
     if (environment.mode !== 'selfhosted') {
       localStorage.setItem('encryptKey', key || 'default');
@@ -138,6 +144,7 @@ export class CrypticService {
     this.key = 'default';
     this.derivedKeyCache.clear();
     this.sessionSalt = null;
+    this.configEpoch++;
     this.encryptionLocalEnabled = false;
     this.encryptionDatabaseEnabled = false;
     localStorage.removeItem('encryptKey');

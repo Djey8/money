@@ -74,51 +74,7 @@ export class DatabaseService {
    */
   writeObject(tag: string, element: any): Observable<any> {
     this.ensureStableIds(tag, element);
-    // Skip encryption for username and email
-    const isUserInfo = tag === 'info/username' || tag === 'info/email';
-
-    const clonedElement = this.convertForStorage(JSON.parse(JSON.stringify(element)));
-
-    const encryptObjectValues = (obj: any): void => {
-      for (const key in obj) {
-        if (Object.prototype.hasOwnProperty.call(obj, key)) {
-          if (
-            typeof obj[key] === 'number' ||
-            typeof obj[key] === 'boolean' ||
-            typeof obj[key] === 'string'
-          ) {
-            obj[key] = this.cryptic.encrypt(obj[key].toString(), 'database');
-          } else if (typeof obj[key] === 'object' && obj[key] !== null) {
-            encryptObjectValues(obj[key]);
-          }
-        }
-      }
-    };
-
-    // Handle encryption for different data types
-    let dataToWrite = clonedElement;
-
-    if (!isUserInfo) {
-      // Only encrypt if NOT username or email
-      if (Array.isArray(clonedElement)) {
-        clonedElement.forEach((item) => {
-          if (typeof item === 'object' && item !== null) {
-            encryptObjectValues(item);
-          }
-        });
-        dataToWrite = clonedElement;
-      } else if (typeof clonedElement === 'object' && clonedElement !== null) {
-        encryptObjectValues(clonedElement);
-        dataToWrite = clonedElement;
-      } else if (
-        typeof clonedElement === 'string' ||
-        typeof clonedElement === 'number' ||
-        typeof clonedElement === 'boolean'
-      ) {
-        // For primitive values, encrypt them
-        dataToWrite = this.cryptic.encrypt(clonedElement.toString(), 'database');
-      }
-    }
+    const dataToWrite = this.encryptForStorage(tag, element);
 
     if (this.mode === 'firebase') {
       this.db.database.goOnline();
@@ -325,6 +281,87 @@ export class DatabaseService {
   }
 
   /**
+   * Converts `element` to its stored form (minor units for a schemaVersion-2
+   * account) and encrypts every value, ready to send. Username and email are
+   * the only things left unencrypted.
+   *
+   * Transactions get a per-row cache (`encryptedRowCache`): a save used to
+   * re-encrypt every field of every transaction - ~13,000 AES operations,
+   * ~1.2s on a desktop and several seconds on a phone - to change one row.
+   */
+  private encryptForStorage(tag: string, element: any): any {
+    if (tag === 'transactions' && Array.isArray(element)) {
+      return this.encryptTransactionRows(element);
+    }
+    const isUserInfo = tag === 'info/username' || tag === 'info/email';
+    const clonedElement = this.convertForStorage(JSON.parse(JSON.stringify(element)));
+    if (isUserInfo) return clonedElement;
+
+    if (Array.isArray(clonedElement)) {
+      clonedElement.forEach((item) => {
+        if (typeof item === 'object' && item !== null) this.encryptObjectValues(item);
+      });
+      return clonedElement;
+    }
+    if (typeof clonedElement === 'object' && clonedElement !== null) {
+      this.encryptObjectValues(clonedElement);
+      return clonedElement;
+    }
+    if (
+      typeof clonedElement === 'string' ||
+      typeof clonedElement === 'number' ||
+      typeof clonedElement === 'boolean'
+    ) {
+      return this.cryptic.encrypt(clonedElement.toString(), 'database');
+    }
+    return clonedElement;
+  }
+
+  private encryptObjectValues(obj: any): void {
+    for (const key in obj) {
+      if (Object.prototype.hasOwnProperty.call(obj, key)) {
+        if (
+          typeof obj[key] === 'number' ||
+          typeof obj[key] === 'boolean' ||
+          typeof obj[key] === 'string'
+        ) {
+          obj[key] = this.cryptic.encrypt(obj[key].toString(), 'database');
+        } else if (typeof obj[key] === 'object' && obj[key] !== null) {
+          this.encryptObjectValues(obj[key]);
+        }
+      }
+    }
+  }
+
+  /**
+   * Last encrypted form of each transaction object, valid while the row's
+   * content and the encryption/schema configuration are unchanged. Reusing
+   * old ciphertext is safe: every field is encrypted independently with its
+   * own IV, carries its own salt, and decrypts on its own.
+   */
+  private readonly encryptedRowCache = new WeakMap<object, { signature: string; row: any }>();
+
+  private encryptTransactionRows(rows: any[]): any[] {
+    // epoch changes with the key/session, the flag with the on/off toggle,
+    // schemaVersion with the minor-units conversion - any of them makes old rows stale.
+    const config = [
+      this.cryptic.configEpoch,
+      this.cryptic.encryptionDatabaseEnabled,
+      AppStateService.instance.schemaVersion,
+    ].join('|');
+    return rows.map((item) => {
+      if (typeof item !== 'object' || item === null) return item;
+      const signature = config + '|' + JSON.stringify(item);
+      const hit = this.encryptedRowCache.get(item);
+      if (hit && hit.signature === signature) return hit.row;
+      const row = this.convertForStorage(JSON.parse(JSON.stringify(item)));
+      this.encryptObjectValues(row);
+      this.encryptedRowCache.set(item, { signature, row });
+      return row;
+    });
+  }
+
+  /**
    * Prepare data for writing (encryption + cloning)
    * @param {string} tag - The tag
    * @param {any} element - The data
@@ -332,53 +369,7 @@ export class DatabaseService {
    */
   private prepareDataForWrite(tag: string, element: any): any {
     this.ensureStableIds(tag, element);
-    // Skip encryption for username and email
-    const isUserInfo = tag === 'info/username' || tag === 'info/email';
-
-    const clonedElement = this.convertForStorage(JSON.parse(JSON.stringify(element)));
-
-    const encryptObjectValues = (obj: any): void => {
-      for (const key in obj) {
-        if (Object.prototype.hasOwnProperty.call(obj, key)) {
-          if (
-            typeof obj[key] === 'number' ||
-            typeof obj[key] === 'boolean' ||
-            typeof obj[key] === 'string'
-          ) {
-            obj[key] = this.cryptic.encrypt(obj[key].toString(), 'database');
-          } else if (typeof obj[key] === 'object' && obj[key] !== null) {
-            encryptObjectValues(obj[key]);
-          }
-        }
-      }
-    };
-
-    // Handle encryption for different data types
-    let dataToWrite = clonedElement;
-
-    if (!isUserInfo) {
-      // Only encrypt if NOT username or email (encrypt method checks if encryption is enabled)
-      if (Array.isArray(clonedElement)) {
-        clonedElement.forEach((item) => {
-          if (typeof item === 'object' && item !== null) {
-            encryptObjectValues(item);
-          }
-        });
-        dataToWrite = clonedElement;
-      } else if (typeof clonedElement === 'object' && clonedElement !== null) {
-        encryptObjectValues(clonedElement);
-        dataToWrite = clonedElement;
-      } else if (
-        typeof clonedElement === 'string' ||
-        typeof clonedElement === 'number' ||
-        typeof clonedElement === 'boolean'
-      ) {
-        // For primitive values, encrypt them
-        dataToWrite = this.cryptic.encrypt(clonedElement.toString(), 'database');
-      }
-    }
-
-    return dataToWrite;
+    return this.encryptForStorage(tag, element);
   }
 
   /**

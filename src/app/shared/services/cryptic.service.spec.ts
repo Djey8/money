@@ -115,6 +115,30 @@ describe('CrypticService', () => {
 
   // --- encrypt / decrypt (v2 PBKDF2 format) ------------------------------
 
+  describe('configEpoch (lets callers drop cached ciphertext)', () => {
+    it('is bumped by every change of key, session or settings', () => {
+      const start = service.configEpoch;
+
+      service.updateConfig('new-key', true, true);
+      expect(service.configEpoch).toBeGreaterThan(start);
+
+      const afterUpdate = service.configEpoch;
+      service.loadFromServer({ key: 'server-key', encryptLocal: true, encryptDatabase: true });
+      expect(service.configEpoch).toBeGreaterThan(afterUpdate);
+
+      const afterLoad = service.configEpoch;
+      service.clearConfig();
+      expect(service.configEpoch).toBeGreaterThan(afterLoad);
+    });
+
+    it('does not change when only encrypting or decrypting', () => {
+      service.updateConfig('some-key', true, true);
+      const epoch = service.configEpoch;
+      service.decrypt(service.encrypt('x', 'database'), 'database');
+      expect(service.configEpoch).toBe(epoch);
+    });
+  });
+
   describe('encrypt() + decrypt()', () => {
     beforeEach(() => {
       service.updateConfig('testKey', true, true);

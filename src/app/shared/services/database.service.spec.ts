@@ -324,6 +324,98 @@ describe('DatabaseService (selfhosted mode)', () => {
     });
   });
 
+  // ── Encrypted-row cache: a save only encrypts what changed ──────────────
+
+  describe('encrypted transaction row cache', () => {
+    let cryptic: ReturnType<typeof makeMockCryptic> & {
+      configEpoch: number;
+      encryptionDatabaseEnabled: boolean;
+    };
+    let cachedService: DatabaseService;
+    let rows: any[];
+
+    const save = () => lastValueFrom(cachedService.writeObject('transactions', rows));
+    const sentPayload = (call = 0) => selfhosted.writeObject.mock.calls[call][1];
+
+    beforeEach(() => {
+      cryptic = { ...makeMockCryptic(), configEpoch: 0, encryptionDatabaseEnabled: true };
+      cachedService = createService({ selfhosted, cacheService, dirtyTracker, cryptic });
+      selfhosted.writeObject.mockReturnValue(of({ success: true }));
+      rows = [
+        { id: 'tx_1', account: 'Daily', amount: 1, category: '@A' },
+        { id: 'tx_2', account: 'Daily', amount: 2, category: '@B' },
+      ];
+    });
+
+    it('does not re-encrypt rows that have not changed, and sends the identical payload', async () => {
+      await save();
+      const encryptCalls = cryptic.encrypt.mock.calls.length;
+      expect(encryptCalls).toBe(8); // 2 rows x 4 fields
+
+      await save();
+
+      expect(cryptic.encrypt.mock.calls.length).toBe(encryptCalls);
+      expect(sentPayload(1)).toEqual(sentPayload(0));
+    });
+
+    it('re-encrypts only the row that changed, and encrypts a new row', async () => {
+      await save();
+      cryptic.encrypt.mockClear();
+
+      rows[1].amount = 99;
+      rows.push({ id: 'tx_3', account: 'Daily', amount: 3, category: '@C' });
+      await save();
+
+      expect(cryptic.encrypt.mock.calls.length).toBe(8); // edited row + new row, 4 fields each
+      expect(sentPayload(1)[1].amount).toBe('enc(99)');
+      expect(sentPayload(1)[2].id).toBe('enc(tx_3)');
+      expect(sentPayload(1)[0]).toBe(sentPayload(0)[0]); // untouched row reused as-is
+    });
+
+    it('re-encrypts everything after the key or session changed (configEpoch)', async () => {
+      await save();
+      cryptic.encrypt.mockClear();
+
+      cryptic.configEpoch++;
+      await save();
+
+      expect(cryptic.encrypt.mock.calls.length).toBe(8);
+    });
+
+    it('re-encrypts everything when database encryption is toggled', async () => {
+      await save();
+      cryptic.encrypt.mockClear();
+
+      cryptic.encryptionDatabaseEnabled = false;
+      await save();
+
+      expect(cryptic.encrypt.mock.calls.length).toBe(8);
+    });
+
+    it('re-encrypts everything when the schema version changes', async () => {
+      await save();
+      cryptic.encrypt.mockClear();
+
+      AppStateService.instance.schemaVersion = 2;
+      try {
+        await save();
+      } finally {
+        AppStateService.instance.schemaVersion = 1;
+      }
+
+      expect(cryptic.encrypt.mock.calls.length).toBe(8);
+      expect(sentPayload(1)[0].amount).toBe('enc(100)'); // stored as minor units now
+    });
+
+    it('does not cache anything for other collections', async () => {
+      const smile = [{ title: 'Trip', target: 1 }];
+      await lastValueFrom(cachedService.writeObject('smile', smile));
+      cryptic.encrypt.mockClear();
+      await lastValueFrom(cachedService.writeObject('smile', smile));
+      expect(cryptic.encrypt.mock.calls.length).toBe(2);
+    });
+  });
+
   // ── Stale-write guard (docs/adr/0003) ───────────────────────────────────
 
   describe('stale-write guard', () => {
