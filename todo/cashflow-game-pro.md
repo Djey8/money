@@ -1,6 +1,6 @@
 # Cashflow game — solo mode in the app + Pro API/MCP (an agent plays full games)
 
-**Status:** inputs received (board picture, rule answers, schema approval — 2026-10-05); **slice A0 in progress.** Master roadmap for Phase 3 (solo board simulation) and Phase 5 (Pro
+**Status:** inputs and open decisions all answered (2026-10-05); **A0 done, A1 in progress.** Master roadmap for Phase 3 (solo board simulation) and Phase 5 (Pro
 API + MCP) of [`cashflow-game.md`](cashflow-game.md), merged because both need the same thing: **one rules engine
 that can play a whole game by itself**. Read that file's decisions 1–12 first; this one only adds to them.
 
@@ -38,6 +38,19 @@ New, 2026-10-05:
    supply a **picture of the rat-race board**; the board data (space order, kinds, layout) is transcribed from it
    — nothing about the board is invented (decision 6 of `cashflow-game.md`).
 6. **Deploy order:** the performance changes are deployed first, independently of all this.
+7. **The live game's history is saved to the account continuously** (JFK, 2026-10-05: _"since we save games, we
+   have the ability to save this history while playing along... you write into this data path all the time"_).
+   Saved games already keep the whole undo chain, a plain-text step log and a snapshot, but only when the player
+   presses Save; the live game's history lives only in the browser's `localStorage`. From slice A2 it is written
+   to the account on every step (same compact codec), so an agent — or the player on another device — sees the
+   full story of a running game, can inspect any step (what it did, what it added to the books), **undo back to
+   any earlier step** (everything after it is undone too; the existing "undo back to here"), and report on how
+   the game went. Undoing a single _middle_ step while keeping the later ones is not defined (later steps depend on
+   it) and is out of scope.
+8. **The game's language is the account's language, fixed for the whole game** (JFK, 2026-10-05). Persisted text
+   (titles, notes, comments) is written in the account language the game was **started** in and stays that way;
+   to play in another language, start a new game under that account language. The API takes no per-call
+   language.
 
 ## 3. Inputs from JFK (received 2026-10-05)
 
@@ -193,17 +206,16 @@ changing a published OpenAPI later. D1/D2 can be pulled forward whenever agent r
    spanner is only the visual reminder, and it is **removed when the player rolls again to continue**
    (`clearCashflowStatus('unemployed')`, driven by the roll instead of a button). Today's companion-mode spanner
    and its manual dismiss stay as they are.
-3. **Charity** — after the donation, for the next **3** turns (the board's wording; JFK said "two" in passing —
-   confirm if 2 is intended) the player may choose **1 or 2 dice** before each roll; the move then continues
-   automatically with the sum.
+3. **Charity** — after the donation, for the next **3** turns (confirmed by JFK: as printed on the board) the
+   player may choose **1 or 2 dice** before each roll; the move then continues automatically with the sum.
 4. **Baby, Market, Deals, Schnickschnack** — as in companion mode. Deals: the player chooses **Small or Big**
    pile; for every card space the player either **draws a random card or looks for a specific one** (the existing
    find-or-draw flow, unchanged). The turn cannot end until the card decision is made or explicitly passed.
 5. **Insufficient cash** on a doodad/deal: the existing auto-bank-loan behaviour (`autoLoanMessage`).
 6. **Fast Track**: out of scope — escaping the rat race ends the game.
 7. **Start**: the token starts at **START**, just before space 0, and the first roll of _n_ lands on space _n − 1_
-   (so a roll of 1 lands on the Deals space next to START). **Open — please confirm with the first playtest;** if
-   the real game starts the token _on_ space 0, it is a one-line change in B2.
+   (so a roll of 1 lands on the Deals space next to START). **Confirmed by JFK** (2026-10-05): the picture shows
+   where START is and where the first roll lands from there.
 
 ## 8. Risks
 

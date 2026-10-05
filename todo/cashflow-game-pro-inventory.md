@@ -98,10 +98,12 @@ Angular service. **UI**: lives in the component. **Tests**: where it is covered 
 _stored_ data: subscription titles/categories ("`<profession> Salary`", "Children Expenses"), Grow notes (🏦/💰
 lines, dice results, price moves), transaction comments ("Sold the X card to a friend"), and even liability tags.
 `saved games` record the language they were played in. An API-created game must write the same text in the same
-language or the account looks different depending on who played. **Decision for A1:** a `GameText` port
-(`text(key, params) → string`) injected into the engine; the frontend supplies ngx-translate, the backend loads
-the same `src/assets/i18n/*.json` catalogs; the API takes an optional `language` (default: the account's). Keys
-that are used as literal matching keys (`Bank loan`, `Bank loan interest`) stay untranslated, as today.
+language or the account looks different depending on who played. **Decided (JFK, 2026-10-05): the account's
+language, fixed for the whole game** — to play in another language, start a new game under that account
+language; the API takes no per-call language. **For A1:** a `GameText` port (`text(key, params) → string`)
+injected into the engine; the frontend supplies ngx-translate, the backend loads the same
+`src/assets/i18n/*.json` catalogs for the game's language (stored on the game, as saved games already do). Keys
+used as literal matching keys (`Bank loan`, `Bank loan interest`) stay untranslated, as today.
 
 **F2 — Dating uses the real wall clock, not the game calendar.** One-off transactions go on "the next free slot of
 this real month" (`nextSmartSubscriptionDate` via `todayIso()`), Payday posts into the current real month, and the
@@ -121,11 +123,13 @@ the hooks run around it. The UI keeps producing the DSL for now and the extracte
 form it derives — one migration step per hook, never a comment-parsing port.
 
 **F4 — The live game's undo history lives only in the browser's `localStorage`.** It is deliberately not synced
-(decision 43). An API/agent has no browser, and an agent's undo must not depend on a UI session. **Needs a JFK
-decision before D2** (not before A1): where the live game's history is stored for API play — a new DB path next to
-`cashflowGame` (additive schema, needs approval like the solo fields) or in-memory per session. Interim position:
-undo is available only for steps taken in the same store (UI steps in the UI, API steps in the API) and the plan
-says so.
+(decision 43). An API/agent has no browser, and an agent's undo must not depend on a UI session. **Decided (JFK,
+2026-10-05): the live game's history is written to the account continuously**, not only on Save — saved games
+already store the compact undo chain, a plain-text step log and a snapshot, and the live game now does the same on
+every step, so an agent sees the whole game, can undo back to any step and can report on how it went. **For A2:**
+a new additive path next to `cashflowGame` (the same `{ schema, payload }` shape and codec as a saved game), written
+with every step through the existing batch write; the 200-step cap stays, and the write cost must be measured
+(the user document is already ~2 MB on a long-lived account) before it ships.
 
 **F5 — "Cash on hand" is `AppStateService.getAmount` + the account allocation ratios**, with a per-entry
 cent-rounding quirk that drifts by a cent on tiny Income amounts (pinned by a test). It is the number every
@@ -177,7 +181,7 @@ Still untested and deliberately left for the slice that moves them: `autoLoanMes
   (b) bank loan + payday + status + Baby/Charity/Downsized orchestration, with the `Clock` and `GameText` ports
   (F1, F2) → (c) card dispatch + market/boost/split/price/cost cards (F7, U2) → (d) deals and typed trade hooks
   (F3) → (e) special assets, dice cards, coins → (f) doodads.
-- **A2** gets one extra item: the live undo history's storage (F4).
+- **A2** gets one extra item: persisting the live history to the account on every step (F4, decided).
 - **A3** gains `shuffleProfession` (F8).
-- **New decisions needed from JFK:** F4 (where API undo history lives) before D2; whether API-played games write
-  text in the account language or a per-call `language` (F1) before A1(b).
+- **Decisions F1 and F4 are made** (account language fixed per game; history saved to the account continuously).
+  Nothing is blocked on JFK; A1(a) can start.
