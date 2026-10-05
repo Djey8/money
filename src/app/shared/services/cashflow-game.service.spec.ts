@@ -3267,4 +3267,188 @@ describe('CashflowGameService', () => {
       expect(persistence.batchWriteAndSync).not.toHaveBeenCalled();
     });
   });
+
+  // ── Characterization tests for the rules todo/cashflow-game-pro.md slice A0 inventories ─────────
+  // These pin today's behaviour of the helpers the shared domain engine will take over (A1/A2), so a
+  // move cannot change what they do unnoticed. "Pinned" means pinned, not endorsed.
+
+  describe('A0 characterization: cash on hand', () => {
+    const income = (amount: number) => ({
+      account: 'Income',
+      amount,
+      date: '2026-01-01',
+      time: '',
+      category: '@Test',
+      comment: '',
+    });
+
+    it('is the Daily + Splurge + Smile + Fire total: each account’s own entries plus its share of Income', () => {
+      const state = AppStateService.instance;
+      state.allTransactions = [
+        income(1000),
+        { ...income(-200), account: 'Daily' },
+        { ...income(-50), account: 'Fire' },
+      ];
+      expect(service.cash).toBe(750);
+    });
+
+    it('does not depend on the allocation ratios when the shares add back up cleanly', () => {
+      const state = AppStateService.instance;
+      state.allTransactions = [income(1000)];
+      state.daily = 25;
+      state.splurge = 25;
+      state.smile = 25;
+      state.fire = 25;
+      expect(service.cash).toBe(1000);
+    });
+
+    it('PINNED QUIRK: each account’s share of an Income entry is rounded to the cent on its own, so a tiny amount can drift by a cent', () => {
+      // 0.05 split 60/10/10/20 is 0.03 + 0.005 + 0.005 + 0.01; the two 0.005 shares each round up to
+      // 0.01, so "cash" reads 0.06. The API must reproduce this to the cent to match the UI - or fix it
+      // deliberately, in its own commit, in both places.
+      AppStateService.instance.allTransactions = [income(0.05)];
+      expect(service.cash).toBe(0.06);
+    });
+  });
+
+  describe('A0 characterization: rollDie', () => {
+    afterEach(() => jest.restoreAllMocks());
+
+    it('maps the random source onto 1..6 inclusive', () => {
+      const random = jest.spyOn(Math, 'random');
+      random.mockReturnValue(0);
+      expect(service.rollDie()).toBe(1);
+      random.mockReturnValue(0.5);
+      expect(service.rollDie()).toBe(4);
+      random.mockReturnValue(0.999999);
+      expect(service.rollDie()).toBe(6);
+    });
+  });
+
+  describe('A0 characterization: the running game’s identity and summary', () => {
+    function started() {
+      service.pickProfession('placeholder', 'placeholder-profession', {
+        onSuccess: jest.fn(),
+        onError: jest.fn(),
+      });
+    }
+
+    it('liveProfessionTitle is null before a game starts and the card’s title afterwards', () => {
+      expect(service.liveProfessionTitle()).toBeNull();
+      started();
+      expect(service.liveProfessionTitle()).toBe('Placeholder profession');
+    });
+
+    it('liveGameSummary reports round, children, loan, cash and cashflow straight from the live game', () => {
+      started();
+      const ok = () => ({ onSuccess: jest.fn(), onError: jest.fn() });
+      service.payday(ok());
+      service.resolveBaby(ok());
+      service.adjustBankLoan(2000, ok());
+
+      const summary = service.liveGameSummary();
+
+      expect(summary).toMatchObject({
+        gameSetId: 'placeholder',
+        professionId: 'placeholder-profession',
+        round: 1,
+        children: 1,
+        bankLoanMinor: 200000,
+        escapedRatRace: false,
+      });
+      expect(summary.cashMinor).toBe(Math.round(service.cash * 100));
+      expect(summary.monthlyCashflowMinor).toBe(Math.round(service.monthlyCashflow * 100));
+      expect(summary.bankrupt).toBe(service.monthlyCashflow < 0);
+      expect(summary.transactionCount).toBe(AppStateService.instance.allTransactions.length);
+      expect(summary.salaryMinor).toBeGreaterThan(0);
+      expect(summary.expensesMinor).toBeGreaterThan(0);
+    });
+
+    it('setGameIdentity gives the game its saved slot and persists it; clearGameIdentity drops it again', () => {
+      started();
+      const ok = { onSuccess: jest.fn(), onError: jest.fn() };
+
+      service.setGameIdentity('game_1', 'My game', ok);
+      expect(AppStateService.instance.cashflowGame).toMatchObject({
+        gameId: 'game_1',
+        gameName: 'My game',
+      });
+      expect(persistence.batchWriteAndSync).toHaveBeenLastCalledWith(
+        expect.objectContaining({ logEvent: 'cashflow_game_identity' }),
+      );
+
+      service.clearGameIdentity(ok);
+      expect('gameId' in AppStateService.instance.cashflowGame).toBe(false);
+      expect('gameName' in AppStateService.instance.cashflowGame).toBe(false);
+    });
+
+    it('Undo keeps the saved slot even when it goes back to a step from before the game was first saved', () => {
+      started();
+      const ok = () => ({ onSuccess: jest.fn(), onError: jest.fn() });
+      service.payday(ok());
+      service.setGameIdentity('game_1', 'My game', ok());
+
+      service.undoLastAction(ok()); // takes back the Payday, which was taken before the game had an identity
+
+      expect(AppStateService.instance.cashflowGame.round).toBe(0);
+      expect(AppStateService.instance.cashflowGame).toMatchObject({
+        gameId: 'game_1',
+        gameName: 'My game',
+      });
+    });
+
+    it('isGameSnapshot accepts a captured snapshot and rejects anything shaped differently', () => {
+      started();
+      expect(service.isGameSnapshot(service.captureGameSnapshot())).toBe(true);
+
+      const good = service.captureGameSnapshot() as any;
+      for (const broken of [
+        null,
+        undefined,
+        {},
+        'not a snapshot',
+        { ...good, allTransactions: undefined },
+        { ...good, mojo: undefined },
+        { ...good, cashflowGame: undefined },
+        { ...good, cashflowGame: { ...good.cashflowGame, gameSubscriptionTitles: 'x' } },
+      ]) {
+        expect(service.isGameSnapshot(broken)).toBe(false);
+      }
+    });
+
+    it('restoreGameSnapshot refuses a foreign file and leaves the live game alone', () => {
+      started();
+      const onError = jest.fn();
+      const before = AppStateService.instance.cashflowGame;
+
+      service.restoreGameSnapshot({} as any, { onSuccess: jest.fn(), onError });
+
+      expect(onError).toHaveBeenCalledWith('This is not a Cashflow game.');
+      expect(AppStateService.instance.cashflowGame).toBe(before);
+    });
+  });
+
+  describe('A0 characterization: removeSubscriptionByTitle', () => {
+    it('removes exactly the subscription with that title and ignores a missing one', () => {
+      const state = AppStateService.instance;
+      const sub = (title: string) =>
+        ({
+          title,
+          account: 'Daily',
+          amount: -1,
+          startDate: '2026-01-01',
+          endDate: '',
+          category: '',
+          comment: '',
+          frequency: 'monthly',
+        }) as any;
+      state.allSubscriptions = [sub('A'), sub('B'), sub('C')];
+
+      service.removeSubscriptionByTitle('B');
+      expect(state.allSubscriptions.map((s) => s.title)).toEqual(['A', 'C']);
+
+      service.removeSubscriptionByTitle('nope');
+      expect(state.allSubscriptions.map((s) => s.title)).toEqual(['A', 'C']);
+    });
+  });
 });

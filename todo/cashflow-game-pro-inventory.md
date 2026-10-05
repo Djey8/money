@@ -1,0 +1,183 @@
+# Cashflow game — rule inventory (slice A0)
+
+**What this is:** the audit [`cashflow-game-pro.md`](cashflow-game-pro.md) slice A0 calls for. Every rule of the game
+that the Pro API and solo mode must reproduce, where it lives today, whether it is already tested, and where it
+goes in A1/A2. Written 2026-10-05 from a full read of `src/app/shared/services/cashflow-game.service.ts` (3,026
+lines) plus the component's rule-bearing methods and all existing game specs.
+
+Line numbers refer to the service as of commit `8141788`; they will drift, the method names will not.
+
+## 1. Headline findings
+
+1. **The arithmetic is mostly already shared.** `packages/domain/src/cashflow-game/` already holds Payday, Baby,
+   Charity, Downsized, the bank loan, profession pick, card find/draw, game finances (`summarizeGameFinances`,
+   `computeMonthlyCashflowMinor`), the Classic decks and the Grow buy calculators. What is **not** shared is the
+   _orchestration_: the Angular service applies those results to `AppStateService`, writes the notes and titles,
+   dates the transactions, keeps the undo stack and persists. A1 is therefore mostly "extract the orchestration as
+   pure functions over plain data", not "port formulas".
+2. **Test coverage is already broad: 206 service tests + 131 component + 18 saved-games + 21 engine + 10 cards.**
+   A0 found only a handful of untested public helpers (§5) and added 11 characterization tests for them. The
+   existing suite is the safety net for A1; no large new test-writing slice is needed first.
+3. **Seven things in today's code would make a server port silently diverge from the UI.** They are §3 — each needs
+   a decision or a design step _before_ A1 touches the code they sit in.
+
+## 2. Rule inventory
+
+Legend — **Domain**: logic already in `@money/domain` (service only applies it). **Orch**: orchestration only in the
+Angular service. **UI**: lives in the component. **Tests**: where it is covered today.
+
+### 2.1 Game lifecycle
+
+| Rule                                                                                                                                                                              | Where (service)                                       | Status                                             | Tests                                            | A1 target                                            |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- | -------------------------------------------------- | ------------------------------------------------ | ---------------------------------------------------- |
+| Game-account gate (email contains `cashflow`; Firebase has no sets)                                                                                                               | `isCashflowGame` 258                                  | Orch (also in `backend/services/game-account.js`)  | `isCashflowGame`                                 | keep both; API uses the backend one                  |
+| **Start game**: profession → starter kit (Savings tx, Salary/expense subscriptions, assets, investments, shares, liabilities), translated titles, smart dates, fresh undo history | `pickProfession` 715; engine `pickCashflowProfession` | Domain computes; Orch applies + translates + dates | `pickProfession`, profession content translation | `startGame(state, set, profession, ctx)` (§3 F1, F2) |
+| **Reset**: wipe every entity the game touched + game state + history; game accounts only                                                                                          | `resetGame` 2506                                      | Orch                                               | `resetGame`                                      | `resetGame(state)`                                   |
+| Live profession / title lookup, current game set                                                                                                                                  | `currentProfession` 2802, `liveProfessionTitle` 2797  | Orch                                               | **added A0**                                     | trivial helpers                                      |
+
+### 2.2 Round, space and status rules
+
+| Rule                                                                                                                                                                                                                        | Where                                    | Status                                                               | Tests                                                                           | A1 target                                        |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------- | ------------------------------------------------ |
+| **Payday**: one transaction per game subscription, ages every prior game tx back a month, each tx dated from its own subscription's day clamped to the month, market offers cleared, recurring dice cards flagged `rollDue` | `payday` 857; engine `runCashflowPayday` | Domain computes; **Orch** dates/ages/clears (real calendar, F2)      | `payday and undo`, `payday date handling`, `Payday ages every game transaction` | `applyPayday` (needs clock, F2)                  |
+| **Baby**: +1 child (max 3), children-expense subscription scaled and upserted by translated title                                                                                                                           | `resolveBaby` 1014; engine               | Domain + Orch (title translation, F1)                                | `resolveBaby`, translation tests                                                | `applyBaby`                                      |
+| **Charity**: pay 10% of total income now, dice choice for 3 turns (`charityRoundsLeft`)                                                                                                                                     | `resolveCharity` 1098; engine            | Domain + Orch (one-off tx dating)                                    | `resolveCharity and resolveDownsized`                                           | `applyCharity`                                   |
+| **Downsized**: pay total expenses once, `unemployedRoundsLeft = 2`, ends a charity bonus; never blocks Payday                                                                                                               | `resolveDownsized` 1114; engine          | Domain + Orch                                                        | same                                                                            | `applyDownsized`                                 |
+| **Clear status** (spanner / charity reminder) — plain acknowledgement, no money                                                                                                                                             | `clearStatus` 1184; engine               | Domain + Orch                                                        | `clearStatus`                                                                   | `clearStatus` (solo: driven by the next roll)    |
+| **Space preview** (what Baby/Charity/Downsized are about to do, nothing applied)                                                                                                                                            | `spacePreview` 1065                      | Orch (calls engine)                                                  | `spacePreview`                                                                  | pure `previewSpace`                              |
+| **Monthly cashflow** = income − expenses over the game's own subscriptions; negative = losing                                                                                                                               | `monthlyCashflow` 1202                   | Domain                                                               | `monthlyCashflow`                                                               | already domain                                   |
+| **Finances summary / rat-race escape / bankrupt** (passive ≥ expenses; monthly < 0)                                                                                                                                         | `liveGameSummary` 404; component 325–415 | Domain `summarizeGameFinances`, **duplicated in the component** (UI) | **added A0** (`liveGameSummary`)                                                | one place: the domain (§4 U1)                    |
+| **Cash on hand** = Daily+Splurge+Smile+Fire (each account's own tx + its share of Income)                                                                                                                                   | `cash` 1218                              | **Orch, reads `AppStateService.getAmount` + allocation ratios**      | **added A0**, incl. a pinned rounding quirk                                     | pure `cashOnHand(transactions, allocation)` (F5) |
+
+### 2.3 Bank loan and money moves
+
+| Rule                                                                                                                                                                | Where                                                          | Status                                  | Tests                                       | A1 target                   |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- | --------------------------------------- | ------------------------------------------- | --------------------------- |
+| **Bank loan** borrow/repay in the set's increment: liability upsert, 10% interest subscription recomputed, **a real cash transaction** (decision 45), one undo step | `adjustBankLoan` 1130, `applyBankLoanAdjustment` 1150; engine  | Domain + Orch                           | `adjustBankLoan`, `Bank loan on a Grow buy` | `applyBankLoan`             |
+| **Auto-borrow** the shortfall (rounded up to the step) before a purchase/doodad; its own undo step; the project's Loan field is switched off (`converted`)          | `beforeGrowTrade` 471                                          | Orch, **called by the Add dialog** (F3) | `Bank loan on a Grow buy`, `executeDeal`    | `planAutoLoan`              |
+| **Paying a starting liability off ends its monthly expense**; bank loan → "Bank loan interest"                                                                      | `removeExpenseForPaidLiability` 1327                           | Orch                                    | `paying a starting liability off`           | `expenseForPaidLiability`   |
+| One-off transaction **date slots** (1,3,5… then 2,4,6… ≤ 28th, of the _real_ current month)                                                                         | `nextSmartSubscriptionDate` 999, `nextGameTransactionDate` 978 | Orch, **wall clock** (F2)               | `date slots for one-off game transactions`  | `nextSlot(usedDays, clock)` |
+| Sell a card to a friend (plain income, category `@<card> card sale`)                                                                                                | `sellCardToFriend` 2708                                        | Orch                                    | `sellCardToFriend` tests                    | `sellCard`                  |
+
+### 2.4 Cards, deals and trades
+
+| Rule                                                                                                                                                             | Where                                                                                                                          | Status                                                         | Tests                                                                        | A1 target                                                       |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------- | ---------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| **Find / browse / draw** a card (random from what the deck has not given out; reshuffle when empty)                                                              | `findCardsInDeck` 2539, `browseCards` 2552, `drawCard` 2567; domain `cards.ts`                                                 | Domain, **`Math.random()` inside `drawRandomCard`** (F8)       | `cards: find, draw, apply`, `cards.spec`                                     | inject an `Rng` (A3)                                            |
+| **Plan a deal** (share / investment / special asset) as a Grow project in `plan` phase; same card again re-plans the price; kind conflicts refused; notes        | `planDeal` 1238, `applyDealCard` 2603, `nextInvestmentLabel` 2662                                                              | Orch + translated notes (F1)                                   | `planDeal / executeDeal`, `stock cards`, `investment cards`                  | `planDeal`                                                      |
+| **Execute a deal** = Grow buy through the existing calculators (`calculateBuyShare`/`Investment`), account `Fire`, auto-loan first, rollback of a half-done deal | `executeDeal` 2356                                                                                                             | Domain calculators + Orch; **emits the Grow comment DSL** (F3) | `planDeal / executeDeal`                                                     | `executeDeal` on **typed Grow actions**, never a comment string |
+| **Investment income**: a bought property's cashflow becomes a `<title> Cashflow` subscription registered with Payday                                             | `registerInvestmentIncome` 2682                                                                                                | Orch                                                           | `executeDeal` (property), boost cards                                        | `registerInvestmentIncome`                                      |
+| **Plan note** (bank loan needed for a buy; updated, never duplicated) and the project's Loan field                                                               | `syncPlanNote` 2206, `loanNeeded`, `loanNoteText`                                                                              | Orch + translated text (F1)                                    | `changing the quantity UPDATES…`                                             | `syncPlanNote` + text port                                      |
+| **Phases** plan → execute → completed as the player trades; a sold property takes its market offer with it                                                       | `setPhaseAfterTrade` 1686                                                                                                      | Orch, called by the Add dialog (F3)                            | `phases: plan when planned…`                                                 | `setPhaseAfterTrade`                                            |
+| **Share price card** (only for held shares; sets price on project + holding; note)                                                                               | `updateSharePrice` 1849, `heldShareProjectFor`                                                                                 | Orch                                                           | `a drawn stock card sets the market price`                                   | `applyPriceCard`                                                |
+| **Stock split card** (dice: 1–3 doubles, 4–6 halves rounding up) — a pending decision                                                                            | `playShareSplitCard` 1900, `resolveShareSplit` 1964                                                                            | Orch                                                           | `stock split cards`                                                          | `splitCard` + decision                                          |
+| **Boost cards** (investments paying ≤ limit gain an amount; subscription follows)                                                                                | `playBoostCard` 2010                                                                                                           | Orch                                                           | `cashflow boost cards`                                                       | `boostCard`                                                     |
+| **Market buyer cards** (offers on owned property types incl. `-II` copies; price = profit %/fixed/per unit; offers live until Payday; sale via normal Sell)      | `playMarketCard` 1720, `marketSaleFor` 2163                                                                                    | Orch + **type labels computed in the component** (UI, F7)      | `market buyer cards`, apartment/condo/gold buyer suites                      | `marketCard`, `marketSaleFor`                                   |
+| **Market cost cards** (tenant damage / broken pipe: the first owned property is charged via the Add dialog)                                                      | `playMarketCostCard` 2074                                                                                                      | Orch + Add dialog (F3)                                         | `cost cards for property owners`                                             | `marketCost`                                                    |
+| **Doodad**: plain expense paid like a purchase (auto-loan when short), `#doodad` comment tag, "🏦" loan note                                                     | `doodadLoanNote` 2260; component `payActiveDoodad` 1619                                                                        | Orch + **UI** (F3, F7)                                         | component `payActiveDoodad…`, `doodadLoanNote lists cash, cost and the loan` | `payDoodad` + typed input                                       |
+| **Special assets / dice cards**: gold coins, sister-in-law loan (1–3 lose, 4–6 get 10 000), Multi-Level-Marketing (one roll per Payday for all kept cards)       | `registerAssetDeal`, `beforeAssetBuy` 1409, `afterAssetBuy`, `resolveGamble` 1609, `resolvePaydayRoll` 1540, `paydayRollCount` | Orch                                                           | `gold coins`, `sister-in-law loan`, `Multi-Level-Marketing`                  | `assetDeals` module                                             |
+| **Selling coins** (proportional cost, last coin removes the asset, notes); `sellAssetProblem` pre-check                                                          | `sellCoins` 1478, `sellAssetProblem` 1459, `coinsOwned`                                                                        | Orch, **parses the Sell comment with a regex** (F3)            | `selling coins`                                                              | typed `sellCoins`                                               |
+| **Dice**: the app rolls a die when the player has none                                                                                                           | `rollDie` 1599                                                                                                                 | Orch, `Math.random()` (F8)                                     | **added A0**                                                                 | `Rng`                                                           |
+| Open decisions (paid dice cards waiting for a roll; one decision per Payday group)                                                                               | `openDecisions` 1512                                                                                                           | Orch                                                           | dice-card suites                                                             | `pendingDecisions(state)` — also the API's `pending`            |
+
+### 2.5 History, undo and saved games
+
+| Rule                                                                                                                                                                           | Where                                                                      | Status                                | Tests                                                       | A2 target                     |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------- | ------------------------------------- | ----------------------------------------------------------- | ----------------------------- |
+| **One undo step per action**: a full deep copy of every entity + game state taken _before_ the action; a failed action pops its step; a deal is two steps when it needs a loan | `pushUndoSnapshot` 301, step kinds 153                                     | Orch, **browser `localStorage`** (F4) | `undoLastAction…`, `History…`                               | `UndoHistory` over plain data |
+| **Undo N steps** back to the oldest of them; keeps the saved-game slot                                                                                                         | `undoSteps` 684                                                            | Orch                                  | `undoSteps(n)…`, **added A0** (slot)                        | `undo(history, n)`            |
+| **History list**: one line per step, newest first, transactions gained between snapshots; names legacy steps by inference                                                      | `historySteps` 623, `inferStep` 644                                        | Orch                                  | `History: one line per undo step`                           | `historySteps`                |
+| **Persisted undo stack**, 200 steps, compact diff encoding, cleared on logout / new game / reset                                                                               | `loadPersistedUndoStack`, `exportUndoChain`, `undo-chain-codec.ts`         | Orch + shared codec (src/app)         | `undo stack persistence…`, codec spec                       | codec moves to domain (A2)    |
+| **Snapshot capture / validate / restore** (the unit Undo and saved games share); a foreign file never replaces a live game                                                     | `captureGameSnapshot` 314, `isGameSnapshot` 332, `restoreGameSnapshot` 357 | Orch                                  | **added A0** (`isGameSnapshot`, refusal), saved-games suite | `snapshot` module             |
+| **Game identity** (saved slot id + name); live summary for the games list                                                                                                      | `setGameIdentity` 389, `clearGameIdentity` 396, `liveGameSummary` 404      | Orch                                  | **added A0**                                                | `snapshot`/`saved-games`      |
+| **Saved-game codec** (JSON → gzip → base64 `gz:`/`raw:` → encrypt) and the saved-games list                                                                                    | `src/app/shared/saved-game-codec.ts`, `cashflow-saved-games.service.ts`    | Orch, **browser gzip** (F9)           | `saved-game-codec.spec`, 18 tests                           | server-side codec (D4)        |
+
+## 3. Cross-cutting findings — each one changes how A1 must be done
+
+**F1 — Persisted text is written in the player's language.** The service calls `translate.instant()` to write
+_stored_ data: subscription titles/categories ("`<profession> Salary`", "Children Expenses"), Grow notes (🏦/💰
+lines, dice results, price moves), transaction comments ("Sold the X card to a friend"), and even liability tags.
+`saved games` record the language they were played in. An API-created game must write the same text in the same
+language or the account looks different depending on who played. **Decision for A1:** a `GameText` port
+(`text(key, params) → string`) injected into the engine; the frontend supplies ngx-translate, the backend loads
+the same `src/assets/i18n/*.json` catalogs; the API takes an optional `language` (default: the account's). Keys
+that are used as literal matching keys (`Bank loan`, `Bank loan interest`) stay untranslated, as today.
+
+**F2 — Dating uses the real wall clock, not the game calendar.** One-off transactions go on "the next free slot of
+this real month" (`nextSmartSubscriptionDate` via `todayIso()`), Payday posts into the current real month, and the
+game's `virtualDate` only drives round/loan maths. The server runs in UTC and at a different moment than the
+browser. **Decision for A1/A3:** inject a `Clock`; the API uses the account's timezone-less local date as the UI
+does (calendar date at the moment of the call) and tests pin it.
+
+**F3 — The deal/trade rules are split between this service and the Add dialog, and the dialog speaks the Grow
+comment DSL.** `beforeGrowTrade`, `afterAssetBuy`, `afterAssetSell`, `setPhaseAfterTrade`,
+`removeExpenseForPaidLiability`, `sellAssetProblem` and the doodad/market-cost payments are _hooks_ the Add
+component calls around a Grow buy/sell, and they recover what happened by **regex over the comment string**
+(`parsePurchase`, `tradeStep`, `sellAssetProblem`, `DOODAD_MARK`, `MARKET_COST_MARK`, `GROW_TRADE_COMMENT`). CLAUDE.md
+and D-16 forbid the API from writing or parsing that DSL. **Decision for A1:** extract each hook as a pure function
+over a _typed_ trade (`{ kind: 'buyShare', title, quantity, priceMinor }`); the backend's existing typed Grow
+actions (`backend/repositories/grow-action-repository.js`, `domain/grow/actions.ts`) provide the trade itself and
+the hooks run around it. The UI keeps producing the DSL for now and the extracted hooks are called with the typed
+form it derives — one migration step per hook, never a comment-parsing port.
+
+**F4 — The live game's undo history lives only in the browser's `localStorage`.** It is deliberately not synced
+(decision 43). An API/agent has no browser, and an agent's undo must not depend on a UI session. **Needs a JFK
+decision before D2** (not before A1): where the live game's history is stored for API play — a new DB path next to
+`cashflowGame` (additive schema, needs approval like the solo fields) or in-memory per session. Interim position:
+undo is available only for steps taken in the same store (UI steps in the UI, API steps in the API) and the plan
+says so.
+
+**F5 — "Cash on hand" is `AppStateService.getAmount` + the account allocation ratios**, with a per-entry
+cent-rounding quirk that drifts by a cent on tiny Income amounts (pinned by a test). It is the number every
+auto-loan decision hangs on, so the API must reproduce it exactly. **A1(a):** `cashOnHand(transactions,
+allocation)` in the domain, tested against the pinned cases, UI switched over first.
+
+**F6 — Persistence is whole-collection writes plus a derived-state recompute.** `persistAll` always writes
+`transactions` + `cashflowGame` + the income-statement derived arrays, plus optionally subscriptions, balance sheet
+and Grow, then nudges pages. The backend already has the equivalent (`withTransactionsWrite`, `applyDerivedState`,
+`withGrowActionWrite`). The extracted engine returns _effects_ (what changed); each side persists in its own way.
+
+**F7 — Some rules sit in the component.** The market-card dispatch (which card kind calls which service method),
+the property **type labels** (EFH/SFH/…) a market card's offers match against, card filtering/families, the Deals
+pile choice, `canLandOnBaby`, and the finance widgets (`liveSalary`, `livePassiveIncome`, `escapedRatRace`, …) that
+duplicate `summarizeGameFinances`. They must move with the rules or the API cannot play a card. **A1(c)/(d)** pulls
+the dispatch and the type tables into the domain; the finance widgets are deleted in favour of the domain summary.
+
+**F8 — Randomness is unseeded in three places:** `drawRandomCard` (domain, `Math.random`), `rollDie` (service) and
+`shuffleProfession` (component). **A3** introduces an `Rng` interface with a seeded implementation; production
+passes a real one.
+
+**F9 — Saved games depend on browser gzip** (`CompressionStream`), with a `raw:` fallback. The server needs a
+Node gzip that produces output the browser reads (and vice versa); a golden fixture pins it (D4).
+
+**F10 — Floats at the edges.** The UI keeps decimal `amount: number`; the domain uses minor units. Every service
+method converts at the boundary (`toMinorUnits`/`fromMinorUnits`). Extracted functions take and return minor
+units; each caller converts as it already does (the backend repositories apply the schema-version conversion).
+
+## 4. UI-side duplication to remove during A1
+
+| #   | Duplicate                                                                                                   | Resolution                                                   |
+| --- | ----------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| U1  | Component finance getters (`liveSalary`, `livePassiveIncome`, `liveTotalExpenses`, `escapedRatRace`, …)     | Use `summarizeGameFinances` only                             |
+| U2  | `matches`/`labelMatches` property-label regex defined twice in the service (`playMarketCard`, module scope) | One domain function                                          |
+| U3  | Loan-needed rounding repeated in `loanNeeded`, `loanNoteText.loanFor`, `doodadLoanNote`, `beforeGrowTrade`  | One `loanForShortfall(costMinor, cashMinor, incrementMinor)` |
+
+## 5. What A0 added
+
+11 characterization tests in `cashflow-game.service.spec.ts` (`describe('A0 characterization: …')`) for the helpers
+that had **no** direct test: `cash` (3, including the pinned one-cent rounding quirk), `rollDie` (1),
+`liveProfessionTitle` (1), `liveGameSummary` (1), `setGameIdentity`/`clearGameIdentity` (1), Undo keeping the saved
+slot (1), `isGameSnapshot` (1), `restoreGameSnapshot` refusing a foreign file (1), `removeSubscriptionByTitle` (1).
+Still untested and deliberately left for the slice that moves them: `autoLoanMessage` and
+`expenseRemovedMessage` (pure translation pass-throughs).
+
+## 6. Consequences for the plan
+
+- **A1 order, refined** (smallest coupling first): (a) cash on hand, finances summary, loan arithmetic (F5, U1, U3) →
+  (b) bank loan + payday + status + Baby/Charity/Downsized orchestration, with the `Clock` and `GameText` ports
+  (F1, F2) → (c) card dispatch + market/boost/split/price/cost cards (F7, U2) → (d) deals and typed trade hooks
+  (F3) → (e) special assets, dice cards, coins → (f) doodads.
+- **A2** gets one extra item: the live undo history's storage (F4).
+- **A3** gains `shuffleProfession` (F8).
+- **New decisions needed from JFK:** F4 (where API undo history lives) before D2; whether API-played games write
+  text in the account language or a per-call `language` (F1) before A1(b).
