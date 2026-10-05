@@ -6,6 +6,8 @@
  * single entry point hides that, so this loads the page from several entry points - the order the
  * modules are first touched in is what decides whether a circle bites.
  */
+// A module (not a global script), so this does not clash with the other spec declaring `require`.
+export {};
 declare const require: (module: string) => unknown;
 
 function dependenciesOf(componentName: string, modulePath: string): unknown[] {

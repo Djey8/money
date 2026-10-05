@@ -1717,7 +1717,8 @@ describe('CashflowGameComponent', () => {
           made.component.activeDeckKind = 'market';
           expect(made.component.marketOfferKinds).toEqual([]); // only one kind: no choice
           const tile = (made.component as any).tileFor(cost);
-          expect(tile.value).toBe('1.000');
+          // The component formats with the runtime locale, so build the expectation the same way.
+          expect(tile.value).toBe((1000).toLocaleString());
           expect(tile.priceText).toBe('1000');
         });
       });

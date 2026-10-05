@@ -5,6 +5,8 @@
  * a shared file has to sit behind `CashflowGameService.isCashflowGame()` - on the same line or in the
  * block just above - or be one of the few calls that are inert or guard themselves.
  */
+// A module (not a global script), so this does not clash with the other spec declaring `require`.
+export {};
 declare const require: (module: string) => any;
 declare const process: { cwd(): string };
 
