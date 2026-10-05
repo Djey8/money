@@ -549,6 +549,35 @@ export class AppDataService {
         ? raw.drawnCardIds[deckKind].map((v: any) => str(v))
         : [];
 
+    const float = (v: any): number => parseFloat(str(v)) || 0;
+    const optionalStr = (v: any): string | undefined => (v == null ? undefined : str(v));
+    const assetDeals: NonNullable<CashflowGameState['assetDeals']> = Array.isArray(raw.assetDeals)
+      ? raw.assetDeals.map((d: any) => ({
+          title: str(d.title),
+          coins: float(d.coins),
+          costMinor: num(d.costMinor),
+          ...(d.successOn != null ? { successOn: num(d.successOn) } : {}),
+          ...(d.payoutMinor != null ? { payoutMinor: num(d.payoutMinor) } : {}),
+          ...(d.recurring != null ? { recurring: str(d.recurring) === 'true' } : {}),
+          ...(d.rollDue != null ? { rollDue: str(d.rollDue) === 'true' } : {}),
+          ...(d.split?.shareTag != null ? { split: { shareTag: str(d.split.shareTag) } } : {}),
+          stage: str(d.stage) as NonNullable<CashflowGameState['assetDeals']>[number]['stage'],
+          ...(d.successText != null ? { successText: str(d.successText) } : {}),
+          ...(d.failureText != null ? { failureText: str(d.failureText) } : {}),
+        }))
+      : [];
+    const marketOffers: NonNullable<CashflowGameState['marketOffers']> = Array.isArray(
+      raw.marketOffers,
+    )
+      ? raw.marketOffers.map((o: any) => ({
+          title: str(o.title),
+          salePriceMinor: num(o.salePriceMinor),
+          cardId: str(o.cardId),
+          label: str(o.label),
+          ...(o.pricePerCoinMinor != null ? { pricePerCoinMinor: num(o.pricePerCoinMinor) } : {}),
+        }))
+      : [];
+
     return {
       gameSetId: nullableStr(raw.gameSetId),
       professionId: nullableStr(raw.professionId),
@@ -569,6 +598,10 @@ export class AppDataService {
         doodad: drawnIds('doodad'),
       },
       history,
+      assetDeals,
+      marketOffers,
+      ...(raw.gameId != null ? { gameId: optionalStr(raw.gameId) } : {}),
+      ...(raw.gameName != null ? { gameName: optionalStr(raw.gameName) } : {}),
     };
   }
 
