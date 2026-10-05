@@ -1435,6 +1435,8 @@ data. Not built: the rat-race-exit indicator (well-defined now — property-cash
 
 ### Phase 5 — self-hosted Pro API + MCP for the game
 
+> Now planned as its own project: [`cashflow-game-pro.md`](cashflow-game-pro.md) (2026-10-05).
+
 - A dedicated REST resource group and MCP tool set for the Cashflow game (its own scopes, its own tools) — separate
   from, and not layered onto, today's generic Money Manager MCP tools (decision 2). Lets an agent play or track a
   game on your behalf.
