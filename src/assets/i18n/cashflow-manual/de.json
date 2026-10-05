@@ -1,0 +1,1173 @@
+{
+  "title": "Cashflow-Spiel-Handbuch",
+  "subtitle": "So spielst du, jede Kartenart, was sich zu kaufen lohnt und was die Zahlen sagen - für Cashflow-Spiel-Konten.",
+  "labels": {
+    "colProfession": "Beruf",
+    "colSalary": "Gehalt",
+    "colExpenses": "Ausgaben",
+    "colCashflow": "Cashflow",
+    "colSavings": "Ersparnisse",
+    "colDebts": "Schulden",
+    "colChild": "Pro Kind",
+    "customMark": "Custom JFK",
+    "noteProfessions": "Cashflow = Gehalt − Ausgaben, pro Monat. Ersparnisse sind dein Startkapital. „Pro Kind“ kommt mit jedem Baby (bis zu drei) zu deinen Ausgaben dazu.",
+    "colNeeded": "Nötiges passives Einkommen",
+    "colSmallDeals": "≈ Immobilien aus dem Kleinen Deal",
+    "colBigDeals": "≈ Immobilien aus dem Großen Deal",
+    "noteEscape": "Du bist aus dem Hamsterrad, wenn dein passives Einkommen deine Ausgaben deckt. Eine durchschnittliche zahlende Immobilie aus dem Kleinen Deal bringt etwa {small} im Monat, eine aus dem Großen Deal etwa {big}. Deine Ausgaben wachsen mit jedem Kind und jedem Bankdarlehen - plane also etwas höher.",
+    "colType": "Art",
+    "colCards": "Karten",
+    "colPrice": "Preis",
+    "colDeposit": "Anzahlung",
+    "colNoCashflow": "Zahlen nichts",
+    "colReturn": "Rendite pro Jahr",
+    "noteReturn": "Rendite pro Jahr = zwölf Monate Cashflow ÷ deine Anzahlung (Cash-on-Cash). Die Hypothek zahlst du nicht selbst ein; eine kleine Anzahlung mit gutem Cashflow ergibt deshalb eine sehr hohe Rendite. Karten ohne Cashflow werden getrennt gezählt.",
+    "colPaysLoan": "Trägt ein Darlehen",
+    "colBestMonthly": "Beste Monatsrendite",
+    "noteLoanProof": "Ein Bankdarlehen kostet jeden Monat 10 % des Betrags. Ein Deal trägt sein Darlehen nur, wenn er jeden Monat mindestens 10 % seiner Anzahlung einbringt. Die Spalte zeigt, wie viele Karten der Art das schaffen.",
+    "colTicker": "Kürzel",
+    "colKind": "Art",
+    "kindStock": "Aktie",
+    "kindFund": "Fonds",
+    "colPrices": "Preise auf den Karten",
+    "colTradingRange": "Handelsspanne",
+    "colCategory": "Kategorie",
+    "colAverage": "Durchschnitt",
+    "colMost": "Teuerste",
+    "noteDoodads": "Insgesamt {count} Schnickschnack-Karten; die durchschnittliche Karte kostet {average}. Smile / Splurge ist das Konto, das die App für die Zahlung vorschlägt.",
+    "colPile": "Stapel",
+    "pileSmall": "Kleiner Deal",
+    "pileBig": "Großer Deal",
+    "cat_shares": "Aktien und Fonds",
+    "cat_houses": "Einfamilienhäuser",
+    "cat_condos": "Eigentumswohnungen",
+    "cat_gold": "Goldmünzen (einfache Angebote)",
+    "cat_dice": "Würfel-Glücksspiele",
+    "cat_mlm": "Multi-Level-Marketing",
+    "cat_businesses": "Geschäfte",
+    "colChance": "Chance bei zufälligem Ziehen",
+    "colMarketCard": "Marktkarte",
+    "market_buyerEFH": "Käufer für ein Einfamilienhaus",
+    "market_buyerMFH": "Käufer für ein Mehrfamilienhaus",
+    "market_buyerETW": "Käufer für eine Eigentumswohnung",
+    "market_buyerAPH": "Käufer für einen Appartementkomplex",
+    "market_buyerGOLD": "Käufer für Goldmünzen",
+    "market_cost": "Reparaturkosten (Immobilienbesitzer)",
+    "market_split": "Aktiensplit",
+    "market_boost": "Cashflow-Schub ★",
+    "colYouOwn": "Du besitzt",
+    "colMarketCards": "Marktkarten, die es betreffen",
+    "profile_EFH": "Ein Einfamilienhaus",
+    "profile_MFH": "Ein Mehrfamilienhaus (4–8 Einheiten)",
+    "profile_ETW": "Eine Eigentumswohnung",
+    "profile_APH": "Ein Appartementkomplex (12–60 Einheiten)",
+    "profile_DH": "Ein Doppelhaus",
+    "profile_GOLD": "Goldmünzen",
+    "profile_SHARE": "Aktien einer Firma",
+    "noteMarketOdds": "Gezählt wird jede Karte des Marktstapels, die etwas für dich oder gegen dich tun kann. Reparaturkosten treffen jede Immobilie; die beiden ★-Schübe treffen jede Investition unter ihrer Grenze; es gibt eine Aktiensplit-Karte pro Firma.",
+    "factPrice": "Preis",
+    "factRange": "Handelsspanne",
+    "factDeposit": "Anzahlung",
+    "factMortgage": "Hypothek",
+    "factCashflow": "Cashflow",
+    "factCost": "Kosten",
+    "factCoins": "Münzen",
+    "factDice": "Gewinn bei",
+    "factPayout": "Zahlt zurück",
+    "factAccount": "Zahlen von",
+    "factOffer": "Angebot",
+    "factSymbol": "Kürzel",
+    "factBoost": "Schub",
+    "factUpTo": "Bis",
+    "unit": "Einheit",
+    "coin": "Münze"
+  },
+  "sections": {
+    "start": {
+      "nav": "Erste Schritte",
+      "title": "Erste Schritte",
+      "intro": "Das Cashflow-Spiel ist ein Begleiter für das Brettspiel: Du spielst auf dem echten Brett mit einem echten Würfel, und diese App führt die Bücher. Alles, was du tust, ist echte Buchhaltung in deinem Konto - Transaktionen, Abonnements, Grow-Projekte, eine Bilanz - so siehst du genau, was jede Entscheidung mit deinem Geld macht.",
+      "blocks": [
+        {
+          "type": "callout",
+          "kind": "note",
+          "title": "Wer das lesen kann",
+          "text": "Dieses Handbuch und das Spiel gibt es nur für **Cashflow-Spiel-Konten**: Konten, deren E-Mail-Adresse das Wort `cashflow` enthält. So ein Konto ist ein reines Spielkonto - nichts darin ist echtes Geld, und nichts, was du tust, erreicht ein normales Konto. Das Spiel funktioniert in der Firebase-Edition und auf einem selbst gehosteten Server gleich."
+        },
+        {
+          "type": "steps",
+          "items": [
+            {
+              "title": "Cashflow-Konto anlegen oder anmelden",
+              "text": "Registriere dich mit einer E-Mail-Adresse, die `cashflow` enthält, zum Beispiel `anna.cashflow@example.com`. Im Menü erscheint dann der Eintrag **Cashflow-Spiel** mit einem 🎲."
+            },
+            {
+              "title": "Spiel öffnen und Spielset wählen",
+              "text": "**Classic Edition** hat die 12 Berufe des gedruckten Spiels und die vollständigen Kartenstapel. **Custom JFK** ergänzt drei weitere Berufe (Softwareentwickler, Freiberufler, Unternehmer) und nutzt dieselben Kartenstapel."
+            },
+            {
+              "title": "Beruf wählen",
+              "text": "Wähle einen aus der Liste oder drücke **Zufällig auswählen**. Die Berufskarte öffnet sich mit ihren gedruckten Zahlen - Einkommen, Ausgaben, Ersparnisse und Schulden. Lies sie, bevor du startest."
+            },
+            {
+              "title": "Spiel starten und Sprache wählen",
+              "text": "Die App fragt, in welcher Sprache du spielen willst. Die Karten, die Namen deiner Käufe (SFH, EFH …) und die Notizen richten sich danach, und jedes Spiel merkt sich seine eigene Sprache."
+            },
+            {
+              "title": "Das Spiel wird eingerichtet",
+              "text": "Die App bucht deine Ersparnisse als Startkapital, legt dein monatliches Gehalt und jede Ausgabe als Abonnement an und trägt die Schulden deines Berufs in die Bilanz ein. Das Dashboard öffnet sich."
+            },
+            {
+              "title": "Spielen",
+              "text": "Zieh deine Figur auf dem echten Brett. Wenn du auf einem Feld landest, sagst du der App, welches es war (siehe „Die Felder“). Am Zahltag drückst du **Zahltag**. Das ist die ganze Schleife."
+            }
+          ]
+        },
+        {
+          "type": "callout",
+          "kind": "tip",
+          "title": "Du entscheidest, die App rechnet",
+          "text": "Die App nimmt dir nie eine Entscheidung ab. Sie zeigt, was eine Karte kostet, wie viel Bargeld du hast, was ein Bankdarlehen kosten würde und was ein Deal einbringt - und dann drückst du den Knopf oder eben nicht. Ein gutes Spiel gewinnt man, indem man diese Zahlen vor jedem Kauf liest."
+        }
+      ]
+    },
+    "goal": {
+      "nav": "Das Ziel",
+      "title": "Das Ziel: raus aus dem Hamsterrad",
+      "intro": "Du startest mit einem Job, der dein Leben bezahlt und sonst wenig. Das Hamsterrad endet, wenn du den Job nicht mehr brauchst.",
+      "blocks": [
+        { "type": "h3", "text": "Passives Einkommen" },
+        {
+          "type": "p",
+          "text": "**Passives Einkommen** ist das Geld, das jeden Monat ohne deine Arbeit hereinkommt: der Cashflow der Immobilien und Geschäfte, die du besitzt. Deine **Ausgaben** sind alles, was jeden Monat hinausgeht - Steuern, Miete oder Hypothek, Kreditraten, Lebenshaltung, die Kosten deiner Kinder und die Zinsen eines Bankdarlehens. Dein Gehalt ist kein passives Einkommen."
+        },
+        {
+          "type": "callout",
+          "kind": "tip",
+          "title": "Du hast das Hamsterrad verlassen, wenn",
+          "text": "**passives Einkommen ≥ monatliche Ausgaben**. Das Dashboard zeigt dann ein grünes Banner: „Du bist dem Hamsterrad entkommen!“ Du kannst beliebig weiterspielen - das Banner verschwindet einfach wieder, wenn deine Ausgaben über dein passives Einkommen steigen."
+        },
+        { "type": "h3", "text": "Wie das Spiel schiefgehen kann" },
+        {
+          "type": "p",
+          "text": "Ist dein **monatlicher Cashflow** (alle Einnahmen minus alle Ausgaben) negativ, nimmt dir jeder Zahltag Bargeld weg, statt welches zu bringen. Das Dashboard warnt dich in Rot. Es hält dich nicht auf: Verkaufe etwas, zahle ein Darlehen zurück oder finde einen besseren Deal vor dem nächsten Zahltag."
+        },
+        {
+          "type": "callout",
+          "kind": "warning",
+          "title": "Schulden sind kein Verlust - Ausbluten ist es",
+          "text": "Geld zu schulden gehört zum Spiel; mit einer Hypothek wird fast jede Immobilie gekauft. Weh tut ein monatlicher Cashflow unter null, vor allem zusammen mit einem teuren Bankdarlehen (10 % des Darlehens jeden Monat)."
+        },
+        { "type": "h3", "text": "Worum du spielst" },
+        {
+          "type": "list",
+          "items": [
+            "**Das passive Einkommen steigern** - jede Immobilie und jedes Geschäft, das du kaufst, bringt seinen Cashflow zu jedem künftigen Zahltag.",
+            "**Die Ausgaben niedrig halten** - Babys und Bankdarlehen erhöhen sie; ein zurückgezahltes Darlehen senkt sie wieder.",
+            "**Nicht trocken laufen** - Schnickschnack und Reparaturen kommen ohne Vorwarnung, also halte etwas Bargeld zurück."
+          ]
+        },
+        {
+          "type": "data",
+          "id": "escape",
+          "caption": "Wie viel passives Einkommen jeder Beruf braucht - und ungefähr wie viele Immobilien das sind"
+        }
+      ]
+    },
+    "dashboard": {
+      "nav": "Das Dashboard",
+      "title": "Das Dashboard",
+      "intro": "Öffnest du das Spiel im Menü, landest du auf dem Dashboard. Alles, was du in einer Runde brauchst, ist auf diesem einen Bildschirm.",
+      "blocks": [
+        {
+          "type": "table",
+          "head": ["Wo", "Was es zeigt oder tut"],
+          "rows": [
+            [
+              "Übersichtskarte",
+              "Dein Beruf (der Info-Knopf öffnet seine Karte), dein **Bargeld**, das Spieldatum, dein **monatlicher Cashflow** und kleine Zeichen: Kinder, eine laufende Wohltätigkeits-Erinnerung, eine Arbeitslos-Erinnerung."
+            ],
+            [
+              "Banner",
+              "Rot, wenn dein monatlicher Cashflow negativ ist. Grün, wenn dein passives Einkommen die Ausgaben deckt - du bist entkommen."
+            ],
+            [
+              "**Zahltag** und **Rückgängig**",
+              "Zahltag bucht einen Monat. Rückgängig nimmt den letzten Schritt zurück - jeden Schritt, nicht nur einen Zahltag."
+            ],
+            [
+              "Offene Entscheidung",
+              "Eine Karte, die auf einen Würfelwurf wartet (siehe „Würfelkarten“), erscheint hier mit einem Knopf **Würfeln**."
+            ],
+            [
+              "Auf welches Feld bist du gekommen?",
+              "Die farbigen Knöpfe: **Deals** (grün), **Schnickschnack** (rot), **Markt** (blau) und die lila **Wohltätigkeit**, **Arbeitslos**, **Baby**."
+            ],
+            [
+              "Bankdarlehen",
+              "**Aufnehmen** und **Zurückzahlen** in Schritten von 1.000 (siehe „Bankdarlehen“)."
+            ],
+            [
+              "Meine Spiele, Verlauf, Menü",
+              "Deine gespeicherten Spiele, die Liste jedes Schritts, den du gemacht hast (jeder lässt sich zurücknehmen), und eine Abkürzung zum Menü der App."
+            ]
+          ]
+        },
+        { "type": "h3", "text": "Die Berufskarte" },
+        {
+          "type": "p",
+          "text": "Tippe auf den Info-Knopf neben deinem Beruf, um seine Karte zu öffnen. Sie hat zwei Ansichten: **Startszenario** (die gedruckte Karte, wie du begonnen hast) und **Live — Aktuelles Spiel** (dasselbe Layout mit den heutigen Zahlen: dein Einkommen und deine Ausgaben, die Immobilien, die du besitzt, deine Schulden)."
+        },
+        {
+          "type": "callout",
+          "kind": "tip",
+          "title": "Der Rest der App ist weiter da",
+          "text": "Deine Transaktionen, Abonnements, Grow-Projekte, Bilanz und Statistiken sind die normalen Seiten der App, vom Spiel gefüllt. Öffne sie jederzeit über das Menü - siehe „Das Spiel und der Rest der App“."
+        }
+      ]
+    },
+    "professions": {
+      "nav": "Berufe",
+      "title": "Berufe",
+      "intro": "Dein Beruf bestimmt, wie viel du verdienst, wie viel du ausgibst, mit wie viel Bargeld du startest und welche Schulden du trägst. Fünfzehn stehen zur Wahl: die zwölf des gedruckten Spiels und drei eigene.",
+      "blocks": [
+        {
+          "type": "data",
+          "id": "professions",
+          "caption": "Alle Berufe, bester monatlicher Cashflow zuerst"
+        },
+        { "type": "h3", "text": "Worauf du bei der Wahl achtest" },
+        {
+          "type": "list",
+          "items": [
+            "**Cashflow (Gehalt − Ausgaben)** ist das Geld, das du jeden Monat investieren kannst. Eine größere Zahl bedeutet schnellere Anzahlungen.",
+            "**Ausgaben** sind das Ziel, das dein passives Einkommen decken muss. Kleine Ausgaben heißen weniger Immobilien bis zum Ziel.",
+            "**Ersparnisse** sind dein Startbargeld und deine erste Anzahlung. Mit wenig Ersparnissen beginnst du mit kleinen Deals.",
+            "**Schulden** werden aus deinen monatlichen Zahlungen bedient; sie sind die ersten hypothekenähnlichen Kosten, die du trägst.",
+            "**Pro Kind** kommt jedes Mal dazu, wenn du auf Baby landest. Bei manchen Berufen ist es klein, bei anderen groß."
+          ]
+        },
+        {
+          "type": "callout",
+          "kind": "tip",
+          "title": "Hohes Gehalt ist nicht automatisch leicht",
+          "text": "Der Arzt verdient am meisten, gibt aber auch am meisten aus: 8.300 Ausgaben müssen durch passives Einkommen gedeckt werden. Der Hausmeister braucht nur 1.000 - eine gute Immobilie aus dem Großen Deal. Ein hohes Gehalt kauft Anzahlungen schneller; niedrige Ausgaben rücken die Ziellinie näher. Beide Wege funktionieren."
+        },
+        {
+          "type": "data",
+          "id": "escape",
+          "caption": "Passives Einkommen, das jeder Beruf erreichen muss"
+        }
+      ]
+    },
+    "payday": {
+      "nav": "Zahltag",
+      "title": "Zahltag und der Spielkalender",
+      "intro": "Der Zahltag ist der Herzschlag des Spiels. Ein Druck bucht einen Monat.",
+      "blocks": [
+        { "type": "h3", "text": "Was der Zahltag tut" },
+        {
+          "type": "list",
+          "items": [
+            "bucht dein **Gehalt** und den **Cashflow jeder Immobilie und jedes Geschäfts**, das du besitzt,",
+            "bucht jede **Ausgabe**: Steuern, Miete oder Hypothek, Kreditraten, Lebenshaltung, Kinder und die Zinsen deines Bankdarlehens,",
+            "schiebt den Spielkalender um **einen Monat** weiter und zählt die Runde,",
+            "öffnet den **Würfelwurf** jeder Multi-Level-Marketing-Karte, die du hältst (ein Wurf für alle),",
+            "beendet die **Marktangebote**, die du hattest - ein Angebot einer Marktkarte gilt nur bis zum nächsten Zahltag."
+          ]
+        },
+        {
+          "type": "p",
+          "text": "Der Zahltag wird nie übersprungen. Auch wenn eine Wohltätigkeits- oder Arbeitslos-Erinnerung angezeigt wird, drückst du jedes Mal Zahltag, wenn du ihn auf dem Brett passierst. Die Erinnerungen gelten deinen Runden auf dem echten Brett, die die App nicht sehen kann."
+        },
+        { "type": "h3", "text": "Der Kalender" },
+        {
+          "type": "p",
+          "text": "Das Spiel hat seinen eigenen Kalender, der pro Zahltag einen Monat weiterläuft. Für die Buchhaltung werden die Transaktionen im **aktuellen echten Monat** abgelegt, jede an dem Tag ihres Abonnements (Gehalt früh im Monat, Hypothek an ihrem Tag …). Käufe und Zahlungen zwischen zwei Zahltagen bekommen den nächsten freien Tag des Monats, damit die Kontoliste lesbar bleibt."
+        },
+        {
+          "type": "callout",
+          "kind": "note",
+          "text": "Ältere Spieltransaktionen wandern mit jedem Zahltag einen Monat zurück. Die Statistik zeigt dein Spiel deshalb als Zeitverlauf, und nichts, was du hier tust, vermischt sich mit einem echten Konto."
+        },
+        {
+          "type": "callout",
+          "kind": "tip",
+          "title": "Zahltag aus Versehen gedrückt?",
+          "text": "Drücke **Rückgängig**. Es stellt alles wieder her, was der Zahltag verändert hat, auch das Datum. Jeder andere Schritt lässt sich genauso zurücknehmen - siehe „Verlauf, Rückgängig und gespeicherte Spiele“."
+        }
+      ]
+    },
+    "spaces": {
+      "nav": "Die Felder",
+      "title": "Die Felder",
+      "intro": "Die App bewegt deine Figur nicht - das tust du auf dem echten Brett. Landest du auf etwas, sagst du der App, welches Feld es war, und sie erledigt den Rest.",
+      "blocks": [
+        {
+          "type": "cards",
+          "items": [
+            {
+              "icon": "🟢",
+              "title": "Deals",
+              "text": "Grün. Wähle den Stapel **Kleiner Deal** oder **Großer Deal**. Aktien, Fonds, Häuser, Mehrfamilienhäuser, Geschäfte, Gold und manche Glücksspiele."
+            },
+            {
+              "icon": "🔴",
+              "title": "Schnickschnack",
+              "text": "Rot. Etwas, das du ungeplant kaufst (im Englischen heißt die Karte Doodad). Du zahlst immer."
+            },
+            {
+              "icon": "🔵",
+              "title": "Markt",
+              "text": "Blau. Ein Ereignis für den ganzen Tisch: Käufer für deine Immobilien und dein Gold, Aktiensplits, Reparaturrechnungen und zwei Sternkarten."
+            },
+            {
+              "icon": "🟣",
+              "title": "Wohltätigkeit",
+              "text": "Lila. Gib ein Zehntel deines Einkommens weg und würfle in den nächsten drei Runden mit einem oder zwei Würfeln."
+            },
+            {
+              "icon": "🟣",
+              "title": "Arbeitslos",
+              "text": "Lila. Zahle einmal alle deine monatlichen Ausgaben und setze zwei Runden aus."
+            },
+            {
+              "icon": "🟣",
+              "title": "Baby",
+              "text": "Lila. Ein Kind mehr, eine monatliche Ausgabe mehr (höchstens drei Kinder)."
+            }
+          ]
+        },
+        {
+          "type": "callout",
+          "kind": "tip",
+          "title": "Wohltätigkeit, Arbeitslos und Baby fragen erst nach",
+          "text": "Sie zeigen, was sie tun werden - mit deinen echten Zahlen - und warten auf **Spielen** oder **Abbrechen**, damit ein Fehltipp nichts verändert."
+        },
+        { "type": "h3", "text": "Die gezogene Karte finden" },
+        {
+          "type": "p",
+          "text": "Hast du einen Stapel gewählt, gibt es zwei Wege, eine Karte aufzurufen:"
+        },
+        {
+          "type": "list",
+          "items": [
+            "**Gezogene Karte finden** - du hältst die echte Karte in der Hand. Tippe einen Namen, ein Kürzel oder einen Preis (zum Beispiel `OK4U 20`) oder nutze die Schnellfilter (Art, Typ, Konto, Kategorie) und tippe die Karte in der Liste an.",
+            "**Karte ziehen** - du hast keinen echten Stapel: Die App zieht zufällig eine und wiederholt keine Karte, bis der Stapel durch ist."
+          ]
+        },
+        {
+          "type": "p",
+          "text": "Dann erscheint die Karte mit Text und Zahlen auf dem Bildschirm, genau wie gedruckt. Was du mit ihr tun kannst, hängt von der Art ab - die folgenden Abschnitte gehen sie nacheinander durch."
+        },
+        {
+          "type": "callout",
+          "kind": "tip",
+          "title": "Falsche Karte?",
+          "text": "Jede Karte hat **Andere wählen** (oder einen Zurück-Pfeil), solange du sie nicht gespielt hast. Gebucht wird erst, wenn du den Spielen-Knopf drückst."
+        }
+      ]
+    },
+    "investing": {
+      "nav": "Investieren",
+      "title": "Investieren: planen, kaufen, verkaufen",
+      "intro": "Jedes Haus, jede Aktie, jedes Geschäft und jede Goldmünze, die du kaufst, ist ein **Grow-Projekt** - derselbe Investitions-Tracker, den die ganze App nutzt. Aus einer Karte wird in drei Schritten ein Projekt.",
+      "blocks": [
+        {
+          "type": "steps",
+          "items": [
+            {
+              "title": "Planen",
+              "text": "Drücke auf der Karte **Als Plan speichern**. Es entsteht ein Grow-Projekt in der Phase **Plan** mit den Zahlen der Karte und einer Notiz: was der Kauf kostet, wie viel Bargeld du hast und welches Bankdarlehen du bräuchtest. Bezahlt wird noch nichts."
+            },
+            {
+              "title": "Kaufen",
+              "text": "Öffne das Projekt (die App bringt dich hin) und drücke **kaufen**. Der Dialog zum Hinzufügen öffnet sich fertig ausgefüllt, auf dem **Fire**-Konto. Prüfe und bestätige. Das Projekt wechselt in **Umsetzung**; eine Immobilie legt ihre Hypothek in der Bilanz an und ihren monatlichen Cashflow als Abonnement, das jeder Zahltag auszahlt."
+            },
+            {
+              "title": "Verkaufen",
+              "text": "Öffne das Projekt und drücke **verkaufen**, wann immer du aussteigen willst. Der Verkauf wird als Einnahme gebucht, die Hypothek abgelöst, und der Cashflow endet. Ist alles verkauft, ist das Projekt **abgeschlossen**."
+            }
+          ]
+        },
+        {
+          "type": "callout",
+          "kind": "note",
+          "title": "Ein Projekt pro Karte",
+          "text": "Ein zweites Haus derselben Art wird ein zweites Projekt mit einer Zahl im Namen: `EFH`, `EFH-II`, `EFH-III`. Jedes lässt sich einzeln verkaufen."
+        },
+        { "type": "h3", "text": "Nicht genug Bargeld?" },
+        {
+          "type": "p",
+          "text": "Ist die Anzahlung größer als dein Bargeld, nimmt die App ein **Bankdarlehen** über genau den fehlenden Betrag - auf die nächsten 1.000 aufgerundet - und bucht es zuerst, als eigenen Schritt. Der Kauf folgt als zweiter Schritt. Rückgängig nimmt zuerst den Kauf zurück, mit dem nächsten Rückgängig das Darlehen. Was das kostet, steht unter „Bankdarlehen“."
+        },
+        {
+          "type": "face",
+          "cardId": "classic-small-efh-45k-2k",
+          "caption": "Eine Karte aus dem Kleinen Deal: ein Einfamilienhaus für 45.000 mit 2.000 Anzahlung - es bringt 250 im Monat."
+        },
+        { "type": "h3", "text": "Die Namen deiner Käufe" },
+        {
+          "type": "p",
+          "text": "Jeder Kauf bekommt ein kurzes Kürzel in der Sprache deines Spiels, damit man sie in Listen und Diagrammen leicht unterscheidet:"
+        },
+        {
+          "type": "table",
+          "head": ["Art", "Englisches Kürzel", "Deutsches Kürzel"],
+          "rows": [
+            ["Einfamilienhaus", "SFH", "EFH"],
+            ["Eigentumswohnung", "CONDO", "ETW"],
+            ["Mehrfamilienhaus (4 / 8 Einheiten)", "APT4, APT8", "MFH4, MFH8"],
+            ["Doppelhaus", "SDH", "DH"],
+            [
+              "Appartementkomplex (12 / 24 / 60 Einheiten)",
+              "CPX12, CPX24, CPX60",
+              "APH12, APH24, APH60"
+            ],
+            [
+              "Geschäftspartner / automatisiertes Unternehmen / Autowaschanlage",
+              "PTR, ABIZ, WASH",
+              "GP, AU, AWA"
+            ],
+            ["Pizzafranchise, Gold, Multi-Level-Marketing", "PIZZA, GOLD, MLM", "PIZZA, GOLD, MLM"]
+          ]
+        },
+        {
+          "type": "callout",
+          "kind": "tip",
+          "title": "An Freund verkaufen",
+          "text": "Auf einer Deal-Karte bucht **An Freund verkaufen** einen einmaligen Verkauf: Du hast mit einem anderen Spieler einen Preis vereinbart, und das Geld kommt sofort herein. **Ablehnen** führt einfach zurück zum Dashboard."
+        }
+      ]
+    },
+    "smalldeal": {
+      "nav": "Kleiner Deal",
+      "title": "Kleiner Deal",
+      "intro": "Der Stapel Kleiner Deal ist für den Anfang: kleine Preise, kleine Anzahlungen. Er hat 38 Karten - 20 Aktien und Fonds, 11 Häuser und Wohnungen und 7 Spezialkarten (Gold, Würfel-Glücksspiele und Multi-Level-Marketing).",
+      "blocks": [
+        { "type": "h3", "text": "Aktien und Fonds" },
+        {
+          "type": "p",
+          "text": "Es gibt vier Wertpapiere - drei Aktien und einen Fonds - mit je fünf Karten, eine pro Preis. Eine Aktie ist ein **Liquiditätswerkzeug, kein passives Einkommen**: Sie zahlt keinen monatlichen Cashflow. Du kaufst günstig, verkaufst teuer und nutzt das Geld für eine größere Anzahlung."
+        },
+        {
+          "type": "face",
+          "cardId": "classic-small-ok4u-20",
+          "caption": "Eine Aktienkarte: Zu diesem Preis darfst du kaufen. Die Handelsspanne zeigt, wohin sich der Kurs bewegt."
+        },
+        { "type": "data", "id": "shares", "caption": "Die vier Wertpapiere" },
+        {
+          "type": "list",
+          "items": [
+            "**Kaufen** im Projekt (die Stückzahl legst du beim Planen fest); der Preis der Karte ist dein Kaufpreis.",
+            "**Eine Karte für eine Aktie, die du hältst**, plant keinen neuen Kauf - sie **setzt den Marktpreis**. Der Knopf heißt **Kurs aktualisieren**; der Kurs ändert sich im Grow-Projekt und bei deinen Aktien, eine Notiz hält fest, was an der Börse passiert ist, und du kannst zum neuen Kurs verkaufen oder kaufen. Deine früheren Verkäufe bleiben, wie sie waren.",
+            "**Aktiensplits** (Marktstapel, siehe „Marktkarten“) verdoppeln oder halbieren die Zahl deiner Aktien."
+          ]
+        },
+        { "type": "h3", "text": "Einfamilienhäuser und Eigentumswohnungen" },
+        {
+          "type": "face",
+          "cardId": "classic-small-etw-55k-5k",
+          "caption": "Eine Wohnung mit großer Hypothek - schau vor dem Kauf, was ein Käufer dafür zahlen würde."
+        },
+        { "type": "data", "id": "smallProperties", "caption": "Immobilien im Kleinen Deal" },
+        {
+          "type": "callout",
+          "kind": "warning",
+          "title": "Zwei Karten zahlen nichts",
+          "text": "Das Einfamilienhaus für 30.000 und die Wohnung für 40.000 mit 1.000 Anzahlung haben einen Cashflow von **0**. Sie sind Fallen: Sie fressen eine Anzahlung und geben nichts zurück, bis ein Käufer auftaucht. Die Tabelle oben zählt sie in der letzten Spalte."
+        },
+        { "type": "h3", "text": "Gold, Glücksspiele und Multi-Level-Marketing" },
+        {
+          "type": "list",
+          "items": [
+            "**Einfache Goldangebote** - 10 Münzen für 3.000 und 5 Münzen für 1.000. Münzen zahlen nichts; sie sind so viel wert, wie ein Goldkäufer zahlt (siehe „Marktkarten“).",
+            "**Würfel-Glücksspiele** - die Kiste mit Gold, die Reise und das Darlehen der Schwägerin. Du zahlst zuerst und würfelst danach (siehe „Würfelkarten“).",
+            "**Multi-Level-Marketing** - zwei Karten: Zahle 500 und behalte die Karte; bei jedem Zahltag würfelst du, und 4–6 zahlt 500."
+          ]
+        },
+        {
+          "type": "face",
+          "cardId": "classic-small-gold-friend-3000",
+          "caption": "Zehn Goldmünzen zum Schnäppchenpreis."
+        },
+        {
+          "type": "face",
+          "cardId": "classic-small-mlm-1",
+          "caption": "Eine Karte, die du behältst: Sie würfelt bei jedem Zahltag."
+        }
+      ]
+    },
+    "bigdeal": {
+      "nav": "Großer Deal",
+      "title": "Großer Deal",
+      "intro": "Karten des Großen Deals brauchen echte Anzahlungen - von 10.000 bis 200.000 - und zahlen echten Cashflow. Es gibt 36 Karten: eine Pizzafranchise, zehn Mehrfamilienhäuser, acht Einfamilienhäuser, fünf Doppelhäuser, vier Appartementkomplexe und acht Geschäfte.",
+      "blocks": [
+        { "type": "data", "id": "bigProperties", "caption": "Karten des Großen Deals nach Art" },
+        { "type": "h3", "text": "Immobilien" },
+        {
+          "type": "p",
+          "text": "Häuser, Mehrfamilienhäuser und Komplexe kaufst du mit einer Hypothek. Du zahlst die Anzahlung; die Hypothek wird eine Verbindlichkeit in deiner Bilanz, und der **Cashflow auf der Karte ist das, was nach der Hypothekenrate übrig bleibt** - es ist also die Zahl, die an deinem Zahltag ankommt."
+        },
+        {
+          "type": "face",
+          "cardId": "classic-big-mfh8-240k-40k",
+          "caption": "Ein Mehrfamilienhaus mit 8 Einheiten: 40.000 Anzahlung, 1.800 im Monat."
+        },
+        {
+          "type": "face",
+          "cardId": "classic-big-aph12-350k-50k",
+          "caption": "Ein Appartementkomplex mit 12 Einheiten."
+        },
+        { "type": "h3", "text": "Geschäfte" },
+        {
+          "type": "p",
+          "text": "Die Pizzafranchise, die Geschäftspartner, die automatisierten Unternehmen und die Autowaschanlage funktionieren wie Immobilien: eine Anzahlung und ein monatlicher Cashflow. Partner kaufst du bar (ohne Hypothek), die anderen haben eine. Geschäfte zählen bei den Karten, die von „deiner Immobilie“ sprechen, **nicht** als Immobilien - Reparaturrechnungen treffen sie nicht."
+        },
+        {
+          "type": "face",
+          "cardId": "classic-big-au-150k-30k-2500",
+          "caption": "Ein automatisiertes Unternehmen: mäßige Anzahlung, 2.500 im Monat."
+        },
+        {
+          "type": "callout",
+          "kind": "tip",
+          "title": "Wie groß ist groß?",
+          "text": "Die durchschnittliche Karte des Großen Deals zahlt etwa das Zehnfache an Cashflow der durchschnittlichen zahlenden Karte des Kleinen Deals, bei einer ungefähr zehnmal größeren Anzahlung. Kleine Deals bauen die erste Anzahlung auf; Große Deals beenden das Hamsterrad."
+        }
+      ]
+    },
+    "dice": {
+      "nav": "Würfelkarten",
+      "title": "Würfelkarten",
+      "intro": "Manche Karten entscheidet ein Würfel. Du zahlst zuerst, dann wird gewürfelt - mit dem Würfel der App oder mit deinem eigenen.",
+      "blocks": [
+        { "type": "h3", "text": "So funktioniert ein Wurf" },
+        {
+          "type": "list",
+          "items": [
+            "Nachdem du bezahlt (oder die Karte gespielt) hast, erscheint eine **offene Entscheidung** auf dem Dashboard.",
+            "**Würfeln** lässt die App würfeln: Ein großer Würfel wird gezeigt, dann das Ergebnis, bis du **Weiter** drückst.",
+            "Oder würfle mit einem echten Würfel und melde es: **Ich habe gewürfelt: gewonnen** / **Ich habe gewürfelt: kein Glück** (bei einem Aktiensplit heißen die beiden Knöpfe ‚1–3‘ und ‚4–6‘).",
+            "Das Ergebnis ist ein Schritt in deinem Verlauf und lässt sich zurücknehmen - die offene Entscheidung kommt dann zurück."
+          ]
+        },
+        {
+          "type": "cards",
+          "items": [
+            {
+              "icon": "🎁",
+              "title": "Was ist in der Box?! / Wo ein Wille ist",
+              "text": "Zahle 500 (die Box) oder 750 (die Reise). Eine **6** gewinnt zehn Goldmünzen; alles andere gewinnt nichts - oder eine alte Katze."
+            },
+            {
+              "icon": "👪",
+              "title": "Schwägerin leiht sich Geld",
+              "text": "Zahle 5.000. **1–3**: Sie zahlt nie zurück. **4–6**: Sie zahlt **10.000** zurück. Im Schnitt fair, aber du gewinnst oder verlierst groß."
+            },
+            {
+              "icon": "📣",
+              "title": "Multi-Level-Marketing",
+              "text": "Zahle 500 und behalte die Karte. Bei **jedem Zahltag** ein Wurf für alle deine Karten: **4–6** zahlt **500** pro Karte. Es ist die am besten zahlende Karte des Stapels."
+            },
+            {
+              "icon": "📈",
+              "title": "Aktiensplits",
+              "text": "Eine Marktkarte für eine Firma. Hältst du ihre Aktien: **1–3** verdoppelt sie, **4–6** halbiert sie. Preis und Kosten ändern sich nicht."
+            }
+          ]
+        },
+        {
+          "type": "face",
+          "cardId": "classic-small-sister-5000",
+          "caption": "Kostet 5.000, kommt bei 4, 5 oder 6 als 10.000 zurück."
+        },
+        {
+          "type": "face",
+          "cardId": "classic-small-gold-box-500",
+          "caption": "Kostet 500, gewinnt bei einer Sechs zehn Münzen."
+        },
+        {
+          "type": "callout",
+          "kind": "tip",
+          "title": "Die Chancen lesen",
+          "text": "Ein Würfel hat sechs Seiten: „4–6“ sind 50 %, „6“ ist eins zu sechs. Das Kapitel über die Wahrscheinlichkeiten rechnet aus, was jedes Glücksspiel im Schnitt wert ist."
+        }
+      ]
+    },
+    "doodad": {
+      "nav": "Schnickschnack",
+      "title": "Schnickschnack (Doodads)",
+      "intro": "Der rote Stapel ist der Preis des Lebens: ein Boot, ein Abend aus, ein neuer Computer. Es gibt 42 Karten, und du kannst keine ablehnen - du entscheidest nur, wie sie bezahlt wird.",
+      "blocks": [
+        {
+          "type": "face",
+          "cardId": "classic-doodad-boat",
+          "caption": "Ein Schnickschnack: Die App schlägt Konto und Kategorie vor."
+        },
+        {
+          "type": "steps",
+          "items": [
+            {
+              "title": "Karte öffnen",
+              "text": "Finde oder ziehe sie. Sie zeigt die Kosten, das Konto, das die App vorschlägt, und die Ausgabenkategorie, unter der es verbucht wird."
+            },
+            {
+              "title": "Transaktion hinzufügen",
+              "text": "Der Dialog öffnet sich ausgefüllt: Konto, Betrag, heutiges freies Datum, die Kategorie und ein Kommentar mit einem kleinen Scherz, deinem Bargeld und wie viel Bankdarlehen du bräuchtest, sowie dem Tag `#doodad`. Ändere alles, was du willst."
+            },
+            {
+              "title": "Bestätigen",
+              "text": "Fehlt Geld, nimmt die App zuerst das Bankdarlehen (eigener Schritt) und bucht dann die Zahlung. Sonst ändert sich nichts - danach besitzt du nichts."
+            }
+          ]
+        },
+        {
+          "type": "p",
+          "text": "Die großen, träumerischen Anschaffungen (ein Boot, eine Küche, das erste Auto fürs Kind) schlägt die App auf deinem **Smile**-Konto vor; die kleinen auf **Splurge**. Keine nimmt Geld von deinem **Fire**- oder **Daily**-Konto. Jede Karte hat eine Kategorie wie Freizeit, Wohnen oder Feiern, damit deine Auswertungen zeigen, wohin ein Spiel voller Schnickschnack ging."
+        },
+        { "type": "data", "id": "doodads", "caption": "Schnickschnack nach Kategorie" },
+        {
+          "type": "callout",
+          "kind": "tip",
+          "title": "Sieh es nicht als Verlust",
+          "text": "Schnickschnack sind Lebenshaltungskosten, kein Fehler. Eine Karte kostet im Schnitt knapp unter 1.400 - halte ein bis zwei davon als Bargeld zurück, und Schnickschnack tut nie weh."
+        }
+      ]
+    },
+    "market": {
+      "nav": "Marktkarten",
+      "title": "Marktkarten",
+      "intro": "Blaue Karten sind Ereignisse für den ganzen Tisch. In der App zählen sie nur für dich: Hat eine Karte nichts mit dem zu tun, was du besitzt, sagt die App, dass sie nicht zutrifft, und das Spielen wird trotzdem in deinem Verlauf vermerkt.",
+      "blocks": [
+        { "type": "data", "id": "marketKinds", "caption": "Was die 39 Marktkarten sind" },
+        { "type": "h3", "text": "Käufer für deine Immobilien" },
+        {
+          "type": "p",
+          "text": "Eine Käuferkarte macht ein **Angebot** für eine Art Immobilie. Spiele sie, und jede Immobilie dieser Art, die du besitzt, bekommt das Angebot, mit einer Notiz in ihrem Grow-Projekt; dann verkaufst du die, die du willst, mit dem normalen Knopf **verkaufen**, der schon ausgefüllt ist. Das Angebot gilt bis zum nächsten Zahltag, und du darfst so viele Immobilien zu diesem Preis verkaufen, wie du willst."
+        },
+        {
+          "type": "callout",
+          "kind": "tip",
+          "title": "Was du bekommst",
+          "text": "Der Käufer zahlt den vollen Preis. Daraus wird die Hypothek zurückgezahlt, und was übrig bleibt, wird als Einnahme gebucht. Bei einem Angebot „Originalpreis + Gewinn“ ist das **deine Anzahlung plus der Gewinn**; bei einem Festpreis der **Preis minus die Hypothek**."
+        },
+        {
+          "type": "cards",
+          "items": [
+            {
+              "icon": "🏠",
+              "title": "Einfamilien- und Mehrfamilienhäuser",
+              "text": "Originalpreis + ein Prozentsatz der vollen Kosten oder + ein fester Betrag. Der Gewinn ist für ein Haus mit 4 und eines mit 8 Einheiten derselbe."
+            },
+            {
+              "icon": "🏢",
+              "title": "Eigentumswohnungen",
+              "text": "Ein Festpreis für die ganze Wohnung. Liegt der Preis unter der Hypothek, **kostet** der Verkauf Geld - die App bucht ihn als Zahlung, nicht als Einnahme, und nimmt bei Bedarf ein Darlehen."
+            },
+            {
+              "icon": "🏬",
+              "title": "Appartementkomplexe",
+              "text": "Ein Preis **pro Einheit**, mal den Einheiten deines Komplexes (ein Komplex mit 24 Einheiten zählt 24), minus die Hypothek."
+            },
+            {
+              "icon": "🪙",
+              "title": "Goldmünzen",
+              "text": "Bargeld für **jede Münze**. Verkaufe alle oder so viele du willst - ändere die Zahl im Verkaufsdialog."
+            }
+          ]
+        },
+        {
+          "type": "face",
+          "cardId": "classic-market-efh-pct20-a",
+          "caption": "Ein Prozent-Käufer für Einfamilienhäuser."
+        },
+        {
+          "type": "face",
+          "cardId": "classic-market-etw-65k",
+          "caption": "Ein Festpreis für eine Wohnung - vergleiche ihn zuerst mit der Hypothek deiner eigenen Wohnung."
+        },
+        {
+          "type": "face",
+          "cardId": "classic-market-gold-central-2k",
+          "caption": "Ein Goldkäufer: jede Münze zu 2.000."
+        },
+        { "type": "h3", "text": "Reparaturkosten" },
+        {
+          "type": "p",
+          "text": "„Mieter beschädigt deine Immobilie“ und „Abwasserrohr gebrochen“ kosten Immobilienbesitzer einmalig 500 bis 2.000. Besitzt du keine Immobilie, ignorierst du die Karte. Sonst öffnet sich der Dialog auf **Fire**, ausgefüllt mit den Kosten und dem Namen deiner ersten Immobilie als Kategorie. Geschäfte sind keine Immobilien."
+        },
+        {
+          "type": "face",
+          "cardId": "classic-market-cost-pipe-2k",
+          "caption": "Nur für Immobilienbesitzer."
+        },
+        { "type": "h3", "text": "Aktiensplits und Sternkarten" },
+        {
+          "type": "p",
+          "text": "Eine **Aktiensplit**-Karte trägt den Namen einer Firma. Ohne ihre Aktien trifft sie nicht zu. Mit ihnen öffnet sich eine Würfelentscheidung: 1–3 verdoppelt deine Aktien, 4–6 halbiert sie (zu deinen Gunsten gerundet). Preis und deine Kosten bleiben gleich."
+        },
+        {
+          "type": "p",
+          "text": "Die beiden **★-Sternkarten** sind die Jackpots: „Kleiner Business Boom!“ hebt jede Investition, die 1.000 oder weniger zahlt, um 250 im Monat; „Neues Managementsystem“ hebt alles, was 2.000 oder weniger zahlt, um 400. Dein Grow-Projekt und sein monatliches Einkommen werden beide dauerhaft erhöht, und eine Notiz hält es fest."
+        },
+        {
+          "type": "face",
+          "cardId": "classic-market-boost-small-250",
+          "caption": "Eine Sternkarte: Dein passives Einkommen steigt für den Rest des Spiels."
+        },
+        { "type": "data", "id": "marketOdds", "caption": "Wie oft dich eine Marktkarte betrifft" }
+      ]
+    },
+    "life": {
+      "nav": "Wohltätigkeit, Arbeitslos, Baby",
+      "title": "Wohltätigkeit, Arbeitslos und Baby",
+      "intro": "Drei Felder, die keine Karte brauchen. Sie fragen zuerst nach und zeigen die Zahlen, die sie verwenden werden.",
+      "blocks": [
+        {
+          "type": "table",
+          "head": ["Feld", "Was es in der App tut", "Was du auf dem Brett tust"],
+          "rows": [
+            [
+              "**Wohltätigkeit**",
+              "Zahlt einmal **10 % deines gesamten Monatseinkommens** (Gehalt plus passives Einkommen) als Zahlung von deinem Daily-Konto.",
+              "In deinen nächsten 3 Runden darfst du mit einem oder zwei Würfeln würfeln. Ein Zeichen erinnert dich; schließe es selbst, wenn die Runden vorbei sind."
+            ],
+            [
+              "**Arbeitslos**",
+              "Zahlt einmal **alle deine monatlichen Ausgaben**. Beendet auch ein laufendes Wohltätigkeits-Zeichen.",
+              "Setze zwei Runden aus, während die anderen spielen. Ein Zeichen erinnert dich."
+            ],
+            [
+              "**Baby**",
+              "Fügt ein Kind hinzu (höchstens **3**) und eine monatliche Ausgabe dafür - der Betrag „Pro Kind“ deines Berufs - die jeder Zahltag zahlt.",
+              "Nichts weiter. Der Knopf ist bei drei Kindern ausgegraut."
+            ]
+          ]
+        },
+        {
+          "type": "callout",
+          "kind": "tip",
+          "title": "Warum Wohltätigkeit sich lohnen kann",
+          "text": "Zehn Prozent des Einkommens sind meist ein kleiner Preis für zwei Würfel in jeder von drei Runden: Du kommst schneller zu den Deal-Feldern. Es ist das einzige Feld, das dir etwas zurückgibt."
+        },
+        {
+          "type": "callout",
+          "kind": "warning",
+          "title": "Arbeitslos, wenn es knapp ist",
+          "text": "Es kostet einen ganzen Monat Ausgaben auf einmal. Mit kleiner Reserve erzwingt es ein Bankdarlehen - nimm Arbeitslos bei der Planung deines Polsters ernst."
+        }
+      ]
+    },
+    "loans": {
+      "nav": "Bankdarlehen",
+      "title": "Bankdarlehen",
+      "intro": "Die Bank leiht in Schritten von **1.000** und berechnet **jeden Monat 10 % des Darlehens**. Das ist die eine Regel, die die App vollständig automatisiert.",
+      "blocks": [
+        {
+          "type": "list",
+          "items": [
+            "**Aufnehmen** legt das Geld als Einnahme zu deinem Bargeld, legt eine Verbindlichkeit **Bankdarlehen** und eine monatliche Ausgabe **Bankdarlehen-Zinsen** an - 1.000 Darlehen kosten 100 im Monat, 5.000 kosten 500.",
+            "**Zurückzahlen** (oder **Alles begleichen**) zahlt das Darlehen in Schritten von 1.000 zurück. Die Zinsen sinken mit dem Darlehen, bis auf null, wenn es weg ist.",
+            "**Automatische Darlehen** - ist ein Kauf oder eine Zahlung größer als dein Bargeld, borgt die App den fehlenden Betrag, auf 1.000 aufgerundet, als eigenen Schritt vor dem Kauf."
+          ]
+        },
+        {
+          "type": "callout",
+          "kind": "warning",
+          "title": "10 % im Monat sind 120 % im Jahr",
+          "text": "Ein Darlehen ist eine teure Brücke, keine Lebensweise. Es lohnt sich nur, wenn das, was du damit kaufst, jeden Monat mehr als 10 % des geliehenen Geldes einbringt. Die Tabelle unten zeigt, welche Karten das schaffen."
+        },
+        {
+          "type": "data",
+          "id": "loanProof",
+          "caption": "Trägt der Deal sein eigenes Darlehen? (Monatscashflow ÷ Anzahlung ≥ 10 %)"
+        },
+        {
+          "type": "callout",
+          "kind": "tip",
+          "title": "Kurz leihen, zurückzahlen, sobald es geht",
+          "text": "Ein kurzes Darlehen für einen Deal, der deutlich mehr als die Zinsen einbringt, ist in Ordnung. Zahle zurück, sobald Geld hereinkommt - aus einem Verkauf, einem Goldkäufer oder einem glücklichen Wurf. Solange ein Darlehen läuft, zeigt es sich als kleines Bank-Symbol in deinen Diagrammen."
+        }
+      ]
+    },
+    "app": {
+      "nav": "Das Spiel und die App",
+      "title": "Das Spiel und der Rest der App",
+      "intro": "Nichts im Spiel ist ein eigenes System. Jede Zahl, die du siehst, ist ein normaler Eintrag der Money App - du kannst sie also mit den normalen Werkzeugen ansehen.",
+      "blocks": [
+        {
+          "type": "table",
+          "head": ["Im Spiel", "In der App"],
+          "rows": [
+            [
+              "Bargeld",
+              "Die Summe deiner Konten Daily, Splurge, Smile und Fire. Einnahmen werden nach den Prozentsätzen deines Kontos auf sie verteilt."
+            ],
+            [
+              "Gehalt, Ausgaben, passives Einkommen",
+              "**Abonnements** - eines pro Zeile. Der Zahltag macht daraus Transaktionen."
+            ],
+            [
+              "Jede Karte, die du bezahlst oder spielst",
+              "Eine **Transaktion** auf dem Konto, auf dem sie gebucht wurde, mit einem Kommentar."
+            ],
+            [
+              "Häuser, Aktien, Geschäfte, Gold",
+              "**Grow**-Projekte und ihre Positionen in der **Bilanz** (Vermögen, Aktien, Investitionen)."
+            ],
+            ["Hypotheken und Bankdarlehen", "Verbindlichkeiten in der **Bilanz**."],
+            [
+              "Einnahmen und Ausgaben nach Kategorie",
+              "Die **Einkommens**-Übersicht und die Kontoseiten - die Kategorien der Schnickschnack-Karten erscheinen hier."
+            ],
+            [
+              "Dein Spiel im Zeitverlauf",
+              "**Statistik**: Diagramme jedes Kontos, mit Markierungen für Grow-Käufe und -Verkäufe, Smile- und Fire-Zahlungen, das Bankdarlehen und Schnickschnack."
+            ]
+          ]
+        },
+        {
+          "type": "callout",
+          "kind": "note",
+          "title": "Fire und Smile im Spiel",
+          "text": "Käufe, Darlehen und Reparaturrechnungen laufen über **Fire**. Träumerischer Schnickschnack läuft über **Smile**, kleiner über **Splurge**. Das ist nur der Vorschlag der App - im Dialog kannst du jede Zahlung von einem anderen Konto buchen."
+        },
+        {
+          "type": "callout",
+          "kind": "warning",
+          "title": "Mit Vorsicht ändern",
+          "text": "Du kannst Einträge auf den normalen Seiten ändern (eine Transaktion, ein Abonnement, eine Grow-Notiz). Das Spiel hindert dich nicht daran - aber ein geänderter Betrag ändert deinen monatlichen Cashflow und deine Hamsterrad-Rechnung. Nutze lieber **Rückgängig**, um einen Schritt zurückzunehmen, statt ihn von Hand zu korrigieren."
+        }
+      ]
+    },
+    "games": {
+      "nav": "Verlauf, Rückgängig, Spiele",
+      "title": "Verlauf, Rückgängig und gespeicherte Spiele",
+      "intro": "Jeder Schritt wird festgehalten, jeder Schritt lässt sich zurücknehmen, und ein Konto kann beliebig viele Spiele aufbewahren.",
+      "blocks": [
+        { "type": "h3", "text": "Rückgängig und Verlauf" },
+        {
+          "type": "list",
+          "items": [
+            "**Rückgängig** nimmt den letzten Schritt zurück - einen Zahltag, eine Karte, ein Darlehen, einen Würfelwurf. Drücke es erneut, um weiter zurückzugehen.",
+            "**Verlauf** listet jeden Schritt der Reihe nach, den neuesten zuerst, mit dem, was er gebucht hat. Jede Zeile hat **Bis hierher zurücknehmen**.",
+            "Ein Kauf, der ein Bankdarlehen brauchte, sind zwei Schritte: das Darlehen, dann der Kauf.",
+            "Ein gespeichertes Spiel behält seinen ganzen Verlauf: Nach dem Laden listet der Verlauf jeden Zug, und Rückgängig geht Schritt für Schritt zurück, sogar bis vor den Spielstart. Spiele, die vor dieser Funktion gespeichert wurden, laden mit leerem Verlauf."
+          ]
+        },
+        { "type": "h3", "text": "Meine Spiele" },
+        {
+          "type": "p",
+          "text": "Dein Konto enthält immer ein **aktuelles Spiel** - das, das du spielst. **Meine Spiele** bewahrt die anderen auf."
+        },
+        {
+          "type": "table",
+          "head": ["Knopf", "Was er tut"],
+          "rows": [
+            [
+              "**Spiel speichern**",
+              "Speichert das Spiel, das du spielst, in seinen Platz. Ein Spiel wird auch automatisch gespeichert, wenn du es verlässt."
+            ],
+            [
+              "**Neues Spiel**",
+              "Speichert das aktuelle Spiel und leert dann das Konto, damit du wieder einen Beruf wählen kannst."
+            ],
+            [
+              "**Fortsetzen**",
+              "Öffnet ein gespeichertes Spiel. Das Spiel, das du spielst, wird zuerst gespeichert, dann wird das andere aktuell - Bargeld, Projekte, Notizen, sogar ein wartender Würfelwurf. Stimmt etwas mit dem gespeicherten Spiel nicht, ändert sich nichts."
+            ],
+            [
+              "**Umbenennen**, **Löschen**",
+              "Ein Spiel umbenennen oder endgültig löschen (mit Rückfrage)."
+            ],
+            [
+              "**Exportieren**, **Spiel importieren**",
+              "Ein Spiel als Datei herunterladen oder eines aus einer Datei hinzufügen. Eine Sicherung oder ein Weg, ein Spiel auf ein anderes Konto zu bringen."
+            ]
+          ]
+        },
+        {
+          "type": "p",
+          "text": "Jedes gespeicherte Spiel zeigt seinen Status - **Läuft**, **Aus dem Hamsterrad**, **Pleite** oder **Beendet** - mit Bargeld, passivem Einkommen gegen Ausgaben und der Runde, die Liste ist also auch eine Rangliste."
+        },
+        { "type": "h3", "text": "Ein Spiel beenden" },
+        {
+          "type": "list",
+          "items": [
+            "**Spiel beenden (speichern)** (Einstellungen) speichert das Spiel mit der Markierung „Beendet“ und leert das Konto.",
+            "**Spiel zurücksetzen** (Einstellungen) löscht das Spiel **ohne zu speichern** und lässt sich nicht zurücknehmen."
+          ]
+        },
+        {
+          "type": "callout",
+          "kind": "note",
+          "text": "Gespeicherte Spiele liegen in deinen eigenen Daten, neben dem Rest deines Kontos, komprimiert und verschlüsselt wie alles andere. Eine sehr lange Liste macht deine Daten größer - die App warnt ab 30 Spielen; exportiere und lösche die, die du nicht mehr brauchst."
+        }
+      ]
+    },
+    "strategy": {
+      "nav": "Strategie",
+      "title": "Strategie",
+      "intro": "Das ist der Ansatz, den die Zahlen der Kartenstapel stützen. Er ist ein Leitfaden, kein Gesetz - Würfel und Zug entscheiden vieles.",
+      "blocks": [
+        { "type": "h3", "text": "1 · Kenne deine Ziellinie" },
+        {
+          "type": "p",
+          "text": "Deine Ausgaben sind dein Ziel. Sieh dir vor dem ersten Zug die Tabelle „Nötiges passives Einkommen“ an und denke in Immobilien: eine Immobilie aus dem Großen Deal für den Hausmeister, fünf für den Arzt. Denke daran, dass jedes Baby und jedes Bankdarlehen die Linie verschiebt."
+        },
+        { "type": "h3", "text": "2 · Baue die erste Anzahlung mit den kleinen Dingen auf" },
+        {
+          "type": "list",
+          "items": [
+            "**Multi-Level-Marketing** ist die beste Karte des Spiels: Sie bringt im Schnitt 250 im Monat auf 500. Hast du das Geld, kaufe sie.",
+            "**Kleine Einfamilienhäuser und Wohnungen mit Cashflow** bringen 40–150 % im Jahr auf eine Anzahlung von wenigen Tausend und kosten fast nichts im Halten. Lass die zwei aus, die nichts zahlen.",
+            "**Aktien** sind Geldmaschinen, wenn du nahe dem Boden der Spanne kaufst (5–10) und nahe der Spitze verkaufst (30). Sie bringen kein passives Einkommen - behandle sie als Anzahlungsgeld.",
+            "**Gold** ist billig, wenn du es von einer Karte kaufst, und teuer, wenn ein Goldkäufer es will: Münzen von einer Karte „10 für 3.000“ bringen bei einer Käuferkarte 10.000–20.000. Der Haken ist das Warten auf den Käufer (drei Marktkarten von 39)."
+          ]
+        },
+        {
+          "type": "h3",
+          "text": "3 · Wechsle zu Großen Deals, sobald eine Anzahlung bezahlbar ist"
+        },
+        {
+          "type": "p",
+          "text": "Eine Immobilie des Großen Deals zahlt 700–11.000 im Monat. Zwei oder drei davon beenden das Rennen für die meisten Berufe. Vergleiche die **Rendite pro Jahr** (Cash-on-Cash) zwischen Karten: Mehrfamilienhäuser mit 4 Einheiten und Doppelhäuser gehören zu den höchsten; bar gekaufte Geschäfte zahlen sich langsamer zurück."
+        },
+        {
+          "type": "callout",
+          "kind": "tip",
+          "title": "Erst die Anzahlung, dann der Cashflow",
+          "text": "Zwei Karten können denselben Cashflow zahlen, mit sehr verschiedenen Anzahlungen. Frage: Wie viele Monate, bis die Anzahlung zurück ist? Die Tabelle der Großen Deals zeigt die Spanne. Eine Karte mit kleinerer Anzahlung und gleichem Cashflow ist die bessere Karte."
+        },
+        { "type": "h3", "text": "4 · Nutze Darlehen als Brücke" },
+        {
+          "type": "list",
+          "items": [
+            "Leihe nur für eine Karte, deren Monatsrendite über 10 % des geliehenen Geldes liegt - die Tabelle „Trägt ein Darlehen“ listet die Arten, die das können.",
+            "Leihe nie, um einen Monat zu decken, den du dir nicht leisten kannst: Ist der monatliche Cashflow negativ, gräbt ein Darlehen nur tiefer.",
+            "Zahle das Darlehen mit dem ersten Geld zurück, das hereinkommt. Ein Darlehen von 5.000 kostet jeden Monat 500 - das ist das Einkommen von zwei Multi-Level-Marketing-Karten."
+          ]
+        },
+        { "type": "h3", "text": "5 · Halte ein Polster" },
+        {
+          "type": "p",
+          "text": "Schnickschnack kostet im Schnitt knapp unter 1.400, Reparaturrechnungen reichen bis 2.000, Arbeitslos kostet einen Monat Ausgaben. Ein Polster von 1.500–3.000 Bargeld verhindert, dass daraus Darlehen werden."
+        },
+        { "type": "h3", "text": "6 · Streue gegen den Markt" },
+        {
+          "type": "p",
+          "text": "Wer Einfamilienhäuser und Mehrfamilienhäuser hält, hat mehr Marktkarten, die helfen. Wer nur Doppelhäuser hält, bei dem trifft nie eine Käuferkarte zu, Reparaturrechnungen aber schon. Die Tabelle „Wie oft dich eine Marktkarte betrifft“ zeigt es."
+        },
+        { "type": "h3", "text": "7 · Verkaufe, wenn ein Käufer zu viel zahlt" },
+        {
+          "type": "p",
+          "text": "Ein Käufer, der 20 % obendrauf zahlt, oder ein fester Gewinn von 10.000–20.000, schlägt oft ein Jahr Cashflow der Immobilie. Verkaufen und eine bessere Karte kaufen kann dein passives Einkommen steigern - aber bedenke, dass ein Verkauf auch den Cashflow entfernt."
+        },
+        {
+          "type": "callout",
+          "kind": "warning",
+          "title": "Häufige Fehler",
+          "text": "Leihen für eine Karte, die nichts zahlt. Das Polster für eine Aktie ausgeben und dann auf Schnickschnack treffen. Ein Darlehen zu 10 % im Monat für einen Deal mit 5 % Rendite. Eine Wohnung an einen Käufer verkaufen, dessen Preis unter ihrer Hypothek liegt."
+        }
+      ]
+    },
+    "odds": {
+      "nav": "Wahrscheinlichkeiten",
+      "title": "Wahrscheinlichkeiten und Zahlen",
+      "intro": "Alles Folgende ist aus den Kartenstapeln selbst gelesen, es ist also genau das, was das Spiel verwendet.",
+      "blocks": [
+        { "type": "h3", "text": "Was ein zufälliges Ziehen bringt" },
+        {
+          "type": "data",
+          "id": "pileOdds",
+          "caption": "Chance jeder Kartenart beim zufälligen Ziehen"
+        },
+        {
+          "type": "p",
+          "text": "Im Stapel Kleiner Deal ist jede zweite Karte eine Aktienkarte; im Großen Deal sind fast zwei von fünf ein Mehrfamilienhaus oder ein Komplex. Schnickschnack ist immer ein Kostenpunkt und hat kein gutes Ergebnis - es gibt 42 davon, und der Durchschnitt liegt knapp unter 1.400."
+        },
+        { "type": "h3", "text": "Glücksspiele - was sie im Schnitt wert sind" },
+        {
+          "type": "table",
+          "head": ["Karte", "Du zahlst", "Du bekommst", "Durchschnittliches Ergebnis"],
+          "rows": [
+            [
+              "Multi-Level-Marketing (pro Zahltag)",
+              "500 einmal",
+              "50 % × 500 pro Wurf",
+              "+250 im Monat - nach zwei Zahltagen wieder drin"
+            ],
+            [
+              "Schwägerin leiht sich Geld",
+              "5.000",
+              "50 % × 10.000",
+              "0 - eine faire Münze, die verdoppelt oder verliert"
+            ],
+            [
+              "Was ist in der Box?!",
+              "500",
+              "1/6 × 10 Münzen",
+              "1⅔ Münzen ≈ 1.667 bei 1.000 pro Münze"
+            ],
+            ["Wo ein Wille ist", "750", "1/6 × 10 Münzen", "dieselben Münzen, ein höherer Preis"],
+            [
+              "Aktiensplit (wenn du die Aktie hältst)",
+              "nichts",
+              "50 % × 2 Aktien + 50 % × ½ Aktien",
+              "+25 % bei der Zahl der Aktien"
+            ]
+          ]
+        },
+        {
+          "type": "p",
+          "text": "Das einzige Glücksspiel, das für sich besser als fair ist, ist Multi-Level-Marketing. Aktiensplits helfen dem Halter (im Schnitt +25 % Aktien); das Darlehen der Schwägerin ist fair, nimm es also nur, wenn du 5.000 verlieren kannst."
+        },
+        { "type": "h3", "text": "Wie oft der Markt dir hilft oder schadet" },
+        {
+          "type": "data",
+          "id": "marketOdds",
+          "caption": "Marktkarten, die jede Art Vermögen betreffen"
+        },
+        { "type": "h3", "text": "Das Hamsterrad in Zahlen" },
+        {
+          "type": "p",
+          "text": "Eine durchschnittliche Immobilie des Großen Deals zahlt etwa 1.800 im Monat; eine durchschnittliche zahlende des Kleinen Deals etwa 180. Um 1.000 Ausgaben zu decken, brauchst du eine Immobilie des Großen Deals oder sechs kleine. Allein die +600 im Monat des Hausmeisters bräuchten Jahre, um die Anzahlung von 32.000–40.000 zu sparen - deshalb zählen am Anfang die kleinen, schnellen Deals, die Glückskarten und die Aktiengeschäfte."
+        },
+        { "type": "data", "id": "escape", "caption": "Nötiges passives Einkommen je Beruf" }
+      ]
+    },
+    "faq": {
+      "nav": "FAQ",
+      "title": "Fragen und Antworten",
+      "intro": "Kurze Antworten auf das, was Leute zuerst fragen.",
+      "blocks": [
+        {
+          "type": "glossary",
+          "items": [
+            {
+              "term": "Brauche ich das echte Brett?",
+              "text": "Die App ist ein Begleiter dafür: Sie führt die Bücher, die Karten und die Zahlen. Du ziehst deine Figur und würfelst auf dem Brett. Bei den Würfelkarten kann die App für dich würfeln."
+            },
+            {
+              "term": "Kann ich mein normales Konto nutzen?",
+              "text": "Nein. Das Spiel gibt es für Konten mit „cashflow“ in der E-Mail-Adresse, und es nutzt das ganze Konto als Spiel. Ein persönliches Konto bleibt davon unberührt."
+            },
+            {
+              "term": "Funktioniert es auf dem selbst gehosteten Server und auf Firebase?",
+              "text": "Ja, auf beiden. Das Spiel und seine gespeicherten Spiele liegen bei deinen anderen Daten; die Kartentexte werden bei Bedarf geladen."
+            },
+            {
+              "term": "Ich habe einen Fehler gemacht - wie behebe ich ihn?",
+              "text": "Drücke Rückgängig. Jeder Schritt - ein Zahltag, eine Karte, ein Darlehen, ein Verkauf - lässt sich zurücknehmen, und der Verlauf lässt dich mehrere Schritte auf einmal zurückgehen."
+            },
+            {
+              "term": "Was passiert, wenn mein monatlicher Cashflow negativ ist?",
+              "text": "Jeder Zahltag nimmt Bargeld, statt welches zu bringen, und das Dashboard zeigt eine rote Warnung. Verkaufe etwas, zahle ein Darlehen zurück oder finde einen besseren Deal. Das Spiel hält nicht an."
+            },
+            {
+              "term": "Was ist die Überholspur (Fast Track)?",
+              "text": "Die zweite Phase des Brettspiels, nachdem du das Hamsterrad verlassen hast. Die App spielt sie noch nicht - du kannst im Hamsterrad beliebig weiterspielen."
+            },
+            {
+              "term": "Warum hat die App von allein ein Bankdarlehen genommen?",
+              "text": "Ein Kauf oder eine Zahlung war größer als dein Bargeld. Sie borgt genau den fehlenden Betrag, auf 1.000 aufgerundet, als eigenen Schritt - nimm ihn zurück, wenn du lieber selbst entscheiden willst."
+            },
+            {
+              "term": "Eine Karte, die ich besitze, fehlt - wo ist sie?",
+              "text": "Die Stapel sind vollständig: Kleiner Deal 38, Großer Deal 36, Schnickschnack 42, Markt 39. Nutze die Suche auf dem Stapelbildschirm und die Schnellfilter."
+            },
+            {
+              "term": "Ich habe in einer Sprache gespielt, und jetzt ist die App in einer anderen",
+              "text": "Jedes gespeicherte Spiel merkt sich seine Sprache und wechselt beim Fortsetzen dorthin, damit Kürzel wie SFH oder EFH einheitlich bleiben."
+            },
+            {
+              "term": "Wo ist das Handbuch in meiner Sprache?",
+              "text": "Das Handbuch gibt es bisher auf Englisch und Deutsch. Andere Sprachen zeigen die englische Fassung."
+            }
+          ]
+        }
+      ]
+    },
+    "glossary": {
+      "nav": "Glossar",
+      "title": "Glossar und Kurzübersicht",
+      "intro": "Die Wörter des Spiels an einem Ort.",
+      "blocks": [
+        {
+          "type": "glossary",
+          "items": [
+            {
+              "term": "Hamsterrad (Rat Race)",
+              "text": "Die erste Phase: ein Job, der deine Lebenshaltung zahlt und nicht mehr. Du verlässt sie, wenn das passive Einkommen deine Ausgaben deckt."
+            },
+            {
+              "term": "Passives Einkommen",
+              "text": "Der monatliche Cashflow deiner Immobilien und Geschäfte - Geld, das ohne deine Arbeit kommt."
+            },
+            {
+              "term": "Cashflow",
+              "text": "Einnahmen minus Ausgaben, pro Monat. Auf einer Karte: das monatliche Geld, das die Investition nach ihrer Hypothek zahlt."
+            },
+            {
+              "term": "Zahltag (Payday)",
+              "text": "Der Schritt, der einen Monat Gehalt, passives Einkommen und Ausgaben bucht."
+            },
+            {
+              "term": "Anzahlung",
+              "text": "Was du für eine Immobilie selbst zahlst. Der Rest ist die Hypothek."
+            },
+            {
+              "term": "Hypothek",
+              "text": "Der von einem Geldgeber finanzierte Teil einer Immobilie. Sie wird eine Verbindlichkeit; ihre Rate steckt schon im Cashflow der Karte."
+            },
+            {
+              "term": "Rendite pro Jahr (Cash-on-Cash)",
+              "text": "Zwölf Monate Cashflow geteilt durch deine Anzahlung."
+            },
+            {
+              "term": "Kleiner Deal / Großer Deal",
+              "text": "Die zwei grünen Stapel. Kleiner Deal: niedrige Preise, Aktien, kleine Immobilien, Gold und Glücksspiele. Großer Deal: große Immobilien und Geschäfte."
+            },
+            {
+              "term": "Schnickschnack (Doodad)",
+              "text": "Eine rote Karte: eine ungeplante Ausgabe. Du zahlst immer."
+            },
+            {
+              "term": "Marktkarte",
+              "text": "Eine blaue Karte: ein Ereignis für alle - Käufer, Reparaturrechnungen, Aktiensplits, Schübe."
+            },
+            {
+              "term": "Sternkarte ★",
+              "text": "Eine seltene Marktkarte, die dein passives Einkommen dauerhaft erhöht."
+            },
+            {
+              "term": "Grow-Projekt",
+              "text": "Der Tracker einer Investition: Plan, Umsetzung, abgeschlossen. Jede Karte, die du kaufst, lebt in einem."
+            },
+            {
+              "term": "Offene Entscheidung",
+              "text": "Eine Karte, die auf dem Dashboard auf einen Würfelwurf wartet."
+            },
+            {
+              "term": "Angebot",
+              "text": "Was ein Marktkäufer zahlt. Gilt bis zum nächsten Zahltag."
+            },
+            {
+              "term": "Aktuelles Spiel",
+              "text": "Das Spiel, das dein Konto gerade spielt. Gespeicherte Spiele sind Kopien, die wieder aktuell werden können."
+            },
+            {
+              "term": "Bankdarlehen",
+              "text": "Geld von der Bank in Schritten von 1.000 zu 10 % des Darlehens pro Monat."
+            },
+            {
+              "term": "Fire / Smile / Splurge / Daily",
+              "text": "Die vier Ausgabenkonten der Money App. Im Spiel laufen Käufe über Fire, träumerischer Schnickschnack über Smile, kleiner über Splurge."
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

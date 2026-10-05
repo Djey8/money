@@ -1,0 +1,1151 @@
+{
+  "title": "Cashflow Game Manual",
+  "subtitle": "How to play, every card type, what to buy, and what the numbers say - for Cashflow game accounts.",
+  "labels": {
+    "colProfession": "Profession",
+    "colSalary": "Salary",
+    "colExpenses": "Expenses",
+    "colCashflow": "Cashflow",
+    "colSavings": "Savings",
+    "colDebts": "Debts",
+    "colChild": "Per child",
+    "customMark": "Custom JFK",
+    "noteProfessions": "Cashflow = salary − expenses, per month. Savings is your starting cash. Per child is added to your expenses with every baby (up to three).",
+    "colNeeded": "Passive income needed",
+    "colSmallDeals": "≈ Small Deal properties",
+    "colBigDeals": "≈ Big Deal properties",
+    "noteEscape": "You are out of the rat race when passive income covers your expenses. An average paying Small Deal property pays about {small} a month, an average Big Deal property about {big}. Your expenses grow with every child and every bank loan, so aim higher.",
+    "colType": "Type",
+    "colCards": "Cards",
+    "colPrice": "Price",
+    "colDeposit": "Deposit",
+    "colNoCashflow": "Pay nothing",
+    "colReturn": "Return a year",
+    "noteReturn": "Return a year = twelve months of cashflow ÷ your deposit (cash-on-cash). The mortgage is not part of what you pay in, so a small deposit with a good cashflow gives a very high return. Cards that pay nothing are counted separately.",
+    "colPaysLoan": "Pays for a loan",
+    "colBestMonthly": "Best monthly yield",
+    "noteLoanProof": "A bank loan costs 10% of the amount every month. A deal pays for its own loan only when it earns at least 10% of its deposit every month. The column shows how many cards of the type reach that.",
+    "colTicker": "Ticker",
+    "colKind": "Kind",
+    "kindStock": "Stock",
+    "kindFund": "Fund",
+    "colPrices": "Prices on the cards",
+    "colTradingRange": "Trading range",
+    "colCategory": "Category",
+    "colAverage": "Average",
+    "colMost": "Most expensive",
+    "noteDoodads": "{count} Doodad cards in all, and the average card costs {average}. Smile / Splurge is the account the app suggests for the payment.",
+    "colPile": "Pile",
+    "pileSmall": "Small Deal",
+    "pileBig": "Big Deal",
+    "cat_shares": "Stocks and funds",
+    "cat_houses": "Single-family homes",
+    "cat_condos": "Condos",
+    "cat_gold": "Gold coins (plain offers)",
+    "cat_dice": "Dice gambles",
+    "cat_mlm": "Multi-Level-Marketing",
+    "cat_businesses": "Businesses",
+    "colChance": "Chance on a random draw",
+    "colMarketCard": "Market card",
+    "market_buyerEFH": "Buyer for a single-family home",
+    "market_buyerMFH": "Buyer for an apartment building",
+    "market_buyerETW": "Buyer for a condo",
+    "market_buyerAPH": "Buyer for an apartment complex",
+    "market_buyerGOLD": "Buyer for gold coins",
+    "market_cost": "Repair cost (property owners)",
+    "market_split": "Stock split",
+    "market_boost": "Cashflow boost ★",
+    "colYouOwn": "You own",
+    "colMarketCards": "Market cards that touch it",
+    "profile_EFH": "A single-family home",
+    "profile_MFH": "An apartment building (4–8 units)",
+    "profile_ETW": "A condo",
+    "profile_APH": "An apartment complex (12–60 units)",
+    "profile_DH": "A semi-detached house",
+    "profile_GOLD": "Gold coins",
+    "profile_SHARE": "Shares of one company",
+    "noteMarketOdds": "Counts every card of the Market pile that can do something for you or to you. Repair costs hit any property; the two ★ boosts touch any investment under their limit; there is one stock split card per company.",
+    "factPrice": "Price",
+    "factRange": "Trading range",
+    "factDeposit": "Deposit",
+    "factMortgage": "Mortgage",
+    "factCashflow": "Cashflow",
+    "factCost": "Cost",
+    "factCoins": "Coins",
+    "factDice": "Wins on",
+    "factPayout": "Pays back",
+    "factAccount": "Pay from",
+    "factOffer": "Offer",
+    "factSymbol": "Symbol",
+    "factBoost": "Boost",
+    "factUpTo": "Up to",
+    "unit": "unit",
+    "coin": "coin"
+  },
+  "sections": {
+    "start": {
+      "nav": "Getting started",
+      "title": "Getting started",
+      "intro": "The Cashflow game is a companion for the board game: you play on the real board with a real die, and this app keeps the books. Everything you do is real bookkeeping in your account - transactions, subscriptions, Grow projects, a balance sheet - so you can see exactly what each decision does to your money.",
+      "blocks": [
+        {
+          "type": "callout",
+          "kind": "note",
+          "title": "Who can read this",
+          "text": "This manual and the game are for **Cashflow game accounts** only: an account whose email address contains the word `cashflow`. Such an account is a dedicated play account - nothing in it is real money, and nothing you do reaches a normal account. The game works the same on the Firebase edition and on a self-hosted server."
+        },
+        {
+          "type": "steps",
+          "items": [
+            {
+              "title": "Create or sign in to a Cashflow account",
+              "text": "Register with an email address that contains `cashflow`, for example `anna.cashflow@example.com`. The menu then shows a **Cashflow Game** entry with a 🎲."
+            },
+            {
+              "title": "Open the game and choose a game set",
+              "text": "**Classic Edition** has the 12 professions of the printed game and the complete card piles. **Custom JFK** adds three more professions (software developer, freelancer, entrepreneur) and uses the same card piles."
+            },
+            {
+              "title": "Pick a profession",
+              "text": "Choose one from the list or press **Shuffle** for a random one. The profession card opens with its printed numbers - income, expenses, savings and debts. Read it before you start."
+            },
+            {
+              "title": "Press Start game and choose the language",
+              "text": "The app asks which language you want to play in. The cards, the labels of your purchases (SFH, CONDO …) and the notes follow it, and every game remembers its own language."
+            },
+            {
+              "title": "The game is set up",
+              "text": "The app books your savings as starting cash, creates your monthly salary and every expense as a subscription, and adds the debts of your profession to the balance sheet. The dashboard opens."
+            },
+            {
+              "title": "Play",
+              "text": "Move your token on the real board. When you land on a space, tell the app which one (see ‘The spaces’). At Payday press **Payday**. That is the whole loop."
+            }
+          ]
+        },
+        {
+          "type": "callout",
+          "kind": "tip",
+          "title": "You decide, the app calculates",
+          "text": "The app never takes a decision away from you. It shows what a card costs, how much cash you have, what a bank loan would cost and what a deal pays - and then you press the button or you don’t. A good game is won by reading those numbers before every purchase."
+        }
+      ]
+    },
+    "goal": {
+      "nav": "The goal",
+      "title": "The goal: out of the rat race",
+      "intro": "You start with a job that pays for your life and little else. The rat race ends when you no longer need the job.",
+      "blocks": [
+        { "type": "h3", "text": "Passive income" },
+        {
+          "type": "p",
+          "text": "**Passive income** is the money that comes in every month without your work: the cashflow of the properties and businesses you own. Your **expenses** are everything that goes out every month - taxes, rent or mortgage, loan payments, living costs, the cost of your children and the interest on a bank loan. Your salary is not passive income."
+        },
+        {
+          "type": "callout",
+          "kind": "tip",
+          "title": "You have won the rat race when",
+          "text": "**passive income ≥ monthly expenses**. The dashboard then shows a green banner: ‘You escaped the rat race!’ You can keep playing as long as you like - the banner simply disappears again if your expenses rise above your passive income."
+        },
+        { "type": "h3", "text": "How the game can go wrong" },
+        {
+          "type": "p",
+          "text": "If your **monthly cashflow** (all income minus all expenses) is negative, every Payday takes cash away instead of adding it. The dashboard warns you in red. It does not stop you: sell something, pay off a loan or find a better deal before the next Payday."
+        },
+        {
+          "type": "callout",
+          "kind": "warning",
+          "title": "Debt is not a loss - bleeding is",
+          "text": "Owing money is part of the game; a mortgage is how almost every property is bought. What hurts is a monthly cashflow below zero, especially together with an expensive bank loan (10% of the loan every month)."
+        },
+        { "type": "h3", "text": "What you are playing for" },
+        {
+          "type": "list",
+          "items": [
+            "**Get the passive income up** - every property or business you buy adds its cashflow to every future Payday.",
+            "**Keep the expenses down** - babies and bank loans raise them; paying a loan off lowers them again.",
+            "**Do not run dry** - doodads and repair bills arrive without warning, so keep some cash back."
+          ]
+        },
+        {
+          "type": "data",
+          "id": "escape",
+          "caption": "How much passive income each profession needs - and roughly how many properties that is"
+        }
+      ]
+    },
+    "dashboard": {
+      "nav": "The dashboard",
+      "title": "The dashboard",
+      "intro": "Open the game from the menu and you land on the dashboard. Everything you need during a turn is on this one screen.",
+      "blocks": [
+        {
+          "type": "table",
+          "head": ["Where", "What it shows or does"],
+          "rows": [
+            [
+              "Summary card",
+              "Your profession (tap the info button to see its card), your **cash**, the game date, your **monthly cashflow** and small badges: children, a running Charity reminder, a Downsized reminder."
+            ],
+            [
+              "Banners",
+              "Red when your monthly cashflow is negative. Green when passive income covers your expenses - you escaped."
+            ],
+            [
+              "**Payday** and **Undo**",
+              "Payday books one month. Undo takes back the last step - any step, not only a Payday."
+            ],
+            [
+              "Open decision",
+              "A card that waits for a dice roll (see ‘Dice cards’) appears here, with a **Roll the dice** button."
+            ],
+            [
+              "Which space did you land on?",
+              "The coloured buttons: **Deals** (green), **Doodad** (red), **Market** (blue), and purple **Charity**, **Downsized**, **Baby**."
+            ],
+            [
+              "Bank loan",
+              "**Borrow** and **Repay** your loan in steps of 1.000 (see ‘Bank loans’)."
+            ],
+            [
+              "My games, History, Menu",
+              "Your saved games, the list of every step you took (each can be undone), and a shortcut to the app menu."
+            ]
+          ]
+        },
+        { "type": "h3", "text": "The profession card" },
+        {
+          "type": "p",
+          "text": "Tap the info button next to your profession to open its card. It has two views you can switch between: **Starting Scenario** (the printed card as you began) and **Live - Current Game** (the same layout with today’s numbers: your income and expenses, the properties you own, your debts)."
+        },
+        {
+          "type": "callout",
+          "kind": "tip",
+          "title": "The rest of the app is still there",
+          "text": "Your transactions, subscriptions, Grow projects, balance sheet and statistics are the normal pages of the app, filled by the game. Open them from the menu any time - see ‘The game and the rest of the app’."
+        }
+      ]
+    },
+    "professions": {
+      "nav": "Professions",
+      "title": "Professions",
+      "intro": "Your profession decides how much you earn, how much you spend, how much cash you start with and what debts you carry. Fifteen are available: the twelve of the printed game and three custom ones.",
+      "blocks": [
+        {
+          "type": "data",
+          "id": "professions",
+          "caption": "All professions, best monthly cashflow first"
+        },
+        { "type": "h3", "text": "What to look at when you choose" },
+        {
+          "type": "list",
+          "items": [
+            "**Cashflow (salary − expenses)** is the money you can invest every month. A bigger number means faster deposits.",
+            "**Expenses** are the target you have to cover with passive income. Small expenses mean fewer properties to escape.",
+            "**Savings** is your starting cash and your first deposit. A profession with low savings starts with small deals.",
+            "**Debts** are paid down from your monthly payments; they are the first mortgage-like costs you carry.",
+            "**Per child** is added every time you land on Baby. It is small for some professions and large for others."
+          ]
+        },
+        {
+          "type": "callout",
+          "kind": "tip",
+          "title": "High salary is not automatically easy",
+          "text": "The doctor earns the most, but also spends the most: 8.300 of expenses have to be covered by passive income. The caretaker needs only 1.000 - one good Big Deal property. A high salary buys deposits faster; low expenses make the finish line closer. Both routes work."
+        },
+        { "type": "data", "id": "escape", "caption": "Passive income each profession must reach" }
+      ]
+    },
+    "payday": {
+      "nav": "Payday",
+      "title": "Payday and the game calendar",
+      "intro": "Payday is the heartbeat of the game. One press books one month.",
+      "blocks": [
+        { "type": "h3", "text": "What Payday does" },
+        {
+          "type": "list",
+          "items": [
+            "books your **salary** and the **cashflow of every property and business** you own,",
+            "books every **expense**: taxes, rent or mortgage, loan payments, living costs, children and the interest on your bank loan,",
+            "moves the game calendar on by **one month** and counts the round,",
+            "opens the **dice roll** of any Multi-Level-Marketing card you hold (one roll for all of them),",
+            "ends the **Market offers** you were holding - an offer from a Market card is good until the next Payday only."
+          ]
+        },
+        {
+          "type": "p",
+          "text": "Payday never skips. Even with a Charity or Downsized reminder showing, you press Payday every time you pass it on the board. The reminders are for your turns on the physical board, which the app cannot see."
+        },
+        { "type": "h3", "text": "The calendar" },
+        {
+          "type": "p",
+          "text": "The game has its own calendar that moves one month per Payday. For bookkeeping the transactions are placed inside the **current real month**, each on the day of its subscription (salary early in the month, mortgage on its day …). Purchases and payments you make between two Paydays take the next free day of the month, so the account list stays readable."
+        },
+        {
+          "type": "callout",
+          "kind": "note",
+          "text": "Older game transactions move back one month with every Payday. Statistics therefore show your game as a timeline, and nothing you do here mixes with a real account."
+        },
+        {
+          "type": "callout",
+          "kind": "tip",
+          "title": "Pressed Payday by mistake?",
+          "text": "Press **Undo**. It restores everything the Payday changed, including the date. Every other step can be undone the same way - see ‘History, Undo and saved games’."
+        }
+      ]
+    },
+    "spaces": {
+      "nav": "The spaces",
+      "title": "The spaces",
+      "intro": "The app does not move your token - you do, on the real board. When you land on something, you tell the app which space it was and it takes care of the rest.",
+      "blocks": [
+        {
+          "type": "cards",
+          "items": [
+            {
+              "icon": "🟢",
+              "title": "Deals",
+              "text": "Green. Choose the **Small Deal** or the **Big Deal** pile. Stocks, funds, houses, apartment buildings, businesses, gold and some gambles."
+            },
+            {
+              "icon": "🔴",
+              "title": "Doodad",
+              "text": "Red. Something you buy without having planned it (the German card is called Schnickschnack). You always pay."
+            },
+            {
+              "icon": "🔵",
+              "title": "Market",
+              "text": "Blue. An event for the whole table: buyers for your properties and gold, stock splits, repair bills and two star cards."
+            },
+            {
+              "icon": "🟣",
+              "title": "Charity",
+              "text": "Purple. Give a tenth of your income away and roll one or two dice for the next three turns."
+            },
+            {
+              "icon": "🟣",
+              "title": "Downsized",
+              "text": "Purple. Pay all your monthly expenses once and sit out two turns."
+            },
+            {
+              "icon": "🟣",
+              "title": "Baby",
+              "text": "Purple. One more child, one more monthly expense (at most three children)."
+            }
+          ]
+        },
+        {
+          "type": "callout",
+          "kind": "tip",
+          "title": "Charity, Downsized and Baby ask first",
+          "text": "They show what they will do - with your real numbers - and wait for **Play** or **Cancel**, so a mis-tap changes nothing."
+        },
+        { "type": "h3", "text": "Finding the card you drew" },
+        { "type": "p", "text": "After you choose a pile you have two ways to bring a card up:" },
+        {
+          "type": "list",
+          "items": [
+            "**Find the card you drew** - you have the physical card in your hand. Type a name, a symbol or a price (for example `OK4U 20`), or use the quick filters (kind, type, account, category) and tap the card in the list.",
+            "**Draw a card** - you have no physical pile: the app draws one at random and does not repeat a card until the pile is used up."
+          ]
+        },
+        {
+          "type": "p",
+          "text": "Then the card appears on screen with its text and its numbers, exactly as printed. What you can do with it depends on its kind - the following sections go through them one by one."
+        },
+        {
+          "type": "callout",
+          "kind": "tip",
+          "title": "Wrong card?",
+          "text": "Every card has a **Pick another one** (or a back arrow) while you have not played it. Nothing is booked until you press the play button."
+        }
+      ]
+    },
+    "investing": {
+      "nav": "How to invest",
+      "title": "How to invest: plan, buy, sell",
+      "intro": "Every house, share, business and gold coin you buy is a **Grow project** - the same investment tracker the rest of the app uses. A card turns into a project in three steps.",
+      "blocks": [
+        {
+          "type": "steps",
+          "items": [
+            {
+              "title": "Plan",
+              "text": "On the card press **Plan this**. A Grow project is created in the **plan** phase with the card’s numbers and a note: what the purchase costs, the cash you have, and the bank loan you would need. Nothing is paid yet."
+            },
+            {
+              "title": "Buy",
+              "text": "Open the project (the app takes you there) and press **buy**. The Add dialog opens ready to go, on the **Fire** account. Check it and confirm. The project moves to **execute**; a property creates its mortgage in the balance sheet and its monthly cashflow as a subscription that every Payday pays out."
+            },
+            {
+              "title": "Sell",
+              "text": "Open the project and press **sell** whenever you want out. The sale is booked as income, the mortgage is paid off and the cashflow stops. When everything is sold the project is **completed**."
+            }
+          ]
+        },
+        {
+          "type": "callout",
+          "kind": "note",
+          "title": "A project for every card",
+          "text": "A second house of the same type becomes a second project with a number added to its name: `SFH`, `SFH-II`, `SFH-III`. Each can be sold on its own."
+        },
+        { "type": "h3", "text": "Not enough cash?" },
+        {
+          "type": "p",
+          "text": "If the deposit is more than your cash, the app takes a **bank loan** for exactly the missing amount - rounded up to the next 1.000 - and books it first, as its own step. The purchase follows as the second step. Undo takes the purchase back first, and the loan with the next Undo. See ‘Bank loans’ for what that costs."
+        },
+        {
+          "type": "face",
+          "cardId": "classic-small-efh-45k-2k",
+          "caption": "A Small Deal card: a single-family home for 45.000 with 2.000 deposit - it pays 250 a month."
+        },
+        { "type": "h3", "text": "The names of your purchases" },
+        {
+          "type": "p",
+          "text": "Each purchase is named by a short label in the language of your game, so they are easy to tell apart in the lists and charts:"
+        },
+        {
+          "type": "table",
+          "head": ["Type", "English label", "German label"],
+          "rows": [
+            ["Single-family home", "SFH", "EFH"],
+            ["Condo", "CONDO", "ETW"],
+            ["Apartment building (4 / 8 units)", "APT4, APT8", "MFH4, MFH8"],
+            ["Semi-detached house", "SDH", "DH"],
+            [
+              "Apartment complex (12 / 24 / 60 units)",
+              "CPX12, CPX24, CPX60",
+              "APH12, APH24, APH60"
+            ],
+            ["Business partner / automated business / car wash", "PTR, ABIZ, WASH", "GP, AU, AWA"],
+            ["Pizza franchise, gold, multi-level marketing", "PIZZA, GOLD, MLM", "PIZZA, GOLD, MLM"]
+          ]
+        },
+        {
+          "type": "callout",
+          "kind": "tip",
+          "title": "Sell to a friend",
+          "text": "On a Deal card **Sell to a friend** books a one-off sale: you agreed a price with another player and the money comes in at once. **Decline** simply returns to the dashboard."
+        }
+      ]
+    },
+    "smalldeal": {
+      "nav": "Small Deal",
+      "title": "Small Deal",
+      "intro": "The Small Deal pile is for beginners: small prices, small deposits. It has 38 cards - 20 stocks and funds, 11 houses and condos, and 7 special cards (gold, dice gambles and Multi-Level-Marketing).",
+      "blocks": [
+        { "type": "h3", "text": "Stocks and funds" },
+        {
+          "type": "p",
+          "text": "There are four securities - three stocks and one fund - and five cards for each, one per price. A stock is a **liquidity tool, not passive income**: it pays no monthly cashflow. You buy low, sell high and use the cash for a bigger deposit."
+        },
+        {
+          "type": "face",
+          "cardId": "classic-small-ok4u-20",
+          "caption": "A stock card: you may buy at this price. The trading range tells you where the price will move."
+        },
+        { "type": "data", "id": "shares", "caption": "The four securities" },
+        {
+          "type": "list",
+          "items": [
+            "**Buy** from the project (you set the number of shares when you plan it); the price of the card is the price you pay.",
+            "**A card for a share you already hold** does not plan a new purchase - it **sets the market price**. The button reads **Update price**; the price changes on your Grow project and on your shares, a note records what happened on the stock market, and you can sell or buy at the new price. Your past sales stay as they were.",
+            "**Stock splits** (Market pile, see ‘Market cards’) double or halve the number of shares you hold."
+          ]
+        },
+        { "type": "h3", "text": "Single-family homes and condos" },
+        {
+          "type": "face",
+          "cardId": "classic-small-etw-55k-5k",
+          "caption": "A condo with a big mortgage - watch what a buyer would pay for it before you buy."
+        },
+        { "type": "data", "id": "smallProperties", "caption": "Small Deal properties" },
+        {
+          "type": "callout",
+          "kind": "warning",
+          "title": "Two cards pay nothing",
+          "text": "The 30.000 single-family home and the 40.000 condo with 1.000 deposit have a cashflow of **0**. They are traps: they eat a deposit and give nothing back until a buyer shows up. The table above counts them in the last column."
+        },
+        { "type": "h3", "text": "Gold, gambles and multi-level marketing" },
+        {
+          "type": "list",
+          "items": [
+            "**Plain gold offers** - 10 coins for 3.000 and 5 coins for 1.000. Coins pay nothing; they are worth what a gold buyer pays (see ‘Market cards’).",
+            "**Dice gambles** - the box of gold, the journey and the sister-in-law’s loan. You pay first and roll a die afterwards (see ‘Dice cards’).",
+            "**Multi-Level-Marketing** - two cards: pay 500 and keep the card; at every Payday you roll a die and a 4–6 pays 500."
+          ]
+        },
+        {
+          "type": "face",
+          "cardId": "classic-small-gold-friend-3000",
+          "caption": "Ten gold coins at a bargain price."
+        },
+        {
+          "type": "face",
+          "cardId": "classic-small-mlm-1",
+          "caption": "A card you keep: it rolls at every Payday."
+        }
+      ]
+    },
+    "bigdeal": {
+      "nav": "Big Deal",
+      "title": "Big Deal",
+      "intro": "Big Deal cards need real deposits - from 10.000 up to 200.000 - and pay real cashflow. There are 36 cards: a pizza franchise, ten apartment buildings, eight single-family homes, five semi-detached houses, four apartment complexes and eight businesses.",
+      "blocks": [
+        { "type": "data", "id": "bigProperties", "caption": "Big Deal cards by type" },
+        { "type": "h3", "text": "Real estate" },
+        {
+          "type": "p",
+          "text": "Houses, apartment buildings and complexes are bought with a mortgage. You pay the deposit; the mortgage becomes a liability in your balance sheet, and the **cashflow on the card is what is left after the mortgage payment** - so it is the number that lands on your Payday."
+        },
+        {
+          "type": "face",
+          "cardId": "classic-big-mfh8-240k-40k",
+          "caption": "An apartment building with 8 units: 40.000 deposit, 1.800 a month."
+        },
+        {
+          "type": "face",
+          "cardId": "classic-big-aph12-350k-50k",
+          "caption": "An apartment complex with 12 units."
+        },
+        { "type": "h3", "text": "Businesses" },
+        {
+          "type": "p",
+          "text": "The pizza franchise, the business partners, the automated companies and the car wash work like properties: a deposit and a monthly cashflow. Partners are bought outright (no mortgage), the others have one. Businesses are **not** counted as properties by the cards that talk about ‘your property’ - repair bills do not hit them."
+        },
+        {
+          "type": "face",
+          "cardId": "classic-big-au-150k-30k-2500",
+          "caption": "An automated business: a modest deposit, 2.500 a month."
+        },
+        {
+          "type": "callout",
+          "kind": "tip",
+          "title": "How big is big?",
+          "text": "The average Big Deal card pays about ten times the cashflow of the average paying Small Deal card, for a deposit roughly ten times larger. Small Deals build the first deposit; Big Deals end the rat race."
+        }
+      ]
+    },
+    "dice": {
+      "nav": "Dice cards",
+      "title": "Dice cards",
+      "intro": "Some cards are decided by a die. You pay first, then the roll is made - with the app’s die or with your own.",
+      "blocks": [
+        { "type": "h3", "text": "How a roll works" },
+        {
+          "type": "list",
+          "items": [
+            "After you pay (or play the card) an **open decision** appears on the dashboard.",
+            "**Roll the dice** lets the app roll: a large die is shown, then the result, until you press **Continue**.",
+            "Or roll a real die and report it: **I rolled it: I won** / **I rolled it: no luck** (for a stock split the two buttons read ‘1–3’ and ‘4–6’).",
+            "The result is one step in your History and can be undone - the open decision comes back."
+          ]
+        },
+        {
+          "type": "cards",
+          "items": [
+            {
+              "icon": "🎁",
+              "title": "What’s in the box?! / Where there’s a will",
+              "text": "Pay 500 (the box) or 750 (the journey). A **6** wins ten gold coins; anything else wins nothing - or an old cat."
+            },
+            {
+              "icon": "👪",
+              "title": "Sister-in-law borrows money",
+              "text": "Pay 5.000. **1–3**: she never pays you back. **4–6**: she pays back **10.000**. It is fair on average, but you win or lose big."
+            },
+            {
+              "icon": "📣",
+              "title": "Multi-Level-Marketing",
+              "text": "Pay 500 and keep the card. At **every Payday** one roll for all your cards: **4–6** pays **500** per card. It is the best-paying card in the pile."
+            },
+            {
+              "icon": "📈",
+              "title": "Stock splits",
+              "text": "A Market card for one company. If you hold its shares: **1–3** doubles them, **4–6** halves them. Price and cost do not change."
+            }
+          ]
+        },
+        {
+          "type": "face",
+          "cardId": "classic-small-sister-5000",
+          "caption": "Costs 5.000, comes back as 10.000 on a 4, 5 or 6."
+        },
+        {
+          "type": "face",
+          "cardId": "classic-small-gold-box-500",
+          "caption": "Costs 500, wins ten coins on a six."
+        },
+        {
+          "type": "callout",
+          "kind": "tip",
+          "title": "Reading the odds",
+          "text": "A single die has six sides: ‘4–6’ is 50%, ‘6’ is one in six. The chapter on the odds works out what each gamble is worth on average."
+        }
+      ]
+    },
+    "doodad": {
+      "nav": "Doodads",
+      "title": "Doodads (Schnickschnack)",
+      "intro": "The red pile is the price of living: a boat, a night out, a new computer. There are 42 cards and you cannot decline one - you only decide how it is paid.",
+      "blocks": [
+        {
+          "type": "face",
+          "cardId": "classic-doodad-boat",
+          "caption": "A Doodad: the app suggests the account and the category."
+        },
+        {
+          "type": "steps",
+          "items": [
+            {
+              "title": "Open the card",
+              "text": "Find or draw it. It shows the cost, the account the app suggests and the spending category it will go under."
+            },
+            {
+              "title": "Add the transaction",
+              "text": "The Add dialog opens filled in: account, amount, today’s free date, the category and a comment with a short joke, what you have in cash and how much bank loan you would need, and the tag `#doodad`. Change anything you like."
+            },
+            {
+              "title": "Confirm",
+              "text": "If you are short, the app takes the bank loan first (its own step) and then books the payment. Nothing else changes - you own nothing afterwards."
+            }
+          ]
+        },
+        {
+          "type": "p",
+          "text": "The big, dreamy purchases (a boat, a kitchen, a first car for a child) are suggested on your **Smile** account; the small things on **Splurge**. Neither takes money from your **Fire** or **Daily** accounts. Every card has a category such as Leisure, Home or Events, so your statements show where a game’s worth of Doodads went."
+        },
+        { "type": "data", "id": "doodads", "caption": "Doodads by category" },
+        {
+          "type": "callout",
+          "kind": "tip",
+          "title": "Do not call it a loss",
+          "text": "A Doodad is a cost of living, not a mistake. On average one costs a little under 1.400 - keep a cushion of one or two of those in cash and Doodads never hurt."
+        }
+      ]
+    },
+    "market": {
+      "nav": "Market cards",
+      "title": "Market cards",
+      "intro": "Blue cards are events for the whole table. In the app they only matter for you: if a card has nothing to do with what you own, the app tells you it does not apply, and the play is still noted in your History.",
+      "blocks": [
+        { "type": "data", "id": "marketKinds", "caption": "What the 39 Market cards are" },
+        { "type": "h3", "text": "Buyers for your properties" },
+        {
+          "type": "p",
+          "text": "A buyer card makes an **offer** for one type of property. Play it and every property of that type you own gets the offer, with a note in its Grow project; then you sell the ones you want with the normal **sell** button, which is already filled in. The offer lasts until the next Payday, and you may sell as many properties as you like at that price."
+        },
+        {
+          "type": "callout",
+          "kind": "tip",
+          "title": "What you receive",
+          "text": "The buyer pays the full price. The mortgage is paid back from it, and what is left is booked as income. For an offer of ‘original price + profit’ that is **your deposit plus the profit**; for a fixed price it is the **price minus the mortgage**."
+        },
+        {
+          "type": "cards",
+          "items": [
+            {
+              "icon": "🏠",
+              "title": "Single-family homes and apartment buildings",
+              "text": "Original price + a percentage of the full cost, or + a fixed amount. The profit is the same for a 4-unit and an 8-unit building."
+            },
+            {
+              "icon": "🏢",
+              "title": "Condos",
+              "text": "A fixed price for the whole condo. If the price is below the mortgage the sale **costs you** money - the app books it as a payment, not income, and takes a loan if you need one."
+            },
+            {
+              "icon": "🏬",
+              "title": "Apartment complexes",
+              "text": "A price **per unit**, times the units of your complex (a 24-unit complex counts 24), minus the mortgage."
+            },
+            {
+              "icon": "🪙",
+              "title": "Gold coins",
+              "text": "Cash for **every coin**. Sell all of them or as many as you like - edit the number in the sell dialog."
+            }
+          ]
+        },
+        {
+          "type": "face",
+          "cardId": "classic-market-efh-pct20-a",
+          "caption": "A percentage buyer for single-family homes."
+        },
+        {
+          "type": "face",
+          "cardId": "classic-market-etw-65k",
+          "caption": "A fixed price for a condo - compare it with the mortgage on your own condo first."
+        },
+        {
+          "type": "face",
+          "cardId": "classic-market-gold-central-2k",
+          "caption": "A gold buyer: every coin at 2.000."
+        },
+        { "type": "h3", "text": "Repair costs" },
+        {
+          "type": "p",
+          "text": "‘A tenant damages your property’ and ‘Sewer pipe broken’ cost property owners 500 to 2.000 once. If you own no property, you ignore the card. Otherwise the Add dialog opens on **Fire**, filled in with the cost and the name of the first property you own as the category. Businesses are not properties."
+        },
+        {
+          "type": "face",
+          "cardId": "classic-market-cost-pipe-2k",
+          "caption": "Only for property owners."
+        },
+        { "type": "h3", "text": "Stock splits and star cards" },
+        {
+          "type": "p",
+          "text": "A **stock split** card has the name of one company on it. Without its shares the card does not apply. With them a dice decision opens: 1–3 doubles your shares, 4–6 halves them (rounded in your favour). The price and your costs stay the same."
+        },
+        {
+          "type": "p",
+          "text": "The two **★ star cards** are the jackpots: ‘Small Business Boom!’ lifts every investment that pays 1.000 or less by 250 a month; ‘New management system’ lifts everything that pays 2.000 or less by 400. Your Grow project and its monthly income are both raised for good, and a note records it."
+        },
+        {
+          "type": "face",
+          "cardId": "classic-market-boost-small-250",
+          "caption": "A star card: your passive income goes up for the rest of the game."
+        },
+        { "type": "data", "id": "marketOdds", "caption": "How often a Market card concerns you" }
+      ]
+    },
+    "life": {
+      "nav": "Charity, Downsized, Baby",
+      "title": "Charity, Downsized and Baby",
+      "intro": "Three spaces that need no card. They ask for confirmation first and show the numbers they will use.",
+      "blocks": [
+        {
+          "type": "table",
+          "head": ["Space", "What it does in the app", "What you do on the board"],
+          "rows": [
+            [
+              "**Charity**",
+              "Pays **10% of your total monthly income** (salary plus passive income) once, as a payment on your Daily account.",
+              "For your next 3 turns you may roll one or two dice. A badge reminds you; dismiss it yourself when the turns are used."
+            ],
+            [
+              "**Downsized**",
+              "Pays **all your monthly expenses** once. Also ends a running Charity badge.",
+              "Sit out two turns while the others play. A badge reminds you."
+            ],
+            [
+              "**Baby**",
+              "Adds a child (at most **3**) and a monthly expense for it - the ‘Per child’ amount of your profession - which every Payday pays.",
+              "Nothing more. The button is greyed out at three children."
+            ]
+          ]
+        },
+        {
+          "type": "callout",
+          "kind": "tip",
+          "title": "Why Charity can be worth it",
+          "text": "Ten per cent of income is usually a small price for two dice on each of three turns: you can move faster to the deal spaces. It is the only space that gives you something back."
+        },
+        {
+          "type": "callout",
+          "kind": "warning",
+          "title": "Downsized when you are tight",
+          "text": "It costs the full month of expenses at once. With a small cash reserve it forces a bank loan - take Downsized seriously when you plan your cushion."
+        }
+      ]
+    },
+    "loans": {
+      "nav": "Bank loans",
+      "title": "Bank loans",
+      "intro": "The bank lends in steps of **1.000** and charges **10% of the loan every month**. That is the one rule the app fully automates.",
+      "blocks": [
+        {
+          "type": "list",
+          "items": [
+            "**Borrow** adds the money to your cash as income, creates a **Bank loan** liability and a monthly expense **Bank loan interest** - a 1.000 loan costs 100 a month, a 5.000 loan 500.",
+            "**Repay** (or **Settle all**) pays the loan back in steps of 1.000. The interest falls with the loan, to nothing when it is gone.",
+            "**Automatic loans** - when a purchase or a payment is bigger than your cash, the app borrows the missing amount, rounded up to 1.000, as its own step in front of the purchase."
+          ]
+        },
+        {
+          "type": "callout",
+          "kind": "warning",
+          "title": "10% a month is 120% a year",
+          "text": "A loan is an expensive bridge, not a way of life. It pays only when the thing you buy with it earns more than 10% of the borrowed money every month. The table below shows which cards manage that."
+        },
+        {
+          "type": "data",
+          "id": "loanProof",
+          "caption": "Can the deal pay for its own loan? (monthly cashflow ÷ deposit ≥ 10%)"
+        },
+        {
+          "type": "callout",
+          "kind": "tip",
+          "title": "Borrow for a moment, repay when you can",
+          "text": "A short loan to buy a deal that pays a lot more than the interest is fine. Repay as soon as cash arrives - from a sale, a gold buyer or a lucky roll. While a loan runs it shows as a small bank symbol on your charts."
+        }
+      ]
+    },
+    "app": {
+      "nav": "The game and the app",
+      "title": "The game and the rest of the app",
+      "intro": "Nothing in the game is a separate system. Every number you see is a normal entry of the Money App - so you can look at it with the normal tools.",
+      "blocks": [
+        {
+          "type": "table",
+          "head": ["In the game", "In the app"],
+          "rows": [
+            [
+              "Cash",
+              "The sum of your Daily, Splurge, Smile and Fire accounts. Income is split between them by the percentages of your account."
+            ],
+            [
+              "Salary, expenses, passive income",
+              "**Subscriptions** - one per line. Payday turns them into transactions."
+            ],
+            [
+              "Every card you pay or play",
+              "A **transaction** in the account it was booked on, with a comment."
+            ],
+            [
+              "Houses, shares, businesses, gold",
+              "**Grow** projects, and their positions in the **Balance** sheet (assets, shares, investments)."
+            ],
+            ["Mortgages and bank loan", "Liabilities in the **Balance** sheet."],
+            [
+              "Income and expenses by category",
+              "The **Income** statement and the account pages - Doodad categories show up here."
+            ],
+            [
+              "Your game over time",
+              "**Stats**: charts of each account, with markers for Grow trades, Smile and Fire payments, the bank loan and Doodads."
+            ]
+          ]
+        },
+        {
+          "type": "callout",
+          "kind": "note",
+          "title": "Fire and Smile in the game",
+          "text": "Purchases, loans and repair bills run through **Fire**. Dreamy Doodads run through **Smile**, small ones through **Splurge**. That is only the suggestion of the app - you can always book a payment from another account in the Add dialog."
+        },
+        {
+          "type": "callout",
+          "kind": "warning",
+          "title": "Edit with care",
+          "text": "You can change entries in the normal pages (a transaction, a subscription, a Grow note). The game does not stop you - but a changed amount changes your monthly cashflow and your rat-race maths. Use **Undo** to take back a step instead of fixing it by hand."
+        }
+      ]
+    },
+    "games": {
+      "nav": "History, Undo, saved games",
+      "title": "History, Undo and saved games",
+      "intro": "Every step you take is recorded, every step can be undone, and an account can keep as many games as you like.",
+      "blocks": [
+        { "type": "h3", "text": "Undo and History" },
+        {
+          "type": "list",
+          "items": [
+            "**Undo** takes back the last step - a Payday, a card, a loan, a dice roll. Press it again to go further back.",
+            "**History** lists every step in order, newest first, with what it booked. Each line has **Undo back to here**.",
+            "A purchase that needed a bank loan is two steps: the loan, then the purchase.",
+            "A saved game keeps its whole history: after you load it, History lists every move and Undo can walk back step by step, even to before the game started. Games saved before this was added load with an empty history."
+          ]
+        },
+        { "type": "h3", "text": "My games" },
+        {
+          "type": "p",
+          "text": "Your account always holds one **live game** - the one you are playing. **My games** keeps the others."
+        },
+        {
+          "type": "table",
+          "head": ["Button", "What it does"],
+          "rows": [
+            [
+              "**Save game**",
+              "Saves the game you are playing into its slot. A game is also saved automatically when you leave it."
+            ],
+            [
+              "**New game**",
+              "Saves the live game, then clears the account so you can choose a profession again."
+            ],
+            [
+              "**Continue**",
+              "Opens a saved game. The game you are playing is saved first, then the other becomes live - cash, projects, notes, even a waiting dice roll. If anything is wrong with the saved game, nothing changes."
+            ],
+            [
+              "**Rename**, **Delete**",
+              "Rename a game, or delete it for good (with a confirmation)."
+            ],
+            [
+              "**Export**, **Import game**",
+              "Download a game as a file, or add one from a file. A backup, or a way to move a game to another account."
+            ]
+          ]
+        },
+        {
+          "type": "p",
+          "text": "Each saved game shows its status - **Playing**, **Out of the rat race**, **Bankrupt** or **Ended** - with cash, passive income against expenses and the round, so the list is also a scoreboard."
+        },
+        { "type": "h3", "text": "Ending a game" },
+        {
+          "type": "list",
+          "items": [
+            "**end game (save it)** (Settings) saves the game with an ‘Ended’ mark and clears the account.",
+            "**reset game** (Settings) deletes the game **without saving** and cannot be undone."
+          ]
+        },
+        {
+          "type": "callout",
+          "kind": "note",
+          "text": "Saved games live in your own data, next to the rest of your account, compressed and encrypted like everything else. A very long list makes your data bigger - the app warns above 30 games; export and delete the ones you no longer need."
+        }
+      ]
+    },
+    "strategy": {
+      "nav": "Strategy",
+      "title": "Strategy",
+      "intro": "This is the approach the numbers of the card piles support. It is a guide, not a law - the dice and the draw decide a lot.",
+      "blocks": [
+        { "type": "h3", "text": "1 · Know your finish line" },
+        {
+          "type": "p",
+          "text": "Your expenses are your target. Look at the ‘passive income needed’ table before the first move and think in properties: one Big Deal property for a caretaker, five for a doctor. Remember that every baby and every bank loan moves the line."
+        },
+        { "type": "h3", "text": "2 · Build the first deposit with the small things" },
+        {
+          "type": "list",
+          "items": [
+            "**Multi-Level-Marketing** is the best card in the game: it returns on average 250 a month on 500. If you have the cash, buy it.",
+            "**Small single-family homes and condos with cashflow** give 40–150% a year on a deposit of a few thousand and cost almost nothing to hold. Skip the two that pay nothing.",
+            "**Shares** are cash machines when you buy near the bottom of the range (5–10) and sell near the top (30). They produce no passive income - treat them as deposit money.",
+            "**Gold** is cheap when you buy it from a card and expensive when a gold buyer asks for it: coins from a 3.000-for-10 card sell for 10.000–20.000 on a buyer’s card. The catch is waiting for the buyer (three Market cards in 39)."
+          ]
+        },
+        { "type": "h3", "text": "3 · Move to Big Deals as soon as a deposit is affordable" },
+        {
+          "type": "p",
+          "text": "A Big Deal property pays 700–11.000 a month. Two or three of them end the race for most professions. Compare the **return a year** (cash-on-cash) between cards: apartment buildings with 4 units and semi-detached houses are among the highest; businesses bought outright are slower to repay."
+        },
+        {
+          "type": "callout",
+          "kind": "tip",
+          "title": "Deposit first, cashflow second",
+          "text": "Two cards can pay the same cashflow with very different deposits. Ask: how many months until the deposit is back? The table of Big Deal types shows the range. A card with a smaller deposit and the same cashflow is the better card."
+        },
+        { "type": "h3", "text": "4 · Use loans like a bridge" },
+        {
+          "type": "list",
+          "items": [
+            "Borrow only for a card whose monthly yield is above 10% of the borrowed money - the ‘pays for a loan’ table lists the types that can.",
+            "Never borrow to cover a month you could not afford: if monthly cashflow is negative, a loan only digs deeper.",
+            "Repay the loan from the first cash that arrives. A 5.000 loan costs 500 every month - that is two Multi-Level-Marketing cards’ worth of income."
+          ]
+        },
+        { "type": "h3", "text": "5 · Keep a cushion" },
+        {
+          "type": "p",
+          "text": "Doodads average a little under 1.400, repair bills reach 2.000, Downsized costs a month of expenses. A cushion of 1.500–3.000 in cash keeps those from becoming loans."
+        },
+        { "type": "h3", "text": "6 · Diversify against the Market" },
+        {
+          "type": "p",
+          "text": "Holding both single-family homes and apartment buildings means more Market cards help you. Holding only semi-detached houses means no buyer card ever applies, while repair bills do. The ‘how often a Market card concerns you’ table shows it."
+        },
+        { "type": "h3", "text": "7 · Sell when a buyer overpays" },
+        {
+          "type": "p",
+          "text": "A buyer offering 20% on top, or a fixed profit of 10.000–20.000, often beats a year of the property’s cashflow. Selling and re-buying a better card can raise your passive income - but remember a sale also removes the cashflow."
+        },
+        {
+          "type": "callout",
+          "kind": "warning",
+          "title": "Common mistakes",
+          "text": "Borrowing for a card that pays nothing. Spending the cushion on a share and then meeting a Doodad. Taking a loan at 10% a month for a deal that returns 5%. Selling a condo to a buyer at a price below its mortgage."
+        }
+      ]
+    },
+    "odds": {
+      "nav": "Odds and numbers",
+      "title": "Odds and numbers",
+      "intro": "Everything below is read from the card piles themselves, so it is exactly what the game uses.",
+      "blocks": [
+        { "type": "h3", "text": "What a random draw gives you" },
+        {
+          "type": "data",
+          "id": "pileOdds",
+          "caption": "Chance of each kind of card on a random draw"
+        },
+        {
+          "type": "p",
+          "text": "In the Small Deal pile one draw in two is a stock card; in the Big Deal pile, nearly two in five are an apartment building or complex. Doodads are always a cost and have no good outcome - there are 42 of them and the average is a little under 1.400."
+        },
+        { "type": "h3", "text": "Gambles - what they are worth on average" },
+        {
+          "type": "table",
+          "head": ["Card", "You pay", "You get", "Average result"],
+          "rows": [
+            [
+              "Multi-Level-Marketing (per Payday)",
+              "500 once",
+              "50% × 500 per roll",
+              "+250 a month - pays back in two Paydays"
+            ],
+            [
+              "Sister-in-law borrows money",
+              "5.000",
+              "50% × 10.000",
+              "0 - a fair coin that doubles or loses"
+            ],
+            ["What’s in the box?!", "500", "1/6 × 10 coins", "1⅔ coins ≈ 1.667 at 1.000 a coin"],
+            ["Where there’s a will", "750", "1/6 × 10 coins", "the same coins, a higher price"],
+            [
+              "Stock split (if you hold the share)",
+              "nothing",
+              "50% × 2 shares + 50% × ½ shares",
+              "+25% in the number of shares"
+            ]
+          ]
+        },
+        {
+          "type": "p",
+          "text": "The only gamble that is better than fair on its own is Multi-Level-Marketing. Stock splits help the holder (+25% shares on average); the sister-in-law’s loan is fair, so take it only when you can afford to lose 5.000."
+        },
+        { "type": "h3", "text": "How often the Market helps or hurts you" },
+        {
+          "type": "data",
+          "id": "marketOdds",
+          "caption": "Market cards that concern each kind of asset"
+        },
+        { "type": "h3", "text": "The rat race in numbers" },
+        {
+          "type": "p",
+          "text": "An average Big Deal property pays about 1.800 a month; an average paying Small Deal property about 180. To cover 1.000 of expenses you need one Big Deal property or six small ones. The caretaker’s +600 a month alone would take years to save the 32.000–40.000 deposit - which is why the small, quick deals, the gamble cards and the share trades matter at the start."
+        },
+        { "type": "data", "id": "escape", "caption": "Passive income needed per profession" }
+      ]
+    },
+    "faq": {
+      "nav": "FAQ",
+      "title": "Questions and answers",
+      "intro": "Short answers to the things people ask first.",
+      "blocks": [
+        {
+          "type": "glossary",
+          "items": [
+            {
+              "term": "Do I need the physical board?",
+              "text": "The app is a companion for it: it keeps the books, the cards and the numbers. You move your token and roll your dice on the board. For the dice cards the app can roll for you."
+            },
+            {
+              "term": "Can I use my normal account?",
+              "text": "No. The game is for accounts with ‘cashflow’ in the email address, and it uses the whole account as the game. A personal account stays untouched by it."
+            },
+            {
+              "term": "Does it work on the self-hosted server and on Firebase?",
+              "text": "Yes, in both. The game and its saved games are stored with your other data; the card texts load on demand."
+            },
+            {
+              "term": "I made a mistake - how do I fix it?",
+              "text": "Press Undo. Every step - a Payday, a card, a loan, a sale - can be undone, and History lets you go back several steps at once."
+            },
+            {
+              "term": "What happens when my monthly cashflow is negative?",
+              "text": "Each Payday takes cash instead of adding it, and the dashboard shows a red warning. Sell something, repay a loan or find a better deal. The game does not stop."
+            },
+            {
+              "term": "What is the Fast Track?",
+              "text": "The second phase of the board game after you escape the rat race. The app does not play it yet - you can carry on in the rat race as long as you like."
+            },
+            {
+              "term": "Why did the app take a bank loan on its own?",
+              "text": "A purchase or payment was bigger than your cash. It borrows exactly the missing amount, rounded up to 1.000, as a separate step - undo it if you would rather decide yourself."
+            },
+            {
+              "term": "A card I own a copy of is missing - where is it?",
+              "text": "The piles are complete: Small Deal 38, Big Deal 36, Doodad 42, Market 39. Use the search on the pile screen and the quick filters."
+            },
+            {
+              "term": "I played in one language and now the app is in another",
+              "text": "Each saved game remembers its language and switches to it when you continue the game, so labels like SFH or EFH stay consistent."
+            },
+            {
+              "term": "Where is the manual in my language?",
+              "text": "The manual is written in English and German so far. Other languages show the English version."
+            }
+          ]
+        }
+      ]
+    },
+    "glossary": {
+      "nav": "Glossary",
+      "title": "Glossary and quick reference",
+      "intro": "The words of the game in one place.",
+      "blocks": [
+        {
+          "type": "glossary",
+          "items": [
+            {
+              "term": "Rat race",
+              "text": "The first phase: a job that pays your living costs and nothing more. You leave it when passive income covers your expenses."
+            },
+            {
+              "term": "Passive income",
+              "text": "The monthly cashflow of your properties and businesses - money that arrives without your work."
+            },
+            {
+              "term": "Cashflow",
+              "text": "Income minus expenses, per month. On a card, the monthly money the investment pays after its mortgage."
+            },
+            {
+              "term": "Payday",
+              "text": "The step that books one month of salary, passive income and expenses."
+            },
+            {
+              "term": "Deposit (down payment)",
+              "text": "What you pay yourself for a property. The rest is the mortgage."
+            },
+            {
+              "term": "Mortgage",
+              "text": "The part of a property financed by a lender. It becomes a liability; its payment is already inside the card’s cashflow."
+            },
+            {
+              "term": "Return a year (cash-on-cash)",
+              "text": "Twelve months of cashflow divided by your deposit."
+            },
+            {
+              "term": "Small Deal / Big Deal",
+              "text": "The two green piles. Small Deal: low prices, stocks, small properties, gold and gambles. Big Deal: large properties and businesses."
+            },
+            {
+              "term": "Doodad (Schnickschnack)",
+              "text": "A red card: an unplanned expense. You always pay."
+            },
+            {
+              "term": "Market card",
+              "text": "A blue card: an event for everyone - buyers, repair bills, stock splits, boosts."
+            },
+            {
+              "term": "Star card ★",
+              "text": "A rare Market card that raises your passive income for good."
+            },
+            {
+              "term": "Grow project",
+              "text": "The tracker for an investment: plan, execute, completed. Every card you buy lives in one."
+            },
+            {
+              "term": "Open decision",
+              "text": "A card that waits for a dice roll on the dashboard."
+            },
+            { "term": "Offer", "text": "What a Market buyer pays. Good until the next Payday." },
+            {
+              "term": "Live game",
+              "text": "The game your account is playing right now. Saved games are copies that can become live again."
+            },
+            {
+              "term": "Bank loan",
+              "text": "Money from the bank in steps of 1.000 at 10% of the loan per month."
+            },
+            {
+              "term": "Fire / Smile / Splurge / Daily",
+              "text": "The four spending accounts of Money App. In the game, purchases go through Fire, dreamy Doodads through Smile, small ones through Splurge."
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

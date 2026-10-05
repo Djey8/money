@@ -13,6 +13,8 @@ export interface DocTopic {
    */
   title?: string;
   desc?: string;
+  /** Only shown to - and readable by - a Cashflow game account. */
+  requiresGame?: boolean;
 }
 
 // Topics shared by both editions. Never a fileReplacements target itself —
