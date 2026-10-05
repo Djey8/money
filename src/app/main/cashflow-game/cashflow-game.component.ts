@@ -22,6 +22,7 @@ import {
   summarizeGameFinances,
   toMinorUnits,
   type SavedGameSummary,
+  pickOne,
 } from '@money/domain';
 import { Grow } from 'src/app/interfaces/grow';
 import { AppStateService } from 'src/app/shared/services/app-state.service';
@@ -468,7 +469,7 @@ export class CashflowGameComponent {
   shuffleProfession(): void {
     const professions = this.selectedGameSet?.professions ?? [];
     if (!professions.length) return;
-    const pick = professions[Math.floor(Math.random() * professions.length)];
+    const pick = pickOne(professions, this.cashflowGameService.rng);
     this.selectedProfessionId = pick.id;
     this.openProfessionCard(pick);
   }

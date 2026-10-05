@@ -1,3 +1,4 @@
+import { seededRng } from '@money/domain';
 import { AppStateService } from './app-state.service';
 import { CashflowGameService } from './cashflow-game.service';
 import { IncomeStatementService } from './income-statement.service';
@@ -3421,6 +3422,16 @@ describe('CashflowGameService', () => {
       expect(service.rollDie()).toBe(4);
       random.mockReturnValue(0.999999);
       expect(service.rollDie()).toBe(6);
+    });
+
+    it('rolls from the injected source when one is set - the same seed rolls the same game', () => {
+      const play = (seed: number) => {
+        service.rng = seededRng(seed);
+        return Array.from({ length: 8 }, () => service.rollDie());
+      };
+      expect(play(5)).toEqual(play(5));
+      service.rng = () => 0.5;
+      expect(service.rollDie()).toBe(4);
     });
   });
 

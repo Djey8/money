@@ -72,6 +72,9 @@ import {
   summarizeGameFinances,
   UNDO_STACK_LIMIT,
   systemClock,
+  systemRng,
+  rollDie as rollDieRule,
+  type Rng,
   toMinorUnits,
   tradePurchase,
   updateSharePrice,
@@ -346,6 +349,9 @@ export class CashflowGameService {
 
   /** "Now" for everything the game dates and stamps. A property (not a constructor argument) so a test can pin it. */
   clock: Clock = systemClock;
+
+  /** Where chance comes from (the dice, the card draws, a shuffled profession). A property so a test - or the solo engine - can pin it. */
+  rng: Rng = systemRng;
 
   /**
    * Not synced to the DB — see `UNDO_STACK_STORAGE_KEY`'s own comment. Starts from whatever's in
@@ -1405,7 +1411,7 @@ export class CashflowGameService {
 
   /** A die for the app to roll when the player has no real one at hand. */
   rollDie(): number {
-    return Math.floor(Math.random() * 6) + 1;
+    return rollDieRule(this.rng);
   }
 
   /**
@@ -1815,6 +1821,7 @@ export class CashflowGameService {
       result = drawRandomCard(
         deck as CashflowDeckCardMap[K][],
         state.cashflowGame.drawnCardIds[deckKind],
+        this.rng,
       );
     } catch (err: unknown) {
       callbacks.onError(errorMessage(err, 'Could not draw a card.'));

@@ -374,3 +374,12 @@ documented in `backend/DATABASE_STRUCTURE.md`):
 Open for D: the server must write the same document (Node zlib + the `EncryptionSession`) with each API step, and an
 agent's "undo back to step n" reads it from there. Saved-game blob types (`SavedGameBlob`, step log) still live in the
 Angular service; they move with D4 when the server needs them.
+
+## A3 wrap-up (2026-10-05)
+
+Chance is injected like the clock: `rng.ts` has `Rng`, `systemRng` (looks `Math.random` up per call), `seededRng`
+(mulberry32), `rollDie` and `pickOne`. `drawRandomCard` takes an optional `Rng`; `CashflowGameService.rng` feeds
+`rollDie`, card draws and (through the component) `shuffleProfession`. Behaviour in the app is unchanged; the solo engine
+and the API can now play a game from a seed. Left alone on purpose: `Math.random` in id generators (saved-game ids etc.),
+which are not game chance. **Next:** Phase B, the solo engine (board data from the picture, dice and movement, turn state
+machine, game end, simulation tests).

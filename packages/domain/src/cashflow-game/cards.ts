@@ -12,6 +12,8 @@
  *   been drawn since the deck's last reshuffle.
  */
 
+import { pickOne, systemRng, type Rng } from './rng';
+
 export interface CashflowDrawResult<T> {
   card: T;
   /** The deck's new "discard pile" (drawn-since-last-reshuffle) state — persist this. */
@@ -24,6 +26,7 @@ export interface CashflowDrawResult<T> {
 export function drawRandomCard<T extends { id: string }>(
   deck: T[],
   drawnIds: string[],
+  rng: Rng = systemRng,
 ): CashflowDrawResult<T> {
   if (deck.length === 0) {
     throw new Error('This deck has no cards yet.');
@@ -34,7 +37,7 @@ export function drawRandomCard<T extends { id: string }>(
     remaining = deck;
     reshuffled = true;
   }
-  const card = remaining[Math.floor(Math.random() * remaining.length)];
+  const card = pickOne(remaining, rng);
   return {
     card,
     drawnIds: [...(reshuffled ? [] : drawnIds), card.id],
