@@ -1,3 +1,57 @@
+## [1.19.0] - 2026-10-05
+
+### Features
+
+- feat(auth): require the game password to register a Cashflow game account
+- feat(docs): add the Cashflow game manual to the self-hosted docs
+- feat(cashflow-game): game panel with Payday, cards, dice, Market, loans and My games
+- feat(stats): mark game events in the charts
+- feat(cashflow-game): Grow trades, Market offers and gold deals from the dialogs
+- feat(cashflow-game): saved games that keep their whole undo history
+- feat(cashflow-game): game engine service with a full, reloadable undo history
+- feat(cashflow-game): card texts in six languages and a language per game
+- feat(domain): add Classic Cashflow card catalogs, saved-game model and content split
+- feat(cashflow-game): add all 12 Classic professions + new Custom JFK set
+- feat(cashflow-game): translate profession content into all 6 languages
+- feat(subscription): add a Category column to the Subscriptions page
+- feat(cashflow-game): persist the undo stack to localStorage, clear it on logout
+- feat(cashflow-game): general undo for any action; fix missing categories and dates
+- feat(cashflow-game): add Passive Income back to the mini cashflow box
+- feat(cashflow-game): defer Salary/Expenses to the first Payday, spread its dates across the month
+- feat(cashflow-game): profession card becomes an Income Statement/Balance Sheet, live during the game
+- feat(cashflow-game): itemize starting cash into real transactions; reload after reset
+- feat(cashflow-game): board-space color-coded selector, quiet monthly-cashflow stat, single Menu link
+- feat(cashflow-game): hide the placeholder fixture from players, complete the View Card stats, move reset to Settings
+- feat(cashflow-game): turn the game into an overlay panel, with profession shuffle and card view
+- feat(cashflow-game): categorize expense lines, compute starting cash, add the real Hausmeister profession
+- feat(cashflow-game): a reset button — wipe the whole account, start over
+- feat(cashflow-game): find or draw a card, from any of the four decks
+- feat(cashflow-game): Deal cards as Grow plans, reuse the app's own views
+- feat(cashflow-game): companion-mode space resolutions and bank loans
+- feat(cashflow-game): MVP of the Cashflow board game companion
+
+### Bug Fixes
+
+- fix(docker): patch pcre2 in the frontend image
+- fix(cashflow-game): Live scenario Salary always showing 0; lowercase reset button
+- fix(i18n): translate Smile/Fire bucket names in the Chinese locale
+- fix(cashflow-game): correct stat row order, add space-button effect hints
+- fix(cashflow-game): bank loan borrow/repay now actually moves cash
+- fix(cashflow-game): dashboard spacing, redesigned loan/menu buttons, hide History
+- fix(cashflow-game): date Payday transactions from each Subscription's own date
+- fix(cashflow-game): remove the rat-race bars, size the mini cashflow box to its amount pills
+- fix(cashflow-game): reliably detect an active game, disable subscription auto-add everywhere
+- fix(cashflow-game): notify pages instead of reloading the page after every action
+- fix(cashflow-game): categories on Payday/Downsized, itemize Downsized, step-by-step dashboard, reload after start
+- fix(cashflow-game): stop Start Game from silently no-opping at app bootstrap
+- fix(cashflow-game): add the missing menu entry to reach the page
+- fix(cashflow-game): remove a sold property's cashflow Subscription
+- fix(cashflow-game): Payday is unconditional; Deal cards are just Grow
+
+### Performance
+
+- perf(backend): cache encryption sessions and use native PBKDF2
+
 ## [1.18.0] - 2026-09-24
 
 ### Features
