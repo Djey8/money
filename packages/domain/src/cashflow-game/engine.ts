@@ -149,7 +149,7 @@ export interface CashflowGameSubscription {
 }
 
 /** The real Subscriptions matching `state.gameSubscriptionTitles`, in that order — what Payday/Charity/Downsized act on. */
-function ownedSubscriptions(
+export function ownedGameSubscriptions(
   state: CashflowGameState,
   subscriptions: CashflowGameSubscription[],
 ): CashflowGameSubscription[] {
@@ -201,15 +201,17 @@ export function runCashflowPayday(
   subscriptions: CashflowGameSubscription[],
 ): PaydayResult {
   const date = requireStarted(state, 'running Payday');
-  const transactions: CashflowTransactionRecord[] = ownedSubscriptions(state, subscriptions).map(
-    (sub) =>
-      cashflowTransaction(
-        sub.account,
-        sub.amountMinor,
-        date,
-        sub.comment ? sub.comment : '',
-        sub.category ?? '',
-      ),
+  const transactions: CashflowTransactionRecord[] = ownedGameSubscriptions(
+    state,
+    subscriptions,
+  ).map((sub) =>
+    cashflowTransaction(
+      sub.account,
+      sub.amountMinor,
+      date,
+      sub.comment ? sub.comment : '',
+      sub.category ?? '',
+    ),
   );
 
   const nextRound = state.round + 1;
@@ -330,7 +332,7 @@ export function resolveCashflowCharity(
   subscriptions: CashflowGameSubscription[],
 ): CharityResult {
   const date = requireStarted(state, 'landing on Charity');
-  const totalIncomeMinor = ownedSubscriptions(state, subscriptions)
+  const totalIncomeMinor = ownedGameSubscriptions(state, subscriptions)
     .filter((sub) => sub.amountMinor > 0)
     .reduce((sum, sub) => sum + sub.amountMinor, 0);
   const transaction = cashflowTransaction(
@@ -376,7 +378,7 @@ export function resolveCashflowDownsized(
   subscriptions: CashflowGameSubscription[],
 ): DownsizedResult {
   const date = requireStarted(state, 'landing on Downsized');
-  const transactions = ownedSubscriptions(state, subscriptions)
+  const transactions = ownedGameSubscriptions(state, subscriptions)
     .filter((sub) => sub.amountMinor < 0)
     .map((sub) =>
       cashflowTransaction(
@@ -419,7 +421,10 @@ export function computeMonthlyCashflowMinor(
   state: CashflowGameState,
   subscriptions: CashflowGameSubscription[],
 ): number {
-  return ownedSubscriptions(state, subscriptions).reduce((sum, sub) => sum + sub.amountMinor, 0);
+  return ownedGameSubscriptions(state, subscriptions).reduce(
+    (sum, sub) => sum + sub.amountMinor,
+    0,
+  );
 }
 
 export interface BankLoanResult {
