@@ -1,9 +1,3 @@
-import {
-  decodeUndoChain,
-  encodeUndoChain,
-  isEncodedUndoChain,
-  type EncodedUndoChain,
-} from '../undo-chain-codec';
 import { Injectable } from '@angular/core';
 import { Subject } from 'rxjs';
 import { TranslateService } from '@ngx-translate/core';
@@ -27,6 +21,10 @@ import {
   CashflowTransactionRecord,
   cashOnHandMinor,
   coinsOwnedOf,
+  decodeUndoChain,
+  encodeUndoChain,
+  isEncodedUndoChain,
+  type EncodedUndoChain,
   dealInputFromCard,
   doodadLoanNote as doodadLoanNoteRule,
   executeDeal as executeDealRule,
@@ -385,7 +383,7 @@ export class CashflowGameService {
 
   /** Reads a stored history: the compact form, or the plain list older versions of the app wrote. */
   private decodeStack(stored: unknown): CashflowGameSnapshot[] {
-    if (isEncodedUndoChain(stored)) return decodeUndoChain(stored) as CashflowGameSnapshot[];
+    if (isEncodedUndoChain(stored)) return decodeUndoChain<CashflowGameSnapshot>(stored);
     return Array.isArray(stored) ? (stored as CashflowGameSnapshot[]) : [];
   }
 
