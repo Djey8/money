@@ -8,6 +8,7 @@ import {
   runCashflowPayday,
 } from './engine';
 import { textOrFallback, type GameText } from './game-text';
+import type { GameStep } from './steps';
 import {
   dateFromSubscriptionDay,
   gameSubscriptionDays,
@@ -64,10 +65,7 @@ export interface RoundDeps {
 }
 
 /** One entry of the game's History: what kind of step it was and what it was about. */
-export interface RoundStep {
-  kind: 'payday' | 'baby' | 'charity' | 'downsized';
-  detail?: string;
-}
+export type RoundStep = GameStep;
 
 /** What a round rule changes. Positions refer to `RoundBooks.transactions`. */
 export interface RoundEffects {

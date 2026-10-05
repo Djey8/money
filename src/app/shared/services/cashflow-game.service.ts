@@ -50,6 +50,8 @@ import {
   usedDaysThisMonth,
   type BookSubscription,
   type Clock,
+  type GameStep,
+  type GameStepKind,
   type RoundBooks,
   type RoundDeps,
   type RoundEffects,
@@ -173,42 +175,10 @@ function toFloatTransaction(record: CashflowTransactionRecord): Transaction {
 }
 
 /** Every real entity a cashflow-game action can touch — a full copy of this is one undo step (JFK, 2026-09-29+: "we need to keep track of the history of inputs... we need to make sure we can revert each move"). Includes Smile/Fire/Mojo even though only `resetGame` ever touches them, so undoing a reset restores those too, not just the game's own bookkeeping. Plain JSON data throughout, so a deep clone is just a stringify/parse round-trip. */
-/** Everything a player can do that is one step in the game - and one step to undo (JFK, 2026-10-03). */
-export type CashflowStepKind =
-  | 'start'
-  | 'payday'
-  | 'baby'
-  | 'charity'
-  | 'downsized'
-  | 'loanTaken'
-  | 'loanRepaid'
-  | 'loanAuto'
-  | 'planDeal'
-  | 'buyDeal'
-  | 'doodad'
-  | 'marketCard'
-  | 'marketCost'
-  | 'priceUpdate'
-  | 'shareSplit'
-  | 'shareReverseSplit'
-  | 'cardSale'
-  | 'reset'
-  | 'buyShare'
-  | 'sellShare'
-  | 'buyInvestment'
-  | 'sellInvestment'
-  | 'payoff'
-  | 'buyAsset'
-  | 'sellAsset'
-  | 'diceWon'
-  | 'diceLost'
-  | 'transaction';
+/** Everything a player can do that is one step in the game - and one step to undo (JFK, 2026-10-03). Defined in the domain, shared with the Pro API. */
+export type CashflowStepKind = GameStepKind;
 
-interface CashflowStepInfo {
-  kind: CashflowStepKind;
-  /** What it was about: a title, a symbol, an amount, "Round 3"... */
-  detail?: string;
-}
+type CashflowStepInfo = GameStep;
 
 /** One line of the game's History, newest first - exactly one per undo step. */
 export interface CashflowHistoryStep {

@@ -35,3 +35,4 @@ export * from './cashflow-game/clock';
 export * from './cashflow-game/game-text';
 export * from './cashflow-game/scheduling';
 export * from './cashflow-game/rounds';
+export * from './cashflow-game/steps';
