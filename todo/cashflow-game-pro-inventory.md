@@ -299,3 +299,22 @@ transaction comment ("Sold the X card to a friend") was hardcoded English~~ - **
 **Still to do:** A1(e) - special assets, dice cards, coins, the stock split's resolution (`beforeAssetBuy`,
 `afterAssetBuy`, `afterAssetSell`, `sellCoins`, `resolveGamble`, `resolvePaydayRoll`, `resolveShareSplit`,
 `openDecisions`, `paydayRollCount`); A1(f) - the Doodad payment, then A2 and A3.
+
+**A1(e) results - special assets, dice cards, coins and the split roll** (`9bd045d` and the adapter commit after it):
+
+- **`asset-deals.ts`** holds the hooks around the Add dialog's Buy / Sell Asset (`beforeAssetBuy` - a dice card is paid for
+  but waits for its roll; `afterAssetBuy`; `afterAssetSell` - selling the last of an asset completes its project),
+  `sellCoins` (the asset and the project keep the cost of the coins left; the last coin removes the asset; fractions
+  allowed), `openDecisions` / `paydayRollCount` / `recurringOwned`, and `resolveGamble`, which settles a paid dice card
+  (won: the coins as an Asset at what was paid; a loan to a relative: the cash back as income; lost: gone), a kept card's
+  **one Payday roll covering every due card of its kind** (a win pays once per card, on different days) and a stock
+  split's roll (double / halve, the half you keep rounding up). The die is an input, so every rule is deterministic.
+- `GameEffects` and the books gained asset positions (upsert and removal). The service's methods are adapters; the dead
+  private helpers (`resolvePaydayRoll`, `resolveShareSplit`, `recurringOwned`, `assetDeals`, `setAssetDeal`) are gone.
+  All 375 game tests passed unchanged on the first run.
+
+**Left for A3:** the app still rolls its own die (`rollDie`, `Math.random`) and a card is still drawn with the domain's
+unseeded `drawRandomCard`; both become an injected `Rng`.
+
+**Still to do:** A1(f) - the Doodad payment (partly the component's `payActiveDoodad` and the Add dialog), then A2
+(undo, snapshots, reset, saved games, and writing the live history to the account on every step) and A3 (`Rng`).

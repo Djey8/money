@@ -8,6 +8,13 @@ import { Injectable } from '@angular/core';
 import { Subject } from 'rxjs';
 import { TranslateService } from '@ngx-translate/core';
 import {
+  afterAssetBuy as afterAssetBuyRule,
+  afterAssetSell as afterAssetSellRule,
+  beforeAssetBuy as beforeAssetBuyRule,
+  openDecisions as openDecisionsOf,
+  paydayRollCount as paydayRollCountOf,
+  resolveGamble as resolveGambleRule,
+  sellCoins as sellCoinsRule,
   CashflowAssetDeal,
   CashflowDealCard,
   CashflowDeckKind,
@@ -1051,6 +1058,16 @@ export class CashflowGameService {
         price: fromMinorUnits(upsert.priceMinor),
       }));
     }
+    for (const upsert of effects.assetUpserts) {
+      this.upsertEntity(state.allAssets, upsert.tag, () => ({
+        tag: upsert.tag,
+        amount: fromMinorUnits(upsert.amountMinor),
+      }));
+    }
+    for (const tag of effects.assetRemovals) {
+      const index = state.allAssets.findIndex((asset) => asset.tag === tag);
+      if (index >= 0) state.allAssets.splice(index, 1);
+    }
     for (const upsert of effects.investmentUpserts) {
       this.upsertEntity(state.allInvestments, upsert.tag, () => ({
         tag: upsert.tag,
@@ -1340,63 +1357,28 @@ export class CashflowGameService {
     return this.translate.instant('CashflowGame.expenseRemoved', { title });
   }
 
-  /** The special-asset deals in play (gold coins), oldest first. */
-  private assetDeals(): CashflowAssetDeal[] {
-    return AppStateService.instance.cashflowGame.assetDeals ?? [];
-  }
-
-  private setAssetDeal(title: string, patch: Partial<CashflowAssetDeal>): void {
-    const state = AppStateService.instance;
-    state.cashflowGame = {
-      ...state.cashflowGame,
-      assetDeals: this.assetDeals().map((deal) =>
-        deal.title === title ? { ...deal, ...patch } : deal,
-      ),
-    };
-  }
-
   /**
    * Called by the Add dialog's Buy Asset before it books the asset. A dice-gamble card is *paid* but
    * does not become an asset yet - it waits for the roll (`resolveGamble`) - so this returns true and
    * the dialog skips creating it. A plain offer returns false and is booked as usual.
    */
   beforeAssetBuy(title: string): boolean {
-    // 'awaitingRoll' counts too: pressing Buy again on a card that is already paid and waiting must
-    // not hand out the coins without the roll.
-    const deal = this.assetDeals().find(
-      (d) => d.title === title && (d.stage === 'planned' || d.stage === 'awaitingRoll'),
-    );
-    // A recurring card (Multi-Level-Marketing) is simply bought; its dice come at every Payday.
-    if (!deal?.successOn || deal.recurring) return false;
-    this.setAssetDeal(title, { stage: 'awaitingRoll' });
-    return true;
+    const hook = beforeAssetBuyRule(AppStateService.instance.cashflowGame, title);
+    if (hook.effects) this.applyGameEffects(hook.effects);
+    return hook.gamble;
   }
 
   /** After the dialog's Buy Asset: a plain offer is now owned; a gamble is paid and waits for its roll. */
   afterAssetBuy(title: string): void {
-    const project = AppStateService.instance.allGrowProjects.find((p) => p.title === title);
-    const deal = this.assetDeals().find((d) => d.title === title);
-    if (deal?.stage === 'awaitingRoll') {
-      if (project) {
-        project.status = 'awaiting roll';
-        project.phase = 'execute';
-      }
-      // Paid: bring the player straight to the game dashboard, where the roll is decided.
-      this.decisionNeeded$.next();
-      return;
-    }
-    if (deal?.stage === 'planned') this.setAssetDeal(title, { stage: 'owned' });
-    this.setPhaseAfterTrade(title, 'buy');
+    const effects = afterAssetBuyRule(this.gameBooks(), title);
+    this.applyGameEffects(effects);
+    // Paid: bring the player straight to the game dashboard, where the roll is decided.
+    if (effects.decisionNeeded) this.decisionNeeded$.next();
   }
 
   /** After the dialog's Sell Asset: the project is sold only when the asset is gone; otherwise it still holds what is left. */
   afterAssetSell(title: string): void {
-    const state = AppStateService.instance;
-    const stillOwned = state.allAssets.some((asset) => asset.tag === title);
-    if (!stillOwned) this.setAssetDeal(title, { stage: 'sold', rollDue: false });
-    const project = state.allGrowProjects.find((candidate) => candidate.title === title);
-    if (project) project.status = stillOwned ? 'bought' : 'sold';
-    this.setPhaseAfterTrade(title, 'sell');
+    this.applyGameEffects(afterAssetSellRule(this.gameBooks(), title));
   }
 
   /** How many coins of a special asset (gold) are still owned - 0 for any other asset. */
@@ -1420,33 +1402,15 @@ export class CashflowGameService {
    * Returns false for an ordinary asset, which keeps its usual sale.
    */
   sellCoins(title: string, quantity: number, price: number): boolean {
-    const state = AppStateService.instance;
-    const deal = this.assetDeals().find((d) => d.title === title && d.stage === 'owned');
-    if (!deal || !(quantity > 0)) return false;
-    const left = Math.max(0, Math.round((deal.coins - quantity) * 100) / 100);
-    const asset = state.allAssets.find((candidate) => candidate.tag === title);
-    const project = state.allGrowProjects.find((candidate) => candidate.title === title);
-    const keep = deal.coins > 0 ? left / deal.coins : 0;
-    if (asset) {
-      if (left <= 0) state.allAssets.splice(state.allAssets.indexOf(asset), 1);
-      else asset.amount = Math.round(Number(asset.amount) * keep * 100) / 100;
-    }
-    if (project) {
-      if (left > 0) project.amount = Math.round(Number(project.amount) * keep * 100) / 100;
-      project.notes = [
-        ...(project.notes ?? []),
-        {
-          text: this.translate.instant('CashflowGame.coinsSoldNote', {
-            sold: quantity,
-            price: this.amountText(price),
-            left,
-          }),
-          createdAt: this.clock.nowIso(),
-        },
-      ];
-    }
-    this.setAssetDeal(title, left <= 0 ? { coins: 0, stage: 'sold' } : { coins: left });
-    return true;
+    const { sold, effects } = sellCoinsRule(
+      this.gameBooks(),
+      title,
+      quantity,
+      toMinorUnits(price),
+      this.cardDeps,
+    );
+    if (effects) this.applyGameEffects(effects);
+    return sold;
   }
 
   /** Fires when a dice card has just been paid - the game panel listens and opens on the open decision (JFK, 2026-10-03). */
@@ -1454,89 +1418,12 @@ export class CashflowGameService {
 
   /** Paid dice cards still waiting for their roll - shown on the game dashboard as an open decision. */
   get openDecisions(): CashflowAssetDeal[] {
-    const waiting = this.assetDeals().filter((deal) => deal.stage === 'awaitingRoll');
-    // The Payday rolls of kept cards are one decision for the whole group, shown once.
-    const due = this.recurringOwned().filter((deal) => deal.rollDue);
-    return due.length ? [...waiting, due[0]] : waiting;
-  }
-
-  /** Kept cards that are rolled for at every Payday (Multi-Level-Marketing). */
-  private recurringOwned(): CashflowAssetDeal[] {
-    return this.assetDeals().filter((deal) => deal.recurring && deal.stage === 'owned');
+    return openDecisionsOf(AppStateService.instance.cashflowGame);
   }
 
   /** How many cards the open Payday roll covers: a roll pays once per card, so two cards win (or miss) together. */
   paydayRollCount(deal: CashflowAssetDeal): number {
-    if (!deal.recurring) return 1;
-    return this.recurringOwned().filter(
-      (other) =>
-        other.rollDue &&
-        other.costMinor === deal.costMinor &&
-        other.payoutMinor === deal.payoutMinor,
-    ).length;
-  }
-
-  /**
-   * One Payday roll for every kept card of the same kind (JFK, 2026-10-03: "you just throw once and
-   * either you get twice or nothing"): a win books one income per card, a miss books nothing - the
-   * cards stay in execution either way. A separate History step from the Payday itself.
-   */
-  private resolvePaydayRoll(
-    target: CashflowAssetDeal,
-    outcome: { won: boolean; roll?: number },
-    callbacks: CashflowGameCallbacks,
-  ): void {
-    const state = AppStateService.instance;
-    const group = this.recurringOwned().filter(
-      (other) =>
-        other.rollDue &&
-        other.costMinor === target.costMinor &&
-        other.payoutMinor === target.payoutMinor,
-    );
-    const label = group.length > 1 ? `${target.title} ×${group.length}` : target.title;
-    this.pushUndoSnapshot({
-      kind: outcome.won ? 'diceWon' : 'diceLost',
-      detail: outcome.roll ? `${label} · 🎲 ${outcome.roll}` : label,
-    });
-    const payout = fromMinorUnits(target.payoutMinor ?? 0);
-    const resultText =
-      (outcome.won ? target.successText : target.failureText) ??
-      this.translate.instant(
-        outcome.won ? 'CashflowGame.diceWonPayoutToast' : 'CashflowGame.diceLostToast',
-        { amount: this.amountText(payout * group.length) },
-      );
-    for (const deal of group) {
-      const project = state.allGrowProjects.find((p) => p.title === deal.title);
-      if (project) {
-        project.notes = [
-          ...(project.notes ?? []),
-          {
-            text: `🎲 ${outcome.roll ? `${outcome.roll}: ` : ''}${resultText}`,
-            createdAt: this.clock.nowIso(),
-          },
-        ];
-      }
-      if (outcome.won) {
-        state.allTransactions.push({
-          account: 'Daily',
-          amount: payout,
-          date: this.nextGameTransactionDate(),
-          time: '',
-          category: `@${deal.title}`,
-          comment: `${deal.title} payout\n#cashflow`,
-        });
-      }
-    }
-    const done = new Set(group.map((deal) => deal.title));
-    state.cashflowGame = {
-      ...state.cashflowGame,
-      assetDeals: this.assetDeals().map((deal) =>
-        done.has(deal.title) ? { ...deal, rollDue: false } : deal,
-      ),
-    };
-    this.persistAll('cashflow_dice', { title: target.title, won: outcome.won }, callbacks, {
-      includeGrow: true,
-    });
+    return paydayRollCountOf(AppStateService.instance.cashflowGame, deal);
   }
 
   /** A die for the app to roll when the player has no real one at hand. */
@@ -1555,70 +1442,28 @@ export class CashflowGameService {
     outcome: { won: boolean; roll?: number },
     callbacks: CashflowGameCallbacks,
   ): void {
-    const state = AppStateService.instance;
-    const dueCard = this.recurringOwned().find((d) => d.title === title && d.rollDue);
-    if (dueCard) {
-      this.resolvePaydayRoll(dueCard, outcome, callbacks);
+    let result: ReturnType<typeof resolveGambleRule>;
+    try {
+      result = resolveGambleRule(this.gameBooks(), title, outcome, this.cardDeps);
+    } catch (err: unknown) {
+      callbacks.onError(errorMessage(err, 'Could not settle this card.'));
       return;
     }
-    const deal = this.assetDeals().find((d) => d.title === title && d.stage === 'awaitingRoll');
-    if (!deal) {
-      callbacks.onError('There is no dice decision open for this card.');
-      return;
-    }
-    if (deal.split) {
-      this.resolveShareSplit(deal, outcome, callbacks);
-      return;
-    }
-    this.pushUndoSnapshot({
-      kind: outcome.won ? 'diceWon' : 'diceLost',
-      detail: outcome.roll ? `${title} · 🎲 ${outcome.roll}` : title,
-    });
-    const project = state.allGrowProjects.find((p) => p.title === title);
-    const payout = deal.payoutMinor ? fromMinorUnits(deal.payoutMinor) : 0;
-    const resultText =
-      (outcome.won ? deal.successText : deal.failureText) ??
-      this.translate.instant(
-        outcome.won
-          ? payout
-            ? 'CashflowGame.diceWonPayoutToast'
-            : 'CashflowGame.diceWonToast'
-          : 'CashflowGame.diceLostToast',
-        { coins: deal.coins, amount: this.amountText(payout) },
-      );
-    if (project) {
-      project.notes = [
-        ...(project.notes ?? []),
-        {
-          text: `🎲 ${outcome.roll ? `${outcome.roll}: ` : ''}${resultText}`,
-          createdAt: this.clock.nowIso(),
-        },
-      ];
-      project.status = outcome.won ? (payout ? 'paid back' : 'bought') : 'lost';
-      project.phase = outcome.won && !payout ? 'execute' : 'completed';
-    }
-    if (outcome.won && payout) {
-      // A loan that came back: the cash is income, nothing is owned afterwards.
-      state.allTransactions.push({
-        account: 'Daily',
-        amount: payout,
-        date: this.nextGameTransactionDate(),
-        time: '',
-        category: `@${title}`,
-        comment: `${title} paid back\n#cashflow`,
-      });
-    } else if (outcome.won) {
-      const owned = state.allAssets.find((asset) => asset.tag === title);
-      if (owned) owned.amount = Number(owned.amount) + fromMinorUnits(deal.costMinor);
-      else state.allAssets.push({ tag: title, amount: fromMinorUnits(deal.costMinor) });
-    }
-    this.setAssetDeal(title, {
-      stage: outcome.won ? (payout ? 'paidBack' : 'owned') : 'lost',
-    });
-    this.persistAll('cashflow_dice', { title, won: outcome.won }, callbacks, {
-      includeBalanceSheet: true,
-      includeGrow: true,
-    });
+    this.pushUndoSnapshot(result.effects.step as CashflowStepInfo);
+    this.applyGameEffects(result.effects);
+    const { persist } = result.effects;
+    this.persistAll(
+      result.kind === 'split' ? 'cashflow_share_split' : 'cashflow_dice',
+      result.kind === 'split'
+        ? { share: result.share, won: outcome.won }
+        : { title, won: outcome.won },
+      callbacks,
+      {
+        includeSubscriptions: persist.subscriptions,
+        includeBalanceSheet: persist.balanceSheet,
+        includeGrow: persist.grow,
+      },
+    );
   }
 
   /**
@@ -1748,50 +1593,6 @@ export class CashflowGameService {
         onError: callbacks.onError,
       },
     );
-  }
-
-  /**
-   * The split roll (JFK, 2026-10-03): 1-3 (`won`) doubles the quantity of the share, 4-6 halves it
-   * (the half you keep rounds up). Only the quantity changes - no price, no cash, no cost. One undo
-   * step, and a note on the share's Grow project.
-   */
-  private resolveShareSplit(
-    deal: CashflowAssetDeal,
-    outcome: { won: boolean; roll?: number },
-    callbacks: CashflowGameCallbacks,
-  ): void {
-    const state = AppStateService.instance;
-    const tag = deal.split?.shareTag ?? '';
-    const share = state.allShares.find((candidate) => candidate.tag === tag);
-    const from = Number(share?.quantity) || 0;
-    const to = outcome.won ? from * 2 : Math.ceil(from / 2);
-    this.pushUndoSnapshot({
-      kind: outcome.won ? 'shareSplit' : 'shareReverseSplit',
-      detail: `${tag} · ${outcome.roll ? `🎲 ${outcome.roll} · ` : ''}${from} → ${to}`,
-    });
-    if (share) share.quantity = to;
-    const project = state.allGrowProjects.find((candidate) => candidate.title === tag);
-    if (project) {
-      if (project.share && Number(project.share.quantity) === from) project.share.quantity = to;
-      project.notes = [
-        ...(project.notes ?? []),
-        {
-          text: `🎲 ${outcome.roll ? `${outcome.roll}: ` : ''}${this.translate.instant(
-            outcome.won ? 'CashflowGame.splitDouble' : 'CashflowGame.splitHalve',
-            { share: tag, from, to },
-          )}`,
-          createdAt: this.clock.nowIso(),
-        },
-      ];
-    }
-    state.cashflowGame = {
-      ...state.cashflowGame,
-      assetDeals: this.assetDeals().filter((candidate) => candidate.title !== deal.title),
-    };
-    this.persistAll('cashflow_share_split', { share: tag, won: outcome.won }, callbacks, {
-      includeBalanceSheet: true,
-      includeGrow: true,
-    });
   }
 
   /**
