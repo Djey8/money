@@ -3135,6 +3135,89 @@ describe('CashflowGameService', () => {
     });
   });
 
+  describe('solo mode: the token walks the ring (JFK, 2026-10-05)', () => {
+    const callbacks = () => ({ onSuccess: jest.fn(), onError: jest.fn() });
+    const startSolo = () =>
+      service.pickProfession('placeholder', 'placeholder-profession', callbacks(), 'solo');
+    /** A die that always shows `face`. */
+    const die = (face: number) => () => (face - 1) / 6 + 0.01;
+
+    it('starts at START with the first roll open; a companion game has no turn', () => {
+      startSolo();
+      expect(service.isSolo).toBe(true);
+      expect(AppStateService.instance.cashflowGame.boardPosition).toBeNull();
+      expect(service.soloTurn).toEqual({ phase: 'roll', count: 0 });
+      expect(service.cannotRollBecause).toBeNull();
+      (AppStateService as any)._instance = undefined;
+      service.pickProfession('placeholder', 'placeholder-profession', callbacks());
+      expect(service.isSolo).toBe(false);
+      expect(service.cannotRollBecause).toMatch(/solo/);
+    });
+
+    it('a roll moves the token, books what the landing does, and is one undo step', () => {
+      startSolo();
+      service.rng = die(6); // 6 from START lands on the Payday at 5
+      const result = service.rollTurn(1, callbacks())!;
+      const state = AppStateService.instance;
+      expect(result.move.to).toBe(5);
+      expect(state.cashflowGame.boardPosition).toBe(5);
+      expect(state.cashflowGame.round).toBe(1);
+      expect(state.allTransactions.length).toBeGreaterThan(1); // Savings + the Payday's lines
+      expect(service.historySteps().map((step) => step.kind)).toEqual(['roll', 'start']);
+
+      service.undoLastAction(callbacks());
+      expect(state.cashflowGame.boardPosition).toBeNull();
+      expect(state.cashflowGame.round).toBe(0);
+      expect(state.allTransactions).toHaveLength(1);
+      expect(service.soloTurn).toEqual({ phase: 'roll', count: 0 });
+    });
+
+    it('a card space leaves the turn open until the card is settled; passing is an undoable step', () => {
+      startSolo();
+      service.rng = die(1); // space 0: a Deals space
+      service.rollTurn(1, callbacks());
+      expect(service.soloTurn.phase).toBe('decide');
+      expect(service.soloTurn.pending).toEqual({ kind: 'deal', spaceIndex: 0 });
+      const blocked = callbacks();
+      expect(service.rollTurn(1, blocked)).toBeNull();
+      expect(blocked.onError).toHaveBeenCalledWith(expect.stringMatching(/card/));
+
+      service.settleSoloDecision('passed', callbacks());
+      expect(service.soloTurn.phase).toBe('roll');
+      expect(service.historySteps()[0].kind).toBe('skipCard');
+      service.undoLastAction(callbacks());
+      expect(service.soloTurn.phase).toBe('decide');
+
+      service.settleSoloDecision('done', callbacks());
+      expect(service.soloTurn.phase).toBe('roll');
+      expect(service.historySteps()[0].kind).toBe('roll'); // 'done' adds no step of its own
+    });
+
+    it('persists the new token and turn with the game', () => {
+      startSolo();
+      persistence.batchWriteAndSync.mockClear();
+      service.rng = die(1);
+      service.rollTurn(1, callbacks());
+      const writes = persistence.batchWriteAndSync.mock.calls[0][0].writes;
+      const game = writes.find((write: any) => write.tag === 'cashflowGame').data;
+      expect(game.boardPosition).toBe(0);
+      expect(game.turn.phase).toBe('decide');
+    });
+
+    it('a finished game cannot be rolled, and reports its summary', () => {
+      startSolo();
+      const state = AppStateService.instance;
+      state.cashflowGame = {
+        ...state.cashflowGame,
+        turn: { phase: 'over', count: 9, outcome: 'escaped' },
+      };
+      const refused = callbacks();
+      expect(service.rollTurn(1, refused)).toBeNull();
+      expect(refused.onError).toHaveBeenCalledWith(expect.stringMatching(/over/));
+      expect(service.soloSummary().outcome).toBe('escaped');
+    });
+  });
+
   describe('the live history in the account (JFK, 2026-10-05)', () => {
     const callbacks = () => ({ onSuccess: jest.fn(), onError: jest.fn() });
     const started = () =>

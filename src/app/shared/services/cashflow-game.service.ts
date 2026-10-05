@@ -73,6 +73,16 @@ import {
   UNDO_STACK_LIMIT,
   systemClock,
   systemRng,
+  CLASSIC_RAT_RACE_BOARD,
+  playTurn,
+  settleDecision as settleDecisionRule,
+  whyCannotRoll,
+  finalSummary,
+  currentTurn,
+  type DiceCount,
+  type FinalSummary,
+  type RatRaceBoard,
+  type TurnResult,
   rollDie as rollDieRule,
   type Rng,
   toMinorUnits,
@@ -749,7 +759,12 @@ export class CashflowGameService {
    * records pick up whatever language is active right now (todo/cashflow-game.md decision 48, JFK
    * 2026-09-29+: "can we have this in all 6 languages and we translate all of these values").
    */
-  pickProfession(gameSetId: string, professionId: string, callbacks: CashflowGameCallbacks): void {
+  pickProfession(
+    gameSetId: string,
+    professionId: string,
+    callbacks: CashflowGameCallbacks,
+    mode: 'companion' | 'solo' = 'companion',
+  ): void {
     const state = AppStateService.instance;
     let result: ReturnType<typeof pickCashflowProfession>;
     try {
@@ -758,6 +773,7 @@ export class CashflowGameService {
         gameSetId,
         professionId,
         this.clock.todayIso(),
+        mode,
       );
     } catch (err: unknown) {
       callbacks.onError(errorMessage(err, 'Could not start the game.'));
@@ -1079,6 +1095,83 @@ export class CashflowGameService {
   /** The next free day-of-month slot of this real month, dated (see `nextSmartDate`). */
   private nextSmartSubscriptionDate(usedDays: Set<number>): string {
     return nextSmartDate(usedDays, this.clock.todayIso());
+  }
+
+  // ── Solo mode: the token walks the rat-race ring (todo/cashflow-game-pro.md, Phase C) ──────────────
+
+  /** The ring the token walks. */
+  readonly board: RatRaceBoard = CLASSIC_RAT_RACE_BOARD;
+
+  /** Whether the running game is a solo game. */
+  get isSolo(): boolean {
+    return AppStateService.instance.cashflowGame.mode === 'solo';
+  }
+
+  /** Where the solo turn stands: waiting for a roll, a card to deal with, or over. */
+  get soloTurn() {
+    return currentTurn(AppStateService.instance.cashflowGame);
+  }
+
+  /** Why no roll can be made right now (null when one can). */
+  get cannotRollBecause(): string | null {
+    return whyCannotRoll(AppStateService.instance.cashflowGame);
+  }
+
+  /** How a finished solo game ended, with the closing numbers. */
+  soloSummary(): FinalSummary {
+    return finalSummary(this.gameBooks());
+  }
+
+  /**
+   * One solo turn: roll, move, pay the Paydays passed, resolve the landing - **one** undo step. The dice are the
+   * engine's (this service's `rng`); the UI only shows what came out. Returns the roll and move so it can animate them.
+   */
+  rollTurn(dice: DiceCount, callbacks: CashflowGameCallbacks): TurnResult | null {
+    const profession = this.currentProfession();
+    if (!profession) {
+      callbacks.onError('Pick a profession first.');
+      return null;
+    }
+    let result: TurnResult;
+    try {
+      result = playTurn(
+        this.gameBooks(),
+        { ...this.roundDeps, board: this.board, profession, rng: this.rng },
+        { dice },
+      );
+    } catch (err: unknown) {
+      callbacks.onError(errorMessage(err, 'Could not roll.'));
+      return null;
+    }
+    this.pushUndoSnapshot(result.step);
+    for (const effects of result.effects) this.applyGameEffects(effects);
+    this.persistAll('cashflow_roll', { total: result.roll.total, to: result.move.to }, callbacks, {
+      includeSubscriptions: true,
+      includeGrow: true,
+    });
+    if (result.effects.some((effects) => effects.decisionNeeded)) this.decisionNeeded$.next();
+    return result;
+  }
+
+  /**
+   * Closes the open card decision of a solo turn: `done` once the card was dealt with, `passed` to leave it (a step of
+   * its own, so Undo brings the card back). Dealing with the card may have won the game, so the books are checked.
+   */
+  settleSoloDecision(how: 'done' | 'passed', callbacks: CashflowGameCallbacks): void {
+    let settled: ReturnType<typeof settleDecisionRule>;
+    try {
+      settled = settleDecisionRule(
+        AppStateService.instance.cashflowGame,
+        how,
+        this.gameBooks().subscriptions,
+      );
+    } catch (err: unknown) {
+      callbacks.onError(errorMessage(err, 'Nothing to settle.'));
+      return;
+    }
+    if (settled.step) this.pushUndoSnapshot(settled.step);
+    AppStateService.instance.cashflowGame = settled.state;
+    this.persistAll('cashflow_decision', { how }, callbacks);
   }
 
   /** Resolves a Baby space: +1 child (max 3), scales the children-expense Subscription. */
