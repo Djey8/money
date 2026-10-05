@@ -198,3 +198,30 @@ describe('cryptic (CrypticService v2 port)', () => {
     });
   });
 });
+
+describe('native PBKDF2 path', () => {
+  it('derives the same key as crypto-js, so ciphertext from either path interoperates', () => {
+    const salt = CryptoJS.enc.Hex.parse('000102030405060708090a0b0c0d0e0f');
+    const reference = CryptoJS.PBKDF2('pässword ✓', salt, {
+      keySize: 8,
+      iterations: 10000,
+      hasher: CryptoJS.algo.SHA256,
+    });
+    // A value encrypted under the reference key must decrypt via the session
+    // (which uses the native path under Node) and vice versa.
+    const session = new EncryptionSession('pässword ✓');
+    const value = session.encrypt('same key?', { saltHex: CryptoJS.enc.Hex.stringify(salt) });
+    const raw = CryptoJS.enc.Base64.parse(value.slice(3));
+    const ct = CryptoJS.lib.WordArray.create(raw.words.slice(16), raw.sigBytes - 64);
+    const plain = CryptoJS.AES.decrypt(
+      CryptoJS.lib.CipherParams.create({ ciphertext: ct }),
+      reference,
+      {
+        iv: CryptoJS.lib.WordArray.create(raw.words.slice(4, 8), 16),
+        mode: CryptoJS.mode.CBC,
+        padding: CryptoJS.pad.Pkcs7,
+      },
+    );
+    expect(plain.toString(CryptoJS.enc.Utf8)).toBe('same key?');
+  });
+});

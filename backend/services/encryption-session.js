@@ -37,10 +37,34 @@ async function setEncryptionConfig(authDb, userId, config) {
   return userDoc.encryptionConfig;
 }
 
+// One EncryptionSession per user, reused across requests: its derived-key
+// cache is what makes decrypting a large collection cheap (one PBKDF2 per
+// distinct salt, not per request). Keyed by the password too, so changing the
+// stored key (mm-admin rotate-encryption-key) transparently gets a fresh
+// session. Bounded so a many-user server can't grow it without limit.
+const MAX_CACHED_SESSIONS = 50;
+const sessionCache = new Map();
+
+function cachedSession(userId, key) {
+  const hit = sessionCache.get(userId);
+  if (hit && hit.key === key) {
+    sessionCache.delete(userId); // refresh recency
+    sessionCache.set(userId, hit);
+    return hit.session;
+  }
+  const session = new EncryptionSession(key);
+  sessionCache.delete(userId);
+  sessionCache.set(userId, { key, session });
+  if (sessionCache.size > MAX_CACHED_SESSIONS) {
+    sessionCache.delete(sessionCache.keys().next().value);
+  }
+  return session;
+}
+
 async function getEncryptionSession(authDb, userId) {
   const encryptionConfig = await getEncryptionConfig(authDb, userId);
   if (!encryptionConfig.encryptDatabase || encryptionConfig.key === 'default') return null;
-  return new EncryptionSession(encryptionConfig.key);
+  return cachedSession(userId, encryptionConfig.key);
 }
 
 module.exports = {

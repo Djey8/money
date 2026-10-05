@@ -57,7 +57,47 @@ export interface EncryptOptions {
   ivHex?: string;
 }
 
+// Node's native PBKDF2 is ~100x faster than crypto-js's pure-JS one (~11ms vs
+// ~1.2s for 10,000 iterations on the self-hosted server) and yields the
+// identical key. Loaded via `module.require` rather than an `import` so
+// browser bundlers (this barrel is also bundled into the Angular app) never
+// try to resolve Node's `crypto`; there it stays null and crypto-js is used.
+interface NodePbkdf2 {
+  pbkdf2Sync(
+    password: string,
+    salt: Uint8Array,
+    iterations: number,
+    keylen: number,
+    digest: string,
+  ): Uint8Array;
+}
+
+function loadNodeCrypto(): NodePbkdf2 | null {
+  try {
+    if (typeof module !== 'undefined' && typeof module.require === 'function') {
+      const loaded = module.require('crypto') as NodePbkdf2;
+      if (typeof loaded?.pbkdf2Sync === 'function') return loaded;
+    }
+  } catch {
+    // not running under Node
+  }
+  return null;
+}
+
+const nodeCrypto = loadNodeCrypto();
+
 function deriveKey(password: string, salt: CryptoJS.lib.WordArray): CryptoJS.lib.WordArray {
+  if (nodeCrypto) {
+    const saltBytes = Uint8Array.from(Buffer.from(CryptoJS.enc.Hex.stringify(salt), 'hex'));
+    const derived = nodeCrypto.pbkdf2Sync(
+      password,
+      saltBytes,
+      PBKDF2_ITERATIONS,
+      PBKDF2_KEY_SIZE * 4,
+      'sha256',
+    );
+    return CryptoJS.enc.Hex.parse(Buffer.from(derived).toString('hex'));
+  }
   return CryptoJS.PBKDF2(password, salt, {
     keySize: PBKDF2_KEY_SIZE,
     iterations: PBKDF2_ITERATIONS,
