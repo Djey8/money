@@ -1,3 +1,4 @@
+import * as nodeCrypto from 'crypto';
 import * as CryptoJS from 'crypto-js';
 import {
   decrypt,
@@ -223,5 +224,76 @@ describe('native PBKDF2 path', () => {
       },
     );
     expect(plain.toString(CryptoJS.enc.Utf8)).toBe('same key?');
+  });
+});
+
+describe('native AES/HMAC path vs a pure crypto-js reference', () => {
+  const PASSWORD = 'pässword ✓';
+  const SALT_HEX = '00112233445566778899aabbccddeeff';
+  const PLAINTEXTS = [
+    '',
+    'a',
+    '-1234.56',
+    'Ünïcödé ✓ 日本語 🏦',
+    'x'.repeat(5000),
+    'line1\nline2\t"q"',
+  ];
+
+  function referenceEncrypt(plaintext: string): string {
+    const salt = CryptoJS.enc.Hex.parse(SALT_HEX);
+    const iv = CryptoJS.lib.WordArray.random(16);
+    const key = CryptoJS.PBKDF2(PASSWORD, salt, {
+      keySize: 8,
+      iterations: 10000,
+      hasher: CryptoJS.algo.SHA256,
+    });
+    const ct = CryptoJS.AES.encrypt(plaintext, key, {
+      iv,
+      mode: CryptoJS.mode.CBC,
+      padding: CryptoJS.pad.Pkcs7,
+    }).ciphertext;
+    const hmac = CryptoJS.HmacSHA256(salt.clone().concat(iv).concat(ct), key);
+    return 'v2:' + CryptoJS.enc.Base64.stringify(salt.clone().concat(iv).concat(hmac).concat(ct));
+  }
+
+  function referenceDecrypt(value: string): string {
+    const raw = CryptoJS.enc.Base64.parse(value.slice(3));
+    const salt = CryptoJS.lib.WordArray.create(raw.words.slice(0, 4), 16);
+    const iv = CryptoJS.lib.WordArray.create(raw.words.slice(4, 8), 16);
+    const ct = CryptoJS.lib.WordArray.create(raw.words.slice(16), raw.sigBytes - 64);
+    const key = CryptoJS.PBKDF2(PASSWORD, salt, {
+      keySize: 8,
+      iterations: 10000,
+      hasher: CryptoJS.algo.SHA256,
+    });
+    return CryptoJS.AES.decrypt(CryptoJS.lib.CipherParams.create({ ciphertext: ct }), key, {
+      iv,
+      mode: CryptoJS.mode.CBC,
+      padding: CryptoJS.pad.Pkcs7,
+    }).toString(CryptoJS.enc.Utf8);
+  }
+
+  it.each(PLAINTEXTS)('session.encrypt output decrypts with crypto-js: %j', (plaintext) => {
+    const session = new EncryptionSession(PASSWORD);
+    expect(referenceDecrypt(session.encrypt(plaintext, { saltHex: SALT_HEX }))).toBe(plaintext);
+  });
+
+  it.each(PLAINTEXTS)('crypto-js output decrypts with session.decrypt: %j', (plaintext) => {
+    expect(new EncryptionSession(PASSWORD).decrypt(referenceEncrypt(plaintext))).toBe(plaintext);
+  });
+
+  it('rejects a ciphertext whose HMAC is valid but padding is not', () => {
+    const session = new EncryptionSession(PASSWORD);
+    const good = session.encrypt('hello', { saltHex: SALT_HEX });
+    const bytes = Buffer.from(good.slice(3), 'base64');
+    // Drop the last ciphertext block so the length is no longer a multiple of 16, then re-sign it.
+    const truncated = bytes.subarray(0, bytes.length - 3);
+    const key = nodeCrypto.pbkdf2Sync(PASSWORD, Buffer.from(SALT_HEX, 'hex'), 10000, 32, 'sha256');
+    const hmac = nodeCrypto
+      .createHmac('sha256', key)
+      .update(Buffer.concat([truncated.subarray(0, 32), truncated.subarray(64)]))
+      .digest();
+    hmac.copy(truncated, 32);
+    expect(() => session.decrypt('v2:' + truncated.toString('base64'))).toThrow(DecryptionError);
   });
 });

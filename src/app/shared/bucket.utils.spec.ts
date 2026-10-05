@@ -83,6 +83,24 @@ describe('bucket.utils', () => {
     expect(transactions[1]).toMatchObject({ amount: -200, comment: '#settle:Guide:700.00' });
   });
 
+  it('keeps the settlement id when it is replaced', () => {
+    const transactions = [contribution(500)];
+    settleBucketTransactions(transactions, {
+      ...base,
+      projectTitle: 'Alps',
+      bucket: { title: 'Guide', amount: 500 },
+      actual: 650,
+    });
+    transactions[1].id = 'tx_settle';
+    settleBucketTransactions(transactions, {
+      ...base,
+      projectTitle: 'Alps',
+      bucket: { title: 'Guide', amount: 650 },
+      actual: 700,
+    });
+    expect(transactions[1].id).toBe('tx_settle');
+  });
+
   it('unsettling removes the settlement only', () => {
     const transactions = [contribution(500)];
     settleBucketTransactions(transactions, {

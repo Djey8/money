@@ -257,6 +257,39 @@ describe('AppDataService', () => {
       expect(AppStateService.instance.allTransactions[0].amount).toBe(100);
     });
 
+    it('keeps a transaction id on load so the next save can send it back', async () => {
+      const service = createService();
+      mockDatabase.getBatchData.mockResolvedValue({
+        data: {
+          transactions: {
+            '0': {
+              id: 'tx_abc',
+              account: 'Daily',
+              amount: '100',
+              date: '2026-01-01',
+              time: '12:00',
+              category: 'Food',
+              comment: 'Lunch',
+            },
+            '1': {
+              account: 'Daily',
+              amount: '5',
+              date: '2026-01-02',
+              time: '12:00',
+              category: 'Food',
+              comment: '',
+            },
+          },
+        },
+        updatedAt: null,
+      });
+
+      await service.loadTier1();
+
+      expect(AppStateService.instance.allTransactions[0].id).toBe('tx_abc');
+      expect('id' in AppStateService.instance.allTransactions[1]).toBe(false);
+    });
+
     it('converts minor-units amounts back to decimal for a schemaVersion-2 account (docs/adr/0002)', async () => {
       const service = createService();
       mockDatabase.getBatchData.mockResolvedValue({

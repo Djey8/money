@@ -62,20 +62,17 @@ export interface EncryptOptions {
 // identical key. Loaded via `module.require` rather than an `import` so
 // browser bundlers (this barrel is also bundled into the Angular app) never
 // try to resolve Node's `crypto`; there it stays null and crypto-js is used.
-interface NodePbkdf2 {
-  pbkdf2Sync(
-    password: string,
-    salt: Uint8Array,
-    iterations: number,
-    keylen: number,
-    digest: string,
-  ): Uint8Array;
-}
+//
+// The same applies to AES-256-CBC and HMAC-SHA256 below: `EncryptionSession`
+// uses Node's native versions when present (~0.01ms per value vs ~1.5ms for
+// crypto-js on the self-hosted server — decrypting a 1,900-transaction
+// collection took 13-26s). The wire format is byte-for-byte identical.
+type NodeCrypto = typeof import('crypto');
 
-function loadNodeCrypto(): NodePbkdf2 | null {
+function loadNodeCrypto(): NodeCrypto | null {
   try {
     if (typeof module !== 'undefined' && typeof module.require === 'function') {
-      const loaded = module.require('crypto') as NodePbkdf2;
+      const loaded = module.require('crypto') as NodeCrypto;
       if (typeof loaded?.pbkdf2Sync === 'function') return loaded;
     }
   } catch {
@@ -86,17 +83,20 @@ function loadNodeCrypto(): NodePbkdf2 | null {
 
 const nodeCrypto = loadNodeCrypto();
 
+function nativeDeriveKey(node: NodeCrypto, password: string, saltHex: string): Buffer {
+  return node.pbkdf2Sync(
+    password,
+    Buffer.from(saltHex, 'hex'),
+    PBKDF2_ITERATIONS,
+    PBKDF2_KEY_SIZE * 4,
+    'sha256',
+  );
+}
+
 function deriveKey(password: string, salt: CryptoJS.lib.WordArray): CryptoJS.lib.WordArray {
   if (nodeCrypto) {
-    const saltBytes = Uint8Array.from(Buffer.from(CryptoJS.enc.Hex.stringify(salt), 'hex'));
-    const derived = nodeCrypto.pbkdf2Sync(
-      password,
-      saltBytes,
-      PBKDF2_ITERATIONS,
-      PBKDF2_KEY_SIZE * 4,
-      'sha256',
-    );
-    return CryptoJS.enc.Hex.parse(Buffer.from(derived).toString('hex'));
+    const derived = nativeDeriveKey(nodeCrypto, password, CryptoJS.enc.Hex.stringify(salt));
+    return CryptoJS.enc.Hex.parse(derived.toString('hex'));
   }
   return CryptoJS.PBKDF2(password, salt, {
     keySize: PBKDF2_KEY_SIZE,
@@ -220,7 +220,9 @@ function decryptLegacy(ciphertext: string, key: string): string {
  */
 export class EncryptionSession {
   private readonly derivedKeyCache = new Map<string, CryptoJS.lib.WordArray>();
+  private readonly nativeKeyCache = new Map<string, Buffer>();
   private readonly sessionSalt = CryptoJS.lib.WordArray.random(SALT_BYTES);
+  private readonly sessionSaltHex = CryptoJS.enc.Hex.stringify(this.sessionSalt);
 
   constructor(private readonly password: string) {}
 
@@ -238,6 +240,7 @@ export class EncryptionSession {
    * class doc) or the given `saltHex` to pin a specific one instead.
    */
   encrypt(plaintext: string, options: EncryptOptions = {}): string {
+    if (nodeCrypto) return this.encryptNative(nodeCrypto, plaintext, options);
     const salt = options.saltHex ? CryptoJS.enc.Hex.parse(options.saltHex) : this.sessionSalt;
     return encryptWithKey(plaintext, salt, this.getDerivedKey(salt), options.ivHex);
   }
@@ -245,11 +248,62 @@ export class EncryptionSession {
   /** Decrypts a v2 or legacy-format value, reusing this session's derived-key cache for v2 values. */
   decrypt(ciphertext: string): string {
     if (isV2Ciphertext(ciphertext)) {
-      return decryptV2WithDeriveFn(ciphertext.slice(V2_PREFIX.length), (salt) =>
-        this.getDerivedKey(salt),
-      );
+      const body = ciphertext.slice(V2_PREFIX.length);
+      if (nodeCrypto) return this.decryptV2Native(nodeCrypto, body);
+      return decryptV2WithDeriveFn(body, (salt) => this.getDerivedKey(salt));
     }
     return decryptLegacy(ciphertext, this.password);
+  }
+
+  private nativeKey(node: NodeCrypto, saltHex: string): Buffer {
+    let key = this.nativeKeyCache.get(saltHex);
+    if (!key) {
+      key = nativeDeriveKey(node, this.password, saltHex);
+      this.nativeKeyCache.set(saltHex, key);
+    }
+    return key;
+  }
+
+  private encryptNative(node: NodeCrypto, plaintext: string, options: EncryptOptions): string {
+    const saltHex = options.saltHex ?? this.sessionSaltHex;
+    const salt = Buffer.from(saltHex, 'hex');
+    const iv = options.ivHex ? Buffer.from(options.ivHex, 'hex') : node.randomBytes(IV_BYTES);
+    const key = this.nativeKey(node, saltHex);
+
+    const cipher = node.createCipheriv('aes-256-cbc', key, iv);
+    const ciphertext = Buffer.concat([cipher.update(plaintext, 'utf8'), cipher.final()]);
+    const hmac = node.createHmac('sha256', key).update(salt).update(iv).update(ciphertext).digest();
+    return V2_PREFIX + Buffer.concat([salt, iv, hmac, ciphertext]).toString('base64');
+  }
+
+  private decryptV2Native(node: NodeCrypto, base64Data: string): string {
+    const data = Buffer.from(base64Data, 'base64');
+    if (data.length < V2_MIN_BYTES) {
+      throw new DecryptionError('Invalid v2 ciphertext: too short');
+    }
+    const salt = data.subarray(0, SALT_BYTES);
+    const iv = data.subarray(SALT_BYTES, SALT_BYTES + IV_BYTES);
+    const storedHmac = data.subarray(SALT_BYTES + IV_BYTES, V2_MIN_BYTES);
+    const ciphertext = data.subarray(V2_MIN_BYTES);
+    const key = this.nativeKey(node, salt.toString('hex'));
+
+    const computedHmac = node
+      .createHmac('sha256', key)
+      .update(salt)
+      .update(iv)
+      .update(ciphertext)
+      .digest();
+    if (!node.timingSafeEqual(computedHmac, storedHmac)) {
+      throw new DecryptionError(
+        'HMAC verification failed — ciphertext may be tampered or the key is wrong',
+      );
+    }
+    try {
+      const decipher = node.createDecipheriv('aes-256-cbc', key, iv);
+      return Buffer.concat([decipher.update(ciphertext), decipher.final()]).toString('utf8');
+    } catch {
+      throw new DecryptionError('Decryption failed — malformed ciphertext');
+    }
   }
 }
 

@@ -245,12 +245,12 @@ describe('DatabaseService (selfhosted mode)', () => {
       selfhosted.writeObject.mockReturnValue(of({ success: true }));
 
       await lastValueFrom(
-        service.writeObject('transactions', [{ amount: 42.5, category: '@Food' }]),
+        service.writeObject('transactions', [{ id: 'tx_1', amount: 42.5, category: '@Food' }]),
       );
 
       expect(selfhosted.writeObject).toHaveBeenCalledWith(
         'transactions',
-        [{ amount: 'enc(4250)', category: 'enc(@Food)' }],
+        [{ id: 'enc(tx_1)', amount: 'enc(4250)', category: 'enc(@Food)' }],
         null,
       );
     });
@@ -259,14 +259,68 @@ describe('DatabaseService (selfhosted mode)', () => {
       selfhosted.writeObject.mockReturnValue(of({ success: true }));
 
       await lastValueFrom(
-        service.writeObject('transactions', [{ amount: 42.5, category: '@Food' }]),
+        service.writeObject('transactions', [{ id: 'tx_1', amount: 42.5, category: '@Food' }]),
       );
 
       expect(selfhosted.writeObject).toHaveBeenCalledWith(
         'transactions',
-        [{ amount: 'enc(42.5)', category: 'enc(@Food)' }],
+        [{ id: 'enc(tx_1)', amount: 'enc(42.5)', category: 'enc(@Food)' }],
         null,
       );
+    });
+  });
+
+  // ── Stable transaction ids (see shared/transaction-ids.ts) ──────────────
+
+  describe('stable transaction ids on write', () => {
+    it('stamps missing ids onto the in-memory transactions and sends them, encrypted', async () => {
+      selfhosted.writeObject.mockReturnValue(of({ success: true }));
+      const transactions: any[] = [{ id: 'tx_kept', amount: 1 }, { amount: 2 }];
+
+      await lastValueFrom(service.writeObject('transactions', transactions));
+
+      expect(transactions[0].id).toBe('tx_kept');
+      expect(transactions[1].id).toMatch(/^tx_[0-9a-f-]{36}$/);
+      const sent = selfhosted.writeObject.mock.calls[0][1];
+      expect(sent[0].id).toBe('enc(tx_kept)');
+      expect(sent[1].id).toBe(`enc(${transactions[1].id})`);
+    });
+
+    it('keeps the same id across later saves of the same transaction', async () => {
+      selfhosted.writeObject.mockReturnValue(of({ success: true }));
+      const transactions: any[] = [{ amount: 2 }];
+
+      await lastValueFrom(service.writeObject('transactions', transactions));
+      const firstId = transactions[0].id;
+      await lastValueFrom(service.writeObject('transactions', transactions));
+
+      expect(transactions[0].id).toBe(firstId);
+    });
+
+    it('stamps ids on the batch write path too', async () => {
+      selfhosted.writeBatch.mockReturnValue(of({ success: true }));
+      const transactions: any[] = [{ amount: 2 }];
+
+      await lastValueFrom(
+        service.batchWrite([
+          { tag: 'transactions', data: transactions },
+          { tag: 'budget', data: [{ tag: 'x' }] },
+        ]),
+      );
+
+      expect(transactions[0].id).toMatch(/^tx_/);
+      const batch = selfhosted.writeBatch.mock.calls[0][0];
+      expect(batch[0].data[0].id).toBe(`enc(${transactions[0].id})`);
+      expect(batch[1].data[0].id).toBeUndefined(); // other collections are untouched
+    });
+
+    it('does not touch other tags', async () => {
+      selfhosted.writeObject.mockReturnValue(of({ success: true }));
+      const smile: any[] = [{ title: 'Trip' }];
+
+      await lastValueFrom(service.writeObject('smile', smile));
+
+      expect(smile[0].id).toBeUndefined();
     });
   });
 
@@ -505,6 +559,12 @@ describe('DatabaseService (firebase mode)', () => {
   });
 
   describe('writeObject()', () => {
+    it('does not add ids to transactions (Firebase data is unchanged)', () => {
+      const transactions: any[] = [{ amount: 50 }];
+      service.writeObject('transactions', transactions);
+      expect(transactions[0].id).toBeUndefined();
+    });
+
     it('calls Firebase set with encrypted data', (done) => {
       const result = service.writeObject('transactions', [{ amount: 50 }]);
       expect(db.database.goOnline).toHaveBeenCalled();

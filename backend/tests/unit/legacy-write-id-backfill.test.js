@@ -69,6 +69,17 @@ describe('backfillMissingIdsForWrite', () => {
     expect(result).toBe(input);
   });
 
+  it('does no work at all when every entry already carries an id (the app mints its own)', async () => {
+    // The self-hosted app sends an id with every transaction; this must stay a pure pass-through,
+    // because decrypting the stored collection to match ids is what made saves take 13-26s.
+    const authDb = makeAuthDb({ key: 'secret', encryptDatabase: true });
+    const stored = [{ id: 'v2:stored', account: 'v2:x' }];
+    const data = [{ id: 'v2:incoming', account: 'v2:y' }];
+    const result = await backfillMissingIdsForWrite(authDb, 'u1', 'transactions', data, stored);
+    expect(result).toBe(data);
+    expect(authDb.get).not.toHaveBeenCalled();
+  });
+
   it('encrypts the generated id when the account has database encryption enabled', async () => {
     const authDb = makeAuthDb({ key: 'secret-passphrase', encryptDatabase: true });
     const result = await backfillMissingIdsForWrite(authDb, 'u1', 'transactions', [

@@ -59,6 +59,8 @@ export function settleBucketTransactions(
   const surplus = Math.max(0, round(saved - input.actual));
 
   const settlement: Transaction = {
+    // Replacing a settlement keeps its identity, so an API client holding the id still finds it.
+    ...(existing?.id ? { id: existing.id } : {}),
     account: existing?.account || input.account,
     amount: round(-(input.actual - saved)),
     date: existing?.date || input.date,
