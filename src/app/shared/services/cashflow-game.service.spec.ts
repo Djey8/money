@@ -3134,6 +3134,87 @@ describe('CashflowGameService', () => {
     });
   });
 
+  describe('the live history in the account (JFK, 2026-10-05)', () => {
+    const callbacks = () => ({ onSuccess: jest.fn(), onError: jest.fn() });
+    const started = () =>
+      service.pickProfession('placeholder', 'placeholder-profession', callbacks());
+
+    it('announces every change of the history, and stamps it', () => {
+      const changed = jest.fn();
+      service.historyChanged$.subscribe(changed);
+      service.clock = { ...service.clock, nowIso: () => '2026-10-05T10:00:00.000Z' };
+
+      started();
+      expect(changed).toHaveBeenCalled();
+      expect(service.historyUpdatedAt).toBe('2026-10-05T10:00:00.000Z');
+
+      changed.mockClear();
+      service.resolveBaby(callbacks());
+      expect(changed).toHaveBeenCalled();
+      service.undoLastAction(callbacks());
+      expect(changed).toHaveBeenCalledTimes(2);
+    });
+
+    it('the stored history lists every step and carries the stamp', () => {
+      started();
+      service.resolveBaby(callbacks());
+      const history = service.liveHistory();
+      expect(history.steps.map((s) => s.kind)).toEqual(['start', 'baby']);
+      expect(history.updatedAt).toBe(service.historyUpdatedAt);
+    });
+
+    it('a reset announces an empty history; logout announces nothing and keeps the account untouched', () => {
+      started();
+      const changed = jest.fn();
+      service.historyChanged$.subscribe(changed);
+
+      service.clearPersistedUndoStack();
+      expect(changed).not.toHaveBeenCalled();
+      expect(service.historyUpdatedAt).toBeNull();
+      expect(localStorage.getItem('cashflowUndoStackAt')).toBeNull();
+
+      started();
+      changed.mockClear();
+      const gameAccount = jest.spyOn(CashflowGameService, 'isCashflowGame').mockReturnValue(true);
+      service.resetGame(callbacks());
+      gameAccount.mockRestore();
+      expect(changed).toHaveBeenCalled();
+      expect(service.liveHistory().steps).toEqual([]);
+    });
+
+    it('adopts the account’s history only when it is newer, without writing it back', () => {
+      started();
+      service.resolveBaby(callbacks());
+      const mine = service.liveHistory();
+      const changed = jest.fn();
+      service.historyChanged$.subscribe(changed);
+
+      // an older or equal copy changes nothing
+      expect(service.adoptAccountHistory({ ...mine, updatedAt: '2000-01-01T00:00:00.000Z' })).toBe(
+        false,
+      );
+      expect(service.adoptAccountHistory(mine)).toBe(false);
+
+      // a newer one replaces the history (here: the one from before the baby)
+      service.undoLastAction(callbacks());
+      const shorter = service.liveHistory();
+      changed.mockClear();
+      const newer = { ...mine, updatedAt: '2999-01-01T00:00:00.000Z' };
+      expect(service.adoptAccountHistory(newer)).toBe(true);
+      expect(service.historyUpdatedAt).toBe('2999-01-01T00:00:00.000Z');
+      expect(service.liveHistory().steps.length).toBeGreaterThan(shorter.steps.length);
+      expect(changed).not.toHaveBeenCalled();
+      expect(localStorage.getItem('cashflowUndoStackAt')).toBe('2999-01-01T00:00:00.000Z');
+    });
+
+    it('refuses a damaged account history', () => {
+      started();
+      expect(service.adoptAccountHistory({ schema: 1, updatedAt: '2999', undo: 'x' })).toBe(false);
+      expect(service.adoptAccountHistory(null)).toBe(false);
+      expect(service.canUndo).toBe(true);
+    });
+  });
+
   describe('profession content translation (todo/cashflow-game.md decision 48)', () => {
     /** A stand-in for a non-German active language, translating exactly the real "hausmeister" profession's content — proves actual translation happens, not just that the fallback-to-German path (already covered elsewhere) still works. */
     function fakeTranslate(): { instant: jest.Mock } {

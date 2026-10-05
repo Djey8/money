@@ -355,5 +355,22 @@ call a rule, push the undo step, apply the effects in place, persist), the undo 
 the translation of persisted text. Throughout A1 the existing game tests (374 at the start, 375 now) were never changed to
 make a move pass, and the domain gained ~640 tests of its own.
 
-**Next:** A2 (undo, snapshots, reset, the saved-game snapshot, and writing the live history to the account on every step),
-then A3 (an injected `Rng` for `rollDie`, `drawRandomCard` and `shuffleProfession`), then Phase B (the solo engine).
+**Next:** A3 (an injected `Rng` for `rollDie`, `drawRandomCard` and `shuffleProfession`), then Phase B (the solo engine).
+
+## A2 wrap-up (2026-10-05)
+
+Undo stack, snapshots, history list and reset are pure functions in `history.ts` (`pushUndoSnapshot`, `popUndoSteps`,
+`keepSavedSlot`, `captureGameSnapshot`, `blankGameData`, `historySteps`, `inferStep`), the undo-chain codec moved to
+`undo-chain.ts`, and the **live history is written to the account** (`live-history.ts`, path `cashflowGameHistory`,
+documented in `backend/DATABASE_STRUCTURE.md`):
+
+- the document is `{ schema, updatedAt, gameId?, undo, steps }`, packed and encrypted exactly like a saved game;
+- the browser writes it ~3 s after the last step (`CashflowHistorySyncService`, debounced, in the background - never part
+  of an action's own batch), keeps a local copy with its own timestamp, and on load takes whichever copy is newer;
+  a newer browser copy is written out, an equal one is left alone, a damaged or newer-schema one is ignored;
+- a new game, a loaded saved game and a reset replace it, logout leaves the account's copy untouched;
+- measured on a synthetic 200-step game with 600 transactions: 194 KB JSON, **~9 KB packed, ~80 ms to build** - cheap.
+
+Open for D: the server must write the same document (Node zlib + the `EncryptionSession`) with each API step, and an
+agent's "undo back to step n" reads it from there. Saved-game blob types (`SavedGameBlob`, step log) still live in the
+Angular service; they move with D4 when the server needs them.

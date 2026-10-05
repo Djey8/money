@@ -23,9 +23,13 @@ import {
   blankGameData,
   captureGameSnapshot as captureSnapshot,
   coinsOwnedOf,
+  accountHistoryIsNewer,
+  buildLiveHistory,
   decodeUndoChain,
   encodeUndoChain,
   isEncodedUndoChain,
+  readLiveHistory,
+  type LiveHistory,
   type EncodedUndoChain,
   dealInputFromCard,
   doodadLoanNote as doodadLoanNoteRule,
@@ -326,6 +330,8 @@ function deepClone<T>(value: T): T {
  * the browser's site data removes it same as everything else — no extra code needed for that part.
  */
 const UNDO_STACK_STORAGE_KEY = 'cashflowUndoStack';
+/** When the browser's copy of the history last changed - compared with the account's copy (see `CashflowHistorySyncService`). */
+const UNDO_STACK_AT_KEY = 'cashflowUndoStackAt';
 
 /**
  * Replaces `GameModeService`'s two date-shifting methods with automation
@@ -347,6 +353,12 @@ export class CashflowGameService {
    * (both editions) calls `clearPersistedUndoStack()` so a different login never inherits it.
    */
   private undoStack: CashflowGameSnapshot[] = this.loadPersistedUndoStack();
+
+  /** When the history last changed (ISO), so the browser's and the account's copy can tell which is newer. */
+  private undoStackAt: string | null = this.loadPersistedUndoStackAt();
+
+  /** Fires whenever the history changed and the account's copy should follow. */
+  readonly historyChanged$ = new Subject<void>();
 
   constructor(
     private persistence: PersistenceService,
@@ -376,6 +388,45 @@ export class CashflowGameService {
     }
   }
 
+  private loadPersistedUndoStackAt(): string | null {
+    try {
+      return localStorage.getItem(UNDO_STACK_AT_KEY);
+    } catch {
+      return null;
+    }
+  }
+
+  /** When the browser's copy of the history last changed; null when it never has. */
+  get historyUpdatedAt(): string | null {
+    return this.undoStackAt;
+  }
+
+  /** The history as it is stored in the account: the compact chain and a plain log, stamped with its last change. */
+  liveHistory(): LiveHistory {
+    return buildLiveHistory(
+      this.undoStack,
+      AppStateService.instance,
+      {
+        text: this.roundDeps.text,
+        money: (amountMinor) => this.amountText(fromMinorUnits(amountMinor)),
+      },
+      this.undoStackAt ?? this.clock.nowIso(),
+    );
+  }
+
+  /**
+   * Takes over the account's history when it is newer than the browser's (another device played, or the Pro API did).
+   * Changes the history only - the books were already loaded from the account - and does not write it back.
+   */
+  adoptAccountHistory(stored: unknown): boolean {
+    const read = readLiveHistory<CashflowGameSnapshot>(stored);
+    if (!read || !accountHistoryIsNewer(read.updatedAt, this.undoStackAt)) return false;
+    this.undoStack = read.stack.slice(-UNDO_STACK_LIMIT);
+    this.undoStackAt = read.updatedAt;
+    this.storeUndoStackLocally();
+    return true;
+  }
+
   /** Reads a stored history: the compact form, or the plain list older versions of the app wrote. */
   private decodeStack(stored: unknown): CashflowGameSnapshot[] {
     if (isEncodedUndoChain(stored)) return decodeUndoChain<CashflowGameSnapshot>(stored);
@@ -389,8 +440,15 @@ export class CashflowGameService {
 
   /** `localStorage.setItem` can throw (quota, private-browsing) — the in-memory stack still works for the rest of this session either way. */
   private persistUndoStack(): void {
+    this.undoStackAt = this.clock.nowIso();
+    this.storeUndoStackLocally();
+    this.historyChanged$.next();
+  }
+
+  private storeUndoStackLocally(): void {
     try {
       localStorage.setItem(UNDO_STACK_STORAGE_KEY, JSON.stringify(encodeUndoChain(this.undoStack)));
+      if (this.undoStackAt) localStorage.setItem(UNDO_STACK_AT_KEY, this.undoStackAt);
     } catch {
       // best-effort only
     }
@@ -455,6 +513,8 @@ export class CashflowGameService {
         this.undoStack = [];
       }
     }
+    // Without a history the account's old one must still be replaced by this game's (empty) one.
+    this.persistUndoStack();
     this.applySnapshot(deepClone(snapshot));
     this.persistAll('cashflow_game_loaded', { gameId: snapshot.cashflowGame.gameId }, callbacks, {
       includeSubscriptions: true,
@@ -624,8 +684,10 @@ export class CashflowGameService {
    */
   clearPersistedUndoStack(): void {
     this.undoStack = [];
+    this.undoStackAt = null;
     try {
       localStorage.removeItem(UNDO_STACK_STORAGE_KEY);
+      localStorage.removeItem(UNDO_STACK_AT_KEY);
     } catch {
       // best-effort only
     }
@@ -1682,6 +1744,7 @@ export class CashflowGameService {
     }
     // A reset ends the game, history included - there is nothing to undo back into (JFK, 2026-10-03).
     this.clearPersistedUndoStack();
+    this.persistUndoStack(); // the account's history is emptied too
     const state = AppStateService.instance;
     const blank = blankGameData();
     state.allTransactions = blank.allTransactions as Transaction[];

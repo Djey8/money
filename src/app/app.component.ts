@@ -16,6 +16,7 @@ import { IncomeStatementService } from './shared/services/income-statement.servi
 import { AppStateService } from './shared/services/app-state.service';
 import { AppDataService } from './shared/services/app-data.service';
 import { CashflowGameService } from './shared/services/cashflow-game.service';
+import { CashflowHistorySyncService } from './shared/services/cashflow-history-sync.service';
 import { SubscriptionProcessingService } from './shared/services/subscription-processing.service';
 import { ToastService } from './shared/services/toast.service';
 import { migrateGrowArray } from './shared/grow-migration.utils';
@@ -219,6 +220,7 @@ export class AppComponent {
     private tourService: TourService,
     private selfhosted: SelfhostedService,
     private cashflowGameService: CashflowGameService,
+    private cashflowHistorySync: CashflowHistorySyncService,
   ) {
     AppComponent.instance = this;
 
@@ -361,6 +363,7 @@ export class AppComponent {
             // instead, same as tier 1, since for this account type it effectively is tier 1.
             AppDataService.instance
               .loadCashflowGameData()
+              .then(() => this.cashflowHistorySync.loadAndAdopt())
               .catch((err) => console.error('Cashflow game data load error:', err));
           }
           // Auto-start interactive tour for new users
