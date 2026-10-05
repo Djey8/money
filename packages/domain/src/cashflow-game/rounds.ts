@@ -77,6 +77,14 @@ function engineSubscriptions(subscriptions: BookSubscription[]) {
   }));
 }
 
+/** The date the next one-off game transaction takes: the next free day slot of the real current month. */
+export function nextOneOffDate(
+  books: Pick<RoundBooks, 'subscriptions' | 'transactions'>,
+  today: string,
+): string {
+  return nextSmartDate(usedDaysThisMonth(books.subscriptions, books.transactions, today), today);
+}
+
 /**
  * Books one-off game transactions on the next free day slots of the real current month, instead of the game
  * calendar's date (which runs months ahead as rounds pass). `fixedDate` overrides the slot (a loan taken from a
