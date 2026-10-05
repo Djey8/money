@@ -91,6 +91,68 @@ describe('RegistrationComponent', () => {
     });
   });
 
+  describe('game password for a Cashflow game account (self-hosted only)', () => {
+    const fill = (email: string) => {
+      component.usernameTextField = 'Anna';
+      component.emailTextField = email;
+      component.passwordTextField = 'StrongPass1';
+    };
+
+    it('is asked for only on the self-hosted server and only for a "cashflow" email', () => {
+      fill('anna.cashflow@example.com');
+      (component as any).mode = 'firebase';
+      expect(component.needsGamePassword).toBe(false);
+
+      (component as any).mode = 'selfhosted';
+      expect(component.needsGamePassword).toBe(true);
+
+      fill('anna@example.com');
+      expect(component.needsGamePassword).toBe(false);
+    });
+
+    it('does not register a game account without it', () => {
+      (component as any).mode = 'selfhosted';
+      fill('Anna.CashFlow@example.com');
+      const signUp = jest.spyOn(component, 'SignUp').mockImplementation();
+
+      component.register();
+
+      expect(component.isError).toBe(true);
+      expect(component.errorMessageLable).toBe('A game account needs the game password');
+      expect(signUp).not.toHaveBeenCalled();
+    });
+
+    it('registers once it is filled in', () => {
+      (component as any).mode = 'selfhosted';
+      fill('anna.cashflow@example.com');
+      component.gamePasswordTextField = 'this too shall pass';
+      const signUp = jest.spyOn(component, 'SignUp').mockImplementation();
+
+      component.register();
+
+      expect(component.isError).toBe(false);
+      expect(signUp).toHaveBeenCalled();
+    });
+
+    it('sends it to the server with the registration', () => {
+      (component as any).mode = 'selfhosted';
+      fill('anna.cashflow@example.com');
+      component.gamePasswordTextField = 'this too shall pass';
+      const register = jest
+        .spyOn((component as any).selfhosted, 'register')
+        .mockReturnValue({ toPromise: () => new Promise(() => undefined) });
+
+      component.SignUp('', '');
+
+      expect(register).toHaveBeenCalledWith(
+        'anna.cashflow@example.com',
+        'StrongPass1',
+        'Anna',
+        'this too shall pass',
+      );
+    });
+  });
+
   describe('default()', () => {
     it('should call cryptic.updateConfig with default values and reset isUploaded', () => {
       component.isUploaded = true;

@@ -33,8 +33,17 @@ export class SelfhostedService {
   }
 
   // Authentication methods
-  register(email: string, password: string, username?: string): Observable<any> {
-    return this.http.post(`${this.apiUrl}/auth/register`, { email, password, username }).pipe(
+  register(
+    email: string,
+    password: string,
+    username?: string,
+    gamePassword?: string,
+  ): Observable<any> {
+    // A Cashflow game account (email contains "cashflow") also sends the game password; the server checks it.
+    const body = gamePassword
+      ? { email, password, username, gamePassword }
+      : { email, password, username };
+    return this.http.post(`${this.apiUrl}/auth/register`, body).pipe(
       map((response: any) => {
         this._authenticated = true;
         localStorage.setItem('selfhosted_userId', response.userId);

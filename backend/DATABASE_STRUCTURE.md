@@ -288,6 +288,17 @@ Each user document has the following structure:
 }
 ```
 
+### Saved Cashflow games (`cashflowGames/`, Cashflow-game accounts only)
+
+An account whose email contains "cashflow" plays one live game (everything above is that game) and can keep any number of past ones (JFK, 2026-10-04). They live under their own path, next to the rest of the user's data, and are read only when the game panel opens:
+
+| Path                       | Holds                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `cashflowGames/index`      | `{ schema, payload }` - the small list of game summaries (name, profession, round, cash, passive income, expenses, escaped / bankrupt, last saved), amounts in minor units. What the games list - and later statistics - read.                                                                                                                                                                                                                   |
+| `cashflowGames/games/<id>` | `{ schema, payload }` - one game: its summary, a plain-text step log, the full undo history (`undo`: every earlier snapshot, stored as differences from the next newer one - see `src/app/shared/undo-chain-codec.ts`; absent on games saved before) and a snapshot of everything the live game consists of (transactions, subscriptions, Grow projects, shares, investments, assets, liabilities, Smile / Fire projects, Mojo, the game state). |
+
+`payload` is the JSON, gzip-compressed and base64-encoded (`gz:` prefix; `raw:` when the browser cannot compress), then encrypted like every other stored value. The snapshot keeps the in-memory (decimal) amounts and is opaque to the server; `schema` says how to read it. Every saved game sits inside the user's one document, so each one is kept small - the app warns above 30 games and can export a game to a file. Deleting a game overwrites its snapshot with an empty marker (a plain write is protected against stale data; the delete endpoint is not).
+
 ### Data loading tiers (frontend behavior, not a storage concept)
 
 The frontend (`AppDataService`, `src/app/shared/services/app-data.service.ts`) does not load all of the above eagerly. It classifies paths into three tiers — worth knowing when reasoning about "is this data available yet" from an API/agent client, since **the API itself always returns current data regardless of tier** (tiers are a frontend rendering-performance optimization, not a backend concept):

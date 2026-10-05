@@ -363,6 +363,23 @@
 
     <!-- TAB: Financials - Only show for income-growth projects -->
     <div class="tab-content" *ngIf="classReference.activeTab === 'financials' && !isExpenseType()">
+      <div class="info-section" *ngIf="isCashflowGameAccount && heldShare">
+        <h4 class="fin-line">
+          {{ 'CashflowGame.heldShares' | translate }}: {{ heldShare.quantity | appNumber }}
+        </h4>
+        <h4 class="fin-line">
+          {{ 'CashflowGame.marketValue' | translate }}:
+          {{ heldShare.quantity * heldShare.price | appNumber }} {{ currency }}
+        </h4>
+        <h4 class="fin-line">
+          {{ 'CashflowGame.invested' | translate }}: {{ classReference.amount | appNumber }}
+          {{ currency }}
+        </h4>
+        <h4 class="fin-line">
+          {{ 'CashflowGame.avgBuyPrice' | translate }}: {{ averageBuyPrice | appNumber }}
+          {{ currency }}
+        </h4>
+      </div>
       <div class="info-section">
         <h4 *ngIf="classReference.cashflow > 0" class="fin-line">
           {{ 'Menu.cashflow' | translate }}: {{ classReference.cashflow | appNumber }}
@@ -421,6 +438,16 @@
           </tbody>
         </table>
       </div>
+    </div>
+
+    <!-- Buy / Sell, just above Edit - on Overview and Financials only, not on Actions / Notes. -->
+    <div class="info-trade-actions" *ngIf="showTradeButtons">
+      <button class="card-btn card-btn-buy" (click)="buyThisProject()">
+        {{ 'Grow.buy' | translate }}
+      </button>
+      <button class="card-btn card-btn-sell" (click)="sellThisProject()">
+        {{ 'Grow.sell' | translate }}
+      </button>
     </div>
 
     <button id="editbtn" class="btn btn--action" (click)="editGrowProject()">
@@ -760,7 +787,6 @@
             class="mb-xs"
             [attr.aria-invalid]="classReference.isError ? true : null"
           />
-
           <div
             class="toggle-row"
             role="switch"

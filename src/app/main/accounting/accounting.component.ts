@@ -1,7 +1,6 @@
 import { InfoComponent } from 'src/app/panels/info/info.component';
 import { AppComponent } from 'src/app/app.component';
 import { StatsComponent } from 'src/app/stats/stats.component';
-import { GameModeService } from 'src/app/shared/services/game-mode.service';
 import { MenuComponent } from 'src/app/panels/menu/menu.component';
 import { Router } from '@angular/router';
 import { SettingsComponent } from 'src/app/panels/settings/settings.component';
@@ -75,8 +74,6 @@ export class AccountingComponent implements OnDestroy, AfterViewChecked, OnInit,
 
   searchTextField = '';
 
-  static roundCount = 0;
-
   // Advanced filter system
   static advancedFilter: IncomeFilter = {
     startDate: '',
@@ -128,7 +125,6 @@ export class AccountingComponent implements OnDestroy, AfterViewChecked, OnInit,
         return { ...transaction, id: index };
       },
     );
-    AccountingComponent.calculateroundCount();
 
     // Initialize advanced filter
     AccountingComponent.isAdvancedFilterExpanded = false;
@@ -153,54 +149,6 @@ export class AccountingComponent implements OnDestroy, AfterViewChecked, OnInit,
 
     // Update available tags
     this.updateAvailableTags();
-  }
-
-  /**
-   * Calculate how many times salary was received minus 1
-   */
-  static calculateroundCount() {
-    if (AppStateService.instance.allTransactions) {
-      // Calculate months between first and last transaction dates
-      if (AppStateService.instance.allTransactions.length > 0) {
-        const dates = AppStateService.instance.allTransactions
-          .map((tx) => new Date(tx.date))
-          .sort((a, b) => a.getTime() - b.getTime());
-        const firstDate = dates[0];
-        const lastDate = dates[dates.length - 1];
-
-        const monthsBetween =
-          (lastDate.getFullYear() - firstDate.getFullYear()) * 12 +
-          (lastDate.getMonth() - firstDate.getMonth());
-        AccountingComponent.roundCount = Math.max(0, monthsBetween);
-      }
-    } else {
-      AccountingComponent.roundCount = 0;
-    }
-  }
-
-  /**
-   * Decrease salary count
-   */
-  decreaseRoundCount() {
-    if (AccountingComponent.roundCount > 0) {
-      AccountingComponent.roundCount--;
-      GameModeService.instance.moveTransactionsOneMonthForwardAndRemoveCurrentSubscriptions();
-    }
-  }
-
-  /**
-   * Increase salary count
-   */
-  increaseRoundCount() {
-    AccountingComponent.roundCount++;
-    GameModeService.instance.moveTransactionsOneMonthBackAndAddCurrentSubscriptions();
-  }
-
-  /**
-   * Check if cashflow game mode is active
-   */
-  isCashflowGame(): boolean {
-    return GameModeService.isCashflowGame();
   }
 
   @ViewChild(MatSort) sort!: MatSort;
@@ -301,7 +249,6 @@ export class AccountingComponent implements OnDestroy, AfterViewChecked, OnInit,
           return { ...transaction, id: index };
         },
       );
-      AccountingComponent.calculateroundCount();
       if (this.bottomPaginator) {
         AccountingComponent.dataSource.paginator = this.bottomPaginator;
       }

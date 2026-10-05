@@ -1,0 +1,670 @@
+{
+  "shared": {
+    "shareRule": "Solo tú puedes comprar tantas acciones como quieras a este precio. Cualquiera puede vender a este precio.",
+    "investmentRule": "Aprovecha esta oferta tú mismo o véndesela a otro jugador.",
+    "doodadLoanHint": "(Pide un préstamo bancario si tienes que hacerlo)",
+    "doodadChildHint": "(Si tienes un hijo)",
+    "doodadLoanChildHint": "(Pide un préstamo bancario si tienes que hacerlo) (Si tienes un hijo)"
+  },
+  "cards": {
+    "classic-small-ok4u-5": {
+      "description": "Los tipos de interés frenan el precio de las acciones de esta veterana empresa farmacéutica."
+    },
+    "classic-small-ok4u-10": {
+      "description": "Los retrasos en investigación y desarrollo mantienen bajo el precio de las acciones de esta veterana empresa farmacéutica."
+    },
+    "classic-small-ok4u-20": {
+      "description": "Los temores a la inflación debilitan el precio de las acciones de esta veterana empresa farmacéutica."
+    },
+    "classic-small-ok4u-30": {
+      "description": "La baja inflación impulsa el precio de las acciones de esta veterana empresa farmacéutica."
+    },
+    "classic-small-ok4u-40": {
+      "description": "Un mercado en auge eleva el precio de las acciones de esta veterana empresa farmacéutica."
+    },
+    "classic-small-gro4us-30": {
+      "description": "Un brillante joven gestor de fondos. Todos creen que puede convertir todo en oro."
+    },
+    "classic-small-on2u-40": {
+      "description": "Un éxito de taquilla en el sector infantil lleva el precio de las acciones a un récord."
+    },
+    "classic-small-myt4u-5": {
+      "description": "Los tipos de interés récord llevan a un precio de las acciones inferior a la media en este vendedor de electrónica."
+    },
+    "classic-small-gro4us-40": {
+      "description": "El mercado de las empresas líderes lleva el precio del fondo a un máximo histórico."
+    },
+    "classic-small-gro4us-20": {
+      "description": "Unos tipos de interés más bajos impulsan el mercado y financian un gran rendimiento."
+    },
+    "classic-small-gro4us-10": {
+      "description": "El débil crecimiento del empleo daña la confianza del consumidor. Las acciones caen junto con la opinión pública."
+    },
+    "classic-small-gro4us-5": {
+      "description": "Un informe anual débil provoca un precio bajo del fondo de inversión."
+    },
+    "classic-small-on2u-30": {
+      "description": "La fuerte demanda de la filmoteca de películas clásicas de la empresa sostiene un buen precio de las acciones."
+    },
+    "classic-small-on2u-20": {
+      "description": "Un nuevo director de adquisición de películas mejora las perspectivas del precio de las acciones."
+    },
+    "classic-small-on2u-10": {
+      "description": "¡Despiden al comprador de películas tras un tercer gran fracaso! Las acciones caen. Se cancela el bonus de la directiva."
+    },
+    "classic-small-on2u-5": {
+      "description": "El parque temático más reciente es un enorme fracaso y los informes señalan pérdidas. El precio de las acciones toca un mínimo histórico."
+    },
+    "classic-small-myt4u-40": {
+      "description": "¡Un mercado en auge lleva el precio de las acciones de este vendedor de electrónica a un récord!"
+    },
+    "classic-small-myt4u-30": {
+      "description": "Los tipos de interés bajos llevan a un precio positivo de las acciones en este vendedor de electrónica."
+    },
+    "classic-small-myt4u-20": {
+      "description": "Un mercado débil provoca la caída del precio de las acciones en este vendedor de electrónica."
+    },
+    "classic-small-myt4u-10": {
+      "description": "¡Un producto nuevo fracasa y se anuncian graves pérdidas! El precio de las acciones cae."
+    },
+    "classic-small-efh": {
+      "title": "Casa unifamiliar en venta",
+      "description": "Entrada baja para esta casa unifamiliar. El propietario se muda inesperadamente de la ciudad. La persona adecuada sabrá sacarle partido."
+    },
+    "classic-big-pizza": {
+      "title": "Franquicia de pizzería en venta",
+      "description": "Una franquicia de pizzería saludable. La tendencia hacia la comida rápida de calidad está en auge. Una zona muy concurrida junto a un campus universitario."
+    },
+    "classic-small-efh-65k-5k": {
+      "title": "Casa unifamiliar en venta",
+      "description": "Una bonita casa unifamiliar alquilada, disponible con poca antelación por una subasta judicial. Un edificio antiguo bien conservado con inquilino."
+    },
+    "classic-small-efh-45k-2k": {
+      "title": "Casa unifamiliar en venta",
+      "description": "Una empresa compró la casa unifamiliar de un directivo trasladado. Actualmente no hay inquilino. Lleva seis meses en el mercado y acaba de bajar de precio. Pide un préstamo si es necesario, pero ¡DEBERÍAS COMPRAR ESTA PROPIEDAD!",
+      "heading": "¡Has encontrado una súper oferta!"
+    },
+    "classic-small-efh-30k-1k": {
+      "title": "Casa unifamiliar en venta",
+      "description": "El departamento de carreteras ofrece una casa unifamiliar en una zona antigua. El mercado se ha hundido y la ciudad TIENE que vender. Sin flujo de caja, pero una posible oportunidad de plusvalía."
+    },
+    "classic-small-efh-35k-2k": {
+      "title": "Casa unifamiliar en venta",
+      "description": "Una casa unifamiliar más antigua, antes propiedad del Estado, se vende con financiación pública. Hay inquilino. Pide un préstamo si es necesario, pero ¡DEBERÍAS COMPRAR ESTA PROPIEDAD!",
+      "heading": "¡Has encontrado una súper oferta!"
+    },
+    "classic-small-efh-50k-2k": {
+      "title": "Casa unifamiliar en venta",
+      "description": "Esta casa unifamiliar en ejecución hipotecaria lleva seis meses deshabitada y acaba de reducirse de precio. El préstamo incluye los costes de reparación estimados."
+    },
+    "classic-small-efh-50k-4k": {
+      "title": "Casa unifamiliar en venta",
+      "description": "Hay una bonita casa unifamiliar en un mercado debilitado por los despidos. Sería una buena inversión para el comprador adecuado."
+    },
+    "classic-small-etw-40k-5k": {
+      "title": "Apartamento en propiedad en venta",
+      "description": "¡Subasta judicial! Un apartamento en propiedad en un barrio muy buscado, cerca de empleos y comercios. Financiación favorable del banco."
+    },
+    "classic-small-etw-40k-1k": {
+      "title": "Apartamento en propiedad en venta",
+      "description": "Un excelente apartamento en propiedad con muchos extras. La propietaria quiere mudarse RÁPIDO por su trabajo soñado. Ella está haciendo carrera: ¡tú también puedes! Sin flujo de caja, pero una posible oportunidad de plusvalía."
+    },
+    "classic-small-etw-40k-4k": {
+      "title": "Apartamento en propiedad en venta",
+      "description": "Unos padres venden el apartamento en propiedad que usaba su hijo estudiante. Hay una gran demanda de alquiler en esta zona."
+    },
+    "classic-small-etw-55k-5k": {
+      "title": "Apartamento en propiedad en venta",
+      "description": "Una pareja joven ofrece un apartamento en propiedad más antiguo porque quiere mudarse a una casa unifamiliar más grande al crecer su familia. Disponible pronto."
+    },
+    "classic-big-mfh8-240k-40k": {
+      "title": "Edificio multifamiliar, 8 viviendas, en venta",
+      "description": "El propietario ofrece su edificio multifamiliar de 8 viviendas al precio tasado actualmente. Tiene todas las características que buscan los inquilinos. Totalmente alquilado a precio de mercado, con una documentación excelente."
+    },
+    "classic-big-mfh8-320k-40k": {
+      "title": "Edificio multifamiliar, 8 viviendas, en venta",
+      "description": "El propietario reinvierte y ofrece en venta un edificio multifamiliar de 8 viviendas a un precio razonable. La financiación ya está lista. Solo falta tu entrada."
+    },
+    "classic-big-mfh4-340k-32k": {
+      "title": "Edificio multifamiliar, 4 viviendas, en venta",
+      "description": "El propietario vende un edificio multifamiliar de 4 viviendas porque se muda a otro estado. Documentación completa, totalmente alquilado, poca rotación de inquilinos en un buen barrio."
+    },
+    "classic-big-mfh8-250k-40k": {
+      "title": "Edificio multifamiliar, 8 viviendas, en venta",
+      "description": "Los litigios del propietario obligan a vender este edificio multifamiliar de 8 viviendas. Aprovecha el trato antes de que lo haga otro."
+    },
+    "classic-big-mfh8-360k-32k": {
+      "title": "Edificio multifamiliar, 8 viviendas, en venta",
+      "description": "Un pequeño empresario autónomo necesita dinero urgentemente para asegurar una asociación comercial. El edificio multifamiliar de 8 viviendas se vende para reunir capital. Una gran oportunidad para la persona adecuada."
+    },
+    "classic-big-mfh4-280k-16k": {
+      "title": "Edificio multifamiliar, 4 viviendas, en venta",
+      "description": "Hay disponible un edificio multifamiliar antiguo de 4 viviendas: venta forzosa. El propietario, que no vive en la zona, tiene problemas económicos y años de impuestos atrasados. Hay parte de la documentación."
+    },
+    "classic-big-mfh4-370k-10k": {
+      "title": "Edificio multifamiliar, 4 viviendas, en venta",
+      "description": "Se vende un edificio multifamiliar de 4 viviendas en una zona en revalorización. El propietario tiene que vender por deudas fiscales."
+    },
+    "classic-big-mfh4-290k-15k": {
+      "title": "Edificio multifamiliar, 4 viviendas, en venta",
+      "description": "Se vende un edificio multifamiliar de 4 viviendas junto a una nueva autovía. El propietario/residente se muda a una zona más tranquila. El precio es para una venta rápida."
+    },
+    "classic-big-mfh4-300k-20k": {
+      "title": "Edificio multifamiliar, 4 viviendas, en venta",
+      "description": "Un edificio multifamiliar de 4 viviendas en una zona residencial que se recupera. Totalmente alquilado, con las reparaciones al día. Necesita tu entrada y paciencia."
+    },
+    "classic-big-mfh4-225k-15k": {
+      "title": "Edificio multifamiliar, 4 viviendas, en venta",
+      "description": "Un bonito edificio multifamiliar bien cuidado de 4 viviendas en un buen barrio. Inquilinos de larga duración, flujo de caja positivo, pocas reparaciones."
+    },
+    "classic-big-efh-270k-15k": {
+      "title": "Casa unifamiliar en venta",
+      "description": "Un directivo degradado ya no puede afrontar los pagos con su nuevo sueldo y tiene que vender su casa unifamiliar. El barrio está en transición."
+    },
+    "classic-big-efh-225k-14k": {
+      "title": "Casa unifamiliar en venta",
+      "description": "Un empresario necesita dinero para salvar su empresa. Vende esta casa unifamiliar, actualmente ocupada por un inquilino satisfecho."
+    },
+    "classic-big-efh-300k-20k": {
+      "title": "Casa unifamiliar en venta",
+      "description": "Hay disponible una bonita casa unifamiliar con piscina integrada y todas las comodidades en un respetable barrio de clase media. Buenos colegios cerca."
+    },
+    "classic-big-efh-300k-12k": {
+      "title": "Casa unifamiliar en venta",
+      "description": "Una casa unifamiliar en una zona difícil. Flujo de caja positivo a pesar de los alquileres bajos."
+    },
+    "classic-big-efh-325k-18k": {
+      "title": "Casa unifamiliar en venta",
+      "description": "Un empresario experimentado ha mantenido esta casa unifamiliar en excelente estado, de modo que alcanza los alquileres máximos incluso en un barrio antiguo."
+    },
+    "classic-big-efh-350k-20k": {
+      "title": "Casa unifamiliar en venta",
+      "description": "Un divorcio provoca la venta de esta casa unifamiliar en una zona llena de viviendas ocupadas por sus propietarios. Lleva 5 meses en el mercado."
+    },
+    "classic-big-efh-275k-16k": {
+      "title": "Casa unifamiliar en venta",
+      "description": "Una casa unifamiliar cerca del aeropuerto. Costes bajos y mucho potencial de flujo de caja, si puedes soportar el ruido."
+    },
+    "classic-big-efh-275k-15k": {
+      "title": "Casa unifamiliar en venta",
+      "description": "Los herederos del propietario ofrecen una casa unifamiliar adosada en un campo de golf apartado. Se incluye la membresía del club de golf."
+    },
+    "classic-big-dh-260k-12k": {
+      "title": "Casa pareada en venta",
+      "description": "El propietario de una casa pareada tiene que vender para pagar facturas del hospital. Esta propiedad bien cuidada tiene dos inquilinos y es una buena oportunidad de inversión."
+    },
+    "classic-big-dh-250k-16k": {
+      "title": "Casa pareada en venta",
+      "description": "El propietario deja la casa pareada porque su familia crece. El inquilino de la otra mitad se queda y un nuevo inquilino ya espera para mudarse a esta propiedad bien cuidada."
+    },
+    "classic-big-dh-170k-18k": {
+      "title": "Casa pareada en venta",
+      "description": "¡Esta casa pareada es la mejor de la zona! El orgulloso propietario se jubila en otro estado para vivir cerca de sus nietos."
+    },
+    "classic-big-dh-245k-12k": {
+      "title": "Casa pareada en venta",
+      "description": "¡Esta inversión en casa pareada ya tiene inquilinos! El propietario tiene problemas fiscales y necesita vender rápido."
+    },
+    "classic-big-dh-260k-10k": {
+      "title": "Casa pareada en venta",
+      "description": "Hay disponible una casa pareada bien cuidada en una ubicación deseable por un traspaso de propiedad. Una excelente oportunidad de inversión para el comprador adecuado."
+    },
+    "classic-big-aph12-350k-50k": {
+      "title": "Complejo de apartamentos en venta",
+      "description": "Los herederos del propietario, que viven fuera de la ciudad, ofrecen un complejo de apartamentos de 12 viviendas. Una ubicación sumamente popular con una larga lista de espera para las viviendas de esta propiedad."
+    },
+    "classic-big-aph24-575k-75k": {
+      "title": "Complejo de apartamentos en venta",
+      "description": "Se venden dos edificios con un total de 24 viviendas. El propietario los gestiona con un empleado en el lugar. Vende porque se jubila. Una gran oportunidad."
+    },
+    "classic-big-aph60-1200k-200k": {
+      "title": "Complejo de apartamentos en venta",
+      "description": "Un complejo de apartamentos de 60 viviendas de un fondo de pensiones que el propietario está disolviendo. Cuenta con administración propia del inmueble."
+    },
+    "classic-big-aph24-550k-50k": {
+      "title": "Complejo de apartamentos en venta",
+      "description": "El propietario se jubila y este complejo de apartamentos de 24 viviendas está totalmente alquilado con un gran flujo de caja. Muy buena ubicación cerca de una universidad pública."
+    },
+    "classic-big-gp-25k-25k-1300": {
+      "title": "Se busca socio",
+      "description": "Un médico de éxito amplía su consulta y clínica. Necesita un socio para financiar la parte de capital propio de los costes de construcción."
+    },
+    "classic-big-gp-20k-20k-1200": {
+      "title": "Se busca socio",
+      "description": "Una exitosa cadena de pizzerías se expande a la fabricación de pizzas congeladas para tiendas de alimentación. El propietario necesita capital para el equipamiento."
+    },
+    "classic-big-gp-30k-30k-1500": {
+      "title": "Se busca socio",
+      "description": "Un concesionario quiere ampliar el leasing de coches de 2 y 3 años. Necesita capital porque la financiera del fabricante no está interesada."
+    },
+    "classic-big-gp-30k-30k-1700": {
+      "title": "Se busca socio",
+      "description": "Un negocio de sándwiches duplica su número de locales. El propietario necesita un inversor para empezar."
+    },
+    "classic-big-au-180k-20k-1600": {
+      "title": "Negocio automatizado en venta",
+      "description": "Un salón recreativo clásico con 30 máquinas de pinball y clientes fieles. El propietario se excedió y tiene que pagar deudas con urgencia."
+    },
+    "classic-big-au-125k-25k-1800": {
+      "title": "Negocio automatizado en venta",
+      "description": "Un exitoso autolavado de monedas con 4 plazas cerca de un cruce muy transitado. El vendedor se muda a una residencia de mayores en otro estado."
+    },
+    "classic-big-au-150k-30k-2500": {
+      "title": "Negocio automatizado en venta",
+      "description": "Una quiebra personal obliga a vender una lavandería concurrida y exitosa en una autovía de mucho tráfico. Se espera un crecimiento económico muy alto en esta zona."
+    },
+    "classic-big-awa-350k-50k-2500": {
+      "title": "Autolavado en venta",
+      "description": "Se vende un autolavado familiar en una ubicación privilegiada. La venta es urgente por una disputa familiar. Los propietarios quieren salir lo antes posible."
+    },
+    "classic-small-gold-friend-3000": {
+      "title": "Un amigo necesita dinero rápido",
+      "description": "Un amigo necesita dinero urgentemente. Te vende 10 monedas de oro muy por debajo del precio normal."
+    },
+    "classic-small-gold-collector-1000": {
+      "title": "Un coleccionista de monedas necesita dinero",
+      "description": "Un coleccionista de monedas necesita dinero rápido para resolver un problema fiscal. Te vende 5 monedas de oro muy por debajo del precio normal."
+    },
+    "classic-small-gold-box-500": {
+      "title": "¿Qué hay en la caja?!",
+      "description": "Tienes la oportunidad de comprar un archivador con llave en una liquidación de bienes del hogar. Si compras el archivador, paga 500 € y lanza un dado: sacas 1-5: no encuentras... ABSOLUTAMENTE NADA en el archivador. Sacas 6: encuentras... diez monedas de oro. ¡CHA-CHING! Anótalas en tu hoja de activos.",
+      "success": "Sacaste un 6: encuentras... diez monedas de oro. ¡CHA-CHING!",
+      "failure": "Sacaste 1-5: no encuentras... ABSOLUTAMENTE NADA en el archivador."
+    },
+    "classic-small-gold-will-750": {
+      "title": "Donde hay un testamento...",
+      "description": "Fallece un pariente lejano. Se te menciona en el testamento, pero tienes que viajar para aceptarlo. Si lo aceptas, paga 750 € por el viaje y lanza un dado: sacas 1-5: te dejan un gato viejo. ¡Que lo disfrutes! Sacas 6: te dejan diez monedas de oro. Anótalas en tu hoja de activos.",
+      "success": "Sacaste un 6: te dejan diez monedas de oro.",
+      "failure": "Sacaste 1-5: te dejan un gato viejo. ¡Que lo disfrutes!"
+    },
+    "classic-small-sister-5000": {
+      "title": "La cuñada pide dinero prestado",
+      "description": "Tu cuñada está desempleada y necesita 5.000 € para la cuota de su casa. Promete devolverte 10.000 €. Si decides ayudarla, paga 5.000 € y tira un dado: Sacas 1-3: nunca te devuelve el dinero y pierdes 5.000 €. Sacas 4-6: te devuelve 10.000 €, pero las reuniones familiares siguen siendo incómodas. Coste: 5.000 €",
+      "success": "Sacaste 4-6: te devuelve 10.000 €, pero las reuniones familiares siguen siendo incómodas.",
+      "failure": "Sacaste 1-3: nunca te devuelve el dinero y pierdes 5.000 €."
+    },
+    "classic-small-mlm-1": {
+      "title": "Entrada al marketing multinivel",
+      "description": "Tienes la oportunidad de invertir en un negocio de marketing multinivel. La empresa quiere ampliar el alcance de su proyecto más reciente. Si decides entrar, paga 500 € y CONSERVA ESTA CARTA: en cada día de pago, tira un dado: Sacas 1-3: no hay ingresos este mes, pero sigue intentándolo. Sacas 4-6: ¡tu esfuerzo ha dado frutos! Cobra 500 €. Usa esta oferta tú mismo o véndela a otro jugador. Coste: 500 €",
+      "success": "Sacaste 4-6: ¡tu esfuerzo ha dado frutos! Cobra 500 €.",
+      "failure": "Sacaste 1-3: no hay ingresos este mes, pero sigue intentándolo."
+    },
+    "classic-small-mlm-2": {
+      "title": "Entrada al marketing multinivel",
+      "description": "Tienes la oportunidad de invertir en un negocio de marketing multinivel. La empresa quiere ampliar el alcance de su proyecto más reciente. Si decides entrar, paga 500 € y CONSERVA ESTA CARTA: en cada día de pago, tira un dado: Sacas 1-3: no hay ingresos este mes, pero sigue intentándolo. Sacas 4-6: ¡tu esfuerzo ha dado frutos! Cobra 500 €. Usa esta oferta tú mismo o véndela a otro jugador. Coste: 500 €",
+      "success": "Sacaste 4-6: ¡tu esfuerzo ha dado frutos! Cobra 500 €.",
+      "failure": "Sacaste 1-3: no hay ingresos este mes, pero sigue intentándolo."
+    },
+    "classic-doodad-jetski": {
+      "title": "Compras una moto acuática",
+      "comment": "¿Quién necesita un fin de semana sin salpicaduras?"
+    },
+    "classic-doodad-reunion": {
+      "title": "Vas a la reunión de antiguos compañeros",
+      "comment": "Todos presumen de lo bien que les va. Tú pagas la cuenta."
+    },
+    "classic-doodad-boat": {
+      "title": "Compras un barco",
+      "comment": "Un barco es un agujero en el agua donde tiras dinero. ¡Pero qué agujero!"
+    },
+    "classic-doodad-gym": {
+      "title": "Montas un gimnasio en casa",
+      "comment": "La cinta ya llegó. Las ganas seguro que vienen después."
+    },
+    "classic-doodad-chair": {
+      "title": "Compras una silla cómoda",
+      "comment": "Tu espalda te da las gracias."
+    },
+    "classic-doodad-massagesuit": {
+      "title": "Te regalas un traje de masaje",
+      "comment": "Relax con solo pulsar un botón. Tu cuenta se tensa."
+    },
+    "classic-doodad-jewelry": {
+      "title": "Compras bisutería",
+      "comment": "Brilla como la de verdad. Casi cuesta como la de verdad."
+    },
+    "classic-doodad-cappuccino": {
+      "title": "Compras una cafetera de capuchino",
+      "comment": "Se amortiza tras el café número 700. Más o menos."
+    },
+    "classic-doodad-birthday": {
+      "title": "Organizas una fiesta de cumpleaños para tu hijo",
+      "comment": "Diez niños, una tarta, cero nervios."
+    },
+    "classic-doodad-kitchen": {
+      "title": "Reformas tu cocina",
+      "comment": "La cocina vieja tenía carácter. La nueva tiene granito."
+    },
+    "classic-doodad-tennis": {
+      "title": "Compras una raqueta de tenis nueva",
+      "comment": "Esta vez seguro que no es tu técnica."
+    },
+    "classic-doodad-concert": {
+      "title": "Compras entradas para un concierto",
+      "comment": "Una noche inolvidable. Tu cuenta bancaria tampoco la olvidará."
+    },
+    "classic-doodad-familyvacation": {
+      "title": "Hacéis unas vacaciones en familia",
+      "comment": "Descanso garantizado. Hasta el tercer «¿Falta mucho?»."
+    },
+    "classic-doodad-sunglasses": {
+      "title": "Compras unas gafas de sol nuevas",
+      "comment": "Las anteriores las perdiste hace solo tres veranos."
+    },
+    "classic-doodad-console": {
+      "title": "Compras una consola nueva",
+      "comment": "Para los niños. Por supuesto."
+    },
+    "classic-doodad-trainingwear": {
+      "title": "Necesitas ropa de deporte nueva",
+      "comment": "Importante para entrenar. Y para lucirte."
+    },
+    "classic-doodad-painting": {
+      "title": "Tu casa necesita una mano de pintura",
+      "comment": "Recién pintada, las grietas desaparecen. Al menos un tiempo."
+    },
+    "classic-doodad-wedding": {
+      "title": "Ayudas con la boda de tu hijo",
+      "comment": "El día más feliz de la vida de tu hijo. El más caro de la tuya."
+    },
+    "classic-doodad-soundsystem": {
+      "title": "Compras un nuevo sistema de sonido",
+      "comment": "Los vecinos conocen por fin tu gusto musical."
+    },
+    "classic-doodad-bowlingball": {
+      "title": "Compras una bola de bolos nueva",
+      "comment": "Con tu propia bola se juega mucho mejor. Según tú."
+    },
+    "classic-doodad-clothes": {
+      "title": "Compras ropa nueva",
+      "comment": "Nada del armario te quedaba bien. O te gustaba."
+    },
+    "classic-doodad-caraircon": {
+      "title": "Necesitas aire acondicionado nuevo para tu coche",
+      "comment": "Sudar es gratis. Sudar en un atasco, no."
+    },
+    "classic-doodad-golfclub": {
+      "title": "Te haces socio del club de golf",
+      "comment": "Aquí se cierran los negocios importantes. Y se pierden muchas bolas."
+    },
+    "classic-doodad-watch": {
+      "title": "Compras un reloj nuevo",
+      "comment": "Tu móvil también da la hora. Pero con menos elegancia."
+    },
+    "classic-doodad-carradio": {
+      "title": "Necesitas una radio nueva para el coche",
+      "comment": "Los atascos solo se soportan con buena música."
+    },
+    "classic-doodad-tv": {
+      "title": "Compras un televisor de pantalla plana",
+      "comment": "Pantalla fina, factura gruesa."
+    },
+    "classic-doodad-firstcar": {
+      "title": "Le compras a tu hijo su primer coche",
+      "comment": "Las llaves son de tu hijo. El depósito sigue siendo cosa tuya."
+    },
+    "classic-doodad-braces": {
+      "title": "Tu hijo necesita ortodoncia",
+      "comment": "Hoy una boca de metal, mañana una sonrisa radiante. Y una factura radiante."
+    },
+    "classic-doodad-date": {
+      "title": "Tienes una cita (concierto, cena y postre)",
+      "comment": "Pagas tú, claro. El postre fue un error. O quizá no."
+    },
+    "classic-doodad-rims": {
+      "title": "Tu coche necesita llantas nuevas",
+      "comment": "El coche no va más rápido. Solo lo parece."
+    },
+    "classic-doodad-foodprocessor": {
+      "title": "Compras un robot de cocina",
+      "comment": "Lo hace todo. Lo usas dos veces."
+    },
+    "classic-doodad-golfclubs": {
+      "title": "Te regalas unos palos de golf nuevos",
+      "comment": "Tu hándicap seguro que no es culpa de los palos."
+    },
+    "classic-doodad-tutoring": {
+      "title": "Pagas clases particulares para tu hijo",
+      "comment": "Una inversión en el futuro. Y en la nota de mates."
+    },
+    "classic-doodad-computer": {
+      "title": "Necesitas un ordenador nuevo",
+      "comment": "El viejo tardaba diez minutos enteros en arrancar."
+    },
+    "classic-doodad-seasontickets": {
+      "title": "Compras abonos de temporada",
+      "comment": "Cada partido en casa, cada derrota, en directo."
+    },
+    "classic-doodad-tires": {
+      "title": "Necesitas neumáticos nuevos",
+      "comment": "El dibujo importa. En los neumáticos y en el currículum."
+    },
+    "classic-doodad-dentist": {
+      "title": "Ve al dentista",
+      "comment": "Solo duele un momento. La factura duele más.",
+      "description": "(¡Quizá te toque un diente de oro brillante!)"
+    },
+    "classic-doodad-casino": {
+      "title": "Vas al casino",
+      "comment": "La banca siempre gana. Al menos pasaste una buena noche."
+    },
+    "classic-doodad-winetrip": {
+      "title": "Haces una excursión a una región vinícola",
+      "comment": "Solo una pequeña cata. El maletero queda lleno igualmente."
+    },
+    "classic-doodad-artpainting": {
+      "title": "Compras un cuadro de un artista local",
+      "comment": "Arte que valdrá una fortuna en veinte años. O nada."
+    },
+    "classic-doodad-friendsdinner": {
+      "title": "Invitas a tus amigos a cenar",
+      "comment": "Tú cocinas, ellos ríen. Lo mejor: se quedan más de lo previsto."
+    },
+    "classic-doodad-phone": {
+      "title": "Compras el móvil más nuevo",
+      "comment": "El anterior aún funcionaba. Pero este tiene una cámara apenas mejor."
+    },
+    "classic-market-efh-pct20-a": {
+      "title": "Comprador de casa unifamiliar",
+      "description": "Un comprador busca una casa unifamiliar. Ofrece el precio original + 20%. Cualquiera puede vender tantas propiedades como quiera a este precio. Si vendes, paga la hipoteca correspondiente y tacha el flujo de caja de esa propiedad."
+    },
+    "classic-market-efh-pct20-b": {
+      "title": "Comprador de casa unifamiliar",
+      "description": "Un comprador busca una casa unifamiliar. Ofrece el precio original + 20%. Cualquiera puede vender tantas propiedades como quiera a este precio. Si vendes, paga la hipoteca correspondiente y tacha el flujo de caja de esa propiedad."
+    },
+    "classic-market-efh-pct15": {
+      "title": "Comprador de casa unifamiliar",
+      "description": "Un comprador busca una casa unifamiliar. Ofrece el precio original + 15%. Cualquiera puede vender tantas propiedades como quiera a este precio. Si vendes, paga la hipoteca correspondiente y tacha el flujo de caja de esa propiedad."
+    },
+    "classic-market-efh-pct10-a": {
+      "title": "Comprador de casa unifamiliar",
+      "description": "Un comprador busca una casa unifamiliar. Ofrece el precio original + 10%. Cualquiera puede vender tantas propiedades como quiera a este precio. Si vendes, paga la hipoteca correspondiente y tacha el flujo de caja de esa propiedad."
+    },
+    "classic-market-efh-pct10-b": {
+      "title": "Comprador de casa unifamiliar",
+      "description": "Un comprador busca una casa unifamiliar. Ofrece el precio original + 10%. Cualquiera puede vender tantas propiedades como quiera a este precio. Si vendes, paga la hipoteca correspondiente y tacha el flujo de caja de esa propiedad."
+    },
+    "classic-market-efh-amt20k": {
+      "title": "Comprador de casa unifamiliar",
+      "description": "Un comprador busca una casa unifamiliar. Ofrece el precio original + 20.000 €. Cualquiera puede vender tantas propiedades como quiera a este precio. Si vendes, paga la hipoteca correspondiente y tacha el flujo de caja de esa propiedad."
+    },
+    "classic-market-efh-amt15k": {
+      "title": "Comprador de casa unifamiliar",
+      "description": "Un comprador busca una casa unifamiliar. Ofrece el precio original + 15.000 €. Cualquiera puede vender tantas propiedades como quiera a este precio. Si vendes, paga la hipoteca correspondiente y tacha el flujo de caja de esa propiedad."
+    },
+    "classic-market-efh-amt10k": {
+      "title": "Comprador de casa unifamiliar",
+      "description": "Un comprador busca una casa unifamiliar. Ofrece el precio original + 10.000 €. Cualquiera puede vender tantas propiedades como quiera a este precio. Si vendes, paga la hipoteca correspondiente y tacha el flujo de caja de esa propiedad."
+    },
+    "classic-market-efh-amt5k": {
+      "title": "Comprador de casa unifamiliar",
+      "description": "Un comprador busca una casa unifamiliar. Ofrece el precio original + 5.000 €. Cualquiera puede vender tantas propiedades como quiera a este precio. Si vendes, paga la hipoteca correspondiente y tacha el flujo de caja de esa propiedad."
+    },
+    "classic-market-mfh-pct20": {
+      "title": "Comprador de apartamentos y edificios multifamiliares",
+      "description": "Un comprador busca edificios de apartamentos y multifamiliares con cualquier número de unidades. Ofrece el precio original + 20%. Cualquiera puede vender tantas propiedades como quiera a este precio. Si vendes, paga la hipoteca correspondiente y tacha el flujo de caja de esa propiedad."
+    },
+    "classic-market-mfh-pct15": {
+      "title": "Comprador de apartamentos y edificios multifamiliares",
+      "description": "Un comprador busca edificios de apartamentos y multifamiliares con cualquier número de unidades. Ofrece el precio original + 15%. Cualquiera puede vender tantas propiedades como quiera a este precio. Si vendes, paga la hipoteca correspondiente y tacha el flujo de caja de esa propiedad."
+    },
+    "classic-market-mfh-pct10": {
+      "title": "Comprador de apartamentos y edificios multifamiliares",
+      "description": "Un comprador busca edificios de apartamentos y multifamiliares con cualquier número de unidades. Ofrece el precio original + 10%. Cualquiera puede vender tantas propiedades como quiera a este precio. Si vendes, paga la hipoteca correspondiente y tacha el flujo de caja de esa propiedad."
+    },
+    "classic-market-mfh-pct5": {
+      "title": "Comprador de apartamentos y edificios multifamiliares",
+      "description": "Un comprador busca edificios de apartamentos y multifamiliares con cualquier número de unidades. Ofrece el precio original + 5%. Cualquiera puede vender tantas propiedades como quiera a este precio. Si vendes, paga la hipoteca correspondiente y tacha el flujo de caja de esa propiedad."
+    },
+    "classic-market-mfh-amt30k": {
+      "title": "Comprador de apartamentos y edificios multifamiliares",
+      "description": "Un comprador busca edificios de apartamentos y multifamiliares con cualquier número de unidades. Ofrece el precio original + 30.000 €. Cualquiera puede vender tantas propiedades como quiera a este precio. Si vendes, paga la hipoteca correspondiente y tacha el flujo de caja de esa propiedad."
+    },
+    "classic-market-mfh-amt20k": {
+      "title": "Comprador de apartamentos y edificios multifamiliares",
+      "description": "Un comprador busca edificios de apartamentos y multifamiliares con cualquier número de unidades. Ofrece el precio original + 20.000 €. Cualquiera puede vender tantas propiedades como quiera a este precio. Si vendes, paga la hipoteca correspondiente y tacha el flujo de caja de esa propiedad."
+    },
+    "classic-market-mfh-amt15k": {
+      "title": "Comprador de apartamentos y edificios multifamiliares",
+      "description": "Un comprador busca edificios de apartamentos y multifamiliares con cualquier número de unidades. Ofrece el precio original + 15.000 €. Cualquiera puede vender tantas propiedades como quiera a este precio. Si vendes, paga la hipoteca correspondiente y tacha el flujo de caja de esa propiedad."
+    },
+    "classic-market-mfh-amt10k": {
+      "title": "Comprador de apartamentos y edificios multifamiliares",
+      "description": "Un comprador busca edificios de apartamentos y multifamiliares con cualquier número de unidades. Ofrece el precio original + 10.000 €. Cualquiera puede vender tantas propiedades como quiera a este precio. Si vendes, paga la hipoteca correspondiente y tacha el flujo de caja de esa propiedad."
+    },
+    "classic-market-mfh-amt5k": {
+      "title": "Comprador de apartamentos y edificios multifamiliares",
+      "description": "Un comprador busca edificios de apartamentos y multifamiliares con cualquier número de unidades. Ofrece el precio original + 5.000 €. Cualquiera puede vender tantas propiedades como quiera a este precio. Si vendes, paga la hipoteca correspondiente y tacha el flujo de caja de esa propiedad."
+    },
+    "classic-market-mfh-amt1k": {
+      "title": "Comprador de apartamentos y edificios multifamiliares",
+      "description": "Un comprador busca edificios de apartamentos y multifamiliares con cualquier número de unidades. Ofrece el precio original + 1.000 €. Cualquiera puede vender tantas propiedades como quiera a este precio. Si vendes, paga la hipoteca correspondiente y tacha el flujo de caja de esa propiedad."
+    },
+    "classic-market-etw-65k": {
+      "title": "Comprador de piso",
+      "description": "Se ofrecen 65.000 € por tu piso (ETW). El comprador tiene su propia financiación. Cualquiera puede vender a este precio. Si vendes, paga la hipoteca correspondiente y tacha el flujo de caja de esa propiedad."
+    },
+    "classic-market-etw-45k": {
+      "title": "Comprador de piso",
+      "description": "Se ofrecen 45.000 € por tu piso (ETW). El comprador tiene su propia financiación. Cualquiera puede vender a este precio. Si vendes, paga la hipoteca correspondiente y tacha el flujo de caja de esa propiedad."
+    },
+    "classic-market-aph-45k": {
+      "title": "Comprador de edificio de apartamentos",
+      "description": "Un comprador ofrece 45.000 € por unidad (WE) en edificios de apartamentos de cualquier tamaño. El comprador tiene su propia financiación. Cualquiera puede vender a este precio. Si vendes, paga la hipoteca correspondiente y tacha el flujo de caja de esa propiedad."
+    },
+    "classic-market-aph-25k": {
+      "title": "Comprador de edificio de apartamentos",
+      "description": "Un comprador ofrece 25.000 € por unidad (WE) en edificios de apartamentos de cualquier tamaño. El comprador tiene su propia financiación. Cualquiera puede vender a este precio. Si vendes, paga la hipoteca correspondiente y tacha el flujo de caja de esa propiedad."
+    },
+    "classic-market-aph-ag40k": {
+      "title": "Comprador de edificio de apartamentos",
+      "description": "Una inmobiliaria ofrece 40.000 € por unidad (WE) en edificios de apartamentos de cualquier tamaño. El comprador tiene su propia financiación. Cualquiera puede vender a este precio. Si vendes, paga la hipoteca correspondiente y tacha el flujo de caja de esa propiedad."
+    },
+    "classic-market-aph-ag30k": {
+      "title": "Comprador de edificio de apartamentos",
+      "description": "Una inmobiliaria ofrece 30.000 € por unidad (WE) en edificios de apartamentos de cualquier tamaño. El comprador tiene capital de la venta de otro complejo de apartamentos. Cualquiera puede vender a este precio. Si vendes, paga la hipoteca correspondiente y tacha el flujo de caja de esa propiedad."
+    },
+    "classic-market-gold-collector-1k": {
+      "title": "Un coleccionista busca monedas de oro",
+      "description": "Un rico coleccionista busca monedas de oro. Ofrece 1.000 € en efectivo por cada moneda. Cualquiera puede vender tantas monedas como quiera a este precio."
+    },
+    "classic-market-gold-unrest-1k": {
+      "title": "Sube el precio del oro",
+      "description": "Disturbios en el extranjero. Los precios del petróleo están amenazados. El precio del oro se dispara. Un comprador ofrece 1.000 € en efectivo por cada moneda de oro. Cualquiera puede vender tantas monedas como quiera a este precio."
+    },
+    "classic-market-gold-central-2k": {
+      "title": "Sube el precio del oro",
+      "description": "El banco central imprime dinero y, al intentar impulsar la economía, provoca una fuerte inflación. El precio del oro se dispara. Un comprador ofrece 2.000 € en efectivo por cada moneda de oro. Cualquiera puede vender tantas monedas como quiera a este precio."
+    },
+    "classic-market-cost-tenant-1k": {
+      "title": "Un inquilino daña tu propiedad",
+      "description": "Un inquilino se niega a pagar el alquiler. Tras el desalojo, encuentras daños considerables en tu propiedad. El seguro cubre la mayoría de las reparaciones, pero aun así debes pagar 1.000 € (una sola vez). Pide un préstamo al banco si es necesario para cubrir los costes. La carta solo vale para quien la sacó. Si NO tienes ninguna propiedad, ignora esta carta.",
+      "comment": "Un inquilino se negó a pagar el alquiler y dañó {property}. El seguro cubre la mayor parte, tú pagas el resto una vez."
+    },
+    "classic-market-cost-tenant-500-a": {
+      "title": "Un inquilino daña tu propiedad",
+      "description": "Un inquilino se niega a pagar el alquiler. Tras el desalojo, encuentras daños considerables en tu propiedad. El seguro cubre la mayoría de las reparaciones, pero aun así debes pagar 500 € (una sola vez). Pide un préstamo al banco si es necesario para cubrir los costes. La carta solo vale para quien la sacó. Si NO tienes ninguna propiedad, ignora esta carta.",
+      "comment": "Un inquilino se negó a pagar el alquiler y dañó {property}. El seguro cubre la mayor parte, tú pagas el resto una vez."
+    },
+    "classic-market-cost-tenant-500-b": {
+      "title": "Un inquilino daña tu propiedad",
+      "description": "Un inquilino se niega a pagar el alquiler. Tras el desalojo, encuentras daños considerables en tu propiedad. El seguro cubre la mayoría de las reparaciones, pero aun así debes pagar 500 € (una sola vez). Pide un préstamo al banco si es necesario para cubrir los costes. La carta solo vale para quien la sacó. Si NO tienes ninguna propiedad, ignora esta carta.",
+      "comment": "Un inquilino se negó a pagar el alquiler y dañó {property}. El seguro cubre la mayor parte, tú pagas el resto una vez."
+    },
+    "classic-market-cost-pipe-1k": {
+      "title": "Tubería de desagüe rota",
+      "description": "¡Tu propiedad está bajo el agua! Paga 1.000 € por una nueva tubería de desagüe (una sola vez). Pide un préstamo al banco si es necesario para cubrir los costes. La carta solo vale para quien la sacó. Si NO tienes ninguna propiedad, ignora esta carta.",
+      "comment": "La tubería de desagüe de {property} se rompió y todo quedó bajo el agua. Pagas la nueva tubería una vez."
+    },
+    "classic-market-cost-pipe-2k": {
+      "title": "Tubería de desagüe rota",
+      "description": "¡Tu propiedad está bajo el agua! Paga 2.000 € por una nueva tubería de desagüe (una sola vez). Pide un préstamo al banco si es necesario para cubrir los costes. La carta solo vale para quien la sacó. Si NO tienes ninguna propiedad, ignora esta carta.",
+      "comment": "La tubería de desagüe de {property} se rompió y todo quedó bajo el agua. Pagas la nueva tubería una vez."
+    },
+    "classic-market-split-ok4u": {
+      "title": "Acción - OK4U Pharma S.A.",
+      "description": "OK4U comienza ensayos de un fármaco que podría salvar vidas. Los efectos secundarios aún no se han probado. Podría cambiar el mundo... si funciona. El dueño de la carta tira un dado. Sacaste 1-3: ¡SPLIT DE ACCIONES! Todo el que tenga acciones de OK4U DUPLICA sus participaciones. Sacaste 4-6: ¡SPLIT INVERSO! Todo el que tenga acciones de OK4U pierde la mitad de sus participaciones. (No pagas dinero. Tu coste total no cambia.) Símbolo: OK4U ¿SPLIT o SPLIT INVERSO?"
+    },
+    "classic-market-split-myt4u": {
+      "title": "Acción - MYT4U Electronics Co.",
+      "description": "MYT4U se arriesga con una nueva tecnología de entretenimiento doméstico. ¿Será un gran éxito o un fracaso? El dueño de la carta tira un dado. Sacaste 1-3: ¡SPLIT DE ACCIONES! Todo el que tenga acciones de MYT4U DUPLICA sus participaciones. Sacaste 4-6: ¡SPLIT INVERSO! Todo el que tenga acciones de MYT4U pierde la mitad de sus participaciones. (No pagas dinero. Tu coste total no cambia.) Símbolo: MYT4U ¿SPLIT o SPLIT INVERSO?"
+    },
+    "classic-market-split-gro4us": {
+      "title": "Fondo de inversión – GRO4US",
+      "description": "El mercado está cambiando y habrá fuertes oscilaciones en los próximos meses. ¿Cómo se comportarán los fondos en este tiempo de cambio? El dueño de la carta tira un dado. Sacaste 1-3: ¡SPLIT DE ACCIONES! Todo el que tenga acciones de GRO4US DUPLICA sus participaciones. Sacaste 4-6: ¡SPLIT INVERSO! Todo el que tenga acciones de GRO4US pierde la mitad de sus participaciones. (No pagas dinero. Tu coste total no cambia.) Símbolo: GRO4US ¿SPLIT o SPLIT INVERSO?"
+    },
+    "classic-market-split-on2u": {
+      "title": "Acción - ON2U Entertainment S.A.",
+      "description": "El estudio apoya a un nuevo director en su superproducción de verano. La producción revolucionaria podría ser demasiado ambiciosa. El dueño de la carta tira un dado. Sacaste 1-3: ¡SPLIT DE ACCIONES! Todo el que tenga acciones de ON2U DUPLICA sus participaciones. Sacaste 4-6: ¡SPLIT INVERSO! Todo el que tenga acciones de ON2U pierde la mitad de sus participaciones. (No pagas dinero. Tu coste total no cambia.) Símbolo: ON2U ¿SPLIT o SPLIT INVERSO?"
+    },
+    "classic-market-boost-small-250": {
+      "title": "¡Pequeño boom de negocios!",
+      "description": "¡La economía del centro de la ciudad está explotando! TODOS están afectados. TODOS los negocios con un cashflow de 1.000 € o menos aumentan su cashflow en 250 €."
+    },
+    "classic-market-boost-mgmt-400": {
+      "title": "Nuevo sistema de gestión",
+      "description": "Un nuevo sistema de gestión crea nueva productividad y menores costes. Solo afecta a la persona que sacó esta carta. TODOS los negocios con un cashflow de 2.000 € o menos aumentan su cashflow en 400 €."
+    }
+  },
+  "symbols": {
+    "EFH": "CUF",
+    "ETW": "APT",
+    "MFH4": "EDF4",
+    "MFH8": "EDF8",
+    "PIZZA": "PIZZA",
+    "DH": "PAR",
+    "APH12": "CPL12",
+    "APH24": "CPL24",
+    "APH60": "CPL60",
+    "GP": "SOC",
+    "AU": "NAUT",
+    "AWA": "LAVA",
+    "GOLD": "ORO",
+    "LOAN": "PRESTAMO",
+    "MLM": "MLM"
+  },
+  "families": {
+    "EFH": "Casas unifamiliares",
+    "ETW": "Apartamentos en propiedad",
+    "MFH": "Edificios multifamiliares",
+    "DH": "Casas pareadas",
+    "APH": "Complejos de apartamentos",
+    "GP": "Socios",
+    "AU": "Negocios automatizados",
+    "AWA": "Autolavados",
+    "PIZZA": "Franquicia de pizzería",
+    "GOLD": "Monedas de oro",
+    "LOAN": "Préstamo familiar",
+    "MLM": "Marketing multinivel"
+  },
+  "doodadGroups": {
+    "leisure": "Ocio y aficiones",
+    "events": "Fiestas y eventos",
+    "home": "Hogar y casa",
+    "wellness": "Salud y bienestar",
+    "style": "Moda y estilo de vida",
+    "car": "Coche y movilidad",
+    "tech": "Tecnología y electrónica",
+    "education": "Educación y aprendizaje"
+  }
+}

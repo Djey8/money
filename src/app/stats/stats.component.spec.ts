@@ -1,4 +1,5 @@
 import { StatsComponent } from './stats.component';
+import { AppStateService } from '../shared/services/app-state.service';
 
 // StatsComponent uses deferred imports (setTimeout + dynamic import) for
 // MenuComponent, SettingsComponent, etc. Constructor accesses these before
@@ -24,6 +25,47 @@ describe('StatsComponent', () => {
     it('should track isBIDashboard state', () => {
       StatsComponent.isBIDashboard = true;
       expect(StatsComponent.isBIDashboard).toBe(true);
+    });
+  });
+
+  describe('redraws when the Cashflow game changes the data', () => {
+    afterEach(() => jest.useRealTimers());
+
+    it('redraws the account charts once for a burst of transaction/subscription updates, and stops after destroy', () => {
+      jest.useFakeTimers();
+      StatsComponent.isBIDashboard = false;
+      const stats: any = Object.create(StatsComponent.prototype);
+      stats.callCharts = jest.fn();
+      const state = AppStateService.instance;
+
+      stats.ngOnInit();
+      state.transactionsUpdated$.next();
+      state.subscriptionsUpdated$.next(); // a Payday fires both
+      jest.advanceTimersByTime(300);
+      expect(stats.callCharts).toHaveBeenCalledTimes(1);
+
+      stats.ngOnDestroy();
+      state.transactionsUpdated$.next();
+      jest.advanceTimersByTime(300);
+      expect(stats.callCharts).toHaveBeenCalledTimes(1);
+    });
+
+    it('rebuilds the open BI dashboard instead when one is showing', () => {
+      jest.useFakeTimers();
+      StatsComponent.isBIDashboard = true;
+      const build = jest.spyOn(StatsComponent as any, 'createBIDashboard').mockImplementation();
+      const stats: any = Object.create(StatsComponent.prototype);
+      stats.callCharts = jest.fn();
+
+      stats.ngOnInit();
+      AppStateService.instance.transactionsUpdated$.next();
+      jest.advanceTimersByTime(300);
+
+      expect(build).toHaveBeenCalledTimes(1);
+      expect(stats.callCharts).not.toHaveBeenCalled();
+      stats.ngOnDestroy();
+      build.mockRestore();
+      StatsComponent.isBIDashboard = false;
     });
   });
 });

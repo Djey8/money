@@ -1,0 +1,191 @@
+/* ============================================================
+   Cashflow game manual - on top of the self-hosting guide's styles
+   (same tokens, same layout); only what the manual adds.
+   ============================================================ */
+
+.cashflow-manual .manual-p {
+  font-size: 0.97rem;
+  line-height: 1.7;
+  color: var(--color-text);
+  margin: 0 0 1rem;
+}
+
+.cashflow-manual code {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.85em;
+  background: var(--color-background-alt, rgba(0, 0, 0, 0.06));
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+}
+
+.cashflow-manual .manual-list {
+  margin: 0 0 1.25rem;
+  padding-left: 1.4rem;
+  line-height: 1.65;
+  font-size: 0.97rem;
+}
+
+.cashflow-manual .manual-list li {
+  margin-bottom: 0.4rem;
+}
+
+/* ── Callouts ── */
+.manual-callout {
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  border-left-width: 4px;
+  padding: 0.9rem 1.15rem;
+  margin: 0 0 1.25rem;
+  font-size: 0.93rem;
+  line-height: 1.6;
+  background: var(--color-surface);
+}
+
+.manual-callout-title {
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.manual-callout--tip {
+  border-left-color: var(--color-success, #2e7d32);
+  background: rgba(76, 175, 80, 0.08);
+}
+
+.manual-callout--warning {
+  border-left-color: var(--color-danger, #d32f2f);
+  background: rgba(211, 47, 47, 0.07);
+}
+
+.manual-callout--note {
+  border-left-color: var(--color-info, #1976d2);
+  background: rgba(25, 118, 210, 0.07);
+}
+
+.manual-callout--example {
+  border-left-color: var(--color-cf-purple, #8e44ad);
+  background: rgba(142, 68, 173, 0.07);
+}
+
+/* ── Tables ── */
+.manual-table table {
+  min-width: 480px;
+}
+
+.manual-table tbody tr:nth-child(even) {
+  background: var(--color-background-alt, rgba(0, 0, 0, 0.025));
+}
+
+.manual-table-caption {
+  font-weight: 700;
+  margin: 0 0 0.5rem;
+}
+
+.manual-table-note {
+  margin: 0.5rem 0 0;
+  font-size: 0.82rem;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+}
+
+/* ── Cards of several kinds ── */
+.cashflow-manual .manual-cards {
+  margin-bottom: 1.5rem;
+}
+
+.cashflow-manual .step-card h4 {
+  margin: 0 0 0.25rem;
+}
+
+/* ── A real card, drawn like the one on the table ── */
+.manual-figure {
+  margin: 0 0 1.5rem;
+  max-width: 440px;
+}
+
+.manual-figure figcaption {
+  margin-top: 0.4rem;
+  font-size: 0.82rem;
+  color: var(--color-text-muted);
+}
+
+.manual-face {
+  --tone: var(--color-primary);
+  border: 2px solid var(--tone);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  overflow: hidden;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
+}
+
+/* The colours of the spaces on the board: green Deals, red Schnickschnack, blue Market. */
+.manual-face--small,
+.manual-face--big {
+  --tone: var(--color-success, #2e7d32);
+}
+
+.manual-face--doodad {
+  --tone: var(--color-danger, #d32f2f);
+}
+
+.manual-face--market {
+  --tone: var(--color-info, #1976d2);
+}
+
+.manual-face-head {
+  padding: 0.6rem 1rem;
+  background: var(--tone);
+  color: #fff;
+  font-weight: 800;
+  font-size: 1rem;
+}
+
+.manual-face-text {
+  margin: 0;
+  padding: 0.85rem 1rem 0.5rem;
+  font-size: 0.88rem;
+  line-height: 1.55;
+  color: var(--color-text);
+}
+
+.manual-face-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.4rem;
+  padding: 0.65rem 1rem 0.9rem;
+  border-top: 1px dashed var(--color-border);
+}
+
+.manual-face-fact {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.manual-face-fact-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+}
+
+.manual-face-fact strong {
+  font-size: 1.15rem;
+  color: var(--tone);
+}
+
+/* ── Glossary ── */
+.manual-glossary {
+  margin: 0 0 1.5rem;
+}
+
+.manual-glossary dt {
+  font-weight: 700;
+  margin-top: 0.9rem;
+  color: var(--color-primary);
+}
+
+.manual-glossary dd {
+  margin: 0.15rem 0 0;
+  font-size: 0.94rem;
+  line-height: 1.6;
+}

@@ -15,7 +15,7 @@ import { PersistenceService } from './shared/services/persistence.service';
 import { IncomeStatementService } from './shared/services/income-statement.service';
 import { AppStateService } from './shared/services/app-state.service';
 import { AppDataService } from './shared/services/app-data.service';
-import { GameModeService } from './shared/services/game-mode.service';
+import { CashflowGameService } from './shared/services/cashflow-game.service';
 import { SubscriptionProcessingService } from './shared/services/subscription-processing.service';
 import { ToastService } from './shared/services/toast.service';
 import { migrateGrowArray } from './shared/grow-migration.utils';
@@ -46,6 +46,7 @@ import { ImpressumComponent as ImpressumComp } from './panels/impressum/impressu
 import { PolicyComponent as PolicyComp } from './panels/policy/policy.component';
 import { InstructionsComponent as InstructionsComp } from './panels/instructions/instructions.component';
 import { InfoComponent as InfoComp } from './panels/info/info.component';
+import { CashflowGameComponent as CashflowGameComp } from './main/cashflow-game/cashflow-game.component';
 import { ToastComponent } from './shared/components/toast/toast.component';
 import { ConfirmDialogComponent } from './shared/components/confirm-dialog/confirm-dialog.component';
 import { BottomNavComponent } from './shared/components/bottom-nav/bottom-nav.component';
@@ -168,6 +169,7 @@ setTimeout(() =>
     PolicyComp,
     InstructionsComp,
     InfoComp,
+    CashflowGameComp,
     ToastComponent,
     ConfirmDialogComponent,
     BottomNavComponent,
@@ -211,12 +213,12 @@ export class AppComponent {
     private incomeStatement: IncomeStatementService,
     public appState: AppStateService,
     private appData: AppDataService,
-    private gameMode: GameModeService,
     private subscriptionProcessing: SubscriptionProcessingService,
     private onboardingService: OnboardingService,
     private toastService: ToastService,
     private tourService: TourService,
     private selfhosted: SelfhostedService,
+    private cashflowGameService: CashflowGameService,
   ) {
     AppComponent.instance = this;
 
@@ -348,9 +350,18 @@ export class AppComponent {
           AppStateService.instance.isLoading = false;
           // Recalculate home amounts now that data is loaded
           if (HomeComponent) HomeComponent.getAmounts();
-          if (!GameModeService.isCashflowGame()) {
+          if (!CashflowGameService.isCashflowGame()) {
             // Auto-generate subscription transactions on load
             this.autoGenerateSubscriptionTransactions();
+          } else {
+            // A cashflow account's game state was only ever loaded on-demand, when the game
+            // panel itself was opened — so a page that needs to know "is a game running"
+            // (Settings' reset button) couldn't rely on it before that (JFK, 2026-09-29: "the
+            // component does not know we started a game"). Load it as part of normal bootstrap
+            // instead, same as tier 1, since for this account type it effectively is tier 1.
+            AppDataService.instance
+              .loadCashflowGameData()
+              .catch((err) => console.error('Cashflow game data load error:', err));
           }
           // Auto-start interactive tour for new users
           if (window.localStorage.getItem('onboarding_pending') === 'true') {
@@ -526,6 +537,12 @@ export class AppComponent {
     this.localStorage.removeData('liabilities');
     this.localStorage.removeData('grow');
     this.localStorage.removeData('budget');
+
+    // The Cashflow game's undo history is a same-session/reload safety net, deliberately not
+    // synced to the DB — but it must never leak into a different login (JFK, 2026-09-29+: "when we
+    // logout we remove also this part for the localStorage"). Clears both the in-memory stack on
+    // this running singleton and its localStorage copy.
+    this.cashflowGameService.clearPersistedUndoStack();
 
     AppStateService.instance.allTransactions = [];
     AppStateService.instance.allSubscriptions = [];

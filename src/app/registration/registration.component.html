@@ -93,6 +93,21 @@
         </svg>
       </button>
     </div>
+    <ng-container *ngIf="needsGamePassword">
+      <label for="gamePassword" class="required">{{
+        'Registration.GamePassword' | translate
+      }}</label>
+      <input
+        type="password"
+        id="gamePassword"
+        name="gamePassword"
+        autocomplete="off"
+        aria-required="true"
+        [(ngModel)]="gamePasswordTextField"
+        [attr.aria-invalid]="isError ? true : null"
+        [attr.aria-describedby]="isError ? 'reg-error' : null"
+      />
+    </ng-container>
     <ul class="password-rules" *ngIf="passwordTextField.length > 0">
       <li *ngIf="!hasMinLength">{{ 'Registration.RuleMinLength' | translate }}</li>
       <li *ngIf="!hasUppercase">{{ 'Registration.RuleUppercase' | translate }}</li>

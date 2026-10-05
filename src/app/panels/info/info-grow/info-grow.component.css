@@ -1306,3 +1306,39 @@
   flex: 1;
   min-width: 150px;
 }
+
+/* Buy / Sell inside a project's info (Overview and Financials, above Edit): green Buy, red Sell like the
+   Grow grid's cards, but solid - the grid's see-through tints vanish against this panel's blue background. */
+.info-trade-actions {
+  display: flex;
+  gap: 8px;
+  /* Room above, so the row doesn't crowd the Add buttons over it; little below, Edit follows straight on. */
+  margin-top: 28px;
+  margin-bottom: 6px;
+}
+
+.card-btn {
+  flex: 1;
+  padding: 10px 0;
+  border-radius: var(--radius-sm);
+  border: 1px solid;
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffffff;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.card-btn:hover {
+  opacity: 0.88;
+}
+
+.card-btn-buy {
+  background: #1f9d63;
+  border-color: #17804f;
+}
+
+.card-btn-sell {
+  background: #d63031;
+  border-color: #b02526;
+}

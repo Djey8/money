@@ -33,6 +33,7 @@ import { RouterModule } from '@angular/router';
 import { ToastService } from 'src/app/shared/services/toast.service';
 import { SubscriptionProcessingService } from 'src/app/shared/services/subscription-processing.service';
 import { FrontendLoggerService } from 'src/app/shared/services/frontend-logger.service';
+import { CashflowGameService } from 'src/app/shared/services/cashflow-game.service';
 
 @Component({
   selector: 'app-subscription',
@@ -61,13 +62,14 @@ import { FrontendLoggerService } from 'src/app/shared/services/frontend-logger.s
 export class SubscriptionComponent implements OnDestroy, AfterViewChecked, OnInit, AfterViewInit {
   private _liveAnnouncer = inject(LiveAnnouncer);
   private tableInitialized = false;
+  private subUpdateSub?: Subscription;
 
   static isSearched = false;
   static allSubscriptions = [];
   static allSearchedSubscriptions = [];
 
-  displayedColumns: string[] = ['id', 'title', 'account', 'amount', 'startDate'];
-  displayedColumnsIn: string[] = ['id', 'title', 'account', 'amount', 'endDate'];
+  displayedColumns: string[] = ['id', 'title', 'account', 'category', 'amount', 'startDate'];
+  displayedColumnsIn: string[] = ['id', 'title', 'account', 'category', 'amount', 'endDate'];
 
   static activeDataSource = new MatTableDataSource<any>([]);
   static inactiveDataSource = new MatTableDataSource<any>([]);
@@ -277,8 +279,14 @@ export class SubscriptionComponent implements OnDestroy, AfterViewChecked, OnIni
     }
   }
 
-  // eslint-disable-next-line @angular-eslint/no-empty-lifecycle-method, @typescript-eslint/no-empty-function -- required by `implements OnDestroy`; nothing to clean up here
-  ngOnDestroy() {}
+  ngOnDestroy() {
+    this.subUpdateSub?.unsubscribe();
+  }
+
+  /** A cashflow-game account's Subscriptions only ever become Transactions via Payday — the manual refresh button doesn't apply and would silently no-op (todo/cashflow-game.md decision 31). */
+  isCashflowGame(): boolean {
+    return CashflowGameService.isCashflowGame();
+  }
 
   private setupTableFeatures() {
     this.applyCustomSorting(SubscriptionComponent.activeDataSource);
@@ -308,6 +316,20 @@ export class SubscriptionComponent implements OnDestroy, AfterViewChecked, OnIni
     // Apply custom sorting
     this.applyCustomSorting(SubscriptionComponent.activeDataSource);
     this.applyCustomSorting(SubscriptionComponent.inactiveDataSource);
+
+    // Refresh when subscriptions change from somewhere that doesn't already hold a reference to
+    // this page (e.g. the Cashflow game panel, which can create/remove many at once).
+    this.subUpdateSub = AppStateService.instance.subscriptionsUpdated$.subscribe(() => {
+      SubscriptionComponent.allSubscriptions = AppStateService.instance.allSubscriptions;
+      SubscriptionComponent.activeDataSource.data = SubscriptionComponent.allSubscriptions.map(
+        (subscription, index) => ({ ...subscription, id: index }),
+      );
+      SubscriptionComponent.inactiveDataSource.data = SubscriptionComponent.allSubscriptions.map(
+        (subscription, index) => ({ ...subscription, id: index }),
+      );
+      this.applyCustomSorting(SubscriptionComponent.activeDataSource);
+      this.applyCustomSorting(SubscriptionComponent.inactiveDataSource);
+    });
   }
 
   /** Announce the change in sort state for assistive technology. */

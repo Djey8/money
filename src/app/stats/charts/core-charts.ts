@@ -1,6 +1,8 @@
+import { leftMarginForLabels } from './axis-margin';
 import { StatsComponent } from '../stats.component';
 import * as d3 from 'd3';
 import { ChartFilterService, ChartFilterState } from '../../shared/services/chart-filter.service';
+import { gameMarkerFor } from './game-markers';
 import { AppStateService } from '../../shared/services/app-state.service';
 import { IncomeStatementService } from '../../shared/services/income-statement.service';
 import { IncomeComponent } from '../../main/cashflow/income/income.component';
@@ -897,6 +899,90 @@ export function createCategoryBubbleChart(selectedPeriod = 'all', selectedIndex 
     .text((d: { value: number }) => format(d.value));
 }
 
+/**
+ * One day-marker on an account chart: a white circle outlined in the event's colour, its symbol in
+ * the middle, and a small "+" / "-" badge for the direction of the money (JFK, 2026-10-03). Used by
+ * Smile, Fire, Grow and the Cashflow game's Bank loan so they all read the same way.
+ */
+function drawEventMarker(
+  svg: any,
+  options: {
+    className: string;
+    x: number;
+    y: number;
+    color: string;
+    sign: '+' | '-';
+    /** Picture shown in the middle (cropped round); `emoji` is the fallback if it fails to load. */
+    iconHref?: string;
+    emoji: string;
+    clipId?: string;
+    onClick: () => void;
+  },
+): void {
+  const group = svg
+    .append('g')
+    .attr('class', options.className)
+    .attr('transform', `translate(${options.x}, ${options.y})`)
+    .style('cursor', 'pointer')
+    .on('click', options.onClick);
+
+  group
+    .append('circle')
+    .attr('cx', -4)
+    .attr('cy', -18)
+    .attr('r', 12)
+    .attr('fill', '#ffffff')
+    .attr('stroke', options.color)
+    .attr('stroke-width', 2.5);
+
+  const drawEmoji = () =>
+    group
+      .append('text')
+      .attr('x', -4)
+      .attr('y', -13)
+      .attr('text-anchor', 'middle')
+      .attr('font-size', '14px')
+      .attr('pointer-events', 'none')
+      .text(options.emoji);
+
+  if (options.iconHref && options.clipId) {
+    group
+      .append('clipPath')
+      .attr('id', options.clipId)
+      .append('circle')
+      .attr('cx', -4)
+      .attr('cy', -18)
+      .attr('r', 9);
+    group
+      .append('image')
+      .attr('href', options.iconHref)
+      .attr('x', -13)
+      .attr('y', -27)
+      .attr('width', 18)
+      .attr('height', 18)
+      .attr('clip-path', `url(#${options.clipId})`)
+      .attr('pointer-events', 'none')
+      .on('error', function () {
+        d3.select(this).remove();
+        drawEmoji();
+      });
+  } else {
+    drawEmoji();
+  }
+
+  const badge = group.append('g').attr('pointer-events', 'none');
+  badge.append('circle').attr('cx', 6).attr('cy', -28).attr('r', 6).attr('fill', options.color);
+  badge
+    .append('text')
+    .attr('x', 6)
+    .attr('y', -24.5)
+    .attr('text-anchor', 'middle')
+    .attr('font-size', '11px')
+    .attr('font-weight', '700')
+    .attr('fill', '#ffffff')
+    .text(options.sign === '+' ? '+' : '\u2212');
+}
+
 export function createChart(
   filter: string,
   selectedYear = 'all',
@@ -912,7 +998,8 @@ export function createChart(
   StatsComponent.screenWidth = window.innerWidth - 20;
   StatsComponent.screenHeight = window.innerHeight - 110;
   const margin = { top: 25, right: 50, bottom: 60, left: 40 };
-  const width = StatsComponent.screenWidth - margin.left - margin.right;
+  // The left margin grows with the y-axis labels (see below), so the plot width is adjusted then.
+  let width = StatsComponent.screenWidth - margin.left - margin.right;
   const height = StatsComponent.screenHeight - margin.top - margin.bottom;
   const fontSize = Math.min(12, Math.max(8, Math.round(StatsComponent.screenWidth / 100)));
 
@@ -945,6 +1032,14 @@ export function createChart(
   const dailyFireTransactions = new Map<string, any[]>();
   const dailyAddMojoTransactions = new Map<string, any[]>();
   const dailyGrowTransactions = new Map<string, any[]>();
+  // Cashflow game: the Bank loan moves, drawn as a bank symbol - one marker for taking a loan, one for paying it back.
+  const dailyLoanTakenTransactions = new Map<string, any[]>();
+  const dailyLoanRepaidTransactions = new Map<string, any[]>();
+  // Cashflow game: every Schnickschnack (Doodad) payment carries the #doodad tag in its comment.
+  const dailyDoodadTransactions = new Map<string, any[]>();
+
+  // The game's own markers (bank loan, Doodad) exist only while a game is running.
+  const gameRunning = Boolean(AppStateService.instance.cashflowGame?.professionId);
 
   for (const t of transactions) {
     const dateStr = t.date.toISOString().split('T')[0];
@@ -987,6 +1082,26 @@ export function createChart(
         dailyAddMojoTransactions.set(dateStr, []);
       }
       dailyAddMojoTransactions.get(dateStr)!.push(t);
+    }
+    // Only the loan being taken or repaid - the monthly interest Payday books under the same category
+    // has no "Bank loan" comment and is deliberately not drawn (JFK, 2026-10-03).
+    const gameMarker = gameMarkerFor(
+      { amount: t.amount, category: t.original.category, comment: t.original.comment },
+      gameRunning,
+    );
+    if (isChecked && (gameMarker === 'loanTaken' || gameMarker === 'loanRepaid')) {
+      const loanMoves =
+        gameMarker === 'loanTaken' ? dailyLoanTakenTransactions : dailyLoanRepaidTransactions;
+      if (!loanMoves.has(dateStr)) {
+        loanMoves.set(dateStr, []);
+      }
+      loanMoves.get(dateStr)!.push(t);
+    }
+    if (isChecked && gameMarker === 'doodad') {
+      if (!dailyDoodadTransactions.has(dateStr)) {
+        dailyDoodadTransactions.set(dateStr, []);
+      }
+      dailyDoodadTransactions.get(dateStr)!.push(t);
     }
     if (
       isChecked &&
@@ -1085,6 +1200,17 @@ export function createChart(
   const padding = range < 100 ? 50 : range * 0.1;
 
   y.domain([minY > 0 ? 0 : minY - padding, maxY + padding]);
+
+  // Make room on the left for the widest y-axis label: 9,000 needs little, 1,250,000 needs more
+  // (JFK, 2026-10-03). Nothing is drawn yet, so the plot area can still be resized.
+  const yTickLabels = y.ticks().map((tick) => d3.format(',.0f')(tick));
+  margin.left = leftMarginForLabels(yTickLabels, fontSize, margin.left);
+  width = StatsComponent.screenWidth - margin.left - margin.right;
+  x.range([0, width]);
+  d3.select('#chart-container')
+    .select('svg')
+    .attr('width', width + margin.left + margin.right);
+  svg.attr('transform', `translate(${margin.left},${margin.top})`);
 
   // X Axis with custom tick format for 1st tick
   const ticks = x.ticks(Math.min(10, dataset.length));
@@ -1285,216 +1411,112 @@ export function createChart(
   }
 
   if (isChecked) {
-    // Add grow icons for outgoing Grow transactions
+    // Grow trades: green when the day's money came in (a sale), turquoise when it went out (a buy).
     for (const [dateStr, growTransactions] of dailyGrowTransactions.entries()) {
-      const growAccounts = new Set<string>();
-      growTransactions.forEach((t: any) => {
-        if (t.account) {
-          growAccounts.add(t.account.toLocaleLowerCase());
-        }
-      });
-
-      // Mark each transaction as positive or negative for later use
-      growTransactions.forEach((t: any) => {
-        t.isPositive = t.amount > 0;
-      });
-
-      const date = new Date(dateStr);
+      const growAccounts = new Set<string>(
+        growTransactions.map((t: any) => (t.account || '').toLocaleLowerCase()),
+      );
       const dataPoint = dataset.find((d) => d.date.toISOString().split('T')[0] === dateStr);
-
       if (
-        dataPoint &&
-        growTransactions.length > 0 &&
-        (filter === 'income' || growAccounts.has(filter.toLocaleLowerCase()))
+        !dataPoint ||
+        growTransactions.length === 0 ||
+        !(filter === 'income' || growAccounts.has(filter.toLocaleLowerCase()))
       ) {
-        const xPos = x(date);
-        const yPos = y(dataPoint.value);
-
-        // Create a group for the grow indicator
-        const smileGroup = svg
-          .append('g')
-          .attr('class', 'grow-indicator')
-          .attr('transform', `translate(${xPos}, ${yPos})`);
-
-        // Use an SVG <clipPath> to make the image round
-        const clipId = `grow-clip-${dateStr.replace(/[^a-zA-Z0-9]/g, '')}`;
-        smileGroup
-          .append('clipPath')
-          .attr('id', clipId)
-          .append('circle')
-          .attr('cx', -4)
-          .attr('cy', -18)
-          .attr('r', 12);
-
-        smileGroup
-          .append('image')
-          .attr('href', '../../../assets/icons/grow.jpg')
-          .attr('x', -16)
-          .attr('y', -30)
-          .attr('width', 24)
-          .attr('height', 24)
-          .attr('clip-path', `url(#${clipId})`)
-          .style('cursor', 'pointer')
-          .on('error', function () {
-            // Fallback to emoji if image fails to load
-            d3.select(this).remove();
-            smileGroup
-              .append('text')
-              .attr('x', 0)
-              .attr('y', -10)
-              .attr('text-anchor', 'middle')
-              .attr('font-size', '20px')
-              .style('cursor', 'pointer')
-              .text('💰');
-          })
-          .on('click', function () {
-            showTransactionDetails(growTransactions, dateStr, filter);
-          });
-
-        // Determine fill color based on the sign of the first transaction for this date
-        const isPositive = growTransactions[0]?.isPositive;
-        smileGroup
-          .append('circle')
-          .attr('cx', -4)
-          .attr('cy', -18)
-          .attr('r', 12)
-          .attr('fill', isPositive ? '#006400' : '#4fd8e6') // dark green if positive, turquoise if negative
-          .attr('fill-opacity', 0.3)
-          .attr('pointer-events', 'none');
+        continue;
       }
+      const net = growTransactions.reduce((sum: number, t: any) => sum + t.amount, 0);
+      drawEventMarker(svg, {
+        className: 'grow-indicator',
+        x: x(new Date(dateStr)),
+        y: y(dataPoint.value),
+        color: net > 0 ? '#006400' : '#17a2b8',
+        sign: net > 0 ? '+' : '-',
+        iconHref: '../../../assets/icons/grow.jpg',
+        emoji: '\ud83d\udcb0',
+        clipId: `grow-clip-${dateStr.replace(/[^a-zA-Z0-9]/g, '')}`,
+        onClick: () => showTransactionDetails(growTransactions, dateStr, filter),
+      });
     }
   }
 
-  // === SMILE TRANSACTION INDICATORS ===
-  if (isChecked && (filter === 'income' || filter === 'smile')) {
-    // Add smile icons for outgoing Smile transactions
-    for (const [dateStr, smileTransactions] of dailySmileTransactions.entries()) {
-      const date = new Date(dateStr);
+  // === BANK LOAN INDICATORS ===
+  // Orange with a "+" when a loan is taken, green with a "-" when it is paid back.
+  if (isChecked) {
+    const drawLoanIndicators = (moves: Map<string, any[]>, kind: 'taken' | 'repaid'): void => {
+      for (const [dateStr, loanTransactions] of moves.entries()) {
+        const accounts = new Set<string>(
+          loanTransactions.map((t: any) => (t.account || '').toLocaleLowerCase()),
+        );
+        const dataPoint = dataset.find((d) => d.date.toISOString().split('T')[0] === dateStr);
+        if (!dataPoint || (filter !== 'income' && !accounts.has(filter.toLocaleLowerCase()))) {
+          continue;
+        }
+        drawEventMarker(svg, {
+          className: `loan-indicator loan-${kind}`,
+          // Sits beside the other day markers (Grow, Smile, ...) instead of on top of them.
+          x: x(new Date(dateStr)) + 28,
+          y: y(dataPoint.value),
+          color: kind === 'taken' ? '#e67e22' : '#2e8b57',
+          sign: kind === 'taken' ? '+' : '-',
+          emoji: '\ud83c\udfe6',
+          onClick: () => showTransactionDetails(loanTransactions, dateStr, filter),
+        });
+      }
+    };
+    drawLoanIndicators(dailyLoanTakenTransactions, 'taken');
+    drawLoanIndicators(dailyLoanRepaidTransactions, 'repaid');
+  }
+
+  // === DOODAD (SCHNICKSCHNACK) INDICATORS ===
+  // A purple marker with a "-" on each day a Doodad card was paid, left of the day's other markers.
+  if (isChecked) {
+    for (const [dateStr, doodadTransactions] of dailyDoodadTransactions.entries()) {
+      const accounts = new Set<string>(
+        doodadTransactions.map((t: any) => (t.account || '').toLocaleLowerCase()),
+      );
       const dataPoint = dataset.find((d) => d.date.toISOString().split('T')[0] === dateStr);
-
-      if (dataPoint && smileTransactions.length > 0) {
-        const xPos = x(date);
-        const yPos = y(dataPoint.value);
-
-        // Create a group for the smile indicator
-        const smileGroup = svg
-          .append('g')
-          .attr('class', 'smile-indicator')
-          .attr('transform', `translate(${xPos}, ${yPos})`);
-
-        // Add smile icon (using emoji as fallback if image fails)
-        // Use an SVG <clipPath> to make the image round
-        const clipId = `smile-clip-${dateStr.replace(/[^a-zA-Z0-9]/g, '')}`;
-        smileGroup
-          .append('clipPath')
-          .attr('id', clipId)
-          .append('circle')
-          .attr('cx', -4) // center of the image (x + width/2)
-          .attr('cy', -18) // center of the image (y + height/2)
-          .attr('r', 12);
-
-        smileGroup
-          .append('image')
-          .attr('href', '../../../assets/icons/smile.jpg')
-          .attr('x', -16)
-          .attr('y', -30)
-          .attr('width', 24)
-          .attr('height', 24)
-          .attr('clip-path', `url(#${clipId})`)
-          .style('cursor', 'pointer')
-          .on('error', function () {
-            // Fallback to emoji if image fails to load
-            d3.select(this).remove();
-            smileGroup
-              .append('text')
-              .attr('x', 0)
-              .attr('y', -10)
-              .attr('text-anchor', 'middle')
-              .attr('font-size', '20px')
-              .style('cursor', 'pointer')
-              .text('😊');
-          })
-          .on('click', function () {
-            showTransactionDetails(smileTransactions, dateStr, filter);
-          });
-
-        // Overlay a semi-transparent yellow circle on top of the image
-        smileGroup
-          .append('circle')
-          .attr('cx', -4)
-          .attr('cy', -18)
-          .attr('r', 12)
-          .attr('fill', 'yellow')
-          .attr('fill-opacity', 0.3)
-          .attr('pointer-events', 'none');
+      if (!dataPoint || (filter !== 'income' && !accounts.has(filter.toLocaleLowerCase()))) {
+        continue;
       }
+      drawEventMarker(svg, {
+        className: 'doodad-indicator',
+        x: x(new Date(dateStr)) - 28,
+        y: y(dataPoint.value),
+        color: '#8e44ad',
+        sign: '-',
+        emoji: '\ud83d\udecd\ufe0f',
+        onClick: () => showTransactionDetails(doodadTransactions, dateStr, filter),
+      });
     }
   }
 
-  if (isChecked && (filter === 'income' || filter === 'fire')) {
-    // Add fire icons for outgoing Smile transactions
-    for (const [dateStr, fireTransactions] of dailyFireTransactions.entries()) {
-      const date = new Date(dateStr);
+  // === SMILE / FIRE TRANSACTION INDICATORS ===
+  // Both only track money going out of a project (see the daily maps above), hence the "-".
+  const drawProjectIndicators = (
+    moves: Map<string, any[]>,
+    kind: 'smile' | 'fire',
+    color: string,
+    emoji: string,
+  ): void => {
+    if (!isChecked || !(filter === 'income' || filter === kind)) return;
+    for (const [dateStr, projectTransactions] of moves.entries()) {
       const dataPoint = dataset.find((d) => d.date.toISOString().split('T')[0] === dateStr);
-
-      if (dataPoint && fireTransactions.length > 0) {
-        const xPos = x(date);
-        const yPos = y(dataPoint.value);
-
-        // Create a group for the smile indicator
-        const smileGroup = svg
-          .append('g')
-          .attr('class', 'fire-indicator')
-          .attr('transform', `translate(${xPos}, ${yPos})`);
-
-        // Add smile icon (using emoji as fallback if image fails)
-        // Use an SVG <clipPath> to make the image round
-        const clipId = `fire-clip-${dateStr.replace(/[^a-zA-Z0-9]/g, '')}`;
-        smileGroup
-          .append('clipPath')
-          .attr('id', clipId)
-          .append('circle')
-          .attr('cx', -4) // center of the image (x + width/2)
-          .attr('cy', -18) // center of the image (y + height/2)
-          .attr('r', 12);
-
-        smileGroup
-          .append('image')
-          .attr('href', '../../../assets/icons/fire.jpg')
-          .attr('x', -16)
-          .attr('y', -30)
-          .attr('width', 24)
-          .attr('height', 24)
-          .attr('clip-path', `url(#${clipId})`)
-          .style('cursor', 'pointer')
-          .on('error', function () {
-            // Fallback to emoji if image fails to load
-            d3.select(this).remove();
-            smileGroup
-              .append('text')
-              .attr('x', 0)
-              .attr('y', -10)
-              .attr('text-anchor', 'middle')
-              .attr('font-size', '20px')
-              .style('cursor', 'pointer')
-              .text('🔥');
-          })
-          .on('click', function () {
-            showTransactionDetails(fireTransactions, dateStr, filter);
-          });
-
-        // Overlay a semi-transparent yellow circle on top of the image
-        smileGroup
-          .append('circle')
-          .attr('cx', -4)
-          .attr('cy', -18)
-          .attr('r', 12)
-          .attr('fill', 'red')
-          .attr('fill-opacity', 0.3)
-          .attr('pointer-events', 'none');
-      }
+      if (!dataPoint || projectTransactions.length === 0) continue;
+      drawEventMarker(svg, {
+        className: `${kind}-indicator`,
+        x: x(new Date(dateStr)),
+        y: y(dataPoint.value),
+        color,
+        sign: '-',
+        iconHref: `../../../assets/icons/${kind}.jpg`,
+        emoji,
+        clipId: `${kind}-clip-${dateStr.replace(/[^a-zA-Z0-9]/g, '')}`,
+        onClick: () => showTransactionDetails(projectTransactions, dateStr, filter),
+      });
     }
-  }
+  };
+  drawProjectIndicators(dailySmileTransactions, 'smile', '#e0a800', '\ud83d\ude0a');
+  drawProjectIndicators(dailyFireTransactions, 'fire', '#d9342b', '\ud83d\udd25');
 
   // Final Value Label
   if (dataset.length > 0) {

@@ -2,7 +2,8 @@ import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule, TranslateService, LangChangeEvent } from '@ngx-translate/core';
-import { Subscription } from 'rxjs';
+import { Subscription, merge } from 'rxjs';
+import { debounceTime } from 'rxjs/operators';
 
 import { AppStateService } from '../../shared/services/app-state.service';
 import { AppNumberPipe } from '../../shared/pipes/app-number.pipe';
@@ -106,6 +107,7 @@ export class FinancialStatementComponent implements OnInit, OnDestroy {
   ];
 
   private langSub?: Subscription;
+  private dataSub?: Subscription;
 
   constructor(
     private translate: TranslateService,
@@ -115,10 +117,16 @@ export class FinancialStatementComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.recompute();
     this.langSub = this.translate.onLangChange.subscribe((_: LangChangeEvent) => this.recompute());
+    // Recalculate when the Cashflow game (Payday, Reset, Undo...) changes the books underneath.
+    const state = AppStateService.instance;
+    this.dataSub = merge(state.transactionsUpdated$, state.subscriptionsUpdated$)
+      .pipe(debounceTime(150))
+      .subscribe(() => this.recompute());
   }
 
   ngOnDestroy(): void {
     this.langSub?.unsubscribe();
+    this.dataSub?.unsubscribe();
   }
 
   get currency(): string {

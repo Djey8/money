@@ -47,18 +47,6 @@
   />
   <button id="addbtn" class="add-circle-btn" aria-label="Add" (click)="addTransaction()">+</button>
 </div>
-<div class="salary-counter" *ngIf="isCashflowGame()">
-  <button class="arrow-button" (click)="decreaseRoundCount()">
-    <span *ngIf="classReference.roundCount != 0" class="arrow-left">◀</span>
-  </button>
-  <div class="salary-count">
-    <span class="salary-label">{{ 'CashflowGame.Round' | translate }}</span>
-    <span class="salary-number">{{ classReference.roundCount }}</span>
-  </div>
-  <button class="arrow-button" (click)="increaseRoundCount()">
-    <span class="arrow-right">▶</span>
-  </button>
-</div>
 
 <div class="search-bar-container" *ngIf="classReference.allTransactions.length > 0">
   <input

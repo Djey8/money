@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 import { MatTableDataSource } from '@angular/material/table';
 import { AppStateService } from 'src/app/shared/services/app-state.service';
+import { CashflowGameService } from 'src/app/shared/services/cashflow-game.service';
 import { CommonModule } from '@angular/common';
 import { TranslateModule } from '@ngx-translate/core';
 import { TrapFocusDirective } from 'src/app/shared/directives/trap-focus.directive';
@@ -45,6 +46,12 @@ setTimeout(() =>
 );
 let AppComponent: any;
 setTimeout(() => import('src/app/app.component').then((m) => (AppComponent = m.AppComponent)));
+let CashflowGameComponent: any;
+setTimeout(() =>
+  import('src/app/main/cashflow-game/cashflow-game.component').then(
+    (m) => (CashflowGameComponent = m.CashflowGameComponent),
+  ),
+);
 @Component({
   selector: 'app-menu',
   standalone: true,
@@ -97,6 +104,7 @@ export class MenuComponent {
     AddComponent.zIndex = 0;
     ProfileComponent.zIndex = 0;
     InfoComponent.zIndex = 0;
+    if (CashflowGameComponent) CashflowGameComponent.zIndex = 0;
   }
 
   /**
@@ -361,6 +369,16 @@ export class MenuComponent {
    */
   clickedIncomeStatement() {
     this.router.navigate([`/income`]);
+    MenuComponent.isMenu = false;
+  }
+
+  /** Only an account whose email contains "cashflow" ever sees this entry (todo/cashflow-game.md decision 2). */
+  isCashflowGame(): boolean {
+    return CashflowGameService.isCashflowGame();
+  }
+
+  clickedCashflowGame() {
+    CashflowGameComponent.open();
     MenuComponent.isMenu = false;
   }
 

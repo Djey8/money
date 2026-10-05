@@ -22,6 +22,9 @@ import { IncomeStatementService } from 'src/app/shared/services/income-statement
 import { ErrorMapperService } from 'src/app/shared/services/error-mapper.service';
 import { AppStateService } from 'src/app/shared/services/app-state.service';
 import { ToastService } from 'src/app/shared/services/toast.service';
+import { CashflowGameService } from 'src/app/shared/services/cashflow-game.service';
+import { CashflowSavedGamesService } from 'src/app/shared/services/cashflow-saved-games.service';
+import { ConfirmService } from 'src/app/shared/services/confirm.service';
 import { migrateGrowArray } from 'src/app/shared/grow-migration.utils';
 import { migrateSmileArray } from 'src/app/shared/smile-migration.utils';
 import { CommonModule } from '@angular/common';
@@ -312,6 +315,9 @@ export class SettingsComponent implements DoCheck {
     private incomeStatement: IncomeStatementService,
     private errorMapper: ErrorMapperService,
     private toastService: ToastService,
+    private cashflowGameService: CashflowGameService,
+    private cashflowSavedGames: CashflowSavedGamesService,
+    private confirmService: ConfirmService,
   ) {
     this.translate.setDefaultLang('en');
     SettingsComponent.isInfo = false;
@@ -634,6 +640,65 @@ export class SettingsComponent implements DoCheck {
 
   switchLanguage(language: string) {
     this.translate.use(language);
+  }
+
+  /** Only a Cashflow game account with a game actually running ever sees the reset entry (JFK, 2026-09-26). */
+  get isCashflowGameActive(): boolean {
+    return (
+      CashflowGameService.isCashflowGame() &&
+      AppStateService.instance.cashflowGame.professionId !== null
+    );
+  }
+
+  /**
+   * Ends the game being played the safe way (JFK, 2026-10-04): it is saved to My games with an "ended"
+   * mark, then the account is cleared for the next game.
+   */
+  endCashflowGame() {
+    // The button only shows for a running game; the code does not rely on that alone.
+    if (!this.isCashflowGameActive) return;
+    this.confirmService.confirm(
+      this.translate.instant('CashflowGame.endGameConfirm'),
+      () => {
+        this.cashflowSavedGames
+          .endGame()
+          .then(() =>
+            this.toastService.show(this.translate.instant('CashflowGame.endGameDone'), 'success'),
+          )
+          .catch((err: unknown) =>
+            this.toastService.show(err instanceof Error ? err.message : String(err), 'error'),
+          );
+      },
+      'CashflowGame.endGameButton',
+      'primary',
+    );
+  }
+
+  /**
+   * Wipes every real entity the Cashflow game touches back to a blank slate — confirmed first, this can't be
+   * undone. No page reload needed: `CashflowGameService.persistAll` fires `transactionsUpdated$`/
+   * `subscriptionsUpdated$` on every successful write, which Home, the account list pages, and the Subscriptions
+   * page all subscribe to; Grow/Balance/Smile/Fire read `AppStateService` through live getters already, so a
+   * global change-detection pass (triggered by those same signals firing) is all they need (JFK, 2026-09-26:
+   * "can we refresh just the tables, variables, values on the page").
+   */
+  resetCashflowGame() {
+    if (!this.isCashflowGameActive) return;
+    this.confirmService.confirm(
+      this.translate.instant('CashflowGame.resetConfirm'),
+      () => {
+        this.cashflowGameService.resetGame({
+          onSuccess: () => {
+            this.toastService.show(this.translate.instant('CashflowGame.resetDone'), 'delete');
+          },
+          onError: (message) => {
+            this.toastService.show(message, 'error');
+          },
+        });
+      },
+      'CashflowGame.resetConfirmButton',
+      'delete',
+    );
   }
 
   toggleDeleteAuth() {

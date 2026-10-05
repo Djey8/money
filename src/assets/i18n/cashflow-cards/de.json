@@ -1,0 +1,670 @@
+{
+  "shared": {
+    "shareRule": "Nur du kannst zu diesem Preis so viele Anteile kaufen, wie du willst. Jeder kann zu diesem Preis verkaufen.",
+    "investmentRule": "Nutze dieses Angebot selbst oder verkaufe es an einen anderen Mitspieler.",
+    "doodadLoanHint": "(Nimm ein Bankdarlehen auf, wenn du musst)",
+    "doodadChildHint": "(Wenn du ein Kind hast)",
+    "doodadLoanChildHint": "(Nimm ein Bankdarlehen auf, wenn du musst) (Wenn du ein Kind hast)"
+  },
+  "cards": {
+    "classic-small-ok4u-5": {
+      "description": "Zinsen legen Aktienkurs dieses langjährigen Pharmazieunternehmens lahm."
+    },
+    "classic-small-ok4u-10": {
+      "description": "Verzögerungen bei Forschung und Entwicklung sorgen für niedrige Aktienkurse bei diesem langjährigen Pharmazieunternehmen."
+    },
+    "classic-small-ok4u-20": {
+      "description": "Inflationsängste sorgen für schwachen Aktienkurs bei diesem langjährigen Pharmazieunternehmen."
+    },
+    "classic-small-ok4u-30": {
+      "description": "Niedrige Inflation führt zu hohen Aktienkursen für dieses langjährige Pharmazieunternehmen."
+    },
+    "classic-small-ok4u-40": {
+      "description": "Boomender Markt lässt Aktienkurs dieses langjährigen Pharmazieunternehmens ansteigen."
+    },
+    "classic-small-gro4us-30": {
+      "description": "Brillanter junger Fondsmanager. Jeder glaubt, er kann alles in Gold verwandeln."
+    },
+    "classic-small-on2u-40": {
+      "description": "Kinoerfolg im Kindersektor sorgt für Rekordaktienkurs."
+    },
+    "classic-small-myt4u-5": {
+      "description": "Rekordzinsen führen zu unterdurchschnittlichem Aktienkurs bei diesem Elektronikverkäufer."
+    },
+    "classic-small-gro4us-40": {
+      "description": "Der Markt führender Unternehmen treibt den Fondspreis auf ein Rekordhoch."
+    },
+    "classic-small-gro4us-20": {
+      "description": "Niedrigere Zinsen treiben den Markt und finanzieren starke Leistungen."
+    },
+    "classic-small-gro4us-10": {
+      "description": "Schwaches Abschneiden beim Beschäftigungsanstieg sorgt für mangelndes Verbrauchervertrauen. Aktien fallen mit der öffentlichen Meinung."
+    },
+    "classic-small-gro4us-5": {
+      "description": "Schwacher Jahresbericht führt zu niedrigem Preis des Investmentfonds."
+    },
+    "classic-small-on2u-30": {
+      "description": "Die starke Nachfrage nach der firmeneigenen Bibliothek für alte Filme führt zu einem guten Aktienpreis."
+    },
+    "classic-small-on2u-20": {
+      "description": "Neuer Direktor für Filmakquise belebt die Aussichten für den Aktienkurs."
+    },
+    "classic-small-on2u-10": {
+      "description": "Filmeinkäufer nach drittem Megaflop gefeuert! Die Aktien fallen. Bonus des Vorstands gestrichen."
+    },
+    "classic-small-on2u-5": {
+      "description": "Neuester Themenpark ist ein riesiger Flop, Berichte melden Einbußen. Der Aktienpreis erreicht ein Allzeittief."
+    },
+    "classic-small-myt4u-40": {
+      "description": "Boomender Markt führt zu Rekordaktienpreis dieses Elektronikverkäufers!"
+    },
+    "classic-small-myt4u-30": {
+      "description": "Niedrige Zinsen führen zu positivem Aktienkurs bei diesem Elektronikverkäufer."
+    },
+    "classic-small-myt4u-20": {
+      "description": "Schwacher Markt führt zu fallenden Aktienkursen bei diesem Elektronikverkäufer."
+    },
+    "classic-small-myt4u-10": {
+      "description": "Neues Produkt floppt und schwere Verluste werden verkündet! Aktienkurs fällt."
+    },
+    "classic-small-efh": {
+      "title": "Einfamilienhaus zu verkaufen",
+      "description": "Niedrige Anzahlung für dieses Einfamilienhaus (EFH). Besitzer zieht unerwartet aus der Stadt. Die richtige Person wird gut damit umgehen."
+    },
+    "classic-big-pizza": {
+      "title": "Pizzafranchise zu verkaufen",
+      "description": "Gesundes Pizza-Franchise. Der Trend zu hochwertigem Fast-Food boomt. Hochfrequentierte Gegend direkt neben einem Hochschul-Campus."
+    },
+    "classic-small-efh-65k-5k": {
+      "title": "Einfamilienhaus zu verkaufen",
+      "description": "Nettes vermietetes Einfamilienhaus (EFH) aufgrund einer Zwangsversteigerung kurzfristig verfügbar. Gut erhaltenes älteres Gebäude mit Mieter."
+    },
+    "classic-small-efh-45k-2k": {
+      "title": "Einfamilienhaus zu verkaufen",
+      "description": "Ein Unternehmen hat das Einfamilienhaus (EFH) eines versetzten Managers gekauft. Derzeit kein Mieter vorhanden. Es ist seit sechs Monaten auf dem Markt und wurde gerade im Preis reduziert. Nimm ein Darlehen auf, wenn du musst, aber DU SOLLTEST DIESES OBJEKT KAUFEN!",
+      "heading": "Du findest einen Super Deal!"
+    },
+    "classic-small-efh-30k-1k": {
+      "title": "Einfamilienhaus zu verkaufen",
+      "description": "Einfamilienhaus (EFH) in älterer Gegend wird vom Straßenbauamt angeboten. Der Markt ist eingebrochen und die Stadt MUSS verkaufen. Kein Cashflow, aber eine mögliche Gelegenheit für Kapitalzuwachs."
+    },
+    "classic-small-efh-35k-2k": {
+      "title": "Einfamilienhaus zu verkaufen",
+      "description": "Älteres Einfamilienhaus (EFH), vorher im Staatsbesitz, wird mit staatlicher Finanzierung verkauft. Mieter vorhanden. Nimm ein Darlehen auf, wenn du musst, aber DU SOLLTEST DIESES OBJEKT KAUFEN!",
+      "heading": "Du findest einen Super Deal!"
+    },
+    "classic-small-efh-50k-2k": {
+      "title": "Einfamilienhaus zu verkaufen",
+      "description": "Dieses Einfamilienhaus (EFH) in Zwangsvollstreckung ist seit sechs Monaten unbewohnt und wurde gerade reduziert. Das Darlehen enthält die geschätzten Reparaturkosten."
+    },
+    "classic-small-efh-50k-4k": {
+      "title": "Einfamilienhaus zu verkaufen",
+      "description": "Nettes Einfamilienhaus (EFH) in einem aufgrund von Entlassungen geschwächten Markt verfügbar. Es wäre eine gute Investition für den richtigen Käufer."
+    },
+    "classic-small-etw-40k-5k": {
+      "title": "Eigentumswohnung zu verkaufen",
+      "description": "Zwangsversteigerung! Eigentumswohnung (ETW) in begehrter Nachbarschaft in der Nähe von Arbeitsplätzen und Geschäften. Günstige Finanzierung von der Bank."
+    },
+    "classic-small-etw-40k-1k": {
+      "title": "Eigentumswohnung zu verkaufen",
+      "description": "Hervorragende Eigentumswohnung (ETW) mit vielen Extras. Die Besitzerin möchte für ihren Traumjob SCHNELL umziehen. Sie macht Karriere - das kannst du auch! Kein Cashflow, aber eine mögliche Gelegenheit für Kapitalzuwachs."
+    },
+    "classic-small-etw-40k-4k": {
+      "title": "Eigentumswohnung zu verkaufen",
+      "description": "Eltern verkaufen die Eigentumswohnung (ETW), die von ihrem studierenden Kind genutzt wurde. Großer Mietbedarf in dieser Gegend."
+    },
+    "classic-small-etw-55k-5k": {
+      "title": "Eigentumswohnung zu verkaufen",
+      "description": "Ältere Eigentumswohnung (ETW) wird von einem jungen Paar angeboten, das wegen Familienzuwachs in ein größeres Einfamilienhaus umziehen möchte. Bald verfügbar."
+    },
+    "classic-big-mfh8-240k-40k": {
+      "title": "Mehrfamilienhaus (MFH) 8 WE zu verkaufen",
+      "description": "Eigentümer bietet sein MFH mit 8 WE zum derzeit ermittelten Preis an. Es hat alle Ausstattungsmerkmale, nach denen Mieter suchen. Vollvermietet zum marktüblichen Preis mit ausgezeichneten Unterlagen."
+    },
+    "classic-big-mfh8-320k-40k": {
+      "title": "Mehrfamilienhaus (MFH) 8 WE zu verkaufen",
+      "description": "Eigentümer investiert neu und bietet ein MFH mit 8 WE zu einem angemessenen Preis zum Verkauf an. Finanzierung ist bereits vorhanden. Es braucht nur noch deine Anzahlung."
+    },
+    "classic-big-mfh4-340k-32k": {
+      "title": "Mehrfamilienhaus (MFH) 4 WE zu verkaufen",
+      "description": "MFH mit 4 WE von Eigentümer zu verkaufen. Dieser zieht in ein anderes Bundesland. Vollständige Unterlagen, komplett vermietet, geringer Mieterwechsel in guter Nachbarschaft."
+    },
+    "classic-big-mfh8-250k-40k": {
+      "title": "Mehrfamilienhaus (MFH) 8 WE zu verkaufen",
+      "description": "Rechtsstreitigkeiten des Eigentümers führen zu einer Zwangsveräußerung dieses MFH mit 8 WE. Schnapp dir den Deal, bevor es jemand anderes macht."
+    },
+    "classic-big-mfh8-360k-32k": {
+      "title": "Mehrfamilienhaus (MFH) 8 WE zu verkaufen",
+      "description": "Selbstständiger Kleinunternehmer braucht dringend Geld, um eine geschäftliche Partnerschaft zu sichern. Das MFH mit 8 WE wird verkauft, um Kapital zu beschaffen. Großartige Gelegenheit für die richtige Person."
+    },
+    "classic-big-mfh4-280k-16k": {
+      "title": "Mehrfamilienhaus (MFH) 4 WE zu verkaufen",
+      "description": "Älteres MFH mit 4 WE verfügbar - Zwangsveräußerung. Nicht ortsansässiger Besitzer in finanziellen Nöten, da er Jahre mit Steuern im Rückstand ist. Einige Unterlagen sind verfügbar."
+    },
+    "classic-big-mfh4-370k-10k": {
+      "title": "Mehrfamilienhaus (MFH) 4 WE zu verkaufen",
+      "description": "MFH mit 4 WE in aufgewerteter Gegend zu verkaufen. Besitzer muss aufgrund von Steuerschulden verkaufen."
+    },
+    "classic-big-mfh4-290k-15k": {
+      "title": "Mehrfamilienhaus (MFH) 4 WE zu verkaufen",
+      "description": "MFH mit 4 WE unmittelbar neben neuer Schnellstraße zu verkaufen. Der Eigentümer/Bewohner zieht in eine ruhigere Wohngegend. Der Preis ist für einen schnellen Verkauf."
+    },
+    "classic-big-mfh4-300k-20k": {
+      "title": "Mehrfamilienhaus (MFH) 4 WE zu verkaufen",
+      "description": "MFH mit 4 WE in sich erholender Wohngegend. Komplett vermietet, Reparaturen sind auf dem Laufenden. Benötigt deine Anzahlung und Geduld."
+    },
+    "classic-big-mfh4-225k-15k": {
+      "title": "Mehrfamilienhaus (MFH) 4 WE zu verkaufen",
+      "description": "Schönes, gepflegtes MFH mit 4 WE in guter Nachbarschaft. Langfristige Mieter, positiver Cashflow, geringe Reparaturen."
+    },
+    "classic-big-efh-270k-15k": {
+      "title": "Einfamilienhaus zu verkaufen",
+      "description": "Herabgestufter Manager kann die Zahlungen von seinem neuen Gehalt nicht mehr leisten und muss sein Einfamilienhaus verkaufen. Die Umgebung befindet sich im Übergangsprozess."
+    },
+    "classic-big-efh-225k-14k": {
+      "title": "Einfamilienhaus zu verkaufen",
+      "description": "Ein Geschäftsmann braucht Geld, um sein Unternehmen zu retten. Er verkauft dieses Einfamilienhaus (EFH). Es wird zurzeit von einem zufriedenen Mieter bewohnt."
+    },
+    "classic-big-efh-300k-20k": {
+      "title": "Einfamilienhaus zu verkaufen",
+      "description": "Schönes Einfamilienhaus (EFH) mit eingebautem Pool und sämtlichen Vorrichtungen in gutbürgerlicher Gegend verfügbar. Gute Schulen vorhanden."
+    },
+    "classic-big-efh-300k-12k": {
+      "title": "Einfamilienhaus zu verkaufen",
+      "description": "Einfamilienhaus (EFH) in rauer Wohngegend. Positiver Cashflow trotz geringer Mieten."
+    },
+    "classic-big-efh-325k-18k": {
+      "title": "Einfamilienhaus zu verkaufen",
+      "description": "Erfahrener Geschäftsmann hat dieses Einfamilienhaus (EFH) in ausgezeichnetem Zustand gehalten, so dass es auch in älterer Nachbarschaft Höchstmieten erzielt."
+    },
+    "classic-big-efh-350k-20k": {
+      "title": "Einfamilienhaus zu verkaufen",
+      "description": "Eine Scheidung führt zum Verkauf dieses Einfamilienhauses (EFH) in einer Gegend voller selbstgenutzter Häuser. Es ist seit 5 Monaten auf dem Markt."
+    },
+    "classic-big-efh-275k-16k": {
+      "title": "Einfamilienhaus zu verkaufen",
+      "description": "Einfamilienhaus (EFH) in der Nähe des Flughafens. Geringe Kosten und jede Menge Cashflow-Potenzial, sofern du den Lärm ertragen kannst."
+    },
+    "classic-big-efh-275k-15k": {
+      "title": "Einfamilienhaus zu verkaufen",
+      "description": "Von den Erben des Eigentümers wird ein Einfamilien-Terrassenhaus (EFH) auf abgelegenem Golfplatz angeboten. Eine Golfmitgliedschaft ist inklusive."
+    },
+    "classic-big-dh-260k-12k": {
+      "title": "Doppelhaus zu verkaufen",
+      "description": "Doppelhausbesitzer muss verkaufen, um Krankenhausrechnungen zu bezahlen. Zwei Mieter sind in dieser gepflegten Immobilie vorhanden und sie ist eine gute Investitionsmöglichkeit."
+    },
+    "classic-big-dh-250k-16k": {
+      "title": "Doppelhaus zu verkaufen",
+      "description": "Der Eigentümer verlässt das Doppelhaus aufgrund von Familienzuwachs. Der Mieter in der anderen Hälfte bleibt und ein neuer Mieter wartet schon darauf, in diese gepflegte Immobilie einzuziehen."
+    },
+    "classic-big-dh-170k-18k": {
+      "title": "Doppelhaus zu verkaufen",
+      "description": "Dieses Doppelhaus ist das beste in der Gegend! Der stolze Besitzer setzt sich in einem anderen Bundesland zur Ruhe, um in der Nähe seiner Enkelkinder zu wohnen."
+    },
+    "classic-big-dh-245k-12k": {
+      "title": "Doppelhaus zu verkaufen",
+      "description": "In diesem Investment Doppelhaus sind Mieter vorhanden! Der Eigentümer hat Steuerprobleme und muss schnell verkaufen."
+    },
+    "classic-big-dh-260k-10k": {
+      "title": "Doppelhaus zu verkaufen",
+      "description": "Gepflegtes Doppelhaus in begehrenswerter Lage aufgrund von Eigentumsübertragung verfügbar. Ausgezeichnete Investitionsmöglichkeit für den richtigen Käufer."
+    },
+    "classic-big-aph12-350k-50k": {
+      "title": "Appartementhaus zu verkaufen",
+      "description": "Appartementhaus mit 12 WE wird von den auswärts lebenden Erben des Eigentümers angeboten. Äußerst beliebte Lage mit einer langen Warteliste für Wohneinheiten in dieser Immobilie."
+    },
+    "classic-big-aph24-575k-75k": {
+      "title": "Appartementhaus zu verkaufen",
+      "description": "Zwei Gebäude mit insgesamt 24 WE zu verkaufen. Sie werden vom Eigentümer mit einem Mitarbeiter vor Ort gemanagt. Eigentümer verkauft, weil er in Ruhestand geht. Große Gelegenheit."
+    },
+    "classic-big-aph60-1200k-200k": {
+      "title": "Appartementhaus zu verkaufen",
+      "description": "Appartementhaus mit 60 WE aus Rentenfonds, der vom Eigentümer aufgelöst wird. Eigene Hausverwaltung vorhanden."
+    },
+    "classic-big-aph24-550k-50k": {
+      "title": "Appartementhaus zu verkaufen",
+      "description": "Der Eigentümer geht in Rente und dieses Appartementhaus mit 24 WE ist mit einem großartigen Cashflow voll vermietet. Sehr gute Lage in der Nähe einer staatlichen Hochschule."
+    },
+    "classic-big-gp-25k-25k-1300": {
+      "title": "Geschäftspartner gesucht",
+      "description": "Erfolgreicher Arzt vergrößert seine Praxis und Klinik. Er braucht einen Partner, um den Eigenkapitalanteil der Baukosten zu finanzieren."
+    },
+    "classic-big-gp-20k-20k-1200": {
+      "title": "Geschäftspartner gesucht",
+      "description": "Erfolgreiche Pizzakette expandiert in die Herstellung von Tiefkühlpizzen für Lebensmittelgeschäfte. Der Eigentümer benötigt Kapital für die Ausstattung."
+    },
+    "classic-big-gp-30k-30k-1500": {
+      "title": "Geschäftspartner gesucht",
+      "description": "Ein Autohändler möchte das Leasing mit 2 und 3 Jahre alten Autos ausbauen. Er benötigt Kapital, da die Finanzierungsgesellschaft des Autoherstellers nicht daran interessiert ist."
+    },
+    "classic-big-gp-30k-30k-1700": {
+      "title": "Geschäftspartner gesucht",
+      "description": "Ein Sandwichgeschäft verdoppelt die Anzahl der Standorte. Der Eigentümer braucht einen Investor, um anzufangen."
+    },
+    "classic-big-au-180k-20k-1600": {
+      "title": "Automatisiertes Unternehmen zu verkaufen",
+      "description": "Klassische Spielhalle mit 30 Flippermaschinen und treuen Kunden. Der Eigentümer hat sich übernommen und muss dringend Schulden abbezahlen."
+    },
+    "classic-big-au-125k-25k-1800": {
+      "title": "Automatisiertes Unternehmen zu verkaufen",
+      "description": "Erfolgreiche münzbetriebene Autowaschanlage mit 4 Parkbuchten in der Nähe einer verkehrsreichen Kreuzung. Der Verkäufer zieht in eine Seniorensiedlung in ein anderes Bundesland."
+    },
+    "classic-big-au-150k-30k-2500": {
+      "title": "Automatisiertes Unternehmen zu verkaufen",
+      "description": "Privater Konkurs erzwingt den Verkauf eines belebten, erfolgreichen Waschsalons an einer hochfrequentierten Schnellstraße. In dieser Gegend wird ein sehr hohes Wirtschaftswachstum erwartet."
+    },
+    "classic-big-awa-350k-50k-2500": {
+      "title": "Autowaschanlage zu verkaufen",
+      "description": "Autowaschanlage aus Familienbesitz in erstklassiger Lage steht zum Verkauf. Der Verkauf drängt aufgrund einer Familienfehde. Die Besitzer wollen so schnell wie möglich raus."
+    },
+    "classic-small-gold-friend-3000": {
+      "title": "Freund braucht schnell Bargeld",
+      "description": "Ein Freund braucht dringend Geld. Er verkauft dir 10 Goldmünzen weit unter dem Normalpreis."
+    },
+    "classic-small-gold-collector-1000": {
+      "title": "Münzsammler braucht Bargeld",
+      "description": "Ein Münzsammler braucht schnell Bargeld, um ein Steuerproblem zu lösen. Er verkauft dir 5 Goldmünzen weit unter dem Normalpreis."
+    },
+    "classic-small-gold-box-500": {
+      "title": "Was ist in der Box?!",
+      "description": "Du hast die Gelegenheit, einen abschließbaren Aktenschrank bei einer Haushaltsauflösung zu kaufen. Wenn du den Aktenschrank kaufst, zahle 500 € und würfel mit einem Würfel: Du hast 1-5 gewürfelt: Du findest...ÜBERHAUPT NICHTS in dem Aktenschrank. Du hast 6 gewürfelt: Du findest... zehn Goldmünzen. CHA-CHING! Trage diese auf dein Vermögenswerteblatt ein.",
+      "success": "Du hast 6 gewürfelt: Du findest... zehn Goldmünzen. CHA-CHING!",
+      "failure": "Du hast 1-5 gewürfelt: Du findest...ÜBERHAUPT NICHTS in dem Aktenschrank."
+    },
+    "classic-small-gold-will-750": {
+      "title": "Wo ein Wille ist...",
+      "description": "Ein entfernter Verwandter verstirbt. Du bist im Testament erwähnt, musst aber reisen, um es anzunehmen. Wenn du es annimmst, zahle 750 € für die Reise und würfel mit einem Würfel: Du hast 1-5 gewürfelt: Dir wird eine ältere Katze hinterlassen. Viel Spaß! Du hast 6 gewürfelt: Dir werden zehn Goldmünzen hinterlassen. Trage diese auf dein Vermögenswerteblatt ein.",
+      "success": "Du hast 6 gewürfelt: Dir werden zehn Goldmünzen hinterlassen.",
+      "failure": "Du hast 1-5 gewürfelt: Dir wird eine ältere Katze hinterlassen. Viel Spaß!"
+    },
+    "classic-small-sister-5000": {
+      "title": "Schwägerin leiht sich Geld",
+      "description": "Deine Schwägerin ist arbeitslos und braucht 5.000 € für ihre Hausrate. Sie verspricht, dir 10.000 € zurückzuzahlen. Wenn du dich entscheidest, ihr zu helfen, zahle 5.000 € und würfle mit einem Würfel: Du hast 1-3 gewürfelt: Sie zahlt dir das Geld nie zurück und du verlierst 5.000 €. Du hast 4-6 gewürfelt: Sie zahlt dir 10.000 € zurück, aber Familientreffen sind immer noch unangenehm. Kosten: 5.000 €",
+      "success": "Du hast 4-6 gewürfelt: Sie zahlt dir 10.000 € zurück, aber Familientreffen sind immer noch unangenehm.",
+      "failure": "Du hast 1-3 gewürfelt: Sie zahlt dir das Geld nie zurück und du verlierst 5.000 €."
+    },
+    "classic-small-mlm-1": {
+      "title": "Multi-Level-Marketing Einstieg",
+      "description": "Du hast die Chance, in eine Multi-Level-Marketing-Gelegenheit zu investieren. Das Unternehmen möchte die Reichweite seines neuesten Projektes ausweiten. Wenn du dich entscheidest einzusteigen, zahle 500 € und BEHALTE DIESE KARTE: Bei jedem Zahltag, würfle mit einem Würfel: Du hast 1-3 gewürfelt: Keine Einnahmen diesen Monat, aber versuch es weiter. Du hast 4-6 gewürfelt: Deine Mühe hat sich ausgezahlt! Kassiere 500 €. Nutze dieses Angebot selbst oder verkaufe es an einen anderen Mitspieler. Kosten: 500 €",
+      "success": "Du hast 4-6 gewürfelt: Deine Mühe hat sich ausgezahlt! Kassiere 500 €.",
+      "failure": "Du hast 1-3 gewürfelt: Keine Einnahmen diesen Monat, aber versuch es weiter."
+    },
+    "classic-small-mlm-2": {
+      "title": "Multi-Level-Marketing Einstieg",
+      "description": "Du hast die Chance, in eine Multi-Level-Marketing-Gelegenheit zu investieren. Das Unternehmen möchte die Reichweite seines neuesten Projektes ausweiten. Wenn du dich entscheidest einzusteigen, zahle 500 € und BEHALTE DIESE KARTE: Bei jedem Zahltag, würfle mit einem Würfel: Du hast 1-3 gewürfelt: Keine Einnahmen diesen Monat, aber versuch es weiter. Du hast 4-6 gewürfelt: Deine Mühe hat sich ausgezahlt! Kassiere 500 €. Nutze dieses Angebot selbst oder verkaufe es an einen anderen Mitspieler. Kosten: 500 €",
+      "success": "Du hast 4-6 gewürfelt: Deine Mühe hat sich ausgezahlt! Kassiere 500 €.",
+      "failure": "Du hast 1-3 gewürfelt: Keine Einnahmen diesen Monat, aber versuch es weiter."
+    },
+    "classic-doodad-jetski": {
+      "title": "Du kaufst einen Jet Ski",
+      "comment": "Wer braucht schon ein Wochenende ohne Wasserspritzer?"
+    },
+    "classic-doodad-reunion": {
+      "title": "Du gehst zum Klassentreffen",
+      "comment": "Alle erzählen, wie erfolgreich sie sind. Du bezahlst die Rechnung."
+    },
+    "classic-doodad-boat": {
+      "title": "Du kaufst ein Boot",
+      "comment": "Ein Boot ist ein Loch im Wasser, in das man Geld wirft. Aber was für ein Loch!"
+    },
+    "classic-doodad-gym": {
+      "title": "Du richtest dir einen Fitnessraum ein",
+      "comment": "Das Laufband ist da. Der Vorsatz kommt bestimmt auch noch."
+    },
+    "classic-doodad-chair": {
+      "title": "Du kaufst einen bequemen Stuhl",
+      "comment": "Dein Rücken sagt Danke."
+    },
+    "classic-doodad-massagesuit": {
+      "title": "Du gönnst dir einen Massanzug",
+      "comment": "Entspannung per Knopfdruck. Dein Konto spannt sich dafür an."
+    },
+    "classic-doodad-jewelry": {
+      "title": "Du kaufst Modeschmuck",
+      "comment": "Glänzt wie echt. Kostet fast wie echt."
+    },
+    "classic-doodad-cappuccino": {
+      "title": "Du kaufst eine Cappuccino Maschine",
+      "comment": "Rechnet sich ab dem 700. Kaffee. Ungefähr."
+    },
+    "classic-doodad-birthday": {
+      "title": "Du gibst eine Geburtstagsparty für dein Kind",
+      "comment": "Zehn Kinder, ein Kuchen, null Nerven."
+    },
+    "classic-doodad-kitchen": {
+      "title": "Du renovierst deine Küche",
+      "comment": "Die alte Küche hatte Charakter. Die neue hat Granit."
+    },
+    "classic-doodad-tennis": {
+      "title": "Du kaufst einen neuen Tennisschläger",
+      "comment": "Diesmal liegt es bestimmt am Schläger."
+    },
+    "classic-doodad-concert": {
+      "title": "Du kaufst Konzerttickets",
+      "comment": "Ein Abend, den du nie vergisst. Dein Konto auch nicht."
+    },
+    "classic-doodad-familyvacation": {
+      "title": "Ihr macht einen Familienurlaub",
+      "comment": "Erholung garantiert. Spätestens ab dem dritten Mal „Sind wir bald da?“ ist sie dahin."
+    },
+    "classic-doodad-sunglasses": {
+      "title": "Du kaufst eine neue Sonnenbrille",
+      "comment": "Die alte hast du doch erst vor drei Sommern liegen lassen."
+    },
+    "classic-doodad-console": {
+      "title": "Du kaufst eine neue Spielekonsole",
+      "comment": "Nur für die Kinder. Natürlich."
+    },
+    "classic-doodad-trainingwear": {
+      "title": "Du brauchst neue Trainingskleidung",
+      "comment": "Fürs Training wichtig. Fürs Aussehen auch."
+    },
+    "classic-doodad-painting": {
+      "title": "Dein Haus braucht einen neuen Anstrich",
+      "comment": "Frisch gestrichen sieht man die Risse nicht mehr. Zumindest eine Weile."
+    },
+    "classic-doodad-wedding": {
+      "title": "Unterstütze die Hochzeit deines Kindes",
+      "comment": "Der schönste Tag im Leben deines Kindes. Der teuerste in deinem."
+    },
+    "classic-doodad-soundsystem": {
+      "title": "Du kaufst ein neues Soundsystem",
+      "comment": "Die Nachbarn lernen deinen Musikgeschmack kennen."
+    },
+    "classic-doodad-bowlingball": {
+      "title": "Du kaufst eine neue Bowlingkugel",
+      "comment": "Mit der eigenen Kugel trifft man doch viel besser. Behauptest du."
+    },
+    "classic-doodad-clothes": {
+      "title": "Du kaufst neue Kleidung",
+      "comment": "Im Schrank hing nichts mehr, was passt. Oder gefällt."
+    },
+    "classic-doodad-caraircon": {
+      "title": "Du brauchst eine neue Klimaanlage für dein Auto",
+      "comment": "Schwitzen kostet nichts. Aber im Stau schon."
+    },
+    "classic-doodad-golfclub": {
+      "title": "Du wirst Mitglied im Golfclub",
+      "comment": "Hier werden die wichtigen Geschäfte gemacht. Und viele Bälle verloren."
+    },
+    "classic-doodad-watch": {
+      "title": "Du kaufst eine neue Uhr",
+      "comment": "Dein Handy zeigt die Zeit auch an. Aber nicht so edel."
+    },
+    "classic-doodad-carradio": {
+      "title": "Du brauchst ein neues Autoradio",
+      "comment": "Der Stau wird erst mit guter Musik erträglich."
+    },
+    "classic-doodad-tv": {
+      "title": "Du kaufst einen Flachbildfernseher",
+      "comment": "Dünner Bildschirm, dicke Rechnung."
+    },
+    "classic-doodad-firstcar": {
+      "title": "Du kaufst deinem Kind sein erstes Auto",
+      "comment": "Der Schlüssel wandert weiter. Der Tank bleibt deine Sache."
+    },
+    "classic-doodad-braces": {
+      "title": "Dein Kind benötigt eine Zahnspange",
+      "comment": "Heute ein Metallgebiss, morgen ein strahlendes Lächeln. Und eine strahlende Rechnung."
+    },
+    "classic-doodad-date": {
+      "title": "Du hast ein Date (Konzert, Essen & Dessert!)",
+      "comment": "Du zahlst natürlich. Der Nachtisch war ein Fehler. Oder doch nicht."
+    },
+    "classic-doodad-rims": {
+      "title": "Dein Auto braucht neue Felgen",
+      "comment": "Das Auto fährt nicht schneller. Es sieht nur so aus."
+    },
+    "classic-doodad-foodprocessor": {
+      "title": "Du kaufst eine Küchenmaschine",
+      "comment": "Sie kann alles. Du benutzt sie zweimal."
+    },
+    "classic-doodad-golfclubs": {
+      "title": "Du gönnst dir neue Golfschläger",
+      "comment": "Dein Handicap liegt garantiert nicht an den Schlägern."
+    },
+    "classic-doodad-tutoring": {
+      "title": "Du zahlst Privatunterricht für dein Kind",
+      "comment": "Investition in die Zukunft. Und in die Mathenote."
+    },
+    "classic-doodad-computer": {
+      "title": "Du brauchst einen neuen Computer",
+      "comment": "Der alte brauchte ganze zehn Minuten zum Hochfahren."
+    },
+    "classic-doodad-seasontickets": {
+      "title": "Du kaufst Saison Tickets",
+      "comment": "Jedes Heimspiel, jede Niederlage, live dabei."
+    },
+    "classic-doodad-tires": {
+      "title": "Du brauchst neue Reifen",
+      "comment": "Profil ist wichtig. Beim Reifen und im Lebenslauf."
+    },
+    "classic-doodad-dentist": {
+      "title": "Geh zum Zahnarzt",
+      "comment": "Es tut nur kurz weh. Die Rechnung länger.",
+      "description": "(Vielleicht bekommst du einen glänzenden Goldzahn!)"
+    },
+    "classic-doodad-casino": {
+      "title": "Du gehst ins Casino",
+      "comment": "Das Haus gewinnt immer. Du hattest wenigstens einen schönen Abend."
+    },
+    "classic-doodad-winetrip": {
+      "title": "Du machst einen Ausflug in ein Weinanbaugebiet",
+      "comment": "Nur eine kleine Verkostung. Der Kofferraum ist trotzdem voll."
+    },
+    "classic-doodad-artpainting": {
+      "title": "Du kaufst ein Gemälde eines lokalen Künstlers",
+      "comment": "Kunst, die in zwanzig Jahren unbezahlbar ist. Oder gar nichts wert."
+    },
+    "classic-doodad-friendsdinner": {
+      "title": "Du lädst deine Freunde zum Abendessen ein",
+      "comment": "Du kochst, sie lachen. Das Beste: Sie bleiben länger als geplant."
+    },
+    "classic-doodad-phone": {
+      "title": "Du kaufst dir das neuste Handy",
+      "comment": "Das alte funktionierte noch. Aber dieses hat kaum erkennbar eine bessere Kamera."
+    },
+    "classic-market-efh-pct20-a": {
+      "title": "Einfamilienhaus Käufer",
+      "description": "Käufer sucht ein Einfamilienhaus. Er bietet den ursprünglichen Preis + 20%. Jeder kann beliebig viele Immobilien zu diesem Preis verkaufen. Wenn du verkaufst, bezahle die dazugehörige Hypothek zurück und streiche den Cashflow dieser Immobilie."
+    },
+    "classic-market-efh-pct20-b": {
+      "title": "Einfamilienhaus Käufer",
+      "description": "Käufer sucht ein Einfamilienhaus. Er bietet den ursprünglichen Preis + 20%. Jeder kann beliebig viele Immobilien zu diesem Preis verkaufen. Wenn du verkaufst, bezahle die dazugehörige Hypothek zurück und streiche den Cashflow dieser Immobilie."
+    },
+    "classic-market-efh-pct15": {
+      "title": "Einfamilienhaus Käufer",
+      "description": "Käufer sucht ein Einfamilienhaus. Er bietet den ursprünglichen Preis + 15%. Jeder kann beliebig viele Immobilien zu diesem Preis verkaufen. Wenn du verkaufst, bezahle die dazugehörige Hypothek zurück und streiche den Cashflow dieser Immobilie."
+    },
+    "classic-market-efh-pct10-a": {
+      "title": "Einfamilienhaus Käufer",
+      "description": "Käufer sucht ein Einfamilienhaus. Er bietet den ursprünglichen Preis + 10%. Jeder kann beliebig viele Immobilien zu diesem Preis verkaufen. Wenn du verkaufst, bezahle die dazugehörige Hypothek zurück und streiche den Cashflow dieser Immobilie."
+    },
+    "classic-market-efh-pct10-b": {
+      "title": "Einfamilienhaus Käufer",
+      "description": "Käufer sucht ein Einfamilienhaus. Er bietet den ursprünglichen Preis + 10%. Jeder kann beliebig viele Immobilien zu diesem Preis verkaufen. Wenn du verkaufst, bezahle die dazugehörige Hypothek zurück und streiche den Cashflow dieser Immobilie."
+    },
+    "classic-market-efh-amt20k": {
+      "title": "Einfamilienhaus Käufer",
+      "description": "Käufer sucht ein Einfamilienhaus. Er bietet den ursprünglichen Preis + 20.000 €. Jeder kann beliebig viele Immobilien zu diesem Preis verkaufen. Wenn du verkaufst, bezahle die dazugehörige Hypothek zurück und streiche den Cashflow dieser Immobilie."
+    },
+    "classic-market-efh-amt15k": {
+      "title": "Einfamilienhaus Käufer",
+      "description": "Käufer sucht ein Einfamilienhaus. Er bietet den ursprünglichen Preis + 15.000 €. Jeder kann beliebig viele Immobilien zu diesem Preis verkaufen. Wenn du verkaufst, bezahle die dazugehörige Hypothek zurück und streiche den Cashflow dieser Immobilie."
+    },
+    "classic-market-efh-amt10k": {
+      "title": "Einfamilienhaus Käufer",
+      "description": "Käufer sucht ein Einfamilienhaus. Er bietet den ursprünglichen Preis + 10.000 €. Jeder kann beliebig viele Immobilien zu diesem Preis verkaufen. Wenn du verkaufst, bezahle die dazugehörige Hypothek zurück und streiche den Cashflow dieser Immobilie."
+    },
+    "classic-market-efh-amt5k": {
+      "title": "Einfamilienhaus Käufer",
+      "description": "Käufer sucht ein Einfamilienhaus. Er bietet den ursprünglichen Preis + 5.000 €. Jeder kann beliebig viele Immobilien zu diesem Preis verkaufen. Wenn du verkaufst, bezahle die dazugehörige Hypothek zurück und streiche den Cashflow dieser Immobilie."
+    },
+    "classic-market-mfh-pct20": {
+      "title": "Appartement- und Mehrfamilienhaus Käufer",
+      "description": "Käufer sucht Appartement- und Mehrfamilienhäuser mit jeder Anzahl von Wohneinheiten (WE). Er bietet den ursprünglichen Preis + 20%. Jeder kann beliebig viele Immobilien zu diesem Preis verkaufen. Wenn du verkaufst, bezahle die dazugehörige Hypothek zurück und streiche den Cashflow dieser Immobilie."
+    },
+    "classic-market-mfh-pct15": {
+      "title": "Appartement- und Mehrfamilienhaus Käufer",
+      "description": "Käufer sucht Appartement- und Mehrfamilienhäuser mit jeder Anzahl von Wohneinheiten (WE). Er bietet den ursprünglichen Preis + 15%. Jeder kann beliebig viele Immobilien zu diesem Preis verkaufen. Wenn du verkaufst, bezahle die dazugehörige Hypothek zurück und streiche den Cashflow dieser Immobilie."
+    },
+    "classic-market-mfh-pct10": {
+      "title": "Appartement- und Mehrfamilienhaus Käufer",
+      "description": "Käufer sucht Appartement- und Mehrfamilienhäuser mit jeder Anzahl von Wohneinheiten (WE). Er bietet den ursprünglichen Preis + 10%. Jeder kann beliebig viele Immobilien zu diesem Preis verkaufen. Wenn du verkaufst, bezahle die dazugehörige Hypothek zurück und streiche den Cashflow dieser Immobilie."
+    },
+    "classic-market-mfh-pct5": {
+      "title": "Appartement- und Mehrfamilienhaus Käufer",
+      "description": "Käufer sucht Appartement- und Mehrfamilienhäuser mit jeder Anzahl von Wohneinheiten (WE). Er bietet den ursprünglichen Preis + 5%. Jeder kann beliebig viele Immobilien zu diesem Preis verkaufen. Wenn du verkaufst, bezahle die dazugehörige Hypothek zurück und streiche den Cashflow dieser Immobilie."
+    },
+    "classic-market-mfh-amt30k": {
+      "title": "Appartement- und Mehrfamilienhaus Käufer",
+      "description": "Käufer sucht Appartement- und Mehrfamilienhäuser mit jeder Anzahl von Wohneinheiten (WE). Er bietet den ursprünglichen Preis + 30.000 €. Jeder kann beliebig viele Immobilien zu diesem Preis verkaufen. Wenn du verkaufst, bezahle die dazugehörige Hypothek zurück und streiche den Cashflow dieser Immobilie."
+    },
+    "classic-market-mfh-amt20k": {
+      "title": "Appartement- und Mehrfamilienhaus Käufer",
+      "description": "Käufer sucht Appartement- und Mehrfamilienhäuser mit jeder Anzahl von Wohneinheiten (WE). Er bietet den ursprünglichen Preis + 20.000 €. Jeder kann beliebig viele Immobilien zu diesem Preis verkaufen. Wenn du verkaufst, bezahle die dazugehörige Hypothek zurück und streiche den Cashflow dieser Immobilie."
+    },
+    "classic-market-mfh-amt15k": {
+      "title": "Appartement- und Mehrfamilienhaus Käufer",
+      "description": "Käufer sucht Appartement- und Mehrfamilienhäuser mit jeder Anzahl von Wohneinheiten (WE). Er bietet den ursprünglichen Preis + 15.000 €. Jeder kann beliebig viele Immobilien zu diesem Preis verkaufen. Wenn du verkaufst, bezahle die dazugehörige Hypothek zurück und streiche den Cashflow dieser Immobilie."
+    },
+    "classic-market-mfh-amt10k": {
+      "title": "Appartement- und Mehrfamilienhaus Käufer",
+      "description": "Käufer sucht Appartement- und Mehrfamilienhäuser mit jeder Anzahl von Wohneinheiten (WE). Er bietet den ursprünglichen Preis + 10.000 €. Jeder kann beliebig viele Immobilien zu diesem Preis verkaufen. Wenn du verkaufst, bezahle die dazugehörige Hypothek zurück und streiche den Cashflow dieser Immobilie."
+    },
+    "classic-market-mfh-amt5k": {
+      "title": "Appartement- und Mehrfamilienhaus Käufer",
+      "description": "Käufer sucht Appartement- und Mehrfamilienhäuser mit jeder Anzahl von Wohneinheiten (WE). Er bietet den ursprünglichen Preis + 5.000 €. Jeder kann beliebig viele Immobilien zu diesem Preis verkaufen. Wenn du verkaufst, bezahle die dazugehörige Hypothek zurück und streiche den Cashflow dieser Immobilie."
+    },
+    "classic-market-mfh-amt1k": {
+      "title": "Appartement- und Mehrfamilienhaus Käufer",
+      "description": "Käufer sucht Appartement- und Mehrfamilienhäuser mit jeder Anzahl von Wohneinheiten (WE). Er bietet den ursprünglichen Preis + 1.000 €. Jeder kann beliebig viele Immobilien zu diesem Preis verkaufen. Wenn du verkaufst, bezahle die dazugehörige Hypothek zurück und streiche den Cashflow dieser Immobilie."
+    },
+    "classic-market-etw-65k": {
+      "title": "Eigentumswohnung Käufer",
+      "description": "Für deine Eigentumswohnung (ETW) werden 65.000 € angeboten. Der Käufer hat eine eigene Finanzierung. Jeder kann zu diesem Preis verkaufen. Wenn du verkaufst, bezahle die dazugehörige Hypothek zurück und streiche den Cashflow dieser Immobilie."
+    },
+    "classic-market-etw-45k": {
+      "title": "Eigentumswohnung Käufer",
+      "description": "Für deine Eigentumswohnung (ETW) werden 45.000 € angeboten. Der Käufer hat eine eigene Finanzierung. Jeder kann zu diesem Preis verkaufen. Wenn du verkaufst, bezahle die dazugehörige Hypothek zurück und streiche den Cashflow dieser Immobilie."
+    },
+    "classic-market-aph-45k": {
+      "title": "Appartementhaus Käufer",
+      "description": "Käufer bietet 45.000 € pro Wohneinheit (WE) in Appartementhäusern jeder Größe. Der Käufer hat eine eigene Finanzierung. Jeder kann zu diesem Preis verkaufen. Wenn du verkaufst, bezahle die dazugehörige Hypothek zurück und streiche den Cashflow dieser Immobilie."
+    },
+    "classic-market-aph-25k": {
+      "title": "Appartementhaus Käufer",
+      "description": "Käufer bietet 25.000 € pro Wohneinheit (WE) in Appartementhäusern jeder Größe. Der Käufer hat eine eigene Finanzierung. Jeder kann zu diesem Preis verkaufen. Wenn du verkaufst, bezahle die dazugehörige Hypothek zurück und streiche den Cashflow dieser Immobilie."
+    },
+    "classic-market-aph-ag40k": {
+      "title": "Appartementhaus Käufer",
+      "description": "Immobilien AG bietet 40.000 € pro Wohneinheit (WE) in Appartementhäusern jeder Größe. Der Käufer hat eine eigene Finanzierung. Jeder kann zu diesem Preis verkaufen. Wenn du verkaufst, bezahle die dazugehörige Hypothek zurück und streiche den Cashflow dieser Immobilie."
+    },
+    "classic-market-aph-ag30k": {
+      "title": "Appartementhaus Käufer",
+      "description": "Immobilien AG bietet 30.000 € pro Wohneinheit (WE) in Appartementhäusern jeder Größe. Der Käufer hat Kapital aus dem Verkauf eines anderen Apartment Komplexes. Jeder kann zu diesem Preis verkaufen. Wenn du verkaufst, bezahle die dazugehörige Hypothek zurück und streiche den Cashflow dieser Immobilie."
+    },
+    "classic-market-gold-collector-1k": {
+      "title": "Sammler sucht Goldmünzen",
+      "description": "Wohlhabender Sammler sucht nach Goldmünzen. Er bietet 1.000 € in bar für jede Münze. Jeder kann beliebig viele Münzen zu diesem Preis verkaufen."
+    },
+    "classic-market-gold-unrest-1k": {
+      "title": "Der Goldpreis steigt",
+      "description": "Unruhen in Übersee. Die Ölpreise sind bedroht. Der Goldpreis schießt in die Höhe. Ein Käufer bietet 1.000 € in bar für jede Goldmünze. Jeder kann beliebig viele Münzen zu diesem Preis verkaufen."
+    },
+    "classic-market-gold-central-2k": {
+      "title": "Der Goldpreis steigt",
+      "description": "Die Zentralbank druckt Geld und verursacht, in dem Versuch, die Wirtschaft anzukurbeln, eine starke Inflation. Der Goldpreis schießt in die Höhe. Ein Käufer bietet 2.000 € in bar für jede Goldmünze. Jeder kann beliebig viele Münzen zu diesem Preis verkaufen."
+    },
+    "classic-market-cost-tenant-1k": {
+      "title": "Mieter beschädigt deine Immobilie",
+      "description": "Ein Mieter weigert sich die Miete zu zahlen. Nachdem die Wohnung zwangsgeräumt wurde, findest du einen beträchtlichen Schaden an deiner Immobilie vor. Die Versicherung deckt die meisten Reparaturen, aber du musst trotzdem noch 1.000 € (einmalig) zahlen. Nimm ein Darlehen bei der Bank auf, wenn nötig, um die Kosten zu decken. Die Karte gilt nur für die Person, die sie gezogen hat. Wenn du KEINE Immobilie besitzt, ignoriere diese Karte.",
+      "comment": "Ein Mieter hat die Miete verweigert und {property} beschädigt. Die Versicherung zahlt das Meiste, den Rest zahlst du einmalig."
+    },
+    "classic-market-cost-tenant-500-a": {
+      "title": "Mieter beschädigt deine Immobilie",
+      "description": "Ein Mieter weigert sich die Miete zu zahlen. Nachdem die Wohnung zwangsgeräumt wurde, findest du einen beträchtlichen Schaden an deiner Immobilie vor. Die Versicherung deckt die meisten Reparaturen, aber du musst trotzdem noch 500 € (einmalig) zahlen. Nimm ein Darlehen bei der Bank auf, wenn nötig, um die Kosten zu decken. Die Karte gilt nur für die Person, die sie gezogen hat. Wenn du KEINE Immobilie besitzt, ignoriere diese Karte.",
+      "comment": "Ein Mieter hat die Miete verweigert und {property} beschädigt. Die Versicherung zahlt das Meiste, den Rest zahlst du einmalig."
+    },
+    "classic-market-cost-tenant-500-b": {
+      "title": "Mieter beschädigt deine Immobilie",
+      "description": "Ein Mieter weigert sich die Miete zu zahlen. Nachdem die Wohnung zwangsgeräumt wurde, findest du einen beträchtlichen Schaden an deiner Immobilie vor. Die Versicherung deckt die meisten Reparaturen, aber du musst trotzdem noch 500 € (einmalig) zahlen. Nimm ein Darlehen bei der Bank auf, wenn nötig, um die Kosten zu decken. Die Karte gilt nur für die Person, die sie gezogen hat. Wenn du KEINE Immobilie besitzt, ignoriere diese Karte.",
+      "comment": "Ein Mieter hat die Miete verweigert und {property} beschädigt. Die Versicherung zahlt das Meiste, den Rest zahlst du einmalig."
+    },
+    "classic-market-cost-pipe-1k": {
+      "title": "Abwasserrohr gebrochen",
+      "description": "Deine Immobilie steht unter Wasser! Zahle 1.000 € für ein neues Abwasserrohr (einmalig). Nimm ein Darlehen bei der Bank auf, wenn nötig, um die Kosten zu decken. Die Karte gilt nur für die Person, die sie gezogen hat. Wenn du KEINE Immobilie besitzt, ignoriere diese Karte.",
+      "comment": "Das Abwasserrohr bei {property} ist gebrochen und alles stand unter Wasser. Das neue Rohr zahlst du einmalig."
+    },
+    "classic-market-cost-pipe-2k": {
+      "title": "Abwasserrohr gebrochen",
+      "description": "Deine Immobilie steht unter Wasser! Zahle 2.000 € für ein neues Abwasserrohr (einmalig). Nimm ein Darlehen bei der Bank auf, wenn nötig, um die Kosten zu decken. Die Karte gilt nur für die Person, die sie gezogen hat. Wenn du KEINE Immobilie besitzt, ignoriere diese Karte.",
+      "comment": "Das Abwasserrohr bei {property} ist gebrochen und alles stand unter Wasser. Das neue Rohr zahlst du einmalig."
+    },
+    "classic-market-split-ok4u": {
+      "title": "Aktie - OK4U Pharma AG",
+      "description": "OK4U beginnt Versuche mit eventuell lebensrettendem Medikament. Nebenwirkungen sind noch nicht getestet. Es könnte die Welt verändern... wenn es wirkt. Der Karteninhaber würfelt mit einem Würfel. Du hast 1-3 gewürfelt: AKTIENSPLIT! Jeder, der OK4U-Aktien besitzt, VERDOPPELT seine Anteile. Du hast 4-6 gewürfelt: RÜCKWÄRTSSPLIT! Jeder, der OK4U-Aktien besitzt, verliert die Hälfte seiner Anteile. (Du zahlst kein Geld. Deine Gesamtkosten ändern sich nicht.) Symbol: OK4U SPLIT oder RÜCKWÄRTSSPLIT?"
+    },
+    "classic-market-split-myt4u": {
+      "title": "Aktie - MYT4U Electronics Co.",
+      "description": "MYT4U geht mit neuer Heimunterhaltungstechnik ein Risiko ein. Wird es ein großer Erfolg oder eine Bruchlandung? Der Karteninhaber würfelt mit einem Würfel. Du hast 1-3 gewürfelt: AKTIENSPLIT! Jeder, der MYT4U-Aktien besitzt, VERDOPPELT seine Anteile. Du hast 4-6 gewürfelt: RÜCKWÄRTSSPLIT! Jeder, der MYT4U-Aktien besitzt, verliert die Hälfte seiner Anteile. (Du zahlst kein Geld. Deine Gesamtkosten ändern sich nicht.) Symbol: MYT4U SPLIT oder RÜCKWÄRTSSPLIT?"
+    },
+    "classic-market-split-gro4us": {
+      "title": "Investmentfonds – GRO4US",
+      "description": "Der Markt ist im Wandel und es wird in den nächsten Monaten starke Marktumschwünge geben. Wie werden sich Fonds in dieser Zeit der Veränderung verhalten? Der Karteninhaber würfelt mit einem Würfel. Du hast 1-3 gewürfelt: AKTIENSPLIT! Jeder, der GRO4US-Aktien besitzt, VERDOPPELT seine Anteile. Du hast 4-6 gewürfelt: RÜCKWÄRTSSPLIT! Jeder, der GRO4US-Aktien besitzt, verliert die Hälfte seiner Anteile. (Du zahlst kein Geld. Deine Gesamtkosten ändern sich nicht.) Symbol: GRO4US SPLIT oder RÜCKWÄRTSSPLIT?"
+    },
+    "classic-market-split-on2u": {
+      "title": "Aktie - ON2U Entertainment AG",
+      "description": "Studio unterstützt neuen Direktor bei seinem Sommer-Blockbuster. Die bahnbrechende Produktion könnte zu ambitioniert sein. Der Karteninhaber würfelt mit einem Würfel. Du hast 1-3 gewürfelt: AKTIENSPLIT! Jeder, der ON2U-Aktien besitzt, VERDOPPELT seine Anteile. Du hast 4-6 gewürfelt: RÜCKWÄRTSSPLIT! Jeder, der ON2U-Aktien besitzt, verliert die Hälfte seiner Anteile. (Du zahlst kein Geld. Deine Gesamtkosten ändern sich nicht.) Symbol: ON2U SPLIT oder RÜCKWÄRTSSPLIT?"
+    },
+    "classic-market-boost-small-250": {
+      "title": "Kleiner Business Boom!",
+      "description": "Die Wirtschaft im Stadtzentrum explodiert! JEDER ist betroffen. ALLE Geschäfte mit einem Cashflow von 1.000 € oder geringer, erhöhen ihren Cashflow um 250 €."
+    },
+    "classic-market-boost-mgmt-400": {
+      "title": "Neues Managementsystem",
+      "description": "Ein neues Managementsystem schafft neue Produktivität und geringere Kosten. Nur die Person, die diese Karte gezogen hat, ist davon betroffen. ALLE Geschäfte mit einem Cashflow von 2.000 € oder geringer, erhöhen ihren Cashflow um 400 €."
+    }
+  },
+  "symbols": {
+    "EFH": "EFH",
+    "ETW": "ETW",
+    "MFH4": "MFH4",
+    "MFH8": "MFH8",
+    "PIZZA": "PIZZA",
+    "DH": "DH",
+    "APH12": "APH12",
+    "APH24": "APH24",
+    "APH60": "APH60",
+    "GP": "GP",
+    "AU": "AU",
+    "AWA": "AWA",
+    "GOLD": "GOLD",
+    "LOAN": "KREDIT",
+    "MLM": "MLM"
+  },
+  "families": {
+    "EFH": "Einfamilienhäuser",
+    "ETW": "Eigentumswohnungen",
+    "MFH": "Mehrfamilienhäuser",
+    "DH": "Doppelhäuser",
+    "APH": "Appartementhäuser",
+    "GP": "Geschäftspartner",
+    "AU": "Automatisierte Unternehmen",
+    "AWA": "Autowaschanlagen",
+    "PIZZA": "Pizzafranchise",
+    "GOLD": "Goldmünzen",
+    "LOAN": "Familiendarlehen",
+    "MLM": "Multi-Level-Marketing"
+  },
+  "doodadGroups": {
+    "leisure": "Freizeit und Hobby",
+    "events": "Feiern und Events",
+    "home": "Wohnen und Haushalt",
+    "wellness": "Gesundheit und Wellness",
+    "style": "Mode und Lifestyle",
+    "car": "Auto und Mobilität",
+    "tech": "Technik und Elektronik",
+    "education": "Bildung und Lernen"
+  }
+}

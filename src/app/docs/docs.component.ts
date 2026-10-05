@@ -3,6 +3,7 @@ import { NgFor } from '@angular/common';
 import { RouterLink, Router } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { DemoService } from '../shared/services/demo.service';
+import { CashflowGameService } from '../shared/services/cashflow-game.service';
 import { DocTopic, docTopics } from './docs.topics';
 
 // Deferred import to break circular chain
@@ -24,7 +25,10 @@ export type { DocTopic };
   encapsulation: ViewEncapsulation.None,
 })
 export class DocsComponent {
-  topics: DocTopic[] = docTopics;
+  /** The Cashflow game manual is listed only for a Cashflow game account (checked live: the account loads after the page). */
+  get topics(): DocTopic[] {
+    return docTopics.filter((topic) => !topic.requiresGame || CashflowGameService.isCashflowGame());
+  }
 
   constructor(
     private demoService: DemoService,

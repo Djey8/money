@@ -1,3 +1,5 @@
+import { merge, Subscription } from 'rxjs';
+import { debounceTime } from 'rxjs/operators';
 import {
   Component,
   AfterViewInit,
@@ -923,10 +925,20 @@ export class StatsComponent implements AfterViewInit, AfterViewChecked, OnDestro
     return count;
   }
 
+  private dataChangeSub?: Subscription;
+
   /**
    * Initializes the component.
    */
   ngOnInit(): void {
+    // The Cashflow game changes transactions/subscriptions from its own panel (Payday, Reset, Undo,
+    // a Deal...) while this page can be showing underneath - redraw the current view when it does
+    // (JFK, 2026-10-03). Bursts of writes collapse into one redraw.
+    const state = AppStateService.instance;
+    this.dataChangeSub = merge(state.transactionsUpdated$, state.subscriptionsUpdated$)
+      .pipe(debounceTime(150))
+      .subscribe(() => this.recreateCurrentView());
+
     // Initialize the component
     // Track initial screen dimensions
     StatsComponent.lastScreenWidth = window.innerWidth;
@@ -967,14 +979,18 @@ export class StatsComponent implements AfterViewInit, AfterViewChecked, OnDestro
 
         StatsComponent.filterPanelMoved = false;
 
-        // Recreate the current view
-        if (StatsComponent.isBIDashboard) {
-          StatsComponent.createBIDashboard(StatsComponent.activeBIDashboard);
-        } else {
-          this.callCharts();
-        }
+        this.recreateCurrentView();
       }
     }, 50); // Wait 50ms after last resize event
+  }
+
+  /** Redraws whichever view is open - a BI dashboard or the account charts - from the current data. */
+  private recreateCurrentView(): void {
+    if (StatsComponent.isBIDashboard) {
+      StatsComponent.createBIDashboard(StatsComponent.activeBIDashboard);
+    } else {
+      this.callCharts();
+    }
   }
 
   /**
@@ -989,6 +1005,7 @@ export class StatsComponent implements AfterViewInit, AfterViewChecked, OnDestro
    * Cleanup when component is destroyed
    */
   ngOnDestroy(): void {
+    this.dataChangeSub?.unsubscribe();
     // Clear static instance reference
     if (StatsComponent.currentInstance === this) {
       StatsComponent.currentInstance = null;

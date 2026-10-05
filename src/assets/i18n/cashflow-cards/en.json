@@ -1,0 +1,670 @@
+{
+  "shared": {
+    "shareRule": "Only you may buy as many shares as you like at this price. Anyone may sell at this price.",
+    "investmentRule": "Use this offer yourself or sell it to another player.",
+    "doodadLoanHint": "(Take out a bank loan if you have to)",
+    "doodadChildHint": "(If you have a child)",
+    "doodadLoanChildHint": "(Take out a bank loan if you have to) (If you have a child)"
+  },
+  "cards": {
+    "classic-small-ok4u-5": {
+      "description": "Interest rates are stalling the share price of this long-established pharmaceutical company."
+    },
+    "classic-small-ok4u-10": {
+      "description": "Delays in research and development are keeping the share price low at this long-established pharmaceutical company."
+    },
+    "classic-small-ok4u-20": {
+      "description": "Inflation fears are causing a weak share price at this long-established pharmaceutical company."
+    },
+    "classic-small-ok4u-30": {
+      "description": "Low inflation is driving high share prices for this long-established pharmaceutical company."
+    },
+    "classic-small-ok4u-40": {
+      "description": "A booming market is pushing up the share price of this long-established pharmaceutical company."
+    },
+    "classic-small-gro4us-30": {
+      "description": "A brilliant young fund manager. Everyone believes he can turn anything into gold."
+    },
+    "classic-small-on2u-40": {
+      "description": "A box-office hit in the children's sector is driving a record share price."
+    },
+    "classic-small-myt4u-5": {
+      "description": "Record interest rates are leading to a below-average share price at this electronics retailer."
+    },
+    "classic-small-gro4us-40": {
+      "description": "The market for leading companies is driving the fund price to a record high."
+    },
+    "classic-small-gro4us-20": {
+      "description": "Lower interest rates are lifting the market and financing strong performance."
+    },
+    "classic-small-gro4us-10": {
+      "description": "Weak job growth is hurting consumer confidence. Shares fall along with public opinion."
+    },
+    "classic-small-gro4us-5": {
+      "description": "A weak annual report leads to a low price for the investment fund."
+    },
+    "classic-small-on2u-30": {
+      "description": "Strong demand for the company's library of classic films is supporting a good share price."
+    },
+    "classic-small-on2u-20": {
+      "description": "A new director of film acquisitions is brightening the outlook for the share price."
+    },
+    "classic-small-on2u-10": {
+      "description": "Film buyer fired after a third mega-flop! Shares fall. The board's bonus is cancelled."
+    },
+    "classic-small-on2u-5": {
+      "description": "The newest theme park is a huge flop, reports show losses. The share price hits an all-time low."
+    },
+    "classic-small-myt4u-40": {
+      "description": "A booming market is driving this electronics retailer's share price to a record!"
+    },
+    "classic-small-myt4u-30": {
+      "description": "Low interest rates are leading to a positive share price at this electronics retailer."
+    },
+    "classic-small-myt4u-20": {
+      "description": "A weak market is leading to falling share prices at this electronics retailer."
+    },
+    "classic-small-myt4u-10": {
+      "description": "A new product flops and heavy losses are announced! The share price falls."
+    },
+    "classic-small-efh": {
+      "title": "Single-family home for sale",
+      "description": "Low down payment on this single-family home. The owner is unexpectedly moving out of town. The right person will do well with it."
+    },
+    "classic-big-pizza": {
+      "title": "Pizza franchise for sale",
+      "description": "A healthy pizza franchise. The trend towards high-quality fast food is booming. A busy area right next to a university campus."
+    },
+    "classic-small-efh-65k-5k": {
+      "title": "Single-family home for sale",
+      "description": "A nice rented single-family home available at short notice because of a foreclosure auction. A well-kept older building with a tenant."
+    },
+    "classic-small-efh-45k-2k": {
+      "title": "Single-family home for sale",
+      "description": "A company bought the single-family home of a transferred manager. There is currently no tenant. It has been on the market for six months and has just been reduced in price. Take out a loan if you have to, but YOU SHOULD BUY THIS PROPERTY!",
+      "heading": "You've found a Super Deal!"
+    },
+    "classic-small-efh-30k-1k": {
+      "title": "Single-family home for sale",
+      "description": "A single-family home in an older neighborhood is offered by the highway department. The market has collapsed and the city HAS to sell. No cashflow, but a possible opportunity for capital gain."
+    },
+    "classic-small-efh-35k-2k": {
+      "title": "Single-family home for sale",
+      "description": "An older single-family home, previously state-owned, is being sold with government financing. A tenant is in place. Take out a loan if you have to, but YOU SHOULD BUY THIS PROPERTY!",
+      "heading": "You've found a Super Deal!"
+    },
+    "classic-small-efh-50k-2k": {
+      "title": "Single-family home for sale",
+      "description": "This single-family home in foreclosure has been vacant for six months and has just been reduced in price. The loan includes the estimated repair costs."
+    },
+    "classic-small-efh-50k-4k": {
+      "title": "Single-family home for sale",
+      "description": "A nice single-family home is available in a market weakened by layoffs. It would be a good investment for the right buyer."
+    },
+    "classic-small-etw-40k-5k": {
+      "title": "Condo for sale",
+      "description": "Foreclosure auction! A condo in a sought-after neighborhood close to jobs and shops. Favorable financing from the bank."
+    },
+    "classic-small-etw-40k-1k": {
+      "title": "Condo for sale",
+      "description": "An excellent condo with lots of extras. The owner wants to move QUICKLY for her dream job. She is making a career - so can you! No cashflow, but a possible opportunity for capital gain."
+    },
+    "classic-small-etw-40k-4k": {
+      "title": "Condo for sale",
+      "description": "Parents are selling the condo their studying child used to live in. There is a big demand for rentals in this area."
+    },
+    "classic-small-etw-55k-5k": {
+      "title": "Condo for sale",
+      "description": "An older condo is offered by a young couple who want to move into a larger single-family home because their family is growing. Available soon."
+    },
+    "classic-big-mfh8-240k-40k": {
+      "title": "Apartment building, 8 units, for sale",
+      "description": "The owner offers his apartment building with 8 units at the currently appraised price. It has every feature tenants look for. Fully rented at the market rate, with excellent documentation."
+    },
+    "classic-big-mfh8-320k-40k": {
+      "title": "Apartment building, 8 units, for sale",
+      "description": "The owner is reinvesting and offers an apartment building with 8 units for sale at a fair price. Financing is already in place. All it needs is your down payment."
+    },
+    "classic-big-mfh4-340k-32k": {
+      "title": "Apartment building, 4 units, for sale",
+      "description": "An apartment building with 4 units is for sale by its owner, who is moving to another state. Complete documentation, fully rented, low tenant turnover in a good neighborhood."
+    },
+    "classic-big-mfh8-250k-40k": {
+      "title": "Apartment building, 8 units, for sale",
+      "description": "The owner's legal disputes are forcing the sale of this apartment building with 8 units. Grab the deal before someone else does."
+    },
+    "classic-big-mfh8-360k-32k": {
+      "title": "Apartment building, 8 units, for sale",
+      "description": "A self-employed small business owner urgently needs money to secure a business partnership. The apartment building with 8 units is being sold to raise capital. A great opportunity for the right person."
+    },
+    "classic-big-mfh4-280k-16k": {
+      "title": "Apartment building, 4 units, for sale",
+      "description": "An older apartment building with 4 units is available - a forced sale. The absentee owner is in financial trouble, years behind on taxes. Some documentation is available."
+    },
+    "classic-big-mfh4-370k-10k": {
+      "title": "Apartment building, 4 units, for sale",
+      "description": "An apartment building with 4 units in an up-and-coming area is for sale. The owner has to sell because of tax debts."
+    },
+    "classic-big-mfh4-290k-15k": {
+      "title": "Apartment building, 4 units, for sale",
+      "description": "An apartment building with 4 units right next to a new expressway is for sale. The owner/resident is moving to a quieter neighborhood. The price is set for a quick sale."
+    },
+    "classic-big-mfh4-300k-20k": {
+      "title": "Apartment building, 4 units, for sale",
+      "description": "An apartment building with 4 units in a recovering residential area. Fully rented, repairs are up to date. It needs your down payment and patience."
+    },
+    "classic-big-mfh4-225k-15k": {
+      "title": "Apartment building, 4 units, for sale",
+      "description": "A lovely, well-kept apartment building with 4 units in a good neighborhood. Long-term tenants, positive cashflow, minimal repairs."
+    },
+    "classic-big-efh-270k-15k": {
+      "title": "Single-family home for sale",
+      "description": "A demoted manager can no longer make the payments on his new salary and has to sell his single-family home. The neighborhood is in transition."
+    },
+    "classic-big-efh-225k-14k": {
+      "title": "Single-family home for sale",
+      "description": "A businessman needs money to save his company. He is selling this single-family home, currently occupied by a satisfied tenant."
+    },
+    "classic-big-efh-300k-20k": {
+      "title": "Single-family home for sale",
+      "description": "A lovely single-family home with a built-in pool and all the amenities is available in a respectable middle-class neighborhood. Good schools nearby."
+    },
+    "classic-big-efh-300k-12k": {
+      "title": "Single-family home for sale",
+      "description": "A single-family home in a rough neighborhood. Positive cashflow despite low rents."
+    },
+    "classic-big-efh-325k-18k": {
+      "title": "Single-family home for sale",
+      "description": "An experienced businessman has kept this single-family home in excellent condition, so it fetches top rents even in an older neighborhood."
+    },
+    "classic-big-efh-350k-20k": {
+      "title": "Single-family home for sale",
+      "description": "A divorce is forcing the sale of this single-family home in an area full of owner-occupied houses. It has been on the market for 5 months."
+    },
+    "classic-big-efh-275k-16k": {
+      "title": "Single-family home for sale",
+      "description": "A single-family home near the airport. Low costs and plenty of cashflow potential, if you can put up with the noise."
+    },
+    "classic-big-efh-275k-15k": {
+      "title": "Single-family home for sale",
+      "description": "The owner's heirs are offering a terraced single-family home on a remote golf course. A golf membership is included."
+    },
+    "classic-big-dh-260k-12k": {
+      "title": "Semi-detached house for sale",
+      "description": "A semi-detached house owner has to sell to pay hospital bills. There are two tenants in this well-kept property, and it is a good investment opportunity."
+    },
+    "classic-big-dh-250k-16k": {
+      "title": "Semi-detached house for sale",
+      "description": "The owner is leaving the semi-detached house because the family is growing. The tenant in the other half is staying, and a new tenant is already waiting to move into this well-kept property."
+    },
+    "classic-big-dh-170k-18k": {
+      "title": "Semi-detached house for sale",
+      "description": "This semi-detached house is the best in the area! The proud owner is retiring to another state to live near his grandchildren."
+    },
+    "classic-big-dh-245k-12k": {
+      "title": "Semi-detached house for sale",
+      "description": "This semi-detached investment comes with tenants! The owner has tax problems and needs to sell quickly."
+    },
+    "classic-big-dh-260k-10k": {
+      "title": "Semi-detached house for sale",
+      "description": "A well-kept semi-detached house in a desirable location is available because of a transfer of ownership. An excellent investment opportunity for the right buyer."
+    },
+    "classic-big-aph12-350k-50k": {
+      "title": "Apartment complex for sale",
+      "description": "An apartment complex with 12 units is offered by the owner's heirs, who live out of town. An extremely popular location with a long waiting list for units in this property."
+    },
+    "classic-big-aph24-575k-75k": {
+      "title": "Apartment complex for sale",
+      "description": "Two buildings with a total of 24 units are for sale. The owner manages them with one on-site employee. The owner is selling because he is retiring. A great opportunity."
+    },
+    "classic-big-aph60-1200k-200k": {
+      "title": "Apartment complex for sale",
+      "description": "An apartment complex with 60 units from a pension fund that the owner is dissolving. In-house property management is in place."
+    },
+    "classic-big-aph24-550k-50k": {
+      "title": "Apartment complex for sale",
+      "description": "The owner is retiring, and this apartment complex with 24 units is fully rented with a great cashflow. A very good location near a state university."
+    },
+    "classic-big-gp-25k-25k-1300": {
+      "title": "Business partner wanted",
+      "description": "A successful doctor is expanding his practice and clinic. He needs a partner to finance the equity share of the construction costs."
+    },
+    "classic-big-gp-20k-20k-1200": {
+      "title": "Business partner wanted",
+      "description": "A successful pizza chain is expanding into making frozen pizzas for grocery stores. The owner needs capital for the equipment."
+    },
+    "classic-big-gp-30k-30k-1500": {
+      "title": "Business partner wanted",
+      "description": "A car dealer wants to expand leasing of 2- and 3-year-old cars. He needs capital because the carmaker's finance company is not interested."
+    },
+    "classic-big-gp-30k-30k-1700": {
+      "title": "Business partner wanted",
+      "description": "A sandwich shop is doubling its number of locations. The owner needs an investor to get started."
+    },
+    "classic-big-au-180k-20k-1600": {
+      "title": "Automated business for sale",
+      "description": "A classic arcade with 30 pinball machines and loyal customers. The owner overextended himself and urgently has to pay off debts."
+    },
+    "classic-big-au-125k-25k-1800": {
+      "title": "Automated business for sale",
+      "description": "A successful coin-operated car wash with 4 bays near a busy intersection. The seller is moving to a retirement community in another state."
+    },
+    "classic-big-au-150k-30k-2500": {
+      "title": "Automated business for sale",
+      "description": "A personal bankruptcy forces the sale of a busy, successful laundromat on a high-traffic expressway. Very strong economic growth is expected in this area."
+    },
+    "classic-big-awa-350k-50k-2500": {
+      "title": "Car wash for sale",
+      "description": "A family-owned car wash in a prime location is for sale. The sale is urgent because of a family feud. The owners want out as fast as possible."
+    },
+    "classic-small-gold-friend-3000": {
+      "title": "Friend needs cash fast",
+      "description": "A friend urgently needs money. He sells you 10 gold coins far below the normal price."
+    },
+    "classic-small-gold-collector-1000": {
+      "title": "Coin collector needs cash",
+      "description": "A coin collector needs cash quickly to solve a tax problem. He sells you 5 gold coins far below the normal price."
+    },
+    "classic-small-gold-box-500": {
+      "title": "What's in the box?!",
+      "description": "You have the chance to buy a lockable filing cabinet at a household clearance sale. If you buy the cabinet, pay 500 € and roll one die: You rolled 1-5: You find... ABSOLUTELY NOTHING in the cabinet. You rolled a 6: You find... ten gold coins. CHA-CHING! Enter them on your asset sheet.",
+      "success": "You rolled a 6: you find... ten gold coins. CHA-CHING!",
+      "failure": "You rolled 1-5: you find... ABSOLUTELY NOTHING in the cabinet."
+    },
+    "classic-small-gold-will-750": {
+      "title": "Where there's a will...",
+      "description": "A distant relative passes away. You are mentioned in the will, but you have to travel to accept it. If you accept, pay 750 € for the trip and roll one die: You rolled 1-5: You are left an old cat. Have fun! You rolled a 6: You are left ten gold coins. Enter them on your asset sheet.",
+      "success": "You rolled a 6: you are left ten gold coins.",
+      "failure": "You rolled 1-5: you are left an old cat. Have fun!"
+    },
+    "classic-small-sister-5000": {
+      "title": "Sister-in-law borrows money",
+      "description": "Your sister-in-law is unemployed and needs 5,000 € for her house installment. She promises to pay you back 10,000 €. If you decide to help her, pay 5,000 € and roll one die: You rolled 1-3: She never pays you back and you lose 5,000 €. You rolled 4-6: She pays you back 10,000 €, but family gatherings are still awkward. Cost: 5,000 €",
+      "success": "You rolled 4-6: she pays you back 10,000, but family gatherings are still awkward.",
+      "failure": "You rolled 1-3: she never pays you back and you lose 5,000 €."
+    },
+    "classic-small-mlm-1": {
+      "title": "Multi-level marketing buy-in",
+      "description": "You have the chance to invest in a multi-level marketing opportunity. The company wants to expand the reach of its newest project. If you decide to join, pay 500 € and KEEP THIS CARD: At every Payday, roll one die: You rolled 1-3: No income this month, but keep trying. You rolled 4-6: Your effort paid off! Collect 500 €. Use this offer yourself or sell it to another player. Cost: 500 €",
+      "success": "You rolled 4-6: your effort paid off! Collect 500 €.",
+      "failure": "You rolled 1-3: no income this month, but keep trying."
+    },
+    "classic-small-mlm-2": {
+      "title": "Multi-level marketing buy-in",
+      "description": "You have the chance to invest in a multi-level marketing opportunity. The company wants to expand the reach of its newest project. If you decide to join, pay 500 € and KEEP THIS CARD: At every Payday, roll one die: You rolled 1-3: No income this month, but keep trying. You rolled 4-6: Your effort paid off! Collect 500 €. Use this offer yourself or sell it to another player. Cost: 500 €",
+      "success": "You rolled 4-6: your effort paid off! Collect 500 €.",
+      "failure": "You rolled 1-3: no income this month, but keep trying."
+    },
+    "classic-doodad-jetski": {
+      "title": "You buy a jet ski",
+      "comment": "Who needs a weekend without a little splash?"
+    },
+    "classic-doodad-reunion": {
+      "title": "You go to the class reunion",
+      "comment": "Everyone brags about how well they are doing. You pick up the tab."
+    },
+    "classic-doodad-boat": {
+      "title": "You buy a boat",
+      "comment": "A boat is a hole in the water you throw money into. But what a hole!"
+    },
+    "classic-doodad-gym": {
+      "title": "You set up a home gym",
+      "comment": "The treadmill has arrived. The resolve will surely follow."
+    },
+    "classic-doodad-chair": {
+      "title": "You buy a comfortable chair",
+      "comment": "Your back says thank you."
+    },
+    "classic-doodad-massagesuit": {
+      "title": "You treat yourself to a massage suit",
+      "comment": "Relaxation at the press of a button. Your bank account tenses up."
+    },
+    "classic-doodad-jewelry": {
+      "title": "You buy costume jewelry",
+      "comment": "Shines like the real thing. Costs almost like the real thing."
+    },
+    "classic-doodad-cappuccino": {
+      "title": "You buy a cappuccino machine",
+      "comment": "Pays for itself after the 700th coffee. Roughly."
+    },
+    "classic-doodad-birthday": {
+      "title": "You throw a birthday party for your child",
+      "comment": "Ten kids, one cake, zero nerves."
+    },
+    "classic-doodad-kitchen": {
+      "title": "You renovate your kitchen",
+      "comment": "The old kitchen had character. The new one has granite."
+    },
+    "classic-doodad-tennis": {
+      "title": "You buy a new tennis racket",
+      "comment": "This time it will surely not be your technique."
+    },
+    "classic-doodad-concert": {
+      "title": "You buy concert tickets",
+      "comment": "A night you will never forget. Neither will your bank account."
+    },
+    "classic-doodad-familyvacation": {
+      "title": "You take a family vacation",
+      "comment": "Relaxation guaranteed. Until the third \"Are we there yet?\""
+    },
+    "classic-doodad-sunglasses": {
+      "title": "You buy new sunglasses",
+      "comment": "You only left the old ones behind three summers ago."
+    },
+    "classic-doodad-console": {
+      "title": "You buy a new game console",
+      "comment": "For the kids. Obviously."
+    },
+    "classic-doodad-trainingwear": {
+      "title": "You need new workout clothes",
+      "comment": "Important for training. And for looking the part."
+    },
+    "classic-doodad-painting": {
+      "title": "Your house needs a new coat of paint",
+      "comment": "Freshly painted, the cracks vanish. For a while, at least."
+    },
+    "classic-doodad-wedding": {
+      "title": "You support your child's wedding",
+      "comment": "The happiest day of your child's life. The most expensive of yours."
+    },
+    "classic-doodad-soundsystem": {
+      "title": "You buy a new sound system",
+      "comment": "The neighbors get to know your taste in music."
+    },
+    "classic-doodad-bowlingball": {
+      "title": "You buy a new bowling ball",
+      "comment": "With your own ball you hit so much better. Allegedly."
+    },
+    "classic-doodad-clothes": {
+      "title": "You buy new clothes",
+      "comment": "Nothing in the closet fit anymore. Or was still in style."
+    },
+    "classic-doodad-caraircon": {
+      "title": "You need a new air conditioner for your car",
+      "comment": "Sweating is free. Sweating in traffic is not."
+    },
+    "classic-doodad-golfclub": {
+      "title": "You join the golf club",
+      "comment": "The important deals happen here. And a lot of balls get lost."
+    },
+    "classic-doodad-watch": {
+      "title": "You buy a new watch",
+      "comment": "Your phone shows the time too. Just not as elegantly."
+    },
+    "classic-doodad-carradio": {
+      "title": "You need a new car radio",
+      "comment": "Traffic jams only become bearable with good music."
+    },
+    "classic-doodad-tv": {
+      "title": "You buy a flat-screen TV",
+      "comment": "Thin screen, thick bill."
+    },
+    "classic-doodad-firstcar": {
+      "title": "You buy your child their first car",
+      "comment": "The keys go to your child. The tank stays your problem."
+    },
+    "classic-doodad-braces": {
+      "title": "Your child needs braces",
+      "comment": "A metal mouth today, a dazzling smile tomorrow. And a dazzling bill."
+    },
+    "classic-doodad-date": {
+      "title": "You go on a date (concert, dinner and dessert!)",
+      "comment": "You pay, of course. The dessert was a mistake. Or maybe not."
+    },
+    "classic-doodad-rims": {
+      "title": "Your car needs new rims",
+      "comment": "The car does not go faster. It just looks like it does."
+    },
+    "classic-doodad-foodprocessor": {
+      "title": "You buy a food processor",
+      "comment": "It can do everything. You use it twice."
+    },
+    "classic-doodad-golfclubs": {
+      "title": "You treat yourself to new golf clubs",
+      "comment": "Your handicap is surely not the clubs' fault."
+    },
+    "classic-doodad-tutoring": {
+      "title": "You pay for private tutoring for your child",
+      "comment": "An investment in the future. And in the math grade."
+    },
+    "classic-doodad-computer": {
+      "title": "You need a new computer",
+      "comment": "The old one needed a full ten minutes to boot."
+    },
+    "classic-doodad-seasontickets": {
+      "title": "You buy season tickets",
+      "comment": "Every home game, every defeat, live."
+    },
+    "classic-doodad-tires": {
+      "title": "You need new tires",
+      "comment": "Tread matters. On tires and on a résumé."
+    },
+    "classic-doodad-dentist": {
+      "title": "Go to the dentist",
+      "comment": "It only hurts briefly. The bill hurts longer.",
+      "description": "(Maybe you get a shiny gold tooth!)"
+    },
+    "classic-doodad-casino": {
+      "title": "You go to the casino",
+      "comment": "The house always wins. At least you had a nice evening."
+    },
+    "classic-doodad-winetrip": {
+      "title": "You take a trip to a wine region",
+      "comment": "Just a small tasting. The trunk is full anyway."
+    },
+    "classic-doodad-artpainting": {
+      "title": "You buy a painting by a local artist",
+      "comment": "Art that will be priceless in twenty years. Or worth nothing."
+    },
+    "classic-doodad-friendsdinner": {
+      "title": "You invite your friends to dinner",
+      "comment": "You cook, they laugh. Best part: they stay longer than planned."
+    },
+    "classic-doodad-phone": {
+      "title": "You buy the newest phone",
+      "comment": "The old one still worked. But this one has a barely noticeably better camera."
+    },
+    "classic-market-efh-pct20-a": {
+      "title": "Single-family home buyer",
+      "description": "A buyer is looking for a single-family home. He offers the original price + 20%. Anyone may sell as many properties as they like at this price. If you sell, pay off the mortgage that goes with it and cross out the cash flow of that property."
+    },
+    "classic-market-efh-pct20-b": {
+      "title": "Single-family home buyer",
+      "description": "A buyer is looking for a single-family home. He offers the original price + 20%. Anyone may sell as many properties as they like at this price. If you sell, pay off the mortgage that goes with it and cross out the cash flow of that property."
+    },
+    "classic-market-efh-pct15": {
+      "title": "Single-family home buyer",
+      "description": "A buyer is looking for a single-family home. He offers the original price + 15%. Anyone may sell as many properties as they like at this price. If you sell, pay off the mortgage that goes with it and cross out the cash flow of that property."
+    },
+    "classic-market-efh-pct10-a": {
+      "title": "Single-family home buyer",
+      "description": "A buyer is looking for a single-family home. He offers the original price + 10%. Anyone may sell as many properties as they like at this price. If you sell, pay off the mortgage that goes with it and cross out the cash flow of that property."
+    },
+    "classic-market-efh-pct10-b": {
+      "title": "Single-family home buyer",
+      "description": "A buyer is looking for a single-family home. He offers the original price + 10%. Anyone may sell as many properties as they like at this price. If you sell, pay off the mortgage that goes with it and cross out the cash flow of that property."
+    },
+    "classic-market-efh-amt20k": {
+      "title": "Single-family home buyer",
+      "description": "A buyer is looking for a single-family home. He offers the original price + 20,000 €. Anyone may sell as many properties as they like at this price. If you sell, pay off the mortgage that goes with it and cross out the cash flow of that property."
+    },
+    "classic-market-efh-amt15k": {
+      "title": "Single-family home buyer",
+      "description": "A buyer is looking for a single-family home. He offers the original price + 15,000 €. Anyone may sell as many properties as they like at this price. If you sell, pay off the mortgage that goes with it and cross out the cash flow of that property."
+    },
+    "classic-market-efh-amt10k": {
+      "title": "Single-family home buyer",
+      "description": "A buyer is looking for a single-family home. He offers the original price + 10,000 €. Anyone may sell as many properties as they like at this price. If you sell, pay off the mortgage that goes with it and cross out the cash flow of that property."
+    },
+    "classic-market-efh-amt5k": {
+      "title": "Single-family home buyer",
+      "description": "A buyer is looking for a single-family home. He offers the original price + 5,000 €. Anyone may sell as many properties as they like at this price. If you sell, pay off the mortgage that goes with it and cross out the cash flow of that property."
+    },
+    "classic-market-mfh-pct20": {
+      "title": "Apartment and multi-family building buyer",
+      "description": "A buyer is looking for apartment and multi-family buildings with any number of units. He offers the original price + 20%. Anyone may sell as many properties as they like at this price. If you sell, pay off the mortgage that goes with it and cross out the cash flow of that property."
+    },
+    "classic-market-mfh-pct15": {
+      "title": "Apartment and multi-family building buyer",
+      "description": "A buyer is looking for apartment and multi-family buildings with any number of units. He offers the original price + 15%. Anyone may sell as many properties as they like at this price. If you sell, pay off the mortgage that goes with it and cross out the cash flow of that property."
+    },
+    "classic-market-mfh-pct10": {
+      "title": "Apartment and multi-family building buyer",
+      "description": "A buyer is looking for apartment and multi-family buildings with any number of units. He offers the original price + 10%. Anyone may sell as many properties as they like at this price. If you sell, pay off the mortgage that goes with it and cross out the cash flow of that property."
+    },
+    "classic-market-mfh-pct5": {
+      "title": "Apartment and multi-family building buyer",
+      "description": "A buyer is looking for apartment and multi-family buildings with any number of units. He offers the original price + 5%. Anyone may sell as many properties as they like at this price. If you sell, pay off the mortgage that goes with it and cross out the cash flow of that property."
+    },
+    "classic-market-mfh-amt30k": {
+      "title": "Apartment and multi-family building buyer",
+      "description": "A buyer is looking for apartment and multi-family buildings with any number of units. He offers the original price + 30,000 €. Anyone may sell as many properties as they like at this price. If you sell, pay off the mortgage that goes with it and cross out the cash flow of that property."
+    },
+    "classic-market-mfh-amt20k": {
+      "title": "Apartment and multi-family building buyer",
+      "description": "A buyer is looking for apartment and multi-family buildings with any number of units. He offers the original price + 20,000 €. Anyone may sell as many properties as they like at this price. If you sell, pay off the mortgage that goes with it and cross out the cash flow of that property."
+    },
+    "classic-market-mfh-amt15k": {
+      "title": "Apartment and multi-family building buyer",
+      "description": "A buyer is looking for apartment and multi-family buildings with any number of units. He offers the original price + 15,000 €. Anyone may sell as many properties as they like at this price. If you sell, pay off the mortgage that goes with it and cross out the cash flow of that property."
+    },
+    "classic-market-mfh-amt10k": {
+      "title": "Apartment and multi-family building buyer",
+      "description": "A buyer is looking for apartment and multi-family buildings with any number of units. He offers the original price + 10,000 €. Anyone may sell as many properties as they like at this price. If you sell, pay off the mortgage that goes with it and cross out the cash flow of that property."
+    },
+    "classic-market-mfh-amt5k": {
+      "title": "Apartment and multi-family building buyer",
+      "description": "A buyer is looking for apartment and multi-family buildings with any number of units. He offers the original price + 5,000 €. Anyone may sell as many properties as they like at this price. If you sell, pay off the mortgage that goes with it and cross out the cash flow of that property."
+    },
+    "classic-market-mfh-amt1k": {
+      "title": "Apartment and multi-family building buyer",
+      "description": "A buyer is looking for apartment and multi-family buildings with any number of units. He offers the original price + 1,000 €. Anyone may sell as many properties as they like at this price. If you sell, pay off the mortgage that goes with it and cross out the cash flow of that property."
+    },
+    "classic-market-etw-65k": {
+      "title": "Condo buyer",
+      "description": "65,000 € is offered for your condo (ETW). The buyer has their own financing. Anyone may sell at this price. If you sell, pay off the mortgage that goes with it and cross out the cash flow of that property."
+    },
+    "classic-market-etw-45k": {
+      "title": "Condo buyer",
+      "description": "45,000 € is offered for your condo (ETW). The buyer has their own financing. Anyone may sell at this price. If you sell, pay off the mortgage that goes with it and cross out the cash flow of that property."
+    },
+    "classic-market-aph-45k": {
+      "title": "Apartment building buyer",
+      "description": "A buyer offers 45,000 € per unit (WE) in apartment buildings of any size. The buyer has their own financing. Anyone may sell at this price. If you sell, pay off the mortgage that goes with it and cross out the cash flow of that property."
+    },
+    "classic-market-aph-25k": {
+      "title": "Apartment building buyer",
+      "description": "A buyer offers 25,000 € per unit (WE) in apartment buildings of any size. The buyer has their own financing. Anyone may sell at this price. If you sell, pay off the mortgage that goes with it and cross out the cash flow of that property."
+    },
+    "classic-market-aph-ag40k": {
+      "title": "Apartment building buyer",
+      "description": "A real-estate company offers 40,000 € per unit (WE) in apartment buildings of any size. The buyer has their own financing. Anyone may sell at this price. If you sell, pay off the mortgage that goes with it and cross out the cash flow of that property."
+    },
+    "classic-market-aph-ag30k": {
+      "title": "Apartment building buyer",
+      "description": "A real-estate company offers 30,000 € per unit (WE) in apartment buildings of any size. The buyer has capital from selling another apartment complex. Anyone may sell at this price. If you sell, pay off the mortgage that goes with it and cross out the cash flow of that property."
+    },
+    "classic-market-gold-collector-1k": {
+      "title": "Collector wants gold coins",
+      "description": "A wealthy collector is looking for gold coins. He offers 1,000 € in cash for every coin. Anyone may sell as many coins as they like at this price."
+    },
+    "classic-market-gold-unrest-1k": {
+      "title": "The price of gold is rising",
+      "description": "Unrest overseas. Oil prices are under threat. The price of gold is skyrocketing. A buyer offers 1,000 € in cash for every gold coin. Anyone may sell as many coins as they like at this price."
+    },
+    "classic-market-gold-central-2k": {
+      "title": "The price of gold is rising",
+      "description": "The central bank prints money and, trying to boost the economy, causes heavy inflation. The price of gold is skyrocketing. A buyer offers 2,000 € in cash for every gold coin. Anyone may sell as many coins as they like at this price."
+    },
+    "classic-market-cost-tenant-1k": {
+      "title": "Tenant damages your property",
+      "description": "A tenant refuses to pay the rent. After the eviction you find considerable damage to your property. The insurance covers most of the repairs, but you still have to pay 1,000 € (one time). Take out a bank loan if necessary to cover the costs. The card applies only to the person who drew it. If you own NO property, ignore this card.",
+      "comment": "A tenant refused to pay the rent and damaged {property}. The insurance covers most of it, you pay the rest once."
+    },
+    "classic-market-cost-tenant-500-a": {
+      "title": "Tenant damages your property",
+      "description": "A tenant refuses to pay the rent. After the eviction you find considerable damage to your property. The insurance covers most of the repairs, but you still have to pay 500 € (one time). Take out a bank loan if necessary to cover the costs. The card applies only to the person who drew it. If you own NO property, ignore this card.",
+      "comment": "A tenant refused to pay the rent and damaged {property}. The insurance covers most of it, you pay the rest once."
+    },
+    "classic-market-cost-tenant-500-b": {
+      "title": "Tenant damages your property",
+      "description": "A tenant refuses to pay the rent. After the eviction you find considerable damage to your property. The insurance covers most of the repairs, but you still have to pay 500 € (one time). Take out a bank loan if necessary to cover the costs. The card applies only to the person who drew it. If you own NO property, ignore this card.",
+      "comment": "A tenant refused to pay the rent and damaged {property}. The insurance covers most of it, you pay the rest once."
+    },
+    "classic-market-cost-pipe-1k": {
+      "title": "Sewer pipe broken",
+      "description": "Your property is under water! Pay 1,000 € for a new sewer pipe (one time). Take out a bank loan if necessary to cover the costs. The card applies only to the person who drew it. If you own NO property, ignore this card.",
+      "comment": "The sewer pipe at {property} broke and everything was under water. You pay for the new pipe once."
+    },
+    "classic-market-cost-pipe-2k": {
+      "title": "Sewer pipe broken",
+      "description": "Your property is under water! Pay 2,000 € for a new sewer pipe (one time). Take out a bank loan if necessary to cover the costs. The card applies only to the person who drew it. If you own NO property, ignore this card.",
+      "comment": "The sewer pipe at {property} broke and everything was under water. You pay for the new pipe once."
+    },
+    "classic-market-split-ok4u": {
+      "title": "Stock - OK4U Pharma Inc.",
+      "description": "OK4U begins trials of a possibly life-saving drug. Side effects have not been tested yet. It could change the world... if it works. The card holder rolls one die. You rolled 1-3: STOCK SPLIT! Everyone who owns OK4U shares DOUBLES their shares. You rolled 4-6: REVERSE SPLIT! Everyone who owns OK4U shares loses half of their shares. (You pay no money. Your total cost does not change.) Symbol: OK4U SPLIT or REVERSE SPLIT?"
+    },
+    "classic-market-split-myt4u": {
+      "title": "Stock - MYT4U Electronics Co.",
+      "description": "MYT4U takes a risk with new home entertainment technology. Will it be a great success or a crash landing? The card holder rolls one die. You rolled 1-3: STOCK SPLIT! Everyone who owns MYT4U shares DOUBLES their shares. You rolled 4-6: REVERSE SPLIT! Everyone who owns MYT4U shares loses half of their shares. (You pay no money. Your total cost does not change.) Symbol: MYT4U SPLIT or REVERSE SPLIT?"
+    },
+    "classic-market-split-gro4us": {
+      "title": "Mutual fund – GRO4US",
+      "description": "The market is changing and there will be strong swings in the coming months. How will funds behave during this time of change? The card holder rolls one die. You rolled 1-3: STOCK SPLIT! Everyone who owns GRO4US shares DOUBLES their shares. You rolled 4-6: REVERSE SPLIT! Everyone who owns GRO4US shares loses half of their shares. (You pay no money. Your total cost does not change.) Symbol: GRO4US SPLIT or REVERSE SPLIT?"
+    },
+    "classic-market-split-on2u": {
+      "title": "Stock - ON2U Entertainment Inc.",
+      "description": "The studio backs a new director on his summer blockbuster. The groundbreaking production may be too ambitious. The card holder rolls one die. You rolled 1-3: STOCK SPLIT! Everyone who owns ON2U shares DOUBLES their shares. You rolled 4-6: REVERSE SPLIT! Everyone who owns ON2U shares loses half of their shares. (You pay no money. Your total cost does not change.) Symbol: ON2U SPLIT or REVERSE SPLIT?"
+    },
+    "classic-market-boost-small-250": {
+      "title": "Small Business Boom!",
+      "description": "The economy in the city center is exploding! EVERYONE is affected. ALL businesses with a cashflow of 1,000 € or less increase their cashflow by 250 €."
+    },
+    "classic-market-boost-mgmt-400": {
+      "title": "New management system",
+      "description": "A new management system creates new productivity and lower costs. Only the person who drew this card is affected. ALL businesses with a cashflow of 2,000 € or less increase their cashflow by 400 €."
+    }
+  },
+  "symbols": {
+    "EFH": "SFH",
+    "ETW": "CONDO",
+    "MFH4": "APT4",
+    "MFH8": "APT8",
+    "PIZZA": "PIZZA",
+    "DH": "SDH",
+    "APH12": "CPX12",
+    "APH24": "CPX24",
+    "APH60": "CPX60",
+    "GP": "PTR",
+    "AU": "ABIZ",
+    "AWA": "WASH",
+    "GOLD": "GOLD",
+    "LOAN": "LOAN",
+    "MLM": "MLM"
+  },
+  "families": {
+    "EFH": "Single-family homes",
+    "ETW": "Condos",
+    "MFH": "Apartment buildings",
+    "DH": "Semi-detached houses",
+    "APH": "Apartment complexes",
+    "GP": "Business partners",
+    "AU": "Automated businesses",
+    "AWA": "Car washes",
+    "PIZZA": "Pizza franchise",
+    "GOLD": "Gold coins",
+    "LOAN": "Family loan",
+    "MLM": "Multi-level marketing"
+  },
+  "doodadGroups": {
+    "leisure": "Leisure and hobbies",
+    "events": "Parties and events",
+    "home": "Home and household",
+    "wellness": "Health and wellness",
+    "style": "Fashion and lifestyle",
+    "car": "Car and mobility",
+    "tech": "Technology and electronics",
+    "education": "Education and learning"
+  }
+}

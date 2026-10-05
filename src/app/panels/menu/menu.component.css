@@ -96,6 +96,11 @@
   grid-template-columns: 1fr 1fr 1fr 1fr;
 }
 
+/* An item alone in its row — spans the full grid width instead of leaving empty columns beside it. */
+.menu-item--full-row {
+  grid-column: 1 / -1;
+}
+
 @media (max-width: 400px) {
   .menu-grid--4 {
     grid-template-columns: 1fr 1fr 1fr 1fr;

@@ -1,0 +1,670 @@
+{
+  "shared": {
+    "shareRule": "Toi seul peux acheter autant d'actions que tu veux à ce prix. Tout le monde peut vendre à ce prix.",
+    "investmentRule": "Profite de cette offre toi-même ou revends-la à un autre joueur.",
+    "doodadLoanHint": "(Prends un prêt bancaire si tu dois)",
+    "doodadChildHint": "(Si tu as un enfant)",
+    "doodadLoanChildHint": "(Prends un prêt bancaire si tu dois) (Si tu as un enfant)"
+  },
+  "cards": {
+    "classic-small-ok4u-5": {
+      "description": "Les taux d'intérêt paralysent le cours de l'action de cette entreprise pharmaceutique de longue date."
+    },
+    "classic-small-ok4u-10": {
+      "description": "Des retards en recherche et développement maintiennent bas le cours de l'action de cette entreprise pharmaceutique de longue date."
+    },
+    "classic-small-ok4u-20": {
+      "description": "Les craintes d'inflation pèsent sur le cours de l'action de cette entreprise pharmaceutique de longue date."
+    },
+    "classic-small-ok4u-30": {
+      "description": "La faible inflation fait monter le cours de l'action de cette entreprise pharmaceutique de longue date."
+    },
+    "classic-small-ok4u-40": {
+      "description": "Un marché en plein essor fait grimper le cours de l'action de cette entreprise pharmaceutique de longue date."
+    },
+    "classic-small-gro4us-30": {
+      "description": "Un jeune gérant de fonds brillant. Tout le monde croit qu'il peut tout transformer en or."
+    },
+    "classic-small-on2u-40": {
+      "description": "Un succès au cinéma dans le secteur jeunesse fait grimper l'action à un niveau record."
+    },
+    "classic-small-myt4u-5": {
+      "description": "Des taux d'intérêt record entraînent un cours de l'action inférieur à la moyenne chez ce revendeur d'électronique."
+    },
+    "classic-small-gro4us-40": {
+      "description": "Le marché des grandes entreprises pousse le prix du fonds à un record."
+    },
+    "classic-small-gro4us-20": {
+      "description": "Des taux d'intérêt plus bas soutiennent le marché et financent de solides performances."
+    },
+    "classic-small-gro4us-10": {
+      "description": "La faible croissance de l'emploi nuit à la confiance des consommateurs. Les actions baissent avec l'opinion publique."
+    },
+    "classic-small-gro4us-5": {
+      "description": "Un rapport annuel décevant entraîne un prix bas pour le fonds d'investissement."
+    },
+    "classic-small-on2u-30": {
+      "description": "La forte demande pour la bibliothèque de films anciens de l'entreprise soutient un bon cours de l'action."
+    },
+    "classic-small-on2u-20": {
+      "description": "Un nouveau directeur des acquisitions de films améliore les perspectives du cours de l'action."
+    },
+    "classic-small-on2u-10": {
+      "description": "L'acheteur de films est renvoyé après un troisième énorme flop ! Les actions chutent. Le bonus de la direction est supprimé."
+    },
+    "classic-small-on2u-5": {
+      "description": "Le dernier parc d'attractions est un énorme flop, les rapports font état de pertes. Le cours de l'action atteint un plus bas historique."
+    },
+    "classic-small-myt4u-40": {
+      "description": "Un marché en plein essor porte le cours de l'action de ce revendeur d'électronique à un record !"
+    },
+    "classic-small-myt4u-30": {
+      "description": "Des taux d'intérêt bas entraînent un cours de l'action favorable chez ce revendeur d'électronique."
+    },
+    "classic-small-myt4u-20": {
+      "description": "Un marché faible entraîne une baisse du cours de l'action chez ce revendeur d'électronique."
+    },
+    "classic-small-myt4u-10": {
+      "description": "Un nouveau produit fait un flop et de lourdes pertes sont annoncées ! Le cours de l'action baisse."
+    },
+    "classic-small-efh": {
+      "title": "Maison individuelle à vendre",
+      "description": "Faible apport pour cette maison individuelle. Le propriétaire quitte la ville de façon inattendue. La bonne personne saura en tirer profit."
+    },
+    "classic-big-pizza": {
+      "title": "Franchise de pizzeria à vendre",
+      "description": "Une franchise de pizzeria saine. La tendance au fast-food de qualité explose. Un quartier très fréquenté juste à côté d'un campus universitaire."
+    },
+    "classic-small-efh-65k-5k": {
+      "title": "Maison individuelle à vendre",
+      "description": "Une jolie maison individuelle louée, disponible rapidement à la suite d'une vente forcée. Un bâtiment ancien bien entretenu, avec un locataire."
+    },
+    "classic-small-efh-45k-2k": {
+      "title": "Maison individuelle à vendre",
+      "description": "Une entreprise a acheté la maison individuelle d'un cadre muté. Il n'y a actuellement pas de locataire. Elle est en vente depuis six mois et vient de baisser de prix. Contracte un prêt si tu dois, mais TU DEVRAIS ACHETER CE BIEN !",
+      "heading": "Tu as trouvé une super affaire !"
+    },
+    "classic-small-efh-30k-1k": {
+      "title": "Maison individuelle à vendre",
+      "description": "Une maison individuelle dans un vieux quartier est proposée par le service des routes. Le marché s'est effondré et la ville DOIT vendre. Pas de cashflow, mais une possible occasion de plus-value."
+    },
+    "classic-small-efh-35k-2k": {
+      "title": "Maison individuelle à vendre",
+      "description": "Une maison individuelle plus ancienne, auparavant propriété de l'État, est vendue avec un financement public. Un locataire est en place. Contracte un prêt si tu dois, mais TU DEVRAIS ACHETER CE BIEN !",
+      "heading": "Tu as trouvé une super affaire !"
+    },
+    "classic-small-efh-50k-2k": {
+      "title": "Maison individuelle à vendre",
+      "description": "Cette maison individuelle en saisie est inoccupée depuis six mois et vient de baisser de prix. Le prêt inclut les frais de réparation estimés."
+    },
+    "classic-small-efh-50k-4k": {
+      "title": "Maison individuelle à vendre",
+      "description": "Une jolie maison individuelle est disponible sur un marché affaibli par des licenciements. Ce serait un bon investissement pour le bon acheteur."
+    },
+    "classic-small-etw-40k-5k": {
+      "title": "Appartement en copropriété à vendre",
+      "description": "Vente forcée ! Un appartement en copropriété dans un quartier recherché, près des emplois et des commerces. Financement avantageux de la banque."
+    },
+    "classic-small-etw-40k-1k": {
+      "title": "Appartement en copropriété à vendre",
+      "description": "Un excellent appartement en copropriété avec de nombreux extras. La propriétaire veut déménager RAPIDEMENT pour son emploi de rêve. Elle fait carrière - toi aussi, tu peux ! Pas de cashflow, mais une possible occasion de plus-value."
+    },
+    "classic-small-etw-40k-4k": {
+      "title": "Appartement en copropriété à vendre",
+      "description": "Des parents vendent l'appartement en copropriété qu'utilisait leur enfant étudiant. Forte demande locative dans ce quartier."
+    },
+    "classic-small-etw-55k-5k": {
+      "title": "Appartement en copropriété à vendre",
+      "description": "Un appartement en copropriété plus ancien est proposé par un jeune couple qui souhaite emménager dans une plus grande maison individuelle car sa famille s'agrandit. Bientôt disponible."
+    },
+    "classic-big-mfh8-240k-40k": {
+      "title": "Immeuble collectif, 8 logements, à vendre",
+      "description": "Le propriétaire propose son immeuble de 8 logements au prix actuellement estimé. Il offre toutes les caractéristiques que recherchent les locataires. Entièrement loué au prix du marché, avec une excellente documentation."
+    },
+    "classic-big-mfh8-320k-40k": {
+      "title": "Immeuble collectif, 8 logements, à vendre",
+      "description": "Le propriétaire réinvestit et met en vente un immeuble de 8 logements à un prix raisonnable. Le financement est déjà en place. Il ne manque que ton apport."
+    },
+    "classic-big-mfh4-340k-32k": {
+      "title": "Immeuble collectif, 4 logements, à vendre",
+      "description": "Un immeuble de 4 logements est à vendre par son propriétaire, qui déménage dans un autre État. Documentation complète, entièrement loué, faible rotation des locataires dans un bon quartier."
+    },
+    "classic-big-mfh8-250k-40k": {
+      "title": "Immeuble collectif, 8 logements, à vendre",
+      "description": "Les litiges juridiques du propriétaire entraînent la vente forcée de cet immeuble de 8 logements. Saisis l'affaire avant que quelqu'un d'autre ne le fasse."
+    },
+    "classic-big-mfh8-360k-32k": {
+      "title": "Immeuble collectif, 8 logements, à vendre",
+      "description": "Un petit entrepreneur indépendant a urgemment besoin d'argent pour conclure un partenariat commercial. L'immeuble de 8 logements est vendu pour lever des fonds. Une excellente occasion pour la bonne personne."
+    },
+    "classic-big-mfh4-280k-16k": {
+      "title": "Immeuble collectif, 4 logements, à vendre",
+      "description": "Un immeuble plus ancien de 4 logements est disponible - vente forcée. Le propriétaire non résident est en difficulté financière, avec des années d'impôts en retard. Une partie de la documentation est disponible."
+    },
+    "classic-big-mfh4-370k-10k": {
+      "title": "Immeuble collectif, 4 logements, à vendre",
+      "description": "Un immeuble de 4 logements dans un quartier en pleine valorisation est à vendre. Le propriétaire doit vendre à cause de dettes fiscales."
+    },
+    "classic-big-mfh4-290k-15k": {
+      "title": "Immeuble collectif, 4 logements, à vendre",
+      "description": "Un immeuble de 4 logements juste à côté d'une nouvelle voie rapide est à vendre. Le propriétaire/occupant déménage vers un quartier plus calme. Le prix est fixé pour une vente rapide."
+    },
+    "classic-big-mfh4-300k-20k": {
+      "title": "Immeuble collectif, 4 logements, à vendre",
+      "description": "Un immeuble de 4 logements dans un quartier résidentiel en redressement. Entièrement loué, les réparations sont à jour. Il demande ton apport et de la patience."
+    },
+    "classic-big-mfh4-225k-15k": {
+      "title": "Immeuble collectif, 4 logements, à vendre",
+      "description": "Un bel immeuble bien entretenu de 4 logements dans un bon quartier. Locataires de longue durée, cashflow positif, peu de réparations."
+    },
+    "classic-big-efh-270k-15k": {
+      "title": "Maison individuelle à vendre",
+      "description": "Un cadre rétrogradé ne peut plus faire face aux paiements avec son nouveau salaire et doit vendre sa maison individuelle. Le quartier est en transition."
+    },
+    "classic-big-efh-225k-14k": {
+      "title": "Maison individuelle à vendre",
+      "description": "Un homme d'affaires a besoin d'argent pour sauver son entreprise. Il vend cette maison individuelle, actuellement habitée par un locataire satisfait."
+    },
+    "classic-big-efh-300k-20k": {
+      "title": "Maison individuelle à vendre",
+      "description": "Une belle maison individuelle avec piscine intégrée et tous les équipements est disponible dans un quartier bourgeois respectable. Bonnes écoles à proximité."
+    },
+    "classic-big-efh-300k-12k": {
+      "title": "Maison individuelle à vendre",
+      "description": "Une maison individuelle dans un quartier difficile. Cashflow positif malgré de faibles loyers."
+    },
+    "classic-big-efh-325k-18k": {
+      "title": "Maison individuelle à vendre",
+      "description": "Un homme d'affaires expérimenté a maintenu cette maison individuelle en excellent état, si bien qu'elle obtient des loyers maximaux même dans un vieux quartier."
+    },
+    "classic-big-efh-350k-20k": {
+      "title": "Maison individuelle à vendre",
+      "description": "Un divorce entraîne la vente de cette maison individuelle dans un quartier de maisons occupées par leurs propriétaires. Elle est sur le marché depuis 5 mois."
+    },
+    "classic-big-efh-275k-16k": {
+      "title": "Maison individuelle à vendre",
+      "description": "Une maison individuelle près de l'aéroport. Faibles coûts et beaucoup de potentiel de cashflow, si tu supportes le bruit."
+    },
+    "classic-big-efh-275k-15k": {
+      "title": "Maison individuelle à vendre",
+      "description": "Les héritiers du propriétaire proposent une maison individuelle mitoyenne sur un terrain de golf isolé. Une adhésion au golf est incluse."
+    },
+    "classic-big-dh-260k-12k": {
+      "title": "Maison jumelée à vendre",
+      "description": "Le propriétaire d'une maison jumelée doit vendre pour payer des frais d'hôpital. Cette propriété bien entretenue compte deux locataires et constitue une bonne opportunité d'investissement."
+    },
+    "classic-big-dh-250k-16k": {
+      "title": "Maison jumelée à vendre",
+      "description": "Le propriétaire quitte la maison jumelée car sa famille s'agrandit. Le locataire de l'autre moitié reste et un nouveau locataire attend déjà d'emménager dans cette propriété bien entretenue."
+    },
+    "classic-big-dh-170k-18k": {
+      "title": "Maison jumelée à vendre",
+      "description": "Cette maison jumelée est la meilleure du quartier ! Son fier propriétaire prend sa retraite dans un autre État pour vivre près de ses petits-enfants."
+    },
+    "classic-big-dh-245k-12k": {
+      "title": "Maison jumelée à vendre",
+      "description": "Cet investissement en maison jumelée comprend des locataires ! Le propriétaire a des problèmes fiscaux et doit vendre rapidement."
+    },
+    "classic-big-dh-260k-10k": {
+      "title": "Maison jumelée à vendre",
+      "description": "Une maison jumelée bien entretenue, bien située, est disponible à la suite d'un transfert de propriété. Une excellente opportunité d'investissement pour le bon acheteur."
+    },
+    "classic-big-aph12-350k-50k": {
+      "title": "Résidence d'appartements à vendre",
+      "description": "Une résidence de 12 logements est proposée par les héritiers du propriétaire, qui vivent ailleurs. Un emplacement extrêmement prisé avec une longue liste d'attente pour les logements de cette propriété."
+    },
+    "classic-big-aph24-575k-75k": {
+      "title": "Résidence d'appartements à vendre",
+      "description": "Deux bâtiments totalisant 24 logements sont à vendre. Le propriétaire les gère avec un employé sur place. Il vend car il part à la retraite. Une belle opportunité."
+    },
+    "classic-big-aph60-1200k-200k": {
+      "title": "Résidence d'appartements à vendre",
+      "description": "Une résidence de 60 logements issue d'un fonds de pension que le propriétaire dissout. Une gestion immobilière interne est en place."
+    },
+    "classic-big-aph24-550k-50k": {
+      "title": "Résidence d'appartements à vendre",
+      "description": "Le propriétaire part à la retraite et cette résidence de 24 logements est entièrement louée avec un excellent cashflow. Très bon emplacement près d'une université publique."
+    },
+    "classic-big-gp-25k-25k-1300": {
+      "title": "Associé recherché",
+      "description": "Un médecin à succès agrandit son cabinet et sa clinique. Il a besoin d'un associé pour financer la part de fonds propres des coûts de construction."
+    },
+    "classic-big-gp-20k-20k-1200": {
+      "title": "Associé recherché",
+      "description": "Une chaîne de pizzerias à succès se lance dans la fabrication de pizzas surgelées pour les supermarchés. Le propriétaire a besoin de capital pour l'équipement."
+    },
+    "classic-big-gp-30k-30k-1500": {
+      "title": "Associé recherché",
+      "description": "Un concessionnaire automobile veut développer la location de voitures de 2 et 3 ans. Il a besoin de capital car la société de financement du constructeur n'est pas intéressée."
+    },
+    "classic-big-gp-30k-30k-1700": {
+      "title": "Associé recherché",
+      "description": "Un commerce de sandwichs double son nombre d'emplacements. Le propriétaire a besoin d'un investisseur pour démarrer."
+    },
+    "classic-big-au-180k-20k-1600": {
+      "title": "Entreprise automatisée à vendre",
+      "description": "Une salle de jeux classique avec 30 flippers et des clients fidèles. Le propriétaire a vu trop grand et doit rembourser d'urgence ses dettes."
+    },
+    "classic-big-au-125k-25k-1800": {
+      "title": "Entreprise automatisée à vendre",
+      "description": "Une station de lavage à pièces à succès, avec 4 postes, près d'un carrefour très fréquenté. Le vendeur part vivre dans une résidence pour seniors dans un autre État."
+    },
+    "classic-big-au-150k-30k-2500": {
+      "title": "Entreprise automatisée à vendre",
+      "description": "Une faillite personnelle impose la vente d'une laverie animée et prospère sur une voie rapide très fréquentée. Une très forte croissance économique est attendue dans ce secteur."
+    },
+    "classic-big-awa-350k-50k-2500": {
+      "title": "Station de lavage auto à vendre",
+      "description": "Une station de lavage familiale, très bien située, est à vendre. La vente est urgente à cause d'une querelle familiale. Les propriétaires veulent partir au plus vite."
+    },
+    "classic-small-gold-friend-3000": {
+      "title": "Un ami a vite besoin d'argent",
+      "description": "Un ami a un besoin urgent d'argent. Il te vend 10 pièces d'or bien en dessous du prix normal."
+    },
+    "classic-small-gold-collector-1000": {
+      "title": "Un collectionneur de pièces a besoin d'argent",
+      "description": "Un collectionneur de pièces a vite besoin d'argent pour régler un problème fiscal. Il te vend 5 pièces d'or bien en dessous du prix normal."
+    },
+    "classic-small-gold-box-500": {
+      "title": "Qu'y a-t-il dans la boîte ?!",
+      "description": "Tu as l'occasion d'acheter un classeur verrouillable lors d'une liquidation de ménage. Si tu achètes le classeur, paie 500 € et lance un dé : tu fais 1-5 : tu ne trouves... ABSOLUMENT RIEN dans le classeur. Tu fais 6 : tu trouves... dix pièces d'or. CHA-CHING ! Inscris-les sur ta feuille d'actifs.",
+      "success": "Tu as fait 6 : tu trouves... dix pièces d'or. CHA-CHING !",
+      "failure": "Tu as fait 1-5 : tu ne trouves... ABSOLUMENT RIEN dans le classeur."
+    },
+    "classic-small-gold-will-750": {
+      "title": "Là où il y a un testament...",
+      "description": "Un parent éloigné décède. Tu es cité dans le testament, mais tu dois voyager pour l'accepter. Si tu l'acceptes, paie 750 € pour le voyage et lance un dé : tu fais 1-5 : on te lègue un vieux chat. Amuse-toi bien ! Tu fais 6 : on te lègue dix pièces d'or. Inscris-les sur ta feuille d'actifs.",
+      "success": "Tu as fait 6 : on te lègue dix pièces d'or.",
+      "failure": "Tu as fait 1-5 : on te lègue un vieux chat. Amuse-toi bien !"
+    },
+    "classic-small-sister-5000": {
+      "title": "Belle-sœur emprunte de l'argent",
+      "description": "Ta belle-sœur est au chômage et a besoin de 5 000 € pour sa mensualité de maison. Elle promet de te rembourser 10 000 €. Si tu décides de l'aider, paie 5 000 € et lance un dé : Tu fais 1-3 : elle ne te rembourse jamais et tu perds 5 000 €. Tu fais 4-6 : elle te rembourse 10 000 €, mais les réunions de famille restent gênantes. Coût : 5 000 €",
+      "success": "Tu as fait 4-6 : elle te rembourse 10 000 €, mais les réunions de famille restent gênantes.",
+      "failure": "Tu as fait 1-3 : elle ne te rembourse jamais et tu perds 5 000 €."
+    },
+    "classic-small-mlm-1": {
+      "title": "Entrée dans le marketing multiniveau",
+      "description": "Tu as la possibilité d'investir dans une opportunité de marketing multiniveau. L'entreprise souhaite étendre la portée de son tout nouveau projet. Si tu décides d'y entrer, paie 500 € et GARDE CETTE CARTE : à chaque jour de paie, lance un dé : Tu fais 1-3 : pas de revenu ce mois-ci, mais continue d'essayer. Tu fais 4-6 : tes efforts ont payé ! Encaisse 500 €. Utilise cette offre toi-même ou vends-la à un autre joueur. Coût : 500 €",
+      "success": "Tu as fait 4-6 : tes efforts ont payé ! Encaisse 500 €.",
+      "failure": "Tu as fait 1-3 : pas de revenu ce mois-ci, mais continue d'essayer."
+    },
+    "classic-small-mlm-2": {
+      "title": "Entrée dans le marketing multiniveau",
+      "description": "Tu as la possibilité d'investir dans une opportunité de marketing multiniveau. L'entreprise souhaite étendre la portée de son tout nouveau projet. Si tu décides d'y entrer, paie 500 € et GARDE CETTE CARTE : à chaque jour de paie, lance un dé : Tu fais 1-3 : pas de revenu ce mois-ci, mais continue d'essayer. Tu fais 4-6 : tes efforts ont payé ! Encaisse 500 €. Utilise cette offre toi-même ou vends-la à un autre joueur. Coût : 500 €",
+      "success": "Tu as fait 4-6 : tes efforts ont payé ! Encaisse 500 €.",
+      "failure": "Tu as fait 1-3 : pas de revenu ce mois-ci, mais continue d'essayer."
+    },
+    "classic-doodad-jetski": {
+      "title": "Tu achètes un jet ski",
+      "comment": "Qui a besoin d’un week-end sans éclaboussures ?"
+    },
+    "classic-doodad-reunion": {
+      "title": "Tu vas à la réunion d’anciens élèves",
+      "comment": "Tout le monde se vante de sa réussite. Toi, tu payes l’addition."
+    },
+    "classic-doodad-boat": {
+      "title": "Tu achètes un bateau",
+      "comment": "Un bateau est un trou dans l’eau où l’on jette de l’argent. Mais quel trou !"
+    },
+    "classic-doodad-gym": {
+      "title": "Tu installes une salle de sport chez toi",
+      "comment": "Le tapis de course est arrivé. La motivation suivra sûrement."
+    },
+    "classic-doodad-chair": {
+      "title": "Tu achètes une chaise confortable",
+      "comment": "Ton dos te dit merci."
+    },
+    "classic-doodad-massagesuit": {
+      "title": "Tu t’offres une combinaison de massage",
+      "comment": "La détente d’un simple clic. Ton compte, lui, se crispe."
+    },
+    "classic-doodad-jewelry": {
+      "title": "Tu achètes des bijoux fantaisie",
+      "comment": "Brille comme du vrai. Coûte presque comme du vrai."
+    },
+    "classic-doodad-cappuccino": {
+      "title": "Tu achètes une machine à cappuccino",
+      "comment": "Rentabilisée dès le 700e café. À peu près."
+    },
+    "classic-doodad-birthday": {
+      "title": "Tu organises une fête d’anniversaire pour ton enfant",
+      "comment": "Dix enfants, un gâteau, zéro nerf."
+    },
+    "classic-doodad-kitchen": {
+      "title": "Tu rénoves ta cuisine",
+      "comment": "L’ancienne cuisine avait du caractère. La nouvelle a du granit."
+    },
+    "classic-doodad-tennis": {
+      "title": "Tu achètes une nouvelle raquette de tennis",
+      "comment": "Cette fois, ce ne sera sûrement pas ta technique."
+    },
+    "classic-doodad-concert": {
+      "title": "Tu achètes des billets de concert",
+      "comment": "Une soirée inoubliable. Ton compte en banque aussi s’en souviendra."
+    },
+    "classic-doodad-familyvacation": {
+      "title": "Vous partez en vacances en famille",
+      "comment": "Détente garantie. Jusqu’au troisième « On arrive bientôt ? »"
+    },
+    "classic-doodad-sunglasses": {
+      "title": "Tu achètes de nouvelles lunettes de soleil",
+      "comment": "Tu as perdu les anciennes il y a seulement trois étés."
+    },
+    "classic-doodad-console": {
+      "title": "Tu achètes une nouvelle console de jeux",
+      "comment": "Pour les enfants. Évidemment."
+    },
+    "classic-doodad-trainingwear": {
+      "title": "Il te faut une nouvelle tenue de sport",
+      "comment": "Important pour l’entraînement. Et pour le style."
+    },
+    "classic-doodad-painting": {
+      "title": "Ta maison a besoin d’une nouvelle peinture",
+      "comment": "Fraîchement repeintes, les fissures disparaissent. Pour un temps."
+    },
+    "classic-doodad-wedding": {
+      "title": "Tu aides à payer le mariage de ton enfant",
+      "comment": "Le plus beau jour de la vie de ton enfant. Le plus cher de la tienne."
+    },
+    "classic-doodad-soundsystem": {
+      "title": "Tu achètes un nouveau système audio",
+      "comment": "Les voisins découvrent enfin tes goûts musicaux."
+    },
+    "classic-doodad-bowlingball": {
+      "title": "Tu achètes une nouvelle boule de bowling",
+      "comment": "Avec sa propre boule, on joue bien mieux. Paraît-il."
+    },
+    "classic-doodad-clothes": {
+      "title": "Tu achètes de nouveaux vêtements",
+      "comment": "Plus rien dans l’armoire ne t’allait. Ou ne plaisait."
+    },
+    "classic-doodad-caraircon": {
+      "title": "Il te faut une nouvelle clim pour ta voiture",
+      "comment": "Transpirer est gratuit. Transpirer dans les bouchons, non."
+    },
+    "classic-doodad-golfclub": {
+      "title": "Tu deviens membre du club de golf",
+      "comment": "C’est là que se font les affaires importantes. Et que se perdent beaucoup de balles."
+    },
+    "classic-doodad-watch": {
+      "title": "Tu achètes une nouvelle montre",
+      "comment": "Ton téléphone donne aussi l’heure. Mais avec moins d’élégance."
+    },
+    "classic-doodad-carradio": {
+      "title": "Il te faut un nouvel autoradio",
+      "comment": "Les embouteillages ne deviennent supportables qu’avec de la bonne musique."
+    },
+    "classic-doodad-tv": {
+      "title": "Tu achètes une télévision à écran plat",
+      "comment": "Écran fin, facture épaisse."
+    },
+    "classic-doodad-firstcar": {
+      "title": "Tu achètes sa première voiture à ton enfant",
+      "comment": "Les clés partent chez ton enfant. Le plein reste ton problème."
+    },
+    "classic-doodad-braces": {
+      "title": "Ton enfant a besoin d’un appareil dentaire",
+      "comment": "Une bouche en métal aujourd’hui, un sourire éclatant demain. Et une facture éclatante."
+    },
+    "classic-doodad-date": {
+      "title": "Tu as un rendez-vous (concert, dîner et dessert !)",
+      "comment": "C’est toi qui paies, bien sûr. Le dessert était une erreur. Ou pas."
+    },
+    "classic-doodad-rims": {
+      "title": "Ta voiture a besoin de nouvelles jantes",
+      "comment": "La voiture n’avance pas plus vite. Elle en a juste l’air."
+    },
+    "classic-doodad-foodprocessor": {
+      "title": "Tu achètes un robot de cuisine",
+      "comment": "Il sait tout faire. Tu l’utilises deux fois."
+    },
+    "classic-doodad-golfclubs": {
+      "title": "Tu t’offres de nouveaux clubs de golf",
+      "comment": "Ton handicap n’est sûrement pas la faute des clubs."
+    },
+    "classic-doodad-tutoring": {
+      "title": "Tu payes des cours particuliers pour ton enfant",
+      "comment": "Un investissement dans l’avenir. Et dans la note de maths."
+    },
+    "classic-doodad-computer": {
+      "title": "Il te faut un nouvel ordinateur",
+      "comment": "L’ancien mettait dix bonnes minutes à démarrer."
+    },
+    "classic-doodad-seasontickets": {
+      "title": "Tu achètes un abonnement à la saison",
+      "comment": "Chaque match à domicile, chaque défaite, en direct."
+    },
+    "classic-doodad-tires": {
+      "title": "Il te faut de nouveaux pneus",
+      "comment": "Le profil compte. Sur les pneus comme sur un CV."
+    },
+    "classic-doodad-dentist": {
+      "title": "Va chez le dentiste",
+      "comment": "Ça ne fait mal qu’un instant. La facture, plus longtemps.",
+      "description": "(Peut-être auras-tu une dent en or brillante !)"
+    },
+    "classic-doodad-casino": {
+      "title": "Tu vas au casino",
+      "comment": "La banque gagne toujours. Au moins, tu as passé une belle soirée."
+    },
+    "classic-doodad-winetrip": {
+      "title": "Tu fais une excursion dans une région viticole",
+      "comment": "Juste une petite dégustation. Le coffre est plein quand même."
+    },
+    "classic-doodad-artpainting": {
+      "title": "Tu achètes un tableau d’un artiste local",
+      "comment": "De l’art qui vaudra une fortune dans vingt ans. Ou rien du tout."
+    },
+    "classic-doodad-friendsdinner": {
+      "title": "Tu invites tes amis à dîner",
+      "comment": "Tu cuisines, ils rient. Le meilleur : ils restent plus longtemps que prévu."
+    },
+    "classic-doodad-phone": {
+      "title": "Tu achètes le tout dernier téléphone",
+      "comment": "L’ancien marchait encore. Mais celui-ci a un appareil photo à peine meilleur."
+    },
+    "classic-market-efh-pct20-a": {
+      "title": "Acheteur de maison individuelle",
+      "description": "Un acheteur cherche une maison individuelle. Il offre le prix d’origine + 20%. Chacun peut vendre autant de biens qu’il veut à ce prix. Si tu vends, rembourse l’hypothèque correspondante et raye le cashflow de ce bien."
+    },
+    "classic-market-efh-pct20-b": {
+      "title": "Acheteur de maison individuelle",
+      "description": "Un acheteur cherche une maison individuelle. Il offre le prix d’origine + 20%. Chacun peut vendre autant de biens qu’il veut à ce prix. Si tu vends, rembourse l’hypothèque correspondante et raye le cashflow de ce bien."
+    },
+    "classic-market-efh-pct15": {
+      "title": "Acheteur de maison individuelle",
+      "description": "Un acheteur cherche une maison individuelle. Il offre le prix d’origine + 15%. Chacun peut vendre autant de biens qu’il veut à ce prix. Si tu vends, rembourse l’hypothèque correspondante et raye le cashflow de ce bien."
+    },
+    "classic-market-efh-pct10-a": {
+      "title": "Acheteur de maison individuelle",
+      "description": "Un acheteur cherche une maison individuelle. Il offre le prix d’origine + 10%. Chacun peut vendre autant de biens qu’il veut à ce prix. Si tu vends, rembourse l’hypothèque correspondante et raye le cashflow de ce bien."
+    },
+    "classic-market-efh-pct10-b": {
+      "title": "Acheteur de maison individuelle",
+      "description": "Un acheteur cherche une maison individuelle. Il offre le prix d’origine + 10%. Chacun peut vendre autant de biens qu’il veut à ce prix. Si tu vends, rembourse l’hypothèque correspondante et raye le cashflow de ce bien."
+    },
+    "classic-market-efh-amt20k": {
+      "title": "Acheteur de maison individuelle",
+      "description": "Un acheteur cherche une maison individuelle. Il offre le prix d’origine + 20 000 €. Chacun peut vendre autant de biens qu’il veut à ce prix. Si tu vends, rembourse l’hypothèque correspondante et raye le cashflow de ce bien."
+    },
+    "classic-market-efh-amt15k": {
+      "title": "Acheteur de maison individuelle",
+      "description": "Un acheteur cherche une maison individuelle. Il offre le prix d’origine + 15 000 €. Chacun peut vendre autant de biens qu’il veut à ce prix. Si tu vends, rembourse l’hypothèque correspondante et raye le cashflow de ce bien."
+    },
+    "classic-market-efh-amt10k": {
+      "title": "Acheteur de maison individuelle",
+      "description": "Un acheteur cherche une maison individuelle. Il offre le prix d’origine + 10 000 €. Chacun peut vendre autant de biens qu’il veut à ce prix. Si tu vends, rembourse l’hypothèque correspondante et raye le cashflow de ce bien."
+    },
+    "classic-market-efh-amt5k": {
+      "title": "Acheteur de maison individuelle",
+      "description": "Un acheteur cherche une maison individuelle. Il offre le prix d’origine + 5 000 €. Chacun peut vendre autant de biens qu’il veut à ce prix. Si tu vends, rembourse l’hypothèque correspondante et raye le cashflow de ce bien."
+    },
+    "classic-market-mfh-pct20": {
+      "title": "Acheteur d’appartements et d’immeubles collectifs",
+      "description": "Un acheteur cherche des immeubles d’appartements et collectifs avec n’importe quel nombre de logements. Il offre le prix d’origine + 20%. Chacun peut vendre autant de biens qu’il veut à ce prix. Si tu vends, rembourse l’hypothèque correspondante et raye le cashflow de ce bien."
+    },
+    "classic-market-mfh-pct15": {
+      "title": "Acheteur d’appartements et d’immeubles collectifs",
+      "description": "Un acheteur cherche des immeubles d’appartements et collectifs avec n’importe quel nombre de logements. Il offre le prix d’origine + 15%. Chacun peut vendre autant de biens qu’il veut à ce prix. Si tu vends, rembourse l’hypothèque correspondante et raye le cashflow de ce bien."
+    },
+    "classic-market-mfh-pct10": {
+      "title": "Acheteur d’appartements et d’immeubles collectifs",
+      "description": "Un acheteur cherche des immeubles d’appartements et collectifs avec n’importe quel nombre de logements. Il offre le prix d’origine + 10%. Chacun peut vendre autant de biens qu’il veut à ce prix. Si tu vends, rembourse l’hypothèque correspondante et raye le cashflow de ce bien."
+    },
+    "classic-market-mfh-pct5": {
+      "title": "Acheteur d’appartements et d’immeubles collectifs",
+      "description": "Un acheteur cherche des immeubles d’appartements et collectifs avec n’importe quel nombre de logements. Il offre le prix d’origine + 5%. Chacun peut vendre autant de biens qu’il veut à ce prix. Si tu vends, rembourse l’hypothèque correspondante et raye le cashflow de ce bien."
+    },
+    "classic-market-mfh-amt30k": {
+      "title": "Acheteur d’appartements et d’immeubles collectifs",
+      "description": "Un acheteur cherche des immeubles d’appartements et collectifs avec n’importe quel nombre de logements. Il offre le prix d’origine + 30 000 €. Chacun peut vendre autant de biens qu’il veut à ce prix. Si tu vends, rembourse l’hypothèque correspondante et raye le cashflow de ce bien."
+    },
+    "classic-market-mfh-amt20k": {
+      "title": "Acheteur d’appartements et d’immeubles collectifs",
+      "description": "Un acheteur cherche des immeubles d’appartements et collectifs avec n’importe quel nombre de logements. Il offre le prix d’origine + 20 000 €. Chacun peut vendre autant de biens qu’il veut à ce prix. Si tu vends, rembourse l’hypothèque correspondante et raye le cashflow de ce bien."
+    },
+    "classic-market-mfh-amt15k": {
+      "title": "Acheteur d’appartements et d’immeubles collectifs",
+      "description": "Un acheteur cherche des immeubles d’appartements et collectifs avec n’importe quel nombre de logements. Il offre le prix d’origine + 15 000 €. Chacun peut vendre autant de biens qu’il veut à ce prix. Si tu vends, rembourse l’hypothèque correspondante et raye le cashflow de ce bien."
+    },
+    "classic-market-mfh-amt10k": {
+      "title": "Acheteur d’appartements et d’immeubles collectifs",
+      "description": "Un acheteur cherche des immeubles d’appartements et collectifs avec n’importe quel nombre de logements. Il offre le prix d’origine + 10 000 €. Chacun peut vendre autant de biens qu’il veut à ce prix. Si tu vends, rembourse l’hypothèque correspondante et raye le cashflow de ce bien."
+    },
+    "classic-market-mfh-amt5k": {
+      "title": "Acheteur d’appartements et d’immeubles collectifs",
+      "description": "Un acheteur cherche des immeubles d’appartements et collectifs avec n’importe quel nombre de logements. Il offre le prix d’origine + 5 000 €. Chacun peut vendre autant de biens qu’il veut à ce prix. Si tu vends, rembourse l’hypothèque correspondante et raye le cashflow de ce bien."
+    },
+    "classic-market-mfh-amt1k": {
+      "title": "Acheteur d’appartements et d’immeubles collectifs",
+      "description": "Un acheteur cherche des immeubles d’appartements et collectifs avec n’importe quel nombre de logements. Il offre le prix d’origine + 1 000 €. Chacun peut vendre autant de biens qu’il veut à ce prix. Si tu vends, rembourse l’hypothèque correspondante et raye le cashflow de ce bien."
+    },
+    "classic-market-etw-65k": {
+      "title": "Acheteur de logement en copropriété",
+      "description": "65 000 € sont proposés pour ton appartement en copropriété (ETW). L’acheteur dispose de son propre financement. Chacun peut vendre à ce prix. Si tu vends, rembourse l’hypothèque correspondante et raye le cashflow de ce bien."
+    },
+    "classic-market-etw-45k": {
+      "title": "Acheteur de logement en copropriété",
+      "description": "45 000 € sont proposés pour ton appartement en copropriété (ETW). L’acheteur dispose de son propre financement. Chacun peut vendre à ce prix. Si tu vends, rembourse l’hypothèque correspondante et raye le cashflow de ce bien."
+    },
+    "classic-market-aph-45k": {
+      "title": "Acheteur d’immeuble d’appartements",
+      "description": "Un acheteur offre 45 000 € par logement (WE) dans des immeubles d’appartements de toute taille. L’acheteur dispose de son propre financement. Chacun peut vendre à ce prix. Si tu vends, rembourse l’hypothèque correspondante et raye le cashflow de ce bien."
+    },
+    "classic-market-aph-25k": {
+      "title": "Acheteur d’immeuble d’appartements",
+      "description": "Un acheteur offre 25 000 € par logement (WE) dans des immeubles d’appartements de toute taille. L’acheteur dispose de son propre financement. Chacun peut vendre à ce prix. Si tu vends, rembourse l’hypothèque correspondante et raye le cashflow de ce bien."
+    },
+    "classic-market-aph-ag40k": {
+      "title": "Acheteur d’immeuble d’appartements",
+      "description": "Une société immobilière offre 40 000 € par logement (WE) dans des immeubles d’appartements de toute taille. L’acheteur dispose de son propre financement. Chacun peut vendre à ce prix. Si tu vends, rembourse l’hypothèque correspondante et raye le cashflow de ce bien."
+    },
+    "classic-market-aph-ag30k": {
+      "title": "Acheteur d’immeuble d’appartements",
+      "description": "Une société immobilière offre 30 000 € par logement (WE) dans des immeubles d’appartements de toute taille. L’acheteur dispose de capitaux issus de la vente d’un autre complexe d’appartements. Chacun peut vendre à ce prix. Si tu vends, rembourse l’hypothèque correspondante et raye le cashflow de ce bien."
+    },
+    "classic-market-gold-collector-1k": {
+      "title": "Un collectionneur cherche des pièces d’or",
+      "description": "Un riche collectionneur cherche des pièces d’or. Il offre 1 000 € comptant pour chaque pièce. Chacun peut vendre autant de pièces qu’il veut à ce prix."
+    },
+    "classic-market-gold-unrest-1k": {
+      "title": "Le prix de l’or monte",
+      "description": "Troubles à l’étranger. Les prix du pétrole sont menacés. Le prix de l’or s’envole. Un acheteur offre 1 000 € comptant pour chaque pièce d’or. Chacun peut vendre autant de pièces qu’il veut à ce prix."
+    },
+    "classic-market-gold-central-2k": {
+      "title": "Le prix de l’or monte",
+      "description": "La banque centrale imprime de l’argent et, en voulant relancer l’économie, provoque une forte inflation. Le prix de l’or s’envole. Un acheteur offre 2 000 € comptant pour chaque pièce d’or. Chacun peut vendre autant de pièces qu’il veut à ce prix."
+    },
+    "classic-market-cost-tenant-1k": {
+      "title": "Un locataire endommage ton bien",
+      "description": "Un locataire refuse de payer le loyer. Après l’expulsion, tu découvres des dégâts considérables dans ton bien. L’assurance couvre la plupart des réparations, mais tu dois quand même payer 1 000 € (une seule fois). Prends un prêt bancaire si nécessaire pour couvrir les frais. La carte ne concerne que la personne qui l’a piochée. Si tu ne possèdes AUCUN bien, ignore cette carte.",
+      "comment": "Un locataire a refusé de payer le loyer et a endommagé {property}. L’assurance couvre l’essentiel, tu paies le reste une fois."
+    },
+    "classic-market-cost-tenant-500-a": {
+      "title": "Un locataire endommage ton bien",
+      "description": "Un locataire refuse de payer le loyer. Après l’expulsion, tu découvres des dégâts considérables dans ton bien. L’assurance couvre la plupart des réparations, mais tu dois quand même payer 500 € (une seule fois). Prends un prêt bancaire si nécessaire pour couvrir les frais. La carte ne concerne que la personne qui l’a piochée. Si tu ne possèdes AUCUN bien, ignore cette carte.",
+      "comment": "Un locataire a refusé de payer le loyer et a endommagé {property}. L’assurance couvre l’essentiel, tu paies le reste une fois."
+    },
+    "classic-market-cost-tenant-500-b": {
+      "title": "Un locataire endommage ton bien",
+      "description": "Un locataire refuse de payer le loyer. Après l’expulsion, tu découvres des dégâts considérables dans ton bien. L’assurance couvre la plupart des réparations, mais tu dois quand même payer 500 € (une seule fois). Prends un prêt bancaire si nécessaire pour couvrir les frais. La carte ne concerne que la personne qui l’a piochée. Si tu ne possèdes AUCUN bien, ignore cette carte.",
+      "comment": "Un locataire a refusé de payer le loyer et a endommagé {property}. L’assurance couvre l’essentiel, tu paies le reste une fois."
+    },
+    "classic-market-cost-pipe-1k": {
+      "title": "Canalisation d’égout cassée",
+      "description": "Ton bien est sous l’eau ! Paie 1 000 € pour une nouvelle canalisation d’égout (une seule fois). Prends un prêt bancaire si nécessaire pour couvrir les frais. La carte ne concerne que la personne qui l’a piochée. Si tu ne possèdes AUCUN bien, ignore cette carte.",
+      "comment": "La canalisation d’égout de {property} a cédé et tout était sous l’eau. Tu paies la nouvelle canalisation une fois."
+    },
+    "classic-market-cost-pipe-2k": {
+      "title": "Canalisation d’égout cassée",
+      "description": "Ton bien est sous l’eau ! Paie 2 000 € pour une nouvelle canalisation d’égout (une seule fois). Prends un prêt bancaire si nécessaire pour couvrir les frais. La carte ne concerne que la personne qui l’a piochée. Si tu ne possèdes AUCUN bien, ignore cette carte.",
+      "comment": "La canalisation d’égout de {property} a cédé et tout était sous l’eau. Tu paies la nouvelle canalisation une fois."
+    },
+    "classic-market-split-ok4u": {
+      "title": "Action - OK4U Pharma SA",
+      "description": "OK4U commence des essais d’un médicament peut-être vital. Les effets secondaires n’ont pas encore été testés. Il pourrait changer le monde... s’il fonctionne. Le détenteur de la carte lance un dé. Tu as fait 1-3 : SPLIT D’ACTIONS ! Quiconque possède des actions OK4U DOUBLE ses parts. Tu as fait 4-6 : SPLIT INVERSÉ ! Quiconque possède des actions OK4U perd la moitié de ses parts. (Tu ne paies rien. Ton coût total ne change pas.) Symbole : OK4U SPLIT ou SPLIT INVERSÉ ?"
+    },
+    "classic-market-split-myt4u": {
+      "title": "Action - MYT4U Electronics Co.",
+      "description": "MYT4U prend un risque avec une nouvelle technologie de divertissement à domicile. Sera-ce un grand succès ou un échec cuisant ? Le détenteur de la carte lance un dé. Tu as fait 1-3 : SPLIT D’ACTIONS ! Quiconque possède des actions MYT4U DOUBLE ses parts. Tu as fait 4-6 : SPLIT INVERSÉ ! Quiconque possède des actions MYT4U perd la moitié de ses parts. (Tu ne paies rien. Ton coût total ne change pas.) Symbole : MYT4U SPLIT ou SPLIT INVERSÉ ?"
+    },
+    "classic-market-split-gro4us": {
+      "title": "Fonds d’investissement – GRO4US",
+      "description": "Le marché évolue et de fortes fluctuations sont à prévoir dans les prochains mois. Comment les fonds se comporteront-ils en cette période de changement ? Le détenteur de la carte lance un dé. Tu as fait 1-3 : SPLIT D’ACTIONS ! Quiconque possède des actions GRO4US DOUBLE ses parts. Tu as fait 4-6 : SPLIT INVERSÉ ! Quiconque possède des actions GRO4US perd la moitié de ses parts. (Tu ne paies rien. Ton coût total ne change pas.) Symbole : GRO4US SPLIT ou SPLIT INVERSÉ ?"
+    },
+    "classic-market-split-on2u": {
+      "title": "Action - ON2U Entertainment SA",
+      "description": "Le studio soutient un nouveau réalisateur pour son blockbuster d’été. Cette production révolutionnaire est peut-être trop ambitieuse. Le détenteur de la carte lance un dé. Tu as fait 1-3 : SPLIT D’ACTIONS ! Quiconque possède des actions ON2U DOUBLE ses parts. Tu as fait 4-6 : SPLIT INVERSÉ ! Quiconque possède des actions ON2U perd la moitié de ses parts. (Tu ne paies rien. Ton coût total ne change pas.) Symbole : ON2U SPLIT ou SPLIT INVERSÉ ?"
+    },
+    "classic-market-boost-small-250": {
+      "title": "Petit boom des affaires !",
+      "description": "L’économie du centre-ville explose ! TOUT LE MONDE est concerné. TOUTES les affaires avec un cashflow de 1 000 € ou moins augmentent leur cashflow de 250 €."
+    },
+    "classic-market-boost-mgmt-400": {
+      "title": "Nouveau système de gestion",
+      "description": "Un nouveau système de gestion apporte de la productivité et des coûts réduits. Seule la personne qui a pioché cette carte est concernée. TOUTES les affaires avec un cashflow de 2 000 € ou moins augmentent leur cashflow de 400 €."
+    }
+  },
+  "symbols": {
+    "EFH": "MAI",
+    "ETW": "APPT",
+    "MFH4": "IMM4",
+    "MFH8": "IMM8",
+    "PIZZA": "PIZZA",
+    "DH": "JUM",
+    "APH12": "RES12",
+    "APH24": "RES24",
+    "APH60": "RES60",
+    "GP": "ASSOC",
+    "AU": "EAUT",
+    "AWA": "LAV",
+    "GOLD": "OR",
+    "LOAN": "PRET",
+    "MLM": "MLM"
+  },
+  "families": {
+    "EFH": "Maisons individuelles",
+    "ETW": "Appartements en copropriété",
+    "MFH": "Immeubles collectifs",
+    "DH": "Maisons jumelées",
+    "APH": "Résidences d'appartements",
+    "GP": "Associés",
+    "AU": "Entreprises automatisées",
+    "AWA": "Stations de lavage",
+    "PIZZA": "Franchise de pizzeria",
+    "GOLD": "Pièces d'or",
+    "LOAN": "Prêt familial",
+    "MLM": "Marketing multiniveau"
+  },
+  "doodadGroups": {
+    "leisure": "Loisirs et hobbies",
+    "events": "Fêtes et événements",
+    "home": "Maison et ménage",
+    "wellness": "Santé et bien-être",
+    "style": "Mode et style de vie",
+    "car": "Voiture et mobilité",
+    "tech": "Technologie et électronique",
+    "education": "Éducation et apprentissage"
+  }
+}

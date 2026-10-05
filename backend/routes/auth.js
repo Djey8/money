@@ -11,6 +11,7 @@ const {
   setEncryptionConfig,
   DEFAULT_ENCRYPTION_CONFIG,
 } = require('../services/encryption-session');
+const { isGameAccountEmail, isGamePassword } = require('../services/game-account');
 const router = express.Router();
 
 /**
@@ -194,7 +195,7 @@ router.post('/guest', (req, res) => {
 // Register
 router.post('/register', async (req, res) => {
   try {
-    const { email, password, username } = req.body;
+    const { email, password, username, gamePassword } = req.body;
 
     if (!email || !password) {
       return res.status(400).json({ error: 'Email and password are required' });
@@ -204,6 +205,15 @@ router.post('/register', async (req, res) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return res.status(400).json({ error: 'Invalid email format' });
+    }
+
+    // A Cashflow game account needs the game password (see services/game-account.js).
+    if (isGameAccountEmail(email) && !isGamePassword(gamePassword)) {
+      logSecurityEvent('game_account_registration_refused', 'low', { email });
+      return res.status(403).json({
+        error: 'A game account needs the game password',
+        code: gamePassword ? 'GAME_PASSWORD_INVALID' : 'GAME_PASSWORD_REQUIRED',
+      });
     }
 
     // Password policy: min 8 chars, at least 1 uppercase, 1 lowercase, 1 number

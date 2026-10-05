@@ -16,6 +16,13 @@ export const routes: Routes = [
     loadComponent: () => import('./docs/api/api-docs.component').then((m) => m.ApiDocsComponent),
   },
   {
+    // The Cashflow game manual: the game itself is self-hosted only (its printed content is not in the
+    // Firebase build), so its manual is too.
+    path: 'docs/cashflow',
+    loadComponent: () =>
+      import('./docs/cashflow/cashflow-docs.component').then((m) => m.CashflowDocsComponent),
+  },
+  {
     path: 'settings/tokens',
     loadComponent: () =>
       import('./panels/settings/personal-access-tokens/personal-access-tokens.component').then(

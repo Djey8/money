@@ -3,6 +3,8 @@ import { DocTopic, baseDocTopics } from './docs.topics.base';
 export type { DocTopic };
 export const docTopics: DocTopic[] = [
   ...baseDocTopics,
+  // The Cashflow game manual - self-hosted only, like the game (cashflow-content.firebase.ts).
+  { id: 'cashflowgame', icon: '🎲', route: '/docs/cashflow', requiresGame: true },
   {
     id: 'api',
     icon: '🔌',

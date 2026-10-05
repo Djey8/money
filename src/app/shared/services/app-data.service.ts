@@ -32,7 +32,11 @@ import { SubscriptionComponent } from '../../main/subscription/subscription.comp
 import { FireEmergenciesComponent } from '../../main/fire/fire-emergencies/fire-emergencies.component';
 import { environment } from '../../../environments/environment';
 import { DemoService } from './demo.service';
-import { convertDocumentFromMinorUnits } from '@money/domain';
+import {
+  convertDocumentFromMinorUnits,
+  CashflowGameState,
+  initialCashflowGameState,
+} from '@money/domain';
 
 @Injectable({
   providedIn: 'root',
@@ -66,6 +70,9 @@ export class AppDataService {
   static readonly TIER2_PATHS = ['smile', 'fire', 'mojo', 'budget'];
   // Tier 3: On-demand — loaded when user navigates to the page
   static readonly TIER3_GROW_PATHS = ['grow'];
+  // Tier 3: on demand, only ever fetched for a Cashflow-game account
+  // (CashflowGameService.isCashflowGame()) — zero extra load for anyone else.
+  static readonly TIER3_CASHFLOW_GAME_PATHS = ['cashflowGame'];
   static readonly TIER3_BALANCE_PATHS = [
     'balance/asset/assets',
     'balance/asset/shares',
@@ -398,6 +405,26 @@ export class AppDataService {
     }
   }
 
+  /** Loads the Cashflow game's meta state — call only when `CashflowGameService.isCashflowGame()`. */
+  async loadCashflowGameData(): Promise<void> {
+    if (AppStateService.instance.tier3CashflowGameLoaded) return;
+    await this.tier1Ready;
+    try {
+      const response = await this.database.getBatchData(AppDataService.TIER3_CASHFLOW_GAME_PATHS);
+      if (response === null) {
+        // 304 Not Modified
+        AppStateService.instance.tier3CashflowGameLoaded = true;
+        return;
+      }
+      this.applyBatchData(response.data);
+      AppStateService.instance.tier3CashflowGameLoaded = true;
+      await this.observeServerVersion(response.updatedAt);
+    } catch (err) {
+      console.error('Cashflow game data load error:', err);
+      AppStateService.instance.tier3CashflowGameLoaded = true;
+    }
+  }
+
   async loadBalanceData(): Promise<void> {
     if (AppStateService.instance.tier3BalanceLoaded) return;
     await this.tier1Ready;
@@ -477,6 +504,105 @@ export class AppDataService {
       decrypt: (v) => this.cryptic.decrypt(v, 'database'),
       encrypt: (v) => this.cryptic.encrypt(v, 'database'),
     }).data;
+  }
+
+  /**
+   * `writeObject` (database.service.ts) recursively encrypts every leaf of
+   * whatever's written under a path, field name or nesting depth aside — so
+   * a plain `CashflowGameState` object round-trips through it correctly
+   * with no bespoke write-side code, same as every other path. This is its
+   * read-side counterpart, explicit per field like every other case below
+   * (rather than a generic recursive decrypt), so a shape change here is a
+   * compile error, not a silent runtime mismatch.
+   */
+  private decryptCashflowGameState(raw: any): CashflowGameState {
+    if (raw == null) return initialCashflowGameState();
+    const str = (v: any): string => this.cryptic.decrypt(v, 'database');
+    const num = (v: any): number => parseInt(str(v), 10) || 0;
+    const nullableStr = (v: any): string | null => (v == null ? null : str(v));
+    const nullableNum = (v: any): number | null => (v == null ? null : num(v));
+    const optionalBool = (v: any): boolean | undefined =>
+      v == null ? undefined : str(v) === 'true';
+    const optionalNum = (v: any): number | undefined => (v == null ? undefined : num(v));
+
+    const history: CashflowGameState['history'] = Array.isArray(raw.history)
+      ? raw.history.map((entry: any) => ({
+          round: num(entry.round),
+          virtualDateBefore: str(entry.virtualDateBefore),
+          virtualDateAfter: str(entry.virtualDateAfter),
+          kind: str(entry.kind) as CashflowGameState['history'][number]['kind'],
+          createdTransactions: Array.isArray(entry.createdTransactions)
+            ? entry.createdTransactions.map((t: any) => ({
+                account: str(t.account),
+                amountMinor: num(t.amountMinor),
+                date: str(t.date),
+                time: str(t.time),
+                category: str(t.category),
+                comment: str(t.comment),
+              }))
+            : [],
+        }))
+      : [];
+
+    const drawnIds = (deckKind: keyof CashflowGameState['drawnCardIds']): string[] =>
+      Array.isArray(raw.drawnCardIds?.[deckKind])
+        ? raw.drawnCardIds[deckKind].map((v: any) => str(v))
+        : [];
+
+    const float = (v: any): number => parseFloat(str(v)) || 0;
+    const optionalStr = (v: any): string | undefined => (v == null ? undefined : str(v));
+    const assetDeals: NonNullable<CashflowGameState['assetDeals']> = Array.isArray(raw.assetDeals)
+      ? raw.assetDeals.map((d: any) => ({
+          title: str(d.title),
+          coins: float(d.coins),
+          costMinor: num(d.costMinor),
+          ...(d.successOn != null ? { successOn: num(d.successOn) } : {}),
+          ...(d.payoutMinor != null ? { payoutMinor: num(d.payoutMinor) } : {}),
+          ...(d.recurring != null ? { recurring: str(d.recurring) === 'true' } : {}),
+          ...(d.rollDue != null ? { rollDue: str(d.rollDue) === 'true' } : {}),
+          ...(d.split?.shareTag != null ? { split: { shareTag: str(d.split.shareTag) } } : {}),
+          stage: str(d.stage) as NonNullable<CashflowGameState['assetDeals']>[number]['stage'],
+          ...(d.successText != null ? { successText: str(d.successText) } : {}),
+          ...(d.failureText != null ? { failureText: str(d.failureText) } : {}),
+        }))
+      : [];
+    const marketOffers: NonNullable<CashflowGameState['marketOffers']> = Array.isArray(
+      raw.marketOffers,
+    )
+      ? raw.marketOffers.map((o: any) => ({
+          title: str(o.title),
+          salePriceMinor: num(o.salePriceMinor),
+          cardId: str(o.cardId),
+          label: str(o.label),
+          ...(o.pricePerCoinMinor != null ? { pricePerCoinMinor: num(o.pricePerCoinMinor) } : {}),
+        }))
+      : [];
+
+    return {
+      gameSetId: nullableStr(raw.gameSetId),
+      professionId: nullableStr(raw.professionId),
+      mode: raw.mode != null ? (str(raw.mode) as CashflowGameState['mode']) : 'companion',
+      boardPosition: nullableNum(raw.boardPosition),
+      round: num(raw.round),
+      virtualDate: nullableStr(raw.virtualDate),
+      children: num(raw.children),
+      charityRoundsLeft: num(raw.charityRoundsLeft),
+      unemployedRoundsLeft: num(raw.unemployedRoundsLeft),
+      gameSubscriptionTitles: Array.isArray(raw.gameSubscriptionTitles)
+        ? raw.gameSubscriptionTitles.map((t: any) => str(t))
+        : [],
+      drawnCardIds: {
+        dealSmall: drawnIds('dealSmall'),
+        dealBig: drawnIds('dealBig'),
+        market: drawnIds('market'),
+        doodad: drawnIds('doodad'),
+      },
+      history,
+      assetDeals,
+      marketOffers,
+      ...(raw.gameId != null ? { gameId: optionalStr(raw.gameId) } : {}),
+      ...(raw.gameName != null ? { gameName: optionalStr(raw.gameName) } : {}),
+    };
   }
 
   private applyPathData(path: string, raw: any): void {
@@ -1056,6 +1182,12 @@ export class AppDataService {
           AppStateService.instance.allBudgets = myBudgets;
           this.localStorage.saveData('budget', JSON.stringify(myBudgets));
         }
+        break;
+      }
+      case 'cashflowGame': {
+        const state = this.decryptCashflowGameState(raw);
+        AppStateService.instance.cashflowGame = state;
+        this.localStorage.saveData('cashflowGame', JSON.stringify(state));
         break;
       }
       case 'grow': {

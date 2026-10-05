@@ -32,6 +32,16 @@ describe('encryption session resolution', () => {
     expect(session.decrypt(session.encrypt('hello'))).toBe('hello');
   });
 
+  it('reuses one session per user across calls, and a fresh one when the key changes', async () => {
+    const authDb = makeAuthDb({ encryptionConfig: { key: 'secret', encryptDatabase: true } });
+    const first = await getEncryptionSession(authDb, 'user_cache');
+    expect(await getEncryptionSession(authDb, 'user_cache')).toBe(first);
+    expect(await getEncryptionSession(authDb, 'user_other')).not.toBe(first);
+
+    const rotated = makeAuthDb({ encryptionConfig: { key: 'new-secret', encryptDatabase: true } });
+    expect(await getEncryptionSession(rotated, 'user_cache')).not.toBe(first);
+  });
+
   it('propagates auth database failures other than not found', async () => {
     const error = new Error('unavailable');
     error.statusCode = 503;
