@@ -31,3 +31,6 @@ export * from './cashflow-game/saved-games';
 export * from './cashflow-game/engine';
 export * from './cashflow-game/cards';
 export * from './cashflow-game/cash';
+export * from './cashflow-game/clock';
+export * from './cashflow-game/game-text';
+export * from './cashflow-game/scheduling';
