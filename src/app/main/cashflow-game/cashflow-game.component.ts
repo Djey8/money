@@ -12,8 +12,9 @@ import {
   CashflowProfession,
   computeCashflowProfessionMonthlyCashflowMinor,
   fromMinorUnits,
-  PROPERTY_SYMBOLS,
-  BUSINESS_SYMBOLS,
+  buyerCardTypes,
+  businessCardLabels,
+  propertyCardTypes,
   savedGameStatus,
   summarizeGameFinances,
   toMinorUnits,
@@ -1500,11 +1501,8 @@ export class CashflowGameComponent {
       card,
       {
         title: this.activeCardTitle,
-        types: symbols.map((symbol) => ({
-          labels: [symbol, this.cardText.symbolFor(symbol) ?? symbol],
-          // APH24: the number is the unit count (WE).
-          units: Number(/\d+$/.exec(symbol)?.[0]) || undefined,
-        })),
+        // APH24: the number in a symbol is the unit count (WE) - the domain reads it.
+        types: buyerCardTypes(card, (symbol) => this.cardText.symbolFor(symbol)),
       },
       {
         onSuccess: (matched) => {
@@ -1569,10 +1567,7 @@ export class CashflowGameComponent {
       {
         title: this.activeCardTitle,
         businessLabels: boost.onlyBusinesses
-          ? BUSINESS_SYMBOLS.flatMap((symbol) => [
-              symbol,
-              this.cardText.symbolFor(symbol) ?? symbol,
-            ])
+          ? businessCardLabels((symbol) => this.cardText.symbolFor(symbol))
           : undefined,
       },
       {
@@ -1689,9 +1684,7 @@ export class CashflowGameComponent {
       card,
       {
         title: this.activeCardTitle,
-        types: PROPERTY_SYMBOLS.map((symbol) => ({
-          labels: [symbol, this.cardText.symbolFor(symbol) ?? symbol],
-        })),
+        types: propertyCardTypes((symbol) => this.cardText.symbolFor(symbol)),
       },
       {
         onSuccess: (property) => {

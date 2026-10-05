@@ -193,6 +193,7 @@ Still untested and deliberately left for the slice that moves them: `autoLoanMes
 | A0 — inventory + characterization tests                                     | done     | `fa6bae6`                                                                                                                                     |
 | A1(a) — cash on hand, finances, loan arithmetic                             | **done** | `0ccb3f1` (domain `cash.ts`), `9e65a08` (service switched over), the component-totals commit after it                                         |
 | A1(b) — Payday, Baby, Charity, Downsized, with the Clock and GameText ports | **done** | `455bbf5` (clock, text, scheduling), `d5d992c` (service dates through them), `e72d82d` (rules as pure functions), the adapter commit after it |
+| A1(c) — Market cards: buyers, gold, splits, boosts, cost and price cards    | **done** | `d4fe38f` (step types), `186e0a0` (rules), the adapter commit after it                                                                        |
 
 **A1(a) results.** F5 and U1/U3 are resolved: `cashOnHandMinor` and `loanForShortfallMinor` live in the domain, the
 service's `cash` and its four copies of the loan rounding call them, and the game page's salary / passive income /
@@ -222,3 +223,22 @@ tests passed unchanged through the move.
 **Left for the next slices:** `upsertSubscription`/`pushOneOffTransactions` are still used by the bank loan and the
 deal code (A1(c)-(f)) - the domain versions (`upsertBookSubscription`, `placeOneOffTransactions`) are ready for them.
 The page's `liveCashflow` vs the dashboard's `monthlyCashflow` divergence is still open.
+
+**A1(c) results.** The Market cards are pure functions in `market-cards.ts`, in the same shape as the round rules:
+books in minor units plus a clock, a text function and a money formatter in, effects out (new game state, the History
+step, project note/cashflow/price updates, share prices, subscription upserts, what to persist). `playMarketBuyerCard`
+covers property buyers (a percentage, a fixed profit, a fixed price, a price per unit) and the gold buyer;
+`playShareSplitCard`, `playBoostCard`, `playMarketCostCard` and `updateSharePrice` the rest; `marketSaleFor` (the offer
+behind the Sell button) is pure too. The property-label matcher exists once, in the domain (U2 resolved), and the
+game page's inline dispatch - which symbols a card names, the labels they go by, which businesses a boost helps - is
+now `marketCardKind`, `buyerCardTypes`, `propertyCardTypes` and `businessCardLabels` (F7 resolved for the Market
+cards). The history step types moved to the domain too (`steps.ts`), since the API reports and undoes the same steps.
+The service's seven card methods are adapters; 374 existing tests passed unchanged through the move, and the service
+lost ~170 lines.
+
+**What the API will need for these (not part of A1(c)):** the card-text catalog that turns a symbol into the label a
+game's language gives it (EFH / SFH), the same lazily loaded per-language files the game page uses. The rules take the
+resolved labels as input, so only the lookup has to exist server-side.
+
+**Left for the next slices:** the stock split's _resolution_ (`resolveShareSplit`, reached through `resolveGamble`) and
+the dice cards belong to A1(e); deals and trades to A1(d); the Doodad payment to A1(f).
