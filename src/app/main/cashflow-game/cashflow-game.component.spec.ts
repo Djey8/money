@@ -1482,6 +1482,25 @@ describe('CashflowGameComponent', () => {
         expect(withGame(2000, 1500).escapedRatRace).toBe(true);
       });
 
+      it('counts an exact tie as escaped even where decimal sums would drift (0.1 + 0.2 vs 0.3)', () => {
+        // With plain decimals 0.1 + 0.2 is 0.30000000000000004, so 0.3 of passive income would
+        // read as "not enough" against it. The domain summary works in whole minor units.
+        const component = withGame(0.3, 0);
+        const state = AppStateService.instance;
+        state.cashflowGame = {
+          ...state.cashflowGame,
+          gameSubscriptionTitles: ['Salary', 'Rent A', 'Rent B', 'OK Cashflow'],
+        };
+        state.allSubscriptions = [
+          { title: 'Salary', amount: 3000 },
+          { title: 'Rent A', amount: -0.1 },
+          { title: 'Rent B', amount: -0.2 },
+          { title: 'OK Cashflow', amount: 0.3 },
+        ] as any;
+
+        expect(component.escapedRatRace).toBe(true);
+      });
+
       it('stays hidden while the expenses are higher, and when there is nothing to cover', () => {
         expect(withGame(1000, 1500).escapedRatRace).toBe(false);
         expect(withGame(0, 0).escapedRatRace).toBe(false);

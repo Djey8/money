@@ -185,3 +185,25 @@ Still untested and deliberately left for the slice that moves them: `autoLoanMes
 - **A3** gains `shuffleProfession` (F8).
 - **Decisions F1 and F4 are made** (account language fixed per game; history saved to the account continuously).
   Nothing is blocked on JFK; A1(a) can start.
+
+## 7. Progress
+
+| Slice                                           | Status   | Commits                                                                                               |
+| ----------------------------------------------- | -------- | ----------------------------------------------------------------------------------------------------- |
+| A0 — inventory + characterization tests         | done     | `fa6bae6`                                                                                             |
+| A1(a) — cash on hand, finances, loan arithmetic | **done** | `0ccb3f1` (domain `cash.ts`), `9e65a08` (service switched over), the component-totals commit after it |
+
+**A1(a) results.** F5 and U1/U3 are resolved: `cashOnHandMinor` and `loanForShortfallMinor` live in the domain, the
+service's `cash` and its four copies of the loan rounding call them, and the game page's salary / passive income /
+expenses / "escaped the rat race" come from `summarizeGameFinances` — the same function a saved game's summary
+uses. The cash port keeps the legacy float arithmetic on purpose (an integer rewrite differs in ~1% of random cases
+at half-cent boundaries); a 100,000-case fuzz test pins it to the original.
+
+**One deliberate edge fix inside the otherwise behaviour-neutral component change:** the page now decides "escaped
+the rat race" in whole minor units, so an exact tie between passive income and expenses is a tie. With decimal sums
+0.1 + 0.2 ≠ 0.3 it could read as not escaped (a test pins this, and fails against the old code).
+
+**Known divergence left as is (not introduced here):** the page's `liveCashflow` is salary + passive − expenses,
+while the dashboard's `monthlyCashflow` is the sum of _every_ game subscription. They agree for every subscription
+the game itself creates; they would differ only for a positive game subscription that is neither the salary nor a
+`<name> Cashflow` one. Worth unifying when A1(b) moves payday and the status rules.

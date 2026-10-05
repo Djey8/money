@@ -15,6 +15,8 @@ import {
   PROPERTY_SYMBOLS,
   BUSINESS_SYMBOLS,
   savedGameStatus,
+  summarizeGameFinances,
+  toMinorUnits,
   type SavedGameSummary,
 } from '@money/domain';
 import { Grow } from 'src/app/interfaces/grow';
@@ -323,8 +325,23 @@ export class CashflowGameComponent {
    * is not working").
    */
   get liveSalary(): number {
-    const title = this.appState.cashflowGame.gameSubscriptionTitles[0];
-    return this.appState.allSubscriptions.find((sub) => sub.title === title)?.amount ?? 0;
+    return fromMinorUnits(this.liveFinances.salaryMinor);
+  }
+
+  /**
+   * The game's monthly money picture, from the same domain function a saved game's summary and the Pro
+   * API use - one definition of salary, passive income, expenses and "out of the rat race" for all three
+   * (todo/cashflow-game-pro-inventory.md U1). Exact minor units, so a tie between passive income and
+   * expenses is a tie and not a float-rounding coin toss.
+   */
+  private get liveFinances() {
+    return summarizeGameFinances(
+      this.appState.cashflowGame,
+      this.appState.allSubscriptions.map((sub) => ({
+        title: sub.title,
+        amountMinor: toMinorUnits(sub.amount),
+      })),
+    );
   }
 
   /**
@@ -343,7 +360,7 @@ export class CashflowGameComponent {
   }
 
   get livePassiveIncome(): number {
-    return this.livePassiveIncomeLines.reduce((sum, line) => sum + line.amount, 0);
+    return fromMinorUnits(this.liveFinances.passiveIncomeMinor);
   }
 
   /** Cash plus everything listed under Assets. */
@@ -392,7 +409,7 @@ export class CashflowGameComponent {
   }
 
   get liveTotalExpenses(): number {
-    return this.liveExpenseLines.reduce((sum, line) => sum + Math.abs(line.amount), 0);
+    return fromMinorUnits(this.liveFinances.expensesMinor);
   }
 
   /**
@@ -400,15 +417,14 @@ export class CashflowGameComponent {
    * businesses pay every month - covers every monthly expense. Shown as a banner; the game goes on.
    */
   get escapedRatRace(): boolean {
-    return (
-      this.hasActiveGame &&
-      this.liveTotalExpenses > 0 &&
-      this.livePassiveIncome >= this.liveTotalExpenses
-    );
+    return this.hasActiveGame && this.liveFinances.escapedRatRace;
   }
 
   get liveCashflow(): number {
-    return this.liveTotalIncome - this.liveTotalExpenses;
+    const finances = this.liveFinances;
+    return fromMinorUnits(
+      finances.salaryMinor + finances.passiveIncomeMinor - finances.expensesMinor,
+    );
   }
 
   /** Every current liability — the whole account is the game (decision 2), no filtering needed. */
