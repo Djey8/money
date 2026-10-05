@@ -268,3 +268,33 @@ the dice cards belong to A1(e); deals and trades to A1(d); the Doodad payment to
 `GameEffects` needs project creation (and the share / investment / asset positions a buy writes) - the one place the effects
 model grows again. The asset-specific hooks (`beforeAssetBuy`, `afterAssetBuy`, `afterAssetSell`, `sellCoins`) and the dice
 cards stay in A1(e).
+
+**A1(d), part 2 results - the deal lifecycle** (`20cadd6`, `abf082f`, and the adapter commit after them):
+
+- **`deals.ts`** holds `planDeal` (a Deal card becomes a planned Grow project - share, property or special asset - with
+  the card's text and range), `syncPlanNote` (the one "🏦 bank loan needed" note, updated in place, plus a share's
+  project Loan field and Deposit), `executeDeal` (the buy on the existing Grow calculators, returning the undo steps in
+  order - the automatic loan first when cash is short, then the purchase dated after it - and deciding everything before
+  returning, so a refused deal has nothing to roll back), `registerInvestmentIncome`, `setPhaseAfterTrade`,
+  `removeExpenseForPaidLiability` (matched under the language the game was started in), `sellCardToFriend`,
+  `doodadLoanNote`, `dealInputFromCard`, `nextInvestmentLabel` and `plannedDeals`.
+- **`books.ts`** adds the full `GameBooks` and `applyEffectsToBooks`, so a rule that does several things in a row sees the
+  result of each before deciding the next. `GameEffects` grew to carry share and property positions and Grow project
+  creation / field updates.
+- The Angular service's deal methods are adapters; it went from 3,026 lines at the start of A1 to 2,321. **All 374
+  existing game tests passed unchanged on the first run through the move**, and the dead private helpers it left behind
+  (`upsertGrowProject`, `upsertSubscription`, `removeCreatedTransactions`, ...) are gone.
+- F3 is resolved for the deal lifecycle: no deal rule reads or writes the Grow comment by hand. The one comment a purchase
+  carries is the canonical one `calculateBuyShare` / `calculateBuyInvestment` generate. What still goes through the Add
+  dialog's comment text is the _trade_ the player makes there (the dialog builds and parses it with `split(' ')` itself);
+  the game hooks around it now read it with the domain parser (`trades.ts`).
+
+**Two inconsistencies found and deliberately not "fixed" here** (each needs its own decision, since changing them changes
+what is stored in the account): (1) the "🏦" notes and the Doodad note format money with the browser's own locale
+(`toLocaleString()`), while every other game text uses the app's number format - the rules take a separate `plainMoney`
+formatter to keep that exact; (2) `sellCardToFriend`'s transaction comment ("Sold the X card to a friend") is hardcoded
+English while the game's other persisted text follows the game's language.
+
+**Still to do:** A1(e) - special assets, dice cards, coins, the stock split's resolution (`beforeAssetBuy`,
+`afterAssetBuy`, `afterAssetSell`, `sellCoins`, `resolveGamble`, `resolvePaydayRoll`, `resolveShareSplit`,
+`openDecisions`, `paydayRollCount`); A1(f) - the Doodad payment, then A2 and A3.
