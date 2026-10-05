@@ -44,6 +44,7 @@ export class RegistrationComponent implements OnInit, OnDestroy {
   usernameTextField = '';
   emailTextField = '';
   passwordTextField = '';
+  gamePasswordTextField = '';
 
   eyePic = '../../assets/symbols/eye.png';
   showPassword = false;
@@ -55,6 +56,14 @@ export class RegistrationComponent implements OnInit, OnDestroy {
     return AppComponent;
   }
   private mode: 'firebase' | 'selfhosted' = environment.mode as 'firebase' | 'selfhosted';
+
+  /**
+   * A new Cashflow game account (email contains "cashflow") also needs the game password - asked for
+   * on the self-hosted server only, which checks it itself (backend/services/game-account.js).
+   */
+  get needsGamePassword(): boolean {
+    return this.mode === 'selfhosted' && this.emailTextField.toLowerCase().includes('cashflow');
+  }
 
   /**
    * Constructs a new instance of the RegistrationComponent class.
@@ -142,7 +151,12 @@ export class RegistrationComponent implements OnInit, OnDestroy {
     if (this.mode === 'selfhosted') {
       // Selfhosted mode - use backend API
       return this.selfhosted
-        .register(this.emailTextField, this.passwordTextField, this.usernameTextField)
+        .register(
+          this.emailTextField,
+          this.passwordTextField,
+          this.usernameTextField,
+          this.needsGamePassword ? this.gamePasswordTextField : undefined,
+        )
         .toPromise()
         .then((result) => {
           // Log successful registration
@@ -221,7 +235,11 @@ export class RegistrationComponent implements OnInit, OnDestroy {
         })
         .catch((error) => {
           this.isError = true;
-          this.errorMessageLable = this.errorMapper.toUserMessage(error, 'Registration failed');
+          const gameCode = error?.error?.code;
+          this.errorMessageLable =
+            gameCode === 'GAME_PASSWORD_REQUIRED' || gameCode === 'GAME_PASSWORD_INVALID'
+              ? 'That is not the game password'
+              : this.errorMapper.toUserMessage(error, 'Registration failed');
           this.isLoading = false;
           console.error('Selfhosted registration error:', error);
 
@@ -478,6 +496,9 @@ export class RegistrationComponent implements OnInit, OnDestroy {
     } else if (!this.isPasswordValid) {
       this.isError = true;
       this.errorMessageLable = 'Please meet all password requirements';
+    } else if (this.needsGamePassword && this.gamePasswordTextField.trim() === '') {
+      this.isError = true;
+      this.errorMessageLable = 'A game account needs the game password';
     } else {
       this.isError = false;
       this.errorMessageLable = '';

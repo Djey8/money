@@ -45,6 +45,53 @@ beforeEach(() => {
 // ============================================================
 // Registration input validation
 // ============================================================
+describe('POST /api/auth/register — Cashflow game accounts need the game password', () => {
+  const account = { email: 'anna.cashflow@example.com', password: 'StrongP@ss1' };
+
+  it('refuses a game account without the game password', async () => {
+    const res = await request(app).post('/api/auth/register').send(account);
+
+    expect(res.status).toBe(403);
+    expect(res.body.code).toBe('GAME_PASSWORD_REQUIRED');
+    expect(__mockAuthDb.insert).not.toHaveBeenCalled();
+  });
+
+  it('refuses a game account with a wrong game password', async () => {
+    const res = await request(app)
+      .post('/api/auth/register')
+      .send({ ...account, gamePassword: 'nope' });
+
+    expect(res.status).toBe(403);
+    expect(res.body.code).toBe('GAME_PASSWORD_INVALID');
+    expect(__mockAuthDb.insert).not.toHaveBeenCalled();
+  });
+
+  it('creates the game account with the right game password, ignoring case and spaces', async () => {
+    __mockAuthDb.find.mockResolvedValue({ docs: [] });
+    __mockAuthDb.insert.mockResolvedValue({ ok: true });
+    __mockUsersDb.insert.mockResolvedValue({ ok: true });
+
+    const res = await request(app)
+      .post('/api/auth/register')
+      .send({ ...account, gamePassword: '  This Too Shall Pass ' });
+
+    expect(res.status).toBe(201);
+    expect(__mockAuthDb.insert).toHaveBeenCalled();
+  });
+
+  it('does not ask a normal account for it', async () => {
+    __mockAuthDb.find.mockResolvedValue({ docs: [] });
+    __mockAuthDb.insert.mockResolvedValue({ ok: true });
+    __mockUsersDb.insert.mockResolvedValue({ ok: true });
+
+    const res = await request(app)
+      .post('/api/auth/register')
+      .send({ email: 'jane@example.com', password: 'StrongP@ss1' });
+
+    expect(res.status).toBe(201);
+  });
+});
+
 describe('POST /api/auth/register — input validation', () => {
   it('returns 400 when email is missing', async () => {
     const res = await request(app).post('/api/auth/register').send({ password: 'StrongP@ss1' });

@@ -185,6 +185,10 @@ Access at `http://localhost:8080`. Port-forward is automatic (WSL2 does not expo
 
 ---
 
+## Cashflow game accounts
+
+The Cashflow board-game companion exists in the self-hosted edition only (its printed card content is deliberately not part of the Firebase build). An account whose email contains `cashflow` can only be registered with the game password: the registration form asks for it, and the server (`backend/services/game-account.js`) checks it, so calling `/api/auth/register` directly does not get around it. Only the SHA-256 of the password is stored in the source; set `CASHFLOW_GAME_PASSWORD_SHA256` (hex, of the lower-cased and trimmed password) in the backend environment to use your own. Accounts created before this rule keep working.
+
 ## Monitoring (Optional)
 
 The K3s deployment includes Grafana + Loki + Promtail for log aggregation. These are **disabled by default** to save resources — deploy them only when debugging:
