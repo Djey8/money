@@ -4,6 +4,8 @@
  */
 export type GameStepKind =
   | 'start'
+  | 'roll'
+  | 'skipCard'
   | 'payday'
   | 'baby'
   | 'charity'

@@ -129,7 +129,8 @@ export function pickCashflowProfession(
       gameSetId,
       professionId,
       mode,
-      boardPosition: mode === 'solo' ? 0 : null,
+      boardPosition: null, // a solo token starts at START, just before space 0
+      ...(mode === 'solo' ? { turn: { phase: 'roll' as const, count: 0 } } : {}),
       virtualDate: today,
       gameSubscriptionTitles,
     },
