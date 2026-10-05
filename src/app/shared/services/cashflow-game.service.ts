@@ -23,12 +23,14 @@ import {
   CashflowTransactionRecord,
   calculateBuyInvestment,
   calculateBuyShare,
+  cashOnHandMinor,
   clearCashflowStatus,
   computeMonthlyCashflowMinor,
   drawRandomCard,
   findCards,
   fromMinorUnits,
   initialCashflowGameState,
+  loanForShortfallMinor,
   multiplyQuantityPrice,
   pickCashflowProfession,
   resolveCashflowBaby,
@@ -488,8 +490,7 @@ export class CashflowGameService {
       const financedMinor = Math.max(0, toMinorUnits(financedLoan));
       const wantedMinor = Math.max(shortfallMinor, financedMinor);
       if (wantedMinor > 0) {
-        const incrementMinor = gameSet.loanRule.incrementMinor;
-        const plannedMinor = Math.ceil(wantedMinor / incrementMinor) * incrementMinor;
+        const plannedMinor = loanForShortfallMinor(wantedMinor, 0, gameSet.loanRule.incrementMinor);
         this.pushUndoSnapshot({
           kind: 'loanAuto',
           detail: this.amountText(fromMinorUnits(plannedMinor)),
@@ -1217,14 +1218,14 @@ export class CashflowGameService {
    */
   get cash(): number {
     const state = AppStateService.instance;
-    return (
-      Math.round(
-        (state.getAmount('Daily', state.daily / 100) +
-          state.getAmount('Splurge', state.splurge / 100) +
-          state.getAmount('Smile', state.smile / 100) +
-          state.getAmount('Fire', state.fire / 100)) *
-          100,
-      ) / 100
+    return fromMinorUnits(
+      cashOnHandMinor(
+        state.allTransactions.map((t) => ({
+          account: t.account,
+          amountMinor: toMinorUnits(t.amount),
+        })),
+        { daily: state.daily, splurge: state.splurge, smile: state.smile, fire: state.fire },
+      ),
     );
   }
 
@@ -2246,10 +2247,15 @@ export class CashflowGameService {
         : project.isAsset
           ? toMinorUnits(Number(project.amount) || 0)
           : 0;
-    const shortfallMinor = Math.max(0, costMinor - toMinorUnits(this.cash));
-    const incrementMinor = this.currentGameSet()?.loanRule.incrementMinor ?? 0;
-    return fromMinorUnits(
-      incrementMinor ? Math.ceil(shortfallMinor / incrementMinor) * incrementMinor : shortfallMinor,
+    return fromMinorUnits(this.loanForCostMinor(costMinor));
+  }
+
+  /** The Bank loan a purchase of `costMinor` would need at the current cash: the shortfall rounded up to the game set's loan step. */
+  private loanForCostMinor(costMinor: number): number {
+    return loanForShortfallMinor(
+      costMinor,
+      toMinorUnits(this.cash),
+      this.currentGameSet()?.loanRule.incrementMinor ?? 0,
     );
   }
 
@@ -2261,11 +2267,7 @@ export class CashflowGameService {
     const state = AppStateService.instance;
     const money = (amount: number) => `${amount.toLocaleString()} ${state.currency}`;
     const cash = this.cash;
-    const shortfallMinor = Math.max(0, costMinor - toMinorUnits(cash));
-    const incrementMinor = this.currentGameSet()?.loanRule.incrementMinor ?? 0;
-    const loan = fromMinorUnits(
-      incrementMinor ? Math.ceil(shortfallMinor / incrementMinor) * incrementMinor : shortfallMinor,
-    );
+    const loan = fromMinorUnits(this.loanForCostMinor(costMinor));
     return (
       LOAN_NOTE_MARK +
       this.translate.instant('CashflowGame.noteCashDoodad', {
@@ -2280,15 +2282,7 @@ export class CashflowGameService {
     const state = AppStateService.instance;
     const money = (amount: number) => `${amount.toLocaleString()} ${state.currency}`;
     const cash = this.cash;
-    const loanFor = (costMinor: number) => {
-      const shortfallMinor = Math.max(0, costMinor - toMinorUnits(cash));
-      const incrementMinor = this.currentGameSet()?.loanRule.incrementMinor ?? 0;
-      return fromMinorUnits(
-        incrementMinor
-          ? Math.ceil(shortfallMinor / incrementMinor) * incrementMinor
-          : shortfallMinor,
-      );
-    };
+    const loanFor = (costMinor: number) => fromMinorUnits(this.loanForCostMinor(costMinor));
     if (project.share?.tag) {
       const quantity = Number(project.share.quantity) || 0;
       const price = Number(project.share.price) || 0;
@@ -2377,7 +2371,8 @@ export class CashflowGameService {
       kind === 'share'
         ? multiplyQuantityPrice(shareQuantity, toMinorUnits(project.share.price))
         : toMinorUnits(project.investment.deposit);
-    const shortfallMinor = costMinor - toMinorUnits(this.cash);
+    const cashMinor = toMinorUnits(this.cash);
+    const shortfallMinor = costMinor - cashMinor;
     // Taking the loan and buying with it are two separate moves (JFK, 2026-09-30), so each gets its
     // own undo step: one Undo takes back the purchase, the next takes back the loan.
     const pushedSnapshots: CashflowGameSnapshot[] = [];
@@ -2390,8 +2385,11 @@ export class CashflowGameService {
         pushTracked({ kind: 'loanAuto' });
         const gameSet = this.currentGameSet();
         if (!gameSet) throw new Error('Pick a profession first.');
-        const incrementMinor = gameSet.loanRule.incrementMinor;
-        const borrowMinor = Math.ceil(shortfallMinor / incrementMinor) * incrementMinor;
+        const borrowMinor = loanForShortfallMinor(
+          costMinor,
+          cashMinor,
+          gameSet.loanRule.incrementMinor,
+        );
         this.applyBankLoanAdjustment(fromMinorUnits(borrowMinor));
       }
       pushTracked({ kind: 'buyDeal', detail: title });
