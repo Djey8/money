@@ -1547,6 +1547,7 @@
   "CashflowGame.loanSettleAll": "Tout solder",
   "CashflowGame.cardCashflow": "Cashflow mensuel",
   "CashflowGame.loanAutoTaken": "Prêt bancaire de {{amount}} contracté pour financer l'achat",
+  "CashflowGame.cardSaleComment": "Carte {{name}} vendue à un ami",
   "CashflowGame.heldShares": "Actions détenues",
   "CashflowGame.marketValue": "Valeur de marché (au dernier cours)",
   "CashflowGame.invested": "Investi",

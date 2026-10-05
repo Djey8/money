@@ -289,11 +289,12 @@ cards stay in A1(e).
   dialog's comment text is the _trade_ the player makes there (the dialog builds and parses it with `split(' ')` itself);
   the game hooks around it now read it with the domain parser (`trades.ts`).
 
-**Two inconsistencies found and deliberately not "fixed" here** (each needs its own decision, since changing them changes
-what is stored in the account): (1) the "🏦" notes and the Doodad note format money with the browser's own locale
+**Two inconsistencies found.** (1) The "🏦" notes and the Doodad note format money with the browser's own locale
 (`toLocaleString()`), while every other game text uses the app's number format - the rules take a separate `plainMoney`
-formatter to keep that exact; (2) `sellCardToFriend`'s transaction comment ("Sold the X card to a friend") is hardcoded
-English while the game's other persisted text follows the game's language.
+formatter to keep that exact; changing it changes what is stored, so it is left for its own decision. (2) ~~`sellCardToFriend`'s
+transaction comment ("Sold the X card to a friend") was hardcoded English~~ - **fixed**: it is now the translated
+`CashflowGame.cardSaleComment` in all six languages, so it follows the game's language like the rest. Its _category_
+(`@<card> card sale`) deliberately stays a literal key: History names a card sale by it, and old games carry it.
 
 **Still to do:** A1(e) - special assets, dice cards, coins, the stock split's resolution (`beforeAssetBuy`,
 `afterAssetBuy`, `afterAssetSell`, `sellCoins`, `resolveGamble`, `resolvePaydayRoll`, `resolveShareSplit`,

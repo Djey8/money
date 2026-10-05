@@ -2860,6 +2860,24 @@ describe('CashflowGameService', () => {
       expect(state.allTransactions).toHaveLength(before);
     });
 
+    it('writes the card sale’s comment in the language the game is played in, keeping the #cashflow tag', () => {
+      const english = translate.instant.getMockImplementation()!;
+      translate.instant.mockImplementation((key: string, params?: Record<string, string>) =>
+        key === 'CashflowGame.cardSaleComment'
+          ? `Karte ${params?.['name']} an einen Freund verkauft`
+          : english(key, params),
+      );
+      const before = AppStateService.instance.allTransactions.length;
+
+      service.sellCardToFriend(ok4u, 500, callbacks());
+
+      expect(AppStateService.instance.allTransactions[before].comment).toBe(
+        'Karte OK4U an einen Freund verkauft\n#cashflow',
+      );
+      // The category stays a literal key: History and old games recognise a card sale by it.
+      expect(AppStateService.instance.allTransactions[before].category).toBe('@OK4U card sale');
+    });
+
     it('dates a card sale on the next free day of the real current month, filling odd days first then even', () => {
       const state = AppStateService.instance;
       const prefix = new Date().toISOString().slice(0, 7); // same month prefix todayIso() uses

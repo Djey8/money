@@ -1522,6 +1522,7 @@
   "CashflowGame.loanSettleAll": "Settle all",
   "CashflowGame.cardCashflow": "Cashflow",
   "CashflowGame.loanAutoTaken": "Bank loan of {{amount}} taken to cover the purchase",
+  "CashflowGame.cardSaleComment": "Sold the {{name}} card to a friend",
   "CashflowGame.heldShares": "Shares held",
   "CashflowGame.marketValue": "Market value (at the latest price)",
   "CashflowGame.invested": "Invested",

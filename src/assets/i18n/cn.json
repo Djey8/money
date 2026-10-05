@@ -1547,6 +1547,7 @@
   "CashflowGame.loanSettleAll": "全部还清",
   "CashflowGame.cardCashflow": "现金流",
   "CashflowGame.loanAutoTaken": "已申请 {{amount}} 银行贷款用于支付此次购买",
+  "CashflowGame.cardSaleComment": "把 {{name}} 卡卖给了朋友",
   "CashflowGame.heldShares": "持有股数",
   "CashflowGame.marketValue": "市值（按最新价格）",
   "CashflowGame.invested": "已投入",

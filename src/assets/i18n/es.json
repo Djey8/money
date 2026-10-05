@@ -1491,6 +1491,7 @@
   "CashflowGame.loanSettleAll": "Saldar todo",
   "CashflowGame.cardCashflow": "Flujo de caja",
   "CashflowGame.loanAutoTaken": "Préstamo bancario de {{amount}} solicitado para cubrir la compra",
+  "CashflowGame.cardSaleComment": "Carta {{name}} vendida a un amigo",
   "CashflowGame.heldShares": "Acciones en cartera",
   "CashflowGame.marketValue": "Valor de mercado (al último precio)",
   "CashflowGame.invested": "Invertido",

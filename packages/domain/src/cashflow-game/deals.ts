@@ -758,7 +758,7 @@ export function sellCardToFriend(
   card: Pick<CashflowDealCard, 'title' | 'symbol'>,
   amountMinor: number,
   label: string | undefined,
-  deps: Pick<DealDeps, 'clock'>,
+  deps: Pick<DealDeps, 'clock' | 'text'>,
 ): GameEffects {
   if (!books.state.virtualDate) throw new Error('Pick a profession first.');
   if (!(amountMinor > 0)) throw new Error('Enter the price your friend pays.');
@@ -772,7 +772,7 @@ export function sellCardToFriend(
         date: '',
         time: '',
         category: `@${name} card sale`,
-        comment: `Sold the ${name} card to a friend\n#cashflow`,
+        comment: `${deps.text('CashflowGame.cardSaleComment', { name })}\n#cashflow`,
       },
     ],
     books,

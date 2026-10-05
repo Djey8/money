@@ -608,7 +608,7 @@ describe('sellCardToFriend', () => {
         date: '2026-10-05',
         time: '',
         category: '@OK4U card sale',
-        comment: 'Sold the OK4U card to a friend\n#cashflow',
+        comment: 'CashflowGame.cardSaleComment{"name":"OK4U"}\n#cashflow',
       },
     ]);
   });

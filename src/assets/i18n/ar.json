@@ -1522,6 +1522,7 @@
   "CashflowGame.loanSettleAll": "تسوية الكل",
   "CashflowGame.cardCashflow": "التدفق النقدي",
   "CashflowGame.loanAutoTaken": "تم أخذ قرض مصرفي بقيمة {{amount}} لتغطية الشراء",
+  "CashflowGame.cardSaleComment": "تم بيع بطاقة {{name}} إلى صديق",
   "CashflowGame.heldShares": "الأسهم المملوكة",
   "CashflowGame.marketValue": "القيمة السوقية (بآخر سعر)",
   "CashflowGame.invested": "المستثمر",
