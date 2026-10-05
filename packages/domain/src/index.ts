@@ -46,3 +46,4 @@ export * from './cashflow-game/asset-deals';
 export * from './cashflow-game/expenses';
 export * from './cashflow-game/undo-chain';
 export * from './cashflow-game/history';
+export * from './cashflow-game/live-history';
