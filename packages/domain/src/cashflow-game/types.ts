@@ -259,15 +259,18 @@ export interface CashflowPendingDecision {
 
 /**
  * Where a solo game's turn stands (todo/cashflow-game-pro.md slice B3). `roll`: waiting for the next roll. `decide`: the
- * token landed on a card space and the turn stays open until the card is dealt with or passed.
+ * token landed on a card space and the turn stays open until the card is dealt with or passed. `over`: the game has
+ * ended - see `outcome`; nothing more is rolled.
  */
 export interface CashflowSoloTurn {
-  phase: 'roll' | 'decide';
+  phase: 'roll' | 'decide' | 'over';
   /** How many rolls have been made. */
   count: number;
   /** The dice of the last roll. */
   lastRoll?: number[];
   pending?: CashflowPendingDecision;
+  /** Set with `phase: 'over'`: out of the rat race, or lost. */
+  outcome?: 'escaped' | 'bankrupt';
 }
 
 export interface CashflowGameState {

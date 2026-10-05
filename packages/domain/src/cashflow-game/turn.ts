@@ -9,6 +9,7 @@ import {
 import type { RatRaceBoard } from './board';
 import { applyEffectsToBooks, type GameBooks } from './books';
 import { clearCashflowStatus } from './engine';
+import { endIfOver } from './game-end';
 import { emptyEffects, type GameEffects } from './effects';
 import {
   playBaby,
@@ -65,8 +66,9 @@ export function currentTurn(state: CashflowGameState): CashflowSoloTurn {
 export function whyCannotRoll(state: CashflowGameState): string | null {
   if (state.mode !== 'solo') return 'Rolling is only for a solo game.';
   if (!state.professionId) return 'Start a game first.';
-  if (currentTurn(state).phase === 'decide')
-    return 'Deal with the card on this space first, or pass.';
+  const phase = currentTurn(state).phase;
+  if (phase === 'over') return 'The game is over.';
+  if (phase === 'decide') return 'Deal with the card on this space first, or pass.';
   return null;
 }
 
@@ -145,11 +147,11 @@ export function playTurn(books: GameBooks, deps: TurnDeps, request: TurnRequest 
     lastRoll: roll.dice,
     ...(pending ? { pending } : {}),
   };
-  const finalState: CashflowGameState = {
-    ...working.state,
-    boardPosition: move.to,
-    turn: nextTurn,
-  };
+  // A Payday or a landing can end the game: out of the rat race, or bankrupt.
+  const finalState = endIfOver(
+    { ...working.state, boardPosition: move.to, turn: nextTurn },
+    working.subscriptions,
+  );
   // The turn state rides on the last effect (or on one of its own when nothing else changed).
   if (effects.length === 0) effects.push(emptyEffects(finalState, null));
   else effects[effects.length - 1] = { ...effects[effects.length - 1], state: finalState };
@@ -184,14 +186,21 @@ export function whyCannotSettle(state: CashflowGameState): string | null {
  * Closes the turn's open card decision: `done` once the card was dealt with (its own steps are already in the history),
  * `passed` to leave it - a step of its own, so it can be undone. The next roll is open afterwards.
  */
-export function settleDecision(state: CashflowGameState, how: 'done' | 'passed'): DecisionResult {
+export function settleDecision(
+  state: CashflowGameState,
+  how: 'done' | 'passed',
+  subscriptions?: { title: string; amountMinor: number }[],
+): DecisionResult {
   const cannot = whyCannotSettle(state);
   if (cannot) throw new Error(cannot);
   const turn = currentTurn(state);
   const rest: CashflowSoloTurn = { ...turn };
   delete rest.pending;
   return {
-    state: { ...state, turn: { ...rest, phase: 'roll' } },
+    // Dealing with the card may have changed the monthly picture: the end is checked when the books are given.
+    state: subscriptions
+      ? endIfOver({ ...state, turn: { ...rest, phase: 'roll' } }, subscriptions)
+      : { ...state, turn: { ...rest, phase: 'roll' } },
     step: how === 'passed' ? { kind: 'skipCard', detail: turn.pending?.kind } : null,
   };
 }
