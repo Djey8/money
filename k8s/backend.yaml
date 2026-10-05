@@ -121,13 +121,16 @@ spec:
                   name: backend-secret
                   key: ADMIN_EMAILS
                   optional: true
+          # No CPU limit on purpose: this is a single-node box dedicated to the app, and a
+          # limit only throttles a pod that wants to burst (CouchDB reading/writing a 2MB
+          # document, the backend decrypting). The request still guarantees its share; the
+          # monitoring stack (loki/grafana/promtail) keeps its limits so it cannot starve it.
           resources:
             requests:
-              memory: '256Mi'
-              cpu: '250m'
-            limits:
               memory: '384Mi'
-              cpu: '1000m'
+              cpu: '500m'
+            limits:
+              memory: '768Mi'
           livenessProbe:
             httpGet:
               path: /health

@@ -59,13 +59,16 @@ spec:
               mountPath: /opt/couchdb/data
             - name: couchdb-local-config
               mountPath: /opt/couchdb/etc/local.d
+          # No CPU limit on purpose: this is a single-node box dedicated to the app, and a
+          # limit only throttles a pod that wants to burst (CouchDB reading/writing a 2MB
+          # document, the backend decrypting). The request still guarantees its share; the
+          # monitoring stack (loki/grafana/promtail) keeps its limits so it cannot starve it.
           resources:
             requests:
-              memory: '256Mi'
-              cpu: '250m'
-            limits:
               memory: '512Mi'
               cpu: '500m'
+            limits:
+              memory: '1Gi'
       volumes:
         - name: couchdb-config-src
           configMap:
