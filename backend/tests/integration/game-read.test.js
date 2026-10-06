@@ -604,6 +604,14 @@ describe('a whole game played through the API', () => {
     expect(game.finances.passiveIncomeMinor).toBeGreaterThanOrEqual(game.finances.expensesMinor);
     expect(game.legalActions.map((action) => action.action)).toEqual(['undo', 'reset']);
 
+    const full = await session('post', '/api/v1/game/saves', user.token).send({ name: 'full' });
+    const compact = await session('post', '/api/v1/game/saves', user.token).send({
+      name: 'compact',
+      compact: true,
+    });
+    // a compact save keeps the plain step log but not the undo chain: about a tenth of the size
+    expect(compact.body.game.sizeBytes).toBeLessThan(full.body.game.sizeBytes / 5);
+    expect(compact.body.game.sizeBytes).toBeGreaterThan(1000);
     // everything it did is in the history, and can be taken back
     const history = await session('get', '/api/v1/game/history', user.token);
     expect(history.body.steps[0].kind).toBe('start');

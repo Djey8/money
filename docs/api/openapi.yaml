@@ -1541,6 +1541,231 @@ paths:
           $ref: '#/components/responses/GameActionRefused'
         '422':
           $ref: '#/components/responses/GameActionRefused'
+  /game/saves:
+    get:
+      operationId: listGameSaves
+      summary: The saved games and the storage left
+      description: >-
+        Game accounts only; requires `game:r`. Every saved game with its summary, `status` (`playing`, `escaped`, `bankrupt`, `ended`) and `sizeBytes`, and `storage`: how much of the account's one database document the saves use, how much room is left (`remainingBytes`) and `keepAtMost` - an agent leaves at most this many saves behind after a session (`overKeepBy` says how many too many).
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Done
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/GameActionRefused'
+    post:
+      operationId: saveGame
+      summary: Save the running game
+      description: >-
+        Game accounts only; requires `game:w`. Saves the running game into its slot (the first save gives it one; a later save updates the same slot), in the same format the app uses. With `compact: true` the undo chain is left out - a tenth of the size, and what an agent should use for analysis games; a compact game loads without undo history. Refused with 409 `game_storage_full` when the account's document would pass its storage budget: delete saves first.
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                compact: { type: boolean, default: false }
+      responses:
+        '200':
+          description: The saved game and the storage left
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/GameActionRefused'
+  /game/saves/prune:
+    post:
+      operationId: pruneGameSaves
+      summary: Delete saved games, keeping the important ones (destructive)
+      description: >-
+        Game accounts only; requires `game:w`. Keeps the saves in `keepIds` and the `keepLatest` newest ones and deletes every other. The clean-up an agent owes after a session of analysis. Requires `confirm: true`. Never touches the running game.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [confirm]
+              properties:
+                confirm: { type: boolean, enum: [true] }
+                keepIds: { type: array, items: { type: string } }
+                keepLatest: { type: integer, minimum: 0 }
+      responses:
+        '200':
+          description: The ids that were deleted and the storage left
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/GameActionRefused'
+  /game/saves/{saveId}:
+    get:
+      operationId: getGameSave
+      summary: One saved game with its step log
+      description: >-
+        Game accounts only; requires `game:r`. The summary and the plain-text log of every step (`number`, `kind`, `detail`, `at`), oldest first - what happened in that game, without opening the snapshot. This is what a game analysis reads.
+      security:
+        - bearerAuth: []
+      parameters:
+        - { name: saveId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Done
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/GameActionRefused'
+    patch:
+      operationId: renameGameSave
+      summary: Rename a saved game
+      description: >-
+        Game accounts only; requires `game:w`.
+      security:
+        - bearerAuth: []
+      parameters:
+        - { name: saveId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string }
+      responses:
+        '200':
+          description: Done
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/GameActionRefused'
+    delete:
+      operationId: deleteGameSave
+      summary: Delete a saved game (destructive)
+      description: >-
+        Game accounts only; requires `game:w` and `?confirm=true`. If the running game sat in that slot it forgets the slot.
+      security:
+        - bearerAuth: []
+      parameters:
+        - { name: saveId, in: path, required: true, schema: { type: string } }
+        - { name: confirm, in: query, required: true, schema: { type: boolean } }
+      responses:
+        '200':
+          description: Done
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/GameActionRefused'
+  /game/saves/{saveId}/load:
+    post:
+      operationId: loadGameSave
+      summary: Continue a saved game
+      description: >-
+        Game accounts only; requires `game:w`. Makes the saved game the running game, with its undo history when it was saved with one. The game being played (if it is another one) is saved first. Continuing an ended game un-ends it.
+      security:
+        - bearerAuth: []
+      parameters:
+        - { name: saveId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Done
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/GameActionRefused'
+  /game/end:
+    post:
+      operationId: endGame
+      summary: End the running game on purpose
+      description: >-
+        Game accounts only; requires `game:w`. Saves the running game marked as ended, then clears the account for the next one (like "End game" in the app). The ended game can be continued later.
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+      responses:
+        '200':
+          description: Done
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/GameActionRefused'
   /mojo:
     get:
       operationId: getMojo

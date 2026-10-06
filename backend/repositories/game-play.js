@@ -627,4 +627,4 @@ function runAction(action, input, context, { settings, state, data, session, his
   return { data: stored, result: played.result };
 }
 
-module.exports = { playGameAction, GameActionError };
+module.exports = { playGameAction, GameActionError, loadContext };

@@ -213,4 +213,6 @@ module.exports = {
   buildHistoryDocument,
   packHistory,
   unpackHistory,
+  packJson: packHistory,
+  unpackJson: unpackHistory,
 };

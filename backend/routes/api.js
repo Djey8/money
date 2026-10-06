@@ -47,6 +47,7 @@ const {
   getGameSet,
 } = require('../repositories/game-repository');
 const { playGameAction, GameActionError } = require('../repositories/game-play');
+const gameSaves = require('../repositories/game-saves');
 const { isGameAccountEmail } = require('../services/game-account');
 const {
   settleBucket,
@@ -3556,6 +3557,8 @@ const GAME_ACTION_STATUS = {
   GAME_ACTION_NOT_ALLOWED: 409,
   GAME_RULE_REFUSED: 422,
   GAME_WRITE_CONFLICT: 409,
+  GAME_STORAGE_FULL: 409,
+  GAME_SAVE_NOT_FOUND: 404,
 };
 
 function gameAction(path, action, readInput) {
@@ -3661,6 +3664,117 @@ gameAction('/game/bank-loan', 'bank_loan', (body) => {
     throw new Error('amountMinor must be a non-zero integer (positive borrows, negative repays).');
   }
   return { amountMinor: body.amountMinor };
+});
+
+// Saved games (slice D4). Reads need game:r, everything that changes a save needs game:w; deleting needs ?confirm=true.
+function savesRoute(method, path, scope, { audit = false, input, run }) {
+  router[method](path, requireScope(scope), requireGameAccount, async (req, res, next) => {
+    let parsed;
+    try {
+      parsed = input ? input(req) : {};
+    } catch (error) {
+      return problem(res, 400, 'validation_invalid', 'Invalid saved-game request', error.message);
+    }
+    try {
+      const result = await run({ usersDb: getUsersDb(), authDb: getAuthDb() }, req.userId, parsed);
+      if (audit) {
+        await recordAuditEntry(getAuditDb(), {
+          userId: req.userId,
+          actor: auditActor(req.auth),
+          method: req.method,
+          path: req.baseUrl + req.path,
+          resource: 'game-saves',
+        });
+      }
+      return res.json(result);
+    } catch (error) {
+      if (error instanceof GameActionError) {
+        const status = GAME_ACTION_STATUS[error.code] || 400;
+        return problem(
+          res,
+          status,
+          error.code.toLowerCase(),
+          'Saved-game request refused',
+          error.message,
+        );
+      }
+      return next(error);
+    }
+  });
+}
+
+const optionalName = (body) => {
+  if (body.name === undefined) return undefined;
+  if (typeof body.name !== 'string' || !body.name.trim()) {
+    throw new Error('name must be a non-empty string.');
+  }
+  return body.name.trim();
+};
+const requireConfirm = (confirmed) => {
+  if (confirmed !== true && confirmed !== 'true') {
+    throw new Error('This deletes saved games for good: confirm it (confirm: true).');
+  }
+};
+
+savesRoute('get', '/game/saves', 'game:r', {
+  run: (deps, userId) => gameSaves.listSaves(deps, userId),
+});
+savesRoute('post', '/game/saves/prune', 'game:w', {
+  audit: true,
+  input: (req) => {
+    const { keepIds = [], keepLatest = 0 } = req.body || {};
+    requireConfirm(req.body?.confirm);
+    if (!Array.isArray(keepIds) || keepIds.some((id) => typeof id !== 'string')) {
+      throw new Error('keepIds must be a list of saved-game ids.');
+    }
+    if (!Number.isInteger(keepLatest) || keepLatest < 0) {
+      throw new Error('keepLatest must be a whole number, 0 or more.');
+    }
+    return { keepIds, keepLatest };
+  },
+  run: (deps, userId, input) => gameSaves.pruneSaves(deps, userId, input),
+});
+savesRoute('post', '/game/saves', 'game:w', {
+  audit: true,
+  input: (req) => {
+    const body = req.body || {};
+    if (body.compact !== undefined && typeof body.compact !== 'boolean') {
+      throw new Error('compact must be true or false.');
+    }
+    return { name: optionalName(body), compact: body.compact === true };
+  },
+  run: (deps, userId, input) => gameSaves.saveGame(deps, userId, input),
+});
+savesRoute('get', '/game/saves/:saveId', 'game:r', {
+  input: (req) => ({ id: req.params.saveId }),
+  run: (deps, userId, input) => gameSaves.getSave(deps, userId, input.id),
+});
+savesRoute('post', '/game/saves/:saveId/load', 'game:w', {
+  audit: true,
+  input: (req) => ({ id: req.params.saveId }),
+  run: (deps, userId, input) => gameSaves.loadSave(deps, userId, input.id),
+});
+savesRoute('patch', '/game/saves/:saveId', 'game:w', {
+  audit: true,
+  input: (req) => {
+    const name = optionalName(req.body || {});
+    if (!name) throw new Error('name is required.');
+    return { id: req.params.saveId, name };
+  },
+  run: (deps, userId, input) => gameSaves.renameSave(deps, userId, input.id, input.name),
+});
+savesRoute('delete', '/game/saves/:saveId', 'game:w', {
+  audit: true,
+  input: (req) => {
+    requireConfirm(req.query.confirm ?? req.body?.confirm);
+    return { id: req.params.saveId };
+  },
+  run: (deps, userId, input) => gameSaves.deleteSave(deps, userId, input.id),
+});
+savesRoute('post', '/game/end', 'game:w', {
+  audit: true,
+  input: (req) => ({ name: optionalName(req.body || {}) }),
+  run: (deps, userId, input) => gameSaves.endGame(deps, userId, input),
 });
 
 router.post('/auth/tokens', requireSession, async (req, res) => {
