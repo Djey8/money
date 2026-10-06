@@ -115,11 +115,14 @@ game. The board is the German "Cashflow - Verlasse das Hamsterrad!" rat race, dr
 - **A turn is one roll, and it reveals itself in order.** The dice tumble and come to rest on their number (the faces
   you see are the engine's result - the tumble never decides anything), the token walks space by space, it rests on the
   space it landed on, and only then does the landing speak. Press **Skip** to jump ahead; with "reduce motion" set the
-  token jumps by itself. The dice stay still on the last number afterwards.
+  token jumps by itself. The dice are thrown with a bounce, the faces slow down, they land with one small pop and then stay still on the number.
 - **Payday** pays whenever you **land on or pass** a Payday space, once per Payday space. It also advances the game's
-  calendar one month, as in the companion. A big banner shows what it paid (income, expenses, the monthly result) and
-  stays until your next roll or until you close it.
-- **Baby, Charity, Downsized** resolve on the spot (a Baby space with three children changes nothing). **Charity**
+  calendar one month, as in the companion. A popup floats over the page with what it paid (income, expenses, the monthly
+  result) and goes with the next thing you do - the info banners of the game vanish that way, there is no close button.
+- **Baby, Charity, Downsized** resolve on the spot (a Baby space with three children changes nothing). **Charity and
+  Downsized pay cash, and the balance never goes negative:** when cash is short, the Bank loan is taken first (the
+  shortfall rounded up to the loan step, as its own step in the history) and then the payment is made - in solo and with
+  the physical board alike. **Charity**
   donates 10 % of your income, then for the next **3 turns** you may choose **1 or 2 dice** before each roll.
   **Downsized** pays your expenses; the spanner is only a reminder (playing alone nobody takes a turn in between, so
   nothing is skipped) and your **next roll removes it**.

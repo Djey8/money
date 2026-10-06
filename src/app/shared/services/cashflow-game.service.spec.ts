@@ -3155,6 +3155,94 @@ describe('CashflowGameService', () => {
     });
   });
 
+  describe('spaces that pay cash never take the balance negative (JFK, 2026-10-06)', () => {
+    const callbacks = () => ({ onSuccess: jest.fn(), onError: jest.fn(), onLoan: jest.fn() });
+    const start = () =>
+      service.pickProfession('placeholder', 'placeholder-profession', callbacks());
+
+    it('Downsized with an empty account takes the bank loan first, as its own undo step, then pays', () => {
+      start();
+      const state = AppStateService.instance;
+      expect(service.cash).toBe(0);
+      const cb = callbacks();
+
+      service.resolveDownsized(cb);
+
+      expect(cb.onSuccess).toHaveBeenCalled();
+      expect(cb.onLoan).toHaveBeenCalledWith(expect.any(Number));
+      expect(service.cash).toBeGreaterThanOrEqual(0);
+      expect(state.liabilities.find((l) => l.tag === 'Bank loan')?.amount).toBeGreaterThan(0);
+      expect(state.cashflowGame.unemployedRoundsLeft).toBe(2);
+      expect(service.historySteps().map((step) => step.kind)).toEqual([
+        'downsized',
+        'loanAuto',
+        'start',
+      ]);
+
+      service.undoLastAction(callbacks()); // takes back the payment only
+      expect(state.liabilities.find((l) => l.tag === 'Bank loan')).toBeDefined();
+      service.undoLastAction(callbacks()); // then the loan
+      expect(state.liabilities.find((l) => l.tag === 'Bank loan')).toBeUndefined();
+      expect(service.cash).toBe(0);
+    });
+
+    it('persists the Bank loan with the payment', () => {
+      start();
+      persistence.batchWriteAndSync.mockClear();
+      service.resolveDownsized(callbacks());
+      const writes = persistence.batchWriteAndSync.mock.calls[0][0].writes.map((w: any) => w.tag);
+      expect(writes).toEqual(expect.arrayContaining(['balance/liabilities', 'subscriptions']));
+    });
+
+    it('Charity with an empty account borrows the donation first too', () => {
+      start();
+      const cb = callbacks();
+      service.resolveCharity(cb);
+      expect(cb.onLoan).toHaveBeenCalled();
+      expect(service.cash).toBeGreaterThanOrEqual(0);
+      expect(AppStateService.instance.cashflowGame.charityRoundsLeft).toBe(3);
+    });
+
+    it('with enough cash no loan is taken and no loan is announced', () => {
+      start();
+      AppStateService.instance.allTransactions.push({
+        account: 'Income',
+        amount: 100000,
+        date: '2026-10-01',
+        time: '',
+        category: '@Savings',
+        comment: '',
+      } as any);
+      const cb = callbacks();
+      service.resolveDownsized(cb);
+      expect(cb.onLoan).not.toHaveBeenCalled();
+      expect(
+        AppStateService.instance.liabilities.find((l) => l.tag === 'Bank loan'),
+      ).toBeUndefined();
+      expect(service.historySteps().map((step) => step.kind)).toEqual(['downsized', 'start']);
+    });
+
+    it('a solo roll that lands on Downsized borrows inside the same step and persists the loan', () => {
+      service.pickProfession('placeholder', 'placeholder-profession', callbacks(), 'solo');
+      const state = AppStateService.instance;
+      state.cashflowGame = {
+        ...state.cashflowGame,
+        boardPosition: 10,
+        turn: { phase: 'roll', count: 3 },
+      };
+      service.rng = () => 0.01; // a 1: space 11, Downsized
+      persistence.batchWriteAndSync.mockClear();
+
+      const result = service.rollTurn(1, callbacks())!;
+
+      expect(result.autoLoansMinor).toHaveLength(1);
+      expect(service.cash).toBeGreaterThanOrEqual(0);
+      expect(service.historySteps().map((step) => step.kind)).toEqual(['roll', 'start']);
+      const writes = persistence.batchWriteAndSync.mock.calls[0][0].writes.map((w: any) => w.tag);
+      expect(writes).toContain('balance/liabilities');
+    });
+  });
+
   describe('solo mode: the token walks the ring (JFK, 2026-10-05)', () => {
     const callbacks = () => ({ onSuccess: jest.fn(), onError: jest.fn() });
     const startSolo = () =>

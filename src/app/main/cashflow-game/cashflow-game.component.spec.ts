@@ -2065,6 +2065,88 @@ describe('CashflowGameComponent solo mode (JFK, 2026-10-05)', () => {
     expect(component.trackByIndex(1)).toBe(1);
   });
 
+  it('info banners go with the next thing the player does: any click clears them, the click’s own notice stays', () => {
+    const { component } = soloComponent();
+    component.paydayBanner = { count: 1, incomeMinor: 1, expensesMinor: 0, netMinor: 1 };
+    component.marketNotice = 'This card does not apply to you';
+
+    document.dispatchEvent(new Event('click'));
+    expect(component.paydayBanner).toBeNull();
+    expect(component.marketNotice).toBeNull();
+
+    // a notice raised by the click's own handler comes after the sweep and so survives it: capture phase runs first
+    const button = document.createElement('button');
+    document.body.appendChild(button);
+    button.addEventListener('click', () => (component.marketNotice = 'raised by this click'));
+    button.click();
+    expect(component.marketNotice).toBe('raised by this click');
+    button.remove();
+  });
+
+  it('stops listening for clicks when it is destroyed', () => {
+    const { component } = soloComponent();
+    component.ngOnDestroy();
+    component.paydayBanner = { count: 1, incomeMinor: 1, expensesMinor: 0, netMinor: 1 };
+    document.dispatchEvent(new Event('click'));
+    expect(component.paydayBanner).not.toBeNull();
+  });
+
+  it('shows the Payday popup amounts with exactly one sign each: +2.500,00 € / −2.200,00 € / +300,00 €', () => {
+    const { component } = soloComponent();
+    (component as any).appState.isEuropeanFormat = true;
+    (component as any).appState.currency = '€';
+    // (amounts are in the account's own display units: 100 minor = 1)
+    const shown = (minor: number) => component.signedCardAmount(minor).replace(/\s/g, ' ');
+    expect(shown(250000)).toBe('+2.500 €');
+    expect(shown(-220000)).toBe('−2.200 €');
+    expect(shown(30000)).toBe('+300 €');
+    expect(shown(-30000)).toBe('−300 €');
+    expect(shown(0)).toBe('0 €');
+    expect(shown(250000)).not.toMatch(/\+\+|−\+|\+−/);
+  });
+
+  it('the dice land with one pop and are still afterwards: the landing flag is not left on', async () => {
+    const { component, rollTurn } = soloComponent();
+    setSoloState();
+    (window as any).matchMedia = jest.fn(() => ({ matches: false })); // animations on: the real tumble
+    rollTurn.mockImplementation((_d: number, callbacks: any) => {
+      callbacks.onSuccess();
+      return {
+        roll: { dice: [3], total: 3 },
+        move: { entered: [{ index: 2 }], paydays: 0, landed: { kind: 'deal', index: 2 } },
+        effects: [],
+        openingPayday: false,
+        autoLoansMinor: [],
+      };
+    });
+    component.rollSolo();
+    component.skipWalk(); // jump ahead: the tumble is cut short, the dice show their number at once
+    await new Promise((resolve) => setTimeout(resolve, 150));
+    expect(component.diceTumbling).toBe(false);
+    expect(component.shownDice).toEqual([3]);
+    expect(component.diceLanded).toBe(false);
+  });
+
+  it('a roll that had to borrow first tells the player about the loan', async () => {
+    const { component, rollTurn, toastService, cashflowGameService } = soloComponent();
+    (cashflowGameService as any).autoLoanMessage = jest.fn((amount: number) => `loan ${amount}`);
+    setSoloState();
+    rollTurn.mockImplementation((_d: number, callbacks: any) => {
+      callbacks.onSuccess();
+      return {
+        roll: { dice: [1], total: 1 },
+        move: { entered: [{ index: 11 }], paydays: 0, landed: { kind: 'downsized', index: 11 } },
+        effects: [],
+        openingPayday: false,
+        autoLoansMinor: [200000],
+      };
+    });
+    component.rollSolo();
+    await settle();
+    expect((cashflowGameService as any).autoLoanMessage).toHaveBeenCalledWith(2000);
+    expect(toastService.show).toHaveBeenCalledWith('loan 2000', 'update');
+  });
+
   it('a Payday shows a big banner with what it paid, until the next roll or until it is closed', async () => {
     const { component, rollTurn } = soloComponent();
     setSoloState();
@@ -2099,7 +2181,7 @@ describe('CashflowGameComponent solo mode (JFK, 2026-10-05)', () => {
       netMinor: 300000,
     });
 
-    component.dismissPayday();
+    component.dismissInfoBanners();
     expect(component.paydayBanner).toBeNull();
 
     // a roll that crosses no Payday leaves no banner, and the next roll clears the old one

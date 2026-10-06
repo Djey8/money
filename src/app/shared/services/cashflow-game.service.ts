@@ -54,8 +54,6 @@ import {
   playBankLoan,
   playBaby,
   playBoostCard,
-  playCharity,
-  playDownsized,
   playMarketBuyerCard,
   playMarketCostCard,
   playPayday,
@@ -73,6 +71,9 @@ import {
   UNDO_STACK_LIMIT,
   systemClock,
   systemRng,
+  playCharityPaying,
+  playDownsizedPaying,
+  type PaidWithLoan,
   CLASSIC_RAT_RACE_BOARD,
   playTurn,
   settleDecision as settleDecisionRule,
@@ -134,6 +135,8 @@ export interface CashflowCardPlanText extends CashflowCardText {
 export interface CashflowGameCallbacks {
   onSuccess: () => void;
   onError: (message: string) => void;
+  /** Called before `onSuccess` when the action had to take an automatic bank loan first (the amount, in minor units). */
+  onLoan?: (loanMinor: number) => void;
 }
 
 /** A Deal card resolved through the app's existing Grow feature (todo/cashflow-game.md decision 10) — not a new entity type, just the two shapes Grow's own buy actions need. */
@@ -1136,7 +1139,7 @@ export class CashflowGameService {
     try {
       result = playTurn(
         this.gameBooks(),
-        { ...this.roundDeps, board: this.board, profession, rng: this.rng },
+        { ...this.cardDeps, board: this.board, profession, rng: this.rng },
         { dice },
       );
     } catch (err: unknown) {
@@ -1145,8 +1148,10 @@ export class CashflowGameService {
     }
     this.pushUndoSnapshot(result.step);
     for (const effects of result.effects) this.applyGameEffects(effects);
+    // an automatic bank loan (Charity or Downsized with too little cash) writes the Bank loan liability too
     this.persistAll('cashflow_roll', { total: result.roll.total, to: result.move.to }, callbacks, {
       includeSubscriptions: true,
+      includeBalanceSheet: true,
       includeGrow: true,
     });
     if (result.effects.some((effects) => effects.decisionNeeded)) this.decisionNeeded$.next();
@@ -1207,32 +1212,55 @@ export class CashflowGameService {
     return previewSpace(this.roundBooks(), kind, this.currentProfession(), this.roundDeps.text);
   }
 
-  /** Resolves a Charity space: pays 10% of total income now, unlocks the dice choice for 3 turns. */
-  resolveCharity(callbacks: CashflowGameCallbacks): void {
-    let effects: GameEffects;
+  /**
+   * A space that pays cash. The balance never goes negative (JFK, 2026-10-06): when cash is short the Bank loan is taken
+   * first - its own undo step, like a deal's - and then the payment is made.
+   */
+  private resolvePayingSpace(
+    pay: (books: GameBooks) => PaidWithLoan,
+    logEvent: string,
+    failure: string,
+    callbacks: CashflowGameCallbacks,
+  ): void {
+    let paid: PaidWithLoan;
     try {
-      effects = playCharity(this.roundBooks(), this.roundDeps);
+      paid = pay(this.gameBooks());
     } catch (err: unknown) {
-      callbacks.onError(errorMessage(err, 'Could not resolve Charity.'));
+      callbacks.onError(errorMessage(err, failure));
       return;
     }
-    this.pushUndoSnapshot(effects.step);
-    this.applyGameEffects(effects);
-    this.persistAll('cashflow_charity', {}, callbacks);
+    for (const effects of paid.effects) {
+      this.pushUndoSnapshot(effects.step as CashflowStepInfo);
+      this.applyGameEffects(effects);
+    }
+    const borrowedMinor = paid.loansMinor.reduce((sum, loan) => sum + loan, 0);
+    if (borrowedMinor > 0) callbacks.onLoan?.(borrowedMinor);
+    this.persistAll(
+      logEvent,
+      {},
+      callbacks,
+      borrowedMinor > 0 ? { includeSubscriptions: true, includeBalanceSheet: true } : {},
+    );
   }
 
-  /** Resolves a Downsized space: pays total expenses once and shows the sitting-out reminder (ends an active charity bonus). */
+  /** Resolves a Charity space: pays 10% of total income now (borrowing first when cash is short), unlocks the dice choice for 3 turns. */
+  resolveCharity(callbacks: CashflowGameCallbacks): void {
+    this.resolvePayingSpace(
+      (books) => playCharityPaying(books, this.cardDeps),
+      'cashflow_charity',
+      'Could not resolve Charity.',
+      callbacks,
+    );
+  }
+
+  /** Resolves a Downsized space: pays total expenses once (borrowing first when cash is short) and shows the sitting-out reminder (ends an active charity bonus). */
   resolveDownsized(callbacks: CashflowGameCallbacks): void {
-    let effects: GameEffects;
-    try {
-      effects = playDownsized(this.roundBooks(), this.roundDeps);
-    } catch (err: unknown) {
-      callbacks.onError(errorMessage(err, 'Could not resolve Downsized.'));
-      return;
-    }
-    this.pushUndoSnapshot(effects.step);
-    this.applyGameEffects(effects);
-    this.persistAll('cashflow_downsized', {}, callbacks);
+    this.resolvePayingSpace(
+      (books) => playDownsizedPaying(books, this.cardDeps),
+      'cashflow_downsized',
+      'Could not resolve Downsized.',
+      callbacks,
+    );
   }
 
   /** Takes (`delta > 0`) or repays (`< 0`) a bank loan in the game set's increment (a decimal amount, like everywhere else in the app); upserts the Liability + interest Subscription, recomputed from the new principal every time. */

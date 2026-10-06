@@ -7,6 +7,7 @@ in light and dark, with a cashflow account on the self-hosted edition. Tick what
 
 - [ ] New game: after the profession, the language question also asks _how to play_; "With the physical board" is
       pre-selected and plays exactly as before.
+- [ ] Every game in the list has a bin; it asks the normal delete confirmation, and the game is gone afterwards.
 - [ ] On the start screen your old games are **not** listed; a "My games" button below Start opens just the list
       (played and ongoing games, with Import), and a game can be continued from there.
 - [ ] "Solo in the app" starts the game; the dashboard shows the ring, the token at START and a Roll button - and no
@@ -18,10 +19,14 @@ in light and dark, with a cashflow account on the self-hosted edition. Tick what
       space; it rests on its landing before anything else appears; Skip jumps ahead.
 - [ ] Coming back to the dashboard (from a card, or after a reload) shows the dice still on the last number - no replay.
 - [ ] **The very first roll pays your first Payday** (savings plus one Payday), whatever you roll.
-- [ ] A Payday (passed, landed on, or the opening one) shows a big banner with income, expenses and the monthly result,
-      which stays until the next roll or until you close it.
+- [ ] A Payday (passed, landed on, or the opening one) shows a popup floating over the page with income, expenses and
+      the monthly result - each amount with one sign - and it goes with your next action (any tap), no close button.
+- [ ] A market card's "does not apply" notice goes the same way, with the next action.
+- [ ] The dice are thrown (bounce and turn), the faces slow down, they land with one pop and then rest still.
 - [ ] A first roll of 1 lands on the Deals space next to START; a 6 lands on the first Payday.
 - [ ] Passing a Payday pays it (round goes up, Payday lines appear in Transactions); landing on one pays it once.
+- [ ] Landing on Downsized (or Charity) with too little cash takes the Bank loan first, then pays - the balance is never
+      negative, and a message says what was borrowed.
 - [ ] Baby adds a child (a fourth Baby space does nothing); Charity donates and offers 1 or 2 dice for 3 turns, then
       back to one die; Downsized pays the expenses and the spanner goes at the next roll.
 - [ ] With "reduce motion" on, the token jumps instead of walking.
@@ -60,6 +65,10 @@ First playtest (2026-10-06), handled in the next build - please re-check:
   that happens only during the roll; otherwise the dice rest still.
 - The Payday banner was too small and vanished too fast -> big banner with the amounts, stays until the next roll.
 - A share card could be sold to a friend -> not any more (property and asset cards only).
+- Payday popup: signs doubled ("++2.500") -> one sign each; it is now a popup that goes with the next action.
+- Dice animation improved (thrown, decelerating faces, one landing pop).
+- Old games could only be deleted from inside an opened row -> a bin on every row of the list (normal confirmation).
+- Downsized took the balance negative -> it borrows first (also Charity), in solo and companion.
 - Old games cluttered the start screen -> behind a "My games" button below Start.
 
 (JFK's further notes go here.)

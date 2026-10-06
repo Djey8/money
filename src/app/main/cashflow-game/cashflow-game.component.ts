@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnDestroy } from '@angular/core';
 import { CommonModule, formatNumber } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -90,9 +90,12 @@ type MarketKind = 'percent' | 'amount' | 'price' | 'cost' | 'split' | 'boost';
 /** How long the token rests on each space while it walks, and how long a Payday flashes. */
 const WALK_STEP_MS = 320;
 /** The dice tumble, then rest on their number for a beat, before the token moves; the token then rests on its landing. */
-const DICE_TUMBLE_MS = 1300;
-const DICE_FACE_MS = 110;
-const DICE_SETTLE_MS = 450;
+const DICE_TUMBLE_MS = 1900;
+/** The faces flicker fast at first and slow down as the dice come to rest. */
+const DICE_FACE_FIRST_MS = 70;
+const DICE_FACE_LAST_MS = 300;
+const DICE_SETTLE_MS = 650;
+const DICE_LAND_POP_MS = 900;
 const LANDING_PAUSE_MS = 1500;
 
 @Component({
@@ -111,7 +114,7 @@ const LANDING_PAUSE_MS = 1500;
   templateUrl: './cashflow-game.component.html',
   styleUrls: ['./cashflow-game.component.css'],
 })
-export class CashflowGameComponent {
+export class CashflowGameComponent implements OnDestroy {
   static isOpen = false;
   static zIndex = 0;
   static instance: CashflowGameComponent;
@@ -156,6 +159,7 @@ export class CashflowGameComponent {
     private confirm: ConfirmService,
   ) {
     CashflowGameComponent.instance = this;
+    document.addEventListener('click', this.onAnyClick, true);
     // Paying a dice card (gold coins) brings the player here, to the decision.
     this.cashflowGameService.decisionNeeded$?.subscribe(() => this.showOpenDecision());
   }
@@ -558,6 +562,8 @@ export class CashflowGameComponent {
   /** True only while the dice tumble after a roll; before and after they rest still on their number. */
   diceTumbling = false;
   private tumbleFaces: number[] = [];
+  /** True for a moment as the dice land, for one small pop - never again when they come back into view. */
+  diceLanded = false;
   /** How many dice the player rolls while Charity lasts. */
   diceChoice: 1 | 2 = 1;
   /** True while the token walks to where the roll took it. */
@@ -673,6 +679,14 @@ export class CashflowGameComponent {
     });
     if (!result) return;
     this.lastDice = result.roll.dice;
+    // a space that had to borrow first (Charity, Downsized with too little cash) says so
+    const borrowedMinor = (result.autoLoansMinor ?? []).reduce((sum, loan) => sum + loan, 0);
+    if (borrowedMinor > 0) {
+      this.toastService.show(
+        this.cashflowGameService.autoLoanMessage(this.toDisplayAmount(borrowedMinor)),
+        'update',
+      );
+    }
     this.paydayBanner = null; // the last roll's Payday is done with once the next roll starts
     this.paydaySummary = this.summarisePaydays(result);
     void this.walkTo(from, result);
@@ -700,8 +714,27 @@ export class CashflowGameComponent {
     this.paydayBanner = this.paydaySummary;
   }
 
-  dismissPayday(): void {
+  /**
+   * The info banners - the Payday popup, a market card's notice - go with the next thing the player does (JFK,
+   * 2026-10-06), not with a close button. Listens in the capture phase, so it runs before the click's own handler:
+   * a notice that handler raises is not swept away by the same click.
+   */
+  dismissInfoBanners(): void {
     this.paydayBanner = null;
+    this.marketNotice = null;
+  }
+
+  private readonly onAnyClick = (): void => {
+    if (this.paydayBanner || this.marketNotice) this.dismissInfoBanners();
+  };
+
+  ngOnDestroy(): void {
+    document.removeEventListener('click', this.onAnyClick, true);
+  }
+
+  /** An amount with its sign, for the Payday popup: "+2.500,00 €", "−2.200,00 €". */
+  signedCardAmount(minor: number): string {
+    return `${minor < 0 ? '−' : ''}${this.cardAmount(minor, true)}`;
   }
 
   /** What the Paydays of a roll paid in all: the income, the expenses, and what is left of the month. */
@@ -746,17 +779,30 @@ export class CashflowGameComponent {
     this.afterLanding(result);
   }
 
-  /** Faces flicker for a moment, then settle on the real roll and stay still (the engine already decided it). */
+  /**
+   * The dice are thrown: they bounce and turn while the faces flicker, slowing down as they come to rest; then they
+   * land on the real roll (the engine already decided it) with one small pop, and stay still from then on.
+   */
   private async tumbleDice(count: number): Promise<void> {
     if (this.reducedMotion) return;
     this.diceTumbling = true;
     const started = Date.now();
+    let previous: number[] = [];
     while (Date.now() - started < DICE_TUMBLE_MS && !this.skipWalking) {
-      this.tumbleFaces = Array.from({ length: count }, () => 1 + Math.floor(Math.random() * 6));
-      await this.pause(DICE_FACE_MS);
+      const progress = (Date.now() - started) / DICE_TUMBLE_MS;
+      let faces: number[];
+      do {
+        faces = Array.from({ length: count }, () => 1 + Math.floor(Math.random() * 6));
+      } while (faces.join() === previous.join() && count === 1); // a die never "flickers" to the same face
+      previous = this.tumbleFaces = faces;
+      await this.pause(DICE_FACE_FIRST_MS + (DICE_FACE_LAST_MS - DICE_FACE_FIRST_MS) * progress);
     }
     this.diceTumbling = false;
-    if (!this.skipWalking) await this.pause(DICE_SETTLE_MS);
+    if (!this.skipWalking) {
+      this.diceLanded = true;
+      setTimeout(() => (this.diceLanded = false), DICE_LAND_POP_MS);
+      await this.pause(DICE_SETTLE_MS);
+    }
   }
 
   /** What the landing leaves: the end of the game, a card waiting in the dialog, or a space resolved on the spot. */
@@ -2299,11 +2345,20 @@ export class CashflowGameComponent {
   }
 
   private runAction(
-    action: (callbacks: { onSuccess: () => void; onError: (message: string) => void }) => void,
+    action: (callbacks: {
+      onSuccess: () => void;
+      onError: (message: string) => void;
+      onLoan?: (loanMinor: number) => void;
+    }) => void,
     kind: 'baby' | 'charity' | 'downsized',
   ): void {
     this.isBusy = true;
     action({
+      onLoan: (loanMinor) =>
+        this.toastService.show(
+          this.cashflowGameService.autoLoanMessage(this.toDisplayAmount(loanMinor)),
+          'update',
+        ),
       onSuccess: () => {
         this.isBusy = false;
         this.toastService.show(this.translate.instant(`CashflowGame.${kind}Done`), 'success');
