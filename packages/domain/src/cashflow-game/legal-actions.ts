@@ -1,3 +1,4 @@
+import { openDecisions } from './asset-deals';
 import { currentTurn, whyCannotRoll, whyCannotSettle } from './turn';
 import type { CashflowGameState } from './types';
 
@@ -15,6 +16,8 @@ export type LegalActionId =
   | 'draw_card'
   | 'buy_deal'
   | 'pay_doodad'
+  | 'play_market'
+  | 'roll_decision'
   | 'payday'
   | 'baby'
   | 'charity'
@@ -43,6 +46,13 @@ function cardActions(kind: 'deal' | 'market' | 'doodad' | undefined): LegalActio
     actions.push({
       action: 'buy_deal',
       description: 'Plan and buy a Deal card (a share or a property) by its card id.',
+    });
+  }
+  if (!kind || kind === 'market') {
+    actions.push({
+      action: 'play_market',
+      description:
+        'Play a Market card by its card id: buyer offers, price moves, splits, boosts and costs.',
     });
   }
   if (!kind || kind === 'doodad') {
@@ -97,6 +107,13 @@ export function legalActions(
     actions.push({
       action: 'bank_loan',
       description: 'Borrow one more loan step from the bank, or repay some of it.',
+    });
+  }
+  const waiting = openDecisions(state);
+  if (waiting.length > 0) {
+    actions.push({
+      action: 'roll_decision',
+      description: `Roll the die for a waiting card (${waiting.map((deal) => deal.title).join(', ')}).`,
     });
   }
   if (options.canUndo) {

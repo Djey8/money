@@ -44,6 +44,7 @@ describe('legalActions', () => {
     expect(ids(started({}))).toEqual([
       'draw_card',
       'buy_deal',
+      'play_market',
       'pay_doodad',
       'payday',
       'baby',
