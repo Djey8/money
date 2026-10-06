@@ -1110,6 +1110,9 @@
           {{ 'CashflowGame.loanOutstanding' | translate }}: {{ currentLoanPrincipal | appNumber }}
           {{ appState.currency }}
         </p>
+        <p class="cf-loan-current cf-loan-cash">
+          {{ 'CashflowGame.cash' | translate }}: {{ cash | appNumber }} {{ appState.currency }}
+        </p>
         <label class="cf-field">
           {{
             'CashflowGame.loanIncrements' | translate: { amount: (loanIncrementAmount | appNumber) }
@@ -1136,6 +1139,9 @@
         <p class="cf-loan-current">
           {{ 'CashflowGame.loanOutstanding' | translate }}: {{ currentLoanPrincipal | appNumber }}
           {{ appState.currency }}
+        </p>
+        <p class="cf-loan-current cf-loan-cash">
+          {{ 'CashflowGame.cash' | translate }}: {{ cash | appNumber }} {{ appState.currency }}
         </p>
         <label class="cf-field">
           {{
@@ -1269,87 +1275,172 @@
               [placeholder]="'CashflowGame.cardFindHint' | translate"
             />
           </label>
-          <div class="cf-filter-chips" *ngIf="cardKinds.length > 1">
-            <button
-              type="button"
-              class="cf-chip"
-              *ngFor="let kind of cardKinds"
-              [class.cf-chip--active]="cardKindFilter === kind"
-              [attr.aria-pressed]="cardKindFilter === kind"
-              (click)="toggleCardKind(kind)"
+          <div class="cf-filters">
+            <div class="cf-filter-chips" *ngIf="cardKinds.length > 1">
+              <button
+                type="button"
+                class="cf-chip"
+                *ngFor="let kind of cardKinds"
+                [class.cf-chip--active]="cardKindFilter === kind"
+                [attr.aria-pressed]="cardKindFilter === kind"
+                (click)="toggleCardKind(kind)"
+              >
+                {{
+                  (kind === 'share'
+                    ? 'Choose.Share'
+                    : kind === 'investment'
+                      ? 'Choose.Investment'
+                      : 'Choose.Asset'
+                  ) | translate
+                }}
+              </button>
+            </div>
+            <select
+              class="cf-filter-select"
+              *ngIf="cardKinds.length > 1"
+              [class.cf-filter-select--active]="cardKindFilter !== null"
+              [attr.aria-label]="'CashflowGame.filterKinds' | translate"
+              [ngModel]="cardKindFilter ?? ''"
+              (ngModelChange)="pickCardKind($event)"
             >
-              {{
-                (kind === 'share'
-                  ? 'Choose.Share'
-                  : kind === 'investment'
-                    ? 'Choose.Investment'
-                    : 'Choose.Asset'
-                ) | translate
-              }}
-            </button>
-          </div>
-          <!-- Second row: the types in this pile (single-family homes, car washes...) -->
-          <div class="cf-filter-chips" *ngIf="cardFamilies.length > 1">
-            <button
-              type="button"
-              class="cf-chip"
-              *ngFor="let family of cardFamilies"
-              [class.cf-chip--active]="cardFamilyFilter === family"
-              [attr.aria-pressed]="cardFamilyFilter === family"
-              (click)="toggleCardFamily(family)"
+              <option value="">{{ 'CashflowGame.filterKinds' | translate }}</option>
+              <option *ngFor="let item of cardKinds" [value]="item">
+                {{
+                  (item === 'share'
+                    ? 'Choose.Share'
+                    : item === 'investment'
+                      ? 'Choose.Investment'
+                      : 'Choose.Asset'
+                  ) | translate
+                }}
+              </option>
+            </select>
+            <!-- Second row: the types in this pile (single-family homes, car washes...) -->
+            <div class="cf-filter-chips" *ngIf="cardFamilies.length > 1">
+              <button
+                type="button"
+                class="cf-chip"
+                *ngFor="let family of cardFamilies"
+                [class.cf-chip--active]="cardFamilyFilter === family"
+                [attr.aria-pressed]="cardFamilyFilter === family"
+                (click)="toggleCardFamily(family)"
+              >
+                {{ familyLabel(family) }}
+              </button>
+            </div>
+            <select
+              class="cf-filter-select"
+              *ngIf="cardFamilies.length > 1"
+              [class.cf-filter-select--active]="cardFamilyFilter !== null"
+              [attr.aria-label]="'CashflowGame.filterTypes' | translate"
+              [ngModel]="cardFamilyFilter ?? ''"
+              (ngModelChange)="pickCardFamily($event)"
             >
-              {{ familyLabel(family) }}
-            </button>
-          </div>
-          <!-- Market: filter by the property type a buyer wants, then by percentage or fixed amount. -->
-          <div class="cf-filter-chips" *ngIf="marketFamilies.length">
-            <button
-              type="button"
-              class="cf-chip"
-              *ngFor="let family of marketFamilies"
-              [class.cf-chip--active]="marketFamilyFilter === family"
-              [attr.aria-pressed]="marketFamilyFilter === family"
-              (click)="toggleMarketFamily(family)"
+              <option value="">{{ 'CashflowGame.filterTypes' | translate }}</option>
+              <option *ngFor="let item of cardFamilies" [value]="item">
+                {{ familyLabel(item) }}
+              </option>
+            </select>
+            <!-- Market: filter by the property type a buyer wants, then by percentage or fixed amount. -->
+            <div class="cf-filter-chips" *ngIf="marketFamilies.length">
+              <button
+                type="button"
+                class="cf-chip"
+                *ngFor="let family of marketFamilies"
+                [class.cf-chip--active]="marketFamilyFilter === family"
+                [attr.aria-pressed]="marketFamilyFilter === family"
+                (click)="toggleMarketFamily(family)"
+              >
+                {{ familyLabel(family) }}
+              </button>
+            </div>
+            <select
+              class="cf-filter-select"
+              *ngIf="marketFamilies.length"
+              [class.cf-filter-select--active]="marketFamilyFilter !== null"
+              [attr.aria-label]="'CashflowGame.filterTypes' | translate"
+              [ngModel]="marketFamilyFilter ?? ''"
+              (ngModelChange)="pickMarketFamily($event)"
             >
-              {{ familyLabel(family) }}
-            </button>
-          </div>
-          <div class="cf-filter-chips" *ngIf="marketOfferKinds.length">
-            <button
-              type="button"
-              class="cf-chip"
-              *ngFor="let kind of marketOfferKinds"
-              [class.cf-chip--active]="marketOfferFilter === kind"
-              [attr.aria-pressed]="marketOfferFilter === kind"
-              (click)="toggleMarketOffer(kind)"
+              <option value="">{{ 'CashflowGame.filterTypes' | translate }}</option>
+              <option *ngFor="let item of marketFamilies" [value]="item">
+                {{ familyLabel(item) }}
+              </option>
+            </select>
+            <div class="cf-filter-chips" *ngIf="marketOfferKinds.length">
+              <button
+                type="button"
+                class="cf-chip"
+                *ngFor="let kind of marketOfferKinds"
+                [class.cf-chip--active]="marketOfferFilter === kind"
+                [attr.aria-pressed]="marketOfferFilter === kind"
+                (click)="toggleMarketOffer(kind)"
+              >
+                {{ 'CashflowGame.marketOffer' + marketKindWord(kind) | translate }}
+              </button>
+            </div>
+            <select
+              class="cf-filter-select"
+              *ngIf="marketOfferKinds.length"
+              [class.cf-filter-select--active]="marketOfferFilter !== null"
+              [attr.aria-label]="'CashflowGame.filterOffers' | translate"
+              [ngModel]="marketOfferFilter ?? ''"
+              (ngModelChange)="pickMarketOffer($event)"
             >
-              {{ 'CashflowGame.marketOffer' + marketKindWord(kind) | translate }}
-            </button>
-          </div>
-          <!-- Schnickschnack: filter by the account it is suggested for, then by spending group (category). -->
-          <div class="cf-filter-chips" *ngIf="doodadAccounts.length">
-            <button
-              type="button"
-              class="cf-chip"
-              *ngFor="let account of doodadAccounts"
-              [class.cf-chip--active]="doodadAccountFilter === account"
-              [attr.aria-pressed]="doodadAccountFilter === account"
-              (click)="toggleDoodadAccount(account)"
+              <option value="">{{ 'CashflowGame.filterOffers' | translate }}</option>
+              <option *ngFor="let item of marketOfferKinds" [value]="item">
+                {{ 'CashflowGame.marketOffer' + marketKindWord(item) | translate }}
+              </option>
+            </select>
+            <!-- Schnickschnack: filter by the account it is suggested for, then by spending group (category). -->
+            <div class="cf-filter-chips" *ngIf="doodadAccounts.length">
+              <button
+                type="button"
+                class="cf-chip"
+                *ngFor="let account of doodadAccounts"
+                [class.cf-chip--active]="doodadAccountFilter === account"
+                [attr.aria-pressed]="doodadAccountFilter === account"
+                (click)="toggleDoodadAccount(account)"
+              >
+                {{ account }}
+              </button>
+            </div>
+            <select
+              class="cf-filter-select"
+              *ngIf="doodadAccounts.length"
+              [class.cf-filter-select--active]="doodadAccountFilter !== null"
+              [attr.aria-label]="'CashflowGame.filterAccounts' | translate"
+              [ngModel]="doodadAccountFilter ?? ''"
+              (ngModelChange)="pickDoodadAccount($event)"
             >
-              {{ account }}
-            </button>
-          </div>
-          <div class="cf-filter-chips" *ngIf="doodadGroups.length">
-            <button
-              type="button"
-              class="cf-chip"
-              *ngFor="let group of doodadGroups"
-              [class.cf-chip--active]="doodadGroupFilter === group"
-              [attr.aria-pressed]="doodadGroupFilter === group"
-              (click)="toggleDoodadGroup(group)"
+              <option value="">{{ 'CashflowGame.filterAccounts' | translate }}</option>
+              <option *ngFor="let item of doodadAccounts" [value]="item">{{ item }}</option>
+            </select>
+            <div class="cf-filter-chips" *ngIf="doodadGroups.length">
+              <button
+                type="button"
+                class="cf-chip"
+                *ngFor="let group of doodadGroups"
+                [class.cf-chip--active]="doodadGroupFilter === group"
+                [attr.aria-pressed]="doodadGroupFilter === group"
+                (click)="toggleDoodadGroup(group)"
+              >
+                {{ doodadGroupLabel(group) }}
+              </button>
+            </div>
+            <select
+              class="cf-filter-select"
+              *ngIf="doodadGroups.length"
+              [class.cf-filter-select--active]="doodadGroupFilter !== null"
+              [attr.aria-label]="'CashflowGame.filterGroups' | translate"
+              [ngModel]="doodadGroupFilter ?? ''"
+              (ngModelChange)="pickDoodadGroup($event)"
             >
-              {{ doodadGroupLabel(group) }}
-            </button>
+              <option value="">{{ 'CashflowGame.filterGroups' | translate }}</option>
+              <option *ngFor="let item of doodadGroups" [value]="item">
+                {{ doodadGroupLabel(item) }}
+              </option>
+            </select>
           </div>
           <div class="cf-card-grid" *ngIf="cardTiles.length; else noCardMatch">
             <button

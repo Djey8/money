@@ -1809,43 +1809,6 @@
     font-size: 0.78rem;
   }
 
-  /* The quick filters: one line each, side by side to scroll, instead of seven wrapped rows. */
-  .cf-filter-chips {
-    flex-wrap: nowrap;
-    gap: 6px;
-    margin: 0 -12px 8px;
-    padding: 2px 12px;
-    overflow-x: auto;
-    scroll-snap-type: x proximity;
-    scrollbar-width: none;
-    -webkit-overflow-scrolling: touch;
-    -webkit-mask-image: linear-gradient(
-      to right,
-      transparent 0,
-      #000 10px,
-      #000 calc(100% - 26px),
-      transparent 100%
-    );
-    mask-image: linear-gradient(
-      to right,
-      transparent 0,
-      #000 10px,
-      #000 calc(100% - 26px),
-      transparent 100%
-    );
-  }
-
-  .cf-filter-chips::-webkit-scrollbar {
-    display: none;
-  }
-
-  .cf-chip {
-    flex: none;
-    padding: 5px 11px;
-    font-size: 0.8rem;
-    scroll-snap-align: start;
-  }
-
   .cf-card-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -1899,24 +1862,29 @@
   }
 }
 
-/* ───────── A tablet: wider, the ring beside the controls ───────── */
+/* ───────── A tablet or wide screen: a wider card; the ring stays big and the controls sit under it in one row ───────── */
 @media (min-width: 601px) and (min-height: 521px) {
   .cf-panel {
     width: min(94vw, 760px);
+  }
+
+  /* The roll / decision bar stays in reach under the ring, its content as wide as the controls need (not the card). */
+  .cf-solo-controls {
+    position: sticky;
+    bottom: 0;
+    z-index: 4;
+    margin: 0 -10px -10px;
+    padding: 8px max(10px, calc((100% - 560px) / 2)) 12px;
+    background: var(--color-background);
+    border-top: 1px solid var(--color-border-light);
+    box-shadow: 0 -8px 14px -10px rgba(0, 0, 0, 0.35);
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
   }
 }
 
 @media (min-width: 700px) {
   .cf-solo {
-    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
-    align-items: center;
-    column-gap: 20px;
     padding: 16px;
-  }
-
-  .cf-solo-controls {
-    align-self: center;
-    gap: 12px;
   }
 
   .cf-solo-roll-row > .btn--primary {
@@ -1948,7 +1916,7 @@
 @media (min-width: 900px) {
   .cf-panel--wide {
     top: 4vh;
-    width: min(96vw, 1120px);
+    width: min(96vw, 800px);
     max-height: 92vh;
   }
 
@@ -1966,11 +1934,6 @@
 
   .cf-stat-value {
     font-size: 1.5rem;
-  }
-
-  .cf-solo {
-    column-gap: 32px;
-    padding: 20px;
   }
 
   .cf-solo app-rat-race-board {
@@ -2073,41 +2036,13 @@
 
 /* ═══ Responsive layout, fourth pass: tablet and wide ═══ */
 @media (min-width: 700px) {
-  /* The ring on the left, the status and the controls beside it, vertically centred together. */
-  .cf-solo-board {
-    display: contents;
-  }
-
-  .cf-solo {
-    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
-    grid-template-areas:
-      'board .'
-      'board hud'
-      'board controls'
-      'board .';
-    grid-template-rows: 1fr auto auto 1fr;
+  .cf-solo-hud {
+    font-size: 0.95rem;
   }
 
   .cf-solo app-rat-race-board {
-    grid-area: board;
-    justify-self: center;
     /* never taller than the window leaves room for: the ring is in view with the stats above it */
-    max-width: min(560px, max(300px, calc(100vh - 330px)));
-  }
-
-  .cf-solo-hud {
-    grid-area: hud;
-    align-self: end;
-    flex-direction: column;
-    align-items: flex-start;
-    margin: 0 0 12px;
-    font-size: 1rem;
-    gap: 6px;
-  }
-
-  .cf-solo-controls {
-    grid-area: controls;
-    align-self: start;
+    max-width: min(560px, max(300px, calc(100vh - 420px)));
   }
 }
 
@@ -2115,34 +2050,6 @@
   .cf-panel--wide {
     top: 3vh;
     max-height: 94vh;
-  }
-
-  /* The stats become one strip: who you are, the money, the monthly result and Undo - not a tall card. */
-  .cf-summary {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    align-items: center;
-    column-gap: 28px;
-    padding: 12px 20px;
-  }
-
-  .cf-summary .cf-profession-card-header {
-    gap: 8px;
-    margin: 0;
-  }
-
-  .cf-summary .cf-stat-row {
-    margin: 0;
-    gap: 24px;
-  }
-
-  .cf-summary .cf-summary-foot {
-    flex-wrap: nowrap;
-    gap: 20px;
-  }
-
-  .cf-summary > :not(.cf-profession-card-header):not(.cf-stat-row):not(.cf-summary-foot) {
-    grid-column: 1 / -1;
   }
 
   .cf-solo-dice .cf-die {
@@ -2241,5 +2148,41 @@
 
   .cf-stat-value {
     font-size: 1rem;
+  }
+}
+
+/* ═══ The quick filters: chips on a big screen, a pair of dropdowns on a phone ═══ */
+.cf-filter-select {
+  display: none;
+}
+
+@media (max-width: 600px) {
+  .cf-filters {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .cf-filters .cf-filter-chips {
+    display: none;
+  }
+
+  .cf-filter-select {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    padding: 9px 8px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-background);
+    color: var(--color-text);
+    font-size: 0.9rem;
+    text-overflow: ellipsis;
+  }
+
+  .cf-filter-select--active {
+    border: 2px solid var(--color-primary);
+    font-weight: 700;
   }
 }

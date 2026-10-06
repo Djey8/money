@@ -84,10 +84,15 @@ part of the screenshots.
       scrolls inside the sheet; Shuffle / View card / Start game and My games are spaced and aligned.
 - [ ] **Phone**: the language screen shows six languages in two rows and Start game stays at the bottom without scrolling.
 - [ ] **Phone on its side**: the stats are one strip, the ring beside the roll / decision.
-- [ ] **Tablet**: the ring beside the status, dice and decision.
-- [ ] **Wide screen**: the dashboard panel is about 1100 px wide; the stats are one strip on top, the ring is large on the
-      left, the status lines, big dice and Roll button on the right, Bank loan and the rows two to a line below; the card lists
-      show six columns.
+- [ ] **Tablet and wide screen**: one column about 800 px wide; the ring stays big (up to 560 px), the dice and the Roll
+      button (or the decision) sit **under it in one row**, in a bar that stays in reach; Bank loan and the rows two to a line.
+- [ ] **Phone quick filters** on the card lists are **dropdowns** (two per line: kind and type, offer, account and
+      category) instead of chips; the big screens keep the chips.
+- [ ] **Subscriptions table** (whole app): on a small phone (up to 520 px) the Category column is hidden so the table fits
+      the page; at 320 px it scrolls inside its own box rather than widening the page.
+- [ ] Bank loan and **Repay loan** screens show how much **Cash** you have.
+- [ ] **Escaping the rat race ends the game at once** (also when it happens through a purchase made in the Add dialog or
+      a sale) - no extra roll; Undo of that move brings the game back.
 
 ## Languages and layout
 
@@ -106,6 +111,11 @@ First playtest (2026-10-06), handled in the next build - please re-check:
 - Settling the bank loan left the steps field at 2 -> it goes back to 1.
 - Selling a property to a market buyer paid the deposit twice (14.000 instead of 12.000) -> the Amount field is the profit.
 - The MLM bonus was booked on Daily -> now on Income.
+- Escaping the rat race still needed one more roll to end the game -> the game ends the moment the books say so.
+- Subscriptions table did not fit a small phone -> Category column hidden below 520 px (whole app).
+- Repay loan did not show the cash -> it does (also on Borrow).
+- Mobile quick filters ran off the screen -> dropdowns on phones.
+- Wide screens: ring kept big, controls under it in one row, panel about 800 px.
 - Charity / Baby / Downsized took effect the moment the dice were thrown (two-dice choice already visible) -> a roll is
   now only worked out first and applied once the totem has settled.
 - Adding a transaction (a Doodad) did not refresh the Stats page underneath -> the Add dialog now tells the pages.

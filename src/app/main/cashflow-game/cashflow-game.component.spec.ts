@@ -2607,3 +2607,49 @@ describe('CashflowGameComponent loan steps input (JFK, 2026-10-06)', () => {
     expect(component.loanIncrements).toBe(2);
   });
 });
+
+describe('CashflowGameComponent quick filters as dropdowns (JFK, 2026-10-06)', () => {
+  beforeEach(() => {
+    (AppStateService as any)._instance = undefined;
+    ProfileComponent.mail = '';
+  });
+
+  it('picking a value filters, picking "all" clears, picking the same value again changes nothing', () => {
+    const { component } = makeComponent();
+
+    component.pickCardKind('share');
+    expect(component.cardKindFilter).toBe('share');
+    component.pickCardKind('share'); // the same value again: still the share filter, not toggled off
+    expect(component.cardKindFilter).toBe('share');
+    component.pickCardKind('investment');
+    expect(component.cardKindFilter).toBe('investment');
+    component.pickCardKind(''); // "all kinds"
+    expect(component.cardKindFilter).toBeNull();
+    component.pickCardKind(''); // nothing to clear
+    expect(component.cardKindFilter).toBeNull();
+  });
+
+  it('every group has its dropdown: the market offer, the Doodad account and group', () => {
+    const { component } = makeComponent();
+
+    component.pickMarketOffer('percent');
+    expect(component.marketOfferFilter).toBe('percent');
+    component.pickMarketOffer('');
+    expect(component.marketOfferFilter).toBeNull();
+
+    component.pickDoodadGroup('Food');
+    expect(component.doodadGroupFilter).toBe('Food');
+    component.pickDoodadGroup('');
+    expect(component.doodadGroupFilter).toBeNull();
+
+    component.pickMarketFamily('EFH');
+    expect(component.marketFamilyFilter).toBe('EFH');
+    component.pickMarketFamily('');
+    expect(component.marketFamilyFilter).toBeNull();
+
+    component.pickCardFamily('EFH');
+    expect(component.cardFamilyFilter).toBe('EFH');
+    component.pickCardFamily('');
+    expect(component.cardFamilyFilter).toBeNull();
+  });
+});

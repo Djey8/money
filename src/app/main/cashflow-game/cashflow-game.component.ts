@@ -1601,6 +1601,48 @@ export class CashflowGameComponent implements OnDestroy {
     return this.kindsCache;
   }
 
+  /**
+   * A dropdown picks one value or "all" (empty) - the same as tapping a chip, including what a chip clears with it. On a
+   * phone the quick filters are dropdowns: a row of chips ran off the screen.
+   */
+  private pickFilter<T extends string>(
+    current: T | null,
+    value: string,
+    toggle: (value: T) => void,
+  ): void {
+    if (!value) {
+      if (current !== null) toggle(current); // tapping the active chip clears it
+    } else if (current !== value) {
+      toggle(value as T);
+    }
+  }
+
+  pickCardKind(value: string): void {
+    this.pickFilter(this.cardKindFilter, value, (kind) => this.toggleCardKind(kind));
+  }
+
+  pickCardFamily(value: string): void {
+    this.pickFilter(this.cardFamilyFilter, value, (family) => this.toggleCardFamily(family));
+  }
+
+  pickMarketFamily(value: string): void {
+    this.pickFilter(this.marketFamilyFilter, value, (family) => this.toggleMarketFamily(family));
+  }
+
+  pickMarketOffer(value: string): void {
+    this.pickFilter(this.marketOfferFilter, value, (kind) => this.toggleMarketOffer(kind));
+  }
+
+  pickDoodadAccount(value: string): void {
+    this.pickFilter(this.doodadAccountFilter, value, (account) =>
+      this.toggleDoodadAccount(account),
+    );
+  }
+
+  pickDoodadGroup(value: string): void {
+    this.pickFilter(this.doodadGroupFilter, value, (group) => this.toggleDoodadGroup(group));
+  }
+
   /** Tapping the active filter again clears it. */
   toggleCardKind(kind: CardKind): void {
     this.cardKindFilter = this.cardKindFilter === kind ? null : kind;
