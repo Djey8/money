@@ -53,3 +53,4 @@ export * from './cashflow-game/movement';
 export * from './cashflow-game/turn';
 export * from './cashflow-game/auto-pay';
 export * from './cashflow-game/game-end';
+export * from './cashflow-game/legal-actions';
