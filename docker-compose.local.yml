@@ -1,0 +1,113 @@
+# Local self-hosted TEST stack - the whole product on this machine, nothing deployed, nothing shared with a real
+# server. CouchDB + backend + frontend (the real nginx image) + MCP, built from the working tree.
+#
+#   .\scripts\local-env.ps1 up        start (builds the images from the current code)
+#   .\scripts\local-env.ps1 down      stop, keep the test data
+#   .\scripts\local-env.ps1 reset     stop and wipe the test data
+#
+# Everything here is throwaway: its own project name, container names, volume, ports and secrets, so it cannot touch a
+# real CouchDB or another stack. Playing the Cashflow game needs a "cashflow" account and the GAME password of THIS
+# stack, which is "localtest" (the real one never goes in a file). Skill: .claude/skills/mm-local-selfhosted.
+name: moneylocal
+
+services:
+  couchdb:
+    image: couchdb:3.3
+    container_name: mm-local-couchdb
+    ports:
+      - '15984:5984'
+    environment:
+      - COUCHDB_USER=admin
+      - COUCHDB_PASSWORD=local-test-password
+    volumes:
+      - couchdb-data:/opt/couchdb/data
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -sf http://localhost:5984/_up || exit 1']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+    networks:
+      - money-local
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: mm-local-backend
+    ports:
+      - '13000:3000'
+    environment:
+      - PORT=3000
+      # production = what a real deploy runs (secure cookies work on http://localhost in Chrome/Firefox; over a LAN IP
+      # or in Safari set MM_LOCAL_NODE_ENV=development before `up`)
+      - NODE_ENV=${MM_LOCAL_NODE_ENV:-production}
+      - LOG_LEVEL=info
+      - COUCHDB_URL=http://couchdb:5984
+      - COUCHDB_USER=admin
+      - COUCHDB_PASSWORD=local-test-password
+      - JWT_SECRET=local-test-jwt-secret-not-for-real-use-0123456789abcdef
+      - CORS_ORIGINS=http://localhost:8080,http://localhost:4200
+      - SKIP_RATE_LIMIT=true
+      # sha256 of the game password "localtest" - only for registering "cashflow" game accounts on this stack
+      - CASHFLOW_GAME_PASSWORD_SHA256=e3c353cdbccadf35c58c8968721942db7518fcdc5acfc9daecb88edc845219be
+    depends_on:
+      couchdb:
+        condition: service_healthy
+    networks:
+      - money-local
+
+  # nginx.conf also declares an HTTPS server (8443) whose certificate Kubernetes mounts from a secret; without one nginx
+  # refuses to start. This one-shot service writes a throwaway self-signed certificate into a shared volume.
+  certs:
+    image: alpine:3
+    container_name: mm-local-certs
+    command: >
+      sh -c "apk add --no-cache openssl >/dev/null &&
+      openssl req -x509 -nodes -newkey rsa:2048 -days 30 -subj /CN=localhost
+      -keyout /certs/tls.key -out /certs/tls.crt && chmod 644 /certs/tls.key /certs/tls.crt"
+    volumes:
+      - certs:/certs
+    restart: 'no'
+    networks:
+      - money-local
+
+  # The same image the real deploy ships: Angular (self-hosted edition) behind nginx, which proxies /api to `backend`
+  # and /mcp to `mcp` by these service names.
+  frontend:
+    build: .
+    container_name: mm-local-frontend
+    ports:
+      - '8080:8080'
+    volumes:
+      - certs:/etc/nginx/certs:ro
+    depends_on:
+      backend:
+        condition: service_started
+      certs:
+        condition: service_completed_successfully
+    networks:
+      - money-local
+
+  mcp:
+    build:
+      context: .
+      dockerfile: apps/mcp/Dockerfile
+    container_name: mm-local-mcp
+    ports:
+      - '13939:3939'
+    environment:
+      - MM_API_URL=http://backend:3000/api/v1
+      - MM_MCP_PUBLIC_URL=http://localhost:8080
+    depends_on:
+      - backend
+    networks:
+      - money-local
+
+volumes:
+  couchdb-data:
+  certs:
+
+networks:
+  money-local:
+    driver: bridge

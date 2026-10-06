@@ -169,6 +169,10 @@ Access via `http://<server-ip>` (port 80 through Ingress or NodePort).
 
 ---
 
+## Local test stack (Podman, nothing deployed)
+
+To try the whole product on your own machine - CouchDB, backend, the real nginx frontend and the MCP server, built from the working tree with throwaway secrets - run `.\scripts\local-env.ps1 up` (Windows, Podman), then open http://localhost:8080. `down` keeps the test data, `reset` deletes it, `status` and `logs` show what runs. It is a separate Compose project (`docker-compose.local.yml`, containers `mm-local-*`), so it never touches a real database. The Cashflow game password on this stack is `localtest`. Details and troubleshooting: `.claude/skills/mm-local-selfhosted/SKILL.md`.
+
 ## Windows / WSL (Local Development)
 
 For developing and testing self-hosted mode on Windows with WSL2 + K3s:

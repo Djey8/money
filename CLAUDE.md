@@ -67,4 +67,4 @@ Install deps first if `node_modules` is missing: `npm ci --legacy-peer-deps` (ro
 - `docs/discovery/` — Phase 0 findings: `ARCHITECTURE.md`, `DOMAIN_MODEL.md`, `FEATURE_CATALOG.md`, `RISKS_AND_QUESTIONS.md`.
 - `docs/SELFHOSTED.md`, `docs/DEPLOYMENT.md` — self-hosted setup and deploy-script flag reference.
 - `backend/DATABASE_STRUCTURE.md` — CouchDB storage paths and the frontend's tiered-loading contract.
-- Skills: `mm-conventions`, `mm-add-api-endpoint`, `mm-domain-rules`, `mm-release`, `mm-code-review` under `.claude/skills/`.
+- Skills: `mm-conventions`, `mm-add-api-endpoint`, `mm-domain-rules`, `mm-release`, `mm-code-review`, `mm-local-selfhosted` (bring up a local full stack to test without deploying) under `.claude/skills/`.
