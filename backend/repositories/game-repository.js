@@ -1,106 +1,36 @@
 'use strict';
 
 const {
-  initialCashflowGameState,
   summarizeGameFinances,
   cashOnHandMinor,
   legalActions,
   gameOutcome,
   currentTurn,
   CLASSIC_RAT_RACE_BOARD,
+  systemClock,
+  playPayday,
+  playBaby,
+  playBankLoan,
+  playCharityPaying,
+  playDownsizedPaying,
+  roundBooksOf,
+  clearCashflowStatus,
+  emptyEffects,
+  applyEffectsToBooks,
+  endIfOver,
 } = require('@money/domain');
 const { getEncryptionSession } = require('../services/encryption-session');
 const { decryptValue, toApiTransactions } = require('./transaction-repository');
-const { getSettings } = require('./settings-repository');
+const { decodeGameState } = require('../services/game-state-codec');
+const { getSettings, decryptSettings } = require('./settings-repository');
+const { readBooks, applyEffectsToData } = require('../services/game-writer');
+const { createGameText, createMoneyFormat } = require('../services/game-text');
 
 /**
  * Cashflow game, read side (todo/cashflow-game-pro.md slice D1). The live game is stored the way the browser writes it:
  * every leaf of `data.cashflowGame` an encrypted string, so `decodeGameState` is the server's port of the browser's
  * `decryptCashflowGameState` (app-data.service.ts) - the two must read the same document the same way.
  */
-
-function decodeGameState(raw, session) {
-  if (raw == null) return initialCashflowGameState();
-  const str = (value) => decryptValue(value, session);
-  const num = (value) => parseInt(str(value), 10) || 0;
-  const float = (value) => parseFloat(str(value)) || 0;
-  const flag = (value) => str(value) === 'true';
-  const nullableStr = (value) => (value == null ? null : str(value));
-  const list = (value, map) => (Array.isArray(value) ? value.map(map) : []);
-  const drawn = (deck) => list(raw.drawnCardIds?.[deck], str);
-
-  const state = {
-    gameSetId: nullableStr(raw.gameSetId),
-    professionId: nullableStr(raw.professionId),
-    mode: raw.mode != null ? str(raw.mode) : 'companion',
-    boardPosition: raw.boardPosition == null ? null : num(raw.boardPosition),
-    round: num(raw.round),
-    virtualDate: nullableStr(raw.virtualDate),
-    children: num(raw.children),
-    charityRoundsLeft: num(raw.charityRoundsLeft),
-    unemployedRoundsLeft: num(raw.unemployedRoundsLeft),
-    gameSubscriptionTitles: list(raw.gameSubscriptionTitles, str),
-    drawnCardIds: {
-      dealSmall: drawn('dealSmall'),
-      dealBig: drawn('dealBig'),
-      market: drawn('market'),
-      doodad: drawn('doodad'),
-    },
-    history: list(raw.history, (entry) => ({
-      round: num(entry.round),
-      virtualDateBefore: str(entry.virtualDateBefore),
-      virtualDateAfter: str(entry.virtualDateAfter),
-      kind: str(entry.kind),
-      createdTransactions: list(entry.createdTransactions, (t) => ({
-        account: str(t.account),
-        amountMinor: num(t.amountMinor),
-        date: str(t.date),
-        time: str(t.time),
-        category: str(t.category),
-        comment: str(t.comment),
-      })),
-    })),
-    assetDeals: list(raw.assetDeals, (d) => ({
-      title: str(d.title),
-      coins: float(d.coins),
-      costMinor: num(d.costMinor),
-      ...(d.successOn != null ? { successOn: num(d.successOn) } : {}),
-      ...(d.payoutMinor != null ? { payoutMinor: num(d.payoutMinor) } : {}),
-      ...(d.recurring != null ? { recurring: flag(d.recurring) } : {}),
-      ...(d.rollDue != null ? { rollDue: flag(d.rollDue) } : {}),
-      ...(d.split?.shareTag != null ? { split: { shareTag: str(d.split.shareTag) } } : {}),
-      stage: str(d.stage),
-      ...(d.successText != null ? { successText: str(d.successText) } : {}),
-      ...(d.failureText != null ? { failureText: str(d.failureText) } : {}),
-    })),
-    marketOffers: list(raw.marketOffers, (o) => ({
-      title: str(o.title),
-      salePriceMinor: num(o.salePriceMinor),
-      cardId: str(o.cardId),
-      label: str(o.label),
-      ...(o.pricePerCoinMinor != null ? { pricePerCoinMinor: num(o.pricePerCoinMinor) } : {}),
-    })),
-  };
-  if (raw.turn != null) {
-    state.turn = {
-      phase: str(raw.turn.phase),
-      count: num(raw.turn.count),
-      ...(raw.turn.outcome != null ? { outcome: str(raw.turn.outcome) } : {}),
-      ...(Array.isArray(raw.turn.lastRoll) ? { lastRoll: raw.turn.lastRoll.map(num) } : {}),
-      ...(raw.turn.pending != null
-        ? {
-            pending: {
-              kind: str(raw.turn.pending.kind),
-              spaceIndex: num(raw.turn.pending.spaceIndex),
-            },
-          }
-        : {}),
-    };
-  }
-  if (raw.gameId != null) state.gameId = str(raw.gameId);
-  if (raw.gameName != null) state.gameName = str(raw.gameName);
-  return state;
-}
 
 /** The printed content lives in its own module, kept out of the domain package's main entry on purpose. */
 function loadGameSets() {
@@ -208,4 +138,114 @@ function getGameSet(gameSetId) {
   return { ...toSetSummary(gameSet), loanRule: gameSet.loanRule, board: CLASSIC_RAT_RACE_BOARD };
 }
 
-module.exports = { getGame, listGameSets, getGameSet, decodeGameState };
+const MAX_WRITE_RETRIES = 10;
+
+class GameActionError extends Error {
+  constructor(code, message) {
+    super(message);
+    this.code = code;
+  }
+}
+
+/** The effects one action plays over the books; the rules themselves are the domain's. */
+function playAction(action, input, { books, profession, deps }) {
+  switch (action) {
+    case 'payday':
+      return [playPayday(roundBooksOf(books), deps)];
+    case 'baby':
+      return [playBaby(roundBooksOf(books), profession, deps)];
+    case 'charity':
+      return playCharityPaying(books, deps).effects;
+    case 'downsized':
+      return playDownsizedPaying(books, deps).effects;
+    case 'bank_loan':
+      return [playBankLoan(books, input.amountMinor, deps)];
+    case 'clear_status':
+      return [emptyEffects(clearCashflowStatus(books.state, input.status), null)];
+    default:
+      throw new GameActionError('GAME_ACTION_UNKNOWN', `Unknown game action: ${action}`);
+  }
+}
+
+/**
+ * Plays one action of the live game and stores the result (todo/cashflow-game-pro.md slice D2): the action must be one
+ * of `legalActions`, the rule is the domain's, the effects are written the way the browser stores them - one document
+ * write, retried on a concurrent change. Returns the game as `getGame` shows it afterwards.
+ */
+async function playGameAction(deps, userId, action, input = {}) {
+  let attempt = 0;
+  while (attempt < MAX_WRITE_RETRIES) {
+    let userDoc;
+    try {
+      userDoc = await deps.usersDb.get(userId);
+    } catch (error) {
+      if (error.statusCode !== 404) throw error;
+      throw new GameActionError('GAME_NOT_STARTED', 'No game is running.');
+    }
+    const data = userDoc.data || {};
+    const session = await getEncryptionSession(deps.authDb, userId);
+    const settings = decryptSettings(data.settings, session);
+    const state = decodeGameState(data.cashflowGame, session);
+    if (!state.professionId) throw new GameActionError('GAME_NOT_STARTED', 'No game is running.');
+    const legal = legalActions(state).map((candidate) => candidate.action);
+    if (!legal.includes(action)) {
+      throw new GameActionError(
+        'GAME_ACTION_NOT_ALLOWED',
+        `'${action}' is not allowed now. Allowed: ${legal.join(', ')}.`,
+      );
+    }
+    const gameSet = loadGameSets().find((candidate) => candidate.id === state.gameSetId);
+    const profession = gameSet?.professions.find(
+      (candidate) => candidate.id === state.professionId,
+    );
+    const books = readBooks(data, session, { state, allocation: settings.allocation, gameSet });
+    const text = createGameText(settings.language);
+    const gameDeps = {
+      clock: systemClock,
+      text,
+      money: createMoneyFormat(settings),
+      plainMoney: createMoneyFormat(settings),
+    };
+
+    let effectsList;
+    try {
+      effectsList = playAction(action, input, { books, profession, deps: gameDeps });
+    } catch (error) {
+      if (error instanceof GameActionError) throw error;
+      throw new GameActionError('GAME_RULE_REFUSED', error.message);
+    }
+
+    let nextData = data;
+    let nextBooks = books;
+    for (const effects of effectsList) {
+      nextData = applyEffectsToData(nextData, effects, { session, nowIso: systemClock.nowIso() });
+      nextBooks = applyEffectsToBooks(nextBooks, effects);
+    }
+    // A solo game ends the moment the books say so (escaped / bankrupt).
+    const ended = endIfOver(nextBooks.state, nextBooks.subscriptions);
+    if (ended !== nextBooks.state) {
+      nextData = applyEffectsToData(nextData, emptyEffects(ended, null), {
+        session,
+        nowIso: systemClock.nowIso(),
+      });
+    }
+
+    try {
+      await deps.usersDb.insert({ ...userDoc, data: nextData, updatedAt: systemClock.nowIso() });
+      return await getGame(deps, userId);
+    } catch (error) {
+      if (error.statusCode !== 409) throw error;
+      attempt += 1;
+    }
+  }
+  throw new GameActionError('GAME_WRITE_CONFLICT', 'The game kept changing; try again.');
+}
+
+module.exports = {
+  getGame,
+  listGameSets,
+  getGameSet,
+  decodeGameState,
+  playGameAction,
+  GameActionError,
+};

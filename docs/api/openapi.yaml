@@ -905,6 +905,198 @@ paths:
           $ref: '#/components/responses/NotAGameAccountOrScope'
         '404':
           $ref: '#/components/responses/NotFound'
+  /game/payday:
+    post:
+      operationId: gamePayday
+      summary: Run a Payday
+      description: >-
+        Salary and every monthly expense of the game are booked, earlier game transactions age back a month, the round advances (companion game). Game accounts only; requires `game:w`. The action must be one of the `legalActions` of
+        `GET /game` (409 `game_action_not_allowed` otherwise); a refusal by the game's own rules is 422
+        `game_rule_refused`, 409 `game_not_started` means no game is running. Returns the game as `GET /game`
+        shows it afterwards. Audit logged.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The game after the action
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameView'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '409':
+          $ref: '#/components/responses/GameActionRefused'
+        '422':
+          $ref: '#/components/responses/GameActionRefused'
+  /game/baby:
+    post:
+      operationId: gameBaby
+      summary: A child is born
+      description: >-
+        Adds a child (at most 3) and raises the children-expenses subscription (companion game). Game accounts only; requires `game:w`. The action must be one of the `legalActions` of
+        `GET /game` (409 `game_action_not_allowed` otherwise); a refusal by the game's own rules is 422
+        `game_rule_refused`, 409 `game_not_started` means no game is running. Returns the game as `GET /game`
+        shows it afterwards. Audit logged.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The game after the action
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameView'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '409':
+          $ref: '#/components/responses/GameActionRefused'
+        '422':
+          $ref: '#/components/responses/GameActionRefused'
+  /game/charity:
+    post:
+      operationId: gameCharity
+      summary: Donate to charity
+      description: >-
+        Pays 10% of the total income and opens the 1-or-2-dice choice for the next 3 turns (companion game). The Bank loan is taken first when cash is short. Game accounts only; requires `game:w`. The action must be one of the `legalActions` of
+        `GET /game` (409 `game_action_not_allowed` otherwise); a refusal by the game's own rules is 422
+        `game_rule_refused`, 409 `game_not_started` means no game is running. Returns the game as `GET /game`
+        shows it afterwards. Audit logged.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The game after the action
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameView'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '409':
+          $ref: '#/components/responses/GameActionRefused'
+        '422':
+          $ref: '#/components/responses/GameActionRefused'
+  /game/downsized:
+    post:
+      operationId: gameDownsized
+      summary: Lose the job (Downsized)
+      description: >-
+        Pays every monthly expense once and shows the sitting-out reminder (companion game). The Bank loan is taken first when cash is short. Game accounts only; requires `game:w`. The action must be one of the `legalActions` of
+        `GET /game` (409 `game_action_not_allowed` otherwise); a refusal by the game's own rules is 422
+        `game_rule_refused`, 409 `game_not_started` means no game is running. Returns the game as `GET /game`
+        shows it afterwards. Audit logged.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The game after the action
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameView'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '409':
+          $ref: '#/components/responses/GameActionRefused'
+        '422':
+          $ref: '#/components/responses/GameActionRefused'
+  /game/status/clear:
+    post:
+      operationId: gameClearStatus
+      summary: Dismiss a status reminder
+      description: >-
+        Clears the Charity or Downsized reminder once the turns have played out. Not a financial action; no history entry (companion game). Game accounts only; requires `game:w`. The action must be one of the `legalActions` of
+        `GET /game` (409 `game_action_not_allowed` otherwise); a refusal by the game's own rules is 422
+        `game_rule_refused`, 409 `game_not_started` means no game is running. Returns the game as `GET /game`
+        shows it afterwards. Audit logged.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [charity, unemployed]
+            example: { status: unemployed }
+      responses:
+        '200':
+          description: The game after the action
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameView'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '409':
+          $ref: '#/components/responses/GameActionRefused'
+        '422':
+          $ref: '#/components/responses/GameActionRefused'
+  /game/bank-loan:
+    post:
+      operationId: gameBankLoan
+      summary: Take or repay a bank loan
+      description: >-
+        Moves the loan by `amountMinor`, which must be a multiple of the game set's loan step. The Bank loan liability and its interest subscription are recomputed from the new principal; the cash moves for real. Game accounts only; requires `game:w`. The action must be one of the `legalActions` of
+        `GET /game` (409 `game_action_not_allowed` otherwise); a refusal by the game's own rules is 422
+        `game_rule_refused`, 409 `game_not_started` means no game is running. Returns the game as `GET /game`
+        shows it afterwards. Audit logged.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amountMinor]
+              properties:
+                amountMinor:
+                  type: integer
+                  description: Positive borrows, negative repays.
+            example: { amountMinor: 100000 }
+      responses:
+        '200':
+          description: The game after the action
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameView'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '409':
+          $ref: '#/components/responses/GameActionRefused'
+        '422':
+          $ref: '#/components/responses/GameActionRefused'
   /mojo:
     get:
       operationId: getMojo
@@ -4633,7 +4825,19 @@ components:
       properties:
         action:
           type: string
-          enum: [start, roll, pass_card, payday, baby, charity, downsized, bank_loan, reset]
+          enum:
+            [
+              start,
+              roll,
+              pass_card,
+              payday,
+              baby,
+              charity,
+              downsized,
+              clear_status,
+              bank_loan,
+              reset,
+            ]
         description: { type: string }
     GameView:
       type: object
@@ -7180,6 +7384,18 @@ components:
             status: 403
             detail: The Cashflow game endpoints are only available to game accounts.
             code: not_a_game_account
+    GameActionRefused:
+      description: The action is not allowed now (`game_action_not_allowed`, `game_not_started`, `game_write_conflict`, 409) or the game's own rules refuse it (`game_rule_refused`, 422)
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://money-manager.dev/problems/game_action_not_allowed
+            title: Game action refused
+            status: 409
+            detail: "'payday' is not allowed now. Allowed: roll, bank_loan, reset."
+            code: game_action_not_allowed
     NotFound:
       description: Requested resource was not found
       content:

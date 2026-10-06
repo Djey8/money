@@ -39,7 +39,13 @@ const {
   getGrowPnl,
 } = require('../repositories/report-repository');
 const { getMojoStatus, updateMojoTarget } = require('../repositories/mojo-repository');
-const { getGame, listGameSets, getGameSet } = require('../repositories/game-repository');
+const {
+  getGame,
+  listGameSets,
+  getGameSet,
+  playGameAction,
+  GameActionError,
+} = require('../repositories/game-repository');
 const { isGameAccountEmail } = require('../services/game-account');
 const {
   settleBucket,
@@ -3515,6 +3521,65 @@ router.get('/game/sets/:setId', requireScope('game:r'), requireGameAccount, (req
   } catch (error) {
     return next(error);
   }
+});
+
+// Game actions (slice D2): each is one of the game's `legalActions`; the rule is the domain's, so a refusal reads the
+// same as in the app.
+const GAME_ACTION_STATUS = {
+  GAME_NOT_STARTED: 409,
+  GAME_ACTION_NOT_ALLOWED: 409,
+  GAME_RULE_REFUSED: 422,
+  GAME_WRITE_CONFLICT: 409,
+};
+
+function gameAction(path, action, readInput) {
+  router.post(path, requireScope('game:w'), requireGameAccount, async (req, res, next) => {
+    let input;
+    try {
+      input = readInput ? readInput(req.body || {}) : {};
+    } catch (error) {
+      return problem(res, 400, 'validation_invalid', 'Invalid game request', error.message);
+    }
+    try {
+      const game = await playGameAction(
+        { usersDb: getUsersDb(), authDb: getAuthDb() },
+        req.userId,
+        action,
+        input,
+      );
+      await recordAuditEntry(getAuditDb(), {
+        userId: req.userId,
+        actor: auditActor(req.auth),
+        method: req.method,
+        path: req.baseUrl + req.path,
+        resource: 'game',
+      });
+      return res.json(game);
+    } catch (error) {
+      if (error instanceof GameActionError) {
+        const status = GAME_ACTION_STATUS[error.code] || 400;
+        return problem(res, status, error.code.toLowerCase(), 'Game action refused', error.message);
+      }
+      return next(error);
+    }
+  });
+}
+
+gameAction('/game/payday', 'payday');
+gameAction('/game/baby', 'baby');
+gameAction('/game/charity', 'charity');
+gameAction('/game/downsized', 'downsized');
+gameAction('/game/status/clear', 'clear_status', (body) => {
+  if (body.status !== 'charity' && body.status !== 'unemployed') {
+    throw new Error("status must be 'charity' or 'unemployed'.");
+  }
+  return { status: body.status };
+});
+gameAction('/game/bank-loan', 'bank_loan', (body) => {
+  if (!Number.isInteger(body.amountMinor) || body.amountMinor === 0) {
+    throw new Error('amountMinor must be a non-zero integer (positive borrows, negative repays).');
+  }
+  return { amountMinor: body.amountMinor };
 });
 
 router.post('/auth/tokens', requireSession, async (req, res) => {

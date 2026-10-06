@@ -138,3 +138,138 @@ describe('GET /game/sets', () => {
     expect(refused.status).toBe(403);
   });
 });
+
+const startedState = (patch = {}) => ({
+  gameSetId: 'placeholder',
+  professionId: 'placeholder-profession',
+  mode: 'companion',
+  boardPosition: null,
+  round: 0,
+  virtualDate: '2026-01-01',
+  children: 0,
+  charityRoundsLeft: 0,
+  unemployedRoundsLeft: 0,
+  gameSubscriptionTitles: ['Placeholder profession Salary', 'Placeholder Expenses'],
+  drawnCardIds: { dealSmall: [], dealBig: [], market: [], doodad: [] },
+  history: [],
+  ...patch,
+});
+
+const gameSubscriptions = [
+  {
+    id: 'subscriptions_salary',
+    title: 'Placeholder profession Salary',
+    account: 'Income',
+    amount: 3000,
+    startDate: '2026-01-05',
+    endDate: '',
+    category: '@Salary',
+    comment: '#cashflow',
+    frequency: 'monthly',
+  },
+  {
+    id: 'subscriptions_expenses',
+    title: 'Placeholder Expenses',
+    account: 'Daily',
+    amount: -1800,
+    startDate: '2026-01-06',
+    endDate: '',
+    category: '@Placeholder Expenses',
+    comment: '#cashflow',
+    frequency: 'monthly',
+  },
+];
+
+async function startedGameUser(suffix, patch) {
+  const user = await registerGameUser(suffix);
+  await session('post', '/api/data/write/subscriptions', user.token).send(gameSubscriptions);
+  const write = await session('post', '/api/data/write/cashflowGame', user.token).send(
+    startedState(patch),
+  );
+  expect(write.status).toBe(200);
+  return user;
+}
+
+describe('POST /game/* - companion actions', () => {
+  it('runs a Payday: salary and expenses booked, the round advanced, the game state stored', async () => {
+    if (!dbAvailable) return;
+    const user = await startedGameUser('_payday');
+    const response = await session('post', '/api/v1/game/payday', user.token).send({});
+    expect(response.status).toBe(200);
+    expect(response.body).toMatchObject({ round: 1, outcome: 'playing' });
+    expect(response.body.cashMinor).toBe(120000);
+
+    const transactions = await session('get', '/api/v1/transactions', user.token);
+    expect(transactions.body.transactions.map((t) => t.amountMinor).sort((a, b) => a - b)).toEqual([
+      -180000, 300000,
+    ]);
+
+    // the stored state is what a second read sees
+    const again = await session('get', '/api/v1/game', user.token);
+    expect(again.body.round).toBe(1);
+  });
+
+  it('takes and repays a bank loan, with its interest subscription', async () => {
+    if (!dbAvailable) return;
+    const user = await startedGameUser('_loan');
+    const borrowed = await session('post', '/api/v1/game/bank-loan', user.token).send({
+      amountMinor: 100000,
+    });
+    expect(borrowed.status).toBe(200);
+    expect(borrowed.body.cashMinor).toBe(100000);
+    const subscriptions = await session('get', '/api/v1/subscriptions', user.token);
+    expect(subscriptions.body.subscriptions.map((s) => s.title)).toContain('Bank loan interest');
+
+    const repaid = await session('post', '/api/v1/game/bank-loan', user.token).send({
+      amountMinor: -100000,
+    });
+    expect(repaid.status).toBe(200);
+    expect(repaid.body.cashMinor).toBe(0);
+    const after = await session('get', '/api/v1/subscriptions', user.token);
+    expect(after.body.subscriptions.map((s) => s.title)).not.toContain('Bank loan interest');
+  });
+
+  it('adds a child (Baby) and keeps the expenses subscription', async () => {
+    if (!dbAvailable) return;
+    const user = await startedGameUser('_baby');
+    const response = await session('post', '/api/v1/game/baby', user.token).send({});
+    expect(response.status).toBe(200);
+    expect(response.body.children).toBe(1);
+  });
+
+  it('refuses what the rules do not allow, and bad input', async () => {
+    if (!dbAvailable) return;
+    const solo = await startedGameUser('_solo', {
+      mode: 'solo',
+      turn: { phase: 'roll', count: 0 },
+    });
+    const refused = await session('post', '/api/v1/game/payday', solo.token).send({});
+    expect(refused.status).toBe(409);
+    expect(refused.body.code).toBe('game_action_not_allowed');
+
+    const bad = await session('post', '/api/v1/game/bank-loan', solo.token).send({
+      amountMinor: 0,
+    });
+    expect(bad.status).toBe(400);
+
+    const none = await registerGameUser('_nogame');
+    const noGame = await session('post', '/api/v1/game/payday', none.token).send({});
+    expect(noGame.status).toBe(409);
+    expect(noGame.body.code).toBe('game_not_started');
+  });
+
+  it('needs game:w and a game account', async () => {
+    if (!dbAvailable) return;
+    const user = await startedGameUser('_scopew');
+    const readOnly = await patWith(user, ['game:r']);
+    const denied = await session('post', '/api/v1/game/payday', readOnly).send({});
+    expect(denied.status).toBe(403);
+    expect(denied.body.code).toBe('scope_insufficient');
+
+    const plain = await registerTestUser('_game_plain_w');
+    createdSessions.push(plain);
+    const notGame = await session('post', '/api/v1/game/payday', plain.token).send({});
+    expect(notGame.status).toBe(403);
+    expect(notGame.body.code).toBe('not_a_game_account');
+  });
+});
