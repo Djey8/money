@@ -207,6 +207,11 @@
   cursor: pointer;
 }
 
+.cf-start-games-btn {
+  /* clear space between the Start button above and My games: they read as two separate choices */
+  margin-top: 28px;
+}
+
 .cf-row-btn:hover {
   background-color: var(--color-background);
 }
