@@ -56,3 +56,4 @@ export * from './cashflow-game/game-end';
 export * from './cashflow-game/legal-actions';
 export * from './cashflow-game/card-plan-text';
 export * from './cashflow-game/positions';
+export * from './cashflow-game/actions';

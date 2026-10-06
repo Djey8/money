@@ -25,31 +25,12 @@ const {
   settleDecision,
   CLASSIC_RAT_RACE_BOARD,
   systemRng,
-  drawRandomCard,
-  dealInputFromCard,
-  takenDealLabels,
-  planDeal,
-  executeDeal,
-  payCardExpense,
-  doodadAccount,
-  dealPlanText,
-  doodadPaymentCategory,
-  doodadPaymentTitle,
-  buyAssetDeal,
-  sellPosition,
-  marketCardKind,
-  playMarketBuyerCard,
-  playShareSplitCard,
-  playBoostCard,
-  playMarketCostCard,
-  updateSharePrice,
-  buyerCardTypes,
-  propertyCardTypes,
-  businessCardLabels,
-  MARKET_COST_ACCOUNT,
-  openDecisions,
-  resolveGamble,
-  rollDie,
+  drawCardAction,
+  buyDealAction,
+  payDoodadAction,
+  playMarketAction,
+  rollDecisionAction,
+  sellPositionAction,
 } = require('@money/domain');
 const { getEncryptionSession } = require('../services/encryption-session');
 const { decryptSettings } = require('./settings-repository');
@@ -160,7 +141,7 @@ function playStart(books, input, deps, gameSets) {
  * What one action plays over the books: the effects in order, the one History step they share when they carry none of
  * their own (a roll), and what the caller reports back (`result`).
  */
-function playAction(action, input, { books, profession, deps, gameSets, gameSet }) {
+function playAction(action, input, { books, profession, deps, gameSets }) {
   switch (action) {
     case 'start':
       return { effects: playStart(books, input, deps, gameSets) };
@@ -202,264 +183,20 @@ function playAction(action, input, { books, profession, deps, gameSets, gameSet 
       return { effects: [emptyEffects(settled.state, settled.step)] };
     }
     case 'draw_card':
-      return drawCard(books, input, deps, gameSet);
+      return drawCardAction(books, input, deps);
     case 'buy_deal':
-      return buyDeal(books, input, deps, gameSet);
+      return buyDealAction(books, input, deps);
     case 'pay_doodad':
-      return payDoodad(books, input, deps, gameSet);
+      return payDoodadAction(books, input, deps);
     case 'play_market':
-      return playMarket(books, input, deps, gameSet);
+      return playMarketAction(books, input, deps);
     case 'roll_decision':
-      return rollDecision(books, input, deps);
+      return rollDecisionAction(books, input, deps);
     case 'sell_position':
-      return sellHolding(books, input, deps);
+      return sellPositionAction(books, input, deps);
     default:
       throw refuse('GAME_ACTION_UNKNOWN', `Unknown game action: ${action}`);
   }
-}
-
-const DECK_FOR_PENDING = { deal: ['dealSmall', 'dealBig'], market: ['market'], doodad: ['doodad'] };
-
-function cardTextDeps(deps) {
-  return { text: deps.text, cards: deps.cards, money: deps.money };
-}
-
-/** A card as the API shows it: its numbers, plus what it prints in the game's language. */
-function describeCard(card, deps) {
-  return {
-    ...card,
-    printed: deps.cards.textFor(card.id),
-    label: deps.cards.symbolFor(card.symbol),
-  };
-}
-
-function findDeck(gameSet, deckKind) {
-  const deck = gameSet?.decks?.[deckKind];
-  if (!deck) throw refuse('GAME_RULE_REFUSED', `This game set has no ${deckKind} cards.`);
-  return deck;
-}
-
-function drawCard(books, input, deps, gameSet) {
-  const deckKind = input.deck;
-  const pending = books.state.turn?.pending;
-  if (
-    books.state.mode === 'solo' &&
-    pending &&
-    !DECK_FOR_PENDING[pending.kind].includes(deckKind)
-  ) {
-    throw refuse(
-      'GAME_RULE_REFUSED',
-      `This space asks for a ${pending.kind} card: draw from ${DECK_FOR_PENDING[pending.kind].join(' or ')}.`,
-    );
-  }
-  const drawn = drawRandomCard(
-    findDeck(gameSet, deckKind),
-    books.state.drawnCardIds[deckKind],
-    deps.rng,
-  );
-  const state = {
-    ...books.state,
-    drawnCardIds: { ...books.state.drawnCardIds, [deckKind]: drawn.drawnIds },
-  };
-  return {
-    effects: [emptyEffects(state, null)],
-    result: { deck: deckKind, reshuffled: drawn.reshuffled, card: describeCard(drawn.card, deps) },
-  };
-}
-
-/** Plans a Deal card as a Grow project and buys it - the app's two steps, so Undo takes them back one at a time. */
-function buyDeal(books, input, deps, gameSet) {
-  const decks = [...findDeck(gameSet, 'dealSmall'), ...(gameSet.decks.dealBig ?? [])];
-  const card = decks.find((candidate) => candidate.id === input.cardId);
-  if (!card) throw refuse('GAME_RULE_REFUSED', `No Deal card with the id '${input.cardId}'.`);
-  const symbol = card.symbol ?? card.title;
-  const holds = books.shares.some((share) => share.tag === symbol && share.quantity > 0);
-  if (card.assetKind === 'share' && holds) {
-    // The market moves the price of a share already held; planning it again would double the position.
-    const priced = updateSharePrice(
-      books,
-      card,
-      { description: deps.cards.textFor(card.id).description },
-      deps,
-    );
-    return {
-      effects: [priced.effects],
-      settle: true,
-      result: { card: describeCard(card, deps), title: priced.title, kind: 'priceUpdate' },
-    };
-  }
-  const dealInput = dealInputFromCard(
-    card,
-    dealPlanText(card, cardTextDeps(deps)),
-    takenDealLabels(books),
-  );
-  const plan = planDeal(books, dealInput, deps);
-  const planned = applyEffectsToBooks(books, plan);
-  // A special-asset card (gold, the loan to a relative, MLM) is bought as an asset; a dice card then waits for its roll.
-  const executed =
-    card.assetKind === 'asset'
-      ? buyAssetDeal(planned, dealInput.title, deps)
-      : executeDeal(planned, dealInput.title, input.quantity, deps);
-  return {
-    effects: [plan, ...executed.steps],
-    settle: true,
-    result: { card: describeCard(card, deps), title: dealInput.title, kind: executed.kind },
-  };
-}
-
-/** A Market or Doodad card's heading in the game's language (a star card is the jackpot of the pile). */
-function cardHeading(card, deps) {
-  const name = deps.cards.textFor(card.id).title ?? card.title;
-  return card.star ? `${name} ★` : name;
-}
-
-/** Plays a Market card the way its kind asks; a card that does not apply to the player is still played (a History step). */
-function playMarket(books, input, deps, gameSet) {
-  const card = findDeck(gameSet, 'market').find((candidate) => candidate.id === input.cardId);
-  if (!card) throw refuse('GAME_RULE_REFUSED', `No Market card with the id '${input.cardId}'.`);
-  const title = cardHeading(card, deps);
-  const label = (symbol) => deps.cards.symbolFor(symbol);
-  const kind = marketCardKind(card);
-  const described = describeCard(card, deps);
-  switch (kind) {
-    case 'buyer':
-    case 'gold': {
-      const played = playMarketBuyerCard(
-        books,
-        card,
-        { title, types: buyerCardTypes(card, label) },
-        deps,
-      );
-      return {
-        effects: [played.effects],
-        settle: true,
-        result: { card: described, kind, matched: played.matched },
-      };
-    }
-    case 'split': {
-      const played = playShareSplitCard(books, card, { title, labels: [card.splits.symbol] }, deps);
-      return {
-        effects: [played.effects],
-        settle: true,
-        result: {
-          card: described,
-          kind,
-          share: played.share ?? null,
-          decisionOpen: played.effects.decisionNeeded,
-        },
-      };
-    }
-    case 'boost': {
-      const played = playBoostCard(
-        books,
-        card,
-        {
-          title,
-          businessLabels: card.boost.onlyBusinesses ? businessCardLabels(label) : undefined,
-        },
-        deps,
-      );
-      return {
-        effects: [played.effects],
-        settle: true,
-        result: { card: described, kind, changed: played.changed },
-      };
-    }
-    case 'cost': {
-      const played = playMarketCostCard(books, card, { title, types: propertyCardTypes(label) });
-      if (!played.property) {
-        return {
-          effects: [played.effects],
-          settle: true,
-          result: { card: described, kind, property: null },
-        };
-      }
-      const flavor = (deps.cards.textFor(card.id).comment ?? '')
-        .split('{property}')
-        .join(played.property);
-      const effects = payCardExpense(
-        books,
-        {
-          kind: 'marketCost',
-          title,
-          flavor,
-          category: played.property,
-          costMinor: card.pays.costMinor,
-          account: MARKET_COST_ACCOUNT,
-        },
-        deps,
-      );
-      return {
-        effects,
-        settle: true,
-        result: {
-          card: described,
-          kind,
-          property: played.property,
-          costMinor: card.pays.costMinor,
-        },
-      };
-    }
-    default:
-      return { effects: [], settle: true, result: { card: described, kind } };
-  }
-}
-
-/** Rolls the die for a waiting card: a stock split doubles on 1-3, every other card wins on a high roll. */
-function rollDecision(books, input, deps) {
-  const waiting = openDecisions(books.state);
-  const deal = input.title
-    ? waiting.find((candidate) => candidate.title === input.title)
-    : waiting[0];
-  if (!deal) throw refuse('GAME_RULE_REFUSED', 'There is no dice decision waiting.');
-  const roll = rollDie(deps.rng);
-  const won = deal.split ? roll <= 3 : roll >= (deal.successOn ?? 6);
-  const settled = resolveGamble(books, deal.title, { won, roll }, deps);
-  return {
-    effects: [settled.effects],
-    result: { title: deal.title, kind: settled.kind, roll, won },
-  };
-}
-
-/** Sells a position the player holds: shares, a property to a market buyer, gold by the coin. */
-function sellHolding(books, input, deps) {
-  const sold = sellPosition(
-    books,
-    {
-      title: input.title,
-      quantity: input.quantity,
-      priceMinor: input.priceMinor,
-      salePriceMinor: input.salePriceMinor,
-    },
-    deps,
-  );
-  return {
-    effects: sold.steps,
-    result: { title: input.title, kind: sold.kind, cashMinor: sold.cashMinor },
-  };
-}
-
-function payDoodad(books, input, deps, gameSet) {
-  const card = findDeck(gameSet, 'doodad').find((candidate) => candidate.id === input.cardId);
-  if (!card) throw refuse('GAME_RULE_REFUSED', `No Doodad card with the id '${input.cardId}'.`);
-  const textDeps = cardTextDeps(deps);
-  const effects = payCardExpense(
-    books,
-    {
-      kind: 'doodad',
-      title: doodadPaymentTitle(card, textDeps),
-      flavor: deps.cards.textFor(card.id).comment,
-      category: doodadPaymentCategory(card, textDeps),
-      costMinor: card.costMinor,
-      account: doodadAccount(card),
-    },
-    deps,
-  );
-  return {
-    effects,
-    settle: true,
-    result: { card: describeCard(card, deps), costMinor: card.costMinor },
-  };
 }
 
 /** What an action needs to run: the stored data, the encryption session, the account's settings and the game's words. */
@@ -603,7 +340,6 @@ function runAction(action, input, context, { settings, state, data, session, his
     profession,
     deps: context.gameDeps,
     gameSets,
-    gameSet,
   });
 
   const effectsList = played.effects;
