@@ -11,6 +11,12 @@ export const SAVED_GAME_SCHEMA = 1;
 /** A gentle warning, not a hard cap: every saved game lives inside the user's one database document. */
 export const SAVED_GAME_SOFT_LIMIT = 30;
 
+/**
+ * What an agent leaves behind after a session of analysis (JFK, 2026-10-07): it may save as many games as the account's
+ * storage budget allows while it works, but afterwards keeps at most this many - the important ones.
+ */
+export const SAVED_GAME_AGENT_KEEP = 100;
+
 export type SavedGameStatus = 'playing' | 'escaped' | 'bankrupt' | 'ended';
 
 export interface SavedGameSummary {
