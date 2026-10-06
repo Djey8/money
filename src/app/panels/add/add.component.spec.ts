@@ -1,5 +1,6 @@
 import { AddComponent } from './add.component';
 import { AppStateService } from '../../shared/services/app-state.service';
+import { AppComponent } from '../../app.component';
 
 describe('AddComponent', () => {
   beforeEach(() => {
@@ -66,5 +67,38 @@ describe('AddComponent', () => {
     expect(AddComponent.isShare).toBe(false);
     expect(AddComponent.isTaxExpense).toBe(false);
     expect(AddComponent.url).toBe('/transactions');
+  });
+
+  describe('after a transaction is saved (JFK, 2026-10-06)', () => {
+    // A page showing underneath - the Stats charts, Home, an account list - draws from the data it had; navigating to
+    // the page that is already open does nothing, so the dialog has to say that the transactions changed.
+    const closing = () => {
+      const component: any = Object.create(AddComponent.prototype);
+      component.router = { navigate: jest.fn() };
+      component.closeWindow = jest.fn();
+      jest.spyOn(AppComponent, 'gotoTop').mockImplementation(() => undefined);
+      return component;
+    };
+
+    afterEach(() => jest.restoreAllMocks());
+
+    it('tells the pages underneath that transactions and subscriptions changed, then goes back to the page', async () => {
+      // the dialog binds AppComponent lazily (to avoid a circular import): wait for that
+      await new Promise((resolve) => setTimeout(resolve, 200));
+      const component = closing();
+      const state = AppStateService.instance;
+      const transactions = jest.fn();
+      const subscriptions = jest.fn();
+      state.transactionsUpdated$.subscribe(transactions);
+      state.subscriptionsUpdated$.subscribe(subscriptions);
+      AddComponent.url = '/stats';
+
+      component.closeWindowAndNavigate();
+
+      expect(transactions).toHaveBeenCalledTimes(1);
+      expect(subscriptions).toHaveBeenCalledTimes(1);
+      expect(component.closeWindow).toHaveBeenCalled();
+      expect(component.router.navigate).toHaveBeenCalledWith(['/stats']);
+    });
   });
 });

@@ -1853,6 +1853,12 @@ export class AddComponent extends BaseAddComponent implements OnInit, AfterViewI
     AddComponent.shareTextField = '50';
     this.closeWindow();
     AppComponent.gotoTop();
+    // Navigating to the page already open does nothing, so a page showing underneath (the Stats charts, Home, an account
+    // list) would keep the data it drew before: tell it that the transactions changed (JFK, 2026-10-06: a Doodad
+    // transaction was added while the Stats page was open and it did not update). A Sell Investment can also remove a
+    // subscription in the same save.
+    AppStateService.instance.transactionsUpdated$.next();
+    AppStateService.instance.subscriptionsUpdated$.next();
     this.router.navigate([AddComponent.url]);
   }
 
