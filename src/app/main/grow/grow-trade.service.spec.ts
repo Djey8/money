@@ -2,6 +2,7 @@ import { AddComponent } from 'src/app/panels/add/add.component';
 import { AppComponent } from 'src/app/app.component';
 import { AppStateService } from 'src/app/shared/services/app-state.service';
 import { Grow } from 'src/app/interfaces/grow';
+import { initialCashflowGameState, marketSaleFor } from '@money/domain';
 import { GrowTradeService } from './grow-trade.service';
 
 const project = (overrides: Partial<Grow>): Grow =>
@@ -116,6 +117,37 @@ describe('GrowTradeService', () => {
     expect(AddComponent.amountTextField).toBe('10000');
     expect(Number(AddComponent.amountTextField) + 3000).toBe(13000);
     expect(AddComponent.commentTextField).toBe('Sell Investment EFH 3000 47000;');
+  });
+
+  it('a percent offer books what the buyer pays less the mortgage - the deposit is not paid back twice', async () => {
+    const { service, cashflowGame } = makeService();
+    // a "+20 %" buyer on a property that cost 70.000 (10.000 deposit, 60.000 mortgage) offers 84.000
+    const state = {
+      ...initialCashflowGameState(),
+      marketOffers: [{ title: 'EFH', salePriceMinor: 8400000, cardId: 'm1', label: '+20%' }],
+    };
+    const investment = { tag: 'EFH', depositMinor: 1000000, amountMinor: 6000000 };
+    cashflowGame.marketSaleFor.mockImplementation(((title: string) => {
+      const sale = marketSaleFor(state, [investment], title);
+      return (
+        sale && {
+          salePrice: sale.salePriceMinor / 100,
+          netCash: sale.netCashMinor / 100,
+          label: sale.label,
+        }
+      );
+    }) as any);
+    AppStateService.instance.allInvestments = [
+      { tag: 'EFH', deposit: 10000, amount: 60000 },
+    ] as any;
+
+    await service.sell(
+      project({ title: 'EFH', investment: { tag: 'EFH', deposit: 10000, amount: 60000 } }),
+    );
+
+    // 84.000 - 60.000 mortgage = 24.000 for the player: the 10.000 deposit and the 14.000 profit
+    expect(AddComponent.amountTextField).toBe('14000');
+    expect(Number(AddComponent.amountTextField) + 10000).toBe(24000); // what the Add dialog books
   });
 
   it('Sell books exactly the net cash: a 2.000 deposit and a 10.000 profit is 12.000, not 14.000', async () => {

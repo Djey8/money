@@ -30,6 +30,7 @@ in light and dark, with a cashflow account on the self-hosted edition. Tick what
 - [ ] The MLM roll dialog appears only **after the totem has finished moving** (not while it is still walking).
 - [ ] Selling a property to a market buyer books exactly what the card says: e.g. a 2.000 deposit with +10.000 profit
       books **12.000** (the Amount field shows the 10.000 profit, the dialog adds the deposit back) - not 14.000.
+      Same for a **percent** buyer (e.g. +20 % on a 70.000 property with 10.000 deposit: 24.000, not 34.000).
 - [ ] A won MLM roll books the bonus on the **Income** account (not Daily), one transaction per kept card.
 - [ ] With a kept MLM card, a Payday shows its box, **stays while you press the MLM roll**, and the outcome (the bonus, or
       not) appears as a second info box next to it; the next action clears both.

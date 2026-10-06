@@ -179,6 +179,19 @@ describe('playMarketBuyerCard: property buyers', () => {
     expect(update.notes![0].text).toContain('"cash":"24,000 EUR"'); // 84.000 - 60.000 mortgage
   });
 
+  it('a percent offer’s cash is the deposit plus the profit, each counted once', () => {
+    const { effects } = playMarketBuyerCard(
+      books({ investments: [efh], growProjects: [efhProject()] }),
+      buyerCard({ family: 'EFH', plusPercent: 20 }),
+      { types },
+      deps,
+    );
+    const sale = marketSaleFor(effects.state, [efh], 'EFH')!;
+    const profitMinor = 1400000; // 20 % of the 70.000 the property cost in all
+    expect(sale.salePriceMinor).toBe(8400000);
+    expect(sale.netCashMinor).toBe(efh.depositMinor + profitMinor); // 24.000: 10.000 back + 14.000, not 34.000
+  });
+
   it('a fixed profit, a fixed price and a per-unit price', () => {
     const run = (sells: CashflowMarketCard['sells'], tag = 'EFH', type = types[0]) =>
       playMarketBuyerCard(
