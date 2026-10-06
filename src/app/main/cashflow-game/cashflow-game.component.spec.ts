@@ -2505,3 +2505,44 @@ describe('CashflowGameComponent open decisions wait for the totem (JFK, 2026-10-
     expect(component.visibleDecisions).toEqual([mlm]);
   });
 });
+
+describe('CashflowGameComponent loan steps input (JFK, 2026-10-06)', () => {
+  beforeEach(() => {
+    (AppStateService as any)._instance = undefined;
+    ProfileComponent.mail = '';
+  });
+
+  it('opening the borrow or the payback screen starts at 1 step, whatever was left from before', () => {
+    const { component } = makeComponent();
+    component.loanIncrements = 4;
+    component.openPayLoan();
+    expect(component.loanIncrements).toBe(1);
+    expect(component.dashboardView).toBe('payLoan');
+
+    component.loanIncrements = 3;
+    component.openBankLoan();
+    expect(component.loanIncrements).toBe(1);
+    expect(component.dashboardView).toBe('bankLoan');
+  });
+
+  it('after a settle that went through, the next one starts at 1 again', () => {
+    const { component } = makeComponent({
+      adjustBankLoan: jest.fn((_delta: number, callbacks: any) => callbacks.onSuccess()),
+    });
+    component.loanIncrements = 2; // "settle all" had filled in 2
+    (component as any).adjustLoan(-2000);
+    expect(component.loanIncrements).toBe(1);
+    expect(component.dashboardView).toBe('main');
+  });
+
+  it('a settle that failed keeps what the player typed, so they can correct it', () => {
+    const { component } = makeComponent({
+      adjustBankLoan: jest.fn((_delta: number, callbacks: any) =>
+        callbacks.onError('not possible'),
+      ),
+    });
+    component.loanIncrements = 2;
+    (component as any).adjustLoan(-2000);
+    expect(component.loanIncrements).toBe(2);
+  });
+});

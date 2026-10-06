@@ -34,6 +34,8 @@ in light and dark, with a cashflow account on the self-hosted edition. Tick what
 - [ ] Landing on Downsized (or Charity) with too little cash takes the Bank loan first, then pays - the balance is never
       negative, and a message says what was borrowed.
 - [ ] Under Charity **two dice are selected by default**; switching to one dice works; a later Charity space selects two again.
+- [ ] Bank loan / Payback loan: the steps field starts at 1 every time the screen opens, and again after a settle (it
+      does not keep the 2 of "settle all").
 - [ ] Baby adds a child (a fourth Baby space does nothing); Charity donates and offers 1 or 2 dice for 3 turns, then
       back to one die; Downsized pays the expenses and the spanner goes at the next roll.
 - [ ] With "reduce motion" on, the token jumps instead of walking.
@@ -72,6 +74,7 @@ First playtest (2026-10-06), handled in the next build - please re-check:
   wait on the landing: the dialog comes the moment the totem is placed.)
 - START: no line; the totem waits outside the ring, top middle, "Start" below it, and moves inside with the first roll.
 - Card screens show the tile symbol of their deck, on the right of the heading.
+- Settling the bank loan left the steps field at 2 -> it goes back to 1.
 - The MLM roll dialog came at once while the totem was still walking -> it waits until the totem has stopped.
 - MLM: the Payday box stays through the MLM roll and the outcome is a second info box.
 - Charity: two dice are selected by default (change to one if wanted).

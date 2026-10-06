@@ -2342,11 +2342,13 @@ export class CashflowGameComponent implements OnDestroy {
 
   /** Bank Loan and Payback Loan are each hidden behind their own trigger, with a Back button, like Deal pile/Cards (JFK, 2026-09-29). */
   openBankLoan(): void {
+    this.loanIncrements = 1; // always a fresh start, never the number left from the last time (JFK, 2026-10-06)
     this.dashboardView = 'bankLoan';
   }
 
   /** Only reachable once there's actually a loan to pay back — the trigger button itself is `*ngIf`'d on that. */
   openPayLoan(): void {
+    this.loanIncrements = 1;
     this.dashboardView = 'payLoan';
   }
 
@@ -2418,6 +2420,7 @@ export class CashflowGameComponent implements OnDestroy {
       onSuccess: () => {
         this.isBusy = false;
         this.toastService.show(this.translate.instant('CashflowGame.loanUpdated'), 'success');
+        this.loanIncrements = 1; // the next settle starts at 1 again, not at the 2 of the last one
         this.backToMain();
       },
       onError: (message) => {
