@@ -226,3 +226,86 @@ describe('dispatchToolCall — error mapping', () => {
     expect(JSON.stringify(result)).not.toContain('mmpat_test');
   });
 });
+
+describe('the Cashflow game tools', () => {
+  it('lists get_cashflow_game and play_cashflow_game with every action', () => {
+    const tools = buildToolList(TOOLS);
+    const read = tools.find((t) => t.name === 'get_cashflow_game')!;
+    const play = tools.find((t) => t.name === 'play_cashflow_game')!;
+    const readActions = (read.inputSchema.properties as { action: { enum: string[] } }).action.enum;
+    const playActions = (play.inputSchema.properties as { action: { enum: string[] } }).action.enum;
+    expect(readActions).toEqual(
+      expect.arrayContaining(['game', 'sets', 'set', 'cards', 'history', 'saves', 'save']),
+    );
+    expect(playActions).toEqual(
+      expect.arrayContaining([
+        'start',
+        'roll',
+        'draw_card',
+        'buy_deal',
+        'play_market',
+        'undo',
+        'save',
+      ]),
+    );
+  });
+
+  it('reads the game with GET /game', async () => {
+    const fetchImpl = jest.fn(async () => jsonResponse(200, { active: false, legalActions: [] }));
+    const client = fakeClient(fetchImpl);
+    const result = await dispatchToolCall(TOOLS, client, 'get_cashflow_game', { action: 'game' });
+    expect(result.isError).toBeFalsy();
+    const [url, init] = fetchImpl.mock.calls[0];
+    expect(url).toBe('http://localhost:3000/api/v1/game');
+    expect(init.method).toBe('GET');
+  });
+
+  it('rolls with POST /game/turn and sends the dice as the body', async () => {
+    const fetchImpl = jest.fn(async () => jsonResponse(200, { result: { total: 4 } }));
+    const client = fakeClient(fetchImpl);
+    await dispatchToolCall(TOOLS, client, 'play_cashflow_game', { action: 'roll', dice: 2 });
+    const [url, init] = fetchImpl.mock.calls[0];
+    expect(url).toBe('http://localhost:3000/api/v1/game/turn');
+    expect(JSON.parse(init.body)).toEqual({ dice: 2 });
+  });
+
+  it('refuses reset, delete_save and prune_saves without confirm: true, never calling the API', async () => {
+    const fetchImpl = jest.fn();
+    const client = fakeClient(fetchImpl);
+    for (const args of [
+      { action: 'reset' },
+      { action: 'delete_save', saveId: 'game_1' },
+      { action: 'prune_saves', keepLatest: 1 },
+    ]) {
+      const result = await dispatchToolCall(TOOLS, client, 'play_cashflow_game', args);
+      expect(result.isError).toBe(true);
+    }
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
+
+  it('passes the confirmation on to endpoints that ask for it themselves', async () => {
+    const fetchImpl = jest.fn(async () => jsonResponse(200, { active: false }));
+    const client = fakeClient(fetchImpl);
+    await dispatchToolCall(TOOLS, client, 'play_cashflow_game', { action: 'reset', confirm: true });
+    expect(JSON.parse(fetchImpl.mock.calls[0][1].body)).toEqual({ confirm: true });
+
+    fetchImpl.mockClear();
+    await dispatchToolCall(TOOLS, client, 'play_cashflow_game', {
+      action: 'delete_save',
+      saveId: 'game_1',
+      confirm: true,
+    });
+    const [url, init] = fetchImpl.mock.calls[0];
+    expect(new URL(url).pathname).toBe('/api/v1/game/saves/game_1');
+    expect(new URL(url).searchParams.get('confirm')).toBe('true');
+    expect(init.method).toBe('DELETE');
+
+    fetchImpl.mockClear();
+    await dispatchToolCall(TOOLS, client, 'play_cashflow_game', {
+      action: 'prune_saves',
+      keepIds: ['a'],
+      confirm: true,
+    });
+    expect(JSON.parse(fetchImpl.mock.calls[0][1].body)).toEqual({ keepIds: ['a'], confirm: true });
+  });
+});

@@ -147,3 +147,18 @@ game. The board is the German "Cashflow - Verlasse das Hamsterrad!" rat race, dr
 The turn logic is the `@money/domain` package's (`board.ts`, `movement.ts`, `turn.ts`, `game-end.ts`); the app only
 shows it and forwards the buttons. A seeded game plays out identically every time, which is how the rules are tested
 (`solo-simulation.spec.ts`).
+
+## 9. Playing as an agent (Pro API and MCP)
+
+A game account (an email containing `cashflow`) can be played by an agent through the Pro API or the MCP tools `get_cashflow_game` and `play_cashflow_game`. It plays the same rules as the app - the rules are shared code - and the account ends up exactly as if a person had played the same moves: the books, the game state and the history are written the way the app writes them, so the player can undo what an agent played, and the other way round.
+
+**The loop.** Call `get_cashflow_game` action `game` before every move. It returns the state, the books' figures and `legalActions`: the only moves the game accepts now. In a solo game:
+
+1. `start` with `mode: "solo"` (pick the set and profession from `sets`).
+2. While `turn.phase` is `roll`: `roll` (`dice: 2` while Charity runs). The first roll pays the opening Payday; every Payday the token enters is paid.
+3. While it is `decide`, `pendingDecision.kind` names the pile: for `deal`, `draw_card` from `dealSmall` or `dealBig`, then `buy_deal {cardId, quantity?}` or `pass_card`; for `doodad`, `draw_card` then `pay_doodad {cardId}`; for `market`, `draw_card` then `play_market {cardId}` or `pass_card`. A stock split or a paid dice card leaves a waiting `roll_decision`.
+4. Stop when `outcome` is `escaped` (passive income covers every expense) or `bankrupt` (a negative monthly cashflow).
+
+**Not yet through the API:** special-asset Deal cards (gold, loan to a relative, Multi-Level-Marketing) and selling positions. Pass those cards.
+
+**Undo and history.** `undo {count?}` takes steps back; `history` is the step log. **Saved games:** `save` (use `compact: true` for analysis games: about a tenth of the size), `saves`, `save`, `load_save`, `end_game`, `rename_save`, `delete_save`, `prune_saves`. Every saved game sits inside the account's one database document, so `storage` in the saves list says how much room is left and a save past the budget is refused. **An agent that saves many games cleans up afterwards**: at most 100 saves stay (`storage.keepAtMost`), the important ones.

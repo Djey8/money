@@ -227,6 +227,11 @@ export async function dispatchToolCall(
   }
 
   const reservedKeys = new Set(RESERVED_ARG_KEYS);
+  // An endpoint that itself asks for `confirm` in its body (resetting a game) gets the caller's, not just the tool's gate.
+  const bodyProperties = operation.requestBodySchema?.properties;
+  if (bodyProperties && typeof bodyProperties === 'object' && 'confirm' in bodyProperties) {
+    reservedKeys.delete('confirm');
+  }
   if (tool.kind === 'entity') reservedKeys.add(tool.entityParam);
   if (toolAction.ndjsonBodyArg) reservedKeys.add(toolAction.ndjsonBodyArg);
 
