@@ -71,6 +71,7 @@ export function playSoloGame(seed: number, policy: Policy, maxTurns = 400): Play
   const turnDeps = (): TurnDeps => ({
     clock: fixedClock(TODAY),
     text: identityText,
+    money: (m) => `${m / 100}`,
     board,
     profession,
     rng,

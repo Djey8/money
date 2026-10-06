@@ -19,6 +19,7 @@ const dice =
 const deps = (rng: Rng): TurnDeps => ({
   clock: fixedClock(TODAY),
   text: identityText,
+  money: (minor) => `${minor / 100}E`,
   board,
   profession,
   rng,

@@ -9,16 +9,11 @@ import {
 import type { RatRaceBoard } from './board';
 import { applyEffectsToBooks, type GameBooks } from './books';
 import { clearCashflowStatus } from './engine';
+import { playCharityPaying, playDownsizedPaying, type PaidWithLoan } from './auto-pay';
 import { endIfOver } from './game-end';
+import type { CardDeps } from './market-cards';
 import { emptyEffects, type GameEffects } from './effects';
-import {
-  playBaby,
-  playCharity,
-  playDownsized,
-  playPayday,
-  type RoundBooks,
-  type RoundDeps,
-} from './rounds';
+import { playBaby, playPayday, type RoundBooks } from './rounds';
 import { systemRng, type Rng } from './rng';
 import type { GameStep } from './steps';
 import type {
@@ -50,10 +45,12 @@ export interface TurnResult {
   move: Move;
   /** The first roll of a game also pays the opening Payday: it is what officially starts the game. */
   openingPayday: boolean;
+  /** What the space's automatic bank loans lent, one entry each (Charity or Downsized with too little cash). */
+  autoLoansMinor: number[];
 }
 
 /** What a turn rule needs on top of the books. */
-export interface TurnDeps extends RoundDeps {
+export interface TurnDeps extends CardDeps {
   board: RatRaceBoard;
   profession: CashflowProfession;
   rng?: Rng;
@@ -114,6 +111,11 @@ export function playTurn(books: GameBooks, deps: TurnDeps, request: TurnRequest 
 
   let working: GameBooks = { ...books, state };
   const effects: GameEffects[] = [];
+  const autoLoansMinor: number[] = [];
+  const applyPaid = (paid: PaidWithLoan) => {
+    paid.effects.forEach(apply);
+    autoLoansMinor.push(...paid.loansMinor);
+  };
   const apply = (next: GameEffects) => {
     effects.push({ ...next, step: null });
     working = applyEffectsToBooks(working, next);
@@ -132,11 +134,12 @@ export function playTurn(books: GameBooks, deps: TurnDeps, request: TurnRequest 
       if (working.state.children < MAX_CHILDREN)
         apply(playBaby(roundBooks(working), deps.profession, deps));
       break;
+    // Charity and Downsized pay cash: a short account takes the bank loan first, never goes negative.
     case 'charity':
-      apply(playCharity(roundBooks(working), deps));
+      applyPaid(playCharityPaying(working, deps));
       break;
     case 'downsized':
-      apply(playDownsized(roundBooks(working), deps));
+      applyPaid(playDownsizedPaying(working, deps));
       break;
     case 'deal':
     case 'market':
@@ -169,6 +172,7 @@ export function playTurn(books: GameBooks, deps: TurnDeps, request: TurnRequest 
     roll,
     move,
     openingPayday,
+    autoLoansMinor,
   };
 }
 
