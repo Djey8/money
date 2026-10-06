@@ -78,7 +78,6 @@ function onCircle(degrees: number, radius: number): { x: number; y: number } {
           [attr.width]="cellSize"
           [attr.height]="cellSize"
           rx="8"
-          [class.rr-cell--here]="cell.index === position"
         />
         <text [attr.x]="cell.x" [attr.y]="cell.y" class="rr-glyph">{{ cell.glyph }}</text>
       </g>
@@ -86,6 +85,22 @@ function onCircle(degrees: number, radius: number): { x: number; y: number } {
       <g class="rr-start" *ngIf="position === null">
         <text [attr.x]="center" [attr.y]="startLabelY" class="rr-start-text">START</text>
       </g>
+    </svg>
+    <!--
+      The walking part lives on a layer of its own over the ring: every step moves the token and the highlight, and on one
+      shared drawing that repaints the whole ring - emoji text included - which flashed black on some of the spaces.
+    -->
+    <svg class="rr-walker" [attr.viewBox]="viewBox" aria-hidden="true">
+      <rect
+        *ngIf="here as cell"
+        class="rr-cell--here"
+        [ngClass]="'rr-here--' + cell.kind"
+        [attr.x]="cell.x - cellSize / 2"
+        [attr.y]="cell.y - cellSize / 2"
+        [attr.width]="cellSize"
+        [attr.height]="cellSize"
+        rx="8"
+      />
       <g
         class="rr-token"
         [attr.transform]="'translate(' + token.x + ' ' + token.y + ')'"
@@ -99,6 +114,7 @@ function onCircle(degrees: number, radius: number): { x: number; y: number } {
   styles: [
     `
       :host {
+        position: relative;
         display: block;
         width: 100%;
         max-width: 420px;
@@ -108,6 +124,17 @@ function onCircle(degrees: number, radius: number): { x: number; y: number } {
         width: 100%;
         height: auto;
         display: block;
+        /* painted once, on its own layer: nothing on it changes while the token walks */
+        transform: translateZ(0);
+      }
+      .rr-walker {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        overflow: visible;
+        will-change: transform;
       }
       .rr-track {
         fill: none;
@@ -151,8 +178,26 @@ function onCircle(degrees: number, radius: number): { x: number; y: number } {
         stroke: var(--color-warning, #f39c12);
         fill: rgba(243, 156, 18, 0.2);
       }
-      .rr-cell rect.rr-cell--here {
+      .rr-cell--here {
+        fill: none;
         stroke-width: 4;
+      }
+      .rr-here--deal {
+        stroke: var(--color-success);
+      }
+      .rr-here--doodad {
+        stroke: var(--color-danger);
+      }
+      .rr-here--market {
+        stroke: var(--color-info);
+      }
+      .rr-here--charity,
+      .rr-here--downsized,
+      .rr-here--baby {
+        stroke: var(--color-cf-purple, #8e44ad);
+      }
+      .rr-here--payday {
+        stroke: var(--color-warning, #f39c12);
       }
       .rr-start-text {
         font-size: 11px;
@@ -200,6 +245,11 @@ export class RatRaceBoardComponent {
     return this.position === null
       ? `0 ${-TOP_MARGIN} ${SIZE} ${SIZE + TOP_MARGIN}`
       : `${RING_VIEW.x} ${RING_VIEW.y} ${RING_VIEW.size} ${RING_VIEW.size}`;
+  }
+
+  /** The space the token stands on, for the highlight that rides on the walker layer. */
+  get here(): Cell | null {
+    return this.cells.find((cell) => cell.index === this.position) ?? null;
   }
 
   get cells(): Cell[] {
