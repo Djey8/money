@@ -846,6 +846,48 @@ export class CashflowGameComponent implements OnDestroy {
     });
   }
 
+  /**
+   * Wipes the game being played without saving it - for a game started with the wrong settings - and returns to the start
+   * panel (JFK, 2026-10-06). Asks first, with the same wording and confirmation as the reset in Settings.
+   */
+  resetCurrentGame(): void {
+    this.confirm.confirm(
+      this.translate.instant('CashflowGame.resetConfirm'),
+      () => {
+        this.isBusy = true;
+        this.cashflowGameService.resetGame({
+          onSuccess: () => {
+            this.isBusy = false;
+            this.toastService.show(this.translate.instant('CashflowGame.resetDone'), 'delete');
+            this.backToStartPanel();
+          },
+          onError: (message) => {
+            this.isBusy = false;
+            this.toastService.show(message, 'error');
+          },
+        });
+      },
+      'CashflowGame.resetConfirmButton',
+      'delete',
+    );
+  }
+
+  /** Everything the page was showing about the finished game goes: the start panel is what is left. */
+  private backToStartPanel(): void {
+    this.dashboardView = 'main';
+    this.viewedProfession = null;
+    this.choosingLanguage = false;
+    this.showStartGames = false;
+    this.pendingSpace = null;
+    this.spaceData = null;
+    this.rollResult = null;
+    this.marketNotice = null;
+    this.paydayBanner = null;
+    this.lastDice = [];
+    this.diceTumbling = false;
+    this.backToMain();
+  }
+
   /** A short hop out to the app's own hamburger menu, instead of duplicating a list of links here. */
   openMenu(): void {
     this.closeWindow();

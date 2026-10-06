@@ -207,6 +207,31 @@
   cursor: pointer;
 }
 
+/* Reset game: the last button of the dashboard, red, so it is not pressed by accident. */
+.cf-reset-btn {
+  display: block;
+  width: 100%;
+  margin-top: 28px;
+  padding: 14px 16px;
+  border: 0;
+  border-radius: var(--radius-md);
+  background-color: var(--color-danger, #d32f2f);
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-transform: capitalize;
+  cursor: pointer;
+}
+
+.cf-reset-btn:hover:not(:disabled) {
+  filter: brightness(0.92);
+}
+
+.cf-reset-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
 .cf-start-games-btn {
   /* clear space between the Start button above and My games: they read as two separate choices */
   margin-top: 28px;
@@ -1406,6 +1431,7 @@
   padding: 0.3rem 0.4rem;
   cursor: pointer;
   opacity: 0.7;
+  color: var(--color-danger, #d32f2f);
 }
 
 .cf-saved-game-delete:hover:not(:disabled),

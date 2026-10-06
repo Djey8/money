@@ -7,6 +7,9 @@ in light and dark, with a cashflow account on the self-hosted edition. Tick what
 
 - [ ] New game: after the profession, the language question also asks _how to play_; "With the physical board" is
       pre-selected and plays exactly as before.
+- [ ] The last button of the dashboard is a red **Reset game**: it asks first, then wipes the game (nothing is saved) and
+      the panel shows the start panel again.
+- [ ] Delete buttons in the games list are red like the other delete buttons (and the bin on each row too).
 - [ ] Every game in the list has a bin; it asks the normal delete confirmation, and the game is gone afterwards.
 - [ ] On the start screen your old games are **not** listed; a "My games" button below Start opens just the list
       (played and ongoing games, with Import), and a game can be continued from there.
@@ -67,6 +70,7 @@ First playtest (2026-10-06), handled in the next build - please re-check:
 - A share card could be sold to a friend -> not any more (property and asset cards only).
 - Payday popup: signs doubled ("++2.500") -> one sign each; it is now a popup that goes with the next action.
 - Dice animation improved (thrown, decelerating faces, one landing pop).
+- Wrong settings at the start -> a red Reset game button at the end of the dashboard (asks, wipes, back to start).
 - Old games could only be deleted from inside an opened row -> a bin on every row of the list (normal confirmation).
 - Downsized took the balance negative -> it borrows first (also Charity), in solo and companion.
 - Old games cluttered the start screen -> behind a "My games" button below Start.

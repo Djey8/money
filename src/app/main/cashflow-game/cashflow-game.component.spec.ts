@@ -2311,3 +2311,55 @@ describe('CashflowGameComponent start screen: the games played so far (JFK, 2026
     expect(component.showStartGames).toBe(false);
   });
 });
+
+describe('CashflowGameComponent reset game button (JFK, 2026-10-06)', () => {
+  beforeEach(() => {
+    (AppStateService as any)._instance = undefined;
+    ProfileComponent.mail = '';
+  });
+
+  it('asks first, then wipes the game without saving it and leaves the start panel behind', () => {
+    const { component, cashflowGameService, confirm, savedGames, toastService } = makeComponent({
+      resetGame: jest.fn((callbacks: any) => callbacks.onSuccess()),
+    });
+    component.dashboardView = 'cards';
+    component.showStartGames = true;
+    component.lastDice = [3];
+    component.paydayBanner = { count: 1, incomeMinor: 1, expensesMinor: 0, netMinor: 1 };
+
+    component.resetCurrentGame();
+
+    expect(confirm.confirm).toHaveBeenCalledWith(
+      'CashflowGame.resetConfirm',
+      expect.any(Function),
+      'CashflowGame.resetConfirmButton',
+      'delete',
+    );
+    expect(cashflowGameService.resetGame).toHaveBeenCalledTimes(1);
+    expect(savedGames.saveCurrent).not.toHaveBeenCalled(); // wiped, not saved
+    expect(toastService.show).toHaveBeenCalledWith('CashflowGame.resetDone', 'delete');
+    expect(component.dashboardView).toBe('main');
+    expect(component.showStartGames).toBe(false);
+    expect(component.lastDice).toEqual([]);
+    expect(component.paydayBanner).toBeNull();
+    expect(component.isBusy).toBe(false);
+  });
+
+  it('does nothing when the player says no', () => {
+    const { component, cashflowGameService, confirm } = makeComponent();
+    confirm.confirm.mockImplementation(() => undefined); // the dialog is dismissed
+    component.resetCurrentGame();
+    expect(cashflowGameService.resetGame).not.toHaveBeenCalled();
+  });
+
+  it('shows the reason when the reset fails and keeps the game', () => {
+    const { component, toastService } = makeComponent({
+      resetGame: jest.fn((callbacks: any) => callbacks.onError('only for a game account')),
+    });
+    component.dashboardView = 'history';
+    component.resetCurrentGame();
+    expect(toastService.show).toHaveBeenCalledWith('only for a game account', 'error');
+    expect(component.dashboardView).toBe('history');
+    expect(component.isBusy).toBe(false);
+  });
+});

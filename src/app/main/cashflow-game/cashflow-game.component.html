@@ -453,7 +453,7 @@
                 {{ 'CashflowGame.exportGame' | translate }}
               </button>
               <button
-                class="btn btn--sm cf-btn-outlined"
+                class="btn btn--sm btn--danger"
                 [disabled]="isBusy"
                 (click)="deleteSavedGame(game)"
               >
@@ -915,6 +915,11 @@
         <button class="cf-row-btn" (click)="openMenu()">
           <span>{{ 'Menu.title' | translate }}</span>
           <span class="cf-row-btn-chevron">›</span>
+        </button>
+
+        <!-- Last, and red: wipes this game without saving it, back to the start panel (JFK, 2026-10-06). -->
+        <button class="cf-reset-btn" [disabled]="isBusy" (click)="resetCurrentGame()">
+          {{ 'CashflowGame.resetGame' | translate }}
         </button>
       </ng-container>
 
