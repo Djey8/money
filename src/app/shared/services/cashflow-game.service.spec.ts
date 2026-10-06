@@ -2843,17 +2843,37 @@ describe('CashflowGameService', () => {
       expect(state.liabilities.find((l) => l.tag === 'Bank loan')).toBeUndefined();
     });
 
-    it('selling a card to a friend books one-time Daily income named after the card, and undoes', () => {
+    // only property and asset cards can be sold to a friend; a share card belongs to whoever drew it (JFK, 2026-10-06)
+    const house = {
+      id: 'classic-small-efh',
+      title: 'Einfamilienhaus',
+      assetKind: 'investment' as const,
+      symbol: 'EFH',
+      depositMinor: 300000,
+      mortgageMinor: 4700000,
+      cashflowMinor: 10000,
+    };
+
+    it('a share card cannot be sold to a friend: nothing is booked and the player is told why', () => {
       const before = AppStateService.instance.allTransactions.length;
       const cb = callbacks();
       service.sellCardToFriend(ok4u, 500, cb);
+      expect(cb.onError).toHaveBeenCalledWith(expect.stringMatching(/belongs to whoever drew it/));
+      expect(cb.onSuccess).not.toHaveBeenCalled();
+      expect(AppStateService.instance.allTransactions).toHaveLength(before);
+    });
+
+    it('selling a card to a friend books one-time Daily income named after the card, and undoes', () => {
+      const before = AppStateService.instance.allTransactions.length;
+      const cb = callbacks();
+      service.sellCardToFriend(house, 500, cb);
 
       const state = AppStateService.instance;
       expect(cb.onSuccess).toHaveBeenCalled();
       expect(state.allTransactions[before]).toMatchObject({
         account: 'Daily',
         amount: 500,
-        category: '@OK4U card sale',
+        category: '@EFH card sale',
       });
       expect(state.allGrowProjects).toHaveLength(0);
 
@@ -2870,13 +2890,13 @@ describe('CashflowGameService', () => {
       );
       const before = AppStateService.instance.allTransactions.length;
 
-      service.sellCardToFriend(ok4u, 500, callbacks());
+      service.sellCardToFriend(house, 500, callbacks());
 
       expect(AppStateService.instance.allTransactions[before].comment).toBe(
-        'Karte OK4U an einen Freund verkauft\n#cashflow',
+        'Karte EFH an einen Freund verkauft\n#cashflow',
       );
       // The category stays a literal key: History and old games recognise a card sale by it.
-      expect(AppStateService.instance.allTransactions[before].category).toBe('@OK4U card sale');
+      expect(AppStateService.instance.allTransactions[before].category).toBe('@EFH card sale');
     });
 
     it('dates a card sale on the next free day of the real current month, filling odd days first then even', () => {
@@ -2893,9 +2913,9 @@ describe('CashflowGameService', () => {
         ].filter((d) => d?.startsWith(monthPrefix)),
       );
 
-      service.sellCardToFriend(ok4u, 100, callbacks());
-      service.sellCardToFriend(ok4u, 100, callbacks());
-      const sales = state.allTransactions.filter((t) => t.category === '@OK4U card sale');
+      service.sellCardToFriend(house, 100, callbacks());
+      service.sellCardToFriend(house, 100, callbacks());
+      const sales = state.allTransactions.filter((t) => t.category === '@EFH card sale');
 
       expect(sales[0].date.startsWith(monthPrefix)).toBe(true);
       expect(taken.has(sales[0].date)).toBe(false);
@@ -2906,7 +2926,7 @@ describe('CashflowGameService', () => {
 
     it('rejects a sale with no price', () => {
       const cb = callbacks();
-      service.sellCardToFriend(ok4u, 0, cb);
+      service.sellCardToFriend(house, 0, cb);
       expect(cb.onError).toHaveBeenCalled();
     });
   });
@@ -3161,8 +3181,8 @@ describe('CashflowGameService', () => {
       const state = AppStateService.instance;
       expect(result.move.to).toBe(5);
       expect(state.cashflowGame.boardPosition).toBe(5);
-      expect(state.cashflowGame.round).toBe(1);
-      expect(state.allTransactions.length).toBeGreaterThan(1); // Savings + the Payday's lines
+      expect(state.cashflowGame.round).toBe(2); // the opening Payday of the first roll, and the Payday it landed on
+      expect(state.allTransactions.length).toBeGreaterThan(1); // Savings + the Paydays' lines
       expect(service.historySteps().map((step) => step.kind)).toEqual(['roll', 'start']);
 
       service.undoLastAction(callbacks());

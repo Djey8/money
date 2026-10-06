@@ -568,9 +568,45 @@
         <!-- Solo mode (JFK, 2026-10-05): the app rolls the dice and walks the token round the rat race. -->
         <div class="cf-card cf-solo" *ngIf="isSolo">
           <app-rat-race-board [board]="board" [position]="tokenPosition"></app-rat-race-board>
-          <p class="cf-payday-flash" *ngIf="paydayFlash" role="status">
-            💰 {{ 'CashflowGame.solo.passedPayday' | translate }}
-          </p>
+          <!-- What the Payday paid: big, with the numbers, until the next roll or until it is closed (JFK, 2026-10-06). -->
+          <div class="cf-payday-banner" *ngIf="paydayBanner as payday" role="status">
+            <button
+              type="button"
+              class="cf-payday-banner-close"
+              [attr.aria-label]="'CashflowGame.dismiss' | translate"
+              (click)="dismissPayday()"
+            >
+              ✕
+            </button>
+            <h3 class="cf-payday-banner-title">
+              💰 {{ 'CashflowGame.solo.passedPayday' | translate }}
+              <span *ngIf="payday.count > 1">
+                {{ 'CashflowGame.solo.paydayTimes' | translate: { count: payday.count } }}</span
+              >
+            </h3>
+            <dl class="cf-payday-banner-lines">
+              <div>
+                <dt>{{ 'CashflowGame.solo.paydayIncome' | translate }}</dt>
+                <dd class="cf-payday-in">
+                  +{{ toDisplayAmount(payday.incomeMinor) | appNumber }} {{ appState.currency }}
+                </dd>
+              </div>
+              <div>
+                <dt>{{ 'CashflowGame.solo.sumExpenses' | translate }}</dt>
+                <dd class="cf-payday-out">
+                  −{{ toDisplayAmount(payday.expensesMinor) | appNumber }} {{ appState.currency }}
+                </dd>
+              </div>
+            </dl>
+            <p class="cf-payday-banner-net" [class.cf-negative]="payday.netMinor < 0">
+              {{ 'CashflowGame.monthlyCashflow' | translate }}:
+              <strong>
+                {{ payday.netMinor > 0 ? '+' : ''
+                }}{{ toDisplayAmount(payday.netMinor) | appNumber }}
+                {{ appState.currency }}
+              </strong>
+            </p>
+          </div>
 
           <ng-container *ngIf="!gameOver">
             <ul class="cf-solo-hud">
@@ -588,11 +624,11 @@
               </li>
             </ul>
 
-            <div class="cf-solo-dice" *ngIf="lastDice.length">
+            <div class="cf-solo-dice" *ngIf="shownDice.length">
               <div
                 class="cf-die"
-                *ngFor="let face of lastDice"
-                [class.cf-die--rolling]="walking"
+                *ngFor="let face of shownDice; trackBy: trackByIndex"
+                [class.cf-die--tumbling]="diceTumbling"
                 role="img"
                 [attr.aria-label]="'CashflowGame.diceRolled' | translate: { roll: face }"
               >
@@ -629,7 +665,11 @@
               </div>
             </ng-container>
 
-            <div class="cf-solo-decision" *ngIf="soloTurn.phase === 'decide'" role="group">
+            <div
+              class="cf-solo-decision"
+              *ngIf="soloTurn.phase === 'decide' && !walking"
+              role="group"
+            >
               <h3>
                 {{ 'CashflowGame.solo.decisionTitle' | translate: { space: pendingSpaceName } }}
               </h3>
@@ -1541,7 +1581,7 @@
             </button>
             <button
               class="btn btn--sm cf-btn-outlined"
-              *ngIf="isDealDeck"
+              *ngIf="isDealDeck && !isShareCard"
               [disabled]="isBusy"
               (click)="showFriendSale = !showFriendSale"
             >
@@ -1563,7 +1603,7 @@
               }}
             </button>
           </div>
-          <div class="cf-friend-sale" *ngIf="isDealDeck && showFriendSale">
+          <div class="cf-friend-sale" *ngIf="isDealDeck && !isShareCard && showFriendSale">
             <div class="cf-friend-sale-head">
               <span class="cf-friend-sale-label">{{
                 'CashflowGame.cardFriendPays' | translate

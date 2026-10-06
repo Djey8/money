@@ -215,7 +215,8 @@ changing a published OpenAPI later. D1/D2 can be pulled forward whenever agent r
 6. **Fast Track**: out of scope — escaping the rat race ends the game.
 7. **Start**: the token starts at **START**, just before space 0, and the first roll of _n_ lands on space _n − 1_
    (so a roll of 1 lands on the Deals space next to START). **Confirmed by JFK** (2026-10-05): the picture shows
-   where START is and where the first roll lands from there.
+   where START is and where the first roll lands from there. **The first roll also pays the opening Payday** (JFK,
+   2026-10-06: "the first dice is starting officially the game ... savings + one time payday").
 
 ## 8. Risks
 

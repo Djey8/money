@@ -1239,17 +1239,70 @@
   gap: 0.75rem;
 }
 
-.cf-payday-flash {
-  margin: 0;
+.cf-payday-banner {
+  position: relative;
+  padding: 1rem 1rem 0.9rem;
+  border: 3px solid var(--color-warning, #f39c12);
+  border-radius: 14px;
+  background: rgba(243, 156, 18, 0.14);
   text-align: center;
+  animation: cf-payday-pop 0.5s ease-out;
+}
+
+.cf-payday-banner-title {
+  margin: 0 0 0.5rem;
+  font-size: 1.6rem;
+}
+
+.cf-payday-banner-lines {
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  margin: 0 0 0.4rem;
+  font-size: 1.1rem;
+}
+
+.cf-payday-banner-lines dt {
+  font-size: 0.8rem;
+  color: var(--color-text-secondary, #666);
+}
+
+.cf-payday-banner-lines dd {
+  margin: 0;
   font-weight: 700;
-  color: var(--color-warning, #f39c12);
-  animation: cf-payday-pop 0.9s ease-out;
+}
+
+.cf-payday-in {
+  color: var(--color-success);
+}
+
+.cf-payday-out {
+  color: var(--color-danger);
+}
+
+.cf-payday-banner-net {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.cf-payday-banner-net strong {
+  font-size: 1.5rem;
+}
+
+.cf-payday-banner-close {
+  position: absolute;
+  top: 0.4rem;
+  right: 0.5rem;
+  border: 0;
+  background: none;
+  font-size: 1.1rem;
+  cursor: pointer;
+  color: inherit;
 }
 
 @keyframes cf-payday-pop {
   from {
-    transform: scale(0.8);
+    transform: scale(0.85);
     opacity: 0;
   }
   to {
@@ -1276,20 +1329,35 @@
   gap: 0.6rem;
 }
 
-.cf-die--rolling {
-  animation: cf-die-shake 0.4s ease-in-out infinite;
+/* The solo dice rest still on their number: the base die's own entrance tumble would replay every time they come into
+   view again (back from a card, a reload), so only the roll itself - class set by the component - animates. */
+.cf-solo-dice .cf-die {
+  width: 72px;
+  height: 72px;
+  margin: 0;
+  padding: 9px;
+  animation: none;
 }
 
-@keyframes cf-die-shake {
-  0%,
-  100% {
-    transform: rotate(0);
+.cf-solo-dice .cf-die--tumbling {
+  animation: cf-die-throw 0.55s ease-in-out infinite;
+}
+
+@keyframes cf-die-throw {
+  0% {
+    transform: rotate(0) translateY(0);
   }
   25% {
-    transform: rotate(-12deg);
+    transform: rotate(-16deg) translateY(-8px);
+  }
+  50% {
+    transform: rotate(0) translateY(0);
   }
   75% {
-    transform: rotate(12deg);
+    transform: rotate(16deg) translateY(-8px);
+  }
+  100% {
+    transform: rotate(0) translateY(0);
   }
 }
 
@@ -1356,8 +1424,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .cf-die--rolling,
-  .cf-payday-flash {
+  .cf-solo-dice .cf-die--tumbling,
+  .cf-payday-banner {
     animation: none;
   }
 }

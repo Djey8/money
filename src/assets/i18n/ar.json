@@ -1646,6 +1646,8 @@
   "CashflowGame.solo.sumExpenses": "المصروفات",
   "CashflowGame.step.roll": "رمية",
   "CashflowGame.step.skipCard": "تم تجاوز البطاقة",
+  "CashflowGame.solo.paydayIncome": "الدخل",
+  "CashflowGame.solo.paydayTimes": "× {{count}}",
   "BI.netWorth": "صافي الثروة",
   "BI.categorySpending": "إنفاق الفئة",
   "BI.monthlyDeposit": "الإيداع الشهري",

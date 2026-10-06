@@ -1959,7 +1959,7 @@ describe('CashflowGameComponent solo mode (JFK, 2026-10-05)', () => {
     } as any;
   };
 
-  const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
+  const settle = () => new Promise((resolve) => setTimeout(resolve, 15));
 
   beforeEach(() => {
     (AppStateService as any)._instance = undefined;
@@ -2005,7 +2005,7 @@ describe('CashflowGameComponent solo mode (JFK, 2026-10-05)', () => {
     expect(free.component.canRoll).toBe(false);
   });
 
-  it('a roll shows the dice and, landing on a Deals space, opens the pile choice', async () => {
+  it('a roll shows the dice and, landing on a Deals space, waits for the player: the card does not open by itself', async () => {
     const { component, rollTurn, cashflowGameService } = soloComponent();
     setSoloState();
     rollTurn.mockImplementation((_dice: number, callbacks: any) => {
@@ -2032,7 +2032,90 @@ describe('CashflowGameComponent solo mode (JFK, 2026-10-05)', () => {
     expect(component.lastDice).toEqual([3]);
     expect(component.walking).toBe(false);
     expect(component.tokenPosition).toBe(2);
-    expect(component.dashboardView).toBe('dealPile');
+    // the landing dialog is up (the turn is waiting on the card); nothing opened the card flow
+    expect(component.soloTurn.pending).toEqual({ kind: 'deal', spaceIndex: 2 });
+    expect(component.dashboardView).toBe('main');
+    // and the player opens it on request
+    const deals = jest.spyOn(component, 'landOnDeals').mockImplementation(() => undefined);
+    component.openSoloDecision();
+    expect(deals).toHaveBeenCalled();
+  });
+
+  it('the dice rest on the number rolled - still, also after a reload and when the dice come into view again', async () => {
+    const { component, rollTurn } = soloComponent();
+    setSoloState({ turn: { phase: 'roll', count: 1, lastRoll: [4, 2] } });
+    // after a reload nothing was rolled in this session, yet the last roll is on show
+    expect(component.diceTumbling).toBe(false);
+    expect(component.shownDice).toEqual([4, 2]);
+
+    setSoloState({ turn: { phase: 'roll', count: 1 } });
+    rollTurn.mockImplementation((_d: number, callbacks: any) => {
+      callbacks.onSuccess();
+      return {
+        roll: { dice: [5], total: 5 },
+        move: { entered: [{ index: 4 }], paydays: 0, landed: { kind: 'deal', index: 4 } },
+        effects: [],
+        openingPayday: false,
+      };
+    });
+    component.rollSolo();
+    await settle();
+    expect(component.diceTumbling).toBe(false);
+    expect(component.shownDice).toEqual([5]);
+    expect(component.trackByIndex(1)).toBe(1);
+  });
+
+  it('a Payday shows a big banner with what it paid, until the next roll or until it is closed', async () => {
+    const { component, rollTurn } = soloComponent();
+    setSoloState();
+    const payday = {
+      appendedTransactions: [
+        { amountMinor: 300000 },
+        { amountMinor: -120000 },
+        { amountMinor: -30000 },
+      ],
+    };
+    rollTurn.mockImplementation((_d: number, callbacks: any) => {
+      callbacks.onSuccess();
+      return {
+        roll: { dice: [6], total: 6 },
+        move: {
+          entered: [{ index: 5, kind: 'payday' }],
+          paydays: 1,
+          landed: { kind: 'payday', index: 5 },
+        },
+        effects: [payday, payday, { appendedTransactions: [{ amountMinor: -9999 }] }],
+        openingPayday: true,
+      };
+    });
+    component.rollSolo();
+    await settle();
+
+    // the opening Payday and the one landed on: both are in the banner, the landing's own booking is not
+    expect(component.paydayBanner).toEqual({
+      count: 2,
+      incomeMinor: 600000,
+      expensesMinor: 300000,
+      netMinor: 300000,
+    });
+
+    component.dismissPayday();
+    expect(component.paydayBanner).toBeNull();
+
+    // a roll that crosses no Payday leaves no banner, and the next roll clears the old one
+    component.paydayBanner = { count: 1, incomeMinor: 1, expensesMinor: 0, netMinor: 1 };
+    rollTurn.mockImplementation((_d: number, callbacks: any) => {
+      callbacks.onSuccess();
+      return {
+        roll: { dice: [1], total: 1 },
+        move: { entered: [{ index: 6 }], paydays: 0, landed: { kind: 'deal', index: 6 } },
+        effects: [],
+        openingPayday: false,
+      };
+    });
+    component.rollSolo();
+    await settle();
+    expect(component.paydayBanner).toBeNull();
   });
 
   it('two dice are rolled only when Charity runs and they were chosen', () => {

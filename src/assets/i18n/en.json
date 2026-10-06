@@ -1646,6 +1646,8 @@
   "CashflowGame.solo.sumExpenses": "Expenses",
   "CashflowGame.step.roll": "Roll",
   "CashflowGame.step.skipCard": "Card passed",
+  "CashflowGame.solo.paydayIncome": "Income",
+  "CashflowGame.solo.paydayTimes": "× {{count}}",
   "BI.netWorth": "Net Worth",
   "BI.categorySpending": "Category Spending",
   "BI.monthlyDeposit": "Monthly Deposit",

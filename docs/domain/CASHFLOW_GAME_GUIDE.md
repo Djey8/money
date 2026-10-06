@@ -110,19 +110,25 @@ game. The board is the German "Cashflow - Verlasse das Hamsterrad!" rat race, dr
 3 Doodad, 3 Payday, 3 Market, one each of Charity, Downsized and Baby).
 
 - **Start.** The token starts at START, just before the first space: a first roll of _n_ lands on space _n_ (the
-  Deals space next to START for a 1).
-- **A turn is one roll.** The app rolls (the die faces you see are the engine's result - the animation never rolls on
-  its own), the token walks space by space, and what the landing space does happens at once. Press **Skip** to jump
-  to the landing; with "reduce motion" set the token jumps by itself.
+  Deals space next to START for a 1). **The first roll starts the game officially**: it also pays your first Payday,
+  so you have your savings plus one Payday before the token has moved.
+- **A turn is one roll, and it reveals itself in order.** The dice tumble and come to rest on their number (the faces
+  you see are the engine's result - the tumble never decides anything), the token walks space by space, it rests on the
+  space it landed on, and only then does the landing speak. Press **Skip** to jump ahead; with "reduce motion" set the
+  token jumps by itself. The dice stay still on the last number afterwards.
 - **Payday** pays whenever you **land on or pass** a Payday space, once per Payday space. It also advances the game's
-  calendar one month, as in the companion.
+  calendar one month, as in the companion. A big banner shows what it paid (income, expenses, the monthly result) and
+  stays until your next roll or until you close it.
 - **Baby, Charity, Downsized** resolve on the spot (a Baby space with three children changes nothing). **Charity**
   donates 10 % of your income, then for the next **3 turns** you may choose **1 or 2 dice** before each roll.
   **Downsized** pays your expenses; the spanner is only a reminder (playing alone nobody takes a turn in between, so
   nothing is skipped) and your **next roll removes it**.
-- **Deals, Doodad, Market** hand you the card flow you know (Deals asks for the Small or Big pile first; you draw a
-  random card or look for a specific one). The turn stays open - **you cannot roll again** - until you press **Done**
-  after dealing with the card, or **Pass** to leave it (Pass is a step of its own, so Undo brings the card back).
+- **Deals, Doodad, Market** show a dialog first ("You landed on Deals"). **Open the card** starts the card flow you
+  know (Deals asks for the Small or Big pile first; you draw a random card or look for a specific one) - nothing opens
+  by itself. The turn stays open - **you cannot roll again** - until you press **Done** after dealing with the card, or
+  **Pass** to leave it (Pass is a step of its own, so Undo brings the card back).
+- **Selling a card to a friend** is for property and special-asset cards only (also in companion mode): **a share card
+  belongs to whoever drew it** and cannot be sold.
 - **One roll is one step in the history**, however many Paydays and spaces it touched: one Undo takes back the whole
   roll, with the token.
 - **The game ends** when you **escape the rat race** (passive income covers all your monthly expenses - the Fast

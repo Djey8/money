@@ -1615,6 +1615,8 @@
   "CashflowGame.solo.sumExpenses": "Gastos",
   "CashflowGame.step.roll": "Tirada",
   "CashflowGame.step.skipCard": "Carta pasada",
+  "CashflowGame.solo.paydayIncome": "Ingresos",
+  "CashflowGame.solo.paydayTimes": "× {{count}}",
   "BI.title": "Panel de Business Intelligence",
   "BI.dashboard1": "Tablero 1: Resumen Financiero",
   "BI.dashboard2": "Tablero 2: Análisis de Cuentas y Presupuesto",

@@ -88,8 +88,12 @@ interface CardTile {
 type MarketKind = 'percent' | 'amount' | 'price' | 'cost' | 'split' | 'boost';
 
 /** How long the token rests on each space while it walks, and how long a Payday flashes. */
-const WALK_STEP_MS = 260;
-const PAYDAY_FLASH_MS = 900;
+const WALK_STEP_MS = 320;
+/** The dice tumble, then rest on their number for a beat, before the token moves; the token then rests on its landing. */
+const DICE_TUMBLE_MS = 1300;
+const DICE_FACE_MS = 110;
+const DICE_SETTLE_MS = 450;
+const LANDING_PAUSE_MS = 1500;
 
 @Component({
   selector: 'app-cashflow-game',
@@ -550,12 +554,21 @@ export class CashflowGameComponent {
 
   /** The dice of the last roll, for the die faces on the dashboard. */
   lastDice: number[] = [];
+  /** True only while the dice tumble after a roll; before and after they rest still on their number. */
+  diceTumbling = false;
+  private tumbleFaces: number[] = [];
   /** How many dice the player rolls while Charity lasts. */
   diceChoice: 1 | 2 = 1;
   /** True while the token walks to where the roll took it. */
   walking = false;
-  /** A "Payday!" flash while the token passes or lands on one. */
-  paydayFlash = false;
+  /** What the Payday(s) of the last roll paid: shown big until the next roll or until it is closed. */
+  paydayBanner: {
+    count: number;
+    incomeMinor: number;
+    expensesMinor: number;
+    netMinor: number;
+  } | null = null;
+  private paydaySummary: typeof this.paydayBanner = null;
   private skipWalking = false;
   /** Where the token is drawn while it walks; undefined means "where the game says it is". */
   private walkingAt: number | null | undefined = undefined;
@@ -569,7 +582,19 @@ export class CashflowGameComponent {
   }
 
   get gameOver(): boolean {
-    return this.isSolo && this.soloTurn.phase === 'over';
+    return this.isSolo && this.soloTurn.phase === 'over' && !this.walking;
+  }
+
+  /** The faces on show: random ones while the dice tumble, otherwise the last roll (also after a reload). */
+  get shownDice(): number[] {
+    if (this.diceTumbling) return this.tumbleFaces;
+    if (this.lastDice.length) return this.lastDice;
+    return this.appState.cashflowGame.turn?.lastRoll ?? [];
+  }
+
+  /** Keeps each die's element while its face changes, so the tumble is one animation and not one per face. */
+  trackByIndex(index: number): number {
+    return index;
   }
 
   /** The token as shown: stepping along while it walks, otherwise on the game's own position. */
@@ -588,7 +613,7 @@ export class CashflowGameComponent {
 
   /** "Space 7 of 24", or "At START". */
   get positionText(): string {
-    const position = this.appState.cashflowGame.boardPosition;
+    const position = this.tokenPosition;
     return position === null
       ? this.translate.instant('CashflowGame.solo.positionStart')
       : this.translate.instant('CashflowGame.solo.position', {
@@ -599,7 +624,7 @@ export class CashflowGameComponent {
 
   /** How many spaces until the token next enters a Payday space. */
   get spacesToPayday(): number {
-    const position = this.appState.cashflowGame.boardPosition;
+    const position = this.tokenPosition;
     const first = position === null ? 0 : position + 1;
     for (let step = 0; step < this.board.length; step++) {
       if (this.board[(first + step) % this.board.length].kind === 'payday') return step + 1;
@@ -647,6 +672,8 @@ export class CashflowGameComponent {
     });
     if (!result) return;
     this.lastDice = result.roll.dice;
+    this.paydayBanner = null; // the last roll's Payday is done with once the next roll starts
+    this.paydaySummary = this.summarisePaydays(result);
     void this.walkTo(from, result);
   }
 
@@ -667,39 +694,79 @@ export class CashflowGameComponent {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
-  private flashPayday(): void {
-    this.paydayFlash = true;
-    setTimeout(() => (this.paydayFlash = false), PAYDAY_FLASH_MS);
+  /** Brings up the Payday banner (the roll's own numbers) - once the token enters a Payday space, or at the opening. */
+  private showPayday(): void {
+    this.paydayBanner = this.paydaySummary;
   }
 
-  /** The token steps along the spaces the roll entered, a Payday flashing as it is entered, then the landing is dealt with. */
+  dismissPayday(): void {
+    this.paydayBanner = null;
+  }
+
+  /** What the Paydays of a roll paid in all: the income, the expenses, and what is left of the month. */
+  private summarisePaydays(result: TurnResult): typeof this.paydayBanner {
+    const count = (result.openingPayday ? 1 : 0) + result.move.paydays;
+    if (!count) return null;
+    let incomeMinor = 0;
+    let expensesMinor = 0;
+    // the Payday effects come first, in order; whatever the landing space did follows them
+    for (const effects of (result.effects ?? []).slice(0, count)) {
+      for (const transaction of effects.appendedTransactions) {
+        if (transaction.amountMinor > 0) incomeMinor += transaction.amountMinor;
+        else expensesMinor -= transaction.amountMinor;
+      }
+    }
+    return { count, incomeMinor, expensesMinor, netMinor: incomeMinor - expensesMinor };
+  }
+
+  /**
+   * The whole reveal, in order: the dice tumble and come to rest on their number, a beat later the token walks space
+   * by space (a Payday flashing as it is entered), it rests on its landing, and only then does the landing speak - a
+   * card waits for the player to open it, nothing opens by itself (JFK, 2026-10-06).
+   */
   private async walkTo(from: number | null, result: TurnResult): Promise<void> {
     this.walking = true;
     this.skipWalking = this.reducedMotion;
     this.walkingAt = from;
+    await this.tumbleDice(result.roll.dice.length);
+    if (result.openingPayday) this.showPayday();
     for (const space of result.move.entered) {
       if (this.skipWalking) break;
       await this.pause(WALK_STEP_MS);
       this.walkingAt = space.index;
-      if (space.kind === 'payday') this.flashPayday();
+      if (space.kind === 'payday') this.showPayday();
     }
-    if (this.skipWalking && result.move.paydays > 0) this.flashPayday();
+    if (this.skipWalking && result.move.paydays > 0) this.showPayday();
+    this.walkingAt = result.move.to;
+    // The token rests on the space it landed on before anything else appears.
+    await this.pause(this.reducedMotion ? 0 : this.skipWalking ? 400 : LANDING_PAUSE_MS);
     this.walkingAt = undefined;
     this.walking = false;
     this.afterLanding(result);
   }
 
-  /** What the landing leaves: the end of the game, a card to deal with, or a space that was resolved on the spot. */
+  /** Faces flicker for a moment, then settle on the real roll and stay still (the engine already decided it). */
+  private async tumbleDice(count: number): Promise<void> {
+    if (this.reducedMotion) return;
+    this.diceTumbling = true;
+    const started = Date.now();
+    while (Date.now() - started < DICE_TUMBLE_MS && !this.skipWalking) {
+      this.tumbleFaces = Array.from({ length: count }, () => 1 + Math.floor(Math.random() * 6));
+      await this.pause(DICE_FACE_MS);
+    }
+    this.diceTumbling = false;
+    if (!this.skipWalking) await this.pause(DICE_SETTLE_MS);
+  }
+
+  /** What the landing leaves: the end of the game, a card waiting in the dialog, or a space resolved on the spot. */
   private afterLanding(result: TurnResult): void {
     const turn = this.appState.cashflowGame.turn;
     if (turn?.phase === 'over') {
       this.dashboardView = 'main';
       return;
     }
-    if (turn?.phase === 'decide' && turn.pending) {
-      this.openSoloDecision();
-      return;
-    }
+    // A card space shows its dialog ("You landed on Deals - open the card, done, or pass"); the card opens on request.
+    if (turn?.phase === 'decide' && turn.pending) return;
     const spoken: Record<string, string> = {
       baby: 'CashflowGame.solo.landedBaby',
       charity: 'CashflowGame.solo.landedCharity',
@@ -1148,7 +1215,8 @@ export class CashflowGameComponent {
   }
 
   sellActiveCardToFriend(): void {
-    if (!this.activeCard || this.friendPrice === null) return;
+    // a share card belongs to whoever drew it: only property and asset cards can be sold (JFK, 2026-10-06)
+    if (!this.activeCard || this.friendPrice === null || this.isShareCard) return;
     this.isBusy = true;
     this.cashflowGameService.sellCardToFriend(
       this.activeCard as CashflowDealCard,

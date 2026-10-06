@@ -1671,6 +1671,8 @@
   "CashflowGame.solo.sumExpenses": "Dépenses",
   "CashflowGame.step.roll": "Lancer",
   "CashflowGame.step.skipCard": "Carte passée",
+  "CashflowGame.solo.paydayIncome": "Revenus",
+  "CashflowGame.solo.paydayTimes": "× {{count}}",
   "Empty.transactions": "Pas encore de transactions. Appuyez sur + pour ajouter la première.",
   "Empty.subscriptions": "Pas encore d'abonnements. Appuyez sur + pour ajouter le premier.",
   "Empty.growProjects": "Pas encore de projets. Appuyez sur + pour ajouter le premier.",

@@ -1671,6 +1671,8 @@
   "CashflowGame.solo.sumExpenses": "Ausgaben",
   "CashflowGame.step.roll": "Wurf",
   "CashflowGame.step.skipCard": "Karte ausgelassen",
+  "CashflowGame.solo.paydayIncome": "Einkommen",
+  "CashflowGame.solo.paydayTimes": "× {{count}}",
   "Empty.transactions": "Noch keine Transaktionen. Tippe +, um deine erste hinzuzufügen.",
   "Empty.subscriptions": "Noch keine Abonnements. Tippe +, um dein erstes hinzuzufügen.",
   "Empty.growProjects": "Noch keine Projekte. Tippe +, um dein erstes hinzuzufügen.",

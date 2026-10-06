@@ -1671,6 +1671,8 @@
   "CashflowGame.solo.sumExpenses": "支出",
   "CashflowGame.step.roll": "掷骰子",
   "CashflowGame.step.skipCard": "放弃卡片",
+  "CashflowGame.solo.paydayIncome": "收入",
+  "CashflowGame.solo.paydayTimes": "× {{count}}",
   "Empty.transactions": "还没有交易。点击 + 添加第一笔。",
   "Empty.subscriptions": "还没有订阅。点击 + 添加第一个。",
   "Empty.growProjects": "还没有项目。点击 + 添加第一个。",

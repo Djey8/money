@@ -29,6 +29,19 @@ describe('RatRaceBoardComponent', () => {
     expect(element.querySelector('.rr-start-text')?.textContent).toBe('START');
   });
 
+  it('shows START above the ring with a line to the first tile, and drops it once the token has moved', () => {
+    fixture.componentRef.setInput('position', null);
+    fixture.detectChanges();
+    const text = element.querySelector('.rr-start-text')!;
+    expect(Number(text.getAttribute('y'))).toBeLessThan(0); // above the ring, not on it
+    expect(element.querySelector('.rr-start-line')).not.toBeNull();
+
+    fixture.componentRef.setInput('position', 0);
+    fixture.detectChanges();
+    expect(element.querySelector('.rr-start-text')).toBeNull();
+    expect(element.querySelector('.rr-start-line')).toBeNull();
+  });
+
   it('names every space for assistive technology', () => {
     fixture.detectChanges();
     expect(cells().every((cell) => (cell.querySelector('title')?.textContent ?? '') !== '')).toBe(

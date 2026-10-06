@@ -12,8 +12,12 @@ in light and dark, with a cashflow account on the self-hosted edition. Tick what
 
 ## Rolling
 
-- [ ] Roll: die face(s) appear, the token walks space by space, a Payday flashes when it is entered, Skip jumps to
-      the landing.
+- [ ] Roll: the dice tumble (slowly enough to see) and then rest on their number; a beat later the token walks space by
+      space; it rests on its landing before anything else appears; Skip jumps ahead.
+- [ ] Coming back to the dashboard (from a card, or after a reload) shows the dice still on the last number - no replay.
+- [ ] **The very first roll pays your first Payday** (savings plus one Payday), whatever you roll.
+- [ ] A Payday (passed, landed on, or the opening one) shows a big banner with income, expenses and the monthly result,
+      which stays until the next roll or until you close it.
 - [ ] A first roll of 1 lands on the Deals space next to START; a 6 lands on the first Payday.
 - [ ] Passing a Payday pays it (round goes up, Payday lines appear in Transactions); landing on one pays it once.
 - [ ] Baby adds a child (a fourth Baby space does nothing); Charity donates and offers 1 or 2 dice for 3 turns, then
@@ -22,7 +26,10 @@ in light and dark, with a cashflow account on the self-hosted edition. Tick what
 
 ## Cards
 
-- [ ] Landing on Deals asks for the Small or Big pile, then the usual find-or-draw flow; Doodad and Market open theirs.
+- [ ] Landing on Deals shows "You landed on Deals" with Open the card / Done / Pass - the card does **not** open by
+      itself; Open the card asks for the Small or Big pile, then the usual find-or-draw flow; Doodad and Market open theirs.
+- [ ] "Sell to a friend" is offered on property and asset cards, **not on share cards**.
+- [ ] START is above the ring with a small line to the first tile, and is gone once the token has moved.
 - [ ] While the card is open the Roll button is gone; "Open the card" reopens it after closing it; "Done" and "Pass"
       reopen the roll.
 - [ ] Undo after Pass brings the card back; Undo after a roll takes back the move, the Paydays and the landing together.
@@ -41,4 +48,15 @@ in light and dark, with a cashflow account on the self-hosted edition. Tick what
 
 ## Findings
 
-(JFK's playtest notes go here.)
+First playtest (2026-10-06), handled in the next build - please re-check:
+
+- Board stays always open in solo mode (kept as it was).
+- A roll of 1 showed the Deals card at once, confusing -> the token now rests on its landing and a dialog waits for you.
+- START overlapped the ring -> now above it with a line to the first tile, gone after the first move.
+- The first roll starts the game: first Payday + savings.
+- The dice animation was unreliable and too fast, and replayed whenever the dice came back into view -> slower tumble
+  that happens only during the roll; otherwise the dice rest still.
+- The Payday banner was too small and vanished too fast -> big banner with the amounts, stays until the next roll.
+- A share card could be sold to a friend -> not any more (property and asset cards only).
+
+(JFK's further notes go here.)
