@@ -86,4 +86,29 @@ describe('RatRaceBoardComponent', () => {
     });
     expect(new Set(spots).size).toBe(24);
   });
+
+  it('closes in on the ring once the totem is inside it, and still shows every cell', () => {
+    fixture.componentRef.setInput('position', null);
+    fixture.detectChanges();
+    const atStart = element.querySelector('svg')!.getAttribute('viewBox')!.split(' ').map(Number);
+    expect(atStart[1]).toBeLessThan(0); // room above the ring for the totem and START
+
+    fixture.componentRef.setInput('position', 3);
+    fixture.detectChanges();
+    const [x, y, width, height] = element
+      .querySelector('svg')!
+      .getAttribute('viewBox')!
+      .split(' ')
+      .map(Number);
+    expect(width * height).toBeLessThan(atStart[2] * atStart[3]);
+    for (const cell of Array.from(element.querySelectorAll('.rr-cell rect'))) {
+      const left = Number(cell.getAttribute('x'));
+      const top = Number(cell.getAttribute('y'));
+      const size = Number(cell.getAttribute('width'));
+      expect(left).toBeGreaterThanOrEqual(x);
+      expect(top).toBeGreaterThanOrEqual(y);
+      expect(left + size).toBeLessThanOrEqual(x + width);
+      expect(top + size).toBeLessThanOrEqual(y + height);
+    }
+  });
 });

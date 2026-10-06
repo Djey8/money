@@ -67,6 +67,28 @@ in light and dark, with a cashflow account on the self-hosted edition. Tick what
       cashflow ends it as bankrupt; nothing can be rolled afterwards.
 - [ ] "Save game" and "New game" on the end screen work; a saved solo game loads again with its token and turn.
 
+## Screen sizes (responsive pass, 2026-10-06)
+
+Reviewed with screenshots at 375 x 667 (iPhone SE, the baseline), 320 x 568, 390 x 844, a phone on its side (667 x 375),
+a tablet (768 x 1024) and 1440 x 900. Please check on your own devices - dark mode and Arabic (right to left) were not
+part of the screenshots.
+
+- [ ] **Phone**: the panel is a full-screen sheet with a slim header; Cash, Round and the game date are one row; "Monthly
+      cashflow" and Undo share the next line; the whole ring is in view with the Roll button as a bar at the bottom of the
+      screen, no scrolling needed to play a turn.
+- [ ] **Phone**: landing on a card space puts "You landed on ..." with Open the card / Done / Pass in that bottom bar, the
+      die beside the title; the ring stays in view above it.
+- [ ] **Phone**: after the first roll the ring grows (the empty START area is gone); Bank loan is full width, My games /
+      History / Menu / reset game sit two to a line.
+- [ ] **Phone**: the quick filters of the card lists are one scrolling line each (not seven wrapped rows); the card list
+      scrolls inside the sheet; Shuffle / View card / Start game and My games are spaced and aligned.
+- [ ] **Phone**: the language screen shows six languages in two rows and Start game stays at the bottom without scrolling.
+- [ ] **Phone on its side**: the stats are one strip, the ring beside the roll / decision.
+- [ ] **Tablet**: the ring beside the status, dice and decision.
+- [ ] **Wide screen**: the dashboard panel is about 1100 px wide; the stats are one strip on top, the ring is large on the
+      left, the status lines, big dice and Roll button on the right, Bank loan and the rows two to a line below; the card lists
+      show six columns.
+
 ## Languages and layout
 
 - [ ] All solo texts read right in en / de / es / fr / cn / ar (arabic right-to-left), nothing cut off at phone width.

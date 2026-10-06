@@ -23,8 +23,10 @@ const CENTER = SIZE / 2;
 const RING = 150;
 const TOKEN_RING = 112;
 /** Room above the ring for the START label. */
-const TOP_MARGIN = 58;
-const CELL = 38;
+const TOP_MARGIN = 48;
+const CELL = 34;
+/** The ring and its cells with a little air round them: from here to here, in the 400-unit drawing. */
+const RING_VIEW = { x: 22, y: 22, size: 356 };
 
 /** What each space is called, in the game's own translations - the same words the "landed on" buttons use. */
 const LABEL_KEYS: Record<RatRaceSpaceKind, string> = {
@@ -66,12 +68,7 @@ function onCircle(degrees: number, radius: number): { x: number; y: number } {
   imports: [CommonModule, TranslateModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <svg
-      class="rr-board"
-      [attr.viewBox]="'0 ' + -topMargin + ' ' + size + ' ' + (size + topMargin)"
-      role="img"
-      [attr.aria-label]="ariaLabel"
-    >
+    <svg class="rr-board" [attr.viewBox]="viewBox" role="img" [attr.aria-label]="ariaLabel">
       <circle class="rr-track" [attr.cx]="center" [attr.cy]="center" [attr.r]="ring" />
       <g *ngFor="let cell of cells" class="rr-cell" [ngClass]="'rr-cell--' + cell.kind">
         <title>{{ cell.labelKey | translate }}</title>
@@ -123,7 +120,7 @@ function onCircle(degrees: number, radius: number): { x: number; y: number } {
         fill: var(--color-surface, #fff);
       }
       .rr-glyph {
-        font-size: 18px;
+        font-size: 16px;
         text-anchor: middle;
         dominant-baseline: central;
         pointer-events: none;
@@ -195,6 +192,16 @@ export class RatRaceBoardComponent {
   readonly cellSize = CELL;
   readonly topMargin = TOP_MARGIN;
 
+  /**
+   * Before the first roll the totem waits outside the ring, so the picture has room above it. Once it is inside the ring
+   * that room is empty and the picture closes in on the ring - which then fills the width it has.
+   */
+  get viewBox(): string {
+    return this.position === null
+      ? `0 ${-TOP_MARGIN} ${SIZE} ${SIZE + TOP_MARGIN}`
+      : `${RING_VIEW.x} ${RING_VIEW.y} ${RING_VIEW.size} ${RING_VIEW.size}`;
+  }
+
   get cells(): Cell[] {
     return this.board.map((space) => ({
       index: space.index,
@@ -207,7 +214,7 @@ export class RatRaceBoardComponent {
 
   /** Where "START" is written: between the waiting totem and the ring. */
   get startLabelY(): number {
-    return -TOP_MARGIN + 46;
+    return -6;
   }
 
   /**
@@ -215,7 +222,7 @@ export class RatRaceBoardComponent {
    * the inner circle in line with the space it stands on.
    */
   get token(): { x: number; y: number } {
-    if (this.position === null) return { x: CENTER, y: -TOP_MARGIN + 20 };
+    if (this.position === null) return { x: CENTER, y: -30 };
     return onCircle(spaceAngle(this.board, this.position), TOKEN_RING);
   }
 

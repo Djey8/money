@@ -230,6 +230,18 @@ export class CashflowGameComponent implements OnDestroy {
     );
   }
 
+  /**
+   * The panel opens wide on a big screen for the views that have something to show beside each other: the dashboard
+   * (the ring beside the dice and the decision) and the card lists. Phones ignore it - there the panel is a full sheet.
+   */
+  get wideLayout(): boolean {
+    return (
+      this.hasActiveGame &&
+      !this.viewedProfession &&
+      (this.dashboardView === 'main' || this.dashboardView === 'cards')
+    );
+  }
+
   get hasActiveGame(): boolean {
     return this.appState.cashflowGame.professionId !== null;
   }

@@ -456,3 +456,18 @@ Known simplifications, to settle with JFK's playtest: "Done" is a button (the ca
 themselves when a card is applied); the dice are shown at once and the token then walks (no separate dice-tumble phase);
 the bank loan and Undo stay available during a turn as in companion mode. Not run in a browser by me - the playtest is the
 first real look at the screen. **Next:** JFK's playtest, then Phase D.
+
+## Responsive pass (2026-10-06)
+
+Reviewed with Playwright screenshots (a one-off, outside the repo) at 375x667, 320x568, 390x844, 667x375, 768x1024 and
+1440x900 against the local stack. Three layouts from one stylesheet (appended at the end of
+`cashflow-game.component.css`, breakpoints 600 / 700 / 900 px plus `max-height: 520px` for a phone on its side):
+
+- **phone / low screen** - the panel is a full sheet with a sticky header; the roll and decision controls are a sticky bar
+  at the bottom of the card; Cash / Round / Date are a 3-column grid with the numbers shrinking before they wrap; chips are
+  one-line scroll rows; the die is 46 px; the dashboard rows are a two-column grid.
+- **tablet / wide** - `cf-panel--wide` (dashboard and card lists) up to 1120 px; the solo card is a grid (ring | status +
+  controls, centred); the summary becomes one strip; the card list gets up to six columns.
+- the global `.btn` (an 80 % centred block) is normalised inside the panel; a standalone button fills its card.
+- the board crops its empty START area once the totem is inside the ring (`viewBox`), so the ring grows.
+  Not covered by screenshots: dark mode, Arabic (right to left), very long translated labels.

@@ -2,6 +2,7 @@
 
 <div
   class="cf-panel"
+  [class.cf-panel--wide]="wideLayout"
   role="dialog"
   aria-modal="true"
   appTrapFocus
@@ -280,7 +281,7 @@
         </label>
       </fieldset>
       <button
-        class="btn btn--primary"
+        class="btn btn--primary cf-sticky-cta"
         [disabled]="isBusy || !selectedProfessionId"
         (click)="startGame()"
       >
@@ -474,7 +475,12 @@
     </ng-template>
 
     <!-- Active game dashboard -->
-    <div class="cf-dashboard" *ngIf="hasActiveGame && !viewedProfession">
+    <div
+      class="cf-dashboard"
+      [class.cf-dashboard--main]="dashboardView === 'main'"
+      [class.cf-dashboard--solo]="isSolo"
+      *ngIf="hasActiveGame && !viewedProfession"
+    >
       <ng-container *ngIf="dashboardView === 'main'">
         <!-- What a Payday paid: an info box like the one below, goes with the next action or the X (JFK, 2026-10-06). -->
         <div
@@ -487,6 +493,13 @@
             <span *ngIf="payday.count > 1">{{
               'CashflowGame.solo.paydayTimes' | translate: { count: payday.count }
             }}</span>
+            <span
+              class="cf-payday-note-line cf-payday-note-net"
+              [class.cf-negative]="payday.netMinor < 0"
+            >
+              {{ 'CashflowGame.monthlyCashflow' | translate }}
+              <b>{{ signedCardAmount(payday.netMinor) }}</b>
+            </span>
             <span class="cf-payday-note-line">
               {{ 'CashflowGame.solo.paydayIncome' | translate }}
               <b class="cf-payday-in">{{ signedCardAmount(payday.incomeMinor) }}</b>
@@ -494,10 +507,6 @@
             <span class="cf-payday-note-line">
               {{ 'CashflowGame.solo.sumExpenses' | translate }}
               <b class="cf-payday-out">{{ signedCardAmount(-payday.expensesMinor) }}</b>
-            </span>
-            <span class="cf-payday-note-line" [class.cf-negative]="payday.netMinor < 0">
-              {{ 'CashflowGame.monthlyCashflow' | translate }}
-              <b>{{ signedCardAmount(payday.netMinor) }}</b>
             </span>
           </span>
           <button
@@ -568,12 +577,34 @@
             </div>
           </div>
 
-          <p class="cf-stat cf-stat--secondary">
-            <span class="cf-stat-label">{{ 'CashflowGame.monthlyCashflow' | translate }}</span>
-            <span class="cf-stat-value cf-stat-value--sm" [class.cf-negative]="monthlyCashflow < 0">
-              {{ monthlyCashflow | appNumber }} {{ appState.currency }}
-            </span>
-          </p>
+          <div class="cf-summary-foot">
+            <p class="cf-stat cf-stat--secondary">
+              <span class="cf-stat-label">{{ 'CashflowGame.monthlyCashflow' | translate }}</span>
+              <span
+                class="cf-stat-value cf-stat-value--sm"
+                [class.cf-negative]="monthlyCashflow < 0"
+              >
+                {{ monthlyCashflow | appNumber }} {{ appState.currency }}
+              </span>
+            </p>
+            <div class="cf-actions">
+              <button
+                class="btn btn--primary"
+                *ngIf="!isSolo"
+                [disabled]="isBusy"
+                (click)="payday()"
+              >
+                {{ 'CashflowGame.payday' | translate }}
+              </button>
+              <button
+                class="btn btn--sm"
+                [disabled]="isBusy || !canUndo"
+                (click)="undoLastAction()"
+              >
+                {{ 'CashflowGame.undo' | translate }}
+              </button>
+            </div>
+          </div>
 
           <!-- Monthly cashflow already has a view — the Subscriptions page's own total
              (JFK, 2026-09-26: "use the normal app as much as possible"). Only the
@@ -602,12 +633,12 @@
           <div
             class="cf-badges"
             *ngIf="
-              appState.cashflowGame.unemployedRoundsLeft ||
-              appState.cashflowGame.charityRoundsLeft ||
+              (!isSolo && appState.cashflowGame.unemployedRoundsLeft) ||
+              (!isSolo && appState.cashflowGame.charityRoundsLeft) ||
               appState.cashflowGame.children
             "
           >
-            <span class="cf-badge" *ngIf="appState.cashflowGame.unemployedRoundsLeft">
+            <span class="cf-badge" *ngIf="appState.cashflowGame.unemployedRoundsLeft && !isSolo">
               {{
                 'CashflowGame.unemployedBadge'
                   | translate: { count: appState.cashflowGame.unemployedRoundsLeft }
@@ -621,7 +652,7 @@
                 ×
               </button>
             </span>
-            <span class="cf-badge" *ngIf="appState.cashflowGame.charityRoundsLeft">
+            <span class="cf-badge" *ngIf="appState.cashflowGame.charityRoundsLeft && !isSolo">
               {{
                 'CashflowGame.charityBadge'
                   | translate: { count: appState.cashflowGame.charityRoundsLeft }
@@ -641,22 +672,27 @@
               }}
             </span>
           </div>
-
-          <div class="cf-actions">
-            <button class="btn btn--primary" *ngIf="!isSolo" [disabled]="isBusy" (click)="payday()">
-              {{ 'CashflowGame.payday' | translate }}
-            </button>
-            <button class="btn btn--sm" [disabled]="isBusy || !canUndo" (click)="undoLastAction()">
-              {{ 'CashflowGame.undo' | translate }}
-            </button>
-          </div>
         </div>
 
         <!-- Solo mode (JFK, 2026-10-05): the app rolls the dice and walks the token round the rat race. -->
+        <ng-template #soloDice>
+          <div class="cf-solo-dice" *ngIf="shownDice.length">
+            <div
+              class="cf-die"
+              *ngFor="let face of shownDice; trackBy: trackByIndex"
+              [class.cf-die--tumbling]="diceTumbling"
+              [class.cf-die--landed]="diceLanded"
+              role="img"
+              [attr.aria-label]="'CashflowGame.diceRolled' | translate: { roll: face }"
+            >
+              <span class="cf-pip" *ngFor="let on of dieCells(face)" [class.cf-pip--on]="on"></span>
+            </div>
+          </div>
+        </ng-template>
         <div class="cf-card cf-solo" *ngIf="isSolo">
-          <app-rat-race-board [board]="board" [position]="tokenPosition"></app-rat-race-board>
-          <ng-container *ngIf="!gameOver">
-            <ul class="cf-solo-hud">
+          <div class="cf-solo-board">
+            <app-rat-race-board [board]="board" [position]="tokenPosition"></app-rat-race-board>
+            <ul class="cf-solo-hud" *ngIf="!gameOver">
               <li>{{ positionText }}</li>
               <li>{{ paydayText }}</li>
               <li *ngIf="appState.cashflowGame.charityRoundsLeft">
@@ -670,137 +706,137 @@
                 🔧 {{ 'CashflowGame.solo.spanner' | translate }}
               </li>
             </ul>
+          </div>
 
-            <div class="cf-solo-dice" *ngIf="shownDice.length">
+          <div class="cf-solo-controls">
+            <ng-container *ngIf="!gameOver">
+              <ng-container *ngIf="soloTurn.phase === 'roll'">
+                <fieldset class="cf-dice-choice" *ngIf="canChooseDice">
+                  <legend>{{ 'CashflowGame.solo.diceHow' | translate }}</legend>
+                  <label class="cf-dice-option">
+                    <input type="radio" name="diceChoice" [value]="1" [(ngModel)]="diceChoice" />
+                    {{ 'CashflowGame.solo.oneDie' | translate }}
+                  </label>
+                  <label class="cf-dice-option">
+                    <input type="radio" name="diceChoice" [value]="2" [(ngModel)]="diceChoice" />
+                    {{ 'CashflowGame.solo.twoDice' | translate }}
+                  </label>
+                </fieldset>
+                <div class="cf-solo-roll-row">
+                  <ng-container *ngTemplateOutlet="soloDice"></ng-container>
+                  <button class="btn btn--primary" [disabled]="!canRoll" (click)="rollSolo()">
+                    🎲 {{ 'CashflowGame.solo.roll' | translate }}
+                  </button>
+                  <button class="btn btn--sm" *ngIf="walking" (click)="skipWalk()">
+                    {{ 'CashflowGame.solo.skipAnimation' | translate }}
+                  </button>
+                </div>
+                <p class="cf-solo-last" *ngIf="lastDice.length">
+                  {{ 'CashflowGame.solo.lastRoll' | translate: { dice: lastDice.join(' + ') } }}
+                </p>
+              </ng-container>
+
               <div
-                class="cf-die"
-                *ngFor="let face of shownDice; trackBy: trackByIndex"
-                [class.cf-die--tumbling]="diceTumbling"
-                [class.cf-die--landed]="diceLanded"
-                role="img"
-                [attr.aria-label]="'CashflowGame.diceRolled' | translate: { roll: face }"
+                class="cf-solo-decision"
+                *ngIf="soloTurn.phase === 'decide' && !walking"
+                role="group"
               >
-                <span
-                  class="cf-pip"
-                  *ngFor="let on of dieCells(face)"
-                  [class.cf-pip--on]="on"
-                ></span>
+                <div class="cf-solo-decision-head">
+                  <ng-container *ngTemplateOutlet="soloDice"></ng-container>
+                  <h3>
+                    {{ 'CashflowGame.solo.decisionTitle' | translate: { space: pendingSpaceName } }}
+                  </h3>
+                </div>
+                <p class="cf-solo-decision-hint">
+                  {{ 'CashflowGame.solo.decisionHint' | translate }}
+                </p>
+                <div class="cf-actions cf-solo-decision-actions">
+                  <button
+                    class="btn btn--primary"
+                    [disabled]="isBusy || walking"
+                    (click)="openSoloDecision()"
+                  >
+                    {{ 'CashflowGame.solo.openCard' | translate }}
+                  </button>
+                  <button
+                    class="btn btn--sm"
+                    [disabled]="isBusy || walking"
+                    (click)="finishSoloDecision('done')"
+                  >
+                    {{ 'CashflowGame.solo.done' | translate }}
+                  </button>
+                  <button
+                    class="btn btn--sm cf-btn-outlined"
+                    [disabled]="isBusy || walking"
+                    (click)="finishSoloDecision('passed')"
+                  >
+                    {{ 'CashflowGame.solo.pass' | translate }}
+                  </button>
+                </div>
               </div>
-              <span class="cf-solo-dice-text">{{
-                'CashflowGame.solo.lastRoll' | translate: { dice: lastDice.join(' + ') }
-              }}</span>
-            </div>
-
-            <ng-container *ngIf="soloTurn.phase === 'roll'">
-              <fieldset class="cf-dice-choice" *ngIf="canChooseDice">
-                <legend>{{ 'CashflowGame.solo.diceHow' | translate }}</legend>
-                <label class="cf-dice-option">
-                  <input type="radio" name="diceChoice" [value]="1" [(ngModel)]="diceChoice" />
-                  {{ 'CashflowGame.solo.oneDie' | translate }}
-                </label>
-                <label class="cf-dice-option">
-                  <input type="radio" name="diceChoice" [value]="2" [(ngModel)]="diceChoice" />
-                  {{ 'CashflowGame.solo.twoDice' | translate }}
-                </label>
-              </fieldset>
-              <div class="cf-actions">
-                <button class="btn btn--primary" [disabled]="!canRoll" (click)="rollSolo()">
-                  🎲 {{ 'CashflowGame.solo.roll' | translate }}
-                </button>
-                <button class="btn btn--sm" *ngIf="walking" (click)="skipWalk()">
+              <!-- a roll in progress (the decision waits for the totem): the dice stay in view -->
+              <div class="cf-solo-roll-row" *ngIf="soloTurn.phase === 'decide' && walking">
+                <ng-container *ngTemplateOutlet="soloDice"></ng-container>
+                <button class="btn btn--sm" (click)="skipWalk()">
                   {{ 'CashflowGame.solo.skipAnimation' | translate }}
                 </button>
               </div>
             </ng-container>
 
+            <!-- The game is over: escaped the rat race, or bankrupt. -->
             <div
-              class="cf-solo-decision"
-              *ngIf="soloTurn.phase === 'decide' && !walking"
-              role="group"
+              class="cf-solo-over"
+              *ngIf="gameOver"
+              [class.cf-solo-over--won]="soloTurn.outcome === 'escaped'"
+              role="status"
             >
               <h3>
-                {{ 'CashflowGame.solo.decisionTitle' | translate: { space: pendingSpaceName } }}
+                {{
+                  (soloTurn.outcome === 'escaped'
+                    ? 'CashflowGame.solo.overEscaped'
+                    : 'CashflowGame.solo.overBankrupt'
+                  ) | translate
+                }}
               </h3>
-              <p>{{ 'CashflowGame.solo.decisionHint' | translate }}</p>
+              <p>{{ 'CashflowGame.solo.overHint' | translate }}</p>
+              <dl class="cf-solo-summary">
+                <div>
+                  <dt>{{ 'CashflowGame.solo.sumRounds' | translate }}</dt>
+                  <dd>{{ soloSummary.round }}</dd>
+                </div>
+                <div>
+                  <dt>{{ 'CashflowGame.solo.sumTurns' | translate }}</dt>
+                  <dd>{{ soloSummary.turns }}</dd>
+                </div>
+                <div>
+                  <dt>{{ 'CashflowGame.solo.sumCash' | translate }}</dt>
+                  <dd>
+                    {{ toDisplayAmount(soloSummary.cashMinor) | appNumber }} {{ appState.currency }}
+                  </dd>
+                </div>
+                <div>
+                  <dt>{{ 'CashflowGame.solo.sumPassive' | translate }}</dt>
+                  <dd>
+                    {{ toDisplayAmount(soloSummary.finances.passiveIncomeMinor) | appNumber }}
+                    {{ appState.currency }}
+                  </dd>
+                </div>
+                <div>
+                  <dt>{{ 'CashflowGame.solo.sumExpenses' | translate }}</dt>
+                  <dd>
+                    {{ toDisplayAmount(soloSummary.finances.expensesMinor) | appNumber }}
+                    {{ appState.currency }}
+                  </dd>
+                </div>
+              </dl>
               <div class="cf-actions">
-                <button
-                  class="btn btn--primary"
-                  [disabled]="isBusy || walking"
-                  (click)="openSoloDecision()"
-                >
-                  {{ 'CashflowGame.solo.openCard' | translate }}
+                <button class="btn btn--primary" [disabled]="isBusy" (click)="saveGameNow()">
+                  {{ 'CashflowGame.saveGame' | translate }}
                 </button>
-                <button
-                  class="btn btn--sm"
-                  [disabled]="isBusy || walking"
-                  (click)="finishSoloDecision('done')"
-                >
-                  {{ 'CashflowGame.solo.done' | translate }}
-                </button>
-                <button
-                  class="btn btn--sm cf-btn-outlined"
-                  [disabled]="isBusy || walking"
-                  (click)="finishSoloDecision('passed')"
-                >
-                  {{ 'CashflowGame.solo.pass' | translate }}
+                <button class="btn btn--sm cf-btn-outlined" [disabled]="isBusy" (click)="newGame()">
+                  {{ 'CashflowGame.newGame' | translate }}
                 </button>
               </div>
-            </div>
-          </ng-container>
-
-          <!-- The game is over: escaped the rat race, or bankrupt. -->
-          <div
-            class="cf-solo-over"
-            *ngIf="gameOver"
-            [class.cf-solo-over--won]="soloTurn.outcome === 'escaped'"
-            role="status"
-          >
-            <h3>
-              {{
-                (soloTurn.outcome === 'escaped'
-                  ? 'CashflowGame.solo.overEscaped'
-                  : 'CashflowGame.solo.overBankrupt'
-                ) | translate
-              }}
-            </h3>
-            <p>{{ 'CashflowGame.solo.overHint' | translate }}</p>
-            <dl class="cf-solo-summary">
-              <div>
-                <dt>{{ 'CashflowGame.solo.sumRounds' | translate }}</dt>
-                <dd>{{ soloSummary.round }}</dd>
-              </div>
-              <div>
-                <dt>{{ 'CashflowGame.solo.sumTurns' | translate }}</dt>
-                <dd>{{ soloSummary.turns }}</dd>
-              </div>
-              <div>
-                <dt>{{ 'CashflowGame.solo.sumCash' | translate }}</dt>
-                <dd>
-                  {{ toDisplayAmount(soloSummary.cashMinor) | appNumber }} {{ appState.currency }}
-                </dd>
-              </div>
-              <div>
-                <dt>{{ 'CashflowGame.solo.sumPassive' | translate }}</dt>
-                <dd>
-                  {{ toDisplayAmount(soloSummary.finances.passiveIncomeMinor) | appNumber }}
-                  {{ appState.currency }}
-                </dd>
-              </div>
-              <div>
-                <dt>{{ 'CashflowGame.solo.sumExpenses' | translate }}</dt>
-                <dd>
-                  {{ toDisplayAmount(soloSummary.finances.expensesMinor) | appNumber }}
-                  {{ appState.currency }}
-                </dd>
-              </div>
-            </dl>
-            <div class="cf-actions">
-              <button class="btn btn--primary" [disabled]="isBusy" (click)="saveGameNow()">
-                {{ 'CashflowGame.saveGame' | translate }}
-              </button>
-              <button class="btn btn--sm cf-btn-outlined" [disabled]="isBusy" (click)="newGame()">
-                {{ 'CashflowGame.newGame' | translate }}
-              </button>
             </div>
           </div>
         </div>
