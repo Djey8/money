@@ -16,6 +16,7 @@ export type LegalActionId =
   | 'baby'
   | 'charity'
   | 'downsized'
+  | 'clear_status'
   | 'bank_loan'
   | 'reset';
 
@@ -50,6 +51,12 @@ export function legalActions(state: CashflowGameState): LegalAction[] {
       { action: 'charity', description: 'Donate; roll one or two dice for the next 3 turns.' },
       { action: 'downsized', description: 'Lose the job: pay the total monthly expenses once.' },
     );
+    if (state.charityRoundsLeft > 0 || state.unemployedRoundsLeft > 0) {
+      actions.push({
+        action: 'clear_status',
+        description: 'Dismiss the Charity (dice choice) or Downsized (sitting out) reminder.',
+      });
+    }
   }
   if (currentTurn(state).phase !== 'over') {
     actions.push({

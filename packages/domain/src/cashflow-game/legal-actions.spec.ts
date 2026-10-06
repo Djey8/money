@@ -30,6 +30,11 @@ describe('legalActions', () => {
     expect(ids(state)).toEqual(['reset']);
   });
 
+  it('offers dismissing a status reminder only while one is showing (companion)', () => {
+    expect(ids(started({ unemployedRoundsLeft: 2 }))).toContain('clear_status');
+    expect(ids(started({}))).not.toContain('clear_status');
+  });
+
   it('offers the player-reported spaces in a companion game', () => {
     expect(ids(started({}))).toEqual([
       'payday',
