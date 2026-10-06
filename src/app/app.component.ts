@@ -363,6 +363,7 @@ export class AppComponent {
             // instead, same as tier 1, since for this account type it effectively is tier 1.
             AppDataService.instance
               .loadCashflowGameData()
+              .then(() => this.cashflowGameService.endSoloGameIfOver())
               .then(() => this.cashflowHistorySync.loadAndAdopt())
               .catch((err) => console.error('Cashflow game data load error:', err));
           }

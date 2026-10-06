@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Subject } from 'rxjs';
+import { Subject, auditTime, merge } from 'rxjs';
 import { TranslateService } from '@ngx-translate/core';
 import {
   afterAssetBuy as afterAssetBuyRule,
@@ -71,6 +71,7 @@ import {
   UNDO_STACK_LIMIT,
   systemClock,
   systemRng,
+  endIfOver,
   playCharityPaying,
   playDownsizedPaying,
   type PaidWithLoan,
@@ -383,7 +384,13 @@ export class CashflowGameService {
     private persistence: PersistenceService,
     private incomeStatement: IncomeStatementService,
     private translate: TranslateService,
-  ) {}
+  ) {
+    // The game ends when the books say so, whichever action changed them.
+    const state = AppStateService.instance;
+    merge(state.transactionsUpdated$, state.subscriptionsUpdated$)
+      .pipe(auditTime(60))
+      .subscribe(() => this.endSoloGameIfOver());
+  }
 
   static isCashflowGame(): boolean {
     // The Firebase builds carry no game content (cashflow-content.firebase.ts): no sets, no game.
@@ -1175,6 +1182,27 @@ export class CashflowGameService {
    * Closes the open card decision of a solo turn: `done` once the card was dealt with, `passed` to leave it (a step of
    * its own, so Undo brings the card back). Dealing with the card may have won the game, so the books are checked.
    */
+  /**
+   * The solo game ends the moment the books say so (JFK, 2026-10-06: "I escaped the rat race and then I needed to dice one
+   * more time to finish the game") - not only at the next roll or when a card is settled, but whenever the transactions
+   * or subscriptions change: a purchase made in the Add dialog, a sale, a loan, a payoff. Returns whether it ended now.
+   * No undo step of its own: Undo of the move that caused it restores the game as it was, still being played.
+   */
+  endSoloGameIfOver(): boolean {
+    const state = AppStateService.instance;
+    const game = state.cashflowGame;
+    if (game.mode !== 'solo' || !game.professionId || game.turn?.phase === 'over') return false;
+    const next = endIfOver(game, this.gameBooks().subscriptions);
+    if (next === game) return false;
+    state.cashflowGame = next;
+    this.persistAll(
+      'cashflow_game_end',
+      { outcome: next.turn?.outcome },
+      { onSuccess: () => undefined, onError: () => undefined },
+    );
+    return true;
+  }
+
   settleSoloDecision(how: 'done' | 'passed', callbacks: CashflowGameCallbacks): void {
     let settled: ReturnType<typeof settleDecisionRule>;
     try {

@@ -3324,6 +3324,93 @@ describe('CashflowGameService', () => {
       expect(service.soloTurn).toEqual({ phase: 'roll', count: 0 });
     });
 
+    // The game ends the moment the books say so (JFK, 2026-10-06), whichever action changed them.
+    const addGameSubscription = (title: string, amount: number) => {
+      const state = AppStateService.instance;
+      state.allSubscriptions.push({
+        title,
+        account: 'Daily',
+        amount,
+        startDate: '2026-10-05',
+        endDate: '',
+        category: '',
+        comment: '#cashflow',
+        frequency: 'monthly',
+      } as any);
+      state.cashflowGame = {
+        ...state.cashflowGame,
+        gameSubscriptionTitles: [...state.cashflowGame.gameSubscriptionTitles, title],
+      };
+    };
+
+    it('escaping the rat race ends the game at once - not at the next roll', () => {
+      startSolo();
+      expect(service.endSoloGameIfOver()).toBe(false); // nothing changed yet
+      addGameSubscription('Haus Cashflow', 99999); // passive income far above the expenses
+
+      expect(service.endSoloGameIfOver()).toBe(true);
+
+      expect(service.soloTurn).toMatchObject({ phase: 'over', outcome: 'escaped' });
+      expect(service.cannotRollBecause).toMatch(/over/);
+      expect(service.endSoloGameIfOver()).toBe(false); // once is enough
+    });
+
+    it('a negative monthly cashflow ends it as bankrupt, and drops the card that was open', () => {
+      startSolo();
+      service.rng = die(1); // a Deals space: a decision is open
+      service.rollTurn(1, callbacks());
+      expect(service.soloTurn.phase).toBe('decide');
+
+      addGameSubscription('Yacht', -999999);
+      service.endSoloGameIfOver();
+
+      expect(service.soloTurn).toEqual({
+        phase: 'over',
+        count: 1,
+        outcome: 'bankrupt',
+        lastRoll: [1],
+      });
+    });
+
+    it('is noticed when the transactions or subscriptions change: no roll needed', async () => {
+      startSolo();
+      addGameSubscription('Haus Cashflow', 99999);
+
+      AppStateService.instance.subscriptionsUpdated$.next(); // what a purchase made in the Add dialog sends
+      await new Promise((resolve) => setTimeout(resolve, 150));
+
+      expect(service.soloTurn.phase).toBe('over');
+    });
+
+    it('persists the ending, and never touches a companion game', () => {
+      startSolo();
+      addGameSubscription('Haus Cashflow', 99999);
+      persistence.batchWriteAndSync.mockClear();
+      service.endSoloGameIfOver();
+      const writes = persistence.batchWriteAndSync.mock.calls[0][0].writes;
+      expect(writes.find((w: any) => w.tag === 'cashflowGame').data.turn.phase).toBe('over');
+
+      (AppStateService as any)._instance = undefined;
+      service.pickProfession('placeholder', 'placeholder-profession', callbacks()); // companion
+      addGameSubscription('Haus Cashflow', 99999);
+      expect(service.endSoloGameIfOver()).toBe(false);
+      expect(AppStateService.instance.cashflowGame.turn).toBeUndefined();
+    });
+
+    it('Undo of the move that caused the ending brings the game back, still being played', () => {
+      startSolo();
+      service.rng = die(2);
+      service.rollTurn(1, callbacks()); // the move
+      addGameSubscription('Haus Cashflow', 99999); // what the move bought
+      service.endSoloGameIfOver();
+      expect(service.soloTurn.phase).toBe('over');
+
+      service.undoLastAction(callbacks());
+
+      expect(service.soloTurn).toEqual({ phase: 'roll', count: 0 });
+      expect(service.cannotRollBecause).toBeNull();
+    });
+
     it('a card space leaves the turn open until the card is settled; passing is an undoable step', () => {
       startSolo();
       service.rng = die(1); // space 0: a Deals space
