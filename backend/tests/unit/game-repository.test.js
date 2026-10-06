@@ -101,6 +101,8 @@ describe('getGame', () => {
       finances: { salaryMinor: 300000, expensesMinor: 180000, monthlyCashflowMinor: 120000 },
     });
     expect(game.legalActions.map((action) => action.action)).toEqual([
+      'draw_card',
+      'buy_deal',
       'pass_card',
       'bank_loan',
       'reset',

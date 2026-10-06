@@ -21,12 +21,27 @@ const {
   popUndoSteps,
   keepSavedSlot,
   blankGameData,
+  playTurn,
+  settleDecision,
+  CLASSIC_RAT_RACE_BOARD,
+  systemRng,
+  drawRandomCard,
+  dealInputFromCard,
+  takenDealLabels,
+  planDeal,
+  executeDeal,
+  payCardExpense,
+  doodadAccount,
+  dealPlanText,
+  doodadPaymentCategory,
+  doodadPaymentTitle,
 } = require('@money/domain');
 const { getEncryptionSession } = require('../services/encryption-session');
 const { decryptSettings } = require('./settings-repository');
 const { decodeGameState } = require('../services/game-state-codec');
 const { readBooks, applyEffectsToData } = require('../services/game-writer');
 const { createGameText, createMoneyFormat } = require('../services/game-text');
+const { createCardTextSource } = require('../services/game-card-text');
 const {
   readSnapshot,
   writeSnapshot,
@@ -126,26 +141,162 @@ function playStart(books, input, deps, gameSets) {
   return [effects];
 }
 
-/** The effects one action plays over the books; the rules themselves are the domain's. */
-function playAction(action, input, { books, profession, deps, gameSets }) {
+/**
+ * What one action plays over the books: the effects in order, the one History step they share when they carry none of
+ * their own (a roll), and what the caller reports back (`result`).
+ */
+function playAction(action, input, { books, profession, deps, gameSets, gameSet }) {
   switch (action) {
     case 'start':
-      return playStart(books, input, deps, gameSets);
+      return { effects: playStart(books, input, deps, gameSets) };
     case 'payday':
-      return [playPayday(roundBooksOf(books), deps)];
+      return { effects: [playPayday(roundBooksOf(books), deps)] };
     case 'baby':
-      return [playBaby(roundBooksOf(books), profession, deps)];
+      return { effects: [playBaby(roundBooksOf(books), profession, deps)] };
     case 'charity':
-      return playCharityPaying(books, deps).effects;
+      return { effects: playCharityPaying(books, deps).effects };
     case 'downsized':
-      return playDownsizedPaying(books, deps).effects;
+      return { effects: playDownsizedPaying(books, deps).effects };
     case 'bank_loan':
-      return [playBankLoan(books, input.amountMinor, deps)];
+      return { effects: [playBankLoan(books, input.amountMinor, deps)] };
     case 'clear_status':
-      return [emptyEffects(clearCashflowStatus(books.state, input.status), null)];
+      return { effects: [emptyEffects(clearCashflowStatus(books.state, input.status), null)] };
+    case 'roll': {
+      const turn = playTurn(
+        books,
+        { ...deps, board: CLASSIC_RAT_RACE_BOARD, profession, rng: deps.rng },
+        { dice: input.dice },
+      );
+      return {
+        effects: turn.effects,
+        step: turn.step,
+        result: {
+          dice: turn.roll.dice,
+          total: turn.roll.total,
+          from: books.state.boardPosition,
+          to: turn.move.to,
+          landed: turn.move.landed.kind,
+          paydays: turn.move.paydays + (turn.openingPayday ? 1 : 0),
+          openingPayday: turn.openingPayday,
+          autoLoansMinor: turn.autoLoansMinor,
+        },
+      };
+    }
+    case 'pass_card': {
+      const settled = settleDecision(books.state, 'passed', books.subscriptions);
+      return { effects: [emptyEffects(settled.state, settled.step)] };
+    }
+    case 'draw_card':
+      return drawCard(books, input, deps, gameSet);
+    case 'buy_deal':
+      return buyDeal(books, input, deps, gameSet);
+    case 'pay_doodad':
+      return payDoodad(books, input, deps, gameSet);
     default:
       throw refuse('GAME_ACTION_UNKNOWN', `Unknown game action: ${action}`);
   }
+}
+
+const DECK_FOR_PENDING = { deal: ['dealSmall', 'dealBig'], market: ['market'], doodad: ['doodad'] };
+
+function cardTextDeps(deps) {
+  return { text: deps.text, cards: deps.cards, money: deps.money };
+}
+
+/** A card as the API shows it: its numbers, plus what it prints in the game's language. */
+function describeCard(card, deps) {
+  return {
+    ...card,
+    printed: deps.cards.textFor(card.id),
+    label: deps.cards.symbolFor(card.symbol),
+  };
+}
+
+function findDeck(gameSet, deckKind) {
+  const deck = gameSet?.decks?.[deckKind];
+  if (!deck) throw refuse('GAME_RULE_REFUSED', `This game set has no ${deckKind} cards.`);
+  return deck;
+}
+
+function drawCard(books, input, deps, gameSet) {
+  const deckKind = input.deck;
+  const pending = books.state.turn?.pending;
+  if (
+    books.state.mode === 'solo' &&
+    pending &&
+    !DECK_FOR_PENDING[pending.kind].includes(deckKind)
+  ) {
+    throw refuse(
+      'GAME_RULE_REFUSED',
+      `This space asks for a ${pending.kind} card: draw from ${DECK_FOR_PENDING[pending.kind].join(' or ')}.`,
+    );
+  }
+  const drawn = drawRandomCard(
+    findDeck(gameSet, deckKind),
+    books.state.drawnCardIds[deckKind],
+    deps.rng,
+  );
+  const state = {
+    ...books.state,
+    drawnCardIds: { ...books.state.drawnCardIds, [deckKind]: drawn.drawnIds },
+  };
+  return {
+    effects: [emptyEffects(state, null)],
+    result: { deck: deckKind, reshuffled: drawn.reshuffled, card: describeCard(drawn.card, deps) },
+  };
+}
+
+/** Plans a Deal card as a Grow project and buys it - the app's two steps, so Undo takes them back one at a time. */
+function buyDeal(books, input, deps, gameSet) {
+  const decks = [...findDeck(gameSet, 'dealSmall'), ...(gameSet.decks.dealBig ?? [])];
+  const card = decks.find((candidate) => candidate.id === input.cardId);
+  if (!card) throw refuse('GAME_RULE_REFUSED', `No Deal card with the id '${input.cardId}'.`);
+  if (card.assetKind === 'asset') {
+    throw refuse(
+      'GAME_RULE_REFUSED',
+      'Special-asset cards (gold, loans, MLM) are not playable through the API yet.',
+    );
+  }
+  const dealInput = dealInputFromCard(
+    card,
+    dealPlanText(card, cardTextDeps(deps)),
+    takenDealLabels(books),
+  );
+  const plan = planDeal(books, dealInput, deps);
+  const executed = executeDeal(
+    applyEffectsToBooks(books, plan),
+    dealInput.title,
+    input.quantity,
+    deps,
+  );
+  return {
+    effects: [plan, ...executed.steps],
+    settle: true,
+    result: { card: describeCard(card, deps), title: dealInput.title, kind: executed.kind },
+  };
+}
+
+function payDoodad(books, input, deps, gameSet) {
+  const card = findDeck(gameSet, 'doodad').find((candidate) => candidate.id === input.cardId);
+  if (!card) throw refuse('GAME_RULE_REFUSED', `No Doodad card with the id '${input.cardId}'.`);
+  const textDeps = cardTextDeps(deps);
+  const effects = payCardExpense(
+    books,
+    {
+      kind: 'doodad',
+      title: doodadPaymentTitle(card, textDeps),
+      flavor: deps.cards.textFor(card.id).comment,
+      category: doodadPaymentCategory(card, textDeps),
+      costMinor: card.costMinor,
+      account: doodadAccount(card),
+    },
+    deps,
+  );
+  return {
+    effects,
+    settle: true,
+    result: { card: describeCard(card, deps), costMinor: card.costMinor },
+  };
 }
 
 /** What an action needs to run: the stored data, the encryption session, the account's settings and the game's words. */
@@ -169,7 +320,14 @@ async function loadContext(deps, userId) {
     session,
     settings,
     state,
-    gameDeps: { clock: systemClock, text, money, plainMoney: money },
+    gameDeps: {
+      clock: systemClock,
+      text,
+      money,
+      plainMoney: money,
+      rng: deps.rng ?? systemRng,
+      cards: createCardTextSource(settings.language),
+    },
     history: readHistoryStack(data, session),
   };
 }
@@ -197,9 +355,10 @@ function pushStep(stack, data, step, context) {
 }
 
 /** Plays effects in order: each undoable one first pushes how the account stood, then changes it. */
-function applyEffectsList(effectsList, context, startData, startStack) {
+function applyEffectsList(effectsList, context, startData, startStack, sharedStep) {
   let data = startData;
   let stack = startStack;
+  if (sharedStep) stack = pushStep(stack, data, sharedStep, context);
   for (const effects of effectsList) {
     if (effects.step) stack = pushStep(stack, data, effects.step, context);
     data = applyEffectsToData(data, effects, {
@@ -211,6 +370,7 @@ function applyEffectsList(effectsList, context, startData, startStack) {
 }
 
 async function playGameAction(deps, userId, action, input = {}) {
+  // `deps.rng` is for tests and the scripted agent harness; the API itself always rolls with the system's dice.
   let attempt = 0;
   while (attempt < MAX_WRITE_RETRIES) {
     const context = await loadContext(deps, userId);
@@ -228,8 +388,15 @@ async function playGameAction(deps, userId, action, input = {}) {
     }
 
     let nextData;
+    let result;
     try {
-      nextData = runAction(action, input, context, { settings, state, data, session, history });
+      ({ data: nextData, result } = runAction(action, input, context, {
+        settings,
+        state,
+        data,
+        session,
+        history,
+      }));
     } catch (error) {
       if (error instanceof GameActionError) throw error;
       throw refuse('GAME_RULE_REFUSED', error.message);
@@ -237,7 +404,8 @@ async function playGameAction(deps, userId, action, input = {}) {
 
     try {
       await deps.usersDb.insert({ ...userDoc, data: nextData, updatedAt: systemClock.nowIso() });
-      return await getGame(deps, userId);
+      const game = await getGame(deps, userId);
+      return result ? { ...game, result } : game;
     } catch (error) {
       if (error.statusCode !== 409) throw error;
       attempt += 1;
@@ -252,11 +420,11 @@ function runAction(action, input, context, { settings, state, data, session, his
     const { snapshot, stack } = popUndoSteps(history.stack, count);
     if (!snapshot) throw refuse('GAME_RULE_REFUSED', 'Nothing to undo.');
     const restored = writeSnapshot(data, keepSavedSlot(snapshot, state), session);
-    return withHistory(restored, stack, context);
+    return { data: withHistory(restored, stack, context) };
   }
   if (action === 'reset') {
     const blank = writeSnapshot(data, blankGameData(), session);
-    return withHistory(blank, [], context);
+    return { data: withHistory(blank, [], context) };
   }
 
   const gameSets = loadGameSets();
@@ -267,19 +435,35 @@ function runAction(action, input, context, { settings, state, data, session, his
     (candidate) => candidate.id === (input.professionId ?? state.professionId),
   );
   const books = readBooks(data, session, { state, allocation: settings.allocation, gameSet });
-  const effectsList = playAction(action, input, {
+  const played = playAction(action, input, {
     books,
     profession,
     deps: context.gameDeps,
     gameSets,
+    gameSet,
   });
 
+  const effectsList = played.effects;
   // A new game has a new history: whatever an earlier game left behind is dropped.
   const startStack = action === 'start' ? [] : history.stack;
-  const applied = applyEffectsList(effectsList, context, data, startStack);
+  const applied = applyEffectsList(effectsList, context, data, startStack, played.step);
   let { data: nextData } = applied;
   let nextBooks = books;
   for (const effects of effectsList) nextBooks = applyEffectsToBooks(nextBooks, effects);
+
+  // Dealing with the card closes the solo turn's decision (the app's Done); a companion game has none open.
+  if (
+    played.settle &&
+    nextBooks.state.mode === 'solo' &&
+    nextBooks.state.turn?.phase === 'decide'
+  ) {
+    const settled = settleDecision(nextBooks.state, 'done', nextBooks.subscriptions);
+    nextBooks = { ...nextBooks, state: settled.state };
+    nextData = applyEffectsToData(nextData, emptyEffects(settled.state, null), {
+      session,
+      nowIso: systemClock.nowIso(),
+    });
+  }
 
   // A solo game ends the moment the books say so (escaped / bankrupt).
   const ended = endIfOver(nextBooks.state, nextBooks.subscriptions);
@@ -289,9 +473,11 @@ function runAction(action, input, context, { settings, state, data, session, his
       nowIso: systemClock.nowIso(),
     });
   }
-  return applied.stack === history.stack && action !== 'start'
-    ? nextData
-    : withHistory(nextData, applied.stack, context);
+  const stored =
+    applied.stack === history.stack && action !== 'start'
+      ? nextData
+      : withHistory(nextData, applied.stack, context);
+  return { data: stored, result: played.result };
 }
 
 module.exports = { playGameAction, GameActionError };

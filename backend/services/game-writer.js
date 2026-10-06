@@ -23,8 +23,7 @@ const { encodeGameState } = require('./game-state-codec');
  * The server's side of `GameEffects` (todo/cashflow-game-pro.md, slice D2): reads an account's stored data into the
  * minor-unit books the game rules take, and writes the effects a rule returns back into the stored document - the same
  * decisions the Angular service applies to its own entities (`applyGameEffects`), stored the way the browser stores them.
- * Grow updates beyond a project's notes, and creating Grow projects, throw instead of being dropped (they arrive with the
- * deal slice), so a rule that grows a new kind of effect cannot lose changes quietly.
+ * Every kind of effect the rules produce is applied.
  */
 
 const toMinor = (value, schemaVersion) => {
@@ -94,9 +93,28 @@ function readBooks(data, session, { state, allocation, gameSet }) {
         cashflowMinor: grow.cashflowMinor,
         amountMinor: grow.amountMinor,
         isAsset: grow.isAsset,
-        share: null,
-        investment: null,
-        loan: null,
+        share: grow.share
+          ? {
+              tag: grow.share.tag,
+              quantity: grow.share.quantity,
+              priceMinor: grow.share.priceMinor,
+            }
+          : null,
+        investment: grow.investment
+          ? {
+              tag: grow.investment.tag,
+              depositMinor: grow.investment.depositMinor,
+              amountMinor: grow.investment.amountMinor,
+            }
+          : null,
+        loan: grow.liabilitie
+          ? {
+              tag: grow.liabilitie.tag,
+              amountMinor: grow.liabilitie.amountMinor,
+              creditMinor: grow.liabilitie.creditMinor,
+              investment: grow.liabilitie.investment,
+            }
+          : null,
         updatedAt: grow.updatedAt,
       };
     }),
@@ -199,26 +217,69 @@ function removeByTag(rawList, tags, session) {
   return rawList.filter((raw) => !removed.has(decryptValue(raw.tag, session)));
 }
 
-function applyGrowUpdates(rawGrow, updates, session, schemaVersion, nowIso) {
+/** A Grow project as the game has always created one. */
+function newGrow(title, createdAt) {
+  return {
+    id: `grow_${crypto.randomUUID()}`,
+    title,
+    sub: '',
+    phase: 'execute',
+    description: '',
+    strategy: '',
+    riskScore: 0,
+    risks: '',
+    links: [],
+    actionItems: [],
+    notes: [],
+    cashflowMinor: 0,
+    amountMinor: 0,
+    isAsset: false,
+    share: null,
+    investment: null,
+    liabilitie: null,
+    createdAt,
+    updatedAt: createdAt,
+    type: 'income-growth',
+  };
+}
+
+/** The fields of a rule's project update written onto a project (Grow's own field names). */
+function patchGrow(project, update) {
+  const next = { ...project };
+  if (update.sub !== undefined) next.sub = update.sub;
+  if (update.phase !== undefined) next.phase = update.phase;
+  if (update.status !== undefined) next.status = update.status;
+  if (update.description !== undefined) next.description = update.description;
+  if (update.strategy !== undefined) next.strategy = update.strategy;
+  if (update.isAsset !== undefined) next.isAsset = update.isAsset;
+  if (update.amountMinor !== undefined) next.amountMinor = update.amountMinor;
+  if (update.cashflowMinor !== undefined) next.cashflowMinor = update.cashflowMinor;
+  if (update.share !== undefined) next.share = update.share;
+  if (update.sharePriceMinor !== undefined && next.share) {
+    next.share = { ...next.share, priceMinor: update.sharePriceMinor };
+  }
+  if (update.investment !== undefined) next.investment = update.investment;
+  if (update.loan !== undefined) next.liabilitie = update.loan;
+  if (update.notes !== undefined) next.notes = update.notes;
+  if (update.updatedAt !== undefined) next.updatedAt = update.updatedAt;
+  return next;
+}
+
+function applyGrowUpdates(rawGrow, updates, session, schemaVersion) {
   let result = rawGrow;
   for (const update of updates) {
-    const unsupported = Object.keys(update).filter(
-      (key) => !['title', 'notes', 'updatedAt'].includes(key),
-    );
-    if (unsupported.length > 0) {
-      throw new Error(`Grow update fields not supported by the API yet: ${unsupported.join(', ')}`);
-    }
     const index = result.findIndex((raw) => decryptValue(raw.title, session) === update.title);
-    if (index === -1) continue;
-    const current = decryptGrow(result[index], session, schemaVersion);
-    const next = {
-      ...current,
-      notes: update.notes ?? current.notes,
-      updatedAt: update.updatedAt ?? nowIso,
-    };
-    result = result.map((raw, i) =>
-      i === index ? encryptGrow(next, session, schemaVersion) : raw,
-    );
+    let current;
+    if (index === -1) {
+      if (!update.create) continue;
+      current = newGrow(update.title, update.createdAt ?? new Date().toISOString());
+    } else {
+      current = decryptGrow(result[index], session, schemaVersion);
+      if (current.id === undefined) current = { ...current, id: `grow_${crypto.randomUUID()}` };
+    }
+    const encoded = encryptGrow(patchGrow(current, update), session, schemaVersion);
+    result =
+      index === -1 ? [...result, encoded] : result.map((raw, i) => (i === index ? encoded : raw));
   }
   return result;
 }
@@ -227,11 +288,7 @@ function applyGrowUpdates(rawGrow, updates, session, schemaVersion, nowIso) {
  * The stored document's `data` after one rule's effects. Pure over its inputs apart from generated ids.
  * @returns the new `data`
  */
-function applyEffectsToData(data, effects, { session, nowIso }) {
-  if (effects.growUpdates.some((update) => update.create)) {
-    throw new Error('Creating Grow projects is not supported by the API yet');
-  }
-
+function applyEffectsToData(data, effects, { session }) {
   const schemaVersion = data.meta?.schemaVersion || 1;
   const currency = data.meta?.currency || 'EUR';
   let next = { ...data };
@@ -321,13 +378,7 @@ function applyEffectsToData(data, effects, { session, nowIso }) {
   };
 
   if (effects.growUpdates.length > 0) {
-    next.grow = applyGrowUpdates(
-      list(next.grow),
-      effects.growUpdates,
-      session,
-      schemaVersion,
-      nowIso,
-    );
+    next.grow = applyGrowUpdates(list(next.grow), effects.growUpdates, session, schemaVersion);
   }
 
   if (effects.transactionDates.length === 0 && effects.appendedTransactions.length === 0) {

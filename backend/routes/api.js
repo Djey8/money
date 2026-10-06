@@ -42,6 +42,7 @@ const { getMojoStatus, updateMojoTarget } = require('../repositories/mojo-reposi
 const {
   getGame,
   getGameHistory,
+  browseGameCards,
   listGameSets,
   getGameSet,
 } = require('../repositories/game-repository');
@@ -3513,6 +3514,21 @@ router.get('/game/history', requireScope('game:r'), requireGameAccount, async (r
   }
 });
 
+router.get('/game/cards', requireScope('game:r'), requireGameAccount, async (req, res, next) => {
+  try {
+    const result = await browseGameCards(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+      { deck: req.query.deck, query: req.query.query, limit: Number(req.query.limit) || undefined },
+    );
+    if (result.error)
+      return problem(res, 400, 'validation_invalid', 'Invalid cards request', result.error);
+    return res.json(result);
+  } catch (error) {
+    return next(error);
+  }
+});
+
 router.get('/game/sets', requireScope('game:r'), requireGameAccount, (req, res, next) => {
   try {
     return res.json({ sets: listGameSets() });
@@ -3584,6 +3600,29 @@ gameAction('/game/start', 'start', (body) => {
     throw new Error("mode must be 'companion' or 'solo'.");
   }
   return { gameSetId, professionId, mode };
+});
+gameAction('/game/turn', 'roll', (body) => {
+  if (body.dice !== undefined && body.dice !== 1 && body.dice !== 2) {
+    throw new Error('dice must be 1 or 2 (two only count while Charity runs).');
+  }
+  return { dice: body.dice };
+});
+gameAction('/game/cards/pass', 'pass_card');
+const DECKS = ['dealSmall', 'dealBig', 'market', 'doodad'];
+gameAction('/game/cards/draw', 'draw_card', (body) => {
+  if (!DECKS.includes(body.deck)) throw new Error(`deck must be one of ${DECKS.join(', ')}.`);
+  return { deck: body.deck };
+});
+gameAction('/game/deals/buy', 'buy_deal', (body) => {
+  if (typeof body.cardId !== 'string' || !body.cardId) throw new Error('cardId must be a string.');
+  if (body.quantity !== undefined && (!Number.isInteger(body.quantity) || body.quantity < 1)) {
+    throw new Error('quantity must be a positive integer.');
+  }
+  return { cardId: body.cardId, quantity: body.quantity };
+});
+gameAction('/game/doodads/pay', 'pay_doodad', (body) => {
+  if (typeof body.cardId !== 'string' || !body.cardId) throw new Error('cardId must be a string.');
+  return { cardId: body.cardId };
 });
 gameAction('/game/undo', 'undo', (body) => {
   if (body.count !== undefined && (!Number.isInteger(body.count) || body.count < 1)) {

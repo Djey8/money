@@ -74,6 +74,7 @@ COPY --from=domain-build /repo/packages/domain/node_modules /packages/domain/nod
 # The game writes notes and subscription titles in the account's language, from the same catalogs the browser
 # translates with (backend/services/game-text.js looks in /app/i18n).
 COPY src/assets/i18n/*.json /app/i18n/
+COPY src/assets/i18n/cashflow-cards/*.json /app/i18n/cashflow-cards/
 
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs && \

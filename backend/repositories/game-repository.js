@@ -7,11 +7,13 @@ const {
   gameOutcome,
   currentTurn,
   CLASSIC_RAT_RACE_BOARD,
+  findCards,
 } = require('@money/domain');
 const { getEncryptionSession } = require('../services/encryption-session');
 const { decryptValue, toApiTransactions } = require('./transaction-repository');
 const { decodeGameState } = require('../services/game-state-codec');
-const { getSettings } = require('./settings-repository');
+const { getSettings, decryptSettings } = require('./settings-repository');
+const { createCardTextSource } = require('../services/game-card-text');
 const { readHistoryStack, readHistoryLog } = require('../services/game-snapshot');
 
 /**
@@ -134,7 +136,37 @@ async function getGameHistory(deps, userId) {
   return readHistoryLog(data, session);
 }
 
+const CARD_DECKS = ['dealSmall', 'dealBig', 'market', 'doodad'];
+
+/**
+ * `GET /game/cards`: a pile of the running game's set, or the cards matching `query` (title, ticker, price - what
+ * "find this card" searches by). Every card with its numbers and what it prints in the account's language.
+ */
+async function browseGameCards(deps, userId, { deck, query, limit }) {
+  if (!CARD_DECKS.includes(deck)) return { error: `deck must be one of ${CARD_DECKS.join(', ')}.` };
+  const data = await loadUserData(deps, userId);
+  const session = await getEncryptionSession(deps.authDb, userId);
+  const state = decodeGameState(data.cashflowGame, session);
+  const gameSet = loadGameSets().find((candidate) => candidate.id === state.gameSetId);
+  if (!gameSet) return { error: 'No game is running: start one to browse its cards.' };
+  const { language } = decryptSettings(data.settings, session);
+  const cards = createCardTextSource(language);
+  const pile = gameSet.decks?.[deck] ?? [];
+  const matching = query && String(query).trim() ? findCards(pile, String(query)) : pile;
+  const size = Math.min(Math.max(limit || 50, 1), 200);
+  return {
+    deck,
+    total: matching.length,
+    cards: matching.slice(0, size).map((card) => ({
+      ...card,
+      printed: cards.textFor(card.id),
+      label: cards.symbolFor(card.symbol),
+    })),
+  };
+}
+
 module.exports = {
+  browseGameCards,
   getGame,
   getGameHistory,
   listGameSets,

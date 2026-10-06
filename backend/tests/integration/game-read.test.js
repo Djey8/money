@@ -2,7 +2,10 @@
 
 const crypto = require('crypto');
 const request = require('supertest');
+const { seededRng } = require('@money/domain');
 const { app, checkDb, registerTestUser } = require('./setup');
+const { getUsersDb, getAuthDb } = require('../../config/db');
+const { playGameAction } = require('../../repositories/game-play');
 
 const GAME_PASSWORD = 'integration-test-only';
 const originalHash = process.env.CASHFLOW_GAME_PASSWORD_SHA256;
@@ -359,5 +362,178 @@ describe('POST /game/start, /undo, /reset and GET /game/history', () => {
     expect(transactions.body.transactions).toHaveLength(0);
     const history = await session('get', '/api/v1/game/history', user.token);
     expect(history.body.steps).toEqual([]);
+  });
+});
+
+describe('POST /game/turn - the solo turn', () => {
+  async function soloGame(suffix) {
+    const user = await registerGameUser(suffix);
+    const sets = await session('get', '/api/v1/game/sets', user.token);
+    const gameSet = sets.body.sets.find((candidate) => candidate.professions.length > 0);
+    await session('post', '/api/v1/game/start', user.token).send({
+      gameSetId: gameSet.id,
+      professionId: gameSet.professions[0].id,
+      mode: 'solo',
+    });
+    return user;
+  }
+
+  it('rolls, moves the token and reports what happened; the opening roll pays the first Payday', async () => {
+    if (!dbAvailable) return;
+    const user = await soloGame('_turn');
+    const rolled = await session('post', '/api/v1/game/turn', user.token).send({});
+    expect(rolled.status).toBe(200);
+    expect(rolled.body.result).toMatchObject({ from: null, openingPayday: true });
+    expect(rolled.body.result.dice).toHaveLength(1);
+    expect(rolled.body.position.index).toBe(rolled.body.result.to);
+    expect(rolled.body.turn.count).toBe(1);
+    expect(rolled.body.round).toBeGreaterThanOrEqual(1);
+
+    const history = await session('get', '/api/v1/game/history', user.token);
+    expect(history.body.steps.map((step) => step.kind)).toEqual(['start', 'roll']);
+
+    const undone = await session('post', '/api/v1/game/undo', user.token).send({});
+    expect(undone.body.position.index).toBeNull();
+    expect(undone.body.turn.count).toBe(0);
+  });
+
+  it('refuses a second roll while a card waits, and passing the card opens the next roll', async () => {
+    if (!dbAvailable) return;
+    const user = await soloGame('_pass');
+    let state;
+    for (let i = 0; i < 12; i += 1) {
+      state = await session('post', '/api/v1/game/turn', user.token).send({});
+      expect(state.status).toBe(200);
+      if (state.body.turn.phase === 'decide') break;
+    }
+    expect(state.body.turn.phase).toBe('decide');
+    expect(state.body.pendingDecision).toMatchObject({ kind: expect.any(String) });
+    expect(state.body.legalActions.map((action) => action.action)).not.toContain('roll');
+
+    const blocked = await session('post', '/api/v1/game/turn', user.token).send({});
+    expect(blocked.status).toBe(409);
+
+    const passed = await session('post', '/api/v1/game/cards/pass', user.token).send({});
+    expect(passed.status).toBe(200);
+    expect(passed.body.turn.phase).toBe('roll');
+    expect(passed.body.legalActions.map((action) => action.action)).toContain('roll');
+  });
+
+  it('plays the same turns for the same dice (seeded), so a scripted game is reproducible', async () => {
+    if (!dbAvailable) return;
+    const playTen = async (suffix) => {
+      const user = await soloGame(suffix);
+      const deps = { usersDb: getUsersDb(), authDb: getAuthDb(), rng: seededRng(7) };
+      const trail = [];
+      for (let i = 0; i < 10; i += 1) {
+        const game = await session('get', '/api/v1/game', user.token);
+        if (game.body.turn.phase === 'over') break;
+        const action = game.body.turn.phase === 'decide' ? 'pass_card' : 'roll';
+        const result = await playGameAction(deps, user.userId, action, {});
+        trail.push([action, result.position.index, result.cashMinor]);
+      }
+      return trail;
+    };
+    const first = await playTen('_seed_a');
+    const second = await playTen('_seed_b');
+    expect(first.length).toBeGreaterThan(3);
+    expect(second).toEqual(first);
+  });
+});
+
+describe('cards, deals and doodads in a solo game', () => {
+  async function soloAtSpace(suffix, kind) {
+    const user = await registerGameUser(suffix);
+    const sets = await session('get', '/api/v1/game/sets', user.token);
+    const gameSet = sets.body.sets.find((candidate) => candidate.professions.length > 0);
+    await session('post', '/api/v1/game/start', user.token).send({
+      gameSetId: gameSet.id,
+      professionId: gameSet.professions[0].id,
+      mode: 'solo',
+    });
+    for (let i = 0; i < 80; i += 1) {
+      const rolled = await session('post', '/api/v1/game/turn', user.token).send({});
+      expect(rolled.status).toBe(200);
+      if (rolled.body.turn.phase === 'over') return { user, game: rolled.body };
+      if (rolled.body.pendingDecision?.kind === kind) return { user, game: rolled.body };
+      if (rolled.body.turn.phase === 'decide') {
+        await session('post', '/api/v1/game/cards/pass', user.token).send({});
+      }
+    }
+    throw new Error(`never landed on a ${kind} space`);
+  }
+
+  it('lists a pile and finds cards by text', async () => {
+    if (!dbAvailable) return;
+    const { user } = await soloAtSpace('_browse', 'deal');
+    const pile = await session('get', '/api/v1/game/cards?deck=dealSmall&limit=5', user.token);
+    expect(pile.status).toBe(200);
+    expect(pile.body.cards).toHaveLength(5);
+    expect(pile.body.total).toBeGreaterThan(5);
+    const found = await session(
+      'get',
+      `/api/v1/game/cards?deck=dealSmall&query=${encodeURIComponent(pile.body.cards[0].title)}`,
+      user.token,
+    );
+    expect(found.body.cards.map((card) => card.id)).toContain(pile.body.cards[0].id);
+    const bad = await session('get', '/api/v1/game/cards?deck=nope', user.token);
+    expect(bad.status).toBe(400);
+  });
+
+  it('draws a card for the space and buys a Deal: a Grow project, the position, and the turn moves on', async () => {
+    if (!dbAvailable) return;
+    const { user, game } = await soloAtSpace('_deal', 'deal');
+    if (game.turn.phase === 'over') return; // escaped or bankrupt before a Deal space came up
+    const wrongPile = await session('post', '/api/v1/game/cards/draw', user.token).send({
+      deck: 'doodad',
+    });
+    expect(wrongPile.status).toBe(422);
+
+    // an investment or share card: take the first small deal that is not a special asset
+    const pile = await session('get', '/api/v1/game/cards?deck=dealSmall&limit=200', user.token);
+    const card = pile.body.cards.find((candidate) => candidate.assetKind !== 'asset');
+    const bought = await session('post', '/api/v1/game/deals/buy', user.token).send({
+      cardId: card.id,
+      ...(card.assetKind === 'share' ? { quantity: 1 } : {}),
+    });
+    expect(bought.status).toBe(200);
+    expect(bought.body.turn.phase).toBe('roll');
+    expect(bought.body.result.card.id).toBe(card.id);
+
+    const grow = await session('get', '/api/v1/grow', user.token);
+    expect(grow.body.grow.map((project) => project.title)).toContain(bought.body.result.title);
+
+    const history = await session('get', '/api/v1/game/history', user.token);
+    const kinds = history.body.steps.map((step) => step.kind);
+    expect(kinds).toEqual(expect.arrayContaining(['planDeal']));
+  });
+
+  it('draws from the pile the space asks for', async () => {
+    if (!dbAvailable) return;
+    const { user, game } = await soloAtSpace('_draw', 'deal');
+    if (game.turn.phase === 'over') return;
+    const drawn = await session('post', '/api/v1/game/cards/draw', user.token).send({
+      deck: 'dealBig',
+    });
+    expect(drawn.status).toBe(200);
+    expect(drawn.body.result.card.id).toEqual(expect.any(String));
+    expect(drawn.body.turn.phase).toBe('decide'); // drawing does not close the decision
+  });
+
+  it('pays a Doodad from the books and moves on', async () => {
+    if (!dbAvailable) return;
+    const { user, game } = await soloAtSpace('_doodad', 'doodad');
+    if (game.turn.phase === 'over') return;
+    const drawn = await session('post', '/api/v1/game/cards/draw', user.token).send({
+      deck: 'doodad',
+    });
+    const card = drawn.body.result.card;
+    const before = drawn.body.cashMinor;
+    const paid = await session('post', '/api/v1/game/doodads/pay', user.token).send({
+      cardId: card.id,
+    });
+    expect(paid.status).toBe(200);
+    expect(paid.body.turn.phase).toBe('roll');
+    expect(paid.body.cashMinor).toBeLessThanOrEqual(before - card.costMinor + 1);
   });
 });

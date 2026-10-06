@@ -1246,6 +1246,228 @@ paths:
           $ref: '#/components/responses/AuthenticationRequired'
         '403':
           $ref: '#/components/responses/NotAGameAccountOrScope'
+  /game/turn:
+    post:
+      operationId: gameTurn
+      summary: Roll the dice and play the turn (solo)
+      description: >-
+        Rolls, moves the token clockwise, pays every Payday it enters (the first roll of a game also pays the opening Payday), and resolves the space it lands on: Baby, Charity and Downsized automatically (the Bank loan is taken first when cash is short), a card space as a pending decision (`turn.phase: decide`). One roll is one undoable step. `result` reports the dice, where the token went, what it landed on and how many Paydays were paid. The game can end here (`outcome`). Game accounts only; requires `game:w`. The action must be one of the `legalActions` of `GET /game` (409
+        `game_action_not_allowed` otherwise); a refusal by the game's own rules is 422 `game_rule_refused`. Audit
+        logged.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                dice:
+                  {
+                    type: integer,
+                    enum: [1, 2],
+                    description: 'Two dice only count while Charity runs.',
+                  }
+            example: { dice: 1 }
+      responses:
+        '200':
+          description: The game after the action, with `result` describing what happened
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameView'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '409':
+          $ref: '#/components/responses/GameActionRefused'
+        '422':
+          $ref: '#/components/responses/GameActionRefused'
+  /game/cards/pass:
+    post:
+      operationId: gamePassCard
+      summary: Leave the card on this space
+      description: >-
+        Closes the open card decision without playing it; the next roll is open afterwards. One undoable step. Game accounts only; requires `game:w`. The action must be one of the `legalActions` of `GET /game` (409
+        `game_action_not_allowed` otherwise); a refusal by the game's own rules is 422 `game_rule_refused`. Audit
+        logged.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The game after the action, with `result` describing what happened
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameView'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '409':
+          $ref: '#/components/responses/GameActionRefused'
+        '422':
+          $ref: '#/components/responses/GameActionRefused'
+  /game/cards/draw:
+    post:
+      operationId: gameDrawCard
+      summary: Draw a random card
+      description: >-
+        Draws one card at random from a pile, skipping what was drawn since the last reshuffle (the pile reshuffles when exhausted). In a solo game the pile must be the one the space asks for (a Deals space: `dealSmall` or `dealBig`). Drawing changes only the remembered draw pile and does not close the decision. `result.card` has the card's numbers and `printed`, what it says in the account's language. Game accounts only; requires `game:w`. The action must be one of the `legalActions` of `GET /game` (409
+        `game_action_not_allowed` otherwise); a refusal by the game's own rules is 422 `game_rule_refused`. Audit
+        logged.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [deck]
+              properties:
+                deck: { type: string, enum: [dealSmall, dealBig, market, doodad] }
+            example: { deck: dealSmall }
+      responses:
+        '200':
+          description: The game after the action, with `result` describing what happened
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameView'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '409':
+          $ref: '#/components/responses/GameActionRefused'
+        '422':
+          $ref: '#/components/responses/GameActionRefused'
+  /game/deals/buy:
+    post:
+      operationId: gameBuyDeal
+      summary: Plan and buy a Deal card
+      description: >-
+        Plans the card as a Grow project (the app's plan step) and buys it (the app's buy step, taking the Bank loan first when cash is short): two undoable steps, and in a solo game the turn moves on. Shares need a `quantity`. Special-asset cards (gold, loans, MLM) are not playable yet (422). Game accounts only; requires `game:w`. The action must be one of the `legalActions` of `GET /game` (409
+        `game_action_not_allowed` otherwise); a refusal by the game's own rules is 422 `game_rule_refused`. Audit
+        logged.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [cardId]
+              properties:
+                cardId: { type: string }
+                quantity:
+                  { type: integer, minimum: 1, description: 'Shares to buy; for a stock card.' }
+            example: { cardId: ok4u-20, quantity: 100 }
+      responses:
+        '200':
+          description: The game after the action, with `result` describing what happened
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameView'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '409':
+          $ref: '#/components/responses/GameActionRefused'
+        '422':
+          $ref: '#/components/responses/GameActionRefused'
+  /game/doodads/pay:
+    post:
+      operationId: gamePayDoodad
+      summary: Pay a Doodad card
+      description: >-
+        Books the card's cost as an expense on its suggested account (the Bank loan is taken first when cash is short); in a solo game the turn moves on. Game accounts only; requires `game:w`. The action must be one of the `legalActions` of `GET /game` (409
+        `game_action_not_allowed` otherwise); a refusal by the game's own rules is 422 `game_rule_refused`. Audit
+        logged.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [cardId]
+              properties:
+                cardId: { type: string }
+            example: { cardId: doodad-coffee }
+      responses:
+        '200':
+          description: The game after the action, with `result` describing what happened
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameView'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '409':
+          $ref: '#/components/responses/GameActionRefused'
+        '422':
+          $ref: '#/components/responses/GameActionRefused'
+  /game/cards:
+    get:
+      operationId: listGameCards
+      summary: Browse or find the cards of a pile
+      description: >-
+        Game accounts only; requires `game:r`; a game must be running (its set decides the cards). Lists a pile, or the
+        cards matching `query` (title, ticker symbol or price - every word must match). Each card has its
+        language-neutral numbers plus `printed` (what it says in the account's language) and `label`.
+      security:
+        - bearerAuth: []
+      parameters:
+        - {
+            name: deck,
+            in: query,
+            required: true,
+            schema: { type: string, enum: [dealSmall, dealBig, market, doodad] },
+          }
+        - { name: query, in: query, schema: { type: string } }
+        - {
+            name: limit,
+            in: query,
+            schema: { type: integer, minimum: 1, maximum: 200, default: 50 },
+          }
+      responses:
+        '200':
+          description: The cards
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [deck, total, cards]
+                properties:
+                  deck: { type: string }
+                  total: { type: integer }
+                  cards: { type: array, items: { type: object } }
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
   /mojo:
     get:
       operationId: getMojo
@@ -4987,6 +5209,9 @@ components:
               bank_loan,
               undo,
               reset,
+              draw_card,
+              buy_deal,
+              pay_doodad,
             ]
         description: { type: string }
     GameView:
@@ -5053,6 +5278,9 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/GameLegalAction'
+        result:
+          type: object
+          description: Only on the response of an action - what it did (the dice of a roll, the card that was drawn, the deal that was bought...).
     GameSetSummary:
       type: object
       required: [id, title, professions]
