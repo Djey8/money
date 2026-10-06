@@ -534,6 +534,17 @@ describe('cards, deals and doodads in a solo game', () => {
     });
     expect(paid.status).toBe(200);
     expect(paid.body.turn.phase).toBe('roll');
-    expect(paid.body.cashMinor).toBeLessThanOrEqual(before - card.costMinor + 1);
+    expect(before).toBeDefined();
+    expect(paid.body.cashMinor).toBeGreaterThanOrEqual(0); // never into the red: a loan covers a shortfall
+    const transactions = await session(
+      'get',
+      '/api/v1/transactions?limit=100&order=desc',
+      user.token,
+    );
+    expect(
+      transactions.body.transactions.some(
+        (t) => t.comment.includes('#doodad') && t.amountMinor === -card.costMinor,
+      ),
+    ).toBe(true);
   });
 });
