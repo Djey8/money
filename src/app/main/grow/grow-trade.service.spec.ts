@@ -111,8 +111,30 @@ describe('GrowTradeService', () => {
     );
 
     expect(AddComponent.selectedOption).toBe('Income');
-    expect(AddComponent.amountTextField).toBe('13000');
+    // 13.000 is what the player ends up with; the Add dialog adds the 3.000 deposit that comes back to the amount
+    // entered, so the field holds the profit - otherwise the sale books 16.000 (JFK, 2026-10-06: 14.000 for 12.000).
+    expect(AddComponent.amountTextField).toBe('10000');
+    expect(Number(AddComponent.amountTextField) + 3000).toBe(13000);
     expect(AddComponent.commentTextField).toBe('Sell Investment EFH 3000 47000;');
+  });
+
+  it('Sell books exactly the net cash: a 2.000 deposit and a 10.000 profit is 12.000, not 14.000', async () => {
+    const { service, cashflowGame } = makeService();
+    AppStateService.instance.allInvestments = [{ tag: 'SFH', deposit: 2000, amount: 48000 }] as any;
+    cashflowGame.marketSaleFor.mockReturnValue({
+      salePrice: 60000,
+      netCash: 12000,
+      label: '+10.000',
+    });
+
+    await service.sell(
+      project({ title: 'SFH', investment: { tag: 'SFH', deposit: 2000, amount: 48000 } }),
+    );
+
+    expect(AddComponent.commentTextField).toBe('Sell Investment SFH 2000 48000;');
+    expect(AddComponent.amountTextField).toBe('10000');
+    // the Add dialog: amount entered + the deposit coming back
+    expect(Number(AddComponent.amountTextField) + 2000).toBe(12000);
   });
 
   it('Sell books a loss as a Daily expense (the mortgage is more than the buyer pays)', async () => {
@@ -129,7 +151,9 @@ describe('GrowTradeService', () => {
     );
 
     expect(AddComponent.selectedOption).toBe('Daily');
-    expect(AddComponent.amountTextField).toBe('-5000');
+    // the dialog adds the 5.000 deposit back: -10.000 entered books the -5.000 the player really pays
+    expect(AddComponent.amountTextField).toBe('-10000');
+    expect(Number(AddComponent.amountTextField) + 5000).toBe(-5000);
   });
 
   it("Sell on gold with a buyer's offer names all your coins at the buyer's price", async () => {

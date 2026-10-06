@@ -35,6 +35,18 @@ export class GrowTradeService {
     };
   }
 
+  /**
+   * What the Add dialog adds to the entered amount when it books a Sell Investment: the deposit that comes back, less
+   * the loan and credit the Grow project still carries (the "Payback" it adds to the comment) - the dialog's own rule.
+   */
+  private depositReturned(project: Grow): number {
+    const owned = this.positions().investments.find((position) => position.tag === project.title);
+    const deposit = owned?.deposit ?? 0;
+    return project.liabilitie
+      ? deposit - project.liabilitie.amount - project.liabilitie.credit
+      : deposit;
+  }
+
   /** Makes sure the balance sheet is loaded before anything is read from it. */
   private async ensureBalanceLoaded(): Promise<void> {
     const { AppDataService } = await import('src/app/shared/services/app-data.service');
@@ -113,7 +125,14 @@ export class GrowTradeService {
     if (offer?.pricePerCoin !== undefined && project.isAsset) {
       comment = `Sell Asset ${project.title} ${offer.coins} x ${offer.pricePerCoin};`;
     }
-    AddComponent.amountTextField = offer ? String(offer.netCash) : '1';
+    // The Add dialog books a Sell Investment as the amount entered PLUS what comes back of the deposit (JFK, 2026-10-06: a
+    // sale that should have paid 12.000 paid 14.000 - the net cash already contained the 2.000 deposit and the dialog
+    // added it again). So an investment's field holds the net cash less that returned deposit: the profit.
+    AddComponent.amountTextField = !offer
+      ? '1'
+      : project.investment && !project.isAsset
+        ? String(Math.round((offer.netCash - this.depositReturned(project)) * 100) / 100)
+        : String(offer.netCash);
     // A sale that does not cover the mortgage is paid out of your own pocket, not booked as income.
     if (offer && offer.netCash < 0) AddComponent.selectedOption = 'Daily';
     AddComponent.commentTextField = comment;
