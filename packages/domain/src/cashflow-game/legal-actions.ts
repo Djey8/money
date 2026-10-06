@@ -18,6 +18,7 @@ export type LegalActionId =
   | 'downsized'
   | 'clear_status'
   | 'bank_loan'
+  | 'undo'
   | 'reset';
 
 export interface LegalAction {
@@ -25,7 +26,10 @@ export interface LegalAction {
   description: string;
 }
 
-export function legalActions(state: CashflowGameState): LegalAction[] {
+export function legalActions(
+  state: CashflowGameState,
+  options: { canUndo?: boolean } = {},
+): LegalAction[] {
   if (!state.professionId) {
     return [{ action: 'start', description: 'Pick a game set and a profession to begin a game.' }];
   }
@@ -62,6 +66,12 @@ export function legalActions(state: CashflowGameState): LegalAction[] {
     actions.push({
       action: 'bank_loan',
       description: 'Borrow one more loan step from the bank, or repay some of it.',
+    });
+  }
+  if (options.canUndo) {
+    actions.push({
+      action: 'undo',
+      description: 'Take back the newest step (or several, with count), exactly as before it ran.',
     });
   }
   actions.push({ action: 'reset', description: 'Wipe the running game (destructive).' });

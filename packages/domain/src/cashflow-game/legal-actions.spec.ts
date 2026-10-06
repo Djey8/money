@@ -30,6 +30,11 @@ describe('legalActions', () => {
     expect(ids(state)).toEqual(['reset']);
   });
 
+  it('offers undo only when there is a step to take back', () => {
+    expect(legalActions(started({}), { canUndo: true }).map((a) => a.action)).toContain('undo');
+    expect(ids(started({}))).not.toContain('undo');
+  });
+
   it('offers dismissing a status reminder only while one is showing (companion)', () => {
     expect(ids(started({ unemployedRoundsLeft: 2 }))).toContain('clear_status');
     expect(ids(started({}))).not.toContain('clear_status');
