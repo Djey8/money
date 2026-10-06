@@ -2486,3 +2486,22 @@ describe('CashflowGameComponent Payday + MLM info boxes (JFK, 2026-10-06)', () =
     expect(component.mlmBanner).toBeNull();
   });
 });
+
+describe('CashflowGameComponent open decisions wait for the totem (JFK, 2026-10-06)', () => {
+  beforeEach(() => {
+    (AppStateService as any)._instance = undefined;
+    ProfileComponent.mail = '';
+  });
+
+  it('shows the MLM roll (and any open dice decision) only once the walk is done', () => {
+    const mlm = { title: 'MLM', coins: 0, costMinor: 0, recurring: true, rollDue: true } as any;
+    const { component } = makeComponent({ openDecisions: [mlm] as any } as any);
+
+    component.walking = true; // the totem is still moving over the Payday tile
+    expect(component.visibleDecisions).toEqual([]);
+    expect(component.openDecisions).toEqual([mlm]); // it is due, just not on screen yet
+
+    component.walking = false; // the totem has come to rest
+    expect(component.visibleDecisions).toEqual([mlm]);
+  });
+});

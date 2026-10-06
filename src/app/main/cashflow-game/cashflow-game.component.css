@@ -1451,12 +1451,12 @@
 }
 
 /* The symbol of a space's tile, with its border: the same colours as the ring cell and the "landed on" buttons. */
-.cf-tile {
+.cf-space-tile {
   display: inline-grid;
   place-items: center;
-  width: 38px;
-  height: 38px;
-  margin-right: 8px;
+  width: 44px;
+  height: 44px;
+  flex: none;
   border: 2px solid var(--color-border);
   border-radius: 8px;
   background: var(--color-surface);
@@ -1466,18 +1466,18 @@
   vertical-align: middle;
 }
 
-.cf-tile--deal {
+.cf-space-tile--deal {
   border-color: var(--color-success);
   color: var(--color-success);
   background-color: var(--color-success-bg, rgba(76, 175, 80, 0.15));
 }
 
-.cf-tile--doodad {
+.cf-space-tile--doodad {
   border-color: var(--color-danger);
   background-color: var(--color-danger-bg, rgba(211, 47, 47, 0.15));
 }
 
-.cf-tile--market {
+.cf-space-tile--market {
   border-color: var(--color-info);
   background-color: var(--color-info-surface, rgba(0, 123, 255, 0.15));
 }
@@ -1490,4 +1490,12 @@
 
 .cf-notice--won {
   border-left-color: var(--color-success);
+}
+
+/* A card screen's heading: the title on the left, the symbol of its tile on the right, where there was only white space. */
+.cf-heading-with-tile {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }

@@ -25,6 +25,7 @@ in light and dark, with a cashflow account on the self-hosted edition. Tick what
 - [ ] A Payday (passed, landed on, or the opening one) shows a compact info box at the top of the dashboard (like the
       "card does not apply" notice, with an X) with income, expenses and the monthly result - each amount with one sign - and it goes with your next action (any tap) or the X.
 - [ ] A market card's "does not apply" notice goes the same way, with the next action.
+- [ ] The MLM roll dialog appears only **after the totem has finished moving** (not while it is still walking).
 - [ ] With a kept MLM card, a Payday shows its box, **stays while you press the MLM roll**, and the outcome (the bonus, or
       not) appears as a second info box next to it; the next action clears both.
 - [ ] The dice are thrown (bounce and turn), the faces slow down, they land with one pop and then rest still.
@@ -45,7 +46,7 @@ in light and dark, with a cashflow account on the self-hosted edition. Tick what
 - [ ] Before the first roll the totem waits outside the ring at the top middle with "START" below it (no line); with
       the first roll it moves inside the ring and goes round the tiles, and "START" is gone.
 - [ ] The card screens (Deals pile choice, and the Deal / Doodad / Market card lists) show the tile symbol with its
-      coloured border in the heading, so you see which deck you are in.
+      coloured border at the **right end of the heading**, so you see which deck you are in.
 - [ ] While the card is open the Roll button is gone; "Open the card" reopens it after closing it; "Done" and "Pass"
       reopen the roll.
 - [ ] Undo after Pass brings the card back; Undo after a roll takes back the move, the Paydays and the landing together.
@@ -70,7 +71,8 @@ First playtest (2026-10-06), handled in the next build - please re-check:
 - A roll of 1 showed the Deals card at once, confusing -> a dialog waits for you; the card opens on request. (No extra
   wait on the landing: the dialog comes the moment the totem is placed.)
 - START: no line; the totem waits outside the ring, top middle, "Start" below it, and moves inside with the first roll.
-- Card screens show the tile symbol of their deck.
+- Card screens show the tile symbol of their deck, on the right of the heading.
+- The MLM roll dialog came at once while the totem was still walking -> it waits until the totem has stopped.
 - MLM: the Payday box stays through the MLM roll and the outcome is a second info box.
 - Charity: two dice are selected by default (change to one if wanted).
 - START overlapped the ring -> now above it with a line to the first tile, gone after the first move.

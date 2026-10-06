@@ -844,7 +844,7 @@
 
         <!-- Open decisions: a paid dice card (gold coins) waits here until the roll is decided, in the -->
         <!-- app or from a real die (JFK, 2026-10-03). -->
-        <div class="cf-card cf-decision" *ngFor="let deal of openDecisions">
+        <div class="cf-card cf-decision" *ngFor="let deal of visibleDecisions">
           <h3>
             {{ 'CashflowGame.diceOpenTitle' | translate }}: {{ deal.split?.shareTag ?? deal.title }}
           </h3>
@@ -1047,9 +1047,11 @@
         <button class="cf-back-btn" (click)="backToMain()">
           ‹ {{ 'CashflowGame.back' | translate }}
         </button>
-        <h3>
-          <span class="cf-tile cf-tile--deal" aria-hidden="true">{{ tileGlyph('deal') }}</span>
-          {{ 'CashflowGame.spaceDeals' | translate }}
+        <h3 class="cf-heading-with-tile">
+          <span>{{ 'CashflowGame.spaceDeals' | translate }}</span>
+          <span class="cf-space-tile cf-space-tile--deal" aria-hidden="true">{{
+            tileGlyph('deal')
+          }}</span>
         </h3>
         <div class="cf-actions">
           <button class="btn btn--primary" (click)="chooseDealPile('dealSmall')">
@@ -1205,11 +1207,14 @@
         <button class="cf-back-btn" (click)="backToMain()">
           ‹ {{ 'CashflowGame.back' | translate }}
         </button>
-        <h3>
-          <span class="cf-tile" [ngClass]="'cf-tile--' + activeTileKind" aria-hidden="true">{{
-            tileGlyph(activeTileKind)
-          }}</span>
-          {{ 'CashflowGame.cards' | translate }}: {{ activeDeckLabel }}
+        <h3 class="cf-heading-with-tile">
+          <span>{{ 'CashflowGame.cards' | translate }}: {{ activeDeckLabel }}</span>
+          <span
+            class="cf-space-tile"
+            [ngClass]="'cf-space-tile--' + activeTileKind"
+            aria-hidden="true"
+            >{{ tileGlyph(activeTileKind) }}</span
+          >
         </h3>
 
         <div class="cf-actions">

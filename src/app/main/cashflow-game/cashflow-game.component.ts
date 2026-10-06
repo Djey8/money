@@ -1356,6 +1356,15 @@ export class CashflowGameComponent implements OnDestroy {
     return this.cashflowGameService.openDecisions;
   }
 
+  /**
+   * What the dashboard shows of them: nothing while the totem is still moving. A Payday passed on the way brings a kept
+   * Multi-Level-Marketing card's roll with it, and its dialog comes once the totem has moved over the Payday tile and
+   * come to rest - not at once, while the token is still walking (JFK, 2026-10-06).
+   */
+  get visibleDecisions(): CashflowAssetDeal[] {
+    return this.walking ? [] : this.openDecisions;
+  }
+
   /** The app rolls the die. */
   rollDice(deal: CashflowAssetDeal): void {
     const roll = this.cashflowGameService.rollDie();
