@@ -6,6 +6,7 @@ const { seededRng } = require('@money/domain');
 const { app, checkDb, registerTestUser } = require('./setup');
 const { getUsersDb, getAuthDb } = require('../../config/db');
 const { playGameAction } = require('../../repositories/game-play');
+const { getGame } = require('../../repositories/game-repository');
 
 const GAME_PASSWORD = 'integration-test-only';
 const originalHash = process.env.CASHFLOW_GAME_PASSWORD_SHA256;
@@ -547,4 +548,67 @@ describe('cards, deals and doodads in a solo game', () => {
       ),
     ).toBe(true);
   });
+});
+
+describe('a whole game played through the API', () => {
+  /**
+   * The scripted agent of todo/cashflow-game-pro.md slice D5: the very policy and dice of the domain's golden game (seed 4,
+   * buying affordable properties). The domain plays it over pure books, this plays it over a real account through the
+   * public actions - and must end the same: escaped, 52 turns, round 28, one child, six properties.
+   */
+  it('seed 4, buying affordable properties, escapes the rat race exactly like the golden game', async () => {
+    if (!dbAvailable) return;
+    const user = await registerGameUser('_golden');
+    const rng = seededRng(4);
+    const deps = { usersDb: getUsersDb(), authDb: getAuthDb(), rng };
+    const play = (action, input = {}) => playGameAction(deps, user.userId, action, input);
+
+    await play('start', { gameSetId: 'cashflow', professionId: 'hausmeister', mode: 'solo' });
+    const lines = [];
+    let bought = 0;
+    let game = await getGame(deps, user.userId);
+    for (let turn = 0; turn < 150 && game.turn.phase !== 'over'; turn += 1) {
+      game = await play('roll', { dice: game.status.charityRoundsLeft > 0 ? 2 : 1 });
+      const { result } = game;
+      lines.push(`${turn + 1}: ${result.total} -> ${result.landed} (${result.to})`);
+      if (game.turn.phase !== 'decide') continue;
+      if (game.pendingDecision.kind !== 'deal') {
+        game = await play('pass_card');
+        continue;
+      }
+      const deck = rng() < 0.5 ? 'dealSmall' : 'dealBig';
+      game = await play('draw_card', { deck });
+      const card = game.result.card;
+      const cash = game.cashMinor;
+      if (card.assetKind === 'investment' && card.depositMinor <= cash) {
+        game = await play('buy_deal', { cardId: card.id });
+        bought += 1;
+      } else {
+        game = await play('pass_card');
+      }
+    }
+
+    expect(lines.slice(0, 6)).toEqual([
+      '1: 6 -> payday (5)',
+      '2: 2 -> market (7)',
+      '3: 2 -> doodad (9)',
+      '4: 1 -> deal (10)',
+      '5: 1 -> downsized (11)',
+      '6: 6 -> doodad (17)',
+    ]);
+    expect(game.outcome).toBe('escaped');
+    expect(game.turn).toMatchObject({ phase: 'over', outcome: 'escaped', count: 52 });
+    expect(game.round).toBe(28);
+    expect(game.children).toBe(1);
+    expect(bought).toBe(6);
+    expect(game.finances.passiveIncomeMinor).toBeGreaterThanOrEqual(game.finances.expensesMinor);
+    expect(game.legalActions.map((action) => action.action)).toEqual(['undo', 'reset']);
+
+    // everything it did is in the history, and can be taken back
+    const history = await session('get', '/api/v1/game/history', user.token);
+    expect(history.body.steps[0].kind).toBe('start');
+    expect(history.body.steps.filter((step) => step.kind === 'roll')).toHaveLength(52);
+    const undone = await session('post', '/api/v1/game/undo', user.token).send({});
+    expect(undone.body.turn.phase).not.toBe('over');
+  }, 300000);
 });
