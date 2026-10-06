@@ -1,0 +1,65 @@
+# Cashflow game — strategy lab, knowledge base and game analyst
+
+**Status:** planned 2026-10-07, not started. Follows Phase D of [`cashflow-game-pro.md`](cashflow-game-pro.md) (the Pro API and the MCP tools — D1–D5 are built; the special-asset cards and selling are the only gaps). Written from JFK's wishes of 2026-10-07; every decision below is a recommendation until JFK confirms it (§7).
+
+## 1. What JFK wants
+
+1. **A game analyst** — play a game normally (in the app, no agent), then ask a co-pilot or agent: _"analyze my game, tell me where I made wrong decisions, where I lost it or could have done better."_ Like a chess engine's review: _this was a smart move, that one was not_.
+2. **A strategy lab** — once agents can play, run many games to find the best, the worst and the median strategies, per profession.
+3. **A knowledge base** — the lab's facts (distributions, what separates games that escape fast from games that go bankrupt) become documentation under `docs/`, and are what the analyst quotes from. Strategy documentation already exists in the docs; the knowledge base extends it with measured numbers instead of opinions.
+
+## 2. The key insight: a game can be branched
+
+A solo game is a pure function of its books and the dice (`@money/domain`: `playTurn`, `settleDecision`, `executeDeal`... with an injectable seeded `Rng`), and every step of a game is stored as a snapshot (the undo chain, in the live history and in every full saved game). So at **any decision point of a real game we can restore the position and ask "what would have happened if…?"** by playing it out many times under a baseline policy, once per alternative (buy / pass / buy something else). The spread of outcomes is the position's evaluation — exactly how a chess engine judges a move, with Monte Carlo rollouts instead of a search tree because dice make the game stochastic.
+
+This also settles _where the work runs_: **headless, directly on the domain package**, not through the API and the database. Thousands of games take seconds in memory; the same games through HTTP and CouchDB would take hours and fill the account. The API/MCP path is for an LLM agent playing like a person, and for reading a real player's saved games.
+
+## 3. Pieces
+
+| #      | Piece                           | What                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | Needs  |
+| ------ | ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| **E0** | Decisions and formats           | Settle §7. Define the **decision log**: for each step of a game the position before it, the legal alternatives, what was chosen. Define where the knowledge lives: generated JSON under `docs/domain/strategy/data/` plus prose in `docs/domain/`.                                                                                                                                                                                                                                                                                                                                        | JFK    |
+| **E1** | Headless simulator and policies | Move `playSoloGame` out of the spec into a real module (`packages/domain/src/cashflow-game/simulation/`): a policy interface (`decide(position, legalMoves) → move`), the existing never-buy and buy-affordable-properties policies, and new ones (deposit/return thresholds, loan-aware, cash-reserve, "only cards above X% return", Charity-aware). Add the special-asset cards, market cards and selling to the simulator (the pure rules exist; only the API lacks them).                                                                                                             | —      |
+| **E2** | Strategy lab                    | A CLI (`scripts/strategy-lab.ts`): N seeds × professions × policies → per game: outcome, turns, round, cash low point, bankruptcies, purchases. Reports escape rate, turns-to-escape distribution (p10/median/p90), bankruptcy rate, and which early decisions correlate with each. **Optimum** = best policy found by a parameter search (grid, then hill-climb) — not a proof; the writeup says so. Seeds make every number reproducible.                                                                                                                                               | E1     |
+| **E3** | Position evaluator              | `evaluate(position, horizon, rollouts) → { pEscape, pBankrupt, expectedTurns, spread }` by rollouts under a baseline policy from E2. Calibrate: rollout count vs. noise (stop when the confidence interval is tighter than the smallest difference that matters).                                                                                                                                                                                                                                                                                                                         | E1, E2 |
+| **E4** | Game analyst                    | Reads a game (a saved game's undo chain, or the live history), extracts its decisions (deal bought / passed, doodad, market card, loan taken or repaid, dice choice under Charity), evaluates each against the alternatives with E3, and labels it **best / good / inaccuracy / mistake / blunder** by the swing in P(escape) and expected turns. Finds the **turning point** (the biggest negative swing) and explains in words: not just "−12%", but why — cash left after the deposit, the loan it forced, the monthly cashflow it did or did not add — and quotes the knowledge base. | E3, E5 |
+| **E5** | Knowledge base                  | Generated stats pages (`docs/domain/strategy/…`), regenerated by one command and stamped with the rules version they were measured on; the prose guide (`CASHFLOW_GAME_GUIDE.md` and the existing strategy docs) links to them. The analyst and `explain_concept` read them.                                                                                                                                                                                                                                                                                                              | E2     |
+| **E6** | Asking for an analysis          | The surface JFK talks to: an MCP tool/prompt `analyze_cashflow_game {saveId}` that returns the decision-by-decision review, plus a short "how to ask" section in the guide. Later, optionally, an "Analyze this game" button in the app (Pro/self-hosted only — edition rules apply: never in the Firebase build).                                                                                                                                                                                                                                                                        | E4     |
+
+Suggested order: **E0 → E1 → E2 → E5 (first numbers on the docs page) → E3 → E4 → E6.** The first useful result arrives after E2: real strategy statistics. The analyst follows from them.
+
+## 4. What the analyst can and cannot see
+
+- **A solo game played in the app** has everything: every roll, space, card, decision, in order, with the position before each. Full analysis.
+- **A companion game** (physical board, the app as the books) has the player's reports and purchases but not the dice or the board. The analyst can judge **what was bought and paid for and when** (the same evaluation, with the dice replaced by random rolls), but not "you rolled badly" versus "you chose badly" for movement. It says what it cannot judge.
+- It needs the history: a **full** save (undo chain) or the live game's history. A **compact** save has the step log and the final position but no earlier positions, so only the log-level review (what was bought, when, at which cashflow) is possible. The guide says: save games you want analysed in full, not compact.
+- Dice make single games noisy. The analyst separates **luck** (the roll outcomes) from **decisions** (the choices) by evaluating each choice over many rollouts, the way a chess review separates a brilliant move from a lucky blunder.
+
+## 5. Agents in sessions — rules (decided with JFK, 2026-10-07)
+
+- An agent may save **as many games as the session needs** while it works (analysis, experiments), but must **clean up afterwards: at most 100 saves remain, the important ones** (`storage.keepAtMost`, `prune_saves`).
+- It must **watch the storage**: every account's saved games share one database document (8 MiB limit; the API keeps 80% as budget and refuses a save past it with `game_storage_full`). Measured: a full save ≈ 200 KB (≈ 30 fit), a compact save ≈ 17 KB (≈ 300 fit). Agents use `compact: true` for analysis games.
+- The strategy lab does **not** use accounts at all (headless), so a lab run never touches anybody's storage.
+
+## 6. Verification
+
+- **Reproducibility:** the same seed and policy give the same game (already pinned by the domain's golden game; the API reproduces it — `backend/tests/integration/game-read.test.js`).
+- **Evaluator sanity:** a position one move from escaping evaluates ≈ 100%; a position with negative monthly cashflow and no cash evaluates ≈ 0%; known-bad moves (a purchase that leaves negative cash flow) never rate above passing.
+- **Analyst regression:** golden games with hand-labelled decisions (JFK reviews a few and says whether he agrees); the labels are pinned so a rules change that shifts them is noticed.
+- **Docs freshness:** the generated pages carry the rules version and the seed list; a test fails when the cards or rules changed and the numbers were not regenerated.
+
+## 7. Questions for JFK (E0)
+
+1. **Where should the numbers live?** Recommendation: generated JSON + markdown inside the repo (`docs/domain/strategy/`), versioned with the rules, so the analyst works offline and the docs page is always the measured truth. Alternative: only in the account/DB (rejected: not reviewable, tied to one account).
+2. **What counts as "winning" for the ranking?** Recommendation: primary = _fewest turns to escape the rat race_ among games that escape, secondary = _escape probability_ and _bankruptcy probability_. A different goal (maximum net worth at turn N) is possible.
+3. **Professions:** all of them? The Classic set has several with very different salaries and expenses; recommendation: run all, and publish per profession.
+4. **The review tone:** a short list of the 3–5 biggest decisions with the reason (recommended), or every single move graded?
+5. **Companion games:** worth supporting in the first version of the analyst, or solo only at first? Recommendation: solo first (full information), companion in a second step.
+6. **Fast Track** is out of scope (decided 2026-10-05); the analyst and lab stop at the escape.
+
+## 8. Risks
+
+- **Rules fidelity:** a strategy is only as true as the simulator. The simulator _is_ the shared domain rules (the UI and API run the same code), which is why headless-on-domain is the right base; the gaps (special-asset cards, selling) are closed in E1 before any ranking is published, and the golden-game tests keep it honest.
+- **Overfitting to the policy family:** "best strategy" means best among the policies tried. The writeup states the search space.
+- **Noise:** report distributions and confidence intervals, not single numbers; the lab prints how many games each figure rests on.
+- **Cost:** thousands of games × professions × policies: minutes, in memory. Rollout-based analysis of a 100-decision game: bounded by the rollout budget per decision; measured in E3.

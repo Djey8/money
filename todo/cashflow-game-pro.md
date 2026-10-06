@@ -1,6 +1,6 @@
 # Cashflow game — solo mode in the app + Pro API/MCP (an agent plays full games)
 
-**Status:** inputs and open decisions all answered (2026-10-05); **Phase A (A0-A3), Phase B (the solo engine) and Phase C (solo UI, built; awaiting JFK's playtest) done, Phase D (API + MCP) next.** Master roadmap for Phase 3 (solo board simulation) and Phase 5 (Pro
+**Status:** inputs and open decisions all answered (2026-10-05); **Phase A (A0-A3), Phase B (the solo engine) and Phase C (solo UI, built; awaiting JFK's playtest) done, Phase D (API + MCP) built 2026-10-07 except the special-asset Deal cards and selling positions (D1-D5; the follow-on project is [`cashflow-game-analysis.md`](cashflow-game-analysis.md)).** Master roadmap for Phase 3 (solo board simulation) and Phase 5 (Pro
 API + MCP) of [`cashflow-game.md`](cashflow-game.md), merged because both need the same thing: **one rules engine
 that can play a whole game by itself**. Read that file's decisions 1–12 first; this one only adds to them.
 
