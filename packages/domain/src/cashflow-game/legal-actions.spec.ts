@@ -14,7 +14,7 @@ describe('legalActions', () => {
   });
 
   it('offers the roll in a solo game waiting for one', () => {
-    expect(ids(started({ mode: 'solo' }))).toEqual(['roll', 'bank_loan', 'reset']);
+    expect(ids(started({ mode: 'solo' }))).toEqual(['roll', 'bank_loan', 'sell_position', 'reset']);
   });
 
   it('offers passing the card, and no roll, while a card decision is open', () => {
@@ -22,7 +22,14 @@ describe('legalActions', () => {
       mode: 'solo',
       turn: { phase: 'decide', count: 3, pending: { kind: 'deal', spaceIndex: 2 } },
     });
-    expect(ids(state)).toEqual(['draw_card', 'buy_deal', 'pass_card', 'bank_loan', 'reset']);
+    expect(ids(state)).toEqual([
+      'draw_card',
+      'buy_deal',
+      'pass_card',
+      'bank_loan',
+      'sell_position',
+      'reset',
+    ]);
   });
 
   it('offers nothing but a reset once a solo game is over', () => {
@@ -51,6 +58,7 @@ describe('legalActions', () => {
       'charity',
       'downsized',
       'bank_loan',
+      'sell_position',
       'reset',
     ]);
   });

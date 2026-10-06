@@ -55,3 +55,4 @@ export * from './cashflow-game/auto-pay';
 export * from './cashflow-game/game-end';
 export * from './cashflow-game/legal-actions';
 export * from './cashflow-game/card-plan-text';
+export * from './cashflow-game/positions';

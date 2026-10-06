@@ -18,6 +18,7 @@ export type LegalActionId =
   | 'pay_doodad'
   | 'play_market'
   | 'roll_decision'
+  | 'sell_position'
   | 'payday'
   | 'baby'
   | 'charity'
@@ -107,6 +108,13 @@ export function legalActions(
     actions.push({
       action: 'bank_loan',
       description: 'Borrow one more loan step from the bank, or repay some of it.',
+    });
+  }
+  if (currentTurn(state).phase !== 'over') {
+    actions.push({
+      action: 'sell_position',
+      description:
+        'Sell a position you hold: shares (quantity, price), a property to the buyer a Market card brought, gold by the coin.',
     });
   }
   const waiting = openDecisions(state);

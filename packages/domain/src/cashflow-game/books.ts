@@ -104,6 +104,8 @@ export function applyEffectsToBooks(books: GameBooks, effects: GameEffects): Gam
   let shares = books.shares;
   for (const upsert of effects.shareUpserts)
     shares = upsertBy(shares, upsert, (share) => share.tag);
+  const removedShares = new Set(effects.shareRemovals);
+  shares = shares.filter((share) => !removedShares.has(share.tag));
   shares = shares.map((share) => {
     const price = effects.sharePrices.find((candidate) => candidate.tag === share.tag);
     return price ? { ...share, priceMinor: price.priceMinor } : share;
@@ -113,6 +115,8 @@ export function applyEffectsToBooks(books: GameBooks, effects: GameEffects): Gam
   for (const upsert of effects.investmentUpserts) {
     investments = upsertBy(investments, upsert, (investment) => investment.tag);
   }
+  const removedInvestments = new Set(effects.investmentRemovals);
+  investments = investments.filter((investment) => !removedInvestments.has(investment.tag));
 
   let assets = books.assets;
   for (const upsert of effects.assetUpserts)

@@ -109,8 +109,12 @@ export interface GameEffects {
   sharePrices: { tag: string; priceMinor: number }[];
   /** Share positions to create or replace, matched by tag. */
   shareUpserts: BookShare[];
+  /** Tags of share positions to delete (the last share sold). */
+  shareRemovals: string[];
   /** Property / business positions to create or replace, matched by tag. */
   investmentUpserts: BookInvestment[];
+  /** Tags of property / business positions to delete (sold). */
+  investmentRemovals: string[];
   /** Assets (gold coins, a car) to create or set to this amount, matched by tag. */
   assetUpserts: BookAsset[];
   /** Tags of assets to delete (the last coin sold). */
@@ -137,7 +141,9 @@ export function emptyEffects(state: CashflowGameState, step: GameStep | null): G
     growUpdates: [],
     sharePrices: [],
     shareUpserts: [],
+    shareRemovals: [],
     investmentUpserts: [],
+    investmentRemovals: [],
     assetUpserts: [],
     assetRemovals: [],
     persist: { subscriptions: false, grow: false, balanceSheet: false },
