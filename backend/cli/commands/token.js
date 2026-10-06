@@ -40,6 +40,7 @@ const SCOPE_RESOURCES = [
   'account',
   'reports',
   'data',
+  'game',
 ];
 // reports is read-only (calculations never take a :w); data always
 // requires :bulk (the highest-blast-radius resource — full export/import).

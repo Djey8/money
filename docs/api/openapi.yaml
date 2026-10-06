@@ -774,6 +774,137 @@ paths:
           $ref: '#/components/responses/InsufficientScope'
         '404':
           $ref: '#/components/responses/NotFound'
+  /game:
+    get:
+      operationId: getGame
+      summary: Where the live Cashflow game stands, and what may be done next
+      description: >-
+        Game accounts only (an email containing `cashflow`) - any other account gets 403 `not_a_game_account`, whatever
+        its token scopes. Requires `game:r`. Returns the running game's state (profession, mode, round, calendar, token
+        position, turn phase, pending card decision), the figures derived from the account's books (cash on hand,
+        salary, passive income, expenses, monthly cashflow, escaped / bankrupt), and `legalActions` - the moves the rules
+        allow right now, the same rules the app uses, so an agent is never offered a move the game would refuse. With no
+        game running it returns `active: false` and `start` as the only legal action.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The live game
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameView'
+              example:
+                active: true
+                currency: EUR
+                gameSetId: cashflow
+                professionId: nurse
+                professionTitle: Nurse
+                mode: solo
+                gameId: null
+                gameName: null
+                round: 3
+                virtualDate: '2026-04-01'
+                children: 1
+                position: { index: 4, spaceKind: deal }
+                turn:
+                  phase: decide
+                  count: 7
+                  lastRoll: [4]
+                  pending: { kind: deal, spaceIndex: 4 }
+                outcome: playing
+                status: { charityRoundsLeft: 0, unemployedRoundsLeft: 0 }
+                pendingDecision: { kind: deal, spaceIndex: 4 }
+                cashMinor: 345000
+                finances:
+                  salaryMinor: 300000
+                  passiveIncomeMinor: 0
+                  expensesMinor: 180000
+                  monthlyCashflowMinor: 120000
+                  escapedRatRace: false
+                  bankrupt: false
+                assetDeals: []
+                marketOffers: []
+                legalActions:
+                  - action: pass_card
+                    description: Leave the deal on this space without playing it; the next roll is open afterwards.
+                  - action: bank_loan
+                    description: Borrow one more loan step from the bank, or repay some of it.
+                  - action: reset
+                    description: Wipe the running game (destructive).
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+  /game/sets:
+    get:
+      operationId: listGameSets
+      summary: The game sets (editions) and their professions
+      description: >-
+        Game accounts only; requires `game:r`. Lists every game set with its professions (id, title, salary), so an
+        agent can pick what to start a game with.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The sets
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [sets]
+                properties:
+                  sets:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/GameSetSummary'
+              example:
+                sets:
+                  - id: cashflow
+                    title: Cashflow
+                    professions:
+                      - { id: nurse, title: Nurse, salaryMinor: 300000 }
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+  /game/sets/{setId}:
+    get:
+      operationId: getGameSet
+      summary: One game set with its loan rule and the rat-race board
+      description: >-
+        Game accounts only; requires `game:r`. The board is the ring of 24 spaces, clockwise from START: index 0 is the
+        space a roll of 1 lands on.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: setId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The set
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameSet'
+              example:
+                id: cashflow
+                title: Cashflow
+                professions:
+                  - { id: nurse, title: Nurse, salaryMinor: 300000 }
+                loanRule: { incrementMinor: 100000, monthlyInterestPercent: 10 }
+                board:
+                  - { index: 0, kind: deal, printed: Deals }
+                  - { index: 1, kind: doodad, printed: Schnickschnack }
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
   /mojo:
     get:
       operationId: getMojo
@@ -4478,6 +4609,131 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/CategoryAggregate'
+    GameFinances:
+      type: object
+      required:
+        [
+          salaryMinor,
+          passiveIncomeMinor,
+          expensesMinor,
+          monthlyCashflowMinor,
+          escapedRatRace,
+          bankrupt,
+        ]
+      properties:
+        salaryMinor: { type: integer }
+        passiveIncomeMinor: { type: integer }
+        expensesMinor: { type: integer }
+        monthlyCashflowMinor: { type: integer }
+        escapedRatRace: { type: boolean, description: Passive income covers every monthly expense. }
+        bankrupt: { type: boolean, description: The monthly cashflow is negative. }
+    GameLegalAction:
+      type: object
+      required: [action, description]
+      properties:
+        action:
+          type: string
+          enum: [start, roll, pass_card, payday, baby, charity, downsized, bank_loan, reset]
+        description: { type: string }
+    GameView:
+      type: object
+      required: [active, legalActions]
+      properties:
+        active:
+          {
+            type: boolean,
+            description: 'false when no game is running; then only legalActions is present.',
+          }
+        currency: { type: string }
+        gameSetId: { type: string, nullable: true }
+        professionId: { type: string, nullable: true }
+        professionTitle: { type: string, nullable: true }
+        mode: { type: string, enum: [companion, solo] }
+        gameId:
+          {
+            type: string,
+            nullable: true,
+            description: The saved-game slot the running game belongs to.,
+          }
+        gameName: { type: string, nullable: true }
+        round: { type: integer }
+        virtualDate:
+          { type: string, nullable: true, description: 'The game calendar, not the wall clock.' }
+        children: { type: integer }
+        position:
+          type: object
+          nullable: true
+          description: Solo only. `index` is null at START.
+          properties:
+            index: { type: integer, nullable: true }
+            spaceKind: { type: string, nullable: true }
+        turn:
+          type: object
+          nullable: true
+          description: Solo only - where the turn stands (`roll`, `decide`, `over`).
+          properties:
+            phase: { type: string, enum: [roll, decide, over] }
+            count: { type: integer }
+            lastRoll: { type: array, items: { type: integer } }
+            pending:
+              type: object
+              properties:
+                kind: { type: string, enum: [deal, market, doodad] }
+                spaceIndex: { type: integer }
+            outcome: { type: string, enum: [escaped, bankrupt] }
+        outcome: { type: string, enum: [playing, escaped, bankrupt] }
+        status:
+          type: object
+          properties:
+            charityRoundsLeft: { type: integer }
+            unemployedRoundsLeft: { type: integer }
+        pendingDecision:
+          type: object
+          nullable: true
+        cashMinor: { type: integer }
+        finances:
+          $ref: '#/components/schemas/GameFinances'
+        assetDeals: { type: array, items: { type: object } }
+        marketOffers: { type: array, items: { type: object } }
+        legalActions:
+          type: array
+          items:
+            $ref: '#/components/schemas/GameLegalAction'
+    GameSetSummary:
+      type: object
+      required: [id, title, professions]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        professions:
+          type: array
+          items:
+            type: object
+            required: [id, title, salaryMinor]
+            properties:
+              id: { type: string }
+              title: { type: string }
+              salaryMinor: { type: integer }
+    GameSet:
+      allOf:
+        - $ref: '#/components/schemas/GameSetSummary'
+        - type: object
+          required: [loanRule, board]
+          properties:
+            loanRule:
+              type: object
+              properties:
+                incrementMinor: { type: integer }
+                monthlyInterestPercent: { type: number }
+            board:
+              type: array
+              items:
+                type: object
+                properties:
+                  index: { type: integer }
+                  kind:
+                    { type: string, enum: [deal, doodad, payday, market, charity, downsized, baby] }
+                  printed: { type: string }
     MojoStatus:
       type: object
       required: [amountMinor, targetMinor, remainingMinor, percentFilled]
@@ -6912,6 +7168,18 @@ components:
             status: 403
             detail: This operation requires the 'transactions:r' scope.
             code: scope_insufficient
+    NotAGameAccountOrScope:
+      description: The token lacks the `game:r` / `game:w` scope (`scope_insufficient`), or the account is not a game account (`not_a_game_account`)
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://money-manager.dev/problems/not_a_game_account
+            title: Not a game account
+            status: 403
+            detail: The Cashflow game endpoints are only available to game accounts.
+            code: not_a_game_account
     NotFound:
       description: Requested resource was not found
       content:

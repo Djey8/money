@@ -329,3 +329,11 @@ Read `docs/domain/SMILE_FIRE_MOJO_GUIDE.md` (MCP: `explain_concept smile_fire_mo
 3. `PATCH /account` only accepts `email` — `username` and every other profile field belongs to `PATCH /settings` instead (SET-10's field-sensitivity split: `username` is cosmetic, `email` is identity-sensitive). Rejects an email already in use by another account with `409 conflict_email_taken`. Reissues the session cookie with the new email; also writes `data.info.email` in the same operation, so it never silently diverges from the value on `authDb`.
 4. `DELETE /account` requires `{confirm: true}` — never call this without the caller (human or agent) having explicitly confirmed they want to permanently delete the account. Since this route is session-only, it's always a login session (never a PAT) that triggers it — and doing so immediately invalidates every PAT on the account too, since they're all deleted as part of the same cascade. There is no partial/soft delete.
 5. `PATCH`/`DELETE /account` are audit logged (`resource: 'account'`); `GET` and `verify-password` are not.
+
+## Read the Cashflow game (game accounts only)
+
+1. The game endpoints exist only for **game accounts** (an email containing `cashflow`). Any other account gets `403 not_a_game_account`, whatever its scopes. They need the `game:r` scope (`game:w` comes with the write slices).
+2. `GET /api/v1/game/sets` lists the game sets and their professions; `GET /api/v1/game/sets/{setId}` adds the loan rule and the 24-space rat-race board (index 0 is the space a roll of 1 lands on).
+3. `GET /api/v1/game` is the one call to make before every move: with no game running it returns `{active: false, legalActions: [{action: "start"}]}`; with one it returns the state (mode, round, calendar, token position, `turn.phase`, `pendingDecision`), the books' figures (`cashMinor`, `finances`, `outcome`) and `legalActions`.
+4. **Only offer or attempt what `legalActions` lists.** It comes from the same rules the app and the turn engine use. In a solo game `roll` and `pass_card` are the turn's moves; `pass_card` is listed only while a card space is waiting (`turn.phase: "decide"`); once `outcome` is `escaped` or `bankrupt` only `reset` is left.
+5. All amounts are integer minor units. Reads are not audit logged.

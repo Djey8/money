@@ -39,6 +39,8 @@ const {
   getGrowPnl,
 } = require('../repositories/report-repository');
 const { getMojoStatus, updateMojoTarget } = require('../repositories/mojo-repository');
+const { getGame, listGameSets, getGameSet } = require('../repositories/game-repository');
+const { isGameAccountEmail } = require('../services/game-account');
 const {
   settleBucket,
   unsettleBucket,
@@ -3463,6 +3465,53 @@ router.get('/reports/grow/:growId/pnl', requireScope('reports:r'), async (req, r
       );
     }
     return res.json(report);
+  } catch (error) {
+    return next(error);
+  }
+});
+
+// Cashflow game (todo/cashflow-game-pro.md slice D1): game accounts only - an email containing "cashflow" - whatever
+// the token's scopes say, the same line the registration password draws. A token carries no email, so it is read from
+// the account.
+async function requireGameAccount(req, res, next) {
+  try {
+    const email = req.userEmail || (await getAccount({ authDb: getAuthDb() }, req.userId)).email;
+    if (isGameAccountEmail(email)) return next();
+    return problem(
+      res,
+      403,
+      'not_a_game_account',
+      'Not a game account',
+      'The Cashflow game endpoints are only available to game accounts.',
+    );
+  } catch (error) {
+    return next(error);
+  }
+}
+
+router.get('/game', requireScope('game:r'), requireGameAccount, async (req, res, next) => {
+  try {
+    return res.json(await getGame({ usersDb: getUsersDb(), authDb: getAuthDb() }, req.userId));
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.get('/game/sets', requireScope('game:r'), requireGameAccount, (req, res, next) => {
+  try {
+    return res.json({ sets: listGameSets() });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.get('/game/sets/:setId', requireScope('game:r'), requireGameAccount, (req, res, next) => {
+  try {
+    const gameSet = getGameSet(req.params.setId);
+    if (!gameSet) {
+      return problem(res, 404, 'not_found', 'Game set not found', 'No game set has that id.');
+    }
+    return res.json(gameSet);
   } catch (error) {
     return next(error);
   }
