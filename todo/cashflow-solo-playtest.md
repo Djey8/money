@@ -28,6 +28,7 @@ in light and dark, with a cashflow account on the self-hosted edition. Tick what
 - [ ] **Nothing of a roll shows before the totem is on its tile**: Charity's two-dice choice, the new child, the spanner and
       the cash change only once the animation has settled (the Payday box still comes as the totem passes its tile).
 - [ ] The MLM roll dialog appears only **after the totem has finished moving** (not while it is still walking).
+- [ ] A won MLM roll books the bonus on the **Income** account (not Daily), one transaction per kept card.
 - [ ] With a kept MLM card, a Payday shows its box, **stays while you press the MLM roll**, and the outcome (the bonus, or
       not) appears as a second info box next to it; the next action clears both.
 - [ ] The dice are thrown (bounce and turn), the faces slow down, they land with one pop and then rest still.
@@ -77,6 +78,7 @@ First playtest (2026-10-06), handled in the next build - please re-check:
 - START: no line; the totem waits outside the ring, top middle, "Start" below it, and moves inside with the first roll.
 - Card screens show the tile symbol of their deck, on the right of the heading.
 - Settling the bank loan left the steps field at 2 -> it goes back to 1.
+- The MLM bonus was booked on Daily -> now on Income.
 - Charity / Baby / Downsized took effect the moment the dice were thrown (two-dice choice already visible) -> a roll is
   now only worked out first and applied once the totem has settled.
 - Adding a transaction (a Doodad) did not refresh the Stats page underneath -> the Add dialog now tells the pages.

@@ -437,6 +437,12 @@ describe('resolveGamble: the Payday roll of kept cards', () => {
     );
   });
 
+  it('the bonus of a kept card is booked as Income, like the salary - never on Daily', () => {
+    const { effects } = resolveGamble(kept(), 'M1', { won: true, roll: 5 }, deps);
+    expect(effects.appendedTransactions).toHaveLength(2);
+    expect(effects.appendedTransactions.every((t) => t.account === 'Income')).toBe(true);
+  });
+
   it('only the rolled kind is settled; the roll is cleared for those and left on the others', () => {
     const { effects } = resolveGamble(kept(), 'M1', { won: true }, deps);
     const byTitle = Object.fromEntries(effects.state.assetDeals!.map((d) => [d.title, d.rollDue]));

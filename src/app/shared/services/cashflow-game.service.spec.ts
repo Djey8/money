@@ -2516,7 +2516,8 @@ describe('CashflowGameService', () => {
 
           const added = AppStateService.instance.allTransactions.slice(before);
           expect(added).toHaveLength(1);
-          expect(added[0]).toMatchObject({ account: 'Daily', amount: 500, category: '@MLM' });
+          // the bonus is income, like the salary - not a Daily booking (JFK, 2026-10-06)
+          expect(added[0]).toMatchObject({ account: 'Income', amount: 500, category: '@MLM' });
           expect(service.openDecisions).toHaveLength(0);
           expect(service.historySteps()[0]).toMatchObject({ kind: 'diceWon' });
           expect(service.historySteps()[1]).toMatchObject({ kind: 'payday' });

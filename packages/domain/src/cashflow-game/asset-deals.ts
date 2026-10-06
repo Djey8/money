@@ -231,7 +231,8 @@ function resolvePaydayRoll(
   if (outcome.won) {
     effects.appendedTransactions = placeOneOffTransactions(
       group.map((deal) => ({
-        account: 'Daily',
+        // the bonus of a kept Multi-Level-Marketing card is income, like the salary (JFK, 2026-10-06)
+        account: 'Income',
         amountMinor: payoutMinor,
         date: '',
         time: '',
