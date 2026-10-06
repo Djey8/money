@@ -751,16 +751,20 @@ export function removeExpenseForPaidLiability(
 /**
  * Selling a drawn card to another player for a one-time price (JFK, 2026-09-30): plain income, not a Grow sale - no
  * position exists yet. The category names the card, so History and the transaction list show which card was traded.
- * Throws before a game has started and for a price that is not above zero.
+ * Only property and special-asset cards can be traded: a **share card belongs to whoever drew it** (JFK, 2026-10-06).
+ * Throws before a game has started, for a share card, and for a price that is not above zero.
  */
 export function sellCardToFriend(
   books: Pick<GameBooks, 'state' | 'subscriptions' | 'transactions'>,
-  card: Pick<CashflowDealCard, 'title' | 'symbol'>,
+  card: Pick<CashflowDealCard, 'title' | 'symbol'> & Partial<Pick<CashflowDealCard, 'assetKind'>>,
   amountMinor: number,
   label: string | undefined,
   deps: Pick<DealDeps, 'clock' | 'text'>,
 ): GameEffects {
   if (!books.state.virtualDate) throw new Error('Pick a profession first.');
+  if (card.assetKind === 'share') {
+    throw new Error('A share card belongs to whoever drew it - it cannot be sold to a friend.');
+  }
   if (!(amountMinor > 0)) throw new Error('Enter the price your friend pays.');
   const name = label ?? card.symbol ?? card.title;
   const effects = emptyEffects(books.state, { kind: 'cardSale', detail: name });

@@ -613,6 +613,21 @@ describe('sellCardToFriend', () => {
     ]);
   });
 
+  it('a share card cannot be sold to a friend - it belongs to whoever drew it; property and asset cards can', () => {
+    const b = books();
+    expect(() =>
+      sellCardToFriend(b, { ...card, assetKind: 'share' }, 150000, undefined, deps),
+    ).toThrow(/share card belongs to whoever drew it/);
+    expect(
+      sellCardToFriend(b, { ...card, assetKind: 'investment' }, 150000, undefined, deps)
+        .appendedTransactions,
+    ).toHaveLength(1);
+    expect(
+      sellCardToFriend(b, { ...card, assetKind: 'asset' }, 150000, undefined, deps)
+        .appendedTransactions,
+    ).toHaveLength(1);
+  });
+
   it('uses the label when one is given, and the title for a card without a ticker', () => {
     expect(sellCardToFriend(books(), card, 1, 'EFH-II', deps).step!.detail).toBe('EFH-II');
     expect(sellCardToFriend(books(), { title: 'Gold' }, 1, undefined, deps).step!.detail).toBe(
