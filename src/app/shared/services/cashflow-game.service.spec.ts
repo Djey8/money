@@ -3280,6 +3280,49 @@ describe('CashflowGameService', () => {
       expect(service.soloTurn).toEqual({ phase: 'roll', count: 0 });
     });
 
+    it('planning a turn changes nothing; committing applies it once, as one undo step', () => {
+      startSolo();
+      const state = AppStateService.instance;
+      const before = JSON.stringify({
+        game: state.cashflowGame,
+        transactions: state.allTransactions,
+        subscriptions: state.allSubscriptions,
+        liabilities: state.liabilities,
+      });
+      persistence.batchWriteAndSync.mockClear();
+      service.rng = die(6); // 6 from START: the opening Payday, then the Payday space
+
+      const planned = service.planTurn(1, callbacks())!;
+
+      expect(planned.move.to).toBe(5);
+      expect(
+        JSON.stringify({
+          game: state.cashflowGame,
+          transactions: state.allTransactions,
+          subscriptions: state.allSubscriptions,
+          liabilities: state.liabilities,
+        }),
+      ).toBe(before); // nothing has happened yet
+      expect(persistence.batchWriteAndSync).not.toHaveBeenCalled();
+      expect(service.historySteps().map((step) => step.kind)).toEqual(['start']);
+      expect(service.canUndo).toBe(true);
+
+      service.commitTurn(planned, callbacks());
+
+      expect(state.cashflowGame.boardPosition).toBe(5);
+      expect(state.cashflowGame.round).toBe(2);
+      expect(service.historySteps().map((step) => step.kind)).toEqual(['roll', 'start']);
+      expect(persistence.batchWriteAndSync).toHaveBeenCalledTimes(1);
+    });
+
+    it('a planned turn can be thrown away: the game is as it was', () => {
+      startSolo();
+      service.rng = die(2);
+      service.planTurn(1, callbacks());
+      expect(AppStateService.instance.cashflowGame.boardPosition).toBeNull();
+      expect(service.soloTurn).toEqual({ phase: 'roll', count: 0 });
+    });
+
     it('a card space leaves the turn open until the card is settled; passing is an undoable step', () => {
       startSolo();
       service.rng = die(1); // space 0: a Deals space

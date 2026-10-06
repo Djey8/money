@@ -1934,8 +1934,14 @@ describe('CashflowGameComponent solo mode (JFK, 2026-10-05)', () => {
   function soloComponent(extra: Partial<Record<string, unknown>> = {}) {
     const rollTurn = jest.fn();
     const settleSoloDecision = jest.fn();
+    // The page plans a turn, plays its animation and only then applies it. The older tests below describe a whole
+    // roll through `rollTurn`: planning forwards to it, applying just reports success.
+    const planTurn = jest.fn((dice: number, callbacks: any) => rollTurn(dice, callbacks));
+    const commitTurn = jest.fn((_result: unknown, callbacks: any) => callbacks.onSuccess());
     const made = makeComponent({
       rollTurn,
+      planTurn,
+      commitTurn,
       settleSoloDecision,
       board: CLASSIC_RAT_RACE_BOARD,
       soloTurn: { phase: 'roll', count: 0 },
@@ -1943,7 +1949,7 @@ describe('CashflowGameComponent solo mode (JFK, 2026-10-05)', () => {
       soloSummary: jest.fn(() => ({ outcome: 'escaped' })),
       ...extra,
     } as any);
-    return { ...made, rollTurn, settleSoloDecision };
+    return { ...made, rollTurn, planTurn, commitTurn, settleSoloDecision };
   }
 
   const setSoloState = (extra: Record<string, unknown> = {}) => {
@@ -2003,6 +2009,61 @@ describe('CashflowGameComponent solo mode (JFK, 2026-10-05)', () => {
     expect(free.component.canRoll).toBe(true);
     free.component.isBusy = true;
     expect(free.component.canRoll).toBe(false);
+  });
+
+  it('nothing of a roll takes effect before the animation has settled: planned first, applied once the totem is on its tile', async () => {
+    const { component, planTurn, commitTurn } = soloComponent();
+    setSoloState();
+    const planned = {
+      roll: { dice: [3], total: 3 },
+      move: {
+        entered: [{ index: 0 }, { index: 1 }, { index: 2 }],
+        paydays: 0,
+        to: 2,
+        landed: { kind: 'charity', index: 2 },
+      },
+      effects: [],
+      openingPayday: false,
+      autoLoansMinor: [],
+    };
+    planTurn.mockReturnValue(planned); // working it out changes nothing
+    (component as any).diceChoice = 1;
+
+    component.rollSolo();
+
+    expect(planTurn).toHaveBeenCalledTimes(1);
+    expect(commitTurn).not.toHaveBeenCalled(); // not applied yet: no Charity, no child, no spanner, no cash change
+    expect(component.walking).toBe(true);
+    expect(component.isBusy).toBe(true); // nothing else can touch the books meanwhile
+    expect(component.diceChoice).toBe(1); // Charity's two-dice choice is not selected before the totem lands
+
+    await settle();
+
+    expect(commitTurn).toHaveBeenCalledTimes(1);
+    expect(commitTurn.mock.calls[0][0]).toBe(planned);
+    expect(component.walking).toBe(false);
+    expect(component.isBusy).toBe(false);
+    expect(component.diceChoice).toBe(2); // only now, with the totem on the Charity tile
+  });
+
+  it('a roll that cannot be applied says so and releases the page', async () => {
+    const { component, planTurn, commitTurn, toastService } = soloComponent();
+    setSoloState();
+    planTurn.mockReturnValue({
+      roll: { dice: [1], total: 1 },
+      move: { entered: [{ index: 0 }], paydays: 0, to: 0, landed: { kind: 'deal', index: 0 } },
+      effects: [],
+      openingPayday: false,
+      autoLoansMinor: [],
+    });
+    commitTurn.mockImplementation(() => {
+      throw new Error('could not write');
+    });
+    component.rollSolo();
+    await settle();
+    expect(toastService.show).toHaveBeenCalledWith('could not write', 'error');
+    expect(component.isBusy).toBe(false);
+    expect(component.walking).toBe(false);
   });
 
   it('a roll shows the dice and, landing on a Deals space, waits for the player: the card does not open by itself', async () => {

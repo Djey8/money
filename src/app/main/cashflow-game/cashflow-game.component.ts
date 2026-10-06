@@ -666,11 +666,11 @@ export class CashflowGameComponent implements OnDestroy {
     if (!this.canRoll) return;
     const from = this.appState.cashflowGame.boardPosition;
     const dice = this.canChooseDice ? this.diceChoice : 1;
+    // Busy for the whole reveal: nothing else may change the books between the roll and its being applied.
     this.isBusy = true;
-    const result = this.cashflowGameService.rollTurn(dice, {
-      onSuccess: () => {
-        this.isBusy = false;
-      },
+    // The turn is only worked out here; it is applied once the totem has settled (see `walkTo`).
+    const result = this.cashflowGameService.planTurn(dice, {
+      onSuccess: () => undefined,
       onError: (message) => {
         this.isBusy = false;
         this.toastService.show(message, 'error');
@@ -678,16 +678,6 @@ export class CashflowGameComponent implements OnDestroy {
     });
     if (!result) return;
     this.lastDice = result.roll.dice;
-    // landing on Charity opens its three turns with two dice selected; the player may switch to one
-    if (result.move.landed.kind === 'charity') this.diceChoice = 2;
-    // a space that had to borrow first (Charity, Downsized with too little cash) says so
-    const borrowedMinor = (result.autoLoansMinor ?? []).reduce((sum, loan) => sum + loan, 0);
-    if (borrowedMinor > 0) {
-      this.toastService.show(
-        this.cashflowGameService.autoLoanMessage(this.toDisplayAmount(borrowedMinor)),
-        'update',
-      );
-    }
     this.paydayBanner = null; // the last roll's Payday is done with once the next roll starts
     this.paydaySummary = this.summarisePaydays(result);
     void this.walkTo(from, result);
@@ -786,10 +776,45 @@ export class CashflowGameComponent implements OnDestroy {
       if (space.kind === 'payday') this.showPayday();
     }
     if (this.skipWalking && result.move.paydays > 0) this.showPayday();
-    // The totem is on its tile: the dialog or the action comes at once - the dice and the walk gave the time (JFK, 2026-10-06).
+    // The totem is on its tile: only now does the roll take effect - Charity's dice choice, the child, the spanner, the
+    // cash - and the dialog or the action comes at once (JFK, 2026-10-06: nothing before the animation has settled).
+    this.walkingAt = result.move.to;
+    this.applyTurn(result);
     this.walkingAt = undefined;
     this.walking = false;
     this.afterLanding(result);
+  }
+
+  /** Applies the planned turn to the game and tells about what only now has happened. */
+  private applyTurn(result: TurnResult): void {
+    try {
+      this.cashflowGameService.commitTurn(result, {
+        onSuccess: () => {
+          this.isBusy = false;
+        },
+        onError: (message) => {
+          this.isBusy = false;
+          this.toastService.show(message, 'error');
+        },
+      });
+    } catch (err: unknown) {
+      this.isBusy = false;
+      this.toastService.show(
+        err instanceof Error ? err.message : 'Could not apply the roll.',
+        'error',
+      );
+      return;
+    }
+    // landing on Charity opens its three turns with two dice selected; the player may switch to one
+    if (result.move.landed.kind === 'charity') this.diceChoice = 2;
+    // a space that had to borrow first (Charity, Downsized with too little cash) says so
+    const borrowedMinor = (result.autoLoansMinor ?? []).reduce((sum, loan) => sum + loan, 0);
+    if (borrowedMinor > 0) {
+      this.toastService.show(
+        this.cashflowGameService.autoLoanMessage(this.toDisplayAmount(borrowedMinor)),
+        'update',
+      );
+    }
   }
 
   /**

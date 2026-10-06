@@ -1126,18 +1126,18 @@ export class CashflowGameService {
   }
 
   /**
-   * One solo turn: roll, move, pay the Paydays passed, resolve the landing - **one** undo step. The dice are the
-   * engine's (this service's `rng`); the UI only shows what came out. Returns the roll and move so it can animate them.
+   * Works out one solo turn - the dice, the move, everything the landing does - **without changing anything**: the screen
+   * plays its animation first and applies the turn once the totem has settled (JFK, 2026-10-06: nothing may show before
+   * the totem is on its tile). The dice are the engine's (this service's `rng`).
    */
-  rollTurn(dice: DiceCount, callbacks: CashflowGameCallbacks): TurnResult | null {
+  planTurn(dice: DiceCount, callbacks: CashflowGameCallbacks): TurnResult | null {
     const profession = this.currentProfession();
     if (!profession) {
       callbacks.onError('Pick a profession first.');
       return null;
     }
-    let result: TurnResult;
     try {
-      result = playTurn(
+      return playTurn(
         this.gameBooks(),
         { ...this.cardDeps, board: this.board, profession, rng: this.rng },
         { dice },
@@ -1146,6 +1146,13 @@ export class CashflowGameService {
       callbacks.onError(errorMessage(err, 'Could not roll.'));
       return null;
     }
+  }
+
+  /**
+   * Applies a planned turn: **one** undo step, the effects in order, persisted. Call it once the animation has settled,
+   * and only with a turn planned against the books as they still are.
+   */
+  commitTurn(result: TurnResult, callbacks: CashflowGameCallbacks): void {
     this.pushUndoSnapshot(result.step);
     for (const effects of result.effects) this.applyGameEffects(effects);
     // an automatic bank loan (Charity or Downsized with too little cash) writes the Bank loan liability too
@@ -1155,6 +1162,12 @@ export class CashflowGameService {
       includeGrow: true,
     });
     if (result.effects.some((effects) => effects.decisionNeeded)) this.decisionNeeded$.next();
+  }
+
+  /** One solo turn at once: plan it and apply it (no animation in between). */
+  rollTurn(dice: DiceCount, callbacks: CashflowGameCallbacks): TurnResult | null {
+    const result = this.planTurn(dice, callbacks);
+    if (result) this.commitTurn(result, callbacks);
     return result;
   }
 
