@@ -167,7 +167,7 @@ describe('the closing numbers', () => {
     const after = first.effects.reduce(applyEffectsToBooks, books);
     const summary = finalSummary({ ...after, state: first.state });
     expect(summary.outcome).toBe('playing');
-    expect(summary.round).toBe(1);
+    expect(summary.round).toBe(2); // the opening Payday of the first roll, and the Payday it landed on
     expect(summary.turns).toBe(1);
     expect(summary.finances.salaryMinor).toBeGreaterThan(0);
     expect(Number.isInteger(summary.cashMinor)).toBe(true);

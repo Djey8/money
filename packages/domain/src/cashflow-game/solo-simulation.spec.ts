@@ -93,7 +93,7 @@ export function playSoloGame(seed: number, policy: Policy, maxTurns = 400): Play
       dice: books.state.charityRoundsLeft > 0 ? 2 : 1,
     });
     books = result.effects.reduce(applyEffectsToBooks, before);
-    paydays += result.move.paydays;
+    paydays += result.move.paydays + (result.openingPayday ? 1 : 0);
     transcript.push(`${turn + 1}: ${result.step.detail}`);
 
     // Invariants of every turn.
@@ -204,8 +204,8 @@ describe('seeded solo games', () => {
 
   it('golden game: seed 4 buying properties - what an agent’s scripted game is compared with (D5)', () => {
     const played = playSoloGame(4, 'buy-affordable-properties');
-    expect(played.summary).toMatchObject({ outcome: 'escaped', turns: 78, round: 40, children: 3 });
+    expect(played.summary).toMatchObject({ outcome: 'escaped', turns: 52, round: 28, children: 1 });
     expect(played.transcript.slice(0, 6)).toEqual(GOLDEN_SEED_4_START);
-    expect(played.transcript.filter((line) => line.includes('bought'))).toHaveLength(7);
+    expect(played.transcript.filter((line) => line.includes('bought'))).toHaveLength(6);
   });
 });

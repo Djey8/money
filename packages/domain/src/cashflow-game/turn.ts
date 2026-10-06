@@ -48,6 +48,8 @@ export interface TurnResult {
   state: CashflowGameState;
   roll: DiceRoll;
   move: Move;
+  /** The first roll of a game also pays the opening Payday: it is what officially starts the game. */
+  openingPayday: boolean;
 }
 
 /** What a turn rule needs on top of the books. */
@@ -117,6 +119,10 @@ export function playTurn(books: GameBooks, deps: TurnDeps, request: TurnRequest 
     working = applyEffectsToBooks(working, next);
   };
 
+  // The first roll starts the game officially (JFK, 2026-10-06): the opening Payday is paid, on top of the savings the
+  // game began with, before the token moves.
+  const openingPayday = turn.count === 0;
+  if (openingPayday) apply(playPayday(roundBooks(working), deps));
   for (let i = 0; i < move.paydays; i++) apply(playPayday(roundBooks(working), deps));
 
   let pending: CashflowPendingDecision | undefined;
@@ -162,6 +168,7 @@ export function playTurn(books: GameBooks, deps: TurnDeps, request: TurnRequest 
     state: finalState,
     roll,
     move,
+    openingPayday,
   };
 }
 

@@ -120,11 +120,30 @@ describe('rolling', () => {
     });
   });
 
+  it('the first roll starts the game: it pays the opening Payday, once, before the token moves', () => {
+    const start = solo();
+    const first = turn(start, dice(2)); // space 1: a Doodad, no Payday on the way
+    expect(first.result.openingPayday).toBe(true);
+    expect(first.books.state.round).toBe(1);
+    expect(first.books.transactions.length).toBeGreaterThan(start.transactions.length);
+    // the opening Payday posts the salary and the expenses, on top of the savings the game began with
+    expect(first.books.transactions.some((t) => t.category === '@Salary')).toBe(true);
+
+    const settled = {
+      ...first.books,
+      state: settleDecision(first.books.state, 'done').state,
+    };
+    const second = turn(settled, dice(1));
+    expect(second.result.openingPayday).toBe(false);
+    expect(second.books.state.round).toBe(1); // nothing more was entered: no second opening
+  });
+
   it('landing on a Payday pays it once, and it is not a decision', () => {
     const start = solo();
     const { books, result } = turn(start, dice(6));
     expect(result.move.landedOnPayday).toBe(true);
-    expect(books.state.round).toBe(1);
+    expect(result.openingPayday).toBe(true);
+    expect(books.state.round).toBe(2); // the opening Payday, and the one it landed on
     expect(books.transactions.length).toBeGreaterThan(0);
     expect(books.state.turn?.phase).toBe('roll');
     expect(books.state.turn?.pending).toBeUndefined();
@@ -262,7 +281,7 @@ describe('a whole seeded game of turns', () => {
       for (let i = 0; i < 300; i++) {
         const dice = books.state.charityRoundsLeft > 0 ? 2 : 1;
         const rolled = turn(books, rng, dice);
-        paydays += rolled.result.move.paydays;
+        paydays += rolled.result.move.paydays + (rolled.result.openingPayday ? 1 : 0);
         books = rolled.books;
         expect(books.state.boardPosition).toBeGreaterThanOrEqual(0);
         expect(books.state.boardPosition).toBeLessThan(24);
