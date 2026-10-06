@@ -117,8 +117,9 @@ game. The board is the German "Cashflow - Verlasse das Hamsterrad!" rat race, dr
   space it landed on, and only then does the landing speak. Press **Skip** to jump ahead; with "reduce motion" set the
   token jumps by itself. The dice are thrown with a bounce, the faces slow down, they land with one small pop and then stay still on the number.
 - **Payday** pays whenever you **land on or pass** a Payday space, once per Payday space. It also advances the game's
-  calendar one month, as in the companion. A popup floats over the page with what it paid (income, expenses, the monthly
-  result) and goes with the next thing you do - the info banners of the game vanish that way, there is no close button.
+  calendar one month, as in the companion. An info box at the top of the dashboard, like the "card does not apply" notice, shows what
+  it paid (income, expenses, the monthly result); it goes with the next thing you do or with its X - the info boxes of
+  the game vanish that way.
 - **Baby, Charity, Downsized** resolve on the spot (a Baby space with three children changes nothing). **Charity and
   Downsized pay cash, and the balance never goes negative:** when cash is short, the Bank loan is taken first (the
   shortfall rounded up to the loan step, as its own step in the history) and then the payment is made - in solo and with

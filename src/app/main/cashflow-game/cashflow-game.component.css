@@ -207,27 +207,17 @@
   cursor: pointer;
 }
 
-/* Reset game: the last button of the dashboard, red, so it is not pressed by accident. */
-.cf-reset-btn {
-  display: block;
-  width: 100%;
-  margin-top: 28px;
-  padding: 14px 16px;
-  border: 0;
-  border-radius: var(--radius-md);
-  background-color: var(--color-danger, #d32f2f);
-  color: #fff;
-  font-size: 0.95rem;
-  font-weight: 700;
-  text-transform: capitalize;
-  cursor: pointer;
+/* Reset game: the same row as My games, in red - the last one, so it is not pressed by accident. */
+.cf-row-btn--danger {
+  border-color: var(--color-danger, #d32f2f);
+  color: var(--color-danger, #d32f2f);
 }
 
-.cf-reset-btn:hover:not(:disabled) {
-  filter: brightness(0.92);
+.cf-row-btn--danger .cf-row-btn-chevron {
+  color: var(--color-danger, #d32f2f);
 }
 
-.cf-reset-btn:disabled {
+.cf-row-btn--danger:disabled {
   opacity: 0.6;
   cursor: default;
 }
@@ -1269,45 +1259,17 @@
   gap: 0.75rem;
 }
 
-.cf-payday-popup {
-  position: fixed;
-  top: 16vh;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 10000;
-  width: min(92vw, 380px);
-  padding: 0.9rem 1rem 0.8rem;
-  border: 3px solid var(--color-warning, #f39c12);
-  border-radius: 14px;
-  background: var(--color-surface, #fff);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
-  text-align: center;
-  /* never in the way: a click goes through to what is underneath - and is the "next action" that closes it */
-  pointer-events: none;
-  animation: cf-payday-pop 0.45s ease-out;
+/* The Payday info box: the notice style, kept to a few small lines. */
+.cf-notice--payday {
+  border-left-color: var(--color-warning, #f39c12);
+  font-size: 0.9rem;
 }
 
-.cf-payday-popup-title {
-  margin: 0 0 0.4rem;
-  font-size: 1.4rem;
-}
-
-.cf-payday-popup-lines {
+.cf-payday-note {
   display: flex;
-  justify-content: center;
-  gap: 1.5rem;
-  margin: 0 0 0.3rem;
-  font-size: 1.05rem;
-}
-
-.cf-payday-popup-lines dt {
-  font-size: 0.8rem;
-  color: var(--color-text-secondary, #666);
-}
-
-.cf-payday-popup-lines dd {
-  margin: 0;
-  font-weight: 700;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 14px;
 }
 
 .cf-payday-in {
@@ -1316,26 +1278,6 @@
 
 .cf-payday-out {
   color: var(--color-danger);
-}
-
-.cf-payday-popup-net {
-  margin: 0;
-  font-size: 1.05rem;
-}
-
-.cf-payday-popup-net strong {
-  font-size: 1.35rem;
-}
-
-@keyframes cf-payday-pop {
-  from {
-    transform: translateX(-50%) scale(0.85);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(-50%) scale(1);
-    opacity: 1;
-  }
 }
 
 .cf-solo-hud {
@@ -1503,8 +1445,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .cf-solo-dice .cf-die--tumbling,
-  .cf-solo-dice .cf-die--landed,
-  .cf-payday-popup {
+  .cf-solo-dice .cf-die--landed {
     animation: none;
   }
 }

@@ -476,6 +476,39 @@
     <!-- Active game dashboard -->
     <div class="cf-dashboard" *ngIf="hasActiveGame && !viewedProfession">
       <ng-container *ngIf="dashboardView === 'main'">
+        <!-- What a Payday paid: an info box like the one below, goes with the next action or the X (JFK, 2026-10-06). -->
+        <div
+          class="cf-card cf-notice cf-notice--payday"
+          *ngIf="paydayBanner as payday"
+          role="status"
+        >
+          <span class="cf-payday-note">
+            <strong>💰 {{ 'CashflowGame.solo.passedPayday' | translate }}</strong>
+            <span *ngIf="payday.count > 1">{{
+              'CashflowGame.solo.paydayTimes' | translate: { count: payday.count }
+            }}</span>
+            <span class="cf-payday-note-line">
+              {{ 'CashflowGame.solo.paydayIncome' | translate }}
+              <b class="cf-payday-in">{{ signedCardAmount(payday.incomeMinor) }}</b>
+            </span>
+            <span class="cf-payday-note-line">
+              {{ 'CashflowGame.solo.sumExpenses' | translate }}
+              <b class="cf-payday-out">{{ signedCardAmount(-payday.expensesMinor) }}</b>
+            </span>
+            <span class="cf-payday-note-line" [class.cf-negative]="payday.netMinor < 0">
+              {{ 'CashflowGame.monthlyCashflow' | translate }}
+              <b>{{ signedCardAmount(payday.netMinor) }}</b>
+            </span>
+          </span>
+          <button
+            type="button"
+            class="cf-friend-sale-close"
+            [attr.aria-label]="'CashflowGame.cardDismiss' | translate"
+            (click)="paydayBanner = null"
+          >
+            ✕
+          </button>
+        </div>
         <!-- A market card that does not apply to the player. -->
         <div class="cf-card cf-notice" *ngIf="marketNotice" role="status">
           <span>{{ marketNotice }}</span>
@@ -918,8 +951,13 @@
         </button>
 
         <!-- Last, and red: wipes this game without saving it, back to the start panel (JFK, 2026-10-06). -->
-        <button class="cf-reset-btn" [disabled]="isBusy" (click)="resetCurrentGame()">
-          {{ 'CashflowGame.resetGame' | translate }}
+        <button
+          class="cf-row-btn cf-row-btn--danger"
+          [disabled]="isBusy"
+          (click)="resetCurrentGame()"
+        >
+          <span>{{ 'CashflowGame.resetGame' | translate }}</span>
+          <span class="cf-row-btn-chevron">›</span>
         </button>
       </ng-container>
 
@@ -1643,33 +1681,4 @@
       </div>
     </div>
   </div>
-</div>
-
-<!-- What a Payday paid: a popup that floats over the page and goes with the next thing the player does (JFK, 2026-10-06). -->
-<div
-  class="cf-payday-popup"
-  *ngIf="classReference.isOpen && paydayBanner as payday"
-  role="status"
-  aria-live="polite"
->
-  <h3 class="cf-payday-popup-title">
-    💰 {{ 'CashflowGame.solo.passedPayday' | translate }}
-    <span *ngIf="payday.count > 1">{{
-      'CashflowGame.solo.paydayTimes' | translate: { count: payday.count }
-    }}</span>
-  </h3>
-  <dl class="cf-payday-popup-lines">
-    <div>
-      <dt>{{ 'CashflowGame.solo.paydayIncome' | translate }}</dt>
-      <dd class="cf-payday-in">{{ signedCardAmount(payday.incomeMinor) }}</dd>
-    </div>
-    <div>
-      <dt>{{ 'CashflowGame.solo.sumExpenses' | translate }}</dt>
-      <dd class="cf-payday-out">{{ signedCardAmount(-payday.expensesMinor) }}</dd>
-    </div>
-  </dl>
-  <p class="cf-payday-popup-net" [class.cf-negative]="payday.netMinor < 0">
-    {{ 'CashflowGame.monthlyCashflow' | translate }}:
-    <strong>{{ signedCardAmount(payday.netMinor) }}</strong>
-  </p>
 </div>

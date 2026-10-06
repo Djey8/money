@@ -7,7 +7,7 @@ in light and dark, with a cashflow account on the self-hosted edition. Tick what
 
 - [ ] New game: after the profession, the language question also asks _how to play_; "With the physical board" is
       pre-selected and plays exactly as before.
-- [ ] The last button of the dashboard is a red **Reset game**: it asks first, then wipes the game (nothing is saved) and
+- [ ] The last row of the dashboard is a red **Reset game** (the same row design as My games, red text and border): it asks first, then wipes the game (nothing is saved) and
       the panel shows the start panel again.
 - [ ] Delete buttons in the games list are red like the other delete buttons (and the bin on each row too).
 - [ ] Every game in the list has a bin; it asks the normal delete confirmation, and the game is gone afterwards.
@@ -22,8 +22,8 @@ in light and dark, with a cashflow account on the self-hosted edition. Tick what
       space; it rests on its landing before anything else appears; Skip jumps ahead.
 - [ ] Coming back to the dashboard (from a card, or after a reload) shows the dice still on the last number - no replay.
 - [ ] **The very first roll pays your first Payday** (savings plus one Payday), whatever you roll.
-- [ ] A Payday (passed, landed on, or the opening one) shows a popup floating over the page with income, expenses and
-      the monthly result - each amount with one sign - and it goes with your next action (any tap), no close button.
+- [ ] A Payday (passed, landed on, or the opening one) shows a compact info box at the top of the dashboard (like the
+      "card does not apply" notice, with an X) with income, expenses and the monthly result - each amount with one sign - and it goes with your next action (any tap) or the X.
 - [ ] A market card's "does not apply" notice goes the same way, with the next action.
 - [ ] The dice are thrown (bounce and turn), the faces slow down, they land with one pop and then rest still.
 - [ ] A first roll of 1 lands on the Deals space next to START; a 6 lands on the first Payday.
@@ -68,7 +68,8 @@ First playtest (2026-10-06), handled in the next build - please re-check:
   that happens only during the roll; otherwise the dice rest still.
 - The Payday banner was too small and vanished too fast -> big banner with the amounts, stays until the next roll.
 - A share card could be sold to a friend -> not any more (property and asset cards only).
-- Payday popup: signs doubled ("++2.500") -> one sign each; it is now a popup that goes with the next action.
+- Payday notice: signs doubled ("++2.500") -> one sign each; now a compact info box at the top with an X that also goes
+  with the next action. Reset game is the same row design as My games, in red.
 - Dice animation improved (thrown, decelerating faces, one landing pop).
 - Wrong settings at the start -> a red Reset game button at the end of the dashboard (asks, wipes, back to start).
 - Old games could only be deleted from inside an opened row -> a bin on every row of the list (normal confirmation).
