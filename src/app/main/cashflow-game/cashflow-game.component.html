@@ -990,13 +990,13 @@
 
         <!-- History and Menu: both "go see more elsewhere" rows, same treatment (JFK, 2026-09-29: -->
         <!-- "can you hide the history behind a button" / "the menu button... a real button"). -->
-        <button class="cf-row-btn" (click)="openGames()">
-          <span>{{ 'CashflowGame.myGames' | translate }}</span>
+        <button class="cf-row-btn" *ngIf="hasHistory" (click)="openHistory()">
+          <span>{{ 'CashflowGame.history' | translate }}</span>
           <span class="cf-row-btn-chevron">›</span>
         </button>
 
-        <button class="cf-row-btn" *ngIf="hasHistory" (click)="openHistory()">
-          <span>{{ 'CashflowGame.history' | translate }}</span>
+        <button class="cf-row-btn" [class.cf-row-btn--full]="!hasHistory" (click)="openGames()">
+          <span>{{ 'CashflowGame.myGames' | translate }}</span>
           <span class="cf-row-btn-chevron">›</span>
         </button>
 

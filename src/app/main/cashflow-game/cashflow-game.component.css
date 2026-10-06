@@ -156,12 +156,11 @@
 .cf-loan-triggers {
   display: flex;
   gap: 10px;
-  flex-wrap: wrap;
 }
 
 .cf-loan-btn {
   flex: 1;
-  min-width: 140px;
+  min-width: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1927,11 +1926,6 @@
     align-items: start;
   }
 
-  /* Cards that carry the game take the whole width; the loan card and the rows sit two to a line below. */
-  .cf-dashboard--main > .cf-card:not(.cf-loan-triggers) {
-    grid-column: 1 / -1;
-  }
-
   .cf-stat-value {
     font-size: 1.5rem;
   }
@@ -2094,11 +2088,6 @@
   .cf-dashboard--main {
     gap: 16px;
   }
-
-  /* the loan card shares a line with the first row button */
-  .cf-dashboard--main > .cf-card.cf-loan-triggers {
-    grid-column: auto;
-  }
 }
 
 /* The smallest phones (320 px): the decision buttons stay on one line each. */
@@ -2184,5 +2173,21 @@
   .cf-filter-select--active {
     border: 2px solid var(--color-primary);
     font-weight: 700;
+  }
+}
+
+/* ═══ Rows under the game: Bank loan | Repay, History | My games, Menu | reset game ═══ */
+.cf-dashboard--main > .cf-row-btn--full {
+  grid-column: 1 / -1;
+}
+
+/*
+ * The ring takes the height the window has left, so the dashboard fits without scrolling: it shrinks on a short window
+ * and on a very wide but low one (never below a size the cells can still be read at).
+ */
+@media (min-height: 521px) {
+  .cf-solo app-rat-race-board {
+    max-width: min(100%, 560px, max(190px, calc(100vh - 500px)));
+    max-width: min(100%, 560px, max(190px, calc(100dvh - 500px)));
   }
 }
