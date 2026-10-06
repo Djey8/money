@@ -2186,3 +2186,46 @@ describe('CashflowGameComponent solo mode (JFK, 2026-10-05)', () => {
     expect([doodad, market, deals].map((spy) => spy.mock.calls.length)).toEqual([1, 1, 1]);
   });
 });
+
+describe('CashflowGameComponent start screen: the games played so far (JFK, 2026-10-06)', () => {
+  beforeEach(() => {
+    (AppStateService as any)._instance = undefined;
+    ProfileComponent.mail = '';
+  });
+
+  it('keeps the list of old games closed until the button under Start is pressed', () => {
+    const { component, savedGames } = makeComponent();
+    expect(component.showStartGames).toBe(false);
+
+    component.openStartGames();
+    expect(component.showStartGames).toBe(true);
+    expect(savedGames.refresh).toHaveBeenCalled();
+
+    component.closeStartGames();
+    expect(component.showStartGames).toBe(false);
+  });
+
+  it('closing the panel, or continuing a game from the list, closes the list too', async () => {
+    const { component, savedGames } = makeComponent();
+    savedGames.games = [
+      {
+        id: 'g1',
+        name: 'Run',
+        createdAt: '',
+        updatedAt: '',
+        gameSetId: 'cashflow',
+        professionId: 'x',
+      } as any,
+    ];
+
+    component.openStartGames();
+    component.closeWindow();
+    expect(component.showStartGames).toBe(false);
+
+    component.openStartGames();
+    component.continueGame(savedGames.games[0]);
+    await new Promise((resolve) => setTimeout(resolve, 15));
+    expect(savedGames.loadGame).toHaveBeenCalledWith('g1');
+    expect(component.showStartGames).toBe(false);
+  });
+});

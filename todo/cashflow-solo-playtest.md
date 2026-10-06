@@ -7,6 +7,8 @@ in light and dark, with a cashflow account on the self-hosted edition. Tick what
 
 - [ ] New game: after the profession, the language question also asks _how to play_; "With the physical board" is
       pre-selected and plays exactly as before.
+- [ ] On the start screen your old games are **not** listed; a "My games" button below Start opens just the list
+      (played and ongoing games, with Import), and a game can be continued from there.
 - [ ] "Solo in the app" starts the game; the dashboard shows the ring, the token at START and a Roll button - and no
       Payday button and no "which space did you land on" grid.
 
@@ -58,5 +60,6 @@ First playtest (2026-10-06), handled in the next build - please re-check:
   that happens only during the roll; otherwise the dice rest still.
 - The Payday banner was too small and vanished too fast -> big banner with the amounts, stays until the next roll.
 - A share card could be sold to a friend -> not any more (property and asset cards only).
+- Old games cluttered the start screen -> behind a "My games" button below Start.
 
 (JFK's further notes go here.)

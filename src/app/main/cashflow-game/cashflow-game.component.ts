@@ -185,6 +185,7 @@ export class CashflowGameComponent {
   }
 
   closeWindow(): void {
+    this.showStartGames = false;
     this.rollResult = null;
     // A one-time message (e.g. a market card that did not apply) is gone once the panel is closed.
     this.marketNotice = null;
@@ -2036,6 +2037,19 @@ export class CashflowGameComponent {
     this.openGameId = this.openGameId === game.id ? null : game.id;
   }
 
+  /** The start screen's list of games played so far: closed by default, opened with the button under Start. */
+  showStartGames = false;
+
+  openStartGames(): void {
+    this.renamingId = null;
+    this.showStartGames = true;
+    void this.refreshGames();
+  }
+
+  closeStartGames(): void {
+    this.showStartGames = false;
+  }
+
   openGames(): void {
     this.renamingId = null;
     this.dashboardView = 'games';
@@ -2127,6 +2141,7 @@ export class CashflowGameComponent {
           await this.language.use(game.language as Parameters<LanguageService['use']>[0]);
         }
         this.viewedProfession = null;
+        this.showStartGames = false;
         this.backToMain();
       }, 'gameLoaded');
     };

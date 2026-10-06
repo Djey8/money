@@ -288,16 +288,37 @@
       </button>
     </div>
 
-    <!-- Start screen: the games saved so far, to continue one instead of starting a new one. -->
+    <!-- Start screen, behind the "My games" button under Start: every game played or still going, to continue one -->
+    <!-- instead of starting a new one (JFK, 2026-10-06). -->
     <div
       class="cf-card"
-      *ngIf="!hasActiveGame && !viewedProfession && !choosingLanguage && savedGames.games.length"
+      *ngIf="!hasActiveGame && !viewedProfession && !choosingLanguage && showStartGames"
     >
+      <button class="cf-back-btn" (click)="closeStartGames()">
+        ‹ {{ 'CashflowGame.back' | translate }}
+      </button>
       <h3>{{ 'CashflowGame.savedGamesTitle' | translate }}</h3>
+      <div class="cf-actions">
+        <label class="btn btn--sm cf-btn-outlined cf-import-btn">
+          {{ 'CashflowGame.importGame' | translate }}
+          <input
+            type="file"
+            accept=".json,application/json"
+            hidden
+            (change)="importSavedGame($event)"
+          />
+        </label>
+      </div>
+      <p class="cf-card-none" *ngIf="!savedGames.games.length">
+        {{ 'CashflowGame.gamesEmpty' | translate }}
+      </p>
       <ng-container *ngTemplateOutlet="savedGameList"></ng-container>
     </div>
 
-    <div class="cf-card" *ngIf="!hasActiveGame && !viewedProfession && !choosingLanguage">
+    <div
+      class="cf-card"
+      *ngIf="!hasActiveGame && !viewedProfession && !choosingLanguage && !showStartGames"
+    >
       <h3>{{ 'CashflowGame.chooseProfession' | translate }}</h3>
 
       <label class="cf-field" *ngIf="playableGameSets.length > 1">
@@ -334,6 +355,11 @@
         (click)="askLanguage()"
       >
         {{ 'CashflowGame.start' | translate }}
+      </button>
+      <!-- The games played so far are behind a button below Start, not on the screen. -->
+      <button class="cf-row-btn" (click)="openStartGames()">
+        <span>{{ 'CashflowGame.myGames' | translate }}</span>
+        <span class="cf-row-btn-chevron">›</span>
       </button>
     </div>
 
