@@ -2,7 +2,13 @@ import { AddComponent } from 'src/app/panels/add/add.component';
 import { AppComponent } from 'src/app/app.component';
 import { AppStateService } from 'src/app/shared/services/app-state.service';
 import { Grow } from 'src/app/interfaces/grow';
-import { initialCashflowGameState, marketSaleFor } from '@money/domain';
+import {
+  fixedClock,
+  identityText,
+  initialCashflowGameState,
+  marketSaleFor,
+  playMarketBuyerCard,
+} from '@money/domain';
 import { GrowTradeService } from './grow-trade.service';
 
 const project = (overrides: Partial<Grow>): Grow =>
@@ -148,6 +154,105 @@ describe('GrowTradeService', () => {
     // 84.000 - 60.000 mortgage = 24.000 for the player: the 10.000 deposit and the 14.000 profit
     expect(AddComponent.amountTextField).toBe('14000');
     expect(Number(AddComponent.amountTextField) + 10000).toBe(24000); // what the Add dialog books
+  });
+
+  // Every kind of property buyer, through the real offer calculation and the Sell pre-fill (JFK, 2026-10-06: not only
+  // the single-family house - the condo, the apartment complex, the percent and the fixed-profit buyers too).
+  describe.each([
+    {
+      kind: 'a percent on the original price (house)',
+      tag: 'EFH',
+      deposit: 10000,
+      mortgage: 60000,
+      units: undefined,
+      sells: { family: 'EFH', plusPercent: 20 },
+      cash: 24000, // 70.000 + 14.000 = 84.000 - 60.000 mortgage
+    },
+    {
+      kind: 'a fixed profit on the original price',
+      tag: 'EFH',
+      deposit: 2000,
+      mortgage: 48000,
+      units: undefined,
+      sells: { family: 'EFH', plusMinor: 1000000 },
+      cash: 12000, // 50.000 + 10.000 = 60.000 - 48.000 (the SFH of the bug report)
+    },
+    {
+      kind: 'a fixed price for the whole condo (Wohnung)',
+      tag: 'ETW',
+      deposit: 5000,
+      mortgage: 40000,
+      units: undefined,
+      sells: { family: 'ETW', priceMinor: 6000000 },
+      cash: 20000, // 60.000 - 40.000
+    },
+    {
+      kind: 'a price for every unit of an apartment complex',
+      tag: 'APH24',
+      deposit: 20000,
+      mortgage: 50000,
+      units: 24,
+      sells: { family: 'APH', pricePerUnitMinor: 300000 },
+      cash: 22000, // 24 x 3.000 = 72.000 - 50.000
+    },
+    {
+      kind: 'a price that only just covers the deposit (no profit)',
+      tag: 'ETW',
+      deposit: 5000,
+      mortgage: 40000,
+      units: undefined,
+      sells: { family: 'ETW', priceMinor: 4500000 },
+      cash: 5000, // 45.000 - 40.000: the deposit back, nothing more
+    },
+    {
+      kind: 'a price below the mortgage (a loss)',
+      tag: 'ETW',
+      deposit: 5000,
+      mortgage: 40000,
+      units: undefined,
+      sells: { family: 'ETW', priceMinor: 3500000 },
+      cash: -5000, // 35.000 - 40.000
+    },
+  ])('$kind', ({ tag, deposit, mortgage, units, sells, cash }) => {
+    it('books the cash the buyer leaves you with - the deposit comes back once', async () => {
+      const { service, cashflowGame } = makeService();
+      const investment = { tag, depositMinor: deposit * 100, amountMinor: mortgage * 100 };
+      const played = playMarketBuyerCard(
+        {
+          state: {
+            ...initialCashflowGameState(),
+            gameSetId: 'cashflow',
+            professionId: 'hausmeister',
+            virtualDate: '2026-10-15',
+          },
+          subscriptions: [],
+          investments: [investment],
+          shares: [],
+          assets: [],
+          growProjects: [],
+        },
+        { id: 'm1', title: 'Buyer', description: '', sells } as any,
+        { types: [{ labels: [tag], units }] },
+        { clock: fixedClock('2026-10-15'), text: identityText, money: (m) => String(m / 100) },
+      );
+      cashflowGame.marketSaleFor.mockImplementation(((title: string) => {
+        const sale = marketSaleFor(played.effects.state, [investment], title);
+        return (
+          sale && {
+            salePrice: sale.salePriceMinor / 100,
+            netCash: sale.netCashMinor / 100,
+            label: sale.label,
+          }
+        );
+      }) as any);
+      AppStateService.instance.allInvestments = [{ tag, deposit, amount: mortgage }] as any;
+
+      await service.sell(project({ title: tag, investment: { tag, deposit, amount: mortgage } }));
+
+      // what the Add dialog books: the amount entered plus the deposit that comes back
+      expect(Number(AddComponent.amountTextField) + deposit).toBe(cash);
+      expect(AddComponent.selectedOption).toBe(cash < 0 ? 'Daily' : 'Income');
+    });
   });
 
   it('Sell books exactly the net cash: a 2.000 deposit and a 10.000 profit is 12.000, not 14.000', async () => {
