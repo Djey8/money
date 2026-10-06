@@ -1468,6 +1468,79 @@ paths:
           $ref: '#/components/responses/AuthenticationRequired'
         '403':
           $ref: '#/components/responses/NotAGameAccountOrScope'
+  /game/market/play:
+    post:
+      operationId: gamePlayMarket
+      summary: Play a Market card
+      description: >-
+        Plays a Market card by its id the way its kind asks (`result.kind`): a buyer or gold offer goes onto every matching property or coin holding the player owns (`matched`), a stock split opens a dice decision when the share is held, a boost raises the cashflow of qualifying investments (`changed`), a cost is booked on the first property owned (`property`, taking the Bank loan first when cash is short), a text card does nothing. A card that does not apply to the player is still played and recorded. In a solo game the turn moves on. Game accounts only; requires `game:w`. The action must be one of the `legalActions` of `GET /game` (409
+        `game_action_not_allowed` otherwise); a refusal by the game's own rules is 422 `game_rule_refused`. Audit
+        logged.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [cardId]
+              properties:
+                cardId: { type: string }
+            example: { cardId: market-boost-1 }
+      responses:
+        '200':
+          description: The game after the action, with `result` describing what happened
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameView'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '409':
+          $ref: '#/components/responses/GameActionRefused'
+        '422':
+          $ref: '#/components/responses/GameActionRefused'
+  /game/decisions/roll:
+    post:
+      operationId: gameRollDecision
+      summary: Roll the die for a waiting card
+      description: >-
+        Rolls the die for a paid dice card, a kept Multi-Level-Marketing card's Payday roll or a stock split (doubles on 1-3, halves on 4-6) and settles it. `title` picks one when several wait; the first waits by default. `result` has the roll and whether it won. Game accounts only; requires `game:w`. The action must be one of the `legalActions` of `GET /game` (409
+        `game_action_not_allowed` otherwise); a refusal by the game's own rules is 422 `game_rule_refused`. Audit
+        logged.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title: { type: string }
+            example: { title: GOLD }
+      responses:
+        '200':
+          description: The game after the action, with `result` describing what happened
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameView'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '409':
+          $ref: '#/components/responses/GameActionRefused'
+        '422':
+          $ref: '#/components/responses/GameActionRefused'
   /mojo:
     get:
       operationId: getMojo
@@ -5212,6 +5285,8 @@ components:
               draw_card,
               buy_deal,
               pay_doodad,
+              play_market,
+              roll_decision,
             ]
         description: { type: string }
     GameView:

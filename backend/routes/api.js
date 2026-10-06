@@ -3620,6 +3620,16 @@ gameAction('/game/deals/buy', 'buy_deal', (body) => {
   }
   return { cardId: body.cardId, quantity: body.quantity };
 });
+gameAction('/game/market/play', 'play_market', (body) => {
+  if (typeof body.cardId !== 'string' || !body.cardId) throw new Error('cardId must be a string.');
+  return { cardId: body.cardId };
+});
+gameAction('/game/decisions/roll', 'roll_decision', (body) => {
+  if (body.title !== undefined && typeof body.title !== 'string') {
+    throw new Error('title must be a string.');
+  }
+  return { title: body.title };
+});
 gameAction('/game/doodads/pay', 'pay_doodad', (body) => {
   if (typeof body.cardId !== 'string' || !body.cardId) throw new Error('cardId must be a string.');
   return { cardId: body.cardId };

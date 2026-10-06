@@ -612,3 +612,60 @@ describe('a whole game played through the API', () => {
     expect(undone.body.turn.phase).not.toBe('over');
   }, 300000);
 });
+
+describe('Market cards and dice decisions', () => {
+  async function companionGame(suffix) {
+    const user = await registerGameUser(suffix);
+    await session('post', '/api/v1/game/start', user.token).send({
+      gameSetId: 'cashflow',
+      professionId: 'hausmeister',
+    });
+    return user;
+  }
+
+  it('plays every Market card of the Classic pile without error, with or without anything to apply it to', async () => {
+    if (!dbAvailable) return;
+    const user = await companionGame('_market_all');
+    const pile = await session('get', '/api/v1/game/cards?deck=market&limit=200', user.token);
+    expect(pile.body.total).toBeGreaterThan(5);
+    const kinds = new Set();
+    for (const card of pile.body.cards) {
+      const played = await session('post', '/api/v1/game/market/play', user.token).send({
+        cardId: card.id,
+      });
+      expect([card.id, played.status, played.body.detail]).toEqual([card.id, 200, undefined]);
+      kinds.add(played.body.result.kind);
+    }
+    expect(kinds.size).toBeGreaterThan(2);
+  }, 300000);
+
+  it('rolls the die for a stock split once the share is held, and the quantity follows', async () => {
+    if (!dbAvailable) return;
+    const user = await companionGame('_split');
+    const small = await session('get', '/api/v1/game/cards?deck=dealSmall&limit=200', user.token);
+    const stock = small.body.cards.find((card) => card.assetKind === 'share');
+    const bought = await session('post', '/api/v1/game/deals/buy', user.token).send({
+      cardId: stock.id,
+      quantity: 10,
+    });
+    expect(bought.status).toBe(200);
+
+    const market = await session('get', '/api/v1/game/cards?deck=market&limit=200', user.token);
+    const split = market.body.cards.find(
+      (card) => card.splits && card.splits.symbol === stock.symbol,
+    );
+    if (!split) return; // no split card for this stock in the pile
+    const played = await session('post', '/api/v1/game/market/play', user.token).send({
+      cardId: split.id,
+    });
+    expect(played.body.result.share).toBe(stock.symbol);
+    expect(played.body.legalActions.map((action) => action.action)).toContain('roll_decision');
+
+    const rolled = await session('post', '/api/v1/game/decisions/roll', user.token).send({});
+    expect(rolled.status).toBe(200);
+    expect(rolled.body.result).toMatchObject({ kind: 'split', roll: expect.any(Number) });
+    expect(rolled.body.legalActions.map((action) => action.action)).not.toContain('roll_decision');
+    const none = await session('post', '/api/v1/game/decisions/roll', user.token).send({});
+    expect(none.status).toBe(409);
+  });
+});

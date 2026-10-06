@@ -35,6 +35,19 @@ const {
   dealPlanText,
   doodadPaymentCategory,
   doodadPaymentTitle,
+  marketCardKind,
+  playMarketBuyerCard,
+  playShareSplitCard,
+  playBoostCard,
+  playMarketCostCard,
+  updateSharePrice,
+  buyerCardTypes,
+  propertyCardTypes,
+  businessCardLabels,
+  MARKET_COST_ACCOUNT,
+  openDecisions,
+  resolveGamble,
+  rollDie,
 } = require('@money/domain');
 const { getEncryptionSession } = require('../services/encryption-session');
 const { decryptSettings } = require('./settings-repository');
@@ -192,6 +205,10 @@ function playAction(action, input, { books, profession, deps, gameSets, gameSet 
       return buyDeal(books, input, deps, gameSet);
     case 'pay_doodad':
       return payDoodad(books, input, deps, gameSet);
+    case 'play_market':
+      return playMarket(books, input, deps, gameSet);
+    case 'roll_decision':
+      return rollDecision(books, input, deps);
     default:
       throw refuse('GAME_ACTION_UNKNOWN', `Unknown game action: ${action}`);
   }
@@ -257,6 +274,22 @@ function buyDeal(books, input, deps, gameSet) {
       'Special-asset cards (gold, loans, MLM) are not playable through the API yet.',
     );
   }
+  const symbol = card.symbol ?? card.title;
+  const holds = books.shares.some((share) => share.tag === symbol && share.quantity > 0);
+  if (card.assetKind === 'share' && holds) {
+    // The market moves the price of a share already held; planning it again would double the position.
+    const priced = updateSharePrice(
+      books,
+      card,
+      { description: deps.cards.textFor(card.id).description },
+      deps,
+    );
+    return {
+      effects: [priced.effects],
+      settle: true,
+      result: { card: describeCard(card, deps), title: priced.title, kind: 'priceUpdate' },
+    };
+  }
   const dealInput = dealInputFromCard(
     card,
     dealPlanText(card, cardTextDeps(deps)),
@@ -273,6 +306,120 @@ function buyDeal(books, input, deps, gameSet) {
     effects: [plan, ...executed.steps],
     settle: true,
     result: { card: describeCard(card, deps), title: dealInput.title, kind: executed.kind },
+  };
+}
+
+/** A Market or Doodad card's heading in the game's language (a star card is the jackpot of the pile). */
+function cardHeading(card, deps) {
+  const name = deps.cards.textFor(card.id).title ?? card.title;
+  return card.star ? `${name} ★` : name;
+}
+
+/** Plays a Market card the way its kind asks; a card that does not apply to the player is still played (a History step). */
+function playMarket(books, input, deps, gameSet) {
+  const card = findDeck(gameSet, 'market').find((candidate) => candidate.id === input.cardId);
+  if (!card) throw refuse('GAME_RULE_REFUSED', `No Market card with the id '${input.cardId}'.`);
+  const title = cardHeading(card, deps);
+  const label = (symbol) => deps.cards.symbolFor(symbol);
+  const kind = marketCardKind(card);
+  const described = describeCard(card, deps);
+  switch (kind) {
+    case 'buyer':
+    case 'gold': {
+      const played = playMarketBuyerCard(
+        books,
+        card,
+        { title, types: buyerCardTypes(card, label) },
+        deps,
+      );
+      return {
+        effects: [played.effects],
+        settle: true,
+        result: { card: described, kind, matched: played.matched },
+      };
+    }
+    case 'split': {
+      const played = playShareSplitCard(books, card, { title, labels: [card.splits.symbol] }, deps);
+      return {
+        effects: [played.effects],
+        settle: true,
+        result: {
+          card: described,
+          kind,
+          share: played.share ?? null,
+          decisionOpen: played.effects.decisionNeeded,
+        },
+      };
+    }
+    case 'boost': {
+      const played = playBoostCard(
+        books,
+        card,
+        {
+          title,
+          businessLabels: card.boost.onlyBusinesses ? businessCardLabels(label) : undefined,
+        },
+        deps,
+      );
+      return {
+        effects: [played.effects],
+        settle: true,
+        result: { card: described, kind, changed: played.changed },
+      };
+    }
+    case 'cost': {
+      const played = playMarketCostCard(books, card, { title, types: propertyCardTypes(label) });
+      if (!played.property) {
+        return {
+          effects: [played.effects],
+          settle: true,
+          result: { card: described, kind, property: null },
+        };
+      }
+      const flavor = (deps.cards.textFor(card.id).comment ?? '')
+        .split('{property}')
+        .join(played.property);
+      const effects = payCardExpense(
+        books,
+        {
+          kind: 'marketCost',
+          title,
+          flavor,
+          category: played.property,
+          costMinor: card.pays.costMinor,
+          account: MARKET_COST_ACCOUNT,
+        },
+        deps,
+      );
+      return {
+        effects,
+        settle: true,
+        result: {
+          card: described,
+          kind,
+          property: played.property,
+          costMinor: card.pays.costMinor,
+        },
+      };
+    }
+    default:
+      return { effects: [], settle: true, result: { card: described, kind } };
+  }
+}
+
+/** Rolls the die for a waiting card: a stock split doubles on 1-3, every other card wins on a high roll. */
+function rollDecision(books, input, deps) {
+  const waiting = openDecisions(books.state);
+  const deal = input.title
+    ? waiting.find((candidate) => candidate.title === input.title)
+    : waiting[0];
+  if (!deal) throw refuse('GAME_RULE_REFUSED', 'There is no dice decision waiting.');
+  const roll = rollDie(deps.rng);
+  const won = deal.split ? roll <= 3 : roll >= (deal.successOn ?? 6);
+  const settled = resolveGamble(books, deal.title, { won, roll }, deps);
+  return {
+    effects: [settled.effects],
+    result: { title: deal.title, kind: settled.kind, roll, won },
   };
 }
 
