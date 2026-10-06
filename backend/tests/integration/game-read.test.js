@@ -273,3 +273,91 @@ describe('POST /game/* - companion actions', () => {
     expect(notGame.body.code).toBe('not_a_game_account');
   });
 });
+
+describe('POST /game/start, /undo, /reset and GET /game/history', () => {
+  async function firstProfession(user) {
+    const sets = await session('get', '/api/v1/game/sets', user.token);
+    const gameSet = sets.body.sets.find((candidate) => candidate.professions.length > 0);
+    return { gameSetId: gameSet.id, professionId: gameSet.professions[0].id };
+  }
+
+  it('starts a game with its subscriptions, and refuses a second start', async () => {
+    if (!dbAvailable) return;
+    const user = await registerGameUser('_start');
+    const pick = await firstProfession(user);
+    const started = await session('post', '/api/v1/game/start', user.token).send(pick);
+    expect(started.status).toBe(200);
+    expect(started.body).toMatchObject({ active: true, mode: 'companion', round: 0 });
+    expect(started.body.finances.salaryMinor).toBeGreaterThan(0);
+
+    const subscriptions = await session('get', '/api/v1/subscriptions', user.token);
+    expect(subscriptions.body.subscriptions.length).toBeGreaterThan(1);
+
+    const again = await session('post', '/api/v1/game/start', user.token).send(pick);
+    expect(again.status).toBe(409);
+    expect(again.body.code).toBe('game_action_not_allowed');
+
+    const bad = await session('post', '/api/v1/game/start', user.token).send({ gameSetId: 'x' });
+    expect(bad.status).toBe(400);
+  });
+
+  it('starts a solo game on the board at START', async () => {
+    if (!dbAvailable) return;
+    const user = await registerGameUser('_startsolo');
+    const pick = await firstProfession(user);
+    const started = await session('post', '/api/v1/game/start', user.token).send({
+      ...pick,
+      mode: 'solo',
+    });
+    expect(started.body).toMatchObject({
+      mode: 'solo',
+      position: { index: null },
+      turn: { phase: 'roll', count: 0 },
+    });
+    expect(started.body.legalActions.map((action) => action.action)).toContain('roll');
+  });
+
+  it('keeps a history of the steps and undoes them back to the start', async () => {
+    if (!dbAvailable) return;
+    const user = await registerGameUser('_undo');
+    const pick = await firstProfession(user);
+    await session('post', '/api/v1/game/start', user.token).send(pick);
+    const payday = await session('post', '/api/v1/game/payday', user.token).send({});
+    expect(payday.body.round).toBe(1);
+    expect(payday.body.legalActions.map((action) => action.action)).toContain('undo');
+
+    const history = await session('get', '/api/v1/game/history', user.token);
+    expect(history.body.steps.map((step) => step.kind)).toEqual(['start', 'payday']);
+
+    const undone = await session('post', '/api/v1/game/undo', user.token).send({});
+    expect(undone.status).toBe(200);
+    expect(undone.body.round).toBe(0);
+    const transactions = await session('get', '/api/v1/transactions', user.token);
+    expect(transactions.body.transactions).toHaveLength(1); // the starting savings only
+
+    const back = await session('post', '/api/v1/game/undo', user.token).send({});
+    expect(back.body.active).toBe(false);
+
+    const nothing = await session('post', '/api/v1/game/undo', user.token).send({});
+    expect(nothing.status).toBe(409); // no game, nothing to undo
+  });
+
+  it('resets only with a confirmation, and leaves no game and no history', async () => {
+    if (!dbAvailable) return;
+    const user = await registerGameUser('_reset');
+    const pick = await firstProfession(user);
+    await session('post', '/api/v1/game/start', user.token).send(pick);
+    await session('post', '/api/v1/game/payday', user.token).send({});
+
+    const unconfirmed = await session('post', '/api/v1/game/reset', user.token).send({});
+    expect(unconfirmed.status).toBe(400);
+
+    const reset = await session('post', '/api/v1/game/reset', user.token).send({ confirm: true });
+    expect(reset.status).toBe(200);
+    expect(reset.body.active).toBe(false);
+    const transactions = await session('get', '/api/v1/transactions', user.token);
+    expect(transactions.body.transactions).toHaveLength(0);
+    const history = await session('get', '/api/v1/game/history', user.token);
+    expect(history.body.steps).toEqual([]);
+  });
+});

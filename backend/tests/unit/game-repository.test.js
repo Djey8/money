@@ -1,12 +1,8 @@
 'use strict';
 
 const { EncryptionSession } = require('@money/domain');
-const {
-  getGame,
-  listGameSets,
-  getGameSet,
-  decodeGameState,
-} = require('../../repositories/game-repository');
+const { getGame, listGameSets, getGameSet } = require('../../repositories/game-repository');
+const { decodeGameState } = require('../../services/game-state-codec');
 
 const plainState = {
   gameSetId: 'placeholder',

@@ -41,11 +41,11 @@ const {
 const { getMojoStatus, updateMojoTarget } = require('../repositories/mojo-repository');
 const {
   getGame,
+  getGameHistory,
   listGameSets,
   getGameSet,
-  playGameAction,
-  GameActionError,
 } = require('../repositories/game-repository');
+const { playGameAction, GameActionError } = require('../repositories/game-play');
 const { isGameAccountEmail } = require('../services/game-account');
 const {
   settleBucket,
@@ -3503,6 +3503,16 @@ router.get('/game', requireScope('game:r'), requireGameAccount, async (req, res,
   }
 });
 
+router.get('/game/history', requireScope('game:r'), requireGameAccount, async (req, res, next) => {
+  try {
+    return res.json(
+      await getGameHistory({ usersDb: getUsersDb(), authDb: getAuthDb() }, req.userId),
+    );
+  } catch (error) {
+    return next(error);
+  }
+});
+
 router.get('/game/sets', requireScope('game:r'), requireGameAccount, (req, res, next) => {
   try {
     return res.json({ sets: listGameSets() });
@@ -3565,6 +3575,28 @@ function gameAction(path, action, readInput) {
   });
 }
 
+gameAction('/game/start', 'start', (body) => {
+  const { gameSetId, professionId, mode } = body;
+  if (typeof gameSetId !== 'string' || typeof professionId !== 'string') {
+    throw new Error('gameSetId and professionId must be strings.');
+  }
+  if (mode !== undefined && mode !== 'companion' && mode !== 'solo') {
+    throw new Error("mode must be 'companion' or 'solo'.");
+  }
+  return { gameSetId, professionId, mode };
+});
+gameAction('/game/undo', 'undo', (body) => {
+  if (body.count !== undefined && (!Number.isInteger(body.count) || body.count < 1)) {
+    throw new Error('count must be a positive integer.');
+  }
+  return { count: body.count };
+});
+gameAction('/game/reset', 'reset', (body) => {
+  if (body.confirm !== true) {
+    throw new Error('Resetting wipes the whole game: send { "confirm": true }.');
+  }
+  return {};
+});
 gameAction('/game/payday', 'payday');
 gameAction('/game/baby', 'baby');
 gameAction('/game/charity', 'charity');

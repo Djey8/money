@@ -12,6 +12,9 @@ const {
   encryptSubscription,
 } = require('../repositories/subscription-repository');
 const { decryptLiability, encryptLiability } = require('../repositories/liability-repository');
+const { decryptShare, encryptShare } = require('../repositories/share-repository');
+const { decryptInvestment, encryptInvestment } = require('../repositories/investment-repository');
+const { decryptAsset, encryptAsset } = require('../repositories/asset-repository');
 const { decryptGrow, encryptGrow } = require('../repositories/grow-repository');
 const { applyDerivedState } = require('./transaction-derived-state');
 const { encodeGameState } = require('./game-state-codec');
@@ -20,8 +23,8 @@ const { encodeGameState } = require('./game-state-codec');
  * The server's side of `GameEffects` (todo/cashflow-game-pro.md, slice D2): reads an account's stored data into the
  * minor-unit books the game rules take, and writes the effects a rule returns back into the stored document - the same
  * decisions the Angular service applies to its own entities (`applyGameEffects`), stored the way the browser stores them.
- * Effects this does not apply yet throw instead of being dropped, so a rule that grows a new kind of effect cannot lose
- * changes quietly.
+ * Grow updates beyond a project's notes, and creating Grow projects, throw instead of being dropped (they arrive with the
+ * deal slice), so a rule that grows a new kind of effect cannot lose changes quietly.
  */
 
 const toMinor = (value, schemaVersion) => {
@@ -169,6 +172,33 @@ function upsertLiability(rawLiabilities, upsert, session, schemaVersion) {
   );
 }
 
+/**
+ * Creates or replaces one entry of a balance-sheet list, matched by tag; an existing entry keeps its id.
+ * `decode`/`encode` are the entity repository's own, `fresh` builds the entry from the rule's description.
+ */
+function upsertByTag(rawList, tag, { prefix, decode, encode, build }, session, schemaVersion) {
+  const index = rawList.findIndex((raw) => decryptValue(raw.tag, session) === tag);
+  const existing = index === -1 ? null : decode(rawList[index], session, schemaVersion);
+  const entry = {
+    ...(existing ?? {}),
+    ...build(existing),
+    id: existing?.id ?? `${prefix}_${crypto.randomUUID()}`,
+  };
+  const encoded = encode(entry, session, schemaVersion);
+  return index === -1
+    ? [...rawList, encoded]
+    : rawList.map((raw, i) => (i === index ? encoded : raw));
+}
+
+const SHARES = { prefix: 'shares', decode: decryptShare, encode: encryptShare };
+const INVESTMENTS = { prefix: 'investments', decode: decryptInvestment, encode: encryptInvestment };
+const ASSETS = { prefix: 'assets', decode: decryptAsset, encode: encryptAsset };
+
+function removeByTag(rawList, tags, session) {
+  const removed = new Set(tags);
+  return rawList.filter((raw) => !removed.has(decryptValue(raw.tag, session)));
+}
+
 function applyGrowUpdates(rawGrow, updates, session, schemaVersion, nowIso) {
   let result = rawGrow;
   for (const update of updates) {
@@ -198,18 +228,6 @@ function applyGrowUpdates(rawGrow, updates, session, schemaVersion, nowIso) {
  * @returns the new `data`
  */
 function applyEffectsToData(data, effects, { session, nowIso }) {
-  const unsupported = [
-    ['sharePrices', effects.sharePrices],
-    ['shareUpserts', effects.shareUpserts],
-    ['investmentUpserts', effects.investmentUpserts],
-    ['assetUpserts', effects.assetUpserts],
-    ['assetRemovals', effects.assetRemovals],
-  ].filter(([, entries]) => entries.length > 0);
-  if (unsupported.length > 0) {
-    throw new Error(
-      `Effects not supported by the API yet: ${unsupported.map(([n]) => n).join(', ')}`,
-    );
-  }
   if (effects.growUpdates.some((update) => update.create)) {
     throw new Error('Creating Grow projects is not supported by the API yet');
   }
@@ -238,7 +256,69 @@ function applyEffectsToData(data, effects, { session, nowIso }) {
     const removed = new Set(effects.liabilityRemovals);
     rawLiabilities = rawLiabilities.filter((raw) => !removed.has(decryptValue(raw.tag, session)));
   }
-  next.balance = { ...next.balance, liabilities: rawLiabilities };
+  const rawAsset = next.balance?.asset || {};
+  let rawShares = list(rawAsset.shares);
+  for (const { tag, priceMinor } of effects.sharePrices) {
+    if (rawShares.some((raw) => decryptValue(raw.tag, session) === tag)) {
+      rawShares = upsertByTag(
+        rawShares,
+        tag,
+        { ...SHARES, build: () => ({ priceMinor }) },
+        session,
+        schemaVersion,
+      );
+    }
+  }
+  for (const upsert of effects.shareUpserts) {
+    rawShares = upsertByTag(
+      rawShares,
+      upsert.tag,
+      {
+        ...SHARES,
+        build: () => ({
+          tag: upsert.tag,
+          quantity: upsert.quantity,
+          priceMinor: upsert.priceMinor,
+        }),
+      },
+      session,
+      schemaVersion,
+    );
+  }
+  let rawInvestments = list(rawAsset.investments);
+  for (const upsert of effects.investmentUpserts) {
+    rawInvestments = upsertByTag(
+      rawInvestments,
+      upsert.tag,
+      {
+        ...INVESTMENTS,
+        build: () => ({
+          tag: upsert.tag,
+          depositMinor: upsert.depositMinor,
+          amountMinor: upsert.amountMinor,
+        }),
+      },
+      session,
+      schemaVersion,
+    );
+  }
+  let rawAssets = list(rawAsset.assets);
+  for (const upsert of effects.assetUpserts) {
+    rawAssets = upsertByTag(
+      rawAssets,
+      upsert.tag,
+      { ...ASSETS, build: () => ({ tag: upsert.tag, amountMinor: upsert.amountMinor }) },
+      session,
+      schemaVersion,
+    );
+  }
+  if (effects.assetRemovals.length > 0)
+    rawAssets = removeByTag(rawAssets, effects.assetRemovals, session);
+  next.balance = {
+    ...next.balance,
+    liabilities: rawLiabilities,
+    asset: { ...rawAsset, shares: rawShares, investments: rawInvestments, assets: rawAssets },
+  };
 
   if (effects.growUpdates.length > 0) {
     next.grow = applyGrowUpdates(

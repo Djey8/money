@@ -1097,6 +1097,155 @@ paths:
           $ref: '#/components/responses/GameActionRefused'
         '422':
           $ref: '#/components/responses/GameActionRefused'
+  /game/start:
+    post:
+      operationId: gameStart
+      summary: Start a game
+      description: >-
+        Picks a profession and starts the game: the starting savings are booked, the profession's subscriptions and starting positions (assets, investments, shares, liabilities) are created in the account's language, and a new history begins (companion game: the next step is `payday`; solo game: `roll`). Only when no game is running. Game accounts only; requires `game:w`. The action must be one of the `legalActions` of `GET /game` (409
+        `game_action_not_allowed` otherwise); a refusal by the game's own rules is 422 `game_rule_refused`. Returns the
+        game as `GET /game` shows it afterwards. Audit logged.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [gameSetId, professionId]
+              properties:
+                gameSetId: { type: string }
+                professionId: { type: string }
+                mode: { type: string, enum: [companion, solo], default: companion }
+            example: { gameSetId: cashflow, professionId: nurse, mode: solo }
+      responses:
+        '200':
+          description: The game after the action
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameView'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '409':
+          $ref: '#/components/responses/GameActionRefused'
+        '422':
+          $ref: '#/components/responses/GameActionRefused'
+  /game/undo:
+    post:
+      operationId: gameUndo
+      summary: Undo steps
+      description: >-
+        Takes back the newest step, or the newest `count` steps in one go: the account is exactly as it was before the oldest of them ran. Works across what the app played too, because both share one history. 422 when there is nothing to undo. Game accounts only; requires `game:w`. The action must be one of the `legalActions` of `GET /game` (409
+        `game_action_not_allowed` otherwise); a refusal by the game's own rules is 422 `game_rule_refused`. Returns the
+        game as `GET /game` shows it afterwards. Audit logged.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                count: { type: integer, minimum: 1, default: 1 }
+            example: { count: 1 }
+      responses:
+        '200':
+          description: The game after the action
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameView'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '409':
+          $ref: '#/components/responses/GameActionRefused'
+        '422':
+          $ref: '#/components/responses/GameActionRefused'
+  /game/reset:
+    post:
+      operationId: gameReset
+      summary: Reset the game (destructive)
+      description: >-
+        Wipes every transaction, subscription, Grow project, share, investment, asset, liability, Smile / Fire project and the Mojo, the game state and its history, back to a blank account. Not undoable. Requires `confirm: true`. Never call this without the user having confirmed. Game accounts only; requires `game:w`. The action must be one of the `legalActions` of `GET /game` (409
+        `game_action_not_allowed` otherwise); a refusal by the game's own rules is 422 `game_rule_refused`. Returns the
+        game as `GET /game` shows it afterwards. Audit logged.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [confirm]
+              properties:
+                confirm: { type: boolean, enum: [true] }
+            example: { confirm: true }
+      responses:
+        '200':
+          description: The game after the action
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameView'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '409':
+          $ref: '#/components/responses/GameActionRefused'
+        '422':
+          $ref: '#/components/responses/GameActionRefused'
+  /game/history:
+    get:
+      operationId: getGameHistory
+      summary: What happened in the running game
+      description: >-
+        Game accounts only; requires `game:r`. The plain-text step log of the running game, oldest step first - one entry
+        per undoable step, the same list the app's History shows. Written with every step, by the app or the API.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The log
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [updatedAt, steps]
+                properties:
+                  updatedAt: { type: string, nullable: true }
+                  steps:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        number: { type: integer }
+                        kind: { type: string }
+                        detail: { type: string }
+                        at: { type: string }
+              example:
+                updatedAt: '2026-10-06T10:00:01.000Z'
+                steps:
+                  - { number: 1, kind: start, detail: Nurse, at: '2026-10-06T10:00:00.000Z' }
+                  - { number: 2, kind: payday, detail: Round 1, at: '2026-10-06T10:01:00.000Z' }
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
   /mojo:
     get:
       operationId: getMojo
@@ -4836,6 +4985,7 @@ components:
               downsized,
               clear_status,
               bank_loan,
+              undo,
               reset,
             ]
         description: { type: string }
