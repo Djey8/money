@@ -22,7 +22,7 @@ describe('legalActions', () => {
       mode: 'solo',
       turn: { phase: 'decide', count: 3, pending: { kind: 'deal', spaceIndex: 2 } },
     });
-    expect(ids(state)).toEqual(['pass_card', 'bank_loan', 'reset']);
+    expect(ids(state)).toEqual(['draw_card', 'buy_deal', 'pass_card', 'bank_loan', 'reset']);
   });
 
   it('offers nothing but a reset once a solo game is over', () => {
@@ -42,6 +42,9 @@ describe('legalActions', () => {
 
   it('offers the player-reported spaces in a companion game', () => {
     expect(ids(started({}))).toEqual([
+      'draw_card',
+      'buy_deal',
+      'pay_doodad',
       'payday',
       'baby',
       'charity',

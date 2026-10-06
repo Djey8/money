@@ -12,6 +12,9 @@ export type LegalActionId =
   | 'start'
   | 'roll'
   | 'pass_card'
+  | 'draw_card'
+  | 'buy_deal'
+  | 'pay_doodad'
   | 'payday'
   | 'baby'
   | 'charity'
@@ -24,6 +27,32 @@ export type LegalActionId =
 export interface LegalAction {
   action: LegalActionId;
   description: string;
+}
+
+/** What may be done with a card: draw one, and deal with it the way its pile asks. `kind` is the pending pile (any in a companion game). */
+function cardActions(kind: 'deal' | 'market' | 'doodad' | undefined): LegalAction[] {
+  const actions: LegalAction[] = [
+    {
+      action: 'draw_card',
+      description: kind
+        ? `Draw a random ${kind} card.`
+        : 'Draw a random card from a pile (dealSmall, dealBig, market or doodad).',
+    },
+  ];
+  if (!kind || kind === 'deal') {
+    actions.push({
+      action: 'buy_deal',
+      description: 'Plan and buy a Deal card (a share or a property) by its card id.',
+    });
+  }
+  if (!kind || kind === 'doodad') {
+    actions.push({
+      action: 'pay_doodad',
+      description:
+        'Pay a Doodad card by its card id (the Bank loan is taken first when cash is short).',
+    });
+  }
+  return actions;
 }
 
 export function legalActions(
@@ -43,6 +72,7 @@ export function legalActions(
     }
     if (!whyCannotSettle(state)) {
       const pending = currentTurn(state).pending;
+      actions.push(...cardActions(pending?.kind));
       actions.push({
         action: 'pass_card',
         description: `Leave the ${pending?.kind ?? 'card'} on this space without playing it; the next roll is open afterwards.`,
@@ -50,6 +80,7 @@ export function legalActions(
     }
   } else {
     actions.push(
+      ...cardActions(undefined),
       { action: 'payday', description: 'Run a Payday: salary in, monthly expenses out.' },
       { action: 'baby', description: 'A child is born: raises the monthly expenses.' },
       { action: 'charity', description: 'Donate; roll one or two dice for the next 3 turns.' },
