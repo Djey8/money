@@ -19,17 +19,20 @@ in light and dark, with a cashflow account on the self-hosted edition. Tick what
 ## Rolling
 
 - [ ] Roll: the dice tumble (slowly enough to see) and then rest on their number; a beat later the token walks space by
-      space; it rests on its landing before anything else appears; Skip jumps ahead.
+      space; the moment the totem is on its tile the dialog or the action appears (no extra wait); Skip jumps ahead.
 - [ ] Coming back to the dashboard (from a card, or after a reload) shows the dice still on the last number - no replay.
 - [ ] **The very first roll pays your first Payday** (savings plus one Payday), whatever you roll.
 - [ ] A Payday (passed, landed on, or the opening one) shows a compact info box at the top of the dashboard (like the
       "card does not apply" notice, with an X) with income, expenses and the monthly result - each amount with one sign - and it goes with your next action (any tap) or the X.
 - [ ] A market card's "does not apply" notice goes the same way, with the next action.
+- [ ] With a kept MLM card, a Payday shows its box, **stays while you press the MLM roll**, and the outcome (the bonus, or
+      not) appears as a second info box next to it; the next action clears both.
 - [ ] The dice are thrown (bounce and turn), the faces slow down, they land with one pop and then rest still.
 - [ ] A first roll of 1 lands on the Deals space next to START; a 6 lands on the first Payday.
 - [ ] Passing a Payday pays it (round goes up, Payday lines appear in Transactions); landing on one pays it once.
 - [ ] Landing on Downsized (or Charity) with too little cash takes the Bank loan first, then pays - the balance is never
       negative, and a message says what was borrowed.
+- [ ] Under Charity **two dice are selected by default**; switching to one dice works; a later Charity space selects two again.
 - [ ] Baby adds a child (a fourth Baby space does nothing); Charity donates and offers 1 or 2 dice for 3 turns, then
       back to one die; Downsized pays the expenses and the spanner goes at the next roll.
 - [ ] With "reduce motion" on, the token jumps instead of walking.
@@ -39,7 +42,10 @@ in light and dark, with a cashflow account on the self-hosted edition. Tick what
 - [ ] Landing on Deals shows "You landed on Deals" with Open the card / Done / Pass - the card does **not** open by
       itself; Open the card asks for the Small or Big pile, then the usual find-or-draw flow; Doodad and Market open theirs.
 - [ ] "Sell to a friend" is offered on property and asset cards, **not on share cards**.
-- [ ] START is above the ring with a small line to the first tile, and is gone once the token has moved.
+- [ ] Before the first roll the totem waits outside the ring at the top middle with "START" below it (no line); with
+      the first roll it moves inside the ring and goes round the tiles, and "START" is gone.
+- [ ] The card screens (Deals pile choice, and the Deal / Doodad / Market card lists) show the tile symbol with its
+      coloured border in the heading, so you see which deck you are in.
 - [ ] While the card is open the Roll button is gone; "Open the card" reopens it after closing it; "Done" and "Pass"
       reopen the roll.
 - [ ] Undo after Pass brings the card back; Undo after a roll takes back the move, the Paydays and the landing together.
@@ -61,7 +67,12 @@ in light and dark, with a cashflow account on the self-hosted edition. Tick what
 First playtest (2026-10-06), handled in the next build - please re-check:
 
 - Board stays always open in solo mode (kept as it was).
-- A roll of 1 showed the Deals card at once, confusing -> the token now rests on its landing and a dialog waits for you.
+- A roll of 1 showed the Deals card at once, confusing -> a dialog waits for you; the card opens on request. (No extra
+  wait on the landing: the dialog comes the moment the totem is placed.)
+- START: no line; the totem waits outside the ring, top middle, "Start" below it, and moves inside with the first roll.
+- Card screens show the tile symbol of their deck.
+- MLM: the Payday box stays through the MLM roll and the outcome is a second info box.
+- Charity: two dice are selected by default (change to one if wanted).
 - START overlapped the ring -> now above it with a line to the first tile, gone after the first move.
 - The first roll starts the game: first Payday + savings.
 - The dice animation was unreliable and too fast, and replayed whenever the dice came back into view -> slower tumble

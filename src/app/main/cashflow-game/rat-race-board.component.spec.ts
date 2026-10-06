@@ -29,17 +29,30 @@ describe('RatRaceBoardComponent', () => {
     expect(element.querySelector('.rr-start-text')?.textContent).toBe('START');
   });
 
-  it('shows START above the ring with a line to the first tile, and drops it once the token has moved', () => {
+  it('before the first roll the totem waits outside the ring, top middle, with START written below it; no line', () => {
     fixture.componentRef.setInput('position', null);
     fixture.detectChanges();
-    const text = element.querySelector('.rr-start-text')!;
-    expect(Number(text.getAttribute('y'))).toBeLessThan(0); // above the ring, not on it
-    expect(element.querySelector('.rr-start-line')).not.toBeNull();
+    const transform = element.querySelector('.rr-token')!.getAttribute('transform')!;
+    const [x, y] = transform.match(/-?\d+(\.\d+)?/g)!.map(Number);
+    expect(x).toBe(200); // middle
+    expect(y).toBeLessThan(0); // above the ring, outside the rat race
+    const label = element.querySelector('.rr-start-text')!;
+    expect(label.textContent).toBe('START');
+    expect(Number(label.getAttribute('y'))).toBeGreaterThan(y); // below the totem
+    expect(Number(label.getAttribute('y'))).toBeLessThan(0); // and still above the ring
+    expect(element.querySelector('.rr-start-line')).toBeNull();
+  });
 
+  it('with the first roll the totem is inside the ring and START is gone', () => {
     fixture.componentRef.setInput('position', 0);
     fixture.detectChanges();
+    const [, y] = element
+      .querySelector('.rr-token')!
+      .getAttribute('transform')!
+      .match(/-?\d+(\.\d+)?/g)!
+      .map(Number);
+    expect(y).toBeGreaterThan(0); // inside the circle now
     expect(element.querySelector('.rr-start-text')).toBeNull();
-    expect(element.querySelector('.rr-start-line')).toBeNull();
   });
 
   it('names every space for assistive technology', () => {

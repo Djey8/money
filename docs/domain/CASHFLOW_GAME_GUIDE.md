@@ -109,22 +109,26 @@ When a game starts, next to the language you choose **how to play**: _with the p
 game. The board is the German "Cashflow - Verlasse das Hamsterrad!" rat race, drawn as a ring of 24 spaces (12 Deals,
 3 Doodad, 3 Payday, 3 Market, one each of Charity, Downsized and Baby).
 
-- **Start.** The token starts at START, just before the first space: a first roll of _n_ lands on space _n_ (the
+- **Start.** Before the first roll the totem waits outside the rat race, top middle, with "Start" written below it;
+  with the first roll it moves inside the ring and goes round the tiles. The token starts at START, just before the first space: a first roll of _n_ lands on space _n_ (the
   Deals space next to START for a 1). **The first roll starts the game officially**: it also pays your first Payday,
   so you have your savings plus one Payday before the token has moved.
 - **A turn is one roll, and it reveals itself in order.** The dice tumble and come to rest on their number (the faces
-  you see are the engine's result - the tumble never decides anything), the token walks space by space, it rests on the
-  space it landed on, and only then does the landing speak. Press **Skip** to jump ahead; with "reduce motion" set the
+  you see are the engine's result - the tumble never decides anything), the token walks space by space, and the moment
+  the totem is on its tile the landing speaks (no extra wait). Press **Skip** to jump ahead; with "reduce motion" set the
   token jumps by itself. The dice are thrown with a bounce, the faces slow down, they land with one small pop and then stay still on the number.
 - **Payday** pays whenever you **land on or pass** a Payday space, once per Payday space. It also advances the game's
   calendar one month, as in the companion. An info box at the top of the dashboard, like the "card does not apply" notice, shows what
   it paid (income, expenses, the monthly result); it goes with the next thing you do or with its X - the info boxes of
   the game vanish that way.
+- **A kept Multi-Level-Marketing card** gets its bonus roll at the Payday - the same game turn. The Payday info box stays
+  while you press the MLM roll, and the outcome (the bonus paid, or not) appears as a second info box next to it; your
+  next action clears both.
 - **Baby, Charity, Downsized** resolve on the spot (a Baby space with three children changes nothing). **Charity and
   Downsized pay cash, and the balance never goes negative:** when cash is short, the Bank loan is taken first (the
   shortfall rounded up to the loan step, as its own step in the history) and then the payment is made - in solo and with
   the physical board alike. **Charity**
-  donates 10 % of your income, then for the next **3 turns** you may choose **1 or 2 dice** before each roll.
+  donates 10 % of your income, then for the next **3 turns** you may choose **1 or 2 dice** before each roll - **two dice are selected by default**, switch to one if you prefer.
   **Downsized** pays your expenses; the spanner is only a reminder (playing alone nobody takes a turn in between, so
   nothing is skipped) and your **next roll removes it**.
 - **Deals, Doodad, Market** show a dialog first ("You landed on Deals"). **Open the card** starts the card flow you

@@ -509,6 +509,25 @@
             ✕
           </button>
         </div>
+        <!-- The bonus roll of a kept Multi-Level-Marketing card: same game turn as the Payday above, so both show. -->
+        <div
+          class="cf-card cf-notice cf-notice--mlm"
+          [class.cf-notice--won]="mlmBanner.won"
+          *ngIf="mlmBanner"
+          role="status"
+        >
+          <span class="cf-payday-note">
+            <strong>🎲 {{ mlmBanner.text }}</strong>
+          </span>
+          <button
+            type="button"
+            class="cf-friend-sale-close"
+            [attr.aria-label]="'CashflowGame.cardDismiss' | translate"
+            (click)="mlmBanner = null"
+          >
+            ✕
+          </button>
+        </div>
         <!-- A market card that does not apply to the player. -->
         <div class="cf-card cf-notice" *ngIf="marketNotice" role="status">
           <span>{{ marketNotice }}</span>
@@ -1028,7 +1047,10 @@
         <button class="cf-back-btn" (click)="backToMain()">
           ‹ {{ 'CashflowGame.back' | translate }}
         </button>
-        <h3>{{ 'CashflowGame.spaceDeals' | translate }}</h3>
+        <h3>
+          <span class="cf-tile cf-tile--deal" aria-hidden="true">{{ tileGlyph('deal') }}</span>
+          {{ 'CashflowGame.spaceDeals' | translate }}
+        </h3>
         <div class="cf-actions">
           <button class="btn btn--primary" (click)="chooseDealPile('dealSmall')">
             {{ 'CashflowGame.deckDealSmall' | translate }}
@@ -1183,7 +1205,12 @@
         <button class="cf-back-btn" (click)="backToMain()">
           ‹ {{ 'CashflowGame.back' | translate }}
         </button>
-        <h3>{{ 'CashflowGame.cards' | translate }}: {{ activeDeckLabel }}</h3>
+        <h3>
+          <span class="cf-tile" [ngClass]="'cf-tile--' + activeTileKind" aria-hidden="true">{{
+            tileGlyph(activeTileKind)
+          }}</span>
+          {{ 'CashflowGame.cards' | translate }}: {{ activeDeckLabel }}
+        </h3>
 
         <div class="cf-actions">
           <button class="btn btn--primary" [disabled]="isBusy" (click)="drawActiveCard()">

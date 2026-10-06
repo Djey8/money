@@ -4,7 +4,6 @@ import { TranslateModule } from '@ngx-translate/core';
 import {
   CLASSIC_RAT_RACE_BOARD,
   spaceAngle,
-  startAngle,
   type RatRaceBoard,
   type RatRaceSpaceKind,
 } from '@money/domain';
@@ -24,7 +23,7 @@ const CENTER = SIZE / 2;
 const RING = 150;
 const TOKEN_RING = 112;
 /** Room above the ring for the START label. */
-const TOP_MARGIN = 28;
+const TOP_MARGIN = 58;
 const CELL = 38;
 
 /** What each space is called, in the game's own translations - the same words the "landed on" buttons use. */
@@ -38,7 +37,8 @@ const LABEL_KEYS: Record<RatRaceSpaceKind, string> = {
   baby: 'CashflowGame.baby',
 };
 
-const GLYPHS: Record<RatRaceSpaceKind, string> = {
+/** The symbol each kind of space wears - on the ring, and on the card screens that go with it. */
+export const SPACE_GLYPHS: Record<RatRaceSpaceKind, string> = {
   deal: '$',
   doodad: '🛍',
   market: '📈',
@@ -85,16 +85,9 @@ function onCircle(degrees: number, radius: number): { x: number; y: number } {
         />
         <text [attr.x]="cell.x" [attr.y]="cell.y" class="rr-glyph">{{ cell.glyph }}</text>
       </g>
-      <!-- START sits above the ring with a small line to the first tile, and goes once the token has moved. -->
+      <!-- Before the first roll the totem waits outside the rat race, above the ring, with "START" below it. -->
       <g class="rr-start" *ngIf="position === null">
-        <text [attr.x]="center" [attr.y]="-14" class="rr-start-text">START</text>
-        <line
-          class="rr-start-line"
-          [attr.x1]="center + 6"
-          [attr.y1]="-6"
-          [attr.x2]="firstTile.x - 2"
-          [attr.y2]="firstTile.y - cellSize / 2 - 1"
-        />
+        <text [attr.x]="center" [attr.y]="startLabelY" class="rr-start-text">START</text>
       </g>
       <g
         class="rr-token"
@@ -171,11 +164,6 @@ function onCircle(degrees: number, radius: number): { x: number; y: number } {
         dominant-baseline: central;
         fill: var(--color-text-secondary, #666);
       }
-      .rr-start-line {
-        stroke: var(--color-text-secondary, #666);
-        stroke-width: 2;
-        stroke-linecap: round;
-      }
       .rr-token {
         transition: transform 0.25s ease-in-out;
       }
@@ -211,21 +199,24 @@ export class RatRaceBoardComponent {
     return this.board.map((space) => ({
       index: space.index,
       kind: space.kind,
-      glyph: GLYPHS[space.kind],
+      glyph: SPACE_GLYPHS[space.kind],
       labelKey: LABEL_KEYS[space.kind],
       ...onCircle(spaceAngle(this.board, space.index), RING),
     }));
   }
 
-  /** Where the first tile (space 0) sits - the START line points at it. */
-  get firstTile(): { x: number; y: number } {
-    return onCircle(spaceAngle(this.board, 0), RING);
+  /** Where "START" is written: between the waiting totem and the ring. */
+  get startLabelY(): number {
+    return -TOP_MARGIN + 46;
   }
 
-  /** The token rides the inner circle, in line with the space it stands on. */
+  /**
+   * Before the first roll the totem stands outside the rat race, top middle; from the first roll it is inside, riding
+   * the inner circle in line with the space it stands on.
+   */
   get token(): { x: number; y: number } {
-    const degrees = this.position === null ? startAngle() : spaceAngle(this.board, this.position);
-    return onCircle(degrees, TOKEN_RING);
+    if (this.position === null) return { x: CENTER, y: -TOP_MARGIN + 20 };
+    return onCircle(spaceAngle(this.board, this.position), TOKEN_RING);
   }
 
   get ariaLabel(): string {

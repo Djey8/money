@@ -1449,3 +1449,45 @@
     animation: none;
   }
 }
+
+/* The symbol of a space's tile, with its border: the same colours as the ring cell and the "landed on" buttons. */
+.cf-tile {
+  display: inline-grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  margin-right: 8px;
+  border: 2px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1;
+  vertical-align: middle;
+}
+
+.cf-tile--deal {
+  border-color: var(--color-success);
+  color: var(--color-success);
+  background-color: var(--color-success-bg, rgba(76, 175, 80, 0.15));
+}
+
+.cf-tile--doodad {
+  border-color: var(--color-danger);
+  background-color: var(--color-danger-bg, rgba(211, 47, 47, 0.15));
+}
+
+.cf-tile--market {
+  border-color: var(--color-info);
+  background-color: var(--color-info-surface, rgba(0, 123, 255, 0.15));
+}
+
+/* The MLM bonus roll's outcome: green when it paid, neutral when it did not. */
+.cf-notice--mlm {
+  font-size: 0.9rem;
+  border-left-color: var(--color-border);
+}
+
+.cf-notice--won {
+  border-left-color: var(--color-success);
+}

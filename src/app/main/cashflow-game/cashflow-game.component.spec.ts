@@ -2200,6 +2200,40 @@ describe('CashflowGameComponent solo mode (JFK, 2026-10-05)', () => {
     expect(component.paydayBanner).toBeNull();
   });
 
+  it('under Charity two dice are the default and the player may change to one; landing on Charity selects two again', async () => {
+    const first = soloComponent();
+    setSoloState({ charityRoundsLeft: 3 });
+    expect(first.component.diceChoice).toBe(2); // nothing touched: two dice
+    first.rollTurn.mockReturnValue(null);
+    first.component.rollSolo();
+    expect(first.rollTurn.mock.calls[0][0]).toBe(2);
+
+    const changed = soloComponent();
+    setSoloState({ charityRoundsLeft: 2 });
+    changed.component.diceChoice = 1; // the player's own choice is respected
+    changed.rollTurn.mockReturnValue(null);
+    changed.component.rollSolo();
+    expect(changed.rollTurn.mock.calls[0][0]).toBe(1);
+
+    // a roll that lands on Charity selects two dice again for its three turns
+    const landing = soloComponent();
+    setSoloState();
+    landing.component.diceChoice = 1;
+    landing.rollTurn.mockImplementation((_d: number, callbacks: any) => {
+      callbacks.onSuccess();
+      return {
+        roll: { dice: [3], total: 3 },
+        move: { entered: [{ index: 3 }], paydays: 0, landed: { kind: 'charity', index: 3 } },
+        effects: [],
+        openingPayday: false,
+        autoLoansMinor: [],
+      };
+    });
+    landing.component.rollSolo();
+    await settle();
+    expect(landing.component.diceChoice).toBe(2);
+  });
+
   it('two dice are rolled only when Charity runs and they were chosen', () => {
     const first = soloComponent();
     setSoloState({ charityRoundsLeft: 3 });
@@ -2361,5 +2395,94 @@ describe('CashflowGameComponent reset game button (JFK, 2026-10-06)', () => {
     expect(toastService.show).toHaveBeenCalledWith('only for a game account', 'error');
     expect(component.dashboardView).toBe('history');
     expect(component.isBusy).toBe(false);
+  });
+});
+
+describe('CashflowGameComponent Payday + MLM info boxes (JFK, 2026-10-06)', () => {
+  const mlm = {
+    title: 'MLM',
+    coins: 0,
+    costMinor: 0,
+    recurring: true,
+    rollDue: true,
+    payoutMinor: 50000,
+  } as any;
+
+  beforeEach(() => {
+    (AppStateService as any)._instance = undefined;
+    ProfileComponent.mail = '';
+  });
+
+  const decisionCard = () => {
+    const card = document.createElement('div');
+    card.className = 'cf-decision';
+    const button = document.createElement('button');
+    card.appendChild(button);
+    document.body.appendChild(card);
+    return { card, button };
+  };
+
+  it('pressing the MLM roll keeps the Payday box, and the outcome joins it; the next action clears both', () => {
+    const { component } = makeComponent({
+      openDecisions: [mlm] as any,
+      resolveGamble: jest.fn((_title: string, _r: unknown, callbacks: any) =>
+        callbacks.onSuccess(),
+      ),
+    } as any);
+    component.paydayBanner = {
+      count: 1,
+      incomeMinor: 250000,
+      expensesMinor: 220000,
+      netMinor: 30000,
+    };
+    const { card, button } = decisionCard();
+
+    button.click(); // the MLM roll button: inside the decision card
+    expect(component.paydayBanner).not.toBeNull(); // same game turn: the Payday box stays
+
+    component.reportRoll(mlm, true); // ...and the outcome appears next to it
+    expect(component.mlmBanner).toEqual({ won: true, text: expect.any(String) });
+    expect(component.rollResult).toBeNull(); // not the big result card
+    expect(component.paydayBanner).not.toBeNull();
+
+    document.body.click(); // anything else: both go
+    expect(component.paydayBanner).toBeNull();
+    expect(component.mlmBanner).toBeNull();
+    card.remove();
+  });
+
+  it('a lost MLM roll is told too, as a neutral box', () => {
+    const { component } = makeComponent({
+      openDecisions: [mlm] as any,
+      resolveGamble: jest.fn((_t: string, _r: unknown, callbacks: any) => callbacks.onSuccess()),
+    } as any);
+    component.reportRoll(mlm, false);
+    expect(component.mlmBanner?.won).toBe(false);
+    expect(component.mlmBanner?.text).toContain('CashflowGame.diceLostToast');
+  });
+
+  it('without a kept MLM card waiting, a click in the decision area clears the Payday box as any action does', () => {
+    const { component } = makeComponent({ openDecisions: [] as any });
+    component.paydayBanner = { count: 1, incomeMinor: 1, expensesMinor: 0, netMinor: 1 };
+    const { card, button } = decisionCard();
+    button.click();
+    expect(component.paydayBanner).toBeNull();
+    card.remove();
+  });
+
+  it('a gold-coin dice card keeps its own result display (only MLM uses the info box)', () => {
+    const { component } = makeComponent({
+      openDecisions: [] as any,
+      resolveGamble: jest.fn((_t: string, _r: unknown, callbacks: any) => callbacks.onSuccess()),
+    } as any);
+    component.rollDice({
+      title: 'GOLD',
+      coins: 5,
+      costMinor: 1,
+      successOn: 4,
+      stage: 'awaitingRoll',
+    } as any);
+    expect(component.rollResult).not.toBeNull();
+    expect(component.mlmBanner).toBeNull();
   });
 });

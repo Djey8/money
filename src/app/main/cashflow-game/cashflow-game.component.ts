@@ -47,7 +47,7 @@ import { ConfirmService } from 'src/app/shared/services/confirm.service';
 import { CashflowSavedGamesService } from 'src/app/shared/services/cashflow-saved-games.service';
 import { AppNumberPipe } from 'src/app/shared/pipes/app-number.pipe';
 import { AppDatePipe } from 'src/app/shared/pipes/app-date.pipe';
-import { RatRaceBoardComponent } from './rat-race-board.component';
+import { RatRaceBoardComponent, SPACE_GLYPHS } from './rat-race-board.component';
 import { TrapFocusDirective } from 'src/app/shared/directives/trap-focus.directive';
 
 // Deferred import to break the circular chain with AppComponent, same pattern as every other panel.
@@ -89,14 +89,13 @@ type MarketKind = 'percent' | 'amount' | 'price' | 'cost' | 'split' | 'boost';
 
 /** How long the token rests on each space while it walks, and how long a Payday flashes. */
 const WALK_STEP_MS = 320;
-/** The dice tumble, then rest on their number for a beat, before the token moves; the token then rests on its landing. */
+/** The dice tumble, then rest on their number for a beat, before the token moves. */
 const DICE_TUMBLE_MS = 1900;
 /** The faces flicker fast at first and slow down as the dice come to rest. */
 const DICE_FACE_FIRST_MS = 70;
 const DICE_FACE_LAST_MS = 300;
 const DICE_SETTLE_MS = 650;
 const DICE_LAND_POP_MS = 900;
-const LANDING_PAUSE_MS = 1500;
 
 @Component({
   selector: 'app-cashflow-game',
@@ -564,8 +563,8 @@ export class CashflowGameComponent implements OnDestroy {
   private tumbleFaces: number[] = [];
   /** True for a moment as the dice land, for one small pop - never again when they come back into view. */
   diceLanded = false;
-  /** How many dice the player rolls while Charity lasts. */
-  diceChoice: 1 | 2 = 1;
+  /** How many dice the player rolls while Charity lasts: two unless they choose one (JFK, 2026-10-06). */
+  diceChoice: 1 | 2 = 2;
   /** True while the token walks to where the roll took it. */
   walking = false;
   /** What the Payday(s) of the last roll paid: shown big until the next roll or until it is closed. */
@@ -679,6 +678,8 @@ export class CashflowGameComponent implements OnDestroy {
     });
     if (!result) return;
     this.lastDice = result.roll.dice;
+    // landing on Charity opens its three turns with two dice selected; the player may switch to one
+    if (result.move.landed.kind === 'charity') this.diceChoice = 2;
     // a space that had to borrow first (Charity, Downsized with too little cash) says so
     const borrowedMinor = (result.autoLoansMinor ?? []).reduce((sum, loan) => sum + loan, 0);
     if (borrowedMinor > 0) {
@@ -722,11 +723,25 @@ export class CashflowGameComponent implements OnDestroy {
   dismissInfoBanners(): void {
     this.paydayBanner = null;
     this.marketNotice = null;
+    this.mlmBanner = null;
   }
 
-  private readonly onAnyClick = (): void => {
-    if (this.paydayBanner || this.marketNotice) this.dismissInfoBanners();
+  private readonly onAnyClick = (event?: Event): void => {
+    if (!this.paydayBanner && !this.marketNotice && !this.mlmBanner) return;
+    // A Payday and the bonus roll of a kept Multi-Level-Marketing card are one game turn (JFK, 2026-10-06): pressing that
+    // roll keeps the Payday box on screen, and the outcome joins it - the next action after that clears both.
+    const target = event?.target as Element | null | undefined;
+    if (this.mlmRollIsDue && target?.closest?.('.cf-decision')) return;
+    this.dismissInfoBanners();
   };
+
+  /** A Payday is on show and a kept MLM card is waiting for its roll. */
+  private get mlmRollIsDue(): boolean {
+    return (
+      this.paydayBanner !== null &&
+      (this.cashflowGameService.openDecisions ?? []).some((deal) => deal.recurring && deal.rollDue)
+    );
+  }
 
   ngOnDestroy(): void {
     document.removeEventListener('click', this.onAnyClick, true);
@@ -771,9 +786,7 @@ export class CashflowGameComponent implements OnDestroy {
       if (space.kind === 'payday') this.showPayday();
     }
     if (this.skipWalking && result.move.paydays > 0) this.showPayday();
-    this.walkingAt = result.move.to;
-    // The token rests on the space it landed on before anything else appears.
-    await this.pause(this.reducedMotion ? 0 : this.skipWalking ? 400 : LANDING_PAUSE_MS);
+    // The totem is on its tile: the dialog or the action comes at once - the dice and the walk gave the time (JFK, 2026-10-06).
     this.walkingAt = undefined;
     this.walking = false;
     this.afterLanding(result);
@@ -1066,6 +1079,19 @@ export class CashflowGameComponent implements OnDestroy {
     this.openCards();
   }
 
+  /** The tile of the space the open deck belongs to - the symbol on its ring cell - so a Deal, a Doodad and a Market card screen are told apart at a glance. */
+  get activeTileKind(): 'deal' | 'doodad' | 'market' {
+    return this.activeDeckKind === 'doodad'
+      ? 'doodad'
+      : this.activeDeckKind === 'market'
+        ? 'market'
+        : 'deal';
+  }
+
+  tileGlyph(kind: 'deal' | 'doodad' | 'market'): string {
+    return SPACE_GLYPHS[kind];
+  }
+
   /** The active deck's translated name, next to the Cards section heading — the deck picker is now the space buttons above, not a separate dropdown. */
   get activeDeckLabel(): string {
     const key: Record<CashflowDeckKind, string> = {
@@ -1354,6 +1380,9 @@ export class CashflowGameComponent implements OnDestroy {
     text: string;
   } | null = null;
 
+  /** The outcome of a kept Multi-Level-Marketing card's Payday roll, as an info box next to the Payday box. */
+  mlmBanner: { won: boolean; text: string } | null = null;
+
   /** The nine spots of a die face, true where a pip sits: three rows of three, read left to right. */
   dieCells(face: number): boolean[] {
     const pips: Record<number, number[]> = {
@@ -1400,7 +1429,10 @@ export class CashflowGameComponent implements OnDestroy {
                 },
               );
           this.toastService.show(`${rolled}${result}`, won ? 'success' : 'update');
-          if (roll) {
+          if (deal.recurring) {
+            // the Payday bonus of a kept MLM card: an info box beside the Payday box, not the big result card
+            this.mlmBanner = { won, text: `${rolled}${result}`.trim() };
+          } else if (roll) {
             this.rollResult = {
               roll,
               won,
