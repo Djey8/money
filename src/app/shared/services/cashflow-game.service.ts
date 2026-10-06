@@ -1067,6 +1067,14 @@ export class CashflowGameService {
         price: fromMinorUnits(upsert.priceMinor),
       }));
     }
+    for (const tag of effects.shareRemovals) {
+      const index = state.allShares.findIndex((share) => share.tag === tag);
+      if (index >= 0) state.allShares.splice(index, 1);
+    }
+    for (const tag of effects.investmentRemovals) {
+      const index = state.allInvestments.findIndex((investment) => investment.tag === tag);
+      if (index >= 0) state.allInvestments.splice(index, 1);
+    }
     for (const upsert of effects.assetUpserts) {
       this.upsertEntity(state.allAssets, upsert.tag, () => ({
         tag: upsert.tag,

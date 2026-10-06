@@ -3633,6 +3633,23 @@ gameAction('/game/decisions/roll', 'roll_decision', (body) => {
   }
   return { title: body.title };
 });
+gameAction('/game/positions/sell', 'sell_position', (body) => {
+  if (typeof body.title !== 'string' || !body.title) throw new Error('title must be a string.');
+  if (body.quantity !== undefined && !(typeof body.quantity === 'number' && body.quantity > 0)) {
+    throw new Error('quantity must be a number above 0.');
+  }
+  for (const field of ['priceMinor', 'salePriceMinor']) {
+    if (body[field] !== undefined && !Number.isInteger(body[field])) {
+      throw new Error(`${field} must be an integer (minor units).`);
+    }
+  }
+  return {
+    title: body.title,
+    quantity: body.quantity,
+    priceMinor: body.priceMinor,
+    salePriceMinor: body.salePriceMinor,
+  };
+});
 gameAction('/game/doodads/pay', 'pay_doodad', (body) => {
   if (typeof body.cardId !== 'string' || !body.cardId) throw new Error('cardId must be a string.');
   return { cardId: body.cardId };

@@ -342,6 +342,9 @@ function applyEffectsToData(data, effects, { session }) {
       schemaVersion,
     );
   }
+  if (effects.shareRemovals.length > 0) {
+    rawShares = removeByTag(rawShares, effects.shareRemovals, session);
+  }
   let rawInvestments = list(rawAsset.investments);
   for (const upsert of effects.investmentUpserts) {
     rawInvestments = upsertByTag(
@@ -358,6 +361,9 @@ function applyEffectsToData(data, effects, { session }) {
       session,
       schemaVersion,
     );
+  }
+  if (effects.investmentRemovals.length > 0) {
+    rawInvestments = removeByTag(rawInvestments, effects.investmentRemovals, session);
   }
   let rawAssets = list(rawAsset.assets);
   for (const upsert of effects.assetUpserts) {

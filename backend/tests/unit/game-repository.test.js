@@ -105,6 +105,7 @@ describe('getGame', () => {
       'buy_deal',
       'pass_card',
       'bank_loan',
+      'sell_position',
       'reset',
     ]);
   });

@@ -677,3 +677,117 @@ describe('Market cards and dice decisions', () => {
     expect(none.status).toBe(409);
   });
 });
+
+describe('special-asset cards and selling', () => {
+  async function companionGame(suffix) {
+    const user = await registerGameUser(suffix);
+    await session('post', '/api/v1/game/start', user.token).send({
+      gameSetId: 'cashflow',
+      professionId: 'hausmeister',
+    });
+    return user;
+  }
+
+  it('buys every special-asset card of the Classic piles, rolls for the dice ones, and sells what it owns', async () => {
+    if (!dbAvailable) return;
+    const user = await companionGame('_assets');
+    const cards = [];
+    for (const deck of ['dealSmall', 'dealBig']) {
+      const pile = await session('get', `/api/v1/game/cards?deck=${deck}&limit=200`, user.token);
+      cards.push(...pile.body.cards.filter((card) => card.assetKind === 'asset'));
+    }
+    expect(cards.length).toBeGreaterThan(2);
+    const seen = { dice: 0, plain: 0, recurring: 0 };
+    for (const card of cards.slice(0, 12)) {
+      const bought = await session('post', '/api/v1/game/deals/buy', user.token).send({
+        cardId: card.id,
+      });
+      expect([card.id, bought.status, bought.body.detail]).toEqual([card.id, 200, undefined]);
+      expect(bought.body.result.kind).toBe('asset');
+      const title = bought.body.result.title;
+
+      let game = bought.body;
+      if (game.legalActions.some((action) => action.action === 'roll_decision')) {
+        seen.dice += 1;
+        const rolled = await session('post', '/api/v1/game/decisions/roll', user.token).send({
+          title,
+        });
+        expect(rolled.status).toBe(200);
+        game = rolled.body;
+      } else if (card.recurring) {
+        seen.recurring += 1;
+      } else {
+        seen.plain += 1;
+      }
+      const owned = game.holdings.assets.find((asset) => asset.tag === title);
+      if (owned) {
+        const sold = await session('post', '/api/v1/game/positions/sell', user.token).send({
+          title,
+        });
+        expect([title, sold.status, sold.body.detail]).toEqual([title, 200, undefined]);
+        expect(sold.body.holdings.assets.find((asset) => asset.tag === title)).toBeUndefined();
+        expect(sold.body.cashMinor).toBeGreaterThanOrEqual(0);
+      }
+    }
+    expect(seen.dice + seen.plain + seen.recurring).toBeGreaterThan(2);
+  }, 300000);
+
+  it('sells part of a share position, then the rest', async () => {
+    if (!dbAvailable) return;
+    const user = await companionGame('_sellshare');
+    const small = await session('get', '/api/v1/game/cards?deck=dealSmall&limit=200', user.token);
+    const stock = small.body.cards.find((card) => card.assetKind === 'share');
+    const bought = await session('post', '/api/v1/game/deals/buy', user.token).send({
+      cardId: stock.id,
+      quantity: 100,
+    });
+    expect(bought.body.holdings.shares).toEqual([
+      expect.objectContaining({ tag: stock.symbol ?? stock.title, quantity: 100 }),
+    ]);
+    const title = bought.body.holdings.shares[0].tag;
+    const part = await session('post', '/api/v1/game/positions/sell', user.token).send({
+      title,
+      quantity: 40,
+    });
+    expect(part.status).toBe(200);
+    expect(part.body.holdings.shares[0].quantity).toBe(60);
+    const rest = await session('post', '/api/v1/game/positions/sell', user.token).send({ title });
+    expect(rest.body.holdings.shares).toEqual([]);
+    const none = await session('post', '/api/v1/game/positions/sell', user.token).send({ title });
+    expect(none.status).toBe(422);
+  });
+
+  it('sells a property to a buyer, ending its cashflow, and refuses without a buyer', async () => {
+    if (!dbAvailable) return;
+    const user = await companionGame('_sellproperty');
+    const small = await session('get', '/api/v1/game/cards?deck=dealSmall&limit=200', user.token);
+    const house = small.body.cards.find((card) => card.assetKind === 'investment');
+    const bought = await session('post', '/api/v1/game/deals/buy', user.token).send({
+      cardId: house.id,
+    });
+    const title = bought.body.result.title;
+    expect(bought.body.holdings.investments.map((entry) => entry.tag)).toContain(title);
+    expect(bought.body.finances.passiveIncomeMinor).toBeGreaterThan(0);
+
+    const noBuyer = await session('post', '/api/v1/game/positions/sell', user.token).send({
+      title,
+    });
+    expect(noBuyer.status).toBe(422);
+    expect(noBuyer.body.detail).toMatch(/No buyer/);
+
+    const price = house.depositMinor + house.mortgageMinor + 2000000;
+    const sold = await session('post', '/api/v1/game/positions/sell', user.token).send({
+      title,
+      salePriceMinor: price,
+    });
+    expect(sold.status).toBe(200);
+    expect(sold.body.result.cashMinor).toBe(house.depositMinor + 2000000);
+    expect(sold.body.holdings.investments).toEqual([]);
+    expect(sold.body.finances.passiveIncomeMinor).toBe(0);
+
+    // undo takes the sale back: the property is owned again and pays again
+    const undone = await session('post', '/api/v1/game/undo', user.token).send({});
+    expect(undone.body.holdings.investments.map((entry) => entry.tag)).toContain(title);
+    expect(undone.body.finances.passiveIncomeMinor).toBeGreaterThan(0);
+  });
+});

@@ -382,7 +382,8 @@ export const TOOLS: ToolDefinition[] = [
       'Play the Cashflow game (game accounts only). Always read get_cashflow_game action game first and only do ' +
       'what its `legalActions` lists; every action returns the game afterwards, plus `result` (what the dice ' +
       'showed, which card was drawn...). A solo game: start (mode solo), then loop roll, and for the pending card ' +
-      'draw_card + buy_deal / pay_doodad / play_market, or pass_card; roll_decision rolls a waiting dice card. ' +
+      'draw_card + buy_deal / pay_doodad / play_market, or pass_card; roll_decision rolls a waiting dice card; ' +
+      'sell_position sells shares, a property or gold you hold (see holdings in the game). ' +
       'A companion game is driven by payday, baby, charity, downsized, clear_status. bank_loan moves the Bank ' +
       'loan by amountMinor (positive borrows, negative repays). undo takes steps back; save, load_save, end_game, ' +
       'rename_save manage saved games - save analysis games with compact: true, check `storage` before a long ' +
@@ -397,6 +398,7 @@ export const TOOLS: ToolDefinition[] = [
       pay_doodad: action('gamePayDoodad'),
       play_market: action('gamePlayMarket'),
       roll_decision: action('gameRollDecision'),
+      sell_position: action('gameSellPosition'),
       pass_card: action('gamePassCard'),
       payday: action('gamePayday'),
       baby: action('gameBaby'),

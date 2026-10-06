@@ -1356,7 +1356,7 @@ paths:
       operationId: gameBuyDeal
       summary: Plan and buy a Deal card
       description: >-
-        Plans the card as a Grow project (the app's plan step) and buys it (the app's buy step, taking the Bank loan first when cash is short): two undoable steps, and in a solo game the turn moves on. Shares need a `quantity`. Special-asset cards (gold, loans, MLM) are not playable yet (422). Game accounts only; requires `game:w`. The action must be one of the `legalActions` of `GET /game` (409
+        Plans the card as a Grow project (the app's plan step) and buys it (the app's buy step, taking the Bank loan first when cash is short): two undoable steps, and in a solo game the turn moves on. Shares need a `quantity`. A special-asset card (gold, the loan to a relative, Multi-Level-Marketing) is bought as an asset: a dice card is paid for and waits for its roll (`roll_decision`), the others are owned at once. Game accounts only; requires `game:w`. The action must be one of the `legalActions` of `GET /game` (409
         `game_action_not_allowed` otherwise); a refusal by the game's own rules is 422 `game_rule_refused`. Audit
         logged.
       security:
@@ -1765,6 +1765,60 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
         '409':
+          $ref: '#/components/responses/GameActionRefused'
+  /game/positions/sell:
+    post:
+      operationId: gameSellPosition
+      summary: Sell a position you hold
+      description: >-
+        Game accounts only; requires `game:w`. The action must be one of the `legalActions` of `GET /game`; a refusal by
+        the game's own rules (nothing held, no buyer, more than held) is 422 `game_rule_refused`. Sells what the Grow
+        project `title` stands for: **shares** (`quantity`, default all, at `priceMinor`, default the position's price),
+        a **property or business** to the buyer a Market card brought (its offer sets the price; the mortgage is paid back
+        out of it and what is left - deposit plus profit - is booked as income; a sale that costs money is paid from the
+        Daily account, with the Bank loan first when cash is short) or at `salePriceMinor` when no offer is waiting, and
+        **gold** by the coin (`quantity`, default all, at the buyer's price per coin or `priceMinor`). The Grow project
+        follows (sold, completed once nothing is left), a property's cashflow subscription ends with it and the buyer's
+        offer goes. Audit logged.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title]
+              properties:
+                title:
+                  {
+                    type: string,
+                    description: The Grow project's title - also the tag of the position.,
+                  }
+                quantity: { type: number, description: Shares or coins to sell; all when absent. }
+                priceMinor: { type: integer, description: A share's or a coin's price. }
+                salePriceMinor:
+                  {
+                    type: integer,
+                    description: A property's sale price when no buyer's offer is waiting.,
+                  }
+            example: { title: SFH, salePriceMinor: 5200000 }
+      responses:
+        '200':
+          description: The game after the sale, with `result` (`kind`, `cashMinor`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameView'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '409':
+          $ref: '#/components/responses/GameActionRefused'
+        '422':
           $ref: '#/components/responses/GameActionRefused'
   /mojo:
     get:
@@ -5512,6 +5566,7 @@ components:
               pay_doodad,
               play_market,
               roll_decision,
+              sell_position,
             ]
         description: { type: string }
     GameView:
@@ -5572,6 +5627,14 @@ components:
         cashMinor: { type: integer }
         finances:
           $ref: '#/components/schemas/GameFinances'
+        holdings:
+          type: object
+          description: What the player owns - shares, properties and businesses (with their monthly cashflow), assets (with their coins) and the Bank loan - so a sale can name its title.
+          properties:
+            shares: { type: array, items: { type: object } }
+            investments: { type: array, items: { type: object } }
+            assets: { type: array, items: { type: object } }
+            bankLoanMinor: { type: integer }
         assetDeals: { type: array, items: { type: object } }
         marketOffers: { type: array, items: { type: object } }
         legalActions:

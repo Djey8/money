@@ -35,6 +35,8 @@ const {
   dealPlanText,
   doodadPaymentCategory,
   doodadPaymentTitle,
+  buyAssetDeal,
+  sellPosition,
   marketCardKind,
   playMarketBuyerCard,
   playShareSplitCard,
@@ -209,6 +211,8 @@ function playAction(action, input, { books, profession, deps, gameSets, gameSet 
       return playMarket(books, input, deps, gameSet);
     case 'roll_decision':
       return rollDecision(books, input, deps);
+    case 'sell_position':
+      return sellHolding(books, input, deps);
     default:
       throw refuse('GAME_ACTION_UNKNOWN', `Unknown game action: ${action}`);
   }
@@ -268,12 +272,6 @@ function buyDeal(books, input, deps, gameSet) {
   const decks = [...findDeck(gameSet, 'dealSmall'), ...(gameSet.decks.dealBig ?? [])];
   const card = decks.find((candidate) => candidate.id === input.cardId);
   if (!card) throw refuse('GAME_RULE_REFUSED', `No Deal card with the id '${input.cardId}'.`);
-  if (card.assetKind === 'asset') {
-    throw refuse(
-      'GAME_RULE_REFUSED',
-      'Special-asset cards (gold, loans, MLM) are not playable through the API yet.',
-    );
-  }
   const symbol = card.symbol ?? card.title;
   const holds = books.shares.some((share) => share.tag === symbol && share.quantity > 0);
   if (card.assetKind === 'share' && holds) {
@@ -296,12 +294,12 @@ function buyDeal(books, input, deps, gameSet) {
     takenDealLabels(books),
   );
   const plan = planDeal(books, dealInput, deps);
-  const executed = executeDeal(
-    applyEffectsToBooks(books, plan),
-    dealInput.title,
-    input.quantity,
-    deps,
-  );
+  const planned = applyEffectsToBooks(books, plan);
+  // A special-asset card (gold, the loan to a relative, MLM) is bought as an asset; a dice card then waits for its roll.
+  const executed =
+    card.assetKind === 'asset'
+      ? buyAssetDeal(planned, dealInput.title, deps)
+      : executeDeal(planned, dealInput.title, input.quantity, deps);
   return {
     effects: [plan, ...executed.steps],
     settle: true,
@@ -420,6 +418,24 @@ function rollDecision(books, input, deps) {
   return {
     effects: [settled.effects],
     result: { title: deal.title, kind: settled.kind, roll, won },
+  };
+}
+
+/** Sells a position the player holds: shares, a property to a market buyer, gold by the coin. */
+function sellHolding(books, input, deps) {
+  const sold = sellPosition(
+    books,
+    {
+      title: input.title,
+      quantity: input.quantity,
+      priceMinor: input.priceMinor,
+      salePriceMinor: input.salePriceMinor,
+    },
+    deps,
+  );
+  return {
+    effects: sold.steps,
+    result: { title: input.title, kind: sold.kind, cashMinor: sold.cashMinor },
   };
 }
 

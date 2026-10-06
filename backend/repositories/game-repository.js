@@ -14,6 +14,7 @@ const { decryptValue, toApiTransactions } = require('./transaction-repository');
 const { decodeGameState } = require('../services/game-state-codec');
 const { getSettings, decryptSettings } = require('./settings-repository');
 const { createCardTextSource } = require('../services/game-card-text');
+const { readBooks } = require('../services/game-writer');
 const { readHistoryStack, readHistoryLog } = require('../services/game-snapshot');
 
 /**
@@ -55,15 +56,39 @@ async function loadGameBooks(deps, userId) {
   const transactions = toApiTransactions(rawTransactions, session, schemaVersion, currency);
   const { allocation } = await getSettings(deps, userId);
   const { stack } = readHistoryStack(data, session);
-  return { state, subscriptions, transactions, allocation, currency, canUndo: stack.length > 0 };
+  const gameSet = loadGameSets().find((candidate) => candidate.id === state.gameSetId);
+  const books = readBooks(data, session, { state, allocation, gameSet });
+  const holdings = {
+    shares: books.shares,
+    investments: books.investments.map((investment) => ({
+      ...investment,
+      cashflowMinor:
+        books.growProjects.find((project) => project.title === investment.tag)?.cashflowMinor ?? 0,
+    })),
+    assets: books.assets.map((asset) => ({
+      ...asset,
+      coins: (state.assetDeals ?? []).find(
+        (deal) => deal.title === asset.tag && deal.stage === 'owned',
+      )?.coins,
+    })),
+    bankLoanMinor:
+      books.liabilities.find((liability) => liability.tag === 'Bank loan')?.amountMinor ?? 0,
+  };
+  return {
+    state,
+    subscriptions,
+    transactions,
+    allocation,
+    currency,
+    holdings,
+    canUndo: stack.length > 0,
+  };
 }
 
 /** `GET /game`: where the live game stands and what may be done next. */
 async function getGame(deps, userId) {
-  const { state, subscriptions, transactions, allocation, currency, canUndo } = await loadGameBooks(
-    deps,
-    userId,
-  );
+  const { state, subscriptions, transactions, allocation, currency, canUndo, holdings } =
+    await loadGameBooks(deps, userId);
   if (!state.professionId) return { active: false, legalActions: legalActions(state) };
 
   const solo = state.mode === 'solo';
@@ -100,6 +125,7 @@ async function getGame(deps, userId) {
     pendingDecision: turn?.pending ?? null,
     cashMinor: cashOnHandMinor(transactions, allocation),
     finances: summarizeGameFinances(state, subscriptions),
+    holdings,
     assetDeals: state.assetDeals,
     marketOffers: state.marketOffers,
     legalActions: legalActions(state, { canUndo }),
