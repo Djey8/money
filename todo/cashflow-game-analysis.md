@@ -38,7 +38,7 @@ Suggested order: **E0 → E1 → E2 → E5 (first numbers on the docs page) → 
 ## 5. Agents in sessions — rules (decided with JFK, 2026-10-07)
 
 - An agent may save **as many games as the session needs** while it works (analysis, experiments), but must **clean up afterwards: at most 100 saves remain, the important ones** (`storage.keepAtMost`, `prune_saves`).
-- It must **watch the storage**: every account's saved games share one database document (8 MiB limit; the API keeps 80% as budget and refuses a save past it with `game_storage_full`). Measured: a full save ≈ 200 KB (≈ 30 fit), a compact save ≈ 17 KB (≈ 300 fit). Agents use `compact: true` for analysis games.
+- It must **watch the storage**: every account's saved games share one database document (8 MiB limit; the API keeps 80% as budget and refuses a save past it with `game_storage_full`). Measured: a full save ≈ 200 KB (≈ 30 fit), a compact save ≈ 17 KB (≈ 300 fit). A normal game, and any game the player wants feedback on, is always saved in full (JFK, 2026-10-07); `compact: true` is only for a batch of games saved for statistics.
 - The strategy lab does **not** use accounts at all (headless), so a lab run never touches anybody's storage.
 
 ## 6. Verification

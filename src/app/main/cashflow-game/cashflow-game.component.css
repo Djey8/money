@@ -2191,3 +2191,10 @@
     max-width: min(100%, 560px, max(190px, calc(100dvh - 500px)));
   }
 }
+
+/* Right to left (Arabic): the arrows that point "onward" or "back" point the other way. */
+:host-context(.rtl-text) .cf-row-btn-chevron,
+:host-context(.rtl-text) .cf-back-arrow {
+  display: inline-block;
+  transform: scaleX(-1);
+}

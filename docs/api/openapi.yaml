@@ -1568,7 +1568,7 @@ paths:
       operationId: saveGame
       summary: Save the running game
       description: >-
-        Game accounts only; requires `game:w`. Saves the running game into its slot (the first save gives it one; a later save updates the same slot), in the same format the app uses. With `compact: true` the undo chain is left out - a tenth of the size, and what an agent should use for analysis games; a compact game loads without undo history. Refused with 409 `game_storage_full` when the account's document would pass its storage budget: delete saves first.
+        Game accounts only; requires `game:w`. Saves the running game into its slot (the first save gives it one; a later save updates the same slot), in the same format the app uses. A normal game, and every game the player wants feedback on, is saved in full (the default) and keeps its undo history. `compact: true` leaves the undo chain out - a tenth of the size - and is only for a batch of games saved for statistics; a compact game loads without undo history and cannot be reviewed. Refused with 409 `game_storage_full` when the account's document would pass its storage budget: delete saves first.
       security:
         - bearerAuth: []
       requestBody:

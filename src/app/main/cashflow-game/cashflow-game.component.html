@@ -21,7 +21,7 @@
     <!-- or — while a game is running — the same shape read live, one or the other, never both. -->
     <div class="cf-card cf-profession-card" *ngIf="viewedProfession as profession">
       <button class="cf-back-btn" (click)="closeProfessionCard()">
-        ‹ {{ 'CashflowGame.back' | translate }}
+        <span class="cf-back-arrow">‹</span> {{ 'CashflowGame.back' | translate }}
       </button>
       <div class="cf-profession-card-header">
         <h3>{{ professionTitle(profession) }}</h3>
@@ -249,7 +249,7 @@
     <!-- Which language to play in: asked when a game is about to start (JFK, 2026-10-03). -->
     <div class="cf-card" *ngIf="!hasActiveGame && !viewedProfession && choosingLanguage">
       <button class="cf-back-btn" (click)="cancelLanguage()">
-        ‹ {{ 'CashflowGame.back' | translate }}
+        <span class="cf-back-arrow">‹</span> {{ 'CashflowGame.back' | translate }}
       </button>
       <h3>{{ 'CashflowGame.languageTitle' | translate }}</h3>
       <p class="cf-language-hint">{{ 'CashflowGame.languageHint' | translate }}</p>
@@ -296,7 +296,7 @@
       *ngIf="!hasActiveGame && !viewedProfession && !choosingLanguage && showStartGames"
     >
       <button class="cf-back-btn" (click)="closeStartGames()">
-        ‹ {{ 'CashflowGame.back' | translate }}
+        <span class="cf-back-arrow">‹</span> {{ 'CashflowGame.back' | translate }}
       </button>
       <h3>{{ 'CashflowGame.savedGamesTitle' | translate }}</h3>
       <div class="cf-actions">
@@ -1022,7 +1022,7 @@
       <!-- My games: the game being played and every saved one (JFK, 2026-10-04). -->
       <div class="cf-card" *ngIf="dashboardView === 'games'">
         <button class="cf-back-btn" (click)="backToMain()">
-          ‹ {{ 'CashflowGame.back' | translate }}
+          <span class="cf-back-arrow">‹</span> {{ 'CashflowGame.back' | translate }}
         </button>
         <h3>{{ 'CashflowGame.myGames' | translate }}</h3>
         <div class="cf-actions">
@@ -1054,7 +1054,7 @@
         *ngIf="dashboardView === 'confirmSpace' && pendingSpace"
       >
         <button class="cf-back-btn" (click)="cancelSpace()">
-          ‹ {{ 'CashflowGame.back' | translate }}
+          <span class="cf-back-arrow">‹</span> {{ 'CashflowGame.back' | translate }}
         </button>
         <h3>{{ 'CashflowGame.' + pendingSpace | translate }}</h3>
         <p class="cf-card-text">{{ spaceExplanation }}</p>
@@ -1081,7 +1081,7 @@
 
       <div class="cf-card" *ngIf="dashboardView === 'dealPile'">
         <button class="cf-back-btn" (click)="backToMain()">
-          ‹ {{ 'CashflowGame.back' | translate }}
+          <span class="cf-back-arrow">‹</span> {{ 'CashflowGame.back' | translate }}
         </button>
         <h3 class="cf-heading-with-tile">
           <span>{{ 'CashflowGame.spaceDeals' | translate }}</span>
@@ -1103,7 +1103,7 @@
       <!-- (JFK, 2026-09-29). -->
       <div class="cf-card" *ngIf="dashboardView === 'bankLoan'">
         <button class="cf-back-btn" (click)="backToMain()">
-          ‹ {{ 'CashflowGame.back' | translate }}
+          <span class="cf-back-arrow">‹</span> {{ 'CashflowGame.back' | translate }}
         </button>
         <h3>{{ 'CashflowGame.bankLoan' | translate }}</h3>
         <p class="cf-loan-current">
@@ -1133,7 +1133,7 @@
       <!-- Payback Loan: only reachable once there's a loan (its trigger button is *ngIf'd on that). -->
       <div class="cf-card" *ngIf="dashboardView === 'payLoan'">
         <button class="cf-back-btn" (click)="backToMain()">
-          ‹ {{ 'CashflowGame.back' | translate }}
+          <span class="cf-back-arrow">‹</span> {{ 'CashflowGame.back' | translate }}
         </button>
         <h3>{{ 'CashflowGame.loanRepay' | translate }}</h3>
         <p class="cf-loan-current">
@@ -1177,7 +1177,7 @@
       <!-- loan (JFK, 2026-09-29). Account · Category · Amount, so a payout's category is visible here too. -->
       <div class="cf-card" *ngIf="dashboardView === 'history'">
         <button class="cf-back-btn" (click)="backToMain()">
-          ‹ {{ 'CashflowGame.back' | translate }}
+          <span class="cf-back-arrow">‹</span> {{ 'CashflowGame.back' | translate }}
         </button>
         <h3>{{ 'CashflowGame.history' | translate }}</h3>
         <p
@@ -1253,7 +1253,7 @@
       <!-- default behind its own button (JFK, 2026-09-26: "the load option should be first hidden"). -->
       <div class="cf-card" *ngIf="dashboardView === 'cards'">
         <button class="cf-back-btn" (click)="backToMain()">
-          ‹ {{ 'CashflowGame.back' | translate }}
+          <span class="cf-back-arrow">‹</span> {{ 'CashflowGame.back' | translate }}
         </button>
         <h3 class="cf-heading-with-tile">
           <span>{{ 'CashflowGame.cards' | translate }}: {{ activeDeckLabel }}</span>
