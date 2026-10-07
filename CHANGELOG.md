@@ -1,3 +1,10 @@
+## [1.22.0] - 2026-10-07
+
+### Features
+
+- feat(cashflow-game): a card that was drawn and left is remembered in the History and judged by the analyst
+- feat(cashflow-game): the analyst shares its time between the decisions, says when it is incomplete, and judges a high salary by the rolls saved
+
 ## [1.21.1] - 2026-10-07
 
 ### Bug Fixes
