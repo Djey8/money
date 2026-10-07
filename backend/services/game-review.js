@@ -4,7 +4,14 @@ const fs = require('fs');
 const path = require('path');
 const { Worker } = require('worker_threads');
 const { GameActionError } = require('../repositories/game-play');
-const { PRESET_SPECS, benchmarkFor, describeReview } = require('@money/domain');
+const {
+  PRESET_SPECS,
+  benchmarkFor,
+  describeReview,
+  describeProgress,
+  progressPoints,
+} = require('@money/domain');
+const { CASHFLOW_GAME_SETS } = require('@money/domain/dist/cashflow-content');
 
 /**
  * The game analyst on the server (todo/cashflow-game-analysis.md, E6): runs the domain's `reviewGame` on a stored undo
@@ -16,6 +23,22 @@ const RESULT_FILES = [
   path.join(__dirname, '..', 'strategy', 'results.json'),
   path.join(__dirname, '..', '..', 'docs', 'domain', 'strategy', 'data', 'results.json'),
 ].filter(Boolean);
+
+// What the card lab measured: where games stand on the way to the exit, and how they end (scripts/card-lab.js).
+const CARD_RESULT_FILES = [
+  process.env.GAME_CARD_RESULTS,
+  path.join(__dirname, '..', 'strategy', 'card-results.json'),
+  path.join(__dirname, '..', '..', 'docs', 'domain', 'strategy', 'data', 'card-results.json'),
+].filter(Boolean);
+
+let cardLabBands;
+function loadProgressBands() {
+  if (cardLabBands === undefined) {
+    const file = CARD_RESULT_FILES.find((candidate) => fs.existsSync(candidate));
+    cardLabBands = file ? (JSON.parse(fs.readFileSync(file, 'utf8')).progressBands ?? null) : null;
+  }
+  return cardLabBands;
+}
 
 let labResults;
 function loadLabResults() {
@@ -82,12 +105,17 @@ async function reviewHistory(stack, live, options) {
   const escaped = review.final.outcome === 'escaped' ? review.final.rolls : null;
   const benchmark = benchmarkFor(loadLabResults(), live.cashflowGame.professionId, escaped);
   const strategy = PRESET_SPECS.find((spec) => spec.id === strategyId);
+  const bands = loadProgressBands();
+  const progress = bands
+    ? progressPoints(stack, live, { gameSets: CASHFLOW_GAME_SETS, bands })
+    : [];
   return {
     reviewable: true,
     baseline: { id: strategyId, label: strategy.label, description: strategy.description },
     review,
     benchmark,
-    text: describeReview(review, { money: options.money, benchmark }),
+    progress,
+    text: describeReview(review, { money: options.money, benchmark }) + describeProgress(progress),
   };
 }
 

@@ -115,7 +115,46 @@
     "deckMarket": "Markt",
     "deckDoodad": "Schnickschnack",
     "browserSearch": "Suche nach Titel, Kürzel, ID oder Art",
-    "browserNone": "Keine Karte passt."
+    "browserNone": "Keine Karte passt.",
+    "colCard": "Karte",
+    "colCardNumbers": "Zahlen",
+    "colFromCash": "Aus Bargeld gekauft (Punkte)",
+    "colWithLoan": "Mit Kredit gekauft (Punkte)",
+    "colRollsSaved": "Gesparte Würfe aus Bargeld (typisches / ausgebautes Spiel)",
+    "colHelps": "Hilft in",
+    "colTraded": "Wenn die Aktien gehandelt werden (Punkte)",
+    "colCost": "Kosten",
+    "colEscapeEffect": "Chance auf den Ausstieg (Punkte)",
+    "colBankruptEffect": "Chance auf die Pleite (Punkte)",
+    "colEarly": "Frühes Spiel (Punkte)",
+    "colLate": "Spätes Spiel (Punkte)",
+    "colAppliedIn": "Gilt in",
+    "colPays": "Zahlt",
+    "colAtRoll": "Wurf",
+    "colProgress": "Passives Einkommen deckt",
+    "band0": "unter 5 % der Ausgaben",
+    "band1": "5 % bis 10 %",
+    "band2": "10 % bis 20 %",
+    "band3": "20 % bis 40 %",
+    "band4": "40 % oder mehr",
+    "colLastDecision": "Das Letzte, was geschah",
+    "colBankruptGames": "Von den Pleiten",
+    "perMonth": "im Monat",
+    "coins": "Münzen",
+    "kind_buy": "Deal gekauft",
+    "kind_pass": "Deal ausgelassen",
+    "kind_doodad": "Schnickschnack",
+    "kind_market": "Marktkarte",
+    "kind_sell": "Etwas verkauft",
+    "kind_repay": "Bank zurückgezahlt",
+    "kind_none": "Nichts - der Monat selbst",
+    "noteCardLabDeals": "Punkte der Chance, die Rattenjagd zu verlassen, gemittelt über viele Positionen, wenn die Karte gekauft wird: positiv hilft. „Aus Bargeld“ zählt die Positionen, in denen die Anzahlung bar da war, „mit Kredit“ die, in denen die Bank sie leihen musste. Gesparte Würfe: Median der Würfe bis zum Ausstieg ohne die Karte minus mit ihr. Hilft in: Anteil der Positionen, in denen sie die Chance um mehr als einen Punkt bewegte.",
+    "noteCardLabDoodads": "Was es kostet, die Karte zu ziehen, in Punkten der Chance auf den Ausstieg und auf die Pleite, gemittelt über viele Positionen. Frühes Spiel sind die Würfe 3 und 10, spätes Spiel die Würfe 20 und 32.",
+    "noteCardLabMarket": "Es zählen nur Positionen, für die die Karte gilt (ein Käufer braucht eine Immobilie seiner Art, ein Boom ein Geschäft, das noch wachsen kann). Gilt in: Anteil der Positionen, in denen sie galt.",
+    "noteCardLabDice": "Die Chance sind die Würfel: Die Karte gewinnt bei ihrer Zahl oder höher. Die letzten beiden Spalten sind gemessen: was das Bezahlen der Karte mit der Chance auf den Ausstieg und auf die Pleite machte, gemittelt über viele Positionen.",
+    "noteCardLabMilestones": "Passives Einkommen als Anteil der Ausgaben (100 % ist der Ausstieg) beim Wurf der Spalte, für die Spiele, die mit der besten gefundenen Strategie ausstiegen. Die erste Zahl ist das mittlere Spiel, in Klammern das schnellste und das langsamste Zehntel. Ein Spiel unter dem langsamen Wert liegt hinter fast jedem Spiel, das ausgestiegen ist.",
+    "noteCardLabBands": "Chance auf den Ausstieg / Chance auf die Pleite, von dem Punkt aus, den ein Spiel bei diesem Wurf erreicht hat (eine ausgewogene Strategie, alle Berufe). Je weiter das passive Einkommen Richtung Ausgaben gekommen ist, desto sicherer der Ausstieg.",
+    "noteCardLabRuin": "Unter den Spielen, die pleitegingen: die letzte Entscheidung vor dem Ende und die Karten, die am häufigsten unter den letzten dreien waren."
   },
   "sections": {
     "start": {
@@ -1174,12 +1213,98 @@
           "type": "callout",
           "kind": "tip",
           "title": "Warum die IDs wichtig sind",
-          "text": "Jede Karte, die du wählst - zufällig gezogen oder unter deinen echten Karten gefunden - steht mit ihrer genauen ID im Verlauf. Bei der Analyse eines Spiels liest der Analyst diese IDs, sieht, welchen Deal du ausgelassen hast, und spielt beide Entscheidungen viele Male durch. **Wähle die Karte, bevor du sie auslässt**: Ohne gewählte Karte gibt es nichts zu bewerten."
+          "text": "Jede Karte, die du wählst - zufällig gezogen oder unter deinen echten Karten gefunden - steht mit ihrer genauen ID im Verlauf. Bei der Analyse eines Spiels liest der Analyst diese IDs, sieht, welchen Deal du ausgelassen hast, und spielt beide Entscheidungen viele Male durch. **Öffne die Karte, bevor du sie auslässt**, dann kann der Analyst sagen, ob der Deal sich gelohnt hätte. Stöbern wird nicht erfasst, nur die Karte, die offen ist, wenn du sie nutzt oder ablehnst; ganz ohne Karte zu passen ist erlaubt, der Analyst vermerkt dann nur als kleinen Minuspunkt, dass du nicht hingeschaut hast."
         },
         { "type": "cardbrowser" },
         {
           "type": "p",
           "text": "Ein Agent liest dieselbe Liste über `GET /api/v1/game/cards` (ohne laufendes Spiel: `gameSetId=cashflow` angeben) und in `docs/domain/CASHFLOW_CARDS.md`."
+        }
+      ]
+    },
+    "cardlab": {
+      "nav": "Was die Karten wert sind",
+      "title": "Was die Karten wert sind",
+      "intro": "Jede Karte des Spiels, gemessen. 142 echte Positionen - aus simulierten Spielen bei Wurf 3, 10, 20 und 32, für jeden Beruf - wurden je 20-mal mit der Karte und 20-mal ohne sie zu Ende gespielt, mit denselben Würfen. Was eine Karte tut, ist der Unterschied, wie oft das Spiel die Rattenjagd verlässt, in **Punkten** (Prozentpunkten). Eine Karte, die um 3 Punkte hilft, hilft in manchen Positionen stark und in anderen gar nicht; verlassen kannst du dich auf den Durchschnitt vieler Positionen.",
+      "blocks": [
+        {
+          "type": "callout",
+          "kind": "note",
+          "title": "So liest du die Tabellen",
+          "text": "Plus hilft, Minus schadet. „Genommen“ heißt: ein Deal gekauft, ein Schnickschnack bezahlt oder eine Marktkarte gespielt; jedes Spiel danach spielt die ausgewogene Strategie des Strategielabors. **Aus Bargeld** zählt die Positionen, in denen die Anzahlung bar da war, **mit Kredit** die, in denen die Bank sie leihen musste. Der Messfehler liegt bei den Kleinen Deals und dem Schnickschnack bei etwa einem Punkt. Ein ausgebautes Spiel ist eines tief im Spiel mit schon gekauften Immobilien (die beste gefundene Strategie, Wurf 20 bis 60)."
+        },
+        { "type": "h3", "text": "Kleine Deals" },
+        {
+          "type": "p",
+          "text": "Der beste Kleine Deal ist der **Multi-Level-Marketing**-Einstieg: **+6 Punkte** und etwa fünf gesparte Würfe, für 500 €. Danach kommen die **Einfamilienhäuser mit 2.000 € Anzahlung** (+3 Punkte aus Bargeld, etwa acht gesparte Würfe) - und die Überraschung: Muss die Bank diese Anzahlung leihen, sind sie **+10 bis +12 Punkte** wert, denn eine Immobilie, die für 2.000 € 200 bis 250 € im Monat zahlt, ist einen Kredit wert. Eigentumswohnungen und die teuren Häuser (4.000 bis 5.000 € Anzahlung) sind das Gegenteil: aus Bargeld tun sie ungefähr nichts, mit Kredit kosten sie 10 bis 19 Punkte. **Aktien** sind in beide Richtungen kleine Wetten (zwischen −2,5 und +1,5 Punkten): Wer die Hälfte seines Bargelds in Aktien steckt und sie hält, bindet es, und die billigen (5, 10 oder 20 €) kosten etwas mehr als die teuren."
+        },
+        { "type": "data", "id": "cardLabSmall", "caption": "Jeder Kleine Deal, der beste zuerst" },
+        { "type": "h3", "text": "Große Deals" },
+        {
+          "type": "p",
+          "text": "Bei einem Großen Deal kommt es darauf an, **woher die Anzahlung kommt**. Aus Bargeld gekauft, sparen die guten 5 bis 12 Würfe (am meisten das Mehrfamilienhaus für 10.000 € und das Doppelhaus für 10.000 €). Mit Kredit gekauft sind sie das Gefährlichste im ganzen Spiel: **−9 bis −84 Punkte** (die meisten zwischen −20 und −65), weil Zinsen und Hypothek auffressen, was die Immobilie einbringt. Die Pizzakette und die großen Wohnanlagen stehen unten in der Tabelle (−77 bis −84 Punkte mit Kredit): Die Anzahlung ist viel mehr, als ein Spiel in dieser Phase hat. Die eine Ausnahme ist das **Doppelhaus für 10.000 €** (1.100 € im Monat): Es lohnt sich sogar mit Kredit (+3,6 Punkte)."
+        },
+        { "type": "data", "id": "cardLabBig", "caption": "Jeder Große Deal" },
+        { "type": "h3", "text": "Schnickschnack: was er dich kostet" },
+        {
+          "type": "p",
+          "text": "Schnickschnack wird bezahlt, was auch draufsteht - es geht nur darum, wie weh es tut. **Jede 1.000 € Schnickschnack kosten etwa 3,5 bis 4,5 Punkte** Ausstiegschance: Die Küche für 7.500 € nimmt 34 Punkte, das Auto oder Boot für 5.000 € 23, ein Schnickschnack für 1.000 € 3,5 und alles unter 300 € etwa einen. Derselbe Schnickschnack kostet **im frühen Spiel das Eineinhalb- bis Doppelte** wie im späten - und in einem ausgebauten Spiel etwa die Hälfte, weil die Immobilien ihn schneller zurückzahlen. Bei 6 von 10 Pleiten war das Letzte, was geschah, ein Schnickschnack (siehe unten)."
+        },
+        {
+          "type": "data",
+          "id": "cardLabDoodads",
+          "caption": "Jeder Schnickschnack, der schlimmste zuerst"
+        },
+        { "type": "h3", "text": "Marktkarten" },
+        {
+          "type": "p",
+          "text": "Die meisten Marktkarten tun dir nichts. Ein **Käufer** für dein Einfamilienhaus ist am meisten wert, wenn er einen festen Betrag obendrauf bietet: +20.000 € sind **4,7 Punkte** wert (15 gesparte Würfe), +5.000 € nur 1 - und +10 % kaum mehr. Die beiden **Geschäfts-Boom**-Karten (+250 € und +400 € auf ein Geschäft) sind 2,6 und 3,2 Punkte wert, im ausgebauten Spiel etwa 12 und 17 Würfe. Die Kostenkarten (Mieter, Rohr) kosten 0,7 bis 3,5 Punkte, etwa so viel wie dasselbe Geld als Schnickschnack. Aktiensplits spielen keine Rolle."
+        },
+        { "type": "data", "id": "cardLabMarket", "caption": "Die Marktkarten, die dich betreffen" },
+        { "type": "h3", "text": "Würfelkarten: was ein Glücksspiel kostet" },
+        {
+          "type": "p",
+          "text": "Eine Würfelkarte gewinnt bei ihrer Zahl oder höher: Eine 4 gewinnt zur Hälfte, eine 6 einmal in sechs. **Der Multi-Level-Marketing-Einstieg gewinnt zur Hälfte und zahlt jeden Monat**: +6 Punkte. **Die Goldkisten** (eine 6 gewinnt, einmal in sechs) sind kleine Wetten, die meist verlieren: −0,6 und −1,7 Punkte - die Münzen sind wenig wert gegen das, was dasselbe Geld in einer Immobilie verdient. **Die Schwägerin** zahlt zur Hälfte 10.000 € für 5.000 € zurück: Im Schnitt ist das genau null, und trotzdem kostet es 7,6 Punkte - 0,6, wenn die 5.000 € bar da waren, 11,7, wenn die Bank sie leihen musste: ein faires Glücksspiel ist nicht umsonst, weil das Geld den Immobilien fehlt, die es hätte kaufen können."
+        },
+        {
+          "type": "data",
+          "id": "cardLabDice",
+          "caption": "Die Karten, die ein Würfel entscheidet"
+        },
+        { "type": "h3", "text": "Wo ein Spiel auf dem Weg steht" },
+        {
+          "type": "p",
+          "text": "Das passive Einkommen als Anteil der Ausgaben zeigt, wie nah der Ausstieg ist. Die erste Tabelle zeigt je Beruf, wo die Spiele, die **ausgestiegen sind**, bei Wurf 10, 20, 30, 40 und 60 standen - das mittlere Spiel, in Klammern das schnellste und das langsamste Zehntel. Bei Wurf 20 hat ein Spiel, das aussteigt, meist 7 bis 24 % der Ausgaben gedeckt, bei Wurf 40 20 bis 60 %."
+        },
+        {
+          "type": "data",
+          "id": "cardLabMilestones",
+          "caption": "Passives Einkommen als Anteil der Ausgaben, Spiele, die ausgestiegen sind"
+        },
+        {
+          "type": "p",
+          "text": "Die zweite Tabelle dreht es um: Von allen Spielen, die bei diesem Wurf in einem Bereich standen, wie viele stiegen aus und wie viele gingen pleite. **Früh zurückzuliegen ist nicht verloren** (4 von 5 Spielen mit unter 5 % bei Wurf 10 steigen trotzdem aus) - spät zurückzuliegen schon: unter 5 % bei Wurf 30 lässt zwei von drei, unter 5 % bei Wurf 60 nur 63 %. Ein Spiel, das bis Wurf 30 20 % erreicht hat, steigt fast immer aus (99 %), ab 40 % ist es so gut wie sicher."
+        },
+        {
+          "type": "data",
+          "id": "cardLabBands",
+          "caption": "Chance auf den Ausstieg / die Pleite, je nachdem wie weit ein Spiel ist"
+        },
+        { "type": "h3", "text": "Was ein Spiel in die Pleite führt" },
+        {
+          "type": "p",
+          "text": "Von 12.000 Spielen mit der ausgewogenen Strategie gingen 16 % pleite. Die Tabelle zeigt, was die letzte Entscheidung vor dem Ende war und welche Karten am häufigsten unter den letzten drei waren. Es ist **fast immer ein Schnickschnack** (61 %), ein ausgelassener Deal (26 %, das Spiel war schon verloren) oder eine Markt-Kostenkarte. Küche, erstes Auto, Zahnspange und Boot sind am häufigsten - die teuren Schnickschnack-Karten im Stapel. Der beste Schutz ist kein kluger Deal, sondern **Bargeld für den nächsten Schnickschnack** (siehe Abschnitt 17)."
+        },
+        {
+          "type": "data",
+          "id": "cardLabRuin",
+          "caption": "Die letzte Entscheidung vor einer Pleite"
+        },
+        {
+          "type": "callout",
+          "kind": "tip",
+          "title": "Wie der Analyst das nutzt",
+          "text": "Wird ein Spiel analysiert, wird eine Karte, die du ausgelassen hast, bewertet, indem beide Entscheidungen mit denselben Würfen durchgespielt werden, und neben diese Zahlen gestellt: **Ein ausgelassener Deal, der +5 Punkte wert war, war eine verpasste Chance, einer, der geschadet hätte, wurde zu Recht ausgelassen**. Der Analyst sagt dir auch, wo dein Spiel bei Wurf 10, 20, 30, 40 und 60 stand, verglichen mit den Spielen in der zweiten Tabelle, und wie die ausgegangen sind."
         }
       ]
     },

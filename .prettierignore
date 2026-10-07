@@ -12,3 +12,6 @@ e2e/visual-regression.spec.ts-snapshots/
 src/assets/i18n/cashflow-manual/strategy-lab.json
 docs/domain/strategy/data/results.json
 docs/domain/CASHFLOW_CARDS.md
+src/assets/i18n/cashflow-manual/card-lab.json
+docs/domain/strategy/data/card-results.json
+docs/domain/CASHFLOW_CARD_LAB.md

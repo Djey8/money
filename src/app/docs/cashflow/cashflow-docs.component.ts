@@ -32,6 +32,7 @@ import {
 } from './manual-content';
 import {
   buildManualTable,
+  type CardLab,
   type LabResults,
   type ManualContext,
   type ManualTable,
@@ -73,6 +74,8 @@ export class CashflowDocsComponent implements OnInit, OnDestroy {
   content: ManualContent | null = null;
   /** What the strategy lab measured (scripts/strategy-lab.js); null when the file is not there. */
   lab: LabResults | null = null;
+  /** What the card lab measured (scripts/card-lab.js); null when the file is not there. */
+  cardLab: CardLab | null = null;
   loadFailed = false;
   /** The manual is not written in the app's language yet - the English text is shown. */
   usingFallback = false;
@@ -156,6 +159,9 @@ export class CashflowDocsComponent implements OnInit, OnDestroy {
       this.lab = await firstValueFrom(
         this.http.get<LabResults>('assets/i18n/cashflow-manual/strategy-lab.json'),
       ).catch(() => null);
+      this.cardLab = await firstValueFrom(
+        this.http.get<CardLab>('assets/i18n/cashflow-manual/card-lab.json'),
+      ).catch(() => null);
       this.tableCache.clear();
     } catch {
       this.loadFailed = true;
@@ -218,6 +224,8 @@ export class CashflowDocsComponent implements OnInit, OnDestroy {
       groupName: (group) => this.cardText.groupName(group),
       familyName: (family) => this.cardText.familyName(family),
       lab: this.lab,
+      cardLab: this.cardLab,
+      cardName: (id: string) => this.cardNameOf(id),
     };
   }
 
@@ -232,6 +240,16 @@ export class CashflowDocsComponent implements OnInit, OnDestroy {
   }
 
   // ---------------------------------------------------------------- card reference
+
+  /** A card's name for the tables: its title, with the ticker when the title alone does not tell cards apart. */
+  cardNameOf(cardId: string): string {
+    const found = this.cardById(cardId);
+    if (!found) return cardId;
+    const card = found.card as { title: string; symbol?: string };
+    const title = this.cardText.textFor(cardId).title ?? card.title;
+    const label = card.symbol ? this.cardText.symbolFor(card.symbol) : undefined;
+    return label && !title.includes(label) ? `${title} (${label})` : title;
+  }
 
   readonly browserDecks: ReferenceDeck[] = REFERENCE_DECKS;
   browserDeck: ReferenceDeck = 'dealSmall';

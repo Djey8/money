@@ -31,6 +31,100 @@ export interface ManualContext {
   familyName(family: string): string;
   /** What the strategy lab measured (assets/i18n/cashflow-manual/strategy-lab.json); null until it is loaded or when absent. */
   lab?: LabResults | null;
+  /** What the card lab measured (assets/i18n/cashflow-manual/card-lab.json); null until it is loaded or when absent. */
+  cardLab?: CardLab | null;
+  /** A card's name in the manual's language (its title, and its ticker when that tells it apart). */
+  cardName?(cardId: string): string;
+}
+
+// -- The card lab results (scripts/card-lab.js) -----------------------------------------------------
+
+export interface CardLabCard {
+  deck: 'dealSmall' | 'dealBig' | 'doodad' | 'market';
+  applied: number;
+  positions: number;
+  /** The change in the chance to escape the rat race when the card is taken: 0.05 is five points. */
+  escapeEffect: number | null;
+  escapeError: number | null;
+  bankruptEffect: number | null;
+  rollsSaved: number | null;
+  helps: number | null;
+  hurts: number | null;
+  early: number | null;
+  late: number | null;
+  fromCash: number | null;
+  fromCashApplied: number;
+  /** Median rolls to escape saved when the card is bought from cash (without the card minus with it). */
+  fromCashRolls: number | null;
+  withLoan: number | null;
+  withLoanApplied: number;
+  /** The same card in built-up games (the best strategy, deep into the game, rich in properties). */
+  builders: {
+    applied: number;
+    positions: number;
+    escapeEffect: number | null;
+    bankruptEffect: number | null;
+    rollsSaved: number | null;
+    fromCash: number | null;
+    fromCashApplied: number;
+    fromCashRolls: number | null;
+  } | null;
+  /** A share card when the shares are traded afterwards (sold when the price is high). */
+  traded: {
+    applied: number;
+    escapeEffect: number | null;
+    bankruptEffect: number | null;
+    rollsSaved: number | null;
+  } | null;
+}
+
+export interface CardLabMilestone {
+  professionId: string;
+  policyId: string;
+  games: number;
+  escapeRate: number;
+  marks: Record<
+    string,
+    {
+      escapedP10: number | null;
+      escapedP50: number | null;
+      escapedP90: number | null;
+      allP50: number | null;
+      still: number;
+    }
+  >;
+}
+
+export interface CardLab {
+  meta: {
+    positions: number;
+    rollouts: number;
+    gamesPerProfession: number;
+    stages: number[];
+    milestones: number[];
+    policy: string;
+  };
+  cards: Record<string, CardLabCard>;
+  dice: {
+    id: string;
+    costMinor: number;
+    winChance: number;
+    payoutMinor: number | null;
+    coins: number | null;
+    recurring: boolean;
+  }[];
+  milestones: CardLabMilestone[];
+  /** Per "policy|roll": four bands of progress (under 20%, 20-50%, 50-80%, 80% and more of the expenses covered). */
+  progressBands: Record<string, { games: number; escaped: number; bankrupt: number }[]>;
+  ruin: {
+    games: number;
+    bankrupt: number;
+    /** "kind|card id" -> how many bankrupt games had it among their last three decisions. */
+    lastCards: Record<string, number>;
+    lastKinds: Record<string, number>;
+    children: Record<string, number>;
+    landings: Record<string, number>;
+  };
 }
 
 // -- The strategy lab results (scripts/strategy-lab.js) -------------------------------------------
@@ -86,6 +180,14 @@ export const MANUAL_DATA_IDS = [
   'labMatrix',
   'labProfessions',
   'labCeiling',
+  'cardLabSmall',
+  'cardLabBig',
+  'cardLabDoodads',
+  'cardLabMarket',
+  'cardLabDice',
+  'cardLabMilestones',
+  'cardLabBands',
+  'cardLabRuin',
 ] as const;
 export type ManualDataId = (typeof MANUAL_DATA_IDS)[number];
 
@@ -572,8 +674,252 @@ function labCeilingTable(ctx: ManualContext): ManualTable {
   };
 }
 
+// -- Tables from the card lab ----------------------------------------------------------------------
+
+const points = (effect: number | null | undefined): string => {
+  if (effect === null || effect === undefined) return '-';
+  const value = Math.round(effect * 1000) / 10;
+  return `${value > 0 ? '+' : value < 0 ? '−' : ''}${Math.abs(value).toLocaleString('en-US', { maximumFractionDigits: 1 })}`;
+};
+
+function cardNumbers(card: CashflowDealCard, ctx: ManualContext): string {
+  const bits: string[] = [];
+  if (card.priceMinor !== undefined) bits.push(ctx.money(card.priceMinor));
+  if (card.depositMinor !== undefined) {
+    bits.push(`${ctx.money(card.depositMinor)} → +${ctx.money(card.cashflowMinor ?? 0)}`);
+  }
+  if (card.assetKind === 'asset' && card.costMinor !== undefined)
+    bits.push(ctx.money(card.costMinor));
+  return bits.join(', ');
+}
+
+/** Rolls saved when the card is bought from cash: in a typical game / in a built-up one. */
+function rollsPair(stats: CardLabCard): string {
+  const one = (value: number | null | undefined, applied: number): string =>
+    value === null || value === undefined || applied < 3 ? '-' : String(Math.round(value));
+  return `${one(stats.fromCashRolls, stats.fromCashApplied)} / ${one(stats.builders?.fromCashRolls, stats.builders?.fromCashApplied ?? 0)}`;
+}
+
+function cardNameOf(ctx: ManualContext, id: string, fallback: string): string {
+  return ctx.cardName ? ctx.cardName(id) : fallback;
+}
+
+/** Every Deal of a pile, the one that helped most when bought first. */
+function cardLabDealsTable(deck: 'dealSmall' | 'dealBig', ctx: ManualContext): ManualTable {
+  const l = ctx.labels;
+  const head = [
+    l['colCard'],
+    l['colCardNumbers'],
+    l['colFromCash'],
+    l['colWithLoan'],
+    l['colRollsSaved'],
+    l['colTraded'],
+  ];
+  const lab = ctx.cardLab;
+  if (!lab) return labMissing(head, ctx);
+  const rows = (classicSet().decks?.[deck] ?? [])
+    .map((card) => ({ card, stats: lab.cards[card.id] }))
+    .filter((row) => row.stats && row.stats.applied > 0)
+    .sort(
+      (a, b) =>
+        (b.stats.fromCash ?? b.stats.escapeEffect ?? -9) -
+          (a.stats.fromCash ?? a.stats.escapeEffect ?? -9) ||
+        (b.stats.escapeEffect ?? -9) - (a.stats.escapeEffect ?? -9),
+    );
+  return {
+    head,
+    rows: rows.map(({ card, stats }) => [
+      cardNameOf(ctx, card.id, card.title),
+      cardNumbers(card, ctx),
+      stats.fromCashApplied >= 3 ? points(stats.fromCash) : '-',
+      stats.withLoanApplied >= 3 ? points(stats.withLoan) : '-',
+      rollsPair(stats),
+      stats.traded && stats.traded.applied >= 3 ? points(stats.traded.escapeEffect) : '-',
+    ]),
+    note: l['noteCardLabDeals'],
+  };
+}
+
+function cardLabDoodadsTable(ctx: ManualContext): ManualTable {
+  const l = ctx.labels;
+  const head = [
+    l['colCard'],
+    l['colCost'],
+    l['colEscapeEffect'],
+    l['colBankruptEffect'],
+    l['colEarly'],
+    l['colLate'],
+  ];
+  const lab = ctx.cardLab;
+  if (!lab) return labMissing(head, ctx);
+  const rows = (classicSet().decks?.doodad ?? [])
+    .map((card) => ({ card, stats: lab.cards[card.id] }))
+    .filter((row) => row.stats)
+    .sort((a, b) => (a.stats.escapeEffect ?? 0) - (b.stats.escapeEffect ?? 0));
+  return {
+    head,
+    rows: rows.map(({ card, stats }) => [
+      cardNameOf(ctx, card.id, card.title),
+      ctx.money(card.costMinor),
+      points(stats.escapeEffect),
+      points(stats.bankruptEffect),
+      points(stats.early),
+      points(stats.late),
+    ]),
+    note: l['noteCardLabDoodads'],
+  };
+}
+
+function cardLabMarketTable(ctx: ManualContext): ManualTable {
+  const l = ctx.labels;
+  const head = [l['colCard'], l['colAppliedIn'], l['colEscapeEffect'], l['colBankruptEffect']];
+  const lab = ctx.cardLab;
+  if (!lab) return labMissing(head, ctx);
+  const rows = (classicSet().decks?.market ?? [])
+    .map((card) => ({ card, stats: lab.cards[card.id] }))
+    .filter((row) => row.stats && row.stats.applied > 0)
+    .sort((a, b) => (b.stats.escapeEffect ?? 0) - (a.stats.escapeEffect ?? 0));
+  return {
+    head,
+    rows: rows.map(({ card, stats }) => [
+      cardNameOf(ctx, card.id, card.title),
+      ctx.percent(stats.applied / Math.max(1, stats.positions)),
+      points(stats.escapeEffect),
+      points(stats.bankruptEffect),
+    ]),
+    note: l['noteCardLabMarket'],
+  };
+}
+
+function cardLabDiceTable(ctx: ManualContext): ManualTable {
+  const l = ctx.labels;
+  const head = [
+    l['colCard'],
+    l['colCost'],
+    l['colChance'],
+    l['colPays'],
+    l['colEscapeEffect'],
+    l['colBankruptEffect'],
+  ];
+  const lab = ctx.cardLab;
+  if (!lab) return labMissing(head, ctx);
+  const rows = lab.dice
+    .map((dice) => ({ dice, stats: lab.cards[dice.id] }))
+    .sort((a, b) => (b.stats?.escapeEffect ?? -9) - (a.stats?.escapeEffect ?? -9));
+  return {
+    head,
+    rows: rows.map(({ dice, stats }) => [
+      cardNameOf(ctx, dice.id, dice.id),
+      ctx.money(dice.costMinor),
+      ctx.percent(dice.winChance),
+      dice.payoutMinor
+        ? `${ctx.money(dice.payoutMinor)}${dice.recurring ? ` ${l['perMonth'] ?? 'a month'}` : ''}`
+        : dice.coins
+          ? `${dice.coins} ${l['coins'] ?? 'coins'}`
+          : '-',
+      points(stats?.escapeEffect),
+      points(stats?.bankruptEffect),
+    ]),
+    note: l['noteCardLabDice'],
+  };
+}
+
+function cardLabMilestonesTable(ctx: ManualContext): ManualTable {
+  const l = ctx.labels;
+  const lab = ctx.cardLab;
+  const rolls = lab?.meta.milestones ?? [10, 20, 30, 40, 60];
+  const head = [
+    l['colProfession'],
+    l['colEscapes'],
+    ...rolls.map((roll) => `${l['colAtRoll'] ?? 'Roll'} ${roll}`),
+  ];
+  if (!lab) return labMissing(head, ctx);
+  const names = new Map(
+    classicSet().professions.map((profession) => [profession.id, ctx.professionTitle(profession)]),
+  );
+  const rows = lab.milestones
+    .filter((entry) => entry.policyId === 'best-found')
+    .sort((a, b) => a.escapeRate - b.escapeRate);
+  return {
+    head,
+    rows: rows.map((entry) => [
+      names.get(entry.professionId) ?? entry.professionId,
+      ctx.percent(entry.escapeRate),
+      ...rolls.map((roll) => {
+        const mark = entry.marks[String(roll)];
+        return mark && mark.escapedP50 !== null
+          ? `${ctx.percent(mark.escapedP50)} (${ctx.percent(mark.escapedP10 ?? 0)} – ${ctx.percent(mark.escapedP90 ?? 0)})`
+          : '-';
+      }),
+    ]),
+    note: l['noteCardLabMilestones'],
+  };
+}
+
+function cardLabBandsTable(ctx: ManualContext): ManualTable {
+  const l = ctx.labels;
+  const lab = ctx.cardLab;
+  const rolls = lab?.meta.milestones ?? [10, 20, 30, 40, 60];
+  const head = [l['colProgress'], ...rolls.map((roll) => `${l['colAtRoll'] ?? 'Roll'} ${roll}`)];
+  if (!lab) return labMissing(head, ctx);
+  const bands = [l['band0'], l['band1'], l['band2'], l['band3'], l['band4']];
+  return {
+    head,
+    rows: bands.map((band, index) => [
+      band,
+      ...rolls.map((roll) => {
+        const slot = lab.progressBands[`all-rounder|${roll}`]?.[index];
+        return slot && slot.games >= 20
+          ? `${ctx.percent(slot.escaped / slot.games)} / ${ctx.percent(slot.bankrupt / slot.games)}`
+          : '-';
+      }),
+    ]),
+    note: l['noteCardLabBands'],
+  };
+}
+
+function cardLabRuinTable(ctx: ManualContext): ManualTable {
+  const l = ctx.labels;
+  const head = [l['colLastDecision'], l['colBankruptGames']];
+  const lab = ctx.cardLab;
+  if (!lab) return labMissing(head, ctx);
+  const total = Math.max(1, lab.ruin.bankrupt);
+  const kindName = (kind: string): string => l[`kind_${kind}`] ?? kind;
+  const kinds = Object.entries(lab.ruin.lastKinds).sort((a, b) => b[1] - a[1]);
+  const cards = Object.entries(lab.ruin.lastCards)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10);
+  return {
+    head,
+    rows: [
+      ...kinds.map(([kind, count]) => [kindName(kind), ctx.percent(count / total)]),
+      ...cards.map(([key, count]) => {
+        const [kind, id] = key.split('|');
+        return [`${kindName(kind)}: ${cardNameOf(ctx, id, id)}`, ctx.percent(count / total)];
+      }),
+    ],
+    note: l['noteCardLabRuin'],
+  };
+}
+
 export function buildManualTable(id: ManualDataId, ctx: ManualContext): ManualTable {
   switch (id) {
+    case 'cardLabSmall':
+      return cardLabDealsTable('dealSmall', ctx);
+    case 'cardLabBig':
+      return cardLabDealsTable('dealBig', ctx);
+    case 'cardLabDoodads':
+      return cardLabDoodadsTable(ctx);
+    case 'cardLabMarket':
+      return cardLabMarketTable(ctx);
+    case 'cardLabDice':
+      return cardLabDiceTable(ctx);
+    case 'cardLabMilestones':
+      return cardLabMilestonesTable(ctx);
+    case 'cardLabBands':
+      return cardLabBandsTable(ctx);
+    case 'cardLabRuin':
+      return cardLabRuinTable(ctx);
     case 'labStrategies':
       return labStrategiesTable(ctx);
     case 'labMatrix':

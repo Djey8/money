@@ -49,3 +49,4 @@ docs
 !docs/domain/strategy
 !docs/domain/strategy/data
 !docs/domain/strategy/data/results.json
+!docs/domain/strategy/data/card-results.json
