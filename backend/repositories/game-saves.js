@@ -444,4 +444,5 @@ module.exports = {
   deleteSave,
   pruneSaves,
   storageOf,
+  readBlob,
 };

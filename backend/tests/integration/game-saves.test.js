@@ -184,3 +184,45 @@ describe('saved games', () => {
     expect(none.body.code).toBe('game_not_started');
   });
 });
+
+describe('the game analyst', () => {
+  it('judges the purchases of the running game against not buying them, and says what a compact save cannot do', async () => {
+    if (!dbAvailable) return;
+    const user = await registerGameUser('_review');
+    await startGame(user);
+    const small = await api('get', '/game/cards?deck=dealSmall&limit=200', user);
+    const house = small.body.cards.find(
+      (card) => card.assetKind === 'investment' && card.cashflowMinor > 0,
+    );
+    const bought = await api('post', '/game/deals/buy', user).send({ cardId: house.id });
+    expect(bought.status).toBe(200);
+    await api('post', '/game/payday', user).send({});
+
+    const review = await api('get', '/game/review?rollouts=12&timeBudgetSeconds=60', user);
+    expect(review.status).toBe(200);
+    expect(review.body.reviewable).toBe(true);
+    expect(review.body.baseline.id).toBe('all-rounder');
+    expect(review.body.review.moves.map((move) => move.kind)).toContain('purchase');
+    expect(review.body.review.final.outcome).toBe('playing');
+    expect(review.body.text).toContain('## Game review');
+    expect(review.body.text).toContain('Bought');
+
+    const full = await api('post', '/game/saves', user).send({ name: 'full' });
+    const reviewedSave = await api(
+      'get',
+      `/game/saves/${full.body.game.id}/review?rollouts=12`,
+      user,
+    );
+    expect(reviewedSave.body.reviewable).toBe(true);
+    expect(reviewedSave.body.review.judged).toBeGreaterThan(0);
+
+    const compact = await api('post', '/game/saves', user).send({ name: 'compact', compact: true });
+    const none = await api('get', `/game/saves/${compact.body.game.id}/review`, user);
+    expect(none.status).toBe(200);
+    expect(none.body.reviewable).toBe(false);
+    expect(none.body.reason).toMatch(/compactly/);
+
+    const bad = await api('get', '/game/review?rollouts=5', user);
+    expect(bad.status).toBe(400);
+  }, 180000);
+});

@@ -1,6 +1,6 @@
 # Cashflow game — strategy lab, knowledge base and game analyst
 
-**Status:** planned 2026-10-07, not started. Follows Phase D of [`cashflow-game-pro.md`](cashflow-game-pro.md) (the Pro API and the MCP tools — D1–D5 are built; the special-asset cards and selling are the only gaps). Written from JFK's wishes of 2026-10-07; every decision below is a recommendation until JFK confirms it (§7).
+**Status (2026-10-07):** E0 answered by JFK; E1 (headless simulator, strategies), E2 (the lab, `scripts/strategy-lab.js`), E3 (position evaluator), E4 (game analyst), E5 (results in `docs/domain/CASHFLOW_STRATEGY_LAB.md` and the in-app manual, section 18) and E6 (`GET /game/review`, `GET /game/saves/{id}/review`, MCP `get_cashflow_game` actions `review` / `review_save`) are built. Follows Phase D of [`cashflow-game-pro.md`](cashflow-game-pro.md), which is complete. Decisions of JFK: winning means escaping the rat race, losing means bankruptcy; judge strategies by how often they escape, how fast (rolls and months), how much passive income and cashflow they reach, average and best case; all professions; solo games analysed in full, companion games on their purchases, sales and loans; Fast Track stays out of scope; the knowledge lives in the app's documentation (the Cashflow manual), generated from the lab.
 
 ## 1. What JFK wants
 

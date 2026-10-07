@@ -363,8 +363,10 @@ export const TOOLS: ToolDefinition[] = [
       '`legalActions`, the only moves play_cashflow_game will accept right now (call this before every move). ' +
       'sets/set: the game sets, professions and the 24-space board. cards: browse or find cards of a pile (deck is ' +
       'required; query searches title, ticker and price). history: the step log of the running game. saves/save: ' +
-      'the saved games, the account storage left (`storage`) and one saved game with its step log. Requires a PAT ' +
-      'with game:r.',
+      'the saved games, the account storage left (`storage`) and one saved game with its step log. review / review_save: ' +
+      'the game analyst - judges the decisions of the running game or a saved game (best ... blunder, the turning ' +
+      'point, a comparison with the strategy lab); read explain_concept topic cashflow_strategy_lab to turn it into ' +
+      'advice. Requires a PAT with game:r.',
     actions: {
       game: action('getGame'),
       sets: action('listGameSets'),
@@ -373,6 +375,8 @@ export const TOOLS: ToolDefinition[] = [
       history: action('getGameHistory'),
       saves: action('listGameSaves'),
       save: action('getGameSave'),
+      review: action('getGameReview'),
+      review_save: action('getGameSaveReview'),
     },
   },
   {

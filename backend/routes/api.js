@@ -48,6 +48,7 @@ const {
 } = require('../repositories/game-repository');
 const { playGameAction, GameActionError } = require('../repositories/game-play');
 const gameSaves = require('../repositories/game-saves');
+const gameAnalysis = require('../repositories/game-analysis');
 const { isGameAccountEmail } = require('../services/game-account');
 const {
   settleBucket,
@@ -3733,6 +3734,35 @@ const requireConfirm = (confirmed) => {
   }
 };
 
+// The game analyst: judges the decisions of the running game, or of a saved game that kept its history.
+const reviewInput = (req) => {
+  const rollouts = req.query.rollouts === undefined ? undefined : Number(req.query.rollouts);
+  if (
+    rollouts !== undefined &&
+    !(Number.isInteger(rollouts) && rollouts >= 10 && rollouts <= 400)
+  ) {
+    throw new Error('rollouts must be a whole number from 10 to 400.');
+  }
+  const seconds =
+    req.query.timeBudgetSeconds === undefined ? undefined : Number(req.query.timeBudgetSeconds);
+  if (seconds !== undefined && !(Number.isFinite(seconds) && seconds >= 5 && seconds <= 180)) {
+    throw new Error('timeBudgetSeconds must be from 5 to 180.');
+  }
+  return {
+    id: req.params.saveId,
+    strategy: typeof req.query.strategy === 'string' ? req.query.strategy : undefined,
+    rollouts,
+    timeBudgetMs: seconds === undefined ? undefined : seconds * 1000,
+  };
+};
+savesRoute('get', '/game/review', 'game:r', {
+  input: reviewInput,
+  run: (deps, userId, input) => gameAnalysis.reviewLive(deps, userId, input),
+});
+savesRoute('get', '/game/saves/:saveId/review', 'game:r', {
+  input: reviewInput,
+  run: (deps, userId, input) => gameAnalysis.reviewSave(deps, userId, input.id, input),
+});
 savesRoute('get', '/game/saves', 'game:r', {
   run: (deps, userId) => gameSaves.listSaves(deps, userId),
 });

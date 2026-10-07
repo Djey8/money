@@ -1820,6 +1820,95 @@ paths:
           $ref: '#/components/responses/GameActionRefused'
         '422':
           $ref: '#/components/responses/GameActionRefused'
+  /game/review:
+    get:
+      operationId: getGameReview
+      summary: Review the running game's decisions
+      description: >-
+        Game accounts only; requires `game:r`. The game analyst: finds the decisions that mattered - what was bought, sold, borrowed or repaid, a card that was planned and left - and judges each the way a chess review does: the position after the move and the position after the alternative are each played out many times with the same dice, under the `strategy` for the decisions still to come, and compared by how often the games escape the rat race. `label` is `best`, `good`, `neutral`, `inaccuracy`, `mistake` or `blunder`; `turningPoint` is the move that cost the most; `benchmark` sets the game beside the strategy lab's measurements for the profession; `text` is the review in words. A game played without a physical board has everything; a companion game is judged on its purchases, sales and loans. CPU-heavy: it runs in a worker and stops at the time budget.
+      security:
+        - bearerAuth: []
+      parameters:
+        - {
+            name: strategy,
+            in: query,
+            schema: { type: string, default: all-rounder },
+            description: The strategy the games continue with after each position (a preset id of the strategy lab).,
+          }
+        - {
+            name: rollouts,
+            in: query,
+            schema: { type: integer, minimum: 10, maximum: 400, default: 80 },
+            description: Simulated continuations per position.,
+          }
+        - {
+            name: timeBudgetSeconds,
+            in: query,
+            schema: { type: integer, minimum: 5, maximum: 180, default: 60 },
+            description: Stops judging after this long; the moves judged so far are returned.,
+          }
+      responses:
+        '200':
+          description: 'The review, or `reviewable: false` with the reason'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameReviewResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/GameActionRefused'
+  /game/saves/{saveId}/review:
+    get:
+      operationId: getGameSaveReview
+      summary: Review a saved game's decisions
+      description: >-
+        Game accounts only; requires `game:r`. The game analyst: finds the decisions that mattered - what was bought, sold, borrowed or repaid, a card that was planned and left - and judges each the way a chess review does: the position after the move and the position after the alternative are each played out many times with the same dice, under the `strategy` for the decisions still to come, and compared by how often the games escape the rat race. `label` is `best`, `good`, `neutral`, `inaccuracy`, `mistake` or `blunder`; `turningPoint` is the move that cost the most; `benchmark` sets the game beside the strategy lab's measurements for the profession; `text` is the review in words. A game played without a physical board has everything; a companion game is judged on its purchases, sales and loans. CPU-heavy: it runs in a worker and stops at the time budget. A save needs its undo history: a compact save has none and answers `reviewable: false`.
+      security:
+        - bearerAuth: []
+      parameters:
+        - { name: saveId, in: path, required: true, schema: { type: string } }
+        - {
+            name: strategy,
+            in: query,
+            schema: { type: string, default: all-rounder },
+            description: The strategy the games continue with after each position (a preset id of the strategy lab).,
+          }
+        - {
+            name: rollouts,
+            in: query,
+            schema: { type: integer, minimum: 10, maximum: 400, default: 80 },
+            description: Simulated continuations per position.,
+          }
+        - {
+            name: timeBudgetSeconds,
+            in: query,
+            schema: { type: integer, minimum: 5, maximum: 180, default: 60 },
+            description: Stops judging after this long; the moves judged so far are returned.,
+          }
+      responses:
+        '200':
+          description: 'The review, or `reviewable: false` with the reason'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameReviewResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/GameActionRefused'
   /mojo:
     get:
       operationId: getMojo
@@ -5679,6 +5768,26 @@ components:
                   kind:
                     { type: string, enum: [deal, doodad, payday, market, charity, downsized, baby] }
                   printed: { type: string }
+    GameReviewResponse:
+      type: object
+      required: [reviewable]
+      properties:
+        reviewable: { type: boolean }
+        reason: { type: string, description: Why not, when reviewable is false. }
+        baseline:
+          type: object
+          properties:
+            id: { type: string }
+            label: { type: string }
+            description: { type: string }
+        review:
+          type: object
+          description: The judged moves (kind, label, escapeChance taken/other/delta, rollsToEscape, facts), counts per label, turningPoint, bestMove, final result.
+        benchmark:
+          type: object
+          nullable: true
+          description: The strategy lab's best strategy for the profession and where this game ranks among its games.
+        text: { type: string, description: The review in words (markdown). }
     MojoStatus:
       type: object
       required: [amountMinor, targetMinor, remainingMinor, percentFilled]
