@@ -1647,6 +1647,7 @@
   "CashflowGame.solo.sumExpenses": "المصروفات",
   "CashflowGame.step.roll": "رمية",
   "CashflowGame.step.skipCard": "تم تجاوز البطاقة",
+  "CashflowGame.step.cardPicked": "تم اختيار بطاقة",
   "CashflowGame.solo.paydayIncome": "الدخل",
   "CashflowGame.solo.paydayTimes": "× {{count}}",
   "CashflowGame.filterKinds": "كل الأنواع",

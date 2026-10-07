@@ -2958,6 +2958,22 @@ describe('CashflowGameService', () => {
       expect(persistence.writeAndSync).toHaveBeenCalled();
     });
 
+    it('drawing and finding a card are History steps carrying the exact card id', () => {
+      started();
+      const onSuccess = jest.fn();
+      service.drawCard('dealSmall', { onSuccess, onError: jest.fn() });
+      const drawn = onSuccess.mock.calls[0][0];
+      const [found] = service.findCardsInDeck('dealSmall', 'duplex');
+      service.recordCardPicked('dealSmall', found);
+      service.recordCardPicked('dealSmall', found); // the same card again: no second step
+
+      const picks = service
+        .historySteps()
+        .filter((step) => step.kind === 'cardPicked')
+        .reverse();
+      expect(picks.map((step) => step.cardId)).toEqual([drawn.id, found.id]);
+    });
+
     it('drawCard reshuffles a single-card deck rather than erroring on the second draw', () => {
       started();
       const first = jest.fn();

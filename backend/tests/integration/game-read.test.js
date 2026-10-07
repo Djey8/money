@@ -479,6 +479,22 @@ describe('cards, deals and doodads in a solo game', () => {
     expect(found.body.cards.map((card) => card.id)).toContain(pile.body.cards[0].id);
     const bad = await session('get', '/api/v1/game/cards?deck=nope', user.token);
     expect(bad.status).toBe(400);
+
+    // the card reference needs no running game: the set is named
+    const fresh = await registerGameUser('_reference');
+    const reference = await session(
+      'get',
+      '/api/v1/game/cards?deck=dealBig&gameSetId=cashflow&limit=200',
+      fresh.token,
+    );
+    expect(reference.status).toBe(200);
+    expect(reference.body.total).toBeGreaterThan(5);
+    const unknown = await session(
+      'get',
+      '/api/v1/game/cards?deck=dealBig&gameSetId=nope',
+      fresh.token,
+    );
+    expect(unknown.status).toBe(400);
   });
 
   it('draws a card for the space and buys a Deal: a Grow project, the position, and the turn moves on', async () => {

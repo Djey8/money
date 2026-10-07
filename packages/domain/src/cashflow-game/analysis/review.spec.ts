@@ -190,6 +190,25 @@ describe('reviewGame', () => {
     expect(review.judged).toBe(1);
     expect(review.moves[0]).toMatchObject({ kind: 'passed-card', alternative: 'buying it' });
 
+    // a game that logged the pick itself (cardPicked) names the card without the decks' memory
+    const picked = [
+      stack[0],
+      {
+        ...snapshotFromBooks({
+          ...onSpace,
+          state: { ...onSpace.state, drawnCardIds: start.state.drawnCardIds },
+        }),
+        step: {
+          kind: 'cardPicked' as const,
+          detail: card.title,
+          cardId: card.id,
+          deck: 'dealSmall' as const,
+        },
+      },
+      { ...snapshotFromBooks(onSpace), step: { kind: 'skipCard' as const, detail: 'deal' } },
+    ];
+    expect(cardSeenBeforePass(picked, 2)).toEqual({ deck: 'dealSmall', cardId: card.id });
+
     // a pass with no card drawn first has nothing to judge
     const unseen = [
       stack[0],

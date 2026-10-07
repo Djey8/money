@@ -102,6 +102,7 @@ import {
   type GameBooks,
   type GameEffects,
   type GameStep,
+  cardPickedStep,
   type LoanBooks,
   type GameStepKind,
   type HistoryStep,
@@ -2010,6 +2011,10 @@ export class CashflowGameService {
       callbacks.onError(errorMessage(err, 'Could not draw a card.'));
       return;
     }
+    // the pick is a step of its own - the exact card is in the History, so a game can be analysed card by card
+    if (state.cashflowGame.professionId) {
+      this.pushUndoSnapshot(cardPickedStep(deckKind, result.card));
+    }
     state.cashflowGame = {
       ...state.cashflowGame,
       drawnCardIds: { ...state.cashflowGame.drawnCardIds, [deckKind]: result.drawnIds },
@@ -2023,6 +2028,17 @@ export class CashflowGameService {
       onSuccess: () => callbacks.onSuccess(result.card),
       onError: (error: any) => callbacks.onError(error?.message || 'Database write failed'),
     });
+  }
+
+  /**
+   * A card found among the physical cards is picked too (the same step as a random draw), so the History knows exactly
+   * which card was on the table when it is passed or played. Picking the card that was picked last again adds nothing.
+   */
+  recordCardPicked(deckKind: CashflowDeckKind, card: { id: string; title: string }): void {
+    if (!AppStateService.instance.cashflowGame.professionId) return;
+    const last = this.undoStack[this.undoStack.length - 1]?.step;
+    if (last?.kind === 'cardPicked' && last.cardId === card.id) return;
+    this.pushUndoSnapshot(cardPickedStep(deckKind, card));
   }
 
   /** Plans a drawn/found Deal card exactly as `planDeal` would from the manual form — its numbers, not re-typed. */

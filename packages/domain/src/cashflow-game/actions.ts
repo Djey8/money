@@ -22,7 +22,7 @@ import {
 } from './market-cards';
 import { buyAssetDeal, sellPosition, type SellInput } from './positions';
 import { rollDie, type Rng } from './rng';
-import type { GameStep } from './steps';
+import { cardPickedStep, type GameStep } from './steps';
 import type {
   CashflowDealCard,
   CashflowDeckKind,
@@ -105,9 +105,15 @@ export function drawCardAction(
     ...books.state,
     drawnCardIds: { ...books.state.drawnCardIds, [deck]: drawn.drawnIds },
   };
+  const described = describeCard(drawn.card, deps);
   return {
-    effects: [emptyEffects(state, null)],
-    result: { deck, reshuffled: drawn.reshuffled, card: describeCard(drawn.card, deps) },
+    effects: [
+      emptyEffects(
+        state,
+        cardPickedStep(deck, drawn.card as { id: string; title: string }, described.label),
+      ),
+    ],
+    result: { deck, reshuffled: drawn.reshuffled, card: described },
   };
 }
 

@@ -269,13 +269,20 @@ export class CashflowGameComponent implements OnDestroy {
     return this.gameSets.find((set) => set.id === gameSetId);
   }
 
-  /** What a passed card was (the card the player had drawn and left), for the History line. */
-  passedCardLabel(cardId: string): string {
+  /** What a card in the History was (a picked card, or the card a pass left), by its id. */
+  cardLabelOf(cardId: string): string {
     const decks = this.currentGameSet?.decks;
-    const card = [...(decks?.dealSmall ?? []), ...(decks?.dealBig ?? [])].find(
-      (candidate) => candidate.id === cardId,
+    const card = [
+      ...(decks?.dealSmall ?? []),
+      ...(decks?.dealBig ?? []),
+      ...(decks?.market ?? []),
+      ...(decks?.doodad ?? []),
+    ].find((candidate) => candidate.id === cardId) as
+      { symbol?: string; title: string } | undefined;
+    if (!card) return '';
+    return (
+      (card.symbol ? this.cardText.symbolFor(card.symbol) : undefined) ?? card.symbol ?? card.title
     );
-    return card ? (this.cardText.symbolFor(card.symbol) ?? card.symbol ?? card.title) : '';
   }
 
   get loanIncrementAmount(): number {
@@ -1880,6 +1887,7 @@ export class CashflowGameComponent implements OnDestroy {
   }
 
   selectCard(card: CashflowDealCard | CashflowMarketCard | CashflowDoodadCard): void {
+    this.cashflowGameService.recordCardPicked(this.activeDeckKind, card);
     this.activeCard = card;
     this.cardQuery = '';
   }

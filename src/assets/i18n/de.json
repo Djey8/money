@@ -1672,6 +1672,7 @@
   "CashflowGame.solo.sumExpenses": "Ausgaben",
   "CashflowGame.step.roll": "Wurf",
   "CashflowGame.step.skipCard": "Karte ausgelassen",
+  "CashflowGame.step.cardPicked": "Karte gewählt",
   "CashflowGame.solo.paydayIncome": "Einkommen",
   "CashflowGame.solo.paydayTimes": "× {{count}}",
   "CashflowGame.filterKinds": "Alle Arten",

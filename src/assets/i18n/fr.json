@@ -1672,6 +1672,7 @@
   "CashflowGame.solo.sumExpenses": "Dépenses",
   "CashflowGame.step.roll": "Lancer",
   "CashflowGame.step.skipCard": "Carte passée",
+  "CashflowGame.step.cardPicked": "Carte choisie",
   "CashflowGame.solo.paydayIncome": "Revenus",
   "CashflowGame.solo.paydayTimes": "× {{count}}",
   "CashflowGame.filterKinds": "Toutes les sortes",

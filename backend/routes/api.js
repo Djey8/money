@@ -3521,7 +3521,12 @@ router.get('/game/cards', requireScope('game:r'), requireGameAccount, async (req
     const result = await browseGameCards(
       { usersDb: getUsersDb(), authDb: getAuthDb() },
       req.userId,
-      { deck: req.query.deck, query: req.query.query, limit: Number(req.query.limit) || undefined },
+      {
+        deck: req.query.deck,
+        query: req.query.query,
+        limit: Number(req.query.limit) || undefined,
+        gameSetId: typeof req.query.gameSetId === 'string' ? req.query.gameSetId : undefined,
+      },
     );
     if (result.error)
       return problem(res, 400, 'validation_invalid', 'Invalid cards request', result.error);

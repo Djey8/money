@@ -1206,9 +1206,11 @@
                 <span class="cf-history-title">{{
                   'CashflowGame.step.' + step.kind | translate
                 }}</span>
-                <span class="cf-history-detail" *ngIf="step.detail">{{ step.detail }}</span>
+                <span class="cf-history-detail" *ngIf="step.detail && step.kind !== 'cardPicked'">{{
+                  step.detail
+                }}</span>
                 <span class="cf-history-detail" *ngIf="step.cardId">{{
-                  passedCardLabel(step.cardId)
+                  cardLabelOf(step.cardId)
                 }}</span>
               </button>
               <button

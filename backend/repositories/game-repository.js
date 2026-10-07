@@ -168,13 +168,22 @@ const CARD_DECKS = ['dealSmall', 'dealBig', 'market', 'doodad'];
  * `GET /game/cards`: a pile of the running game's set, or the cards matching `query` (title, ticker, price - what
  * "find this card" searches by). Every card with its numbers and what it prints in the account's language.
  */
-async function browseGameCards(deps, userId, { deck, query, limit }) {
+async function browseGameCards(deps, userId, { deck, query, limit, gameSetId }) {
   if (!CARD_DECKS.includes(deck)) return { error: `deck must be one of ${CARD_DECKS.join(', ')}.` };
   const data = await loadUserData(deps, userId);
   const session = await getEncryptionSession(deps.authDb, userId);
   const state = decodeGameState(data.cashflowGame, session);
-  const gameSet = loadGameSets().find((candidate) => candidate.id === state.gameSetId);
-  if (!gameSet) return { error: 'No game is running: start one to browse its cards.' };
+  // the running game's set, or the one asked for (the card reference needs no game)
+  const gameSet = loadGameSets().find(
+    (candidate) => candidate.id === (gameSetId || state.gameSetId),
+  );
+  if (!gameSet) {
+    return {
+      error: gameSetId
+        ? `No game set with the id '${gameSetId}'.`
+        : 'No game is running: start one, or pass gameSetId, to browse its cards.',
+    };
+  }
   const { language } = decryptSettings(data.settings, session);
   const cards = createCardTextSource(language);
   const pile = gameSet.decks?.[deck] ?? [];

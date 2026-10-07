@@ -1647,6 +1647,7 @@
   "CashflowGame.solo.sumExpenses": "Expenses",
   "CashflowGame.step.roll": "Roll",
   "CashflowGame.step.skipCard": "Card passed",
+  "CashflowGame.step.cardPicked": "Card picked",
   "CashflowGame.solo.paydayIncome": "Income",
   "CashflowGame.solo.paydayTimes": "× {{count}}",
   "CashflowGame.filterKinds": "All kinds",

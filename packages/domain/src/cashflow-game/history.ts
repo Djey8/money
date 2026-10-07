@@ -197,8 +197,8 @@ export function inferStep(
 }
 
 /**
- * The Deal card the player had drawn when they passed (a `skipCard` step), or null when none was drawn. Drawing is not a
- * step of its own, but it is remembered: the deck's list of cards given out since its last shuffle grows by the drawn
+ * The Deal card the player had picked when they passed (a `skipCard` step), or null when none was picked. Picking a card is a
+ * `cardPicked` step of its own; a game from before that only has the decks' memory: the deck's list of cards given out since its last shuffle grows by the drawn
  * card. So the card is whatever the Deal decks gained between the position before the roll that landed on the space and
  * the position before the pass - which is why a game that left a card unseen cannot say what it left.
  */
@@ -206,6 +206,15 @@ export function cardSeenBeforePass<
   S extends Pick<GameSnapshot, 'cashflowGame'> & { step?: GameStep },
 >(stack: S[], index: number): { deck: 'dealSmall' | 'dealBig'; cardId: string } | null {
   if (stack[index]?.step?.kind !== 'skipCard') return null;
+  // the card the player picked on this space (a Deal card): the newest pick since the roll
+  for (let back = index - 1; back >= 0 && stack[back].step?.kind !== 'roll'; back -= 1) {
+    const picked = stack[back].step;
+    if (picked?.kind === 'cardPicked' && picked.cardId) {
+      if (picked.deck === 'dealSmall' || picked.deck === 'dealBig') {
+        return { deck: picked.deck, cardId: picked.cardId };
+      }
+    }
+  }
   let roll = index - 1;
   while (roll >= 0 && stack[roll].step?.kind !== 'roll') roll -= 1;
   if (roll < 0) return null;
@@ -241,6 +250,7 @@ export function historySteps<S extends GameSnapshot>(
       // Steps saved before history tracking carry no name: work it out from what changed.
       const step = snapshot.step ?? inferStep(snapshot, after, deps);
       const seen = cardSeenBeforePass(stack, index);
+      const cardId = step.cardId ?? seen?.cardId;
       return {
         id: `${snapshot.step?.at ?? 'saved'}-${index}`,
         number: index + 1,
@@ -248,7 +258,7 @@ export function historySteps<S extends GameSnapshot>(
         detail: step.detail ?? '',
         at: snapshot.step?.at ?? '',
         transactions: after.allTransactions.slice(snapshot.allTransactions.length),
-        ...(seen ? { cardId: seen.cardId } : {}),
+        ...(cardId ? { cardId } : {}),
       };
     })
     .reverse() as HistoryStep<S['allTransactions'][number]>[];

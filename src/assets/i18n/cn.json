@@ -1672,6 +1672,7 @@
   "CashflowGame.solo.sumExpenses": "支出",
   "CashflowGame.step.roll": "掷骰子",
   "CashflowGame.step.skipCard": "放弃卡片",
+  "CashflowGame.step.cardPicked": "选择卡片",
   "CashflowGame.solo.paydayIncome": "收入",
   "CashflowGame.solo.paydayTimes": "× {{count}}",
   "CashflowGame.filterKinds": "全部类别",

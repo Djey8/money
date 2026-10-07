@@ -268,19 +268,27 @@ export function reviewGame(
     return card && card.assetKind !== 'share' ? card : null;
   };
 
+  // a planned card that was neither bought nor passed with its card known (that pass is judged on its own)
+  const isLeftPlan = (index: number): boolean => {
+    const title = stack[index].step?.detail ?? '';
+    const next = (offset: number) => stack[index + offset]?.step;
+    const bought = [1, 2, 3].some(
+      (offset) =>
+        next(offset) && PURCHASES.has(next(offset)!.kind) && next(offset)!.detail === title,
+    );
+    const passedKnown = [1, 2, 3].some(
+      (offset) => next(offset)?.kind === 'skipCard' && passedCardOf(index + offset) !== null,
+    );
+    return !bought && !passedKnown;
+  };
+
   // the decisions there are to judge, so the time budget can be shared between them
   const isDecision = (index: number): boolean => {
     const step = stack[index].step;
     if (!step) return false;
     if (PURCHASES.has(step.kind)) return true;
     if (step.kind === 'skipCard') return passedCardOf(index) !== null;
-    if (step.kind === 'planDeal') {
-      const title = step.detail ?? '';
-      return ![1, 2, 3].some((offset) => {
-        const next = stack[index + offset]?.step;
-        return next && PURCHASES.has(next.kind) && next.detail === title;
-      });
-    }
+    if (step.kind === 'planDeal') return isLeftPlan(index);
     return (
       (SALES.has(step.kind) && step.kind !== 'cardSale') ||
       step.kind === 'loanTaken' ||
@@ -344,11 +352,7 @@ export function reviewGame(
       }
     } else if (step.kind === 'planDeal') {
       // a card that was planned and not bought within the next steps was left
-      const bought = [1, 2, 3].some((offset) => {
-        const next = stack[index + offset]?.step;
-        return next && PURCHASES.has(next.kind) && next.detail === title;
-      });
-      if (!bought && index + 1 <= stack.length) {
+      if (isLeftPlan(index) && index + 1 <= stack.length) {
         const planned = booksOf(entry(index + 1));
         try {
           const executed = executeDeal(planned, title, undefined, quietDeps);
