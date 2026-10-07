@@ -37,6 +37,7 @@ const SCOPE_RESOURCES: ScopeResource[] = [
   { key: 'settings', label: 'Settings', levels: ['none', 'r', 'w', 'rw'] },
   { key: 'encryption', label: 'Encryption config', levels: ['none', 'r', 'w', 'rw'] },
   { key: 'data', label: 'Full data export/import', levels: ['none', 'bulk'] },
+  { key: 'game', label: 'Cashflow game (game accounts only)', levels: ['none', 'r', 'w', 'rw'] },
 ];
 
 /** The "AI Assistant" scope bundle documented on the Pro API docs page — every normal
@@ -52,6 +53,7 @@ const AI_ASSISTANT_PRESET: Record<string, ScopeLevel> = {
   budget: 'rw',
   income: 'r',
   reports: 'r',
+  game: 'rw',
 };
 
 /**

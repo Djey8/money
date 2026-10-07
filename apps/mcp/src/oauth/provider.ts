@@ -39,6 +39,7 @@ export const DEFAULT_SCOPES = [
   'budget:rw',
   'income:r',
   'reports:r',
+  'game:rw',
 ];
 
 class InMemoryClientsStore implements OAuthRegisteredClientsStore {

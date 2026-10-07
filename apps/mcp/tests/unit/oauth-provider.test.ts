@@ -119,6 +119,10 @@ describe('MoneyManagerOAuthProvider', () => {
       );
     });
 
+    it('offers the Cashflow game scopes on the login page', () => {
+      expect(DEFAULT_SCOPES).toContain('game:rw');
+    });
+
     it('falls back to DEFAULT_SCOPES when the client requested none', async () => {
       mockedBackend.loginWithPassword.mockResolvedValue('session-jwt');
       mockedBackend.mintPersonalAccessToken.mockResolvedValue({
