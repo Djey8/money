@@ -186,15 +186,24 @@ function finishSale(
   return steps;
 }
 
+/** A price given for a sale is money: a whole, non-negative amount of minor units (a negative one would debit the sale). */
+function checkedPrice(value: number | undefined, label: string): number | undefined {
+  if (value === undefined) return undefined;
+  if (!Number.isSafeInteger(value) || value < 0) {
+    throw new Error(`${label} must be a whole amount of minor units, zero or more.`);
+  }
+  return value;
+}
+
 function sellShare(books: GameBooks, input: SellInput, deps: DealDeps): TradeResult {
   const { title } = input;
   const held = books.shares.find((share) => share.tag === title);
   if (!held || !(held.quantity > 0)) throw new Error(`You hold no ${title} shares.`);
   const quantity = input.quantity ?? held.quantity;
-  if (!(quantity > 0) || quantity > held.quantity) {
+  if (!Number.isFinite(quantity) || !(quantity > 0) || quantity > held.quantity) {
     throw new Error(`You hold ${held.quantity} ${title} shares; ${quantity} cannot be sold.`);
   }
-  const priceMinor = input.priceMinor ?? held.priceMinor;
+  const priceMinor = checkedPrice(input.priceMinor, 'priceMinor') ?? held.priceMinor;
   const result = calculateSellShare(title, quantity, priceMinor, held.quantity);
   const sale = emptyEffects(books.state, gameTradeStep(result.comment, `@${title}`));
   sale.persist = { subscriptions: false, grow: true, balanceSheet: true };
@@ -234,7 +243,8 @@ function sellInvestment(books: GameBooks, input: SellInput, deps: DealDeps): Tra
   if (!position) throw new Error(`You own no ${title}.`);
   const project = books.growProjects.find((candidate) => candidate.title === title)!;
   const offer = marketSaleFor(books.state, books.investments, title);
-  const salePriceMinor = input.salePriceMinor ?? offer?.salePriceMinor;
+  const salePriceMinor =
+    checkedPrice(input.salePriceMinor, 'salePriceMinor') ?? offer?.salePriceMinor;
   if (salePriceMinor === undefined) {
     throw new Error(
       `No buyer for ${title}: play a Market card with an offer for it first, or give salePriceMinor.`,
@@ -318,10 +328,12 @@ function sellAsset(books: GameBooks, title: string, input: SellInput, deps: Deal
     }
     // coins sell at the buyer's price per coin, else at what each cost
     priceMinor =
-      input.priceMinor ?? offer?.pricePerCoinMinor ?? Math.round(asset.amountMinor / coins);
+      checkedPrice(input.priceMinor, 'priceMinor') ??
+      offer?.pricePerCoinMinor ??
+      Math.round(asset.amountMinor / coins);
     totalMinor = multiplyQuantityPrice(quantity, priceMinor);
   } else {
-    priceMinor = input.priceMinor ?? asset.amountMinor;
+    priceMinor = checkedPrice(input.priceMinor, 'priceMinor') ?? asset.amountMinor;
     totalMinor = priceMinor;
   }
   const result = calculateSellAsset(title, totalMinor, asset.amountMinor, {

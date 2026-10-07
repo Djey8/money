@@ -3560,6 +3560,7 @@ const GAME_ACTION_STATUS = {
   GAME_WRITE_CONFLICT: 409,
   GAME_STORAGE_FULL: 409,
   GAME_SAVE_NOT_FOUND: 404,
+  GAME_REVIEW_BUSY: 429,
 };
 
 function gameAction(path, action, readInput) {
@@ -3636,12 +3637,15 @@ gameAction('/game/decisions/roll', 'roll_decision', (body) => {
 });
 gameAction('/game/positions/sell', 'sell_position', (body) => {
   if (typeof body.title !== 'string' || !body.title) throw new Error('title must be a string.');
-  if (body.quantity !== undefined && !(typeof body.quantity === 'number' && body.quantity > 0)) {
+  if (
+    body.quantity !== undefined &&
+    !(typeof body.quantity === 'number' && Number.isFinite(body.quantity) && body.quantity > 0)
+  ) {
     throw new Error('quantity must be a number above 0.');
   }
   for (const field of ['priceMinor', 'salePriceMinor']) {
-    if (body[field] !== undefined && !Number.isInteger(body[field])) {
-      throw new Error(`${field} must be an integer (minor units).`);
+    if (body[field] !== undefined && !(Number.isSafeInteger(body[field]) && body[field] >= 0)) {
+      throw new Error(`${field} must be a whole amount of minor units, zero or more.`);
     }
   }
   return {

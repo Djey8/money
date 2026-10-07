@@ -3,6 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 const { Worker } = require('worker_threads');
+const { GameActionError } = require('../repositories/game-play');
 const { PRESET_SPECS, benchmarkFor, describeReview } = require('@money/domain');
 
 /**
@@ -27,13 +28,41 @@ function loadLabResults() {
 
 const DEFAULT_STRATEGY = 'all-rounder';
 
+// A review plays thousands of games on a core of its own; a few at once would starve the API.
+const MAX_REVIEWS_AT_ONCE = 2;
+let reviewsRunning = 0;
+
 function runWorker(data) {
+  if (reviewsRunning >= MAX_REVIEWS_AT_ONCE) {
+    throw new GameActionError(
+      'GAME_REVIEW_BUSY',
+      'Other reviews are running; try again in a minute.',
+    );
+  }
+  reviewsRunning += 1;
   return new Promise((resolve, reject) => {
     const worker = new Worker(path.join(__dirname, 'game-review-worker.js'), { workerData: data });
-    worker.once('message', resolve);
-    worker.once('error', reject);
+    let finished = false;
+    const finish = () => {
+      if (finished) return false;
+      finished = true;
+      clearTimeout(killer);
+      reviewsRunning -= 1;
+      return true;
+    };
+    // the worker's own deadline is cooperative; this one is hard
+    const killer = setTimeout(() => {
+      if (finish()) reject(new Error('The review took too long and was stopped.'));
+      worker.terminate();
+    }, data.timeBudgetMs + 30000);
+    worker.once('message', (message) => {
+      if (finish()) resolve(message);
+    });
+    worker.once('error', (error) => {
+      if (finish()) reject(error);
+    });
     worker.once('exit', (code) => {
-      if (code !== 0) reject(new Error(`The review worker stopped with code ${code}.`));
+      if (code !== 0 && finish()) reject(new Error(`The review worker stopped with code ${code}.`));
     });
   });
 }

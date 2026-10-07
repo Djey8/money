@@ -128,6 +128,10 @@ describe('sellPosition - shares', () => {
     const owned = bought(shareInput);
     expect(() => sellPosition(owned, { title: 'OK4U', quantity: 101 }, deps)).toThrow('hold 100');
     expect(() => sellPosition(books(), { title: 'OK4U' }, deps)).toThrow('No Grow project');
+    expect(() => sellPosition(owned, { title: 'OK4U', priceMinor: -1500 }, deps)).toThrow(
+      'minor units',
+    );
+    expect(() => sellPosition(owned, { title: 'OK4U', quantity: Infinity }, deps)).toThrow();
   });
 });
 

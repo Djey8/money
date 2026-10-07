@@ -31,14 +31,6 @@ export interface LoanBooks extends Pick<RoundBooks, 'state' | 'subscriptions'> {
 }
 
 /**
- * Takes (`deltaMinor > 0`) or repays (`< 0`) a bank loan in the game set's step. The Bank loan liability and its
- * interest subscription are recomputed from the new principal every time (never hand-edited); a repaid loan removes
- * both. The money moves for real: a transaction credits a borrow and debits a repayment (JFK, 2026-09-29+), booked on
- * the next free day slot of the real month - or on `options.date` when a dialog fixed the day.
- *
- * Throws when no game has started, for a zero or off-step amount, and for repaying more than is owed.
- */
-/**
  * The most that can be repaid right now: the whole loan, or the whole steps of it the cash on hand covers - whichever is
  * less (JFK, 2026-10-07: you cannot repay into the red). Never negative.
  */
@@ -52,6 +44,14 @@ export function maxRepayableMinor(
   return Math.min(principalMinor, affordable);
 }
 
+/**
+ * Takes (`deltaMinor > 0`) or repays (`< 0`) a bank loan in the game set's step. The Bank loan liability and its
+ * interest subscription are recomputed from the new principal every time (never hand-edited); a repaid loan removes
+ * both. The money moves for real: a transaction credits a borrow and debits a repayment (JFK, 2026-09-29+), booked on
+ * the next free day slot of the real month - or on `options.date` when a dialog fixed the day.
+ *
+ * Throws when no game has started, for a zero or off-step amount, and for repaying more than is owed.
+ */
 export function playBankLoan(
   books: LoanBooks,
   deltaMinor: number,
