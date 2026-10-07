@@ -1,3 +1,77 @@
+## [1.20.0] - 2026-10-07
+
+### Features
+
+- feat(cashflow-game): repaying the bank can never take the account below zero
+- feat: the strategy lab and what it measured, in the Cashflow manual
+- feat(api): the game analyst - GET /game/review and /game/saves/{id}/review, and MCP review actions
+- feat(domain): a strategy lab, a position evaluator and a game analyst
+- feat(api): special-asset cards and selling positions - the whole game is playable
+- feat(domain): buy special assets and sell every kind of position as pure rules
+- feat(mcp): get_cashflow_game and play_cashflow_game, with the guide's section for agents
+- feat(api): saved games - save, list, read, continue, end, rename, delete, prune - with a storage budget
+- feat(domain): how many saved games an agent leaves behind
+- feat(api): play Market cards and roll waiting dice decisions
+- feat(domain): play_market and roll_decision join legalActions
+- feat(api): the solo turn and card decisions (turn, draw, buy a Deal, pay a Doodad, pass)
+- feat(domain): card text composer and card actions in legalActions
+- feat(api): start, undo and reset the Cashflow game, with a history shared with the app
+- feat(domain): undo joins legalActions while there is a step to take back
+- feat(api): companion game actions (payday, baby, charity, downsized, status clear, bank loan)
+- feat(domain): clear_status joins legalActions while a reminder is showing
+- feat(api): read surface for the Cashflow game (GET /game, /game/sets) behind a game-account guard
+- feat(domain): legalActions - what the game allows right now
+- feat(cashflow-game): paired dashboard rows and a ring that shrinks with the window height
+- feat: dropdown quick filters on phones, cash on the loan screens, a slimmer wide layout, a fitting Subscriptions table
+- feat(cashflow-game): a responsive layout - phone sheet, tablet and wide dashboard
+- feat(cashflow-game): open dice decisions wait for the totem; tile symbol on the right of card headings
+- feat(cashflow-game): solo feedback round - start look, tile symbols, no landing wait, Charity default, MLM info box
+- feat(cashflow-game): a red Reset game button on the dashboard; red delete in the games list
+- feat(cashflow-game): loan messages, Payday popup, thrown dice and a bin on every saved game
+- feat(cashflow-game): the games played so far sit behind a button below Start
+- feat(cashflow-game): solo playtest feedback - reveal order, START label, Payday banner, friend sale
+- feat(domain): the first solo roll starts the game and pays the opening Payday
+- feat(cashflow-game): play solo in the app - dice, walking token, card turns and the end screen
+- feat(cashflow-game): the rat-race ring and token as an SVG component
+- feat(cashflow-game): roll a solo turn and settle its card through the service
+- feat(domain): the end of a solo game - escaping the rat race or going bankrupt
+- feat(cashflow-game): read a solo game's token and turn back from the account
+- feat(domain): a solo turn - roll, move, pay Paydays, resolve the landing
+- feat(domain): dice, token movement and Payday passing for solo play
+- feat(domain): the rat-race board for solo play
+- feat(cashflow-game): write the live game's history to the account
+- feat(domain): the live game's history as a document the account can hold
+- feat(domain): the game's history, undo stack and snapshots as pure functions
+- feat(domain): the Doodad and Market-cost payments as pure rules
+- feat(domain): special assets, dice cards, coins and the split roll as pure rules
+- feat(domain): the deal lifecycle as pure rules
+- feat(domain): the full books, and applying effects to them
+- feat(domain): the bank loan and the automatic purchase loan as pure rules
+- feat(domain): classify a game trade and price its purchase through the typed parser
+- feat(domain): the Market cards as pure functions
+- feat(domain): Payday, Baby, Charity and Downsized as pure functions
+- feat(domain): clock and text ports, and the game's date scheduling
+- feat(domain): shared cash on hand and bank-loan arithmetic for the game
+
+### Bug Fixes
+
+- fix(cashflow-game): a sale price must be a non-negative whole amount; reviews are capped and stopped on time
+- fix(cashflow-game): arrows mirror in right-to-left; a normal game is saved in full
+- fix(cashflow-game): landing no longer greys the screen; what the player earns is booked as Income
+- fix(docs): a wide manual table scrolls inside the page instead of widening it
+- fix(cashflow-game): the walking totem has a layer of its own, so the ring is not repainted on every step
+- fix(cashflow-game): a solo game ends the moment the books say so
+- fix(grow): a market sale of a property no longer pays the deposit twice
+- fix(domain): the bonus of a kept MLM card is Income, not Daily
+- fix(add): tell the pages underneath when a transaction was saved
+- fix(cashflow-game): a solo roll takes effect only once the totem has settled
+- fix(cashflow-game): the loan steps field starts at 1 each time and after a settle
+- fix(domain): Charity and Downsized take the bank loan first when cash is short
+- fix(domain): a share card cannot be sold to a friend
+- fix(cashflow-game): write the card-sale comment in the game's language
+- fix(mobile): restore the iOS input-zoom and pull-to-refresh protections
+- fix(deploy): wait for the rollout, not for pods by label
+
 ## [1.19.2] - 2026-10-05
 
 ### Performance
