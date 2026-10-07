@@ -202,8 +202,19 @@ export class CashflowGameComponent implements OnDestroy {
     this.dashboardView = 'main';
   }
 
+  /**
+   * The card that is open when the player acts on it, declines it or leaves the dialog is the one they saw: it goes into
+   * the History with its exact id (JFK, 2026-10-07: browsing is not tracked, a card you looked at and passed on is). A
+   * card drawn at random was recorded when it was drawn; the same card twice in a row adds nothing.
+   */
+  private recordOpenCard(): void {
+    if (!this.activeCard) return;
+    this.cashflowGameService.recordCardPicked(this.activeDeckKind, this.activeCard);
+  }
+
   /** Leaves a focused sub-view (Deal pile choice, or the Cards find/draw flow) back to the main dashboard. */
   backToMain(): void {
+    this.recordOpenCard();
     this.dashboardView = 'main';
     this.activeCard = null;
     this.showFriendSale = false;
@@ -1887,7 +1898,7 @@ export class CashflowGameComponent implements OnDestroy {
   }
 
   selectCard(card: CashflowDealCard | CashflowMarketCard | CashflowDoodadCard): void {
-    this.cashflowGameService.recordCardPicked(this.activeDeckKind, card);
+    // browsing is not tracked: the card counts once it is acted on or declined (recordOpenCard)
     this.activeCard = card;
     this.cardQuery = '';
   }
@@ -1919,6 +1930,7 @@ export class CashflowGameComponent implements OnDestroy {
   /** Deal: plans it. Doodad: pays its cost now. Market: nothing to apply — see CASHFLOW_GAME_GUIDE.md §4/§6. */
   applyActiveCard(): void {
     if (!this.activeCard) return;
+    this.recordOpenCard();
     if (this.activeShareProject) {
       this.updateActiveSharePrice();
       return;
@@ -1997,6 +2009,7 @@ export class CashflowGameComponent implements OnDestroy {
   playActiveMarket(): void {
     const card = this.activeMarket;
     if (!card?.sells) return;
+    this.recordOpenCard();
     const symbols = card.sells.symbols ?? [card.sells.family];
     const families = [...new Set(symbols.map((symbol) => symbol.replace(/\d+$/, '')))];
     this.isBusy = true;
@@ -2036,6 +2049,7 @@ export class CashflowGameComponent implements OnDestroy {
   playActiveMarketSplit(): void {
     const card = this.activeMarket;
     if (!card?.splits) return;
+    this.recordOpenCard();
     const symbol = card.splits.symbol;
     this.isBusy = true;
     this.cashflowGameService.playShareSplitCard(
@@ -2063,6 +2077,7 @@ export class CashflowGameComponent implements OnDestroy {
   playActiveMarketBoost(): void {
     const card = this.activeMarket;
     if (!card?.boost) return;
+    this.recordOpenCard();
     const boost = card.boost;
     this.isBusy = true;
     this.cashflowGameService.playBoostCard(
@@ -2183,6 +2198,7 @@ export class CashflowGameComponent implements OnDestroy {
   playActiveMarketCost(): void {
     const card = this.activeMarket;
     if (!card?.pays) return;
+    this.recordOpenCard();
     const pays = card.pays;
     this.isBusy = true;
     this.cashflowGameService.playMarketCostCard(

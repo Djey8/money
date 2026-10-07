@@ -1413,6 +1413,28 @@ describe('CashflowGameComponent', () => {
       expect(component.activeCard).toBeNull();
       expect(cashflowGameService.applyDealCard).not.toHaveBeenCalled();
     });
+
+    it('records the card that was open: a card seen and declined is in the History', () => {
+      const { component, cashflowGameService } = makeComponent();
+      component.activeDeckKind = 'dealBig';
+      component.activeCard = { id: 'classic-big-pizza', title: 'Pizza', assetKind: 'investment' };
+
+      component.declineActiveCard();
+
+      expect(cashflowGameService.recordCardPicked).toHaveBeenCalledWith(
+        'dealBig',
+        expect.objectContaining({ id: 'classic-big-pizza' }),
+      );
+    });
+
+    it('records nothing when no card was opened (a pass without looking)', () => {
+      const { component, cashflowGameService } = makeComponent();
+      component.activeCard = null;
+
+      component.backToMain();
+
+      expect(cashflowGameService.recordCardPicked).not.toHaveBeenCalled();
+    });
   });
 
   describe('cards: find, draw, apply', () => {
@@ -1430,7 +1452,7 @@ describe('CashflowGameComponent', () => {
     });
 
     it('selectCard sets the active card and clears the search', () => {
-      const { component } = makeComponent();
+      const { component, cashflowGameService } = makeComponent();
       component.cardQuery = 'dup';
       const card = { id: '1', title: 'Duplex' };
 
@@ -1438,6 +1460,8 @@ describe('CashflowGameComponent', () => {
 
       expect(component.activeCard).toBe(card);
       expect(component.cardQuery).toBe('');
+      // browsing is not tracked
+      expect(cashflowGameService.recordCardPicked).not.toHaveBeenCalled();
     });
 
     it('changeDeck clears whatever was found/active for the previous deck', () => {

@@ -59,6 +59,8 @@ function describeMove(move: ReviewedMove, money: (minor: number) => string): str
   const kindWord: Record<ReviewedMove['kind'], string> = {
     purchase: 'Bought',
     'passed-card': 'Passed on',
+    'unseen-card': 'Passed without looking at',
+    'kept-offer': 'Kept it when a buyer offered:',
     sale: 'Sold',
     loan: 'Took the',
     repayment: 'Repaid the',

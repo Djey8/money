@@ -2,7 +2,7 @@ import type { GameBooks } from '../books';
 import { cashOnHandMinor } from '../cash';
 import { executeDeal, type DealDeps } from '../deals';
 import { fixedClock } from '../clock';
-import { buyDealAction, type ActionDeps } from '../actions';
+import { buyDealAction, playMarketAction, sellPositionAction, type ActionDeps } from '../actions';
 import { cardSeenBeforePass, type GameSnapshot } from '../history';
 import { seededRng } from '../rng';
 import { identityText } from '../game-text';
@@ -24,7 +24,16 @@ import { booksFromSnapshot } from './books-from-snapshot';
  */
 
 export type MoveLabel = 'best' | 'good' | 'neutral' | 'inaccuracy' | 'mistake' | 'blunder';
-export type MoveKind = 'purchase' | 'passed-card' | 'sale' | 'loan' | 'repayment';
+export type MoveKind =
+  | 'purchase'
+  | 'passed-card'
+  /** A Deal space passed without opening the card: what looking at it would have been worth. */
+  | 'unseen-card'
+  /** A buyer's offer for something the player owns that was not taken: selling was the alternative. */
+  | 'kept-offer'
+  | 'sale'
+  | 'loan'
+  | 'repayment';
 
 export interface MoveFacts {
   title: string;
@@ -268,6 +277,57 @@ export function reviewGame(
     return card && card.assetKind !== 'share' ? card : null;
   };
 
+  // The game position before the next roll after a step (the live game when no roll follows), and whether the player sold
+  // anything meanwhile.
+  const nextRoll = (index: number): number => {
+    let next = index + 1;
+    while (next < stack.length && stack[next].step?.kind !== 'roll') next += 1;
+    return next;
+  };
+  const soldBetween = (from: number, to: number): boolean =>
+    stack
+      .slice(from + 1, to)
+      .some(
+        (entry) => entry.step && (SALES.has(entry.step.kind) || entry.step.kind === 'cardSale'),
+      );
+
+  // A Market buyer's card the player picked: what selling to the buyer would have been, when they did not
+  // ("the moment it affects us but we don't act on it"). Null when it did not apply or was acted on.
+  const untakenOffer = (index: number): { card: { title: string }; sold: GameBooks } | null => {
+    const cardId = stack[index].step?.cardId;
+    const set = gameSet(stack[index].cashflowGame.gameSetId);
+    const card = (set?.decks?.market ?? []).find((candidate) => candidate.id === cardId);
+    if (!card?.sells) return null;
+    const until = nextRoll(index);
+    if (soldBetween(index, until)) return null;
+    try {
+      let books = booksOf(entry(index));
+      const plan = playMarketAction(books, { cardId: card.id }, quietActionDeps);
+      books = afterDone(plan.effects.reduce(applyEffectsToBooks, books));
+      const titles = (books.state.marketOffers ?? []).map((offer) => offer.title);
+      if (titles.length === 0) return null;
+      for (const title of titles) {
+        const sale = sellPositionAction(books, { title }, quietActionDeps);
+        books = sale.effects.reduce(applyEffectsToBooks, books);
+      }
+      return { card, sold: afterDone(books) };
+    } catch {
+      return null;
+    }
+  };
+
+  // a Deal space left without picking any card: nothing was looked at, so nothing about the card can be judged - only
+  // what looking would have been worth (JFK, 2026-10-07: "a little minus point of not even checking")
+  const isBlindPass = (index: number): boolean => {
+    if (stack[index].step?.kind !== 'skipCard' || stack[index].step?.detail !== 'deal')
+      return false;
+    for (let back = index - 1; back >= 0 && stack[back].step?.kind !== 'roll'; back -= 1) {
+      if (stack[back].step?.kind === 'cardPicked') return false;
+      if (stack[back].step?.kind === 'planDeal') return false;
+    }
+    return cardSeenBeforePass(stack, index) === null;
+  };
+
   // a planned card that was neither bought nor passed with its card known (that pass is judged on its own)
   const isLeftPlan = (index: number): boolean => {
     const title = stack[index].step?.detail ?? '';
@@ -287,7 +347,8 @@ export function reviewGame(
     const step = stack[index].step;
     if (!step) return false;
     if (PURCHASES.has(step.kind)) return true;
-    if (step.kind === 'skipCard') return passedCardOf(index) !== null;
+    if (step.kind === 'skipCard') return passedCardOf(index) !== null || isBlindPass(index);
+    if (step.kind === 'cardPicked' && step.deck === 'market') return untakenOffer(index) !== null;
     if (step.kind === 'planDeal') return isLeftPlan(index);
     return (
       (SALES.has(step.kind) && step.kind !== 'cardSale') ||
@@ -329,6 +390,16 @@ export function reviewGame(
     } else if (step.kind === 'skipCard') {
       // a card that was drawn and left: judged against buying it
       const card = passedCardOf(index);
+      if (!card && isBlindPass(index)) {
+        judge(
+          index,
+          'unseen-card',
+          'a Deal you did not look at',
+          booksOf(entry(index + 1)),
+          booksOf(entry(index)),
+          'looking at the card',
+        );
+      }
       if (card) {
         const before = booksOf(entry(index));
         let bought: GameBooks | null = null;
@@ -349,6 +420,19 @@ export function reviewGame(
             card,
           );
         }
+      }
+    } else if (step.kind === 'cardPicked' && step.deck === 'market') {
+      const offer = untakenOffer(index);
+      if (offer) {
+        const until = nextRoll(index);
+        judge(
+          index,
+          'kept-offer',
+          offer.card.title,
+          afterDone(booksOf(entry(until))),
+          offer.sold,
+          'selling to the buyer',
+        );
       }
     } else if (step.kind === 'planDeal') {
       // a card that was planned and not bought within the next steps was left
