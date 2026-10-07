@@ -669,6 +669,11 @@ describe('a whole game played through the API', () => {
     const history = await session('get', '/api/v1/game/history', user.token);
     expect(history.body.steps[0].kind).toBe('start');
     expect(history.body.steps.filter((step) => step.kind === 'roll')).toHaveLength(52);
+    // a card that was drawn and left is remembered on its History line, so it can be judged
+    const passes = history.body.steps.filter((step) => step.kind === 'skipCard');
+    expect(passes.length).toBeGreaterThan(0);
+    expect(passes.some((step) => typeof step.cardId === 'string')).toBe(true);
+    expect(reviewed.body.review.moves.some((move) => move.kind === 'passed-card')).toBe(true);
     const undone = await session('post', '/api/v1/game/undo', user.token).send({});
     expect(undone.body.turn.phase).not.toBe('over');
   }, 300000);

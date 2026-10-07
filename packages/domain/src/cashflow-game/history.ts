@@ -57,6 +57,8 @@ export interface HistoryStep<T = SnapshotTransaction> {
   at: string;
   /** What the step added to the books - e.g. a Payday's income and expense lines for the month. */
   transactions: T[];
+  /** For a passed card: the Deal card that had been drawn before the player left it (absent when none was drawn). */
+  cardId?: string;
 }
 
 /** The text a History line needs: the word "Round" for a Payday, and how an amount reads. */
@@ -195,6 +197,35 @@ export function inferStep(
 }
 
 /**
+ * The Deal card the player had drawn when they passed (a `skipCard` step), or null when none was drawn. Drawing is not a
+ * step of its own, but it is remembered: the deck's list of cards given out since its last shuffle grows by the drawn
+ * card. So the card is whatever the Deal decks gained between the position before the roll that landed on the space and
+ * the position before the pass - which is why a game that left a card unseen cannot say what it left.
+ */
+export function cardSeenBeforePass<
+  S extends Pick<GameSnapshot, 'cashflowGame'> & { step?: GameStep },
+>(stack: S[], index: number): { deck: 'dealSmall' | 'dealBig'; cardId: string } | null {
+  if (stack[index]?.step?.kind !== 'skipCard') return null;
+  let roll = index - 1;
+  while (roll >= 0 && stack[roll].step?.kind !== 'roll') roll -= 1;
+  if (roll < 0) return null;
+  // drawing is no step, so the position before the roll is the last one that shows the decks as they were
+  const beforeRoll = stack[roll].cashflowGame.drawnCardIds;
+  const beforePass = stack[index].cashflowGame.drawnCardIds;
+  let seen: { deck: 'dealSmall' | 'dealBig'; cardId: string } | null = null;
+  for (const deck of ['dealSmall', 'dealBig'] as const) {
+    const was = beforeRoll?.[deck] ?? [];
+    const now = beforePass?.[deck] ?? [];
+    const last = now[now.length - 1];
+    // a longer list, or a reshuffle (a shorter one) that ends in another card
+    if (last && (now.length !== was.length || last !== was[was.length - 1])) {
+      seen = { deck, cardId: last };
+    }
+  }
+  return seen;
+}
+
+/**
  * The game's History: one line per undo step, newest first (JFK, 2026-10-03: "each step to go backwards (undo) should be
  * on this list"). What each step added to the books is whatever the books gained between its snapshot and the next
  * one's - so a Payday lists its whole month, and nothing has to be recorded twice.
@@ -209,6 +240,7 @@ export function historySteps<S extends GameSnapshot>(
       const after: LiveGameView = index + 1 < stack.length ? stack[index + 1] : live;
       // Steps saved before history tracking carry no name: work it out from what changed.
       const step = snapshot.step ?? inferStep(snapshot, after, deps);
+      const seen = cardSeenBeforePass(stack, index);
       return {
         id: `${snapshot.step?.at ?? 'saved'}-${index}`,
         number: index + 1,
@@ -216,6 +248,7 @@ export function historySteps<S extends GameSnapshot>(
         detail: step.detail ?? '',
         at: snapshot.step?.at ?? '',
         transactions: after.allTransactions.slice(snapshot.allTransactions.length),
+        ...(seen ? { cardId: seen.cardId } : {}),
       };
     })
     .reverse() as HistoryStep<S['allTransactions'][number]>[];

@@ -2,7 +2,9 @@ import type { GameBooks } from '../books';
 import { cashOnHandMinor } from '../cash';
 import { executeDeal, type DealDeps } from '../deals';
 import { fixedClock } from '../clock';
-import type { GameSnapshot } from '../history';
+import { buyDealAction, type ActionDeps } from '../actions';
+import { cardSeenBeforePass, type GameSnapshot } from '../history';
+import { seededRng } from '../rng';
 import { identityText } from '../game-text';
 import { summarizeGameFinances } from '../saved-games';
 import type { GameStep } from '../steps';
@@ -107,6 +109,18 @@ const quietDeps: DealDeps = {
   text: identityText,
   money: (minor) => `${minor / 100}`,
   plainMoney: (minor) => `${minor / 100}`,
+};
+
+/** What buying a card needs when only its numbers matter: no words, a fixed day, no luck. */
+const quietActionDeps: ActionDeps = {
+  ...quietDeps,
+  cards: {
+    textFor: () => ({}),
+    symbolFor: (symbol) => symbol,
+    sharedText: () => '',
+    groupName: (group) => group,
+  },
+  rng: seededRng(1),
 };
 
 function afterDone(books: GameBooks): GameBooks {
@@ -243,11 +257,23 @@ export function reviewGame(
     });
   };
 
+  // the Deal card that was drawn and then left at a step (not a share: it has no count to buy), if there was one
+  const passedCardOf = (index: number) => {
+    const seen = cardSeenBeforePass(stack, index);
+    if (!seen) return null;
+    const set = gameSet(stack[index].cashflowGame.gameSetId);
+    const card = [...(set?.decks?.dealSmall ?? []), ...(set?.decks?.dealBig ?? [])].find(
+      (candidate) => candidate.id === seen.cardId,
+    );
+    return card && card.assetKind !== 'share' ? card : null;
+  };
+
   // the decisions there are to judge, so the time budget can be shared between them
   const isDecision = (index: number): boolean => {
     const step = stack[index].step;
     if (!step) return false;
     if (PURCHASES.has(step.kind)) return true;
+    if (step.kind === 'skipCard') return passedCardOf(index) !== null;
     if (step.kind === 'planDeal') {
       const title = step.detail ?? '';
       return ![1, 2, 3].some((offset) => {
@@ -291,6 +317,30 @@ export function reviewGame(
         const before = booksOf(entry(index));
         const after = booksOf(entry(index + 1));
         judge(index, 'purchase', title, afterDone(after), afterPass(before), 'not buying it');
+      }
+    } else if (step.kind === 'skipCard') {
+      // a card that was drawn and left: judged against buying it
+      const card = passedCardOf(index);
+      if (card) {
+        const before = booksOf(entry(index));
+        let bought: GameBooks | null = null;
+        try {
+          const plan = buyDealAction(before, { cardId: card.id }, quietActionDeps);
+          bought = afterDone(plan.effects.reduce(applyEffectsToBooks, before));
+        } catch {
+          // a deal that could not have been bought (no cash, even with the bank) was no decision to judge
+        }
+        if (bought) {
+          judge(
+            index,
+            'passed-card',
+            card.symbol ?? card.title,
+            booksOf(entry(index + 1)),
+            bought,
+            'buying it',
+            card,
+          );
+        }
       }
     } else if (step.kind === 'planDeal') {
       // a card that was planned and not bought within the next steps was left

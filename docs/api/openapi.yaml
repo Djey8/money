@@ -1405,6 +1405,9 @@ paths:
                         kind: { type: string }
                         detail: { type: string }
                         at: { type: string }
+                        cardId:
+                          type: string
+                          description: For a passed card (kind skipCard) - the Deal card the player had drawn before leaving it.
               example:
                 updatedAt: '2026-10-06T10:00:01.000Z'
                 steps:

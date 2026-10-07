@@ -1,5 +1,7 @@
 import { CASHFLOW_GAME_SETS } from '../../cashflow-content';
 import { buyDealAction, type ActionDeps } from '../actions';
+import { cardSeenBeforePass } from '../history';
+import { settleDecision } from '../turn';
 import { applyEffectsToBooks, type GameBooks } from '../books';
 import { fixedClock } from '../clock';
 import { identityText } from '../game-text';
@@ -146,6 +148,60 @@ describe('reviewGame', () => {
     expect(review.moves).toEqual([]);
     expect(review.steps).toBe(2);
     expect(review.turningPoint).toBeNull();
+  });
+
+  it('judges a card that was drawn and then left against buying it', () => {
+    const start = midGame();
+    const card = set
+      .decks!.dealSmall!.filter((candidate) => candidate.assetKind === 'investment')
+      .find((candidate) => (candidate.cashflowMinor ?? 0) > 0)!;
+    // landed on a Deal space, drew the card (no step of its own: only the deck remembers it), then passed
+    const onSpace: GameBooks = {
+      ...start,
+      state: {
+        ...start.state,
+        drawnCardIds: { ...start.state.drawnCardIds, dealSmall: [card.id] },
+        turn: {
+          phase: 'decide',
+          count: 7,
+          lastRoll: [4],
+          pending: { kind: 'deal', spaceIndex: 4 },
+        },
+      },
+    };
+    const passed: GameBooks = {
+      ...onSpace,
+      state: settleDecision(onSpace.state, 'passed', onSpace.subscriptions).state,
+    };
+    const stack = [
+      { ...snapshotFromBooks(start), step: { kind: 'roll' as const, detail: '4' } },
+      { ...snapshotFromBooks(onSpace), step: { kind: 'skipCard' as const, detail: 'deal' } },
+    ];
+
+    expect(cardSeenBeforePass(stack, 1)).toEqual({ deck: 'dealSmall', cardId: card.id });
+    expect(cardSeenBeforePass(stack, 0)).toBeNull();
+
+    const review = reviewGame(stack, snapshotFromBooks(passed), {
+      gameSets: CASHFLOW_GAME_SETS,
+      policy,
+      rollouts: 20,
+      horizon: 250,
+    });
+    expect(review.judged).toBe(1);
+    expect(review.moves[0]).toMatchObject({ kind: 'passed-card', alternative: 'buying it' });
+
+    // a pass with no card drawn first has nothing to judge
+    const unseen = [
+      stack[0],
+      {
+        ...snapshotFromBooks({
+          ...onSpace,
+          state: { ...onSpace.state, drawnCardIds: start.state.drawnCardIds },
+        }),
+        step: { kind: 'skipCard' as const, detail: 'deal' },
+      },
+    ];
+    expect(cardSeenBeforePass(unseen, 1)).toBeNull();
   });
 
   it('says so when the time runs out, and shares the time between the decisions', () => {
