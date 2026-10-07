@@ -2963,7 +2963,10 @@ describe('CashflowGameService', () => {
       const onSuccess = jest.fn();
       service.drawCard('dealSmall', { onSuccess, onError: jest.fn() });
       const drawn = onSuccess.mock.calls[0][0];
-      const [found] = service.findCardsInDeck('dealSmall', 'duplex');
+      // the other card of the two-card deck, so the second pick is never the one drawn
+      const found = service
+        .findCardsInDeck('dealSmall', 'Placeholder')
+        .find((candidate) => candidate.id !== drawn.id)!;
       service.recordCardPicked('dealSmall', found);
       service.recordCardPicked('dealSmall', found); // the same card again: no second step
 
