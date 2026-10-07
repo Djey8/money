@@ -29,6 +29,46 @@ export interface ManualContext {
   professionTitle(profession: CashflowProfession): string;
   groupName(group: string): string;
   familyName(family: string): string;
+  /** What the strategy lab measured (assets/i18n/cashflow-manual/strategy-lab.json); null until it is loaded or when absent. */
+  lab?: LabResults | null;
+}
+
+// -- The strategy lab results (scripts/strategy-lab.js) -------------------------------------------
+
+export interface LabSpread {
+  min: number;
+  p10: number;
+  p25: number;
+  median: number;
+  mean: number;
+  p75: number;
+  p90: number;
+  max: number;
+}
+
+export interface LabStats {
+  games: number;
+  escapeRate: number;
+  bankruptRate: number;
+  timeoutRate: number;
+  turnsToEscape: LabSpread | null;
+  monthsToEscape: LabSpread | null;
+  passiveIncomeAtEscapeMinor: LabSpread | null;
+  monthlyCashflowAtEscapeMinor: LabSpread | null;
+  peakPassiveIncomeMinor: LabSpread | null;
+}
+
+export interface LabResults {
+  meta: { rulesDigest: string; gamesPerGroup: number; maxTurns: number; generatedAt: string };
+  policies: { id: string; label: string; description: string }[];
+  professions: {
+    setId: string;
+    id: string;
+    title: string;
+    salaryMinor: number;
+    expensesMinor: number;
+  }[];
+  results: Record<string, Record<string, LabStats>>;
 }
 
 export const MANUAL_DATA_IDS = [
@@ -42,6 +82,10 @@ export const MANUAL_DATA_IDS = [
   'pileOdds',
   'marketKinds',
   'marketOdds',
+  'labStrategies',
+  'labMatrix',
+  'labProfessions',
+  'labCeiling',
 ] as const;
 export type ManualDataId = (typeof MANUAL_DATA_IDS)[number];
 
@@ -362,8 +406,182 @@ function marketOddsTable(ctx: ManualContext): ManualTable {
   };
 }
 
+// -- Tables from the strategy lab ------------------------------------------------------------------
+
+/** The better strategy first: it escapes more often, and escapes sooner. */
+function byEscape(a: LabStats, b: LabStats): number {
+  return (
+    b.escapeRate - a.escapeRate ||
+    (a.turnsToEscape?.median ?? Number.MAX_SAFE_INTEGER) -
+      (b.turnsToEscape?.median ?? Number.MAX_SAFE_INTEGER)
+  );
+}
+
+function labMissing(head: string[], ctx: ManualContext): ManualTable {
+  return { head, rows: [[ctx.labels['labMissing'] ?? '-', ...head.slice(1).map(() => '-')]] };
+}
+
+/** A strategy name in the language of the manual (the lab English label when the manual has none). */
+function policyName(ctx: ManualContext, id: string, fallback: string): string {
+  return ctx.labels[`policy_${id}`] ?? fallback;
+}
+
+const dash = (value: number | undefined | null, format: (v: number) => string): string =>
+  value === undefined || value === null || Number.isNaN(value) ? '-' : format(value);
+
+function labStrategiesTable(ctx: ManualContext): ManualTable {
+  const l = ctx.labels;
+  const head = [
+    l['colStrategy'],
+    l['colEscapes'],
+    l['colBankrupt'],
+    l['colMedianRolls'],
+    l['colMedianMonths'],
+    l['colPassiveAtEscape'],
+  ];
+  const lab = ctx.lab;
+  if (!lab) return labMissing(head, ctx);
+  const mean = (values: number[]) =>
+    values.length ? values.reduce((total, value) => total + value, 0) / values.length : undefined;
+  const rows = lab.policies.map((policy) => {
+    const groups = lab.professions.map((profession) => lab.results[profession.id][policy.id]);
+    return {
+      policy,
+      escape: mean(groups.map((g) => g.escapeRate)) ?? 0,
+      bankrupt: mean(groups.map((g) => g.bankruptRate)) ?? 0,
+      rolls: mean(groups.flatMap((g) => (g.turnsToEscape ? [g.turnsToEscape.median] : []))),
+      months: mean(groups.flatMap((g) => (g.monthsToEscape ? [g.monthsToEscape.median] : []))),
+      passive: mean(
+        groups.flatMap((g) =>
+          g.passiveIncomeAtEscapeMinor ? [g.passiveIncomeAtEscapeMinor.median] : [],
+        ),
+      ),
+    };
+  });
+  rows.sort((a, b) => b.escape - a.escape || (a.rolls ?? 1e9) - (b.rolls ?? 1e9));
+  return {
+    head,
+    rows: rows.map((row) => [
+      policyName(ctx, row.policy.id, row.policy.label),
+      ctx.percent(row.escape),
+      ctx.percent(row.bankrupt),
+      dash(row.rolls, ctx.number),
+      dash(row.months, ctx.number),
+      dash(row.passive, ctx.money),
+    ]),
+    note: l['noteLab'],
+  };
+}
+
+function labMatrixTable(ctx: ManualContext): ManualTable {
+  const l = ctx.labels;
+  const lab = ctx.lab;
+  const head = [
+    l['colProfession'],
+    ...(lab ? lab.policies.map((p) => policyName(ctx, p.id, p.label)) : ['-']),
+  ];
+  if (!lab) return labMissing(head, ctx);
+  return {
+    head,
+    rows: lab.professions.map((profession) => [
+      profession.title,
+      ...lab.policies.map((policy) =>
+        ctx.percent(lab.results[profession.id][policy.id].escapeRate),
+      ),
+    ]),
+    note: l['noteLabMatrix'],
+  };
+}
+
+function labProfessionsTable(ctx: ManualContext): ManualTable {
+  const l = ctx.labels;
+  const head = [
+    l['colProfession'],
+    l['colBestStrategy'],
+    l['colEscapes'],
+    l['colFastest'],
+    l['colMedianRolls'],
+    l['colSlowest'],
+    l['colPassiveAtEscape'],
+    l['colWorstStrategy'],
+    l['colEscapes'],
+  ];
+  const lab = ctx.lab;
+  if (!lab) return labMissing(head, ctx);
+  return {
+    head,
+    rows: lab.professions.map((profession) => {
+      const group = lab.results[profession.id];
+      const ranked = lab.policies
+        .map((policy) => ({ policy, stats: group[policy.id] }))
+        .sort((a, b) => byEscape(a.stats, b.stats));
+      const best = ranked[0];
+      const worst = ranked[ranked.length - 1];
+      const t = best.stats.turnsToEscape;
+      return [
+        profession.title,
+        policyName(ctx, best.policy.id, best.policy.label),
+        ctx.percent(best.stats.escapeRate),
+        dash(t?.p10, ctx.number),
+        dash(t?.median, ctx.number),
+        dash(t?.p90, ctx.number),
+        dash(best.stats.passiveIncomeAtEscapeMinor?.median, ctx.money),
+        policyName(ctx, worst.policy.id, worst.policy.label),
+        ctx.percent(worst.stats.escapeRate),
+      ];
+    }),
+    note: l['noteLabProfessions'],
+  };
+}
+
+function labCeilingTable(ctx: ManualContext): ManualTable {
+  const l = ctx.labels;
+  const head = [
+    l['colProfession'],
+    l['colStrategy'],
+    l['colTypicalPeak'],
+    l['colGoodPeak'],
+    l['colBestPeak'],
+    l['colCashflowAtEscape'],
+  ];
+  const lab = ctx.lab;
+  if (!lab) return labMissing(head, ctx);
+  return {
+    head,
+    rows: lab.professions.map((profession) => {
+      const group = lab.results[profession.id];
+      // the strategy that gets the most passive income onto the table, on average
+      const top = lab.policies
+        .map((policy) => ({ policy, stats: group[policy.id] }))
+        .sort(
+          (a, b) =>
+            (b.stats.peakPassiveIncomeMinor?.mean ?? 0) -
+            (a.stats.peakPassiveIncomeMinor?.mean ?? 0),
+        )[0];
+      const peak = top.stats.peakPassiveIncomeMinor;
+      return [
+        profession.title,
+        policyName(ctx, top.policy.id, top.policy.label),
+        dash(peak?.median, ctx.money),
+        dash(peak?.p90, ctx.money),
+        dash(peak?.max, ctx.money),
+        dash(top.stats.monthlyCashflowAtEscapeMinor?.median, ctx.money),
+      ];
+    }),
+    note: l['noteLabCeiling'],
+  };
+}
+
 export function buildManualTable(id: ManualDataId, ctx: ManualContext): ManualTable {
   switch (id) {
+    case 'labStrategies':
+      return labStrategiesTable(ctx);
+    case 'labMatrix':
+      return labMatrixTable(ctx);
+    case 'labProfessions':
+      return labProfessionsTable(ctx);
+    case 'labCeiling':
+      return labCeilingTable(ctx);
     case 'professions':
       return professionsTable(ctx);
     case 'escape':

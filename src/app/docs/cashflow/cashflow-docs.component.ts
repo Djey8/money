@@ -26,7 +26,12 @@ import {
   type ManualSectionRef,
   type RichSegment,
 } from './manual-content';
-import { buildManualTable, type ManualContext, type ManualTable } from './manual-data';
+import {
+  buildManualTable,
+  type LabResults,
+  type ManualContext,
+  type ManualTable,
+} from './manual-data';
 
 // Deferred import to break circular chain
 let AppComponent: any;
@@ -62,6 +67,8 @@ export class CashflowDocsComponent implements OnInit, OnDestroy {
   sections: ManualSectionRef[] = MANUAL_SECTIONS;
   selectedIndex = 0;
   content: ManualContent | null = null;
+  /** What the strategy lab measured (scripts/strategy-lab.js); null when the file is not there. */
+  lab: LabResults | null = null;
   loadFailed = false;
   /** The manual is not written in the app's language yet - the English text is shown. */
   usingFallback = false;
@@ -141,6 +148,11 @@ export class CashflowDocsComponent implements OnInit, OnDestroy {
       );
       // The cards drawn in the manual use the same texts as the game.
       await this.cardText.ensureLoaded();
+      // The strategy tables read the lab's results; the manual still works without them.
+      this.lab = await firstValueFrom(
+        this.http.get<LabResults>('assets/i18n/cashflow-manual/strategy-lab.json'),
+      ).catch(() => null);
+      this.tableCache.clear();
     } catch {
       this.loadFailed = true;
     }
@@ -201,6 +213,7 @@ export class CashflowDocsComponent implements OnInit, OnDestroy {
       },
       groupName: (group) => this.cardText.groupName(group),
       familyName: (family) => this.cardText.familyName(family),
+      lab: this.lab,
     };
   }
 
