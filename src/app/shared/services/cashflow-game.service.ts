@@ -1334,8 +1334,19 @@ export class CashflowGameService {
     const state = AppStateService.instance;
     return {
       state: state.cashflowGame,
+      allocation: {
+        daily: state.daily,
+        splurge: state.splurge,
+        smile: state.smile,
+        fire: state.fire,
+      },
       subscriptions: state.allSubscriptions.map(toBookSubscription),
-      transactions: state.allTransactions,
+      transactions: state.allTransactions.map((transaction) => ({
+        account: transaction.account,
+        amountMinor: toMinorUnits(transaction.amount),
+        date: transaction.date,
+        comment: transaction.comment,
+      })),
       liabilities: state.liabilities.map((liability) => ({
         tag: liability.tag,
         amountMinor: toMinorUnits(Number(liability.amount) || 0),

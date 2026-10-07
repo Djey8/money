@@ -1149,17 +1149,23 @@
           }}
           <input type="number" min="1" step="1" [(ngModel)]="loanIncrements" />
         </label>
+        <p class="cf-loan-current cf-loan-limit" *ngIf="repaymentLimitedByCash">
+          {{
+            'CashflowGame.loanRepayLimit' | translate: { amount: (maxLoanRepayment | appNumber) }
+          }}
+          {{ appState.currency }}
+        </p>
         <div class="cf-actions">
           <button
             class="btn cf-btn-outlined"
-            [disabled]="isBusy || currentLoanPrincipal <= 0"
+            [disabled]="isBusy || maxLoanRepayment <= 0"
             (click)="settleAllLoan()"
           >
             {{ 'CashflowGame.loanSettleAll' | translate }}
           </button>
           <button
             class="btn btn--primary"
-            [disabled]="isBusy || loanIncrements < 1 || currentLoanPrincipal <= 0"
+            [disabled]="isBusy || loanIncrements < 1 || maxLoanRepayment <= 0"
             (click)="repayLoan()"
           >
             {{ 'CashflowGame.loanRepay' | translate }}

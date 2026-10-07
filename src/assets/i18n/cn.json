@@ -1545,6 +1545,7 @@
   "CashflowGame.noteCashShare": "规划时的可用现金：{{cash}}",
   "CashflowGame.noteCashInvestment": "可用现金：{{cash}} · 首付：{{deposit}} · 所需银行贷款：{{loan}}",
   "CashflowGame.loanSettleAll": "全部还清",
+  "CashflowGame.loanRepayLimit": "你现在最多可以还 {{amount}}——还款来自你手头的现金，并以完整的贷款档位计。",
   "CashflowGame.cardCashflow": "现金流",
   "CashflowGame.loanAutoTaken": "已申请 {{amount}} 银行贷款用于支付此次购买",
   "CashflowGame.cardSaleComment": "把 {{name}} 卡卖给了朋友",

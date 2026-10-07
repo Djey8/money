@@ -12,6 +12,7 @@ import {
   CashflowProfession,
   computeCashflowProfessionMonthlyCashflowMinor,
   fromMinorUnits,
+  maxRepayableMinor,
   buyerCardTypes,
   businessCardLabels,
   cardExpenseComment,
@@ -2480,15 +2481,34 @@ export class CashflowGameComponent implements OnDestroy {
     this.adjustLoan(this.loanIncrements * this.loanIncrementAmount);
   }
 
-  /** Pre-fills the number of steps needed to clear the whole loan (JFK, 2026-10-03): 4,000 outstanding in 1,000 steps -> 4. The player still presses Repay. */
+  /**
+   * The most that can be repaid now (JFK, 2026-10-07): the whole loan, or the whole loan steps the cash on hand covers -
+   * repaying never takes the account below zero. The rule itself is `maxRepayableMinor` in the domain.
+   */
+  get maxLoanRepayment(): number {
+    return fromMinorUnits(
+      maxRepayableMinor(
+        toMinorUnits(this.cash),
+        toMinorUnits(this.currentLoanPrincipal),
+        toMinorUnits(this.loanIncrementAmount),
+      ),
+    );
+  }
+
+  /** Cash is what holds the repayment back, not the size of the loan. */
+  get repaymentLimitedByCash(): boolean {
+    return this.currentLoanPrincipal > 0 && this.maxLoanRepayment < this.currentLoanPrincipal;
+  }
+
+  /** Pre-fills the number of steps that clears the loan - or as much of it as the cash allows (JFK, 2026-10-03/07): 4,000 owed in 1,000 steps -> 4, with 2,500 cash -> 2. The player still presses Repay. */
   settleAllLoan(): void {
     if (this.currentLoanPrincipal <= 0 || !this.loanIncrementAmount) return;
-    this.loanIncrements = Math.ceil(this.currentLoanPrincipal / this.loanIncrementAmount);
+    this.loanIncrements = Math.max(1, Math.ceil(this.maxLoanRepayment / this.loanIncrementAmount));
   }
 
   repayLoan(): void {
     this.adjustLoan(
-      -Math.min(this.loanIncrements * this.loanIncrementAmount, this.currentLoanPrincipal),
+      -Math.min(this.loanIncrements * this.loanIncrementAmount, this.maxLoanRepayment),
     );
   }
 

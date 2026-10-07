@@ -1545,6 +1545,7 @@
   "CashflowGame.noteCashShare": "Liquidités au moment de la planification : {{cash}}",
   "CashflowGame.noteCashInvestment": "Liquidités : {{cash}} · Apport : {{deposit}} · Prêt bancaire nécessaire : {{loan}}",
   "CashflowGame.loanSettleAll": "Tout solder",
+  "CashflowGame.loanRepayLimit": "Tu peux rembourser au maximum {{amount}} maintenant : le remboursement est pris sur ton argent disponible, par paliers entiers du prêt.",
   "CashflowGame.cardCashflow": "Cashflow mensuel",
   "CashflowGame.loanAutoTaken": "Prêt bancaire de {{amount}} contracté pour financer l'achat",
   "CashflowGame.cardSaleComment": "Carte {{name}} vendue à un ami",

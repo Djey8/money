@@ -5,6 +5,7 @@ import type { BookSubscription } from './effects';
 import {
   BANK_LOAN_INTEREST_TITLE,
   BANK_LOAN_TAG,
+  maxRepayableMinor,
   planAutoLoan,
   playBankLoan,
   type LoanBooks,
@@ -51,6 +52,7 @@ function books(extra: Partial<LoanBooks> = {}): LoanBooks {
     subscriptions,
     transactions: [],
     liabilities: [],
+    allocation: { daily: 60, splurge: 10, smile: 10, fire: 20 },
     gameSet,
     ...extra,
   };
@@ -111,8 +113,19 @@ describe('playBankLoan: borrowing', () => {
 });
 
 describe('playBankLoan: repaying', () => {
-  const owing = (principal: number) =>
-    books({ liabilities: [{ tag: BANK_LOAN_TAG, amountMinor: principal }] });
+  /** A loan of `principal` and `cash` on the Daily account (so cash on hand is exactly that). */
+  const owing = (principal: number, cash = 10 * STEP) =>
+    books({
+      liabilities: [{ tag: BANK_LOAN_TAG, amountMinor: principal }],
+      transactions: [
+        {
+          account: 'Daily',
+          amountMinor: cash,
+          date: '2026-10-02',
+          comment: '',
+        },
+      ],
+    });
 
   it('a partial repayment lowers the loan and the interest, and costs real cash', () => {
     const effects = playBankLoan(owing(3 * STEP), -STEP, deps);
@@ -129,6 +142,25 @@ describe('playBankLoan: repaying', () => {
     expect(effects.subscriptionUpserts).toEqual([]);
     expect(effects.subscriptionRemovals).toEqual([BANK_LOAN_INTEREST_TITLE]);
     expect(effects.state.gameSubscriptionTitles).not.toContain(BANK_LOAN_INTEREST_TITLE);
+  });
+
+  it('cannot repay into the red: only the cash on hand, in whole loan steps', () => {
+    // 4.000 owed, 2.500 in cash: two steps can be repaid, three cannot
+    const poor = owing(4 * STEP, 2.5 * STEP);
+    expect(playBankLoan(poor, -2 * STEP, deps).appendedTransactions[0].amountMinor).toBe(-2 * STEP);
+    expect(() => playBankLoan(poor, -3 * STEP, deps)).toThrow('at most 2,000 EUR');
+    // nothing in cash: nothing can be repaid
+    expect(() => playBankLoan(owing(STEP, 0), -STEP, deps)).toThrow('at most 0 EUR');
+    // exactly the cash is allowed
+    expect(() => playBankLoan(owing(4 * STEP, 3 * STEP), -3 * STEP, deps)).not.toThrow();
+  });
+
+  it('maxRepayableMinor is the loan or the affordable whole steps, never negative', () => {
+    expect(maxRepayableMinor(2.5 * STEP, 4 * STEP, STEP)).toBe(2 * STEP);
+    expect(maxRepayableMinor(9 * STEP, 4 * STEP, STEP)).toBe(4 * STEP);
+    expect(maxRepayableMinor(-500, 4 * STEP, STEP)).toBe(0);
+    expect(maxRepayableMinor(5 * STEP, 0, STEP)).toBe(0);
+    expect(maxRepayableMinor(5 * STEP, 4 * STEP, 0)).toBe(0);
   });
 
   it('refuses to repay more than is owed', () => {

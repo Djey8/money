@@ -791,3 +791,42 @@ describe('special-asset cards and selling', () => {
     expect(undone.body.finances.passiveIncomeMinor).toBeGreaterThan(0);
   });
 });
+
+describe('repaying the bank', () => {
+  it('cannot go below zero: only the whole loan steps the cash covers can be repaid', async () => {
+    if (!dbAvailable) return;
+    const user = await registerGameUser('_repay');
+    await session('post', '/api/v1/game/start', user.token).send({
+      gameSetId: 'cashflow',
+      professionId: 'hausmeister',
+    });
+    // a purchase paid with the loan leaves the account near zero and the bank owed
+    const small = await session('get', '/api/v1/game/cards?deck=dealSmall&limit=200', user.token);
+    const house = small.body.cards
+      .filter((card) => card.assetKind === 'investment' && card.depositMinor >= 200000)
+      .sort((a, b) => b.depositMinor - a.depositMinor)[0];
+    const bought = await session('post', '/api/v1/game/deals/buy', user.token).send({
+      cardId: house.id,
+    });
+    const owed = bought.body.holdings.bankLoanMinor;
+    expect(owed).toBeGreaterThan(0);
+    const cash = bought.body.cashMinor;
+    expect(cash).toBeLessThan(owed);
+
+    const tooMuch = await session('post', '/api/v1/game/bank-loan', user.token).send({
+      amountMinor: -owed,
+    });
+    expect(tooMuch.status).toBe(422);
+    expect(tooMuch.body.detail).toMatch(/at most/);
+
+    const affordable = Math.floor(cash / 100000) * 100000;
+    if (affordable > 0) {
+      const repaid = await session('post', '/api/v1/game/bank-loan', user.token).send({
+        amountMinor: -affordable,
+      });
+      expect(repaid.status).toBe(200);
+      expect(repaid.body.cashMinor).toBe(cash - affordable);
+      expect(repaid.body.cashMinor).toBeGreaterThanOrEqual(0);
+    }
+  });
+});

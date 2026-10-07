@@ -1,6 +1,11 @@
 import { emptyEffects, type GameEffects } from './effects';
 import { adjustCashflowBankLoan } from './engine';
-import { loanForShortfallMinor } from './cash';
+import {
+  cashOnHandMinor,
+  loanForShortfallMinor,
+  type CashAllocation,
+  type CashTransaction,
+} from './cash';
 import { placeOneOffTransactions, upsertBookSubscription } from './rounds';
 import type { CardDeps } from './market-cards';
 import type { RoundBooks } from './rounds';
@@ -15,8 +20,12 @@ import type { CashflowGameSet } from './types';
 export const BANK_LOAN_TAG = 'Bank loan';
 export const BANK_LOAN_INTEREST_TITLE = 'Bank loan interest';
 
-export interface LoanBooks extends Pick<RoundBooks, 'state' | 'subscriptions' | 'transactions'> {
+export interface LoanBooks extends Pick<RoundBooks, 'state' | 'subscriptions'> {
+  /** The account's transactions: the loan's cash moves are dated by them, and a repayment is limited by their balance. */
+  transactions: (RoundBooks['transactions'][number] & CashTransaction)[];
   liabilities: { tag: string; amountMinor: number }[];
+  /** The account split the cash on hand depends on: a repayment is limited by it. */
+  allocation: CashAllocation;
   /** The running game's set (it holds the loan rule); undefined before a profession is picked. */
   gameSet: CashflowGameSet | undefined;
 }
@@ -29,6 +38,20 @@ export interface LoanBooks extends Pick<RoundBooks, 'state' | 'subscriptions' | 
  *
  * Throws when no game has started, for a zero or off-step amount, and for repaying more than is owed.
  */
+/**
+ * The most that can be repaid right now: the whole loan, or the whole steps of it the cash on hand covers - whichever is
+ * less (JFK, 2026-10-07: you cannot repay into the red). Never negative.
+ */
+export function maxRepayableMinor(
+  cashMinor: number,
+  principalMinor: number,
+  stepMinor: number,
+): number {
+  if (!(stepMinor > 0) || !(principalMinor > 0)) return 0;
+  const affordable = Math.floor(Math.max(0, cashMinor) / stepMinor) * stepMinor;
+  return Math.min(principalMinor, affordable);
+}
+
 export function playBankLoan(
   books: LoanBooks,
   deltaMinor: number,
@@ -44,6 +67,20 @@ export function playBankLoan(
     currentPrincipalMinor,
     deltaMinor,
   );
+  if (deltaMinor < 0) {
+    // Repaying is paid out of the cash on hand and may not take the account below zero.
+    const cashMinor = cashOnHandMinor(books.transactions, books.allocation);
+    const allowed = maxRepayableMinor(
+      cashMinor,
+      currentPrincipalMinor,
+      books.gameSet.loanRule.incrementMinor,
+    );
+    if (-deltaMinor > allowed) {
+      throw new Error(
+        `You can repay at most ${deps.money(allowed)} now: repaying is paid from the cash you have (${deps.money(Math.max(0, cashMinor))}), in whole loan steps.`,
+      );
+    }
+  }
   const today = deps.clock.todayIso();
 
   const effects = emptyEffects(result.state, {

@@ -702,6 +702,7 @@ describe('CashflowGameComponent', () => {
       AppStateService.instance.liabilities = [
         { tag: 'Bank loan', amount: 500, investment: false, credit: 0 },
       ];
+      (cashflowGameService as any).cash = 10000;
       component.loanIncrements = 5; // 5 * 1000 = 5000, far more than the 500 owed
 
       component.repayLoan();
@@ -851,7 +852,8 @@ describe('CashflowGameComponent', () => {
 
   describe('settle all', () => {
     it('pre-fills the number of steps that clear the whole loan', () => {
-      const { component } = makeComponent();
+      const { component, cashflowGameService } = makeComponent();
+      (cashflowGameService as any).cash = 10000;
       component.appState.cashflowGame = {
         ...component.appState.cashflowGame,
         gameSetId: 'cashflow',
@@ -866,7 +868,8 @@ describe('CashflowGameComponent', () => {
     });
 
     it('rounds up when the loan is not a whole number of steps', () => {
-      const { component } = makeComponent();
+      const { component, cashflowGameService } = makeComponent();
+      (cashflowGameService as any).cash = 10000;
       component.appState.cashflowGame = {
         ...component.appState.cashflowGame,
         gameSetId: 'cashflow',
@@ -878,6 +881,44 @@ describe('CashflowGameComponent', () => {
       component.settleAllLoan();
 
       expect(component.loanIncrements).toBe(3);
+    });
+
+    it('settles only what the cash covers, in whole steps - repaying never goes below zero', () => {
+      const { component, cashflowGameService } = makeComponent();
+      component.appState.cashflowGame = {
+        ...component.appState.cashflowGame,
+        gameSetId: 'cashflow',
+      };
+      component.appState.liabilities = [
+        { tag: 'Bank loan', amount: 4000, investment: false, credit: 0 },
+      ];
+      (cashflowGameService as any).cash = 2500; // 4,000 owed, 2,500 in cash: two steps
+
+      expect(component.maxLoanRepayment).toBe(2000);
+      expect(component.repaymentLimitedByCash).toBe(true);
+      component.settleAllLoan();
+      expect(component.loanIncrements).toBe(2);
+
+      component.loanIncrements = 4; // typing more than the cash covers does not get through
+      component.repayLoan();
+      expect(cashflowGameService.adjustBankLoan).toHaveBeenCalledWith(-2000, expect.anything());
+    });
+
+    it('offers nothing to repay with less than one loan step in cash', () => {
+      const { component, cashflowGameService } = makeComponent();
+      component.appState.cashflowGame = {
+        ...component.appState.cashflowGame,
+        gameSetId: 'cashflow',
+      };
+      component.appState.liabilities = [
+        { tag: 'Bank loan', amount: 4000, investment: false, credit: 0 },
+      ];
+      (cashflowGameService as any).cash = 600;
+
+      expect(component.maxLoanRepayment).toBe(0);
+      component.loanIncrements = 1;
+      component.repayLoan();
+      expect(cashflowGameService.adjustBankLoan).not.toHaveBeenCalled();
     });
   });
 

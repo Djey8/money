@@ -1489,6 +1489,7 @@
   "CashflowGame.noteCashShare": "Efectivo al planificar: {{cash}}",
   "CashflowGame.noteCashInvestment": "Efectivo: {{cash}} · Entrada: {{deposit}} · Préstamo bancario necesario: {{loan}}",
   "CashflowGame.loanSettleAll": "Saldar todo",
+  "CashflowGame.loanRepayLimit": "Ahora puedes devolver como máximo {{amount}}: la devolución sale del efectivo que tienes, en pasos completos del préstamo.",
   "CashflowGame.cardCashflow": "Flujo de caja",
   "CashflowGame.loanAutoTaken": "Préstamo bancario de {{amount}} solicitado para cubrir la compra",
   "CashflowGame.cardSaleComment": "Carta {{name}} vendida a un amigo",

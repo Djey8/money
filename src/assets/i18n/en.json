@@ -1520,6 +1520,7 @@
   "CashflowGame.noteCashShare": "Cash on hand when planned: {{cash}}",
   "CashflowGame.noteCashInvestment": "Cash on hand: {{cash}} · Deposit: {{deposit}} · Bank loan needed: {{loan}}",
   "CashflowGame.loanSettleAll": "Settle all",
+  "CashflowGame.loanRepayLimit": "You can repay at most {{amount}} now - repaying is paid from the cash you have, in whole loan steps.",
   "CashflowGame.cardCashflow": "Cashflow",
   "CashflowGame.loanAutoTaken": "Bank loan of {{amount}} taken to cover the purchase",
   "CashflowGame.cardSaleComment": "Sold the {{name}} card to a friend",

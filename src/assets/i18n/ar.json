@@ -1520,6 +1520,7 @@
   "CashflowGame.noteCashShare": "النقد المتاح عند التخطيط: {{cash}}",
   "CashflowGame.noteCashInvestment": "النقد: {{cash}} · الدفعة الأولى: {{deposit}} · القرض المصرفي المطلوب: {{loan}}",
   "CashflowGame.loanSettleAll": "تسوية الكل",
+  "CashflowGame.loanRepayLimit": "يمكنك الآن سداد {{amount}} على الأكثر - السداد يخرج من النقد الذي لديك وبخطوات كاملة من القرض.",
   "CashflowGame.cardCashflow": "التدفق النقدي",
   "CashflowGame.loanAutoTaken": "تم أخذ قرض مصرفي بقيمة {{amount}} لتغطية الشراء",
   "CashflowGame.cardSaleComment": "تم بيع بطاقة {{name}} إلى صديق",

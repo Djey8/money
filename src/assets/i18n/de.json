@@ -1545,6 +1545,7 @@
   "CashflowGame.noteCashShare": "Bargeld bei der Planung: {{cash}}",
   "CashflowGame.noteCashInvestment": "Bargeld: {{cash}} · Anzahlung: {{deposit}} · Benötigtes Bankdarlehen: {{loan}}",
   "CashflowGame.loanSettleAll": "Alles begleichen",
+  "CashflowGame.loanRepayLimit": "Du kannst jetzt höchstens {{amount}} zurückzahlen - die Rückzahlung kommt aus deinem Bargeld, in ganzen Kreditschritten.",
   "CashflowGame.cardCashflow": "Cashflow",
   "CashflowGame.loanAutoTaken": "Bankdarlehen über {{amount}} für den Kauf aufgenommen",
   "CashflowGame.cardSaleComment": "Karte {{name}} an einen Freund verkauft",
