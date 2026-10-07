@@ -174,6 +174,67 @@ describe('MoneyManagerOAuthProvider', () => {
       );
     });
 
+    describe('with scopes chosen on the login page', () => {
+      async function pending(provider: MoneyManagerOAuthProvider, scopes: string[]) {
+        const res = fakeRes();
+        await provider.authorize(
+          fakeClient(),
+          { codeChallenge: 'challenge', redirectUri: 'https://claude.ai/callback', scopes },
+          res,
+        );
+        return res.redirectedTo!.split('req=')[1];
+      }
+
+      it('mints a token with only the ticked scopes', async () => {
+        mockedBackend.loginWithPassword.mockResolvedValue('session-jwt');
+        mockedBackend.mintPersonalAccessToken.mockResolvedValue({ token: 'mmpat_x', scopes: [] });
+        const provider = new MoneyManagerOAuthProvider(apiUrl);
+        const requestId = await pending(provider, []);
+
+        await provider.completeLogin(requestId, 'me@example.com', 'hunter2', [
+          'reports:r',
+          'game:rw',
+        ]);
+
+        expect(mockedBackend.mintPersonalAccessToken).toHaveBeenCalledWith(
+          apiUrl,
+          'session-jwt',
+          expect.objectContaining({ scopes: ['reports:r', 'game:rw'] }),
+        );
+      });
+
+      it('never widens what was offered, even if the form posts more', async () => {
+        mockedBackend.loginWithPassword.mockResolvedValue('session-jwt');
+        mockedBackend.mintPersonalAccessToken.mockResolvedValue({ token: 'mmpat_x', scopes: [] });
+        const provider = new MoneyManagerOAuthProvider(apiUrl);
+        const requestId = await pending(provider, ['transactions:rw']);
+
+        await provider.completeLogin(requestId, 'me@example.com', 'hunter2', [
+          'transactions:rw',
+          'data:bulk',
+          'admin',
+        ]);
+
+        expect(mockedBackend.mintPersonalAccessToken).toHaveBeenCalledWith(
+          apiUrl,
+          'session-jwt',
+          expect.objectContaining({ scopes: ['transactions:rw'] }),
+        );
+      });
+
+      it('refuses when nothing is ticked, and keeps the request open for another try', async () => {
+        mockedBackend.loginWithPassword.mockResolvedValue('session-jwt');
+        const provider = new MoneyManagerOAuthProvider(apiUrl);
+        const requestId = await pending(provider, []);
+
+        await expect(
+          provider.completeLogin(requestId, 'me@example.com', 'hunter2', []),
+        ).rejects.toThrow(/at least one/i);
+        expect(mockedBackend.mintPersonalAccessToken).not.toHaveBeenCalled();
+        expect(provider.getPendingRequest(requestId)).toBeDefined();
+      });
+    });
+
     it('surfaces a login failure without minting a token', async () => {
       mockedBackend.loginWithPassword.mockRejectedValue(new Error('Invalid email or password.'));
 

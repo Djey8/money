@@ -95,7 +95,13 @@ const PAGE_CHROME = `
     flex-wrap: wrap;
     gap: 0.4rem;
   }
-  .scope-list li {
+  .scope-list li { margin: 0; }
+  .scope-list label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin: 0;
+    cursor: pointer;
     background: var(--color-background);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-sm);
@@ -103,6 +109,18 @@ const PAGE_CHROME = `
     font-family: 'Courier New', monospace;
     font-size: 0.78rem;
     color: var(--color-text-secondary);
+  }
+  .scope-list input { margin: 0; }
+  .scope-actions { margin: -0.9rem 0 1.25rem; font-size: 0.78rem; }
+  .scope-actions button {
+    background: none;
+    border: 0;
+    padding: 0;
+    margin-right: 0.9rem;
+    color: var(--color-primary);
+    cursor: pointer;
+    font-size: inherit;
+    text-decoration: underline;
   }
   form { display: flex; flex-direction: column; }
   label { margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--color-text); }
@@ -158,9 +176,12 @@ export function renderLoginPage(options: {
   requestId: string;
   clientName: string;
   scopes: string[];
+  /** The scopes ticked when the page opens; everything offered when omitted. */
+  selected?: string[];
   error?: string;
 }): string {
   const { requestId, clientName, scopes, error } = options;
+  const selected = new Set(options.selected ?? scopes);
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -174,9 +195,19 @@ export function renderLoginPage(options: {
   <div class="card-container">
     <h1>Sign in to Money Manager</h1>
     <p class="subtitle"><span class="client-name">${escapeHtml(clientName)}</span> is requesting access to:</p>
-    <ul class="scope-list">${scopes.map((scope) => `<li>${escapeHtml(scope)}</li>`).join('')}</ul>
     <form method="post" action="/oauth/login">
+      <ul class="scope-list">${scopes
+        .map(
+          (scope) =>
+            `<li><label><input type="checkbox" name="scope" value="${escapeHtml(scope)}"${selected.has(scope) ? ' checked' : ''}>${escapeHtml(scope)}</label></li>`,
+        )
+        .join('')}</ul>
+      <p class="scope-actions">
+        <button type="button" onclick="document.querySelectorAll('input[name=scope]').forEach(function (box) { box.checked = true; })">Select all</button>
+        <button type="button" onclick="document.querySelectorAll('input[name=scope]').forEach(function (box) { box.checked = false; })">Select none</button>
+      </p>
       <input type="hidden" name="req" value="${escapeHtml(requestId)}">
+      <input type="hidden" name="scopes_chosen" value="1">
       <label for="email">Email</label>
       <input type="email" id="email" name="email" required autofocus autocomplete="username">
       <label for="password">Password</label>
@@ -184,7 +215,7 @@ export function renderLoginPage(options: {
       ${error ? `<p class="error">${escapeHtml(error)}</p>` : ''}
       <button type="submit">Sign in &amp; approve</button>
     </form>
-    <p class="hint">This mints a personal access token scoped to exactly what's listed above —
+    <p class="hint">This mints a personal access token scoped to exactly what's ticked above —
       revoke it any time from Profile &gt; Personal Access Tokens.</p>
   </div>
 </body>

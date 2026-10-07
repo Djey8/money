@@ -182,7 +182,12 @@ export class MoneyManagerOAuthProvider implements OAuthServerProvider {
    * own refusal to ever issue admin to a PAT), and returns the final
    * redirect_uri the caller should send the browser to.
    */
-  async completeLogin(requestId: string, email: string, password: string): Promise<string> {
+  async completeLogin(
+    requestId: string,
+    email: string,
+    password: string,
+    selectedScopes?: string[],
+  ): Promise<string> {
     this.prune();
     const pending = this.pendingRequests.get(requestId);
     if (!pending) {
@@ -192,7 +197,12 @@ export class MoneyManagerOAuthProvider implements OAuthServerProvider {
     const sessionToken = await loginWithPassword(this.apiUrl, email, password);
 
     const requested = (pending.params.scopes ?? []).filter((scope) => scope !== 'admin');
-    const scopes = requested.length > 0 ? requested : DEFAULT_SCOPES;
+    const offered = requested.length > 0 ? requested : DEFAULT_SCOPES;
+    // The person may narrow what is offered, never widen it.
+    const scopes = selectedScopes
+      ? offered.filter((scope) => selectedScopes.includes(scope))
+      : offered;
+    if (scopes.length === 0) throw new Error('Select at least one permission.');
     const minted = await mintPersonalAccessToken(this.apiUrl, sessionToken, {
       name: `${pending.client.client_name ?? pending.client.client_id} (OAuth)`,
       scopes,
