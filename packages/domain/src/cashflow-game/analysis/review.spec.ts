@@ -75,6 +75,16 @@ describe('labelMove', () => {
     expect(labelMove(-0.08, null)).toBe('mistake');
     expect(labelMove(-0.3, null)).toBe('blunder');
   });
+
+  it('judges by the rolls saved when both alternatives nearly always escape (a high salary)', () => {
+    expect(labelMove(0, 20, true)).toBe('best');
+    expect(labelMove(0, 9, true)).toBe('good');
+    expect(labelMove(0, 2, true)).toBe('neutral');
+    expect(labelMove(0, -6, true)).toBe('inaccuracy');
+    expect(labelMove(0, -12, true)).toBe('mistake');
+    expect(labelMove(0, -25, true)).toBe('blunder');
+    expect(labelMove(0, null, true)).toBe('neutral');
+  });
 });
 
 describe('reviewGame', () => {
@@ -137,6 +147,42 @@ describe('reviewGame', () => {
     expect(review.steps).toBe(2);
     expect(review.turningPoint).toBeNull();
   });
+
+  it('says so when the time runs out, and shares the time between the decisions', () => {
+    const before = midGame();
+    const cards = set.decks!.dealSmall!.filter((card) => card.assetKind === 'investment');
+    const card = cards.find((candidate) => (candidate.cashflowMinor ?? 0) > 0)!;
+    const plan = buyDealAction(before, { cardId: card.id }, deps);
+    const after = plan.effects.reduce(applyEffectsToBooks, before);
+    const purchase = {
+      ...snapshotFromBooks(before),
+      step: { kind: 'buyDeal' as const, detail: plan.result!['title'] as string },
+    };
+    const stack = [purchase, purchase, purchase, purchase];
+
+    // no budget: everything is judged and nothing is missing
+    const all = reviewGame(stack, snapshotFromBooks(after), {
+      gameSets: CASHFLOW_GAME_SETS,
+      policy,
+      rollouts: 20,
+      horizon: 250,
+    });
+    expect(all.judged).toBe(4);
+    expect(all.truncated).toBe(false);
+    expect(all.unjudged).toBe(0);
+
+    // a budget too short for all of them: the review says it is incomplete, and how much is missing
+    const tight = reviewGame(stack, snapshotFromBooks(after), {
+      gameSets: CASHFLOW_GAME_SETS,
+      policy,
+      rollouts: 400,
+      horizon: 250,
+      timeBudgetMs: 1,
+    });
+    expect(tight.judged + tight.unjudged).toBe(4);
+    expect(tight.truncated).toBe(tight.unjudged > 0);
+    expect(tight.unjudged).toBeGreaterThan(0);
+  });
 });
 
 describe('describeReview', () => {
@@ -180,6 +226,9 @@ describe('describeReview', () => {
         },
         steps: 80,
         judged: 1,
+        truncated: false,
+        unjudged: 0,
+        rolloutsUsed: { min: 100, max: 100 },
         skipped: 0,
         rollouts: 100,
       },

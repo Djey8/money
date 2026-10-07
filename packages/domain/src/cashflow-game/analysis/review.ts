@@ -74,6 +74,11 @@ export interface GameReview {
   /** How many steps of the history there were, and how many were judged. */
   steps: number;
   judged: number;
+  /** True when the time budget ran out before every decision was judged; `unjudged` counts the ones left. */
+  truncated: boolean;
+  unjudged: number;
+  /** The fewest and most simulated games any move was judged on (fewer when the time budget was tight). */
+  rolloutsUsed: { min: number; max: number } | null;
   /** Decisions that could not be judged (the position could not be played on from). */
   skipped: number;
   rollouts: number;
@@ -109,8 +114,30 @@ function afterDone(books: GameBooks): GameBooks {
   return { ...books, state: settleDecision(books.state, 'done', books.subscriptions).state };
 }
 
-/** The label for how much a move changed the chance to escape; a tie in the chance is broken by the time it saves. */
-export function labelMove(deltaEscape: number, deltaRolls: number | null): MoveLabel {
+/** Both alternatives escape almost every time (a high salary): the chance cannot tell them apart, the speed can. */
+const SATURATED_ESCAPE_RATE = 0.9;
+/** Fewest simulated games per alternative worth judging a move on; below this the labels are noise. */
+const MIN_ROLLOUTS = 20;
+
+/**
+ * The label for how much a move changed the chance to escape; a tie in the chance is broken by the time it saves.
+ * When both alternatives nearly always escape (`saturated`) the chance carries no signal, and the rolls saved decide:
+ * 15 or more is the best, 5 a good move, 5 lost an inaccuracy, 10 a mistake, 20 a blunder.
+ */
+export function labelMove(
+  deltaEscape: number,
+  deltaRolls: number | null,
+  saturated = false,
+): MoveLabel {
+  if (saturated) {
+    if (deltaRolls === null) return 'neutral';
+    if (deltaRolls >= 15) return 'best';
+    if (deltaRolls >= 5) return 'good';
+    if (deltaRolls > -5) return 'neutral';
+    if (deltaRolls > -10) return 'inaccuracy';
+    if (deltaRolls > -20) return 'mistake';
+    return 'blunder';
+  }
   if (deltaEscape >= 0.05) return 'best';
   if (deltaEscape >= 0.01) return 'good';
   if (deltaEscape > -0.01) {
@@ -159,11 +186,16 @@ export function reviewGame(
 
   const moves: ReviewedMove[] = [];
   let skipped = 0;
+  // the games per alternative the move being judged gets (scaled down to fit the time budget)
+  let rolloutsNow = rollouts;
+  let msPerRollout: number | null = null;
+  let leastUsed = Infinity;
+  let mostUsed = 0;
   const evaluate = (books: GameBooks): Evaluation =>
     evaluatePosition(books, {
       gameSets: options.gameSets,
       policy: options.policy,
-      rollouts,
+      rollouts: rolloutsNow,
       horizon: options.horizon ?? 300,
       seedBase: options.seedBase ?? 1,
     });
@@ -181,6 +213,7 @@ export function reviewGame(
     // step must not cost the player the review of all the others
     let a: Evaluation;
     let b: Evaluation;
+    const startedAt = Date.now();
     try {
       a = evaluate(taken);
       b = evaluate(other);
@@ -188,6 +221,11 @@ export function reviewGame(
       skipped += 1;
       return;
     }
+    const spent = (Date.now() - startedAt) / (2 * rolloutsNow);
+    msPerRollout = msPerRollout === null ? spent : (msPerRollout + spent) / 2;
+    leastUsed = Math.min(leastUsed, rolloutsNow);
+    mostUsed = Math.max(mostUsed, rolloutsNow);
+    const saturatedMove = Math.min(a.escapeRate, b.escapeRate) >= SATURATED_ESCAPE_RATE;
     const rollsTaken = a.turnsToEscape?.median ?? null;
     const rollsOther = b.turnsToEscape?.median ?? null;
     const delta = a.escapeRate - b.escapeRate;
@@ -197,7 +235,7 @@ export function reviewGame(
       round: entry(index).cashflowGame.round,
       kind,
       title,
-      label: labelMove(delta, saved),
+      label: labelMove(delta, saved, saturatedMove),
       escapeChance: { taken: a.escapeRate, other: b.escapeRate, delta },
       rollsToEscape: { taken: rollsTaken, other: rollsOther },
       alternative,
@@ -205,10 +243,42 @@ export function reviewGame(
     });
   };
 
-  for (let index = 0; index < stack.length && Date.now() < deadline; index += 1) {
+  // the decisions there are to judge, so the time budget can be shared between them
+  const isDecision = (index: number): boolean => {
+    const step = stack[index].step;
+    if (!step) return false;
+    if (PURCHASES.has(step.kind)) return true;
+    if (step.kind === 'planDeal') {
+      const title = step.detail ?? '';
+      return ![1, 2, 3].some((offset) => {
+        const next = stack[index + offset]?.step;
+        return next && PURCHASES.has(next.kind) && next.detail === title;
+      });
+    }
+    return (
+      (SALES.has(step.kind) && step.kind !== 'cardSale') ||
+      step.kind === 'loanTaken' ||
+      step.kind === 'loanRepaid'
+    );
+  };
+  const decisionIndexes = stack.map((_, index) => index).filter(isDecision);
+  let reached = 0;
+
+  for (let index = 0; index < stack.length; index += 1) {
     const step = stack[index].step;
     if (!step) continue;
     const title = step.detail ?? '';
+    if (isDecision(index)) {
+      if (Date.now() >= deadline) break;
+      reached += 1;
+      const left = decisionIndexes.length - reached + 1;
+      if (msPerRollout !== null && deadline !== Infinity) {
+        const fits = Math.floor(
+          (deadline - Date.now()) / left / (2 * Math.max(msPerRollout, 0.01)),
+        );
+        rolloutsNow = Math.max(MIN_ROLLOUTS, Math.min(rollouts, fits));
+      }
+    }
 
     if (PURCHASES.has(step.kind)) {
       // a purchase (an automatic loan step before it belongs to it)
@@ -284,12 +354,22 @@ export function reviewGame(
     blunder: 0,
   };
   for (const move of moves) counts[move.label] += 1;
-  const worst = [...moves].sort((a, b) => a.escapeChance.delta - b.escapeChance.delta)[0];
-  const top = [...moves].sort((a, b) => b.escapeChance.delta - a.escapeChance.delta)[0];
+  // how much a move mattered: the chance won or lost, and (the tie-break that carries a high salary) the rolls saved
+  const effect = (move: ReviewedMove): number =>
+    move.escapeChance.delta +
+    (move.rollsToEscape.taken !== null && move.rollsToEscape.other !== null
+      ? (move.rollsToEscape.other - move.rollsToEscape.taken) * 0.002
+      : 0);
+  const worst = moves
+    .filter((move) => ['inaccuracy', 'mistake', 'blunder'].includes(move.label))
+    .sort((a, b) => effect(a) - effect(b))[0];
+  const top = moves
+    .filter((move) => move.label === 'best' || move.label === 'good')
+    .sort((a, b) => effect(b) - effect(a))[0];
   return {
     moves,
-    turningPoint: worst && worst.escapeChance.delta <= -0.03 ? worst : null,
-    bestMove: top && top.escapeChance.delta >= 0.03 ? top : null,
+    turningPoint: worst ?? null,
+    bestMove: top ?? null,
     counts,
     final: {
       outcome:
@@ -305,6 +385,9 @@ export function reviewGame(
     },
     steps: stack.length,
     judged: moves.length,
+    truncated: reached < decisionIndexes.length,
+    unjudged: Math.max(0, decisionIndexes.length - reached),
+    rolloutsUsed: moves.length > 0 ? { min: leastUsed, max: mostUsed } : null,
     skipped,
     rollouts,
   };
