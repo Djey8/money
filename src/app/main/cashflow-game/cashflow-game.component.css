@@ -156,12 +156,11 @@
 .cf-loan-triggers {
   display: flex;
   gap: 10px;
-  flex-wrap: wrap;
 }
 
 .cf-loan-btn {
   flex: 1;
-  min-width: 140px;
+  min-width: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -205,6 +204,26 @@
   font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
+}
+
+/* Reset game: the same row as My games, in red - the last one, so it is not pressed by accident. */
+.cf-row-btn--danger {
+  border-color: var(--color-danger, #d32f2f);
+  color: var(--color-danger, #d32f2f);
+}
+
+.cf-row-btn--danger .cf-row-btn-chevron {
+  color: var(--color-danger, #d32f2f);
+}
+
+.cf-row-btn--danger:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.cf-start-games-btn {
+  /* clear space between the Start button above and My games: they read as two separate choices */
+  margin-top: 28px;
 }
 
 .cf-row-btn:hover {
@@ -1188,4 +1207,994 @@
 
 .cf-import-btn {
   cursor: pointer;
+}
+
+/* ── Solo mode: the board, the dice and the open card (todo/cashflow-game-pro.md, Phase C) ─────── */
+
+.cf-mode-choice {
+  border: 0;
+  margin: 1rem 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.cf-mode-choice legend {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.cf-mode-option {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 0.6rem;
+  align-items: start;
+  padding: 0.7rem 0.8rem;
+  border: 2px solid var(--color-border, #ccc);
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.cf-mode-option--active {
+  border-color: var(--color-primary, #2c3e50);
+}
+
+.cf-mode-option input {
+  grid-row: 1 / span 2;
+  margin-top: 0.25rem;
+}
+
+.cf-mode-name {
+  font-weight: 600;
+}
+
+.cf-mode-hint {
+  font-size: 0.85rem;
+  color: var(--color-text-secondary, #666);
+}
+
+.cf-solo {
+  display: grid;
+  gap: 0.75rem;
+}
+
+/* The Payday info box: the notice style, kept to a few small lines. */
+.cf-notice--payday {
+  border-left-color: var(--color-warning, #f39c12);
+  font-size: 0.9rem;
+}
+
+.cf-payday-note {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 14px;
+}
+
+.cf-payday-in {
+  color: var(--color-success);
+}
+
+.cf-payday-out {
+  color: var(--color-danger);
+}
+
+.cf-solo-hud {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1rem;
+  justify-content: center;
+  font-size: 0.9rem;
+}
+
+.cf-solo-dice {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+}
+
+/* The solo dice rest still on their number: the base die's own entrance tumble would replay every time they come into
+   view again (back from a card, a reload), so only the roll itself - class set by the component - animates. */
+.cf-solo-dice {
+  perspective: 600px;
+  min-height: 96px;
+}
+
+/* thrown: it falls, turns over in 3D, bounces and falls again - the faces change faster than it can be read, then slower */
+.cf-solo-dice .cf-die.cf-die--tumbling {
+  animation: cf-die-throw 0.85s cubic-bezier(0.3, 0.1, 0.4, 1) infinite;
+}
+
+.cf-solo-dice .cf-die.cf-die--tumbling:nth-of-type(2) {
+  animation-delay: -0.25s;
+  animation-direction: reverse;
+}
+
+@keyframes cf-die-throw {
+  0% {
+    transform: translateY(-46px) rotate3d(1, 1, 0, 0deg) scale(0.9);
+  }
+  38% {
+    transform: translateY(0) rotate3d(1, 1, 0, 270deg) scale(1.06);
+  }
+  52% {
+    transform: translateY(-20px) rotate3d(1, 1, 0, 330deg) scale(1);
+  }
+  68% {
+    transform: translateY(0) rotate3d(1, 1, 0, 360deg) scale(1.04);
+  }
+  80% {
+    transform: translateY(-7px) rotate3d(1, 1, 0, 360deg) scale(1);
+  }
+  100% {
+    transform: translateY(0) rotate3d(1, 1, 0, 360deg) scale(1);
+  }
+}
+
+/* landed on the number: one small pop, only at the moment of landing */
+.cf-solo-dice .cf-die.cf-die--landed {
+  animation: cf-die-land 0.6s ease-out;
+}
+
+@keyframes cf-die-land {
+  0% {
+    transform: scale(1.25);
+    box-shadow: 0 0 0 0 rgba(243, 156, 18, 0.7);
+  }
+  60% {
+    transform: scale(0.97);
+    box-shadow: 0 0 0 14px rgba(243, 156, 18, 0);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.cf-saved-game-delete {
+  margin-left: auto;
+  border: 0;
+  background: none;
+  font-size: 1.05rem;
+  line-height: 1;
+  padding: 0.3rem 0.4rem;
+  cursor: pointer;
+  opacity: 0.7;
+  color: var(--color-danger, #d32f2f);
+}
+
+.cf-saved-game-delete:hover:not(:disabled),
+.cf-saved-game-delete:focus-visible {
+  opacity: 1;
+}
+
+.cf-dice-choice {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1rem;
+  justify-content: center;
+  align-items: center;
+}
+
+.cf-dice-choice legend {
+  float: left;
+  margin-right: 0.6rem;
+  font-weight: 600;
+}
+
+.cf-dice-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.cf-solo-decision {
+  border: 2px solid var(--color-primary, #2c3e50);
+  border-radius: 10px;
+  padding: 0.75rem;
+}
+
+.cf-solo-decision h3,
+.cf-solo-over h3 {
+  margin: 0 0 0.4rem;
+}
+
+.cf-solo-over {
+  border: 2px solid var(--color-danger);
+  border-radius: 10px;
+  padding: 0.75rem;
+  text-align: center;
+}
+
+.cf-solo-over--won {
+  border-color: var(--color-success);
+}
+
+.cf-solo-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0.5rem;
+  margin: 0.75rem 0;
+}
+
+.cf-solo-summary dt {
+  font-size: 0.8rem;
+  color: var(--color-text-secondary, #666);
+}
+
+.cf-solo-summary dd {
+  margin: 0;
+  font-weight: 700;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cf-solo-dice .cf-die.cf-die--tumbling,
+  .cf-solo-dice .cf-die.cf-die--landed {
+    animation: none;
+  }
+}
+
+/* The symbol of a space's tile, with its border: the same colours as the ring cell and the "landed on" buttons. */
+.cf-space-tile {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  flex: none;
+  border: 2px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1;
+  vertical-align: middle;
+}
+
+.cf-space-tile--deal {
+  border-color: var(--color-success);
+  color: var(--color-success);
+  background-color: var(--color-success-bg, rgba(76, 175, 80, 0.15));
+}
+
+.cf-space-tile--doodad {
+  border-color: var(--color-danger);
+  background-color: var(--color-danger-bg, rgba(211, 47, 47, 0.15));
+}
+
+.cf-space-tile--market {
+  border-color: var(--color-info);
+  background-color: var(--color-info-surface, rgba(0, 123, 255, 0.15));
+}
+
+/* The MLM bonus roll's outcome: green when it paid, neutral when it did not. */
+.cf-notice--mlm {
+  font-size: 0.9rem;
+  border-left-color: var(--color-border);
+}
+
+.cf-notice--won {
+  border-left-color: var(--color-success);
+}
+
+/* A card screen's heading: the title on the left, the symbol of its tile on the right, where there was only white space. */
+.cf-heading-with-tile {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════════════════════
+   Responsive layout (JFK, 2026-10-06). Baseline phone: iPhone SE, 375 x 667. Three kinds of screen:
+   - a phone (up to 600 px): the panel is a full sheet, everything is compact, the roll / decision bar is always in reach;
+   - a tablet (601 - 899 px): the panel is wider and the ring sits beside the controls;
+   - a wide screen (900 px and up): the dashboard uses the width - stats as a strip, the ring beside the dice and the
+     decision, the secondary rows in two columns.
+   ═══════════════════════════════════════════════════════════════════════════════════════════════ */
+
+/* The global .btn is a centred 80 % block made for one button on a page; inside the panel buttons share a row. */
+.cf-panel .btn {
+  width: auto;
+  margin: 0;
+  padding: 10px 16px;
+  font-size: 1rem;
+}
+
+.cf-panel .btn--sm {
+  padding: 8px 12px;
+  font-size: 0.9rem;
+}
+
+.cf-actions {
+  flex-wrap: wrap;
+  align-items: stretch;
+}
+
+.cf-actions > .btn {
+  flex: 1 1 140px;
+  min-width: 0;
+}
+
+/* A button that stands alone in a card is as wide as the card. */
+.cf-card > .btn {
+  display: block;
+  width: 100%;
+}
+
+/* The Start of the language screen stays in reach however long the screen is. */
+.cf-sticky-cta {
+  position: sticky;
+  bottom: 8px;
+  z-index: 3;
+  box-shadow: 0 8px 18px -8px rgba(0, 0, 0, 0.45);
+}
+
+/* Cash, Round and the game date on one row, whatever the screen: the numbers shrink before they wrap. */
+.cf-stat-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 10px 0;
+}
+
+.cf-stat {
+  min-width: 0;
+}
+
+.cf-stat-label {
+  font-size: 0.72rem;
+}
+
+.cf-stat-value {
+  font-size: clamp(0.95rem, 4.4vw, 1.4rem);
+  white-space: nowrap;
+}
+
+.cf-summary .cf-profession-card-header h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+/* The monthly cashflow and Undo share a line. */
+.cf-summary-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cf-summary-foot .cf-stat--secondary {
+  flex: 1 1 auto;
+  margin: 0;
+}
+
+.cf-summary-foot .cf-actions {
+  flex: 0 0 auto;
+}
+
+.cf-summary-foot .cf-actions > .btn {
+  flex: 0 0 auto;
+}
+
+/* ───────── Solo: the ring, the dice and the controls ───────── */
+.cf-solo {
+  display: grid;
+  gap: 6px;
+  padding: 10px;
+}
+
+.cf-solo-board {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+}
+
+/* The ring is as large as the screen allows: wide, but never so tall that the controls fall off the bottom. */
+.cf-solo app-rat-race-board {
+  width: 100%;
+  max-width: min(100%, 440px);
+}
+
+.cf-solo-hud {
+  gap: 2px 12px;
+  font-size: 0.8rem;
+}
+
+.cf-solo-controls {
+  display: grid;
+  gap: 8px;
+}
+
+.cf-solo-roll-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cf-solo-roll-row > .btn--primary {
+  flex: 1 1 auto;
+  padding: 12px 14px;
+  font-size: 1.05rem;
+}
+
+.cf-solo-roll-row > .btn--sm {
+  flex: 0 0 auto;
+}
+
+.cf-solo-dice {
+  display: flex;
+  flex: none;
+  gap: 6px;
+  min-height: 0;
+  perspective: 600px;
+}
+
+.cf-solo-dice .cf-die {
+  width: 46px;
+  height: 46px;
+  margin: 0;
+  padding: 6px;
+  border-radius: 10px;
+  box-sizing: border-box; /* the size is the size, padding included */
+  animation: none; /* the base die tumbles in whenever it appears; here only a roll animates */
+  transform-style: preserve-3d;
+}
+
+.cf-solo-dice .cf-pip {
+  width: 8px;
+  height: 8px;
+}
+
+.cf-solo-last {
+  margin: 0;
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--color-text-secondary);
+}
+
+.cf-solo-decision {
+  padding: 8px 10px;
+}
+
+.cf-solo-decision-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.cf-solo-decision-head h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.cf-solo-decision-hint {
+  margin: 0 0 8px;
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+}
+
+.cf-solo-decision-actions {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1fr;
+  gap: 8px;
+}
+
+.cf-solo-decision-actions > .btn {
+  width: 100%;
+  flex: none;
+  padding: 10px 6px;
+  font-size: 0.9rem;
+}
+
+.cf-dice-choice {
+  justify-content: space-between;
+  font-size: 0.85rem;
+}
+
+/* ───────── A phone, or any screen too low for a floating card: the panel is a full sheet ───────── */
+@media (max-width: 600px), (max-height: 520px) {
+  .cf-panel {
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: auto;
+    max-height: none;
+    transform: none;
+    border: 0;
+    border-radius: 0;
+    padding: 0 12px calc(12px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .cf-panel-header {
+    position: sticky;
+    top: 0;
+    z-index: 6;
+    margin: 0 -12px 8px;
+    padding: 8px 12px;
+    background: var(--color-surface);
+  }
+
+  .cf-panel-title {
+    font-size: 1.05rem;
+  }
+
+  .cf-panel-close {
+    width: 32px;
+    height: 32px;
+  }
+
+  .cf-card {
+    padding: 12px;
+  }
+
+  .cf-dashboard {
+    gap: 10px;
+  }
+
+  .cf-back-btn {
+    padding: 0;
+  }
+
+  .cf-summary {
+    padding: 10px 12px;
+  }
+
+  /* The ring leaves room for the stats above it and the bar below it, on a 667 px high screen too. */
+  .cf-solo app-rat-race-board {
+    max-width: min(100%, max(200px, calc(100vh - 400px)));
+    max-width: min(100%, max(200px, calc(100dvh - 400px)));
+  }
+
+  /* The roll button and the decision stay at the bottom of the screen while the ring is in view. */
+  .cf-solo-controls {
+    position: sticky;
+    bottom: 0;
+    z-index: 4;
+    margin: 0 -10px -10px;
+    padding: 8px 10px calc(10px + env(safe-area-inset-bottom, 0px));
+    background: var(--color-background);
+    border-top: 1px solid var(--color-border-light);
+    box-shadow: 0 -8px 14px -10px rgba(0, 0, 0, 0.35);
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
+  }
+
+  .cf-solo-last,
+  .cf-solo-decision-hint {
+    display: none;
+  }
+
+  .cf-solo-decision {
+    border-width: 2px;
+  }
+
+  /* The language screen: six languages in two short rows, the way to play compact. */
+  .cf-language-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    margin: 8px 0 12px;
+  }
+
+  .cf-language-btn {
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 4px;
+    font-size: 0.82rem;
+  }
+
+  .cf-language-flag {
+    width: 20px;
+    height: 14px;
+  }
+
+  .cf-language-hint {
+    margin: 4px 0;
+    font-size: 0.8rem;
+  }
+
+  .cf-mode-option {
+    padding: 8px 10px;
+  }
+
+  .cf-mode-hint {
+    font-size: 0.78rem;
+  }
+
+  .cf-card-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .cf-tile-price {
+    font-size: 1.05rem;
+  }
+}
+
+/* Even smaller or lower than an iPhone SE: tighter still. */
+@media (max-width: 360px), (max-height: 600px) {
+  .cf-panel-title {
+    font-size: 1rem;
+  }
+
+  .cf-stat-value {
+    font-size: clamp(0.9rem, 4.2vw, 1.2rem);
+  }
+
+  .cf-solo-dice .cf-die {
+    width: 40px;
+    height: 40px;
+    padding: 5px;
+  }
+
+  .cf-solo-dice .cf-pip {
+    width: 7px;
+    height: 7px;
+  }
+}
+
+/* A phone on its side: the ring beside the controls, as there is room across and none up and down. */
+@media (orientation: landscape) and (max-height: 520px) and (max-width: 900px) {
+  .cf-solo {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: center;
+    column-gap: 16px;
+  }
+
+  .cf-solo app-rat-race-board {
+    max-width: min(100%, max(160px, calc(100dvh - 150px)));
+  }
+
+  .cf-solo-controls {
+    position: static;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    box-shadow: none;
+    background: none;
+  }
+}
+
+/* ───────── A tablet or wide screen: a wider card; the ring stays big and the controls sit under it in one row ───────── */
+@media (min-width: 601px) and (min-height: 521px) {
+  .cf-panel {
+    width: min(94vw, 760px);
+  }
+
+  /* The roll / decision bar stays in reach under the ring, its content as wide as the controls need (not the card). */
+  .cf-solo-controls {
+    position: sticky;
+    bottom: 0;
+    z-index: 4;
+    margin: 0 -10px -10px;
+    padding: 8px max(10px, calc((100% - 560px) / 2)) 12px;
+    background: var(--color-background);
+    border-top: 1px solid var(--color-border-light);
+    box-shadow: 0 -8px 14px -10px rgba(0, 0, 0, 0.35);
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
+  }
+}
+
+@media (min-width: 700px) {
+  .cf-solo {
+    padding: 16px;
+  }
+
+  .cf-solo-roll-row > .btn--primary {
+    padding: 14px;
+    font-size: 1.15rem;
+  }
+
+  .cf-solo-dice .cf-die {
+    width: 64px;
+    height: 64px;
+    padding: 8px;
+  }
+
+  .cf-solo-dice .cf-pip {
+    width: 11px;
+    height: 11px;
+  }
+
+  .cf-solo-last {
+    display: block;
+  }
+
+  .cf-solo-hud {
+    font-size: 0.9rem;
+  }
+}
+
+/* ───────── A wide screen: the dashboard uses the width ───────── */
+@media (min-width: 900px) {
+  .cf-panel--wide {
+    top: 4vh;
+    width: min(96vw, 800px);
+    max-height: 92vh;
+  }
+
+  .cf-dashboard--main {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    align-items: start;
+  }
+
+  .cf-stat-value {
+    font-size: 1.5rem;
+  }
+
+  .cf-solo app-rat-race-board {
+    max-width: 560px;
+  }
+
+  .cf-card-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    max-height: calc(3 * 112px + 2 * 8px + 4px);
+  }
+}
+
+/* ═══ Responsive layout, second pass (from the screenshots at 375 x 667) ═══ */
+
+/* An actions row is clear of the button that follows it (Shuffle / View card, then Start game). */
+.cf-actions + .btn,
+.cf-actions + .cf-row-btn {
+  margin-top: 12px;
+}
+
+/* "Monthly cashflow  +600 €" on one line. */
+.cf-summary-foot .cf-stat--secondary {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 8px;
+}
+
+/* The Payday box: title and the monthly result on the first line, income and expenses on the second. */
+.cf-payday-note {
+  gap: 1px 12px;
+  font-size: 0.85rem;
+}
+
+.cf-payday-note-net {
+  margin-left: auto;
+}
+
+@media (max-width: 600px) {
+  .cf-notice {
+    padding: 8px 10px;
+  }
+
+  /* A list that scrolls inside a sheet that scrolls is awkward under a thumb: the sheet scrolls, the list flows. */
+  .cf-card-grid {
+    max-height: none;
+    overflow: visible;
+  }
+
+  .cf-card h3 {
+    margin: 6px 0;
+    font-size: 1.05rem;
+  }
+
+  .cf-heading-with-tile {
+    margin: 2px 0 8px;
+  }
+
+  .cf-space-tile {
+    width: 36px;
+    height: 36px;
+    font-size: 1rem;
+  }
+
+  .cf-card-active {
+    padding: 10px;
+  }
+
+  .cf-solo app-rat-race-board {
+    max-width: min(100%, max(200px, calc(100vh - 370px)));
+    max-width: min(100%, max(200px, calc(100dvh - 370px)));
+  }
+}
+
+/* ═══ Responsive layout, third pass ═══ */
+@media (max-width: 600px) {
+  /* The decision bar is as low as it can be: a small die beside the title, the three buttons under it. */
+  .cf-solo-decision .cf-solo-dice .cf-die {
+    width: 38px;
+    height: 38px;
+    padding: 5px;
+  }
+
+  .cf-solo-decision .cf-solo-dice .cf-pip {
+    width: 6px;
+    height: 6px;
+  }
+
+  .cf-solo-decision-head {
+    margin-bottom: 6px;
+  }
+
+  /* The card list uses what is left of the screen below the filters, and scrolls there. */
+  .cf-card-grid {
+    max-height: max(260px, calc(100vh - 330px));
+    max-height: max(260px, calc(100dvh - 330px));
+    overflow-y: auto;
+  }
+}
+
+/* ═══ Responsive layout, fourth pass: tablet and wide ═══ */
+@media (min-width: 700px) {
+  .cf-solo-hud {
+    font-size: 0.95rem;
+  }
+
+  .cf-solo app-rat-race-board {
+    /* never taller than the window leaves room for: the ring is in view with the stats above it */
+    max-width: min(560px, max(300px, calc(100vh - 420px)));
+  }
+}
+
+@media (min-width: 900px) {
+  .cf-panel--wide {
+    top: 3vh;
+    max-height: 94vh;
+  }
+
+  .cf-solo-dice .cf-die {
+    width: 72px;
+    height: 72px;
+    padding: 9px;
+  }
+
+  .cf-solo-dice .cf-pip {
+    width: 12px;
+    height: 12px;
+  }
+
+  .cf-solo-roll-row {
+    gap: 16px;
+  }
+
+  .cf-solo-roll-row > .btn--primary {
+    padding: 16px;
+    font-size: 1.25rem;
+  }
+}
+
+/* ═══ Responsive layout, fifth pass: the rows under the game sit two to a line, on a phone too ═══ */
+.cf-dashboard--main {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  align-items: start;
+}
+
+.cf-dashboard--main > .cf-card {
+  grid-column: 1 / -1;
+}
+
+.cf-dashboard--main > .cf-row-btn {
+  padding: 12px;
+  font-size: 0.9rem;
+}
+
+@media (min-width: 900px) {
+  .cf-dashboard--main {
+    gap: 16px;
+  }
+}
+
+/* The smallest phones (320 px): the decision buttons stay on one line each. */
+@media (max-width: 340px) {
+  .cf-solo-decision-actions {
+    grid-template-columns: 1.9fr 1fr 1fr;
+    gap: 6px;
+  }
+
+  .cf-solo-decision-actions > .btn {
+    padding: 10px 4px;
+    font-size: 0.8rem;
+  }
+
+  .cf-payday-note {
+    font-size: 0.8rem;
+  }
+}
+
+/* A phone on its side has no height to spare: the stats are one strip, as on a wide screen. */
+@media (orientation: landscape) and (max-height: 520px) and (max-width: 900px) {
+  .cf-summary {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: 16px;
+    padding: 6px 12px;
+  }
+
+  .cf-summary .cf-profession-card-header {
+    gap: 6px;
+    margin: 0;
+  }
+
+  .cf-summary .cf-stat-row {
+    margin: 0;
+  }
+
+  .cf-summary .cf-summary-foot {
+    flex-wrap: nowrap;
+    gap: 12px;
+  }
+
+  .cf-summary > :not(.cf-profession-card-header):not(.cf-stat-row):not(.cf-summary-foot) {
+    grid-column: 1 / -1;
+  }
+
+  .cf-stat-value {
+    font-size: 1rem;
+  }
+}
+
+/* ═══ The quick filters: chips on a big screen, a pair of dropdowns on a phone ═══ */
+.cf-filter-select {
+  display: none;
+}
+
+@media (max-width: 600px) {
+  .cf-filters {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .cf-filters .cf-filter-chips {
+    display: none;
+  }
+
+  .cf-filter-select {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    padding: 9px 8px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-background);
+    color: var(--color-text);
+    font-size: 0.9rem;
+    text-overflow: ellipsis;
+  }
+
+  .cf-filter-select--active {
+    border: 2px solid var(--color-primary);
+    font-weight: 700;
+  }
+}
+
+/* ═══ Rows under the game: Bank loan | Repay, History | My games, Menu | reset game ═══ */
+.cf-dashboard--main > .cf-row-btn--full {
+  grid-column: 1 / -1;
+}
+
+/*
+ * The ring takes the height the window has left, so the dashboard fits without scrolling: it shrinks on a short window
+ * and on a very wide but low one (never below a size the cells can still be read at).
+ */
+@media (min-height: 521px) {
+  .cf-solo app-rat-race-board {
+    max-width: min(100%, 560px, max(190px, calc(100vh - 500px)));
+    max-width: min(100%, 560px, max(190px, calc(100dvh - 500px)));
+  }
+}
+
+/* Right to left (Arabic): the arrows that point "onward" or "back" point the other way. */
+:host-context(.rtl-text) .cf-row-btn-chevron,
+:host-context(.rtl-text) .cf-back-arrow {
+  display: inline-block;
+  transform: scaleX(-1);
 }

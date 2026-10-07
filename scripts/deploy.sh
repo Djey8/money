@@ -747,7 +747,9 @@ done
 
 log_info "Waiting for Backend to be ready (timeout: 5 minutes)..."
 echo "  → Status: Waiting for pods to enter Ready state..."
-if ! kubectl wait --for=condition=ready pod -l app=backend -n "${NAMESPACE}" --timeout=300s 2>&1 | grep -v "error: no matching resources found" | sed 's/^/     /'; then
+# rollout status follows the Deployment itself; waiting on pods by label races with pods of
+# superseded ReplicaSets being deleted mid-wait ("pods ... not found" on a healthy rollout).
+if ! kubectl rollout status deployment/backend -n "${NAMESPACE}" --timeout=300s 2>&1 | sed 's/^/     /'; then
     log_error "Backend failed to become ready"
     echo ""
     log_info "Pod status:"
@@ -814,7 +816,9 @@ done
 
 log_info "Waiting for MCP server to be ready (timeout: 5 minutes)..."
 echo "  → Status: Waiting for pods to enter Ready state..."
-if ! kubectl wait --for=condition=ready pod -l app=mcp -n "${NAMESPACE}" --timeout=300s 2>&1 | grep -v "error: no matching resources found" | sed 's/^/     /'; then
+# rollout status follows the Deployment itself; waiting on pods by label races with pods of
+# superseded ReplicaSets being deleted mid-wait ("pods ... not found" on a healthy rollout).
+if ! kubectl rollout status deployment/mcp -n "${NAMESPACE}" --timeout=300s 2>&1 | sed 's/^/     /'; then
     log_error "MCP server failed to become ready"
     echo ""
     log_info "Pod status:"
@@ -905,7 +909,9 @@ done
 
 log_info "Waiting for Frontend to be ready (timeout: 5 minutes)..."
 echo "  → Status: Waiting for pods to enter Ready state..."
-if ! kubectl wait --for=condition=ready pod -l app=frontend -n "${NAMESPACE}" --timeout=300s 2>&1 | grep -v "error: no matching resources found" | sed 's/^/     /'; then
+# rollout status follows the Deployment itself; waiting on pods by label races with pods of
+# superseded ReplicaSets being deleted mid-wait ("pods ... not found" on a healthy rollout).
+if ! kubectl rollout status deployment/frontend -n "${NAMESPACE}" --timeout=300s 2>&1 | sed 's/^/     /'; then
     log_error "Frontend failed to become ready"
     echo ""
     log_info "Pod status:"

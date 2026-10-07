@@ -1,4 +1,4 @@
-import { decodeUndoChain, encodeUndoChain, isEncodedUndoChain } from './undo-chain-codec';
+import { decodeUndoChain, encodeUndoChain, isEncodedUndoChain } from './undo-chain';
 
 const empty = () => ({
   allTransactions: [] as any[],
@@ -72,7 +72,7 @@ describe('undo chain codec', () => {
 
   it('decodes into independent copies', () => {
     const decoded = decodeUndoChain(encodeUndoChain(playedGame(4)));
-    decoded[3]['allTransactions'].push({ title: 'extra', amount: 1 });
+    (decoded[3]['allTransactions'] as unknown[]).push({ title: 'extra', amount: 1 });
     expect(decoded[2]['allTransactions']).toHaveLength(2);
   });
 

@@ -61,9 +61,10 @@ export const MANUAL_SECTIONS: ManualSectionRef[] = [
   { id: 'app', number: '15', level: 0 },
   { id: 'games', number: '16', level: 0 },
   { id: 'strategy', number: '17', level: 0 },
-  { id: 'odds', number: '18', level: 0 },
-  { id: 'faq', number: '19', level: 0 },
-  { id: 'glossary', number: '20', level: 0 },
+  { id: 'lab', number: '18', level: 0 },
+  { id: 'odds', number: '19', level: 0 },
+  { id: 'faq', number: '20', level: 0 },
+  { id: 'glossary', number: '21', level: 0 },
 ];
 
 /** The languages the manual is written in; every other language shows the English text. */

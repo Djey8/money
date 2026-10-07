@@ -80,7 +80,36 @@
     "factBoost": "Schub",
     "factUpTo": "Bis",
     "unit": "Einheit",
-    "coin": "Münze"
+    "coin": "Münze",
+    "colStrategy": "Strategie",
+    "colEscapes": "Entkommt",
+    "colBankrupt": "Pleite",
+    "colMedianRolls": "Übliche Würfe bis zum Ausstieg",
+    "colMedianMonths": "Übliche Monate bis zum Ausstieg",
+    "colPassiveAtEscape": "Passives Einkommen beim Ausstieg",
+    "colBestStrategy": "Beste Strategie",
+    "colWorstStrategy": "Schlechteste Strategie",
+    "colFastest": "Schnelle Spiele (Würfe)",
+    "colSlowest": "Langsame Spiele (Würfe)",
+    "colTypicalPeak": "Übliches höchstes passives Einkommen",
+    "colGoodPeak": "Ein gutes Spiel erreicht",
+    "colBestPeak": "Das beste Spiel erreichte",
+    "colCashflowAtEscape": "Monatlicher Cashflow beim Ausstieg",
+    "labMissing": "Die Ergebnisse des Strategie-Labors sind nicht verfügbar.",
+    "noteLab": "Mittelwerte über alle Berufe. Ein „Wurf“ ist ein Zug; zwei Würfe sind etwa ein Monat. Üblich heißt: das mittlere Spiel unter denen, die ausgestiegen sind.",
+    "noteLabMatrix": "Der Anteil der Spiele, die das Hamsterrad verlassen, für jeden Beruf und jede Strategie.",
+    "noteLabProfessions": "Schnelle Spiele sind das schnellste Zehntel der Ausstiege, langsame das langsamste Zehntel.",
+    "noteLabCeiling": "Gezeigt wird die Strategie, die im Mittel das meiste passive Einkommen erreichte. Viel zu erreichen heißt nicht, sicher auszusteigen - siehe die Tabelle der Strategien.",
+    "policy_never-buy": "Investiert nie",
+    "policy_cash-properties": "Immobilien aus Bargeld",
+    "policy_picky-properties": "Wählerisch bei Immobilien",
+    "policy_big-deals-when-rich": "Erst klein, dann groß",
+    "policy_bridge-loans": "Kredit, wenn es sich lohnt",
+    "policy_leveraged-big": "Mit Kredit, große Deals",
+    "policy_mlm-then-properties": "Erst Netzwerk, dann Immobilien",
+    "policy_stocks-for-deposits": "Aktien für Anzahlungen",
+    "policy_all-rounder": "Allrounder",
+    "policy_best-found": "Beste Strategie der Suche"
   },
   "sections": {
     "start": {
@@ -969,6 +998,99 @@
           "kind": "warning",
           "title": "Häufige Fehler",
           "text": "Leihen für eine Karte, die nichts zahlt. Das Polster für eine Aktie ausgeben und dann auf Schnickschnack treffen. Ein Darlehen zu 10 % im Monat für einen Deal mit 5 % Rendite. Eine Wohnung an einen Käufer verkaufen, dessen Preis unter ihrer Hypothek liegt."
+        }
+      ]
+    },
+    "lab": {
+      "nav": "Simulierte Spiele",
+      "title": "Was tausende simulierte Spiele zeigen",
+      "intro": "Die App hat ganze Spiele selbst gespielt - mit denselben Regeln und denselben Karten wie du, tausende, für jeden Beruf und für mehrere Strategien. Nichts hier ist Meinung: es ist gezählt. Ändert sich eine Karte oder eine Regel, werden die Zahlen neu gemessen.",
+      "blocks": [
+        {
+          "type": "h3",
+          "text": "So liest man die Zahlen"
+        },
+        {
+          "type": "list",
+          "items": [
+            "**Gewinnen** heißt aus dem Hamsterrad aussteigen: das passive Einkommen deckt alle monatlichen Ausgaben. **Verlieren** heißt Pleite: der monatliche Cashflow wird negativ.",
+            "Ein **Wurf** ist ein Zug. Zwei Würfe sind etwa ein Monat (ein Zahltag), 80 Würfe also etwa 40 Monate.",
+            "Jede Strategie spielt **dieselben Würfel**, die Unterschiede zwischen den Strategien sind also kein Glück.",
+            "Die Strategien stehen unten. Jede entscheidet nur, was auch du entscheidest: von welchem Stapel gezogen wird, ob die Karte gekauft wird, ob ein Kredit aufgenommen wird, ob an einen Käufer verkauft wird und ob die Bank zurückgezahlt wird. Schnickschnack wird immer bezahlt und Marktkarten werden immer gespielt."
+          ]
+        },
+        {
+          "type": "h3",
+          "text": "Welche Strategie gewinnt und wie oft"
+        },
+        {
+          "type": "data",
+          "id": "labStrategies",
+          "caption": "Jede Strategie, im Mittel über alle Berufe"
+        },
+        {
+          "type": "list",
+          "items": [
+            "**Investiert nie** - zahlt jeden Schnickschnack, passt bei jedem Deal: nur das Gehalt.",
+            "**Immobilien aus Bargeld** - kauft jede Immobilie, deren Anzahlung das Bargeld deckt, nur kleine Deals, nie ein Kredit.",
+            "**Wählerisch bei Immobilien** - nur Immobilien mit mindestens 3 % im Monat auf die Anzahlung, 2.000 Reserve.",
+            "**Erst klein, dann groß** - kleine Deals, bis das Bargeld 20.000 erreicht, dann große Deals.",
+            "**Kredit, wenn es sich lohnt** - leiht den Fehlbetrag, wenn die Immobilie mindestens das 1,5-fache der zusätzlichen Zinsen bringt, zahlt zurück, sobald möglich.",
+            "**Mit Kredit, große Deals** - zielt von Anfang an auf große Deals und leiht, wenn die Immobilie mindestens die Zinsen bringt.",
+            "**Erst Netzwerk, dann Immobilien** - kauft jede bezahlbare Multi-Level-Marketing-Karte, danach Immobilien aus Bargeld.",
+            "**Aktien für Anzahlungen** - kauft Aktien bei 10 oder weniger, verkauft bei 25 oder mehr, um Anzahlungen zu sammeln.",
+            "**Allrounder** - Immobilien über 2 % im Monat, Reserve, Kredit nur bei guter Deckung, Multi-Level-Marketing, Aktienhandel, Verkauf an großzügige Käufer, große Deals, sobald das Bargeld reicht.",
+            "**Beste Strategie der Suche** - die beste von 216 Kombinationen dieser Einstellungen, jede tausendfach gespielt (siehe der Bericht in der Projektdokumentation). „Beste“ heißt: die beste der ausprobierten."
+          ]
+        },
+        {
+          "type": "h3",
+          "text": "Beruf für Beruf"
+        },
+        {
+          "type": "data",
+          "id": "labProfessions",
+          "caption": "Die beste und die schlechteste Strategie je Beruf, und wie schnell die beste aussteigt"
+        },
+        {
+          "type": "h3",
+          "text": "Jede Strategie bei jedem Beruf"
+        },
+        {
+          "type": "data",
+          "id": "labMatrix",
+          "caption": "Anteil der Spiele, die aussteigen"
+        },
+        {
+          "type": "h3",
+          "text": "Das höchste passive Einkommen"
+        },
+        {
+          "type": "data",
+          "id": "labCeiling",
+          "caption": "Wie viel passives Einkommen ein Spiel erreichen kann, je Beruf"
+        },
+        {
+          "type": "h3",
+          "text": "Was auffällt"
+        },
+        {
+          "type": "list",
+          "items": [
+            "**Nichts tun verliert.** Ohne Investitionen endet etwa zwei von drei Spielen in der Pleite, der Rest steigt nie aus: ein Gehalt trägt keine Babys, keinen Schnickschnack und keine Kredite, die dadurch nötig werden.",
+            "**Lieber vorsichtig leihen als nie.** Strategien, die nur leihen, wenn eine Karte die Zinsen klar deckt, steigen etwa so oft aus wie die vorsichtigen - in ungefähr halb so vielen Würfen.",
+            "**Auf große Deals wechseln, sobald das Bargeld reicht.** In den gesuchten Einstellungen steigt man mit großen Deals ab etwa 20.000 Bargeld in etwa der halben Zahl von Würfen aus wie mit denselben Einstellungen nur mit kleinen Deals.",
+            "**Multi-Level-Marketing lohnt sich.** Jede der besten gesuchten Strategien kauft es.",
+            "**Das höchste passive Einkommen und der sicherste Ausstieg sind verschiedene Spiele.** Starke Kredite für große Deals erreichen mit Abstand das größte passive Einkommen - ein Spiel kam über 60.000 im Monat - aber etwa zwei von drei Spielen enden vorher in der Pleite.",
+            "**Aktienhandel für Anzahlungen half in diesen Messungen nicht:** damit stieg man seltener aus als mit Immobilien aus Bargeld allein.",
+            "**Das Gehalt entscheidet die Chancen.** Die niedrigsten Gehälter (Hausmeister, LKW-Fahrer) steigen mit der besten Strategie in etwa sieben von zehn Spielen aus; Pilot, Arzt und Anwalt in praktisch jedem Spiel."
+          ]
+        },
+        {
+          "type": "callout",
+          "kind": "note",
+          "title": "Wie weit man dem trauen kann",
+          "text": "Das sind Zählungen simulierter Spiele, kein Beweis. Ein echter Spieler entscheidet mit mehr Wissen als eine feste Strategie - welche Karte vor ihm liegt, wie es den anderen geht - und die Würfel entscheiden weiter viel. Die Zahlen zeigen, welche Gewohnheiten tendenziell gewinnen, nicht wie ein einzelnes Spiel ausgeht."
         }
       ]
     },

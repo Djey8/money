@@ -80,7 +80,36 @@
     "factBoost": "Boost",
     "factUpTo": "Up to",
     "unit": "unit",
-    "coin": "coin"
+    "coin": "coin",
+    "colStrategy": "Strategy",
+    "colEscapes": "Escapes",
+    "colBankrupt": "Bankrupt",
+    "colMedianRolls": "Typical rolls to escape",
+    "colMedianMonths": "Typical months to escape",
+    "colPassiveAtEscape": "Passive income at the escape",
+    "colBestStrategy": "Best strategy",
+    "colWorstStrategy": "Worst strategy",
+    "colFastest": "Fast games (rolls)",
+    "colSlowest": "Slow games (rolls)",
+    "colTypicalPeak": "Typical highest passive income",
+    "colGoodPeak": "A good game reaches",
+    "colBestPeak": "The best game reached",
+    "colCashflowAtEscape": "Monthly cashflow at the escape",
+    "labMissing": "The strategy lab results are not available.",
+    "noteLab": "Averages over all professions. A \"roll\" is one turn; two rolls make about one month. Typical means the middle game of those that escaped.",
+    "noteLabMatrix": "The share of games that escape the rat race, for every profession and strategy.",
+    "noteLabProfessions": "Fast games are the fastest tenth of the escapes, slow games the slowest tenth.",
+    "noteLabCeiling": "The strategy shown is the one that reached the most passive income on average. Reaching a lot is not the same as escaping safely - see the table of strategies.",
+    "policy_never-buy": "Never invests",
+    "policy_cash-properties": "Properties from cash",
+    "policy_picky-properties": "Picky properties",
+    "policy_big-deals-when-rich": "Small first, Big when rich",
+    "policy_bridge-loans": "Borrow when it pays",
+    "policy_leveraged-big": "Leveraged, Big Deals",
+    "policy_mlm-then-properties": "Marketing first, then properties",
+    "policy_stocks-for-deposits": "Trade stocks for deposits",
+    "policy_all-rounder": "All-rounder",
+    "policy_best-found": "Best found by the search"
   },
   "sections": {
     "start": {
@@ -955,6 +984,99 @@
           "kind": "warning",
           "title": "Common mistakes",
           "text": "Borrowing for a card that pays nothing. Spending the cushion on a share and then meeting a Doodad. Taking a loan at 10% a month for a deal that returns 5%. Selling a condo to a buyer at a price below its mortgage."
+        }
+      ]
+    },
+    "lab": {
+      "nav": "Simulated games",
+      "title": "What thousands of simulated games show",
+      "intro": "The app played whole games by itself - with the same rules and the same cards as yours, thousands of them, for every profession and for several strategies. Nothing below is opinion: it is counted. When a card or a rule changes, the numbers are measured again.",
+      "blocks": [
+        {
+          "type": "h3",
+          "text": "How to read the numbers"
+        },
+        {
+          "type": "list",
+          "items": [
+            "**Winning** means escaping the rat race: passive income covers every monthly expense. **Losing** means bankruptcy: the monthly cashflow turns negative.",
+            "A **roll** is one turn. Two rolls make about one month (one Payday), so 80 rolls are about 40 months.",
+            "Every strategy plays **the same dice**, so the differences between strategies are not luck.",
+            "The strategies are listed below. Each decides only what you decide too: which pile to draw from, whether to buy the card, whether to borrow, whether to sell to a buyer and whether to repay the bank. Doodads are always paid and Market cards are always played."
+          ]
+        },
+        {
+          "type": "h3",
+          "text": "Which strategy wins and how often"
+        },
+        {
+          "type": "data",
+          "id": "labStrategies",
+          "caption": "Every strategy, averaged over all professions"
+        },
+        {
+          "type": "list",
+          "items": [
+            "**Never invests** - pays every Doodad, passes every deal: the salary alone.",
+            "**Properties from cash** - buys any property it can pay the deposit for, Small Deals only, never borrows.",
+            "**Picky properties** - only properties paying at least 3% a month on the deposit, keeps 2.000 in reserve.",
+            "**Small first, Big when rich** - Small Deals until cash reaches 20.000, then Big Deals.",
+            "**Borrow when it pays** - borrows the shortfall when a property pays at least 1,5 times the interest the loan adds, repays when it can.",
+            "**Leveraged, Big Deals** - aims at Big Deals from the start and borrows whenever the property pays at least the interest.",
+            "**Marketing first, then properties** - buys every Multi-Level-Marketing card it can afford, then properties from cash.",
+            "**Trade stocks for deposits** - buys stocks at 10 or less, sells at 25 or more, to raise deposit money.",
+            "**All-rounder** - properties above 2% a month, a reserve, loans only when well covered, Multi-Level-Marketing, stock trading, selling to generous buyers, Big Deals once cash allows.",
+            "**Best found by the search** - the best of 216 combinations of those settings that were each played thousands of times (see the report in the project documentation). \"Best\" means best of what was tried."
+          ]
+        },
+        {
+          "type": "h3",
+          "text": "Profession by profession"
+        },
+        {
+          "type": "data",
+          "id": "labProfessions",
+          "caption": "The best and the worst strategy for each profession, and how fast the best one escapes"
+        },
+        {
+          "type": "h3",
+          "text": "Every strategy on every profession"
+        },
+        {
+          "type": "data",
+          "id": "labMatrix",
+          "caption": "Share of the games that escape"
+        },
+        {
+          "type": "h3",
+          "text": "The highest passive income"
+        },
+        {
+          "type": "data",
+          "id": "labCeiling",
+          "caption": "How much passive income a game can reach, by profession"
+        },
+        {
+          "type": "h3",
+          "text": "What stands out"
+        },
+        {
+          "type": "list",
+          "items": [
+            "**Doing nothing loses.** Without investing, about two games in three end in bankruptcy and the rest never escape: a salary does not carry babies, Doodads and the loans they force.",
+            "**Borrow carefully rather than never.** The strategies that borrow only when a card clearly pays for the interest escape about as often as the cautious ones - in roughly half the rolls.",
+            "**Switch to Big Deals once the cash allows.** In the searched settings, going for Big Deals from about 20.000 cash escapes in about half the rolls of the same settings with Small Deals only.",
+            "**Multi-Level-Marketing earns its place.** Every one of the best searched strategies buys it.",
+            "**The highest passive income and the safest escape are different games.** Borrowing heavily for Big Deals reaches by far the largest passive income - one game passed 60.000 a month - but about two games in three end in bankruptcy first.",
+            "**Trading stocks for deposit money did not help** in these measurements: it escaped less often than buying properties from cash alone.",
+            "**The salary decides the odds.** The lowest salaries (caretaker, truck driver) escape in roughly seven games out of ten with the best strategy; pilot, doctor and lawyer escape in practically every game."
+          ]
+        },
+        {
+          "type": "callout",
+          "kind": "note",
+          "title": "How far to trust it",
+          "text": "These are counts of simulated games, not a proof. A real player decides with more information than a fixed strategy - which card is in front of you, how the others are doing - and the dice still decide a lot. Use the numbers to see which habits tend to win, not to predict one game."
         }
       ]
     },

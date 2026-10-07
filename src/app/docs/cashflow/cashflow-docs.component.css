@@ -189,3 +189,14 @@
   font-size: 0.94rem;
   line-height: 1.6;
 }
+
+/* A wide table (every strategy against every profession) scrolls inside the page instead of widening it: a grid column
+   is as wide as its widest content unless it is allowed to shrink. */
+.selfhosted-detail {
+  min-width: 0;
+}
+
+.manual-table {
+  overflow-x: auto;
+  max-width: 100%;
+}

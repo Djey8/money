@@ -45,3 +45,7 @@ docs
 !docs/api/openapi.yaml
 !docs/domain
 !docs/domain/*.md
+# the strategy lab's measurements, copied into the backend image for the game analyst
+!docs/domain/strategy
+!docs/domain/strategy/data
+!docs/domain/strategy/data/results.json

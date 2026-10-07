@@ -320,6 +320,10 @@ curl -X DELETE "http://localhost:3000/api/v1/balance/shares/shares_<id>" \
   -H "Authorization: Bearer $MONEY_MANAGER_TOKEN"
 ```
 
+## Play and analyse the Cashflow game (game accounts only)
+
+Requires `game:r` (read the game, the sets, the cards, a saved game, a review) or `game:w` (every move, save, undo, reset, prune). Only **game accounts** (an email containing `cashflow`) can use these endpoints; any other account gets `403 not_a_game_account`, whatever its scopes. Each move must be one of the `legalActions` that `GET /api/v1/game` lists (`409 game_action_not_allowed` otherwise); the game's own rules refuse with `422 game_rule_refused`. Amounts are integer minor units. `GET /game/review` and `GET /game/saves/{id}/review` judge a game's decisions against simulated alternatives (CPU-heavy; at most two run at once, `429 game_review_busy` otherwise). The full workflow, the clean-up rules for saved games and the error codes are in `docs/api/AGENTS.md` ("Read the Cashflow game") and `docs/api/openapi.yaml` (tag Game).
+
 ## Read revenue, interest, and property income sources
 
 Requires a PAT with `income:r`. All three are read-only — they're fully derived from transaction history and get recomputed on every transaction write, so editing/deleting the underlying transaction (`PATCH/DELETE /transactions/{id}`) is the only durable way to change one. See `docs/api/AGENTS.md` for the full explanation.

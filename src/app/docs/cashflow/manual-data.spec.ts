@@ -1,6 +1,10 @@
 import { CASHFLOW_GAME_SETS } from '../../shared/cashflow-content';
 import { buildManualTable, MANUAL_DATA_IDS, type ManualContext } from './manual-data';
 
+// Node globals: the spec tsconfig carries no node typings.
+declare const require: (id: string) => any;
+declare const __dirname: string;
+
 /** Every label answers with its own name, so a test can tell which column or row it is looking at. */
 const ctx: ManualContext = {
   labels: new Proxy({} as Record<string, string>, { get: (_target, key) => String(key) }),
@@ -110,5 +114,39 @@ describe('Cashflow manual - numbers read from the real card catalog', () => {
     // a semi-detached house has no buyer card at all, only the costs and the boosts
     expect(cell(odds, 'profile_DH', 1)).toBe('7');
     expect(cell(odds, 'profile_GOLD', 1)).toBe('3');
+  });
+});
+
+describe('Cashflow manual - the strategy lab tables', () => {
+  // The same results file the app serves to the manual.
+  const lab = JSON.parse(
+    require('fs').readFileSync(
+      require('path').resolve(__dirname, '../../../assets/i18n/cashflow-manual/strategy-lab.json'),
+      'utf8',
+    ),
+  );
+  const labCtx = { ...ctx, lab };
+
+  it('lists every strategy with how often it escapes, best first', () => {
+    const { rows } = buildManualTable('labStrategies', labCtx);
+    expect(rows).toHaveLength(lab.policies.length);
+    const escapes = rows.map((row) => Number.parseInt(row[1], 10));
+    expect([...escapes].sort((a, b) => b - a)).toEqual(escapes);
+    expect(rows.map((row) => row[0])).toContain('policy_never-buy');
+  });
+
+  it('has a row for every profession in the profession and ceiling tables, and the matrix', () => {
+    for (const id of ['labProfessions', 'labCeiling', 'labMatrix'] as const) {
+      const { head, rows } = buildManualTable(id, labCtx);
+      expect(rows).toHaveLength(lab.professions.length);
+      for (const row of rows) expect(row).toHaveLength(head.length);
+    }
+    expect(buildManualTable('labMatrix', labCtx).head).toHaveLength(lab.policies.length + 1);
+  });
+
+  it('says so, in a table of the same shape, when the results are not there', () => {
+    const missing = buildManualTable('labStrategies', { ...ctx, lab: null });
+    expect(missing.rows[0][0]).toBe('labMissing');
+    expect(missing.rows[0]).toHaveLength(missing.head.length);
   });
 });

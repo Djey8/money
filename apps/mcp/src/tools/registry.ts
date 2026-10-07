@@ -355,6 +355,73 @@ export const TOOLS: ToolDefinition[] = [
   },
   {
     kind: 'simple',
+    name: 'get_cashflow_game',
+    description:
+      'Read explain_concept topic cashflow_game_guide first (section "Playing as an agent"). Read-only view of the ' +
+      'Cashflow game (game accounts only: an email containing "cashflow"; any other account gets 403 ' +
+      'not_a_game_account). game: where the running game stands - state, cash, finances, the pending decision and ' +
+      '`legalActions`, the only moves play_cashflow_game will accept right now (call this before every move). ' +
+      'sets/set: the game sets, professions and the 24-space board. cards: browse or find cards of a pile (deck is ' +
+      'required; query searches title, ticker and price). history: the step log of the running game. saves/save: ' +
+      'the saved games, the account storage left (`storage`) and one saved game with its step log. review / review_save: ' +
+      'the game analyst - judges the decisions of the running game or a saved game (best ... blunder, the turning ' +
+      'point, a comparison with the strategy lab); read explain_concept topic cashflow_strategy_lab to turn it into ' +
+      'advice. Requires a PAT with game:r.',
+    actions: {
+      game: action('getGame'),
+      sets: action('listGameSets'),
+      set: action('getGameSet'),
+      cards: action('listGameCards'),
+      history: action('getGameHistory'),
+      saves: action('listGameSaves'),
+      save: action('getGameSave'),
+      review: action('getGameReview'),
+      review_save: action('getGameSaveReview'),
+    },
+  },
+  {
+    kind: 'simple',
+    name: 'play_cashflow_game',
+    description:
+      'Play the Cashflow game (game accounts only). Always read get_cashflow_game action game first and only do ' +
+      'what its `legalActions` lists; every action returns the game afterwards, plus `result` (what the dice ' +
+      'showed, which card was drawn...). A solo game: start (mode solo), then loop roll, and for the pending card ' +
+      'draw_card + buy_deal / pay_doodad / play_market, or pass_card; roll_decision rolls a waiting dice card; ' +
+      'sell_position sells shares, a property or gold you hold (see holdings in the game). ' +
+      'A companion game is driven by payday, baby, charity, downsized, clear_status. bank_loan moves the Bank ' +
+      'loan by amountMinor (positive borrows, negative repays). undo takes steps back; save, load_save, end_game, ' +
+      'rename_save manage saved games - save a game in full (it keeps the undo history the analyst needs) and use compact: true only for a batch of games saved for statistics, check `storage` before a long ' +
+      'run, and when a session is done clean up with prune_saves so at most 100 saves remain. Requires a PAT ' +
+      'with game:w. reset, delete_save and prune_saves destroy data and require confirm: true - never without ' +
+      "the user's say-so for games you did not create in this session.",
+    actions: {
+      start: action('gameStart'),
+      roll: action('gameTurn'),
+      draw_card: action('gameDrawCard'),
+      buy_deal: action('gameBuyDeal'),
+      pay_doodad: action('gamePayDoodad'),
+      play_market: action('gamePlayMarket'),
+      roll_decision: action('gameRollDecision'),
+      sell_position: action('gameSellPosition'),
+      pass_card: action('gamePassCard'),
+      payday: action('gamePayday'),
+      baby: action('gameBaby'),
+      charity: action('gameCharity'),
+      downsized: action('gameDownsized'),
+      clear_status: action('gameClearStatus'),
+      bank_loan: action('gameBankLoan'),
+      undo: action('gameUndo'),
+      reset: action('gameReset', true),
+      save: action('saveGame'),
+      load_save: action('loadGameSave'),
+      rename_save: action('renameGameSave'),
+      delete_save: action('deleteGameSave', true),
+      prune_saves: action('pruneGameSaves', true),
+      end_game: action('endGame'),
+    },
+  },
+  {
+    kind: 'simple',
     name: 'get_account',
     description:
       "Read the account's email and creation date. Requires a PAT with account:r. Changing the email, " +

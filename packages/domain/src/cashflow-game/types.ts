@@ -250,13 +250,38 @@ export interface CashflowAssetDeal {
   failureText?: string;
 }
 
+/** A card space the token landed on, waiting for the player to deal with its card (or pass). */
+export interface CashflowPendingDecision {
+  kind: 'deal' | 'market' | 'doodad';
+  /** The ring index of the space. A Deals space leaves the pile (Small or Big) to the player. */
+  spaceIndex: number;
+}
+
+/**
+ * Where a solo game's turn stands (todo/cashflow-game-pro.md slice B3). `roll`: waiting for the next roll. `decide`: the
+ * token landed on a card space and the turn stays open until the card is dealt with or passed. `over`: the game has
+ * ended - see `outcome`; nothing more is rolled.
+ */
+export interface CashflowSoloTurn {
+  phase: 'roll' | 'decide' | 'over';
+  /** How many rolls have been made. */
+  count: number;
+  /** The dice of the last roll. */
+  lastRoll?: number[];
+  pending?: CashflowPendingDecision;
+  /** Set with `phase: 'over'`: out of the rat race, or lost. */
+  outcome?: 'escaped' | 'bankrupt';
+}
+
 export interface CashflowGameState {
   gameSetId: string | null;
   professionId: string | null;
   /** Chosen when the game starts (todo/cashflow-game.md decision 8). Only `companion` is resolvable today. */
   mode: 'companion' | 'solo';
-  /** Solo mode's token position on the game set's `board`; always null in companion mode (no token tracked). */
+  /** Solo mode's token: the ring index of its space, null at START (and always null in companion mode, which tracks no token). */
   boardPosition: number | null;
+  /** Solo mode only; absent on every game saved before it existed and in companion mode. */
+  turn?: CashflowSoloTurn;
   round: number;
   /** The game's own calendar (ISO date), independent of the real wall-clock date. Null until a profession is picked. */
   virtualDate: string | null;

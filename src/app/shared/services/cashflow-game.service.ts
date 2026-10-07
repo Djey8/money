@@ -1,15 +1,14 @@
-import {
-  decodeUndoChain,
-  encodeUndoChain,
-  isEncodedUndoChain,
-  type EncodedUndoChain,
-} from '../undo-chain-codec';
 import { Injectable } from '@angular/core';
-import { Subject } from 'rxjs';
+import { Subject, auditTime, merge } from 'rxjs';
 import { TranslateService } from '@ngx-translate/core';
 import {
-  addMonthsToIsoDate,
-  adjustCashflowBankLoan,
+  afterAssetBuy as afterAssetBuyRule,
+  afterAssetSell as afterAssetSellRule,
+  beforeAssetBuy as beforeAssetBuyRule,
+  openDecisions as openDecisionsOf,
+  paydayRollCount as paydayRollCountOf,
+  resolveGamble as resolveGambleRule,
+  sellCoins as sellCoinsRule,
   CashflowAssetDeal,
   CashflowDealCard,
   CashflowDeckKind,
@@ -19,24 +18,95 @@ import {
   CashflowGameSubscription,
   CashflowMarketCard,
   CashflowProfession,
-  CashflowStarterKitSubscription,
   CashflowTransactionRecord,
-  calculateBuyInvestment,
-  calculateBuyShare,
+  cashOnHandMinor,
+  blankGameData,
+  captureGameSnapshot as captureSnapshot,
+  coinsOwnedOf,
+  accountHistoryIsNewer,
+  buildLiveHistory,
+  decodeUndoChain,
+  encodeUndoChain,
+  isEncodedUndoChain,
+  readLiveHistory,
+  type LiveHistory,
+  type EncodedUndoChain,
+  dealInputFromCard,
+  doodadLoanNote as doodadLoanNoteRule,
+  executeDeal as executeDealRule,
   clearCashflowStatus,
   computeMonthlyCashflowMinor,
   drawRandomCard,
   findCards,
   fromMinorUnits,
-  initialCashflowGameState,
-  multiplyQuantityPrice,
+  gameSubscriptionDays,
+  gameTradeStep,
+  historySteps as historyStepsOf,
+  isGameSnapshot as isGameSnapshotRule,
+  keepSavedSlot,
+  marketSaleFor,
+  nextSmartDate,
   pickCashflowProfession,
-  resolveCashflowBaby,
-  resolveCashflowCharity,
-  resolveCashflowDownsized,
-  runCashflowPayday,
+  planAutoLoan,
+  popUndoSteps,
+  planDeal as planDealRule,
+  plannedDeals as plannedDealsRule,
+  playBankLoan,
+  playBaby,
+  playBoostCard,
+  playMarketBuyerCard,
+  playMarketCostCard,
+  playPayday,
+  playShareSplitCard,
+  previewSpace,
+  pushUndoSnapshot as pushSnapshotOnto,
+  registerInvestmentIncome as registerInvestmentIncomeRule,
+  removeExpenseForPaidLiability as removeExpenseForPaidLiabilityRule,
+  sellCardToFriend as sellCardToFriendRule,
+  setPhaseAfterTrade as setPhaseAfterTradeRule,
+  syncPlanNote as syncPlanNoteRule,
+  takenDealLabels,
+  sellAssetProblem,
   summarizeGameFinances,
+  UNDO_STACK_LIMIT,
+  systemClock,
+  systemRng,
+  endIfOver,
+  playCharityPaying,
+  playDownsizedPaying,
+  type PaidWithLoan,
+  CLASSIC_RAT_RACE_BOARD,
+  playTurn,
+  settleDecision as settleDecisionRule,
+  whyCannotRoll,
+  finalSummary,
+  currentTurn,
+  type DiceCount,
+  type FinalSummary,
+  type RatRaceBoard,
+  type TurnResult,
+  rollDie as rollDieRule,
+  type Rng,
   toMinorUnits,
+  tradePurchase,
+  updateSharePrice,
+  usedDaysThisMonth,
+  type BookGrowProject,
+  type BookGrowUpdate,
+  type BookSubscription,
+  type CardBooks,
+  type CardDeps,
+  type DealDeps,
+  type DealInput,
+  type Clock,
+  type GameBooks,
+  type GameEffects,
+  type GameStep,
+  type LoanBooks,
+  type GameStepKind,
+  type HistoryStep,
+  type RoundBooks,
+  type RoundDeps,
   type SavedGameSummary,
 } from '@money/domain';
 import { CASHFLOW_GAME_SETS } from '../cashflow-content';
@@ -66,6 +136,8 @@ export interface CashflowCardPlanText extends CashflowCardText {
 export interface CashflowGameCallbacks {
   onSuccess: () => void;
   onError: (message: string) => void;
+  /** Called before `onSuccess` when the action had to take an automatic bank loan first (the amount, in minor units). */
+  onLoan?: (loanMinor: number) => void;
 }
 
 /** A Deal card resolved through the app's existing Grow feature (todo/cashflow-game.md decision 10) — not a new entity type, just the two shapes Grow's own buy actions need. */
@@ -132,9 +204,99 @@ export interface CashflowCardCallbacks<T> {
   onError: (message: string) => void;
 }
 
-function todayIso(): string {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+/** The service's decimal deal input in the domain's minor units. */
+function toDealInput(input: CashflowDealInput): DealInput {
+  if (input.kind === 'share') {
+    return {
+      kind: 'share',
+      title: input.title,
+      quantity: input.quantity,
+      priceMinor: toMinorUnits(input.price),
+      subtitle: input.subtitle,
+      description: input.description,
+      note: input.note,
+      strategy: input.strategy,
+    };
+  }
+  if (input.kind === 'investment') {
+    return {
+      kind: 'investment',
+      title: input.title,
+      depositMinor: toMinorUnits(input.deposit),
+      mortgageMinor: toMinorUnits(input.mortgage),
+      cashflowMinor: toMinorUnits(input.cashflow),
+      subtitle: input.subtitle,
+      description: input.description,
+      note: input.note,
+    };
+  }
+  return {
+    kind: 'asset',
+    title: input.title,
+    costMinor: toMinorUnits(input.cost),
+    coins: input.coins,
+    successOn: input.successOn,
+    payoutMinor: input.payout ? toMinorUnits(input.payout) : undefined,
+    recurring: input.recurring,
+    subtitle: input.subtitle,
+    description: input.description,
+    note: input.note,
+    strategy: input.strategy,
+    successText: input.successText,
+    failureText: input.failureText,
+  };
+}
+
+function toBookGrowProject(project: Grow): BookGrowProject {
+  const minor = (amount: unknown) => toMinorUnits(Number(amount) || 0);
+  return {
+    title: project.title,
+    sub: project.sub ?? '',
+    phase: project.phase,
+    status: project.status ?? '',
+    description: project.description ?? '',
+    strategy: project.strategy ?? '',
+    notes: project.notes ?? [],
+    cashflowMinor: minor(project.cashflow),
+    amountMinor: minor(project.amount),
+    isAsset: Boolean(project.isAsset),
+    share: project.share?.tag
+      ? {
+          tag: project.share.tag,
+          quantity: Number(project.share.quantity) || 0,
+          priceMinor: minor(project.share.price),
+        }
+      : null,
+    investment: project.investment?.tag
+      ? {
+          tag: project.investment.tag,
+          depositMinor: minor(project.investment.deposit),
+          amountMinor: minor(project.investment.amount),
+        }
+      : null,
+    loan: project.liabilitie?.tag
+      ? {
+          tag: project.liabilitie.tag,
+          amountMinor: minor(project.liabilitie.amount),
+          creditMinor: minor(project.liabilitie.credit),
+          investment: Boolean(project.liabilitie.investment),
+        }
+      : null,
+    updatedAt: project.updatedAt ?? '',
+  };
+}
+
+function toBookSubscription(sub: Subscription): BookSubscription {
+  return {
+    title: sub.title,
+    account: sub.account,
+    amountMinor: toMinorUnits(sub.amount),
+    startDate: sub.startDate,
+    endDate: sub.endDate,
+    category: sub.category,
+    comment: sub.comment,
+    frequency: sub.frequency,
+  };
 }
 
 function toFloatTransaction(record: CashflowTransactionRecord): Transaction {
@@ -149,55 +311,13 @@ function toFloatTransaction(record: CashflowTransactionRecord): Transaction {
 }
 
 /** Every real entity a cashflow-game action can touch — a full copy of this is one undo step (JFK, 2026-09-29+: "we need to keep track of the history of inputs... we need to make sure we can revert each move"). Includes Smile/Fire/Mojo even though only `resetGame` ever touches them, so undoing a reset restores those too, not just the game's own bookkeeping. Plain JSON data throughout, so a deep clone is just a stringify/parse round-trip. */
-/** Everything a player can do that is one step in the game - and one step to undo (JFK, 2026-10-03). */
-export type CashflowStepKind =
-  | 'start'
-  | 'payday'
-  | 'baby'
-  | 'charity'
-  | 'downsized'
-  | 'loanTaken'
-  | 'loanRepaid'
-  | 'loanAuto'
-  | 'planDeal'
-  | 'buyDeal'
-  | 'doodad'
-  | 'marketCard'
-  | 'marketCost'
-  | 'priceUpdate'
-  | 'shareSplit'
-  | 'shareReverseSplit'
-  | 'cardSale'
-  | 'reset'
-  | 'buyShare'
-  | 'sellShare'
-  | 'buyInvestment'
-  | 'sellInvestment'
-  | 'payoff'
-  | 'buyAsset'
-  | 'sellAsset'
-  | 'diceWon'
-  | 'diceLost'
-  | 'transaction';
+/** Everything a player can do that is one step in the game - and one step to undo (JFK, 2026-10-03). Defined in the domain, shared with the Pro API. */
+export type CashflowStepKind = GameStepKind;
 
-interface CashflowStepInfo {
-  kind: CashflowStepKind;
-  /** What it was about: a title, a symbol, an amount, "Round 3"... */
-  detail?: string;
-}
+type CashflowStepInfo = GameStep;
 
-/** One line of the game's History, newest first - exactly one per undo step. */
-export interface CashflowHistoryStep {
-  id: string;
-  /** 1 for the first thing that happened in this game, counting up - stays the same when newer steps are undone. */
-  number: number;
-  kind: CashflowStepKind;
-  detail: string;
-  /** ISO timestamp of when the step was taken (empty for steps saved before history tracking). */
-  at: string;
-  /** What the step added to the books - e.g. a Payday's income and expense lines for the month. */
-  transactions: Transaction[];
-}
+/** One line of the game's History, newest first - exactly one per undo step. Defined in the domain, shared with the Pro API. */
+export type CashflowHistoryStep = HistoryStep<Transaction>;
 
 export interface CashflowGameSnapshot {
   /** Which step this snapshot is the "before" of; absent on snapshots saved before history tracking. */
@@ -219,9 +339,6 @@ function deepClone<T>(value: T): T {
   return JSON.parse(JSON.stringify(value));
 }
 
-/** How many past actions can be undone in a row — comfortably more than one play session needs, cheap to keep since a snapshot is just this small game's own data. */
-const UNDO_STACK_LIMIT = 200;
-
 /**
  * Raw `localStorage`, deliberately not `LocalService`/`PersistenceService` — those encrypt and sync
  * to the DB, which the undo stack must never do (JFK, 2026-09-29+: "can we at least persist the
@@ -230,6 +347,8 @@ const UNDO_STACK_LIMIT = 200;
  * the browser's site data removes it same as everything else — no extra code needed for that part.
  */
 const UNDO_STACK_STORAGE_KEY = 'cashflowUndoStack';
+/** When the browser's copy of the history last changed - compared with the account's copy (see `CashflowHistorySyncService`). */
+const UNDO_STACK_AT_KEY = 'cashflowUndoStackAt';
 
 /**
  * Replaces `GameModeService`'s two date-shifting methods with automation
@@ -242,6 +361,12 @@ const UNDO_STACK_STORAGE_KEY = 'cashflowUndoStack';
 export class CashflowGameService {
   readonly gameSets = CASHFLOW_GAME_SETS;
 
+  /** "Now" for everything the game dates and stamps. A property (not a constructor argument) so a test can pin it. */
+  clock: Clock = systemClock;
+
+  /** Where chance comes from (the dice, the card draws, a shuffled profession). A property so a test - or the solo engine - can pin it. */
+  rng: Rng = systemRng;
+
   /**
    * Not synced to the DB — see `UNDO_STACK_STORAGE_KEY`'s own comment. Starts from whatever's in
    * localStorage (a prior reload/restart's leftovers), so it survives across those; `logOut()`
@@ -249,11 +374,23 @@ export class CashflowGameService {
    */
   private undoStack: CashflowGameSnapshot[] = this.loadPersistedUndoStack();
 
+  /** When the history last changed (ISO), so the browser's and the account's copy can tell which is newer. */
+  private undoStackAt: string | null = this.loadPersistedUndoStackAt();
+
+  /** Fires whenever the history changed and the account's copy should follow. */
+  readonly historyChanged$ = new Subject<void>();
+
   constructor(
     private persistence: PersistenceService,
     private incomeStatement: IncomeStatementService,
     private translate: TranslateService,
-  ) {}
+  ) {
+    // The game ends when the books say so, whichever action changed them.
+    const state = AppStateService.instance;
+    merge(state.transactionsUpdated$, state.subscriptionsUpdated$)
+      .pipe(auditTime(60))
+      .subscribe(() => this.endSoloGameIfOver());
+  }
 
   static isCashflowGame(): boolean {
     // The Firebase builds carry no game content (cashflow-content.firebase.ts): no sets, no game.
@@ -277,9 +414,48 @@ export class CashflowGameService {
     }
   }
 
+  private loadPersistedUndoStackAt(): string | null {
+    try {
+      return localStorage.getItem(UNDO_STACK_AT_KEY);
+    } catch {
+      return null;
+    }
+  }
+
+  /** When the browser's copy of the history last changed; null when it never has. */
+  get historyUpdatedAt(): string | null {
+    return this.undoStackAt;
+  }
+
+  /** The history as it is stored in the account: the compact chain and a plain log, stamped with its last change. */
+  liveHistory(): LiveHistory {
+    return buildLiveHistory(
+      this.undoStack,
+      AppStateService.instance,
+      {
+        text: this.roundDeps.text,
+        money: (amountMinor) => this.amountText(fromMinorUnits(amountMinor)),
+      },
+      this.undoStackAt ?? this.clock.nowIso(),
+    );
+  }
+
+  /**
+   * Takes over the account's history when it is newer than the browser's (another device played, or the Pro API did).
+   * Changes the history only - the books were already loaded from the account - and does not write it back.
+   */
+  adoptAccountHistory(stored: unknown): boolean {
+    const read = readLiveHistory<CashflowGameSnapshot>(stored);
+    if (!read || !accountHistoryIsNewer(read.updatedAt, this.undoStackAt)) return false;
+    this.undoStack = read.stack.slice(-UNDO_STACK_LIMIT);
+    this.undoStackAt = read.updatedAt;
+    this.storeUndoStackLocally();
+    return true;
+  }
+
   /** Reads a stored history: the compact form, or the plain list older versions of the app wrote. */
   private decodeStack(stored: unknown): CashflowGameSnapshot[] {
-    if (isEncodedUndoChain(stored)) return decodeUndoChain(stored) as CashflowGameSnapshot[];
+    if (isEncodedUndoChain(stored)) return decodeUndoChain<CashflowGameSnapshot>(stored);
     return Array.isArray(stored) ? (stored as CashflowGameSnapshot[]) : [];
   }
 
@@ -290,8 +466,15 @@ export class CashflowGameService {
 
   /** `localStorage.setItem` can throw (quota, private-browsing) — the in-memory stack still works for the rest of this session either way. */
   private persistUndoStack(): void {
+    this.undoStackAt = this.clock.nowIso();
+    this.storeUndoStackLocally();
+    this.historyChanged$.next();
+  }
+
+  private storeUndoStackLocally(): void {
     try {
       localStorage.setItem(UNDO_STACK_STORAGE_KEY, JSON.stringify(encodeUndoChain(this.undoStack)));
+      if (this.undoStackAt) localStorage.setItem(UNDO_STACK_AT_KEY, this.undoStackAt);
     } catch {
       // best-effort only
     }
@@ -299,11 +482,10 @@ export class CashflowGameService {
 
   /** Snapshots every real entity a game action can touch, right before that action mutates anything — one call per public mutating method, always before its first mutation. */
   private pushUndoSnapshot(step: CashflowStepInfo): void {
-    this.undoStack.push({
-      step: { ...step, at: new Date().toISOString() },
+    this.undoStack = pushSnapshotOnto(this.undoStack, {
+      step: { ...step, at: this.clock.nowIso() },
       ...this.captureGameSnapshot(),
     });
-    if (this.undoStack.length > UNDO_STACK_LIMIT) this.undoStack.shift();
     this.persistUndoStack();
   }
 
@@ -313,7 +495,7 @@ export class CashflowGameService {
    */
   captureGameSnapshot(): CashflowGameSnapshot {
     const state = AppStateService.instance;
-    return deepClone({
+    return captureSnapshot({
       allTransactions: state.allTransactions,
       allSubscriptions: state.allSubscriptions,
       allGrowProjects: state.allGrowProjects,
@@ -330,24 +512,7 @@ export class CashflowGameService {
 
   /** Whether a loaded snapshot has the shape of a game (a corrupt or foreign file must never replace a live game). */
   isGameSnapshot(value: unknown): value is CashflowGameSnapshot {
-    const snapshot = value as Partial<CashflowGameSnapshot> | null;
-    return Boolean(
-      snapshot &&
-      [
-        snapshot.allTransactions,
-        snapshot.allSubscriptions,
-        snapshot.allGrowProjects,
-        snapshot.allShares,
-        snapshot.allInvestments,
-        snapshot.allAssets,
-        snapshot.liabilities,
-        snapshot.allSmileProjects,
-        snapshot.allFireEmergencies,
-      ].every(Array.isArray) &&
-      snapshot.mojo &&
-      snapshot.cashflowGame &&
-      Array.isArray(snapshot.cashflowGame.gameSubscriptionTitles),
-    );
+    return isGameSnapshotRule(value);
   }
 
   /**
@@ -374,6 +539,8 @@ export class CashflowGameService {
         this.undoStack = [];
       }
     }
+    // Without a history the account's old one must still be replaced by this game's (empty) one.
+    this.persistUndoStack();
     this.applySnapshot(deepClone(snapshot));
     this.persistAll('cashflow_game_loaded', { gameId: snapshot.cashflowGame.gameId }, callbacks, {
       includeSubscriptions: true,
@@ -479,17 +646,19 @@ export class CashflowGameService {
     if (!state.tier3BalanceLoaded || !state.tier3GrowLoaded) {
       return { borrowed: 0, converted: false, nextDate: this.nextGameTransactionDate() };
     }
-    const purchase = this.parsePurchase(comment, expenseAmount);
+    const purchase = tradePurchase(comment, toMinorUnits(expenseAmount));
     const gameSet = this.currentGameSet();
     let borrowedMinor = 0;
     let converted = false;
     if (purchase && gameSet) {
-      const shortfallMinor = Math.max(0, purchase.costMinor - toMinorUnits(this.cash));
-      const financedMinor = Math.max(0, toMinorUnits(financedLoan));
-      const wantedMinor = Math.max(shortfallMinor, financedMinor);
-      if (wantedMinor > 0) {
-        const incrementMinor = gameSet.loanRule.incrementMinor;
-        const plannedMinor = Math.ceil(wantedMinor / incrementMinor) * incrementMinor;
+      const plan = planAutoLoan({
+        costMinor: purchase.costMinor,
+        cashMinor: toMinorUnits(this.cash),
+        financedMinor: toMinorUnits(financedLoan),
+        incrementMinor: gameSet.loanRule.incrementMinor,
+      });
+      if (plan.loanMinor > 0) {
+        const plannedMinor = plan.loanMinor;
         this.pushUndoSnapshot({
           kind: 'loanAuto',
           detail: this.amountText(fromMinorUnits(plannedMinor)),
@@ -497,9 +666,9 @@ export class CashflowGameService {
         try {
           borrowedMinor = plannedMinor;
           this.applyBankLoanAdjustment(fromMinorUnits(borrowedMinor), loanDate);
-          converted = financedMinor > 0;
+          converted = plan.converted;
         } catch {
-          this.undoStack.pop();
+          this.undoStack = popUndoSteps(this.undoStack, 1).stack;
           this.persistUndoStack();
           borrowedMinor = 0;
         }
@@ -512,7 +681,7 @@ export class CashflowGameService {
         if (project) project.liabilitie = null as any;
       }
     }
-    this.pushUndoSnapshot(this.tradeStep(comment, category)); // step 2 (or the only step): the trade itself
+    this.pushUndoSnapshot(gameTradeStep(comment, category)); // step 2 (or the only step): the trade itself
     // The loan comes first: it takes `loanDate` (the day the dialog was opened on), and the purchase
     // that follows gets the next free slot after it.
     return {
@@ -527,64 +696,10 @@ export class CashflowGameService {
     return this.translate.instant('CashflowGame.loanAutoTaken', { amount });
   }
 
-  /** What kind of step a dialog transaction is, read from Grow's own comment text. */
-  private tradeStep(comment: string, category: string): CashflowStepInfo {
-    if (DOODAD_MARK.test(comment)) return { kind: 'doodad', detail: category.replace(/^@/, '') };
-    if (MARKET_COST_MARK.test(comment)) {
-      return { kind: 'marketCost', detail: category.replace(/^@/, '') };
-    }
-    const named = (pattern: RegExp, kind: CashflowStepKind): CashflowStepInfo | null => {
-      const match = pattern.exec(comment);
-      return match ? { kind, detail: match[1] } : null;
-    };
-    return (
-      named(/Buy Share (\S+)/, 'buyShare') ??
-      named(/Sell Share (\S+)/, 'sellShare') ??
-      named(/Buy Investment (\S+)/, 'buyInvestment') ??
-      named(/Sell Investment (\S+)/, 'sellInvestment') ??
-      named(/Buy Asset (\S+)/, 'buyAsset') ??
-      named(/Sell Asset (\S+)/, 'sellAsset') ??
-      (comment.includes('Payback Liabilitie')
-        ? { kind: 'payoff', detail: category.replace(/^@/, '') }
-        : { kind: 'transaction', detail: category.replace(/^@/, '') })
-    );
-  }
-
   /** "4.000" style text for a History line, in the app's number format. */
   private amountText(amount: number): string {
     const state = AppStateService.instance;
     return `${amount.toLocaleString(state.isEuropeanFormat ? 'de-DE' : 'en-US')} ${state.currency}`;
-  }
-
-  /** What a Grow Buy comment is for and costs up front: shares = quantity x price, investments = the deposit. Anything else (sells, dividends, plain transactions) is not a purchase. */
-  private parsePurchase(
-    comment: string,
-    expenseAmount = 0,
-  ): { title: string; costMinor: number } | null {
-    // A Doodad (Schnickschnack) is a plain expense, but it is paid like a purchase: short of cash, the
-    // game takes a Bank loan first.
-    if (
-      (DOODAD_MARK.test(comment) ||
-        MARKET_COST_MARK.test(comment) ||
-        comment.includes('Sell Investment')) &&
-      expenseAmount > 0
-    ) {
-      return { title: '', costMinor: toMinorUnits(expenseAmount) };
-    }
-    const share = /Buy Share (\S+) ([\d.]+) x ([\d.]+)/.exec(comment);
-    if (share) {
-      return {
-        title: share[1],
-        costMinor: Math.round(Number(share[2]) * toMinorUnits(Number(share[3]))),
-      };
-    }
-    const investment = /Buy Investment (\S+) ([\d.]+) [\d.]+/.exec(comment);
-    if (investment) {
-      return { title: investment[1], costMinor: toMinorUnits(Number(investment[2])) };
-    }
-    const asset = /Buy Asset (\S+) 1 x ([\d.]+)/.exec(comment);
-    if (asset) return { title: asset[1], costMinor: toMinorUnits(Number(asset[2])) };
-    return null;
   }
 
   /**
@@ -595,8 +710,10 @@ export class CashflowGameService {
    */
   clearPersistedUndoStack(): void {
     this.undoStack = [];
+    this.undoStackAt = null;
     try {
       localStorage.removeItem(UNDO_STACK_STORAGE_KEY);
+      localStorage.removeItem(UNDO_STACK_AT_KEY);
     } catch {
       // best-effort only
     }
@@ -621,83 +738,23 @@ export class CashflowGameService {
    * be recorded twice.
    */
   historySteps(): CashflowHistoryStep[] {
-    const state = AppStateService.instance;
-    const stack = this.undoStack;
-    return stack
-      .map((snapshot, index) => {
-        const after = index + 1 < stack.length ? stack[index + 1] : state;
-        // Steps saved before history tracking carry no name: work it out from what changed.
-        const step = snapshot.step ?? this.inferStep(snapshot, after);
-        return {
-          id: `${snapshot.step?.at ?? 'saved'}-${index}`,
-          number: index + 1,
-          kind: step.kind,
-          detail: step.detail ?? '',
-          at: snapshot.step?.at ?? '',
-          transactions: after.allTransactions.slice(snapshot.allTransactions.length),
-        };
-      })
-      .reverse();
-  }
-
-  /** Names a step from what it changed in the game: the state before it against the state after. */
-  private inferStep(
-    before: CashflowGameSnapshot,
-    after: Pick<
-      CashflowGameSnapshot,
-      'cashflowGame' | 'liabilities' | 'allGrowProjects' | 'allTransactions'
-    >,
-  ): CashflowStepInfo {
-    const was = before.cashflowGame;
-    const now = after.cashflowGame;
-    if (!was.professionId && now.professionId) return { kind: 'start' };
-    if (was.professionId && !now.professionId) return { kind: 'reset' };
-    if (now.round > was.round) {
-      return {
-        kind: 'payday',
-        detail: `${this.translate.instant('CashflowGame.Round')} ${now.round}`,
-      };
-    }
-    if (now.children > was.children) return { kind: 'baby' };
-    if (now.charityRoundsLeft > was.charityRoundsLeft) return { kind: 'charity' };
-    if (now.unemployedRoundsLeft > was.unemployedRoundsLeft) return { kind: 'downsized' };
-    const bankLoan = (snapshot: Pick<CashflowGameSnapshot, 'liabilities'>) =>
-      snapshot.liabilities.find((liability) => liability.tag === 'Bank loan')?.amount ?? 0;
-    const loanChange = bankLoan(after) - bankLoan(before);
-    if (loanChange !== 0) {
-      return {
-        kind: loanChange > 0 ? 'loanTaken' : 'loanRepaid',
-        detail: this.amountText(Math.abs(loanChange)),
-      };
-    }
-    const added = after.allTransactions.slice(before.allTransactions.length);
-    const last = added[added.length - 1];
-    if (last?.category?.endsWith(' card sale')) {
-      return { kind: 'cardSale', detail: last.category.replace(/^@| card sale$/g, '') };
-    }
-    if (last) return this.tradeStep(last.comment ?? '', last.category ?? '');
-    if (after.allGrowProjects.length > before.allGrowProjects.length) return { kind: 'planDeal' };
-    return { kind: 'transaction' };
+    return historyStepsOf(this.undoStack, AppStateService.instance, {
+      text: this.roundDeps.text,
+      money: (amountMinor) => this.amountText(fromMinorUnits(amountMinor)),
+    });
   }
 
   /** Undoes the newest `count` steps in one go - back to exactly how the game stood before the oldest of them (the History's "undo back to here"). */
   undoSteps(count: number, callbacks: CashflowGameCallbacks): void {
-    let snapshot: CashflowGameSnapshot | undefined;
-    for (let undone = 0; undone < count && this.undoStack.length > 0; undone++) {
-      snapshot = this.undoStack.pop();
-    }
+    const { snapshot, stack } = popUndoSteps(this.undoStack, count);
     if (!snapshot) {
       callbacks.onError('Nothing to undo.');
       return;
     }
+    this.undoStack = stack;
     this.persistUndoStack();
     // A step from before the game was first saved knows nothing of its saved slot: keep the slot.
-    const { gameId, gameName } = AppStateService.instance.cashflowGame;
-    this.applySnapshot(
-      gameId
-        ? { ...snapshot, cashflowGame: { ...snapshot.cashflowGame, gameId, gameName } }
-        : snapshot,
-    );
+    this.applySnapshot(keepSavedSlot(snapshot, AppStateService.instance.cashflowGame));
     this.persistAll('cashflow_undo_action', {}, callbacks, {
       includeSubscriptions: true,
       includeBalanceSheet: true,
@@ -712,11 +769,22 @@ export class CashflowGameService {
    * records pick up whatever language is active right now (todo/cashflow-game.md decision 48, JFK
    * 2026-09-29+: "can we have this in all 6 languages and we translate all of these values").
    */
-  pickProfession(gameSetId: string, professionId: string, callbacks: CashflowGameCallbacks): void {
+  pickProfession(
+    gameSetId: string,
+    professionId: string,
+    callbacks: CashflowGameCallbacks,
+    mode: 'companion' | 'solo' = 'companion',
+  ): void {
     const state = AppStateService.instance;
     let result: ReturnType<typeof pickCashflowProfession>;
     try {
-      result = pickCashflowProfession(this.gameSets, gameSetId, professionId, todayIso());
+      result = pickCashflowProfession(
+        this.gameSets,
+        gameSetId,
+        professionId,
+        this.clock.todayIso(),
+        mode,
+      );
     } catch (err: unknown) {
       callbacks.onError(errorMessage(err, 'Could not start the game.'));
       return;
@@ -855,123 +923,186 @@ export class CashflowGameService {
    * used for round-tracking/loan math, not for what date actually gets persisted.
    */
   payday(callbacks: CashflowGameCallbacks): void {
-    const state = AppStateService.instance;
-    const ownedSubscriptions = this.ownedGameSubscriptions();
-    let result: ReturnType<typeof runCashflowPayday>;
+    let effects: GameEffects;
     try {
-      result = runCashflowPayday(state.cashflowGame, this.gameSubscriptions());
+      effects = playPayday(this.roundBooks(), this.roundDeps);
     } catch (err: unknown) {
       callbacks.onError(errorMessage(err, 'Could not run Payday.'));
       return;
     }
-    this.pushUndoSnapshot({
-      kind: 'payday',
-      detail: `${this.translate.instant('CashflowGame.Round')} ${result.state.round}`,
-    });
-
-    this.shiftGameTransactionDates(-1);
-
-    const [year, month] = todayIso().split('-').map(Number);
-    const datedTransactions = result.transactions.map((record, index) => ({
-      ...record,
-      date: this.dateFromSubscriptionDay(ownedSubscriptions[index], year, month),
-    }));
-    datedTransactions.forEach((record) => state.allTransactions.push(toFloatTransaction(record)));
-
-    // Keep history's own copy in sync with the dates actually persisted, so the History list shows
-    // the dates that actually got saved.
-    const history = [...result.state.history];
-    history[history.length - 1] = {
-      ...history[history.length - 1],
-      createdTransactions: datedTransactions,
-    };
-
-    state.cashflowGame = { ...result.state, history };
-    // Market buyers' offers are good for one round only: gone at Payday, with their notes.
-    const hadOffers = (state.cashflowGame.marketOffers ?? []).length > 0;
-    if (hadOffers) {
-      state.cashflowGame = { ...state.cashflowGame, marketOffers: [] };
-      for (const project of state.allGrowProjects) {
-        project.notes = (project.notes ?? []).filter(
-          (note) => !note.text.startsWith(MARKET_NOTE_MARK),
-        );
-      }
-    }
-    // Every kept Multi-Level-Marketing card now has a roll waiting - one roll for all of them.
-    const hasRecurring = this.recurringOwned().length > 0;
-    if (hasRecurring) {
-      state.cashflowGame = {
-        ...state.cashflowGame,
-        assetDeals: this.assetDeals().map((deal) =>
-          deal.recurring && deal.stage === 'owned' ? { ...deal, rollDue: true } : deal,
-        ),
-      };
-    }
+    this.pushUndoSnapshot(effects.step);
+    this.applyGameEffects(effects);
     this.persistAll(
       'cashflow_payday',
-      { round: result.state.round },
+      { round: effects.state.round },
       callbacks,
-      hadOffers ? { includeGrow: true } : {},
+      effects.persist.grow ? { includeGrow: true } : {},
     );
-    if (hasRecurring) this.decisionNeeded$.next();
+    if (effects.decisionNeeded) this.decisionNeeded$.next();
   }
 
   /**
-   * Every game transaction: those tagged `#cashflow`, plus Grow trades made through the Add dialog
-   * before it tagged them (their comment is Grow's own "Buy Share ..." / "Sell Investment ..." text) -
-   * so older games age their purchases back at Payday too (JFK, 2026-10-03: a share bought two
-   * Paydays ago stayed put).
+   * The slice of the account the round rules (`@money/domain` rounds.ts) read, in minor units. The rules are pure:
+   * this service only builds their input, applies their effects and persists - the same decisions the Pro API makes.
    */
-  private shiftGameTransactionDates(months: number): void {
-    for (const transaction of AppStateService.instance.allTransactions) {
-      if (isGameTransaction(transaction)) {
-        transaction.date = addMonthsToIsoDate(transaction.date, months);
+  private roundBooks(): RoundBooks {
+    const state = AppStateService.instance;
+    return {
+      state: state.cashflowGame,
+      subscriptions: state.allSubscriptions.map(toBookSubscription),
+      transactions: state.allTransactions,
+      growNotes: state.allGrowProjects.map((project) => ({
+        title: project.title,
+        notes: project.notes ?? [],
+      })),
+    };
+  }
+
+  /** Today's date and the game's text, for the round rules: the injectable clock and the selected language. */
+  private get roundDeps(): RoundDeps {
+    return { clock: this.clock, text: (key, params) => this.translate.instant(key, params) };
+  }
+
+  /** Creates or edits subscriptions to read as the rule says, keeping everything else on an existing one (its change history). */
+  private applySubscriptionUpserts(upserts: BookSubscription[]): void {
+    const subscriptions = AppStateService.instance.allSubscriptions;
+    for (const upsert of upserts) {
+      const existing = subscriptions.find((sub) => sub.title === upsert.title);
+      if (existing) {
+        existing.account = upsert.account;
+        existing.amount = fromMinorUnits(upsert.amountMinor);
+        existing.frequency = upsert.frequency;
+        existing.category = upsert.category;
+        existing.comment = upsert.comment;
+      } else {
+        subscriptions.push({
+          title: upsert.title,
+          account: upsert.account,
+          amount: fromMinorUnits(upsert.amountMinor),
+          startDate: upsert.startDate,
+          endDate: upsert.endDate,
+          category: upsert.category,
+          comment: upsert.comment,
+          frequency: upsert.frequency,
+        });
       }
     }
   }
 
-  /** The real Subscriptions Payday owns, in the exact order the engine paired them with `result.transactions` (`ownedSubscriptions` in engine.ts — same titles, same filter, same order) — lets each transaction pick up its own Subscription's `startDate`. */
-  private ownedGameSubscriptions(): Subscription[] {
+  /** The slice of the account the Market-card rules read, in minor units. */
+  private cardBooks(): CardBooks {
     const state = AppStateService.instance;
-    const byTitle = new Map(state.allSubscriptions.map((sub) => [sub.title, sub]));
-    return state.cashflowGame.gameSubscriptionTitles
-      .map((title) => byTitle.get(title))
-      .filter((sub): sub is Subscription => sub !== undefined);
+    const minor = (amount: unknown) => toMinorUnits(Number(amount) || 0);
+    return {
+      state: state.cashflowGame,
+      subscriptions: state.allSubscriptions.map(toBookSubscription),
+      investments: state.allInvestments.map((investment) => ({
+        tag: investment.tag,
+        depositMinor: minor(investment.deposit),
+        amountMinor: minor(investment.amount),
+      })),
+      shares: state.allShares.map((share) => ({
+        tag: share.tag,
+        quantity: Number(share.quantity) || 0,
+        priceMinor: minor(share.price),
+      })),
+      assets: state.allAssets.map((asset) => ({
+        tag: asset.tag,
+        amountMinor: minor(asset.amount),
+      })),
+      growProjects: state.allGrowProjects.map((project) => ({
+        title: project.title,
+        notes: project.notes ?? [],
+        cashflowMinor: minor(project.cashflow),
+        share: project.share?.tag
+          ? { tag: project.share.tag, priceMinor: minor(project.share.price) }
+          : null,
+      })),
+    };
   }
 
-  /** One Subscription's own `startDate` day-of-month, placed in the given real year/month — clamped to that month's actual length (JFK, 2026-09-29: "we just need to make sure the highest day used is the 28th, because of February", "same for 31 to 30 month"). */
-  private dateFromSubscriptionDay(
-    subscription: Subscription | undefined,
-    year: number,
-    month: number,
-  ): string {
-    const day = subscription ? Number(subscription.startDate.split('-')[2]) || 1 : 1;
-    const clampedDay = Math.min(day, new Date(year, month, 0).getDate());
-    return `${year}-${String(month).padStart(2, '0')}-${String(clampedDay).padStart(2, '0')}`;
+  /** The round rules' dependencies plus the game's money format ("4.000 €"). */
+  private get cardDeps(): CardDeps {
+    return {
+      ...this.roundDeps,
+      money: (amountMinor) => this.amountText(fromMinorUnits(amountMinor)),
+    };
   }
 
   /**
-   * Every day-of-month a `#cashflow` Subscription recurs on. A Subscription's `startDate` can sit in
-   * an earlier month than today (the game started weeks ago), but it still pays on that day every
-   * month - so only its day counts, not its month.
+   * Writes any game rule's effects into the live entities (see `GameEffects` in @money/domain). Existing entries are
+   * edited in place, so nothing else on them (ids, change history) is lost.
    */
-  private currentMonthGameSubscriptionDays(): Set<number> {
-    const days = new Set<number>();
-    for (const sub of AppStateService.instance.allSubscriptions) {
-      const day = Number(sub.startDate?.split('-')[2]);
-      if (sub.comment?.includes('#cashflow') && day >= 1) days.add(day);
+  private applyGameEffects(effects: GameEffects): void {
+    const state = AppStateService.instance;
+    for (const { index, date } of effects.transactionDates) {
+      state.allTransactions[index].date = date;
     }
-    return days;
+    effects.appendedTransactions.forEach((record) =>
+      state.allTransactions.push(toFloatTransaction(record)),
+    );
+    this.applySubscriptionUpserts(effects.subscriptionUpserts);
+    for (const title of effects.subscriptionRemovals) this.removeSubscriptionByTitle(title);
+    for (const liability of effects.liabilityUpserts) {
+      this.upsertLiability(liability.tag, liability.amountMinor, liability.investment);
+    }
+    for (const tag of effects.liabilityRemovals) this.removeLiabilityByTag(tag);
+    for (const update of effects.growUpdates) {
+      let project = state.allGrowProjects.find((candidate) => candidate.title === update.title);
+      if (!project) {
+        if (!update.create) continue;
+        project = this.newGrowProject(update.title, update.createdAt ?? this.clock.nowIso());
+        state.allGrowProjects.push(project);
+      }
+      this.applyGrowUpdate(project, update);
+    }
+    for (const { tag, priceMinor } of effects.sharePrices) {
+      const held = state.allShares.find((share) => share.tag === tag);
+      if (held) held.price = fromMinorUnits(priceMinor);
+    }
+    for (const upsert of effects.shareUpserts) {
+      this.upsertEntity(state.allShares, upsert.tag, () => ({
+        tag: upsert.tag,
+        quantity: upsert.quantity,
+        price: fromMinorUnits(upsert.priceMinor),
+      }));
+    }
+    for (const tag of effects.shareRemovals) {
+      const index = state.allShares.findIndex((share) => share.tag === tag);
+      if (index >= 0) state.allShares.splice(index, 1);
+    }
+    for (const tag of effects.investmentRemovals) {
+      const index = state.allInvestments.findIndex((investment) => investment.tag === tag);
+      if (index >= 0) state.allInvestments.splice(index, 1);
+    }
+    for (const upsert of effects.assetUpserts) {
+      this.upsertEntity(state.allAssets, upsert.tag, () => ({
+        tag: upsert.tag,
+        amount: fromMinorUnits(upsert.amountMinor),
+      }));
+    }
+    for (const tag of effects.assetRemovals) {
+      const index = state.allAssets.findIndex((asset) => asset.tag === tag);
+      if (index >= 0) state.allAssets.splice(index, 1);
+    }
+    for (const upsert of effects.investmentUpserts) {
+      this.upsertEntity(state.allInvestments, upsert.tag, () => ({
+        tag: upsert.tag,
+        deposit: fromMinorUnits(upsert.depositMinor),
+        amount: fromMinorUnits(upsert.amountMinor),
+      }));
+    }
+    state.cashflowGame = effects.state;
+  }
+  /** Every day-of-month a `#cashflow` Subscription recurs on (see `gameSubscriptionDays`). */
+  private currentMonthGameSubscriptionDays(): Set<number> {
+    return gameSubscriptionDays(AppStateService.instance.allSubscriptions);
   }
 
   /** Days already taken in this real month: game Subscription days plus any Transaction dated this month. */
   private currentMonthUsedDays(): Set<number> {
-    const days = this.currentMonthGameSubscriptionDays();
-    const prefix = `${todayIso().slice(0, 7)}-`;
-    for (const transaction of AppStateService.instance.allTransactions) {
-      if (transaction.date?.startsWith(prefix)) days.add(Number(transaction.date.split('-')[2]));
-    }
-    return days;
+    const state = AppStateService.instance;
+    return usedDaysThisMonth(state.allSubscriptions, state.allTransactions, this.clock.todayIso());
   }
 
   /** The date the next one-off game transaction (loan move, Doodad, card sale, a Grow trade...) takes: the next free slot of this real month, never the game's own calendar. */
@@ -979,199 +1110,258 @@ export class CashflowGameService {
     return this.nextSmartSubscriptionDate(this.currentMonthUsedDays());
   }
 
-  /** Books one-off game transactions on the next free slots of this real month instead of the game calendar's date (which runs months ahead as rounds pass). */
-  private pushOneOffTransactions(records: CashflowTransactionRecord[], fixedDate?: string): void {
-    const used = this.currentMonthUsedDays();
-    for (const record of records) {
-      AppStateService.instance.allTransactions.push(
-        toFloatTransaction({ ...record, date: fixedDate ?? this.nextSmartSubscriptionDate(used) }),
+  /** The next free day-of-month slot of this real month, dated (see `nextSmartDate`). */
+  private nextSmartSubscriptionDate(usedDays: Set<number>): string {
+    return nextSmartDate(usedDays, this.clock.todayIso());
+  }
+
+  // ── Solo mode: the token walks the rat-race ring (todo/cashflow-game-pro.md, Phase C) ──────────────
+
+  /** The ring the token walks. */
+  readonly board: RatRaceBoard = CLASSIC_RAT_RACE_BOARD;
+
+  /** Whether the running game is a solo game. */
+  get isSolo(): boolean {
+    return AppStateService.instance.cashflowGame.mode === 'solo';
+  }
+
+  /** Where the solo turn stands: waiting for a roll, a card to deal with, or over. */
+  get soloTurn() {
+    return currentTurn(AppStateService.instance.cashflowGame);
+  }
+
+  /** Why no roll can be made right now (null when one can). */
+  get cannotRollBecause(): string | null {
+    return whyCannotRoll(AppStateService.instance.cashflowGame);
+  }
+
+  /** How a finished solo game ended, with the closing numbers. */
+  soloSummary(): FinalSummary {
+    return finalSummary(this.gameBooks());
+  }
+
+  /**
+   * Works out one solo turn - the dice, the move, everything the landing does - **without changing anything**: the screen
+   * plays its animation first and applies the turn once the totem has settled (JFK, 2026-10-06: nothing may show before
+   * the totem is on its tile). The dice are the engine's (this service's `rng`).
+   */
+  planTurn(dice: DiceCount, callbacks: CashflowGameCallbacks): TurnResult | null {
+    const profession = this.currentProfession();
+    if (!profession) {
+      callbacks.onError('Pick a profession first.');
+      return null;
+    }
+    try {
+      return playTurn(
+        this.gameBooks(),
+        { ...this.cardDeps, board: this.board, profession, rng: this.rng },
+        { dice },
       );
+    } catch (err: unknown) {
+      callbacks.onError(errorMessage(err, 'Could not roll.'));
+      return null;
     }
   }
 
   /**
-   * A day-of-month for a newly dated Subscription or one-off transaction, taken in this order:
-   * 1, 3, 5 ... 27, then 2, 4, 6 ... 28 (nothing past the 28th, because of February), skipping days
-   * already used - so a profession's Salary lands on the 1st, taxes on the 3rd, and so on (JFK,
-   * 2026-09-29+/2026-10-03). Falls back to the 29th-31st, then to reusing the least crowded day,
-   * rather than ever refusing to date something.
+   * Applies a planned turn: **one** undo step, the effects in order, persisted. Call it once the animation has settled,
+   * and only with a turn planned against the books as they still are.
    */
-  private nextSmartSubscriptionDate(usedDays: Set<number>): string {
-    const [year, month] = todayIso().split('-').map(Number);
-    const daysInMonth = new Date(year, month, 0).getDate();
-    const order: number[] = [];
-    for (let day = 1; day <= 27; day += 2) order.push(day);
-    for (let day = 2; day <= 28; day += 2) order.push(day);
-    for (let day = 29; day <= daysInMonth; day++) order.push(day);
-    const day =
-      order.find((candidate) => candidate <= daysInMonth && !usedDays.has(candidate)) ??
-      Math.min(daysInMonth, (usedDays.size % daysInMonth) + 1);
-    usedDays.add(day);
-    return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  commitTurn(result: TurnResult, callbacks: CashflowGameCallbacks): void {
+    this.pushUndoSnapshot(result.step);
+    for (const effects of result.effects) this.applyGameEffects(effects);
+    // an automatic bank loan (Charity or Downsized with too little cash) writes the Bank loan liability too
+    this.persistAll('cashflow_roll', { total: result.roll.total, to: result.move.to }, callbacks, {
+      includeSubscriptions: true,
+      includeBalanceSheet: true,
+      includeGrow: true,
+      // the screen does not grey out when the totem lands: the game blocks its own buttons while it saves (JFK, 2026-10-07)
+      quiet: true,
+    });
+    if (result.effects.some((effects) => effects.decisionNeeded)) this.decisionNeeded$.next();
+  }
+
+  /** One solo turn at once: plan it and apply it (no animation in between). */
+  rollTurn(dice: DiceCount, callbacks: CashflowGameCallbacks): TurnResult | null {
+    const result = this.planTurn(dice, callbacks);
+    if (result) this.commitTurn(result, callbacks);
+    return result;
+  }
+
+  /**
+   * Closes the open card decision of a solo turn: `done` once the card was dealt with, `passed` to leave it (a step of
+   * its own, so Undo brings the card back). Dealing with the card may have won the game, so the books are checked.
+   */
+  /**
+   * The solo game ends the moment the books say so (JFK, 2026-10-06: "I escaped the rat race and then I needed to dice one
+   * more time to finish the game") - not only at the next roll or when a card is settled, but whenever the transactions
+   * or subscriptions change: a purchase made in the Add dialog, a sale, a loan, a payoff. Returns whether it ended now.
+   * No undo step of its own: Undo of the move that caused it restores the game as it was, still being played.
+   */
+  endSoloGameIfOver(): boolean {
+    const state = AppStateService.instance;
+    const game = state.cashflowGame;
+    if (game.mode !== 'solo' || !game.professionId || game.turn?.phase === 'over') return false;
+    const next = endIfOver(game, this.gameBooks().subscriptions);
+    if (next === game) return false;
+    state.cashflowGame = next;
+    this.persistAll(
+      'cashflow_game_end',
+      { outcome: next.turn?.outcome },
+      { onSuccess: () => undefined, onError: () => undefined },
+    );
+    return true;
+  }
+
+  settleSoloDecision(how: 'done' | 'passed', callbacks: CashflowGameCallbacks): void {
+    let settled: ReturnType<typeof settleDecisionRule>;
+    try {
+      settled = settleDecisionRule(
+        AppStateService.instance.cashflowGame,
+        how,
+        this.gameBooks().subscriptions,
+      );
+    } catch (err: unknown) {
+      callbacks.onError(errorMessage(err, 'Nothing to settle.'));
+      return;
+    }
+    if (settled.step) this.pushUndoSnapshot(settled.step);
+    AppStateService.instance.cashflowGame = settled.state;
+    this.persistAll('cashflow_decision', { how }, callbacks, { quiet: true });
   }
 
   /** Resolves a Baby space: +1 child (max 3), scales the children-expense Subscription. */
   resolveBaby(callbacks: CashflowGameCallbacks): void {
-    const state = AppStateService.instance;
     const profession = this.currentProfession();
     if (!profession) {
       callbacks.onError('Pick a profession first.');
       return;
     }
-    let result: ReturnType<typeof resolveCashflowBaby>;
+    let effects: GameEffects;
     try {
-      result = resolveCashflowBaby(state.cashflowGame, profession);
+      effects = playBaby(this.roundBooks(), profession, this.roundDeps);
     } catch (err: unknown) {
       callbacks.onError(errorMessage(err, 'Could not resolve Baby.'));
       return;
     }
-    this.pushUndoSnapshot({ kind: 'baby' });
-
-    // Same translation as pickProfession, but computed independently of the engine's own internal
-    // title/gameSubscriptionTitles bookkeeping (always raw German) — ignoring what the engine
-    // returned for that one field and replacing it with our own translated, session-stable title,
-    // so a 2nd/3rd child correctly updates the same Subscription instead of creating a duplicate.
-    const professionTitle = this.translateProfessionTitle(profession);
-    const translatedTitle = this.translate.instant(
-      'CashflowGame.childrenExpensesSubscriptionTitle',
-      {
-        profession: professionTitle,
-      },
-    );
-    const translatedCategory = this.translate.instant('CashflowGame.childrenExpenses');
-    this.upsertSubscription({
-      ...result.subscriptionUpsert,
-      title: translatedTitle,
-      category: `@${translatedCategory}`,
-    });
-    const gameSubscriptionTitles = state.cashflowGame.gameSubscriptionTitles.includes(
-      translatedTitle,
-    )
-      ? state.cashflowGame.gameSubscriptionTitles
-      : [...state.cashflowGame.gameSubscriptionTitles, translatedTitle];
-
-    state.cashflowGame = { ...result.state, gameSubscriptionTitles };
-    this.persistAll('cashflow_baby', { children: result.state.children }, callbacks, {
+    this.pushUndoSnapshot(effects.step);
+    this.applyGameEffects(effects);
+    this.persistAll('cashflow_baby', { children: effects.state.children }, callbacks, {
       includeSubscriptions: true,
     });
   }
 
   /**
    * What a Baby / Charity / Downsized space is about to do, for the confirmation shown before it is
-   * played (JFK, 2026-10-03): the same engine calls the real resolve makes, nothing applied. `amountMinor`
+   * played (JFK, 2026-10-03): the same rule the real resolve runs, nothing applied. `amountMinor`
    * is the money involved - the monthly expense a baby adds, the 10% charity pays, all expenses
    * Downsized pays - and `children` the child count after a baby. Null when it cannot be played.
    */
   spacePreview(
     kind: 'baby' | 'charity' | 'downsized',
   ): { amountMinor: number; children?: number } | null {
-    const state = AppStateService.instance;
-    try {
-      if (kind === 'charity') {
-        const result = resolveCashflowCharity(state.cashflowGame, this.gameSubscriptions());
-        return { amountMinor: Math.abs(result.transaction.amountMinor) };
-      }
-      if (kind === 'downsized') {
-        const result = resolveCashflowDownsized(state.cashflowGame, this.gameSubscriptions());
-        return {
-          amountMinor: result.transactions.reduce((sum, t) => sum + Math.abs(t.amountMinor), 0),
-        };
-      }
-      const profession = this.currentProfession();
-      if (!profession) return null;
-      const result = resolveCashflowBaby(state.cashflowGame, profession);
-      const title = this.translate.instant('CashflowGame.childrenExpensesSubscriptionTitle', {
-        profession: this.translateProfessionTitle(profession),
-      });
-      const current = state.allSubscriptions.find((sub) => sub.title === title);
-      const currentMinor = current ? Math.abs(toMinorUnits(current.amount)) : 0;
-      return {
-        amountMinor: Math.max(0, Math.abs(result.subscriptionUpsert.amountMinor) - currentMinor),
-        children: result.state.children,
-      };
-    } catch {
-      return null;
-    }
+    return previewSpace(this.roundBooks(), kind, this.currentProfession(), this.roundDeps.text);
   }
 
-  /** Resolves a Charity space: pays 10% of total income now, unlocks the dice choice for 3 Paydays. */
+  /**
+   * A space that pays cash. The balance never goes negative (JFK, 2026-10-06): when cash is short the Bank loan is taken
+   * first - its own undo step, like a deal's - and then the payment is made.
+   */
+  private resolvePayingSpace(
+    pay: (books: GameBooks) => PaidWithLoan,
+    logEvent: string,
+    failure: string,
+    callbacks: CashflowGameCallbacks,
+  ): void {
+    let paid: PaidWithLoan;
+    try {
+      paid = pay(this.gameBooks());
+    } catch (err: unknown) {
+      callbacks.onError(errorMessage(err, failure));
+      return;
+    }
+    for (const effects of paid.effects) {
+      this.pushUndoSnapshot(effects.step as CashflowStepInfo);
+      this.applyGameEffects(effects);
+    }
+    const borrowedMinor = paid.loansMinor.reduce((sum, loan) => sum + loan, 0);
+    if (borrowedMinor > 0) callbacks.onLoan?.(borrowedMinor);
+    this.persistAll(
+      logEvent,
+      {},
+      callbacks,
+      borrowedMinor > 0 ? { includeSubscriptions: true, includeBalanceSheet: true } : {},
+    );
+  }
+
+  /** Resolves a Charity space: pays 10% of total income now (borrowing first when cash is short), unlocks the dice choice for 3 turns. */
   resolveCharity(callbacks: CashflowGameCallbacks): void {
-    const state = AppStateService.instance;
-    let result: ReturnType<typeof resolveCashflowCharity>;
-    try {
-      result = resolveCashflowCharity(state.cashflowGame, this.gameSubscriptions());
-    } catch (err: unknown) {
-      callbacks.onError(errorMessage(err, 'Could not resolve Charity.'));
-      return;
-    }
-    this.pushUndoSnapshot({ kind: 'charity' });
-    this.pushOneOffTransactions([result.transaction]);
-    state.cashflowGame = result.state;
-    this.persistAll('cashflow_charity', {}, callbacks);
+    this.resolvePayingSpace(
+      (books) => playCharityPaying(books, this.cardDeps),
+      'cashflow_charity',
+      'Could not resolve Charity.',
+      callbacks,
+    );
   }
 
-  /** Resolves a Downsized space: pays total expenses once, sits out 2 Paydays (ends an active charity bonus). */
+  /** Resolves a Downsized space: pays total expenses once (borrowing first when cash is short) and shows the sitting-out reminder (ends an active charity bonus). */
   resolveDownsized(callbacks: CashflowGameCallbacks): void {
-    const state = AppStateService.instance;
-    let result: ReturnType<typeof resolveCashflowDownsized>;
-    try {
-      result = resolveCashflowDownsized(state.cashflowGame, this.gameSubscriptions());
-    } catch (err: unknown) {
-      callbacks.onError(errorMessage(err, 'Could not resolve Downsized.'));
-      return;
-    }
-    this.pushUndoSnapshot({ kind: 'downsized' });
-    this.pushOneOffTransactions(result.transactions);
-    state.cashflowGame = result.state;
-    this.persistAll('cashflow_downsized', {}, callbacks);
+    this.resolvePayingSpace(
+      (books) => playDownsizedPaying(books, this.cardDeps),
+      'cashflow_downsized',
+      'Could not resolve Downsized.',
+      callbacks,
+    );
   }
 
   /** Takes (`delta > 0`) or repays (`< 0`) a bank loan in the game set's increment (a decimal amount, like everywhere else in the app); upserts the Liability + interest Subscription, recomputed from the new principal every time. */
   adjustBankLoan(delta: number, callbacks: CashflowGameCallbacks): void {
-    this.pushUndoSnapshot({
-      kind: delta > 0 ? 'loanTaken' : 'loanRepaid',
-      detail: this.amountText(Math.abs(delta)),
-    });
+    let effects: GameEffects;
     try {
-      this.applyBankLoanAdjustment(delta);
+      effects = playBankLoan(this.loanBooks(), toMinorUnits(delta), this.cardDeps);
     } catch (err: unknown) {
-      this.undoStack.pop(); // nothing actually changed — don't leave a no-op entry behind
-      this.persistUndoStack();
       callbacks.onError(errorMessage(err, 'Could not adjust the bank loan.'));
       return;
     }
+    this.pushUndoSnapshot(effects.step as CashflowStepInfo);
+    this.applyGameEffects(effects);
     this.persistAll('cashflow_bank_loan', { delta }, callbacks, {
       includeSubscriptions: true,
       includeBalanceSheet: true,
     });
   }
 
-  /** The mutation `adjustBankLoan` and `dealBuy`'s auto-borrow both need — throws instead of using callbacks so a caller can chain it with other mutations before persisting once. */
-  private applyBankLoanAdjustment(delta: number, date?: string): void {
+  /** The slice of the account the bank loan rule reads, in minor units. */
+  private loanBooks(): LoanBooks {
     const state = AppStateService.instance;
-    const gameSet = this.currentGameSet();
-    if (!gameSet) throw new Error('Pick a profession first.');
-    const currentPrincipalMinor = toMinorUnits(
-      state.liabilities.find((liability) => liability.tag === 'Bank loan')?.amount ?? 0,
+    return {
+      state: state.cashflowGame,
+      allocation: {
+        daily: state.daily,
+        splurge: state.splurge,
+        smile: state.smile,
+        fire: state.fire,
+      },
+      subscriptions: state.allSubscriptions.map(toBookSubscription),
+      transactions: state.allTransactions.map((transaction) => ({
+        account: transaction.account,
+        amountMinor: toMinorUnits(transaction.amount),
+        date: transaction.date,
+        comment: transaction.comment,
+      })),
+      liabilities: state.liabilities.map((liability) => ({
+        tag: liability.tag,
+        amountMinor: toMinorUnits(Number(liability.amount) || 0),
+      })),
+      gameSet: this.currentGameSet(),
+    };
+  }
+
+  /** The mutation `adjustBankLoan`, the auto-borrow on a Grow buy and `executeDeal` all need - throws instead of using callbacks so a caller can chain it with other mutations (and its own undo steps) before persisting once. */
+  private applyBankLoanAdjustment(delta: number, date?: string): void {
+    this.applyGameEffects(
+      playBankLoan(this.loanBooks(), toMinorUnits(delta), this.cardDeps, { date }),
     );
-    const result = adjustCashflowBankLoan(
-      state.cashflowGame,
-      gameSet,
-      currentPrincipalMinor,
-      toMinorUnits(delta),
-    );
-    if (result.liabilityUpsert) {
-      this.upsertLiability(result.liabilityUpsert.tag, result.liabilityUpsert.amountMinor);
-    } else {
-      this.removeLiabilityByTag('Bank loan');
-    }
-    if (result.subscriptionUpsert) {
-      this.upsertSubscription(result.subscriptionUpsert);
-    } else {
-      this.removeSubscriptionByTitle('Bank loan interest');
-    }
-    this.pushOneOffTransactions([result.transaction], date);
-    state.cashflowGame = result.state;
   }
 
   /**
@@ -1217,14 +1407,14 @@ export class CashflowGameService {
    */
   get cash(): number {
     const state = AppStateService.instance;
-    return (
-      Math.round(
-        (state.getAmount('Daily', state.daily / 100) +
-          state.getAmount('Splurge', state.splurge / 100) +
-          state.getAmount('Smile', state.smile / 100) +
-          state.getAmount('Fire', state.fire / 100)) *
-          100,
-      ) / 100
+    return fromMinorUnits(
+      cashOnHandMinor(
+        state.allTransactions.map((t) => ({
+          account: t.account,
+          amountMinor: toMinorUnits(t.amount),
+        })),
+        { daily: state.daily, splurge: state.splurge, smile: state.smile, fire: state.fire },
+      ),
     );
   }
 
@@ -1236,85 +1426,78 @@ export class CashflowGameService {
    * Every card becomes a real Grow project this way, planned or not.
    */
   planDeal(input: CashflowDealInput, callbacks: CashflowGameCallbacks): void {
-    const state = AppStateService.instance;
-    if (!state.cashflowGame.professionId) {
-      callbacks.onError('Pick a profession first.');
+    this.runPlanDeal(toDealInput(input), callbacks);
+  }
+
+  /** `planDeal`'s work, on the domain's own input (also what a drawn card is turned into). */
+  private runPlanDeal(input: DealInput, callbacks: CashflowGameCallbacks): void {
+    let effects: GameEffects;
+    try {
+      effects = planDealRule(this.gameBooks(), input, this.dealDeps);
+    } catch (err: unknown) {
+      callbacks.onError(errorMessage(err, 'Could not plan this deal.'));
       return;
     }
-    const existingProject = state.allGrowProjects.find((project) => project.title === input.title);
-    // The same card drawn again (better price, more cash): the project already exists and may already
-    // hold shares — this plan only moves the price and resets the amount to buy, never the holding.
-    const isReplan = Boolean(existingProject && input.kind === 'share');
-    if (existingProject && this.conflictingGrowKind(existingProject, input.kind)) {
-      callbacks.onError(`"${input.title}" already exists as a different kind of Grow project.`);
-      return;
-    }
-    this.pushUndoSnapshot({ kind: 'planDeal', detail: input.title });
-    // Card text and trading range are plain Grow fields; the cash / bank-loan line is a Grow *note*
-    // (the app's existing feature for it), kept current by `syncPlanNote`.
-    const newNotes = [
-      ...(isReplan && input.kind === 'share'
-        ? [this.translate.instant('CashflowGame.cardDrawnAgain', { price: input.price })]
-        : []),
-      ...(input.note ? [input.note] : []),
-    ].map((text) => ({ text, createdAt: new Date().toISOString() }));
-    const notes = [...(existingProject?.notes ?? []), ...newNotes];
-    const base = {
-      status: 'planned',
-      phase: 'plan' as const,
-      ...(input.subtitle && !existingProject?.sub ? { sub: input.subtitle } : {}),
-    };
-    let patch: Partial<Grow>;
-    if (input.kind === 'share') {
-      patch = {
-        ...base,
-        share: { tag: input.title, quantity: input.quantity, price: input.price },
-        ...(input.description && !existingProject?.description
-          ? { description: input.description }
-          : {}),
-        ...(input.strategy ? { strategy: input.strategy } : {}),
-        notes,
-      };
-    } else if (input.kind === 'investment') {
-      patch = {
-        ...base,
-        cashflow: input.cashflow,
-        // Grow's "Deposit" is the project's `amount`: the card's whole Anzahlung (JFK, 2026-10-03).
-        amount: input.deposit,
-        investment: { tag: input.title, deposit: input.deposit, amount: input.mortgage },
-        ...(input.description ? { description: input.description } : {}),
-        notes,
-      };
-    } else {
-      // A special asset (gold coins): a Grow *asset* project, the price is its Deposit.
-      patch = {
-        ...base,
-        isAsset: true,
-        amount: input.cost,
-        ...(input.description ? { description: input.description } : {}),
-        ...(input.strategy ? { strategy: input.strategy } : {}),
-        notes: [
-          ...notes,
-          ...(input.coins > 0
-            ? [
-                {
-                  text: this.translate.instant('CashflowGame.assetCoinsNote', {
-                    coins: input.coins,
-                  }),
-                  createdAt: new Date().toISOString(),
-                },
-              ]
-            : []),
-        ],
-      };
-      this.registerAssetDeal(input);
-    }
-    this.upsertGrowProject(input.title, existingProject, patch);
-    const planned = state.allGrowProjects.find((project) => project.title === input.title);
-    if (planned) this.syncPlanNote(planned);
+    this.pushUndoSnapshot(effects.step as CashflowStepInfo);
+    this.applyGameEffects(effects);
     this.persistAll('cashflow_deal_plan', { kind: input.kind, title: input.title }, callbacks, {
       includeGrow: true,
     });
+  }
+
+  /** Everything the deal rules read of the account, in minor units. */
+  private gameBooks(): GameBooks {
+    const state = AppStateService.instance;
+    const minor = (amount: unknown) => toMinorUnits(Number(amount) || 0);
+    return {
+      state: state.cashflowGame,
+      allocation: {
+        daily: state.daily,
+        splurge: state.splurge,
+        smile: state.smile,
+        fire: state.fire,
+      },
+      gameSet: this.currentGameSet(),
+      subscriptions: state.allSubscriptions.map(toBookSubscription),
+      transactions: state.allTransactions.map((transaction) => ({
+        account: transaction.account,
+        amountMinor: toMinorUnits(transaction.amount),
+        date: transaction.date,
+        time: transaction.time,
+        category: transaction.category,
+        comment: transaction.comment,
+      })),
+      liabilities: state.liabilities.map((liability) => ({
+        tag: liability.tag,
+        amountMinor: minor(liability.amount),
+        investment: Boolean(liability.investment),
+      })),
+      shares: state.allShares.map((share) => ({
+        tag: share.tag,
+        quantity: Number(share.quantity) || 0,
+        priceMinor: minor(share.price),
+      })),
+      investments: state.allInvestments.map((investment) => ({
+        tag: investment.tag,
+        depositMinor: minor(investment.deposit),
+        amountMinor: minor(investment.amount),
+      })),
+      assets: state.allAssets.map((asset) => ({
+        tag: asset.tag,
+        amountMinor: minor(asset.amount),
+      })),
+      growProjects: state.allGrowProjects.map(toBookGrowProject),
+    };
+  }
+
+  /** The card rules' dependencies plus the plain money format the "🏦" notes use (the browser's own locale). */
+  private get dealDeps(): DealDeps {
+    const state = AppStateService.instance;
+    return {
+      ...this.cardDeps,
+      plainMoney: (amountMinor) =>
+        `${fromMinorUnits(amountMinor).toLocaleString()} ${state.currency}`,
+    };
   }
 
   /**
@@ -1325,17 +1508,13 @@ export class CashflowGameService {
    * the debt and its expense back. Returns the removed expense's title (or null).
    */
   removeExpenseForPaidLiability(liabilityTag: string): string | null {
-    const state = AppStateService.instance;
-    if (state.liabilities.some((liability) => liability.tag === liabilityTag)) return null;
-    const title = this.expenseTitleForLiability(liabilityTag);
-    if (!title) return null;
-    this.removeSubscriptionByTitle(title);
-    state.cashflowGame = {
-      ...state.cashflowGame,
-      gameSubscriptionTitles: state.cashflowGame.gameSubscriptionTitles.filter(
-        (gameTitle) => gameTitle !== title,
-      ),
-    };
+    const { title, effects } = removeExpenseForPaidLiabilityRule(
+      this.gameBooks(),
+      this.currentProfession(),
+      liabilityTag,
+      this.dealDeps.text,
+    );
+    if (effects) this.applyGameEffects(effects);
     return title;
   }
 
@@ -1344,112 +1523,33 @@ export class CashflowGameService {
     return this.translate.instant('CashflowGame.expenseRemoved', { title });
   }
 
-  /** The game Subscription that pays a liability off over time, or null when it has none (e.g. a liability the player added by hand). */
-  private expenseTitleForLiability(liabilityTag: string): string | null {
-    if (liabilityTag === 'Bank loan') return 'Bank loan interest';
-    const profession = this.currentProfession();
-    if (!profession) return null;
-    const gameTitles = AppStateService.instance.cashflowGame.gameSubscriptionTitles;
-    // The liability was named in whichever language was active at game start, so match it against
-    // the current translation and the card's original text.
-    const liability = (profession.starterKit.liabilities ?? []).find((candidate) =>
-      [this.translateLiabilityTag(profession, candidate), candidate.tag].includes(liabilityTag),
-    );
-    const expenseKey = liability?.key ? LIABILITY_EXPENSE_KEYS[liability.key] : undefined;
-    const line = expenseKey
-      ? profession.expenses.find((expense) => expense.key === expenseKey)
-      : undefined;
-    if (!line) return null;
-    return (
-      [this.translateExpenseLineTitle(profession, line), line.title].find((title) =>
-        gameTitles.includes(title),
-      ) ?? null
-    );
-  }
-
-  /** The special-asset deals in play (gold coins), oldest first. */
-  private assetDeals(): CashflowAssetDeal[] {
-    return AppStateService.instance.cashflowGame.assetDeals ?? [];
-  }
-
-  private registerAssetDeal(input: CashflowDealAssetInput): void {
-    const state = AppStateService.instance;
-    const deal: CashflowAssetDeal = {
-      title: input.title,
-      coins: input.coins,
-      costMinor: toMinorUnits(input.cost),
-      ...(input.successOn ? { successOn: input.successOn } : {}),
-      ...(input.payout ? { payoutMinor: toMinorUnits(input.payout) } : {}),
-      ...(input.recurring ? { recurring: true } : {}),
-      stage: 'planned',
-      ...(input.successText ? { successText: input.successText } : {}),
-      ...(input.failureText ? { failureText: input.failureText } : {}),
-    };
-    state.cashflowGame = {
-      ...state.cashflowGame,
-      assetDeals: [...this.assetDeals().filter((d) => d.title !== input.title), deal],
-    };
-  }
-
-  private setAssetDeal(title: string, patch: Partial<CashflowAssetDeal>): void {
-    const state = AppStateService.instance;
-    state.cashflowGame = {
-      ...state.cashflowGame,
-      assetDeals: this.assetDeals().map((deal) =>
-        deal.title === title ? { ...deal, ...patch } : deal,
-      ),
-    };
-  }
-
   /**
    * Called by the Add dialog's Buy Asset before it books the asset. A dice-gamble card is *paid* but
    * does not become an asset yet - it waits for the roll (`resolveGamble`) - so this returns true and
    * the dialog skips creating it. A plain offer returns false and is booked as usual.
    */
   beforeAssetBuy(title: string): boolean {
-    // 'awaitingRoll' counts too: pressing Buy again on a card that is already paid and waiting must
-    // not hand out the coins without the roll.
-    const deal = this.assetDeals().find(
-      (d) => d.title === title && (d.stage === 'planned' || d.stage === 'awaitingRoll'),
-    );
-    // A recurring card (Multi-Level-Marketing) is simply bought; its dice come at every Payday.
-    if (!deal?.successOn || deal.recurring) return false;
-    this.setAssetDeal(title, { stage: 'awaitingRoll' });
-    return true;
+    const hook = beforeAssetBuyRule(AppStateService.instance.cashflowGame, title);
+    if (hook.effects) this.applyGameEffects(hook.effects);
+    return hook.gamble;
   }
 
   /** After the dialog's Buy Asset: a plain offer is now owned; a gamble is paid and waits for its roll. */
   afterAssetBuy(title: string): void {
-    const project = AppStateService.instance.allGrowProjects.find((p) => p.title === title);
-    const deal = this.assetDeals().find((d) => d.title === title);
-    if (deal?.stage === 'awaitingRoll') {
-      if (project) {
-        project.status = 'awaiting roll';
-        project.phase = 'execute';
-      }
-      // Paid: bring the player straight to the game dashboard, where the roll is decided.
-      this.decisionNeeded$.next();
-      return;
-    }
-    if (deal?.stage === 'planned') this.setAssetDeal(title, { stage: 'owned' });
-    this.setPhaseAfterTrade(title, 'buy');
+    const effects = afterAssetBuyRule(this.gameBooks(), title);
+    this.applyGameEffects(effects);
+    // Paid: bring the player straight to the game dashboard, where the roll is decided.
+    if (effects.decisionNeeded) this.decisionNeeded$.next();
   }
 
   /** After the dialog's Sell Asset: the project is sold only when the asset is gone; otherwise it still holds what is left. */
   afterAssetSell(title: string): void {
-    const state = AppStateService.instance;
-    const stillOwned = state.allAssets.some((asset) => asset.tag === title);
-    if (!stillOwned) this.setAssetDeal(title, { stage: 'sold', rollDue: false });
-    const project = state.allGrowProjects.find((candidate) => candidate.title === title);
-    if (project) project.status = stillOwned ? 'bought' : 'sold';
-    this.setPhaseAfterTrade(title, 'sell');
+    this.applyGameEffects(afterAssetSellRule(this.gameBooks(), title));
   }
 
   /** How many coins of a special asset (gold) are still owned - 0 for any other asset. */
   coinsOwned(title: string): number {
-    return (
-      this.assetDeals().find((deal) => deal.title === title && deal.stage === 'owned')?.coins ?? 0
-    );
+    return coinsOwnedOf(AppStateService.instance.cashflowGame, title);
   }
 
   /**
@@ -1457,15 +1557,7 @@ export class CashflowGameService {
    * 2026-10-03). Returns the message to show, or null when the sale is fine (or isn't a coin asset).
    */
   sellAssetProblem(comment: string): string | null {
-    const match = /Sell Asset (\S+) ([\d.]+) x ([\d.]+)/.exec(comment);
-    if (!match) return null;
-    const owned = this.coinsOwned(match[1]);
-    if (owned <= 0) return null;
-    const quantity = Number(match[2]);
-    if (!(quantity > 0)) return this.translate.instant('CashflowGame.sellNeedCoins');
-    if (quantity > owned)
-      return this.translate.instant('CashflowGame.sellTooManyCoins', { coins: owned });
-    return null;
+    return sellAssetProblem(comment, (title) => this.coinsOwned(title), this.roundDeps.text);
   }
 
   /**
@@ -1476,33 +1568,15 @@ export class CashflowGameService {
    * Returns false for an ordinary asset, which keeps its usual sale.
    */
   sellCoins(title: string, quantity: number, price: number): boolean {
-    const state = AppStateService.instance;
-    const deal = this.assetDeals().find((d) => d.title === title && d.stage === 'owned');
-    if (!deal || !(quantity > 0)) return false;
-    const left = Math.max(0, Math.round((deal.coins - quantity) * 100) / 100);
-    const asset = state.allAssets.find((candidate) => candidate.tag === title);
-    const project = state.allGrowProjects.find((candidate) => candidate.title === title);
-    const keep = deal.coins > 0 ? left / deal.coins : 0;
-    if (asset) {
-      if (left <= 0) state.allAssets.splice(state.allAssets.indexOf(asset), 1);
-      else asset.amount = Math.round(Number(asset.amount) * keep * 100) / 100;
-    }
-    if (project) {
-      if (left > 0) project.amount = Math.round(Number(project.amount) * keep * 100) / 100;
-      project.notes = [
-        ...(project.notes ?? []),
-        {
-          text: this.translate.instant('CashflowGame.coinsSoldNote', {
-            sold: quantity,
-            price: this.amountText(price),
-            left,
-          }),
-          createdAt: new Date().toISOString(),
-        },
-      ];
-    }
-    this.setAssetDeal(title, left <= 0 ? { coins: 0, stage: 'sold' } : { coins: left });
-    return true;
+    const { sold, effects } = sellCoinsRule(
+      this.gameBooks(),
+      title,
+      quantity,
+      toMinorUnits(price),
+      this.cardDeps,
+    );
+    if (effects) this.applyGameEffects(effects);
+    return sold;
   }
 
   /** Fires when a dice card has just been paid - the game panel listens and opens on the open decision (JFK, 2026-10-03). */
@@ -1510,94 +1584,17 @@ export class CashflowGameService {
 
   /** Paid dice cards still waiting for their roll - shown on the game dashboard as an open decision. */
   get openDecisions(): CashflowAssetDeal[] {
-    const waiting = this.assetDeals().filter((deal) => deal.stage === 'awaitingRoll');
-    // The Payday rolls of kept cards are one decision for the whole group, shown once.
-    const due = this.recurringOwned().filter((deal) => deal.rollDue);
-    return due.length ? [...waiting, due[0]] : waiting;
-  }
-
-  /** Kept cards that are rolled for at every Payday (Multi-Level-Marketing). */
-  private recurringOwned(): CashflowAssetDeal[] {
-    return this.assetDeals().filter((deal) => deal.recurring && deal.stage === 'owned');
+    return openDecisionsOf(AppStateService.instance.cashflowGame);
   }
 
   /** How many cards the open Payday roll covers: a roll pays once per card, so two cards win (or miss) together. */
   paydayRollCount(deal: CashflowAssetDeal): number {
-    if (!deal.recurring) return 1;
-    return this.recurringOwned().filter(
-      (other) =>
-        other.rollDue &&
-        other.costMinor === deal.costMinor &&
-        other.payoutMinor === deal.payoutMinor,
-    ).length;
-  }
-
-  /**
-   * One Payday roll for every kept card of the same kind (JFK, 2026-10-03: "you just throw once and
-   * either you get twice or nothing"): a win books one income per card, a miss books nothing - the
-   * cards stay in execution either way. A separate History step from the Payday itself.
-   */
-  private resolvePaydayRoll(
-    target: CashflowAssetDeal,
-    outcome: { won: boolean; roll?: number },
-    callbacks: CashflowGameCallbacks,
-  ): void {
-    const state = AppStateService.instance;
-    const group = this.recurringOwned().filter(
-      (other) =>
-        other.rollDue &&
-        other.costMinor === target.costMinor &&
-        other.payoutMinor === target.payoutMinor,
-    );
-    const label = group.length > 1 ? `${target.title} ×${group.length}` : target.title;
-    this.pushUndoSnapshot({
-      kind: outcome.won ? 'diceWon' : 'diceLost',
-      detail: outcome.roll ? `${label} · 🎲 ${outcome.roll}` : label,
-    });
-    const payout = fromMinorUnits(target.payoutMinor ?? 0);
-    const resultText =
-      (outcome.won ? target.successText : target.failureText) ??
-      this.translate.instant(
-        outcome.won ? 'CashflowGame.diceWonPayoutToast' : 'CashflowGame.diceLostToast',
-        { amount: this.amountText(payout * group.length) },
-      );
-    for (const deal of group) {
-      const project = state.allGrowProjects.find((p) => p.title === deal.title);
-      if (project) {
-        project.notes = [
-          ...(project.notes ?? []),
-          {
-            text: `🎲 ${outcome.roll ? `${outcome.roll}: ` : ''}${resultText}`,
-            createdAt: new Date().toISOString(),
-          },
-        ];
-      }
-      if (outcome.won) {
-        state.allTransactions.push({
-          account: 'Daily',
-          amount: payout,
-          date: this.nextGameTransactionDate(),
-          time: '',
-          category: `@${deal.title}`,
-          comment: `${deal.title} payout\n#cashflow`,
-        });
-      }
-    }
-    const done = new Set(group.map((deal) => deal.title));
-    state.cashflowGame = {
-      ...state.cashflowGame,
-      assetDeals: this.assetDeals().map((deal) =>
-        done.has(deal.title) ? { ...deal, rollDue: false } : deal,
-      ),
-    };
-    this.persistAll('cashflow_dice', { title: target.title, won: outcome.won }, callbacks, {
-      includeGrow: true,
-    });
+    return paydayRollCountOf(AppStateService.instance.cashflowGame, deal);
   }
 
   /** A die for the app to roll when the player has no real one at hand. */
   rollDie(): number {
-    return Math.floor(Math.random() * 6) + 1;
+    return rollDieRule(this.rng);
   }
 
   /**
@@ -1611,70 +1608,28 @@ export class CashflowGameService {
     outcome: { won: boolean; roll?: number },
     callbacks: CashflowGameCallbacks,
   ): void {
-    const state = AppStateService.instance;
-    const dueCard = this.recurringOwned().find((d) => d.title === title && d.rollDue);
-    if (dueCard) {
-      this.resolvePaydayRoll(dueCard, outcome, callbacks);
+    let result: ReturnType<typeof resolveGambleRule>;
+    try {
+      result = resolveGambleRule(this.gameBooks(), title, outcome, this.cardDeps);
+    } catch (err: unknown) {
+      callbacks.onError(errorMessage(err, 'Could not settle this card.'));
       return;
     }
-    const deal = this.assetDeals().find((d) => d.title === title && d.stage === 'awaitingRoll');
-    if (!deal) {
-      callbacks.onError('There is no dice decision open for this card.');
-      return;
-    }
-    if (deal.split) {
-      this.resolveShareSplit(deal, outcome, callbacks);
-      return;
-    }
-    this.pushUndoSnapshot({
-      kind: outcome.won ? 'diceWon' : 'diceLost',
-      detail: outcome.roll ? `${title} · 🎲 ${outcome.roll}` : title,
-    });
-    const project = state.allGrowProjects.find((p) => p.title === title);
-    const payout = deal.payoutMinor ? fromMinorUnits(deal.payoutMinor) : 0;
-    const resultText =
-      (outcome.won ? deal.successText : deal.failureText) ??
-      this.translate.instant(
-        outcome.won
-          ? payout
-            ? 'CashflowGame.diceWonPayoutToast'
-            : 'CashflowGame.diceWonToast'
-          : 'CashflowGame.diceLostToast',
-        { coins: deal.coins, amount: this.amountText(payout) },
-      );
-    if (project) {
-      project.notes = [
-        ...(project.notes ?? []),
-        {
-          text: `🎲 ${outcome.roll ? `${outcome.roll}: ` : ''}${resultText}`,
-          createdAt: new Date().toISOString(),
-        },
-      ];
-      project.status = outcome.won ? (payout ? 'paid back' : 'bought') : 'lost';
-      project.phase = outcome.won && !payout ? 'execute' : 'completed';
-    }
-    if (outcome.won && payout) {
-      // A loan that came back: the cash is income, nothing is owned afterwards.
-      state.allTransactions.push({
-        account: 'Daily',
-        amount: payout,
-        date: this.nextGameTransactionDate(),
-        time: '',
-        category: `@${title}`,
-        comment: `${title} paid back\n#cashflow`,
-      });
-    } else if (outcome.won) {
-      const owned = state.allAssets.find((asset) => asset.tag === title);
-      if (owned) owned.amount = Number(owned.amount) + fromMinorUnits(deal.costMinor);
-      else state.allAssets.push({ tag: title, amount: fromMinorUnits(deal.costMinor) });
-    }
-    this.setAssetDeal(title, {
-      stage: outcome.won ? (payout ? 'paidBack' : 'owned') : 'lost',
-    });
-    this.persistAll('cashflow_dice', { title, won: outcome.won }, callbacks, {
-      includeBalanceSheet: true,
-      includeGrow: true,
-    });
+    this.pushUndoSnapshot(result.effects.step as CashflowStepInfo);
+    this.applyGameEffects(result.effects);
+    const { persist } = result.effects;
+    this.persistAll(
+      result.kind === 'split' ? 'cashflow_share_split' : 'cashflow_dice',
+      result.kind === 'split'
+        ? { share: result.share, won: outcome.won }
+        : { title, won: outcome.won },
+      callbacks,
+      {
+        includeSubscriptions: persist.subscriptions,
+        includeBalanceSheet: persist.balanceSheet,
+        includeGrow: persist.grow,
+      },
+    );
   }
 
   /**
@@ -1684,138 +1639,38 @@ export class CashflowGameService {
    * buy/sell on a Cashflow account (the normal Grow never moves phases on its own).
    */
   setPhaseAfterTrade(title: string, trade: 'buy' | 'sell'): void {
-    const state = AppStateService.instance;
-    const project = state.allGrowProjects.find((candidate) => candidate.title === title);
-    if (!project) return;
-    const stillHeld =
-      state.allShares.some((share) => share.tag === title) ||
-      state.allInvestments.some((investment) => investment.tag === title) ||
-      state.allAssets.some((asset) => asset.tag === title);
-    project.phase = trade === 'sell' && !stillHeld ? 'completed' : 'execute';
-    // A sold property takes any market offer for it along.
-    if (trade === 'sell' && !stillHeld) this.clearMarketOffer(title);
-  }
-
-  private clearMarketOffer(title: string): void {
-    const state = AppStateService.instance;
-    if (!(state.cashflowGame.marketOffers ?? []).some((offer) => offer.title === title)) return;
-    state.cashflowGame = {
-      ...state.cashflowGame,
-      marketOffers: (state.cashflowGame.marketOffers ?? []).filter(
-        (offer) => offer.title !== title,
-      ),
-    };
+    const effects = setPhaseAfterTradeRule(this.gameBooks(), title, trade);
+    if (effects) this.applyGameEffects(effects);
   }
 
   /**
    * Plays a market buyer card (JFK, 2026-10-03). Every property the player owns of the card's types
    * (`options.types`: the labels each type goes by - EFH, and SFH in English; copies carry -II, -III... -
-   * and its unit count, for a fixed amount paid per unit) gets
-   * the buyer's offer: remembered in the game state until the next Payday, and written into the
-   * property's Grow project as a note saying what the sale would bring. The sale itself is the
-   * normal Sell button in Grow, which pre-fills this offer (`marketSaleFor`). One undo step either
-   * way; calls back with the labels of the properties that got an offer (none = the card does not
-   * apply to this player).
+   * and its unit count, for a fixed amount paid per unit) gets the buyer's offer: remembered in the
+   * game state until the next Payday, and written into the property's Grow project as a note saying
+   * what the sale would bring. The sale itself is the normal Sell button in Grow, which pre-fills this
+   * offer (`marketSaleFor`). One undo step either way; calls back with the labels of the properties
+   * that got an offer (none = the card does not apply to this player). The rule is
+   * `playMarketBuyerCard` in @money/domain.
    */
   playMarketCard(
     card: CashflowMarketCard,
     options: { title?: string; types: { labels: string[]; units?: number }[] },
     callbacks: { onSuccess: (matched: string[]) => void; onError: (message: string) => void },
   ): void {
-    const state = AppStateService.instance;
-    if (!card.sells) {
-      callbacks.onError('This market card has no offer to play.');
+    let result: ReturnType<typeof playMarketBuyerCard>;
+    try {
+      result = playMarketBuyerCard(this.cardBooks(), card, options, this.cardDeps);
+    } catch (err: unknown) {
+      callbacks.onError(errorMessage(err, 'Could not play this market card.'));
       return;
     }
-    if (!state.cashflowGame.virtualDate) {
-      callbacks.onError('Pick a profession first.');
-      return;
-    }
-    this.pushUndoSnapshot({ kind: 'marketCard', detail: options.title ?? card.title });
-    if (card.sells.pricePerCoinMinor !== undefined) {
-      this.playGoldBuyer(card, options, callbacks);
-      return;
-    }
-    const matches = (tag: string, label: string) => {
-      const lower = tag.toLowerCase();
-      const wanted = label.toLowerCase();
-      const escaped = wanted.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      return lower === wanted || new RegExp(`^${escaped}-[ivxlcdm]+$`).test(lower);
-    };
-    const owned = state.allInvestments
-      .map((investment) => ({
-        investment,
-        type: options.types.find((type) => type.labels.some((l) => matches(investment.tag, l))),
-      }))
-      .filter((entry) => entry.type);
-    const titles = new Set(owned.map((entry) => entry.investment.tag));
-    const offers = (state.cashflowGame.marketOffers ?? []).filter(
-      (offer) => !titles.has(offer.title),
-    );
-    for (const { investment, type } of owned) {
-      // The original price: what the property cost in all - the deposit plus the mortgage.
-      const mortgageMinor = toMinorUnits(Number(investment.amount) || 0);
-      const originalMinor = toMinorUnits(Number(investment.deposit) || 0) + mortgageMinor;
-      // What the buyer pays: the original price plus a percentage or a fixed profit, a fixed price for
-      // the whole property (condos), or a price for every unit (WE) of the building (complexes).
-      const sells = card.sells;
-      const units = type?.units ?? 1;
-      const salePriceMinor =
-        sells.priceMinor !== undefined
-          ? sells.priceMinor
-          : sells.pricePerUnitMinor !== undefined
-            ? sells.pricePerUnitMinor * units
-            : originalMinor +
-              (sells.plusPercent !== undefined
-                ? Math.round((originalMinor * sells.plusPercent) / 100)
-                : (sells.plusMinor ?? 0));
-      const premiumMinor = salePriceMinor - originalMinor;
-      const money = (minor: number) => this.amountText(fromMinorUnits(minor));
-      const offerLabel =
-        sells.plusPercent !== undefined
-          ? `+${sells.plusPercent}%`
-          : sells.plusMinor !== undefined
-            ? `+${money(sells.plusMinor)}`
-            : sells.priceMinor !== undefined
-              ? money(sells.priceMinor)
-              : `${money(sells.pricePerUnitMinor ?? 0)} × ${units}`;
-      offers.push({
-        title: investment.tag,
-        salePriceMinor,
-        cardId: card.id,
-        label: offerLabel,
-      });
-      const project = state.allGrowProjects.find((candidate) => candidate.title === investment.tag);
-      if (project) {
-        const text =
-          MARKET_NOTE_MARK +
-          this.translate.instant(
-            salePriceMinor < mortgageMinor
-              ? 'CashflowGame.noteMarketOfferLoss'
-              : 'CashflowGame.noteMarketOffer',
-            {
-              loss: this.amountText(fromMinorUnits(Math.max(0, mortgageMinor - salePriceMinor))),
-              offer: offerLabel,
-              price: this.amountText(fromMinorUnits(salePriceMinor)),
-              profit: this.amountText(fromMinorUnits(premiumMinor)),
-              mortgage: this.amountText(fromMinorUnits(mortgageMinor)),
-              cash: this.amountText(fromMinorUnits(salePriceMinor - mortgageMinor)),
-            },
-          );
-        const notes = project.notes ?? (project.notes = []);
-        const existing = notes.find((note) => note.text.startsWith(MARKET_NOTE_MARK));
-        if (existing) existing.text = text;
-        else notes.push({ text, createdAt: new Date().toISOString() });
-      }
-    }
-    state.cashflowGame = { ...state.cashflowGame, marketOffers: offers };
+    this.pushUndoSnapshot(result.effects.step as CashflowStepInfo);
+    this.applyGameEffects(result.effects);
     this.persistAll(
       'cashflow_market_card',
-      { card: card.id, matched: titles.size },
-      {
-        onSuccess: () => callbacks.onSuccess([...titles]),
-        onError: callbacks.onError,
-      },
+      { card: card.id, matched: result.matched.length },
+      { onSuccess: () => callbacks.onSuccess(result.matched), onError: callbacks.onError },
       { includeGrow: true },
     );
   }
@@ -1844,49 +1699,27 @@ export class CashflowGameService {
    * but everyone can sell at it. When the player still holds shares of it this card does not plan
    * anything - it sets the share's price, on the Grow project and on the share held in the balance
    * sheet (quantity, cash and phase stay), and writes what happened on the stock market into the
-   * project's notes. Buying or selling at the new price is then up to the player, in Grow. One undo step.
+   * project's notes. Buying or selling at the new price is then up to the player, in Grow. One undo
+   * step. The rule is `updateSharePrice` in @money/domain.
    */
   updateSharePrice(
     card: CashflowDealCard,
     text: { description?: string },
     callbacks: { onSuccess: (title: string) => void; onError: (message: string) => void },
   ): void {
-    const state = AppStateService.instance;
-    const title = card.symbol ?? card.title;
-    const project = this.heldShareProjectFor(title);
-    if (!project || !project.share) {
-      callbacks.onError(`You hold no ${title} shares - plan the card instead.`);
+    let result: ReturnType<typeof updateSharePrice>;
+    try {
+      result = updateSharePrice(this.cardBooks(), card, text, this.cardDeps);
+    } catch (err: unknown) {
+      callbacks.onError(errorMessage(err, 'Could not update the share price.'));
       return;
     }
-    const price = fromMinorUnits(card.priceMinor ?? 0);
-    const held = state.allShares.find((share) => share.tag === title);
-    const before = Number(held?.price ?? project.share.price) || 0;
-    this.pushUndoSnapshot({
-      kind: 'priceUpdate',
-      detail: `${title} · ${this.amountText(before)} → ${this.amountText(price)}`,
-    });
-    if (held) held.price = price;
-    project.share.price = price;
-    project.updatedAt = new Date().toISOString();
-    project.notes = [
-      ...(project.notes ?? []),
-      {
-        text: [
-          this.translate.instant(
-            price >= before ? 'CashflowGame.notePriceUp' : 'CashflowGame.notePriceDown',
-            { symbol: title, from: this.amountText(before), to: this.amountText(price) },
-          ),
-          text.description,
-        ]
-          .filter(Boolean)
-          .join(' '),
-        createdAt: new Date().toISOString(),
-      },
-    ];
+    this.pushUndoSnapshot(result.effects.step as CashflowStepInfo);
+    this.applyGameEffects(result.effects);
     this.persistAll(
       'cashflow_share_price',
-      { symbol: title, price },
-      { onSuccess: () => callbacks.onSuccess(title), onError: callbacks.onError },
+      { symbol: result.title, price: fromMinorUnits(card.priceMinor ?? 0) },
+      { onSuccess: () => callbacks.onSuccess(result.title), onError: callbacks.onError },
       { includeBalanceSheet: true, includeGrow: true },
     );
   }
@@ -1895,60 +1728,32 @@ export class CashflowGameService {
    * A stock split card (JFK, 2026-10-03): only for a player who owns that share - otherwise it does
    * not apply (calls back with null; still a History step). With the share, a dice decision opens on
    * the dashboard like the others: `resolveShareSplit` applies it. `options.labels` are the ticker's
-   * labels (it is the same in every language).
+   * labels (it is the same in every language). The rule is `playShareSplitCard` in @money/domain.
    */
   playShareSplitCard(
     card: CashflowMarketCard,
     options: { title?: string; labels: string[] },
     callbacks: { onSuccess: (share: string | null) => void; onError: (message: string) => void },
   ): void {
-    const state = AppStateService.instance;
-    if (!card.splits) {
-      callbacks.onError('This market card has no stock split to play.');
+    let result: ReturnType<typeof playShareSplitCard>;
+    try {
+      result = playShareSplitCard(this.cardBooks(), card, options, this.cardDeps);
+    } catch (err: unknown) {
+      callbacks.onError(errorMessage(err, 'Could not play this market card.'));
       return;
     }
-    if (!state.cashflowGame.virtualDate) {
-      callbacks.onError('Pick a profession first.');
-      return;
-    }
-    const wanted = options.labels.map((label) => label.toLowerCase());
-    const share = state.allShares.find(
-      (candidate) => Number(candidate.quantity) > 0 && wanted.includes(candidate.tag.toLowerCase()),
-    );
-    this.pushUndoSnapshot({ kind: 'marketCard', detail: options.title ?? card.title });
-    if (!share) {
+    this.pushUndoSnapshot(result.effects.step as CashflowStepInfo);
+    if (!result.effects.write) {
       callbacks.onSuccess(null);
       return;
     }
-    const quantity = Number(share.quantity);
-    const id = `SPLIT-${share.tag}`;
-    const deal: CashflowAssetDeal = {
-      title: id,
-      coins: 0,
-      costMinor: 0,
-      stage: 'awaitingRoll',
-      split: { shareTag: share.tag },
-      successText: this.translate.instant('CashflowGame.splitDouble', {
-        share: share.tag,
-        from: quantity,
-        to: quantity * 2,
-      }),
-      failureText: this.translate.instant('CashflowGame.splitHalve', {
-        share: share.tag,
-        from: quantity,
-        to: Math.ceil(quantity / 2),
-      }),
-    };
-    state.cashflowGame = {
-      ...state.cashflowGame,
-      assetDeals: [...this.assetDeals().filter((candidate) => candidate.title !== id), deal],
-    };
+    this.applyGameEffects(result.effects);
     this.persistAll(
       'cashflow_market_split',
-      { share: share.tag },
+      { share: result.share },
       {
         onSuccess: () => {
-          callbacks.onSuccess(share.tag);
+          callbacks.onSuccess(result.share);
           this.decisionNeeded$.next();
         },
         onError: callbacks.onError,
@@ -1957,55 +1762,12 @@ export class CashflowGameService {
   }
 
   /**
-   * The split roll (JFK, 2026-10-03): 1-3 (`won`) doubles the quantity of the share, 4-6 halves it
-   * (the half you keep rounds up). Only the quantity changes - no price, no cash, no cost. One undo
-   * step, and a note on the share's Grow project.
-   */
-  private resolveShareSplit(
-    deal: CashflowAssetDeal,
-    outcome: { won: boolean; roll?: number },
-    callbacks: CashflowGameCallbacks,
-  ): void {
-    const state = AppStateService.instance;
-    const tag = deal.split?.shareTag ?? '';
-    const share = state.allShares.find((candidate) => candidate.tag === tag);
-    const from = Number(share?.quantity) || 0;
-    const to = outcome.won ? from * 2 : Math.ceil(from / 2);
-    this.pushUndoSnapshot({
-      kind: outcome.won ? 'shareSplit' : 'shareReverseSplit',
-      detail: `${tag} · ${outcome.roll ? `🎲 ${outcome.roll} · ` : ''}${from} → ${to}`,
-    });
-    if (share) share.quantity = to;
-    const project = state.allGrowProjects.find((candidate) => candidate.title === tag);
-    if (project) {
-      if (project.share && Number(project.share.quantity) === from) project.share.quantity = to;
-      project.notes = [
-        ...(project.notes ?? []),
-        {
-          text: `🎲 ${outcome.roll ? `${outcome.roll}: ` : ''}${this.translate.instant(
-            outcome.won ? 'CashflowGame.splitDouble' : 'CashflowGame.splitHalve',
-            { share: tag, from, to },
-          )}`,
-          createdAt: new Date().toISOString(),
-        },
-      ];
-    }
-    state.cashflowGame = {
-      ...state.cashflowGame,
-      assetDeals: this.assetDeals().filter((candidate) => candidate.title !== deal.title),
-    };
-    this.persistAll('cashflow_share_split', { share: tag, won: outcome.won }, callbacks, {
-      includeBalanceSheet: true,
-      includeGrow: true,
-    });
-  }
-
-  /**
    * A cashflow boost (JFK, 2026-10-03: "Kleiner Business Boom!", "Neues Managementsystem"): every
    * investment that pays a monthly cashflow of up to the card's limit gains the card's amount. The
    * Grow project's cashflow and its Payday subscription are both raised, and the project gets a note.
    * Calls back with what changed (empty = the card does not apply; still a History step).
-   * `options.businessLabels`, when given, restricts the boost to those property labels.
+   * `options.businessLabels`, when given, restricts the boost to those property labels. The rule is
+   * `playBoostCard` in @money/domain.
    */
   playBoostCard(
     card: CashflowMarketCard,
@@ -2015,47 +1777,20 @@ export class CashflowGameService {
       onError: (message: string) => void;
     },
   ): void {
-    const state = AppStateService.instance;
-    if (!card.boost) {
-      callbacks.onError('This market card has no boost to play.');
+    let result: ReturnType<typeof playBoostCard>;
+    try {
+      result = playBoostCard(this.cardBooks(), card, options, this.cardDeps);
+    } catch (err: unknown) {
+      callbacks.onError(errorMessage(err, 'Could not play this market card.'));
       return;
     }
-    if (!state.cashflowGame.virtualDate) {
-      callbacks.onError('Pick a profession first.');
-      return;
-    }
-    const boost = card.boost;
-    this.pushUndoSnapshot({ kind: 'marketCard', detail: options.title ?? card.title });
-    const changed: { title: string; from: number; to: number }[] = [];
-    for (const investment of state.allInvestments) {
-      if (
-        options.businessLabels &&
-        !options.businessLabels.some((label) => labelMatches(investment.tag, label))
-      ) {
-        continue;
-      }
-      const project = state.allGrowProjects.find((candidate) => candidate.title === investment.tag);
-      const cashflowMinor = toMinorUnits(Number(project?.cashflow) || 0);
-      if (!project || cashflowMinor <= 0 || cashflowMinor > boost.maxCashflowMinor) continue;
-      const from = fromMinorUnits(cashflowMinor);
-      const to = fromMinorUnits(cashflowMinor + boost.addMinor);
-      project.cashflow = to;
-      project.notes = [
-        ...(project.notes ?? []),
-        {
-          text: this.translate.instant('CashflowGame.noteMarketBoost', {
-            card: options.title ?? card.title,
-            add: this.amountText(fromMinorUnits(boost.addMinor)),
-            from: this.amountText(from),
-            to: this.amountText(to),
-          }),
-          createdAt: new Date().toISOString(),
-        },
-      ];
-      // The Payday subscription follows the project's cashflow.
-      this.registerInvestmentIncome(investment.tag);
-      changed.push({ title: investment.tag, from, to });
-    }
+    this.pushUndoSnapshot(result.effects.step as CashflowStepInfo);
+    this.applyGameEffects(result.effects);
+    const changed = result.changed.map((entry) => ({
+      title: entry.title,
+      from: fromMinorUnits(entry.fromMinor),
+      to: fromMinorUnits(entry.toMinor),
+    }));
     this.persistAll(
       'cashflow_market_boost',
       { card: card.id, changed: changed.length },
@@ -2069,88 +1804,23 @@ export class CashflowGameService {
    * a broken sewer pipe). Calls back with the label of the first property the player owns - the
    * payment is then booked on it through the Add dialog, which the caller opens - or with null when
    * they own none and the card simply does not apply (that is still a History step: the card was
-   * played). `options.types` lists the labels every kind of property goes by.
+   * played). `options.types` lists the labels every kind of property goes by. The rule is
+   * `playMarketCostCard` in @money/domain.
    */
   playMarketCostCard(
     card: CashflowMarketCard,
     options: { title?: string; types: { labels: string[] }[] },
     callbacks: { onSuccess: (property: string | null) => void; onError: (message: string) => void },
   ): void {
-    const state = AppStateService.instance;
-    if (!card.pays) {
-      callbacks.onError('This market card has no cost to pay.');
+    let result: ReturnType<typeof playMarketCostCard>;
+    try {
+      result = playMarketCostCard(this.cardBooks(), card, options);
+    } catch (err: unknown) {
+      callbacks.onError(errorMessage(err, 'Could not play this market card.'));
       return;
     }
-    if (!state.cashflowGame.virtualDate) {
-      callbacks.onError('Pick a profession first.');
-      return;
-    }
-    const first = state.allInvestments.find((investment) =>
-      options.types.some((type) =>
-        type.labels.some((label) => labelMatches(investment.tag, label)),
-      ),
-    );
-    if (!first) {
-      this.pushUndoSnapshot({ kind: 'marketCard', detail: options.title ?? card.title });
-    }
-    callbacks.onSuccess(first?.tag ?? null);
-  }
-
-  /**
-   * A gold buyer (JFK, 2026-10-03): cash for every coin, as many as you like. Every gold project with
-   * coins still owned gets the offer - the total follows the coins left, so a partial sale keeps it
-   * for the rest - and the Sell button pre-fills "<coins> x <price per coin>", which can be edited
-   * down to sell fewer.
-   */
-  private playGoldBuyer(
-    card: CashflowMarketCard,
-    options: { types: { labels: string[] }[] },
-    callbacks: { onSuccess: (matched: string[]) => void; onError: (message: string) => void },
-  ): void {
-    const state = AppStateService.instance;
-    const perCoinMinor = card.sells?.pricePerCoinMinor ?? 0;
-    const owned = state.allAssets.filter(
-      (asset) =>
-        this.coinsOwned(asset.tag) > 0 &&
-        options.types.some((type) => type.labels.some((label) => labelMatches(asset.tag, label))),
-    );
-    const titles = new Set(owned.map((asset) => asset.tag));
-    const offers = (state.cashflowGame.marketOffers ?? []).filter(
-      (offer) => !titles.has(offer.title),
-    );
-    const money = (minor: number) => this.amountText(fromMinorUnits(minor));
-    for (const asset of owned) {
-      const coins = this.coinsOwned(asset.tag);
-      const label = `${money(perCoinMinor)} × ${coins}`;
-      offers.push({
-        title: asset.tag,
-        salePriceMinor: perCoinMinor * coins,
-        cardId: card.id,
-        label,
-        pricePerCoinMinor: perCoinMinor,
-      });
-      const project = state.allGrowProjects.find((candidate) => candidate.title === asset.tag);
-      if (project) {
-        const text =
-          MARKET_NOTE_MARK +
-          this.translate.instant('CashflowGame.noteMarketOfferCoins', {
-            perCoin: money(perCoinMinor),
-            coins,
-            price: money(perCoinMinor * coins),
-          });
-        const notes = project.notes ?? (project.notes = []);
-        const existing = notes.find((note) => note.text.startsWith(MARKET_NOTE_MARK));
-        if (existing) existing.text = text;
-        else notes.push({ text, createdAt: new Date().toISOString() });
-      }
-    }
-    state.cashflowGame = { ...state.cashflowGame, marketOffers: offers };
-    this.persistAll(
-      'cashflow_market_card',
-      { card: card.id, matched: titles.size },
-      { onSuccess: () => callbacks.onSuccess([...titles]), onError: callbacks.onError },
-      { includeGrow: true },
-    );
+    if (result.effects.step) this.pushUndoSnapshot(result.effects.step);
+    callbacks.onSuccess(result.property);
   }
 
   /**
@@ -2158,7 +1828,7 @@ export class CashflowGameService {
    * buyer's price and `netCash`, the income the sale books: the buyer pays the original price (deposit +
    * mortgage) plus the profit, the mortgage is paid back out of it, so what is left is the deposit
    * plus the profit (JFK, 2026-10-03). Null when no buyer is interested (or this is not a Cashflow
-   * game).
+   * game). The rule is `marketSaleFor` in @money/domain.
    */
   marketSaleFor(title: string): {
     salePrice: number;
@@ -2169,31 +1839,16 @@ export class CashflowGameService {
     coins?: number;
   } | null {
     if (!CashflowGameService.isCashflowGame()) return null;
-    const state = AppStateService.instance;
-    const offer = (state.cashflowGame.marketOffers ?? []).find(
-      (candidate) => candidate.title === title,
-    );
-    if (offer?.pricePerCoinMinor !== undefined) {
-      // Gold: no mortgage, the whole price is cash - for the coins still owned.
-      const coins = this.coinsOwned(title);
-      if (coins <= 0) return null;
-      const totalMinor = offer.pricePerCoinMinor * coins;
-      return {
-        salePrice: fromMinorUnits(totalMinor),
-        netCash: fromMinorUnits(totalMinor),
-        label: offer.label,
-        pricePerCoin: fromMinorUnits(offer.pricePerCoinMinor),
-        coins,
-      };
-    }
-    const investment = state.allInvestments.find((candidate) => candidate.tag === title);
-    if (!offer || !investment) return null;
-    // The sale price less the mortgage paid back = the deposit you put in + the profit.
-    const mortgageMinor = toMinorUnits(Number(investment.amount) || 0);
+    const books = this.cardBooks();
+    const sale = marketSaleFor(books.state, books.investments, title);
+    if (!sale) return null;
     return {
-      salePrice: fromMinorUnits(offer.salePriceMinor),
-      netCash: fromMinorUnits(offer.salePriceMinor - mortgageMinor),
-      label: offer.label,
+      salePrice: fromMinorUnits(sale.salePriceMinor),
+      netCash: fromMinorUnits(sale.netCashMinor),
+      label: sale.label,
+      ...(sale.pricePerCoinMinor !== undefined
+        ? { pricePerCoin: fromMinorUnits(sale.pricePerCoinMinor), coins: sale.coins }
+        : {}),
     };
   }
 
@@ -2204,53 +1859,8 @@ export class CashflowGameService {
    * Only touches game-planned projects - once bought or sold the note stays as the last word.
    */
   syncPlanNote(project: Grow): void {
-    if (project.status !== 'planned') return;
-    const text = this.loanNoteText(project);
-    if (!text) return;
-    const notes = project.notes ?? (project.notes = []);
-    const existing = notes.find((note) => note.text.startsWith(LOAN_NOTE_MARK));
-    if (existing) existing.text = text;
-    else notes.push({ text, createdAt: new Date().toISOString() });
-    // A share's loan needed goes into the project's own Loan field, so Buy carries it - and the buy
-    // then takes it as a Bank loan (`beforeGrowTrade`) instead of creating a liability for the
-    // project. Grow's own convention holds: Deposit (`amount`) = cost - Loan, and the Loan never
-    // exceeds the cost even though the bank lends in whole steps. A property keeps its full
-    // Anzahlung as Deposit and no Loan field (its loan is the note and the automatic Bank loan).
-    if (project.share?.tag) {
-      const cost = this.roundToCents(
-        (Number(project.share.quantity) || 0) * (Number(project.share.price) || 0),
-      );
-      const loan = Math.min(this.loanNeeded(project), cost);
-      project.liabilitie =
-        loan > 0
-          ? { tag: project.title, amount: loan, credit: 0, investment: true }
-          : (null as any);
-      project.amount = this.roundToCents(cost - loan);
-    } else {
-      project.liabilitie = null as any;
-    }
-  }
-
-  private roundToCents(value: number): number {
-    return Math.round(value * 100) / 100;
-  }
-
-  /** The Bank loan a planned buy would need, rounded up to the loan step (0 when cash covers it or the quantity isn't set yet). */
-  private loanNeeded(project: Grow): number {
-    const costMinor = project.share?.tag
-      ? Math.round(
-          (Number(project.share.quantity) || 0) * toMinorUnits(Number(project.share.price) || 0),
-        )
-      : project.investment?.tag
-        ? toMinorUnits(Number(project.investment.deposit) || 0)
-        : project.isAsset
-          ? toMinorUnits(Number(project.amount) || 0)
-          : 0;
-    const shortfallMinor = Math.max(0, costMinor - toMinorUnits(this.cash));
-    const incrementMinor = this.currentGameSet()?.loanRule.incrementMinor ?? 0;
-    return fromMinorUnits(
-      incrementMinor ? Math.ceil(shortfallMinor / incrementMinor) * incrementMinor : shortfallMinor,
-    );
+    const update = syncPlanNoteRule(this.gameBooks(), toBookGrowProject(project), this.dealDeps);
+    if (update) this.applyGrowUpdate(project, update);
   }
 
   /**
@@ -2258,81 +1868,7 @@ export class CashflowGameService {
    * the Bank loan the payment would need - the same facts the Grow note gives for a purchase.
    */
   doodadLoanNote(costMinor: number): string {
-    const state = AppStateService.instance;
-    const money = (amount: number) => `${amount.toLocaleString()} ${state.currency}`;
-    const cash = this.cash;
-    const shortfallMinor = Math.max(0, costMinor - toMinorUnits(cash));
-    const incrementMinor = this.currentGameSet()?.loanRule.incrementMinor ?? 0;
-    const loan = fromMinorUnits(
-      incrementMinor ? Math.ceil(shortfallMinor / incrementMinor) * incrementMinor : shortfallMinor,
-    );
-    return (
-      LOAN_NOTE_MARK +
-      this.translate.instant('CashflowGame.noteCashDoodad', {
-        cash: money(cash),
-        cost: money(fromMinorUnits(costMinor)),
-        loan: money(loan),
-      })
-    );
-  }
-
-  private loanNoteText(project: Grow): string | null {
-    const state = AppStateService.instance;
-    const money = (amount: number) => `${amount.toLocaleString()} ${state.currency}`;
-    const cash = this.cash;
-    const loanFor = (costMinor: number) => {
-      const shortfallMinor = Math.max(0, costMinor - toMinorUnits(cash));
-      const incrementMinor = this.currentGameSet()?.loanRule.incrementMinor ?? 0;
-      return fromMinorUnits(
-        incrementMinor
-          ? Math.ceil(shortfallMinor / incrementMinor) * incrementMinor
-          : shortfallMinor,
-      );
-    };
-    if (project.share?.tag) {
-      const quantity = Number(project.share.quantity) || 0;
-      const price = Number(project.share.price) || 0;
-      if (quantity <= 0) {
-        return (
-          LOAN_NOTE_MARK +
-          this.translate.instant('CashflowGame.noteCashShare', { cash: money(cash) })
-        );
-      }
-      const costMinor = Math.round(quantity * toMinorUnits(price));
-      return (
-        LOAN_NOTE_MARK +
-        this.translate.instant('CashflowGame.noteLoanShare', {
-          quantity,
-          price: money(price),
-          cost: money(fromMinorUnits(costMinor)),
-          cash: money(cash),
-          loan: money(loanFor(costMinor)),
-        })
-      );
-    }
-    if (project.investment?.tag) {
-      const deposit = Number(project.investment.deposit) || 0;
-      return (
-        LOAN_NOTE_MARK +
-        this.translate.instant('CashflowGame.noteCashInvestment', {
-          cash: money(cash),
-          deposit: money(deposit),
-          loan: money(loanFor(toMinorUnits(deposit))),
-        })
-      );
-    }
-    if (project.isAsset) {
-      const cost = Number(project.amount) || 0;
-      return (
-        LOAN_NOTE_MARK +
-        this.translate.instant('CashflowGame.noteCashInvestment', {
-          cash: money(cash),
-          deposit: money(cost),
-          loan: money(loanFor(toMinorUnits(cost))),
-        })
-      );
-    }
-    return null;
+    return doodadLoanNoteRule(this.gameBooks(), costMinor, this.dealDeps);
   }
 
   /**
@@ -2354,126 +1890,20 @@ export class CashflowGameService {
    * already add to whatever position exists.
    */
   executeDeal(title: string, callbacks: CashflowGameCallbacks, quantity?: number): void {
-    const state = AppStateService.instance;
-    if (!state.cashflowGame.professionId) {
-      callbacks.onError('Pick a profession first.');
-      return;
-    }
-    const project = state.allGrowProjects.find((candidate) => candidate.title === title);
-    if (!project) {
-      callbacks.onError(`No planned deal called "${title}" — plan it first.`);
-      return;
-    }
-    const virtualDate = state.cashflowGame.virtualDate as string;
-    const kind: 'share' | 'investment' = project.investment?.tag ? 'investment' : 'share';
-
-    // A stock card leaves the count to the player (JFK, 2026-09-30), so the buy can carry it.
-    const shareQuantity = kind === 'share' ? (quantity ?? project.share.quantity) : 0;
-    if (kind === 'share' && !(Number.isInteger(shareQuantity) && shareQuantity > 0)) {
-      callbacks.onError('Enter how many shares you want to buy.');
-      return;
-    }
-    const costMinor =
-      kind === 'share'
-        ? multiplyQuantityPrice(shareQuantity, toMinorUnits(project.share.price))
-        : toMinorUnits(project.investment.deposit);
-    const shortfallMinor = costMinor - toMinorUnits(this.cash);
-    // Taking the loan and buying with it are two separate moves (JFK, 2026-09-30), so each gets its
-    // own undo step: one Undo takes back the purchase, the next takes back the loan.
-    const pushedSnapshots: CashflowGameSnapshot[] = [];
-    const pushTracked = (step: CashflowStepInfo) => {
-      this.pushUndoSnapshot(step);
-      pushedSnapshots.push(this.undoStack[this.undoStack.length - 1]);
-    };
+    let result: ReturnType<typeof executeDealRule>;
     try {
-      if (shortfallMinor > 0) {
-        pushTracked({ kind: 'loanAuto' });
-        const gameSet = this.currentGameSet();
-        if (!gameSet) throw new Error('Pick a profession first.');
-        const incrementMinor = gameSet.loanRule.incrementMinor;
-        const borrowMinor = Math.ceil(shortfallMinor / incrementMinor) * incrementMinor;
-        this.applyBankLoanAdjustment(fromMinorUnits(borrowMinor));
-      }
-      pushTracked({ kind: 'buyDeal', detail: title });
-
-      const buyResult =
-        kind === 'share'
-          ? calculateBuyShare({
-              title,
-              quantity: shareQuantity,
-              priceMinor: toMinorUnits(project.share.price),
-              existingShareQuantity:
-                state.allShares.find((share) => share.tag === title)?.quantity ?? null,
-              existingGrowAmountMinor: toMinorUnits(project.amount ?? 0),
-            })
-          : calculateBuyInvestment({
-              title,
-              depositMinor: toMinorUnits(project.investment.deposit),
-              mortgageMinor: toMinorUnits(project.investment.amount),
-              existingInvestmentDepositMinor: this.existingMinor(
-                state.allInvestments.find((investment) => investment.tag === title)?.deposit,
-              ),
-              existingInvestmentAmountMinor: this.existingMinor(
-                state.allInvestments.find((investment) => investment.tag === title)?.amount,
-              ),
-              existingMortgageLiabilityAmountMinor: this.existingMinor(
-                state.liabilities.find((liability) => liability.tag === `M-${title}`)?.amount,
-              ),
-              existingGrowAmountMinor: toMinorUnits(project.amount ?? 0),
-            });
-
-      state.allTransactions.push({
-        account: 'Fire',
-        amount: fromMinorUnits(buyResult.transactionAmountMinor),
-        date: this.nextGameTransactionDate(),
-        time: '',
-        category: `@${title}`,
-        comment: buyResult.comment,
-      });
-
-      if (kind === 'share') {
-        const share = buyResult as ReturnType<typeof calculateBuyShare>;
-        const patch = {
-          tag: title,
-          quantity: share.newShareQuantity,
-          price: fromMinorUnits(share.newSharePriceMinor),
-        };
-        this.upsertEntity(state.allShares, title, () => patch);
-        this.upsertGrowProject(title, project, {
-          amount: fromMinorUnits(buyResult.newGrowAmountMinor),
-          share: patch,
-        });
-      } else {
-        const investment = buyResult as ReturnType<typeof calculateBuyInvestment>;
-        const patch = {
-          tag: title,
-          deposit: fromMinorUnits(investment.newInvestmentDepositMinor),
-          amount: fromMinorUnits(investment.newInvestmentAmountMinor),
-        };
-        this.upsertEntity(state.allInvestments, title, () => patch);
-        this.upsertLiability(
-          investment.mortgageLiabilityPatch.tag,
-          investment.mortgageLiabilityPatch.amountMinor,
-          true,
-        );
-        this.upsertGrowProject(title, project, {
-          amount: fromMinorUnits(buyResult.newGrowAmountMinor),
-          investment: patch,
-        });
-        this.registerInvestmentIncome(title);
-      }
+      result = executeDealRule(this.gameBooks(), title, quantity, this.dealDeps);
     } catch (err: unknown) {
-      // Half a deal (loan taken, purchase failed) must not stay in memory — roll back to before it.
-      if (pushedSnapshots.length) {
-        this.applySnapshot(pushedSnapshots[0]);
-        this.undoStack.splice(this.undoStack.length - pushedSnapshots.length);
-        this.persistUndoStack();
-      }
       callbacks.onError(errorMessage(err, 'Could not complete this deal.'));
       return;
     }
-
-    this.persistAll('cashflow_deal_execute', { kind, title }, callbacks, {
+    // Taking the loan and buying with it are two separate moves (JFK, 2026-09-30), so each gets its
+    // own undo step: one Undo takes back the purchase, the next takes back the loan.
+    for (const effects of result.steps) {
+      this.pushUndoSnapshot(effects.step as CashflowStepInfo);
+      this.applyGameEffects(effects);
+    }
+    this.persistAll('cashflow_deal_execute', { kind: result.kind, title }, callbacks, {
       includeSubscriptions: true,
       includeBalanceSheet: true,
       includeGrow: true,
@@ -2483,15 +1913,8 @@ export class CashflowGameService {
   /** Grow projects not yet bought — planned only (todo/cashflow-game.md decision 12): the deal's plan exists, but no real Share/Investment position backs it yet. */
   get plannedDeals(): Grow[] {
     const state = AppStateService.instance;
-    return state.allGrowProjects.filter((project) => {
-      if (project.investment?.tag) {
-        return !state.allInvestments.some((investment) => investment.tag === project.title);
-      }
-      if (project.share?.tag) {
-        return !state.allShares.some((share) => share.tag === project.title);
-      }
-      return false;
-    });
+    const titles = new Set(plannedDealsRule(this.gameBooks()).map((project) => project.title));
+    return state.allGrowProjects.filter((project) => titles.has(project.title));
   }
 
   /**
@@ -2510,18 +1933,20 @@ export class CashflowGameService {
     }
     // A reset ends the game, history included - there is nothing to undo back into (JFK, 2026-10-03).
     this.clearPersistedUndoStack();
+    this.persistUndoStack(); // the account's history is emptied too
     const state = AppStateService.instance;
-    state.allTransactions = [];
-    state.allSubscriptions = [];
-    state.allGrowProjects = [];
-    state.allShares = [];
-    state.allInvestments = [];
-    state.allAssets = [];
-    state.liabilities = [];
-    state.allSmileProjects = [];
-    state.allFireEmergencies = [];
-    state.mojo = { amount: 0, target: 0 };
-    state.cashflowGame = initialCashflowGameState();
+    const blank = blankGameData();
+    state.allTransactions = blank.allTransactions as Transaction[];
+    state.allSubscriptions = blank.allSubscriptions as Subscription[];
+    state.allGrowProjects = blank.allGrowProjects as Grow[];
+    state.allShares = blank.allShares as Share[];
+    state.allInvestments = blank.allInvestments as Investment[];
+    state.allAssets = blank.allAssets as Asset[];
+    state.liabilities = blank.liabilities as unknown as Liability[];
+    state.allSmileProjects = blank.allSmileProjects as Smile[];
+    state.allFireEmergencies = blank.allFireEmergencies as Fire[];
+    state.mojo = blank.mojo as Mojo;
+    state.cashflowGame = blank.cashflowGame;
 
     this.persistAll('cashflow_reset', {}, callbacks, {
       includeSubscriptions: true,
@@ -2579,6 +2004,7 @@ export class CashflowGameService {
       result = drawRandomCard(
         deck as CashflowDeckCardMap[K][],
         state.cashflowGame.drawnCardIds[deckKind],
+        this.rng,
       );
     } catch (err: unknown) {
       callbacks.onError(errorMessage(err, 'Could not draw a card.'));
@@ -2605,72 +2031,11 @@ export class CashflowGameService {
     callbacks: { onSuccess: (plannedTitle: string) => void; onError: (message: string) => void },
     text: CashflowCardPlanText = {},
   ): void {
-    let input: CashflowDealInput;
-    if (card.assetKind === 'share') {
-      input = {
-        kind: 'share',
-        // The ticker identifies the position; a card without one (placeholders) falls back to its name.
-        title: card.symbol ?? card.title,
-        subtitle: card.title,
-        quantity: card.quantity ?? 0,
-        price: fromMinorUnits(card.priceMinor ?? 0),
-        description: text.description,
-        note: text.note,
-        strategy: text.strategy,
-      };
-    } else if (card.assetKind === 'asset') {
-      input = {
-        kind: 'asset',
-        // Every special-asset card is its own deal: GOLD, then GOLD-II...
-        title: this.nextInvestmentLabel(text.symbol ?? card.symbol ?? card.title),
-        subtitle: text.title ?? card.title,
-        cost: fromMinorUnits(card.costMinor ?? 0),
-        coins: card.quantity ?? 0,
-        successOn: card.successOn,
-        payout: card.payoutMinor ? fromMinorUnits(card.payoutMinor) : undefined,
-        recurring: card.recurring,
-        description: text.description,
-        note: text.note,
-        strategy: text.strategy,
-        successText: text.success,
-        failureText: text.failure,
-      };
-    } else {
-      input = {
-        kind: 'investment',
-        // Every investment card is its own deal: EFH, then EFH-II, EFH-III...
-        title: this.nextInvestmentLabel(text.symbol ?? card.symbol ?? card.title),
-        subtitle: text.title ?? card.title,
-        deposit: fromMinorUnits(card.depositMinor ?? 0),
-        mortgage: fromMinorUnits(card.mortgageMinor ?? 0),
-        cashflow: fromMinorUnits(card.cashflowMinor ?? 0),
-        description: text.description,
-        note: text.note,
-      };
-    }
-    this.planDeal(input, {
+    const input = dealInputFromCard(card, text, takenDealLabels(this.gameBooks()));
+    this.runPlanDeal(input, {
       onSuccess: () => callbacks.onSuccess(input.title),
       onError: callbacks.onError,
     });
-  }
-
-  /**
-   * The first free label for another copy of an investment: the bare abbreviation, then `-II`,
-   * `-III`... Hyphenated, never spaced - Grow's buy comment ("Buy Investment EFH 3000 47000;") is
-   * split on spaces, so a space in the label would corrupt the purchase.
-   */
-  private nextInvestmentLabel(base: string): string {
-    const state = AppStateService.instance;
-    const taken = new Set([
-      ...state.allGrowProjects.map((project) => project.title),
-      ...state.allInvestments.map((investment) => investment.tag),
-      ...state.allAssets.map((asset) => asset.tag),
-    ]);
-    if (!taken.has(base)) return base;
-    for (let copy = 2; ; copy++) {
-      const label = `${base}-${toRoman(copy)}`;
-      if (!taken.has(label)) return label;
-    }
   }
 
   /**
@@ -2680,24 +2045,8 @@ export class CashflowGameService {
    * there would never pay out. Safe to call again; it just refreshes the amount.
    */
   registerInvestmentIncome(title: string): void {
-    const state = AppStateService.instance;
-    const project = state.allGrowProjects.find((candidate) => candidate.title === title);
-    const cashflow = Number(project?.cashflow) || 0;
-    if (cashflow <= 0) return;
-    const subscriptionTitle = `${title} Cashflow`;
-    this.upsertSubscription({
-      title: subscriptionTitle,
-      account: 'Income',
-      amountMinor: toMinorUnits(cashflow),
-      frequency: 'monthly',
-      category: `@${title}`,
-    });
-    if (!state.cashflowGame.gameSubscriptionTitles.includes(subscriptionTitle)) {
-      state.cashflowGame = {
-        ...state.cashflowGame,
-        gameSubscriptionTitles: [...state.cashflowGame.gameSubscriptionTitles, subscriptionTitle],
-      };
-    }
+    const effects = registerInvestmentIncomeRule(this.gameBooks(), title, this.dealDeps);
+    if (effects) this.applyGameEffects(effects);
   }
 
   /**
@@ -2711,38 +2060,22 @@ export class CashflowGameService {
     callbacks: CashflowGameCallbacks,
     label?: string,
   ): void {
-    const state = AppStateService.instance;
-    if (!state.cashflowGame.virtualDate) {
-      callbacks.onError('Pick a profession first.');
+    let effects: GameEffects;
+    try {
+      effects = sellCardToFriendRule(
+        this.gameBooks(),
+        card,
+        toMinorUnits(amount),
+        label,
+        this.dealDeps,
+      );
+    } catch (err: unknown) {
+      callbacks.onError(errorMessage(err, 'Could not sell this card.'));
       return;
     }
-    if (!(amount > 0)) {
-      callbacks.onError('Enter the price your friend pays.');
-      return;
-    }
-    const name = label ?? card.symbol ?? card.title;
-    this.pushUndoSnapshot({ kind: 'cardSale', detail: name });
-    state.allTransactions.push({
-      account: 'Daily',
-      amount,
-      // The next free day of the real current month, spread like the Subscriptions (1st, 3rd, 5th… then 2nd, 4th…).
-      date: this.nextGameTransactionDate(),
-      time: '',
-      category: `@${name} card sale`,
-      comment: `Sold the ${name} card to a friend\n#cashflow`,
-    });
+    this.pushUndoSnapshot(effects.step as CashflowStepInfo);
+    this.applyGameEffects(effects);
     this.persistAll('cashflow_card_sale', { card: card.id, amount }, callbacks);
-  }
-
-  /** Returns the conflicting kind only when the existing project is clearly the other one — never blocks on missing/ambiguous legacy data. */
-  private conflictingGrowKind(project: Grow, kind: 'share' | 'investment' | 'asset'): boolean {
-    if (kind === 'asset') return Boolean(project.share?.tag || project.investment?.tag);
-    if (kind === 'share') return Boolean(project.investment?.tag) && !project.share?.tag;
-    return Boolean(project.share?.tag) && !project.investment?.tag;
-  }
-
-  private existingMinor(amount: number | undefined): number | null {
-    return amount === undefined ? null : toMinorUnits(amount);
   }
 
   private upsertEntity<T extends { tag: string }>(
@@ -2756,14 +2089,9 @@ export class CashflowGameService {
     else list.push(next);
   }
 
-  private upsertGrowProject(title: string, existing: Grow | undefined, patch: Partial<Grow>): void {
-    const state = AppStateService.instance;
-    if (existing) {
-      Object.assign(existing, patch, { updatedAt: new Date().toISOString() });
-      return;
-    }
-    const now = new Date().toISOString();
-    const project: Grow = {
+  /** A fresh Grow project with the defaults the game has always created one with. */
+  private newGrowProject(title: string, createdAt: string): Grow {
+    return {
       title,
       sub: '',
       phase: 'execute',
@@ -2780,12 +2108,55 @@ export class CashflowGameService {
       share: null as any,
       investment: null as any,
       liabilitie: null as any,
-      createdAt: now,
-      updatedAt: now,
+      createdAt,
+      updatedAt: createdAt,
       type: 'income-growth',
-      ...patch,
     };
-    state.allGrowProjects.push(project);
+  }
+
+  /** Writes the fields of a rule's project update onto the live project (decimal amounts, Grow's own field names). */
+  private applyGrowUpdate(project: Grow, update: BookGrowUpdate): void {
+    if (update.sub !== undefined) project.sub = update.sub;
+    if (update.phase !== undefined) project.phase = update.phase as Grow['phase'];
+    if (update.status !== undefined) project.status = update.status;
+    if (update.description !== undefined) project.description = update.description;
+    if (update.strategy !== undefined) project.strategy = update.strategy;
+    if (update.isAsset !== undefined) project.isAsset = update.isAsset;
+    if (update.amountMinor !== undefined) project.amount = fromMinorUnits(update.amountMinor);
+    if (update.cashflowMinor !== undefined) project.cashflow = fromMinorUnits(update.cashflowMinor);
+    if (update.share !== undefined) {
+      project.share = update.share
+        ? {
+            tag: update.share.tag,
+            quantity: update.share.quantity,
+            price: fromMinorUnits(update.share.priceMinor),
+          }
+        : (null as any);
+    }
+    if (update.sharePriceMinor !== undefined && project.share) {
+      project.share.price = fromMinorUnits(update.sharePriceMinor);
+    }
+    if (update.investment !== undefined) {
+      project.investment = update.investment
+        ? {
+            tag: update.investment.tag,
+            deposit: fromMinorUnits(update.investment.depositMinor),
+            amount: fromMinorUnits(update.investment.amountMinor),
+          }
+        : (null as any);
+    }
+    if (update.loan !== undefined) {
+      project.liabilitie = update.loan
+        ? {
+            tag: update.loan.tag,
+            amount: fromMinorUnits(update.loan.amountMinor),
+            credit: fromMinorUnits(update.loan.creditMinor),
+            investment: update.loan.investment,
+          }
+        : (null as any);
+    }
+    if (update.notes !== undefined) project.notes = update.notes;
+    if (update.updatedAt !== undefined) project.updatedAt = update.updatedAt;
   }
 
   private currentGameSet(): CashflowGameSet | undefined {
@@ -2803,33 +2174,6 @@ export class CashflowGameService {
     const { professionId } = AppStateService.instance.cashflowGame;
     if (!professionId) return undefined;
     return this.currentGameSet()?.professions.find((profession) => profession.id === professionId);
-  }
-
-  /** Creates or updates a Subscription by title — the "recomputed every time, never hand-edited" pattern Baby/Bank loan both use. */
-  private upsertSubscription(upsert: CashflowStarterKitSubscription): void {
-    const subscriptions = AppStateService.instance.allSubscriptions;
-    const existing = subscriptions.find((sub) => sub.title === upsert.title);
-    const amount = fromMinorUnits(upsert.amountMinor);
-    if (existing) {
-      existing.account = upsert.account;
-      existing.amount = amount;
-      existing.frequency = upsert.frequency;
-      existing.category = upsert.category ?? existing.category;
-      if (!existing.comment.includes('#cashflow')) {
-        existing.comment = existing.comment ? `${existing.comment}\n#cashflow` : '#cashflow';
-      }
-    } else {
-      subscriptions.push({
-        title: upsert.title,
-        account: upsert.account,
-        amount,
-        startDate: this.nextSmartSubscriptionDate(this.currentMonthGameSubscriptionDays()),
-        endDate: '',
-        category: upsert.category ?? '',
-        comment: upsert.comment ? `${upsert.comment}\n#cashflow` : '#cashflow',
-        frequency: upsert.frequency,
-      });
-    }
   }
 
   /** Public: also used by `add.component.ts`'s Sell Investment handling to drop a closed position's cashflow Subscription (`grow_guide`'s sell action has no way to know it exists). */
@@ -2866,24 +2210,6 @@ export class CashflowGameService {
     }));
   }
 
-  /** Removes exactly the transactions a Payday created, one match per record — never a blanket filter. */
-  private removeCreatedTransactions(records: CashflowTransactionRecord[]): void {
-    const transactions = AppStateService.instance.allTransactions;
-    for (const record of records) {
-      const amount = fromMinorUnits(record.amountMinor);
-      const index = transactions.findIndex(
-        (t) =>
-          t.account === record.account &&
-          t.amount === amount &&
-          t.date === record.date &&
-          t.time === record.time &&
-          t.category === record.category &&
-          t.comment === record.comment,
-      );
-      if (index >= 0) transactions.splice(index, 1);
-    }
-  }
-
   private persistAll(
     logEvent: string,
     logMetadata: Record<string, unknown>,
@@ -2892,11 +2218,13 @@ export class CashflowGameService {
       includeSubscriptions?: boolean;
       includeBalanceSheet?: boolean;
       includeGrow?: boolean;
+      /** Save without the page-wide saving overlay (the caller already blocks its own buttons). */
+      quiet?: boolean;
     } = {},
   ): void {
     const state = AppStateService.instance;
     this.incomeStatement.recalculate();
-    state.isSaving = true;
+    if (!options.quiet) state.isSaving = true;
 
     const writes: { tag: string; data: unknown }[] = [
       { tag: 'transactions', data: state.allTransactions },
@@ -2957,68 +2285,6 @@ export class CashflowGameService {
       },
     });
   }
-}
-
-/** Which monthly expense line a starting liability's payments are (profession card keys). */
-const LIABILITY_EXPENSE_KEYS: Record<string, string> = {
-  mortgage: 'mortgageRent',
-  carLoan: 'carLoan',
-  creditCardDebt: 'creditCard',
-  studentLoanDebt: 'studentLoan',
-  bankLoan: 'bankLoanPayment',
-};
-
-/** Marks the one Grow note a planned card keeps current (bank loan needed for the buy). */
-const LOAN_NOTE_MARK = '🏦 ';
-/** The one note a market buyer's offer leaves on a property's Grow project (replaced by the next offer, removed at Payday). */
-const MARKET_NOTE_MARK = '💰 ';
-
-/** A property / asset label matches a type's label when it is that label or a copy of it (EFH, EFH-II, EFH-III...). */
-function labelMatches(tag: string, label: string): boolean {
-  const lower = tag.toLowerCase();
-  const wanted = label.toLowerCase();
-  const escaped = wanted.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  return lower === wanted || new RegExp(`^${escaped}-[ivxlcdm]+$`).test(lower);
-}
-/** The tag a Doodad payment carries in its comment, so they can all be found again later. */
-const DOODAD_MARK = /#doodad\b/;
-/** The tag a Market card's one-off cost (tenant damage, broken pipe) carries in its comment. */
-const MARKET_COST_MARK = /#market\b/;
-
-/** Grow's own trade comments ("Buy Share OK4U 250 x 10;", "Sell Investment EFH ...", "Dividende Share ...") from before the Add dialog tagged game transactions. */
-const GROW_TRADE_COMMENT =
-  /^(Buy|Sell) (Share|Investment|Asset) |^Dividende Share |^Payback Liabilitie /;
-
-function isGameTransaction(transaction: Transaction): boolean {
-  const comment = transaction.comment ?? '';
-  return comment.includes('#cashflow') || GROW_TRADE_COMMENT.test(comment);
-}
-
-function toRoman(value: number): string {
-  const numerals: [number, string][] = [
-    [1000, 'M'],
-    [900, 'CM'],
-    [500, 'D'],
-    [400, 'CD'],
-    [100, 'C'],
-    [90, 'XC'],
-    [50, 'L'],
-    [40, 'XL'],
-    [10, 'X'],
-    [9, 'IX'],
-    [5, 'V'],
-    [4, 'IV'],
-    [1, 'I'],
-  ];
-  let rest = value;
-  let result = '';
-  for (const [amount, numeral] of numerals) {
-    while (rest >= amount) {
-      result += numeral;
-      rest -= amount;
-    }
-  }
-  return result;
 }
 
 function errorMessage(err: unknown, fallback: string): string {

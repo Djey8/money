@@ -1,4 +1,5 @@
 import { Subject } from 'rxjs';
+import { CLASSIC_RAT_RACE_BOARD } from '@money/domain';
 import { registerLocaleData } from '@angular/common';
 import localeDe from '@angular/common/locales/de';
 import { CASHFLOW_GAME_SETS } from '../../shared/cashflow-content';
@@ -701,6 +702,7 @@ describe('CashflowGameComponent', () => {
       AppStateService.instance.liabilities = [
         { tag: 'Bank loan', amount: 500, investment: false, credit: 0 },
       ];
+      (cashflowGameService as any).cash = 10000;
       component.loanIncrements = 5; // 5 * 1000 = 5000, far more than the 500 owed
 
       component.repayLoan();
@@ -850,7 +852,8 @@ describe('CashflowGameComponent', () => {
 
   describe('settle all', () => {
     it('pre-fills the number of steps that clear the whole loan', () => {
-      const { component } = makeComponent();
+      const { component, cashflowGameService } = makeComponent();
+      (cashflowGameService as any).cash = 10000;
       component.appState.cashflowGame = {
         ...component.appState.cashflowGame,
         gameSetId: 'cashflow',
@@ -865,7 +868,8 @@ describe('CashflowGameComponent', () => {
     });
 
     it('rounds up when the loan is not a whole number of steps', () => {
-      const { component } = makeComponent();
+      const { component, cashflowGameService } = makeComponent();
+      (cashflowGameService as any).cash = 10000;
       component.appState.cashflowGame = {
         ...component.appState.cashflowGame,
         gameSetId: 'cashflow',
@@ -877,6 +881,44 @@ describe('CashflowGameComponent', () => {
       component.settleAllLoan();
 
       expect(component.loanIncrements).toBe(3);
+    });
+
+    it('settles only what the cash covers, in whole steps - repaying never goes below zero', () => {
+      const { component, cashflowGameService } = makeComponent();
+      component.appState.cashflowGame = {
+        ...component.appState.cashflowGame,
+        gameSetId: 'cashflow',
+      };
+      component.appState.liabilities = [
+        { tag: 'Bank loan', amount: 4000, investment: false, credit: 0 },
+      ];
+      (cashflowGameService as any).cash = 2500; // 4,000 owed, 2,500 in cash: two steps
+
+      expect(component.maxLoanRepayment).toBe(2000);
+      expect(component.repaymentLimitedByCash).toBe(true);
+      component.settleAllLoan();
+      expect(component.loanIncrements).toBe(2);
+
+      component.loanIncrements = 4; // typing more than the cash covers does not get through
+      component.repayLoan();
+      expect(cashflowGameService.adjustBankLoan).toHaveBeenCalledWith(-2000, expect.anything());
+    });
+
+    it('offers nothing to repay with less than one loan step in cash', () => {
+      const { component, cashflowGameService } = makeComponent();
+      component.appState.cashflowGame = {
+        ...component.appState.cashflowGame,
+        gameSetId: 'cashflow',
+      };
+      component.appState.liabilities = [
+        { tag: 'Bank loan', amount: 4000, investment: false, credit: 0 },
+      ];
+      (cashflowGameService as any).cash = 600;
+
+      expect(component.maxLoanRepayment).toBe(0);
+      component.loanIncrements = 1;
+      component.repayLoan();
+      expect(cashflowGameService.adjustBankLoan).not.toHaveBeenCalled();
     });
   });
 
@@ -1482,6 +1524,25 @@ describe('CashflowGameComponent', () => {
         expect(withGame(2000, 1500).escapedRatRace).toBe(true);
       });
 
+      it('counts an exact tie as escaped even where decimal sums would drift (0.1 + 0.2 vs 0.3)', () => {
+        // With plain decimals 0.1 + 0.2 is 0.30000000000000004, so 0.3 of passive income would
+        // read as "not enough" against it. The domain summary works in whole minor units.
+        const component = withGame(0.3, 0);
+        const state = AppStateService.instance;
+        state.cashflowGame = {
+          ...state.cashflowGame,
+          gameSubscriptionTitles: ['Salary', 'Rent A', 'Rent B', 'OK Cashflow'],
+        };
+        state.allSubscriptions = [
+          { title: 'Salary', amount: 3000 },
+          { title: 'Rent A', amount: -0.1 },
+          { title: 'Rent B', amount: -0.2 },
+          { title: 'OK Cashflow', amount: 0.3 },
+        ] as any;
+
+        expect(component.escapedRatRace).toBe(true);
+      });
+
       it('stays hidden while the expenses are higher, and when there is nothing to cover', () => {
         expect(withGame(1000, 1500).escapedRatRace).toBe(false);
         expect(withGame(0, 0).escapedRatRace).toBe(false);
@@ -1907,5 +1968,729 @@ describe('CashflowGameComponent', () => {
 
       expect(component.activeCard).toBeNull();
     });
+  });
+});
+
+describe('CashflowGameComponent solo mode (JFK, 2026-10-05)', () => {
+  function soloComponent(extra: Partial<Record<string, unknown>> = {}) {
+    const rollTurn = jest.fn();
+    const settleSoloDecision = jest.fn();
+    // The page plans a turn, plays its animation and only then applies it. The older tests below describe a whole
+    // roll through `rollTurn`: planning forwards to it, applying just reports success.
+    const planTurn = jest.fn((dice: number, callbacks: any) => rollTurn(dice, callbacks));
+    const commitTurn = jest.fn((_result: unknown, callbacks: any) => callbacks.onSuccess());
+    const made = makeComponent({
+      rollTurn,
+      planTurn,
+      commitTurn,
+      settleSoloDecision,
+      board: CLASSIC_RAT_RACE_BOARD,
+      soloTurn: { phase: 'roll', count: 0 },
+      cannotRollBecause: null,
+      soloSummary: jest.fn(() => ({ outcome: 'escaped' })),
+      ...extra,
+    } as any);
+    return { ...made, rollTurn, planTurn, commitTurn, settleSoloDecision };
+  }
+
+  const setSoloState = (extra: Record<string, unknown> = {}) => {
+    const state = AppStateService.instance;
+    state.cashflowGame = {
+      ...state.cashflowGame,
+      mode: 'solo',
+      professionId: 'hausmeister',
+      gameSetId: 'cashflow',
+      boardPosition: null,
+      turn: { phase: 'roll', count: 0 },
+      ...extra,
+    } as any;
+  };
+
+  const settle = () => new Promise((resolve) => setTimeout(resolve, 15));
+
+  beforeEach(() => {
+    (AppStateService as any)._instance = undefined;
+    ProfileComponent.mail = '';
+    // no waiting between steps in tests: the token jumps straight to the landing
+    (window as any).matchMedia = jest.fn(() => ({ matches: true }));
+  });
+
+  it('starts a game in the mode chosen with the language', () => {
+    const { component, cashflowGameService } = soloComponent();
+    component.playMode = 'solo';
+    component.startGame();
+    expect(cashflowGameService.pickProfession).toHaveBeenCalledWith(
+      component.selectedGameSetId,
+      component.selectedProfessionId,
+      expect.any(Object),
+      'solo',
+    );
+    const companion = soloComponent();
+    companion.component.startGame();
+    expect(companion.cashflowGameService.pickProfession.mock.calls[0][3]).toBe('companion');
+  });
+
+  it('measures the way to the next Payday from the token, START included', () => {
+    const { component } = soloComponent();
+    setSoloState({ boardPosition: null });
+    expect(component.spacesToPayday).toBe(6); // spaces 0..5
+    setSoloState({ boardPosition: 4 });
+    expect(component.spacesToPayday).toBe(1);
+    setSoloState({ boardPosition: 5 });
+    expect(component.spacesToPayday).toBe(8); // the next Payday is space 13
+    setSoloState({ boardPosition: 22 });
+    expect(component.spacesToPayday).toBe(7); // wraps to space 5
+  });
+
+  it('cannot roll while busy, or when the game says no', () => {
+    const blocked = soloComponent({ cannotRollBecause: 'Deal with the card first.' });
+    setSoloState();
+    expect(blocked.component.canRoll).toBe(false);
+    const free = soloComponent();
+    expect(free.component.canRoll).toBe(true);
+    free.component.isBusy = true;
+    expect(free.component.canRoll).toBe(false);
+  });
+
+  it('nothing of a roll takes effect before the animation has settled: planned first, applied once the totem is on its tile', async () => {
+    const { component, planTurn, commitTurn } = soloComponent();
+    setSoloState();
+    const planned = {
+      roll: { dice: [3], total: 3 },
+      move: {
+        entered: [{ index: 0 }, { index: 1 }, { index: 2 }],
+        paydays: 0,
+        to: 2,
+        landed: { kind: 'charity', index: 2 },
+      },
+      effects: [],
+      openingPayday: false,
+      autoLoansMinor: [],
+    };
+    planTurn.mockReturnValue(planned); // working it out changes nothing
+    (component as any).diceChoice = 1;
+
+    component.rollSolo();
+
+    expect(planTurn).toHaveBeenCalledTimes(1);
+    expect(commitTurn).not.toHaveBeenCalled(); // not applied yet: no Charity, no child, no spanner, no cash change
+    expect(component.walking).toBe(true);
+    expect(component.isBusy).toBe(true); // nothing else can touch the books meanwhile
+    expect(component.diceChoice).toBe(1); // Charity's two-dice choice is not selected before the totem lands
+
+    await settle();
+
+    expect(commitTurn).toHaveBeenCalledTimes(1);
+    expect(commitTurn.mock.calls[0][0]).toBe(planned);
+    expect(component.walking).toBe(false);
+    expect(component.isBusy).toBe(false);
+    expect(component.diceChoice).toBe(2); // only now, with the totem on the Charity tile
+  });
+
+  it('a roll that cannot be applied says so and releases the page', async () => {
+    const { component, planTurn, commitTurn, toastService } = soloComponent();
+    setSoloState();
+    planTurn.mockReturnValue({
+      roll: { dice: [1], total: 1 },
+      move: { entered: [{ index: 0 }], paydays: 0, to: 0, landed: { kind: 'deal', index: 0 } },
+      effects: [],
+      openingPayday: false,
+      autoLoansMinor: [],
+    });
+    commitTurn.mockImplementation(() => {
+      throw new Error('could not write');
+    });
+    component.rollSolo();
+    await settle();
+    expect(toastService.show).toHaveBeenCalledWith('could not write', 'error');
+    expect(component.isBusy).toBe(false);
+    expect(component.walking).toBe(false);
+  });
+
+  it('a roll shows the dice and, landing on a Deals space, waits for the player: the card does not open by itself', async () => {
+    const { component, rollTurn, cashflowGameService } = soloComponent();
+    setSoloState();
+    rollTurn.mockImplementation((_dice: number, callbacks: any) => {
+      setSoloState({
+        boardPosition: 2,
+        turn: { phase: 'decide', count: 1, pending: { kind: 'deal', spaceIndex: 2 } },
+      });
+      (cashflowGameService as any).soloTurn = AppStateService.instance.cashflowGame.turn;
+      callbacks.onSuccess();
+      return {
+        roll: { dice: [3], total: 3 },
+        move: {
+          entered: [{ index: 0 }, { index: 1 }, { index: 2, kind: 'deal' }],
+          paydays: 0,
+          landed: { kind: 'deal', index: 2 },
+        },
+      };
+    });
+
+    component.rollSolo();
+    await settle();
+
+    expect(rollTurn.mock.calls[0][0]).toBe(1);
+    expect(component.lastDice).toEqual([3]);
+    expect(component.walking).toBe(false);
+    expect(component.tokenPosition).toBe(2);
+    // the landing dialog is up (the turn is waiting on the card); nothing opened the card flow
+    expect(component.soloTurn.pending).toEqual({ kind: 'deal', spaceIndex: 2 });
+    expect(component.dashboardView).toBe('main');
+    // and the player opens it on request
+    const deals = jest.spyOn(component, 'landOnDeals').mockImplementation(() => undefined);
+    component.openSoloDecision();
+    expect(deals).toHaveBeenCalled();
+  });
+
+  it('the dice rest on the number rolled - still, also after a reload and when the dice come into view again', async () => {
+    const { component, rollTurn } = soloComponent();
+    setSoloState({ turn: { phase: 'roll', count: 1, lastRoll: [4, 2] } });
+    // after a reload nothing was rolled in this session, yet the last roll is on show
+    expect(component.diceTumbling).toBe(false);
+    expect(component.shownDice).toEqual([4, 2]);
+
+    setSoloState({ turn: { phase: 'roll', count: 1 } });
+    rollTurn.mockImplementation((_d: number, callbacks: any) => {
+      callbacks.onSuccess();
+      return {
+        roll: { dice: [5], total: 5 },
+        move: { entered: [{ index: 4 }], paydays: 0, landed: { kind: 'deal', index: 4 } },
+        effects: [],
+        openingPayday: false,
+      };
+    });
+    component.rollSolo();
+    await settle();
+    expect(component.diceTumbling).toBe(false);
+    expect(component.shownDice).toEqual([5]);
+    expect(component.trackByIndex(1)).toBe(1);
+  });
+
+  it('info banners go with the next thing the player does: any click clears them, the click’s own notice stays', () => {
+    const { component } = soloComponent();
+    component.paydayBanner = { count: 1, incomeMinor: 1, expensesMinor: 0, netMinor: 1 };
+    component.marketNotice = 'This card does not apply to you';
+
+    document.dispatchEvent(new Event('click'));
+    expect(component.paydayBanner).toBeNull();
+    expect(component.marketNotice).toBeNull();
+
+    // a notice raised by the click's own handler comes after the sweep and so survives it: capture phase runs first
+    const button = document.createElement('button');
+    document.body.appendChild(button);
+    button.addEventListener('click', () => (component.marketNotice = 'raised by this click'));
+    button.click();
+    expect(component.marketNotice).toBe('raised by this click');
+    button.remove();
+  });
+
+  it('stops listening for clicks when it is destroyed', () => {
+    const { component } = soloComponent();
+    component.ngOnDestroy();
+    component.paydayBanner = { count: 1, incomeMinor: 1, expensesMinor: 0, netMinor: 1 };
+    document.dispatchEvent(new Event('click'));
+    expect(component.paydayBanner).not.toBeNull();
+  });
+
+  it('shows the Payday popup amounts with exactly one sign each: +2.500,00 € / −2.200,00 € / +300,00 €', () => {
+    const { component } = soloComponent();
+    (component as any).appState.isEuropeanFormat = true;
+    (component as any).appState.currency = '€';
+    // (amounts are in the account's own display units: 100 minor = 1)
+    const shown = (minor: number) => component.signedCardAmount(minor).replace(/\s/g, ' ');
+    expect(shown(250000)).toBe('+2.500 €');
+    expect(shown(-220000)).toBe('−2.200 €');
+    expect(shown(30000)).toBe('+300 €');
+    expect(shown(-30000)).toBe('−300 €');
+    expect(shown(0)).toBe('0 €');
+    expect(shown(250000)).not.toMatch(/\+\+|−\+|\+−/);
+  });
+
+  it('the dice land with one pop and are still afterwards: the landing flag is not left on', async () => {
+    const { component, rollTurn } = soloComponent();
+    setSoloState();
+    (window as any).matchMedia = jest.fn(() => ({ matches: false })); // animations on: the real tumble
+    rollTurn.mockImplementation((_d: number, callbacks: any) => {
+      callbacks.onSuccess();
+      return {
+        roll: { dice: [3], total: 3 },
+        move: { entered: [{ index: 2 }], paydays: 0, landed: { kind: 'deal', index: 2 } },
+        effects: [],
+        openingPayday: false,
+        autoLoansMinor: [],
+      };
+    });
+    component.rollSolo();
+    component.skipWalk(); // jump ahead: the tumble is cut short, the dice show their number at once
+    await new Promise((resolve) => setTimeout(resolve, 150));
+    expect(component.diceTumbling).toBe(false);
+    expect(component.shownDice).toEqual([3]);
+    expect(component.diceLanded).toBe(false);
+  });
+
+  it('a roll that had to borrow first tells the player about the loan', async () => {
+    const { component, rollTurn, toastService, cashflowGameService } = soloComponent();
+    (cashflowGameService as any).autoLoanMessage = jest.fn((amount: number) => `loan ${amount}`);
+    setSoloState();
+    rollTurn.mockImplementation((_d: number, callbacks: any) => {
+      callbacks.onSuccess();
+      return {
+        roll: { dice: [1], total: 1 },
+        move: { entered: [{ index: 11 }], paydays: 0, landed: { kind: 'downsized', index: 11 } },
+        effects: [],
+        openingPayday: false,
+        autoLoansMinor: [200000],
+      };
+    });
+    component.rollSolo();
+    await settle();
+    expect((cashflowGameService as any).autoLoanMessage).toHaveBeenCalledWith(2000);
+    expect(toastService.show).toHaveBeenCalledWith('loan 2000', 'update');
+  });
+
+  it('a Payday shows a big banner with what it paid, until the next roll or until it is closed', async () => {
+    const { component, rollTurn } = soloComponent();
+    setSoloState();
+    const payday = {
+      appendedTransactions: [
+        { amountMinor: 300000 },
+        { amountMinor: -120000 },
+        { amountMinor: -30000 },
+      ],
+    };
+    rollTurn.mockImplementation((_d: number, callbacks: any) => {
+      callbacks.onSuccess();
+      return {
+        roll: { dice: [6], total: 6 },
+        move: {
+          entered: [{ index: 5, kind: 'payday' }],
+          paydays: 1,
+          landed: { kind: 'payday', index: 5 },
+        },
+        effects: [payday, payday, { appendedTransactions: [{ amountMinor: -9999 }] }],
+        openingPayday: true,
+      };
+    });
+    component.rollSolo();
+    await settle();
+
+    // the opening Payday and the one landed on: both are in the banner, the landing's own booking is not
+    expect(component.paydayBanner).toEqual({
+      count: 2,
+      incomeMinor: 600000,
+      expensesMinor: 300000,
+      netMinor: 300000,
+    });
+
+    component.dismissInfoBanners();
+    expect(component.paydayBanner).toBeNull();
+
+    // a roll that crosses no Payday leaves no banner, and the next roll clears the old one
+    component.paydayBanner = { count: 1, incomeMinor: 1, expensesMinor: 0, netMinor: 1 };
+    rollTurn.mockImplementation((_d: number, callbacks: any) => {
+      callbacks.onSuccess();
+      return {
+        roll: { dice: [1], total: 1 },
+        move: { entered: [{ index: 6 }], paydays: 0, landed: { kind: 'deal', index: 6 } },
+        effects: [],
+        openingPayday: false,
+      };
+    });
+    component.rollSolo();
+    await settle();
+    expect(component.paydayBanner).toBeNull();
+  });
+
+  it('under Charity two dice are the default and the player may change to one; landing on Charity selects two again', async () => {
+    const first = soloComponent();
+    setSoloState({ charityRoundsLeft: 3 });
+    expect(first.component.diceChoice).toBe(2); // nothing touched: two dice
+    first.rollTurn.mockReturnValue(null);
+    first.component.rollSolo();
+    expect(first.rollTurn.mock.calls[0][0]).toBe(2);
+
+    const changed = soloComponent();
+    setSoloState({ charityRoundsLeft: 2 });
+    changed.component.diceChoice = 1; // the player's own choice is respected
+    changed.rollTurn.mockReturnValue(null);
+    changed.component.rollSolo();
+    expect(changed.rollTurn.mock.calls[0][0]).toBe(1);
+
+    // a roll that lands on Charity selects two dice again for its three turns
+    const landing = soloComponent();
+    setSoloState();
+    landing.component.diceChoice = 1;
+    landing.rollTurn.mockImplementation((_d: number, callbacks: any) => {
+      callbacks.onSuccess();
+      return {
+        roll: { dice: [3], total: 3 },
+        move: { entered: [{ index: 3 }], paydays: 0, landed: { kind: 'charity', index: 3 } },
+        effects: [],
+        openingPayday: false,
+        autoLoansMinor: [],
+      };
+    });
+    landing.component.rollSolo();
+    await settle();
+    expect(landing.component.diceChoice).toBe(2);
+  });
+
+  it('two dice are rolled only when Charity runs and they were chosen', () => {
+    const first = soloComponent();
+    setSoloState({ charityRoundsLeft: 3 });
+    first.component.diceChoice = 2;
+    first.rollTurn.mockReturnValue(null);
+    first.component.rollSolo();
+    expect(first.rollTurn.mock.calls[0][0]).toBe(2);
+
+    const plain = soloComponent();
+    setSoloState({ charityRoundsLeft: 0 });
+    plain.component.diceChoice = 2; // a stale choice must not count without Charity
+    plain.rollTurn.mockReturnValue(null);
+    plain.component.rollSolo();
+    expect(plain.rollTurn.mock.calls[0][0]).toBe(1);
+  });
+
+  it('a space resolved on the spot is told in a message; a finished game shows its end', async () => {
+    const { component, rollTurn, toastService } = soloComponent();
+    setSoloState();
+    rollTurn.mockImplementation(() => {
+      setSoloState({ boardPosition: 19, turn: { phase: 'roll', count: 1 } });
+      return {
+        roll: { dice: [4], total: 4 },
+        move: { entered: [{ index: 19 }], paydays: 0, landed: { kind: 'baby', index: 19 } },
+      };
+    });
+    component.rollSolo();
+    await settle();
+    expect(toastService.show).toHaveBeenCalledWith('CashflowGame.solo.landedBaby', 'update');
+
+    setSoloState({ turn: { phase: 'over', count: 5, outcome: 'escaped' } });
+    (component as any).cashflowGameService.soloTurn = AppStateService.instance.cashflowGame.turn;
+    expect(component.gameOver).toBe(true);
+  });
+
+  it('settling the open card goes through the service and returns to the dashboard', () => {
+    const { component, settleSoloDecision } = soloComponent();
+    setSoloState({
+      turn: { phase: 'decide', count: 1, pending: { kind: 'market', spaceIndex: 7 } },
+    });
+    component.dashboardView = 'cards';
+    settleSoloDecision.mockImplementation((_how: string, callbacks: any) => callbacks.onSuccess());
+    component.finishSoloDecision('passed');
+    expect(settleSoloDecision.mock.calls[0][0]).toBe('passed');
+    expect(component.dashboardView).toBe('main');
+  });
+
+  it('an open decision reopens the card flow for its space', () => {
+    const { component, cashflowGameService } = soloComponent();
+    const pending = (kind: string) => {
+      (cashflowGameService as any).soloTurn = {
+        phase: 'decide',
+        count: 1,
+        pending: { kind, spaceIndex: 0 },
+      };
+    };
+    const doodad = jest.spyOn(component, 'landOnDoodad').mockImplementation(() => undefined);
+    const market = jest.spyOn(component, 'landOnMarket').mockImplementation(() => undefined);
+    const deals = jest.spyOn(component, 'landOnDeals').mockImplementation(() => undefined);
+    pending('doodad');
+    component.openSoloDecision();
+    pending('market');
+    component.openSoloDecision();
+    pending('deal');
+    component.openSoloDecision();
+    expect([doodad, market, deals].map((spy) => spy.mock.calls.length)).toEqual([1, 1, 1]);
+  });
+});
+
+describe('CashflowGameComponent start screen: the games played so far (JFK, 2026-10-06)', () => {
+  beforeEach(() => {
+    (AppStateService as any)._instance = undefined;
+    ProfileComponent.mail = '';
+  });
+
+  it('keeps the list of old games closed until the button under Start is pressed', () => {
+    const { component, savedGames } = makeComponent();
+    expect(component.showStartGames).toBe(false);
+
+    component.openStartGames();
+    expect(component.showStartGames).toBe(true);
+    expect(savedGames.refresh).toHaveBeenCalled();
+
+    component.closeStartGames();
+    expect(component.showStartGames).toBe(false);
+  });
+
+  it('closing the panel, or continuing a game from the list, closes the list too', async () => {
+    const { component, savedGames } = makeComponent();
+    savedGames.games = [
+      {
+        id: 'g1',
+        name: 'Run',
+        createdAt: '',
+        updatedAt: '',
+        gameSetId: 'cashflow',
+        professionId: 'x',
+      } as any,
+    ];
+
+    component.openStartGames();
+    component.closeWindow();
+    expect(component.showStartGames).toBe(false);
+
+    component.openStartGames();
+    component.continueGame(savedGames.games[0]);
+    await new Promise((resolve) => setTimeout(resolve, 15));
+    expect(savedGames.loadGame).toHaveBeenCalledWith('g1');
+    expect(component.showStartGames).toBe(false);
+  });
+});
+
+describe('CashflowGameComponent reset game button (JFK, 2026-10-06)', () => {
+  beforeEach(() => {
+    (AppStateService as any)._instance = undefined;
+    ProfileComponent.mail = '';
+  });
+
+  it('asks first, then wipes the game without saving it and leaves the start panel behind', () => {
+    const { component, cashflowGameService, confirm, savedGames, toastService } = makeComponent({
+      resetGame: jest.fn((callbacks: any) => callbacks.onSuccess()),
+    });
+    component.dashboardView = 'cards';
+    component.showStartGames = true;
+    component.lastDice = [3];
+    component.paydayBanner = { count: 1, incomeMinor: 1, expensesMinor: 0, netMinor: 1 };
+
+    component.resetCurrentGame();
+
+    expect(confirm.confirm).toHaveBeenCalledWith(
+      'CashflowGame.resetConfirm',
+      expect.any(Function),
+      'CashflowGame.resetConfirmButton',
+      'delete',
+    );
+    expect(cashflowGameService.resetGame).toHaveBeenCalledTimes(1);
+    expect(savedGames.saveCurrent).not.toHaveBeenCalled(); // wiped, not saved
+    expect(toastService.show).toHaveBeenCalledWith('CashflowGame.resetDone', 'delete');
+    expect(component.dashboardView).toBe('main');
+    expect(component.showStartGames).toBe(false);
+    expect(component.lastDice).toEqual([]);
+    expect(component.paydayBanner).toBeNull();
+    expect(component.isBusy).toBe(false);
+  });
+
+  it('does nothing when the player says no', () => {
+    const { component, cashflowGameService, confirm } = makeComponent();
+    confirm.confirm.mockImplementation(() => undefined); // the dialog is dismissed
+    component.resetCurrentGame();
+    expect(cashflowGameService.resetGame).not.toHaveBeenCalled();
+  });
+
+  it('shows the reason when the reset fails and keeps the game', () => {
+    const { component, toastService } = makeComponent({
+      resetGame: jest.fn((callbacks: any) => callbacks.onError('only for a game account')),
+    });
+    component.dashboardView = 'history';
+    component.resetCurrentGame();
+    expect(toastService.show).toHaveBeenCalledWith('only for a game account', 'error');
+    expect(component.dashboardView).toBe('history');
+    expect(component.isBusy).toBe(false);
+  });
+});
+
+describe('CashflowGameComponent Payday + MLM info boxes (JFK, 2026-10-06)', () => {
+  const mlm = {
+    title: 'MLM',
+    coins: 0,
+    costMinor: 0,
+    recurring: true,
+    rollDue: true,
+    payoutMinor: 50000,
+  } as any;
+
+  beforeEach(() => {
+    (AppStateService as any)._instance = undefined;
+    ProfileComponent.mail = '';
+  });
+
+  const decisionCard = () => {
+    const card = document.createElement('div');
+    card.className = 'cf-decision';
+    const button = document.createElement('button');
+    card.appendChild(button);
+    document.body.appendChild(card);
+    return { card, button };
+  };
+
+  it('pressing the MLM roll keeps the Payday box, and the outcome joins it; the next action clears both', () => {
+    const { component } = makeComponent({
+      openDecisions: [mlm] as any,
+      resolveGamble: jest.fn((_title: string, _r: unknown, callbacks: any) =>
+        callbacks.onSuccess(),
+      ),
+    } as any);
+    component.paydayBanner = {
+      count: 1,
+      incomeMinor: 250000,
+      expensesMinor: 220000,
+      netMinor: 30000,
+    };
+    const { card, button } = decisionCard();
+
+    button.click(); // the MLM roll button: inside the decision card
+    expect(component.paydayBanner).not.toBeNull(); // same game turn: the Payday box stays
+
+    component.reportRoll(mlm, true); // ...and the outcome appears next to it
+    expect(component.mlmBanner).toEqual({ won: true, text: expect.any(String) });
+    expect(component.rollResult).toBeNull(); // not the big result card
+    expect(component.paydayBanner).not.toBeNull();
+
+    document.body.click(); // anything else: both go
+    expect(component.paydayBanner).toBeNull();
+    expect(component.mlmBanner).toBeNull();
+    card.remove();
+  });
+
+  it('a lost MLM roll is told too, as a neutral box', () => {
+    const { component } = makeComponent({
+      openDecisions: [mlm] as any,
+      resolveGamble: jest.fn((_t: string, _r: unknown, callbacks: any) => callbacks.onSuccess()),
+    } as any);
+    component.reportRoll(mlm, false);
+    expect(component.mlmBanner?.won).toBe(false);
+    expect(component.mlmBanner?.text).toContain('CashflowGame.diceLostToast');
+  });
+
+  it('without a kept MLM card waiting, a click in the decision area clears the Payday box as any action does', () => {
+    const { component } = makeComponent({ openDecisions: [] as any });
+    component.paydayBanner = { count: 1, incomeMinor: 1, expensesMinor: 0, netMinor: 1 };
+    const { card, button } = decisionCard();
+    button.click();
+    expect(component.paydayBanner).toBeNull();
+    card.remove();
+  });
+
+  it('a gold-coin dice card keeps its own result display (only MLM uses the info box)', () => {
+    const { component } = makeComponent({
+      openDecisions: [] as any,
+      resolveGamble: jest.fn((_t: string, _r: unknown, callbacks: any) => callbacks.onSuccess()),
+    } as any);
+    component.rollDice({
+      title: 'GOLD',
+      coins: 5,
+      costMinor: 1,
+      successOn: 4,
+      stage: 'awaitingRoll',
+    } as any);
+    expect(component.rollResult).not.toBeNull();
+    expect(component.mlmBanner).toBeNull();
+  });
+});
+
+describe('CashflowGameComponent open decisions wait for the totem (JFK, 2026-10-06)', () => {
+  beforeEach(() => {
+    (AppStateService as any)._instance = undefined;
+    ProfileComponent.mail = '';
+  });
+
+  it('shows the MLM roll (and any open dice decision) only once the walk is done', () => {
+    const mlm = { title: 'MLM', coins: 0, costMinor: 0, recurring: true, rollDue: true } as any;
+    const { component } = makeComponent({ openDecisions: [mlm] as any } as any);
+
+    component.walking = true; // the totem is still moving over the Payday tile
+    expect(component.visibleDecisions).toEqual([]);
+    expect(component.openDecisions).toEqual([mlm]); // it is due, just not on screen yet
+
+    component.walking = false; // the totem has come to rest
+    expect(component.visibleDecisions).toEqual([mlm]);
+  });
+});
+
+describe('CashflowGameComponent loan steps input (JFK, 2026-10-06)', () => {
+  beforeEach(() => {
+    (AppStateService as any)._instance = undefined;
+    ProfileComponent.mail = '';
+  });
+
+  it('opening the borrow or the payback screen starts at 1 step, whatever was left from before', () => {
+    const { component } = makeComponent();
+    component.loanIncrements = 4;
+    component.openPayLoan();
+    expect(component.loanIncrements).toBe(1);
+    expect(component.dashboardView).toBe('payLoan');
+
+    component.loanIncrements = 3;
+    component.openBankLoan();
+    expect(component.loanIncrements).toBe(1);
+    expect(component.dashboardView).toBe('bankLoan');
+  });
+
+  it('after a settle that went through, the next one starts at 1 again', () => {
+    const { component } = makeComponent({
+      adjustBankLoan: jest.fn((_delta: number, callbacks: any) => callbacks.onSuccess()),
+    });
+    component.loanIncrements = 2; // "settle all" had filled in 2
+    (component as any).adjustLoan(-2000);
+    expect(component.loanIncrements).toBe(1);
+    expect(component.dashboardView).toBe('main');
+  });
+
+  it('a settle that failed keeps what the player typed, so they can correct it', () => {
+    const { component } = makeComponent({
+      adjustBankLoan: jest.fn((_delta: number, callbacks: any) =>
+        callbacks.onError('not possible'),
+      ),
+    });
+    component.loanIncrements = 2;
+    (component as any).adjustLoan(-2000);
+    expect(component.loanIncrements).toBe(2);
+  });
+});
+
+describe('CashflowGameComponent quick filters as dropdowns (JFK, 2026-10-06)', () => {
+  beforeEach(() => {
+    (AppStateService as any)._instance = undefined;
+    ProfileComponent.mail = '';
+  });
+
+  it('picking a value filters, picking "all" clears, picking the same value again changes nothing', () => {
+    const { component } = makeComponent();
+
+    component.pickCardKind('share');
+    expect(component.cardKindFilter).toBe('share');
+    component.pickCardKind('share'); // the same value again: still the share filter, not toggled off
+    expect(component.cardKindFilter).toBe('share');
+    component.pickCardKind('investment');
+    expect(component.cardKindFilter).toBe('investment');
+    component.pickCardKind(''); // "all kinds"
+    expect(component.cardKindFilter).toBeNull();
+    component.pickCardKind(''); // nothing to clear
+    expect(component.cardKindFilter).toBeNull();
+  });
+
+  it('every group has its dropdown: the market offer, the Doodad account and group', () => {
+    const { component } = makeComponent();
+
+    component.pickMarketOffer('percent');
+    expect(component.marketOfferFilter).toBe('percent');
+    component.pickMarketOffer('');
+    expect(component.marketOfferFilter).toBeNull();
+
+    component.pickDoodadGroup('Food');
+    expect(component.doodadGroupFilter).toBe('Food');
+    component.pickDoodadGroup('');
+    expect(component.doodadGroupFilter).toBeNull();
+
+    component.pickMarketFamily('EFH');
+    expect(component.marketFamilyFilter).toBe('EFH');
+    component.pickMarketFamily('');
+    expect(component.marketFamilyFilter).toBeNull();
+
+    component.pickCardFamily('EFH');
+    expect(component.cardFamilyFilter).toBe('EFH');
+    component.pickCardFamily('');
+    expect(component.cardFamilyFilter).toBeNull();
   });
 });

@@ -33,24 +33,26 @@
 
 One tool per operation group, not one per HTTP endpoint (a `manage_transactions` tool with an `action` argument, rather than five near-identical `transactions_*` tools). Every write/delete/bulk-scoped action requires a PAT with the matching scope — see each tool's own description (returned in `tools/list`) for exactly which. Call `get_identity` first to see what your token is actually allowed to do.
 
-| Tool                    | Covers                                                                                       |
-| ----------------------- | -------------------------------------------------------------------------------------------- |
-| `manage_transactions`   | list/get/create/update/delete/copy/batch/export/import                                       |
-| `get_reports`           | income statement, cashflow, balance sheet, KPIs, Fire coverage, Grow P&L (all read-only)     |
-| `manage_mojo`           | get/update_target                                                                            |
-| `manage_smile`          | list/get/create/update/delete/create_payment_plan                                            |
-| `manage_fire`           | list/get/create/update/delete/create_payment_plan                                            |
-| `manage_balance_sheet`  | list/get/create/update/delete, for `entityType`: asset, liability, investment, or share      |
-| `list_income_sources`   | list, for `sourceType`: revenue, interest, or property (read-only)                           |
-| `get_identity`          | the caller's userId, auth type, and exact scope list                                         |
-| `manage_grow`           | list/get/create/update/delete plus typed actions: buy/sell/dividend/payback/cashflow/deposit |
-| `manage_subscriptions`  | list/get/create/update/delete/batch/export/import/refresh                                    |
-| `manage_budget`         | list/upsert/get_row/update_row/delete_row/delete_month/fill_forward/copy/from_subscriptions  |
-| `manage_settings`       | get/update                                                                                   |
-| `get_encryption_config` | read-only — never returns the raw key                                                        |
-| `manage_data`           | export/import/recalculate — the highest-blast-radius resource                                |
-| `get_account`           | read-only — email change/delete/verify-password need a browser session, not a PAT            |
-| `explain_concept`       | explains a Money Manager domain concept from `docs/domain/`, no API call                     |
+| Tool                    | Covers                                                                                                 |
+| ----------------------- | ------------------------------------------------------------------------------------------------------ |
+| `manage_transactions`   | list/get/create/update/delete/copy/batch/export/import                                                 |
+| `get_reports`           | income statement, cashflow, balance sheet, KPIs, Fire coverage, Grow P&L (all read-only)               |
+| `manage_mojo`           | get/update_target                                                                                      |
+| `manage_smile`          | list/get/create/update/delete/create_payment_plan                                                      |
+| `manage_fire`           | list/get/create/update/delete/create_payment_plan                                                      |
+| `manage_balance_sheet`  | list/get/create/update/delete, for `entityType`: asset, liability, investment, or share                |
+| `list_income_sources`   | list, for `sourceType`: revenue, interest, or property (read-only)                                     |
+| `get_identity`          | the caller's userId, auth type, and exact scope list                                                   |
+| `manage_grow`           | list/get/create/update/delete plus typed actions: buy/sell/dividend/payback/cashflow/deposit           |
+| `get_cashflow_game`     | game accounts: the running game and its `legalActions`, sets/board, cards, history, saved games        |
+| `play_cashflow_game`    | game accounts: start/roll/draw/buy/pay/play/pass, undo, reset, saved games (`confirm` for destructive) |
+| `manage_subscriptions`  | list/get/create/update/delete/batch/export/import/refresh                                              |
+| `manage_budget`         | list/upsert/get_row/update_row/delete_row/delete_month/fill_forward/copy/from_subscriptions            |
+| `manage_settings`       | get/update                                                                                             |
+| `get_encryption_config` | read-only — never returns the raw key                                                                  |
+| `manage_data`           | export/import/recalculate — the highest-blast-radius resource                                          |
+| `get_account`           | read-only — email change/delete/verify-password need a browser session, not a PAT                      |
+| `explain_concept`       | explains a Money Manager domain concept from `docs/domain/`, no API call                               |
 
 Tool input schemas are generated at build time from `docs/api/openapi.yaml` (`apps/mcp/scripts/generate-operations.ts` → `apps/mcp/src/generated/operations.ts`, rebuilt on every `npm run build`/`npm test`, never hand-edited or committed) — the same spec-first source of truth `docs/adr/0007-documentation-architecture.md` established for the HTTP API, so the two surfaces can't silently drift apart. Tool _descriptions_ (when to use a tool, what it returns, its scope/confirm requirements) are hand-written, not generated, per the ADR — a schema alone can't produce a good LLM-facing explanation of intent.
 

@@ -774,6 +774,1768 @@ paths:
           $ref: '#/components/responses/InsufficientScope'
         '404':
           $ref: '#/components/responses/NotFound'
+  /game:
+    get:
+      operationId: getGame
+      summary: Where the live Cashflow game stands, and what may be done next
+      description: >-
+        Game accounts only (an email containing `cashflow`) - any other account gets 403 `not_a_game_account`, whatever
+        its token scopes. Requires `game:r`. Returns the running game's state (profession, mode, round, calendar, token
+        position, turn phase, pending card decision), the figures derived from the account's books (cash on hand,
+        salary, passive income, expenses, monthly cashflow, escaped / bankrupt), and `legalActions` - the moves the rules
+        allow right now, the same rules the app uses, so an agent is never offered a move the game would refuse. With no
+        game running it returns `active: false` and `start` as the only legal action.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The live game
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameView'
+              example:
+                active: true
+                currency: EUR
+                gameSetId: cashflow
+                professionId: nurse
+                professionTitle: Nurse
+                mode: solo
+                gameId: null
+                gameName: null
+                round: 3
+                virtualDate: '2026-04-01'
+                children: 1
+                position: { index: 4, spaceKind: deal }
+                turn:
+                  phase: decide
+                  count: 7
+                  lastRoll: [4]
+                  pending: { kind: deal, spaceIndex: 4 }
+                outcome: playing
+                status: { charityRoundsLeft: 0, unemployedRoundsLeft: 0 }
+                pendingDecision: { kind: deal, spaceIndex: 4 }
+                cashMinor: 345000
+                finances:
+                  salaryMinor: 300000
+                  passiveIncomeMinor: 0
+                  expensesMinor: 180000
+                  monthlyCashflowMinor: 120000
+                  escapedRatRace: false
+                  bankrupt: false
+                assetDeals: []
+                marketOffers: []
+                legalActions:
+                  - action: pass_card
+                    description: Leave the deal on this space without playing it; the next roll is open afterwards.
+                  - action: bank_loan
+                    description: Borrow one more loan step from the bank, or repay some of it.
+                  - action: reset
+                    description: Wipe the running game (destructive).
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+  /game/sets:
+    get:
+      operationId: listGameSets
+      summary: The game sets (editions) and their professions
+      description: >-
+        Game accounts only; requires `game:r`. Lists every game set with its professions (id, title, salary), so an
+        agent can pick what to start a game with.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The sets
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [sets]
+                properties:
+                  sets:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/GameSetSummary'
+              example:
+                sets:
+                  - id: cashflow
+                    title: Cashflow
+                    professions:
+                      - { id: nurse, title: Nurse, salaryMinor: 300000 }
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+  /game/sets/{setId}:
+    get:
+      operationId: getGameSet
+      summary: One game set with its loan rule and the rat-race board
+      description: >-
+        Game accounts only; requires `game:r`. The board is the ring of 24 spaces, clockwise from START: index 0 is the
+        space a roll of 1 lands on.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: setId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The set
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameSet'
+              example:
+                id: cashflow
+                title: Cashflow
+                professions:
+                  - { id: nurse, title: Nurse, salaryMinor: 300000 }
+                loanRule: { incrementMinor: 100000, monthlyInterestPercent: 10 }
+                board:
+                  - { index: 0, kind: deal, printed: Deals }
+                  - { index: 1, kind: doodad, printed: Schnickschnack }
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /game/payday:
+    post:
+      operationId: gamePayday
+      summary: Run a Payday
+      description: >-
+        Salary and every monthly expense of the game are booked, earlier game transactions age back a month, the round advances (companion game). Game accounts only; requires `game:w`. The action must be one of the `legalActions` of
+        `GET /game` (409 `game_action_not_allowed` otherwise); a refusal by the game's own rules is 422
+        `game_rule_refused`, 409 `game_not_started` means no game is running. Returns the game as `GET /game`
+        shows it afterwards. Audit logged.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The game after the action
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameView'
+              example:
+                active: true
+                currency: EUR
+                gameSetId: cashflow
+                professionId: nurse
+                mode: solo
+                round: 4
+                outcome: playing
+                cashMinor: 465000
+                finances:
+                  {
+                    salaryMinor: 300000,
+                    passiveIncomeMinor: 0,
+                    expensesMinor: 180000,
+                    monthlyCashflowMinor: 120000,
+                    escapedRatRace: false,
+                    bankrupt: false,
+                  }
+                legalActions:
+                  - { action: roll, description: 'Roll the dice and move the token.' }
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '409':
+          $ref: '#/components/responses/GameActionRefused'
+        '422':
+          $ref: '#/components/responses/GameActionRefused'
+  /game/baby:
+    post:
+      operationId: gameBaby
+      summary: A child is born
+      description: >-
+        Adds a child (at most 3) and raises the children-expenses subscription (companion game). Game accounts only; requires `game:w`. The action must be one of the `legalActions` of
+        `GET /game` (409 `game_action_not_allowed` otherwise); a refusal by the game's own rules is 422
+        `game_rule_refused`, 409 `game_not_started` means no game is running. Returns the game as `GET /game`
+        shows it afterwards. Audit logged.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The game after the action
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameView'
+              example:
+                active: true
+                currency: EUR
+                gameSetId: cashflow
+                professionId: nurse
+                mode: solo
+                round: 3
+                outcome: playing
+                cashMinor: 345000
+                finances:
+                  {
+                    salaryMinor: 300000,
+                    passiveIncomeMinor: 0,
+                    expensesMinor: 180000,
+                    monthlyCashflowMinor: 120000,
+                    escapedRatRace: false,
+                    bankrupt: false,
+                  }
+                children: 1
+                legalActions:
+                  - { action: roll, description: 'Roll the dice and move the token.' }
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '409':
+          $ref: '#/components/responses/GameActionRefused'
+        '422':
+          $ref: '#/components/responses/GameActionRefused'
+  /game/charity:
+    post:
+      operationId: gameCharity
+      summary: Donate to charity
+      description: >-
+        Pays 10% of the total income and opens the 1-or-2-dice choice for the next 3 turns (companion game). The Bank loan is taken first when cash is short. Game accounts only; requires `game:w`. The action must be one of the `legalActions` of
+        `GET /game` (409 `game_action_not_allowed` otherwise); a refusal by the game's own rules is 422
+        `game_rule_refused`, 409 `game_not_started` means no game is running. Returns the game as `GET /game`
+        shows it afterwards. Audit logged.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The game after the action
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameView'
+              example:
+                active: true
+                currency: EUR
+                gameSetId: cashflow
+                professionId: nurse
+                mode: solo
+                round: 3
+                outcome: playing
+                cashMinor: 345000
+                finances:
+                  {
+                    salaryMinor: 300000,
+                    passiveIncomeMinor: 0,
+                    expensesMinor: 180000,
+                    monthlyCashflowMinor: 120000,
+                    escapedRatRace: false,
+                    bankrupt: false,
+                  }
+                status: { charityRoundsLeft: 3, unemployedRoundsLeft: 0 }
+                legalActions:
+                  - { action: roll, description: 'Roll the dice and move the token.' }
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '409':
+          $ref: '#/components/responses/GameActionRefused'
+        '422':
+          $ref: '#/components/responses/GameActionRefused'
+  /game/downsized:
+    post:
+      operationId: gameDownsized
+      summary: Lose the job (Downsized)
+      description: >-
+        Pays every monthly expense once and shows the sitting-out reminder (companion game). The Bank loan is taken first when cash is short. Game accounts only; requires `game:w`. The action must be one of the `legalActions` of
+        `GET /game` (409 `game_action_not_allowed` otherwise); a refusal by the game's own rules is 422
+        `game_rule_refused`, 409 `game_not_started` means no game is running. Returns the game as `GET /game`
+        shows it afterwards. Audit logged.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The game after the action
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameView'
+              example:
+                active: true
+                currency: EUR
+                gameSetId: cashflow
+                professionId: nurse
+                mode: solo
+                round: 3
+                outcome: playing
+                cashMinor: 345000
+                finances:
+                  {
+                    salaryMinor: 300000,
+                    passiveIncomeMinor: 0,
+                    expensesMinor: 180000,
+                    monthlyCashflowMinor: 120000,
+                    escapedRatRace: false,
+                    bankrupt: false,
+                  }
+                status: { charityRoundsLeft: 0, unemployedRoundsLeft: 2 }
+                legalActions:
+                  - { action: roll, description: 'Roll the dice and move the token.' }
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '409':
+          $ref: '#/components/responses/GameActionRefused'
+        '422':
+          $ref: '#/components/responses/GameActionRefused'
+  /game/status/clear:
+    post:
+      operationId: gameClearStatus
+      summary: Dismiss a status reminder
+      description: >-
+        Clears the Charity or Downsized reminder once the turns have played out. Not a financial action; no history entry (companion game). Game accounts only; requires `game:w`. The action must be one of the `legalActions` of
+        `GET /game` (409 `game_action_not_allowed` otherwise); a refusal by the game's own rules is 422
+        `game_rule_refused`, 409 `game_not_started` means no game is running. Returns the game as `GET /game`
+        shows it afterwards. Audit logged.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [charity, unemployed]
+            example: { status: unemployed }
+      responses:
+        '200':
+          description: The game after the action
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameView'
+              example:
+                active: true
+                currency: EUR
+                gameSetId: cashflow
+                professionId: nurse
+                mode: solo
+                round: 3
+                outcome: playing
+                cashMinor: 345000
+                finances:
+                  {
+                    salaryMinor: 300000,
+                    passiveIncomeMinor: 0,
+                    expensesMinor: 180000,
+                    monthlyCashflowMinor: 120000,
+                    escapedRatRace: false,
+                    bankrupt: false,
+                  }
+                status: { charityRoundsLeft: 0, unemployedRoundsLeft: 0 }
+                legalActions:
+                  - { action: roll, description: 'Roll the dice and move the token.' }
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '409':
+          $ref: '#/components/responses/GameActionRefused'
+        '422':
+          $ref: '#/components/responses/GameActionRefused'
+  /game/bank-loan:
+    post:
+      operationId: gameBankLoan
+      summary: Take or repay a bank loan
+      description: >-
+        Moves the loan by `amountMinor`, which must be a multiple of the game set's loan step. The Bank loan liability and its interest subscription are recomputed from the new principal; the cash moves for real. Game accounts only; requires `game:w`. The action must be one of the `legalActions` of
+        `GET /game` (409 `game_action_not_allowed` otherwise); a refusal by the game's own rules is 422
+        `game_rule_refused`, 409 `game_not_started` means no game is running. Returns the game as `GET /game`
+        shows it afterwards. Audit logged.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amountMinor]
+              properties:
+                amountMinor:
+                  type: integer
+                  description: Positive borrows, negative repays.
+            example: { amountMinor: 100000 }
+      responses:
+        '200':
+          description: The game after the action
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameView'
+              example:
+                active: true
+                currency: EUR
+                gameSetId: cashflow
+                professionId: nurse
+                mode: solo
+                round: 3
+                outcome: playing
+                cashMinor: 545000
+                finances:
+                  {
+                    salaryMinor: 300000,
+                    passiveIncomeMinor: 0,
+                    expensesMinor: 180000,
+                    monthlyCashflowMinor: 120000,
+                    escapedRatRace: false,
+                    bankrupt: false,
+                  }
+                legalActions:
+                  - { action: roll, description: 'Roll the dice and move the token.' }
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '409':
+          $ref: '#/components/responses/GameActionRefused'
+        '422':
+          $ref: '#/components/responses/GameActionRefused'
+  /game/start:
+    post:
+      operationId: gameStart
+      summary: Start a game
+      description: >-
+        Picks a profession and starts the game: the starting savings are booked, the profession's subscriptions and starting positions (assets, investments, shares, liabilities) are created in the account's language, and a new history begins (companion game: the next step is `payday`; solo game: `roll`). Only when no game is running. Game accounts only; requires `game:w`. The action must be one of the `legalActions` of `GET /game` (409
+        `game_action_not_allowed` otherwise); a refusal by the game's own rules is 422 `game_rule_refused`. Returns the
+        game as `GET /game` shows it afterwards. Audit logged.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [gameSetId, professionId]
+              properties:
+                gameSetId: { type: string }
+                professionId: { type: string }
+                mode: { type: string, enum: [companion, solo], default: companion }
+            example: { gameSetId: cashflow, professionId: nurse, mode: solo }
+      responses:
+        '200':
+          description: The game after the action
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameView'
+              example:
+                active: true
+                currency: EUR
+                gameSetId: cashflow
+                professionId: nurse
+                mode: solo
+                round: 1
+                outcome: playing
+                cashMinor: 200000
+                finances:
+                  {
+                    salaryMinor: 300000,
+                    passiveIncomeMinor: 0,
+                    expensesMinor: 180000,
+                    monthlyCashflowMinor: 120000,
+                    escapedRatRace: false,
+                    bankrupt: false,
+                  }
+                legalActions:
+                  - { action: roll, description: 'Roll the dice and move the token.' }
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '409':
+          $ref: '#/components/responses/GameActionRefused'
+        '422':
+          $ref: '#/components/responses/GameActionRefused'
+  /game/undo:
+    post:
+      operationId: gameUndo
+      summary: Undo steps
+      description: >-
+        Takes back the newest step, or the newest `count` steps in one go: the account is exactly as it was before the oldest of them ran. Works across what the app played too, because both share one history. 422 when there is nothing to undo. Game accounts only; requires `game:w`. The action must be one of the `legalActions` of `GET /game` (409
+        `game_action_not_allowed` otherwise); a refusal by the game's own rules is 422 `game_rule_refused`. Returns the
+        game as `GET /game` shows it afterwards. Audit logged.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                count: { type: integer, minimum: 1, default: 1 }
+            example: { count: 1 }
+      responses:
+        '200':
+          description: The game after the action
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameView'
+              example:
+                active: true
+                currency: EUR
+                gameSetId: cashflow
+                professionId: nurse
+                mode: solo
+                round: 3
+                outcome: playing
+                cashMinor: 345000
+                finances:
+                  {
+                    salaryMinor: 300000,
+                    passiveIncomeMinor: 0,
+                    expensesMinor: 180000,
+                    monthlyCashflowMinor: 120000,
+                    escapedRatRace: false,
+                    bankrupt: false,
+                  }
+                legalActions:
+                  - { action: roll, description: 'Roll the dice and move the token.' }
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '409':
+          $ref: '#/components/responses/GameActionRefused'
+        '422':
+          $ref: '#/components/responses/GameActionRefused'
+  /game/reset:
+    post:
+      operationId: gameReset
+      summary: Reset the game (destructive)
+      description: >-
+        Wipes every transaction, subscription, Grow project, share, investment, asset, liability, Smile / Fire project and the Mojo, the game state and its history, back to a blank account. Not undoable. Requires `confirm: true`. Never call this without the user having confirmed. Game accounts only; requires `game:w`. The action must be one of the `legalActions` of `GET /game` (409
+        `game_action_not_allowed` otherwise); a refusal by the game's own rules is 422 `game_rule_refused`. Returns the
+        game as `GET /game` shows it afterwards. Audit logged.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [confirm]
+              properties:
+                confirm: { type: boolean, enum: [true] }
+            example: { confirm: true }
+      responses:
+        '200':
+          description: The game after the action
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameView'
+              example:
+                active: false
+                legalActions:
+                  - { action: start, description: 'Start a game.' }
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '409':
+          $ref: '#/components/responses/GameActionRefused'
+        '422':
+          $ref: '#/components/responses/GameActionRefused'
+  /game/history:
+    get:
+      operationId: getGameHistory
+      summary: What happened in the running game
+      description: >-
+        Game accounts only; requires `game:r`. The plain-text step log of the running game, oldest step first - one entry
+        per undoable step, the same list the app's History shows. Written with every step, by the app or the API.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The log
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [updatedAt, steps]
+                properties:
+                  updatedAt: { type: string, nullable: true }
+                  steps:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        number: { type: integer }
+                        kind: { type: string }
+                        detail: { type: string }
+                        at: { type: string }
+              example:
+                updatedAt: '2026-10-06T10:00:01.000Z'
+                steps:
+                  - { number: 1, kind: start, detail: Nurse, at: '2026-10-06T10:00:00.000Z' }
+                  - { number: 2, kind: payday, detail: Round 1, at: '2026-10-06T10:01:00.000Z' }
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+  /game/turn:
+    post:
+      operationId: gameTurn
+      summary: Roll the dice and play the turn (solo)
+      description: >-
+        Rolls, moves the token clockwise, pays every Payday it enters (the first roll of a game also pays the opening Payday), and resolves the space it lands on: Baby, Charity and Downsized automatically (the Bank loan is taken first when cash is short), a card space as a pending decision (`turn.phase: decide`). One roll is one undoable step. `result` reports the dice, where the token went, what it landed on and how many Paydays were paid. The game can end here (`outcome`). Game accounts only; requires `game:w`. The action must be one of the `legalActions` of `GET /game` (409
+        `game_action_not_allowed` otherwise); a refusal by the game's own rules is 422 `game_rule_refused`. Audit
+        logged.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                dice:
+                  {
+                    type: integer,
+                    enum: [1, 2],
+                    description: 'Two dice only count while Charity runs.',
+                  }
+            example: { dice: 1 }
+      responses:
+        '200':
+          description: The game after the action, with `result` describing what happened
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameView'
+              example:
+                active: true
+                currency: EUR
+                gameSetId: cashflow
+                professionId: nurse
+                mode: solo
+                round: 3
+                outcome: playing
+                cashMinor: 345000
+                finances:
+                  {
+                    salaryMinor: 300000,
+                    passiveIncomeMinor: 0,
+                    expensesMinor: 180000,
+                    monthlyCashflowMinor: 120000,
+                    escapedRatRace: false,
+                    bankrupt: false,
+                  }
+                turn:
+                  {
+                    phase: 'decide',
+                    count: 8,
+                    lastRoll: [4],
+                    pending: { kind: 'deal', spaceIndex: 4 },
+                  }
+                result:
+                  {
+                    dice: [4],
+                    total: 4,
+                    from: 0,
+                    to: 4,
+                    landed: 'deal',
+                    paydays: 0,
+                    openingPayday: false,
+                    autoLoansMinor: 0,
+                  }
+                legalActions:
+                  - { action: pass_card, description: 'Leave the card.' }
+                  - { action: draw_card, description: 'Draw a Deal card.' }
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '409':
+          $ref: '#/components/responses/GameActionRefused'
+        '422':
+          $ref: '#/components/responses/GameActionRefused'
+  /game/cards/pass:
+    post:
+      operationId: gamePassCard
+      summary: Leave the card on this space
+      description: >-
+        Closes the open card decision without playing it; the next roll is open afterwards. One undoable step. Game accounts only; requires `game:w`. The action must be one of the `legalActions` of `GET /game` (409
+        `game_action_not_allowed` otherwise); a refusal by the game's own rules is 422 `game_rule_refused`. Audit
+        logged.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The game after the action, with `result` describing what happened
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameView'
+              example:
+                active: true
+                currency: EUR
+                gameSetId: cashflow
+                professionId: nurse
+                mode: solo
+                round: 3
+                outcome: playing
+                cashMinor: 345000
+                finances:
+                  {
+                    salaryMinor: 300000,
+                    passiveIncomeMinor: 0,
+                    expensesMinor: 180000,
+                    monthlyCashflowMinor: 120000,
+                    escapedRatRace: false,
+                    bankrupt: false,
+                  }
+                turn: { phase: 'roll', count: 8, lastRoll: [4], pending: null }
+                legalActions:
+                  - { action: roll, description: 'Roll the dice and move the token.' }
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '409':
+          $ref: '#/components/responses/GameActionRefused'
+        '422':
+          $ref: '#/components/responses/GameActionRefused'
+  /game/cards/draw:
+    post:
+      operationId: gameDrawCard
+      summary: Draw a random card
+      description: >-
+        Draws one card at random from a pile, skipping what was drawn since the last reshuffle (the pile reshuffles when exhausted). In a solo game the pile must be the one the space asks for (a Deals space: `dealSmall` or `dealBig`). Drawing changes only the remembered draw pile and does not close the decision. `result.card` has the card's numbers and `printed`, what it says in the account's language. Game accounts only; requires `game:w`. The action must be one of the `legalActions` of `GET /game` (409
+        `game_action_not_allowed` otherwise); a refusal by the game's own rules is 422 `game_rule_refused`. Audit
+        logged.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [deck]
+              properties:
+                deck: { type: string, enum: [dealSmall, dealBig, market, doodad] }
+            example: { deck: dealSmall }
+      responses:
+        '200':
+          description: The game after the action, with `result` describing what happened
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameView'
+              example:
+                active: true
+                currency: EUR
+                gameSetId: cashflow
+                professionId: nurse
+                mode: solo
+                round: 3
+                outcome: playing
+                cashMinor: 345000
+                finances:
+                  {
+                    salaryMinor: 300000,
+                    passiveIncomeMinor: 0,
+                    expensesMinor: 180000,
+                    monthlyCashflowMinor: 120000,
+                    escapedRatRace: false,
+                    bankrupt: false,
+                  }
+                result:
+                  {
+                    deck: 'dealSmall',
+                    reshuffled: false,
+                    card: { id: 'small-12', title: 'Gold coins', kind: 'deal' },
+                  }
+                legalActions:
+                  - { action: buy_deal, description: 'Buy the drawn deal.' }
+                  - { action: pass_card, description: 'Leave the card.' }
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '409':
+          $ref: '#/components/responses/GameActionRefused'
+        '422':
+          $ref: '#/components/responses/GameActionRefused'
+  /game/deals/buy:
+    post:
+      operationId: gameBuyDeal
+      summary: Plan and buy a Deal card
+      description: >-
+        Plans the card as a Grow project (the app's plan step) and buys it (the app's buy step, taking the Bank loan first when cash is short): two undoable steps, and in a solo game the turn moves on. Shares need a `quantity`. A special-asset card (gold, the loan to a relative, Multi-Level-Marketing) is bought as an asset: a dice card is paid for and waits for its roll (`roll_decision`), the others are owned at once. Game accounts only; requires `game:w`. The action must be one of the `legalActions` of `GET /game` (409
+        `game_action_not_allowed` otherwise); a refusal by the game's own rules is 422 `game_rule_refused`. Audit
+        logged.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [cardId]
+              properties:
+                cardId: { type: string }
+                quantity:
+                  { type: integer, minimum: 1, description: 'Shares to buy; for a stock card.' }
+            example: { cardId: ok4u-20, quantity: 100 }
+      responses:
+        '200':
+          description: The game after the action, with `result` describing what happened
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameView'
+              example:
+                active: true
+                currency: EUR
+                gameSetId: cashflow
+                professionId: nurse
+                mode: solo
+                round: 3
+                outcome: playing
+                cashMinor: 245000
+                finances:
+                  {
+                    salaryMinor: 300000,
+                    passiveIncomeMinor: 0,
+                    expensesMinor: 180000,
+                    monthlyCashflowMinor: 120000,
+                    escapedRatRace: false,
+                    bankrupt: false,
+                  }
+                result:
+                  {
+                    card: { id: 'small-12', title: 'Gold coins', kind: 'deal' },
+                    title: 'Gold coins',
+                    kind: 'asset',
+                  }
+                legalActions:
+                  - { action: roll, description: 'Roll the dice and move the token.' }
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '409':
+          $ref: '#/components/responses/GameActionRefused'
+        '422':
+          $ref: '#/components/responses/GameActionRefused'
+  /game/doodads/pay:
+    post:
+      operationId: gamePayDoodad
+      summary: Pay a Doodad card
+      description: >-
+        Books the card's cost as an expense on its suggested account (the Bank loan is taken first when cash is short); in a solo game the turn moves on. Game accounts only; requires `game:w`. The action must be one of the `legalActions` of `GET /game` (409
+        `game_action_not_allowed` otherwise); a refusal by the game's own rules is 422 `game_rule_refused`. Audit
+        logged.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [cardId]
+              properties:
+                cardId: { type: string }
+            example: { cardId: doodad-coffee }
+      responses:
+        '200':
+          description: The game after the action, with `result` describing what happened
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameView'
+              example:
+                active: true
+                currency: EUR
+                gameSetId: cashflow
+                professionId: nurse
+                mode: solo
+                round: 3
+                outcome: playing
+                cashMinor: 325000
+                finances:
+                  {
+                    salaryMinor: 300000,
+                    passiveIncomeMinor: 0,
+                    expensesMinor: 180000,
+                    monthlyCashflowMinor: 120000,
+                    escapedRatRace: false,
+                    bankrupt: false,
+                  }
+                result:
+                  { card: { id: 'doodad-3', title: 'New phone', kind: 'doodad' }, costMinor: 20000 }
+                legalActions:
+                  - { action: roll, description: 'Roll the dice and move the token.' }
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '409':
+          $ref: '#/components/responses/GameActionRefused'
+        '422':
+          $ref: '#/components/responses/GameActionRefused'
+  /game/cards:
+    get:
+      operationId: listGameCards
+      summary: Browse or find the cards of a pile
+      description: >-
+        Game accounts only; requires `game:r`; a game must be running (its set decides the cards). Lists a pile, or the
+        cards matching `query` (title, ticker symbol or price - every word must match). Each card has its
+        language-neutral numbers plus `printed` (what it says in the account's language) and `label`.
+      security:
+        - bearerAuth: []
+      parameters:
+        - {
+            name: deck,
+            in: query,
+            required: true,
+            schema: { type: string, enum: [dealSmall, dealBig, market, doodad] },
+          }
+        - { name: query, in: query, schema: { type: string } }
+        - {
+            name: limit,
+            in: query,
+            schema: { type: integer, minimum: 1, maximum: 200, default: 50 },
+          }
+      responses:
+        '200':
+          description: The cards
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [deck, total, cards]
+                properties:
+                  deck: { type: string }
+                  total: { type: integer }
+                  cards: { type: array, items: { type: object } }
+              example:
+                deck: dealSmall
+                total: 24
+                cards:
+                  - { id: small-12, title: Gold coins, kind: deal }
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+  /game/market/play:
+    post:
+      operationId: gamePlayMarket
+      summary: Play a Market card
+      description: >-
+        Plays a Market card by its id the way its kind asks (`result.kind`): a buyer or gold offer goes onto every matching property or coin holding the player owns (`matched`), a stock split opens a dice decision when the share is held, a boost raises the cashflow of qualifying investments (`changed`), a cost is booked on the first property owned (`property`, taking the Bank loan first when cash is short), a text card does nothing. A card that does not apply to the player is still played and recorded. In a solo game the turn moves on. Game accounts only; requires `game:w`. The action must be one of the `legalActions` of `GET /game` (409
+        `game_action_not_allowed` otherwise); a refusal by the game's own rules is 422 `game_rule_refused`. Audit
+        logged.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [cardId]
+              properties:
+                cardId: { type: string }
+            example: { cardId: market-boost-1 }
+      responses:
+        '200':
+          description: The game after the action, with `result` describing what happened
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameView'
+              example:
+                active: true
+                currency: EUR
+                gameSetId: cashflow
+                professionId: nurse
+                mode: solo
+                round: 3
+                outcome: playing
+                cashMinor: 345000
+                finances:
+                  {
+                    salaryMinor: 300000,
+                    passiveIncomeMinor: 0,
+                    expensesMinor: 180000,
+                    monthlyCashflowMinor: 120000,
+                    escapedRatRace: false,
+                    bankrupt: false,
+                  }
+                result:
+                  {
+                    card: { id: 'market-7', title: 'Buyer for gold', kind: 'market' },
+                    kind: 'buyerOffer',
+                    matched: true,
+                  }
+                legalActions:
+                  - { action: roll, description: 'Roll the dice and move the token.' }
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '409':
+          $ref: '#/components/responses/GameActionRefused'
+        '422':
+          $ref: '#/components/responses/GameActionRefused'
+  /game/decisions/roll:
+    post:
+      operationId: gameRollDecision
+      summary: Roll the die for a waiting card
+      description: >-
+        Rolls the die for a paid dice card, a kept Multi-Level-Marketing card's Payday roll or a stock split (doubles on 1-3, halves on 4-6) and settles it. `title` picks one when several wait; the first waits by default. `result` has the roll and whether it won. Game accounts only; requires `game:w`. The action must be one of the `legalActions` of `GET /game` (409
+        `game_action_not_allowed` otherwise); a refusal by the game's own rules is 422 `game_rule_refused`. Audit
+        logged.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title: { type: string }
+            example: { title: GOLD }
+      responses:
+        '200':
+          description: The game after the action, with `result` describing what happened
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameView'
+              example:
+                active: true
+                currency: EUR
+                gameSetId: cashflow
+                professionId: nurse
+                mode: solo
+                round: 3
+                outcome: playing
+                cashMinor: 345000
+                finances:
+                  {
+                    salaryMinor: 300000,
+                    passiveIncomeMinor: 0,
+                    expensesMinor: 180000,
+                    monthlyCashflowMinor: 120000,
+                    escapedRatRace: false,
+                    bankrupt: false,
+                  }
+                result: { title: 'Gold coins', kind: 'asset', roll: 5, won: true }
+                legalActions:
+                  - { action: roll, description: 'Roll the dice and move the token.' }
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '409':
+          $ref: '#/components/responses/GameActionRefused'
+        '422':
+          $ref: '#/components/responses/GameActionRefused'
+  /game/saves:
+    get:
+      operationId: listGameSaves
+      summary: The saved games and the storage left
+      description: >-
+        Game accounts only; requires `game:r`. Every saved game with its summary, `status` (`playing`, `escaped`, `bankrupt`, `ended`) and `sizeBytes`, and `storage`: how much of the account's one database document the saves use, how much room is left (`remainingBytes`) and `keepAtMost` - an agent leaves at most this many saves behind after a session (`overKeepBy` says how many too many).
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Done
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                games:
+                  - {
+                      id: game_lq3x_ab12,
+                      name: 'Nurse · 07.10.2026',
+                      gameSetId: cashflow,
+                      professionId: nurse,
+                      round: 12,
+                      virtualDate: '2026-12-01',
+                      cashMinor: 410000,
+                      salaryMinor: 300000,
+                      passiveIncomeMinor: 60000,
+                      expensesMinor: 180000,
+                      monthlyCashflowMinor: 180000,
+                      bankLoanMinor: 0,
+                      children: 1,
+                      transactionCount: 96,
+                      escapedRatRace: false,
+                      bankrupt: false,
+                      language: en,
+                      createdAt: '2026-10-07T09:12:00.000Z',
+                      updatedAt: '2026-10-07T09:12:00.000Z',
+                      status: playing,
+                      sizeBytes: 198000,
+                    }
+                currentGameId: game_lq3x_ab12
+                storage:
+                  {
+                    documentBytes: 1204331,
+                    budgetBytes: 6710886,
+                    remainingBytes: 5506555,
+                    limitBytes: 8388608,
+                    gamesBytes: 412000,
+                    gameCount: 2,
+                    keepAtMost: 100,
+                    overKeepBy: 0,
+                  }
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/GameActionRefused'
+    post:
+      operationId: saveGame
+      summary: Save the running game
+      description: >-
+        Game accounts only; requires `game:w`. Saves the running game into its slot (the first save gives it one; a later save updates the same slot), in the same format the app uses. A normal game, and every game the player wants feedback on, is saved in full (the default) and keeps its undo history. `compact: true` leaves the undo chain out - a tenth of the size - and is only for a batch of games saved for statistics; a compact game loads without undo history and cannot be reviewed. Refused with 409 `game_storage_full` when the account's document would pass its storage budget: delete saves first.
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                compact: { type: boolean, default: false }
+      responses:
+        '200':
+          description: The saved game and the storage left
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                game:
+                  {
+                    id: game_lq3x_ab12,
+                    name: 'Nurse · 07.10.2026',
+                    gameSetId: cashflow,
+                    professionId: nurse,
+                    round: 12,
+                    virtualDate: '2026-12-01',
+                    cashMinor: 410000,
+                    salaryMinor: 300000,
+                    passiveIncomeMinor: 60000,
+                    expensesMinor: 180000,
+                    monthlyCashflowMinor: 180000,
+                    bankLoanMinor: 0,
+                    children: 1,
+                    transactionCount: 96,
+                    escapedRatRace: false,
+                    bankrupt: false,
+                    language: en,
+                    createdAt: '2026-10-07T09:12:00.000Z',
+                    updatedAt: '2026-10-07T09:12:00.000Z',
+                    status: playing,
+                    sizeBytes: 198000,
+                  }
+                storage:
+                  {
+                    documentBytes: 1204331,
+                    budgetBytes: 6710886,
+                    remainingBytes: 5506555,
+                    limitBytes: 8388608,
+                    gamesBytes: 412000,
+                    gameCount: 2,
+                    keepAtMost: 100,
+                    overKeepBy: 0,
+                  }
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/GameActionRefused'
+  /game/saves/prune:
+    post:
+      operationId: pruneGameSaves
+      summary: Delete saved games, keeping the important ones (destructive)
+      description: >-
+        Game accounts only; requires `game:w`. Keeps the saves in `keepIds` and the `keepLatest` newest ones and deletes every other. The clean-up an agent owes after a session of analysis. Requires `confirm: true`. Never touches the running game.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [confirm]
+              properties:
+                confirm: { type: boolean, enum: [true] }
+                keepIds: { type: array, items: { type: string } }
+                keepLatest: { type: integer, minimum: 0 }
+      responses:
+        '200':
+          description: The ids that were deleted and the storage left
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                deleted: [game_old_1, game_old_2]
+                storage:
+                  {
+                    documentBytes: 1204331,
+                    budgetBytes: 6710886,
+                    remainingBytes: 5506555,
+                    limitBytes: 8388608,
+                    gamesBytes: 412000,
+                    gameCount: 2,
+                    keepAtMost: 100,
+                    overKeepBy: 0,
+                  }
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/GameActionRefused'
+  /game/saves/{saveId}:
+    get:
+      operationId: getGameSave
+      summary: One saved game with its step log
+      description: >-
+        Game accounts only; requires `game:r`. The summary and the plain-text log of every step (`number`, `kind`, `detail`, `at`), oldest first - what happened in that game, without opening the snapshot. This is what a game analysis reads.
+      security:
+        - bearerAuth: []
+      parameters:
+        - { name: saveId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Done
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                id: game_lq3x_ab12
+                name: 'Nurse · 07.10.2026'
+                gameSetId: cashflow
+                professionId: nurse
+                round: 12
+                virtualDate: '2026-12-01'
+                cashMinor: 410000
+                salaryMinor: 300000
+                passiveIncomeMinor: 60000
+                expensesMinor: 180000
+                monthlyCashflowMinor: 180000
+                bankLoanMinor: 0
+                children: 1
+                transactionCount: 96
+                escapedRatRace: false
+                bankrupt: false
+                language: en
+                createdAt: '2026-10-07T09:12:00.000Z'
+                updatedAt: '2026-10-07T09:12:00.000Z'
+                status: playing
+                sizeBytes: 198000
+                steps: []
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/GameActionRefused'
+    patch:
+      operationId: renameGameSave
+      summary: Rename a saved game
+      description: >-
+        Game accounts only; requires `game:w`.
+      security:
+        - bearerAuth: []
+      parameters:
+        - { name: saveId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string }
+      responses:
+        '200':
+          description: Done
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                renamed: { id: game_lq3x_ab12, name: 'My best game' }
+                storage:
+                  {
+                    documentBytes: 1204331,
+                    budgetBytes: 6710886,
+                    remainingBytes: 5506555,
+                    limitBytes: 8388608,
+                    gamesBytes: 412000,
+                    gameCount: 2,
+                    keepAtMost: 100,
+                    overKeepBy: 0,
+                  }
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/GameActionRefused'
+    delete:
+      operationId: deleteGameSave
+      summary: Delete a saved game (destructive)
+      description: >-
+        Game accounts only; requires `game:w` and `?confirm=true`. If the running game sat in that slot it forgets the slot.
+      security:
+        - bearerAuth: []
+      parameters:
+        - { name: saveId, in: path, required: true, schema: { type: string } }
+        - { name: confirm, in: query, required: true, schema: { type: boolean } }
+      responses:
+        '200':
+          description: Done
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                deleted: [game_lq3x_ab12]
+                storage:
+                  {
+                    documentBytes: 1204331,
+                    budgetBytes: 6710886,
+                    remainingBytes: 5506555,
+                    limitBytes: 8388608,
+                    gamesBytes: 412000,
+                    gameCount: 2,
+                    keepAtMost: 100,
+                    overKeepBy: 0,
+                  }
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/GameActionRefused'
+  /game/saves/{saveId}/load:
+    post:
+      operationId: loadGameSave
+      summary: Continue a saved game
+      description: >-
+        Game accounts only; requires `game:w`. Makes the saved game the running game, with its undo history when it was saved with one. The game being played (if it is another one) is saved first. Continuing an ended game un-ends it.
+      security:
+        - bearerAuth: []
+      parameters:
+        - { name: saveId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Done
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                loaded:
+                  {
+                    id: game_lq3x_ab12,
+                    name: 'Nurse · 07.10.2026',
+                    round: 12,
+                    cashMinor: 410000,
+                    status: playing,
+                  }
+                storage:
+                  {
+                    documentBytes: 1204331,
+                    budgetBytes: 6710886,
+                    remainingBytes: 5506555,
+                    limitBytes: 8388608,
+                    gamesBytes: 412000,
+                    gameCount: 2,
+                    keepAtMost: 100,
+                    overKeepBy: 0,
+                  }
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/GameActionRefused'
+  /game/end:
+    post:
+      operationId: endGame
+      summary: End the running game on purpose
+      description: >-
+        Game accounts only; requires `game:w`. Saves the running game marked as ended, then clears the account for the next one (like "End game" in the app). The ended game can be continued later.
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+      responses:
+        '200':
+          description: Done
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                game:
+                  {
+                    id: game_lq3x_ab12,
+                    name: 'Nurse · 07.10.2026',
+                    gameSetId: cashflow,
+                    professionId: nurse,
+                    round: 12,
+                    virtualDate: '2026-12-01',
+                    cashMinor: 410000,
+                    salaryMinor: 300000,
+                    passiveIncomeMinor: 60000,
+                    expensesMinor: 180000,
+                    monthlyCashflowMinor: 180000,
+                    bankLoanMinor: 0,
+                    children: 1,
+                    transactionCount: 96,
+                    escapedRatRace: false,
+                    bankrupt: false,
+                    language: en,
+                    createdAt: '2026-10-07T09:12:00.000Z',
+                    updatedAt: '2026-10-07T09:12:00.000Z',
+                    status: ended,
+                    sizeBytes: 198000,
+                  }
+                storage:
+                  {
+                    documentBytes: 1204331,
+                    budgetBytes: 6710886,
+                    remainingBytes: 5506555,
+                    limitBytes: 8388608,
+                    gamesBytes: 412000,
+                    gameCount: 2,
+                    keepAtMost: 100,
+                    overKeepBy: 0,
+                  }
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/GameActionRefused'
+  /game/positions/sell:
+    post:
+      operationId: gameSellPosition
+      summary: Sell a position you hold
+      description: >-
+        Game accounts only; requires `game:w`. The action must be one of the `legalActions` of `GET /game`; a refusal by
+        the game's own rules (nothing held, no buyer, more than held) is 422 `game_rule_refused`. Sells what the Grow
+        project `title` stands for: **shares** (`quantity`, default all, at `priceMinor`, default the position's price),
+        a **property or business** to the buyer a Market card brought (its offer sets the price; the mortgage is paid back
+        out of it and what is left - deposit plus profit - is booked as income; a sale that costs money is paid from the
+        Daily account, with the Bank loan first when cash is short) or at `salePriceMinor` when no offer is waiting, and
+        **gold** by the coin (`quantity`, default all, at the buyer's price per coin or `priceMinor`). The Grow project
+        follows (sold, completed once nothing is left), a property's cashflow subscription ends with it and the buyer's
+        offer goes. Audit logged.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title]
+              properties:
+                title:
+                  {
+                    type: string,
+                    description: The Grow project's title - also the tag of the position.,
+                  }
+                quantity: { type: number, description: Shares or coins to sell; all when absent. }
+                priceMinor: { type: integer, description: A share's or a coin's price. }
+                salePriceMinor:
+                  {
+                    type: integer,
+                    description: A property's sale price when no buyer's offer is waiting.,
+                  }
+            example: { title: SFH, salePriceMinor: 5200000 }
+      responses:
+        '200':
+          description: The game after the sale, with `result` (`kind`, `cashMinor`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameView'
+              example:
+                active: true
+                currency: EUR
+                gameSetId: cashflow
+                professionId: nurse
+                mode: solo
+                round: 3
+                outcome: playing
+                cashMinor: 395000
+                finances:
+                  {
+                    salaryMinor: 300000,
+                    passiveIncomeMinor: 0,
+                    expensesMinor: 180000,
+                    monthlyCashflowMinor: 120000,
+                    escapedRatRace: false,
+                    bankrupt: false,
+                  }
+                result: { title: 'OK4U', kind: 'share', cashMinor: 50000 }
+                legalActions:
+                  - { action: roll, description: 'Roll the dice and move the token.' }
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '409':
+          $ref: '#/components/responses/GameActionRefused'
+        '422':
+          $ref: '#/components/responses/GameActionRefused'
+  /game/review:
+    get:
+      operationId: getGameReview
+      summary: Review the running game's decisions
+      description: >-
+        Game accounts only; requires `game:r`. The game analyst: finds the decisions that mattered - what was bought, sold, borrowed or repaid, a card that was planned and left - and judges each the way a chess review does: the position after the move and the position after the alternative are each played out many times with the same dice, under the `strategy` for the decisions still to come, and compared by how often the games escape the rat race. `label` is `best`, `good`, `neutral`, `inaccuracy`, `mistake` or `blunder`; `turningPoint` is the move that cost the most; `benchmark` sets the game beside the strategy lab's measurements for the profession; `text` is the review in words. A game played without a physical board has everything; a companion game is judged on its purchases, sales and loans. CPU-heavy: it runs in a worker and stops at the time budget.
+      security:
+        - bearerAuth: []
+      parameters:
+        - {
+            name: strategy,
+            in: query,
+            schema: { type: string, default: all-rounder },
+            description: The strategy the games continue with after each position (a preset id of the strategy lab).,
+          }
+        - {
+            name: rollouts,
+            in: query,
+            schema: { type: integer, minimum: 10, maximum: 400, default: 80 },
+            description: Simulated continuations per position.,
+          }
+        - {
+            name: timeBudgetSeconds,
+            in: query,
+            schema: { type: integer, minimum: 5, maximum: 180, default: 60 },
+            description: Stops judging after this long; the moves judged so far are returned.,
+          }
+      responses:
+        '200':
+          description: 'The review, or `reviewable: false` with the reason'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameReviewResponse'
+              example:
+                reviewable: true
+                baseline:
+                  {
+                    id: all-rounder,
+                    label: All-rounder,
+                    description: 'Buys sound deals, keeps a reserve.',
+                  }
+                review:
+                  {
+                    steps: 40,
+                    judged: 9,
+                    rollouts: 80,
+                    turningPoint: { step: 17, label: mistake },
+                    final: { outcome: escaped, rolls: 71 },
+                  }
+                benchmark:
+                  {
+                    professionTitle: Nurse,
+                    strategyLabel: 'Properties, no reserve',
+                    escapeRate: 0.9,
+                    games: 300,
+                  }
+                text: 'The game escaped the rat race after 71 rolls.'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/GameActionRefused'
+        '429':
+          description: Other reviews are running (`game_review_busy`); try again in a minute.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+  /game/saves/{saveId}/review:
+    get:
+      operationId: getGameSaveReview
+      summary: Review a saved game's decisions
+      description: >-
+        Game accounts only; requires `game:r`. The game analyst: finds the decisions that mattered - what was bought, sold, borrowed or repaid, a card that was planned and left - and judges each the way a chess review does: the position after the move and the position after the alternative are each played out many times with the same dice, under the `strategy` for the decisions still to come, and compared by how often the games escape the rat race. `label` is `best`, `good`, `neutral`, `inaccuracy`, `mistake` or `blunder`; `turningPoint` is the move that cost the most; `benchmark` sets the game beside the strategy lab's measurements for the profession; `text` is the review in words. A game played without a physical board has everything; a companion game is judged on its purchases, sales and loans. CPU-heavy: it runs in a worker and stops at the time budget. A save needs its undo history: a compact save has none and answers `reviewable: false`.
+      security:
+        - bearerAuth: []
+      parameters:
+        - { name: saveId, in: path, required: true, schema: { type: string } }
+        - {
+            name: strategy,
+            in: query,
+            schema: { type: string, default: all-rounder },
+            description: The strategy the games continue with after each position (a preset id of the strategy lab).,
+          }
+        - {
+            name: rollouts,
+            in: query,
+            schema: { type: integer, minimum: 10, maximum: 400, default: 80 },
+            description: Simulated continuations per position.,
+          }
+        - {
+            name: timeBudgetSeconds,
+            in: query,
+            schema: { type: integer, minimum: 5, maximum: 180, default: 60 },
+            description: Stops judging after this long; the moves judged so far are returned.,
+          }
+      responses:
+        '200':
+          description: 'The review, or `reviewable: false` with the reason'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameReviewResponse'
+              example:
+                reviewable: true
+                baseline:
+                  {
+                    id: all-rounder,
+                    label: All-rounder,
+                    description: 'Buys sound deals, keeps a reserve.',
+                  }
+                review:
+                  {
+                    steps: 40,
+                    judged: 9,
+                    rollouts: 80,
+                    turningPoint: { step: 17, label: mistake },
+                    final: { outcome: escaped, rolls: 71 },
+                  }
+                benchmark:
+                  {
+                    professionTitle: Nurse,
+                    strategyLabel: 'Properties, no reserve',
+                    escapeRate: 0.9,
+                    games: 300,
+                  }
+                text: 'The game escaped the rat race after 71 rolls.'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/GameActionRefused'
+        '429':
+          description: Other reviews are running (`game_review_busy`); try again in a minute.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
   /mojo:
     get:
       operationId: getMojo
@@ -4478,6 +6240,181 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/CategoryAggregate'
+    GameFinances:
+      type: object
+      required:
+        [
+          salaryMinor,
+          passiveIncomeMinor,
+          expensesMinor,
+          monthlyCashflowMinor,
+          escapedRatRace,
+          bankrupt,
+        ]
+      properties:
+        salaryMinor: { type: integer }
+        passiveIncomeMinor: { type: integer }
+        expensesMinor: { type: integer }
+        monthlyCashflowMinor: { type: integer }
+        escapedRatRace: { type: boolean, description: Passive income covers every monthly expense. }
+        bankrupt: { type: boolean, description: The monthly cashflow is negative. }
+    GameLegalAction:
+      type: object
+      required: [action, description]
+      properties:
+        action:
+          type: string
+          enum:
+            [
+              start,
+              roll,
+              pass_card,
+              payday,
+              baby,
+              charity,
+              downsized,
+              clear_status,
+              bank_loan,
+              undo,
+              reset,
+              draw_card,
+              buy_deal,
+              pay_doodad,
+              play_market,
+              roll_decision,
+              sell_position,
+            ]
+        description: { type: string }
+    GameView:
+      type: object
+      required: [active, legalActions]
+      properties:
+        active:
+          {
+            type: boolean,
+            description: 'false when no game is running; then only legalActions is present.',
+          }
+        currency: { type: string }
+        gameSetId: { type: string, nullable: true }
+        professionId: { type: string, nullable: true }
+        professionTitle: { type: string, nullable: true }
+        mode: { type: string, enum: [companion, solo] }
+        gameId:
+          {
+            type: string,
+            nullable: true,
+            description: The saved-game slot the running game belongs to.,
+          }
+        gameName: { type: string, nullable: true }
+        round: { type: integer }
+        virtualDate:
+          { type: string, nullable: true, description: 'The game calendar, not the wall clock.' }
+        children: { type: integer }
+        position:
+          type: object
+          nullable: true
+          description: Solo only. `index` is null at START.
+          properties:
+            index: { type: integer, nullable: true }
+            spaceKind: { type: string, nullable: true }
+        turn:
+          type: object
+          nullable: true
+          description: Solo only - where the turn stands (`roll`, `decide`, `over`).
+          properties:
+            phase: { type: string, enum: [roll, decide, over] }
+            count: { type: integer }
+            lastRoll: { type: array, items: { type: integer } }
+            pending:
+              type: object
+              properties:
+                kind: { type: string, enum: [deal, market, doodad] }
+                spaceIndex: { type: integer }
+            outcome: { type: string, enum: [escaped, bankrupt] }
+        outcome: { type: string, enum: [playing, escaped, bankrupt] }
+        status:
+          type: object
+          properties:
+            charityRoundsLeft: { type: integer }
+            unemployedRoundsLeft: { type: integer }
+        pendingDecision:
+          type: object
+          nullable: true
+        cashMinor: { type: integer }
+        finances:
+          $ref: '#/components/schemas/GameFinances'
+        holdings:
+          type: object
+          description: What the player owns - shares, properties and businesses (with their monthly cashflow), assets (with their coins) and the Bank loan - so a sale can name its title.
+          properties:
+            shares: { type: array, items: { type: object } }
+            investments: { type: array, items: { type: object } }
+            assets: { type: array, items: { type: object } }
+            bankLoanMinor: { type: integer }
+        assetDeals: { type: array, items: { type: object } }
+        marketOffers: { type: array, items: { type: object } }
+        legalActions:
+          type: array
+          items:
+            $ref: '#/components/schemas/GameLegalAction'
+        result:
+          type: object
+          description: Only on the response of an action - what it did (the dice of a roll, the card that was drawn, the deal that was bought...).
+    GameSetSummary:
+      type: object
+      required: [id, title, professions]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        professions:
+          type: array
+          items:
+            type: object
+            required: [id, title, salaryMinor]
+            properties:
+              id: { type: string }
+              title: { type: string }
+              salaryMinor: { type: integer }
+    GameSet:
+      allOf:
+        - $ref: '#/components/schemas/GameSetSummary'
+        - type: object
+          required: [loanRule, board]
+          properties:
+            loanRule:
+              type: object
+              properties:
+                incrementMinor: { type: integer }
+                monthlyInterestPercent: { type: number }
+            board:
+              type: array
+              items:
+                type: object
+                properties:
+                  index: { type: integer }
+                  kind:
+                    { type: string, enum: [deal, doodad, payday, market, charity, downsized, baby] }
+                  printed: { type: string }
+    GameReviewResponse:
+      type: object
+      required: [reviewable]
+      properties:
+        reviewable: { type: boolean }
+        reason: { type: string, description: Why not, when reviewable is false. }
+        baseline:
+          type: object
+          properties:
+            id: { type: string }
+            label: { type: string }
+            description: { type: string }
+        review:
+          type: object
+          description: The judged moves (kind, label, escapeChance taken/other/delta, rollsToEscape, facts), counts per label, turningPoint, bestMove, final result.
+        benchmark:
+          type: object
+          nullable: true
+          description: The strategy lab's best strategy for the profession and where this game ranks among its games.
+        text: { type: string, description: The review in words (markdown). }
     MojoStatus:
       type: object
       required: [amountMinor, targetMinor, remainingMinor, percentFilled]
@@ -6912,6 +8849,30 @@ components:
             status: 403
             detail: This operation requires the 'transactions:r' scope.
             code: scope_insufficient
+    NotAGameAccountOrScope:
+      description: The token lacks the `game:r` / `game:w` scope (`scope_insufficient`), or the account is not a game account (`not_a_game_account`)
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://money-manager.dev/problems/not_a_game_account
+            title: Not a game account
+            status: 403
+            detail: The Cashflow game endpoints are only available to game accounts.
+            code: not_a_game_account
+    GameActionRefused:
+      description: The action is not allowed now (`game_action_not_allowed`, `game_not_started`, `game_write_conflict`, 409) or the game's own rules refuse it (`game_rule_refused`, 422)
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://money-manager.dev/problems/game_action_not_allowed
+            title: Game action refused
+            status: 409
+            detail: "'payday' is not allowed now. Allowed: roll, bank_loan, reset."
+            code: game_action_not_allowed
     NotFound:
       description: Requested resource was not found
       content:

@@ -71,6 +71,14 @@ COPY --from=domain-build /repo/packages/domain/dist /packages/domain/dist
 COPY --from=domain-build /repo/packages/domain/package.json /packages/domain/package.json
 COPY --from=domain-build /repo/packages/domain/node_modules /packages/domain/node_modules
 
+# The game writes notes and subscription titles in the account's language, from the same catalogs the browser
+# translates with (backend/services/game-text.js looks in /app/i18n).
+COPY src/assets/i18n/*.json /app/i18n/
+COPY src/assets/i18n/cashflow-cards/*.json /app/i18n/cashflow-cards/
+
+# What the strategy lab measured, for the game analyst's comparison (backend/services/game-review.js).
+COPY docs/domain/strategy/data/results.json /app/strategy/results.json
+
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nodejs -u 1001 && \

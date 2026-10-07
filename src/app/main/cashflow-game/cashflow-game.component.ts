@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnDestroy } from '@angular/core';
 import { CommonModule, formatNumber } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -12,10 +12,19 @@ import {
   CashflowProfession,
   computeCashflowProfessionMonthlyCashflowMinor,
   fromMinorUnits,
-  PROPERTY_SYMBOLS,
-  BUSINESS_SYMBOLS,
+  maxRepayableMinor,
+  buyerCardTypes,
+  businessCardLabels,
+  cardExpenseComment,
+  doodadAccount,
+  MARKET_COST_ACCOUNT,
+  propertyCardTypes,
   savedGameStatus,
+  summarizeGameFinances,
+  toMinorUnits,
   type SavedGameSummary,
+  pickOne,
+  type TurnResult,
 } from '@money/domain';
 import { Grow } from 'src/app/interfaces/grow';
 import { AppStateService } from 'src/app/shared/services/app-state.service';
@@ -39,6 +48,7 @@ import { ConfirmService } from 'src/app/shared/services/confirm.service';
 import { CashflowSavedGamesService } from 'src/app/shared/services/cashflow-saved-games.service';
 import { AppNumberPipe } from 'src/app/shared/pipes/app-number.pipe';
 import { AppDatePipe } from 'src/app/shared/pipes/app-date.pipe';
+import { RatRaceBoardComponent, SPACE_GLYPHS } from './rat-race-board.component';
 import { TrapFocusDirective } from 'src/app/shared/directives/trap-focus.directive';
 
 // Deferred import to break the circular chain with AppComponent, same pattern as every other panel.
@@ -78,6 +88,16 @@ interface CardTile {
 /** How a market card is filed in the quick filter. */
 type MarketKind = 'percent' | 'amount' | 'price' | 'cost' | 'split' | 'boost';
 
+/** How long the token rests on each space while it walks, and how long a Payday flashes. */
+const WALK_STEP_MS = 320;
+/** The dice tumble, then rest on their number for a beat, before the token moves. */
+const DICE_TUMBLE_MS = 1900;
+/** The faces flicker fast at first and slow down as the dice come to rest. */
+const DICE_FACE_FIRST_MS = 70;
+const DICE_FACE_LAST_MS = 300;
+const DICE_SETTLE_MS = 650;
+const DICE_LAND_POP_MS = 900;
+
 @Component({
   selector: 'app-cashflow-game',
   standalone: true,
@@ -89,11 +109,12 @@ type MarketKind = 'percent' | 'amount' | 'price' | 'cost' | 'split' | 'boost';
     TranslateModule,
     AppNumberPipe,
     AppDatePipe,
+    RatRaceBoardComponent,
   ],
   templateUrl: './cashflow-game.component.html',
   styleUrls: ['./cashflow-game.component.css'],
 })
-export class CashflowGameComponent {
+export class CashflowGameComponent implements OnDestroy {
   static isOpen = false;
   static zIndex = 0;
   static instance: CashflowGameComponent;
@@ -138,6 +159,7 @@ export class CashflowGameComponent {
     private confirm: ConfirmService,
   ) {
     CashflowGameComponent.instance = this;
+    document.addEventListener('click', this.onAnyClick, true);
     // Paying a dice card (gold coins) brings the player here, to the decision.
     this.cashflowGameService.decisionNeeded$?.subscribe(() => this.showOpenDecision());
   }
@@ -167,6 +189,7 @@ export class CashflowGameComponent {
   }
 
   closeWindow(): void {
+    this.showStartGames = false;
     this.rollResult = null;
     // A one-time message (e.g. a market card that did not apply) is gone once the panel is closed.
     this.marketNotice = null;
@@ -205,6 +228,18 @@ export class CashflowGameComponent {
   get selectedProfession(): CashflowProfession | undefined {
     return this.selectedGameSet?.professions.find(
       (profession) => profession.id === this.selectedProfessionId,
+    );
+  }
+
+  /**
+   * The panel opens wide on a big screen for the views that have something to show beside each other: the dashboard
+   * (the ring beside the dice and the decision) and the card lists. Phones ignore it - there the panel is a full sheet.
+   */
+  get wideLayout(): boolean {
+    return (
+      this.hasActiveGame &&
+      !this.viewedProfession &&
+      (this.dashboardView === 'main' || this.dashboardView === 'cards')
     );
   }
 
@@ -323,8 +358,23 @@ export class CashflowGameComponent {
    * is not working").
    */
   get liveSalary(): number {
-    const title = this.appState.cashflowGame.gameSubscriptionTitles[0];
-    return this.appState.allSubscriptions.find((sub) => sub.title === title)?.amount ?? 0;
+    return fromMinorUnits(this.liveFinances.salaryMinor);
+  }
+
+  /**
+   * The game's monthly money picture, from the same domain function a saved game's summary and the Pro
+   * API use - one definition of salary, passive income, expenses and "out of the rat race" for all three
+   * (todo/cashflow-game-pro-inventory.md U1). Exact minor units, so a tie between passive income and
+   * expenses is a tie and not a float-rounding coin toss.
+   */
+  private get liveFinances() {
+    return summarizeGameFinances(
+      this.appState.cashflowGame,
+      this.appState.allSubscriptions.map((sub) => ({
+        title: sub.title,
+        amountMinor: toMinorUnits(sub.amount),
+      })),
+    );
   }
 
   /**
@@ -343,7 +393,7 @@ export class CashflowGameComponent {
   }
 
   get livePassiveIncome(): number {
-    return this.livePassiveIncomeLines.reduce((sum, line) => sum + line.amount, 0);
+    return fromMinorUnits(this.liveFinances.passiveIncomeMinor);
   }
 
   /** Cash plus everything listed under Assets. */
@@ -392,7 +442,7 @@ export class CashflowGameComponent {
   }
 
   get liveTotalExpenses(): number {
-    return this.liveExpenseLines.reduce((sum, line) => sum + Math.abs(line.amount), 0);
+    return fromMinorUnits(this.liveFinances.expensesMinor);
   }
 
   /**
@@ -400,15 +450,14 @@ export class CashflowGameComponent {
    * businesses pay every month - covers every monthly expense. Shown as a banner; the game goes on.
    */
   get escapedRatRace(): boolean {
-    return (
-      this.hasActiveGame &&
-      this.liveTotalExpenses > 0 &&
-      this.livePassiveIncome >= this.liveTotalExpenses
-    );
+    return this.hasActiveGame && this.liveFinances.escapedRatRace;
   }
 
   get liveCashflow(): number {
-    return this.liveTotalIncome - this.liveTotalExpenses;
+    const finances = this.liveFinances;
+    return fromMinorUnits(
+      finances.salaryMinor + finances.passiveIncomeMinor - finances.expensesMinor,
+    );
   }
 
   /** Every current liability — the whole account is the game (decision 2), no filtering needed. */
@@ -448,7 +497,7 @@ export class CashflowGameComponent {
   shuffleProfession(): void {
     const professions = this.selectedGameSet?.professions ?? [];
     if (!professions.length) return;
-    const pick = professions[Math.floor(Math.random() * professions.length)];
+    const pick = pickOne(professions, this.cashflowGameService.rng);
     this.selectedProfessionId = pick.id;
     this.openProfessionCard(pick);
   }
@@ -488,23 +537,406 @@ export class CashflowGameComponent {
   startGame(): void {
     if (!this.selectedGameSetId || !this.selectedProfessionId) return;
     this.isBusy = true;
-    this.cashflowGameService.pickProfession(this.selectedGameSetId, this.selectedProfessionId, {
+    const mode = this.playMode;
+    this.cashflowGameService.pickProfession(
+      this.selectedGameSetId,
+      this.selectedProfessionId,
+      {
+        onSuccess: () => {
+          this.isBusy = false;
+          this.choosingLanguage = false;
+          this.toastService.show(this.translate.instant('CashflowGame.started'), 'success');
+          this.closeWindow();
+          // A plain router.navigate — no reload needed. Home and the other pages that hold their own
+          // snapshot subscribe to transactionsUpdated$/subscriptionsUpdated$ (fired by
+          // CashflowGameService.persistAll on every successful write), so they refresh whether or not
+          // this navigation itself is a no-op (e.g. already being on /home).
+          this.router.navigate(['/home']);
+        },
+        onError: (message) => {
+          this.isBusy = false;
+          this.toastService.show(message, 'error');
+        },
+      },
+      mode,
+    );
+  }
+
+  // ── Solo mode: the app rolls and walks the token (todo/cashflow-game-pro.md, Phase C) ─────────────
+
+  /** Chosen with the language when a game starts; a running game keeps the mode it began with. */
+  playMode: 'companion' | 'solo' = 'companion';
+
+  readonly board = this.cashflowGameService.board;
+
+  /** The dice of the last roll, for the die faces on the dashboard. */
+  lastDice: number[] = [];
+  /** True only while the dice tumble after a roll; before and after they rest still on their number. */
+  diceTumbling = false;
+  private tumbleFaces: number[] = [];
+  /** True for a moment as the dice land, for one small pop - never again when they come back into view. */
+  diceLanded = false;
+  /** How many dice the player rolls while Charity lasts: two unless they choose one (JFK, 2026-10-06). */
+  diceChoice: 1 | 2 = 2;
+  /** True while the token walks to where the roll took it. */
+  walking = false;
+  /** What the Payday(s) of the last roll paid: shown big until the next roll or until it is closed. */
+  paydayBanner: {
+    count: number;
+    incomeMinor: number;
+    expensesMinor: number;
+    netMinor: number;
+  } | null = null;
+  private paydaySummary: typeof this.paydayBanner = null;
+  private skipWalking = false;
+  /** Where the token is drawn while it walks; undefined means "where the game says it is". */
+  private walkingAt: number | null | undefined = undefined;
+
+  get isSolo(): boolean {
+    return this.appState.cashflowGame.mode === 'solo';
+  }
+
+  get soloTurn() {
+    return this.cashflowGameService.soloTurn;
+  }
+
+  get gameOver(): boolean {
+    return this.isSolo && this.soloTurn.phase === 'over' && !this.walking;
+  }
+
+  /** The faces on show: random ones while the dice tumble, otherwise the last roll (also after a reload). */
+  get shownDice(): number[] {
+    if (this.diceTumbling) return this.tumbleFaces;
+    if (this.lastDice.length) return this.lastDice;
+    return this.appState.cashflowGame.turn?.lastRoll ?? [];
+  }
+
+  /** Keeps each die's element while its face changes, so the tumble is one animation and not one per face. */
+  trackByIndex(index: number): number {
+    return index;
+  }
+
+  /** The token as shown: stepping along while it walks, otherwise on the game's own position. */
+  get tokenPosition(): number | null {
+    return this.walkingAt !== undefined ? this.walkingAt : this.appState.cashflowGame.boardPosition;
+  }
+
+  get canRoll(): boolean {
+    return !this.isBusy && !this.walking && this.cashflowGameService.cannotRollBecause === null;
+  }
+
+  /** Charity lets the player pick 1 or 2 dice; otherwise it is always one. */
+  get canChooseDice(): boolean {
+    return this.appState.cashflowGame.charityRoundsLeft > 0;
+  }
+
+  /** "Space 7 of 24", or "At START". */
+  get positionText(): string {
+    const position = this.tokenPosition;
+    return position === null
+      ? this.translate.instant('CashflowGame.solo.positionStart')
+      : this.translate.instant('CashflowGame.solo.position', {
+          n: position + 1,
+          total: this.board.length,
+        });
+  }
+
+  /** How many spaces until the token next enters a Payday space. */
+  get spacesToPayday(): number {
+    const position = this.tokenPosition;
+    const first = position === null ? 0 : position + 1;
+    for (let step = 0; step < this.board.length; step++) {
+      if (this.board[(first + step) % this.board.length].kind === 'payday') return step + 1;
+    }
+    return 0;
+  }
+
+  get paydayText(): string {
+    const count = this.spacesToPayday;
+    return count === 1
+      ? this.translate.instant('CashflowGame.solo.nextPaydayOne')
+      : this.translate.instant('CashflowGame.solo.nextPayday', { count });
+  }
+
+  /** The name of the card space the turn is waiting on, in the game's words. */
+  get pendingSpaceName(): string {
+    const kind = this.soloTurn.pending?.kind;
+    const key: Record<string, string> = {
+      deal: 'CashflowGame.spaceDeals',
+      doodad: 'CashflowGame.deckDoodad',
+      market: 'CashflowGame.deckMarket',
+    };
+    return kind ? this.translate.instant(key[kind]) : '';
+  }
+
+  /** How the finished game ended, with its closing numbers. */
+  get soloSummary() {
+    return this.cashflowGameService.soloSummary();
+  }
+
+  /** Rolls the dice: the engine decides, this only shows it - the die faces, then the token walking there. */
+  rollSolo(): void {
+    if (!this.canRoll) return;
+    const from = this.appState.cashflowGame.boardPosition;
+    const dice = this.canChooseDice ? this.diceChoice : 1;
+    // Busy for the whole reveal: nothing else may change the books between the roll and its being applied.
+    this.isBusy = true;
+    // The turn is only worked out here; it is applied once the totem has settled (see `walkTo`).
+    const result = this.cashflowGameService.planTurn(dice, {
+      onSuccess: () => undefined,
+      onError: (message) => {
+        this.isBusy = false;
+        this.toastService.show(message, 'error');
+      },
+    });
+    if (!result) return;
+    this.lastDice = result.roll.dice;
+    this.paydayBanner = null; // the last roll's Payday is done with once the next roll starts
+    this.paydaySummary = this.summarisePaydays(result);
+    void this.walkTo(from, result);
+  }
+
+  /** Skips the rest of the walk. */
+  skipWalk(): void {
+    this.skipWalking = true;
+  }
+
+  private get reducedMotion(): boolean {
+    return (
+      typeof window !== 'undefined' &&
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    );
+  }
+
+  private pause(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  /** Brings up the Payday banner (the roll's own numbers) - once the token enters a Payday space, or at the opening. */
+  private showPayday(): void {
+    this.paydayBanner = this.paydaySummary;
+  }
+
+  /**
+   * The info banners - the Payday popup, a market card's notice - go with the next thing the player does (JFK,
+   * 2026-10-06), not with a close button. Listens in the capture phase, so it runs before the click's own handler:
+   * a notice that handler raises is not swept away by the same click.
+   */
+  dismissInfoBanners(): void {
+    this.paydayBanner = null;
+    this.marketNotice = null;
+    this.mlmBanner = null;
+  }
+
+  private readonly onAnyClick = (event?: Event): void => {
+    if (!this.paydayBanner && !this.marketNotice && !this.mlmBanner) return;
+    // A Payday and the bonus roll of a kept Multi-Level-Marketing card are one game turn (JFK, 2026-10-06): pressing that
+    // roll keeps the Payday box on screen, and the outcome joins it - the next action after that clears both.
+    const target = event?.target as Element | null | undefined;
+    if (this.mlmRollIsDue && target?.closest?.('.cf-decision')) return;
+    this.dismissInfoBanners();
+  };
+
+  /** A Payday is on show and a kept MLM card is waiting for its roll. */
+  private get mlmRollIsDue(): boolean {
+    return (
+      this.paydayBanner !== null &&
+      (this.cashflowGameService.openDecisions ?? []).some((deal) => deal.recurring && deal.rollDue)
+    );
+  }
+
+  ngOnDestroy(): void {
+    document.removeEventListener('click', this.onAnyClick, true);
+  }
+
+  /** An amount with its sign, for the Payday popup: "+2.500,00 €", "−2.200,00 €". */
+  signedCardAmount(minor: number): string {
+    return `${minor < 0 ? '−' : ''}${this.cardAmount(minor, true)}`;
+  }
+
+  /** What the Paydays of a roll paid in all: the income, the expenses, and what is left of the month. */
+  private summarisePaydays(result: TurnResult): typeof this.paydayBanner {
+    const count = (result.openingPayday ? 1 : 0) + result.move.paydays;
+    if (!count) return null;
+    let incomeMinor = 0;
+    let expensesMinor = 0;
+    // the Payday effects come first, in order; whatever the landing space did follows them
+    for (const effects of (result.effects ?? []).slice(0, count)) {
+      for (const transaction of effects.appendedTransactions) {
+        if (transaction.amountMinor > 0) incomeMinor += transaction.amountMinor;
+        else expensesMinor -= transaction.amountMinor;
+      }
+    }
+    return { count, incomeMinor, expensesMinor, netMinor: incomeMinor - expensesMinor };
+  }
+
+  /**
+   * The whole reveal, in order: the dice tumble and come to rest on their number, a beat later the token walks space
+   * by space (a Payday flashing as it is entered), it rests on its landing, and only then does the landing speak - a
+   * card waits for the player to open it, nothing opens by itself (JFK, 2026-10-06).
+   */
+  private async walkTo(from: number | null, result: TurnResult): Promise<void> {
+    this.walking = true;
+    this.skipWalking = this.reducedMotion;
+    this.walkingAt = from;
+    await this.tumbleDice(result.roll.dice.length);
+    if (result.openingPayday) this.showPayday();
+    for (const space of result.move.entered) {
+      if (this.skipWalking) break;
+      await this.pause(WALK_STEP_MS);
+      this.walkingAt = space.index;
+      if (space.kind === 'payday') this.showPayday();
+    }
+    if (this.skipWalking && result.move.paydays > 0) this.showPayday();
+    // The totem is on its tile: only now does the roll take effect - Charity's dice choice, the child, the spanner, the
+    // cash - and the dialog or the action comes at once (JFK, 2026-10-06: nothing before the animation has settled).
+    this.walkingAt = result.move.to;
+    this.applyTurn(result);
+    this.walkingAt = undefined;
+    this.walking = false;
+    this.afterLanding(result);
+  }
+
+  /** Applies the planned turn to the game and tells about what only now has happened. */
+  private applyTurn(result: TurnResult): void {
+    try {
+      this.cashflowGameService.commitTurn(result, {
+        onSuccess: () => {
+          this.isBusy = false;
+        },
+        onError: (message) => {
+          this.isBusy = false;
+          this.toastService.show(message, 'error');
+        },
+      });
+    } catch (err: unknown) {
+      this.isBusy = false;
+      this.toastService.show(
+        err instanceof Error ? err.message : 'Could not apply the roll.',
+        'error',
+      );
+      return;
+    }
+    // landing on Charity opens its three turns with two dice selected; the player may switch to one
+    if (result.move.landed.kind === 'charity') this.diceChoice = 2;
+    // a space that had to borrow first (Charity, Downsized with too little cash) says so
+    const borrowedMinor = (result.autoLoansMinor ?? []).reduce((sum, loan) => sum + loan, 0);
+    if (borrowedMinor > 0) {
+      this.toastService.show(
+        this.cashflowGameService.autoLoanMessage(this.toDisplayAmount(borrowedMinor)),
+        'update',
+      );
+    }
+  }
+
+  /**
+   * The dice are thrown: they bounce and turn while the faces flicker, slowing down as they come to rest; then they
+   * land on the real roll (the engine already decided it) with one small pop, and stay still from then on.
+   */
+  private async tumbleDice(count: number): Promise<void> {
+    if (this.reducedMotion) return;
+    this.diceTumbling = true;
+    const started = Date.now();
+    let previous: number[] = [];
+    while (Date.now() - started < DICE_TUMBLE_MS && !this.skipWalking) {
+      const progress = (Date.now() - started) / DICE_TUMBLE_MS;
+      let faces: number[];
+      do {
+        faces = Array.from({ length: count }, () => 1 + Math.floor(Math.random() * 6));
+      } while (faces.join() === previous.join() && count === 1); // a die never "flickers" to the same face
+      previous = this.tumbleFaces = faces;
+      await this.pause(DICE_FACE_FIRST_MS + (DICE_FACE_LAST_MS - DICE_FACE_FIRST_MS) * progress);
+    }
+    this.diceTumbling = false;
+    if (!this.skipWalking) {
+      this.diceLanded = true;
+      setTimeout(() => (this.diceLanded = false), DICE_LAND_POP_MS);
+      await this.pause(DICE_SETTLE_MS);
+    }
+  }
+
+  /** What the landing leaves: the end of the game, a card waiting in the dialog, or a space resolved on the spot. */
+  private afterLanding(result: TurnResult): void {
+    const turn = this.appState.cashflowGame.turn;
+    if (turn?.phase === 'over') {
+      this.dashboardView = 'main';
+      return;
+    }
+    // A card space shows its dialog ("You landed on Deals - open the card, done, or pass"); the card opens on request.
+    if (turn?.phase === 'decide' && turn.pending) return;
+    const spoken: Record<string, string> = {
+      baby: 'CashflowGame.solo.landedBaby',
+      charity: 'CashflowGame.solo.landedCharity',
+      downsized: 'CashflowGame.solo.landedDownsized',
+    };
+    const key = spoken[result.move.landed.kind];
+    if (key) this.toastService.show(this.translate.instant(key), 'update');
+  }
+
+  /** Opens the card flow for the space the token is waiting on (Deals asks for the pile first). */
+  openSoloDecision(): void {
+    const kind = this.soloTurn.pending?.kind;
+    if (kind === 'deal') this.landOnDeals();
+    else if (kind === 'doodad') this.landOnDoodad();
+    else if (kind === 'market') this.landOnMarket();
+  }
+
+  /** The card was dealt with (or there was nothing to do): the next roll is open. */
+  finishSoloDecision(how: 'done' | 'passed'): void {
+    this.isBusy = true;
+    this.cashflowGameService.settleSoloDecision(how, {
       onSuccess: () => {
         this.isBusy = false;
-        this.choosingLanguage = false;
-        this.toastService.show(this.translate.instant('CashflowGame.started'), 'success');
-        this.closeWindow();
-        // A plain router.navigate — no reload needed. Home and the other pages that hold their own
-        // snapshot subscribe to transactionsUpdated$/subscriptionsUpdated$ (fired by
-        // CashflowGameService.persistAll on every successful write), so they refresh whether or not
-        // this navigation itself is a no-op (e.g. already being on /home).
-        this.router.navigate(['/home']);
+        this.backToMain();
       },
       onError: (message) => {
         this.isBusy = false;
         this.toastService.show(message, 'error');
       },
     });
+  }
+
+  /**
+   * Wipes the game being played without saving it - for a game started with the wrong settings - and returns to the start
+   * panel (JFK, 2026-10-06). Asks first, with the same wording and confirmation as the reset in Settings.
+   */
+  resetCurrentGame(): void {
+    this.confirm.confirm(
+      this.translate.instant('CashflowGame.resetConfirm'),
+      () => {
+        this.isBusy = true;
+        this.cashflowGameService.resetGame({
+          onSuccess: () => {
+            this.isBusy = false;
+            this.toastService.show(this.translate.instant('CashflowGame.resetDone'), 'delete');
+            this.backToStartPanel();
+          },
+          onError: (message) => {
+            this.isBusy = false;
+            this.toastService.show(message, 'error');
+          },
+        });
+      },
+      'CashflowGame.resetConfirmButton',
+      'delete',
+    );
+  }
+
+  /** Everything the page was showing about the finished game goes: the start panel is what is left. */
+  private backToStartPanel(): void {
+    this.dashboardView = 'main';
+    this.viewedProfession = null;
+    this.choosingLanguage = false;
+    this.showStartGames = false;
+    this.pendingSpace = null;
+    this.spaceData = null;
+    this.rollResult = null;
+    this.marketNotice = null;
+    this.paydayBanner = null;
+    this.lastDice = [];
+    this.diceTumbling = false;
+    this.backToMain();
   }
 
   /** A short hop out to the app's own hamburger menu, instead of duplicating a list of links here. */
@@ -683,6 +1115,19 @@ export class CashflowGameComponent {
     this.activeDeckKind = 'market';
     this.changeDeck();
     this.openCards();
+  }
+
+  /** The tile of the space the open deck belongs to - the symbol on its ring cell - so a Deal, a Doodad and a Market card screen are told apart at a glance. */
+  get activeTileKind(): 'deal' | 'doodad' | 'market' {
+    return this.activeDeckKind === 'doodad'
+      ? 'doodad'
+      : this.activeDeckKind === 'market'
+        ? 'market'
+        : 'deal';
+  }
+
+  tileGlyph(kind: 'deal' | 'doodad' | 'market'): string {
+    return SPACE_GLYPHS[kind];
   }
 
   /** The active deck's translated name, next to the Cards section heading — the deck picker is now the space buttons above, not a separate dropdown. */
@@ -923,7 +1368,8 @@ export class CashflowGameComponent {
   }
 
   sellActiveCardToFriend(): void {
-    if (!this.activeCard || this.friendPrice === null) return;
+    // a share card belongs to whoever drew it: only property and asset cards can be sold (JFK, 2026-10-06)
+    if (!this.activeCard || this.friendPrice === null || this.isShareCard) return;
     this.isBusy = true;
     this.cashflowGameService.sellCardToFriend(
       this.activeCard as CashflowDealCard,
@@ -946,6 +1392,15 @@ export class CashflowGameComponent {
   /** Paid dice cards waiting for their roll. */
   get openDecisions(): CashflowAssetDeal[] {
     return this.cashflowGameService.openDecisions;
+  }
+
+  /**
+   * What the dashboard shows of them: nothing while the totem is still moving. A Payday passed on the way brings a kept
+   * Multi-Level-Marketing card's roll with it, and its dialog comes once the totem has moved over the Payday tile and
+   * come to rest - not at once, while the token is still walking (JFK, 2026-10-06).
+   */
+  get visibleDecisions(): CashflowAssetDeal[] {
+    return this.walking ? [] : this.openDecisions;
   }
 
   /** The app rolls the die. */
@@ -971,6 +1426,9 @@ export class CashflowGameComponent {
     headline: string;
     text: string;
   } | null = null;
+
+  /** The outcome of a kept Multi-Level-Marketing card's Payday roll, as an info box next to the Payday box. */
+  mlmBanner: { won: boolean; text: string } | null = null;
 
   /** The nine spots of a die face, true where a pip sits: three rows of three, read left to right. */
   dieCells(face: number): boolean[] {
@@ -1018,7 +1476,10 @@ export class CashflowGameComponent {
                 },
               );
           this.toastService.show(`${rolled}${result}`, won ? 'success' : 'update');
-          if (roll) {
+          if (deal.recurring) {
+            // the Payday bonus of a kept MLM card: an info box beside the Payday box, not the big result card
+            this.mlmBanner = { won, text: `${rolled}${result}`.trim() };
+          } else if (roll) {
             this.rollResult = {
               roll,
               won,
@@ -1139,6 +1600,48 @@ export class CashflowGameComponent {
       );
     }
     return this.kindsCache;
+  }
+
+  /**
+   * A dropdown picks one value or "all" (empty) - the same as tapping a chip, including what a chip clears with it. On a
+   * phone the quick filters are dropdowns: a row of chips ran off the screen.
+   */
+  private pickFilter<T extends string>(
+    current: T | null,
+    value: string,
+    toggle: (value: T) => void,
+  ): void {
+    if (!value) {
+      if (current !== null) toggle(current); // tapping the active chip clears it
+    } else if (current !== value) {
+      toggle(value as T);
+    }
+  }
+
+  pickCardKind(value: string): void {
+    this.pickFilter(this.cardKindFilter, value, (kind) => this.toggleCardKind(kind));
+  }
+
+  pickCardFamily(value: string): void {
+    this.pickFilter(this.cardFamilyFilter, value, (family) => this.toggleCardFamily(family));
+  }
+
+  pickMarketFamily(value: string): void {
+    this.pickFilter(this.marketFamilyFilter, value, (family) => this.toggleMarketFamily(family));
+  }
+
+  pickMarketOffer(value: string): void {
+    this.pickFilter(this.marketOfferFilter, value, (kind) => this.toggleMarketOffer(kind));
+  }
+
+  pickDoodadAccount(value: string): void {
+    this.pickFilter(this.doodadAccountFilter, value, (account) =>
+      this.toggleDoodadAccount(account),
+    );
+  }
+
+  pickDoodadGroup(value: string): void {
+    this.pickFilter(this.doodadGroupFilter, value, (group) => this.toggleDoodadGroup(group));
   }
 
   /** Tapping the active filter again clears it. */
@@ -1484,11 +1987,8 @@ export class CashflowGameComponent {
       card,
       {
         title: this.activeCardTitle,
-        types: symbols.map((symbol) => ({
-          labels: [symbol, this.cardText.symbolFor(symbol) ?? symbol],
-          // APH24: the number is the unit count (WE).
-          units: Number(/\d+$/.exec(symbol)?.[0]) || undefined,
-        })),
+        // APH24: the number in a symbol is the unit count (WE) - the domain reads it.
+        types: buyerCardTypes(card, (symbol) => this.cardText.symbolFor(symbol)),
       },
       {
         onSuccess: (matched) => {
@@ -1553,10 +2053,7 @@ export class CashflowGameComponent {
       {
         title: this.activeCardTitle,
         businessLabels: boost.onlyBusinesses
-          ? BUSINESS_SYMBOLS.flatMap((symbol) => [
-              symbol,
-              this.cardText.symbolFor(symbol) ?? symbol,
-            ])
+          ? businessCardLabels((symbol) => this.cardText.symbolFor(symbol))
           : undefined,
       },
       {
@@ -1620,13 +2117,15 @@ export class CashflowGameComponent {
     const card = this.activeDoodad;
     if (!card) return;
     const text = this.activeCardText;
-    // What was bought, the joke, the cash / loan note, then the tag - each block after a blank line.
-    const comment =
-      [this.activeCardTitle, text.comment, this.cashflowGameService.doodadLoanNote(card.costMinor)]
-        .filter(Boolean)
-        .join('\n\n') + '\n\n#doodad';
+    // What was bought, the joke, the cash / loan note, then the tag - the domain composes them, so the
+    // game page and the Pro API write the same comment.
+    const comment = cardExpenseComment(
+      'doodad',
+      { title: this.activeCardTitle, flavor: text.comment },
+      this.cashflowGameService.doodadLoanNote(card.costMinor),
+    );
     await this.openAddDialog({
-      account: card.account ?? 'Splurge',
+      account: doodadAccount(card),
       category: this.doodadCategory,
       costMinor: card.costMinor,
       comment,
@@ -1673,9 +2172,7 @@ export class CashflowGameComponent {
       card,
       {
         title: this.activeCardTitle,
-        types: PROPERTY_SYMBOLS.map((symbol) => ({
-          labels: [symbol, this.cardText.symbolFor(symbol) ?? symbol],
-        })),
+        types: propertyCardTypes((symbol) => this.cardText.symbolFor(symbol)),
       },
       {
         onSuccess: (property) => {
@@ -1687,13 +2184,14 @@ export class CashflowGameComponent {
           }
           const what = (this.activeCardText.comment ?? '').split('{property}').join(property);
           void this.openAddDialog({
-            account: 'Fire',
+            account: MARKET_COST_ACCOUNT,
             category: property,
             costMinor: pays.costMinor,
-            comment:
-              [this.activeCardTitle, what, this.cashflowGameService.doodadLoanNote(pays.costMinor)]
-                .filter(Boolean)
-                .join('\n\n') + '\n\n#market',
+            comment: cardExpenseComment(
+              'marketCost',
+              { title: this.activeCardTitle, flavor: what },
+              this.cashflowGameService.doodadLoanNote(pays.costMinor),
+            ),
           });
         },
         onError: (message) => {
@@ -1746,6 +2244,19 @@ export class CashflowGameComponent {
 
   toggleGame(game: SavedGameSummary): void {
     this.openGameId = this.openGameId === game.id ? null : game.id;
+  }
+
+  /** The start screen's list of games played so far: closed by default, opened with the button under Start. */
+  showStartGames = false;
+
+  openStartGames(): void {
+    this.renamingId = null;
+    this.showStartGames = true;
+    void this.refreshGames();
+  }
+
+  closeStartGames(): void {
+    this.showStartGames = false;
   }
 
   openGames(): void {
@@ -1839,6 +2350,7 @@ export class CashflowGameComponent {
           await this.language.use(game.language as Parameters<LanguageService['use']>[0]);
         }
         this.viewedProfession = null;
+        this.showStartGames = false;
         this.backToMain();
       }, 'gameLoaded');
     };
@@ -1910,11 +2422,13 @@ export class CashflowGameComponent {
 
   /** Bank Loan and Payback Loan are each hidden behind their own trigger, with a Back button, like Deal pile/Cards (JFK, 2026-09-29). */
   openBankLoan(): void {
+    this.loanIncrements = 1; // always a fresh start, never the number left from the last time (JFK, 2026-10-06)
     this.dashboardView = 'bankLoan';
   }
 
   /** Only reachable once there's actually a loan to pay back — the trigger button itself is `*ngIf`'d on that. */
   openPayLoan(): void {
+    this.loanIncrements = 1;
     this.dashboardView = 'payLoan';
   }
 
@@ -1967,15 +2481,34 @@ export class CashflowGameComponent {
     this.adjustLoan(this.loanIncrements * this.loanIncrementAmount);
   }
 
-  /** Pre-fills the number of steps needed to clear the whole loan (JFK, 2026-10-03): 4,000 outstanding in 1,000 steps -> 4. The player still presses Repay. */
+  /**
+   * The most that can be repaid now (JFK, 2026-10-07): the whole loan, or the whole loan steps the cash on hand covers -
+   * repaying never takes the account below zero. The rule itself is `maxRepayableMinor` in the domain.
+   */
+  get maxLoanRepayment(): number {
+    return fromMinorUnits(
+      maxRepayableMinor(
+        toMinorUnits(this.cash),
+        toMinorUnits(this.currentLoanPrincipal),
+        toMinorUnits(this.loanIncrementAmount),
+      ),
+    );
+  }
+
+  /** Cash is what holds the repayment back, not the size of the loan. */
+  get repaymentLimitedByCash(): boolean {
+    return this.currentLoanPrincipal > 0 && this.maxLoanRepayment < this.currentLoanPrincipal;
+  }
+
+  /** Pre-fills the number of steps that clears the loan - or as much of it as the cash allows (JFK, 2026-10-03/07): 4,000 owed in 1,000 steps -> 4, with 2,500 cash -> 2. The player still presses Repay. */
   settleAllLoan(): void {
     if (this.currentLoanPrincipal <= 0 || !this.loanIncrementAmount) return;
-    this.loanIncrements = Math.ceil(this.currentLoanPrincipal / this.loanIncrementAmount);
+    this.loanIncrements = Math.max(1, Math.ceil(this.maxLoanRepayment / this.loanIncrementAmount));
   }
 
   repayLoan(): void {
     this.adjustLoan(
-      -Math.min(this.loanIncrements * this.loanIncrementAmount, this.currentLoanPrincipal),
+      -Math.min(this.loanIncrements * this.loanIncrementAmount, this.maxLoanRepayment),
     );
   }
 
@@ -1986,6 +2519,7 @@ export class CashflowGameComponent {
       onSuccess: () => {
         this.isBusy = false;
         this.toastService.show(this.translate.instant('CashflowGame.loanUpdated'), 'success');
+        this.loanIncrements = 1; // the next settle starts at 1 again, not at the 2 of the last one
         this.backToMain();
       },
       onError: (message) => {
@@ -1996,11 +2530,20 @@ export class CashflowGameComponent {
   }
 
   private runAction(
-    action: (callbacks: { onSuccess: () => void; onError: (message: string) => void }) => void,
+    action: (callbacks: {
+      onSuccess: () => void;
+      onError: (message: string) => void;
+      onLoan?: (loanMinor: number) => void;
+    }) => void,
     kind: 'baby' | 'charity' | 'downsized',
   ): void {
     this.isBusy = true;
     action({
+      onLoan: (loanMinor) =>
+        this.toastService.show(
+          this.cashflowGameService.autoLoanMessage(this.toDisplayAmount(loanMinor)),
+          'update',
+        ),
       onSuccess: () => {
         this.isBusy = false;
         this.toastService.show(this.translate.instant(`CashflowGame.${kind}Done`), 'success');

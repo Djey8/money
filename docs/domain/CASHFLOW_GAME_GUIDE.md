@@ -101,3 +101,66 @@ hand. Pay off any liability in full at any point in the game, exactly like any p
   in Payday); decision 2 already means the whole account is the game.
 - Real card text/values (Deal, Market, Doodad) and the physical board's space sequence are still needed from JFK
   before Phase 2/3 can be built — nothing here invents them.
+
+## 8. Solo mode: the app plays the board
+
+When a game starts, next to the language you choose **how to play**: _with the physical board_ (everything above), or
+**solo in the app**, where the app rolls the dice and walks your token round the rat race. The mode is fixed for that
+game. The board is the German "Cashflow - Verlasse das Hamsterrad!" rat race, drawn as a ring of 24 spaces (12 Deals,
+3 Doodad, 3 Payday, 3 Market, one each of Charity, Downsized and Baby).
+
+- **Start.** Before the first roll the totem waits outside the rat race, top middle, with "Start" written below it;
+  with the first roll it moves inside the ring and goes round the tiles. The token starts at START, just before the first space: a first roll of _n_ lands on space _n_ (the
+  Deals space next to START for a 1). **The first roll starts the game officially**: it also pays your first Payday,
+  so you have your savings plus one Payday before the token has moved.
+- **A turn is one roll, and it reveals itself in order.** The dice tumble and come to rest on their number (the faces
+  you see are the engine's result - the tumble never decides anything), the token walks space by space, and the moment
+  the totem is on its tile the landing speaks (no extra wait). Press **Skip** to jump ahead; with "reduce motion" set the
+  token jumps by itself. The dice are thrown with a bounce, the faces slow down, they land with one small pop and then stay still on the number.
+- **Payday** pays whenever you **land on or pass** a Payday space, once per Payday space. It also advances the game's
+  calendar one month, as in the companion. An info box at the top of the dashboard, like the "card does not apply" notice, shows what
+  it paid (income, expenses, the monthly result); it goes with the next thing you do or with its X - the info boxes of
+  the game vanish that way.
+- **A kept Multi-Level-Marketing card** gets its bonus roll at the Payday - the same game turn. The Payday info box stays
+  while you press the MLM roll, and the outcome (the bonus paid, or not) appears as a second info box next to it; your
+  next action clears both.
+- **Baby, Charity, Downsized** resolve on the spot (a Baby space with three children changes nothing). **Charity and
+  Downsized pay cash, and the balance never goes negative:** when cash is short, the Bank loan is taken first (the
+  shortfall rounded up to the loan step, as its own step in the history) and then the payment is made - in solo and with
+  the physical board alike. **Charity**
+  donates 10 % of your income, then for the next **3 turns** you may choose **1 or 2 dice** before each roll - **two dice are selected by default**, switch to one if you prefer.
+  **Downsized** pays your expenses; the spanner is only a reminder (playing alone nobody takes a turn in between, so
+  nothing is skipped) and your **next roll removes it**.
+- **Deals, Doodad, Market** show a dialog first ("You landed on Deals"). **Open the card** starts the card flow you
+  know (Deals asks for the Small or Big pile first; you draw a random card or look for a specific one) - nothing opens
+  by itself. The turn stays open - **you cannot roll again** - until you press **Done** after dealing with the card, or
+  **Pass** to leave it (Pass is a step of its own, so Undo brings the card back).
+- **Selling a card to a friend** is for property and special-asset cards only (also in companion mode): **a share card
+  belongs to whoever drew it** and cannot be sold.
+- **One roll is one step in the history**, however many Paydays and spaces it touched: one Undo takes back the whole
+  roll, with the token.
+- **The game ends** when you **escape the rat race** (passive income covers all your monthly expenses - the Fast
+  Track is not part of the app) or go **bankrupt** (your monthly cashflow is negative). The end screen shows the
+  rounds, turns, cash and monthly picture and offers to save the game.
+- Solo is for **cashflow game accounts** like the rest of the game, in the self-hosted edition's game content.
+
+The turn logic is the `@money/domain` package's (`board.ts`, `movement.ts`, `turn.ts`, `game-end.ts`); the app only
+shows it and forwards the buttons. A seeded game plays out identically every time, which is how the rules are tested
+(`solo-simulation.spec.ts`).
+
+## 9. Playing as an agent (Pro API and MCP)
+
+A game account (an email containing `cashflow`) can be played by an agent through the Pro API or the MCP tools `get_cashflow_game` and `play_cashflow_game`. It plays the same rules as the app - the rules are shared code - and the account ends up exactly as if a person had played the same moves: the books, the game state and the history are written the way the app writes them, so the player can undo what an agent played, and the other way round.
+
+**The loop.** Call `get_cashflow_game` action `game` before every move. It returns the state, the books' figures and `legalActions`: the only moves the game accepts now. In a solo game:
+
+1. `start` with `mode: "solo"` (pick the set and profession from `sets`).
+2. While `turn.phase` is `roll`: `roll` (`dice: 2` while Charity runs). The first roll pays the opening Payday; every Payday the token enters is paid.
+3. While it is `decide`, `pendingDecision.kind` names the pile: for `deal`, `draw_card` from `dealSmall` or `dealBig`, then `buy_deal {cardId, quantity?}` or `pass_card`; for `doodad`, `draw_card` then `pay_doodad {cardId}`; for `market`, `draw_card` then `play_market {cardId}` or `pass_card`. A stock split or a paid dice card leaves a waiting `roll_decision`.
+4. Stop when `outcome` is `escaped` (passive income covers every expense) or `bankrupt` (a negative monthly cashflow).
+
+**Special assets and selling:** `buy_deal` takes the gold, loan-to-a-relative and Multi-Level-Marketing cards too (a dice card waits for `roll_decision`), and `sell_position {title, quantity?, priceMinor?, salePriceMinor?}` sells shares, a property to the buyer a Market card brought, or gold by the coin; `holdings` in the game shows what can be sold.
+
+**Undo and history.** `undo {count?}` takes steps back; `history` is the step log. **Saved games:** `save` (a normal game is saved in full, with its undo history; `compact: true` is only for a batch of games saved for statistics - about a tenth of the size, and they cannot be reviewed), `saves`, `save`, `load_save`, `end_game`, `rename_save`, `delete_save`, `prune_saves`. Every saved game sits inside the account's one database document, so `storage` in the saves list says how much room is left and a save past the budget is refused. **An agent that saves many games cleans up afterwards**: at most 100 saves stay (`storage.keepAtMost`), the important ones.
+
+**Analysing a game.** Ask an agent to analyse a game you played ("where did I go wrong?"): it reads `review` (the running game) or `review_save` (a saved game that kept its history - save games you want analysed in full, not compact) and tells you the turning point and the lessons. Every purchase, sale, loan and card left is judged against the alternative by playing both positions out many times with the same dice, and set beside what the strategy lab measured for your profession (`explain_concept` topic `cashflow_strategy_lab`, and section 18 of the in-app manual).

@@ -19,7 +19,7 @@ const LIST_KEYS = [
   'allFireEmergencies',
 ] as const;
 
-type Snapshot = Record<string, any>;
+type Snapshot = Record<string, unknown>;
 
 interface EncodedList {
   /** How many items at the start equal those of the next newer snapshot's list. */
@@ -28,7 +28,7 @@ interface EncodedList {
   tail: unknown[];
 }
 
-type EncodedSnapshot = Record<string, any> & { lists: Record<string, EncodedList> };
+type EncodedSnapshot = Record<string, unknown> & { lists: Record<string, EncodedList> };
 
 export interface EncodedUndoChain {
   format: 1;
@@ -43,14 +43,15 @@ function sameItems(older: unknown[], newer: unknown[]): number {
   return keep;
 }
 
-export function encodeUndoChain(stack: Snapshot[]): EncodedUndoChain {
+export function encodeUndoChain<T extends object>(snapshotStack: T[]): EncodedUndoChain {
+  const stack = snapshotStack as unknown as Snapshot[];
   const snapshots = stack.map((snapshot, index) => {
     const newer = stack[index + 1];
     const { ...rest } = snapshot;
     const lists: Record<string, EncodedList> = {};
     for (const key of LIST_KEYS) {
-      const items: unknown[] = snapshot[key] ?? [];
-      const keep = newer ? sameItems(items, newer[key] ?? []) : 0;
+      const items = (snapshot[key] ?? []) as unknown[];
+      const keep = newer ? sameItems(items, (newer[key] ?? []) as unknown[]) : 0;
       // An empty list says nothing: it is left out and decodes as empty.
       if (keep > 0 || items.length > keep) lists[key] = { keep, tail: items.slice(keep) };
       delete rest[key];
@@ -65,7 +66,7 @@ export function isEncodedUndoChain(value: unknown): value is EncodedUndoChain {
   return Boolean(chain && chain.format === 1 && Array.isArray(chain.snapshots));
 }
 
-export function decodeUndoChain(chain: EncodedUndoChain): Snapshot[] {
+export function decodeUndoChain<T extends object = Snapshot>(chain: EncodedUndoChain): T[] {
   const decoded: Snapshot[] = new Array(chain.snapshots.length);
   for (let index = chain.snapshots.length - 1; index >= 0; index--) {
     const { lists, ...rest } = chain.snapshots[index];
@@ -79,5 +80,5 @@ export function decodeUndoChain(chain: EncodedUndoChain): Snapshot[] {
     }
     decoded[index] = snapshot;
   }
-  return decoded;
+  return decoded as unknown as T[];
 }
