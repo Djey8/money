@@ -1,3 +1,10 @@
+## [1.21.0] - 2026-10-07
+
+### Features
+
+- feat(mcp): choose which permissions to grant on the MCP login page
+- feat(mcp): the Cashflow game scope is offered on the MCP login page and in the token form
+
 ## [1.20.0] - 2026-10-07
 
 ### Features
