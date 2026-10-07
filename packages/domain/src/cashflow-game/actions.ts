@@ -2,6 +2,9 @@ import { applyEffectsToBooks, type GameBooks } from './books';
 import { dealPlanText, doodadPaymentCategory, doodadPaymentTitle } from './card-plan-text';
 import type { CardTextDeps, CardTextSource } from './card-plan-text';
 import { drawRandomCard } from './cards';
+import { pickCashflowProfession } from './engine';
+import { textOrFallback } from './game-text';
+import { gameSubscriptionDays, nextSmartDate } from './scheduling';
 import { dealInputFromCard, executeDeal, planDeal, takenDealLabels, type DealDeps } from './deals';
 import { openDecisions, resolveGamble } from './asset-deals';
 import { emptyEffects, type GameEffects } from './effects';
@@ -325,4 +328,84 @@ export function sellPositionAction(
     effects: sold.steps,
     result: { title: input.title, kind: sold.kind, cashMinor: sold.cashMinor },
   };
+}
+
+/**
+ * The starting position of a game: the savings booked, the profession's subscriptions and starting positions created in
+ * the game's language, a solo game's token at START. A new game has a new history - the caller drops the old one.
+ */
+export function startGameAction(
+  books: GameBooks,
+  input: { gameSetId: string; professionId: string; mode?: 'companion' | 'solo' },
+  deps: Pick<ActionDeps, 'clock' | 'text'>,
+  gameSets: CashflowGameSet[],
+): ActionPlan {
+  const { gameSetId, professionId, mode = 'companion' } = input;
+  const result = pickCashflowProfession(
+    gameSets,
+    gameSetId,
+    professionId,
+    deps.clock.todayIso(),
+    mode,
+  );
+  const { text } = deps;
+  const { profession } = result;
+  const professionTitle = textOrFallback(
+    text,
+    `CashflowGame.profession.${profession.id}.title`,
+    profession.title,
+  );
+  const salaryWord = text('CashflowGame.salary');
+  const savingsWord = text('CashflowGame.savings');
+  const lineTitle = (line: { key?: string; title: string }) =>
+    line.key
+      ? textOrFallback(text, `CashflowGame.expenseLine.${line.key}`, line.title)
+      : line.title;
+  // result.subscriptions is [salary, ...the non-zero expense lines], in that order.
+  const nonZeroExpenses = profession.expenses.filter((line) => line.amountMinor !== 0);
+  const titles = result.subscriptions.map((_sub, index) =>
+    index === 0
+      ? text('CashflowGame.salarySubscriptionTitle', { profession: professionTitle })
+      : lineTitle(nonZeroExpenses[index - 1]),
+  );
+
+  const usedDays = gameSubscriptionDays(books.subscriptions);
+  const kit = result.starterKit;
+  const effects = emptyEffects(
+    { ...result.state, gameSubscriptionTitles: titles },
+    { kind: 'start', detail: professionTitle },
+  );
+  effects.appendedTransactions = result.startingTransactions.map((record) => ({
+    ...record,
+    category: `@${savingsWord}`,
+    comment: `${text('CashflowGame.savingsTransactionComment', { profession: professionTitle })}\n#cashflow`,
+  }));
+  effects.subscriptionUpserts = result.subscriptions.map((sub, index) => ({
+    title: titles[index],
+    account: sub.account,
+    amountMinor: sub.amountMinor,
+    startDate: nextSmartDate(usedDays, deps.clock.todayIso()),
+    endDate: '',
+    category: index === 0 ? `@${salaryWord}` : `@${titles[index]}`,
+    comment: sub.comment ? `${sub.comment}\n#cashflow` : '#cashflow',
+    frequency: sub.frequency,
+  }));
+  effects.assetUpserts = (kit.assets ?? []).map((asset) => ({
+    tag: asset.tag,
+    amountMinor: asset.amountMinor,
+  }));
+  effects.investmentUpserts = (kit.investments ?? []).map((investment) => ({
+    tag: investment.tag,
+    depositMinor: investment.depositMinor,
+    amountMinor: investment.amountMinor,
+  }));
+  effects.shareUpserts = (kit.shares ?? []).map((share) => ({ ...share }));
+  effects.liabilityUpserts = (kit.liabilities ?? []).map((liability) => ({
+    tag: liability.key
+      ? textOrFallback(text, `CashflowGame.liabilityTag.${liability.key}`, liability.tag)
+      : liability.tag,
+    amountMinor: liability.amountMinor,
+    investment: false,
+  }));
+  return { effects: [effects] };
 }
