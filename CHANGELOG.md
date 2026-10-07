@@ -1,3 +1,9 @@
+## [1.21.1] - 2026-10-07
+
+### Bug Fixes
+
+- fix(cashflow-game): the analyst no longer fails on a sale or loan made while a card waits
+
 ## [1.21.0] - 2026-10-07
 
 ### Features
