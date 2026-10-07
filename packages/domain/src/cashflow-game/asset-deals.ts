@@ -354,11 +354,12 @@ export function resolveGamble(
     ];
   }
   if (outcome.won && payoutMinor) {
-    // A loan that came back: the cash is income, nothing is owned afterwards.
+    // A loan that came back: the cash is income (JFK, 2026-10-07: everything earned is booked as Income), nothing is
+    // owned afterwards.
     effects.appendedTransactions = placeOneOffTransactions(
       [
         {
-          account: 'Daily',
+          account: 'Income',
           amountMinor: payoutMinor,
           date: '',
           time: '',

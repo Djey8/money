@@ -308,7 +308,7 @@ describe('resolveGamble: a paid dice card', () => {
     );
     expect(effects.appendedTransactions).toEqual([
       {
-        account: 'Daily',
+        account: 'Income',
         amountMinor: 1000000,
         date: '2026-10-05',
         time: '',

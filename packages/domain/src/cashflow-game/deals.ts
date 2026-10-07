@@ -771,7 +771,7 @@ export function sellCardToFriend(
   effects.appendedTransactions = placeOneOffTransactions(
     [
       {
-        account: 'Daily',
+        account: 'Income',
         amountMinor,
         date: '',
         time: '',

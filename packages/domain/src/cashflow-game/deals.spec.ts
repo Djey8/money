@@ -597,13 +597,13 @@ describe('removeExpenseForPaidLiability', () => {
 describe('sellCardToFriend', () => {
   const card = { title: 'OK4U Inc.', symbol: 'OK4U' };
 
-  it('books one-time Daily income named after the card, on the next free day, as one step', () => {
+  it('books one-time Income named after the card, on the next free day, as one step', () => {
     const b = books();
     const effects = sellCardToFriend(deepFreeze(b), card, 150000, undefined, deps);
     expect(effects.step).toEqual({ kind: 'cardSale', detail: 'OK4U' });
     expect(effects.appendedTransactions).toEqual([
       {
-        account: 'Daily',
+        account: 'Income',
         amountMinor: 150000,
         date: '2026-10-05',
         time: '',

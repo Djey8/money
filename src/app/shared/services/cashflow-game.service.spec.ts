@@ -2420,7 +2420,7 @@ describe('CashflowGameService', () => {
           expect(AppStateService.instance.allAssets).toHaveLength(0);
         });
 
-        it('a winning roll pays 10.000 into Daily as income - no asset, project completed', () => {
+        it('a winning roll pays 10.000 as Income - no asset, project completed', () => {
           paid();
           const before = AppStateService.instance.allTransactions.length;
 
@@ -2429,7 +2429,7 @@ describe('CashflowGameService', () => {
           const state = AppStateService.instance;
           const income = state.allTransactions.slice(before);
           expect(income).toHaveLength(1);
-          expect(income[0]).toMatchObject({ account: 'Daily', amount: 10000, category: '@LOAN' });
+          expect(income[0]).toMatchObject({ account: 'Income', amount: 10000, category: '@LOAN' });
           expect(income[0].comment).toContain('#cashflow');
           expect(state.allAssets).toHaveLength(0);
           expect(state.cashflowGame.assetDeals![0].stage).toBe('paidBack');
@@ -2864,7 +2864,7 @@ describe('CashflowGameService', () => {
       expect(AppStateService.instance.allTransactions).toHaveLength(before);
     });
 
-    it('selling a card to a friend books one-time Daily income named after the card, and undoes', () => {
+    it('selling a card to a friend books one-time Income named after the card, and undoes', () => {
       const before = AppStateService.instance.allTransactions.length;
       const cb = callbacks();
       service.sellCardToFriend(house, 500, cb);
@@ -2872,7 +2872,7 @@ describe('CashflowGameService', () => {
       const state = AppStateService.instance;
       expect(cb.onSuccess).toHaveBeenCalled();
       expect(state.allTransactions[before]).toMatchObject({
-        account: 'Daily',
+        account: 'Income',
         amount: 500,
         category: '@EFH card sale',
       });

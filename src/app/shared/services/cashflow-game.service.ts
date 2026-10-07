@@ -1175,6 +1175,8 @@ export class CashflowGameService {
       includeSubscriptions: true,
       includeBalanceSheet: true,
       includeGrow: true,
+      // the screen does not grey out when the totem lands: the game blocks its own buttons while it saves (JFK, 2026-10-07)
+      quiet: true,
     });
     if (result.effects.some((effects) => effects.decisionNeeded)) this.decisionNeeded$.next();
   }
@@ -1225,7 +1227,7 @@ export class CashflowGameService {
     }
     if (settled.step) this.pushUndoSnapshot(settled.step);
     AppStateService.instance.cashflowGame = settled.state;
-    this.persistAll('cashflow_decision', { how }, callbacks);
+    this.persistAll('cashflow_decision', { how }, callbacks, { quiet: true });
   }
 
   /** Resolves a Baby space: +1 child (max 3), scales the children-expense Subscription. */
@@ -2216,11 +2218,13 @@ export class CashflowGameService {
       includeSubscriptions?: boolean;
       includeBalanceSheet?: boolean;
       includeGrow?: boolean;
+      /** Save without the page-wide saving overlay (the caller already blocks its own buttons). */
+      quiet?: boolean;
     } = {},
   ): void {
     const state = AppStateService.instance;
     this.incomeStatement.recalculate();
-    state.isSaving = true;
+    if (!options.quiet) state.isSaving = true;
 
     const writes: { tag: string; data: unknown }[] = [
       { tag: 'transactions', data: state.allTransactions },
