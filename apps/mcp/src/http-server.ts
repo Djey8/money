@@ -73,7 +73,13 @@ export async function startHttpServer(env: NodeJS.ProcessEnv = process.env): Pro
   });
 
   app.post('/oauth/login', (req, res) => {
-    const body = req.body as { req?: string; email?: string; password?: string };
+    const body = req.body as {
+      req?: string;
+      email?: string;
+      password?: string;
+      scope?: string | string[];
+      scopes_chosen?: string;
+    };
     const requestId = body.req;
     const pending = requestId ? provider.getPendingRequest(requestId) : undefined;
     if (!requestId || !pending) {
@@ -84,9 +90,17 @@ export async function startHttpServer(env: NodeJS.ProcessEnv = process.env): Pro
     const password = body.password ?? '';
     const scopes = (pending.params.scopes ?? []).filter((scope) => scope !== 'admin');
     const displayScopes = scopes.length > 0 ? scopes : DEFAULT_SCOPES;
+    // The page posts one `scope` per ticked box, and `scopes_chosen` so that "all unticked" (no `scope` at
+    // all) can be told from a client that never showed the choice (everything offered then).
+    const selected =
+      body.scopes_chosen === undefined
+        ? undefined
+        : body.scope === undefined
+          ? []
+          : [body.scope].flat();
 
     provider
-      .completeLogin(requestId, email, password)
+      .completeLogin(requestId, email, password, selected)
       .then((redirectUrl) => res.status(200).type('html').send(renderRedirectPage(redirectUrl)))
       .catch((error: unknown) => {
         const message = error instanceof Error ? error.message : 'Sign-in failed.';
@@ -98,6 +112,7 @@ export async function startHttpServer(env: NodeJS.ProcessEnv = process.env): Pro
               requestId,
               clientName: pending.client.client_name ?? pending.client.client_id,
               scopes: displayScopes,
+              selected,
               error: message,
             }),
           );
