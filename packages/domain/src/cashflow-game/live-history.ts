@@ -27,6 +27,8 @@ export interface HistoryLogLine {
   kind: string;
   detail: string;
   at: string;
+  /** For a passed card: the Deal card that was drawn before it was left. */
+  cardId?: string;
 }
 
 export interface LiveHistory {
@@ -55,7 +57,13 @@ export function buildLiveHistory<S extends GameSnapshot>(
     undo: encodeUndoChain(stack),
     steps: historySteps(stack, live, deps)
       .reverse()
-      .map(({ number, kind, detail, at }) => ({ number, kind, detail, at })),
+      .map(({ number, kind, detail, at, cardId }) => ({
+        number,
+        kind,
+        detail,
+        at,
+        ...(cardId ? { cardId } : {}),
+      })),
   };
 }
 

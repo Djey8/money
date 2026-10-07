@@ -89,8 +89,17 @@ export function describeReview(
     `The game ${result}. Passive income ${money(final.passiveIncomeMinor)} against expenses ${money(final.expensesMinor)}; monthly cashflow ${money(final.monthlyCashflowMinor)}; cash ${money(final.cashMinor)}; ${final.children} ${final.children === 1 ? 'child' : 'children'}.`,
   );
   lines.push(
-    `${review.judged} of ${review.steps} steps were decisions that could be judged (purchases, sales, loans, cards left); each was judged over ${review.rollouts} simulated continuations per alternative, with the same dice for both.`,
+    `${review.judged} of ${review.steps} steps were decisions that could be judged (purchases, sales, loans, cards planned and then left); each was judged over ${
+      review.rolloutsUsed && review.rolloutsUsed.min !== review.rolloutsUsed.max
+        ? `${review.rolloutsUsed.min} to ${review.rolloutsUsed.max}`
+        : (review.rolloutsUsed?.max ?? review.rollouts)
+    } simulated continuations per alternative, with the same dice for both.`,
   );
+  if (review.truncated) {
+    lines.push(
+      `**The review is incomplete:** the time ran out with ${review.unjudged} ${review.unjudged === 1 ? 'decision' : 'decisions'} still to judge. Ask again with more time (or fewer rollouts) to judge them all.`,
+    );
+  }
   if (review.skipped > 0) {
     lines.push(
       `${review.skipped} further ${review.skipped === 1 ? 'decision' : 'decisions'} could not be played on from and ${review.skipped === 1 ? 'is' : 'are'} not judged.`,

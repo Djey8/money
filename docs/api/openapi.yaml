@@ -1405,6 +1405,9 @@ paths:
                         kind: { type: string }
                         detail: { type: string }
                         at: { type: string }
+                        cardId:
+                          type: string
+                          description: For a passed card (kind skipCard) - the Deal card the player had drawn before leaving it.
               example:
                 updatedAt: '2026-10-06T10:00:01.000Z'
                 steps:
@@ -6409,12 +6412,17 @@ components:
             description: { type: string }
         review:
           type: object
-          description: The judged moves (kind, label, escapeChance taken/other/delta, rollsToEscape, facts), counts per label, turningPoint, bestMove, final result.
+          description: The judged moves (kind, label, escapeChance taken/other/delta, rollsToEscape, facts), counts per label, turningPoint, bestMove, final result, and how complete it is (judged, truncated and unjudged when the time budget ran out, skipped for positions that could not be played on from, rolloutsUsed).
         benchmark:
           type: object
           nullable: true
           description: The strategy lab's best strategy for the profession and where this game ranks among its games.
         text: { type: string, description: The review in words (markdown). }
+        truncated:
+          {
+            type: boolean,
+            description: True when the time budget ran out before every decision was judged.,
+          }
     MojoStatus:
       type: object
       required: [amountMinor, targetMinor, remainingMinor, percentFilled]

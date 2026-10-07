@@ -269,6 +269,15 @@ export class CashflowGameComponent implements OnDestroy {
     return this.gameSets.find((set) => set.id === gameSetId);
   }
 
+  /** What a passed card was (the card the player had drawn and left), for the History line. */
+  passedCardLabel(cardId: string): string {
+    const decks = this.currentGameSet?.decks;
+    const card = [...(decks?.dealSmall ?? []), ...(decks?.dealBig ?? [])].find(
+      (candidate) => candidate.id === cardId,
+    );
+    return card ? (this.cardText.symbolFor(card.symbol) ?? card.symbol ?? card.title) : '';
+  }
+
   get loanIncrementAmount(): number {
     return fromMinorUnits(this.currentGameSet?.loanRule.incrementMinor ?? 0);
   }
