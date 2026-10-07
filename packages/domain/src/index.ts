@@ -38,6 +38,7 @@ export * from './cashflow-game/effects';
 export * from './cashflow-game/books';
 export * from './cashflow-game/rounds';
 export * from './cashflow-game/steps';
+export * from './cashflow-game/card-reference';
 export * from './cashflow-game/market-cards';
 export * from './cashflow-game/trades';
 export * from './cashflow-game/loan';

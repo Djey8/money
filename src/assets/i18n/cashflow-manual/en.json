@@ -109,7 +109,13 @@
     "policy_mlm-then-properties": "Marketing first, then properties",
     "policy_stocks-for-deposits": "Trade stocks for deposits",
     "policy_all-rounder": "All-rounder",
-    "policy_best-found": "Best found by the search"
+    "policy_best-found": "Best found by the search",
+    "deckSmall": "Small Deals",
+    "deckBig": "Big Deals",
+    "deckMarket": "Market",
+    "deckDoodad": "Doodads",
+    "browserSearch": "Search by title, ticker, id or kind",
+    "browserNone": "No card matches."
   },
   "sections": {
     "start": {
@@ -1138,6 +1144,24 @@
           "text": "An average Big Deal property pays about 1.800 a month; an average paying Small Deal property about 180. To cover 1.000 of expenses you need one Big Deal property or six small ones. The caretaker’s +600 a month alone would take years to save the 32.000–40.000 deposit - which is why the small, quick deals, the gamble cards and the share trades matter at the start."
         },
         { "type": "data", "id": "escape", "caption": "Passive income needed per profession" }
+      ]
+    },
+    "cards": {
+      "nav": "All the cards",
+      "title": "All the cards",
+      "intro": "Every card of every pile, to read and search - you cannot play them here. Each card shows its **id**: the game's History names a card you picked by that id, so a game can be looked at afterwards and what you passed on (or rightly left) can be told.",
+      "blocks": [
+        {
+          "type": "callout",
+          "kind": "tip",
+          "title": "Why the ids matter",
+          "text": "Every card you pick - drawn at random, or found among your physical cards - is written into the History with its exact id. When a game is analysed, the analyst reads those ids to see which deal you passed on, and plays both choices out many times. **Pick the card before you pass it**: a pass without a picked card leaves nothing to judge."
+        },
+        { "type": "cardbrowser" },
+        {
+          "type": "p",
+          "text": "An agent reads the same list from `GET /api/v1/game/cards` (it needs no running game: pass `gameSetId=cashflow`) and from `docs/domain/CASHFLOW_CARDS.md`."
+        }
       ]
     },
     "faq": {

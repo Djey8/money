@@ -33,6 +33,7 @@ const BLOCK_TYPES = [
   'cards',
   'face',
   'data',
+  'cardbrowser',
   'glossary',
 ];
 

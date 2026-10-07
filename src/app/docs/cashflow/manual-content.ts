@@ -18,6 +18,8 @@ export type ManualBlock =
   | { type: 'face'; cardId: string; caption?: string }
   /** A table computed from the card catalog. */
   | { type: 'data'; id: ManualDataId; caption?: string }
+  /** Every card of every pile, to read and search - without playing any of them. */
+  | { type: 'cardbrowser' }
   | { type: 'glossary'; items: { term: string; text: string }[] };
 
 export interface ManualSection {
@@ -63,8 +65,9 @@ export const MANUAL_SECTIONS: ManualSectionRef[] = [
   { id: 'strategy', number: '17', level: 0 },
   { id: 'lab', number: '18', level: 0 },
   { id: 'odds', number: '19', level: 0 },
-  { id: 'faq', number: '20', level: 0 },
-  { id: 'glossary', number: '21', level: 0 },
+  { id: 'cards', number: '20', level: 0 },
+  { id: 'faq', number: '21', level: 0 },
+  { id: 'glossary', number: '22', level: 0 },
 ];
 
 /** The languages the manual is written in; every other language shows the English text. */

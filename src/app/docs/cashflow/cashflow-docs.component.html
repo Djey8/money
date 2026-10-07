@@ -266,6 +266,53 @@
               <figcaption *ngIf="$any(block).caption">{{ $any(block).caption }}</figcaption>
             </figure>
 
+            <!-- Every card to read and search - none of them can be played here -->
+            <div class="manual-browser" *ngSwitchCase="'cardbrowser'">
+              <div class="manual-browser-tabs" role="tablist">
+                <button
+                  type="button"
+                  role="tab"
+                  *ngFor="let deck of browserDecks"
+                  [ngClass]="{ active: deck === browserDeck }"
+                  [attr.aria-selected]="deck === browserDeck"
+                  (click)="selectBrowserDeck(deck)"
+                >
+                  {{ deckName(deck) }} ({{ browserRows(deck).length }})
+                </button>
+              </div>
+              <input
+                type="search"
+                class="manual-browser-search"
+                [value]="browserQuery"
+                [attr.placeholder]="content?.labels?.['browserSearch'] || 'Search'"
+                (input)="browserQuery = $any($event.target).value"
+              />
+              <p class="manual-table-note" *ngIf="!browserShown.length">
+                {{ content?.labels?.['browserNone'] || 'No card matches.' }}
+              </p>
+              <div class="manual-browser-grid">
+                <figure class="manual-figure" *ngFor="let row of browserShown">
+                  <div
+                    class="manual-face"
+                    [ngClass]="'manual-face--' + faceOf(row.id)?.tone"
+                    *ngIf="faceOf(row.id) as card"
+                  >
+                    <div class="manual-face-head">{{ card.title }}</div>
+                    <p class="manual-face-text">{{ card.text }}</p>
+                    <div class="manual-face-facts" *ngIf="card.facts.length">
+                      <div class="manual-face-fact" *ngFor="let fact of card.facts">
+                        <span class="manual-face-fact-label">{{ fact.label }}</span>
+                        <strong>{{ fact.value }}</strong>
+                      </div>
+                    </div>
+                  </div>
+                  <figcaption>
+                    <code>{{ row.id }}</code>
+                  </figcaption>
+                </figure>
+              </div>
+            </div>
+
             <!-- Glossary -->
             <dl class="manual-glossary" *ngSwitchCase="'glossary'">
               <ng-container *ngFor="let item of $any(block).items">

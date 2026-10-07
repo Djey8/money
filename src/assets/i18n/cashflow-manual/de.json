@@ -109,7 +109,13 @@
     "policy_mlm-then-properties": "Erst Netzwerk, dann Immobilien",
     "policy_stocks-for-deposits": "Aktien für Anzahlungen",
     "policy_all-rounder": "Allrounder",
-    "policy_best-found": "Beste Strategie der Suche"
+    "policy_best-found": "Beste Strategie der Suche",
+    "deckSmall": "Kleine Deals",
+    "deckBig": "Große Deals",
+    "deckMarket": "Markt",
+    "deckDoodad": "Schnickschnack",
+    "browserSearch": "Suche nach Titel, Kürzel, ID oder Art",
+    "browserNone": "Keine Karte passt."
   },
   "sections": {
     "start": {
@@ -1157,6 +1163,24 @@
           "text": "Eine durchschnittliche Immobilie des Großen Deals zahlt etwa 1.800 im Monat; eine durchschnittliche zahlende des Kleinen Deals etwa 180. Um 1.000 Ausgaben zu decken, brauchst du eine Immobilie des Großen Deals oder sechs kleine. Allein die +600 im Monat des Hausmeisters bräuchten Jahre, um die Anzahlung von 32.000–40.000 zu sparen - deshalb zählen am Anfang die kleinen, schnellen Deals, die Glückskarten und die Aktiengeschäfte."
         },
         { "type": "data", "id": "escape", "caption": "Nötiges passives Einkommen je Beruf" }
+      ]
+    },
+    "cards": {
+      "nav": "Alle Karten",
+      "title": "Alle Karten",
+      "intro": "Jede Karte jedes Stapels zum Lesen und Suchen - hier kannst du sie nicht spielen. Jede Karte zeigt ihre **ID**: Der Verlauf des Spiels nennt eine gewählte Karte bei dieser ID. So lässt sich ein Spiel nachträglich ansehen und sagen, welchen Deal du verpasst oder zu Recht liegen gelassen hast.",
+      "blocks": [
+        {
+          "type": "callout",
+          "kind": "tip",
+          "title": "Warum die IDs wichtig sind",
+          "text": "Jede Karte, die du wählst - zufällig gezogen oder unter deinen echten Karten gefunden - steht mit ihrer genauen ID im Verlauf. Bei der Analyse eines Spiels liest der Analyst diese IDs, sieht, welchen Deal du ausgelassen hast, und spielt beide Entscheidungen viele Male durch. **Wähle die Karte, bevor du sie auslässt**: Ohne gewählte Karte gibt es nichts zu bewerten."
+        },
+        { "type": "cardbrowser" },
+        {
+          "type": "p",
+          "text": "Ein Agent liest dieselbe Liste über `GET /api/v1/game/cards` (ohne laufendes Spiel: `gameSetId=cashflow` angeben) und in `docs/domain/CASHFLOW_CARDS.md`."
+        }
       ]
     },
     "faq": {

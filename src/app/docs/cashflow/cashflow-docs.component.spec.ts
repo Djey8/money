@@ -32,6 +32,7 @@ function makeComponent(language = 'en') {
     version: 1,
     ensureLoaded: jest.fn(() => Promise.resolve()),
     textFor: jest.fn(() => ({ title: 'Card title', description: 'Card text' })),
+    symbolFor: jest.fn((symbol: string) => symbol),
     groupName: jest.fn((group: string) => group),
     familyName: jest.fn((family: string) => family),
   };
@@ -163,5 +164,26 @@ describe('CashflowDocsComponent', () => {
       expect.arrayContaining(['Deposit', 'Cashflow']),
     );
     expect(component.faceOf('no-such-card')).toBeNull();
+  });
+
+  it('lists every card of a pile in the card reference and filters it by what is typed', async () => {
+    const { component } = makeComponent();
+    component.ngOnInit();
+    await flush();
+
+    expect(component.browserDecks).toEqual(['dealSmall', 'dealBig', 'market', 'doodad']);
+    const all = component.browserShown;
+    expect(all.length).toBeGreaterThan(10);
+    expect(all.every((row) => row.id.startsWith('classic-small-'))).toBe(true);
+
+    component.browserQuery = 'OK4U';
+    expect(component.browserShown.length).toBeGreaterThan(0);
+    expect(component.browserShown.length).toBeLessThan(all.length);
+
+    component.selectBrowserDeck('doodad');
+    expect(component.browserQuery).toBe('');
+    expect(component.browserShown.every((row) => row.deck === 'doodad')).toBe(true);
+    component.browserQuery = 'zzzz-no-card';
+    expect(component.browserShown).toEqual([]);
   });
 });

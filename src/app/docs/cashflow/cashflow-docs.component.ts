@@ -5,6 +5,10 @@ import { RouterLink, Router } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { firstValueFrom, type Subscription } from 'rxjs';
 import {
+  REFERENCE_DECKS,
+  cardReferenceRows,
+  type CardReferenceRow,
+  type ReferenceDeck,
   type CashflowDealCard,
   type CashflowDoodadCard,
   type CashflowMarketCard,
@@ -225,6 +229,48 @@ export class CashflowDocsComponent implements OnInit, OnDestroy {
       this.tableCache.set(key, table);
     }
     return table;
+  }
+
+  // ---------------------------------------------------------------- card reference
+
+  readonly browserDecks: ReferenceDeck[] = REFERENCE_DECKS;
+  browserDeck: ReferenceDeck = 'dealSmall';
+  browserQuery = '';
+
+  selectBrowserDeck(deck: ReferenceDeck): void {
+    this.browserDeck = deck;
+    this.browserQuery = '';
+  }
+
+  /** What a pile is called on the tab. */
+  deckName(deck: ReferenceDeck): string {
+    const key = {
+      dealSmall: 'deckSmall',
+      dealBig: 'deckBig',
+      market: 'deckMarket',
+      doodad: 'deckDoodad',
+    }[deck];
+    return this.content?.labels[key] ?? deck;
+  }
+
+  /** The cards of a pile as reference rows (id, title, kind), in the pile's own order. */
+  browserRows(deck: ReferenceDeck): CardReferenceRow[] {
+    const set = CASHFLOW_GAME_SETS.find((candidate) => candidate.id === 'cashflow');
+    const ctx = this.formatContext;
+    return cardReferenceRows(set, deck, {
+      textFor: (id) => this.cardText.textFor(id),
+      symbolFor: (symbol) => (symbol ? this.cardText.symbolFor(symbol) : undefined),
+      money: ctx.money,
+    });
+  }
+
+  /** The open pile, filtered by what was typed (the id, the title, the ticker or the kind). */
+  get browserShown(): CardReferenceRow[] {
+    const words = this.browserQuery.toLowerCase().split(/\s+/).filter(Boolean);
+    return this.browserRows(this.browserDeck).filter((row) => {
+      const haystack = `${row.id} ${row.label} ${row.title} ${row.kind}`.toLowerCase();
+      return words.every((word) => haystack.includes(word));
+    });
   }
 
   // ---------------------------------------------------------------- real cards
