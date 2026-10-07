@@ -91,6 +91,11 @@ export function describeReview(
   lines.push(
     `${review.judged} of ${review.steps} steps were decisions that could be judged (purchases, sales, loans, cards left); each was judged over ${review.rollouts} simulated continuations per alternative, with the same dice for both.`,
   );
+  if (review.skipped > 0) {
+    lines.push(
+      `${review.skipped} further ${review.skipped === 1 ? 'decision' : 'decisions'} could not be played on from and ${review.skipped === 1 ? 'is' : 'are'} not judged.`,
+    );
+  }
 
   if (benchmark) {
     lines.push('');

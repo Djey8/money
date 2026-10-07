@@ -180,6 +180,7 @@ describe('describeReview', () => {
         },
         steps: 80,
         judged: 1,
+        skipped: 0,
         rollouts: 100,
       },
       {

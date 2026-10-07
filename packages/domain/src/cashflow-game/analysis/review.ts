@@ -74,6 +74,8 @@ export interface GameReview {
   /** How many steps of the history there were, and how many were judged. */
   steps: number;
   judged: number;
+  /** Decisions that could not be judged (the position could not be played on from). */
+  skipped: number;
   rollouts: number;
 }
 
@@ -156,6 +158,7 @@ export function reviewGame(
   const entry = (index: number): ReviewEntry => stack[index] ?? live;
 
   const moves: ReviewedMove[] = [];
+  let skipped = 0;
   const evaluate = (books: GameBooks): Evaluation =>
     evaluatePosition(books, {
       gameSets: options.gameSets,
@@ -174,8 +177,17 @@ export function reviewGame(
     alternative: string,
     card?: { depositMinor?: number; cashflowMinor?: number },
   ): void => {
-    const a = evaluate(taken);
-    const b = evaluate(other);
+    // a position the policy cannot play on from (a card still waiting, a dice decision open) is not judged: one such
+    // step must not cost the player the review of all the others
+    let a: Evaluation;
+    let b: Evaluation;
+    try {
+      a = evaluate(taken);
+      b = evaluate(other);
+    } catch {
+      skipped += 1;
+      return;
+    }
     const rollsTaken = a.turnsToEscape?.median ?? null;
     const rollsOther = b.turnsToEscape?.median ?? null;
     const delta = a.escapeRate - b.escapeRate;
@@ -228,16 +240,24 @@ export function reviewGame(
       }
     } else if (SALES.has(step.kind) || step.kind === 'cardSale') {
       if (step.kind !== 'cardSale') {
+        // a sale can be made with a card waiting on the space: both sides leave that card alone
         const before = booksOf(entry(index));
-        judge(index, 'sale', title, booksOf(entry(index + 1)), before, 'keeping it');
+        judge(
+          index,
+          'sale',
+          title,
+          afterDone(booksOf(entry(index + 1))),
+          afterDone(before),
+          'keeping it',
+        );
       }
     } else if (step.kind === 'loanTaken') {
       judge(
         index,
         'loan',
         'Bank loan',
-        booksOf(entry(index + 1)),
-        booksOf(entry(index)),
+        afterDone(booksOf(entry(index + 1))),
+        afterDone(booksOf(entry(index))),
         'not borrowing',
       );
     } else if (step.kind === 'loanRepaid') {
@@ -245,8 +265,8 @@ export function reviewGame(
         index,
         'repayment',
         'Bank loan',
-        booksOf(entry(index + 1)),
-        booksOf(entry(index)),
+        afterDone(booksOf(entry(index + 1))),
+        afterDone(booksOf(entry(index))),
         'keeping the loan',
       );
     }
@@ -285,6 +305,7 @@ export function reviewGame(
     },
     steps: stack.length,
     judged: moves.length,
+    skipped,
     rollouts,
   };
 }

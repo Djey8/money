@@ -612,6 +612,59 @@ describe('a whole game played through the API', () => {
     // a compact save keeps the plain step log but not the undo chain: about a tenth of the size
     expect(compact.body.game.sizeBytes).toBeLessThan(full.body.game.sizeBytes / 5);
     expect(compact.body.game.sizeBytes).toBeGreaterThan(1000);
+    // the analyst can judge a finished (escaped) game, running or saved
+    const reviewed = await session(
+      'get',
+      '/api/v1/game/review?rollouts=10&timeBudgetSeconds=5',
+      user.token,
+    );
+    expect(reviewed.status).toBe(200);
+    expect(reviewed.body.reviewable).toBe(true);
+    expect(reviewed.body.review.final.outcome).toBe('escaped');
+    expect(reviewed.body.text).toContain('Game review');
+    // the game's slot is one: saving it again in full replaces the compact save
+    const fullAgain = await session('post', '/api/v1/game/saves', user.token).send({
+      name: 'again',
+    });
+    const reviewedSave = await session(
+      'get',
+      `/api/v1/game/saves/${fullAgain.body.game.id}/review?rollouts=10&timeBudgetSeconds=5`,
+      user.token,
+    );
+    expect(reviewedSave.status).toBe(200);
+    expect(reviewedSave.body.review.final.outcome).toBe('escaped');
+    {
+      const { loadContext } = require('../../repositories/game-play');
+      const { readSnapshot } = require('../../services/game-snapshot');
+      const { reviewHistory } = require('../../services/game-review');
+      const context = await loadContext(deps, user.userId);
+      const live = readSnapshot(context.data, context.session);
+      // the app records other kinds of step than this API run did (a trade, a sale, a loan taken while a card waits):
+      // none of them may stop the analyst
+      for (const kind of [
+        'buyInvestment',
+        'buyShare',
+        'buyAsset',
+        'sellShare',
+        'sellInvestment',
+        'sellAsset',
+        'loanTaken',
+        'loanRepaid',
+        'planDeal',
+      ]) {
+        const stack = context.history.stack.map((entry) =>
+          entry.step && entry.step.kind === 'buyDeal'
+            ? { ...entry, step: { ...entry.step, kind } }
+            : entry,
+        );
+        const review = await reviewHistory(stack, live, {
+          rollouts: 10,
+          timeBudgetMs: 5000,
+          money: context.gameDeps.money,
+        });
+        expect(review.reviewable).toBe(true);
+      }
+    }
     // everything it did is in the history, and can be taken back
     const history = await session('get', '/api/v1/game/history', user.token);
     expect(history.body.steps[0].kind).toBe('start');
