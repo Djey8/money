@@ -253,3 +253,10 @@
 .manual-browser-grid figcaption code {
   word-break: break-all;
 }
+
+/* Arabic: like the rest of the app only the text runs right to left (src/styles.css) - code, numbers and ids stay left to right. */
+.rtl-text .cashflow-manual code,
+.rtl-text .cashflow-manual .manual-browser-grid figcaption {
+  direction: ltr;
+  unicode-bidi: isolate;
+}

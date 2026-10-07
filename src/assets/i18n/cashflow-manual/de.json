@@ -148,7 +148,7 @@
     "kind_sell": "Etwas verkauft",
     "kind_repay": "Bank zurückgezahlt",
     "kind_none": "Nichts - der Monat selbst",
-    "noteCardLabDeals": "Punkte der Chance, die Rattenjagd zu verlassen, gemittelt über viele Positionen, wenn die Karte gekauft wird: positiv hilft. „Aus Bargeld“ zählt die Positionen, in denen die Anzahlung bar da war, „mit Kredit“ die, in denen die Bank sie leihen musste. Gesparte Würfe: Median der Würfe bis zum Ausstieg ohne die Karte minus mit ihr. Hilft in: Anteil der Positionen, in denen sie die Chance um mehr als einen Punkt bewegte.",
+    "noteCardLabDeals": "Punkte der Chance, die Hamsterrad zu verlassen, gemittelt über viele Positionen, wenn die Karte gekauft wird: positiv hilft. „Aus Bargeld“ zählt die Positionen, in denen die Anzahlung bar da war, „mit Kredit“ die, in denen die Bank sie leihen musste. Gesparte Würfe: Median der Würfe bis zum Ausstieg ohne die Karte minus mit ihr. Hilft in: Anteil der Positionen, in denen sie die Chance um mehr als einen Punkt bewegte.",
     "noteCardLabDoodads": "Was es kostet, die Karte zu ziehen, in Punkten der Chance auf den Ausstieg und auf die Pleite, gemittelt über viele Positionen. Frühes Spiel sind die Würfe 3 und 10, spätes Spiel die Würfe 20 und 32.",
     "noteCardLabMarket": "Es zählen nur Positionen, für die die Karte gilt (ein Käufer braucht eine Immobilie seiner Art, ein Boom ein Geschäft, das noch wachsen kann). Gilt in: Anteil der Positionen, in denen sie galt.",
     "noteCardLabDice": "Die Chance sind die Würfel: Die Karte gewinnt bei ihrer Zahl oder höher. Die letzten beiden Spalten sind gemessen: was das Bezahlen der Karte mit der Chance auf den Ausstieg und auf die Pleite machte, gemittelt über viele Positionen.",
@@ -1225,7 +1225,7 @@
     "cardlab": {
       "nav": "Was die Karten wert sind",
       "title": "Was die Karten wert sind",
-      "intro": "Jede Karte des Spiels, gemessen. 142 echte Positionen - aus simulierten Spielen bei Wurf 3, 10, 20 und 32, für jeden Beruf - wurden je 20-mal mit der Karte und 20-mal ohne sie zu Ende gespielt, mit denselben Würfen. Was eine Karte tut, ist der Unterschied, wie oft das Spiel die Rattenjagd verlässt, in **Punkten** (Prozentpunkten). Eine Karte, die um 3 Punkte hilft, hilft in manchen Positionen stark und in anderen gar nicht; verlassen kannst du dich auf den Durchschnitt vieler Positionen.",
+      "intro": "Jede Karte des Spiels, gemessen. 142 echte Positionen - aus simulierten Spielen bei Wurf 3, 10, 20 und 32, für jeden Beruf - wurden je 20-mal mit der Karte und 20-mal ohne sie zu Ende gespielt, mit denselben Würfen. Was eine Karte tut, ist der Unterschied, wie oft das Spiel die Hamsterrad verlässt, in **Punkten** (Prozentpunkten). Eine Karte, die um 3 Punkte hilft, hilft in manchen Positionen stark und in anderen gar nicht; verlassen kannst du dich auf den Durchschnitt vieler Positionen.",
       "blocks": [
         {
           "type": "callout",

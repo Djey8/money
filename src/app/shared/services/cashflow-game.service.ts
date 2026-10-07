@@ -526,7 +526,7 @@ export class CashflowGameService {
     history?: unknown,
   ): void {
     if (!this.isGameSnapshot(snapshot)) {
-      callbacks.onError('This is not a Cashflow game.');
+      callbacks.onError(this.translate.instant('CashflowGame.errorNotAGame'));
       return;
     }
     this.clearPersistedUndoStack();
@@ -749,7 +749,7 @@ export class CashflowGameService {
   undoSteps(count: number, callbacks: CashflowGameCallbacks): void {
     const { snapshot, stack } = popUndoSteps(this.undoStack, count);
     if (!snapshot) {
-      callbacks.onError('Nothing to undo.');
+      callbacks.onError(this.translate.instant('CashflowGame.errorNothingToUndo'));
       return;
     }
     this.undoStack = stack;
@@ -1149,7 +1149,7 @@ export class CashflowGameService {
   planTurn(dice: DiceCount, callbacks: CashflowGameCallbacks): TurnResult | null {
     const profession = this.currentProfession();
     if (!profession) {
-      callbacks.onError('Pick a profession first.');
+      callbacks.onError(this.translate.instant('CashflowGame.errorPickProfession'));
       return null;
     }
     try {
@@ -1235,7 +1235,7 @@ export class CashflowGameService {
   resolveBaby(callbacks: CashflowGameCallbacks): void {
     const profession = this.currentProfession();
     if (!profession) {
-      callbacks.onError('Pick a profession first.');
+      callbacks.onError(this.translate.instant('CashflowGame.errorPickProfession'));
       return;
     }
     let effects: GameEffects;
@@ -1929,7 +1929,7 @@ export class CashflowGameService {
    */
   resetGame(callbacks: CashflowGameCallbacks): void {
     if (!CashflowGameService.isCashflowGame()) {
-      callbacks.onError('This is only available for a Cashflow game account.');
+      callbacks.onError(this.translate.instant('CashflowGame.errorNotGameAccount'));
       return;
     }
     // A reset ends the game, history included - there is nothing to undo back into (JFK, 2026-10-03).

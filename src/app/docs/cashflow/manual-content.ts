@@ -71,8 +71,8 @@ export const MANUAL_SECTIONS: ManualSectionRef[] = [
   { id: 'glossary', number: '23', level: 0 },
 ];
 
-/** The languages the manual is written in; every other language shows the English text. */
-export const MANUAL_LANGUAGES = ['en', 'de'];
+/** The languages the manual is written in - all six of the app's (ngx-translate codes: `cn` is Chinese). */
+export const MANUAL_LANGUAGES = ['en', 'de', 'es', 'fr', 'cn', 'ar'];
 export const MANUAL_FALLBACK_LANGUAGE = 'en';
 
 /** A piece of a line of text: plain, **bold** or `code`. */

@@ -209,7 +209,7 @@ describe('CashflowGameService', () => {
 
       service.undoLastAction({ onSuccess: jest.fn(), onError });
 
-      expect(onError).toHaveBeenCalledWith('Nothing to undo.');
+      expect(onError).toHaveBeenCalledWith('CashflowGame.errorNothingToUndo');
     });
   });
 
@@ -410,7 +410,7 @@ describe('CashflowGameService', () => {
     it('refuses when there is nothing left to undo', () => {
       const onError = jest.fn();
       service.undoSteps(1, { onSuccess: jest.fn(), onError });
-      expect(onError).toHaveBeenCalledWith('Nothing to undo.');
+      expect(onError).toHaveBeenCalledWith('CashflowGame.errorNothingToUndo');
     });
   });
 
@@ -3704,7 +3704,7 @@ describe('CashflowGameService', () => {
 
       service.resetGame({ onSuccess: jest.fn(), onError });
 
-      expect(onError).toHaveBeenCalledWith(expect.stringContaining('Cashflow game account'));
+      expect(onError).toHaveBeenCalledWith('CashflowGame.errorNotGameAccount');
       expect(persistence.batchWriteAndSync).not.toHaveBeenCalled();
     });
   });
@@ -3874,7 +3874,7 @@ describe('CashflowGameService', () => {
 
       service.restoreGameSnapshot({} as any, { onSuccess: jest.fn(), onError });
 
-      expect(onError).toHaveBeenCalledWith('This is not a Cashflow game.');
+      expect(onError).toHaveBeenCalledWith('CashflowGame.errorNotAGame');
       expect(AppStateService.instance.cashflowGame).toBe(before);
     });
   });

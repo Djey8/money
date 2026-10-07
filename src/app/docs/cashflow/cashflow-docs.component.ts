@@ -42,6 +42,16 @@ import {
 let AppComponent: any;
 setTimeout(() => import('src/app/app.component').then((m) => (AppComponent = m.AppComponent)));
 
+/** How numbers are written in each manual language (Arabic keeps Western digits, like the rest of the app). */
+const MANUAL_LOCALES: Record<string, string> = {
+  en: 'en-US',
+  de: 'de-DE',
+  es: 'es-ES',
+  fr: 'fr-FR',
+  cn: 'zh-CN',
+  ar: 'ar-u-nu-latn',
+};
+
 /** A real card of the catalog as the manual draws it: which pile it comes from, its text and its numbers. */
 export interface ManualFace {
   tone: 'small' | 'big' | 'doodad' | 'market';
@@ -208,7 +218,7 @@ export class CashflowDocsComponent implements OnInit, OnDestroy {
   // ---------------------------------------------------------------- tables from the card catalog
 
   private get formatContext(): ManualContext {
-    const locale = (this.translate.currentLang || 'en') === 'de' ? 'de-DE' : 'en-US';
+    const locale = MANUAL_LOCALES[this.translate.currentLang || 'en'] ?? 'en-US';
     const currency = AppStateService.instance.currency || '€';
     const whole = new Intl.NumberFormat(locale, { maximumFractionDigits: 0 });
     return {

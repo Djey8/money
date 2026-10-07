@@ -1,0 +1,1599 @@
+{
+  "title": "Manuel du jeu Cashflow",
+  "subtitle": "Comment jouer, tous les types de cartes, quoi acheter et ce que disent les chiffres - pour les comptes du jeu Cashflow.",
+  "labels": {
+    "colProfession": "Métier",
+    "colSalary": "Salaire",
+    "colExpenses": "Dépenses",
+    "colCashflow": "Cashflow",
+    "colSavings": "Épargne",
+    "colDebts": "Dettes",
+    "colChild": "Par enfant",
+    "customMark": "Custom JFK",
+    "noteProfessions": "Cashflow = salaire − dépenses, par mois. L'épargne est ton capital de départ. Par enfant s'ajoute à tes dépenses à chaque bébé (jusqu'à trois).",
+    "colNeeded": "Revenu passif nécessaire",
+    "colSmallDeals": "≈ biens de Petit Deal",
+    "colBigDeals": "≈ biens de Grand Deal",
+    "noteEscape": "Tu sors de la course effrénée quand ton revenu passif couvre tes dépenses. Un bien de Petit Deal moyen qui rapporte verse environ {small} par mois, un bien de Grand Deal moyen environ {big}. Tes dépenses augmentent avec chaque enfant et chaque prêt bancaire, vise donc plus haut.",
+    "colType": "Type",
+    "colCards": "Cartes",
+    "colPrice": "Prix",
+    "colDeposit": "Apport",
+    "colNoCashflow": "Ne rapportent rien",
+    "colReturn": "Rendement annuel",
+    "noteReturn": "Rendement annuel = douze mois de cashflow ÷ ton apport (sur la mise de fonds). L'hypothèque ne fait pas partie de ce que tu paies : un petit apport avec un bon cashflow donne donc un rendement très élevé. Les cartes qui ne rapportent rien sont comptées à part.",
+    "colPaysLoan": "Paie son prêt",
+    "colBestMonthly": "Meilleur rendement mensuel",
+    "noteLoanProof": "Un prêt bancaire coûte 10 % du montant chaque mois. Un deal ne paie son propre prêt que s'il rapporte au moins 10 % de son apport chaque mois. La colonne indique combien de cartes du type y arrivent.",
+    "colTicker": "Symbole",
+    "colKind": "Sorte",
+    "kindStock": "Action",
+    "kindFund": "Fonds",
+    "colPrices": "Prix sur les cartes",
+    "colTradingRange": "Fourchette de cours",
+    "colCategory": "Catégorie",
+    "colAverage": "Moyenne",
+    "colMost": "La plus chère",
+    "noteDoodads": "{count} cartes Dépense imprévue en tout, et la carte moyenne coûte {average}. Sourire / Plaisir est le compte que l'appli suggère pour le paiement.",
+    "colPile": "Pile",
+    "pileSmall": "Petit Deal",
+    "pileBig": "Grand Deal",
+    "cat_shares": "Actions et fonds",
+    "cat_houses": "Maisons individuelles",
+    "cat_condos": "Appartements",
+    "cat_gold": "Pièces d'or (offres simples)",
+    "cat_dice": "Paris aux dés",
+    "cat_mlm": "Marketing multiniveau",
+    "cat_businesses": "Entreprises",
+    "colChance": "Probabilité sur un tirage au hasard",
+    "colMarketCard": "Carte Marché",
+    "market_buyerEFH": "Acheteur d'une maison individuelle",
+    "market_buyerMFH": "Acheteur d'un immeuble",
+    "market_buyerETW": "Acheteur d'un appartement",
+    "market_buyerAPH": "Acheteur d'une résidence",
+    "market_buyerGOLD": "Acheteur de pièces d'or",
+    "market_cost": "Frais de réparation (propriétaires)",
+    "market_split": "Division d'actions",
+    "market_boost": "Coup de pouce au cashflow ★",
+    "colYouOwn": "Tu possèdes",
+    "colMarketCards": "Cartes Marché qui le concernent",
+    "profile_EFH": "Une maison individuelle",
+    "profile_MFH": "Un immeuble (4–8 logements)",
+    "profile_ETW": "Un appartement",
+    "profile_APH": "Une résidence (12–60 logements)",
+    "profile_DH": "Une maison jumelée",
+    "profile_GOLD": "Des pièces d'or",
+    "profile_SHARE": "Des actions d'une société",
+    "noteMarketOdds": "Compte chaque carte de la pile Marché qui peut faire quelque chose pour toi ou contre toi. Les frais de réparation touchent n'importe quel bien ; les deux coups de pouce ★ touchent tout investissement sous leur plafond ; il y a une carte de division d'actions par société.",
+    "factPrice": "Prix",
+    "factRange": "Fourchette de cours",
+    "factDeposit": "Apport",
+    "factMortgage": "Hypothèque",
+    "factCashflow": "Cashflow",
+    "factCost": "Coût",
+    "factCoins": "Pièces",
+    "factDice": "Gagne avec",
+    "factPayout": "Rapporte",
+    "factAccount": "Payé depuis",
+    "factOffer": "Offre",
+    "factSymbol": "Symbole",
+    "factBoost": "Coup de pouce",
+    "factUpTo": "Jusqu'à",
+    "unit": "unité",
+    "coin": "pièce",
+    "colStrategy": "Stratégie",
+    "colEscapes": "Sortent",
+    "colBankrupt": "Ruinées",
+    "colMedianRolls": "Lancers typiques pour sortir",
+    "colMedianMonths": "Mois typiques pour sortir",
+    "colPassiveAtEscape": "Revenu passif à la sortie",
+    "colBestStrategy": "Meilleure stratégie",
+    "colWorstStrategy": "Pire stratégie",
+    "colFastest": "Parties rapides (lancers)",
+    "colSlowest": "Parties lentes (lancers)",
+    "colTypicalPeak": "Revenu passif maximal typique",
+    "colGoodPeak": "Une bonne partie atteint",
+    "colBestPeak": "La meilleure partie a atteint",
+    "colCashflowAtEscape": "Cashflow mensuel à la sortie",
+    "labMissing": "Les résultats du laboratoire de stratégies ne sont pas disponibles.",
+    "noteLab": "Moyennes sur tous les métiers. Un « lancer » est un tour ; deux lancers font environ un mois. « Typique » désigne la partie médiane parmi celles qui sortent.",
+    "noteLabMatrix": "La part des parties qui sortent de la course effrénée, pour chaque métier et chaque stratégie.",
+    "noteLabProfessions": "Les parties rapides sont le dixième le plus rapide des sorties, les lentes le dixième le plus lent.",
+    "noteLabCeiling": "La stratégie indiquée est celle qui a atteint en moyenne le plus de revenu passif. En atteindre beaucoup n'est pas la même chose que sortir en sécurité - voir le tableau des stratégies.",
+    "policy_never-buy": "N'investit jamais",
+    "policy_cash-properties": "Biens payés comptant",
+    "policy_picky-properties": "Biens sélectifs",
+    "policy_big-deals-when-rich": "Petits d'abord, grands quand on est riche",
+    "policy_bridge-loans": "Emprunter quand ça rapporte",
+    "policy_leveraged-big": "À effet de levier, Grands Deals",
+    "policy_mlm-then-properties": "Marketing d'abord, puis des biens",
+    "policy_stocks-for-deposits": "Négocier des actions pour les apports",
+    "policy_all-rounder": "Polyvalente",
+    "policy_best-found": "La meilleure trouvée par la recherche",
+    "deckSmall": "Petits Deals",
+    "deckBig": "Grands Deals",
+    "deckMarket": "Marché",
+    "deckDoodad": "Dépenses imprévues",
+    "browserSearch": "Cherche par titre, symbole, id ou sorte",
+    "browserNone": "Aucune carte ne correspond.",
+    "colCard": "Carte",
+    "colCardNumbers": "Chiffres",
+    "colFromCash": "Achetée comptant (points)",
+    "colWithLoan": "Achetée avec un prêt (points)",
+    "colRollsSaved": "Lancers économisés comptant (partie typique / avancée)",
+    "colHelps": "Aide dans",
+    "colTraded": "Si les actions sont négociées (points)",
+    "colCost": "Coût",
+    "colEscapeEffect": "Chance de sortir (points)",
+    "colBankruptEffect": "Chance de faire faillite (points)",
+    "colEarly": "Début de partie (points)",
+    "colLate": "Fin de partie (points)",
+    "colAppliedIn": "S'applique dans",
+    "colPays": "Rapporte",
+    "colAtRoll": "Lancer",
+    "colProgress": "Le revenu passif couvre",
+    "band0": "moins de 5 % des dépenses",
+    "band1": "de 5 % à 10 %",
+    "band2": "de 10 % à 20 %",
+    "band3": "de 20 % à 40 %",
+    "band4": "40 % ou plus",
+    "colLastDecision": "Ce qui s'est passé en dernier",
+    "colBankruptGames": "Des faillites",
+    "perMonth": "par mois",
+    "coins": "pièces",
+    "kind_buy": "A acheté un Deal",
+    "kind_pass": "A laissé passer un Deal",
+    "kind_doodad": "Dépense imprévue",
+    "kind_market": "Carte Marché",
+    "kind_sell": "A vendu quelque chose",
+    "kind_repay": "A remboursé la banque",
+    "kind_none": "Rien - le mois lui-même",
+    "noteCardLabDeals": "Points de chance de sortir de la course effrénée, en moyenne sur de nombreuses positions, quand la carte est achetée : positif aide. « Comptant » compte les positions où l'apport était en liquide, « avec un prêt » celles où la banque a dû le prêter. Lancers économisés : la médiane des lancers pour sortir sans la carte moins avec elle. Aide dans : la part des positions où elle a déplacé la chance de plus d'un point.",
+    "noteCardLabDoodads": "Ce que coûte le fait de recevoir la carte, en points de chance de sortir et de faire faillite, en moyenne sur de nombreuses positions. Le début de partie correspond aux lancers 3 et 10, la fin de partie aux lancers 20 et 32.",
+    "noteCardLabMarket": "Seules comptent les positions auxquelles la carte s'applique (un acheteur a besoin d'un bien de son type, un boom d'une entreprise qui peut encore croître). S'applique dans : la part des positions où c'était le cas.",
+    "noteCardLabDice": "La chance, ce sont les dés : la carte gagne avec son chiffre ou plus. Les deux dernières colonnes sont mesurées : ce que payer la carte a fait à la chance de sortir et de faire faillite, en moyenne sur de nombreuses positions.",
+    "noteCardLabMilestones": "Revenu passif en part des dépenses (100 % est la sortie), au lancer de la colonne, pour les parties qui sont sorties avec la meilleure stratégie trouvée. Le premier chiffre est la partie médiane, entre parenthèses le dixième rapide et le dixième lent. Une partie sous le chiffre lent est derrière presque toutes celles qui sont sorties.",
+    "noteCardLabBands": "Chance de sortir / chance de faire faillite, à partir du point qu'une partie a atteint à ce lancer (une stratégie polyvalente, tous les métiers). Plus le revenu passif s'est rapproché des dépenses, plus la sortie est sûre.",
+    "noteCardLabRuin": "Parmi les parties qui ont fait faillite : la dernière décision avant la fin, et les cartes les plus souvent parmi les trois dernières."
+  },
+  "sections": {
+    "start": {
+      "nav": "Pour commencer",
+      "title": "Pour commencer",
+      "intro": "Le jeu Cashflow est un compagnon du jeu de société : tu joues sur le vrai plateau avec un vrai dé, et cette appli tient les comptes. Tout ce que tu fais est de la vraie comptabilité dans ton compte - transactions, abonnements, projets Grow, un bilan - pour que tu voies exactement ce que chaque décision fait à ton argent.",
+      "blocks": [
+        {
+          "type": "callout",
+          "kind": "note",
+          "title": "Qui peut lire ceci",
+          "text": "Ce manuel et le jeu sont réservés aux **comptes du jeu Cashflow** : un compte dont l'adresse e-mail contient le mot `cashflow`. Un tel compte est un compte de jeu dédié - rien n'y est de l'argent réel, et rien de ce que tu fais n'atteint un compte normal. Le jeu fonctionne de la même façon sur l'édition Firebase et sur un serveur auto-hébergé."
+        },
+        {
+          "type": "steps",
+          "items": [
+            {
+              "title": "Crée un compte Cashflow ou connecte-toi",
+              "text": "Inscris-toi avec une adresse e-mail qui contient `cashflow`, par exemple `anna.cashflow@example.com`. Le menu affiche alors une entrée **Jeu Cashflow** avec un 🎲."
+            },
+            {
+              "title": "Ouvre le jeu et choisis un set de jeu",
+              "text": "**Classic Edition** a les 12 métiers du jeu imprimé et les piles de cartes complètes. **Custom JFK** ajoute trois métiers (développeur logiciel, freelance, entrepreneur) et utilise les mêmes piles de cartes."
+            },
+            {
+              "title": "Choisis un métier",
+              "text": "Choisis-en un dans la liste ou appuie sur **Tirer au hasard** pour un métier aléatoire. La carte du métier s'ouvre avec ses chiffres imprimés - revenus, dépenses, épargne et dettes. Lis-la avant de commencer."
+            },
+            {
+              "title": "Appuie sur Démarrer la partie et choisis la langue",
+              "text": "L'appli demande dans quelle langue tu veux jouer. Les cartes, les libellés de tes achats (SFH, CONDO …) et les notes la suivent, et chaque partie se souvient de sa propre langue."
+            },
+            {
+              "title": "La partie est prête",
+              "text": "L'appli enregistre ton épargne comme capital de départ, crée ton salaire mensuel et chaque dépense comme un abonnement, et ajoute les dettes de ton métier au bilan. Le tableau de bord s'ouvre."
+            },
+            {
+              "title": "Jouer",
+              "text": "Déplace ton pion sur le vrai plateau. Quand tu tombes sur une case, dis à l'appli laquelle (voir « Les cases »). Au jour de paie, appuie sur **Jour de paie**. C'est toute la boucle."
+            }
+          ]
+        },
+        {
+          "type": "callout",
+          "kind": "tip",
+          "title": "Tu décides, l'appli calcule",
+          "text": "L'appli ne te retire jamais une décision. Elle montre ce que coûte une carte, combien de liquidités tu as, ce que coûterait un prêt bancaire et ce que rapporte un deal - et ensuite tu appuies sur le bouton ou non. Une bonne partie se gagne en lisant ces chiffres avant chaque achat."
+        }
+      ]
+    },
+    "goal": {
+      "nav": "L'objectif",
+      "title": "L'objectif : sortir de la course effrénée",
+      "intro": "Tu commences avec un travail qui paie ta vie et peu de plus. La course effrénée se termine quand tu n'as plus besoin du travail.",
+      "blocks": [
+        {
+          "type": "h3",
+          "text": "Revenu passif"
+        },
+        {
+          "type": "p",
+          "text": "Le **revenu passif** est l'argent qui rentre chaque mois sans ton travail : le cashflow des biens et des entreprises que tu possèdes. Tes **dépenses** sont tout ce qui sort chaque mois - impôts, loyer ou hypothèque, mensualités de prêts, frais de vie, coût des enfants et intérêts d'un prêt bancaire. Ton salaire n'est pas un revenu passif."
+        },
+        {
+          "type": "callout",
+          "kind": "tip",
+          "title": "Tu as gagné la course effrénée quand",
+          "text": "**revenu passif ≥ dépenses mensuelles**. Le tableau de bord affiche alors un bandeau vert : « Tu as échappé à la course effrénée ! » Tu peux continuer à jouer aussi longtemps que tu veux - le bandeau disparaît simplement si tes dépenses repassent au-dessus de ton revenu passif."
+        },
+        {
+          "type": "h3",
+          "text": "Comment la partie peut mal tourner"
+        },
+        {
+          "type": "p",
+          "text": "Si ton **cashflow mensuel** (tous les revenus moins toutes les dépenses) est négatif, chaque jour de paie te retire des liquidités au lieu d'en ajouter. Le tableau de bord t'avertit en rouge. Il ne t'arrête pas : vends quelque chose, rembourse un prêt ou trouve un meilleur deal avant le prochain jour de paie."
+        },
+        {
+          "type": "callout",
+          "kind": "warning",
+          "title": "La dette n'est pas une perte - l'hémorragie, si",
+          "text": "Devoir de l'argent fait partie du jeu ; une hypothèque est la façon dont presque tout bien s'achète. Ce qui fait mal, c'est un cashflow mensuel sous zéro, surtout avec un prêt bancaire coûteux (10 % du prêt chaque mois)."
+        },
+        {
+          "type": "h3",
+          "text": "Pour quoi tu joues"
+        },
+        {
+          "type": "list",
+          "items": [
+            "**Fais monter le revenu passif** - chaque bien ou entreprise que tu achètes ajoute son cashflow à chaque jour de paie futur.",
+            "**Garde les dépenses basses** - les bébés et les prêts bancaires les augmentent ; rembourser un prêt les rabaisse.",
+            "**Ne te laisse pas à sec** - les dépenses imprévues et les factures de réparation arrivent sans prévenir, garde donc un peu de liquidités."
+          ]
+        },
+        {
+          "type": "data",
+          "id": "escape",
+          "caption": "Combien de revenu passif chaque métier demande - et à peu près combien de biens cela représente"
+        }
+      ]
+    },
+    "dashboard": {
+      "nav": "Le tableau de bord",
+      "title": "Le tableau de bord",
+      "intro": "Ouvre le jeu depuis le menu et tu arrives sur le tableau de bord. Tout ce dont tu as besoin pendant un tour est sur cet écran.",
+      "blocks": [
+        {
+          "type": "table",
+          "head": ["Où", "Ce qu'il montre ou fait"],
+          "rows": [
+            [
+              "Carte récapitulative",
+              "Ton métier (touche le bouton d'info pour voir sa carte), tes **liquidités**, la date du jeu, ton **cashflow mensuel** et de petits badges : enfants, un rappel de Charité en cours, un rappel de Licenciement."
+            ],
+            [
+              "Bandeaux",
+              "Rouge quand ton cashflow mensuel est négatif. Vert quand le revenu passif couvre tes dépenses - tu es sorti."
+            ],
+            [
+              "**Jour de paie** et **Annuler**",
+              "Jour de paie enregistre un mois. Annuler reprend la dernière étape - n'importe quelle étape, pas seulement un jour de paie."
+            ],
+            [
+              "Décision ouverte",
+              "Une carte qui attend un lancer de dé (voir « Cartes à dé ») apparaît ici, avec un bouton **Lancer le dé**."
+            ],
+            [
+              "Sur quelle case es-tu tombé ?",
+              "Les boutons colorés : **Deals** (vert), **Dépense imprévue** (rouge), **Marché** (bleu), et en violet **Charité**, **Licenciement**, **Bébé**."
+            ],
+            [
+              "Prêt bancaire",
+              "**Emprunter** et **Rembourser** ton prêt par paliers de 1.000 (voir « Prêts bancaires »)."
+            ],
+            [
+              "Mes parties, Historique, Menu",
+              "Tes parties enregistrées, la liste de chaque étape que tu as faite (chacune peut être annulée) et un raccourci vers le menu de l'appli."
+            ]
+          ]
+        },
+        {
+          "type": "h3",
+          "text": "La carte du métier"
+        },
+        {
+          "type": "p",
+          "text": "Touche le bouton d'info à côté de ton métier pour ouvrir sa carte. Elle a deux vues entre lesquelles tu peux basculer : **Scénario de départ** (la carte imprimée telle que tu as commencé) et **En direct - partie en cours** (la même mise en page avec les chiffres d'aujourd'hui : tes revenus et dépenses, les biens que tu possèdes, tes dettes)."
+        },
+        {
+          "type": "callout",
+          "kind": "tip",
+          "title": "Le reste de l'appli est toujours là",
+          "text": "Tes transactions, abonnements, projets Grow, bilan et statistiques sont les pages normales de l'appli, remplies par le jeu. Ouvre-les depuis le menu à tout moment - voir « Le jeu et le reste de l'appli »."
+        }
+      ]
+    },
+    "professions": {
+      "nav": "Métiers",
+      "title": "Métiers",
+      "intro": "Ton métier décide combien tu gagnes, combien tu dépenses, avec quel capital tu commences et quelles dettes tu portes. Quinze sont disponibles : les douze du jeu imprimé et trois personnalisés.",
+      "blocks": [
+        {
+          "type": "data",
+          "id": "professions",
+          "caption": "Tous les métiers, meilleur cashflow mensuel d'abord"
+        },
+        {
+          "type": "h3",
+          "text": "À quoi regarder en choisissant"
+        },
+        {
+          "type": "list",
+          "items": [
+            "**Cashflow (salaire − dépenses)** est l'argent que tu peux investir chaque mois. Un chiffre plus grand signifie des apports plus rapides.",
+            "**Dépenses** sont la cible que tu dois couvrir avec le revenu passif. De petites dépenses signifient moins de biens pour sortir.",
+            "**Épargne** est ton capital de départ et ton premier apport. Un métier avec peu d'épargne commence par de petits deals.",
+            "**Dettes** sont remboursées par tes paiements mensuels ; ce sont les premiers coûts proches d'une hypothèque que tu portes.",
+            "**Par enfant** s'ajoute chaque fois que tu tombes sur Bébé. C'est peu pour certains métiers et beaucoup pour d'autres."
+          ]
+        },
+        {
+          "type": "callout",
+          "kind": "tip",
+          "title": "Un salaire élevé n'est pas automatiquement facile",
+          "text": "Le médecin gagne le plus, mais dépense aussi le plus : 8.300 de dépenses doivent être couvertes par le revenu passif. Le concierge n'a besoin que de 1.000 - un bon bien de Grand Deal. Un salaire élevé achète des apports plus vite ; de faibles dépenses rapprochent la ligne d'arrivée. Les deux voies fonctionnent."
+        },
+        {
+          "type": "data",
+          "id": "escape",
+          "caption": "Revenu passif que chaque métier doit atteindre"
+        }
+      ]
+    },
+    "payday": {
+      "nav": "Jour de paie",
+      "title": "Jour de paie et calendrier du jeu",
+      "intro": "Le jour de paie est le battement de cœur du jeu. Un appui enregistre un mois.",
+      "blocks": [
+        {
+          "type": "h3",
+          "text": "Ce que fait le jour de paie"
+        },
+        {
+          "type": "list",
+          "items": [
+            "enregistre ton **salaire** et le **cashflow de chaque bien et entreprise** que tu possèdes,",
+            "enregistre chaque **dépense** : impôts, loyer ou hypothèque, mensualités de prêts, frais de vie, enfants et intérêts de ton prêt bancaire,",
+            "avance le calendrier du jeu d'**un mois** et compte le tour,",
+            "ouvre le **lancer de dé** de toute carte de marketing multiniveau que tu détiens (un lancer pour toutes),",
+            "termine les **offres du Marché** que tu gardais - l'offre d'une carte Marché ne vaut que jusqu'au prochain jour de paie."
+          ]
+        },
+        {
+          "type": "p",
+          "text": "Le jour de paie ne se saute jamais. Même avec un rappel de Charité ou de Licenciement affiché, tu appuies sur Jour de paie chaque fois que tu le passes sur le plateau. Les rappels concernent tes tours sur le plateau physique, que l'appli ne voit pas."
+        },
+        {
+          "type": "h3",
+          "text": "Le calendrier"
+        },
+        {
+          "type": "p",
+          "text": "Le jeu a son propre calendrier, qui avance d'un mois par jour de paie. Pour la comptabilité, les transactions sont placées dans le **mois réel en cours**, chacune au jour de son abonnement (le salaire en début de mois, l'hypothèque à son jour …). Les achats et paiements que tu fais entre deux jours de paie prennent le prochain jour libre du mois, pour que la liste du compte reste lisible."
+        },
+        {
+          "type": "callout",
+          "kind": "note",
+          "text": "Les anciennes transactions du jeu reculent d'un mois à chaque jour de paie. Les statistiques montrent donc ta partie comme une ligne du temps, et rien de ce que tu fais ici ne se mélange à un compte réel."
+        },
+        {
+          "type": "callout",
+          "kind": "tip",
+          "title": "Appuyé sur Jour de paie par erreur ?",
+          "text": "Appuie sur **Annuler**. Cela rétablit tout ce que le jour de paie a changé, date comprise. Toute autre étape s'annule de la même façon - voir « Historique, Annuler et parties enregistrées »."
+        }
+      ]
+    },
+    "spaces": {
+      "nav": "Les cases",
+      "title": "Les cases",
+      "intro": "L'appli ne déplace pas ton pion - c'est toi, sur le vrai plateau. Quand tu tombes sur quelque chose, tu dis à l'appli de quelle case il s'agit et elle s'occupe du reste.",
+      "blocks": [
+        {
+          "type": "cards",
+          "items": [
+            {
+              "icon": "🟢",
+              "title": "Deals",
+              "text": "Vert. Choisis la pile **Petit Deal** ou **Grand Deal**. Actions, fonds, maisons, immeubles, entreprises, or et quelques paris."
+            },
+            {
+              "icon": "🔴",
+              "title": "Dépense imprévue",
+              "text": "Rouge. Quelque chose que tu achètes sans l'avoir prévu (la carte allemande s'appelle Schnickschnack). Tu paies toujours."
+            },
+            {
+              "icon": "🔵",
+              "title": "Marché",
+              "text": "Bleu. Un événement pour toute la table : acheteurs pour tes biens et ton or, divisions d'actions, factures de réparation et deux cartes étoile."
+            },
+            {
+              "icon": "🟣",
+              "title": "Charité",
+              "text": "Violet. Donne un dixième de ton revenu et lance un ou deux dés pendant les trois tours suivants."
+            },
+            {
+              "icon": "🟣",
+              "title": "Licenciement",
+              "text": "Violet. Paie toutes tes dépenses mensuelles d'un coup et passe deux tours."
+            },
+            {
+              "icon": "🟣",
+              "title": "Bébé",
+              "text": "Violet. Un enfant de plus, une dépense mensuelle de plus (trois enfants au maximum)."
+            }
+          ]
+        },
+        {
+          "type": "callout",
+          "kind": "tip",
+          "title": "Charité, Licenciement et Bébé demandent d'abord",
+          "text": "Ils montrent ce qu'ils vont faire - avec tes vrais chiffres - et attendent **Jouer** ou **Annuler**, donc un mauvais appui ne change rien."
+        },
+        {
+          "type": "h3",
+          "text": "Retrouver la carte que tu as piochée"
+        },
+        {
+          "type": "p",
+          "text": "Après avoir choisi une pile, tu as deux façons de faire apparaître une carte :"
+        },
+        {
+          "type": "list",
+          "items": [
+            "**Trouver la carte piochée** - tu as la carte physique en main. Tape un nom, un symbole ou un prix (par exemple `OK4U 20`), ou utilise les filtres rapides (sorte, type, compte, catégorie) et touche la carte dans la liste.",
+            "**Piocher une carte** - tu n'as pas de pile physique : l'appli en pioche une au hasard et ne répète pas une carte avant que la pile soit épuisée."
+          ]
+        },
+        {
+          "type": "p",
+          "text": "Ensuite la carte apparaît à l'écran avec son texte et ses chiffres, exactement comme imprimés. Ce que tu peux en faire dépend de sa sorte - les sections suivantes les passent en revue une par une."
+        },
+        {
+          "type": "callout",
+          "kind": "tip",
+          "title": "Mauvaise carte ?",
+          "text": "Chaque carte a **En choisir une autre** (ou une flèche retour) tant que tu ne l'as pas jouée. Rien n'est enregistré avant que tu appuies sur le bouton de jeu."
+        }
+      ]
+    },
+    "investing": {
+      "nav": "Comment investir",
+      "title": "Comment investir : planifier, acheter, vendre",
+      "intro": "Chaque maison, action, entreprise et pièce d'or que tu achètes est un **projet Grow** - le même suivi d'investissements que dans le reste de l'appli. Une carte devient un projet en trois étapes.",
+      "blocks": [
+        {
+          "type": "steps",
+          "items": [
+            {
+              "title": "Planifier",
+              "text": "Sur la carte, appuie sur **Planifier**. Un projet Grow est créé en phase **plan** avec les chiffres de la carte et une note : ce que coûte l'achat, les liquidités que tu as et le prêt bancaire qu'il te faudrait. Rien n'est encore payé."
+            },
+            {
+              "title": "Acheter",
+              "text": "Ouvre le projet (l'appli t'y emmène) et appuie sur **acheter**. La boîte Ajouter s'ouvre, prête, sur le compte **Feu**. Vérifie et confirme. Le projet passe à **exécution** ; un bien crée son hypothèque dans le bilan et son cashflow mensuel comme un abonnement que chaque jour de paie verse."
+            },
+            {
+              "title": "Vendre",
+              "text": "Ouvre le projet et appuie sur **vendre** quand tu veux sortir. La vente est enregistrée comme revenu, l'hypothèque est remboursée et le cashflow s'arrête. Quand tout est vendu, le projet est **terminé**."
+            }
+          ]
+        },
+        {
+          "type": "callout",
+          "kind": "note",
+          "title": "Un projet pour chaque carte",
+          "text": "Une deuxième maison du même type devient un deuxième projet avec un numéro ajouté à son nom : `MAI`, `MAI-II`, `MAI-III`. Chacune peut être vendue séparément."
+        },
+        {
+          "type": "h3",
+          "text": "Pas assez de liquidités ?"
+        },
+        {
+          "type": "p",
+          "text": "Si l'apport dépasse tes liquidités, l'appli prend un **prêt bancaire** pour exactement la somme manquante - arrondie au 1.000 supérieur - et l'enregistre en premier, comme étape à part. L'achat suit comme deuxième étape. Annuler reprend d'abord l'achat, puis le prêt au prochain Annuler. Voir « Prêts bancaires » pour ce que cela coûte."
+        },
+        {
+          "type": "face",
+          "cardId": "classic-small-efh-45k-2k",
+          "caption": "Une carte Petit Deal : une maison individuelle à 45.000 avec 2.000 d'apport - elle rapporte 250 par mois."
+        },
+        {
+          "type": "h3",
+          "text": "Les noms de tes achats"
+        },
+        {
+          "type": "p",
+          "text": "Chaque achat porte un libellé court dans la langue de ta partie, pour les distinguer facilement dans les listes et les graphiques :"
+        },
+        {
+          "type": "table",
+          "head": ["Type", "Libellé dans cette partie", "Libellé d'origine (allemand)"],
+          "rows": [
+            ["Maison individuelle", "MAI", "EFH"],
+            ["Appartement", "APPT", "ETW"],
+            ["Immeuble (4 / 8 logements)", "IMM4, IMM8", "MFH4, MFH8"],
+            ["Maison jumelée", "JUM", "DH"],
+            ["Résidence (12 / 24 / 60 logements)", "RES12, RES24, RES60", "APH12, APH24, APH60"],
+            [
+              "Associé / entreprise automatisée / station de lavage",
+              "ASSOC, EAUT, LAV",
+              "GP, AU, AWA"
+            ],
+            ["Franchise de pizza, or, marketing multiniveau", "PIZZA, OR, MLM", "PIZZA, GOLD, MLM"]
+          ]
+        },
+        {
+          "type": "callout",
+          "kind": "tip",
+          "title": "Vendre à un ami",
+          "text": "Sur une carte Deal, **Vendre à un ami** enregistre une vente ponctuelle : tu as convenu d'un prix avec un autre joueur et l'argent rentre aussitôt. **Refuser** revient simplement au tableau de bord."
+        }
+      ]
+    },
+    "smalldeal": {
+      "nav": "Petit Deal",
+      "title": "Petit Deal",
+      "intro": "La pile Petit Deal est pour les débutants : petits prix, petits apports. Elle compte 38 cartes - 20 actions et fonds, 11 maisons et appartements, et 7 cartes spéciales (or, paris aux dés et marketing multiniveau).",
+      "blocks": [
+        {
+          "type": "h3",
+          "text": "Actions et fonds"
+        },
+        {
+          "type": "p",
+          "text": "Il y a quatre titres - trois actions et un fonds - et cinq cartes pour chacun, une par prix. Une action est un **outil de liquidité, pas un revenu passif** : elle ne verse aucun cashflow mensuel. Tu achètes bas, tu vends haut et tu utilises les liquidités pour un apport plus grand."
+        },
+        {
+          "type": "face",
+          "cardId": "classic-small-ok4u-20",
+          "caption": "Une carte d'action : tu peux acheter à ce prix. La fourchette de cours indique où le prix va évoluer."
+        },
+        {
+          "type": "data",
+          "id": "shares",
+          "caption": "Les quatre titres"
+        },
+        {
+          "type": "list",
+          "items": [
+            "**Achète** depuis le projet (tu fixes le nombre d'actions en le planifiant) ; le prix de la carte est le prix que tu paies.",
+            "**Une carte d'une action que tu détiens déjà** ne planifie pas un nouvel achat - elle **fixe le cours du marché**. Le bouton indique **Mettre à jour le cours** ; le cours change sur ton projet Grow et sur tes actions, une note consigne ce qui s'est passé en bourse, et tu peux vendre ou acheter au nouveau cours. Tes ventes passées restent comme elles étaient.",
+            "Les **divisions d'actions** (pile Marché, voir « Cartes Marché ») doublent ou divisent par deux le nombre d'actions que tu détiens."
+          ]
+        },
+        {
+          "type": "h3",
+          "text": "Maisons individuelles et appartements"
+        },
+        {
+          "type": "face",
+          "cardId": "classic-small-etw-55k-5k",
+          "caption": "Un appartement avec une grosse hypothèque - regarde ce qu'un acheteur paierait avant d'acheter."
+        },
+        {
+          "type": "data",
+          "id": "smallProperties",
+          "caption": "Biens de Petit Deal"
+        },
+        {
+          "type": "callout",
+          "kind": "warning",
+          "title": "Deux cartes ne rapportent rien",
+          "text": "La maison individuelle à 30.000 et l'appartement à 40.000 avec 1.000 d'apport ont un cashflow de **0**. Ce sont des pièges : elles avalent un apport et ne rendent rien tant qu'un acheteur ne se présente pas. Le tableau ci-dessus les compte dans la dernière colonne."
+        },
+        {
+          "type": "h3",
+          "text": "Or, paris et marketing multiniveau"
+        },
+        {
+          "type": "list",
+          "items": [
+            "**Offres d'or simples** - 10 pièces pour 3.000 et 5 pièces pour 1.000. Les pièces ne rapportent rien ; elles valent ce que paie un acheteur d'or (voir « Cartes Marché »).",
+            "**Paris aux dés** - la boîte d'or, le voyage et le prêt de la belle-sœur. Tu paies d'abord et tu lances un dé ensuite (voir « Cartes à dé »).",
+            "**Marketing multiniveau** - deux cartes : tu paies 500 et tu gardes la carte ; à chaque jour de paie tu lances un dé et un 4–6 rapporte 500."
+          ]
+        },
+        {
+          "type": "face",
+          "cardId": "classic-small-gold-friend-3000",
+          "caption": "Dix pièces d'or à prix cassé."
+        },
+        {
+          "type": "face",
+          "cardId": "classic-small-mlm-1",
+          "caption": "Une carte que tu gardes : elle lance à chaque jour de paie."
+        }
+      ]
+    },
+    "bigdeal": {
+      "nav": "Grand Deal",
+      "title": "Grand Deal",
+      "intro": "Les cartes Grand Deal demandent de vrais apports - de 10.000 jusqu'à 200.000 - et versent un vrai cashflow. Il y a 36 cartes : une franchise de pizza, dix immeubles, huit maisons individuelles, cinq maisons jumelées, quatre résidences et huit entreprises.",
+      "blocks": [
+        {
+          "type": "data",
+          "id": "bigProperties",
+          "caption": "Cartes Grand Deal par type"
+        },
+        {
+          "type": "h3",
+          "text": "Immobilier"
+        },
+        {
+          "type": "p",
+          "text": "Les maisons, immeubles et résidences s'achètent avec une hypothèque. Tu paies l'apport ; l'hypothèque devient un passif dans ton bilan, et le **cashflow de la carte est ce qui reste après la mensualité** - c'est donc le chiffre qui arrive à ton jour de paie."
+        },
+        {
+          "type": "face",
+          "cardId": "classic-big-mfh8-240k-40k",
+          "caption": "Un immeuble de 8 logements : 40.000 d'apport, 1.800 par mois."
+        },
+        {
+          "type": "face",
+          "cardId": "classic-big-aph12-350k-50k",
+          "caption": "Une résidence de 12 logements."
+        },
+        {
+          "type": "h3",
+          "text": "Entreprises"
+        },
+        {
+          "type": "p",
+          "text": "La franchise de pizza, les associés, les entreprises automatisées et la station de lavage fonctionnent comme des biens : un apport et un cashflow mensuel. Les associés s'achètent comptant (sans hypothèque), les autres en ont une. Les cartes qui parlent de « ton bien » ne comptent **pas** les entreprises comme des biens - les factures de réparation ne les touchent pas."
+        },
+        {
+          "type": "face",
+          "cardId": "classic-big-au-150k-30k-2500",
+          "caption": "Une entreprise automatisée : un apport modeste, 2.500 par mois."
+        },
+        {
+          "type": "callout",
+          "kind": "tip",
+          "title": "Grand, c'est combien ?",
+          "text": "La carte Grand Deal moyenne rapporte environ dix fois le cashflow de la carte Petit Deal moyenne qui rapporte, pour un apport à peu près dix fois plus grand. Les Petits Deals construisent le premier apport ; les Grands Deals mettent fin à la course effrénée."
+        }
+      ]
+    },
+    "dice": {
+      "nav": "Cartes à dé",
+      "title": "Cartes à dé",
+      "intro": "Certaines cartes sont décidées par un dé. Tu paies d'abord, puis le lancer a lieu - avec le dé de l'appli ou avec le tien.",
+      "blocks": [
+        {
+          "type": "h3",
+          "text": "Comment fonctionne un lancer"
+        },
+        {
+          "type": "list",
+          "items": [
+            "Après avoir payé (ou joué la carte), une **décision ouverte** apparaît sur le tableau de bord.",
+            "**Lancer le dé** laisse l'appli lancer : un grand dé s'affiche, puis le résultat, jusqu'à ce que tu appuies sur **Continuer**.",
+            "Ou lance un vrai dé et déclare-le : **J'ai lancé : gagné** / **J'ai lancé : pas de chance** (pour une division d'actions, les deux boutons indiquent « 1–3 » et « 4–6 »).",
+            "Le résultat est une étape de ton Historique et peut être annulé - la décision ouverte revient."
+          ]
+        },
+        {
+          "type": "cards",
+          "items": [
+            {
+              "icon": "🎁",
+              "title": "Qu'y a-t-il dans la boîte ?! / Quand on veut, on peut",
+              "text": "Paie 500 (la boîte) ou 750 (le voyage). Un **6** gagne dix pièces d'or ; tout le reste ne gagne rien - ou un vieux chat."
+            },
+            {
+              "icon": "👪",
+              "title": "La belle-sœur emprunte de l'argent",
+              "text": "Paie 5.000. **1–3** : elle ne te rembourse jamais. **4–6** : elle te rend **10.000**. C'est équitable en moyenne, mais tu gagnes ou perds gros."
+            },
+            {
+              "icon": "📣",
+              "title": "Marketing multiniveau",
+              "text": "Paie 500 et garde la carte. À **chaque jour de paie**, un lancer pour toutes tes cartes : un **4–6** rapporte **500** par carte. C'est la carte qui paie le mieux de la pile."
+            },
+            {
+              "icon": "📈",
+              "title": "Divisions d'actions",
+              "text": "Une carte Marché pour une société. Si tu détiens ses actions : **1–3** les double, **4–6** les divise par deux. Le prix et le coût ne changent pas."
+            }
+          ]
+        },
+        {
+          "type": "face",
+          "cardId": "classic-small-sister-5000",
+          "caption": "Coûte 5.000, revient à 10.000 sur un 4, 5 ou 6."
+        },
+        {
+          "type": "face",
+          "cardId": "classic-small-gold-box-500",
+          "caption": "Coûte 500, gagne dix pièces sur un six."
+        },
+        {
+          "type": "callout",
+          "kind": "tip",
+          "title": "Lire les probabilités",
+          "text": "Un dé a six faces : « 4–6 » fait 50 %, « 6 » une chance sur six. Le chapitre sur les probabilités calcule ce que vaut en moyenne chaque pari."
+        }
+      ]
+    },
+    "doodad": {
+      "nav": "Dépenses imprévues",
+      "title": "Dépenses imprévues (Schnickschnack)",
+      "intro": "La pile rouge, c'est le prix de la vie : un bateau, une soirée, un nouvel ordinateur. Il y a 42 cartes et tu ne peux en refuser aucune - tu décides seulement comment elle est payée.",
+      "blocks": [
+        {
+          "type": "face",
+          "cardId": "classic-doodad-boat",
+          "caption": "Une dépense imprévue : l'appli suggère le compte et la catégorie."
+        },
+        {
+          "type": "steps",
+          "items": [
+            {
+              "title": "Ouvre la carte",
+              "text": "Trouve-la ou pioche-la. Elle montre le coût, le compte que suggère l'appli et la catégorie de dépense sous laquelle elle sera classée."
+            },
+            {
+              "title": "Ajoute la transaction",
+              "text": "La boîte Ajouter s'ouvre remplie : compte, montant, le jour libre d'aujourd'hui, la catégorie et un commentaire avec une petite blague, tes liquidités et le prêt bancaire dont tu aurais besoin, et la balise `#doodad`. Change ce que tu veux."
+            },
+            {
+              "title": "Confirme",
+              "text": "S'il te manque de l'argent, l'appli prend d'abord le prêt bancaire (étape à part), puis enregistre le paiement. Rien d'autre ne change - tu ne possèdes rien ensuite."
+            }
+          ]
+        },
+        {
+          "type": "p",
+          "text": "Les gros achats de rêve (un bateau, une cuisine, une première voiture pour un enfant) sont suggérés sur ton compte **Sourire** ; les petites choses sur **Plaisir**. Aucun ne prend d'argent sur tes comptes **Feu** ou **Quotidien**. Chaque carte a une catégorie comme Loisirs, Maison ou Événements, pour que tes relevés montrent où est parti le budget dépenses imprévues d'une partie."
+        },
+        {
+          "type": "data",
+          "id": "doodads",
+          "caption": "Dépenses imprévues par catégorie"
+        },
+        {
+          "type": "callout",
+          "kind": "tip",
+          "title": "Ne l'appelle pas une perte",
+          "text": "Une dépense imprévue est un coût de la vie, pas une erreur. En moyenne, elle coûte un peu moins de 1.400 - garde un coussin d'une ou deux de ces sommes en liquide et les dépenses imprévues ne font jamais mal."
+        }
+      ]
+    },
+    "market": {
+      "nav": "Cartes Marché",
+      "title": "Cartes Marché",
+      "intro": "Les cartes bleues sont des événements pour toute la table. Dans l'appli, elles ne comptent que pour toi : si une carte n'a rien à voir avec ce que tu possèdes, l'appli te dit qu'elle ne s'applique pas, et le coup est quand même noté dans ton Historique.",
+      "blocks": [
+        {
+          "type": "data",
+          "id": "marketKinds",
+          "caption": "Ce que sont les 39 cartes Marché"
+        },
+        {
+          "type": "h3",
+          "text": "Acheteurs pour tes biens"
+        },
+        {
+          "type": "p",
+          "text": "Une carte acheteur fait une **offre** pour un type de bien. Joue-la et chaque bien de ce type que tu possèdes reçoit l'offre, avec une note dans son projet Grow ; ensuite tu vends ceux que tu veux avec le bouton normal **vendre**, déjà rempli. L'offre dure jusqu'au prochain jour de paie, et tu peux vendre autant de biens que tu veux à ce prix."
+        },
+        {
+          "type": "callout",
+          "kind": "tip",
+          "title": "Ce que tu reçois",
+          "text": "L'acheteur paie le prix complet. L'hypothèque en est remboursée, et ce qui reste est enregistré comme revenu. Pour une offre « prix d'origine + profit », c'est **ton apport plus le profit** ; pour un prix fixe, c'est le **prix moins l'hypothèque**."
+        },
+        {
+          "type": "cards",
+          "items": [
+            {
+              "icon": "🏠",
+              "title": "Maisons individuelles et immeubles",
+              "text": "Prix d'origine + un pourcentage du coût total, ou + un montant fixe. Le profit est le même pour un immeuble de 4 logements et un de 8."
+            },
+            {
+              "icon": "🏢",
+              "title": "Appartements",
+              "text": "Un prix fixe pour tout l'appartement. Si le prix est inférieur à l'hypothèque, la vente **te coûte** de l'argent - l'appli l'enregistre comme un paiement, pas comme un revenu, et prend un prêt si besoin."
+            },
+            {
+              "icon": "🏬",
+              "title": "Résidences",
+              "text": "Un prix **par logement**, multiplié par les logements de ta résidence (une de 24 logements compte 24), moins l'hypothèque."
+            },
+            {
+              "icon": "🪙",
+              "title": "Pièces d'or",
+              "text": "Du liquide pour **chaque pièce**. Vends-les toutes ou autant que tu veux - modifie le nombre dans la boîte de vente."
+            }
+          ]
+        },
+        {
+          "type": "face",
+          "cardId": "classic-market-efh-pct20-a",
+          "caption": "Un acheteur au pourcentage pour maisons individuelles."
+        },
+        {
+          "type": "face",
+          "cardId": "classic-market-etw-65k",
+          "caption": "Un prix fixe pour un appartement - compare-le d'abord avec l'hypothèque de ton propre appartement."
+        },
+        {
+          "type": "face",
+          "cardId": "classic-market-gold-central-2k",
+          "caption": "Un acheteur d'or : chaque pièce à 2.000."
+        },
+        {
+          "type": "h3",
+          "text": "Frais de réparation"
+        },
+        {
+          "type": "p",
+          "text": "« Un locataire abîme ton bien » et « Canalisation cassée » coûtent de 500 à 2.000 aux propriétaires, une fois. Si tu ne possèdes aucun bien, tu ignores la carte. Sinon, la boîte Ajouter s'ouvre sur **Feu**, remplie avec le coût et le nom du premier bien que tu possèdes comme catégorie. Les entreprises ne sont pas des biens."
+        },
+        {
+          "type": "face",
+          "cardId": "classic-market-cost-pipe-2k",
+          "caption": "Seulement pour les propriétaires."
+        },
+        {
+          "type": "h3",
+          "text": "Divisions d'actions et cartes étoile"
+        },
+        {
+          "type": "p",
+          "text": "Une carte de **division d'actions** porte le nom d'une société. Sans ses actions, la carte ne s'applique pas. Avec elles, une décision de dé s'ouvre : 1–3 double tes actions, 4–6 les divise par deux (arrondi en ta faveur). Le prix et tes coûts restent les mêmes."
+        },
+        {
+          "type": "p",
+          "text": "Les deux **cartes étoile ★** sont les jackpots : « Petit boom d'affaires ! » augmente de 250 par mois tout investissement qui rapporte 1.000 ou moins ; « Nouveau système de gestion » augmente de 400 tout ce qui rapporte 2.000 ou moins. Ton projet Grow et son revenu mensuel sont relevés pour de bon, et une note le consigne."
+        },
+        {
+          "type": "face",
+          "cardId": "classic-market-boost-small-250",
+          "caption": "Une carte étoile : ton revenu passif augmente pour le reste de la partie."
+        },
+        {
+          "type": "data",
+          "id": "marketOdds",
+          "caption": "À quelle fréquence une carte Marché te concerne"
+        }
+      ]
+    },
+    "life": {
+      "nav": "Charité, Licenciement, Bébé",
+      "title": "Charité, Licenciement et Bébé",
+      "intro": "Trois cases qui n'ont pas besoin de carte. Elles demandent d'abord confirmation et montrent les chiffres qu'elles utiliseront.",
+      "blocks": [
+        {
+          "type": "table",
+          "head": ["Case", "Ce qu'elle fait dans l'appli", "Ce que tu fais sur le plateau"],
+          "rows": [
+            [
+              "**Charité**",
+              "Paie **10 % de ton revenu mensuel total** (salaire plus revenu passif) une fois, comme paiement sur ton compte Quotidien.",
+              "Pendant tes 3 prochains tours, tu peux lancer un ou deux dés. Un badge te le rappelle ; ferme-le toi-même quand les tours sont écoulés."
+            ],
+            [
+              "**Licenciement**",
+              "Paie **toutes tes dépenses mensuelles** une fois. Termine aussi un badge de Charité en cours.",
+              "Passe deux tours pendant que les autres jouent. Un badge te le rappelle."
+            ],
+            [
+              "**Bébé**",
+              "Ajoute un enfant (**3** au maximum) et une dépense mensuelle pour lui - le montant « Par enfant » de ton métier - que chaque jour de paie règle.",
+              "Rien de plus. Le bouton est grisé à trois enfants."
+            ]
+          ]
+        },
+        {
+          "type": "callout",
+          "kind": "tip",
+          "title": "Pourquoi la Charité peut valoir le coup",
+          "text": "Dix pour cent du revenu, c'est généralement un petit prix pour deux dés à chacun de trois tours : tu peux rejoindre plus vite les cases Deals. C'est la seule case qui te rend quelque chose."
+        },
+        {
+          "type": "callout",
+          "kind": "warning",
+          "title": "Licenciement quand tu es juste",
+          "text": "Cela coûte d'un coup tout un mois de dépenses. Avec une petite réserve de liquidités, cela force un prêt bancaire - prends le Licenciement au sérieux quand tu prévois ton coussin."
+        }
+      ]
+    },
+    "loans": {
+      "nav": "Prêts bancaires",
+      "title": "Prêts bancaires",
+      "intro": "La banque prête par paliers de **1.000** et facture **10 % du prêt chaque mois**. C'est la seule règle que l'appli automatise entièrement.",
+      "blocks": [
+        {
+          "type": "list",
+          "items": [
+            "**Emprunter** ajoute l'argent à tes liquidités comme revenu, crée un passif **Prêt bancaire** et une dépense mensuelle **Intérêts du prêt bancaire** - un prêt de 1.000 coûte 100 par mois, un prêt de 5.000, 500.",
+            "**Rembourser** (ou **Tout solder**) rend le prêt par paliers de 1.000. Les intérêts baissent avec le prêt, jusqu'à zéro quand il a disparu.",
+            "**Prêts automatiques** - quand un achat ou un paiement dépasse tes liquidités, l'appli emprunte la somme manquante, arrondie à 1.000, comme étape à part avant l'achat."
+          ]
+        },
+        {
+          "type": "callout",
+          "kind": "warning",
+          "title": "10 % par mois, c'est 120 % par an",
+          "text": "Un prêt est un pont coûteux, pas un mode de vie. Il ne rapporte que lorsque ce que tu achètes avec gagne plus de 10 % de l'argent emprunté chaque mois. Le tableau ci-dessous montre quelles cartes y arrivent."
+        },
+        {
+          "type": "data",
+          "id": "loanProof",
+          "caption": "Le deal peut-il payer son propre prêt ? (cashflow mensuel ÷ apport ≥ 10 %)"
+        },
+        {
+          "type": "callout",
+          "kind": "tip",
+          "title": "Emprunte un instant, rembourse dès que possible",
+          "text": "Un prêt court pour acheter un deal qui rapporte bien plus que les intérêts, c'est bien. Rembourse dès que du liquide arrive - d'une vente, d'un acheteur d'or ou d'un lancer chanceux. Tant qu'un prêt court, il s'affiche comme un petit symbole de banque sur tes graphiques."
+        }
+      ]
+    },
+    "app": {
+      "nav": "Le jeu et l'appli",
+      "title": "Le jeu et le reste de l'appli",
+      "intro": "Rien dans le jeu n'est un système à part. Chaque chiffre que tu vois est une entrée normale de la Money App - tu peux donc le regarder avec les outils habituels.",
+      "blocks": [
+        {
+          "type": "table",
+          "head": ["Dans le jeu", "Dans l'appli"],
+          "rows": [
+            [
+              "Liquidités",
+              "La somme de tes comptes Quotidien, Plaisir, Sourire et Feu. Le revenu est réparti entre eux selon les pourcentages de ton compte."
+            ],
+            [
+              "Salaire, dépenses, revenu passif",
+              "**Abonnements** - un par ligne. Le jour de paie les transforme en transactions."
+            ],
+            [
+              "Chaque carte que tu paies ou joues",
+              "Une **transaction** sur le compte où elle a été enregistrée, avec un commentaire."
+            ],
+            [
+              "Maisons, actions, entreprises, or",
+              "Projets **Grow**, et leurs positions dans le **Bilan** (actifs, actions, investissements)."
+            ],
+            ["Hypothèques et prêt bancaire", "Passifs du **Bilan**."],
+            [
+              "Revenus et dépenses par catégorie",
+              "Le **compte de résultat** et les pages des comptes - les catégories de dépenses imprévues apparaissent ici."
+            ],
+            [
+              "Ta partie dans le temps",
+              "**Statistiques** : des graphiques de chaque compte, avec des repères pour les opérations Grow, les paiements Sourire et Feu, le prêt bancaire et les dépenses imprévues."
+            ]
+          ]
+        },
+        {
+          "type": "callout",
+          "kind": "note",
+          "title": "Feu et Sourire dans le jeu",
+          "text": "Les achats, les prêts et les factures de réparation passent par **Feu**. Les dépenses imprévues de rêve passent par **Sourire**, les petites par **Plaisir**. Ce n'est que la suggestion de l'appli - tu peux toujours enregistrer un paiement depuis un autre compte dans la boîte Ajouter."
+        },
+        {
+          "type": "callout",
+          "kind": "warning",
+          "title": "Modifie avec précaution",
+          "text": "Tu peux modifier des entrées dans les pages normales (une transaction, un abonnement, une note Grow). Le jeu ne t'en empêche pas - mais un montant modifié change ton cashflow mensuel et tes calculs de course effrénée. Utilise **Annuler** pour reprendre une étape plutôt que de la corriger à la main."
+        }
+      ]
+    },
+    "games": {
+      "nav": "Historique, Annuler, parties enregistrées",
+      "title": "Historique, Annuler et parties enregistrées",
+      "intro": "Chaque étape que tu fais est enregistrée, chaque étape peut être annulée, et un compte peut garder autant de parties que tu veux.",
+      "blocks": [
+        {
+          "type": "h3",
+          "text": "Annuler et Historique"
+        },
+        {
+          "type": "list",
+          "items": [
+            "**Annuler** reprend la dernière étape - un jour de paie, une carte, un prêt, un lancer de dé. Appuie à nouveau pour remonter plus loin.",
+            "**Historique** liste chaque étape dans l'ordre, la plus récente d'abord, avec ce qu'elle a enregistré. Chaque ligne a **Annuler jusqu'ici**.",
+            "Un achat qui a nécessité un prêt bancaire, ce sont deux étapes : le prêt, puis l'achat.",
+            "Une partie enregistrée garde tout son historique : après son chargement, l'Historique liste chaque coup et Annuler peut remonter pas à pas, même avant le début de la partie. Les parties enregistrées avant cet ajout se chargent avec un historique vide."
+          ]
+        },
+        {
+          "type": "h3",
+          "text": "Mes parties"
+        },
+        {
+          "type": "p",
+          "text": "Ton compte contient toujours une **partie en direct** - celle que tu joues. **Mes parties** garde les autres."
+        },
+        {
+          "type": "table",
+          "head": ["Bouton", "Ce qu'il fait"],
+          "rows": [
+            [
+              "**Enregistrer la partie**",
+              "Enregistre la partie que tu joues dans son emplacement. Une partie est aussi enregistrée automatiquement quand tu la quittes."
+            ],
+            [
+              "**Nouvelle partie**",
+              "Enregistre la partie en direct, puis vide le compte pour que tu puisses choisir à nouveau un métier."
+            ],
+            [
+              "**Continuer**",
+              "Ouvre une partie enregistrée. La partie que tu joues est enregistrée d'abord, puis l'autre devient la partie en direct - liquidités, projets, notes, même un lancer de dé en attente. Si quelque chose ne va pas dans la partie enregistrée, rien ne change."
+            ],
+            [
+              "**Renommer**, **Supprimer**",
+              "Renomme une partie, ou supprime-la définitivement (avec confirmation)."
+            ],
+            [
+              "**Exporter**, **Importer une partie**",
+              "Télécharge une partie sous forme de fichier, ou ajoutes-en une depuis un fichier. Une sauvegarde, ou un moyen de déplacer une partie vers un autre compte."
+            ]
+          ]
+        },
+        {
+          "type": "p",
+          "text": "Chaque partie enregistrée montre son état - **En cours**, **Sorti de la course**, **Ruiné** ou **Terminée** - avec les liquidités, le revenu passif face aux dépenses et le tour, si bien que la liste est aussi un tableau des scores."
+        },
+        {
+          "type": "h3",
+          "text": "Terminer une partie"
+        },
+        {
+          "type": "list",
+          "items": [
+            "**terminer la partie (l'enregistrer)** (Réglages) enregistre la partie avec la marque « Terminée » et vide le compte.",
+            "**réinitialiser la partie** (Réglages) supprime la partie **sans l'enregistrer** et ne peut pas être annulé."
+          ]
+        },
+        {
+          "type": "callout",
+          "kind": "note",
+          "text": "Les parties enregistrées vivent dans tes propres données, à côté du reste de ton compte, compressées et chiffrées comme tout le reste. Une liste très longue alourdit tes données - l'appli prévient au-delà de 30 parties ; exporte et supprime celles dont tu n'as plus besoin."
+        }
+      ]
+    },
+    "strategy": {
+      "nav": "Stratégie",
+      "title": "Stratégie",
+      "intro": "C'est l'approche que soutiennent les chiffres des piles de cartes. C'est un guide, pas une loi - les dés et le tirage décident beaucoup.",
+      "blocks": [
+        {
+          "type": "h3",
+          "text": "1 · Connais ta ligne d'arrivée"
+        },
+        {
+          "type": "p",
+          "text": "Tes dépenses sont ta cible. Regarde le tableau « revenu passif nécessaire » avant le premier coup et pense en biens : un bien de Grand Deal pour un concierge, cinq pour un médecin. N'oublie pas que chaque bébé et chaque prêt bancaire déplace la ligne."
+        },
+        {
+          "type": "h3",
+          "text": "2 · Construis le premier apport avec les petites choses"
+        },
+        {
+          "type": "list",
+          "items": [
+            "**Le marketing multiniveau** est la meilleure carte du jeu : il rapporte en moyenne 250 par mois pour 500. Si tu as le liquide, achète-le.",
+            "**Les petites maisons individuelles et appartements avec cashflow** donnent 40–150 % par an sur un apport de quelques milliers et ne coûtent presque rien à garder. Évite les deux qui ne rapportent rien.",
+            "**Les actions** sont des machines à liquidités quand tu achètes près du bas de la fourchette (5–10) et vends près du haut (30). Elles ne produisent pas de revenu passif - traite-les comme de l'argent d'apport.",
+            "**L'or** est bon marché quand tu l'achètes sur une carte et cher quand un acheteur d'or le demande : les pièces d'une carte « 10 pour 3.000 » se vendent 10.000–20.000 sur la carte d'un acheteur. Le hic, c'est d'attendre l'acheteur (trois cartes Marché sur 39)."
+          ]
+        },
+        {
+          "type": "h3",
+          "text": "3 · Passe aux Grands Deals dès qu'un apport est abordable"
+        },
+        {
+          "type": "p",
+          "text": "Un bien de Grand Deal rapporte 700–11.000 par mois. Deux ou trois d'entre eux mettent fin à la course pour la plupart des métiers. Compare le **rendement annuel** (sur la mise de fonds) entre les cartes : les immeubles de 4 logements et les maisons jumelées sont parmi les plus élevés ; les entreprises achetées comptant se rentabilisent plus lentement."
+        },
+        {
+          "type": "callout",
+          "kind": "tip",
+          "title": "L'apport d'abord, le cashflow ensuite",
+          "text": "Deux cartes peuvent verser le même cashflow avec des apports très différents. Demande-toi : en combien de mois l'apport est-il récupéré ? Le tableau des types de Grand Deal montre la fourchette. Une carte avec un apport plus petit et le même cashflow est la meilleure carte."
+        },
+        {
+          "type": "h3",
+          "text": "4 · Utilise les prêts comme un pont"
+        },
+        {
+          "type": "list",
+          "items": [
+            "N'emprunte que pour une carte dont le rendement mensuel dépasse 10 % de l'argent emprunté - le tableau « paie son prêt » liste les types qui le peuvent.",
+            "N'emprunte jamais pour couvrir un mois que tu ne pourrais pas payer : si le cashflow mensuel est négatif, un prêt ne fait que creuser plus profond.",
+            "Rembourse le prêt avec les premières liquidités qui arrivent. Un prêt de 5.000 coûte 500 chaque mois - c'est le revenu de deux cartes de marketing multiniveau."
+          ]
+        },
+        {
+          "type": "h3",
+          "text": "5 · Garde un coussin"
+        },
+        {
+          "type": "p",
+          "text": "Les dépenses imprévues font en moyenne un peu moins de 1.400, les factures de réparation atteignent 2.000, le Licenciement coûte un mois de dépenses. Un coussin de 1.500–3.000 en liquide évite qu'ils deviennent des prêts."
+        },
+        {
+          "type": "h3",
+          "text": "6 · Diversifie face au Marché"
+        },
+        {
+          "type": "p",
+          "text": "Détenir à la fois des maisons individuelles et des immeubles signifie que plus de cartes Marché t'aident. Ne détenir que des maisons jumelées signifie qu'aucune carte acheteur ne s'applique jamais, alors que les factures de réparation, si. Le tableau « à quelle fréquence une carte Marché te concerne » le montre."
+        },
+        {
+          "type": "h3",
+          "text": "7 · Vends quand un acheteur paie trop"
+        },
+        {
+          "type": "p",
+          "text": "Un acheteur qui offre 20 % de plus, ou un profit fixe de 10.000–20.000, vaut souvent mieux qu'une année de cashflow du bien. Vendre et racheter une meilleure carte peut augmenter ton revenu passif - mais souviens-toi qu'une vente retire aussi le cashflow."
+        },
+        {
+          "type": "callout",
+          "kind": "warning",
+          "title": "Erreurs courantes",
+          "text": "Emprunter pour une carte qui ne rapporte rien. Dépenser le coussin dans une action et rencontrer ensuite une dépense imprévue. Prendre un prêt à 10 % par mois pour un deal qui rapporte 5 %. Vendre un appartement à un acheteur pour moins que son hypothèque."
+        }
+      ]
+    },
+    "lab": {
+      "nav": "Parties simulées",
+      "title": "Ce que montrent des milliers de parties simulées",
+      "intro": "L'appli a joué des parties entières toute seule - avec les mêmes règles et les mêmes cartes que les tiennes, des milliers, pour chaque métier et plusieurs stratégies. Rien de ce qui suit n'est une opinion : c'est compté. Quand une carte ou une règle change, les chiffres sont mesurés à nouveau.",
+      "blocks": [
+        {
+          "type": "h3",
+          "text": "Comment lire les chiffres"
+        },
+        {
+          "type": "list",
+          "items": [
+            "**Gagner**, c'est sortir de la course effrénée : le revenu passif couvre toutes les dépenses mensuelles. **Perdre**, c'est la faillite : le cashflow mensuel devient négatif.",
+            "Un **lancer** est un tour. Deux lancers font environ un mois (un jour de paie), donc 80 lancers font environ 40 mois.",
+            "Chaque stratégie joue **les mêmes dés**, donc les différences entre stratégies ne sont pas dues à la chance.",
+            "Les stratégies sont listées ci-dessous. Chacune décide seulement ce que tu décides aussi : dans quelle pile piocher, s'il faut acheter la carte, s'il faut emprunter, s'il faut vendre à un acheteur et s'il faut rembourser la banque. Les dépenses imprévues sont toujours payées et les cartes Marché toujours jouées."
+          ]
+        },
+        {
+          "type": "h3",
+          "text": "Quelle stratégie gagne, et à quelle fréquence"
+        },
+        {
+          "type": "data",
+          "id": "labStrategies",
+          "caption": "Chaque stratégie, en moyenne sur tous les métiers"
+        },
+        {
+          "type": "list",
+          "items": [
+            "**N'investit jamais** - paie chaque dépense imprévue, laisse passer chaque deal : le salaire seul.",
+            "**Biens payés comptant** - achète tout bien dont elle peut payer l'apport, Petits Deals seulement, n'emprunte jamais.",
+            "**Biens sélectifs** - seulement les biens qui rapportent au moins 3 % par mois sur l'apport, garde 2.000 de réserve.",
+            "**Petits d'abord, grands quand on est riche** - Petits Deals jusqu'à ce que les liquidités atteignent 20.000, puis Grands Deals.",
+            "**Emprunter quand ça rapporte** - emprunte la différence quand un bien rapporte au moins 1,5 fois les intérêts qu'ajoute le prêt, rembourse dès qu'elle peut.",
+            "**À effet de levier, Grands Deals** - vise les Grands Deals dès le départ et emprunte chaque fois que le bien rapporte au moins les intérêts.",
+            "**Marketing d'abord, puis des biens** - achète chaque carte de marketing multiniveau qu'elle peut se payer, puis des biens comptant.",
+            "**Négocier des actions pour les apports** - achète des actions à 10 ou moins, vend à 25 ou plus, pour réunir l'argent des apports.",
+            "**Polyvalente** - biens au-dessus de 2 % par mois, une réserve, prêts seulement s'ils sont bien couverts, marketing multiniveau, négoce d'actions, vente à des acheteurs généreux, Grands Deals dès que les liquidités le permettent.",
+            "**La meilleure trouvée par la recherche** - la meilleure de 216 combinaisons de ces réglages, jouées chacune des milliers de fois (voir le rapport dans la documentation du projet). « Meilleure » signifie la meilleure de ce qui a été essayé."
+          ]
+        },
+        {
+          "type": "h3",
+          "text": "Métier par métier"
+        },
+        {
+          "type": "data",
+          "id": "labProfessions",
+          "caption": "La meilleure et la pire stratégie pour chaque métier, et la vitesse à laquelle la meilleure sort"
+        },
+        {
+          "type": "h3",
+          "text": "Chaque stratégie sur chaque métier"
+        },
+        {
+          "type": "data",
+          "id": "labMatrix",
+          "caption": "Part des parties qui sortent"
+        },
+        {
+          "type": "h3",
+          "text": "Le revenu passif le plus élevé"
+        },
+        {
+          "type": "data",
+          "id": "labCeiling",
+          "caption": "Quel revenu passif une partie peut atteindre, par métier"
+        },
+        {
+          "type": "h3",
+          "text": "Ce qui ressort"
+        },
+        {
+          "type": "list",
+          "items": [
+            "**Ne rien faire perd.** Sans investir, environ deux parties sur trois finissent en faillite et les autres ne sortent jamais : un salaire ne porte pas les bébés, les dépenses imprévues et les prêts qu'ils imposent.",
+            "**Emprunter avec prudence plutôt que jamais.** Les stratégies qui n'empruntent que lorsqu'une carte paie clairement les intérêts sortent à peu près aussi souvent que les prudentes - en environ la moitié des lancers.",
+            "**Passe aux Grands Deals dès que les liquidités le permettent.** Dans les réglages recherchés, viser les Grands Deals à partir d'environ 20.000 de liquidités sort en environ la moitié des lancers des mêmes réglages avec Petits Deals seulement.",
+            "**Le marketing multiniveau mérite sa place.** Chacune des meilleures stratégies recherchées l'achète.",
+            "**Le revenu passif le plus élevé et la sortie la plus sûre sont deux jeux différents.** Emprunter beaucoup pour des Grands Deals atteint de loin le plus gros revenu passif - une partie a dépassé 60.000 par mois - mais environ deux parties sur trois finissent d'abord en faillite.",
+            "**Négocier des actions pour l'argent des apports n'a pas aidé** dans ces mesures : on sortait moins souvent qu'en achetant seulement des biens comptant.",
+            "**Le salaire décide des chances.** Les salaires les plus bas (concierge, routier) sortent dans environ sept parties sur dix avec la meilleure stratégie ; pilote, médecin et avocat sortent pratiquement à chaque partie."
+          ]
+        },
+        {
+          "type": "callout",
+          "kind": "note",
+          "title": "Quelle confiance accorder à tout cela",
+          "text": "Ce sont des comptages de parties simulées, pas une preuve. Un vrai joueur décide avec plus d'informations qu'une stratégie fixe - quelle carte il a devant lui, où en sont les autres - et les dés décident encore beaucoup. Utilise les chiffres pour voir quelles habitudes tendent à gagner, pas pour prédire une partie."
+        }
+      ]
+    },
+    "odds": {
+      "nav": "Probabilités et chiffres",
+      "title": "Probabilités et chiffres",
+      "intro": "Tout ce qui suit est lu dans les piles de cartes elles-mêmes, c'est donc exactement ce qu'utilise le jeu.",
+      "blocks": [
+        {
+          "type": "h3",
+          "text": "Ce que donne un tirage au hasard"
+        },
+        {
+          "type": "data",
+          "id": "pileOdds",
+          "caption": "Probabilité de chaque sorte de carte sur un tirage au hasard"
+        },
+        {
+          "type": "p",
+          "text": "Dans la pile Petit Deal, un tirage sur deux est une carte d'action ; dans la pile Grand Deal, près de deux sur cinq sont un immeuble ou une résidence. Les dépenses imprévues sont toujours un coût et n'ont pas d'issue favorable - il y en a 42 et la moyenne est un peu inférieure à 1.400."
+        },
+        {
+          "type": "h3",
+          "text": "Paris - ce qu'ils valent en moyenne"
+        },
+        {
+          "type": "table",
+          "head": ["Carte", "Tu paies", "Tu reçois", "Résultat moyen"],
+          "rows": [
+            [
+              "Marketing multiniveau (par jour de paie)",
+              "500 une fois",
+              "50 % × 500 par lancer",
+              "+250 par mois - se rembourse en deux jours de paie"
+            ],
+            [
+              "La belle-sœur emprunte de l'argent",
+              "5.000",
+              "50 % × 10.000",
+              "0 - une pièce équitable qui double ou perd"
+            ],
+            [
+              "Qu'y a-t-il dans la boîte ?!",
+              "500",
+              "1/6 × 10 pièces",
+              "1⅔ pièce ≈ 1.667 à 1.000 la pièce"
+            ],
+            ["Quand on veut", "750", "1/6 × 10 pièces", "les mêmes pièces, à un prix plus élevé"],
+            [
+              "Division d'actions (si tu détiens l'action)",
+              "rien",
+              "50 % × 2 actions + 50 % × ½ action",
+              "+25 % du nombre d'actions"
+            ]
+          ]
+        },
+        {
+          "type": "p",
+          "text": "Le seul pari meilleur qu'équitable à lui seul est le marketing multiniveau. Les divisions d'actions aident le détenteur (+25 % d'actions en moyenne) ; le prêt de la belle-sœur est équitable, ne l'accepte donc que si tu peux te permettre de perdre 5.000."
+        },
+        {
+          "type": "h3",
+          "text": "À quelle fréquence le Marché t'aide ou te nuit"
+        },
+        {
+          "type": "data",
+          "id": "marketOdds",
+          "caption": "Cartes Marché qui concernent chaque sorte d'actif"
+        },
+        {
+          "type": "h3",
+          "text": "La course effrénée en chiffres"
+        },
+        {
+          "type": "p",
+          "text": "Un bien de Grand Deal moyen rapporte environ 1.800 par mois ; un bien de Petit Deal moyen qui rapporte, environ 180. Pour couvrir 1.000 de dépenses, il te faut un bien de Grand Deal ou six petits. Les seuls +600 par mois du concierge mettraient des années à économiser l'apport de 32.000–40.000 - c'est pourquoi les petits deals rapides, les cartes de paris et les opérations sur actions comptent au début."
+        },
+        {
+          "type": "data",
+          "id": "escape",
+          "caption": "Revenu passif nécessaire par métier"
+        }
+      ]
+    },
+    "cards": {
+      "nav": "Toutes les cartes",
+      "title": "Toutes les cartes",
+      "intro": "Chaque carte de chaque pile, à lire et à chercher - tu ne peux pas les jouer ici. Chaque carte montre son **id** : l'Historique du jeu nomme une carte que tu as choisie par cet id, si bien qu'une partie peut être revue après coup et qu'on peut dire ce que tu as laissé passer (ou laissé à raison).",
+      "blocks": [
+        {
+          "type": "callout",
+          "kind": "tip",
+          "title": "Pourquoi les ids comptent",
+          "text": "Chaque carte que tu choisis - piochée au hasard ou trouvée parmi tes cartes physiques - est inscrite dans l'Historique avec son id exact. Quand une partie est analysée, l'analyste lit ces ids pour voir quel deal tu as laissé passer et joue les deux choix de nombreuses fois. **Ouvre la carte avant de la refuser** et l'analyste pourra dire si c'était un deal qui valait la peine. Le feuilletage n'est pas suivi, seulement la carte ouverte quand tu agis dessus ou que tu la refuses ; passer sans ouvrir aucune carte est permis, et l'analyste note seulement, comme un petit point négatif, que tu n'as pas regardé."
+        },
+        {
+          "type": "cardbrowser"
+        },
+        {
+          "type": "p",
+          "text": "Un agent lit la même liste via `GET /api/v1/game/cards` (aucune partie en cours n'est nécessaire : passe `gameSetId=cashflow`) et dans `docs/domain/CASHFLOW_CARDS.md`."
+        }
+      ]
+    },
+    "cardlab": {
+      "nav": "Ce que valent les cartes",
+      "title": "Ce que valent les cartes",
+      "intro": "Chaque carte du jeu, mesurée. 142 positions réelles - tirées de parties simulées aux lancers 3, 10, 20 et 32, pour chaque métier - ont chacune été jouées 20 fois avec la carte prise et 20 fois sans elle, sur les mêmes dés. Ce que fait une carte, c'est la différence de fréquence à laquelle la partie sort de la course effrénée, en **points** (points de pourcentage). Une carte qui aide de 3 points aide beaucoup dans certaines positions et ne fait rien dans d'autres ; c'est la moyenne de nombreuses positions sur laquelle tu peux t'appuyer.",
+      "blocks": [
+        {
+          "type": "callout",
+          "kind": "note",
+          "title": "Comment lire les tableaux",
+          "text": "Le plus aide, le moins nuit. « Prise » signifie un Deal acheté, une dépense imprévue payée ou une carte Marché jouée, et chaque partie qui suit est jouée par la stratégie polyvalente du laboratoire de stratégies. **Comptant** compte les positions où l'apport était en liquide, **avec un prêt** celles où la banque a dû le prêter. L'erreur de mesure est d'environ un point pour les Petits Deals et les dépenses imprévues. Une partie avancée est une partie bien engagée avec des biens déjà achetés (la meilleure stratégie trouvée, lancers 20 à 60)."
+        },
+        {
+          "type": "h3",
+          "text": "Petits Deals"
+        },
+        {
+          "type": "p",
+          "text": "Le meilleur Petit Deal est l'entrée du **marketing multiniveau** : **+6 points** et environ cinq lancers économisés, pour 500 €. Viennent ensuite les **maisons individuelles avec 2.000 € d'apport** (+3 points comptant, environ huit lancers économisés) - et la surprise : quand la banque doit prêter cet apport, elles valent **+10 à +12 points**, car un bien qui rapporte 200 à 250 € par mois pour 2.000 € mérite qu'on emprunte. Les appartements et les maisons chères (4.000 à 5.000 € d'apport) sont l'inverse : comptant, ils ne font à peu près rien, avec un prêt ils coûtent 10 à 19 points. **Les actions** sont de petits paris dans les deux sens (entre −2,5 et +1,5 points) : acheter pour la moitié de tes liquidités des actions que tu gardes les immobilise, et les bon marché (5, 10 ou 20 €) coûtent un peu plus que les chères."
+        },
+        {
+          "type": "data",
+          "id": "cardLabSmall",
+          "caption": "Chaque Petit Deal, le meilleur à acheter d'abord"
+        },
+        {
+          "type": "h3",
+          "text": "Grands Deals"
+        },
+        {
+          "type": "p",
+          "text": "Un Grand Deal est une question d'**origine de l'apport**. Achetés comptant, les bons économisent 5 à 12 lancers (l'immeuble à 10.000 € et la maison jumelée à 10.000 € le plus). Achetés avec un prêt, ils sont la chose la plus dangereuse du jeu : **de −9 à −84 points** (la plupart entre −20 et −65), parce que les intérêts du prêt et l'hypothèque avalent ce que rapporte le bien. La franchise de pizza et les grandes résidences sont en bas du tableau (−77 à −84 points avec un prêt) : l'apport dépasse de loin ce que détient une partie à ce stade. La seule exception est la **maison jumelée à 10.000 €** (1.100 € par mois) : elle vaut d'être achetée même avec un prêt (+3,6 points)."
+        },
+        {
+          "type": "data",
+          "id": "cardLabBig",
+          "caption": "Chaque Grand Deal"
+        },
+        {
+          "type": "h3",
+          "text": "Dépenses imprévues : ce qu'elles te coûtent"
+        },
+        {
+          "type": "p",
+          "text": "Une dépense imprévue est payée, quoi qu'elle dise - la question est donc seulement de savoir combien elle fait mal. **Chaque tranche de 1.000 € d'une dépense imprévue coûte environ 3,5 à 4,5 points** de chance de sortir : la cuisine à 7.500 € en prend 34, la voiture ou le bateau à 5.000 € 23, une dépense de 1.000 € 3,5 et tout ce qui est sous 300 € environ un. La même dépense imprévue coûte **une fois et demie à deux fois plus en début de partie** qu'en fin de partie - et dans une partie avancée environ moitié moins, parce que les biens la remboursent plus vite. Dans 6 faillites sur 10, la dernière chose qui s'est passée était une dépense imprévue (voir ci-dessous)."
+        },
+        {
+          "type": "data",
+          "id": "cardLabDoodads",
+          "caption": "Chaque dépense imprévue, la pire d'abord"
+        },
+        {
+          "type": "h3",
+          "text": "Cartes Marché"
+        },
+        {
+          "type": "p",
+          "text": "La plupart des cartes Marché ne te font rien. Un **acheteur** pour ta maison individuelle vaut le plus lorsqu'il offre un montant fixe en plus : +20.000 € valent **4,7 points** (15 lancers économisés), +5.000 € seulement 1 - et +10 % guère plus. Les deux cartes de **boom d'affaires** (+250 € et +400 € sur une entreprise) valent 2,6 et 3,2 points, et environ 12 et 17 lancers dans une partie avancée. Les cartes de coût (locataire, canalisation) coûtent de 0,7 à 3,5 points, à peu près ce que coûte la même somme en dépense imprévue. Les divisions d'actions ne comptent pas."
+        },
+        {
+          "type": "data",
+          "id": "cardLabMarket",
+          "caption": "Les cartes Marché qui te touchent"
+        },
+        {
+          "type": "h3",
+          "text": "Cartes à dé : ce que coûte un pari"
+        },
+        {
+          "type": "p",
+          "text": "Une carte à dé gagne avec son chiffre ou plus : un 4 gagne une fois sur deux, un 6 une fois sur six. **L'entrée du marketing multiniveau gagne une fois sur deux et paie chaque mois** : +6 points. **Les boîtes d'or** (un 6 gagne, une chance sur six) sont de petits paris qui perdent le plus souvent : −0,6 et −1,7 points - les pièces valent peu à côté de ce que rapporte le même argent dans un bien. **La belle-sœur** rend 10.000 € pour 5.000 € une fois sur deux : en moyenne c'est exactement zéro, et pourtant cela coûte 7,6 points - 0,6 quand les 5.000 € étaient en liquide, 11,7 quand la banque a dû les prêter : un pari équitable n'est pas gratuit, car l'argent manque aux biens qu'il aurait pu acheter."
+        },
+        {
+          "type": "data",
+          "id": "cardLabDice",
+          "caption": "Les cartes décidées par un dé"
+        },
+        {
+          "type": "h3",
+          "text": "Où en est une partie en chemin"
+        },
+        {
+          "type": "p",
+          "text": "Le revenu passif en part des dépenses est le chiffre qui dit à quel point la sortie est proche. Le premier tableau montre, par métier, où en étaient aux lancers 10, 20, 30, 40 et 60 les parties qui **sont sorties** - la partie médiane, et entre parenthèses le dixième rapide et le dixième lent. Au lancer 20, une partie qui sort a typiquement couvert 7 à 24 % de ses dépenses ; au lancer 40, 20 à 60 %."
+        },
+        {
+          "type": "data",
+          "id": "cardLabMilestones",
+          "caption": "Revenu passif en part des dépenses, parties sorties"
+        },
+        {
+          "type": "p",
+          "text": "Le second tableau retourne la question : parmi toutes les parties qui se trouvaient dans une tranche à ce lancer, combien sont sorties et combien ont fait faillite. **Être en retard au début n'est pas perdu** (4 parties sur 5 avec moins de 5 % au lancer 10 sortent quand même) - mais être en retard tard l'est : moins de 5 % au lancer 30 laisse deux sur trois, moins de 5 % au lancer 60 seulement 63 %. Une partie qui a atteint 20 % au lancer 30 sort presque toujours (99 %), et à partir de 40 % c'est quasi certain."
+        },
+        {
+          "type": "data",
+          "id": "cardLabBands",
+          "caption": "Chance de sortir / de faire faillite, selon l'avancement d'une partie"
+        },
+        {
+          "type": "h3",
+          "text": "Ce qui mène une partie à la faillite"
+        },
+        {
+          "type": "p",
+          "text": "Sur 12.000 parties avec la stratégie polyvalente, 16 % ont fait faillite. Le tableau montre quelle a été la dernière décision avant la fin et quelles cartes figuraient le plus souvent parmi les trois dernières. C'est **presque toujours une dépense imprévue** (61 %), un Deal laissé passer (26 %, la partie était déjà perdue) ou une carte Marché de coût. La cuisine, la première voiture, l'appareil dentaire et le bateau sont les plus fréquents - les dépenses imprévues chères de la pile. La meilleure protection n'est pas un deal malin mais **des liquidités pour la prochaine dépense imprévue** (voir la section 17)."
+        },
+        {
+          "type": "data",
+          "id": "cardLabRuin",
+          "caption": "La dernière décision avant une faillite"
+        },
+        {
+          "type": "callout",
+          "kind": "tip",
+          "title": "Comment l'analyste s'en sert",
+          "text": "Quand une partie est analysée, une carte que tu as refusée est jugée en jouant les deux choix sur les mêmes dés, puis comparée à ces chiffres : **un Deal laissé qui valait +5 points était une occasion manquée, un deal qui aurait fait du mal a été laissé à raison**. L'analyste te dit aussi où en était ta partie aux lancers 10, 20, 30, 40 et 60 par rapport aux parties du second tableau, et comment elles ont fini."
+        }
+      ]
+    },
+    "faq": {
+      "nav": "FAQ",
+      "title": "Questions et réponses",
+      "intro": "De courtes réponses à ce qu'on demande en premier.",
+      "blocks": [
+        {
+          "type": "glossary",
+          "items": [
+            {
+              "term": "Ai-je besoin du plateau physique ?",
+              "text": "L'appli en est le compagnon : elle tient les comptes, les cartes et les chiffres. Tu déplaces ton pion et lances tes dés sur le plateau. Pour les cartes à dé, l'appli peut lancer pour toi."
+            },
+            {
+              "term": "Puis-je utiliser mon compte normal ?",
+              "text": "Non. Le jeu est réservé aux comptes dont l'adresse e-mail contient « cashflow », et il utilise tout le compte comme partie. Un compte personnel n'est pas touché."
+            },
+            {
+              "term": "Est-ce que ça marche sur le serveur auto-hébergé et sur Firebase ?",
+              "text": "Oui, dans les deux. Le jeu et ses parties enregistrées sont stockés avec tes autres données ; les textes des cartes se chargent à la demande."
+            },
+            {
+              "term": "J'ai fait une erreur - comment la corriger ?",
+              "text": "Appuie sur Annuler. Chaque étape - un jour de paie, une carte, un prêt, une vente - peut être annulée, et l'Historique te permet de remonter de plusieurs étapes d'un coup."
+            },
+            {
+              "term": "Que se passe-t-il quand mon cashflow mensuel est négatif ?",
+              "text": "Chaque jour de paie retire des liquidités au lieu d'en ajouter, et le tableau de bord affiche un avertissement rouge. Vends quelque chose, rembourse un prêt ou trouve un meilleur deal. Le jeu ne s'arrête pas."
+            },
+            {
+              "term": "Qu'est-ce que la Voie rapide ?",
+              "text": "La deuxième phase du jeu de société, une fois sorti de la course effrénée. L'appli ne la joue pas encore - tu peux continuer dans la course effrénée aussi longtemps que tu veux."
+            },
+            {
+              "term": "Pourquoi l'appli a-t-elle pris un prêt bancaire toute seule ?",
+              "text": "Un achat ou un paiement dépassait tes liquidités. Elle emprunte exactement la somme manquante, arrondie à 1.000, comme étape séparée - annule-la si tu préfères décider toi-même."
+            },
+            {
+              "term": "Il manque une carte dont j'ai un exemplaire - où est-elle ?",
+              "text": "Les piles sont complètes : Petit Deal 38, Grand Deal 36, Dépense imprévue 42, Marché 39. Utilise la recherche sur l'écran de la pile et les filtres rapides."
+            },
+            {
+              "term": "J'ai joué dans une langue et maintenant l'appli est dans une autre",
+              "text": "Chaque partie enregistrée se souvient de sa langue et y bascule quand tu continues la partie, si bien que les libellés comme SFH ou EFH restent cohérents."
+            },
+            {
+              "term": "Où est le manuel dans ma langue ?",
+              "text": "Le manuel est disponible en anglais, allemand, espagnol, français, chinois et arabe, et suit la langue de l'appli."
+            }
+          ]
+        }
+      ]
+    },
+    "glossary": {
+      "nav": "Glossaire",
+      "title": "Glossaire et référence rapide",
+      "intro": "Les mots du jeu au même endroit.",
+      "blocks": [
+        {
+          "type": "glossary",
+          "items": [
+            {
+              "term": "Course effrénée",
+              "text": "La première phase : un travail qui paie tes frais de vie et rien de plus. Tu la quittes quand le revenu passif couvre tes dépenses."
+            },
+            {
+              "term": "Revenu passif",
+              "text": "Le cashflow mensuel de tes biens et entreprises - de l'argent qui arrive sans ton travail."
+            },
+            {
+              "term": "Cashflow",
+              "text": "Revenus moins dépenses, par mois. Sur une carte, l'argent mensuel que l'investissement rapporte après son hypothèque."
+            },
+            {
+              "term": "Jour de paie",
+              "text": "L'étape qui enregistre un mois de salaire, de revenu passif et de dépenses."
+            },
+            {
+              "term": "Apport (mise de fonds)",
+              "text": "Ce que tu paies toi-même pour un bien. Le reste est l'hypothèque."
+            },
+            {
+              "term": "Hypothèque",
+              "text": "La part d'un bien financée par un prêteur. Elle devient un passif ; sa mensualité est déjà comprise dans le cashflow de la carte."
+            },
+            {
+              "term": "Rendement annuel (sur la mise de fonds)",
+              "text": "Douze mois de cashflow divisés par ton apport."
+            },
+            {
+              "term": "Petit Deal / Grand Deal",
+              "text": "Les deux piles vertes. Petit Deal : petits prix, actions, petits biens, or et paris. Grand Deal : grands biens et entreprises."
+            },
+            {
+              "term": "Dépense imprévue (Schnickschnack)",
+              "text": "Une carte rouge : une dépense non planifiée. Tu paies toujours."
+            },
+            {
+              "term": "Carte Marché",
+              "text": "Une carte bleue : un événement pour tous - acheteurs, factures de réparation, divisions d'actions, coups de pouce."
+            },
+            {
+              "term": "Carte étoile ★",
+              "text": "Une carte Marché rare qui augmente ton revenu passif pour de bon."
+            },
+            {
+              "term": "Projet Grow",
+              "text": "Le suivi d'un investissement : plan, exécution, terminé. Chaque carte que tu achètes y vit."
+            },
+            {
+              "term": "Décision ouverte",
+              "text": "Une carte qui attend un lancer de dé sur le tableau de bord."
+            },
+            {
+              "term": "Offre",
+              "text": "Ce que paie un acheteur du Marché. Valable jusqu'au prochain jour de paie."
+            },
+            {
+              "term": "Partie en direct",
+              "text": "La partie que ton compte joue en ce moment. Les parties enregistrées sont des copies qui peuvent redevenir la partie en direct."
+            },
+            {
+              "term": "Prêt bancaire",
+              "text": "De l'argent de la banque par paliers de 1.000 à 10 % du prêt par mois."
+            },
+            {
+              "term": "Feu / Sourire / Plaisir / Quotidien",
+              "text": "Les quatre comptes de dépenses de Money App. Dans le jeu, les achats passent par Feu, les dépenses imprévues de rêve par Sourire, les petites par Plaisir."
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

@@ -80,8 +80,19 @@ describe('CashflowDocsComponent', () => {
     expect(component.usingFallback).toBe(false);
   });
 
+  it('shows the manual in each of the six languages', async () => {
+    for (const language of ['en', 'de', 'es', 'fr', 'cn', 'ar']) {
+      const { component, http } = makeComponent(language);
+      component.ngOnInit();
+      await flush();
+
+      expect(http.get).toHaveBeenCalledWith(`assets/i18n/cashflow-manual/${language}.json`);
+      expect(component.usingFallback).toBe(false);
+    }
+  });
+
   it('shows the English manual with a notice for a language without a manual', async () => {
-    const { component, http } = makeComponent('ar');
+    const { component, http } = makeComponent('it');
     component.ngOnInit();
     await flush();
 
