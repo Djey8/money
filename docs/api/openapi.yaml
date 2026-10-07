@@ -923,6 +923,26 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/GameView'
+              example:
+                active: true
+                currency: EUR
+                gameSetId: cashflow
+                professionId: nurse
+                mode: solo
+                round: 4
+                outcome: playing
+                cashMinor: 465000
+                finances:
+                  {
+                    salaryMinor: 300000,
+                    passiveIncomeMinor: 0,
+                    expensesMinor: 180000,
+                    monthlyCashflowMinor: 120000,
+                    escapedRatRace: false,
+                    bankrupt: false,
+                  }
+                legalActions:
+                  - { action: roll, description: 'Roll the dice and move the token.' }
         '400':
           $ref: '#/components/responses/ValidationError'
         '401':
@@ -951,6 +971,27 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/GameView'
+              example:
+                active: true
+                currency: EUR
+                gameSetId: cashflow
+                professionId: nurse
+                mode: solo
+                round: 3
+                outcome: playing
+                cashMinor: 345000
+                finances:
+                  {
+                    salaryMinor: 300000,
+                    passiveIncomeMinor: 0,
+                    expensesMinor: 180000,
+                    monthlyCashflowMinor: 120000,
+                    escapedRatRace: false,
+                    bankrupt: false,
+                  }
+                children: 1
+                legalActions:
+                  - { action: roll, description: 'Roll the dice and move the token.' }
         '400':
           $ref: '#/components/responses/ValidationError'
         '401':
@@ -979,6 +1020,27 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/GameView'
+              example:
+                active: true
+                currency: EUR
+                gameSetId: cashflow
+                professionId: nurse
+                mode: solo
+                round: 3
+                outcome: playing
+                cashMinor: 345000
+                finances:
+                  {
+                    salaryMinor: 300000,
+                    passiveIncomeMinor: 0,
+                    expensesMinor: 180000,
+                    monthlyCashflowMinor: 120000,
+                    escapedRatRace: false,
+                    bankrupt: false,
+                  }
+                status: { charityRoundsLeft: 3, unemployedRoundsLeft: 0 }
+                legalActions:
+                  - { action: roll, description: 'Roll the dice and move the token.' }
         '400':
           $ref: '#/components/responses/ValidationError'
         '401':
@@ -1007,6 +1069,27 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/GameView'
+              example:
+                active: true
+                currency: EUR
+                gameSetId: cashflow
+                professionId: nurse
+                mode: solo
+                round: 3
+                outcome: playing
+                cashMinor: 345000
+                finances:
+                  {
+                    salaryMinor: 300000,
+                    passiveIncomeMinor: 0,
+                    expensesMinor: 180000,
+                    monthlyCashflowMinor: 120000,
+                    escapedRatRace: false,
+                    bankrupt: false,
+                  }
+                status: { charityRoundsLeft: 0, unemployedRoundsLeft: 2 }
+                legalActions:
+                  - { action: roll, description: 'Roll the dice and move the token.' }
         '400':
           $ref: '#/components/responses/ValidationError'
         '401':
@@ -1047,6 +1130,27 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/GameView'
+              example:
+                active: true
+                currency: EUR
+                gameSetId: cashflow
+                professionId: nurse
+                mode: solo
+                round: 3
+                outcome: playing
+                cashMinor: 345000
+                finances:
+                  {
+                    salaryMinor: 300000,
+                    passiveIncomeMinor: 0,
+                    expensesMinor: 180000,
+                    monthlyCashflowMinor: 120000,
+                    escapedRatRace: false,
+                    bankrupt: false,
+                  }
+                status: { charityRoundsLeft: 0, unemployedRoundsLeft: 0 }
+                legalActions:
+                  - { action: roll, description: 'Roll the dice and move the token.' }
         '400':
           $ref: '#/components/responses/ValidationError'
         '401':
@@ -1087,6 +1191,26 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/GameView'
+              example:
+                active: true
+                currency: EUR
+                gameSetId: cashflow
+                professionId: nurse
+                mode: solo
+                round: 3
+                outcome: playing
+                cashMinor: 545000
+                finances:
+                  {
+                    salaryMinor: 300000,
+                    passiveIncomeMinor: 0,
+                    expensesMinor: 180000,
+                    monthlyCashflowMinor: 120000,
+                    escapedRatRace: false,
+                    bankrupt: false,
+                  }
+                legalActions:
+                  - { action: roll, description: 'Roll the dice and move the token.' }
         '400':
           $ref: '#/components/responses/ValidationError'
         '401':
@@ -1126,6 +1250,26 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/GameView'
+              example:
+                active: true
+                currency: EUR
+                gameSetId: cashflow
+                professionId: nurse
+                mode: solo
+                round: 1
+                outcome: playing
+                cashMinor: 200000
+                finances:
+                  {
+                    salaryMinor: 300000,
+                    passiveIncomeMinor: 0,
+                    expensesMinor: 180000,
+                    monthlyCashflowMinor: 120000,
+                    escapedRatRace: false,
+                    bankrupt: false,
+                  }
+                legalActions:
+                  - { action: roll, description: 'Roll the dice and move the token.' }
         '400':
           $ref: '#/components/responses/ValidationError'
         '401':
@@ -1162,6 +1306,26 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/GameView'
+              example:
+                active: true
+                currency: EUR
+                gameSetId: cashflow
+                professionId: nurse
+                mode: solo
+                round: 3
+                outcome: playing
+                cashMinor: 345000
+                finances:
+                  {
+                    salaryMinor: 300000,
+                    passiveIncomeMinor: 0,
+                    expensesMinor: 180000,
+                    monthlyCashflowMinor: 120000,
+                    escapedRatRace: false,
+                    bankrupt: false,
+                  }
+                legalActions:
+                  - { action: roll, description: 'Roll the dice and move the token.' }
         '400':
           $ref: '#/components/responses/ValidationError'
         '401':
@@ -1199,6 +1363,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/GameView'
+              example:
+                active: false
+                legalActions:
+                  - { action: start, description: 'Start a game.' }
         '400':
           $ref: '#/components/responses/ValidationError'
         '401':
@@ -1277,6 +1445,45 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/GameView'
+              example:
+                active: true
+                currency: EUR
+                gameSetId: cashflow
+                professionId: nurse
+                mode: solo
+                round: 3
+                outcome: playing
+                cashMinor: 345000
+                finances:
+                  {
+                    salaryMinor: 300000,
+                    passiveIncomeMinor: 0,
+                    expensesMinor: 180000,
+                    monthlyCashflowMinor: 120000,
+                    escapedRatRace: false,
+                    bankrupt: false,
+                  }
+                turn:
+                  {
+                    phase: 'decide',
+                    count: 8,
+                    lastRoll: [4],
+                    pending: { kind: 'deal', spaceIndex: 4 },
+                  }
+                result:
+                  {
+                    dice: [4],
+                    total: 4,
+                    from: 0,
+                    to: 4,
+                    landed: 'deal',
+                    paydays: 0,
+                    openingPayday: false,
+                    autoLoansMinor: 0,
+                  }
+                legalActions:
+                  - { action: pass_card, description: 'Leave the card.' }
+                  - { action: draw_card, description: 'Draw a Deal card.' }
         '400':
           $ref: '#/components/responses/ValidationError'
         '401':
@@ -1304,6 +1511,27 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/GameView'
+              example:
+                active: true
+                currency: EUR
+                gameSetId: cashflow
+                professionId: nurse
+                mode: solo
+                round: 3
+                outcome: playing
+                cashMinor: 345000
+                finances:
+                  {
+                    salaryMinor: 300000,
+                    passiveIncomeMinor: 0,
+                    expensesMinor: 180000,
+                    monthlyCashflowMinor: 120000,
+                    escapedRatRace: false,
+                    bankrupt: false,
+                  }
+                turn: { phase: 'roll', count: 8, lastRoll: [4], pending: null }
+                legalActions:
+                  - { action: roll, description: 'Roll the dice and move the token.' }
         '400':
           $ref: '#/components/responses/ValidationError'
         '401':
@@ -1341,6 +1569,33 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/GameView'
+              example:
+                active: true
+                currency: EUR
+                gameSetId: cashflow
+                professionId: nurse
+                mode: solo
+                round: 3
+                outcome: playing
+                cashMinor: 345000
+                finances:
+                  {
+                    salaryMinor: 300000,
+                    passiveIncomeMinor: 0,
+                    expensesMinor: 180000,
+                    monthlyCashflowMinor: 120000,
+                    escapedRatRace: false,
+                    bankrupt: false,
+                  }
+                result:
+                  {
+                    deck: 'dealSmall',
+                    reshuffled: false,
+                    card: { id: 'small-12', title: 'Gold coins', kind: 'deal' },
+                  }
+                legalActions:
+                  - { action: buy_deal, description: 'Buy the drawn deal.' }
+                  - { action: pass_card, description: 'Leave the card.' }
         '400':
           $ref: '#/components/responses/ValidationError'
         '401':
@@ -1380,6 +1635,32 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/GameView'
+              example:
+                active: true
+                currency: EUR
+                gameSetId: cashflow
+                professionId: nurse
+                mode: solo
+                round: 3
+                outcome: playing
+                cashMinor: 245000
+                finances:
+                  {
+                    salaryMinor: 300000,
+                    passiveIncomeMinor: 0,
+                    expensesMinor: 180000,
+                    monthlyCashflowMinor: 120000,
+                    escapedRatRace: false,
+                    bankrupt: false,
+                  }
+                result:
+                  {
+                    card: { id: 'small-12', title: 'Gold coins', kind: 'deal' },
+                    title: 'Gold coins',
+                    kind: 'asset',
+                  }
+                legalActions:
+                  - { action: roll, description: 'Roll the dice and move the token.' }
         '400':
           $ref: '#/components/responses/ValidationError'
         '401':
@@ -1417,6 +1698,28 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/GameView'
+              example:
+                active: true
+                currency: EUR
+                gameSetId: cashflow
+                professionId: nurse
+                mode: solo
+                round: 3
+                outcome: playing
+                cashMinor: 325000
+                finances:
+                  {
+                    salaryMinor: 300000,
+                    passiveIncomeMinor: 0,
+                    expensesMinor: 180000,
+                    monthlyCashflowMinor: 120000,
+                    escapedRatRace: false,
+                    bankrupt: false,
+                  }
+                result:
+                  { card: { id: 'doodad-3', title: 'New phone', kind: 'doodad' }, costMinor: 20000 }
+                legalActions:
+                  - { action: roll, description: 'Roll the dice and move the token.' }
         '400':
           $ref: '#/components/responses/ValidationError'
         '401':
@@ -1462,6 +1765,11 @@ paths:
                   deck: { type: string }
                   total: { type: integer }
                   cards: { type: array, items: { type: object } }
+              example:
+                deck: dealSmall
+                total: 24
+                cards:
+                  - { id: small-12, title: Gold coins, kind: deal }
         '400':
           $ref: '#/components/responses/ValidationError'
         '401':
@@ -1495,6 +1803,32 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/GameView'
+              example:
+                active: true
+                currency: EUR
+                gameSetId: cashflow
+                professionId: nurse
+                mode: solo
+                round: 3
+                outcome: playing
+                cashMinor: 345000
+                finances:
+                  {
+                    salaryMinor: 300000,
+                    passiveIncomeMinor: 0,
+                    expensesMinor: 180000,
+                    monthlyCashflowMinor: 120000,
+                    escapedRatRace: false,
+                    bankrupt: false,
+                  }
+                result:
+                  {
+                    card: { id: 'market-7', title: 'Buyer for gold', kind: 'market' },
+                    kind: 'buyerOffer',
+                    matched: true,
+                  }
+                legalActions:
+                  - { action: roll, description: 'Roll the dice and move the token.' }
         '400':
           $ref: '#/components/responses/ValidationError'
         '401':
@@ -1531,6 +1865,27 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/GameView'
+              example:
+                active: true
+                currency: EUR
+                gameSetId: cashflow
+                professionId: nurse
+                mode: solo
+                round: 3
+                outcome: playing
+                cashMinor: 345000
+                finances:
+                  {
+                    salaryMinor: 300000,
+                    passiveIncomeMinor: 0,
+                    expensesMinor: 180000,
+                    monthlyCashflowMinor: 120000,
+                    escapedRatRace: false,
+                    bankrupt: false,
+                  }
+                result: { title: 'Gold coins', kind: 'asset', roll: 5, won: true }
+                legalActions:
+                  - { action: roll, description: 'Roll the dice and move the token.' }
         '400':
           $ref: '#/components/responses/ValidationError'
         '401':
@@ -1556,6 +1911,43 @@ paths:
             application/json:
               schema:
                 type: object
+              example:
+                games:
+                  - {
+                      id: game_lq3x_ab12,
+                      name: 'Nurse · 07.10.2026',
+                      gameSetId: cashflow,
+                      professionId: nurse,
+                      round: 12,
+                      virtualDate: '2026-12-01',
+                      cashMinor: 410000,
+                      salaryMinor: 300000,
+                      passiveIncomeMinor: 60000,
+                      expensesMinor: 180000,
+                      monthlyCashflowMinor: 180000,
+                      bankLoanMinor: 0,
+                      children: 1,
+                      transactionCount: 96,
+                      escapedRatRace: false,
+                      bankrupt: false,
+                      language: en,
+                      createdAt: '2026-10-07T09:12:00.000Z',
+                      updatedAt: '2026-10-07T09:12:00.000Z',
+                      status: playing,
+                      sizeBytes: 198000,
+                    }
+                currentGameId: game_lq3x_ab12
+                storage:
+                  {
+                    documentBytes: 1204331,
+                    budgetBytes: 6710886,
+                    remainingBytes: 5506555,
+                    limitBytes: 8388608,
+                    gamesBytes: 412000,
+                    gameCount: 2,
+                    keepAtMost: 100,
+                    overKeepBy: 0,
+                  }
         '401':
           $ref: '#/components/responses/AuthenticationRequired'
         '403':
@@ -1586,6 +1978,42 @@ paths:
             application/json:
               schema:
                 type: object
+              example:
+                game:
+                  {
+                    id: game_lq3x_ab12,
+                    name: 'Nurse · 07.10.2026',
+                    gameSetId: cashflow,
+                    professionId: nurse,
+                    round: 12,
+                    virtualDate: '2026-12-01',
+                    cashMinor: 410000,
+                    salaryMinor: 300000,
+                    passiveIncomeMinor: 60000,
+                    expensesMinor: 180000,
+                    monthlyCashflowMinor: 180000,
+                    bankLoanMinor: 0,
+                    children: 1,
+                    transactionCount: 96,
+                    escapedRatRace: false,
+                    bankrupt: false,
+                    language: en,
+                    createdAt: '2026-10-07T09:12:00.000Z',
+                    updatedAt: '2026-10-07T09:12:00.000Z',
+                    status: playing,
+                    sizeBytes: 198000,
+                  }
+                storage:
+                  {
+                    documentBytes: 1204331,
+                    budgetBytes: 6710886,
+                    remainingBytes: 5506555,
+                    limitBytes: 8388608,
+                    gamesBytes: 412000,
+                    gameCount: 2,
+                    keepAtMost: 100,
+                    overKeepBy: 0,
+                  }
         '401':
           $ref: '#/components/responses/AuthenticationRequired'
         '403':
@@ -1620,6 +2048,19 @@ paths:
             application/json:
               schema:
                 type: object
+              example:
+                deleted: [game_old_1, game_old_2]
+                storage:
+                  {
+                    documentBytes: 1204331,
+                    budgetBytes: 6710886,
+                    remainingBytes: 5506555,
+                    limitBytes: 8388608,
+                    gamesBytes: 412000,
+                    gameCount: 2,
+                    keepAtMost: 100,
+                    overKeepBy: 0,
+                  }
         '401':
           $ref: '#/components/responses/AuthenticationRequired'
         '403':
@@ -1645,6 +2086,29 @@ paths:
             application/json:
               schema:
                 type: object
+              example:
+                id: game_lq3x_ab12
+                name: 'Nurse · 07.10.2026'
+                gameSetId: cashflow
+                professionId: nurse
+                round: 12
+                virtualDate: '2026-12-01'
+                cashMinor: 410000
+                salaryMinor: 300000
+                passiveIncomeMinor: 60000
+                expensesMinor: 180000
+                monthlyCashflowMinor: 180000
+                bankLoanMinor: 0
+                children: 1
+                transactionCount: 96
+                escapedRatRace: false
+                bankrupt: false
+                language: en
+                createdAt: '2026-10-07T09:12:00.000Z'
+                updatedAt: '2026-10-07T09:12:00.000Z'
+                status: playing
+                sizeBytes: 198000
+                steps: []
         '401':
           $ref: '#/components/responses/AuthenticationRequired'
         '403':
@@ -1678,6 +2142,19 @@ paths:
             application/json:
               schema:
                 type: object
+              example:
+                renamed: { id: game_lq3x_ab12, name: 'My best game' }
+                storage:
+                  {
+                    documentBytes: 1204331,
+                    budgetBytes: 6710886,
+                    remainingBytes: 5506555,
+                    limitBytes: 8388608,
+                    gamesBytes: 412000,
+                    gameCount: 2,
+                    keepAtMost: 100,
+                    overKeepBy: 0,
+                  }
         '401':
           $ref: '#/components/responses/AuthenticationRequired'
         '403':
@@ -1703,6 +2180,19 @@ paths:
             application/json:
               schema:
                 type: object
+              example:
+                deleted: [game_lq3x_ab12]
+                storage:
+                  {
+                    documentBytes: 1204331,
+                    budgetBytes: 6710886,
+                    remainingBytes: 5506555,
+                    limitBytes: 8388608,
+                    gamesBytes: 412000,
+                    gameCount: 2,
+                    keepAtMost: 100,
+                    overKeepBy: 0,
+                  }
         '401':
           $ref: '#/components/responses/AuthenticationRequired'
         '403':
@@ -1728,6 +2218,26 @@ paths:
             application/json:
               schema:
                 type: object
+              example:
+                loaded:
+                  {
+                    id: game_lq3x_ab12,
+                    name: 'Nurse · 07.10.2026',
+                    round: 12,
+                    cashMinor: 410000,
+                    status: playing,
+                  }
+                storage:
+                  {
+                    documentBytes: 1204331,
+                    budgetBytes: 6710886,
+                    remainingBytes: 5506555,
+                    limitBytes: 8388608,
+                    gamesBytes: 412000,
+                    gameCount: 2,
+                    keepAtMost: 100,
+                    overKeepBy: 0,
+                  }
         '401':
           $ref: '#/components/responses/AuthenticationRequired'
         '403':
@@ -1758,6 +2268,42 @@ paths:
             application/json:
               schema:
                 type: object
+              example:
+                game:
+                  {
+                    id: game_lq3x_ab12,
+                    name: 'Nurse · 07.10.2026',
+                    gameSetId: cashflow,
+                    professionId: nurse,
+                    round: 12,
+                    virtualDate: '2026-12-01',
+                    cashMinor: 410000,
+                    salaryMinor: 300000,
+                    passiveIncomeMinor: 60000,
+                    expensesMinor: 180000,
+                    monthlyCashflowMinor: 180000,
+                    bankLoanMinor: 0,
+                    children: 1,
+                    transactionCount: 96,
+                    escapedRatRace: false,
+                    bankrupt: false,
+                    language: en,
+                    createdAt: '2026-10-07T09:12:00.000Z',
+                    updatedAt: '2026-10-07T09:12:00.000Z',
+                    status: ended,
+                    sizeBytes: 198000,
+                  }
+                storage:
+                  {
+                    documentBytes: 1204331,
+                    budgetBytes: 6710886,
+                    remainingBytes: 5506555,
+                    limitBytes: 8388608,
+                    gamesBytes: 412000,
+                    gameCount: 2,
+                    keepAtMost: 100,
+                    overKeepBy: 0,
+                  }
         '401':
           $ref: '#/components/responses/AuthenticationRequired'
         '403':
@@ -1810,6 +2356,27 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/GameView'
+              example:
+                active: true
+                currency: EUR
+                gameSetId: cashflow
+                professionId: nurse
+                mode: solo
+                round: 3
+                outcome: playing
+                cashMinor: 395000
+                finances:
+                  {
+                    salaryMinor: 300000,
+                    passiveIncomeMinor: 0,
+                    expensesMinor: 180000,
+                    monthlyCashflowMinor: 120000,
+                    escapedRatRace: false,
+                    bankrupt: false,
+                  }
+                result: { title: 'OK4U', kind: 'share', cashMinor: 50000 }
+                legalActions:
+                  - { action: roll, description: 'Roll the dice and move the token.' }
         '400':
           $ref: '#/components/responses/ValidationError'
         '401':
@@ -1854,6 +2421,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/GameReviewResponse'
+              example:
+                reviewable: true
+                baseline:
+                  {
+                    id: all-rounder,
+                    label: All-rounder,
+                    description: 'Buys sound deals, keeps a reserve.',
+                  }
+                review:
+                  {
+                    steps: 40,
+                    judged: 9,
+                    rollouts: 80,
+                    turningPoint: { step: 17, label: mistake },
+                    final: { outcome: escaped, rolls: 71 },
+                  }
+                benchmark:
+                  {
+                    professionTitle: Nurse,
+                    strategyLabel: 'Properties, no reserve',
+                    escapeRate: 0.9,
+                    games: 300,
+                  }
+                text: 'The game escaped the rat race after 71 rolls.'
         '400':
           $ref: '#/components/responses/ValidationError'
         '401':
@@ -1864,6 +2455,12 @@ paths:
           $ref: '#/components/responses/NotFound'
         '409':
           $ref: '#/components/responses/GameActionRefused'
+        '429':
+          description: Other reviews are running (`game_review_busy`); try again in a minute.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
   /game/saves/{saveId}/review:
     get:
       operationId: getGameSaveReview
@@ -1899,6 +2496,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/GameReviewResponse'
+              example:
+                reviewable: true
+                baseline:
+                  {
+                    id: all-rounder,
+                    label: All-rounder,
+                    description: 'Buys sound deals, keeps a reserve.',
+                  }
+                review:
+                  {
+                    steps: 40,
+                    judged: 9,
+                    rollouts: 80,
+                    turningPoint: { step: 17, label: mistake },
+                    final: { outcome: escaped, rolls: 71 },
+                  }
+                benchmark:
+                  {
+                    professionTitle: Nurse,
+                    strategyLabel: 'Properties, no reserve',
+                    escapeRate: 0.9,
+                    games: 300,
+                  }
+                text: 'The game escaped the rat race after 71 rolls.'
         '400':
           $ref: '#/components/responses/ValidationError'
         '401':
@@ -1909,6 +2530,12 @@ paths:
           $ref: '#/components/responses/NotFound'
         '409':
           $ref: '#/components/responses/GameActionRefused'
+        '429':
+          description: Other reviews are running (`game_review_busy`); try again in a minute.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
   /mojo:
     get:
       operationId: getMojo

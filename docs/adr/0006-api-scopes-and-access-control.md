@@ -18,6 +18,8 @@ One risk not yet addressed: **privilege escalation via token management itself.*
 
 `transactions`, `subscriptions`, `smile`, `fire`, `mojo`, `grow`, `balance` (assets/shares/investments/liabilities not wrapped in a Grow project), `income` (revenues/interests/properties), `budget`, `settings` (allocation ratios, currency, date format, language, theme), `encryption` (encryption config — kept separate from `settings` given its sensitivity), `account` (profile/email/password/delete-account actions), `reports` (read-only; calculations never take a `:w`), `data` (full backup export/import — the highest-blast-radius resource, always requires `:bulk` and never bundled into a plain `:w`).
 
+Addendum (2026-10): `game` (`game:r` reads, `game:w` plays and saves) covers the Cashflow game endpoints (`/api/v1/game/*`). They answer only for game accounts (an email containing `cashflow`; any other account gets `403 not_a_game_account` whatever its scopes) - a feature gate, not an authorization: isolation between users is by `userId` as everywhere else.
+
 ### PAT privilege model — preventing self-escalation
 
 - **Token management endpoints (`/api/v1/auth/tokens*`) can never be called using a PAT.** Only an authenticated browser session (the existing JWT/refresh-cookie flow) or the `mm-admin` CLI (which talks to CouchDB directly, not through the API) can create, list, or revoke PATs. A PAT is structurally incapable of managing tokens, including its own — this eliminates the escalation path entirely rather than relying on scope-checking discipline.
