@@ -1,3 +1,18 @@
+## [1.23.0] - 2026-10-08
+
+### Features
+
+- feat(mcp): the explain agent - teach_cashflow prompt, a teaching guide and the manual in six languages for agents
+- feat(cashflow-game): the manual in all six languages, and the last hard-coded game texts translated
+- feat(cashflow-game): the card lab - what each card is worth, measured, in the manual and for the analyst
+- feat(cashflow-game): only a card that was opened counts; a pass without looking and an offer not taken are judged
+- feat(cashflow-game): a card reference for the player (manual section 20) and for agents
+- feat(cashflow-game): picking a card is a History step with the exact card id
+
+### Bug Fixes
+
+- fix(backend): key rotation rolls back when the re-read data cannot even be decoded
+
 ## [1.22.0] - 2026-10-07
 
 ### Features
