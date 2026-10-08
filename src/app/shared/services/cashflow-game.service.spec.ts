@@ -209,7 +209,7 @@ describe('CashflowGameService', () => {
 
       service.undoLastAction({ onSuccess: jest.fn(), onError });
 
-      expect(onError).toHaveBeenCalledWith('Nothing to undo.');
+      expect(onError).toHaveBeenCalledWith('CashflowGame.errorNothingToUndo');
     });
   });
 
@@ -410,7 +410,7 @@ describe('CashflowGameService', () => {
     it('refuses when there is nothing left to undo', () => {
       const onError = jest.fn();
       service.undoSteps(1, { onSuccess: jest.fn(), onError });
-      expect(onError).toHaveBeenCalledWith('Nothing to undo.');
+      expect(onError).toHaveBeenCalledWith('CashflowGame.errorNothingToUndo');
     });
   });
 
@@ -2958,6 +2958,25 @@ describe('CashflowGameService', () => {
       expect(persistence.writeAndSync).toHaveBeenCalled();
     });
 
+    it('drawing and finding a card are History steps carrying the exact card id', () => {
+      started();
+      const onSuccess = jest.fn();
+      service.drawCard('dealSmall', { onSuccess, onError: jest.fn() });
+      const drawn = onSuccess.mock.calls[0][0];
+      // the other card of the two-card deck, so the second pick is never the one drawn
+      const found = service
+        .findCardsInDeck('dealSmall', 'Placeholder')
+        .find((candidate) => candidate.id !== drawn.id)!;
+      service.recordCardPicked('dealSmall', found);
+      service.recordCardPicked('dealSmall', found); // the same card again: no second step
+
+      const picks = service
+        .historySteps()
+        .filter((step) => step.kind === 'cardPicked')
+        .reverse();
+      expect(picks.map((step) => step.cardId)).toEqual([drawn.id, found.id]);
+    });
+
     it('drawCard reshuffles a single-card deck rather than erroring on the second draw', () => {
       started();
       const first = jest.fn();
@@ -3685,7 +3704,7 @@ describe('CashflowGameService', () => {
 
       service.resetGame({ onSuccess: jest.fn(), onError });
 
-      expect(onError).toHaveBeenCalledWith(expect.stringContaining('Cashflow game account'));
+      expect(onError).toHaveBeenCalledWith('CashflowGame.errorNotGameAccount');
       expect(persistence.batchWriteAndSync).not.toHaveBeenCalled();
     });
   });
@@ -3855,7 +3874,7 @@ describe('CashflowGameService', () => {
 
       service.restoreGameSnapshot({} as any, { onSuccess: jest.fn(), onError });
 
-      expect(onError).toHaveBeenCalledWith('This is not a Cashflow game.');
+      expect(onError).toHaveBeenCalledWith('CashflowGame.errorNotAGame');
       expect(AppStateService.instance.cashflowGame).toBe(before);
     });
   });

@@ -33,12 +33,13 @@ const BLOCK_TYPES = [
   'cards',
   'face',
   'data',
+  'cardbrowser',
   'glossary',
 ];
 
 describe('Cashflow manual content', () => {
   it('has a file for every supported manual language', () => {
-    expect(MANUAL_LANGUAGES).toEqual(['en', 'de']);
+    expect(MANUAL_LANGUAGES).toEqual(['en', 'de', 'es', 'fr', 'cn', 'ar']);
     for (const language of MANUAL_LANGUAGES)
       expect(fs.existsSync(path.join(dir, `${language}.json`))).toBe(true);
   });

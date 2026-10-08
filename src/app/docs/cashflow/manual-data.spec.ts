@@ -150,3 +150,49 @@ describe('Cashflow manual - the strategy lab tables', () => {
     expect(missing.rows[0]).toHaveLength(missing.head.length);
   });
 });
+
+describe('Cashflow manual - the card lab tables', () => {
+  const cardLab = JSON.parse(
+    require('fs').readFileSync(
+      require('path').resolve(__dirname, '../../../assets/i18n/cashflow-manual/card-lab.json'),
+      'utf8',
+    ),
+  );
+  const labCtx = { ...ctx, cardLab, cardName: (id: string) => id };
+  const ids = [
+    'cardLabSmall',
+    'cardLabBig',
+    'cardLabDoodads',
+    'cardLabMarket',
+    'cardLabDice',
+    'cardLabMilestones',
+    'cardLabBands',
+    'cardLabRuin',
+  ] as const;
+
+  it('builds every card lab table with a cell for every column', () => {
+    for (const id of ids) {
+      const { head, rows } = buildManualTable(id, labCtx);
+      expect(rows.length).toBeGreaterThan(0);
+      for (const row of rows) expect(row).toHaveLength(head.length);
+      for (const text of [...head, ...rows.flat()]) {
+        expect(text).not.toContain('undefined');
+        expect(text).not.toContain('NaN');
+      }
+    }
+  });
+
+  it('has a row for every Doodad, the costliest first', () => {
+    const { rows } = buildManualTable('cardLabDoodads', labCtx);
+    expect(rows).toHaveLength(classic.decks!.doodad!.length);
+    // the worst first: the 7,500 € kitchen
+    expect(rows[0][0]).toBe('classic-doodad-kitchen');
+    expect(rows[0][1]).toBe('7500€');
+  });
+
+  it('says so, in a table of the same shape, when the results are not there', () => {
+    const missing = buildManualTable('cardLabSmall', { ...ctx, cardLab: null });
+    expect(missing.rows[0][0]).toBe('labMissing');
+    expect(missing.rows[0]).toHaveLength(missing.head.length);
+  });
+});

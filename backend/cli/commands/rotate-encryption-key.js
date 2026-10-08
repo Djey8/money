@@ -218,9 +218,16 @@ async function runRotateEncryptionKey(deps, options) {
   // (with the *old* key) before the rewrite — not just trusting the
   // in-memory `reencryptedData` we just wrote.
   const writtenUserDoc = await usersDb.get(userId);
-  const { data: afterPlaintext } = rewriteEncryptedValues(writtenUserDoc.data, (v) =>
-    newSession.decrypt(v),
-  );
+  // A value that does not decrypt at all (CryptoJS throws "Malformed UTF-8 data" for some garbage) is a failed
+  // verification like any other mismatch - it must roll back, not escape as a bare exception.
+  let afterPlaintext;
+  try {
+    ({ data: afterPlaintext } = rewriteEncryptedValues(writtenUserDoc.data, (v) =>
+      newSession.decrypt(v),
+    ));
+  } catch {
+    afterPlaintext = undefined;
+  }
 
   if (JSON.stringify(afterPlaintext) !== JSON.stringify(beforePlaintext)) {
     await rollbackOrExplain(
@@ -253,7 +260,13 @@ async function runRotateEncryptionKey(deps, options) {
 
   for (let i = 0; i < auditEntries.length; i += 1) {
     const written = await auditDb.get(auditEntries[i]._id);
-    if (newSession.decrypt(written.payload) !== auditBeforePlaintext[i]) {
+    let writtenPlaintext;
+    try {
+      writtenPlaintext = newSession.decrypt(written.payload);
+    } catch {
+      writtenPlaintext = undefined; // see above: garbage that cannot even be decoded is a mismatch
+    }
+    if (writtenPlaintext !== auditBeforePlaintext[i]) {
       await rollbackOrExplain(
         usersDb,
         authDb,

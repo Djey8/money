@@ -45,7 +45,9 @@ export function buildExplainTool(
     description:
       'Explains how Money Manager works, from docs/domain/. Start with app_overview (the model and which tool ' +
       'does what); advisor_playbook for reviews, health metrics and recommendations (Barefoot Investor and Rich ' +
-      'Dad Poor Dad); feature guides and calculation formulas for the rest. No API call, no scope required. ' +
+      'Dad Poor Dad); feature guides and calculation formulas for the rest. To teach the Cashflow game to a group, ' +
+      'read cashflow_teaching_guide, then the manual in the language to teach in (cashflow_manual_en, _de, _es, _fr, ' +
+      '_cn or _ar). No API call, no scope required. ' +
       'Pass topic: one of ' +
       Object.keys(topics).join(', ') +
       '.',

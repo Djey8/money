@@ -190,6 +190,25 @@ describe('reviewGame', () => {
     expect(review.judged).toBe(1);
     expect(review.moves[0]).toMatchObject({ kind: 'passed-card', alternative: 'buying it' });
 
+    // a game that logged the pick itself (cardPicked) names the card without the decks' memory
+    const picked = [
+      stack[0],
+      {
+        ...snapshotFromBooks({
+          ...onSpace,
+          state: { ...onSpace.state, drawnCardIds: start.state.drawnCardIds },
+        }),
+        step: {
+          kind: 'cardPicked' as const,
+          detail: card.title,
+          cardId: card.id,
+          deck: 'dealSmall' as const,
+        },
+      },
+      { ...snapshotFromBooks(onSpace), step: { kind: 'skipCard' as const, detail: 'deal' } },
+    ];
+    expect(cardSeenBeforePass(picked, 2)).toEqual({ deck: 'dealSmall', cardId: card.id });
+
     // a pass with no card drawn first has nothing to judge
     const unseen = [
       stack[0],
@@ -202,6 +221,83 @@ describe('reviewGame', () => {
       },
     ];
     expect(cardSeenBeforePass(unseen, 1)).toBeNull();
+  });
+
+  it('judges a Deal space passed without looking at any card against looking', () => {
+    const start = midGame();
+    const onSpace: GameBooks = {
+      ...start,
+      state: {
+        ...start.state,
+        turn: {
+          phase: 'decide',
+          count: 7,
+          lastRoll: [4],
+          pending: { kind: 'deal', spaceIndex: 4 },
+        },
+      },
+    };
+    const passed: GameBooks = {
+      ...onSpace,
+      state: settleDecision(onSpace.state, 'passed', onSpace.subscriptions).state,
+    };
+    const stack = [
+      { ...snapshotFromBooks(start), step: { kind: 'roll' as const, detail: '4' } },
+      { ...snapshotFromBooks(onSpace), step: { kind: 'skipCard' as const, detail: 'deal' } },
+    ];
+
+    const review = reviewGame(stack, snapshotFromBooks(passed), {
+      gameSets: CASHFLOW_GAME_SETS,
+      policy,
+      rollouts: 20,
+      horizon: 250,
+    });
+    expect(review.judged).toBe(1);
+    expect(review.moves[0]).toMatchObject({
+      kind: 'unseen-card',
+      alternative: 'looking at the card',
+    });
+  });
+
+  it('judges a buyer card whose offer was not taken against selling', () => {
+    const start = midGame();
+    const house = set.decks!.dealSmall!.find((card) => card.id === 'classic-small-efh-65k-5k')!;
+    const plan = buyDealAction(start, { cardId: house.id }, deps);
+    const owning = plan.effects.reduce(applyEffectsToBooks, start);
+    const buyer = 'classic-market-efh-pct20-a';
+    const picked = {
+      kind: 'cardPicked' as const,
+      detail: 'buyer',
+      cardId: buyer,
+      deck: 'market' as const,
+    };
+    const stack = [
+      { ...snapshotFromBooks(owning), step: picked },
+      { ...snapshotFromBooks(owning), step: { kind: 'roll' as const, detail: '3' } },
+    ];
+
+    const review = reviewGame(stack, snapshotFromBooks(owning), {
+      gameSets: CASHFLOW_GAME_SETS,
+      policy,
+      rollouts: 20,
+      horizon: 250,
+    });
+    expect(review.moves.map((move) => move.kind)).toEqual(['kept-offer']);
+    expect(review.moves[0].alternative).toBe('selling to the buyer');
+
+    // sold meanwhile: the player acted on it, nothing to judge
+    const sold = [
+      stack[0],
+      { ...snapshotFromBooks(owning), step: { kind: 'sellInvestment' as const, detail: 'SFH' } },
+      stack[1],
+    ];
+    const acted = reviewGame(sold, snapshotFromBooks(owning), {
+      gameSets: CASHFLOW_GAME_SETS,
+      policy,
+      rollouts: 20,
+      horizon: 250,
+    });
+    expect(acted.moves.map((move) => move.kind)).not.toContain('kept-offer');
   });
 
   it('says so when the time runs out, and shares the time between the decisions', () => {

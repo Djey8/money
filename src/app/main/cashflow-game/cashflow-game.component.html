@@ -12,7 +12,13 @@
 >
   <div class="cf-panel-header">
     <h2 class="cf-panel-title">{{ 'CashflowGame.title' | translate }}</h2>
-    <button class="cf-panel-close" aria-label="Close" (click)="closeWindow()">✕</button>
+    <button
+      class="cf-panel-close"
+      [attr.aria-label]="'CashflowGame.close' | translate"
+      (click)="closeWindow()"
+    >
+      ✕
+    </button>
   </div>
 
   <div class="cashflow-game-page">
@@ -1206,9 +1212,11 @@
                 <span class="cf-history-title">{{
                   'CashflowGame.step.' + step.kind | translate
                 }}</span>
-                <span class="cf-history-detail" *ngIf="step.detail">{{ step.detail }}</span>
+                <span class="cf-history-detail" *ngIf="step.detail && step.kind !== 'cardPicked'">{{
+                  step.detail
+                }}</span>
                 <span class="cf-history-detail" *ngIf="step.cardId">{{
-                  passedCardLabel(step.cardId)
+                  cardLabelOf(step.cardId)
                 }}</span>
               </button>
               <button
@@ -1691,7 +1699,7 @@
             </div>
             <div class="cf-fact cf-fact--right">
               <span class="cf-fact-label">{{ 'CashflowGame.doodadAccount' | translate }}</span>
-              <strong class="cf-fact-value">Fire</strong>
+              <strong class="cf-fact-value">{{ 'Menu.fire' | translate }}</strong>
             </div>
             <div class="cf-fact cf-fact--center">
               <span class="cf-fact-label">{{ 'CashflowGame.marketCostHint' | translate }}</span>

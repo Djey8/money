@@ -5,6 +5,10 @@ import { RouterLink, Router } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { firstValueFrom, type Subscription } from 'rxjs';
 import {
+  REFERENCE_DECKS,
+  cardReferenceRows,
+  type CardReferenceRow,
+  type ReferenceDeck,
   type CashflowDealCard,
   type CashflowDoodadCard,
   type CashflowMarketCard,
@@ -28,6 +32,7 @@ import {
 } from './manual-content';
 import {
   buildManualTable,
+  type CardLab,
   type LabResults,
   type ManualContext,
   type ManualTable,
@@ -36,6 +41,16 @@ import {
 // Deferred import to break circular chain
 let AppComponent: any;
 setTimeout(() => import('src/app/app.component').then((m) => (AppComponent = m.AppComponent)));
+
+/** How numbers are written in each manual language (Arabic keeps Western digits, like the rest of the app). */
+const MANUAL_LOCALES: Record<string, string> = {
+  en: 'en-US',
+  de: 'de-DE',
+  es: 'es-ES',
+  fr: 'fr-FR',
+  cn: 'zh-CN',
+  ar: 'ar-u-nu-latn',
+};
 
 /** A real card of the catalog as the manual draws it: which pile it comes from, its text and its numbers. */
 export interface ManualFace {
@@ -69,6 +84,8 @@ export class CashflowDocsComponent implements OnInit, OnDestroy {
   content: ManualContent | null = null;
   /** What the strategy lab measured (scripts/strategy-lab.js); null when the file is not there. */
   lab: LabResults | null = null;
+  /** What the card lab measured (scripts/card-lab.js); null when the file is not there. */
+  cardLab: CardLab | null = null;
   loadFailed = false;
   /** The manual is not written in the app's language yet - the English text is shown. */
   usingFallback = false;
@@ -152,6 +169,9 @@ export class CashflowDocsComponent implements OnInit, OnDestroy {
       this.lab = await firstValueFrom(
         this.http.get<LabResults>('assets/i18n/cashflow-manual/strategy-lab.json'),
       ).catch(() => null);
+      this.cardLab = await firstValueFrom(
+        this.http.get<CardLab>('assets/i18n/cashflow-manual/card-lab.json'),
+      ).catch(() => null);
       this.tableCache.clear();
     } catch {
       this.loadFailed = true;
@@ -198,7 +218,7 @@ export class CashflowDocsComponent implements OnInit, OnDestroy {
   // ---------------------------------------------------------------- tables from the card catalog
 
   private get formatContext(): ManualContext {
-    const locale = (this.translate.currentLang || 'en') === 'de' ? 'de-DE' : 'en-US';
+    const locale = MANUAL_LOCALES[this.translate.currentLang || 'en'] ?? 'en-US';
     const currency = AppStateService.instance.currency || '€';
     const whole = new Intl.NumberFormat(locale, { maximumFractionDigits: 0 });
     return {
@@ -214,6 +234,8 @@ export class CashflowDocsComponent implements OnInit, OnDestroy {
       groupName: (group) => this.cardText.groupName(group),
       familyName: (family) => this.cardText.familyName(family),
       lab: this.lab,
+      cardLab: this.cardLab,
+      cardName: (id: string) => this.cardNameOf(id),
     };
   }
 
@@ -225,6 +247,58 @@ export class CashflowDocsComponent implements OnInit, OnDestroy {
       this.tableCache.set(key, table);
     }
     return table;
+  }
+
+  // ---------------------------------------------------------------- card reference
+
+  /** A card's name for the tables: its title, with the ticker when the title alone does not tell cards apart. */
+  cardNameOf(cardId: string): string {
+    const found = this.cardById(cardId);
+    if (!found) return cardId;
+    const card = found.card as { title: string; symbol?: string };
+    const title = this.cardText.textFor(cardId).title ?? card.title;
+    const label = card.symbol ? this.cardText.symbolFor(card.symbol) : undefined;
+    return label && !title.includes(label) ? `${title} (${label})` : title;
+  }
+
+  readonly browserDecks: ReferenceDeck[] = REFERENCE_DECKS;
+  browserDeck: ReferenceDeck = 'dealSmall';
+  browserQuery = '';
+
+  selectBrowserDeck(deck: ReferenceDeck): void {
+    this.browserDeck = deck;
+    this.browserQuery = '';
+  }
+
+  /** What a pile is called on the tab. */
+  deckName(deck: ReferenceDeck): string {
+    const key = {
+      dealSmall: 'deckSmall',
+      dealBig: 'deckBig',
+      market: 'deckMarket',
+      doodad: 'deckDoodad',
+    }[deck];
+    return this.content?.labels[key] ?? deck;
+  }
+
+  /** The cards of a pile as reference rows (id, title, kind), in the pile's own order. */
+  browserRows(deck: ReferenceDeck): CardReferenceRow[] {
+    const set = CASHFLOW_GAME_SETS.find((candidate) => candidate.id === 'cashflow');
+    const ctx = this.formatContext;
+    return cardReferenceRows(set, deck, {
+      textFor: (id) => this.cardText.textFor(id),
+      symbolFor: (symbol) => (symbol ? this.cardText.symbolFor(symbol) : undefined),
+      money: ctx.money,
+    });
+  }
+
+  /** The open pile, filtered by what was typed (the id, the title, the ticker or the kind). */
+  get browserShown(): CardReferenceRow[] {
+    const words = this.browserQuery.toLowerCase().split(/\s+/).filter(Boolean);
+    return this.browserRows(this.browserDeck).filter((row) => {
+      const haystack = `${row.id} ${row.label} ${row.title} ${row.kind}`.toLowerCase();
+      return words.every((word) => haystack.includes(word));
+    });
   }
 
   // ---------------------------------------------------------------- real cards

@@ -1550,7 +1550,7 @@ paths:
       operationId: gameDrawCard
       summary: Draw a random card
       description: >-
-        Draws one card at random from a pile, skipping what was drawn since the last reshuffle (the pile reshuffles when exhausted). In a solo game the pile must be the one the space asks for (a Deals space: `dealSmall` or `dealBig`). Drawing changes only the remembered draw pile and does not close the decision. `result.card` has the card's numbers and `printed`, what it says in the account's language. Game accounts only; requires `game:w`. The action must be one of the `legalActions` of `GET /game` (409
+        Draws one card at random from a pile, skipping what was drawn since the last reshuffle (the pile reshuffles when exhausted). In a solo game the pile must be the one the space asks for (a Deals space: `dealSmall` or `dealBig`). Drawing is a step of its own (`cardPicked`, with the exact `cardId`), so the History - and the analyst - know which card was on the table; it changes the remembered draw pile and does not close the decision. `result.card` has the card's numbers and `printed`, what it says in the account's language. Game accounts only; requires `game:w`. The action must be one of the `legalActions` of `GET /game` (409
         `game_action_not_allowed` otherwise); a refusal by the game's own rules is 422 `game_rule_refused`. Audit
         logged.
       security:
@@ -1738,7 +1738,7 @@ paths:
       operationId: listGameCards
       summary: Browse or find the cards of a pile
       description: >-
-        Game accounts only; requires `game:r`; a game must be running (its set decides the cards). Lists a pile, or the
+        Game accounts only; requires `game:r`. The running game's set decides the cards, or pass `gameSetId` to browse a set without a game (the card reference). Lists a pile, or the
         cards matching `query` (title, ticker symbol or price - every word must match). Each card has its
         language-neutral numbers plus `printed` (what it says in the account's language) and `label`.
       security:
@@ -1751,6 +1751,7 @@ paths:
             schema: { type: string, enum: [dealSmall, dealBig, market, doodad] },
           }
         - { name: query, in: query, schema: { type: string } }
+        - { name: gameSetId, in: query, schema: { type: string, example: cashflow } }
         - {
             name: limit,
             in: query,
@@ -6417,6 +6418,10 @@ components:
           type: object
           nullable: true
           description: The strategy lab's best strategy for the profession and where this game ranks among its games.
+        progress:
+          type: array
+          description: Where the game stood at roll 10, 20, 30, 40 and 60 - passive income as a share of the expenses, its band and how simulated games in the same band ended (escapeChance, bankruptChance, games).
+          items: { type: object }
         text: { type: string, description: The review in words (markdown). }
         truncated:
           {

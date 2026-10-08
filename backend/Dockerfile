@@ -78,6 +78,7 @@ COPY src/assets/i18n/cashflow-cards/*.json /app/i18n/cashflow-cards/
 
 # What the strategy lab measured, for the game analyst's comparison (backend/services/game-review.js).
 COPY docs/domain/strategy/data/results.json /app/strategy/results.json
+COPY docs/domain/strategy/data/card-results.json /app/strategy/card-results.json
 
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs && \

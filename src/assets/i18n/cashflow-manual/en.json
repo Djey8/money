@@ -109,7 +109,52 @@
     "policy_mlm-then-properties": "Marketing first, then properties",
     "policy_stocks-for-deposits": "Trade stocks for deposits",
     "policy_all-rounder": "All-rounder",
-    "policy_best-found": "Best found by the search"
+    "policy_best-found": "Best found by the search",
+    "deckSmall": "Small Deals",
+    "deckBig": "Big Deals",
+    "deckMarket": "Market",
+    "deckDoodad": "Doodads",
+    "browserSearch": "Search by title, ticker, id or kind",
+    "browserNone": "No card matches.",
+    "colCard": "Card",
+    "colCardNumbers": "Numbers",
+    "colFromCash": "Bought from cash (points)",
+    "colWithLoan": "Bought with a loan (points)",
+    "colRollsSaved": "Rolls saved from cash (typical / built-up game)",
+    "colHelps": "Helps in",
+    "colTraded": "If the shares are traded (points)",
+    "colCost": "Cost",
+    "colEscapeEffect": "Chance to escape (points)",
+    "colBankruptEffect": "Chance to go bankrupt (points)",
+    "colEarly": "Early game (points)",
+    "colLate": "Late game (points)",
+    "colAppliedIn": "Applies in",
+    "colPays": "Pays",
+    "colAtRoll": "Roll",
+    "colProgress": "Passive income covers",
+    "band0": "under 5% of the expenses",
+    "band1": "5% to 10%",
+    "band2": "10% to 20%",
+    "band3": "20% to 40%",
+    "band4": "40% or more",
+    "colLastDecision": "The last thing that happened",
+    "colBankruptGames": "Of the bankruptcies",
+    "perMonth": "a month",
+    "coins": "coins",
+    "kind_buy": "Bought a Deal",
+    "kind_pass": "Passed on a Deal",
+    "kind_doodad": "Doodad",
+    "kind_market": "Market card",
+    "kind_sell": "Sold something",
+    "kind_repay": "Repaid the bank",
+    "kind_none": "Nothing - the month itself",
+    "noteCardLabDeals": "Points of chance to escape the rat race, averaged over many positions, when the card is bought: positive helps. \"From cash\" counts the positions where the deposit was in cash, \"with a loan\" those where the bank had to lend it. Rolls saved: the median rolls to escape without the card minus with it. Helps in: the share of positions where it moved the chance by more than a point.",
+    "noteCardLabDoodads": "The cost of being handed the card, in points of chance to escape and to go bankrupt, averaged over many positions. Early game is rolls 3 and 10, late game rolls 20 and 32.",
+    "noteCardLabMarket": "Only positions the card applies to count (a buyer needs a property of its kind, a boom a business that can still grow). Applies in: the share of positions where it did.",
+    "noteCardLabDice": "The chance is the dice: the card wins on its number or higher. The last two columns are measured: what paying for the card did to the chance to escape and to go bankrupt, averaged over many positions.",
+    "noteCardLabMilestones": "Passive income as a share of the expenses (100% is the exit), at the roll in the column, for the games that escaped with the best strategy found. The first figure is the middle game, in brackets the fast tenth and the slow tenth. A game below the slow figure is behind almost every game that escaped.",
+    "noteCardLabBands": "Chance to escape / chance to go bankrupt, from the point a game has reached at that roll (an all-round strategy, every profession). The further the passive income has got toward the expenses, the surer the exit.",
+    "noteCardLabRuin": "Among the games that went bankrupt: the last decision before the end, and the cards most often among the last three."
   },
   "sections": {
     "start": {
@@ -1138,6 +1183,102 @@
           "text": "An average Big Deal property pays about 1.800 a month; an average paying Small Deal property about 180. To cover 1.000 of expenses you need one Big Deal property or six small ones. The caretaker’s +600 a month alone would take years to save the 32.000–40.000 deposit - which is why the small, quick deals, the gamble cards and the share trades matter at the start."
         },
         { "type": "data", "id": "escape", "caption": "Passive income needed per profession" }
+      ]
+    },
+    "cards": {
+      "nav": "All the cards",
+      "title": "All the cards",
+      "intro": "Every card of every pile, to read and search - you cannot play them here. Each card shows its **id**: the game's History names a card you picked by that id, so a game can be looked at afterwards and what you passed on (or rightly left) can be told.",
+      "blocks": [
+        {
+          "type": "callout",
+          "kind": "tip",
+          "title": "Why the ids matter",
+          "text": "Every card you pick - drawn at random, or found among your physical cards - is written into the History with its exact id. When a game is analysed, the analyst reads those ids to see which deal you passed on, and plays both choices out many times. **Open the card before you pass it** and the analyst can say whether it was a deal worth taking. Browsing is not tracked, only the card that is open when you act on it or decline it; passing without opening any card is allowed, and the analyst only notes, as a small minus, that you did not look."
+        },
+        { "type": "cardbrowser" },
+        {
+          "type": "p",
+          "text": "An agent reads the same list from `GET /api/v1/game/cards` (it needs no running game: pass `gameSetId=cashflow`) and from `docs/domain/CASHFLOW_CARDS.md`."
+        }
+      ]
+    },
+    "cardlab": {
+      "nav": "What the cards are worth",
+      "title": "What the cards are worth",
+      "intro": "Every card of the game, measured. 142 real positions - taken out of simulated games at roll 3, 10, 20 and 32, for every profession - were each played out 20 times with the card taken and 20 times without it, on the same dice. What a card does is the difference in how often the game escapes the rat race, in **points** (percentage points). A card that helps by 3 points helps a lot in some positions and does nothing in others; an average of many positions is what you can lean on.",
+      "blocks": [
+        {
+          "type": "callout",
+          "kind": "note",
+          "title": "How to read the tables",
+          "text": "Plus helps, minus hurts. \"Taken\" means a Deal bought, a Doodad paid or a Market card played, and every game after it is played by the all-round strategy of the strategy lab. **From cash** counts the positions where the deposit was in cash on hand, **with a loan** those where the bank had to lend it. The measuring error is about one point for the Small Deals and the Doodads. A built-up game is one deep into the game with properties already owned (the best strategy found, roll 20 to 60)."
+        },
+        { "type": "h3", "text": "Small Deals" },
+        {
+          "type": "p",
+          "text": "The best Small Deal is the **Multi-Level-Marketing** buy-in: **+6 points** and about five rolls saved, for 500 €. Next come the **single-family homes with a 2,000 € deposit** (+3 points from cash, about eight rolls saved) - and the surprise: when the bank has to lend that deposit, they are worth **+10 to +12 points**, because a property that pays 200 to 250 € a month for 2,000 € is worth borrowing for. Condos and the expensive houses (4,000 to 5,000 € deposit) are the other way round: from cash they do roughly nothing, with a loan they cost 10 to 19 points. **Shares** are small bets either way (between −2.5 and +1.5 points): buying half of your cash in shares that you then hold ties it up, and the cheap ones (5, 10 or 20 €) cost slightly more than the dear ones."
+        },
+        {
+          "type": "data",
+          "id": "cardLabSmall",
+          "caption": "Every Small Deal, the best to buy first"
+        },
+        { "type": "h3", "text": "Big Deals" },
+        {
+          "type": "p",
+          "text": "A Big Deal is a question of **where the deposit comes from**. Bought from cash, the good ones save 5 to 12 rolls (the 10,000 € apartment building and the 10,000 € semi-detached house the most). Bought with a loan they are the single most dangerous thing in the game: **−9 to −84 points** (most of them between −20 and −65), because the loan's interest and the mortgage eat what the property pays. The Pizza franchise and the big apartment complexes are at the bottom of the table (−77 to −84 points with a loan): the deposit is far more than a game at that stage holds. The one exception is the **semi-detached house for 10,000 €** (1,100 € a month): worth buying even with a loan (+3.6 points)."
+        },
+        { "type": "data", "id": "cardLabBig", "caption": "Every Big Deal" },
+        { "type": "h3", "text": "Doodads: what they cost you" },
+        {
+          "type": "p",
+          "text": "A Doodad is paid, whatever it says - so the question is only how much it hurts. **Each 1,000 € of a Doodad costs about 3.5 to 4.5 points** of the chance to escape: the 7,500 € kitchen takes 34 points, the 5,000 € car or boat 23, a 1,000 € doodad 3.5 and anything under 300 € about one. The same Doodad costs **one and a half to two times as much in the early game** as in the late game - and in a built-up game about half as much, because the properties pay it back sooner. In 6 of 10 bankruptcies the last thing that happened was a Doodad (see below)."
+        },
+        { "type": "data", "id": "cardLabDoodads", "caption": "Every Doodad, the worst first" },
+        { "type": "h3", "text": "Market cards" },
+        {
+          "type": "p",
+          "text": "Most Market cards do nothing to you. A **buyer** for your single-family home is worth the most when it offers a fixed amount on top: +20,000 € is worth **4.7 points** (15 rolls saved), +5,000 € only 1 - and +10% not much more than that. The two **business boom** cards (+250 € and +400 € on a business) are worth 2.6 and 3.2 points, and about 12 and 17 rolls in a built-up game. The cost cards (tenant, pipe) cost 0.7 to 3.5 points, about what the same money costs as a Doodad. Stock splits do not matter."
+        },
+        { "type": "data", "id": "cardLabMarket", "caption": "The Market cards that touch you" },
+        { "type": "h3", "text": "Dice cards: what a gamble costs" },
+        {
+          "type": "p",
+          "text": "A dice card wins on its number or higher: a 4 wins half the time, a 6 one time in six. **The Multi-Level-Marketing buy-in wins half the time and pays every month**: +6 points. **The gold boxes** (a 6 wins, one in six) are small bets that mostly lose: −0.6 and −1.7 points - the coins are worth little compared with what the same money earns in a property. **The sister-in-law** pays 10,000 € back for 5,000 € half the time: on average that is exactly zero, and still it costs 7.6 points - 0.6 when the 5,000 € were in cash, 11.7 when the bank had to lend them: a fair gamble is not free, because the money is gone from the properties it could have bought."
+        },
+        { "type": "data", "id": "cardLabDice", "caption": "The cards decided by a die" },
+        { "type": "h3", "text": "Where a game stands on the way" },
+        {
+          "type": "p",
+          "text": "Passive income as a share of the expenses is the figure that tells how near the exit is. The first table shows, per profession, where the games that **did escape** stood at roll 10, 20, 30, 40 and 60 - the middle game, and in brackets the fast tenth and the slow tenth. At roll 20 a game that escapes has typically covered 7 to 24% of its expenses; at roll 40 20 to 60%."
+        },
+        {
+          "type": "data",
+          "id": "cardLabMilestones",
+          "caption": "Passive income as a share of the expenses, games that escaped"
+        },
+        {
+          "type": "p",
+          "text": "The second table turns it round: of all games that stood in a band at that roll, how many escaped and how many went bankrupt. **Being behind early is not lost** (4 in 5 games that have under 5% at roll 10 still escape) - but being behind late is: under 5% at roll 30 leaves two in three, under 5% at roll 60 only 63%. A game that has reached 20% by roll 30 almost always escapes (99%), and from 40% on it is as good as certain."
+        },
+        {
+          "type": "data",
+          "id": "cardLabBands",
+          "caption": "Chance to escape / go bankrupt, by how far a game has got"
+        },
+        { "type": "h3", "text": "What ends a game in bankruptcy" },
+        {
+          "type": "p",
+          "text": "Of 12,000 games with the all-round strategy, 16% went bankrupt. The table shows what the last decision before the end was and which cards were most often among the last three. It is **almost always a Doodad** (61%), a Deal that was passed (26%, the game was already lost) or a Market cost card. The kitchen, the first car, the braces and the boat are the most frequent - the expensive Doodads in the deck. The best protection is not a clever Deal but **cash on hand for the next Doodad** (see section 17)."
+        },
+        { "type": "data", "id": "cardLabRuin", "caption": "The last decision before a bankruptcy" },
+        {
+          "type": "callout",
+          "kind": "tip",
+          "title": "How the analyst uses this",
+          "text": "When a game is analysed, a card you passed on is judged by playing both choices out on the same dice, and set beside these figures: **a Deal you left that was worth +5 points was a miss, one that would have hurt was rightly left**. The analyst also tells you where your game stood at roll 10, 20, 30, 40 and 60 against the games in the second table, and how those ended."
+        }
       ]
     },
     "faq": {

@@ -479,6 +479,22 @@ describe('cards, deals and doodads in a solo game', () => {
     expect(found.body.cards.map((card) => card.id)).toContain(pile.body.cards[0].id);
     const bad = await session('get', '/api/v1/game/cards?deck=nope', user.token);
     expect(bad.status).toBe(400);
+
+    // the card reference needs no running game: the set is named
+    const fresh = await registerGameUser('_reference');
+    const reference = await session(
+      'get',
+      '/api/v1/game/cards?deck=dealBig&gameSetId=cashflow&limit=200',
+      fresh.token,
+    );
+    expect(reference.status).toBe(200);
+    expect(reference.body.total).toBeGreaterThan(5);
+    const unknown = await session(
+      'get',
+      '/api/v1/game/cards?deck=dealBig&gameSetId=nope',
+      fresh.token,
+    );
+    expect(unknown.status).toBe(400);
   });
 
   it('draws a card for the space and buys a Deal: a Grow project, the position, and the turn moves on', async () => {
@@ -622,6 +638,12 @@ describe('a whole game played through the API', () => {
     expect(reviewed.body.reviewable).toBe(true);
     expect(reviewed.body.review.final.outcome).toBe('escaped');
     expect(reviewed.body.text).toContain('Game review');
+    // where the game stood on the way to the exit, set beside what the card lab measured
+    expect(reviewed.body.progress.length).toBeGreaterThan(0);
+    expect(reviewed.body.progress[0]).toEqual(
+      expect.objectContaining({ roll: 10, escapeChance: expect.any(Number) }),
+    );
+    expect(reviewed.body.text).toContain('On the way to the exit');
     // the game's slot is one: saving it again in full replaces the compact save
     const fullAgain = await session('post', '/api/v1/game/saves', user.token).send({
       name: 'again',

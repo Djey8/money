@@ -64,6 +64,8 @@ export interface Decision {
   round: number;
   kind: 'buy' | 'pass' | 'doodad' | 'market' | 'sell' | 'repay';
   detail: string;
+  /** The card the decision was about (a Deal bought or passed, a Doodad paid, a Market card played). */
+  cardId?: string;
   cashMinor: number;
 }
 
@@ -219,12 +221,13 @@ export class SimGame {
     this.books = books;
   }
 
-  private note(kind: Decision['kind'], detail: string): void {
+  private note(kind: Decision['kind'], detail: string, cardId?: string): void {
     this.decisions?.push({
       turn: this.turns,
       round: this.books.state.round,
       kind,
       detail,
+      ...(cardId ? { cardId } : {}),
       cashMinor: this.cashMinor(),
     });
   }
@@ -280,7 +283,7 @@ export class SimGame {
         costMinor: card.depositMinor ?? card.costMinor ?? (card.priceMinor ?? 0) * (quantity ?? 0),
         cashflowMinor: card.cashflowMinor ?? 0,
       });
-      this.note('buy', result.title ?? card.title);
+      this.note('buy', result.title ?? card.title, card.id);
     }
   }
 
@@ -298,7 +301,7 @@ export class SimGame {
         // the rules refused the purchase (nothing to pay it with): it is passed
       }
     }
-    this.note('pass', card.title);
+    this.note('pass', card.title, card.id);
     this.settleOpenCard();
   }
 
@@ -307,7 +310,7 @@ export class SimGame {
     this.apply(drawn);
     const card = (drawn.result as { card: { id: string; title: string } }).card;
     this.apply(payDoodadAction(this.books, { cardId: card.id }, this.deps));
-    this.note('doodad', card.title);
+    this.note('doodad', card.title, card.id);
   }
 
   private playMarketSpace(): void {
@@ -315,7 +318,7 @@ export class SimGame {
     this.apply(drawn);
     const card = (drawn.result as { card: { id: string; title: string } }).card;
     this.apply(playMarketAction(this.books, { cardId: card.id }, this.deps));
-    this.note('market', card.title);
+    this.note('market', card.title, card.id);
   }
 
   private track(): void {
@@ -345,17 +348,26 @@ export class SimGame {
     const landed = turn.move.landed.kind;
     this.record.landings[landed] = (this.record.landings[landed] ?? 0) + 1;
 
+    this.resolveSpace();
+    this.rollWaitingDice();
+    this.track();
+  }
+
+  /** The card space the token waits on: the strategy draws and decides, like on any landing. */
+  private resolveSpace(): void {
     const pending = currentTurn(this.books.state).pending;
     if (pending?.kind === 'deal') this.playDealSpace();
     else if (pending?.kind === 'doodad') this.playDoodadSpace();
     else if (pending?.kind === 'market') this.playMarketSpace();
-    this.rollWaitingDice();
-    this.track();
   }
 
   /** Plays the game out and returns what happened. */
   play(): GameRecord {
     const max = this.config.maxTurns ?? 400;
+    // A position can begin on a card space nobody has dealt with yet ("what if the card had been looked at?")
+    if (this.phase === 'decide') this.resolveSpace();
+    // a dice decision left open by the position (a card just bought) is rolled first
+    if (this.phase !== 'over') this.rollWaitingDice();
     while (this.turns < max && this.phase !== 'over') this.playTurn();
     return this.finish();
   }

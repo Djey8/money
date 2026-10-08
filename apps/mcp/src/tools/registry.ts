@@ -365,7 +365,7 @@ export const TOOLS: ToolDefinition[] = [
       'required; query searches title, ticker and price). history: the step log of the running game. saves/save: ' +
       'the saved games, the account storage left (`storage`) and one saved game with its step log. review / review_save: ' +
       'the game analyst - judges the decisions of the running game or a saved game (best ... blunder, the turning ' +
-      'point, a comparison with the strategy lab); read explain_concept topic cashflow_strategy_lab to turn it into ' +
+      'point, a comparison with the strategy lab); read explain_concept topic cashflow_strategy_lab (the strategies), cashflow_card_lab (what each card is worth: which Deals help, which Doodads ruin you, what the dice cards cost) and cashflow_cards (every card by id - the history names picked cards by id) to turn it into ' +
       'advice. Requires a PAT with game:r.',
     actions: {
       game: action('getGame'),
