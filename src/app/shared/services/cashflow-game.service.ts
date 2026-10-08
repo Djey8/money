@@ -2036,8 +2036,13 @@ export class CashflowGameService {
    */
   recordCardPicked(deckKind: CashflowDeckKind, card: { id: string; title: string }): void {
     if (!AppStateService.instance.cashflowGame.professionId) return;
-    const last = this.undoStack[this.undoStack.length - 1]?.step;
-    if (last?.kind === 'cardPicked' && last.cardId === card.id) return;
+    // The same card is recorded once per turn: the dialog closing after the card was planned or played would otherwise
+    // log it a second time, after the step it led to.
+    for (let back = this.undoStack.length - 1; back >= 0; back -= 1) {
+      const earlier = this.undoStack[back].step;
+      if (earlier?.kind === 'roll') break;
+      if (earlier?.kind === 'cardPicked' && earlier.cardId === card.id) return;
+    }
     this.pushUndoSnapshot(cardPickedStep(deckKind, card));
   }
 

@@ -444,9 +444,20 @@ export function playBoostCard(
     changed.push({ title: investment.tag, fromMinor: cashflowMinor, toMinor });
   }
 
+  // The log line says what the boost did - which investment went from what to what - so it can be read back later.
+  const name = options.title ?? card.title;
+  const detail =
+    changed.length > 0
+      ? `${name}: ${changed
+          .map(
+            (entry) =>
+              `${entry.title} ${deps.money(entry.fromMinor)} -> ${deps.money(entry.toMinor)}`,
+          )
+          .join(', ')}`
+      : name;
   const result = effects(
     { ...state, gameSubscriptionTitles: titles },
-    { kind: 'marketCard', detail: options.title ?? card.title },
+    { kind: 'marketCard', detail },
   );
   result.growUpdates = growUpdates;
   result.subscriptionUpserts = upserts;

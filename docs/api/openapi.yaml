@@ -1407,7 +1407,11 @@ paths:
                         at: { type: string }
                         cardId:
                           type: string
-                          description: For a passed card (kind skipCard) - the Deal card the player had drawn before leaving it.
+                          description: For a passed card (kind skipCard) or a picked card (kind cardPicked) - the card's id.
+                        deck:
+                          type: string
+                          enum: [dealSmall, dealBig, market, doodad]
+                          description: For a picked card (kind cardPicked) - the pile it came from, so a Small or a Big Deal needs no guessing from the id.
               example:
                 updatedAt: '2026-10-06T10:00:01.000Z'
                 steps:

@@ -61,6 +61,7 @@ function describeMove(move: ReviewedMove, money: (minor: number) => string): str
     'passed-card': 'Passed on',
     'unseen-card': 'Passed without looking at',
     'kept-offer': 'Kept it when a buyer offered:',
+    'unused-boost': 'Left the boost card unplayed:',
     sale: 'Sold',
     loan: 'Took the',
     repayment: 'Repaid the',

@@ -2969,12 +2969,16 @@ describe('CashflowGameService', () => {
         .find((candidate) => candidate.id !== drawn.id)!;
       service.recordCardPicked('dealSmall', found);
       service.recordCardPicked('dealSmall', found); // the same card again: no second step
+      // another card in between does not make the first one new again: a card is logged once a turn
+      service.recordCardPicked('dealSmall', { ...found, id: 'another-card', title: 'Another' });
+      service.recordCardPicked('dealSmall', found);
 
       const picks = service
         .historySteps()
         .filter((step) => step.kind === 'cardPicked')
         .reverse();
-      expect(picks.map((step) => step.cardId)).toEqual([drawn.id, found.id]);
+      expect(picks.map((step) => step.cardId)).toEqual([drawn.id, found.id, 'another-card']);
+      expect(picks.every((step) => step.deck === 'dealSmall')).toBe(true);
     });
 
     it('drawCard reshuffles a single-card deck rather than erroring on the second draw', () => {

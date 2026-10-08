@@ -300,6 +300,90 @@ describe('reviewGame', () => {
     expect(acted.moves.map((move) => move.kind)).not.toContain('kept-offer');
   });
 
+  it('judges a Deal card that was picked and left without a pass step, once even if it was logged twice', () => {
+    const start = midGame();
+    const card = set
+      .decks!.dealSmall!.filter((candidate) => candidate.assetKind === 'investment')
+      .find((candidate) => (candidate.cashflowMinor ?? 0) > 0)!;
+    const picked = {
+      kind: 'cardPicked' as const,
+      detail: card.title,
+      cardId: card.id,
+      deck: 'dealSmall' as const,
+    };
+    // picked and declined: no plan, no pass step - the next roll just follows; the same pick is logged again after it
+    const stack = [
+      { ...snapshotFromBooks(start), step: picked },
+      { ...snapshotFromBooks(start), step: { kind: 'doodad' as const, detail: 'x' } },
+      { ...snapshotFromBooks(start), step: picked },
+      { ...snapshotFromBooks(start), step: { kind: 'roll' as const, detail: '3' } },
+    ];
+    const review = reviewGame(stack, snapshotFromBooks(start), {
+      gameSets: CASHFLOW_GAME_SETS,
+      policy,
+      rollouts: 20,
+      horizon: 250,
+    });
+    expect(review.moves.filter((move) => move.kind === 'passed-card')).toHaveLength(1);
+
+    // planned: the card was acted on, nothing to judge as left
+    const planned = [
+      { ...snapshotFromBooks(start), step: picked },
+      { ...snapshotFromBooks(start), step: { kind: 'planDeal' as const, detail: 'SFH' } },
+      { ...snapshotFromBooks(start), step: { kind: 'roll' as const, detail: '3' } },
+    ];
+    const acted = reviewGame(planned, snapshotFromBooks(start), {
+      gameSets: CASHFLOW_GAME_SETS,
+      policy,
+      rollouts: 20,
+      horizon: 250,
+    });
+    expect(acted.moves.map((move) => move.kind)).not.toContain('passed-card');
+  });
+
+  it('judges a cashflow boost that was open and not played', () => {
+    const start = midGame();
+    const house = set.decks!.dealSmall!.find(
+      (candidate) => candidate.id === 'classic-small-efh-45k-2k',
+    )!;
+    const owning = buyDealAction(start, { cardId: house.id }, deps).effects.reduce(
+      applyEffectsToBooks,
+      start,
+    );
+    const boost = set.decks!.market!.find((candidate) => candidate.boost)!;
+    const picked = {
+      kind: 'cardPicked' as const,
+      detail: boost.title,
+      cardId: boost.id,
+      deck: 'market' as const,
+    };
+    const stack = [
+      { ...snapshotFromBooks(owning), step: picked },
+      { ...snapshotFromBooks(owning), step: { kind: 'roll' as const, detail: '3' } },
+    ];
+    const review = reviewGame(stack, snapshotFromBooks(owning), {
+      gameSets: CASHFLOW_GAME_SETS,
+      policy,
+      rollouts: 20,
+      horizon: 250,
+    });
+    expect(review.moves.map((move) => move.kind)).toEqual(['unused-boost']);
+
+    // played: a marketCard step follows the pick
+    const played = [
+      stack[0],
+      { ...snapshotFromBooks(owning), step: { kind: 'marketCard' as const, detail: boost.title } },
+      stack[1],
+    ];
+    const done = reviewGame(played, snapshotFromBooks(owning), {
+      gameSets: CASHFLOW_GAME_SETS,
+      policy,
+      rollouts: 20,
+      horizon: 250,
+    });
+    expect(done.moves.map((move) => move.kind)).not.toContain('unused-boost');
+  });
+
   it('says so when the time runs out, and shares the time between the decisions', () => {
     const before = midGame();
     const cards = set.decks!.dealSmall!.filter((card) => card.assetKind === 'investment');

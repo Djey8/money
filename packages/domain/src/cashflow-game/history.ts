@@ -59,6 +59,8 @@ export interface HistoryStep<T = SnapshotTransaction> {
   transactions: T[];
   /** For a passed card: the Deal card that had been drawn before the player left it (absent when none was drawn). */
   cardId?: string;
+  /** For a picked card: the pile it came from. */
+  deck?: string;
 }
 
 /** The text a History line needs: the word "Round" for a Payday, and how an amount reads. */
@@ -259,6 +261,7 @@ export function historySteps<S extends GameSnapshot>(
         at: snapshot.step?.at ?? '',
         transactions: after.allTransactions.slice(snapshot.allTransactions.length),
         ...(cardId ? { cardId } : {}),
+        ...(step.deck ? { deck: step.deck } : {}),
       };
     })
     .reverse() as HistoryStep<S['allTransactions'][number]>[];

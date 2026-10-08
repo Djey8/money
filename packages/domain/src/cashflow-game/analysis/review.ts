@@ -31,6 +31,8 @@ export type MoveKind =
   | 'unseen-card'
   /** A buyer's offer for something the player owns that was not taken: selling was the alternative. */
   | 'kept-offer'
+  /** A cashflow boost the player had open and did not play: playing it was the alternative. */
+  | 'unused-boost'
   | 'sale'
   | 'loan'
   | 'repayment';
@@ -297,7 +299,7 @@ export function reviewGame(
     const cardId = stack[index].step?.cardId;
     const set = gameSet(stack[index].cashflowGame.gameSetId);
     const card = (set?.decks?.market ?? []).find((candidate) => candidate.id === cardId);
-    if (!card?.sells) return null;
+    if (!card?.sells || isRepeatPick(index)) return null;
     const until = nextRoll(index);
     if (soldBetween(index, until)) return null;
     try {
@@ -311,6 +313,79 @@ export function reviewGame(
         books = sale.effects.reduce(applyEffectsToBooks, books);
       }
       return { card, sold: afterDone(books) };
+    } catch {
+      return null;
+    }
+  };
+
+  // A card picked twice in one turn (the app used to log the same open card again when its dialog closed): only the
+  // first counts.
+  const isRepeatPick = (index: number): boolean => {
+    const cardId = stack[index].step?.cardId;
+    for (let back = index - 1; back >= 0 && stack[back].step?.kind !== 'roll'; back -= 1) {
+      if (stack[back].step?.kind === 'cardPicked' && stack[back].step?.cardId === cardId)
+        return true;
+    }
+    return false;
+  };
+
+  // What became of a picked Deal card: planned or bought ('acted'), passed with a pass step of its own ('skipped', judged
+  // by that step), or simply left - the player picked another card, or rolled on, without acting on it ('left').
+  const pickFate = (index: number): 'acted' | 'skipped' | 'left' => {
+    const cardId = stack[index].step?.cardId;
+    const until = nextRoll(index);
+    for (let next = index + 1; next < until; next += 1) {
+      const step = stack[next].step;
+      if (!step) continue;
+      if (step.kind === 'planDeal' || PURCHASES.has(step.kind)) return 'acted';
+      if (step.kind === 'skipCard') return 'skipped';
+      if (step.kind === 'cardPicked' && step.cardId !== cardId) return 'left';
+    }
+    return 'left';
+  };
+
+  // A Deal card the player picked and left without planning it: what buying it would have been worth (JFK, 2026-10-08:
+  // "the review should also judge what cards I did not plan"). Not a share (the count is the player's choice), not a
+  // card that could not be bought even with the bank.
+  const leftDealCard = (
+    index: number,
+  ): { card: NonNullable<ReturnType<typeof passedCardOf>>; bought: GameBooks } | null => {
+    const step = stack[index].step;
+    if (step?.kind !== 'cardPicked' || (step.deck !== 'dealSmall' && step.deck !== 'dealBig'))
+      return null;
+    if (isRepeatPick(index) || pickFate(index) !== 'left') return null;
+    const set = gameSet(stack[index].cashflowGame.gameSetId);
+    const card = [...(set?.decks?.dealSmall ?? []), ...(set?.decks?.dealBig ?? [])].find(
+      (candidate) => candidate.id === step.cardId,
+    );
+    if (!card || card.assetKind === 'share') return null;
+    try {
+      const before = booksOf(entry(index + 1));
+      const plan = buyDealAction(before, { cardId: card.id }, quietActionDeps);
+      return { card, bought: afterDone(plan.effects.reduce(applyEffectsToBooks, before)) };
+    } catch {
+      return null;
+    }
+  };
+
+  // A cashflow boost card the player had open and did not play (no marketCard step before the next roll): the boost it
+  // would have given, when it applies to something they own.
+  const unplayedBoost = (index: number): { card: { title: string }; played: GameBooks } | null => {
+    const step = stack[index].step;
+    if (step?.kind !== 'cardPicked' || step.deck !== 'market' || isRepeatPick(index)) return null;
+    const set = gameSet(stack[index].cashflowGame.gameSetId);
+    const card = (set?.decks?.market ?? []).find((candidate) => candidate.id === step.cardId);
+    if (!card?.boost) return null;
+    const until = nextRoll(index);
+    for (let next = index + 1; next < until; next += 1) {
+      if (stack[next].step?.kind === 'marketCard') return null;
+    }
+    try {
+      const before = booksOf(entry(index));
+      const plan = playMarketAction(before, { cardId: card.id }, quietActionDeps);
+      const changed = (plan.result?.['changed'] as unknown[] | undefined) ?? [];
+      if (changed.length === 0) return null;
+      return { card, played: afterDone(plan.effects.reduce(applyEffectsToBooks, before)) };
     } catch {
       return null;
     }
@@ -348,7 +423,10 @@ export function reviewGame(
     if (!step) return false;
     if (PURCHASES.has(step.kind)) return true;
     if (step.kind === 'skipCard') return passedCardOf(index) !== null || isBlindPass(index);
-    if (step.kind === 'cardPicked' && step.deck === 'market') return untakenOffer(index) !== null;
+    if (step.kind === 'cardPicked' && step.deck === 'market') {
+      return untakenOffer(index) !== null || unplayedBoost(index) !== null;
+    }
+    if (step.kind === 'cardPicked') return leftDealCard(index) !== null;
     if (step.kind === 'planDeal') return isLeftPlan(index);
     return (
       (SALES.has(step.kind) && step.kind !== 'cardSale') ||
@@ -432,6 +510,31 @@ export function reviewGame(
           afterDone(booksOf(entry(until))),
           offer.sold,
           'selling to the buyer',
+        );
+      } else {
+        const boost = unplayedBoost(index);
+        if (boost) {
+          judge(
+            index,
+            'unused-boost',
+            boost.card.title,
+            afterDone(booksOf(entry(nextRoll(index)))),
+            boost.played,
+            'playing the card',
+          );
+        }
+      }
+    } else if (step.kind === 'cardPicked') {
+      const left = leftDealCard(index);
+      if (left) {
+        judge(
+          index,
+          'passed-card',
+          left.card.symbol ?? left.card.title,
+          afterPass(booksOf(entry(index + 1))),
+          left.bought,
+          'buying it',
+          left.card,
         );
       }
     } else if (step.kind === 'planDeal') {

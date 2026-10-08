@@ -695,6 +695,12 @@ describe('a whole game played through the API', () => {
     const passes = history.body.steps.filter((step) => step.kind === 'skipCard');
     expect(passes.length).toBeGreaterThan(0);
     expect(passes.some((step) => typeof step.cardId === 'string')).toBe(true);
+    // a picked card names its pile, so a Small or a Big Deal needs no guessing from the id
+    const picks = history.body.steps.filter((step) => step.kind === 'cardPicked');
+    expect(picks.length).toBeGreaterThan(0);
+    expect(
+      picks.every((step) => typeof step.cardId === 'string' && typeof step.deck === 'string'),
+    ).toBe(true);
     expect(reviewed.body.review.moves.some((move) => move.kind === 'passed-card')).toBe(true);
     const undone = await session('post', '/api/v1/game/undo', user.token).send({});
     expect(undone.body.turn.phase).not.toBe('over');
