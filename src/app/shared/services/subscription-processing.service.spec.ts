@@ -58,7 +58,7 @@ describe('SubscriptionProcessingService', () => {
     });
   });
 
-  describe('removeStaleGeneratedTransactions', () => {
+  describe('reconcileGeneratedTransactions', () => {
     const NOW = new Date('2026-04-15');
     const gym = {
       title: 'Gym',
@@ -91,31 +91,61 @@ describe('SubscriptionProcessingService', () => {
       ];
     });
 
-    it('removes what the old subscription generated and the changed one would not', () => {
-      const removed = service.removeStaleGeneratedTransactions(
+    it('removes only the transactions after an end date moved into the past', () => {
+      const result = service.reconcileGeneratedTransactions(
         gym,
         { ...gym, endDate: '2026-02-20' },
         NOW,
       );
-      expect(removed).toBe(2);
+      expect(result).toEqual({ updated: 0, removed: 2 });
       expect(dates()).toEqual(['2026-01-10', '2026-02-10', '2026-02-11']);
     });
 
-    it('removes all of it when the details change, and none when only the end date moves later', () => {
-      expect(service.removeStaleGeneratedTransactions(gym, { ...gym, amount: -25 }, NOW)).toBe(4);
-      expect(dates()).toEqual(['2026-02-11']);
+    it('changes the transactions in place when the details change, keeping their objects and order', () => {
+      const first = AppStateService.instance.allTransactions[0];
+      const result = service.reconcileGeneratedTransactions(
+        gym,
+        { ...gym, amount: -25, category: '@Sport', comment: 'sauna' },
+        NOW,
+      );
+      expect(result).toEqual({ updated: 4, removed: 0 });
+      expect(AppStateService.instance.allTransactions[0]).toBe(first);
+      expect(first).toMatchObject({ amount: -25, category: '@Sport', comment: 'Gym + sauna' });
+      expect(dates()).toEqual([
+        '2026-01-10',
+        '2026-02-10',
+        '2026-03-10',
+        '2026-04-10',
+        '2026-02-11',
+      ]);
+    });
+
+    it('moves the date of the same month when the day changes and drops the one that no longer counts', () => {
+      const result = service.reconcileGeneratedTransactions(
+        gym,
+        { ...gym, startDate: '2026-01-20' },
+        NOW,
+      );
+      expect(result).toEqual({ updated: 3, removed: 1 });
+      expect(dates()).toEqual(['2026-01-20', '2026-02-20', '2026-03-20', '2026-02-11']);
+    });
+
+    it('does nothing when only the end date moves later', () => {
       AppStateService.instance.allTransactions = [generated('2026-01-10')];
       expect(
-        service.removeStaleGeneratedTransactions(
+        service.reconcileGeneratedTransactions(
           { ...gym, endDate: '2026-02-20' },
           { ...gym, endDate: '2026-12-31' },
           NOW,
         ),
-      ).toBe(0);
+      ).toEqual({ updated: 0, removed: 0 });
     });
 
     it('removes everything it generated when the subscription goes', () => {
-      expect(service.removeStaleGeneratedTransactions(gym, null, NOW)).toBe(4);
+      expect(service.reconcileGeneratedTransactions(gym, null, NOW)).toEqual({
+        updated: 0,
+        removed: 4,
+      });
       expect(dates()).toEqual(['2026-02-11']);
     });
 
@@ -123,7 +153,7 @@ describe('SubscriptionProcessingService', () => {
       AppStateService.instance.allTransactions = [
         generated('2026-01-10', 'Gym\n#bucket:Flight:20.00'),
       ];
-      expect(service.removeStaleGeneratedTransactions(gym, null, NOW)).toBe(1);
+      expect(service.reconcileGeneratedTransactions(gym, null, NOW).removed).toBe(1);
     });
   });
 

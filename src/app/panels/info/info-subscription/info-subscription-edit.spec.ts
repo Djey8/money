@@ -121,10 +121,14 @@ describe('InfoSubscriptionComponent: editing a subscription keeps its transactio
     expect(AppStateService.instance.allSubscriptions[0].endDate).toBe(dayInMonth(2, 15));
   });
 
-  it('removes all of them and generates the new ones when the amount changes', async () => {
+  it('changes them in place, keeping their order, when the amount changes', async () => {
+    const before = [...AppStateService.instance.allTransactions];
     component.amountTextField = -25;
     await component.updateSubscription();
-    expect(dates()).toEqual([]);
+    expect(AppStateService.instance.allTransactions).toEqual(
+      before.map((t) => ({ ...t, amount: -25 })),
+    );
+    expect(AppStateService.instance.allTransactions[0]).toBe(before[0]);
     expect(recalculate).toHaveBeenCalled();
     expect(regenerate).toHaveBeenCalled();
     expect(AppStateService.instance.allSubscriptions[0].amount).toBe(-25);
@@ -141,9 +145,12 @@ describe('InfoSubscriptionComponent: editing a subscription keeps its transactio
     });
     component.amountTextField = -25;
     await component.updateSubscription();
-    expect(AppStateService.instance.allTransactions.map((t) => t.comment)).toEqual([
-      'Gym day pass',
-    ]);
+    const comments = AppStateService.instance.allTransactions.map((t) => t.comment);
+    expect(comments).toContain('Gym day pass');
+    const manual = AppStateService.instance.allTransactions.find(
+      (t) => t.comment === 'Gym day pass',
+    );
+    expect(manual.amount).toBe(-20);
   });
 
   it('removes everything it generated first when the "delete transactions" box is ticked, then clears the box', async () => {

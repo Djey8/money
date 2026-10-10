@@ -325,12 +325,12 @@ export class InfoSubscriptionComponent extends BaseInfoComponent implements OnIn
     subscription.comment = this.commentTextField;
     subscription.frequency = this.frequencyField as any;
 
-    const removed = this.subscriptionProcessing.removeStaleGeneratedTransactions(
+    const { updated, removed } = this.subscriptionProcessing.reconcileGeneratedTransactions(
       before,
       InfoSubscriptionComponent.isRefresh ? null : { ...subscription },
     );
     InfoSubscriptionComponent.isRefresh = false;
-    if (removed > 0) {
+    if (updated + removed > 0) {
       // Rebuild the income statement and the funds from the remaining transactions
       this.incomeStatement.recalculate();
     }
@@ -365,6 +365,7 @@ export class InfoSubscriptionComponent extends BaseInfoComponent implements OnIn
       account: this.selectedOption,
       category: this.categoryTextField,
       amount: this.amountTextField,
+      transactionsUpdated: updated,
       transactionsRemoved: removed,
     });
 
@@ -479,10 +480,10 @@ export class InfoSubscriptionComponent extends BaseInfoComponent implements OnIn
 
       // Only delete transactions if checkbox is ticked: the ones this subscription generated
       if (InfoSubscriptionComponent.isRefresh) {
-        deletedTransactionsCount = this.subscriptionProcessing.removeStaleGeneratedTransactions(
+        deletedTransactionsCount = this.subscriptionProcessing.reconcileGeneratedTransactions(
           AppStateService.instance.allSubscriptions[index],
           null,
-        );
+        ).removed;
         InfoSubscriptionComponent.isRefresh = false;
 
         // Recalculate income statement from remaining transactions

@@ -13,7 +13,7 @@ import { Subscription, SubscriptionFrequency } from '../../interfaces/subscripti
 import {
   constructedSubscriptionComment,
   isGeneratedComment,
-  staleGeneratedTransactions,
+  reconcileGeneratedTransactions,
   SyncSubscription,
 } from '@money/domain';
 
@@ -76,41 +76,52 @@ export class SubscriptionProcessingService {
   }
 
   /**
-   * Removes the transactions `before` generated and `after` would not (`after` is `null` when everything it generated
-   * should go): all of them when the details change, those after the end date when it moves into the past, none when it
-   * moves into the future. Returns how many went. The caller recalculates the income statement and funds and stores.
+   * Brings the transactions `before` generated in line with `after` (`null` when the subscription goes - everything it
+   * generated is removed): the ones `after` still has an occurrence for are changed in place, keeping their place in the
+   * list, the others are removed. What `after` is due and lacks is left to `setTransactionsForSubscriptions`, which
+   * appends it. The caller recalculates the income statement and funds and stores.
    * See packages/domain/src/transactions/subscription-sync.ts.
    */
-  removeStaleGeneratedTransactions(
+  reconcileGeneratedTransactions(
     before: Subscription,
     after: Subscription | null,
     now: Date = new Date(),
-  ): number {
+  ): { updated: number; removed: number } {
     const transactions = AppStateService.instance.allTransactions;
-    const stale = new Set(
-      staleGeneratedTransactions(
-        toSyncSubscription(before),
-        after ? toSyncSubscription(after) : null,
-        transactions.map((transaction) => ({
-          date: transaction.date,
-          account: transaction.account,
-          amountMinor: Math.round(Number(transaction.amount) * 100),
-          category: transaction.category,
-          comment: transaction.comment || '',
-        })),
-        now,
-      ),
+    const { updates, removals } = reconcileGeneratedTransactions(
+      toSyncSubscription(before),
+      after ? toSyncSubscription(after) : null,
+      transactions.map((transaction) => ({
+        date: transaction.date,
+        account: transaction.account,
+        amountMinor: Math.round(Number(transaction.amount) * 100),
+        category: transaction.category,
+        comment: transaction.comment || '',
+      })),
+      now,
     );
-    if (stale.size === 0) return 0;
-    AppStateService.instance.allTransactions = transactions.filter((_, index) => !stale.has(index));
+    if (updates.length === 0 && removals.length === 0) return { updated: 0, removed: 0 };
+    for (const update of updates) {
+      const transaction = transactions[update.index];
+      transaction.date = update.date;
+      transaction.account = update.account;
+      transaction.amount = update.amountMinor / 100;
+      transaction.category = update.category;
+      transaction.comment = update.comment;
+    }
+    const removed = new Set(removals);
+    AppStateService.instance.allTransactions = transactions.filter(
+      (_, index) => !removed.has(index),
+    );
     AccountingComponent.allTransactions = AppStateService.instance.allTransactions;
     AppStateService.instance.transactionsUpdated$.next();
-    this.frontendLogger.logActivity('subscription_removed_generated_transactions', 'warning', {
+    this.frontendLogger.logActivity('subscription_reconciled_transactions', 'info', {
       subscriptionTitle: before.title,
-      transactionsRemoved: stale.size,
+      transactionsUpdated: updates.length,
+      transactionsRemoved: removals.length,
       reason: after ? 'subscription_changed' : 'subscription_removed',
     });
-    return stale.size;
+    return { updated: updates.length, removed: removals.length };
   }
 
   /**
