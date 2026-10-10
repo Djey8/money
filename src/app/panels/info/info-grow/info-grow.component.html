@@ -445,7 +445,7 @@
       <button class="card-btn card-btn-buy" (click)="buyThisProject()">
         {{ 'Grow.buy' | translate }}
       </button>
-      <button class="card-btn card-btn-sell" (click)="sellThisProject()">
+      <button class="card-btn card-btn-sell" *ngIf="!sellBlocked" (click)="sellThisProject()">
         {{ 'Grow.sell' | translate }}
       </button>
     </div>

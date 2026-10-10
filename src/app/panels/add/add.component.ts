@@ -449,6 +449,19 @@ export class AddComponent extends BaseAddComponent implements OnInit, AfterViewI
       }
     }
 
+    // The game rules: a plain transaction may be forbidden or capped, a sale may need a Market card's offer.
+    if (CashflowGameService.isCashflowGame()) {
+      const refusal = this.cashflowGameService.addDialogRefusal(
+        AddComponent.commentTextField,
+        AddComponent.categoryTextField,
+        Math.round(Math.abs(parseFloat(String(AddComponent.amountTextField))) * 100) || 0,
+      );
+      if (refusal) {
+        this.showError(refusal);
+        return;
+      }
+    }
+
     // Close dialog immediately for instant UX - processing happens in next event loop
     AddComponent.isAdd = false;
 

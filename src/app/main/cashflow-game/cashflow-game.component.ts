@@ -25,6 +25,12 @@ import {
   type SavedGameSummary,
   pickOne,
   type TurnResult,
+  FREE_RULES,
+  RULE_PRESETS,
+  normalizeRules,
+  rulesOf,
+  whyCannotDraw,
+  type GameRules,
 } from '@money/domain';
 import { Grow } from 'src/app/interfaces/grow';
 import { AppStateService } from 'src/app/shared/services/app-state.service';
@@ -565,6 +571,14 @@ export class CashflowGameComponent implements OnDestroy {
     if (!this.selectedGameSetId || !this.selectedProfessionId) return;
     this.isBusy = true;
     const mode = this.playMode;
+    let rules: GameRules;
+    try {
+      rules = this.currentRules();
+    } catch (error) {
+      this.isBusy = false;
+      this.toastService.show(error instanceof Error ? error.message : String(error), 'error');
+      return;
+    }
     this.cashflowGameService.pickProfession(
       this.selectedGameSetId,
       this.selectedProfessionId,
@@ -586,6 +600,7 @@ export class CashflowGameComponent implements OnDestroy {
         },
       },
       mode,
+      rules,
     );
   }
 
@@ -593,6 +608,57 @@ export class CashflowGameComponent implements OnDestroy {
 
   /** Chosen with the language when a game starts; a running game keeps the mode it began with. */
   playMode: 'companion' | 'solo' = 'companion';
+
+  // ── The rules a new game is played under (JFK, 2026-10-10) ─────────────────────────────────────
+
+  /** What the start panel is set to: a preset, or single settings changed from one. */
+  ruleDraft: GameRules = { ...FREE_RULES };
+  /** The two amount limits as typed (empty: no limit), in the game's currency. */
+  maxLoanText = '';
+  maxFreeText = '';
+  showAdvancedRules = false;
+  readonly presetIds = ['free', 'guided', 'strict'] as const;
+
+  choosePreset(id: 'free' | 'guided' | 'strict'): void {
+    this.ruleDraft = { ...RULE_PRESETS[id] };
+    this.maxLoanText =
+      this.ruleDraft.maxLoanMinor === null ? '' : String(this.ruleDraft.maxLoanMinor / 100);
+    this.maxFreeText =
+      this.ruleDraft.maxFreeAmountMinor === null
+        ? ''
+        : String(this.ruleDraft.maxFreeAmountMinor / 100);
+  }
+
+  private limitMinor(text: string): number | null {
+    const value = parseFloat(String(text).replace(',', '.'));
+    return Number.isFinite(value) && text.trim() !== ''
+      ? Math.max(0, Math.round(value * 100))
+      : null;
+  }
+
+  /** The rules as set now, complete and valid (a changed preset becomes 'custom'). */
+  currentRules(): GameRules {
+    return normalizeRules({
+      ...this.ruleDraft,
+      maxLoanMinor: this.limitMinor(this.maxLoanText),
+      maxFreeAmountMinor: this.limitMinor(this.maxFreeText),
+    });
+  }
+
+  get rulePresetNow(): GameRules['preset'] {
+    return this.currentRules().preset;
+  }
+
+  /** The game being played deals one card per space and nothing can be browsed or swapped (solo, 'offered-once'). */
+  get cardsOfferedOnly(): boolean {
+    const game = this.appState.cashflowGame;
+    return game.mode === 'solo' && rulesOf(game).cardChoice === 'offered-once';
+  }
+
+  /** Why no further card can be drawn on this space, or null. */
+  get drawRefusal(): string | null {
+    return whyCannotDraw(this.appState.cashflowGame);
+  }
 
   readonly board = this.cashflowGameService.board;
 
@@ -1144,6 +1210,25 @@ export class CashflowGameComponent implements OnDestroy {
     this.marketNotice = null;
     this.dashboardView = 'cards';
     void this.cardText.ensureLoaded();
+    this.dealOfferedCard();
+  }
+
+  /**
+   * Under 'offered-once' the pile is not browsed: the one card of the space is drawn at once, or - when the page was
+   * reloaded with a card on offer - brought back, so the player cannot swap it by leaving and coming back.
+   */
+  private dealOfferedCard(): void {
+    if (!this.cardsOfferedOnly) return;
+    const offered = this.soloTurn.pending?.offered;
+    if (!offered) {
+      if (!this.drawRefusal) this.drawActiveCard();
+      return;
+    }
+    this.activeDeckKind = offered.deck;
+    const card = this.cashflowGameService
+      .browseCards(offered.deck, '')
+      .find((candidate: { id: string }) => candidate.id === offered.cardId);
+    if (card) this.activeCard = card as typeof this.activeCard;
   }
 
   /** Red "Schnickschnack" space. */

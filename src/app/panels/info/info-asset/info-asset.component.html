@@ -19,7 +19,9 @@
       </h4>
       <div class="button-container">
         <button id="buyButton" (click)="buyAsset()">{{ 'Grow.buy' | translate }}</button>
-        <button id="sellButton" (click)="sellAsset()">{{ 'Grow.sell' | translate }}</button>
+        <button id="sellButton" *ngIf="!sellBlocked" (click)="sellAsset()">
+          {{ 'Grow.sell' | translate }}
+        </button>
       </div>
     </div>
     <button id="editbtn" class="btn btn--action" (click)="editAsset()">

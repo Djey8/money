@@ -1,4 +1,5 @@
 import { Router } from '@angular/router';
+import { CashflowGameService } from 'src/app/shared/services/cashflow-game.service';
 import { Grow, GrowPhase, GrowType } from 'src/app/interfaces/grow';
 import { LocalService } from 'src/app/shared/services/local.service';
 import { migrateGrowArray } from 'src/app/shared/grow-migration.utils';
@@ -262,6 +263,11 @@ export class GrowComponent implements OnInit, AfterViewInit {
    */
   async buyProject(index: number) {
     await this.growTrade.buy(AppStateService.instance.allGrowProjects[index]);
+  }
+
+  /** A Cashflow game under rules that allow selling only to a Market card's offer hides the Sell button until there is one. */
+  sellBlocked(project: Grow): boolean {
+    return CashflowGameService.sellRefusalFor(project.title) !== null;
   }
 
   async sellProject(index: number) {

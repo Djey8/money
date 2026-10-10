@@ -1,4 +1,5 @@
 import { Subject } from 'rxjs';
+import { RULE_PRESETS } from '@money/domain';
 import { CLASSIC_RAT_RACE_BOARD } from '@money/domain';
 import { registerLocaleData } from '@angular/common';
 import localeDe from '@angular/common/locales/de';
@@ -2051,10 +2052,60 @@ describe('CashflowGameComponent solo mode (JFK, 2026-10-05)', () => {
       component.selectedProfessionId,
       expect.any(Object),
       'solo',
+      expect.objectContaining({ preset: 'free', cardChoice: 'free', sell: 'always' }),
     );
     const companion = soloComponent();
     companion.component.startGame();
     expect(companion.cashflowGameService.pickProfession.mock.calls[0][3]).toBe('companion');
+  });
+
+  it('starts the game under the rules chosen on the start panel, and a preset fills them in', () => {
+    const { component, cashflowGameService } = soloComponent();
+    component.playMode = 'solo';
+    component.choosePreset('strict');
+    expect(component.rulePresetNow).toBe('strict');
+    component.startGame();
+    expect(cashflowGameService.pickProfession.mock.calls[0][4]).toMatchObject({
+      preset: 'strict',
+      cardChoice: 'offered-once',
+      sell: 'with-offer',
+      manualTransactions: 'forbidden',
+    });
+  });
+
+  it('a changed setting makes the rules custom, and the limits are typed in the currency', () => {
+    const { component, cashflowGameService } = soloComponent();
+    component.choosePreset('guided');
+    component.ruleDraft.sellOfferRolls = 2;
+    component.maxFreeText = '250';
+    component.maxLoanText = '';
+    expect(component.rulePresetNow).toBe('custom');
+    component.startGame();
+    expect(cashflowGameService.pickProfession.mock.calls[0][4]).toMatchObject({
+      preset: 'custom',
+      sellOfferRolls: 2,
+      maxFreeAmountMinor: 25000,
+      maxLoanMinor: null,
+    });
+  });
+
+  it('offered-once: no browsing, and the card already on offer is the only one', () => {
+    const { component } = soloComponent();
+    setSoloState({ mode: 'solo', rules: { ...RULE_PRESETS.guided } } as never);
+    expect(component.cardsOfferedOnly).toBe(true);
+    expect(component.drawRefusal).toMatch(/only deal a card for the space/); // no space is open
+    setSoloState({
+      mode: 'solo',
+      rules: { ...RULE_PRESETS.guided },
+      turn: {
+        phase: 'decide',
+        count: 1,
+        pending: { kind: 'deal', spaceIndex: 3, offered: { deck: 'dealSmall', cardId: 'x' } },
+      },
+    } as never);
+    expect(component.drawRefusal).toMatch(/already offered/);
+    setSoloState({ mode: 'solo', rules: undefined } as never);
+    expect(component.cardsOfferedOnly).toBe(false);
   });
 
   it('measures the way to the next Payday from the token, START included', () => {

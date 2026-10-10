@@ -33,6 +33,13 @@ import {
   type EncodedUndoChain,
   dealInputFromCard,
   doodadLoanNote as doodadLoanNoteRule,
+  normalizeRules,
+  rulesOf,
+  whyCannotAddFreeAmount,
+  whyCannotDraw,
+  whyCannotSell,
+  whyCannotUseCard,
+  type GameRules,
   executeDeal as executeDealRule,
   clearCashflowStatus,
   computeMonthlyCashflowMinor,
@@ -775,6 +782,7 @@ export class CashflowGameService {
     professionId: string,
     callbacks: CashflowGameCallbacks,
     mode: 'companion' | 'solo' = 'companion',
+    rules?: Partial<GameRules>,
   ): void {
     const state = AppStateService.instance;
     let result: ReturnType<typeof pickCashflowProfession>;
@@ -785,6 +793,7 @@ export class CashflowGameService {
         professionId,
         this.clock.todayIso(),
         mode,
+        rules ? normalizeRules(rules) : undefined,
       );
     } catch (err: unknown) {
       callbacks.onError(errorMessage(err, 'Could not start the game.'));
@@ -1659,6 +1668,11 @@ export class CashflowGameService {
     options: { title?: string; types: { labels: string[]; units?: number }[] },
     callbacks: { onSuccess: (matched: string[]) => void; onError: (message: string) => void },
   ): void {
+    const refusedCard = this.cardRefusal(card.id);
+    if (refusedCard) {
+      callbacks.onError(refusedCard);
+      return;
+    }
     let result: ReturnType<typeof playMarketBuyerCard>;
     try {
       result = playMarketBuyerCard(this.cardBooks(), card, options, this.cardDeps);
@@ -1708,6 +1722,11 @@ export class CashflowGameService {
     text: { description?: string },
     callbacks: { onSuccess: (title: string) => void; onError: (message: string) => void },
   ): void {
+    const refusedCard = this.cardRefusal(card.id);
+    if (refusedCard) {
+      callbacks.onError(refusedCard);
+      return;
+    }
     let result: ReturnType<typeof updateSharePrice>;
     try {
       result = updateSharePrice(this.cardBooks(), card, text, this.cardDeps);
@@ -1736,6 +1755,11 @@ export class CashflowGameService {
     options: { title?: string; labels: string[] },
     callbacks: { onSuccess: (share: string | null) => void; onError: (message: string) => void },
   ): void {
+    const refusedCard = this.cardRefusal(card.id);
+    if (refusedCard) {
+      callbacks.onError(refusedCard);
+      return;
+    }
     let result: ReturnType<typeof playShareSplitCard>;
     try {
       result = playShareSplitCard(this.cardBooks(), card, options, this.cardDeps);
@@ -1778,6 +1802,11 @@ export class CashflowGameService {
       onError: (message: string) => void;
     },
   ): void {
+    const refusedCard = this.cardRefusal(card.id);
+    if (refusedCard) {
+      callbacks.onError(refusedCard);
+      return;
+    }
     let result: ReturnType<typeof playBoostCard>;
     try {
       result = playBoostCard(this.cardBooks(), card, options, this.cardDeps);
@@ -1813,6 +1842,11 @@ export class CashflowGameService {
     options: { title?: string; types: { labels: string[] }[] },
     callbacks: { onSuccess: (property: string | null) => void; onError: (message: string) => void },
   ): void {
+    const refusedCard = this.cardRefusal(card.id);
+    if (refusedCard) {
+      callbacks.onError(refusedCard);
+      return;
+    }
     let result: ReturnType<typeof playMarketCostCard>;
     try {
       result = playMarketCostCard(this.cardBooks(), card, options);
@@ -1984,6 +2018,59 @@ export class CashflowGameService {
     return cards.sort((a, b) => key(a).localeCompare(key(b)) || price(a) - price(b));
   }
 
+  /** The game rules (free for a game without any). */
+  get rules(): GameRules {
+    return rulesOf(AppStateService.instance.cashflowGame);
+  }
+
+  /** Why the rules forbid playing this card on the open space, or null. */
+  cardRefusal(cardId: string): string | null {
+    return whyCannotUseCard(AppStateService.instance.cashflowGame, cardId);
+  }
+
+  /** Why the rules forbid selling `title` now (a game without rules never does), or null. */
+  sellRefusal(title: string): string | null {
+    return CashflowGameService.sellRefusalFor(title);
+  }
+
+  /** The same without an instance, for the templates that decide whether to show a Sell button. */
+  static sellRefusalFor(title: string): string | null {
+    const game = AppStateService.instance.cashflowGame;
+    return CashflowGameService.isCashflowGame() && game.professionId
+      ? whyCannotSell(game, title)
+      : null;
+  }
+
+  /** Why the rules forbid adding a free-form transaction of this size (minor units), or null. */
+  freeAmountRefusal(amountMinor: number): string | null {
+    const game = AppStateService.instance.cashflowGame;
+    return game.professionId ? whyCannotAddFreeAmount(game, amountMinor) : null;
+  }
+
+  /**
+   * What the game rules say about a transaction made in the Add dialog, or null when it is fine: a trade the game knows
+   * (Buy / Sell Share, Property, Asset, a Doodad, a Market cost, a payback) is judged as that trade - a sale needs an
+   * offer where the rules ask for one - and a plain transaction is a free amount (forbidden, or capped).
+   */
+  addDialogRefusal(comment: string, category: string, amountMinor: number): string | null {
+    const game = AppStateService.instance.cashflowGame;
+    if (!CashflowGameService.isCashflowGame() || !game.professionId) return null;
+    const step = gameTradeStep(comment, category);
+    if (step.kind === 'transaction') return this.freeAmountRefusal(amountMinor);
+    if (['sellShare', 'sellInvestment', 'sellAsset'].includes(step.kind) && step.detail) {
+      return this.sellRefusal(step.detail);
+    }
+    return null;
+  }
+
+  /** Why the rules forbid a Bank loan, or null. */
+  get loanRefusal(): string | null {
+    const game = AppStateService.instance.cashflowGame;
+    return game.professionId && this.rules.bankLoan === 'forbidden'
+      ? 'These game rules do not allow a Bank loan.'
+      : null;
+  }
+
   /**
    * "Draw a card" (todo/cashflow-game.md decision 16): no physical deck in
    * hand — the app picks at random from whatever this deck hasn't already
@@ -1995,6 +2082,11 @@ export class CashflowGameService {
     callbacks: CashflowCardCallbacks<CashflowDeckCardMap[K]>,
   ): void {
     const state = AppStateService.instance;
+    const refusedDraw = whyCannotDraw(state.cashflowGame);
+    if (refusedDraw) {
+      callbacks.onError(refusedDraw);
+      return;
+    }
     const deck = this.currentGameSet()?.decks?.[deckKind];
     if (!deck) {
       callbacks.onError(`This game set has no ${deckKind} cards yet.`);
@@ -2015,8 +2107,20 @@ export class CashflowGameService {
     if (state.cashflowGame.professionId) {
       this.pushUndoSnapshot(cardPickedStep(deckKind, result.card));
     }
+    const turn = state.cashflowGame.turn;
+    // Under 'offered-once' this card is the one offered on the space: nothing else can be played here.
+    const offered =
+      rulesOf(state.cashflowGame).cardChoice === 'offered-once' && turn?.pending
+        ? {
+            turn: {
+              ...turn,
+              pending: { ...turn.pending, offered: { deck: deckKind, cardId: result.card.id } },
+            },
+          }
+        : {};
     state.cashflowGame = {
       ...state.cashflowGame,
+      ...offered,
       drawnCardIds: { ...state.cashflowGame.drawnCardIds, [deckKind]: result.drawnIds },
     };
     this.persistence.writeAndSync({
@@ -2052,6 +2156,11 @@ export class CashflowGameService {
     callbacks: { onSuccess: (plannedTitle: string) => void; onError: (message: string) => void },
     text: CashflowCardPlanText = {},
   ): void {
+    const refusedCard = this.cardRefusal(card.id);
+    if (refusedCard) {
+      callbacks.onError(refusedCard);
+      return;
+    }
     const input = dealInputFromCard(card, text, takenDealLabels(this.gameBooks()));
     this.runPlanDeal(input, {
       onSuccess: () => callbacks.onSuccess(input.title),

@@ -1,4 +1,5 @@
 import { assetSellComment } from 'src/app/shared/asset-coins.utils';
+import { CashflowGameService } from 'src/app/shared/services/cashflow-game.service';
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 import { PersistenceService } from 'src/app/shared/services/persistence.service';
@@ -91,6 +92,11 @@ export class InfoAssetComponent extends BaseInfoComponent {
     MenuComponent.isMenu = false;
     InfoComponent.isInfo = false;
   }
+  /** No Sell button without an offer when the game rules ask for one. */
+  get sellBlocked(): boolean {
+    return CashflowGameService.sellRefusalFor(InfoAssetComponent.title) !== null;
+  }
+
   sellAsset() {
     AddComponent.categoryTextField = `@${InfoAssetComponent.title}`;
     AddComponent.selectedOption = 'Income';

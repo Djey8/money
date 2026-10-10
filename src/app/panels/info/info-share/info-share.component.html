@@ -27,7 +27,9 @@
       </h4>
       <div class="button-container">
         <button id="buyButton" (click)="buyShare()">{{ 'Grow.buy' | translate }}</button>
-        <button id="sellButton" (click)="sellShare()">{{ 'Grow.sell' | translate }}</button>
+        <button id="sellButton" *ngIf="!sellBlocked" (click)="sellShare()">
+          {{ 'Grow.sell' | translate }}
+        </button>
       </div>
     </div>
     <button id="editbtn" (click)="dividende()">{{ 'InfoShare.dividende' | translate }}</button>
