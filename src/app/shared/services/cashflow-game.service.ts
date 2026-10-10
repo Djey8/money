@@ -41,6 +41,7 @@ import {
   whyCannotDraw,
   whyCannotReportRoll,
   whyDiceFirst,
+  whyCardAlreadyBought,
   whyCardAlreadyPlayed,
   propertyCardTypes,
   costCardProperty,
@@ -717,6 +718,7 @@ export class CashflowGameService {
     }
     const tradeStep = gameTradeStep(comment, category);
     this.pushUndoSnapshot(tradeStep); // step 2 (or the only step): the trade itself
+    if (tradeStep.kind === 'buyInvestment' || tradeStep.kind === 'buyAsset') this.markPurchased();
     this.settleDoodadByPayment(tradeStep.kind);
     // The loan comes first: it takes `loanDate` (the day the dialog was opened on), and the purchase
     // that follows gets the next free slot after it.
@@ -1608,6 +1610,7 @@ export class CashflowGameService {
   beforeAssetBuy(title: string): boolean {
     const hook = beforeAssetBuyRule(AppStateService.instance.cashflowGame, title);
     if (hook.effects) this.applyGameEffects(hook.effects);
+    this.markPurchased();
     return hook.gamble;
   }
 
@@ -2126,6 +2129,17 @@ export class CashflowGameService {
     };
   }
 
+  /** The card of this space has bought its property or asset: it buys once, the Buy button is gone. */
+  private markPurchased(): void {
+    const game = AppStateService.instance.cashflowGame;
+    const pending = game.turn?.pending;
+    if (!game.turn || !pending || pending.purchased) return;
+    AppStateService.instance.cashflowGame = {
+      ...game,
+      turn: { ...game.turn, pending: { ...pending, purchased: true } },
+    };
+  }
+
   /** Names the project the card in hand became: the Buy button and the buy rule look for that title. */
   private holdProject(title: string): void {
     const game = AppStateService.instance.cashflowGame;
@@ -2180,7 +2194,10 @@ export class CashflowGameService {
       return this.sellRefusal(step.detail);
     }
     if (['buyShare', 'buyInvestment', 'buyAsset'].includes(step.kind) && step.detail) {
-      return CashflowGameService.buyRefusalFor(step.detail, step.kind === 'buyInvestment');
+      return CashflowGameService.buyRefusalFor(
+        step.detail,
+        step.kind === 'buyInvestment' ? 'property' : step.kind === 'buyAsset' ? 'asset' : 'share',
+      );
     }
     return null;
   }
@@ -2194,7 +2211,11 @@ export class CashflowGameService {
    * Why `title` cannot be bought now, or null: a property that is owned is not bought a second time, and where the rules say
    * so a purchase needs the card in hand (or a price card of the share).
    */
-  static buyRefusalFor(title: string, isProperty = false): string | null {
+  static buyRefusalFor(
+    title: string,
+    kind: 'property' | 'asset' | 'share' = 'share',
+  ): string | null {
+    const isProperty = kind === 'property';
     const game = AppStateService.instance.cashflowGame;
     if (!CashflowGameService.isCashflowGame() || !game.professionId) return null;
     // Owned: in the balance sheet - which is only there once the balance data has been loaded - or, as it is always loaded
@@ -2205,6 +2226,10 @@ export class CashflowGameService {
     const owned =
       AppStateService.instance.allInvestments.some((position) => position.tag === title) ||
       (!!project && ['execute', 'monitor'].includes(project.phase));
+    if (kind !== 'share') {
+      const bought = whyCardAlreadyBought(game);
+      if (bought) return CashflowGameService.ruleText(bought);
+    }
     if (isProperty && owned) {
       return CashflowGameService.ruleText(
         'You already own this property: a property is bought once.',

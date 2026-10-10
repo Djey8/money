@@ -37,6 +37,8 @@ const SENTENCES: Record<string, string> = {
   rollOnly: 'These game rules only allow the roll of the app: the outcome cannot be reported.',
   diceFirst: 'Roll the dice of your open card first: the card of this space comes after it.',
   alreadyOwned: 'You already own EFH: a property is bought once.',
+  mlmKept: 'This card cannot be sold: a Multi-Level-Marketing card is kept.',
+  cardBought: 'The card of this space has bought already: a card buys once.',
   cardPlayed: 'This card has been played already: a card is played once, tick it off.',
   waitsForDoodad:
     'The game waits for the payment: pay it first, nothing else can be played, bought or sold. A Bank loan is possible.',

@@ -267,7 +267,12 @@ export class GrowComponent implements OnInit, AfterViewInit {
 
   /** A property is bought once; under the buy rule a purchase needs the card in hand. Hidden, not just refused. */
   buyBlocked(project: Grow): boolean {
-    return CashflowGameService.buyRefusalFor(project.title, !!project.investment) !== null;
+    return (
+      CashflowGameService.buyRefusalFor(
+        project.title,
+        project.investment ? 'property' : project.isAsset ? 'asset' : 'share',
+      ) !== null
+    );
   }
 
   /** A Market card of this turn touched the project (an offer, a price move, a boost, a cost): look at it. */

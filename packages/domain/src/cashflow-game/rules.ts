@@ -245,9 +245,13 @@ export function openOfferFor(
 
 /** Why a sale of `title` is refused by the rules (no buyer, or selling is off), or null. */
 export function whyCannotSell(
-  state: Pick<CashflowGameState, 'rules' | 'turn' | 'marketOffers'>,
+  state: Pick<CashflowGameState, 'rules' | 'turn' | 'marketOffers' | 'assetDeals'>,
   title: string,
 ): string | null {
+  // A Multi-Level-Marketing card is kept for good: it pays at every Payday and is never sold.
+  if ((state.assetDeals ?? []).some((deal) => deal.title === title && deal.recurring)) {
+    return 'This card cannot be sold: a Multi-Level-Marketing card is kept.';
+  }
   const waiting = whyPaymentPending(state);
   if (waiting) return waiting;
   const rules = rulesOf(state);
@@ -316,7 +320,8 @@ export function whyCannotBuy(
   const waiting = whyPaymentPending(state);
   if (waiting) return waiting;
   if (rulesOf(state).buy !== 'with-card') return null;
-  if (offeredTitle !== undefined && offeredTitle === title && state.turn?.pending) return null;
+  if (state.turn?.pending && offeredTitle !== undefined && isHeldProject(title, offeredTitle))
+    return null;
   const priceCard = (state.marketOffers ?? []).find(
     (offer) =>
       offer.title === title && offer.pricePerShareMinor !== undefined && offerIsOpen(state, offer),
@@ -365,4 +370,22 @@ export function whyCardAlreadyPlayed(
   return pending?.played && pending.offered?.cardId === cardId
     ? 'This card has been played already: a card is played once, tick it off.'
     : null;
+}
+
+/** Why a property or an asset cannot be bought again with the card of the open space (a card buys once), or null. */
+export function whyCardAlreadyBought(state: Pick<CashflowGameState, 'turn'>): string | null {
+  return state.turn?.pending?.purchased
+    ? 'The card of this space has bought already: a card buys once.'
+    : null;
+}
+
+/**
+ * Whether the project `title` is the one the card in hand stands for. A planned project takes the card's key, or - when the
+ * key is already taken - the key with a suffix (GOLD-II, EFH-III, ...); before the card has been planned the card is only
+ * known by its key, which then matches the key itself and every suffixed label of it.
+ */
+export function isHeldProject(title: string, heldTitle: string): boolean {
+  if (title === heldTitle) return true;
+  const SUFFIX = /-[IVXLC]+$/;
+  return !SUFFIX.test(heldTitle) && title.replace(SUFFIX, '') === heldTitle && SUFFIX.test(title);
 }

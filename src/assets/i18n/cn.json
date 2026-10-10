@@ -2641,5 +2641,7 @@
   "Sync.staleWrite": "您的数据已在其他地方被更改（其他设备或代理）。已重新加载最新版本——请重新执行您的上一次更改。",
   "Grow.noPosition": "没有可卖出的内容：资产负债表中没有标签与该项目标题完全一致的持仓。",
   "Registration.GamePassword": "游戏密码",
-  "CashflowGame.rules.msg.cardPlayed": "这张卡牌已经打出：一张卡牌只能打出一次，请勾选完成。"
+  "CashflowGame.rules.msg.cardPlayed": "这张卡牌已经打出：一张卡牌只能打出一次，请勾选完成。",
+  "CashflowGame.rules.msg.mlmKept": "这张卡牌不能出售：传销式多层次营销（MLM）卡牌需要保留。",
+  "CashflowGame.rules.msg.cardBought": "这一格的卡牌已经购买过：一张卡牌只能购买一次。"
 }

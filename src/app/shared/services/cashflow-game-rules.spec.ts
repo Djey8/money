@@ -114,8 +114,8 @@ describe('the game rules in the app', () => {
   it('a property that is owned is not bought a second time, whatever the rules', () => {
     startGame();
     AppStateService.instance.allInvestments = [{ tag: 'EFH', amount: 1, deposit: 1 }] as never;
-    expect(CashflowGameService.buyRefusalFor('EFH', true)).toMatch(/already own/);
-    expect(CashflowGameService.buyRefusalFor('EFH-II', true)).toBeNull();
+    expect(CashflowGameService.buyRefusalFor('EFH', 'property')).toMatch(/already own/);
+    expect(CashflowGameService.buyRefusalFor('EFH-II', 'property')).toBeNull();
     expect(service.addDialogRefusal('Buy Investment EFH 1 1;', '@EFH', 100)).toMatch(/already own/);
   });
 
@@ -160,14 +160,14 @@ describe('the game rules in the app', () => {
       { title: 'DUPLEX', phase: 'plan', investment: { tag: 'DUPLEX' } },
       { title: 'OLD', phase: 'completed', investment: { tag: 'OLD' } },
     ] as never;
-    expect(CashflowGameService.buyRefusalFor('EFH', true)).toMatch(/already own/);
-    expect(CashflowGameService.buyRefusalFor('DUPLEX', true)).toBeNull(); // only planned
-    expect(CashflowGameService.buyRefusalFor('OLD', true)).toBeNull(); // sold since
+    expect(CashflowGameService.buyRefusalFor('EFH', 'property')).toMatch(/already own/);
+    expect(CashflowGameService.buyRefusalFor('DUPLEX', 'property')).toBeNull(); // only planned
+    expect(CashflowGameService.buyRefusalFor('OLD', 'property')).toBeNull(); // sold since
   });
 
   it('guided and strict buy only with the card in hand: no card, no Buy', () => {
     startGame(RULE_PRESETS.guided);
-    expect(CashflowGameService.buyRefusalFor('DUPLEX', true)).toMatch(/only allow buying/);
+    expect(CashflowGameService.buyRefusalFor('DUPLEX', 'property')).toMatch(/only allow buying/);
     AppStateService.instance.cashflowGame.turn = {
       phase: 'decide',
       count: 2,
@@ -177,10 +177,10 @@ describe('the game rules in the app', () => {
         offered: { deck: 'dealBig', cardId: 'db-1', title: 'DUPLEX' },
       },
     };
-    expect(CashflowGameService.buyRefusalFor('DUPLEX', true)).toBeNull();
+    expect(CashflowGameService.buyRefusalFor('DUPLEX', 'property')).toBeNull();
     // the space is settled: the chance is over
     AppStateService.instance.cashflowGame.turn = { phase: 'roll', count: 2 };
-    expect(CashflowGameService.buyRefusalFor('DUPLEX', true)).toMatch(/only allow buying/);
+    expect(CashflowGameService.buyRefusalFor('DUPLEX', 'property')).toMatch(/only allow buying/);
   });
 
   it('a card is planned once; the card in hand is matched on the project it became', () => {
@@ -198,10 +198,49 @@ describe('the game rules in the app', () => {
     // planning took the label EFH-II: the Buy rule now looks for that title
     (service as any).markCardPlayed();
     (service as any).holdProject('EFH-II');
-    expect(CashflowGameService.buyRefusalFor('EFH-II', true)).toBeNull();
-    expect(CashflowGameService.buyRefusalFor('EFH', true)).toMatch(/only allow buying/);
+    expect(CashflowGameService.buyRefusalFor('EFH-II', 'property')).toBeNull();
+    expect(CashflowGameService.buyRefusalFor('EFH', 'property')).toMatch(/only allow buying/);
     // the same card cannot be played again, another one (free card choice) is not blocked by this
     expect(service.cardRefusal('db-1')).toMatch(/played already/);
     expect(service.cardRefusal('db-2')).toBeNull();
+  });
+
+  it('a Multi-Level-Marketing card is never sold, under any rules', () => {
+    for (const rules of [undefined, RULE_PRESETS.guided, RULE_PRESETS.strict]) {
+      startGame(rules);
+      AppStateService.instance.cashflowGame.assetDeals = [
+        { title: 'MLM-II', coins: 1, costMinor: 1, stage: 'owned', recurring: true },
+        { title: 'GOLD', coins: 2, costMinor: 1, stage: 'owned' },
+      ] as never;
+      expect(CashflowGameService.sellRefusalFor('MLM-II')).toMatch(
+        /Multi-Level-Marketing card is kept/,
+      );
+      // gold is sold the usual way (under free rules: any time)
+      if (!rules || rules.sell === 'always')
+        expect(CashflowGameService.sellRefusalFor('GOLD')).toBeNull();
+    }
+  });
+
+  it('a card buys once: after a property or an asset was bought there is no second Buy; GOLD-II is the held GOLD', () => {
+    startGame(RULE_PRESETS.guided);
+    AppStateService.instance.cashflowGame.turn = {
+      phase: 'decide',
+      count: 3,
+      pending: {
+        kind: 'deal',
+        spaceIndex: 2,
+        offered: { deck: 'dealSmall', cardId: 'ds-9', title: 'GOLD' },
+      },
+    };
+    expect(CashflowGameService.buyRefusalFor('GOLD-II', 'asset')).toBeNull();
+    (service as any).markPurchased();
+    expect(CashflowGameService.buyRefusalFor('GOLD-II', 'asset')).toMatch(
+      /only allow buying|buys once|already/,
+    );
+    expect(
+      service.addDialogRefusal('Buy Asset GOLD-II 1 x 1000;', '@GOLD-II', 100000),
+    ).toBeTruthy();
+    // shares keep their own quantity logic: not blocked by a bought property
+    expect(CashflowGameService.buyRefusalFor('OK4U', 'share')).toMatch(/only allow buying/);
   });
 });

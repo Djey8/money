@@ -50,6 +50,8 @@ const PATTERNS: Pattern[] = [
     id: 'alreadyOwned',
     test: /You already own (.+): a property is bought once|You already own this property/,
   },
+  { id: 'mlmKept', test: /Multi-Level-Marketing card is kept/ },
+  { id: 'cardBought', test: /card of this space has bought already/ },
   { id: 'cardPlayed', test: /This card has been played already/ },
   { id: 'waitsForDoodad', test: /The game waits for the payment/ },
 ];

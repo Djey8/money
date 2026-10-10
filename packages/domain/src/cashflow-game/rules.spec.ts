@@ -27,6 +27,7 @@ import {
   whyCannotUseCard,
   whyPaymentPending,
   whyCardAlreadyPlayed,
+  isHeldProject,
   completeRules,
 } from './rules';
 import type { CashflowGameState, CashflowMarketOffer } from './types';
@@ -505,5 +506,21 @@ describe('a card is played once', () => {
     expect(whyCardAlreadyPlayed(state, 'db-1')).toMatch(/played already/);
     expect(whyCardAlreadyPlayed(state, 'db-2')).toBeNull();
     expect(whyCardAlreadyPlayed({ turn: { phase: 'roll', count: 1 } } as never, 'db-1')).toBeNull();
+  });
+});
+
+describe('the key of a card and its numbered projects', () => {
+  it('the same key with -II, -III, -IV ... is the card in hand', () => {
+    expect(isHeldProject('GOLD', 'GOLD')).toBe(true);
+    for (const title of ['GOLD-II', 'GOLD-III', 'GOLD-IV', 'GOLD-X']) {
+      expect(isHeldProject(title, 'GOLD')).toBe(true);
+    }
+    expect(isHeldProject('GOLD-II', 'GOLD-II')).toBe(true);
+    // once the card became GOLD-II, only that project - not its older sibling
+    expect(isHeldProject('GOLD', 'GOLD-II')).toBe(false);
+    expect(isHeldProject('GOLD-III', 'GOLD-II')).toBe(false);
+    // another key, or a title that only starts alike
+    expect(isHeldProject('GOLDEN-II', 'GOLD')).toBe(false);
+    expect(isHeldProject('EFH-II', 'GOLD')).toBe(false);
   });
 });

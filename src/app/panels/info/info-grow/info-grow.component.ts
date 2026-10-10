@@ -253,7 +253,11 @@ export class InfoGrowComponent extends BaseInfoComponent {
   get buyBlocked(): boolean {
     const project = this.openProject;
     return (
-      !!project && CashflowGameService.buyRefusalFor(project.title, !!project.investment) !== null
+      !!project &&
+      CashflowGameService.buyRefusalFor(
+        project.title,
+        project.investment ? 'property' : project.isAsset ? 'asset' : 'share',
+      ) !== null
     );
   }
 

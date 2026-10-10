@@ -269,6 +269,8 @@ export interface CashflowPendingDecision {
   played?: boolean;
   /** The card on this space has to be paid (a Market cost card for a player who owns a property): the Doodad rule applies to it. */
   paymentDue?: boolean;
+  /** A property or an asset (gold, a dice card) was bought with the card of this space: a card buys once. */
+  purchased?: boolean;
 }
 
 /**

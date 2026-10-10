@@ -2641,5 +2641,7 @@
   "Sync.staleWrite": "Vos données ont été modifiées ailleurs (autre appareil ou un agent). La dernière version a été rechargée — veuillez refaire votre dernière modification.",
   "Grow.noPosition": "Rien à vendre : aucune position du bilan n'a d'étiquette correspondant exactement au titre de ce projet.",
   "Registration.GamePassword": "Mot de passe du jeu",
-  "CashflowGame.rules.msg.cardPlayed": "Cette carte a déjà été jouée : une carte ne se joue qu'une fois, coche-la."
+  "CashflowGame.rules.msg.cardPlayed": "Cette carte a déjà été jouée : une carte ne se joue qu'une fois, coche-la.",
+  "CashflowGame.rules.msg.mlmKept": "Cette carte ne peut pas être vendue : une carte de Multi-Level-Marketing se garde.",
+  "CashflowGame.rules.msg.cardBought": "La carte de cette case a déjà acheté : une carte n'achète qu'une fois."
 }
