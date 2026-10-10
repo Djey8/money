@@ -654,26 +654,24 @@ export class AppDataService {
               cardChoice: str(raw.rules.cardChoice) as GameRules['cardChoice'],
               sell: str(raw.rules.sell) as GameRules['sell'],
               sellOfferRolls: num(raw.rules.sellOfferRolls),
-              buy: raw.rules.buy != null ? (str(raw.rules.buy) as GameRules['buy']) : 'always',
-              reportRolls:
-                raw.rules.reportRolls != null
-                  ? (str(raw.rules.reportRolls) as GameRules['reportRolls'])
-                  : 'allowed',
-              diceFirst:
-                raw.rules.diceFirst != null
-                  ? (str(raw.rules.diceFirst) as GameRules['diceFirst'])
-                  : 'off',
-              passDoodads:
-                raw.rules.passDoodads != null
-                  ? (str(raw.rules.passDoodads) as GameRules['passDoodads'])
-                  : 'allowed',
+              // a setting the game was stored without is left out: its own preset decides it (rulesOf)
+              ...(raw.rules.buy != null ? { buy: str(raw.rules.buy) as GameRules['buy'] } : {}),
+              ...(raw.rules.reportRolls != null
+                ? { reportRolls: str(raw.rules.reportRolls) as GameRules['reportRolls'] }
+                : {}),
+              ...(raw.rules.diceFirst != null
+                ? { diceFirst: str(raw.rules.diceFirst) as GameRules['diceFirst'] }
+                : {}),
+              ...(raw.rules.passDoodads != null
+                ? { passDoodads: str(raw.rules.passDoodads) as GameRules['passDoodads'] }
+                : {}),
               manualTransactions: str(
                 raw.rules.manualTransactions,
               ) as GameRules['manualTransactions'],
               bankLoan: str(raw.rules.bankLoan) as GameRules['bankLoan'],
               maxLoanMinor: nullableNum(raw.rules.maxLoanMinor),
               maxFreeAmountMinor: nullableNum(raw.rules.maxFreeAmountMinor),
-            },
+            } as GameRules,
           }
         : {}),
       ...(raw.gameId != null ? { gameId: optionalStr(raw.gameId) } : {}),

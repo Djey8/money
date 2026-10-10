@@ -267,6 +267,8 @@ export interface CashflowPendingDecision {
   offered?: { deck: CashflowDeckKind; cardId: string; title?: string };
   /** The card of this space has been played (planned, played, paid): it can be looked at or ticked off, but not passed. */
   played?: boolean;
+  /** The card on this space has to be paid (a Market cost card for a player who owns a property): the Doodad rule applies to it. */
+  paymentDue?: boolean;
 }
 
 /**

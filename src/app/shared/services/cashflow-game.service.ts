@@ -1,3 +1,4 @@
+import { translateRuleRefusal } from '../rule-refusal';
 import { Injectable } from '@angular/core';
 import { Subject, auditTime, merge } from 'rxjs';
 import { TranslateService } from '@ngx-translate/core';
@@ -40,6 +41,9 @@ import {
   whyCannotDraw,
   whyCannotReportRoll,
   whyDiceFirst,
+  propertyCardTypes,
+  costCardProperty,
+  whyPaymentPending,
   whyCannotSkipCard,
   whyCannotSell,
   whyCannotUseCard,
@@ -397,11 +401,28 @@ export class CashflowGameService {
     private incomeStatement: IncomeStatementService,
     private translate: TranslateService,
   ) {
+    CashflowGameService.translator = translate;
     // The game ends when the books say so, whichever action changed them.
     const state = AppStateService.instance;
     merge(state.transactionsUpdated$, state.subscriptionsUpdated$)
       .pipe(auditTime(60))
       .subscribe(() => this.endSoloGameIfOver());
+  }
+
+  /** Set when the service is created: the game rules' English refusals are shown in the player's language. */
+  private static translator?: TranslateService;
+
+  /** A game-rules refusal in the player's language (the sentence itself when it is not one or there is no translator). */
+  static ruleText(message: string): string {
+    const translator = CashflowGameService.translator;
+    return translateRuleRefusal(
+      message,
+      translator ? (key, params) => translator.instant(key, params) : undefined,
+    );
+  }
+
+  private static ruleTextOrNull(message: string | null): string | null {
+    return message === null ? null : CashflowGameService.ruleText(message);
   }
 
   static isCashflowGame(): boolean {
@@ -711,7 +732,10 @@ export class CashflowGameService {
    */
   private settleDoodadByPayment(stepKind: string): void {
     const game = AppStateService.instance.cashflowGame;
-    if (stepKind !== 'doodad' || game.turn?.pending?.kind !== 'doodad') return;
+    const pending = game.turn?.pending;
+    const paysDoodad = stepKind === 'doodad' && pending?.kind === 'doodad';
+    const paysCost = stepKind === 'marketCost' && !!pending?.paymentDue;
+    if (!paysDoodad && !paysCost) return;
     if (rulesOf(game).passDoodads !== 'forbidden') return;
     try {
       const settled = settleDecisionRule(game, 'done', this.gameBooks().subscriptions);
@@ -1255,7 +1279,7 @@ export class CashflowGameService {
       ? null
       : whyCannotSkipCard(AppStateService.instance.cashflowGame, how);
     if (refusal) {
-      callbacks.onError(refusal);
+      callbacks.onError(CashflowGameService.ruleText(refusal));
       return;
     }
     try {
@@ -1659,7 +1683,7 @@ export class CashflowGameService {
     if (outcome.roll === undefined) {
       const reported = whyCannotReportRoll(AppStateService.instance.cashflowGame);
       if (reported) {
-        callbacks.onError(reported);
+        callbacks.onError(CashflowGameService.ruleText(reported));
         return;
       }
     }
@@ -2076,12 +2100,12 @@ export class CashflowGameService {
   /** Why the rules forbid playing this card now (an open dice decision comes first; under offered-once only the offered card), or null. */
   cardRefusal(cardId: string): string | null {
     const game = AppStateService.instance.cashflowGame;
-    return whyDiceFirst(game) ?? whyCannotUseCard(game, cardId);
+    return CashflowGameService.ruleTextOrNull(whyDiceFirst(game) ?? whyCannotUseCard(game, cardId));
   }
 
   /** Why the open dice decision must be rolled before a card is picked (rules: dice first), or null. */
   get diceFirstRefusal(): string | null {
-    return whyDiceFirst(AppStateService.instance.cashflowGame);
+    return CashflowGameService.ruleTextOrNull(whyDiceFirst(AppStateService.instance.cashflowGame));
   }
 
   /** Marks the card of the open space as played: it can be looked at and ticked off, not passed any more. */
@@ -2109,14 +2133,16 @@ export class CashflowGameService {
   static sellRefusalFor(title: string): string | null {
     const game = AppStateService.instance.cashflowGame;
     return CashflowGameService.isCashflowGame() && game.professionId
-      ? whyCannotSell(game, title)
+      ? CashflowGameService.ruleTextOrNull(whyCannotSell(game, title))
       : null;
   }
 
   /** Why the rules forbid adding a free-form transaction of this size (minor units), or null. */
   freeAmountRefusal(amountMinor: number): string | null {
     const game = AppStateService.instance.cashflowGame;
-    return game.professionId ? whyCannotAddFreeAmount(game, amountMinor) : null;
+    return game.professionId
+      ? CashflowGameService.ruleTextOrNull(whyCannotAddFreeAmount(game, amountMinor))
+      : null;
   }
 
   /**
@@ -2128,6 +2154,9 @@ export class CashflowGameService {
     const game = AppStateService.instance.cashflowGame;
     if (!CashflowGameService.isCashflowGame() || !game.professionId) return null;
     const step = gameTradeStep(comment, category);
+    // While a Doodad has to be paid, only its payment is booked (a Bank loan is not an Add-dialog trade)
+    const waiting = whyPaymentPending(game);
+    if (waiting && step.kind !== 'doodad') return CashflowGameService.ruleText(waiting);
     if (step.kind === 'transaction') return this.freeAmountRefusal(amountMinor);
     if (['sellShare', 'sellInvestment', 'sellAsset'].includes(step.kind) && step.detail) {
       return this.sellRefusal(step.detail);
@@ -2159,16 +2188,20 @@ export class CashflowGameService {
       AppStateService.instance.allInvestments.some((position) => position.tag === title) ||
       (!!project && ['execute', 'monitor'].includes(project.phase));
     if (isProperty && owned) {
-      return 'You already own this property: a property is bought once.';
+      return CashflowGameService.ruleText(
+        'You already own this property: a property is bought once.',
+      );
     }
-    return whyCannotBuy(game, title, game.turn?.pending?.offered?.title);
+    return CashflowGameService.ruleTextOrNull(
+      whyCannotBuy(game, title, game.turn?.pending?.offered?.title),
+    );
   }
 
   /** Why the rules forbid a Bank loan, or null. */
   get loanRefusal(): string | null {
     const game = AppStateService.instance.cashflowGame;
     return game.professionId && this.rules.bankLoan === 'forbidden'
-      ? 'These game rules do not allow a Bank loan.'
+      ? CashflowGameService.ruleText('These game rules do not allow a Bank loan.')
       : null;
   }
 
@@ -2181,11 +2214,12 @@ export class CashflowGameService {
   drawCard<K extends CashflowDeckKind>(
     deckKind: K,
     callbacks: CashflowCardCallbacks<CashflowDeckCardMap[K]>,
+    options: { labelFor?: (symbol: string) => string | undefined } = {},
   ): void {
     const state = AppStateService.instance;
     const refusedDraw = whyDiceFirst(state.cashflowGame) ?? whyCannotDraw(state.cashflowGame);
     if (refusedDraw) {
-      callbacks.onError(refusedDraw);
+      callbacks.onError(CashflowGameService.ruleText(refusedDraw));
       return;
     }
     const deck = this.currentGameSet()?.decks?.[deckKind];
@@ -2210,12 +2244,22 @@ export class CashflowGameService {
     }
     const turn = state.cashflowGame.turn;
     // Under 'offered-once' this card is the one offered on the space: nothing else can be played here.
+    // A Market cost card for a player who owns a property is a payment that has to be made (the Doodad rule applies).
+    const dueCard = result.card as unknown as CashflowMarketCard;
+    const paymentDue =
+      deckKind === 'market' &&
+      !!dueCard.pays &&
+      costCardProperty(
+        this.cardBooks(),
+        propertyCardTypes((symbol) => options.labelFor?.(symbol)),
+      ) !== null;
     const offered = turn?.pending
       ? {
           turn: {
             ...turn,
             pending: {
               ...turn.pending,
+              ...(paymentDue ? { paymentDue: true } : {}),
               offered: {
                 deck: deckKind,
                 cardId: result.card.id,
@@ -2547,5 +2591,5 @@ export class CashflowGameService {
 }
 
 function errorMessage(err: unknown, fallback: string): string {
-  return err instanceof Error ? err.message : fallback;
+  return err instanceof Error ? CashflowGameService.ruleText(err.message) : fallback;
 }

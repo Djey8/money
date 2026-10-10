@@ -92,7 +92,7 @@ describe('the game rules in the app', () => {
     (service as any).settleSoloDecision('passed', { onSuccess: jest.fn(), onError });
     (service as any).settleSoloDecision('done', { onSuccess: jest.fn(), onError });
     expect(onError).toHaveBeenCalledTimes(2);
-    expect(onError.mock.calls[0][0]).toMatch(/do not allow passing a Doodad/);
+    expect(onError.mock.calls[0][0]).toMatch(/do not allow passing a payment/);
     expect(AppStateService.instance.cashflowGame.turn?.phase).toBe('decide');
 
     (service as any).gameBooks = () => ({ subscriptions: [] });

@@ -1,6 +1,6 @@
 'use strict';
 
-const { EncryptionSession, initialCashflowGameState } = require('@money/domain');
+const { EncryptionSession, initialCashflowGameState, completeRules } = require('@money/domain');
 const { decodeGameState, encodeGameState } = require('../../services/game-state-codec');
 const { createGameText, createMoneyFormat } = require('../../services/game-text');
 
@@ -92,6 +92,29 @@ describe('game text', () => {
     expect(decodeGameState(encodeGameState(ruled, null), null)).toEqual(ruled);
     const session = new EncryptionSession('a-key');
     expect(decodeGameState(encodeGameState(ruled, session), session)).toEqual(ruled);
+  });
+
+  it('leaves out a rule the game was stored without, so its preset decides it', () => {
+    const stored = encodeGameState(
+      {
+        ...state,
+        rules: {
+          preset: 'strict',
+          cardChoice: 'offered-once',
+          sell: 'with-offer',
+          sellOfferRolls: 1,
+          manualTransactions: 'forbidden',
+          bankLoan: 'allowed',
+          maxLoanMinor: null,
+          maxFreeAmountMinor: 0,
+        },
+      },
+      null,
+    );
+    const decoded = decodeGameState(stored, null);
+    expect(decoded.rules.passDoodads).toBeUndefined();
+    expect(completeRules(decoded.rules).passDoodads).toBe('forbidden'); // Strict, even for an older game
+    expect(completeRules({ ...decoded.rules, preset: 'custom' }).passDoodads).toBe('allowed');
   });
 
   it('falls back to English for an unknown language', () => {

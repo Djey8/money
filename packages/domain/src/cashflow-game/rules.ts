@@ -102,8 +102,17 @@ export const FREE_RULES: GameRules = RULE_PRESETS.free;
 
 /** The rules of a game; one saved before rules existed has none, which is `free`. */
 export function rulesOf(state: Pick<CashflowGameState, 'rules'>): GameRules {
-  // a game stored before a setting existed has none of it: that setting is free
-  return state.rules ? { ...FREE_RULES, ...stripUndefined(state.rules) } : FREE_RULES;
+  return state.rules ? completeRules(state.rules) : FREE_RULES;
+}
+
+/**
+ * Stored rules with every setting present. A game stored before a setting existed has none of it: the setting then comes
+ * from the preset the game was started with (a Strict game stays Strict when a new rule is added to Strict), and is free
+ * for a custom set.
+ */
+export function completeRules(stored: Partial<GameRules>): GameRules {
+  const base = RULE_PRESETS[stored.preset as keyof typeof RULE_PRESETS] ?? FREE_RULES;
+  return { ...base, ...stripUndefined(stored) };
 }
 
 const isWholeAmount = (value: unknown): value is number =>
@@ -216,8 +225,11 @@ export function offerIsOpen(
   state: Pick<CashflowGameState, 'rules' | 'turn'>,
   offer: Pick<CashflowMarketOffer, 'offeredAtRoll'>,
 ): boolean {
-  const rolls = rulesOf(state).sellOfferRolls;
+  const rules = rulesOf(state);
+  const rolls = rules.sellOfferRolls;
   if (rolls <= 0 || offer.offeredAtRoll === undefined || !state.turn) return true;
+  // For one roll the offer is the card in hand: it goes the moment the space is settled (Done or Pass), not at the next roll.
+  if (rolls === 1 && rules.sell === 'with-offer' && state.turn.phase !== 'decide') return false;
   return state.turn.count - offer.offeredAtRoll < rolls;
 }
 
@@ -236,6 +248,8 @@ export function whyCannotSell(
   state: Pick<CashflowGameState, 'rules' | 'turn' | 'marketOffers'>,
   title: string,
 ): string | null {
+  const waiting = whyPaymentPending(state);
+  if (waiting) return waiting;
   const rules = rulesOf(state);
   if (rules.sell === 'always') return null;
   if (rules.sell === 'never') return 'These game rules do not allow selling.';
@@ -285,8 +299,8 @@ export function whyCannotSkipCard(
     return 'The card of this space has been played: it cannot be passed any more, tick it off.';
   }
   if (rulesOf(state).passDoodads !== 'forbidden') return null;
-  return pending?.kind === 'doodad'
-    ? 'These game rules do not allow passing a Doodad: pay it, the game waits for the payment.'
+  return pending?.kind === 'doodad' || pending?.paymentDue
+    ? 'These game rules do not allow passing a payment (a Doodad or a cost card): pay it, the game waits for the payment.'
     : null;
 }
 
@@ -299,6 +313,8 @@ export function whyCannotBuy(
   title: string,
   offeredTitle: string | undefined,
 ): string | null {
+  const waiting = whyPaymentPending(state);
+  if (waiting) return waiting;
   if (rulesOf(state).buy !== 'with-card') return null;
   if (offeredTitle !== undefined && offeredTitle === title && state.turn?.pending) return null;
   const priceCard = (state.marketOffers ?? []).find(
@@ -325,5 +341,17 @@ export function whyCannotBuyCard(
 export function whyCannotReportRoll(state: Pick<CashflowGameState, 'rules'>): string | null {
   return rulesOf(state).reportRolls === 'forbidden'
     ? 'These game rules only allow the roll of the app: the outcome cannot be reported.'
+    : null;
+}
+
+/**
+ * While a Doodad has to be paid (`passDoodads: 'forbidden'`) the game waits for the payment: no buying, selling or other card
+ * until it is paid - a Bank loan to find the money is the one thing besides the payment itself (JFK, 2026-10-10).
+ */
+export function whyPaymentPending(state: Pick<CashflowGameState, 'rules' | 'turn'>): string | null {
+  if (rulesOf(state).passDoodads !== 'forbidden') return null;
+  const pending = state.turn?.pending;
+  return pending?.kind === 'doodad' || pending?.paymentDue
+    ? 'The game waits for the payment: pay it first, nothing else can be played, bought or sold. A Bank loan is possible.'
     : null;
 }

@@ -482,6 +482,17 @@ export function playBoostCard(
   };
 }
 
+/** The first property a Market cost card applies to (the player owns it), or null - then the card costs nothing. */
+export function costCardProperty(
+  books: Pick<CardBooks, 'investments'>,
+  types: CardType[],
+): string | null {
+  return (
+    books.investments.find((investment) => types.some((type) => matchesType(investment.tag, type)))
+      ?.tag ?? null
+  );
+}
+
 export interface CostResult {
   effects: CardEffects;
   /** The label of the first property the player owns - the payment is booked on it through the Add dialog - or null. */

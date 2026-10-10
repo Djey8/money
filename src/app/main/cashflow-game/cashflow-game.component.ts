@@ -675,7 +675,8 @@ export class CashflowGameComponent implements OnDestroy {
 
   /** The rules keep the open space until it is dealt with: a Doodad has to be paid, not passed or ticked off. */
   get mustPayDoodad(): boolean {
-    return whyCannotSkipCard(this.appState.cashflowGame) !== null;
+    // 'done' is only refused for a payment that is due; a played card refuses only the pass (that is no payment)
+    return whyCannotSkipCard(this.appState.cashflowGame, 'done') !== null;
   }
 
   /** Why no further card can be drawn on this space, or null. */
@@ -1573,7 +1574,7 @@ export class CashflowGameComponent implements OnDestroy {
   reportRoll(deal: CashflowAssetDeal, won: boolean): void {
     const refused = whyCannotReportRoll(this.appState.cashflowGame);
     if (refused) {
-      this.toastService.show(refused, 'error');
+      this.toastService.show(CashflowGameService.ruleText(refused), 'error');
       return;
     }
     this.settleDecision(deal, won);
@@ -2052,16 +2053,20 @@ export class CashflowGameComponent implements OnDestroy {
   /** "In this app we pick randomly a card" (JFK, 2026-09-26) — no physical deck needed. */
   drawActiveCard(): void {
     this.isBusy = true;
-    this.cashflowGameService.drawCard(this.activeDeckKind, {
-      onSuccess: (card) => {
-        this.isBusy = false;
-        this.activeCard = card;
+    this.cashflowGameService.drawCard(
+      this.activeDeckKind,
+      {
+        onSuccess: (card) => {
+          this.isBusy = false;
+          this.activeCard = card;
+        },
+        onError: (message) => {
+          this.isBusy = false;
+          this.toastService.show(message, 'error');
+        },
       },
-      onError: (message) => {
-        this.isBusy = false;
-        this.toastService.show(message, 'error');
-      },
-    });
+      { labelFor: (symbol) => this.cardText.symbolFor(symbol) },
+    );
   }
 
   /** Deal: plans it. Doodad: pays its cost now. Market: nothing to apply — see CASHFLOW_GAME_GUIDE.md §4/§6. */

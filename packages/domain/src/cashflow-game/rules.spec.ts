@@ -25,6 +25,8 @@ import {
   whyCannotSkipCard,
   whyCannotSell,
   whyCannotUseCard,
+  whyPaymentPending,
+  completeRules,
 } from './rules';
 import type { CashflowGameState, CashflowMarketOffer } from './types';
 
@@ -274,8 +276,14 @@ describe('passing a Doodad', () => {
   it('strict forbids it, guided and free allow it; an old game without the setting allows it', () => {
     expect(RULE_PRESETS.strict.passDoodads).toBe('forbidden');
     expect(RULE_PRESETS.guided.passDoodads).toBe('allowed');
+    // a Strict game stored before the rule existed is still Strict (its preset decides what it was stored without)
     expect(
       rulesOf({ rules: { ...RULE_PRESETS.strict, passDoodads: undefined as never } }).passDoodads,
+    ).toBe('forbidden');
+    expect(
+      rulesOf({
+        rules: { ...RULE_PRESETS.strict, preset: 'custom', passDoodads: undefined as never },
+      }).passDoodads,
     ).toBe('allowed');
     expect(() => normalizeRules({ passDoodads: 'maybe' as never })).toThrow(/passDoodads/);
   });
@@ -402,5 +410,79 @@ describe('the order of a turn', () => {
     expect(whyDiceFirst(strict)).toMatch(/Roll the dice of your open card first/);
     expect(whyDiceFirst({ ...strict, assetDeals: [] })).toBeNull();
     expect(whyDiceFirst({ ...strict, rules: RULE_PRESETS.free })).toBeNull();
+  });
+});
+
+describe('while a Doodad has to be paid', () => {
+  const paying = (rules: Partial<typeof FREE_RULES> = {}): CashflowGameState => ({
+    ...books({ passDoodads: 'forbidden', sell: 'always', ...rules }, 'solo').state,
+    turn: { phase: 'decide', count: 2, pending: { kind: 'doodad', spaceIndex: 4 } },
+  });
+
+  it('nothing else can be sold or bought, whatever the sell and buy rules say', () => {
+    expect(whyPaymentPending(paying())).toMatch(/waits for the payment/);
+    expect(whyCannotSell(paying(), 'OK4U')).toMatch(/waits for the payment/);
+    expect(whyCannotBuy(paying({ buy: 'always' }), 'OK4U', undefined)).toMatch(
+      /waits for the payment/,
+    );
+    expect(whyPaymentPending(paying({ passDoodads: 'allowed' }))).toBeNull();
+  });
+
+  it('the sell, buy and market moves are not offered, the payment, a loan and undo are', () => {
+    const ids = legalActions(paying(), { canUndo: true }).map((a) => a.action);
+    expect(ids).toEqual(expect.arrayContaining(['pay_doodad', 'bank_loan', 'undo']));
+    for (const gone of ['sell_position', 'buy_deal', 'play_market', 'pass_card']) {
+      expect(ids).not.toContain(gone);
+    }
+  });
+});
+
+describe('a game stored before a rule existed', () => {
+  it('takes the missing rule from its preset: Strict stays Strict', () => {
+    const stored = {
+      ...RULE_PRESETS.strict,
+      passDoodads: undefined,
+      buy: undefined,
+      diceFirst: undefined,
+    };
+    const rules = completeRules(stored as never);
+    expect(rules.passDoodads).toBe('forbidden');
+    expect(rules.buy).toBe('with-card');
+    expect(rules.diceFirst).toBe('first');
+    expect(completeRules({ ...stored, preset: 'custom' } as never).passDoodads).toBe('allowed');
+    expect(rulesOf({ rules: stored as never }).reportRolls).toBe('forbidden');
+  });
+});
+
+describe('a cost card is a payment too, and a held card is the offer', () => {
+  it('a Market cost card that applies has to be paid like a Doodad', () => {
+    const state = {
+      ...books({ passDoodads: 'forbidden' }, 'solo').state,
+      turn: {
+        phase: 'decide',
+        count: 2,
+        pending: { kind: 'market', spaceIndex: 8, paymentDue: true },
+      },
+    } as CashflowGameState;
+    expect(whyCannotSkipCard(state, 'passed')).toMatch(/pay it/);
+    expect(whyCannotSkipCard(state, 'done')).toMatch(/pay it/);
+    expect(whyPaymentPending(state)).toMatch(/waits for the payment/);
+    const free = { ...state, rules: RULE_PRESETS.free };
+    expect(whyCannotSkipCard(free, 'done')).toBeNull();
+  });
+
+  it('a one-roll offer is gone the moment the space is settled, not at the next roll', () => {
+    const offer = { title: 'EFH', salePriceMinor: 1, cardId: 'm', label: '', offeredAtRoll: 4 };
+    const holding = {
+      ...books({ sell: 'with-offer', sellOfferRolls: 1 }, 'solo').state,
+      turn: { phase: 'decide', count: 4, pending: { kind: 'market', spaceIndex: 8 } },
+      marketOffers: [offer],
+    } as CashflowGameState;
+    expect(openOfferFor(holding, 'EFH')).toBeDefined();
+    const settled = { ...holding, turn: { phase: 'roll', count: 4 } } as CashflowGameState;
+    expect(openOfferFor(settled, 'EFH')).toBeUndefined();
+    // three rolls keep the offer over the following turns
+    const longer = { ...settled, rules: normalizeRules({ sell: 'with-offer', sellOfferRolls: 3 }) };
+    expect(openOfferFor(longer, 'EFH')).toBeDefined();
   });
 });

@@ -12,6 +12,7 @@ import { MARKET_COST_ACCOUNT, doodadAccount, payCardExpense } from './expenses';
 import {
   buyerCardTypes,
   businessCardLabels,
+  costCardProperty,
   marketCardKind,
   playBoostCard,
   playMarketBuyerCard,
@@ -28,6 +29,7 @@ import {
   whyCannotBuyCard,
   whyCannotDraw,
   whyCannotUseCard,
+  whyPaymentPending,
   type GameRules,
 } from './rules';
 import type {
@@ -134,11 +136,24 @@ export function drawCardAction(
           },
         }
       : drawnState;
+  // A Market cost card for a player who owns a property is a payment that has to be made (the Doodad rule applies to it).
+  const dueCard = drawn.card as unknown as CashflowMarketCard;
+  const paymentDue =
+    deck === 'market' &&
+    !!dueCard.pays &&
+    costCardProperty(
+      books,
+      propertyCardTypes((symbol) => deps.cards.symbolFor(symbol)),
+    ) !== null;
+  const stateWithPayment =
+    paymentDue && state.turn?.pending
+      ? { ...state, turn: { ...state.turn, pending: { ...state.turn.pending, paymentDue: true } } }
+      : state;
   const described = describeCard(drawn.card, deps);
   return {
     effects: [
       emptyEffects(
-        state,
+        stateWithPayment,
         cardPickedStep(deck, drawn.card as { id: string; title: string }, described.label),
       ),
     ],
@@ -160,6 +175,7 @@ export function buyDealAction(
   const card = cards.find((candidate) => candidate.id === input.cardId);
   if (!card) throw new Error(`No Deal card with the id '${input.cardId}'.`);
   const refused =
+    whyPaymentPending(books.state) ??
     whyDiceFirst(books.state) ??
     whyCannotUseCard(books.state, input.cardId) ??
     whyCannotBuyCard(books.state, input.cardId);
@@ -246,7 +262,10 @@ export function playMarketAction(
     (candidate) => candidate.id === input.cardId,
   );
   if (!card) throw new Error(`No Market card with the id '${input.cardId}'.`);
-  const refused = whyDiceFirst(books.state) ?? whyCannotUseCard(books.state, input.cardId);
+  const refused =
+    whyPaymentPending(books.state) ??
+    whyDiceFirst(books.state) ??
+    whyCannotUseCard(books.state, input.cardId);
   if (refused) throw new Error(refused);
   const title = marketHeading(card, deps);
   const label = (symbol: string) => deps.cards.symbolFor(symbol);

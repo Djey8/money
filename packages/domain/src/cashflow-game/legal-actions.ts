@@ -1,7 +1,7 @@
 import { openDecisions, whyDiceFirst } from './asset-deals';
 import { currentTurn, whyCannotRoll, whyCannotSettle } from './turn';
 import type { CashflowGameState } from './types';
-import { offerIsOpen, rulesOf, whyCannotDraw, whyCannotSkipCard } from './rules';
+import { offerIsOpen, rulesOf, whyCannotDraw, whyCannotSkipCard, whyPaymentPending } from './rules';
 
 /**
  * What the player (or an agent) may do right now, as plain ids (todo/cashflow-game-pro.md, slice D1). The rules that
@@ -137,6 +137,14 @@ export function legalActions(
       action: 'roll_decision',
       description: `Roll the die for a waiting card (${waiting.map((deal) => deal.title).join(', ')}).`,
     });
+  }
+  // While a Doodad has to be paid nothing else can be played, bought or sold: the payment, a Bank loan and undo remain.
+  if (whyPaymentPending(state)) {
+    const kept = actions.filter(
+      (entry) => !['sell_position', 'buy_deal', 'play_market'].includes(entry.action),
+    );
+    actions.length = 0;
+    actions.push(...kept);
   }
   if (options.canUndo) {
     actions.push({

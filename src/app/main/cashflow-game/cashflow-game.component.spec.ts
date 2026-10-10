@@ -2141,6 +2141,8 @@ describe('CashflowGameComponent solo mode (JFK, 2026-10-05)', () => {
       turn: { phase: 'decide', count: 2, pending: { kind: 'deal', spaceIndex: 2, played: true } },
     } as never);
     expect(component.cannotPassNow).toBe(true);
+    // a played Deal is no payment: Done stays, and no 'pay the Doodad' lock shows on it (JFK, 2026-10-10)
+    expect(component.mustPayDoodad).toBe(false);
     setSoloState({ mode: 'solo', rules: { ...RULE_PRESETS.strict } } as never);
     expect(component.reportRollsForbidden).toBe(true);
     setSoloState({ mode: 'solo', rules: { ...RULE_PRESETS.free } } as never);
