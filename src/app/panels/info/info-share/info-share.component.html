@@ -18,7 +18,8 @@
         {{ 'InfoShare.quantity' | translate }}: {{ classReference.quantity }}
       </h4>
       <h4 class="infoLable mt-xs">
-        {{ 'InfoShare.price' | translate }}: {{ classReference.price }} {{ currency }}
+        {{ 'InfoShare.price' | translate }}: {{ classReference.price | appNumber: '1.2-2' : false }}
+        {{ currency }}
       </h4>
       <hr class="divider-black" />
       <h4 class="infoLable mt-xs">

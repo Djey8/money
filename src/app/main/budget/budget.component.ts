@@ -1,4 +1,5 @@
 import { Component, HostListener, OnInit } from '@angular/core';
+import { formatNumber } from '@angular/common';
 import { Router } from '@angular/router';
 import { TranslateService } from '@ngx-translate/core';
 import { AppComponent } from 'src/app/app.component';
@@ -28,6 +29,12 @@ import { TranslateModule } from '@ngx-translate/core';
   ],
 })
 export class BudgetComponent implements OnInit {
+  /** An amount in the chart labels, in the number format the player chose (4.000,00 / 4,000.00), no sign. */
+  private static amount(value: number, decimals = 2): string {
+    const locale = AppStateService.instance.isEuropeanFormat ? 'de-DE' : 'en-US';
+    return formatNumber(value, locale, `1.${decimals}-${decimals}`);
+  }
+
   static get allBudgets(): Budget[] {
     return AppStateService.instance.allBudgets;
   }
@@ -384,10 +391,10 @@ export class BudgetComponent implements OnInit {
 
       const info = `
       <strong>${d3.timeFormat('%B %Y')(new Date(d.month))}</strong><br/>
-      <span style="color:#2196F3;">●</span> ${BudgetComponent.translateService.instant('Budget.actual')}: ${d.actual.toFixed(2)} ${AppStateService.instance.currency}<br/>
-      <span style="color:green;">●</span> ${BudgetComponent.translateService.instant('Budget.planned')}: ${d.planned.toFixed(2)} ${AppStateService.instance.currency}<br/>
+      <span style="color:#2196F3;">●</span> ${BudgetComponent.translateService.instant('Budget.actual')}: ${BudgetComponent.amount(d.actual)} ${AppStateService.instance.currency}<br/>
+      <span style="color:green;">●</span> ${BudgetComponent.translateService.instant('Budget.planned')}: ${BudgetComponent.amount(d.planned)} ${AppStateService.instance.currency}<br/>
       <strong style="color:${d.difference > 0 ? '#d32f2f' : '#4caf50'}">
-        ${d.difference > 0 ? BudgetComponent.translateService.instant('Budget.over') : BudgetComponent.translateService.instant('Budget.under')} ${BudgetComponent.translateService.instant('Budget.label')}: ${Math.abs(d.difference).toFixed(2)} ${AppStateService.instance.currency}
+        ${d.difference > 0 ? BudgetComponent.translateService.instant('Budget.over') : BudgetComponent.translateService.instant('Budget.under')} ${BudgetComponent.translateService.instant('Budget.label')}: ${BudgetComponent.amount(Math.abs(d.difference))} ${AppStateService.instance.currency}
       </strong>
     `;
 
@@ -527,7 +534,7 @@ export class BudgetComponent implements OnInit {
       .attr('fill', 'black')
       .style('font-size', '11px')
       .style('font-weight', 'bold')
-      .text((d) => d.actual.toFixed(0));
+      .text((d) => BudgetComponent.amount(d.actual, 0));
 
     // Difference labels (red for over budget)
     svg
@@ -542,7 +549,7 @@ export class BudgetComponent implements OnInit {
       .attr('fill', '#d32f2f')
       .style('font-size', '11px')
       .style('font-weight', 'bold')
-      .text((d) => `+${d.difference.toFixed(0)}`);
+      .text((d) => `+${BudgetComponent.amount(d.difference, 0)}`);
 
     // Interactive dots for details (only if actual > 0)
     svg
