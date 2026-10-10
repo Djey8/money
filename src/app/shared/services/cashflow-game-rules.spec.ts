@@ -151,4 +151,35 @@ describe('the game rules in the app', () => {
     startGame(RULE_PRESETS.free);
     expect(service.cardRefusal('any')).toBeNull();
   });
+
+  it('a bought property is recognised after a reload, before the balance sheet has loaded', () => {
+    startGame();
+    AppStateService.instance.allInvestments = [];
+    AppStateService.instance.allGrowProjects = [
+      { title: 'EFH', phase: 'execute', investment: { tag: 'EFH' } },
+      { title: 'DUPLEX', phase: 'plan', investment: { tag: 'DUPLEX' } },
+      { title: 'OLD', phase: 'completed', investment: { tag: 'OLD' } },
+    ] as never;
+    expect(CashflowGameService.buyRefusalFor('EFH', true)).toMatch(/already own/);
+    expect(CashflowGameService.buyRefusalFor('DUPLEX', true)).toBeNull(); // only planned
+    expect(CashflowGameService.buyRefusalFor('OLD', true)).toBeNull(); // sold since
+  });
+
+  it('guided and strict buy only with the card in hand: no card, no Buy', () => {
+    startGame(RULE_PRESETS.guided);
+    expect(CashflowGameService.buyRefusalFor('DUPLEX', true)).toMatch(/only allow buying/);
+    AppStateService.instance.cashflowGame.turn = {
+      phase: 'decide',
+      count: 2,
+      pending: {
+        kind: 'deal',
+        spaceIndex: 2,
+        offered: { deck: 'dealBig', cardId: 'db-1', title: 'DUPLEX' },
+      },
+    };
+    expect(CashflowGameService.buyRefusalFor('DUPLEX', true)).toBeNull();
+    // the space is settled: the chance is over
+    AppStateService.instance.cashflowGame.turn = { phase: 'roll', count: 2 };
+    expect(CashflowGameService.buyRefusalFor('DUPLEX', true)).toMatch(/only allow buying/);
+  });
 });

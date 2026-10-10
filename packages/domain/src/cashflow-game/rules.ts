@@ -73,7 +73,7 @@ export const RULE_PRESETS: Record<Exclude<RulePreset, 'custom'>, GameRules> = {
     cardChoice: 'offered-once',
     sell: 'with-offer',
     sellOfferRolls: 3,
-    buy: 'always',
+    buy: 'with-card',
     passDoodads: 'allowed',
     reportRolls: 'allowed',
     diceFirst: 'first',

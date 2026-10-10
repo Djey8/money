@@ -2150,10 +2150,15 @@ export class CashflowGameService {
   static buyRefusalFor(title: string, isProperty = false): string | null {
     const game = AppStateService.instance.cashflowGame;
     if (!CashflowGameService.isCashflowGame() || !game.professionId) return null;
-    if (
-      isProperty &&
-      AppStateService.instance.allInvestments.some((owned) => owned.tag === title)
-    ) {
+    // Owned: in the balance sheet - which is only there once the balance data has been loaded - or, as it is always loaded
+    // with the Grow projects, a project that has been bought (phase execute / monitor) and not sold since.
+    const project = AppStateService.instance.allGrowProjects.find(
+      (candidate) => candidate.title === title,
+    );
+    const owned =
+      AppStateService.instance.allInvestments.some((position) => position.tag === title) ||
+      (!!project && ['execute', 'monitor'].includes(project.phase));
+    if (isProperty && owned) {
       return 'You already own this property: a property is bought once.';
     }
     return whyCannotBuy(game, title, game.turn?.pending?.offered?.title);
