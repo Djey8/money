@@ -5143,12 +5143,14 @@ paths:
       summary: Update a subscription (SUB-2)
       description: >-
         A subscription owned by an active Smile/Fire payment plan is refused (400) — change it through the plan.
-        Accepts a partial body. If any of title/category/amountMinor/account/comment/startDate/frequency actually
-        changes, cascades a cleanup that deletes every existing transaction matching the subscription's OLD identity
-        (account+amountMinor+category+comment) — a tighter 4-field match than the original app's 3-field
-        account+amount+category match, to avoid deleting unrelated manually-entered transactions that happen to
-        coincide on just those three fields. Only deletes; call `POST /subscriptions/refresh` afterward to
-        regenerate under the new identity.
+        Accepts a partial body and keeps the subscription's generated transactions in line with it: what the OLD
+        subscription generated and the NEW one would not is deleted, then whatever the new one is due and lacks is
+        generated (as `POST /subscriptions/refresh` does). Change the details (title, comment, account, amountMinor,
+        category) and all of its transactions are replaced; move `endDate` into the past and the transactions after it
+        are deleted; move it into the future (or clear it) and the missing ones are generated; change nothing that
+        matters and nothing happens. A transaction counts as generated when its account, amount, category and comment
+        (`title` or `title + comment`, possibly followed by `#bucket:` tags) match AND its date was one of the
+        subscription's occurrences - a hand-made transaction on another day, or with another comment, stays.
       security:
         - bearerAuth: []
       requestBody:
@@ -5179,7 +5181,7 @@ paths:
       summary: Delete a subscription (SUB-3)
       description: >-
         A subscription owned by an active Smile/Fire payment plan is refused (400) — deactivate or delete the plan instead.
-        Leaves already-generated transactions untouched by default. Pass `?deleteTransactions=true` to also delete every transaction matching this subscription's identity.
+        Leaves already-generated transactions untouched by default. Pass `?deleteTransactions=true` to also delete the transactions this subscription generated (same recognition as `PATCH`: account, amount, category, comment and an occurrence date).
       security:
         - bearerAuth: []
       parameters:
