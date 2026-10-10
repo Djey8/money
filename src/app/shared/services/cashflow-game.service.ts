@@ -719,6 +719,7 @@ export class CashflowGameService {
     const tradeStep = gameTradeStep(comment, category);
     this.pushUndoSnapshot(tradeStep); // step 2 (or the only step): the trade itself
     if (tradeStep.kind === 'buyInvestment' || tradeStep.kind === 'buyAsset') this.markPurchased();
+    if (tradeStep.kind === 'doodad' || tradeStep.kind === 'marketCost') this.markCardPlayed();
     this.settleDoodadByPayment(tradeStep.kind);
     // The loan comes first: it takes `loanDate` (the day the dialog was opened on), and the purchase
     // that follows gets the next free slot after it.
@@ -1280,7 +1281,10 @@ export class CashflowGameService {
     let settled: ReturnType<typeof settleDecisionRule>;
     const refusal = options.paid
       ? null
-      : whyCannotSkipCard(AppStateService.instance.cashflowGame, how);
+      : whyCannotSkipCard(
+          CashflowGameService.effectiveGame(AppStateService.instance.cashflowGame),
+          how,
+        );
     if (refusal) {
       callbacks.onError(CashflowGameService.ruleText(refusal));
       return;
@@ -2109,7 +2113,9 @@ export class CashflowGameService {
   cardRefusal(cardId: string): string | null {
     const game = AppStateService.instance.cashflowGame;
     return CashflowGameService.ruleTextOrNull(
-      whyDiceFirst(game) ?? whyCardAlreadyPlayed(game, cardId) ?? whyCannotUseCard(game, cardId),
+      whyDiceFirst(game) ??
+        whyCardAlreadyPlayed(CashflowGameService.effectiveGame(game), cardId) ??
+        whyCannotUseCard(game, cardId),
     );
   }
 
@@ -2138,6 +2144,47 @@ export class CashflowGameService {
       ...game,
       turn: { ...game.turn, pending: { ...pending, purchased: true } },
     };
+  }
+
+  /**
+   * The Grow project the card in hand became on the open space, or null when it was not planned - or when the project has
+   * been deleted since, which gives the card its buttons back. Its title is the key the plan took (EFH-II, APT-IV ...),
+   * remembered when the card was planned.
+   */
+  /**
+   * Whether the card open on screen has been played on this space - and so is only to be read now, every action button gone
+   * (JFK, 2026-10-10). A Deal card counts as played only while its project exists.
+   */
+  static isPlayedCard(cardId: string): boolean {
+    const pending = AppStateService.instance.cashflowGame.turn?.pending;
+    if (!pending?.played || pending.offered?.cardId !== cardId) return false;
+    return pending.kind !== 'deal' || CashflowGameService.heldProjectFor(cardId) !== null;
+  }
+
+  static heldProjectFor(cardId: string): Grow | null {
+    const pending = AppStateService.instance.cashflowGame.turn?.pending;
+    const title = pending?.offered?.title;
+    if (!pending?.played || pending.offered?.cardId !== cardId || !title) return null;
+    return (
+      AppStateService.instance.allGrowProjects.find((project) => project.title === title) ?? null
+    );
+  }
+
+  /**
+   * The game as the rules should read it: a Deal card counts as played only while the project it became exists - delete the
+   * project and the card can be planned, sold or declined again (JFK, 2026-10-10).
+   */
+  static effectiveGame(game: CashflowGameState): CashflowGameState {
+    const pending = game.turn?.pending;
+    if (!game.turn || !pending?.played || pending.kind !== 'deal' || !pending.offered?.title) {
+      return game;
+    }
+    const exists = AppStateService.instance.allGrowProjects.some(
+      (project) => project.title === pending.offered?.title,
+    );
+    return exists
+      ? game
+      : { ...game, turn: { ...game.turn, pending: { ...pending, played: false } } };
   }
 
   /** Names the project the card in hand became: the Buy button and the buy rule look for that title. */
@@ -2188,7 +2235,8 @@ export class CashflowGameService {
     const step = gameTradeStep(comment, category);
     // While a Doodad has to be paid, only its payment is booked (a Bank loan is not an Add-dialog trade)
     const waiting = whyPaymentPending(game);
-    if (waiting && step.kind !== 'doodad') return CashflowGameService.ruleText(waiting);
+    if (waiting && step.kind !== 'doodad' && step.kind !== 'marketCost')
+      return CashflowGameService.ruleText(waiting);
     if (step.kind === 'transaction') return this.freeAmountRefusal(amountMinor);
     if (['sellShare', 'sellInvestment', 'sellAsset'].includes(step.kind) && step.detail) {
       return this.sellRefusal(step.detail);

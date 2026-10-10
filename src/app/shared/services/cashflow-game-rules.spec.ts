@@ -196,6 +196,7 @@ describe('the game rules in the app', () => {
     };
     expect(service.cardRefusal('db-1')).toBeNull();
     // planning took the label EFH-II: the Buy rule now looks for that title
+    AppStateService.instance.allGrowProjects = [{ title: 'EFH-II', phase: 'plan' }] as never;
     (service as any).markCardPlayed();
     (service as any).holdProject('EFH-II');
     expect(CashflowGameService.buyRefusalFor('EFH-II', 'property')).toBeNull();
@@ -242,5 +243,82 @@ describe('the game rules in the app', () => {
     ).toBeTruthy();
     // shares keep their own quantity logic: not blocked by a bought property
     expect(CashflowGameService.buyRefusalFor('OK4U', 'share')).toMatch(/only allow buying/);
+  });
+
+  it('a planned card is only read while its project exists; delete the project and its buttons are back', () => {
+    startGame({ ...RULE_PRESETS.guided, cardChoice: 'free', preset: 'custom' });
+    AppStateService.instance.cashflowGame.turn = {
+      phase: 'decide',
+      count: 3,
+      pending: {
+        kind: 'deal',
+        spaceIndex: 2,
+        played: true,
+        offered: { deck: 'dealBig', cardId: 'db-1', title: 'APT-IV' },
+      },
+    };
+    AppStateService.instance.allGrowProjects = [{ title: 'APT-IV', phase: 'plan' }] as never;
+    expect(CashflowGameService.heldProjectFor('db-1')?.title).toBe('APT-IV');
+    expect(CashflowGameService.heldProjectFor('db-2')).toBeNull();
+    expect(service.cardRefusal('db-1')).toMatch(/played already/);
+    expect(
+      CashflowGameService.effectiveGame(AppStateService.instance.cashflowGame).turn?.pending
+        ?.played,
+    ).toBe(true);
+
+    AppStateService.instance.allGrowProjects = [];
+    expect(CashflowGameService.heldProjectFor('db-1')).toBeNull();
+    expect(service.cardRefusal('db-1')).toBeNull(); // planned, sold to a friend or declined again
+    expect(
+      CashflowGameService.effectiveGame(AppStateService.instance.cashflowGame).turn?.pending
+        ?.played,
+    ).toBe(false);
+  });
+
+  it('every card that was played is only read afterwards: a Market card or a Doodad too, a Deal while its project exists', () => {
+    startGame();
+    const pending = (kind: 'deal' | 'market' | 'doodad', title?: string) => ({
+      phase: 'decide' as const,
+      count: 3,
+      pending: {
+        kind,
+        spaceIndex: 2,
+        played: true,
+        offered: { deck: kind === 'deal' ? ('dealBig' as const) : kind, cardId: 'c-1', title },
+      },
+    });
+    AppStateService.instance.cashflowGame.turn = pending('market');
+    expect(CashflowGameService.isPlayedCard('c-1')).toBe(true);
+    expect(CashflowGameService.isPlayedCard('c-2')).toBe(false); // another card is not
+    AppStateService.instance.cashflowGame.turn = pending('doodad');
+    expect(CashflowGameService.isPlayedCard('c-1')).toBe(true);
+    AppStateService.instance.cashflowGame.turn = pending('deal', 'EFH-II');
+    AppStateService.instance.allGrowProjects = [{ title: 'EFH-II', phase: 'plan' }] as never;
+    expect(CashflowGameService.isPlayedCard('c-1')).toBe(true);
+    AppStateService.instance.allGrowProjects = []; // the project was deleted: the card can be used again
+    expect(CashflowGameService.isPlayedCard('c-1')).toBe(false);
+    // a card that was only looked at (not played) keeps its buttons
+    AppStateService.instance.cashflowGame.turn = {
+      ...pending('market'),
+      pending: { kind: 'market', spaceIndex: 2, offered: { deck: 'market', cardId: 'c-1' } },
+    };
+    expect(CashflowGameService.isPlayedCard('c-1')).toBe(false);
+  });
+
+  it('the payment of a Market cost card is allowed while the game waits for it, and settles the space', () => {
+    startGame(RULE_PRESETS.strict);
+    AppStateService.instance.cashflowGame.turn = {
+      phase: 'decide',
+      count: 3,
+      pending: { kind: 'market', spaceIndex: 8, paymentDue: true },
+    };
+    // the Add dialog books it with the #market tag; anything else is refused while the payment waits
+    expect(service.addDialogRefusal('Broken pipe #market', '@EFH', 50000)).toBeNull();
+    expect(service.addDialogRefusal('Buy Share OK4U 10 x 10;', '@OK4U', 10000)).toMatch(
+      /Spiel|game waits|waits for the payment/,
+    );
+    (service as any).gameBooks = () => ({ subscriptions: [] });
+    (service as any).settleDoodadByPayment('marketCost');
+    expect(AppStateService.instance.cashflowGame.turn?.phase).toBe('roll');
   });
 });

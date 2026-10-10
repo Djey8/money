@@ -660,7 +660,10 @@ export class CashflowGameComponent implements OnDestroy {
 
   /** The card of this space was played: it is ticked off (Done), not passed. */
   get cannotPassNow(): boolean {
-    return whyCannotSkipCard(this.appState.cashflowGame, 'passed') !== null;
+    return (
+      whyCannotSkipCard(CashflowGameService.effectiveGame(this.appState.cashflowGame), 'passed') !==
+      null
+    );
   }
 
   /** Under the dice-first rule an open dice decision is rolled before the card of the space is picked. */
@@ -1479,6 +1482,18 @@ export class CashflowGameComponent implements OnDestroy {
   }
 
   /** The Grow project of the open stock card's share while the player still holds some, or undefined (then the card is planned). */
+  /** The card open on screen has been planned and its project still exists: it is only read now. */
+  get activeCardProject(): Grow | null {
+    const card = this.activeCard as { id?: string } | null;
+    return card?.id ? CashflowGameService.heldProjectFor(card.id) : null;
+  }
+
+  /** The card open on screen was played on this space: it is read, nothing more can be done with it. */
+  get activeCardReadOnly(): boolean {
+    const card = this.activeCard as { id?: string } | null;
+    return !!card?.id && CashflowGameService.isPlayedCard(card.id);
+  }
+
   get activeShareProject(): Grow | undefined {
     if (!this.isShareCard) return undefined;
     const card = this.activeCard as CashflowDealCard;

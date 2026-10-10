@@ -1859,10 +1859,18 @@
             </div>
           </div>
 
-          <div class="cf-actions">
+          <p class="cf-solo-hint" *ngIf="activeCardProject" role="status">
+            {{ 'CashflowGame.cardPlannedAs' | translate: { title: activeCardProject.title } }}
+          </p>
+          <p class="cf-solo-hint" *ngIf="activeCardReadOnly && !activeCardProject" role="status">
+            {{ 'CashflowGame.cardPlayedReadOnly' | translate }}
+          </p>
+          <div class="cf-actions" *ngIf="!activeCardReadOnly">
             <button
               class="btn btn--sm btn--primary"
-              *ngIf="activeDeckKind !== 'market' && activeDeckKind !== 'doodad'"
+              *ngIf="
+                activeDeckKind !== 'market' && activeDeckKind !== 'doodad' && !activeCardProject
+              "
               [disabled]="isBusy"
               (click)="applyActiveCard()"
             >
@@ -1949,7 +1957,7 @@
             </button>
             <button
               class="btn btn--sm cf-btn-outlined"
-              *ngIf="isDealDeck && !isShareCard"
+              *ngIf="isDealDeck && !isShareCard && !activeCardProject"
               [disabled]="isBusy"
               (click)="showFriendSale = !showFriendSale"
             >
@@ -1959,6 +1967,7 @@
               class="btn btn--sm cf-btn-outlined"
               *ngIf="
                 activeDeckKind !== 'doodad' &&
+                !activeCardProject &&
                 !activeMarket?.sells &&
                 !activeMarket?.pays &&
                 !activeMarket?.splits &&
@@ -1971,7 +1980,10 @@
               }}
             </button>
           </div>
-          <div class="cf-friend-sale" *ngIf="isDealDeck && !isShareCard && showFriendSale">
+          <div
+            class="cf-friend-sale"
+            *ngIf="isDealDeck && !isShareCard && showFriendSale && !activeCardReadOnly"
+          >
             <div class="cf-friend-sale-head">
               <span class="cf-friend-sale-label">{{
                 'CashflowGame.cardFriendPays' | translate

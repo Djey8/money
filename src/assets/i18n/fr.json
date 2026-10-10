@@ -2643,5 +2643,7 @@
   "Registration.GamePassword": "Mot de passe du jeu",
   "CashflowGame.rules.msg.cardPlayed": "Cette carte a déjà été jouée : une carte ne se joue qu'une fois, coche-la.",
   "CashflowGame.rules.msg.mlmKept": "Cette carte ne peut pas être vendue : une carte de Multi-Level-Marketing se garde.",
-  "CashflowGame.rules.msg.cardBought": "La carte de cette case a déjà acheté : une carte n'achète qu'une fois."
+  "CashflowGame.rules.msg.cardBought": "La carte de cette case a déjà acheté : une carte n'achète qu'une fois.",
+  "CashflowGame.cardPlannedAs": "Planifiée comme {{title}} : tu ne peux plus que lire cette carte. Supprime le projet dans Grow pour la planifier à nouveau.",
+  "CashflowGame.cardPlayedReadOnly": "Cette carte a été jouée : tu ne peux plus que la lire."
 }

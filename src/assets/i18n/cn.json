@@ -2643,5 +2643,7 @@
   "Registration.GamePassword": "游戏密码",
   "CashflowGame.rules.msg.cardPlayed": "这张卡牌已经打出：一张卡牌只能打出一次，请勾选完成。",
   "CashflowGame.rules.msg.mlmKept": "这张卡牌不能出售：传销式多层次营销（MLM）卡牌需要保留。",
-  "CashflowGame.rules.msg.cardBought": "这一格的卡牌已经购买过：一张卡牌只能购买一次。"
+  "CashflowGame.rules.msg.cardBought": "这一格的卡牌已经购买过：一张卡牌只能购买一次。",
+  "CashflowGame.cardPlannedAs": "已规划为 {{title}}：现在只能阅读这张卡牌。在 Grow 中删除该项目即可重新规划。",
+  "CashflowGame.cardPlayedReadOnly": "这张卡牌已经打出：现在只能阅读。"
 }
