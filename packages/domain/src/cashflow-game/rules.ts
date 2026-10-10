@@ -24,6 +24,11 @@ export interface GameRules {
   sell: SellRule;
   /** With `with-offer`: how many of the player's rolls an offer stays open (1 = until the next roll); 0 = until the next Payday. */
   sellOfferRolls: number;
+  /**
+   * A Doodad (Schnickschnack) space: `allowed` may be passed or ticked off without paying, `forbidden` waits for the payment -
+   * the game does not go on until the Doodad is paid.
+   */
+  passDoodads: 'allowed' | 'forbidden';
   /** Free-form transactions and amounts outside the game's own moves (the Add dialog, an API transaction). */
   manualTransactions: 'allowed' | 'forbidden';
   bankLoan: 'allowed' | 'forbidden';
@@ -39,6 +44,7 @@ export const RULE_PRESETS: Record<Exclude<RulePreset, 'custom'>, GameRules> = {
     cardChoice: 'free',
     sell: 'always',
     sellOfferRolls: 0,
+    passDoodads: 'allowed',
     manualTransactions: 'allowed',
     bankLoan: 'allowed',
     maxLoanMinor: null,
@@ -49,6 +55,7 @@ export const RULE_PRESETS: Record<Exclude<RulePreset, 'custom'>, GameRules> = {
     cardChoice: 'offered-once',
     sell: 'with-offer',
     sellOfferRolls: 3,
+    passDoodads: 'allowed',
     manualTransactions: 'allowed',
     bankLoan: 'allowed',
     maxLoanMinor: null,
@@ -59,6 +66,7 @@ export const RULE_PRESETS: Record<Exclude<RulePreset, 'custom'>, GameRules> = {
     cardChoice: 'offered-once',
     sell: 'with-offer',
     sellOfferRolls: 1,
+    passDoodads: 'forbidden',
     manualTransactions: 'forbidden',
     bankLoan: 'allowed',
     maxLoanMinor: null,
@@ -70,7 +78,8 @@ export const FREE_RULES: GameRules = RULE_PRESETS.free;
 
 /** The rules of a game; one saved before rules existed has none, which is `free`. */
 export function rulesOf(state: Pick<CashflowGameState, 'rules'>): GameRules {
-  return state.rules ?? FREE_RULES;
+  // a game stored before a setting existed has none of it: that setting is free
+  return state.rules ? { ...FREE_RULES, ...stripUndefined(state.rules) } : FREE_RULES;
 }
 
 const isWholeAmount = (value: unknown): value is number =>
@@ -100,6 +109,9 @@ export function normalizeRules(input: Partial<GameRules> | undefined | null): Ga
     merged.sellOfferRolls > 12
   ) {
     throw new Error('sellOfferRolls must be a whole number from 0 (until the next Payday) to 12.');
+  }
+  if (!['allowed', 'forbidden'].includes(merged.passDoodads)) {
+    throw new Error("passDoodads must be 'allowed' or 'forbidden'.");
   }
   if (!['allowed', 'forbidden'].includes(merged.manualTransactions)) {
     throw new Error("manualTransactions must be 'allowed' or 'forbidden'.");
@@ -224,4 +236,15 @@ export function whyCannotDraw(
     return 'A card was already offered on this space: play it or pass. These game rules deal one card.';
   }
   return null;
+}
+
+/**
+ * Why the open space may not be passed or ticked off without being dealt with, or null. Under `passDoodads: 'forbidden'` a
+ * Doodad has to be paid: the turn stays open until its payment settles it.
+ */
+export function whyCannotSkipCard(state: Pick<CashflowGameState, 'rules' | 'turn'>): string | null {
+  if (rulesOf(state).passDoodads !== 'forbidden') return null;
+  return state.turn?.pending?.kind === 'doodad'
+    ? 'These game rules do not allow passing a Doodad: pay it, the game waits for the payment.'
+    : null;
 }

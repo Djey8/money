@@ -645,6 +645,10 @@ export class AppDataService {
               cardChoice: str(raw.rules.cardChoice) as GameRules['cardChoice'],
               sell: str(raw.rules.sell) as GameRules['sell'],
               sellOfferRolls: num(raw.rules.sellOfferRolls),
+              passDoodads:
+                raw.rules.passDoodads != null
+                  ? (str(raw.rules.passDoodads) as GameRules['passDoodads'])
+                  : 'allowed',
               manualTransactions: str(
                 raw.rules.manualTransactions,
               ) as GameRules['manualTransactions'],

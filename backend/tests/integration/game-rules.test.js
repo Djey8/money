@@ -162,4 +162,29 @@ describe('game rules', () => {
     const other = await api('post', play[0], user).send({ cardId: 'not-the-offered-card' });
     expect(other.status).toBeGreaterThanOrEqual(400);
   });
+
+  it('strict: a Doodad cannot be passed, only paid', async () => {
+    if (!dbAvailable) return;
+    const user = await gameUser('_doodad');
+    await start(user, { mode: 'solo', rules: { preset: 'strict' } });
+    let game;
+    for (let i = 0; i < 80; i += 1) {
+      game = (await api('get', '/game', user)).body;
+      if (game.pendingDecision?.kind === 'doodad') break;
+      if (game.outcome !== 'playing') break;
+      if (game.pendingDecision) await api('post', '/game/cards/pass', user).send({});
+      else await api('post', '/game/turn', user).send({});
+    }
+    if (game.pendingDecision?.kind !== 'doodad') return; // the dice never landed on one
+    const passed = await api('post', '/game/cards/pass', user).send({});
+    expect(passed.status).toBeGreaterThanOrEqual(400);
+    expect(game.legalActions.map((a) => a.action)).not.toContain('pass_card');
+    const drawn = await api('post', '/game/cards/draw', user).send({ deck: 'doodad' });
+    expect(drawn.status).toBe(200);
+    const paid = await api('post', '/game/doodads/pay', user).send({
+      cardId: drawn.body.result.card.id,
+    });
+    expect(paid.status).toBe(200);
+    expect((await api('get', '/game', user)).body.pendingDecision).toBeNull();
+  }, 120000);
 });

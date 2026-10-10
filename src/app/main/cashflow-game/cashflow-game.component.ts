@@ -30,6 +30,7 @@ import {
   normalizeRules,
   rulesOf,
   whyCannotDraw,
+  whyCannotSkipCard,
   type GameRules,
 } from '@money/domain';
 import { Grow } from 'src/app/interfaces/grow';
@@ -653,6 +654,11 @@ export class CashflowGameComponent implements OnDestroy {
   get cardsOfferedOnly(): boolean {
     const game = this.appState.cashflowGame;
     return game.mode === 'solo' && rulesOf(game).cardChoice === 'offered-once';
+  }
+
+  /** The rules keep the open space until it is dealt with: a Doodad has to be paid, not passed or ticked off. */
+  get mustPayDoodad(): boolean {
+    return whyCannotSkipCard(this.appState.cashflowGame) !== null;
   }
 
   /** Why no further card can be drawn on this space, or null. */

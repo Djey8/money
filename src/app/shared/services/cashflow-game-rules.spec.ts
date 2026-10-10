@@ -68,4 +68,34 @@ describe('the game rules in the app', () => {
     );
     expect(service.addDialogRefusal('x\n#doodad', '@Phone', 20000)).toBeNull();
   });
+
+  it('a Doodad under strict cannot be passed or ticked off; paying it settles the space', () => {
+    startGame(RULE_PRESETS.strict);
+    AppStateService.instance.cashflowGame.turn = {
+      phase: 'decide',
+      count: 4,
+      pending: { kind: 'doodad', spaceIndex: 4 },
+    };
+    const onError = jest.fn();
+    (service as any).settleSoloDecision('passed', { onSuccess: jest.fn(), onError });
+    (service as any).settleSoloDecision('done', { onSuccess: jest.fn(), onError });
+    expect(onError).toHaveBeenCalledTimes(2);
+    expect(onError.mock.calls[0][0]).toMatch(/do not allow passing a Doodad/);
+    expect(AppStateService.instance.cashflowGame.turn?.phase).toBe('decide');
+
+    (service as any).gameBooks = () => ({ subscriptions: [] });
+    (service as any).settleDoodadByPayment('doodad');
+    expect(AppStateService.instance.cashflowGame.turn?.phase).toBe('roll');
+  });
+
+  it('a Doodad may be passed where the rules allow it', () => {
+    startGame(RULE_PRESETS.guided);
+    AppStateService.instance.cashflowGame.turn = {
+      phase: 'decide',
+      count: 4,
+      pending: { kind: 'doodad', spaceIndex: 4 },
+    };
+    (service as any).settleDoodadByPayment('doodad');
+    expect(AppStateService.instance.cashflowGame.turn?.phase).toBe('decide'); // not auto-settled
+  });
 });

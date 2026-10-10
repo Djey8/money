@@ -1,7 +1,7 @@
 import { openDecisions } from './asset-deals';
 import { currentTurn, whyCannotRoll, whyCannotSettle } from './turn';
 import type { CashflowGameState } from './types';
-import { offerIsOpen, rulesOf, whyCannotDraw } from './rules';
+import { offerIsOpen, rulesOf, whyCannotDraw, whyCannotSkipCard } from './rules';
 
 /**
  * What the player (or an agent) may do right now, as plain ids (todo/cashflow-game-pro.md, slice D1). The rules that
@@ -89,10 +89,11 @@ export function legalActions(
           (a) => a.action !== 'draw_card' || !whyCannotDraw(state),
         ),
       );
-      actions.push({
-        action: 'pass_card',
-        description: `Leave the ${pending?.kind ?? 'card'} on this space without playing it; the next roll is open afterwards.`,
-      });
+      if (!whyCannotSkipCard(state))
+        actions.push({
+          action: 'pass_card',
+          description: `Leave the ${pending?.kind ?? 'card'} on this space without playing it; the next roll is open afterwards.`,
+        });
     }
   } else {
     actions.push(

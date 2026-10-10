@@ -18,6 +18,7 @@ import {
   whyCannotBorrow,
   whyCannotDraw,
   whyCannotNameSalePrice,
+  whyCannotSkipCard,
   whyCannotSell,
   whyCannotUseCard,
 } from './rules';
@@ -247,6 +248,39 @@ describe('cards under the rules', () => {
       turn: { phase: 'roll', count: 1 },
     } as CashflowGameState;
     expect(whyCannotDraw(noSpace)).toMatch(/only deal a card for the space/);
+  });
+});
+
+describe('passing a Doodad', () => {
+  const onDoodad = (rules: Partial<typeof FREE_RULES>): CashflowGameState => ({
+    ...books(rules, 'solo').state,
+    turn: { phase: 'decide', count: 1, pending: { kind: 'doodad', spaceIndex: 4 } },
+  });
+
+  it('is allowed unless the rules forbid it, and only a Doodad is held', () => {
+    expect(whyCannotSkipCard(onDoodad({}))).toBeNull();
+    expect(whyCannotSkipCard(onDoodad({ passDoodads: 'forbidden' }))).toMatch(/pay it/);
+    const onDeal: CashflowGameState = {
+      ...onDoodad({ passDoodads: 'forbidden' }),
+      turn: { phase: 'decide', count: 1, pending: { kind: 'deal', spaceIndex: 2 } },
+    };
+    expect(whyCannotSkipCard(onDeal)).toBeNull();
+  });
+
+  it('strict forbids it, guided and free allow it; an old game without the setting allows it', () => {
+    expect(RULE_PRESETS.strict.passDoodads).toBe('forbidden');
+    expect(RULE_PRESETS.guided.passDoodads).toBe('allowed');
+    expect(
+      rulesOf({ rules: { ...RULE_PRESETS.strict, passDoodads: undefined as never } }).passDoodads,
+    ).toBe('allowed');
+    expect(() => normalizeRules({ passDoodads: 'maybe' as never })).toThrow(/passDoodads/);
+  });
+
+  it('the pass action is not offered on a Doodad space that has to be paid', () => {
+    const ids = (state: CashflowGameState) => legalActions(state).map((a) => a.action);
+    expect(ids(onDoodad({ passDoodads: 'forbidden' }))).not.toContain('pass_card');
+    expect(ids(onDoodad({ passDoodads: 'forbidden' }))).toContain('pay_doodad');
+    expect(ids(onDoodad({}))).toContain('pass_card');
   });
 });
 

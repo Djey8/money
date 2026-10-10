@@ -59,6 +59,7 @@ describe('game text', () => {
         cardChoice: 'offered-once',
         sell: 'with-offer',
         sellOfferRolls: 3,
+        passDoodads: 'forbidden',
         manualTransactions: 'forbidden',
         bankLoan: 'allowed',
         maxLoanMinor: null,

@@ -352,6 +352,17 @@
             <small>{{ 'CashflowGame.rules.sellOfferRollsHint' | translate }}</small>
           </label>
           <label class="cf-field">
+            {{ 'CashflowGame.rules.passDoodads' | translate }}
+            <select [(ngModel)]="ruleDraft.passDoodads" name="rulePassDoodads">
+              <option value="allowed">
+                {{ 'CashflowGame.rules.passDoodadsAllowed' | translate }}
+              </option>
+              <option value="forbidden">
+                {{ 'CashflowGame.rules.passDoodadsForbidden' | translate }}
+              </option>
+            </select>
+          </label>
+          <label class="cf-field">
             {{ 'CashflowGame.rules.manual' | translate }}
             <select [(ngModel)]="ruleDraft.manualTransactions" name="ruleManual">
               <option value="allowed">{{ 'CashflowGame.rules.manualAllowed' | translate }}</option>
@@ -868,6 +879,7 @@
                   </button>
                   <button
                     class="btn btn--sm"
+                    *ngIf="!mustPayDoodad"
                     [disabled]="isBusy || walking"
                     (click)="finishSoloDecision('done')"
                   >
@@ -875,11 +887,15 @@
                   </button>
                   <button
                     class="btn btn--sm cf-btn-outlined"
+                    *ngIf="!mustPayDoodad"
                     [disabled]="isBusy || walking"
                     (click)="finishSoloDecision('passed')"
                   >
                     {{ 'CashflowGame.solo.pass' | translate }}
                   </button>
+                  <p class="cf-solo-hint" *ngIf="mustPayDoodad" role="status">
+                    {{ 'CashflowGame.rules.doodadMustPay' | translate }}
+                  </p>
                 </div>
               </div>
               <!-- a roll in progress (the decision waits for the totem): the dice stay in view -->

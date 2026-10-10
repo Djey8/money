@@ -106,6 +106,7 @@ function decodeGameState(raw, session) {
       cardChoice: str(r.cardChoice),
       sell: str(r.sell),
       sellOfferRolls: num(r.sellOfferRolls),
+      passDoodads: r.passDoodads != null ? str(r.passDoodads) : 'allowed',
       manualTransactions: str(r.manualTransactions),
       bankLoan: str(r.bankLoan),
       maxLoanMinor: cap(r.maxLoanMinor),

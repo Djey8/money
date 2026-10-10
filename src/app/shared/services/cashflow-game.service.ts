@@ -37,6 +37,7 @@ import {
   rulesOf,
   whyCannotAddFreeAmount,
   whyCannotDraw,
+  whyCannotSkipCard,
   whyCannotSell,
   whyCannotUseCard,
   type GameRules,
@@ -689,7 +690,9 @@ export class CashflowGameService {
         if (project) project.liabilitie = null as any;
       }
     }
-    this.pushUndoSnapshot(gameTradeStep(comment, category)); // step 2 (or the only step): the trade itself
+    const tradeStep = gameTradeStep(comment, category);
+    this.pushUndoSnapshot(tradeStep); // step 2 (or the only step): the trade itself
+    this.settleDoodadByPayment(tradeStep.kind);
     // The loan comes first: it takes `loanDate` (the day the dialog was opened on), and the purchase
     // that follows gets the next free slot after it.
     return {
@@ -697,6 +700,22 @@ export class CashflowGameService {
       converted,
       nextDate: this.nextGameTransactionDate(),
     };
+  }
+
+  /**
+   * Under `passDoodads: 'forbidden'` the game waits for the Doodad: paying it - the Add dialog's #doodad transaction - is
+   * what settles the space, so the next roll opens only then. (The Add dialog stores the game state with the trade.)
+   */
+  private settleDoodadByPayment(stepKind: string): void {
+    const game = AppStateService.instance.cashflowGame;
+    if (stepKind !== 'doodad' || game.turn?.pending?.kind !== 'doodad') return;
+    if (rulesOf(game).passDoodads !== 'forbidden') return;
+    try {
+      const settled = settleDecisionRule(game, 'done', this.gameBooks().subscriptions);
+      AppStateService.instance.cashflowGame = settled.state;
+    } catch {
+      // nothing open to settle
+    }
   }
 
   /** The toast text for an automatic loan, in the current language. */
@@ -1223,8 +1242,17 @@ export class CashflowGameService {
     return true;
   }
 
-  settleSoloDecision(how: 'done' | 'passed', callbacks: CashflowGameCallbacks): void {
+  settleSoloDecision(
+    how: 'done' | 'passed',
+    callbacks: CashflowGameCallbacks,
+    options: { paid?: boolean } = {},
+  ): void {
     let settled: ReturnType<typeof settleDecisionRule>;
+    const refusal = options.paid ? null : whyCannotSkipCard(AppStateService.instance.cashflowGame);
+    if (refusal) {
+      callbacks.onError(refusal);
+      return;
+    }
     try {
       settled = settleDecisionRule(
         AppStateService.instance.cashflowGame,
