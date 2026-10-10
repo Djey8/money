@@ -617,6 +617,9 @@ export class AppDataService {
               ...(Array.isArray(raw.turn.lastRoll)
                 ? { lastRoll: raw.turn.lastRoll.map((die: any) => num(die)) }
                 : {}),
+              ...(Array.isArray(raw.turn.affected)
+                ? { affected: raw.turn.affected.map((title: any) => str(title)) }
+                : {}),
               ...(raw.turn.pending != null
                 ? {
                     pending: {
@@ -624,11 +627,17 @@ export class AppDataService {
                         NonNullable<CashflowGameState['turn']>['pending']
                       >['kind'],
                       spaceIndex: num(raw.turn.pending.spaceIndex),
+                      ...(raw.turn.pending.played != null
+                        ? { played: str(raw.turn.pending.played) === 'true' }
+                        : {}),
                       ...(raw.turn.pending.offered != null
                         ? {
                             offered: {
                               deck: str(raw.turn.pending.offered.deck) as CashflowDeckKind,
                               cardId: str(raw.turn.pending.offered.cardId),
+                              ...(raw.turn.pending.offered.title != null
+                                ? { title: str(raw.turn.pending.offered.title) }
+                                : {}),
                             },
                           }
                         : {}),
@@ -645,6 +654,15 @@ export class AppDataService {
               cardChoice: str(raw.rules.cardChoice) as GameRules['cardChoice'],
               sell: str(raw.rules.sell) as GameRules['sell'],
               sellOfferRolls: num(raw.rules.sellOfferRolls),
+              buy: raw.rules.buy != null ? (str(raw.rules.buy) as GameRules['buy']) : 'always',
+              reportRolls:
+                raw.rules.reportRolls != null
+                  ? (str(raw.rules.reportRolls) as GameRules['reportRolls'])
+                  : 'allowed',
+              diceFirst:
+                raw.rules.diceFirst != null
+                  ? (str(raw.rules.diceFirst) as GameRules['diceFirst'])
+                  : 'off',
               passDoodads:
                 raw.rules.passDoodads != null
                   ? (str(raw.rules.passDoodads) as GameRules['passDoodads'])

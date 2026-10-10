@@ -1,4 +1,4 @@
-import { openDecisions } from './asset-deals';
+import { openDecisions, whyDiceFirst } from './asset-deals';
 import { currentTurn, whyCannotRoll, whyCannotSettle } from './turn';
 import type { CashflowGameState } from './types';
 import { offerIsOpen, rulesOf, whyCannotDraw, whyCannotSkipCard } from './rules';
@@ -84,11 +84,13 @@ export function legalActions(
     }
     if (!whyCannotSettle(state)) {
       const pending = currentTurn(state).pending;
-      actions.push(
-        ...cardActions(pending?.kind).filter(
-          (a) => a.action !== 'draw_card' || !whyCannotDraw(state),
-        ),
-      );
+      if (!whyDiceFirst(state)) {
+        actions.push(
+          ...cardActions(pending?.kind).filter(
+            (a) => a.action !== 'draw_card' || !whyCannotDraw(state),
+          ),
+        );
+      }
       if (!whyCannotSkipCard(state))
         actions.push({
           action: 'pass_card',

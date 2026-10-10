@@ -266,7 +266,15 @@ export function playMarketBuyerCard(
   const result = effects({ ...state, marketOffers: [...kept, ...offers] }, step);
   result.growUpdates = [...notesByTitle].map(([title, notes]) => ({ title, notes }));
   result.persist.grow = true;
-  return { effects: result, matched: [...matchedSet] };
+  return { effects: withAffected(result, [...matchedSet]), matched: [...matchedSet] };
+}
+
+/** Notes on the turn which Grow projects a Market card touched, so the screen can point at them (until the next roll). */
+function withAffected<T extends { state: CashflowGameState }>(result: T, titles: string[]): T {
+  const turn = result.state.turn;
+  if (!turn || titles.length === 0) return result;
+  const affected = [...new Set([...(turn.affected ?? []), ...titles])];
+  return { ...result, state: { ...result.state, turn: { ...turn, affected } } };
 }
 
 export interface MarketSale {
@@ -367,7 +375,7 @@ export function playShareSplitCard(
     step,
   );
   result.decisionNeeded = true;
-  return { effects: result, share: share.tag };
+  return { effects: withAffected(result, [share.tag]), share: share.tag };
 }
 
 export interface BoostResult {
@@ -465,7 +473,13 @@ export function playBoostCard(
   result.growUpdates = growUpdates;
   result.subscriptionUpserts = upserts;
   result.persist = { subscriptions: true, grow: true, balanceSheet: false };
-  return { effects: result, changed };
+  return {
+    effects: withAffected(
+      result,
+      changed.map((entry) => entry.title),
+    ),
+    changed,
+  };
 }
 
 export interface CostResult {
@@ -491,10 +505,16 @@ export function playMarketCostCard(
     options.types.some((type) => matchesType(investment.tag, type)),
   );
   return {
-    effects: {
-      ...effects(state, first ? null : { kind: 'marketCard', detail: options.title ?? card.title }),
-      write: false,
-    },
+    effects: withAffected(
+      {
+        ...effects(
+          state,
+          first ? null : { kind: 'marketCard', detail: options.title ?? card.title },
+        ),
+        write: false,
+      },
+      first ? [first.tag] : [],
+    ),
     property: first?.tag ?? null,
   };
 }
@@ -575,5 +595,5 @@ export function updateSharePrice(
     },
   ];
   result.persist = { subscriptions: false, grow: true, balanceSheet: true };
-  return { effects: result, title };
+  return { effects: withAffected(result, [title]), title };
 }

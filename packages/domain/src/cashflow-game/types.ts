@@ -264,7 +264,9 @@ export interface CashflowPendingDecision {
    * Under the rule `cardChoice: 'offered-once'`: the one card drawn for this space. It is the only card that may be
    * played here; nothing else can be drawn or named until the space is settled.
    */
-  offered?: { deck: CashflowDeckKind; cardId: string };
+  offered?: { deck: CashflowDeckKind; cardId: string; title?: string };
+  /** The card of this space has been played (planned, played, paid): it can be looked at or ticked off, but not passed. */
+  played?: boolean;
 }
 
 /**
@@ -281,6 +283,8 @@ export interface CashflowSoloTurn {
   pending?: CashflowPendingDecision;
   /** Set with `phase: 'over'`: out of the rat race, or lost. */
   outcome?: 'escaped' | 'bankrupt';
+  /** The Grow projects a Market card of this turn touched (an offer, a price move, a boost, a cost): to check for an update. */
+  affected?: string[];
 }
 
 export interface CashflowGameState {

@@ -1,3 +1,4 @@
+import { gameTradeStep } from '@money/domain';
 import { bucketCapacity } from 'src/app/shared/bucket.utils';
 import {
   Component,
@@ -122,6 +123,8 @@ export class AddComponent extends BaseAddComponent implements OnInit, AfterViewI
   showShareOptions = true;
 
   static url = '/transactions';
+  /** A trade of the Cashflow game (a sale, a purchase, a Doodad) was added: back to the game dashboard afterwards. */
+  static returnToGame = false;
   static zIndex;
   static isAdd;
   static isError;
@@ -461,6 +464,11 @@ export class AddComponent extends BaseAddComponent implements OnInit, AfterViewI
         return;
       }
     }
+
+    AddComponent.returnToGame =
+      CashflowGameService.isCashflowGame() &&
+      gameTradeStep(AddComponent.commentTextField, AddComponent.categoryTextField).kind !==
+        'transaction';
 
     // Close dialog immediately for instant UX - processing happens in next event loop
     AddComponent.isAdd = false;
@@ -1873,6 +1881,7 @@ export class AddComponent extends BaseAddComponent implements OnInit, AfterViewI
     AppStateService.instance.transactionsUpdated$.next();
     AppStateService.instance.subscriptionsUpdated$.next();
     this.router.navigate([AddComponent.url]);
+    this.returnToGameDashboard();
   }
 
   /**
@@ -1934,7 +1943,17 @@ export class AddComponent extends BaseAddComponent implements OnInit, AfterViewI
       this.closeWindow();
       AppComponent.gotoTop();
       this.router.navigate([AddComponent.url]);
+      this.returnToGameDashboard();
     }
+  }
+
+  /** A game trade is done: the game dashboard is what comes next (JFK, 2026-10-10), not the page the trade was made from. */
+  private returnToGameDashboard(): void {
+    if (!AddComponent.returnToGame) return;
+    AddComponent.returnToGame = false;
+    void import('src/app/main/cashflow-game/cashflow-game.component').then((module) =>
+      module.CashflowGameComponent.open(),
+    );
   }
 
   removeFromMojo() {

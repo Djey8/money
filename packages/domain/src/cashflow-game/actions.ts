@@ -6,7 +6,7 @@ import { pickCashflowProfession } from './engine';
 import { textOrFallback } from './game-text';
 import { gameSubscriptionDays, nextSmartDate } from './scheduling';
 import { dealInputFromCard, executeDeal, planDeal, takenDealLabels, type DealDeps } from './deals';
-import { openDecisions, resolveGamble } from './asset-deals';
+import { openDecisions, resolveGamble, whyDiceFirst } from './asset-deals';
 import { emptyEffects, type GameEffects } from './effects';
 import { MARKET_COST_ACCOUNT, doodadAccount, payCardExpense } from './expenses';
 import {
@@ -23,7 +23,13 @@ import {
 import { buyAssetDeal, sellPosition, type SellInput } from './positions';
 import { rollDie, type Rng } from './rng';
 import { cardPickedStep, type GameStep } from './steps';
-import { normalizeRules, rulesOf, whyCannotDraw, whyCannotUseCard, type GameRules } from './rules';
+import {
+  normalizeRules,
+  whyCannotBuyCard,
+  whyCannotDraw,
+  whyCannotUseCard,
+  type GameRules,
+} from './rules';
 import type {
   CashflowDealCard,
   CashflowDeckKind,
@@ -97,7 +103,7 @@ export function drawCardAction(
       `This space asks for a ${pending.kind} card: draw from ${DECK_FOR_PENDING[pending.kind].join(' or ')}.`,
     );
   }
-  const refused = whyCannotDraw(books.state);
+  const refused = whyDiceFirst(books.state) ?? whyCannotDraw(books.state);
   if (refused) throw new Error(refused);
   const drawn = drawRandomCard(
     findDeck(books.gameSet, deck) as { id: string }[],
@@ -108,16 +114,23 @@ export function drawCardAction(
     ...books.state,
     drawnCardIds: { ...books.state.drawnCardIds, [deck]: drawn.drawnIds },
   };
-  // Under 'offered-once' the drawn card is the one offered on this space, and nothing else can be played.
+  // The drawn card is the card in hand on this space (under 'offered-once' the only one that can be played).
   const state =
-    rulesOf(books.state).cardChoice === 'offered-once' &&
-    books.state.mode === 'solo' &&
-    drawnState.turn?.pending
+    books.state.mode === 'solo' && drawnState.turn?.pending
       ? {
           ...drawnState,
           turn: {
             ...drawnState.turn,
-            pending: { ...drawnState.turn.pending, offered: { deck, cardId: drawn.card.id } },
+            pending: {
+              ...drawnState.turn.pending,
+              offered: {
+                deck,
+                cardId: drawn.card.id,
+                title:
+                  (drawn.card as { symbol?: string; title?: string }).symbol ??
+                  (drawn.card as { title?: string }).title,
+              },
+            },
           },
         }
       : drawnState;
@@ -146,7 +159,10 @@ export function buyDealAction(
   ];
   const card = cards.find((candidate) => candidate.id === input.cardId);
   if (!card) throw new Error(`No Deal card with the id '${input.cardId}'.`);
-  const refused = whyCannotUseCard(books.state, input.cardId);
+  const refused =
+    whyDiceFirst(books.state) ??
+    whyCannotUseCard(books.state, input.cardId) ??
+    whyCannotBuyCard(books.state, input.cardId);
   if (refused) throw new Error(refused);
   const symbol = card.symbol ?? card.title;
   const holds = books.shares.some((share) => share.tag === symbol && share.quantity > 0);
@@ -192,7 +208,7 @@ export function payDoodadAction(
     (candidate) => candidate.id === input.cardId,
   );
   if (!card) throw new Error(`No Doodad card with the id '${input.cardId}'.`);
-  const refused = whyCannotUseCard(books.state, input.cardId);
+  const refused = whyDiceFirst(books.state) ?? whyCannotUseCard(books.state, input.cardId);
   if (refused) throw new Error(refused);
   const text = textDeps(deps);
   const effects = payCardExpense(
@@ -230,7 +246,7 @@ export function playMarketAction(
     (candidate) => candidate.id === input.cardId,
   );
   if (!card) throw new Error(`No Market card with the id '${input.cardId}'.`);
-  const refused = whyCannotUseCard(books.state, input.cardId);
+  const refused = whyDiceFirst(books.state) ?? whyCannotUseCard(books.state, input.cardId);
   if (refused) throw new Error(refused);
   const title = marketHeading(card, deps);
   const label = (symbol: string) => deps.cards.symbolFor(symbol);

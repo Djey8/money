@@ -442,7 +442,7 @@
 
     <!-- Buy / Sell, just above Edit - on Overview and Financials only, not on Actions / Notes. -->
     <div class="info-trade-actions" *ngIf="showTradeButtons">
-      <button class="card-btn card-btn-buy" (click)="buyThisProject()">
+      <button class="card-btn card-btn-buy" *ngIf="!buyBlocked" (click)="buyThisProject()">
         {{ 'Grow.buy' | translate }}
       </button>
       <button class="card-btn card-btn-sell" *ngIf="!sellBlocked" (click)="sellThisProject()">

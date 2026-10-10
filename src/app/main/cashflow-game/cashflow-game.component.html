@@ -352,6 +352,31 @@
             <small>{{ 'CashflowGame.rules.sellOfferRollsHint' | translate }}</small>
           </label>
           <label class="cf-field">
+            {{ 'CashflowGame.rules.buy' | translate }}
+            <select [(ngModel)]="ruleDraft.buy" name="ruleBuy">
+              <option value="always">{{ 'CashflowGame.rules.buyAlways' | translate }}</option>
+              <option value="with-card">{{ 'CashflowGame.rules.buyWithCard' | translate }}</option>
+            </select>
+          </label>
+          <label class="cf-field">
+            {{ 'CashflowGame.rules.reportRolls' | translate }}
+            <select [(ngModel)]="ruleDraft.reportRolls" name="ruleReportRolls">
+              <option value="allowed">
+                {{ 'CashflowGame.rules.reportRollsAllowed' | translate }}
+              </option>
+              <option value="forbidden">
+                {{ 'CashflowGame.rules.reportRollsForbidden' | translate }}
+              </option>
+            </select>
+          </label>
+          <label class="cf-field">
+            {{ 'CashflowGame.rules.diceFirst' | translate }}
+            <select [(ngModel)]="ruleDraft.diceFirst" name="ruleDiceFirst">
+              <option value="off">{{ 'CashflowGame.rules.diceFirstOff' | translate }}</option>
+              <option value="first">{{ 'CashflowGame.rules.diceFirstOn' | translate }}</option>
+            </select>
+          </label>
+          <label class="cf-field">
             {{ 'CashflowGame.rules.passDoodads' | translate }}
             <select [(ngModel)]="ruleDraft.passDoodads" name="rulePassDoodads">
               <option value="allowed">
@@ -872,7 +897,7 @@
                 <div class="cf-actions cf-solo-decision-actions">
                   <button
                     class="btn btn--primary"
-                    [disabled]="isBusy || walking || appState.isSaving"
+                    [disabled]="isBusy || walking || appState.isSaving || !!diceFirstRefusal"
                     (click)="openSoloDecision()"
                   >
                     {{ 'CashflowGame.solo.openCard' | translate }}
@@ -887,12 +912,15 @@
                   </button>
                   <button
                     class="btn btn--sm cf-btn-outlined"
-                    *ngIf="!mustPayDoodad"
+                    *ngIf="!cannotPassNow"
                     [disabled]="isBusy || walking"
                     (click)="finishSoloDecision('passed')"
                   >
                     {{ 'CashflowGame.solo.pass' | translate }}
                   </button>
+                  <p class="cf-solo-hint" *ngIf="diceFirstRefusal" role="status">
+                    {{ 'CashflowGame.rules.diceFirstHint' | translate }}
+                  </p>
                   <p class="cf-solo-hint" *ngIf="mustPayDoodad" role="status">
                     {{ 'CashflowGame.rules.doodadMustPay' | translate }}
                   </p>
@@ -1016,7 +1044,7 @@
               🎲 {{ 'CashflowGame.diceRollButton' | translate }}
             </button>
           </div>
-          <div class="cf-actions cf-decision-real">
+          <div class="cf-actions cf-decision-real" *ngIf="!reportRollsForbidden">
             <button
               class="btn btn--sm cf-btn-outlined"
               [disabled]="isBusy"

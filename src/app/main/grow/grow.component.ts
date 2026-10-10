@@ -265,6 +265,17 @@ export class GrowComponent implements OnInit, AfterViewInit {
     await this.growTrade.buy(AppStateService.instance.allGrowProjects[index]);
   }
 
+  /** A property is bought once; under the buy rule a purchase needs the card in hand. Hidden, not just refused. */
+  buyBlocked(project: Grow): boolean {
+    return CashflowGameService.buyRefusalFor(project.title, !!project.investment) !== null;
+  }
+
+  /** A Market card of this turn touched the project (an offer, a price move, a boost, a cost): look at it. */
+  isAffected(project: Grow): boolean {
+    const game = AppStateService.instance.cashflowGame;
+    return CashflowGameService.isCashflowGame() && !!game.turn?.affected?.includes(project.title);
+  }
+
   /** A Cashflow game under rules that allow selling only to a Market card's offer hides the Sell button until there is one. */
   sellBlocked(project: Grow): boolean {
     return CashflowGameService.sellRefusalFor(project.title) !== null;

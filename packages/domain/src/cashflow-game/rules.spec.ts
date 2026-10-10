@@ -7,6 +7,7 @@ import { executeDeal, planDeal, type DealDeps, type DealInput } from './deals';
 import { playBankLoan } from './loan';
 import { sellPosition } from './positions';
 import { legalActions } from './legal-actions';
+import { whyDiceFirst } from './asset-deals';
 import {
   FREE_RULES,
   RULE_PRESETS,
@@ -18,6 +19,9 @@ import {
   whyCannotBorrow,
   whyCannotDraw,
   whyCannotNameSalePrice,
+  whyCannotBuy,
+  whyCannotBuyCard,
+  whyCannotReportRoll,
   whyCannotSkipCard,
   whyCannotSell,
   whyCannotUseCard,
@@ -303,5 +307,100 @@ describe('legal actions follow the rules', () => {
 
   it('a free game offers everything as before', () => {
     expect(ids(books().state)).toEqual(expect.arrayContaining(['bank_loan', 'sell_position']));
+  });
+});
+
+describe('buying under the rules', () => {
+  const strictState = (extra: Partial<CashflowGameState> = {}): CashflowGameState =>
+    ({
+      ...books({ buy: 'with-card' }, 'solo').state,
+      turn: {
+        phase: 'decide',
+        count: 3,
+        pending: { kind: 'deal', spaceIndex: 2, offered: { deck: 'dealSmall', cardId: 'ds-1' } },
+      },
+      ...extra,
+    }) as CashflowGameState;
+
+  it('always: nothing is limited', () => {
+    expect(whyCannotBuy(books().state, 'OK4U', undefined)).toBeNull();
+    expect(whyCannotBuyCard(books().state, 'x')).toBeNull();
+  });
+
+  it('with-card: only the card in hand, while the space is open', () => {
+    expect(whyCannotBuy(strictState(), 'OK4U', 'OK4U')).toBeNull();
+    expect(whyCannotBuy(strictState(), 'EFH', 'OK4U')).toMatch(/only allow buying EFH/);
+    const settled = { ...strictState(), turn: { phase: 'roll', count: 3 } } as CashflowGameState;
+    expect(whyCannotBuy(settled, 'OK4U', 'OK4U')).toMatch(/only allow buying/); // the chance is over
+  });
+
+  it('with-card: a price card of the share is another chance, while its offer is open', () => {
+    const state = strictState({
+      turn: { phase: 'roll', count: 4 },
+      marketOffers: [
+        {
+          title: 'OK4U',
+          salePriceMinor: 1,
+          cardId: 'm',
+          label: '',
+          pricePerShareMinor: 900,
+          offeredAtRoll: 4,
+        },
+      ],
+    });
+    expect(whyCannotBuy(state, 'OK4U', undefined)).toBeNull();
+    expect(whyCannotBuy(state, 'EFH', undefined)).toMatch(/only allow buying/);
+  });
+
+  it('with-card: the engine buys only the picked card', () => {
+    expect(whyCannotBuyCard(strictState(), 'ds-1')).toBeNull();
+    expect(whyCannotBuyCard(strictState(), 'ds-2')).toMatch(/card in hand/);
+  });
+
+  it('a property is not bought twice', () => {
+    let b = books();
+    const property = {
+      kind: 'investment',
+      title: 'EFH',
+      subtitle: 'House',
+      depositMinor: 300000,
+      mortgageMinor: 4700000,
+      cashflowMinor: 20000,
+    } as DealInput;
+    b = applyEffectsToBooks(b, planDeal(b, property, deps));
+    const bought = executeDeal(b, 'EFH', undefined, deps).steps.reduce(applyEffectsToBooks, b);
+    expect(() => executeDeal(bought, 'EFH', undefined, deps)).toThrow(/already own EFH/);
+  });
+});
+
+describe('passing a played card, and reporting a roll', () => {
+  it('a played card cannot be passed, only ticked off', () => {
+    const state = {
+      ...books().state,
+      turn: { phase: 'decide', count: 1, pending: { kind: 'deal', spaceIndex: 2, played: true } },
+    } as CashflowGameState;
+    expect(whyCannotSkipCard(state, 'passed')).toMatch(/cannot be passed/);
+    expect(whyCannotSkipCard(state, 'done')).toBeNull();
+  });
+
+  it('strict allows only the roll of the app', () => {
+    expect(whyCannotReportRoll({ rules: RULE_PRESETS.strict })).toMatch(/roll of the app/);
+    expect(whyCannotReportRoll({ rules: RULE_PRESETS.guided })).toBeNull();
+    expect(whyCannotReportRoll({})).toBeNull();
+  });
+});
+
+describe('the order of a turn', () => {
+  it('under dice-first an open dice decision comes before any card', () => {
+    const dice = [
+      { title: 'MLM', coins: 1, costMinor: 1, stage: 'owned', recurring: true, rollDue: true },
+    ] as never;
+    const strict = {
+      ...books({ diceFirst: 'first' }, 'solo').state,
+      assetDeals: dice,
+    } as CashflowGameState;
+    expect(whyDiceFirst(strict)).toMatch(/Roll the dice of your open card first/);
+    expect(whyDiceFirst({ ...strict, assetDeals: [] })).toBeNull();
+    expect(whyDiceFirst({ ...strict, rules: RULE_PRESETS.free })).toBeNull();
   });
 });

@@ -62,7 +62,19 @@ describe('the game rules in the app', () => {
 
   it('a trade the game knows is judged as that trade, not as a free amount', () => {
     startGame(RULE_PRESETS.strict);
+    AppStateService.instance.cashflowGame.turn = {
+      phase: 'decide',
+      count: 4,
+      pending: {
+        kind: 'deal',
+        spaceIndex: 2,
+        offered: { deck: 'dealSmall', cardId: 'ds-1', title: 'OK4U' },
+      },
+    };
     expect(service.addDialogRefusal('Buy Share OK4U 100 x 10;', '@OK4U', 100000)).toBeNull();
+    expect(service.addDialogRefusal('Buy Share EFH 1 x 10;', '@EFH', 100000)).toMatch(
+      /only allow buying EFH/,
+    );
     expect(service.addDialogRefusal('Sell Share OK4U 100 x 10;', '@OK4U', 100000)).toMatch(
       /No buyer for OK4U/,
     );
@@ -97,5 +109,46 @@ describe('the game rules in the app', () => {
     };
     (service as any).settleDoodadByPayment('doodad');
     expect(AppStateService.instance.cashflowGame.turn?.phase).toBe('decide'); // not auto-settled
+  });
+
+  it('a property that is owned is not bought a second time, whatever the rules', () => {
+    startGame();
+    AppStateService.instance.allInvestments = [{ tag: 'EFH', amount: 1, deposit: 1 }] as never;
+    expect(CashflowGameService.buyRefusalFor('EFH', true)).toMatch(/already own/);
+    expect(CashflowGameService.buyRefusalFor('EFH-II', true)).toBeNull();
+    expect(service.addDialogRefusal('Buy Investment EFH 1 1;', '@EFH', 100)).toMatch(/already own/);
+  });
+
+  it('a card that was played cannot be passed, only ticked off', () => {
+    startGame();
+    AppStateService.instance.cashflowGame.turn = {
+      phase: 'decide',
+      count: 4,
+      pending: { kind: 'deal', spaceIndex: 2, played: true },
+    };
+    const onError = jest.fn();
+    (service as any).gameBooks = () => ({ subscriptions: [] });
+    (service as any).persistAll = jest.fn();
+    (service as any).settleSoloDecision('passed', { onSuccess: jest.fn(), onError });
+    expect(onError.mock.calls[0][0]).toMatch(/cannot be passed/);
+    (service as any).settleSoloDecision('done', { onSuccess: jest.fn(), onError });
+    expect(onError).toHaveBeenCalledTimes(1);
+  });
+
+  it('a claimed roll is refused where only the roll of the app counts', () => {
+    startGame(RULE_PRESETS.strict);
+    const onError = jest.fn();
+    (service as any).resolveGamble('MLM', { won: true }, { onSuccess: jest.fn(), onError });
+    expect(onError.mock.calls[0][0]).toMatch(/roll of the app/);
+  });
+
+  it('under dice-first no card can be played while a dice decision is open', () => {
+    startGame(RULE_PRESETS.strict);
+    AppStateService.instance.cashflowGame.assetDeals = [
+      { title: 'MLM', coins: 1, costMinor: 1, stage: 'owned', recurring: true, rollDue: true },
+    ] as never;
+    expect(service.cardRefusal('any')).toMatch(/Roll the dice of your open card first/);
+    startGame(RULE_PRESETS.free);
+    expect(service.cardRefusal('any')).toBeNull();
   });
 });

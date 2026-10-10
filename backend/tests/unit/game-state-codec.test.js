@@ -60,6 +60,9 @@ describe('game text', () => {
         sell: 'with-offer',
         sellOfferRolls: 3,
         passDoodads: 'forbidden',
+        buy: 'with-card',
+        reportRolls: 'forbidden',
+        diceFirst: 'first',
         manualTransactions: 'forbidden',
         bankLoan: 'allowed',
         maxLoanMinor: null,
@@ -67,7 +70,13 @@ describe('game text', () => {
       },
       turn: {
         ...state.turn,
-        pending: { kind: 'deal', spaceIndex: 4, offered: { deck: 'dealSmall', cardId: 'ds-1' } },
+        pending: {
+          kind: 'deal',
+          spaceIndex: 4,
+          played: true,
+          offered: { deck: 'dealSmall', cardId: 'ds-1', title: 'OK4U' },
+        },
+        affected: ['OK4U'],
       },
       marketOffers: [
         {

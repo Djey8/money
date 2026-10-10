@@ -29,6 +29,21 @@ export interface GameRules {
    * the game does not go on until the Doodad is paid.
    */
   passDoodads: 'allowed' | 'forbidden';
+  /**
+   * Buying: `always`, or `with-card` - only while the card is in hand (the card of the space you landed on, until the space
+   * is settled) or a stock price card of the share is open. After that the chance is over until another card brings one.
+   */
+  buy: 'always' | 'with-card';
+  /**
+   * A dice decision of a card (Multi-Level-Marketing, a split): `allowed` lets the player report a roll made with a real die
+   * ("I got it"), `forbidden` allows only the app's own roll - the outcome cannot be claimed.
+   */
+  reportRolls: 'allowed' | 'forbidden';
+  /**
+   * The order of a turn: `first` - a dice decision that is open (the Payday roll of a Multi-Level-Marketing card, a card waiting for
+   * its roll) is rolled before the card of the space can be picked or played. `off`: any order.
+   */
+  diceFirst: 'off' | 'first';
   /** Free-form transactions and amounts outside the game's own moves (the Add dialog, an API transaction). */
   manualTransactions: 'allowed' | 'forbidden';
   bankLoan: 'allowed' | 'forbidden';
@@ -44,7 +59,10 @@ export const RULE_PRESETS: Record<Exclude<RulePreset, 'custom'>, GameRules> = {
     cardChoice: 'free',
     sell: 'always',
     sellOfferRolls: 0,
+    buy: 'always',
     passDoodads: 'allowed',
+    reportRolls: 'allowed',
+    diceFirst: 'off',
     manualTransactions: 'allowed',
     bankLoan: 'allowed',
     maxLoanMinor: null,
@@ -55,7 +73,10 @@ export const RULE_PRESETS: Record<Exclude<RulePreset, 'custom'>, GameRules> = {
     cardChoice: 'offered-once',
     sell: 'with-offer',
     sellOfferRolls: 3,
+    buy: 'always',
     passDoodads: 'allowed',
+    reportRolls: 'allowed',
+    diceFirst: 'first',
     manualTransactions: 'allowed',
     bankLoan: 'allowed',
     maxLoanMinor: null,
@@ -66,7 +87,10 @@ export const RULE_PRESETS: Record<Exclude<RulePreset, 'custom'>, GameRules> = {
     cardChoice: 'offered-once',
     sell: 'with-offer',
     sellOfferRolls: 1,
+    buy: 'with-card',
     passDoodads: 'forbidden',
+    reportRolls: 'forbidden',
+    diceFirst: 'first',
     manualTransactions: 'forbidden',
     bankLoan: 'allowed',
     maxLoanMinor: null,
@@ -109,6 +133,15 @@ export function normalizeRules(input: Partial<GameRules> | undefined | null): Ga
     merged.sellOfferRolls > 12
   ) {
     throw new Error('sellOfferRolls must be a whole number from 0 (until the next Payday) to 12.');
+  }
+  if (!['off', 'first'].includes(merged.diceFirst)) {
+    throw new Error("diceFirst must be 'off' or 'first'.");
+  }
+  if (!['allowed', 'forbidden'].includes(merged.reportRolls)) {
+    throw new Error("reportRolls must be 'allowed' or 'forbidden'.");
+  }
+  if (!['always', 'with-card'].includes(merged.buy)) {
+    throw new Error("buy must be 'always' or 'with-card'.");
   }
   if (!['allowed', 'forbidden'].includes(merged.passDoodads)) {
     throw new Error("passDoodads must be 'allowed' or 'forbidden'.");
@@ -242,9 +275,55 @@ export function whyCannotDraw(
  * Why the open space may not be passed or ticked off without being dealt with, or null. Under `passDoodads: 'forbidden'` a
  * Doodad has to be paid: the turn stays open until its payment settles it.
  */
-export function whyCannotSkipCard(state: Pick<CashflowGameState, 'rules' | 'turn'>): string | null {
+export function whyCannotSkipCard(
+  state: Pick<CashflowGameState, 'rules' | 'turn'>,
+  how: 'done' | 'passed' = 'passed',
+): string | null {
+  const pending = state.turn?.pending;
+  // A card that was played cannot be passed afterwards - it is ticked off (done).
+  if (how === 'passed' && pending?.played) {
+    return 'The card of this space has been played: it cannot be passed any more, tick it off.';
+  }
   if (rulesOf(state).passDoodads !== 'forbidden') return null;
-  return state.turn?.pending?.kind === 'doodad'
+  return pending?.kind === 'doodad'
     ? 'These game rules do not allow passing a Doodad: pay it, the game waits for the payment.'
+    : null;
+}
+
+/**
+ * Why `title` may not be bought now under `buy: 'with-card'`, or null. `offeredTitle` is the title of the card in hand (the one
+ * picked on the open space), when there is one. A share price card of the share also gives a chance to buy, while its offer is open.
+ */
+export function whyCannotBuy(
+  state: Pick<CashflowGameState, 'rules' | 'turn' | 'marketOffers'>,
+  title: string,
+  offeredTitle: string | undefined,
+): string | null {
+  if (rulesOf(state).buy !== 'with-card') return null;
+  if (offeredTitle !== undefined && offeredTitle === title && state.turn?.pending) return null;
+  const priceCard = (state.marketOffers ?? []).find(
+    (offer) =>
+      offer.title === title && offer.pricePerShareMinor !== undefined && offerIsOpen(state, offer),
+  );
+  if (priceCard) return null;
+  return `These game rules only allow buying ${title} while its card is in hand or a price card of it is open.`;
+}
+
+/** Why this card may not be bought now: under `buy: 'with-card'` only the card picked on the open space (a solo game). */
+export function whyCannotBuyCard(
+  state: Pick<CashflowGameState, 'rules' | 'mode' | 'turn'>,
+  cardId: string,
+): string | null {
+  if (rulesOf(state).buy !== 'with-card' || state.mode !== 'solo') return null;
+  const offered = state.turn?.pending?.offered;
+  return offered && offered.cardId === cardId
+    ? null
+    : 'These game rules only allow buying the card in hand: the card picked on this space.';
+}
+
+/** Why a dice decision may not be settled by a claimed result (no roll of the app's own), or null. */
+export function whyCannotReportRoll(state: Pick<CashflowGameState, 'rules'>): string | null {
+  return rulesOf(state).reportRolls === 'forbidden'
+    ? 'These game rules only allow the roll of the app: the outcome cannot be reported.'
     : null;
 }

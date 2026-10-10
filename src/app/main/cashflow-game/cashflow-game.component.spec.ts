@@ -2108,6 +2108,45 @@ describe('CashflowGameComponent solo mode (JFK, 2026-10-05)', () => {
     expect(component.cardsOfferedOnly).toBe(false);
   });
 
+  it('opening the space again goes straight to the card that was picked: no Small or Big to choose again', () => {
+    const { component, cashflowGameService } = soloComponent();
+    (cashflowGameService as any).browseCards = jest.fn(() => [{ id: 'db-1' }]);
+    setSoloState({
+      mode: 'solo',
+      turn: {
+        phase: 'decide',
+        count: 2,
+        pending: {
+          kind: 'deal',
+          spaceIndex: 2,
+          offered: { deck: 'dealBig', cardId: 'db-1', title: 'EFH' },
+        },
+      },
+    } as never);
+    component.openSoloDecision();
+    expect(component.dashboardView).toBe('cards');
+    expect(component.activeDeckKind).toBe('dealBig');
+    expect(component.activeCard).toMatchObject({ id: 'db-1' });
+  });
+
+  it('a card that was played cannot be passed any more, and an open dice decision blocks opening the space', () => {
+    const { component } = soloComponent();
+    setSoloState({
+      mode: 'solo',
+      turn: { phase: 'decide', count: 2, pending: { kind: 'deal', spaceIndex: 2 } },
+    } as never);
+    expect(component.cannotPassNow).toBe(false);
+    setSoloState({
+      mode: 'solo',
+      turn: { phase: 'decide', count: 2, pending: { kind: 'deal', spaceIndex: 2, played: true } },
+    } as never);
+    expect(component.cannotPassNow).toBe(true);
+    setSoloState({ mode: 'solo', rules: { ...RULE_PRESETS.strict } } as never);
+    expect(component.reportRollsForbidden).toBe(true);
+    setSoloState({ mode: 'solo', rules: { ...RULE_PRESETS.free } } as never);
+    expect(component.reportRollsForbidden).toBe(false);
+  });
+
   it('measures the way to the next Payday from the token, START included', () => {
     const { component } = soloComponent();
     setSoloState({ boardPosition: null });

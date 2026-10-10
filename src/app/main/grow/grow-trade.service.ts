@@ -78,6 +78,11 @@ export class GrowTradeService {
   }
 
   async buy(project: Grow): Promise<void> {
+    const refused = CashflowGameService.buyRefusalFor(project.title, !!project.investment);
+    if (refused) {
+      this.toastService.show('CashflowGame.rules.buyBlocked', 'error');
+      return;
+    }
     await this.ensureBalanceLoaded();
     const { AddComponent, MenuComponent, InfoComponent, InfoGrowComponent, AppComponent } =
       await this.panels();

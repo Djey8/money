@@ -80,16 +80,21 @@ function decodeGameState(raw, session) {
       count: num(raw.turn.count),
       ...(raw.turn.outcome != null ? { outcome: str(raw.turn.outcome) } : {}),
       ...(Array.isArray(raw.turn.lastRoll) ? { lastRoll: raw.turn.lastRoll.map(num) } : {}),
+      ...(Array.isArray(raw.turn.affected) ? { affected: raw.turn.affected.map(str) } : {}),
       ...(raw.turn.pending != null
         ? {
             pending: {
               kind: str(raw.turn.pending.kind),
               spaceIndex: num(raw.turn.pending.spaceIndex),
+              ...(raw.turn.pending.played != null ? { played: flag(raw.turn.pending.played) } : {}),
               ...(raw.turn.pending.offered != null
                 ? {
                     offered: {
                       deck: str(raw.turn.pending.offered.deck),
                       cardId: str(raw.turn.pending.offered.cardId),
+                      ...(raw.turn.pending.offered.title != null
+                        ? { title: str(raw.turn.pending.offered.title) }
+                        : {}),
                     },
                   }
                 : {}),
@@ -107,6 +112,9 @@ function decodeGameState(raw, session) {
       sell: str(r.sell),
       sellOfferRolls: num(r.sellOfferRolls),
       passDoodads: r.passDoodads != null ? str(r.passDoodads) : 'allowed',
+      buy: r.buy != null ? str(r.buy) : 'always',
+      reportRolls: r.reportRolls != null ? str(r.reportRolls) : 'allowed',
+      diceFirst: r.diceFirst != null ? str(r.diceFirst) : 'off',
       manualTransactions: str(r.manualTransactions),
       bankLoan: str(r.bankLoan),
       maxLoanMinor: cap(r.maxLoanMinor),

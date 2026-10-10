@@ -249,6 +249,14 @@ export class InfoGrowComponent extends BaseInfoComponent {
     if (project) void this.growTrade.buy(project);
   }
 
+  /** See GrowComponent.buyBlocked. */
+  get buyBlocked(): boolean {
+    const project = this.openProject;
+    return (
+      !!project && CashflowGameService.buyRefusalFor(project.title, !!project.investment) !== null
+    );
+  }
+
   /** See GrowComponent.sellBlocked: no Sell button without an offer when the game rules ask for one. */
   get sellBlocked(): boolean {
     const project = this.openProject;

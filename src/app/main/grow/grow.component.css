@@ -482,3 +482,9 @@
     font-size: 12px;
   }
 }
+
+/* A Market card of this game turn touched this project: a soft ring, so you know which projects to check for an update. */
+.grow-card--affected {
+  box-shadow: 0 0 0 2px rgba(245, 166, 35, 0.75);
+  background-image: linear-gradient(0deg, rgba(245, 166, 35, 0.08), rgba(245, 166, 35, 0.08));
+}

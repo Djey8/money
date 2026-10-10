@@ -30,7 +30,9 @@ import {
   normalizeRules,
   rulesOf,
   whyCannotDraw,
+  whyCannotReportRoll,
   whyCannotSkipCard,
+  whyDiceFirst,
   type GameRules,
 } from '@money/domain';
 import { Grow } from 'src/app/interfaces/grow';
@@ -656,6 +658,21 @@ export class CashflowGameComponent implements OnDestroy {
     return game.mode === 'solo' && rulesOf(game).cardChoice === 'offered-once';
   }
 
+  /** The card of this space was played: it is ticked off (Done), not passed. */
+  get cannotPassNow(): boolean {
+    return whyCannotSkipCard(this.appState.cashflowGame, 'passed') !== null;
+  }
+
+  /** Under the dice-first rule an open dice decision is rolled before the card of the space is picked. */
+  get diceFirstRefusal(): string | null {
+    return whyDiceFirst(this.appState.cashflowGame);
+  }
+
+  /** The rules do not let the player claim a roll made with a real die: only the app's roll counts. */
+  get reportRollsForbidden(): boolean {
+    return whyCannotReportRoll(this.appState.cashflowGame) !== null;
+  }
+
   /** The rules keep the open space until it is dealt with: a Doodad has to be paid, not passed or ticked off. */
   get mustPayDoodad(): boolean {
     return whyCannotSkipCard(this.appState.cashflowGame) !== null;
@@ -992,6 +1009,14 @@ export class CashflowGameComponent implements OnDestroy {
   /** Opens the card flow for the space the token is waiting on (Deals asks for the pile first). */
   openSoloDecision(): void {
     const kind = this.soloTurn.pending?.kind;
+    const picked = this.appState.cashflowGame.turn?.pending?.offered;
+    if (picked) {
+      // The card of this space was picked: opening it again goes straight to it, no Small or Big to choose again.
+      this.activeDeckKind = picked.deck;
+      this.changeDeck();
+      this.openCards();
+      return;
+    }
     if (kind === 'deal') this.landOnDeals();
     else if (kind === 'doodad') this.landOnDoodad();
     else if (kind === 'market') this.landOnMarket();
@@ -1224,10 +1249,10 @@ export class CashflowGameComponent implements OnDestroy {
    * reloaded with a card on offer - brought back, so the player cannot swap it by leaving and coming back.
    */
   private dealOfferedCard(): void {
-    if (!this.cardsOfferedOnly) return;
-    const offered = this.soloTurn.pending?.offered;
+    const offered = this.appState.cashflowGame.turn?.pending?.offered;
     if (!offered) {
-      if (!this.drawRefusal) this.drawActiveCard();
+      if (this.cardsOfferedOnly && !this.drawRefusal && !this.diceFirstRefusal)
+        this.drawActiveCard();
       return;
     }
     this.activeDeckKind = offered.deck;
@@ -1546,6 +1571,11 @@ export class CashflowGameComponent implements OnDestroy {
 
   /** The player rolled a real die and says how it went. */
   reportRoll(deal: CashflowAssetDeal, won: boolean): void {
+    const refused = whyCannotReportRoll(this.appState.cashflowGame);
+    if (refused) {
+      this.toastService.show(refused, 'error');
+      return;
+    }
     this.settleDecision(deal, won);
   }
 

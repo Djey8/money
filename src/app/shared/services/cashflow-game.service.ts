@@ -36,7 +36,10 @@ import {
   normalizeRules,
   rulesOf,
   whyCannotAddFreeAmount,
+  whyCannotBuy,
   whyCannotDraw,
+  whyCannotReportRoll,
+  whyDiceFirst,
   whyCannotSkipCard,
   whyCannotSell,
   whyCannotUseCard,
@@ -1248,7 +1251,9 @@ export class CashflowGameService {
     options: { paid?: boolean } = {},
   ): void {
     let settled: ReturnType<typeof settleDecisionRule>;
-    const refusal = options.paid ? null : whyCannotSkipCard(AppStateService.instance.cashflowGame);
+    const refusal = options.paid
+      ? null
+      : whyCannotSkipCard(AppStateService.instance.cashflowGame, how);
     if (refusal) {
       callbacks.onError(refusal);
       return;
@@ -1468,7 +1473,11 @@ export class CashflowGameService {
   }
 
   /** `planDeal`'s work, on the domain's own input (also what a drawn card is turned into). */
-  private runPlanDeal(input: DealInput, callbacks: CashflowGameCallbacks): void {
+  private runPlanDeal(
+    input: DealInput,
+    callbacks: CashflowGameCallbacks,
+    options: { fromCard?: boolean } = {},
+  ): void {
     let effects: GameEffects;
     try {
       effects = planDealRule(this.gameBooks(), input, this.dealDeps);
@@ -1478,6 +1487,7 @@ export class CashflowGameService {
     }
     this.pushUndoSnapshot(effects.step as CashflowStepInfo);
     this.applyGameEffects(effects);
+    if (options.fromCard) this.markCardPlayed();
     this.persistAll('cashflow_deal_plan', { kind: input.kind, title: input.title }, callbacks, {
       includeGrow: true,
     });
@@ -1646,6 +1656,13 @@ export class CashflowGameService {
     outcome: { won: boolean; roll?: number },
     callbacks: CashflowGameCallbacks,
   ): void {
+    if (outcome.roll === undefined) {
+      const reported = whyCannotReportRoll(AppStateService.instance.cashflowGame);
+      if (reported) {
+        callbacks.onError(reported);
+        return;
+      }
+    }
     let result: ReturnType<typeof resolveGambleRule>;
     try {
       result = resolveGambleRule(this.gameBooks(), title, outcome, this.cardDeps);
@@ -1655,6 +1672,7 @@ export class CashflowGameService {
     }
     this.pushUndoSnapshot(result.effects.step as CashflowStepInfo);
     this.applyGameEffects(result.effects);
+    this.markCardPlayed();
     const { persist } = result.effects;
     this.persistAll(
       result.kind === 'split' ? 'cashflow_share_split' : 'cashflow_dice',
@@ -1710,6 +1728,7 @@ export class CashflowGameService {
     }
     this.pushUndoSnapshot(result.effects.step as CashflowStepInfo);
     this.applyGameEffects(result.effects);
+    this.markCardPlayed();
     this.persistAll(
       'cashflow_market_card',
       { card: card.id, matched: result.matched.length },
@@ -1764,6 +1783,7 @@ export class CashflowGameService {
     }
     this.pushUndoSnapshot(result.effects.step as CashflowStepInfo);
     this.applyGameEffects(result.effects);
+    this.markCardPlayed();
     this.persistAll(
       'cashflow_share_price',
       { symbol: result.title, price: fromMinorUnits(card.priceMinor ?? 0) },
@@ -1801,6 +1821,7 @@ export class CashflowGameService {
       return;
     }
     this.applyGameEffects(result.effects);
+    this.markCardPlayed();
     this.persistAll(
       'cashflow_market_split',
       { share: result.share },
@@ -1844,6 +1865,7 @@ export class CashflowGameService {
     }
     this.pushUndoSnapshot(result.effects.step as CashflowStepInfo);
     this.applyGameEffects(result.effects);
+    this.markCardPlayed();
     const changed = result.changed.map((entry) => ({
       title: entry.title,
       from: fromMinorUnits(entry.fromMinor),
@@ -2051,9 +2073,31 @@ export class CashflowGameService {
     return rulesOf(AppStateService.instance.cashflowGame);
   }
 
-  /** Why the rules forbid playing this card on the open space, or null. */
+  /** Why the rules forbid playing this card now (an open dice decision comes first; under offered-once only the offered card), or null. */
   cardRefusal(cardId: string): string | null {
-    return whyCannotUseCard(AppStateService.instance.cashflowGame, cardId);
+    const game = AppStateService.instance.cashflowGame;
+    return whyDiceFirst(game) ?? whyCannotUseCard(game, cardId);
+  }
+
+  /** Why the open dice decision must be rolled before a card is picked (rules: dice first), or null. */
+  get diceFirstRefusal(): string | null {
+    return whyDiceFirst(AppStateService.instance.cashflowGame);
+  }
+
+  /** Marks the card of the open space as played: it can be looked at and ticked off, not passed any more. */
+  private markCardPlayed(): void {
+    const game = AppStateService.instance.cashflowGame;
+    const pending = game.turn?.pending;
+    if (!game.turn || !pending || pending.played) return;
+    AppStateService.instance.cashflowGame = {
+      ...game,
+      turn: { ...game.turn, pending: { ...pending, played: true } },
+    };
+  }
+
+  /** The card picked on the open space, whatever the rules - opening the space again goes straight to it. */
+  get pickedCard(): { deck: CashflowDeckKind; cardId: string } | undefined {
+    return AppStateService.instance.cashflowGame.turn?.pending?.offered;
   }
 
   /** Why the rules forbid selling `title` now (a game without rules never does), or null. */
@@ -2088,7 +2132,31 @@ export class CashflowGameService {
     if (['sellShare', 'sellInvestment', 'sellAsset'].includes(step.kind) && step.detail) {
       return this.sellRefusal(step.detail);
     }
+    if (['buyShare', 'buyInvestment', 'buyAsset'].includes(step.kind) && step.detail) {
+      return CashflowGameService.buyRefusalFor(step.detail, step.kind === 'buyInvestment');
+    }
     return null;
+  }
+
+  /** Whether the app may report a roll made with a real die (`reportRolls`). */
+  get reportRollsForbidden(): boolean {
+    return whyCannotReportRoll(AppStateService.instance.cashflowGame) !== null;
+  }
+
+  /**
+   * Why `title` cannot be bought now, or null: a property that is owned is not bought a second time, and where the rules say
+   * so a purchase needs the card in hand (or a price card of the share).
+   */
+  static buyRefusalFor(title: string, isProperty = false): string | null {
+    const game = AppStateService.instance.cashflowGame;
+    if (!CashflowGameService.isCashflowGame() || !game.professionId) return null;
+    if (
+      isProperty &&
+      AppStateService.instance.allInvestments.some((owned) => owned.tag === title)
+    ) {
+      return 'You already own this property: a property is bought once.';
+    }
+    return whyCannotBuy(game, title, game.turn?.pending?.offered?.title);
   }
 
   /** Why the rules forbid a Bank loan, or null. */
@@ -2110,7 +2178,7 @@ export class CashflowGameService {
     callbacks: CashflowCardCallbacks<CashflowDeckCardMap[K]>,
   ): void {
     const state = AppStateService.instance;
-    const refusedDraw = whyCannotDraw(state.cashflowGame);
+    const refusedDraw = whyDiceFirst(state.cashflowGame) ?? whyCannotDraw(state.cashflowGame);
     if (refusedDraw) {
       callbacks.onError(refusedDraw);
       return;
@@ -2137,15 +2205,21 @@ export class CashflowGameService {
     }
     const turn = state.cashflowGame.turn;
     // Under 'offered-once' this card is the one offered on the space: nothing else can be played here.
-    const offered =
-      rulesOf(state.cashflowGame).cardChoice === 'offered-once' && turn?.pending
-        ? {
-            turn: {
-              ...turn,
-              pending: { ...turn.pending, offered: { deck: deckKind, cardId: result.card.id } },
+    const offered = turn?.pending
+      ? {
+          turn: {
+            ...turn,
+            pending: {
+              ...turn.pending,
+              offered: {
+                deck: deckKind,
+                cardId: result.card.id,
+                title: (result.card as { symbol?: string }).symbol ?? result.card.title,
+              },
             },
-          }
-        : {};
+          },
+        }
+      : {};
     state.cashflowGame = {
       ...state.cashflowGame,
       ...offered,
@@ -2176,6 +2250,24 @@ export class CashflowGameService {
       if (earlier?.kind === 'cardPicked' && earlier.cardId === card.id) return;
     }
     this.pushUndoSnapshot(cardPickedStep(deckKind, card));
+    // the card in hand on this space: opening the space again goes straight to it
+    const game = AppStateService.instance.cashflowGame;
+    if (game.turn?.pending) {
+      AppStateService.instance.cashflowGame = {
+        ...game,
+        turn: {
+          ...game.turn,
+          pending: {
+            ...game.turn.pending,
+            offered: {
+              deck: deckKind,
+              cardId: card.id,
+              title: (card as { symbol?: string }).symbol ?? card.title,
+            },
+          },
+        },
+      };
+    }
   }
 
   /** Plans a drawn/found Deal card exactly as `planDeal` would from the manual form — its numbers, not re-typed. */
@@ -2190,10 +2282,14 @@ export class CashflowGameService {
       return;
     }
     const input = dealInputFromCard(card, text, takenDealLabels(this.gameBooks()));
-    this.runPlanDeal(input, {
-      onSuccess: () => callbacks.onSuccess(input.title),
-      onError: callbacks.onError,
-    });
+    this.runPlanDeal(
+      input,
+      {
+        onSuccess: () => callbacks.onSuccess(input.title),
+        onError: callbacks.onError,
+      },
+      { fromCard: true },
+    );
   }
 
   /**

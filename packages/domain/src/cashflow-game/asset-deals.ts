@@ -1,4 +1,5 @@
 import type { GameBooks } from './books';
+import { rulesOf, whyCannotReportRoll } from './rules';
 import { setPhaseAfterTrade } from './deals';
 import { emptyEffects, type BookGrowUpdate, type GameEffects } from './effects';
 import type { CardDeps } from './market-cards';
@@ -42,6 +43,17 @@ export function openDecisions(state: CashflowGameState): CashflowAssetDeal[] {
   const waiting = dealsOf(state).filter((deal) => deal.stage === 'awaitingRoll');
   const due = recurringOwned(state).filter((deal) => deal.rollDue);
   return due.length ? [...waiting, due[0]] : waiting;
+}
+
+/**
+ * Why no card of the space may be picked or played yet: under `diceFirst` the dice decisions that are open come first (JFK,
+ * 2026-10-10: an MLM Payday roll is rolled before the card of the space the token landed on).
+ */
+export function whyDiceFirst(state: CashflowGameState): string | null {
+  if (rulesOf(state).diceFirst !== 'first') return null;
+  return openDecisions(state).length > 0
+    ? 'Roll the dice of your open card first: the card of this space comes after it.'
+    : null;
 }
 
 /** How many cards the open Payday roll covers: a roll pays once per card, so two cards win (or miss) together. */
@@ -312,6 +324,10 @@ export function resolveGamble(
   outcome: RollOutcome,
   deps: CardDeps,
 ): GambleResult {
+  if (outcome.roll === undefined) {
+    const refused = whyCannotReportRoll(books.state);
+    if (refused) throw new Error(refused);
+  }
   const dueCard = recurringOwned(books.state).find((d) => d.title === title && d.rollDue);
   if (dueCard) return resolvePaydayRoll(books, dueCard, outcome, deps);
 
