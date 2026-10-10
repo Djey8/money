@@ -648,8 +648,24 @@ export class CashflowGameComponent implements OnDestroy {
     return this.walkingAt !== undefined ? this.walkingAt : this.appState.cashflowGame.boardPosition;
   }
 
+  /**
+   * The dice may only be pressed when nothing is still loading or being stored (JFK, 2026-10-10: on a phone the button
+   * worked before the turn had finished loading) and no dice action of a card is open - those come first.
+   */
   get canRoll(): boolean {
-    return !this.isBusy && !this.walking && this.cashflowGameService.cannotRollBecause === null;
+    return (
+      !this.isBusy &&
+      !this.walking &&
+      !this.appState.isLoading &&
+      !this.appState.isSaving &&
+      !this.hasOpenDiceAction &&
+      this.cashflowGameService.cannotRollBecause === null
+    );
+  }
+
+  /** A paid dice card (Multi-Level-Marketing, ...) waits for its roll: it is done before the next turn. */
+  get hasOpenDiceAction(): boolean {
+    return this.visibleDecisions.length > 0;
   }
 
   /** Charity lets the player pick 1 or 2 dice; otherwise it is always one. */

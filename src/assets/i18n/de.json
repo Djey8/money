@@ -1641,6 +1641,7 @@
   "CashflowGame.solo.modeSolo": "Allein in der App",
   "CashflowGame.solo.modeSoloHint": "Die App würfelt und bewegt deine Figur durch das Hamsterrad.",
   "CashflowGame.solo.roll": "Würfeln",
+  "CashflowGame.solo.finishDiceFirst": "Erledige zuerst die Würfelaktion weiter unten - dann kannst du würfeln.",
   "CashflowGame.solo.diceHow": "Würfel in diesem Zug",
   "CashflowGame.solo.oneDie": "1 Würfel",
   "CashflowGame.solo.twoDice": "2 Würfel",

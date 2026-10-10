@@ -105,6 +105,7 @@ registerLocaleData(localeDe); // the app registers it at startup (app.config.ts)
 describe('CashflowGameComponent', () => {
   beforeEach(() => {
     (AppStateService as any)._instance = undefined;
+    AppStateService.instance.isLoading = false; // the app has finished loading
     ProfileComponent.mail = '';
     CashflowGameComponent.isOpen = false;
     CashflowGameComponent.zIndex = 0;
@@ -2035,6 +2036,7 @@ describe('CashflowGameComponent solo mode (JFK, 2026-10-05)', () => {
 
   beforeEach(() => {
     (AppStateService as any)._instance = undefined;
+    AppStateService.instance.isLoading = false; // the app has finished loading
     ProfileComponent.mail = '';
     // no waiting between steps in tests: the token jumps straight to the landing
     (window as any).matchMedia = jest.fn(() => ({ matches: true }));
@@ -2075,6 +2077,31 @@ describe('CashflowGameComponent solo mode (JFK, 2026-10-05)', () => {
     expect(free.component.canRoll).toBe(true);
     free.component.isBusy = true;
     expect(free.component.canRoll).toBe(false);
+  });
+
+  it('cannot roll while the app still loads or stores the last turn (a phone pressed it too early)', () => {
+    const { component } = soloComponent();
+    setSoloState();
+    expect(component.canRoll).toBe(true);
+    AppStateService.instance.isLoading = true;
+    expect(component.canRoll).toBe(false);
+    AppStateService.instance.isLoading = false;
+    AppStateService.instance.isSaving = true;
+    expect(component.canRoll).toBe(false);
+    AppStateService.instance.isSaving = false;
+    expect(component.canRoll).toBe(true);
+  });
+
+  it('cannot roll while a paid dice action (MLM, ...) is open: it comes first', () => {
+    const { component } = soloComponent();
+    setSoloState();
+    const open = jest
+      .spyOn(component, 'openDecisions', 'get')
+      .mockReturnValue([{ title: 'MLM', coins: 1 } as any]);
+    expect(component.hasOpenDiceAction).toBe(true);
+    expect(component.canRoll).toBe(false);
+    open.mockReturnValue([]);
+    expect(component.canRoll).toBe(true);
   });
 
   it('nothing of a roll takes effect before the animation has settled: planned first, applied once the totem is on its tile', async () => {
@@ -2433,6 +2460,7 @@ describe('CashflowGameComponent solo mode (JFK, 2026-10-05)', () => {
 describe('CashflowGameComponent start screen: the games played so far (JFK, 2026-10-06)', () => {
   beforeEach(() => {
     (AppStateService as any)._instance = undefined;
+    AppStateService.instance.isLoading = false; // the app has finished loading
     ProfileComponent.mail = '';
   });
 
@@ -2476,6 +2504,7 @@ describe('CashflowGameComponent start screen: the games played so far (JFK, 2026
 describe('CashflowGameComponent reset game button (JFK, 2026-10-06)', () => {
   beforeEach(() => {
     (AppStateService as any)._instance = undefined;
+    AppStateService.instance.isLoading = false; // the app has finished loading
     ProfileComponent.mail = '';
   });
 
@@ -2537,6 +2566,7 @@ describe('CashflowGameComponent Payday + MLM info boxes (JFK, 2026-10-06)', () =
 
   beforeEach(() => {
     (AppStateService as any)._instance = undefined;
+    AppStateService.instance.isLoading = false; // the app has finished loading
     ProfileComponent.mail = '';
   });
 
@@ -2617,6 +2647,7 @@ describe('CashflowGameComponent Payday + MLM info boxes (JFK, 2026-10-06)', () =
 describe('CashflowGameComponent open decisions wait for the totem (JFK, 2026-10-06)', () => {
   beforeEach(() => {
     (AppStateService as any)._instance = undefined;
+    AppStateService.instance.isLoading = false; // the app has finished loading
     ProfileComponent.mail = '';
   });
 
@@ -2636,6 +2667,7 @@ describe('CashflowGameComponent open decisions wait for the totem (JFK, 2026-10-
 describe('CashflowGameComponent loan steps input (JFK, 2026-10-06)', () => {
   beforeEach(() => {
     (AppStateService as any)._instance = undefined;
+    AppStateService.instance.isLoading = false; // the app has finished loading
     ProfileComponent.mail = '';
   });
 
@@ -2677,6 +2709,7 @@ describe('CashflowGameComponent loan steps input (JFK, 2026-10-06)', () => {
 describe('CashflowGameComponent quick filters as dropdowns (JFK, 2026-10-06)', () => {
   beforeEach(() => {
     (AppStateService as any)._instance = undefined;
+    AppStateService.instance.isLoading = false; // the app has finished loading
     ProfileComponent.mail = '';
   });
 

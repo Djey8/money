@@ -730,9 +730,17 @@
                 </fieldset>
                 <div class="cf-solo-roll-row">
                   <ng-container *ngTemplateOutlet="soloDice"></ng-container>
-                  <button class="btn btn--primary" [disabled]="!canRoll" (click)="rollSolo()">
+                  <button
+                    class="btn btn--primary"
+                    *ngIf="!hasOpenDiceAction"
+                    [disabled]="!canRoll"
+                    (click)="rollSolo()"
+                  >
                     🎲 {{ 'CashflowGame.solo.roll' | translate }}
                   </button>
+                  <p class="cf-solo-hint" *ngIf="hasOpenDiceAction" role="status">
+                    {{ 'CashflowGame.solo.finishDiceFirst' | translate }}
+                  </p>
                   <button class="btn btn--sm" *ngIf="walking" (click)="skipWalk()">
                     {{ 'CashflowGame.solo.skipAnimation' | translate }}
                   </button>
@@ -759,7 +767,7 @@
                 <div class="cf-actions cf-solo-decision-actions">
                   <button
                     class="btn btn--primary"
-                    [disabled]="isBusy || walking"
+                    [disabled]="isBusy || walking || appState.isSaving"
                     (click)="openSoloDecision()"
                   >
                     {{ 'CashflowGame.solo.openCard' | translate }}

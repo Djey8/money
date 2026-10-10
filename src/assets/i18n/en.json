@@ -1616,6 +1616,7 @@
   "CashflowGame.solo.modeSolo": "Solo in the app",
   "CashflowGame.solo.modeSoloHint": "The app rolls the dice and walks your token round the rat race.",
   "CashflowGame.solo.roll": "Roll the dice",
+  "CashflowGame.solo.finishDiceFirst": "Finish the dice action below first - then you can roll.",
   "CashflowGame.solo.diceHow": "Dice this turn",
   "CashflowGame.solo.oneDie": "1 die",
   "CashflowGame.solo.twoDice": "2 dice",

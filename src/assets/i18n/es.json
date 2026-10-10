@@ -1585,6 +1585,7 @@
   "CashflowGame.solo.modeSolo": "En solitario en la app",
   "CashflowGame.solo.modeSoloHint": "La app tira los dados y mueve tu ficha por la carrera de la rata.",
   "CashflowGame.solo.roll": "Tirar los dados",
+  "CashflowGame.solo.finishDiceFirst": "Resuelve primero la acción de dados de abajo; luego podrás tirar.",
   "CashflowGame.solo.diceHow": "Dados en este turno",
   "CashflowGame.solo.oneDie": "1 dado",
   "CashflowGame.solo.twoDice": "2 dados",

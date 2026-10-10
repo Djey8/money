@@ -1616,6 +1616,7 @@
   "CashflowGame.solo.modeSolo": "منفردًا داخل التطبيق",
   "CashflowGame.solo.modeSoloHint": "يرمي التطبيق النرد ويحرّك قطعتك في سباق الفئران.",
   "CashflowGame.solo.roll": "ارمِ النرد",
+  "CashflowGame.solo.finishDiceFirst": "أنهِ أولاً إجراء النرد أدناه، ثم يمكنك رمي النرد.",
   "CashflowGame.solo.diceHow": "النرد في هذا الدور",
   "CashflowGame.solo.oneDie": "نرد واحد",
   "CashflowGame.solo.twoDice": "نردان",

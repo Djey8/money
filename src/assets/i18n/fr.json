@@ -1641,6 +1641,7 @@
   "CashflowGame.solo.modeSolo": "En solo dans l’appli",
   "CashflowGame.solo.modeSoloHint": "L’appli lance les dés et déplace votre pion sur la course de rats.",
   "CashflowGame.solo.roll": "Lancer les dés",
+  "CashflowGame.solo.finishDiceFirst": "Termine d'abord l'action de dés ci-dessous - ensuite tu peux lancer.",
   "CashflowGame.solo.diceHow": "Dés pour ce tour",
   "CashflowGame.solo.oneDie": "1 dé",
   "CashflowGame.solo.twoDice": "2 dés",
