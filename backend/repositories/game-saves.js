@@ -27,44 +27,50 @@ const {
   unpackJson,
 } = require('../services/game-snapshot');
 const { loadGameSets } = require('./game-repository');
+const {
+  SAVES_BUDGET_BYTES,
+  readStoredGame,
+  writeStoredGame,
+  deleteStoredGame,
+  storedGameSizes,
+  embeddedGame,
+  embeddedGameIds,
+  migrateEmbeddedGames,
+} = require('./game-save-store');
 const { GameActionError, loadContext } = require('./game-play');
 
 /**
- * Saved games through the API (todo/cashflow-game-pro.md slice D4). They live exactly where the browser keeps them -
- * `data.cashflowGames.index` and `data.cashflowGames.games.<id>`, each `{ schema, payload }` with the payload the JSON,
- * gzipped, base64-encoded and encrypted as one string - so a game saved in the app loads here and the other way round.
- * Every saved game sits inside the user's one database document, so the document's size is watched: a save that would
- * fill more than `STORAGE_BUDGET_FRACTION` of what CouchDB accepts is refused until something is deleted.
+ * Saved games through the API (todo/cashflow-game-pro.md slice D4). The small list of summaries lives where the browser
+ * keeps it - `data.cashflowGames.index` in the user's document - and each game is a document of its own in the
+ * `gamesaves` database (repositories/game-save-store.js), the same `{ schema, payload }` the browser writes to
+ * `cashflowGames/games/<id>` (the payload is the JSON, gzipped, base64-encoded and encrypted as one string), so a game
+ * saved in the app loads here and the other way round. What an account may keep is limited by a byte budget over all of
+ * its saved games (`SAVES_BUDGET_BYTES`, 1 GiB unless set), and one game by what CouchDB accepts as a document.
+ * Games saved before the move still sit inside the user's document; the first operation here moves them over.
  */
 
 const COUCHDB_MAX_DOCUMENT_BYTES = Number(process.env.COUCHDB_MAX_DOCUMENT_BYTES) || 8388608;
-const STORAGE_BUDGET_FRACTION = 0.8;
+const ONE_GAME_FRACTION = 0.9;
 const MAX_WRITE_RETRIES = 10;
 
 const refuse = (code, message) => new GameActionError(code, message);
-
-function budgetBytes() {
-  return Math.floor(COUCHDB_MAX_DOCUMENT_BYTES * STORAGE_BUDGET_FRACTION);
-}
 
 function documentBytes(data) {
   return Buffer.byteLength(JSON.stringify(data));
 }
 
-/** What one stored save takes up in the document, in bytes. */
-function saveBytes(data, id) {
-  const stored = data.cashflowGames?.games?.[id];
-  return stored ? Buffer.byteLength(JSON.stringify(stored)) : 0;
-}
-
-function storageOf(data, savedGames) {
-  const used = documentBytes(data);
+/**
+ * The storage report: `sizes` is every stored game's `{ id, bytes }`. `documentBytes` is the user's own document (the
+ * index, the settings, the running game); `limitBytes` is what CouchDB accepts for one document - and so for one game.
+ */
+function storageOf(data, savedGames, sizes) {
+  const gamesBytes = sizes.reduce((sum, entry) => sum + entry.bytes, 0);
   return {
-    documentBytes: used,
-    budgetBytes: budgetBytes(),
-    remainingBytes: Math.max(0, budgetBytes() - used),
+    documentBytes: documentBytes(data),
+    budgetBytes: SAVES_BUDGET_BYTES,
+    remainingBytes: Math.max(0, SAVES_BUDGET_BYTES - gamesBytes),
     limitBytes: COUCHDB_MAX_DOCUMENT_BYTES,
-    gamesBytes: documentBytes(data.cashflowGames ?? {}),
+    gamesBytes,
     gameCount: savedGames.length,
     keepAtMost: SAVED_GAME_AGENT_KEEP,
     overKeepBy: Math.max(0, savedGames.length - SAVED_GAME_AGENT_KEEP),
@@ -101,19 +107,20 @@ function writeIndex(data, games, session) {
   };
 }
 
-function readBlob(data, id, session) {
-  const blob = readPacked(data.cashflowGames?.games?.[id], session);
+/** One saved game: from its own document, or - until the move has reached it - from the user's document. */
+async function readBlob(deps, userId, data, id, session) {
+  const stored = (await readStoredGame(deps.savesDb, userId, id)) ?? embeddedGame(data, id) ?? null;
+  const blob = readPacked(stored, session);
   if (!blob || !blob.snapshot) return null;
   if (blob.schema > SAVED_GAME_SCHEMA)
     throw refuse('GAME_RULE_REFUSED', 'This game was saved by a newer version.');
   return blob;
 }
 
-function writeBlob(data, id, blob, session) {
-  const games = { ...data.cashflowGames?.games };
-  if (blob === null) delete games[id];
-  else games[id] = writePacked(blob, session);
-  return { ...data, cashflowGames: { ...data.cashflowGames, games } };
+/** The stored form of a blob, ready for the games store, and its size. */
+function packedBlob(blob, session) {
+  const value = writePacked(blob, session);
+  return { value, bytes: Buffer.byteLength(JSON.stringify(value)) };
 }
 
 // ── Building a save ───────────────────────────────────────────────────────────────────────────────
@@ -167,7 +174,10 @@ function stepLog(stack, live, context) {
   ).steps;
 }
 
-/** Saves the running game into its slot (the first save gives it one). Returns the new data and the list entry. */
+/**
+ * Saves the running game into its slot (the first save gives it one). Returns the new data (the state and the index -
+ * the game itself is not in it), the list entry and the `blob` to store under `summary.id`.
+ */
 function saveRunning(data, context, options = {}) {
   const { session, settings, state, history } = context;
   let id = state.gameId;
@@ -208,48 +218,97 @@ function saveRunning(data, context, options = {}) {
     // A compact save keeps the plain step log but not the undo chain, which is most of a save's size.
     ...(options.compact ? {} : { undo: encodeUndoChain(history.stack) }),
   };
-  next = writeBlob(next, id, blob, session);
   next = writeIndex(next, [...games.filter((candidate) => candidate.id !== id), summary], session);
-  return { data: next, summary, state: nextState };
+  return { data: next, summary, state: nextState, blob };
 }
 
 // ── Running an operation on the stored document ──────────────────────────────────────────────────
 
-/** Loads the document, lets `operate` change it, stores it - retried on a concurrent change. */
+/** The context of the account, with any game still inside the user's document moved to its own document first. */
+async function loadSavesContext(deps, userId) {
+  const context = await loadContext(deps, userId);
+  if (embeddedGameIds(context.data).length === 0) return context;
+  await migrateEmbeddedGames(deps, userId);
+  return loadContext(deps, userId);
+}
+
+/**
+ * Loads the account, lets `operate` change it and stores the result - retried on a concurrent change. `operate`
+ * returns the new user-document `data` and, for the games it changed, `blobs`: `{ id, blob }` (save this game) or
+ * `{ id, blob: null }` (delete it). Games are stored before the document is written and deleted after it, so a failure
+ * in between never leaves the index pointing at a game that is not there.
+ */
 async function withSaves(deps, userId, operate) {
   let attempt = 0;
   while (attempt < MAX_WRITE_RETRIES) {
-    const context = await loadContext(deps, userId);
-    const outcome = await operate(context);
+    const context = await loadSavesContext(deps, userId);
+    const sizes = await storedGameSizes(deps.savesDb, userId);
+    const outcome = await operate({ ...context, sizes });
     if (!outcome.data) return outcome.result;
+
+    const packed = new Map();
+    for (const { id, blob } of outcome.blobs ?? []) {
+      if (blob !== null) packed.set(id, packedBlob(blob, context.session));
+    }
+    assertRoom(sizes, outcome.blobs ?? [], packed);
+
+    for (const [id, { value }] of packed) await writeStoredGame(deps.savesDb, userId, id, value);
     try {
       await deps.usersDb.insert({
         ...context.userDoc,
         data: outcome.data,
         updatedAt: systemClock.nowIso(),
       });
-      return {
-        ...outcome.result,
-        storage: storageOf(outcome.data, readIndex(outcome.data, context.session)),
-      };
     } catch (error) {
       if (error.statusCode !== 409) throw error;
       attempt += 1;
+      continue;
     }
+    for (const { id, blob } of outcome.blobs ?? []) {
+      if (blob === null) await deleteStoredGame(deps.savesDb, userId, id);
+    }
+    const after = new Map(sizes.map((entry) => [entry.id, entry.bytes]));
+    for (const { id, blob } of outcome.blobs ?? []) {
+      if (blob === null) after.delete(id);
+      else after.set(id, packed.get(id).bytes);
+    }
+    return {
+      ...outcome.result,
+      storage: storageOf(
+        outcome.data,
+        readIndex(outcome.data, context.session),
+        [...after].map(([id, bytes]) => ({ id, bytes })),
+      ),
+    };
   }
   throw refuse('GAME_WRITE_CONFLICT', 'The account kept changing; try again.');
 }
 
-function assertRoom(data, session) {
-  const used = documentBytes(data);
-  if (used > budgetBytes()) {
+/** Refuses a save that would not fit: one game above what CouchDB accepts, or the account's games above the budget. */
+function assertRoom(sizes, blobs, packed) {
+  const oneGameLimit = Math.floor(COUCHDB_MAX_DOCUMENT_BYTES * ONE_GAME_FRACTION);
+  for (const [id, { bytes }] of packed) {
+    if (bytes > oneGameLimit) {
+      throw refuse(
+        'GAME_STORAGE_FULL',
+        `Saved game ${id} is too large to store (${bytes} of ${oneGameLimit} bytes allowed for one game). ` +
+          'Save it compact (the undo history left out) instead.',
+      );
+    }
+  }
+  const sizeOf = new Map(sizes.map((entry) => [entry.id, entry.bytes]));
+  for (const { id, blob } of blobs) {
+    if (blob === null) sizeOf.delete(id);
+    else sizeOf.set(id, packed.get(id).bytes);
+  }
+  const used = [...sizeOf.values()].reduce((sum, bytes) => sum + bytes, 0);
+  if (used > SAVES_BUDGET_BYTES) {
     throw refuse(
       'GAME_STORAGE_FULL',
-      `The account has no room for another saved game (${used} of ${budgetBytes()} bytes used). ` +
-        `Delete saved games that are no longer needed (DELETE /game/saves/{id}, or POST /game/saves/prune), then save again.`,
+      `The account has no room for another saved game (${used} of ${SAVES_BUDGET_BYTES} bytes used). ` +
+        'Delete saved games that are no longer needed (DELETE /game/saves/{id}, or POST /game/saves/prune), then save again.',
     );
   }
-  return readIndex(data, session);
 }
 
 function requireRunning(state) {
@@ -259,22 +318,24 @@ function requireRunning(state) {
 // ── The operations ────────────────────────────────────────────────────────────────────────────────
 
 async function listSaves(deps, userId) {
-  const context = await loadContext(deps, userId);
+  const context = await loadSavesContext(deps, userId);
   const games = readIndex(context.data, context.session);
+  const sizes = await storedGameSizes(deps.savesDb, userId);
+  const sizeOf = new Map(sizes.map((entry) => [entry.id, entry.bytes]));
   return {
     games: sortSavedGames(games).map((game) => ({
       ...game,
       status: savedGameStatus(game),
-      sizeBytes: saveBytes(context.data, game.id),
+      sizeBytes: sizeOf.get(game.id) ?? 0,
     })),
     currentGameId: context.state.gameId ?? null,
-    storage: storageOf(context.data, games),
+    storage: storageOf(context.data, games, sizes),
   };
 }
 
 async function getSave(deps, userId, id) {
   const context = await loadContext(deps, userId);
-  const blob = readBlob(context.data, id, context.session);
+  const blob = await readBlob(deps, userId, context.data, id, context.session);
   if (!blob) throw refuse('GAME_SAVE_NOT_FOUND', 'No saved game has that id.');
   return { ...blob.summary, status: savedGameStatus(blob.summary), steps: blob.steps ?? [] };
 }
@@ -283,14 +344,14 @@ async function saveGame(deps, userId, options = {}) {
   return withSaves(deps, userId, async (context) => {
     requireRunning(context.state);
     const saved = saveRunning(context.data, context, options);
-    assertRoom(saved.data, context.session);
     return {
       data: saved.data,
+      blobs: [{ id: saved.summary.id, blob: saved.blob }],
       result: {
         game: {
           ...saved.summary,
           status: savedGameStatus(saved.summary),
-          sizeBytes: saveBytes(saved.data, saved.summary.id),
+          sizeBytes: packedBlob(saved.blob, context.session).bytes,
         },
       },
     };
@@ -302,7 +363,6 @@ async function endGame(deps, userId, options = {}) {
   return withSaves(deps, userId, async (context) => {
     requireRunning(context.state);
     const saved = saveRunning(context.data, context, { ...options, ended: true });
-    assertRoom(saved.data, context.session);
     const cleared = writeSnapshot(saved.data, blankGameData(), context.session);
     const withEmptyHistory = {
       ...cleared,
@@ -316,6 +376,7 @@ async function endGame(deps, userId, options = {}) {
     };
     return {
       data: withEmptyHistory,
+      blobs: [{ id: saved.summary.id, blob: saved.blob }],
       result: { game: { ...saved.summary, status: savedGameStatus(saved.summary) } },
     };
   });
@@ -325,14 +386,17 @@ async function endGame(deps, userId, options = {}) {
 async function loadSave(deps, userId, id) {
   return withSaves(deps, userId, async (context) => {
     const { session, state } = context;
-    const blob = readBlob(context.data, id, session);
+    const blob = await readBlob(deps, userId, context.data, id, session);
     if (!blob) throw refuse('GAME_SAVE_NOT_FOUND', 'No saved game has that id.');
     if (!isGameSnapshot(blob.snapshot))
       throw refuse('GAME_RULE_REFUSED', 'This saved game is damaged.');
 
     let data = context.data;
+    const blobs = [];
     if (state.professionId && state.gameId !== id) {
-      data = saveRunning(data, context).data;
+      const running = saveRunning(data, context);
+      data = running.data;
+      blobs.push({ id: running.summary.id, blob: running.blob });
     }
     const games = readIndex(data, session);
     const listed = games.find((candidate) => candidate.id === id);
@@ -364,8 +428,7 @@ async function loadSave(deps, userId, id) {
       [...games.filter((candidate) => candidate.id !== id), entry],
       session,
     );
-    assertRoom(restored, session);
-    return { data: restored, result: { loaded: entry } };
+    return { data: restored, blobs, result: { loaded: entry } };
   });
 }
 
@@ -391,13 +454,12 @@ async function renameSave(deps, userId, id, name) {
   });
 }
 
-/** Removes saved games; a running game that sat in one of the slots forgets its slot. */
+/** Removes saved games from the index; a running game that sat in one of the slots forgets its slot. */
 function dropSaves(context, ids) {
   const { session, state } = context;
   const removed = new Set(ids);
   let data = context.data;
   const games = readIndex(data, session);
-  for (const id of removed) data = writeBlob(data, id, null, session);
   data = writeIndex(
     data,
     games.filter((game) => !removed.has(game.id)),
@@ -416,7 +478,11 @@ async function deleteSave(deps, userId, id) {
     if (!games.some((game) => game.id === id)) {
       throw refuse('GAME_SAVE_NOT_FOUND', 'No saved game has that id.');
     }
-    return { data: dropSaves(context, [id]), result: { deleted: [id] } };
+    return {
+      data: dropSaves(context, [id]),
+      blobs: [{ id, blob: null }],
+      result: { deleted: [id] },
+    };
   });
 }
 
@@ -430,7 +496,11 @@ async function pruneSaves(deps, userId, { keepIds = [], keepLatest = 0 }) {
     const keep = new Set([...keepIds, ...games.slice(0, keepLatest).map((game) => game.id)]);
     const doomed = games.filter((game) => !keep.has(game.id)).map((game) => game.id);
     if (doomed.length === 0) return { result: { deleted: [] } };
-    return { data: dropSaves(context, doomed), result: { deleted: doomed } };
+    return {
+      data: dropSaves(context, doomed),
+      blobs: doomed.map((id) => ({ id, blob: null })),
+      result: { deleted: doomed },
+    };
   });
 }
 

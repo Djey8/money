@@ -27,7 +27,7 @@ async function reviewLive(deps, userId, options) {
 
 async function reviewSave(deps, userId, id, options) {
   const context = await loadContext(deps, userId);
-  const blob = readBlob(context.data, id, context.session);
+  const blob = await readBlob(deps, userId, context.data, id, context.session);
   if (!blob) throw new GameActionError('GAME_SAVE_NOT_FOUND', 'No saved game has that id.');
   if (!isGameSnapshot(blob.snapshot)) return notReviewable('This saved game is damaged.');
   if (!isEncodedUndoChain(blob.undo)) {

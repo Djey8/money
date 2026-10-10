@@ -24,6 +24,7 @@ let usersDb;
 let authDb;
 let communityDb;
 let auditDb;
+let gameSavesDb;
 
 async function createDbIfNotExists(name) {
   try {
@@ -49,11 +50,15 @@ async function initializeDatabase() {
     // Empty until slice 1's write endpoints exist; created now so the schema
     // and security lockdown are in place from day one.
     await createDbIfNotExists('audit');
+    // One document per saved Cashflow game (repositories/game-save-store.js), so saved games no longer share the
+    // user's single document and its CouchDB size limit.
+    await createDbIfNotExists('gamesaves');
 
     usersDb = connection.db.use('users');
     authDb = connection.db.use('auth');
     communityDb = connection.db.use('community');
     auditDb = connection.db.use('audit');
+    gameSavesDb = connection.db.use('gamesaves');
 
     // Create indexes
     await createIndexes();
@@ -143,6 +148,14 @@ async function createIndexes() {
         fields: ['userId', 'payloadEncrypted'],
       },
       name: 'audit-user-payload-encrypted-index',
+    });
+
+    // Serves "this user's saved games" (sizes and clean-up) in repositories/game-save-store.js.
+    await gameSavesDb.createIndex({
+      index: {
+        fields: ['userId'],
+      },
+      name: 'gamesaves-user-index',
     });
 
     console.log('Indexes created successfully');
@@ -249,6 +262,9 @@ async function setupDatabaseSecurity() {
       },
     };
 
+    // Saved games: encrypted payloads, service account only.
+    const gameSavesSecurity = auditSecurity;
+
     // Apply security settings
     try {
       await connection.request({
@@ -297,6 +313,18 @@ async function setupDatabaseSecurity() {
     } catch (err) {
       console.error('Error setting audit database security:', err.message);
     }
+
+    try {
+      await connection.request({
+        db: 'gamesaves',
+        path: '_security',
+        method: 'PUT',
+        body: gameSavesSecurity,
+      });
+      console.log('Game saves database security configured');
+    } catch (err) {
+      console.error('Error setting game saves database security:', err.message);
+    }
   } catch (error) {
     console.error('Error setting up database security:', error);
     // Don't fail initialization if security setup fails
@@ -319,10 +347,15 @@ function getAuditDb() {
   return auditDb;
 }
 
+function getGameSavesDb() {
+  return gameSavesDb;
+}
+
 module.exports = {
   initializeDatabase,
   getUsersDb,
   getAuthDb,
   getCommunityDb,
   getAuditDb,
+  getGameSavesDb,
 };

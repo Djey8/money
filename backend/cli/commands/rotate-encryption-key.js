@@ -13,7 +13,8 @@
  * there would make all previously-encrypted data (and, just as easily
  * forgotten, all previously-encrypted audit payloads) permanently
  * unreadable. This tool exists specifically to do that re-processing
- * safely, for both databases.
+ * safely, for both databases - and for the user's saved Cashflow games, which are documents of their own in the
+ * `gamesaves` database (repositories/game-save-store.js).
  *
  * Modeled on `mm-admin migrate`'s safety cycle (JFK's explicit requirement:
  * "nothing I use today may break, must be reversible"):
@@ -89,9 +90,9 @@ async function writeWithRetry(db, docId, mutate) {
  * debugging a double-failure would lose both the original cause and the
  * backup file path, their only remaining recovery route.
  */
-async function rollbackOrExplain(usersDb, authDb, auditDb, userId, backupFile, reason) {
+async function rollbackOrExplain(usersDb, authDb, auditDb, userId, backupFile, reason, savesDb) {
   try {
-    await restoreFromBackup(usersDb, authDb, auditDb, userId, backupFile);
+    await restoreFromBackup(usersDb, authDb, auditDb, userId, backupFile, savesDb);
   } catch (rollbackErr) {
     throw new RotationError(
       `${reason} Automatic rollback from ${backupFile} ALSO FAILED (${rollbackErr.message}) — ` +
@@ -101,9 +102,34 @@ async function rollbackOrExplain(usersDb, authDb, auditDb, userId, backupFile, r
   throw new RotationError(`${reason} Automatically rolled back from ${backupFile}.`);
 }
 
-async function restoreFromBackup(usersDb, authDb, auditDb, userId, backupFile) {
+/** Every stored saved game of the account, whole (the payloads are what gets re-keyed). */
+async function fetchGameDocs(savesDb, userId) {
+  const docs = [];
+  let bookmark;
+  for (;;) {
+    const page = await savesDb.find({
+      selector: { userId },
+      limit: 100,
+      ...(bookmark ? { bookmark } : {}),
+    });
+    docs.push(...page.docs);
+    if (page.docs.length < 100) return docs;
+    bookmark = page.bookmark;
+  }
+}
+
+async function restoreFromBackup(usersDb, authDb, auditDb, userId, backupFile, savesDb) {
   const raw = fs.readFileSync(backupFile, 'utf8');
-  const { userDoc, authDoc, auditEntries } = JSON.parse(raw);
+  const { userDoc, authDoc, auditEntries, games } = JSON.parse(raw);
+  if (savesDb) {
+    for (const game of games || []) {
+      await writeWithRetry(savesDb, game._id, (current) => ({
+        ...current,
+        schema: game.schema,
+        payload: game.payload,
+      }));
+    }
+  }
   await writeWithRetry(usersDb, userId, (current) => ({
     ...userDoc,
     _rev: current._rev,
@@ -129,13 +155,13 @@ async function restoreFromBackup(usersDb, authDb, auditDb, userId, backupFile) {
  * @param {object} options - { userId, newKey, dryRun, backupDir, rollbackFile }
  */
 async function runRotateEncryptionKey(deps, options) {
-  const { usersDb, authDb, auditDb } = deps;
+  const { usersDb, authDb, auditDb, savesDb } = deps;
   const { userId, newKey, dryRun = false, backupDir = DEFAULT_BACKUP_DIR, rollbackFile } = options;
 
   if (!userId) throw new RotationError('--user <id> is required');
 
   if (rollbackFile) {
-    return restoreFromBackup(usersDb, authDb, auditDb, userId, rollbackFile);
+    return restoreFromBackup(usersDb, authDb, auditDb, userId, rollbackFile, savesDb);
   }
 
   if (typeof newKey !== 'string' || newKey.trim() === '') {
@@ -182,12 +208,15 @@ async function runRotateEncryptionKey(deps, options) {
   }
   const auditBeforePlaintext = auditEntries.map((entry) => oldSession.decrypt(entry.payload));
 
+  const gameDocs = savesDb ? await fetchGameDocs(savesDb, userId) : [];
+
   if (dryRun) {
     return {
       status: 'dry-run',
       userId,
       fieldsReencrypted: rewrittenPaths.length,
       auditEntriesReencrypted: auditEntries.length,
+      savedGamesReencrypted: gameDocs.length,
     };
   }
 
@@ -199,6 +228,7 @@ async function runRotateEncryptionKey(deps, options) {
       payload: entry.payload,
       payloadEncrypted: entry.payloadEncrypted,
     })),
+    games: gameDocs.map((game) => ({ _id: game._id, schema: game.schema, payload: game.payload })),
   });
   // Printed before any write that could be interrupted, so an operator
   // whose process gets killed mid-rotation still has the one thing needed
@@ -237,6 +267,7 @@ async function runRotateEncryptionKey(deps, options) {
       userId,
       backupFile,
       `Verification failed for user ${userId}: decrypted content before and after rotation did not match.`,
+      savesDb,
     );
   }
 
@@ -254,6 +285,7 @@ async function runRotateEncryptionKey(deps, options) {
         userId,
         backupFile,
         `Data was re-encrypted and verified, but re-encrypting audit entry ${entry._id} failed (${err.message}).`,
+        savesDb,
       );
     }
   }
@@ -274,6 +306,37 @@ async function runRotateEncryptionKey(deps, options) {
         userId,
         backupFile,
         `Verification failed for audit entry ${auditEntries[i]._id}: decrypted content before and after rotation did not match.`,
+        savesDb,
+      );
+    }
+  }
+
+  // The saved games: re-keyed one by one, each read back and compared before the next.
+  for (const game of gameDocs) {
+    try {
+      const schemaBefore = oldSession.decrypt(game.schema);
+      const payloadBefore = oldSession.decrypt(game.payload);
+      await writeWithRetry(savesDb, game._id, (current) => ({
+        ...current,
+        schema: newSession.encrypt(schemaBefore),
+        payload: newSession.encrypt(payloadBefore),
+      }));
+      const written = await savesDb.get(game._id);
+      if (
+        newSession.decrypt(written.schema) !== schemaBefore ||
+        newSession.decrypt(written.payload) !== payloadBefore
+      ) {
+        throw new Error('it did not read back the same');
+      }
+    } catch (err) {
+      await rollbackOrExplain(
+        usersDb,
+        authDb,
+        auditDb,
+        userId,
+        backupFile,
+        `Data and audit entries were re-encrypted and verified, but re-encrypting saved game ${game._id} failed (${err.message}).`,
+        savesDb,
       );
     }
   }
@@ -292,6 +355,7 @@ async function runRotateEncryptionKey(deps, options) {
       userId,
       backupFile,
       `Data and audit entries were re-encrypted and verified, but recording the new active key failed (${err.message}).`,
+      savesDb,
     );
   }
 
@@ -300,6 +364,7 @@ async function runRotateEncryptionKey(deps, options) {
     userId,
     fieldsReencrypted: rewrittenPaths.length,
     auditEntriesReencrypted: auditEntries.length,
+    savedGamesReencrypted: gameDocs.length,
     backupFile,
   };
 }

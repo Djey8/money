@@ -16,6 +16,7 @@
  */
 
 const bcrypt = require('bcryptjs');
+const { deleteAllStoredGames } = require('./game-save-store');
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -145,7 +146,7 @@ async function destroyTolerant(db, docId) {
  * HTTP-session concerns the calling route handles (it has access to the
  * request's cookies; this repository only ever receives a `userId`).
  */
-async function deleteAccount({ usersDb, authDb }, userId) {
+async function deleteAccount({ usersDb, authDb, savesDb }, userId) {
   // Fetched and validated before anything is destroyed, so a user with an
   // implausibly large number of PATs aborts the whole deletion up front
   // rather than partially deleting the account and leaving some tokens
@@ -165,6 +166,8 @@ async function deleteAccount({ usersDb, authDb }, userId) {
     await destroyTolerant(authDb, pat._id);
   }
 
+  // Saved Cashflow games are documents of their own, not part of the user document.
+  if (savesDb) await deleteAllStoredGames(savesDb, userId);
   await destroyTolerant(usersDb, userId);
   await destroyTolerant(authDb, userId);
 
