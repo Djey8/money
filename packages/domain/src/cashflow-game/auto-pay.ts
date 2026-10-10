@@ -67,7 +67,7 @@ export function payWithAutoLoan(
       financedMinor: 0,
       incrementMinor: working.gameSet.loanRule.incrementMinor,
     });
-    const loan = playBankLoan(working, loanMinor, deps);
+    const loan = playBankLoan(working, loanMinor, deps, { mandatory: true });
     loan.step = { kind: 'loanAuto', detail: deps.money(loanMinor) };
     effects.push(loan);
     loansMinor.push(loanMinor);

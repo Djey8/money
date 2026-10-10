@@ -1,3 +1,4 @@
+import { openOfferFor } from './rules';
 import {
   emptyEffects,
   type BookAsset,
@@ -179,6 +180,7 @@ export function playMarketBuyerCard(
         cardId: card.id,
         label: `${deps.money(perCoinMinor)} × ${coins}`,
         pricePerCoinMinor: perCoinMinor,
+        ...(state.turn ? { offeredAtRoll: state.turn.count } : {}),
       });
       const notes = projectNotes(asset.tag);
       if (notes) {
@@ -230,6 +232,7 @@ export function playMarketBuyerCard(
         salePriceMinor,
         cardId: card.id,
         label: offerLabel,
+        ...(state.turn ? { offeredAtRoll: state.turn.count } : {}),
       });
       const notes = projectNotes(investment.tag);
       if (notes) {
@@ -285,7 +288,7 @@ export function marketSaleFor(
   investments: BookInvestment[],
   title: string,
 ): MarketSale | null {
-  const offer = (state.marketOffers ?? []).find((candidate) => candidate.title === title);
+  const offer = openOfferFor(state, title);
   if (offer?.pricePerCoinMinor !== undefined) {
     // Gold: no mortgage, the whole price is cash - for the coins still owned.
     const coins = coinsOwnedOf(state, title);
@@ -529,6 +532,22 @@ export function updateSharePrice(
     detail: `${title} · ${deps.money(beforeMinor)} → ${deps.money(priceMinor)}`,
   });
   result.sharePrices = [{ tag: title, priceMinor }];
+  // The new price is also an offer for the shares held: what a sale under the game rules gets, while it is open.
+  const otherOffers = (books.state.marketOffers ?? []).filter((offer) => offer.title !== title);
+  result.state = {
+    ...result.state,
+    marketOffers: [
+      ...otherOffers,
+      {
+        title,
+        salePriceMinor: priceMinor * held.quantity,
+        cardId: card.id,
+        label: deps.money(priceMinor),
+        pricePerShareMinor: priceMinor,
+        ...(books.state.turn ? { offeredAtRoll: books.state.turn.count } : {}),
+      },
+    ],
+  };
   result.growUpdates = [
     {
       title,

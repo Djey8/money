@@ -1,3 +1,4 @@
+import type { GameRules } from './rules';
 /**
  * Types for the Cashflow (board game) MVP — see todo/cashflow-game.md for the
  * full plan. A "game set" is the pluggable physical edition/house-rules
@@ -174,6 +175,10 @@ export interface CashflowMarketOffer {
   label: string;
   /** Gold buyers: the price for every coin - the total follows the coins still owned. */
   pricePerCoinMinor?: number;
+  /** A stock price card: the price for every share held, which is what a sale under the rules gets. */
+  pricePerShareMinor?: number;
+  /** The player's roll count when the card was played: with `sellOfferRolls` it decides how long the offer stays open. */
+  offeredAtRoll?: number;
 }
 
 export type CashflowDeckKind = 'dealSmall' | 'dealBig' | 'market' | 'doodad';
@@ -255,6 +260,11 @@ export interface CashflowPendingDecision {
   kind: 'deal' | 'market' | 'doodad';
   /** The ring index of the space. A Deals space leaves the pile (Small or Big) to the player. */
   spaceIndex: number;
+  /**
+   * Under the rule `cardChoice: 'offered-once'`: the one card drawn for this space. It is the only card that may be
+   * played here; nothing else can be drawn or named until the space is settled.
+   */
+  offered?: { deck: CashflowDeckKind; cardId: string };
 }
 
 /**
@@ -303,6 +313,8 @@ export interface CashflowGameState {
   gameId?: string;
   /** The name it goes by in the games list. */
   gameName?: string;
+  /** The rules the game is played under, fixed at its start (rules.ts); absent: `free`, as before rules existed. */
+  rules?: GameRules;
 }
 
 export function initialCashflowGameState(): CashflowGameState {

@@ -26,6 +26,7 @@ export * from './transactions/subscription-generation';
 export * from './transactions/subscription-sync';
 export * from './transactions/budget-from-subscriptions';
 export * from './cashflow-game/types';
+export * from './cashflow-game/rules';
 export * from './cashflow-game/game-sets';
 export * from './cashflow-game/symbols';
 export * from './cashflow-game/saved-games';

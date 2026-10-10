@@ -1,6 +1,7 @@
 import { openDecisions } from './asset-deals';
 import { currentTurn, whyCannotRoll, whyCannotSettle } from './turn';
 import type { CashflowGameState } from './types';
+import { offerIsOpen, rulesOf, whyCannotDraw } from './rules';
 
 /**
  * What the player (or an agent) may do right now, as plain ids (todo/cashflow-game-pro.md, slice D1). The rules that
@@ -83,7 +84,11 @@ export function legalActions(
     }
     if (!whyCannotSettle(state)) {
       const pending = currentTurn(state).pending;
-      actions.push(...cardActions(pending?.kind));
+      actions.push(
+        ...cardActions(pending?.kind).filter(
+          (a) => a.action !== 'draw_card' || !whyCannotDraw(state),
+        ),
+      );
       actions.push({
         action: 'pass_card',
         description: `Leave the ${pending?.kind ?? 'card'} on this space without playing it; the next roll is open afterwards.`,
@@ -104,13 +109,19 @@ export function legalActions(
       });
     }
   }
-  if (currentTurn(state).phase !== 'over') {
+  const rules = rulesOf(state);
+  if (currentTurn(state).phase !== 'over' && rules.bankLoan === 'allowed') {
     actions.push({
       action: 'bank_loan',
       description: 'Borrow one more loan step from the bank, or repay some of it.',
     });
   }
-  if (currentTurn(state).phase !== 'over') {
+  if (
+    currentTurn(state).phase !== 'over' &&
+    rules.sell !== 'never' &&
+    (rules.sell === 'always' ||
+      (state.marketOffers ?? []).some((offer) => offerIsOpen(state, offer)))
+  ) {
     actions.push({
       action: 'sell_position',
       description:

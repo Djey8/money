@@ -70,6 +70,8 @@ function decodeGameState(raw, session) {
       cardId: str(o.cardId),
       label: str(o.label),
       ...(o.pricePerCoinMinor != null ? { pricePerCoinMinor: num(o.pricePerCoinMinor) } : {}),
+      ...(o.pricePerShareMinor != null ? { pricePerShareMinor: num(o.pricePerShareMinor) } : {}),
+      ...(o.offeredAtRoll != null ? { offeredAtRoll: num(o.offeredAtRoll) } : {}),
     })),
   };
   if (raw.turn != null) {
@@ -83,9 +85,31 @@ function decodeGameState(raw, session) {
             pending: {
               kind: str(raw.turn.pending.kind),
               spaceIndex: num(raw.turn.pending.spaceIndex),
+              ...(raw.turn.pending.offered != null
+                ? {
+                    offered: {
+                      deck: str(raw.turn.pending.offered.deck),
+                      cardId: str(raw.turn.pending.offered.cardId),
+                    },
+                  }
+                : {}),
             },
           }
         : {}),
+    };
+  }
+  if (raw.rules != null) {
+    const r = raw.rules;
+    const cap = (value) => (value == null ? null : num(value));
+    state.rules = {
+      preset: str(r.preset),
+      cardChoice: str(r.cardChoice),
+      sell: str(r.sell),
+      sellOfferRolls: num(r.sellOfferRolls),
+      manualTransactions: str(r.manualTransactions),
+      bankLoan: str(r.bankLoan),
+      maxLoanMinor: cap(r.maxLoanMinor),
+      maxFreeAmountMinor: cap(r.maxFreeAmountMinor),
     };
   }
   if (raw.gameId != null) state.gameId = str(raw.gameId);

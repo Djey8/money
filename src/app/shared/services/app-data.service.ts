@@ -35,6 +35,8 @@ import { DemoService } from './demo.service';
 import {
   convertDocumentFromMinorUnits,
   CashflowGameState,
+  CashflowDeckKind,
+  GameRules,
   initialCashflowGameState,
 } from '@money/domain';
 
@@ -575,6 +577,10 @@ export class AppDataService {
           cardId: str(o.cardId),
           label: str(o.label),
           ...(o.pricePerCoinMinor != null ? { pricePerCoinMinor: num(o.pricePerCoinMinor) } : {}),
+          ...(o.pricePerShareMinor != null
+            ? { pricePerShareMinor: num(o.pricePerShareMinor) }
+            : {}),
+          ...(o.offeredAtRoll != null ? { offeredAtRoll: num(o.offeredAtRoll) } : {}),
         }))
       : [];
 
@@ -618,9 +624,33 @@ export class AppDataService {
                         NonNullable<CashflowGameState['turn']>['pending']
                       >['kind'],
                       spaceIndex: num(raw.turn.pending.spaceIndex),
+                      ...(raw.turn.pending.offered != null
+                        ? {
+                            offered: {
+                              deck: str(raw.turn.pending.offered.deck) as CashflowDeckKind,
+                              cardId: str(raw.turn.pending.offered.cardId),
+                            },
+                          }
+                        : {}),
                     },
                   }
                 : {}),
+            },
+          }
+        : {}),
+      ...(raw.rules != null
+        ? {
+            rules: {
+              preset: str(raw.rules.preset) as GameRules['preset'],
+              cardChoice: str(raw.rules.cardChoice) as GameRules['cardChoice'],
+              sell: str(raw.rules.sell) as GameRules['sell'],
+              sellOfferRolls: num(raw.rules.sellOfferRolls),
+              manualTransactions: str(
+                raw.rules.manualTransactions,
+              ) as GameRules['manualTransactions'],
+              bankLoan: str(raw.rules.bankLoan) as GameRules['bankLoan'],
+              maxLoanMinor: nullableNum(raw.rules.maxLoanMinor),
+              maxFreeAmountMinor: nullableNum(raw.rules.maxFreeAmountMinor),
             },
           }
         : {}),

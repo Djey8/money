@@ -51,6 +51,39 @@ describe('game text', () => {
     expect(createGameText('de')('CashflowGame.noSuchKey')).toBe('CashflowGame.noSuchKey');
   });
 
+  it('keeps the game rules, the card on offer and the age of a sale offer', () => {
+    const ruled = {
+      ...state,
+      rules: {
+        preset: 'custom',
+        cardChoice: 'offered-once',
+        sell: 'with-offer',
+        sellOfferRolls: 3,
+        manualTransactions: 'forbidden',
+        bankLoan: 'allowed',
+        maxLoanMinor: null,
+        maxFreeAmountMinor: 5000,
+      },
+      turn: {
+        ...state.turn,
+        pending: { kind: 'deal', spaceIndex: 4, offered: { deck: 'dealSmall', cardId: 'ds-1' } },
+      },
+      marketOffers: [
+        {
+          title: 'OK4U',
+          salePriceMinor: 150000,
+          cardId: 'm1',
+          label: '15',
+          pricePerShareMinor: 1500,
+          offeredAtRoll: 7,
+        },
+      ],
+    };
+    expect(decodeGameState(encodeGameState(ruled, null), null)).toEqual(ruled);
+    const session = new EncryptionSession('a-key');
+    expect(decodeGameState(encodeGameState(ruled, session), session)).toEqual(ruled);
+  });
+
   it('falls back to English for an unknown language', () => {
     expect(createGameText('xx')('CashflowGame.Round')).toBe('Round');
   });

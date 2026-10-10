@@ -23,6 +23,7 @@ import {
 import { buyAssetDeal, sellPosition, type SellInput } from './positions';
 import { rollDie, type Rng } from './rng';
 import { cardPickedStep, type GameStep } from './steps';
+import { normalizeRules, rulesOf, whyCannotDraw, whyCannotUseCard, type GameRules } from './rules';
 import type {
   CashflowDealCard,
   CashflowDeckKind,
@@ -96,15 +97,30 @@ export function drawCardAction(
       `This space asks for a ${pending.kind} card: draw from ${DECK_FOR_PENDING[pending.kind].join(' or ')}.`,
     );
   }
+  const refused = whyCannotDraw(books.state);
+  if (refused) throw new Error(refused);
   const drawn = drawRandomCard(
     findDeck(books.gameSet, deck) as { id: string }[],
     books.state.drawnCardIds[deck],
     deps.rng,
   );
-  const state = {
+  const drawnState = {
     ...books.state,
     drawnCardIds: { ...books.state.drawnCardIds, [deck]: drawn.drawnIds },
   };
+  // Under 'offered-once' the drawn card is the one offered on this space, and nothing else can be played.
+  const state =
+    rulesOf(books.state).cardChoice === 'offered-once' &&
+    books.state.mode === 'solo' &&
+    drawnState.turn?.pending
+      ? {
+          ...drawnState,
+          turn: {
+            ...drawnState.turn,
+            pending: { ...drawnState.turn.pending, offered: { deck, cardId: drawn.card.id } },
+          },
+        }
+      : drawnState;
   const described = describeCard(drawn.card, deps);
   return {
     effects: [
@@ -130,6 +146,8 @@ export function buyDealAction(
   ];
   const card = cards.find((candidate) => candidate.id === input.cardId);
   if (!card) throw new Error(`No Deal card with the id '${input.cardId}'.`);
+  const refused = whyCannotUseCard(books.state, input.cardId);
+  if (refused) throw new Error(refused);
   const symbol = card.symbol ?? card.title;
   const holds = books.shares.some((share) => share.tag === symbol && share.quantity > 0);
   if (card.assetKind === 'share' && holds) {
@@ -174,6 +192,8 @@ export function payDoodadAction(
     (candidate) => candidate.id === input.cardId,
   );
   if (!card) throw new Error(`No Doodad card with the id '${input.cardId}'.`);
+  const refused = whyCannotUseCard(books.state, input.cardId);
+  if (refused) throw new Error(refused);
   const text = textDeps(deps);
   const effects = payCardExpense(
     books,
@@ -210,6 +230,8 @@ export function playMarketAction(
     (candidate) => candidate.id === input.cardId,
   );
   if (!card) throw new Error(`No Market card with the id '${input.cardId}'.`);
+  const refused = whyCannotUseCard(books.state, input.cardId);
+  if (refused) throw new Error(refused);
   const title = marketHeading(card, deps);
   const label = (symbol: string) => deps.cards.symbolFor(symbol);
   const kind = marketCardKind(card);
@@ -342,7 +364,13 @@ export function sellPositionAction(
  */
 export function startGameAction(
   books: GameBooks,
-  input: { gameSetId: string; professionId: string; mode?: 'companion' | 'solo' },
+  input: {
+    gameSetId: string;
+    professionId: string;
+    mode?: 'companion' | 'solo';
+    /** A preset name and/or single settings; see rules.ts. Absent: free, as before. */
+    rules?: Partial<GameRules>;
+  },
   deps: Pick<ActionDeps, 'clock' | 'text'>,
   gameSets: CashflowGameSet[],
 ): ActionPlan {
@@ -353,6 +381,7 @@ export function startGameAction(
     professionId,
     deps.clock.todayIso(),
     mode,
+    input.rules ? normalizeRules(input.rules) : undefined,
   );
   const { text } = deps;
   const { profession } = result;

@@ -89,7 +89,7 @@ export function payCardExpense(
   });
   if (plan.loanMinor > 0) {
     const loanDate = input.loanDate ?? nextOneOffDate(books, today);
-    const loan = playBankLoan(books, plan.loanMinor, deps, { date: loanDate });
+    const loan = playBankLoan(books, plan.loanMinor, deps, { date: loanDate, mandatory: true });
     loan.step = { kind: 'loanAuto', detail: deps.money(plan.loanMinor) };
     steps.push(loan);
     working = applyEffectsToBooks(working, loan);
