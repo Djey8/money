@@ -1909,7 +1909,7 @@ paths:
       operationId: listGameSaves
       summary: The saved games and the storage left
       description: >-
-        Game accounts only; requires `game:r`. Every saved game with its summary, `status` (`playing`, `escaped`, `bankrupt`, `ended`) and `sizeBytes`, and `storage`: how much of the account's one database document the saves use, how much room is left (`remainingBytes`) and `keepAtMost` - an agent leaves at most this many saves behind after a session (`overKeepBy` says how many too many).
+        Game accounts only; requires `game:r`. Every saved game with its summary, `status` (`playing`, `escaped`, `bankrupt`, `ended`) and `sizeBytes`, and `storage`: how much of the account's saved-game budget the saves use (`gamesBytes` of `budgetBytes`; every saved game is a document of its own, `limitBytes` is what one document may be), how much room is left (`remainingBytes`) and `keepAtMost` - an agent leaves at most this many saves behind after a session (`overKeepBy` says how many too many).
       security:
         - bearerAuth: []
       responses:
@@ -1947,13 +1947,13 @@ paths:
                 currentGameId: game_lq3x_ab12
                 storage:
                   {
-                    documentBytes: 1204331,
-                    budgetBytes: 6710886,
-                    remainingBytes: 5506555,
+                    documentBytes: 204331,
+                    budgetBytes: 1073741824,
+                    remainingBytes: 1073329824,
                     limitBytes: 8388608,
                     gamesBytes: 412000,
                     gameCount: 2,
-                    keepAtMost: 100,
+                    keepAtMost: 500,
                     overKeepBy: 0,
                   }
         '401':
@@ -2013,13 +2013,13 @@ paths:
                   }
                 storage:
                   {
-                    documentBytes: 1204331,
-                    budgetBytes: 6710886,
-                    remainingBytes: 5506555,
+                    documentBytes: 204331,
+                    budgetBytes: 1073741824,
+                    remainingBytes: 1073329824,
                     limitBytes: 8388608,
                     gamesBytes: 412000,
                     gameCount: 2,
-                    keepAtMost: 100,
+                    keepAtMost: 500,
                     overKeepBy: 0,
                   }
         '401':
@@ -2060,13 +2060,13 @@ paths:
                 deleted: [game_old_1, game_old_2]
                 storage:
                   {
-                    documentBytes: 1204331,
-                    budgetBytes: 6710886,
-                    remainingBytes: 5506555,
+                    documentBytes: 204331,
+                    budgetBytes: 1073741824,
+                    remainingBytes: 1073329824,
                     limitBytes: 8388608,
                     gamesBytes: 412000,
                     gameCount: 2,
-                    keepAtMost: 100,
+                    keepAtMost: 500,
                     overKeepBy: 0,
                   }
         '401':
@@ -2154,13 +2154,13 @@ paths:
                 renamed: { id: game_lq3x_ab12, name: 'My best game' }
                 storage:
                   {
-                    documentBytes: 1204331,
-                    budgetBytes: 6710886,
-                    remainingBytes: 5506555,
+                    documentBytes: 204331,
+                    budgetBytes: 1073741824,
+                    remainingBytes: 1073329824,
                     limitBytes: 8388608,
                     gamesBytes: 412000,
                     gameCount: 2,
-                    keepAtMost: 100,
+                    keepAtMost: 500,
                     overKeepBy: 0,
                   }
         '401':
@@ -2192,13 +2192,13 @@ paths:
                 deleted: [game_lq3x_ab12]
                 storage:
                   {
-                    documentBytes: 1204331,
-                    budgetBytes: 6710886,
-                    remainingBytes: 5506555,
+                    documentBytes: 204331,
+                    budgetBytes: 1073741824,
+                    remainingBytes: 1073329824,
                     limitBytes: 8388608,
                     gamesBytes: 412000,
                     gameCount: 2,
-                    keepAtMost: 100,
+                    keepAtMost: 500,
                     overKeepBy: 0,
                   }
         '401':
@@ -2237,13 +2237,13 @@ paths:
                   }
                 storage:
                   {
-                    documentBytes: 1204331,
-                    budgetBytes: 6710886,
-                    remainingBytes: 5506555,
+                    documentBytes: 204331,
+                    budgetBytes: 1073741824,
+                    remainingBytes: 1073329824,
                     limitBytes: 8388608,
                     gamesBytes: 412000,
                     gameCount: 2,
-                    keepAtMost: 100,
+                    keepAtMost: 500,
                     overKeepBy: 0,
                   }
         '401':
@@ -2303,13 +2303,13 @@ paths:
                   }
                 storage:
                   {
-                    documentBytes: 1204331,
-                    budgetBytes: 6710886,
-                    remainingBytes: 5506555,
+                    documentBytes: 204331,
+                    budgetBytes: 1073741824,
+                    remainingBytes: 1073329824,
                     limitBytes: 8388608,
                     gamesBytes: 412000,
                     gameCount: 2,
-                    keepAtMost: 100,
+                    keepAtMost: 500,
                     overKeepBy: 0,
                   }
         '401':

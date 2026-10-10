@@ -80,7 +80,7 @@ export class CashflowSavedGamesService {
     return AppStateService.instance.cashflowGame.gameId;
   }
 
-  /** More saved games than is comfortable for the one database document they all live in. */
+  /** More saved games than makes for a comfortable list (storage is no limit: each game is a document of its own). */
   get tooMany(): boolean {
     return this.games.length > SAVED_GAME_SOFT_LIMIT;
   }

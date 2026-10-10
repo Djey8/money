@@ -8,14 +8,17 @@ import type { CashflowGameState } from './types';
  */
 export const SAVED_GAME_SCHEMA = 1;
 
-/** A gentle warning, not a hard cap: every saved game lives inside the user's one database document. */
-export const SAVED_GAME_SOFT_LIMIT = 30;
+/**
+ * A gentle warning, not a hard cap: past this many the games list gets long. (Storage is no reason any more - every
+ * saved game is a document of its own and the account's byte budget is a gibibyte; JFK, 2026-10-10: "hundreds of games".)
+ */
+export const SAVED_GAME_SOFT_LIMIT = 1000;
 
 /**
  * What an agent leaves behind after a session of analysis (JFK, 2026-10-07): it may save as many games as the account's
  * storage budget allows while it works, but afterwards keeps at most this many - the important ones.
  */
-export const SAVED_GAME_AGENT_KEEP = 100;
+export const SAVED_GAME_AGENT_KEEP = 500;
 
 export type SavedGameStatus = 'playing' | 'escaped' | 'bankrupt' | 'ended';
 
