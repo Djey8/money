@@ -105,3 +105,120 @@ export function staleGeneratedTransactions(
   });
   return stale;
 }
+
+// ── Editing in place ─────────────────────────────────────────────────────────────────────────────
+
+export interface GeneratedTransactionUpdate {
+  /** Index into the transactions that were passed in. */
+  index: number;
+  date: string;
+  account: string;
+  amountMinor: number;
+  category: string;
+  comment: string;
+}
+
+export interface SubscriptionReconciliation {
+  /** Transactions to change in place (they keep their id and their place in the list). */
+  updates: GeneratedTransactionUpdate[];
+  /** Transactions to delete: the old subscription generated them and the new one has no occurrence for them. */
+  removals: number[];
+}
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+function dayNumber(date: string): number {
+  return Math.round(new Date(`${date}T00:00:00Z`).getTime() / DAY_MS);
+}
+
+/** The calendar period an occurrence belongs to; weekly and biweekly ones have none (matched by distance). */
+function periodOf(frequency: SubscriptionFrequency, date: string): string | null {
+  const [year, month] = date.split('-').map(Number);
+  switch (frequency) {
+    case 'weekly':
+    case 'biweekly':
+      return null;
+    case 'quarterly':
+      return `${year}-Q${Math.floor((month - 1) / 3)}`;
+    case 'yearly':
+      return `${year}`;
+    default:
+      return `${year}-${month}`;
+  }
+}
+
+/**
+ * Changes a subscription's generated transactions in place where it can (JFK, 2026-10-10: keep the id and the order of
+ * the transactions unless one really goes). Each occurrence of the new subscription takes over the old generated
+ * transaction of the same period - the same month for a monthly one, the nearest day within half an interval for a weekly
+ * one - changing its date, account, amount, category and comment to the new values. Old transactions with no occurrence
+ * left are removed; occurrences with no old transaction are not handled here (the ordinary generation adds them, at the
+ * end of the list). `after` is `null` when the subscription is deleted: everything it generated goes.
+ */
+export function reconcileGeneratedTransactions(
+  before: SyncSubscription,
+  after: SyncSubscription | null,
+  transactions: readonly SyncTransaction[],
+  now: Date,
+): SubscriptionReconciliation {
+  const beforeDates = new Set(subscriptionOccurrenceDates(before, now));
+  const candidates: number[] = [];
+  transactions.forEach((transaction, index) => {
+    if (isGeneratedBy(before, transaction, beforeDates)) candidates.push(index);
+  });
+  if (!after) return { updates: [], removals: candidates };
+
+  const frequency = after.frequency || 'monthly';
+  const maxDistance = frequency === 'weekly' ? 3 : frequency === 'biweekly' ? 7 : 0;
+  const free = new Set(candidates);
+  const takeFor = (date: string): number | null => {
+    const period = periodOf(frequency, date);
+    let best: number | null = null;
+    let bestDistance = Infinity;
+    for (const index of free) {
+      const other = transactions[index].date;
+      const distance = Math.abs(dayNumber(other) - dayNumber(date));
+      const fits =
+        period !== null ? periodOf(frequency, other) === period : distance <= maxDistance;
+      // within a period the closest day wins; the earlier transaction wins a tie
+      if (
+        fits &&
+        (distance < bestDistance || (distance === bestDistance && index < (best ?? Infinity)))
+      ) {
+        best = index;
+        bestDistance = distance;
+      }
+    }
+    if (best !== null) free.delete(best);
+    return best;
+  };
+
+  const constructed = constructedSubscriptionComment(after.title, after.comment);
+  const updates: GeneratedTransactionUpdate[] = [];
+  for (const date of subscriptionOccurrenceDates(after, now)) {
+    const index = takeFor(date);
+    if (index === null) continue;
+    const current = transactions[index];
+    // fund tags after the comment stay while the comment does
+    const comment = isGeneratedComment(current.comment, constructed)
+      ? current.comment
+      : constructed;
+    if (
+      current.date !== date ||
+      current.account !== after.account ||
+      current.amountMinor !== after.amountMinor ||
+      current.category !== after.category ||
+      current.comment !== comment
+    ) {
+      updates.push({
+        index,
+        date,
+        account: after.account,
+        amountMinor: after.amountMinor,
+        category: after.category,
+        comment,
+      });
+    }
+  }
+  return { updates, removals: [...free].sort((a, b) => a - b) };
+}

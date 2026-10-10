@@ -6,8 +6,9 @@ later one should add the missing ones"_, _"the cashflow sums and the budget fill
 
 A subscription has no link to the transactions it generated. They are recognised by what they look like (account, amount,
 category, comment `title` or `title + comment`, possibly followed by `#bucket:` tags) **and** a date that was one of the
-subscription's occurrences - `packages/domain/src/transactions/subscription-sync.ts`. One rule covers every edit: _remove
-what the old subscription generated and the new one would not; then generate what the new one is due and lacks._
+subscription's occurrences - `packages/domain/src/transactions/subscription-sync.ts`. One rule covers every edit: _change what the old subscription generated in place where the new one still has an occurrence for it (same id, same
+place in the list), remove what it has none for, then generate what the new one is due and lacks (appended)._ Occurrences are paired by
+period (same month / quarter / year; nearest day within half an interval for weekly and biweekly).
 
 | #   | Use case                                                 | Before                                                                                                                                                                                                                                  | Now                                                                                                                                                              |
 | --- | -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |

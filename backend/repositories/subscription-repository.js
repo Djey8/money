@@ -39,6 +39,7 @@ const {
   transactionFromApi,
   generateDueSubscriptionTransactions,
   staleGeneratedTransactions,
+  reconcileGeneratedTransactions,
 } = require('@money/domain');
 const { getEncryptionSession } = require('../services/encryption-session');
 const { assertNotPlanOwned } = require('../services/payment-plan-links');
@@ -135,6 +136,28 @@ async function getSubscription(deps, userId, subscriptionId) {
 /** Matches `transactionExistsForDate`'s 4 identifying fields (everything but `date`) — see this file's header comment for why it's a tighter match than the original's own PATCH-time cleanup. */
 function buildConstructedComment(title, comment) {
   return comment ? `${title} + ${comment}` : title;
+}
+
+/**
+ * The transactions after `before` became `after`: the ones the new subscription still has an occurrence for are changed in
+ * place (same id, same place in the list), the ones it has none for are dropped.
+ */
+function reconciledTransactions(before, after, existingTransactions, now) {
+  const { updates, removals } = reconcileGeneratedTransactions(
+    before,
+    after,
+    existingTransactions,
+    now,
+  );
+  const updateOf = new Map(updates.map((update) => [update.index, update]));
+  const removed = new Set(removals);
+  return existingTransactions.flatMap((transaction, index) => {
+    if (removed.has(index)) return [];
+    const update = updateOf.get(index);
+    if (!update) return [transaction];
+    const { index: _index, ...changes } = update;
+    return [{ ...transaction, ...changes }];
+  });
 }
 
 /** The transactions that stay when `before` becomes `after` (`null`: it is deleted). */
@@ -248,7 +271,7 @@ async function updateSubscription(deps, userId, subscriptionId, patch, { now = n
         schemaVersion,
         currency,
       );
-      const remainingTransactions = withoutStaleGenerated(
+      const remainingTransactions = reconciledTransactions(
         current,
         updated,
         existingTransactions,
@@ -261,10 +284,10 @@ async function updateSubscription(deps, userId, subscriptionId, patch, { now = n
         fundState,
         now,
       );
-      if (
-        remainingTransactions.length === existingTransactions.length &&
-        generation.transactionsCreated === 0
-      ) {
+      const changed =
+        remainingTransactions.length !== existingTransactions.length ||
+        remainingTransactions.some((transaction, i) => transaction !== existingTransactions[i]);
+      if (!changed && generation.transactionsCreated === 0) {
         return {
           updatedData: { ...data, subscriptions: updatedRawSubscriptions },
           result: updated,

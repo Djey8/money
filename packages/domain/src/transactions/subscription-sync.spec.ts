@@ -2,6 +2,7 @@ import {
   constructedSubscriptionComment,
   isGeneratedComment,
   staleGeneratedTransactions,
+  reconcileGeneratedTransactions,
   SyncSubscription,
   SyncTransaction,
   subscriptionOccurrenceDates,
@@ -191,5 +192,113 @@ describe('monthlyEquivalentMinor', () => {
     expect(monthlyEquivalentMinor(-1200, 'weekly')).toBe(-5200);
     expect(monthlyEquivalentMinor(-1200, 'biweekly')).toBe(-2600);
     expect(monthlyEquivalentMinor(500, 'yearly')).toBe(42);
+  });
+});
+
+describe('reconcileGeneratedTransactions', () => {
+  const all = () => generated(gym);
+
+  it('changes nothing when nothing changed', () => {
+    expect(reconcileGeneratedTransactions(gym, { ...gym }, all(), NOW)).toEqual({
+      updates: [],
+      removals: [],
+    });
+  });
+
+  it('edits every transaction in place when comment, category, account or amount change', () => {
+    const after = {
+      ...gym,
+      category: '@Sport',
+      account: 'Splurge',
+      comment: 'sauna',
+      amountMinor: -2500,
+    };
+    const result = reconcileGeneratedTransactions(gym, after, all(), NOW);
+    expect(result.removals).toEqual([]);
+    expect(result.updates.map((u) => u.index)).toEqual([0, 1, 2, 3]);
+    expect(result.updates[1]).toMatchObject({
+      date: '2026-02-10',
+      category: '@Sport',
+      account: 'Splurge',
+      amountMinor: -2500,
+      comment: 'Gym + sauna',
+    });
+  });
+
+  it('moves the date of the transaction of the same month when only the day changes', () => {
+    const result = reconcileGeneratedTransactions(
+      gym,
+      { ...gym, startDate: '2026-01-20' },
+      all(),
+      NOW,
+    );
+    expect(result.removals).toEqual([3]);
+    expect(result.updates.map((u) => [u.index, u.date])).toEqual([
+      [0, '2026-01-20'],
+      [1, '2026-02-20'],
+      [2, '2026-03-20'],
+    ]);
+    // April 20 is not due yet: the April transaction has no occurrence left, so it goes (removals above)
+  });
+
+  it('removes only the transaction that no longer counts when the start moves a month later', () => {
+    const result = reconcileGeneratedTransactions(
+      gym,
+      { ...gym, startDate: '2026-02-10' },
+      all(),
+      NOW,
+    );
+    expect(result).toEqual({ updates: [], removals: [0] });
+  });
+
+  it('removes the transactions after an earlier end date and leaves the others alone', () => {
+    const result = reconcileGeneratedTransactions(
+      gym,
+      { ...gym, endDate: '2026-02-20' },
+      all(),
+      NOW,
+    );
+    expect(result).toEqual({ updates: [], removals: [2, 3] });
+  });
+
+  it('leaves what is missing to the generation when the end date moves later', () => {
+    const ended = { ...gym, endDate: '2026-02-20' };
+    const result = reconcileGeneratedTransactions(ended, { ...gym }, generated(ended), NOW);
+    expect(result).toEqual({ updates: [], removals: [] });
+  });
+
+  it('keeps fund tags while the comment stays and drops them when it changes', () => {
+    const tagged = all().map((t) => ({ ...t, comment: `${t.comment}\n#bucket:Flight:20.00` }));
+    expect(
+      reconcileGeneratedTransactions(gym, { ...gym, amountMinor: -2100 }, tagged, NOW).updates[0]
+        .comment,
+    ).toBe('Gym\n#bucket:Flight:20.00');
+    expect(
+      reconcileGeneratedTransactions(gym, { ...gym, title: 'Fit' }, tagged, NOW).updates[0].comment,
+    ).toBe('Fit');
+  });
+
+  it('matches weekly transactions to the nearest new date', () => {
+    const weekly: SyncSubscription = { ...gym, frequency: 'weekly', startDate: '2026-03-30' };
+    const txs = generated(weekly);
+    const result = reconcileGeneratedTransactions(
+      weekly,
+      { ...weekly, startDate: '2026-04-01' },
+      txs,
+      NOW,
+    );
+    expect(result.updates.map((u) => [u.index, u.date])).toEqual([
+      [0, '2026-04-01'],
+      [1, '2026-04-08'],
+      [2, '2026-04-15'],
+    ]);
+    expect(result.removals).toEqual([]);
+  });
+
+  it('removes everything when the subscription is deleted, and never touches hand-made look-alikes', () => {
+    const manual = { ...all()[0], date: '2026-02-11' };
+    expect(reconcileGeneratedTransactions(gym, null, [manual, ...all()], NOW).removals).toEqual([
+      1, 2, 3, 4,
+    ]);
   });
 });

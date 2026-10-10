@@ -318,6 +318,61 @@ describe('updateSubscription', () => {
     expect(current().data.transactions).toHaveLength(4);
   });
 
+  it('keeps the ids and the order when comment, category or amount change', async () => {
+    const document = existingSubscriptionDocument();
+    document.data.transactions = allGenerated();
+    const { deps, current } = writableDeps(document);
+    await updateSubscription(
+      deps,
+      'user_1',
+      'subscriptions_1',
+      { category: '@Music', amountMinor: -1500 },
+      { now: NOW },
+    );
+    const transactions = current().data.transactions;
+    expect(transactions.map((t) => t.id)).toEqual(allGenerated().map((t) => t.id));
+    expect(transactions.every((t) => t.category === '@Music' && Number(t.amount) === -15)).toBe(
+      true,
+    );
+  });
+
+  it('moves the dates, keeps the ids, and drops only the transaction that no longer counts', async () => {
+    const document = existingSubscriptionDocument();
+    document.data.transactions = allGenerated();
+    const { deps, current } = writableDeps(document);
+    await updateSubscription(
+      deps,
+      'user_1',
+      'subscriptions_1',
+      { startDate: '2026-01-20' },
+      { now: NOW },
+    );
+    const transactions = current().data.transactions;
+    expect(transactions.map((t) => [t.id, t.date])).toEqual([
+      ['transactions_2026-01-01', '2026-01-20'],
+      ['transactions_2026-02-01', '2026-02-20'],
+      ['transactions_2026-03-01', '2026-03-20'],
+    ]);
+  });
+
+  it('removes only the first transaction when the start moves a month later', async () => {
+    const document = existingSubscriptionDocument();
+    document.data.transactions = allGenerated();
+    const { deps, current } = writableDeps(document);
+    await updateSubscription(
+      deps,
+      'user_1',
+      'subscriptions_1',
+      { startDate: '2026-02-01' },
+      { now: NOW },
+    );
+    expect(current().data.transactions.map((t) => t.id)).toEqual([
+      'transactions_2026-02-01',
+      'transactions_2026-03-01',
+      'transactions_2026-04-01',
+    ]);
+  });
+
   it('returns null for an id that does not exist', async () => {
     const { deps } = writableDeps(existingSubscriptionDocument());
     await expect(
