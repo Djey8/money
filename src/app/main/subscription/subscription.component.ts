@@ -24,6 +24,8 @@ import { MatInputModule } from '@angular/material/input';
 import { BalanceComponent } from '../cashflow/balance/balance.component';
 import { ProfileComponent } from 'src/app/panels/profile/profile.component';
 import { AppStateService } from 'src/app/shared/services/app-state.service';
+import { monthlyEquivalentMinor } from '@money/domain';
+import { SubscriptionFrequency } from '../../interfaces/subscription';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
@@ -341,13 +343,26 @@ export class SubscriptionComponent implements OnDestroy, AfterViewChecked, OnIni
     }
   }
 
+  /**
+   * What a subscription costs or earns per month on average: a yearly one a twelfth, a weekly one 52/12 payments. The
+   * sums on this page are monthly figures, so a quarterly or yearly subscription no longer counts in full.
+   */
+  static monthlyAmount(subscription: { amount: number; frequency?: string }): number {
+    return (
+      monthlyEquivalentMinor(
+        Math.round(Number(subscription.amount) * 100),
+        (subscription.frequency as SubscriptionFrequency) || 'monthly',
+      ) / 100
+    );
+  }
+
   static getCreditAmount() {
     let sum = 0;
     SubscriptionComponent.allSubscriptions.forEach((subscription) => {
       const endDate = new Date(subscription.endDate);
       const today = new Date();
       if (subscription.account === 'Income' && (!subscription.endDate || endDate >= today)) {
-        sum += subscription.amount;
+        sum += SubscriptionComponent.monthlyAmount(subscription);
       }
     });
     return sum;
@@ -359,7 +374,7 @@ export class SubscriptionComponent implements OnDestroy, AfterViewChecked, OnIni
       const endDate = new Date(subscription.endDate);
       const today = new Date();
       if (subscription.account != 'Income' && (!subscription.endDate || endDate >= today)) {
-        sum += subscription.amount;
+        sum += SubscriptionComponent.monthlyAmount(subscription);
       }
     });
     return sum;
@@ -371,7 +386,7 @@ export class SubscriptionComponent implements OnDestroy, AfterViewChecked, OnIni
       const endDate = new Date(subscription.endDate);
       const today = new Date();
       if (!subscription.endDate || endDate >= today) {
-        sum += subscription.amount;
+        sum += SubscriptionComponent.monthlyAmount(subscription);
       }
     });
     return sum;
@@ -506,31 +521,22 @@ export class SubscriptionComponent implements OnDestroy, AfterViewChecked, OnIni
   applyFrequencyFilter() {
     const filterFrequency = this.frequencyFilter;
 
-    if (filterFrequency === 'all') {
-      // Show all subscriptions
-      SubscriptionComponent.activeDataSource.data = [...SubscriptionComponent.allSubscriptions].map(
-        (subscription, index) => {
-          return { ...subscription, id: index };
-        },
-      );
-      SubscriptionComponent.inactiveDataSource.data = [
-        ...SubscriptionComponent.allSubscriptions,
-      ].map((subscription, index) => {
-        return { ...subscription, id: index };
-      });
-    } else {
-      // Filter by selected frequency
-      const filtered = SubscriptionComponent.allSubscriptions.filter(
-        (sub) =>
-          sub.frequency === filterFrequency || (!sub.frequency && filterFrequency === 'monthly'),
-      );
-      SubscriptionComponent.activeDataSource.data = filtered.map((subscription, index) => {
-        return { ...subscription, id: index };
-      });
-      SubscriptionComponent.inactiveDataSource.data = filtered.map((subscription, index) => {
-        return { ...subscription, id: index };
-      });
-    }
+    // A row's id is its place in the full list - a click opens (and edits) the subscription at that place, and the
+    // list hides ended ones by it - so it is set before the filter, not after.
+    const everyRow = SubscriptionComponent.allSubscriptions.map((subscription, index) => ({
+      ...subscription,
+      id: index,
+    }));
+    const rows =
+      filterFrequency === 'all'
+        ? everyRow
+        : everyRow.filter(
+            (sub) =>
+              sub.frequency === filterFrequency ||
+              (!sub.frequency && filterFrequency === 'monthly'),
+          );
+    SubscriptionComponent.activeDataSource.data = rows;
+    SubscriptionComponent.inactiveDataSource.data = [...rows];
   }
 
   /**

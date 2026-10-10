@@ -10,6 +10,26 @@ import { Transaction } from '../../interfaces/transaction';
 import { Revenue } from '../../interfaces/revenue';
 import { Expense } from '../../interfaces/expense';
 import { Subscription, SubscriptionFrequency } from '../../interfaces/subscription';
+import {
+  constructedSubscriptionComment,
+  isGeneratedComment,
+  staleGeneratedTransactions,
+  SyncSubscription,
+} from '@money/domain';
+
+/** A subscription as the domain rules see it: money in minor units, no end date as `null`. */
+export function toSyncSubscription(subscription: Subscription): SyncSubscription {
+  return {
+    title: subscription.title,
+    account: subscription.account,
+    amountMinor: Math.round(Number(subscription.amount) * 100),
+    startDate: subscription.startDate,
+    endDate: subscription.endDate ? subscription.endDate : null,
+    category: subscription.category,
+    comment: subscription.comment || '',
+    frequency: subscription.frequency || 'monthly',
+  };
+}
 
 @Injectable({
   providedIn: 'root',
@@ -34,9 +54,10 @@ export class SubscriptionProcessingService {
    * Matches on date, account, amount, category, and the constructed comment.
    */
   private transactionExistsForDate(subscription: any, date: string): boolean {
-    const commentCompare = subscription.comment
-      ? subscription.title + ' + ' + subscription.comment
-      : subscription.title;
+    const commentCompare = constructedSubscriptionComment(
+      subscription.title,
+      subscription.comment || '',
+    );
 
     for (let i = 0; i < AppStateService.instance.allTransactions.length; i++) {
       const t = AppStateService.instance.allTransactions[i];
@@ -45,12 +66,51 @@ export class SubscriptionProcessingService {
         t.account === subscription.account &&
         t.amount === subscription.amount &&
         t.category === subscription.category &&
-        t.comment === commentCompare
+        // a Smile transaction carries "#bucket:" tags after the comment: still the same occurrence
+        isGeneratedComment(t.comment, commentCompare)
       ) {
         return true;
       }
     }
     return false;
+  }
+
+  /**
+   * Removes the transactions `before` generated and `after` would not (`after` is `null` when everything it generated
+   * should go): all of them when the details change, those after the end date when it moves into the past, none when it
+   * moves into the future. Returns how many went. The caller recalculates the income statement and funds and stores.
+   * See packages/domain/src/transactions/subscription-sync.ts.
+   */
+  removeStaleGeneratedTransactions(
+    before: Subscription,
+    after: Subscription | null,
+    now: Date = new Date(),
+  ): number {
+    const transactions = AppStateService.instance.allTransactions;
+    const stale = new Set(
+      staleGeneratedTransactions(
+        toSyncSubscription(before),
+        after ? toSyncSubscription(after) : null,
+        transactions.map((transaction) => ({
+          date: transaction.date,
+          account: transaction.account,
+          amountMinor: Math.round(Number(transaction.amount) * 100),
+          category: transaction.category,
+          comment: transaction.comment || '',
+        })),
+        now,
+      ),
+    );
+    if (stale.size === 0) return 0;
+    AppStateService.instance.allTransactions = transactions.filter((_, index) => !stale.has(index));
+    AccountingComponent.allTransactions = AppStateService.instance.allTransactions;
+    AppStateService.instance.transactionsUpdated$.next();
+    this.frontendLogger.logActivity('subscription_removed_generated_transactions', 'warning', {
+      subscriptionTitle: before.title,
+      transactionsRemoved: stale.size,
+      reason: after ? 'subscription_changed' : 'subscription_removed',
+    });
+    return stale.size;
   }
 
   /**

@@ -7,6 +7,7 @@ import { FrontendLoggerService } from 'src/app/shared/services/frontend-logger.s
 import { environment } from 'src/environments/environment';
 import { BaseInfoComponent } from 'src/app/shared/base/base-info.component';
 import { IncomeStatementService } from 'src/app/shared/services/income-statement.service';
+import { SubscriptionProcessingService } from 'src/app/shared/services/subscription-processing.service';
 import { AppStateService } from 'src/app/shared/services/app-state.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -154,6 +155,7 @@ export class InfoSubscriptionComponent extends BaseInfoComponent implements OnIn
     private database: DatabaseService,
     private frontendLogger: FrontendLoggerService,
     private incomeStatement: IncomeStatementService,
+    private subscriptionProcessing: SubscriptionProcessingService,
   ) {
     super(router);
     this.initStatic(InfoSubscriptionComponent);
@@ -272,6 +274,7 @@ export class InfoSubscriptionComponent extends BaseInfoComponent implements OnIn
     //Validation (check if Amount is not empty)
     this.isEdit = true;
     InfoSubscriptionComponent.isError = false;
+    InfoSubscriptionComponent.isRefresh = false;
     this.selectedOption = InfoSubscriptionComponent.account;
     this.titleTextField = InfoSubscriptionComponent.title;
     this.amountTextField = InfoSubscriptionComponent.amount;
@@ -289,9 +292,14 @@ export class InfoSubscriptionComponent extends BaseInfoComponent implements OnIn
   clickImage() {}
 
   /**
-   * Updates the subscription with the new values.
+   * Updates the subscription with the new values and keeps its transactions in line with it (JFK, 2026-10-10): what the
+   * old subscription generated and the new one would not is removed - everything when the details changed, the part
+   * after the new end date when the end date moved into the past - and what the new one is due and lacks is generated
+   * (everything after a details change, the missing ones when the end date moved into the future). The ticked
+   * "delete transactions" box removes everything the old one generated first, whatever changed. Only once the data is
+   * stored does the toast say so.
    */
-  updateSubscription() {
+  async updateSubscription() {
     // Validation (check if Amount is not empty)
     if (
       !this.amountTextField ||
@@ -300,80 +308,85 @@ export class InfoSubscriptionComponent extends BaseInfoComponent implements OnIn
       this.selectedOption === ''
     ) {
       this.showError('Please fill out all required fields.');
-    } else {
-      // Update existing subscription (PATCH)
-      if (
-        this.titleTextField !== InfoSubscriptionComponent.title ||
-        this.categoryTextField !== InfoSubscriptionComponent.category ||
-        this.amountTextField !== InfoSubscriptionComponent.amount ||
-        this.selectedOption !== InfoSubscriptionComponent.account ||
-        this.commentTextField !== InfoSubscriptionComponent.comment ||
-        this.startDateTextField !== InfoSubscriptionComponent.startDate ||
-        this.frequencyField !== InfoSubscriptionComponent.frequency ||
-        InfoSubscriptionComponent.isRefresh
-      ) {
-        this.deleteTransactions(InfoSubscriptionComponent.index);
-      }
-
-      // Update transaction values
-      AppStateService.instance.allSubscriptions[InfoSubscriptionComponent.index].title =
-        this.titleTextField;
-      AppStateService.instance.allSubscriptions[InfoSubscriptionComponent.index].account =
-        this.selectedOption;
-      AppStateService.instance.allSubscriptions[InfoSubscriptionComponent.index].amount =
-        this.amountTextField;
-      AppStateService.instance.allSubscriptions[InfoSubscriptionComponent.index].startDate =
-        this.startDateTextField;
-      AppStateService.instance.allSubscriptions[InfoSubscriptionComponent.index].endDate =
-        this.endDateTextField;
-      AppStateService.instance.allSubscriptions[InfoSubscriptionComponent.index].category =
-        this.categoryTextField;
-      AppStateService.instance.allSubscriptions[InfoSubscriptionComponent.index].comment =
-        this.commentTextField;
-      AppStateService.instance.allSubscriptions[InfoSubscriptionComponent.index].frequency = this
-        .frequencyField as any;
-
-      SubscriptionComponent.allSubscriptions = AppStateService.instance.allSubscriptions;
-      SubscriptionComponent.activeDataSource.data = SubscriptionComponent.allSubscriptions;
-      SubscriptionComponent.activeDataSource.data = SubscriptionComponent.activeDataSource.data.map(
-        (subscription, index) => {
-          return { ...subscription, id: index };
-        },
-      );
-      SubscriptionComponent.inactiveDataSource.data = SubscriptionComponent.allSubscriptions;
-      SubscriptionComponent.inactiveDataSource.data =
-        SubscriptionComponent.inactiveDataSource.data.map((subscription, index) => {
-          return { ...subscription, id: index };
-        });
-      // Update InfoComponent values
-      InfoSubscriptionComponent.title = this.titleTextField;
-      InfoSubscriptionComponent.img = this.selectedOption.toLocaleLowerCase();
-      InfoSubscriptionComponent.account = this.selectedOption;
-      InfoSubscriptionComponent.amount = this.amountTextField;
-      InfoSubscriptionComponent.startDate = this.startDateTextField;
-      InfoSubscriptionComponent.endDate = this.endDateTextField;
-      InfoSubscriptionComponent.category = this.categoryTextField;
-      InfoSubscriptionComponent.comment = this.commentTextField;
-      InfoSubscriptionComponent.frequency = this.frequencyField;
-      InfoSubscriptionComponent.frequencyField = this.frequencyField;
-
-      // Log user activity
-      this.frontendLogger.logActivity('update_subscription', 'info', {
-        title: this.titleTextField,
-        account: this.selectedOption,
-        category: this.categoryTextField,
-        amount: this.amountTextField,
-      });
-
-      // Write to DB
-      this.updateStorage();
-
-      // Clean Up close Window
-      this.clearError();
-      this.isEdit = false;
-      this.toastService.show('Subscription updated', 'update');
-      AppComponent.gotoTop();
+      return;
     }
+
+    const subscriptions = AppStateService.instance.allSubscriptions;
+    const subscription = subscriptions[InfoSubscriptionComponent.index];
+    const before = { ...subscription };
+
+    // Update subscription values
+    subscription.title = this.titleTextField;
+    subscription.account = this.selectedOption;
+    subscription.amount = this.amountTextField;
+    subscription.startDate = this.startDateTextField;
+    subscription.endDate = this.endDateTextField;
+    subscription.category = this.categoryTextField;
+    subscription.comment = this.commentTextField;
+    subscription.frequency = this.frequencyField as any;
+
+    const removed = this.subscriptionProcessing.removeStaleGeneratedTransactions(
+      before,
+      InfoSubscriptionComponent.isRefresh ? null : { ...subscription },
+    );
+    InfoSubscriptionComponent.isRefresh = false;
+    if (removed > 0) {
+      // Rebuild the income statement and the funds from the remaining transactions
+      this.incomeStatement.recalculate();
+    }
+
+    SubscriptionComponent.allSubscriptions = AppStateService.instance.allSubscriptions;
+    SubscriptionComponent.activeDataSource.data = SubscriptionComponent.allSubscriptions;
+    SubscriptionComponent.activeDataSource.data = SubscriptionComponent.activeDataSource.data.map(
+      (entry, index) => {
+        return { ...entry, id: index };
+      },
+    );
+    SubscriptionComponent.inactiveDataSource.data = SubscriptionComponent.allSubscriptions;
+    SubscriptionComponent.inactiveDataSource.data =
+      SubscriptionComponent.inactiveDataSource.data.map((entry, index) => {
+        return { ...entry, id: index };
+      });
+    // Update InfoComponent values
+    InfoSubscriptionComponent.title = this.titleTextField;
+    InfoSubscriptionComponent.img = this.selectedOption.toLocaleLowerCase();
+    InfoSubscriptionComponent.account = this.selectedOption;
+    InfoSubscriptionComponent.amount = this.amountTextField;
+    InfoSubscriptionComponent.startDate = this.startDateTextField;
+    InfoSubscriptionComponent.endDate = this.endDateTextField;
+    InfoSubscriptionComponent.category = this.categoryTextField;
+    InfoSubscriptionComponent.comment = this.commentTextField;
+    InfoSubscriptionComponent.frequency = this.frequencyField;
+    InfoSubscriptionComponent.frequencyField = this.frequencyField;
+
+    // Log user activity
+    this.frontendLogger.logActivity('update_subscription', 'info', {
+      title: this.titleTextField,
+      account: this.selectedOption,
+      category: this.categoryTextField,
+      amount: this.amountTextField,
+      transactionsRemoved: removed,
+    });
+
+    // Generate what the changed subscription is due and lacks
+    try {
+      await this.subscriptionProcessing.setTransactionsForSubscriptions();
+    } catch (error) {
+      console.error('Failed to generate subscription transactions after an edit:', error);
+    }
+
+    // Write to DB
+    const saved = await this.updateStorage();
+
+    // Clean Up close Window
+    this.clearError();
+    this.isEdit = false;
+    if (saved) {
+      this.toastService.show('Subscription updated', 'update');
+    } else {
+      this.toastService.show('The subscription could not be saved - reload and try again', 'error');
+    }
+    AppComponent.gotoTop();
   }
 
   /**
@@ -464,35 +477,13 @@ export class InfoSubscriptionComponent extends BaseInfoComponent implements OnIn
       // Save data before deleting
       const deletedTitle = AppStateService.instance.allSubscriptions[index].title;
 
-      // Only delete transactions if checkbox is ticked
+      // Only delete transactions if checkbox is ticked: the ones this subscription generated
       if (InfoSubscriptionComponent.isRefresh) {
-        const account = AppStateService.instance.allSubscriptions[index].account;
-        const amount = AppStateService.instance.allSubscriptions[index].amount;
-        const category = AppStateService.instance.allSubscriptions[index].category;
-
-        const initialLength = AppStateService.instance.allTransactions.length;
-        AppStateService.instance.allTransactions = AppStateService.instance.allTransactions.filter(
-          (transaction) => {
-            return !(
-              transaction.account === account &&
-              transaction.amount === amount &&
-              transaction.category === category
-            );
-          },
+        deletedTransactionsCount = this.subscriptionProcessing.removeStaleGeneratedTransactions(
+          AppStateService.instance.allSubscriptions[index],
+          null,
         );
-        deletedTransactionsCount = initialLength - AppStateService.instance.allTransactions.length;
-
-        // Log mass deletion of transactions
-        if (deletedTransactionsCount > 0) {
-          this.frontendLogger.logActivity('mass_delete_transactions', 'warning', {
-            subscriptionTitle: deletedTitle,
-            account: account,
-            category: category,
-            amount: amount,
-            transactionsDeleted: deletedTransactionsCount,
-            reason: 'subscription_removal',
-          });
-        }
+        InfoSubscriptionComponent.isRefresh = false;
 
         // Recalculate income statement from remaining transactions
         if (deletedTransactionsCount > 0) {
@@ -528,41 +519,14 @@ export class InfoSubscriptionComponent extends BaseInfoComponent implements OnIn
     });
   }
 
-  /**
-   * Deletes a transaction at the specified index.
-   * @param index - The index of the transaction to be deleted.
-   */
-  deleteTransactions(index: number) {
-    // eslint-disable-next-line no-useless-assignment -- initial 0 is a default that's always overwritten before read; pre-existing, out of scope for lint setup
-    let deletedTransactionsCount = 0;
-
-    // Delete Transactions
-    const account = AppStateService.instance.allSubscriptions[index].account;
-    const amount = AppStateService.instance.allSubscriptions[index].amount;
-    const category = AppStateService.instance.allSubscriptions[index].category;
-
-    const initialLength = AppStateService.instance.allTransactions.length;
-    AppStateService.instance.allTransactions = AppStateService.instance.allTransactions.filter(
-      (transaction) => {
-        return !(
-          transaction.account === account &&
-          transaction.amount === amount &&
-          transaction.category === category
-        );
-      },
-    );
-    deletedTransactionsCount = initialLength - AppStateService.instance.allTransactions.length;
-
-    // Recalculate income statement from remaining transactions
-    if (deletedTransactionsCount > 0) {
-      this.incomeStatement.recalculate();
-    }
-
-    // WRITE to Storage
-    this.updateStorage();
+  /** Stores everything a subscription change touches; resolves true once it is stored, false when a write failed. */
+  updateStorage(): Promise<boolean> {
+    return new Promise<boolean>((resolve) => {
+      this.storeAll(resolve);
+    });
   }
 
-  updateStorage() {
+  private storeAll(resolve: (stored: boolean) => void) {
     try {
       // WRITE to StorageInfoComponent
       // Interests
@@ -735,6 +699,7 @@ export class InfoSubscriptionComponent extends BaseInfoComponent implements OnIn
                 JSON.stringify(AppStateService.instance.liabilities),
               );
               this.router.navigate(['/subscription']);
+              resolve(true);
             }
           };
 
@@ -743,9 +708,12 @@ export class InfoSubscriptionComponent extends BaseInfoComponent implements OnIn
               next: handleComplete,
               error: (error) => {
                 this.showError(error.message || 'Database write failed');
+                resolve(false);
               },
             });
           });
+        } else {
+          resolve(true);
         }
       } else {
         // Firebase mode
@@ -803,9 +771,11 @@ export class InfoSubscriptionComponent extends BaseInfoComponent implements OnIn
           JSON.stringify(AppStateService.instance.liabilities),
         );
         this.router.navigate(['/subscription']);
+        resolve(true);
       }
     } catch (error) {
       this.showError(error.message || 'Error occurred');
+      resolve(false);
     }
   }
 
