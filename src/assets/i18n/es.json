@@ -2640,5 +2640,6 @@
   "Statement.interestCoverageHealthy": "Saludable ≥ 1: los ingresos cubren los intereses.",
   "Sync.staleWrite": "Tus datos se cambiaron en otro lugar (otro dispositivo o un agente). Se cargó la versión más reciente; vuelve a realizar tu último cambio.",
   "Grow.noPosition": "Nada que vender: ninguna posición del balance tiene una etiqueta que coincida exactamente con el título de este proyecto.",
-  "Registration.GamePassword": "Contraseña del juego"
+  "Registration.GamePassword": "Contraseña del juego",
+  "CashflowGame.rules.msg.cardPlayed": "Esta carta ya se jugó: una carta se juega una sola vez, márcala como hecha."
 }

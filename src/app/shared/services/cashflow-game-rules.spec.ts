@@ -182,4 +182,26 @@ describe('the game rules in the app', () => {
     AppStateService.instance.cashflowGame.turn = { phase: 'roll', count: 2 };
     expect(CashflowGameService.buyRefusalFor('DUPLEX', true)).toMatch(/only allow buying/);
   });
+
+  it('a card is planned once; the card in hand is matched on the project it became', () => {
+    startGame({ ...RULE_PRESETS.guided, cardChoice: 'free', preset: 'custom' });
+    AppStateService.instance.cashflowGame.turn = {
+      phase: 'decide',
+      count: 3,
+      pending: {
+        kind: 'deal',
+        spaceIndex: 2,
+        offered: { deck: 'dealBig', cardId: 'db-1', title: 'EFH' },
+      },
+    };
+    expect(service.cardRefusal('db-1')).toBeNull();
+    // planning took the label EFH-II: the Buy rule now looks for that title
+    (service as any).markCardPlayed();
+    (service as any).holdProject('EFH-II');
+    expect(CashflowGameService.buyRefusalFor('EFH-II', true)).toBeNull();
+    expect(CashflowGameService.buyRefusalFor('EFH', true)).toMatch(/only allow buying/);
+    // the same card cannot be played again, another one (free card choice) is not blocked by this
+    expect(service.cardRefusal('db-1')).toMatch(/played already/);
+    expect(service.cardRefusal('db-2')).toBeNull();
+  });
 });

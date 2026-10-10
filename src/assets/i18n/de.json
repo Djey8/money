@@ -2640,5 +2640,6 @@
   "Statement.interestCoverageHealthy": "Gesund bei ≥ 1: Einnahmen decken Zinszahlungen.",
   "Sync.staleWrite": "Deine Daten wurden an anderer Stelle geändert (anderes Gerät oder ein Agent). Die neueste Version wurde geladen — bitte wiederhole deine letzte Änderung.",
   "Grow.noPosition": "Nichts zu verkaufen: Keine Position in der Bilanz hat einen Tag, der genau dem Projekttitel entspricht.",
-  "Registration.GamePassword": "Spielpasswort"
+  "Registration.GamePassword": "Spielpasswort",
+  "CashflowGame.rules.msg.cardPlayed": "Diese Karte wurde schon gespielt: eine Karte wird nur einmal gespielt, hake sie ab."
 }

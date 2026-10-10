@@ -2640,5 +2640,6 @@
   "Statement.interestCoverageHealthy": "Healthy when ≥ 1: earnings cover interest payments.",
   "Sync.staleWrite": "Your data was changed elsewhere (another device or an agent). Reloaded the latest version — please redo your last change.",
   "Grow.noPosition": "Nothing to sell: no balance-sheet position has a tag exactly matching this project's title.",
-  "Registration.GamePassword": "Game password"
+  "Registration.GamePassword": "Game password",
+  "CashflowGame.rules.msg.cardPlayed": "This card has been played already: a card is played once, tick it off."
 }

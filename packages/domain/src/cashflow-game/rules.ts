@@ -355,3 +355,14 @@ export function whyPaymentPending(state: Pick<CashflowGameState, 'rules' | 'turn
     ? 'The game waits for the payment: pay it first, nothing else can be played, bought or sold. A Bank loan is possible.'
     : null;
 }
+
+/** Why this card may not be played again: it has been played on the open space already (a card is planned once). */
+export function whyCardAlreadyPlayed(
+  state: Pick<CashflowGameState, 'turn'>,
+  cardId: string,
+): string | null {
+  const pending = state.turn?.pending;
+  return pending?.played && pending.offered?.cardId === cardId
+    ? 'This card has been played already: a card is played once, tick it off.'
+    : null;
+}

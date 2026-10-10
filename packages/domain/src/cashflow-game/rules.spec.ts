@@ -26,6 +26,7 @@ import {
   whyCannotSell,
   whyCannotUseCard,
   whyPaymentPending,
+  whyCardAlreadyPlayed,
   completeRules,
 } from './rules';
 import type { CashflowGameState, CashflowMarketOffer } from './types';
@@ -484,5 +485,25 @@ describe('a cost card is a payment too, and a held card is the offer', () => {
     // three rolls keep the offer over the following turns
     const longer = { ...settled, rules: normalizeRules({ sell: 'with-offer', sellOfferRolls: 3 }) };
     expect(openOfferFor(longer, 'EFH')).toBeDefined();
+  });
+});
+
+describe('a card is played once', () => {
+  it('refuses the same card again once it has been played on the open space', () => {
+    const state = {
+      turn: {
+        phase: 'decide',
+        count: 1,
+        pending: {
+          kind: 'deal',
+          spaceIndex: 2,
+          played: true,
+          offered: { deck: 'dealBig', cardId: 'db-1' },
+        },
+      },
+    } as never;
+    expect(whyCardAlreadyPlayed(state, 'db-1')).toMatch(/played already/);
+    expect(whyCardAlreadyPlayed(state, 'db-2')).toBeNull();
+    expect(whyCardAlreadyPlayed({ turn: { phase: 'roll', count: 1 } } as never, 'db-1')).toBeNull();
   });
 });

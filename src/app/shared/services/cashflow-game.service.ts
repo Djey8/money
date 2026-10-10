@@ -41,6 +41,7 @@ import {
   whyCannotDraw,
   whyCannotReportRoll,
   whyDiceFirst,
+  whyCardAlreadyPlayed,
   propertyCardTypes,
   costCardProperty,
   whyPaymentPending,
@@ -1511,7 +1512,11 @@ export class CashflowGameService {
     }
     this.pushUndoSnapshot(effects.step as CashflowStepInfo);
     this.applyGameEffects(effects);
-    if (options.fromCard) this.markCardPlayed();
+    if (options.fromCard) {
+      this.markCardPlayed();
+      // the card in hand is now the project it became (EFH-II when EFH was taken): that is what Buy is matched on
+      this.holdProject(input.title);
+    }
     this.persistAll('cashflow_deal_plan', { kind: input.kind, title: input.title }, callbacks, {
       includeGrow: true,
     });
@@ -2100,7 +2105,9 @@ export class CashflowGameService {
   /** Why the rules forbid playing this card now (an open dice decision comes first; under offered-once only the offered card), or null. */
   cardRefusal(cardId: string): string | null {
     const game = AppStateService.instance.cashflowGame;
-    return CashflowGameService.ruleTextOrNull(whyDiceFirst(game) ?? whyCannotUseCard(game, cardId));
+    return CashflowGameService.ruleTextOrNull(
+      whyDiceFirst(game) ?? whyCardAlreadyPlayed(game, cardId) ?? whyCannotUseCard(game, cardId),
+    );
   }
 
   /** Why the open dice decision must be rolled before a card is picked (rules: dice first), or null. */
@@ -2116,6 +2123,17 @@ export class CashflowGameService {
     AppStateService.instance.cashflowGame = {
       ...game,
       turn: { ...game.turn, pending: { ...pending, played: true } },
+    };
+  }
+
+  /** Names the project the card in hand became: the Buy button and the buy rule look for that title. */
+  private holdProject(title: string): void {
+    const game = AppStateService.instance.cashflowGame;
+    const offered = game.turn?.pending?.offered;
+    if (!game.turn?.pending || !offered) return;
+    AppStateService.instance.cashflowGame = {
+      ...game,
+      turn: { ...game.turn, pending: { ...game.turn.pending, offered: { ...offered, title } } },
     };
   }
 
