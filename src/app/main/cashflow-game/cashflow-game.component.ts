@@ -658,6 +658,11 @@ export class CashflowGameComponent implements OnDestroy {
     return game.mode === 'solo' && rulesOf(game).cardChoice === 'offered-once';
   }
 
+  /** How many buttons the decision panel shows: Open the card, Done, Pass - Pass and Done go when the rules take them away. */
+  get decisionButtonCount(): number {
+    return 1 + (this.mustPayDoodad ? 0 : 1) + (this.cannotPassNow ? 0 : 1);
+  }
+
   /** The card of this space was played: it is ticked off (Done), not passed. */
   get cannotPassNow(): boolean {
     return (
@@ -1545,6 +1550,7 @@ export class CashflowGameComponent implements OnDestroy {
   sellActiveCardToFriend(): void {
     // a share card belongs to whoever drew it: only property and asset cards can be sold (JFK, 2026-10-06)
     if (!this.activeCard || this.friendPrice === null || this.isShareCard) return;
+    this.recordOpenCard();
     this.isBusy = true;
     this.cashflowGameService.sellCardToFriend(
       this.activeCard as CashflowDealCard,
@@ -2058,7 +2064,12 @@ export class CashflowGameComponent implements OnDestroy {
 
   /** Declining a Deal card ends the turn's card business - straight back to the main dashboard (JFK, 2026-09-30). */
   declineActiveCard(): void {
-    this.backToMain();
+    // declining uses the card up: back on the dashboard it can be looked at again, or ticked off with Done
+    this.recordOpenCard();
+    this.cashflowGameService.declineCard({
+      onSuccess: () => this.backToMain(),
+      onError: (message) => this.toastService.show(message, 'error'),
+    });
   }
 
   clearActiveCard(): void {

@@ -87,6 +87,7 @@ function decodeGameState(raw, session) {
               kind: str(raw.turn.pending.kind),
               spaceIndex: num(raw.turn.pending.spaceIndex),
               ...(raw.turn.pending.played != null ? { played: flag(raw.turn.pending.played) } : {}),
+              ...(raw.turn.pending.closed != null ? { closed: flag(raw.turn.pending.closed) } : {}),
               ...(raw.turn.pending.offered != null
                 ? {
                     offered: {

@@ -271,6 +271,8 @@ export interface CashflowPendingDecision {
   paymentDue?: boolean;
   /** A property or an asset (gold, a dice card) was bought with the card of this space: a card buys once. */
   purchased?: boolean;
+  /** The card was dealt with without a project: sold to a friend or declined. It is only read afterwards, like a played card. */
+  closed?: boolean;
 }
 
 /**

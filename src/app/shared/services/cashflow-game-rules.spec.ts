@@ -321,4 +321,27 @@ describe('the game rules in the app', () => {
     (service as any).settleDoodadByPayment('marketCost');
     expect(AppStateService.instance.cashflowGame.turn?.phase).toBe('roll');
   });
+
+  it('a card sold to a friend or declined is used up: only read afterwards, whether or not it became a project', () => {
+    startGame();
+    AppStateService.instance.allGrowProjects = [];
+    AppStateService.instance.cashflowGame.turn = {
+      phase: 'decide',
+      count: 3,
+      pending: {
+        kind: 'deal',
+        spaceIndex: 2,
+        offered: { deck: 'dealBig', cardId: 'db-1', title: 'EFH' },
+      },
+    };
+    expect(CashflowGameService.isPlayedCard('db-1')).toBe(false);
+    (service as any).markCardClosed();
+    expect(CashflowGameService.isPlayedCard('db-1')).toBe(true); // no Grow project, and still only read
+    expect(
+      CashflowGameService.effectiveGame(AppStateService.instance.cashflowGame).turn?.pending
+        ?.played,
+    ).toBe(true);
+    // it cannot be played again
+    expect(service.cardRefusal('db-1')).toMatch(/played already/);
+  });
 });

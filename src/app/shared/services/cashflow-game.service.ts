@@ -2135,6 +2135,27 @@ export class CashflowGameService {
     };
   }
 
+  /**
+   * The card in hand was dealt with without becoming a project - sold to a friend or declined: it counts as played, so it can be
+   * read again but not used or passed (JFK, 2026-10-10).
+   */
+  private markCardClosed(): void {
+    this.markCardPlayed();
+    const game = AppStateService.instance.cashflowGame;
+    const pending = game.turn?.pending;
+    if (!game.turn || !pending || pending.closed) return;
+    AppStateService.instance.cashflowGame = {
+      ...game,
+      turn: { ...game.turn, pending: { ...pending, closed: true } },
+    };
+  }
+
+  /** Declining the card in hand uses it up: afterwards it is only read. */
+  declineCard(callbacks: CashflowGameCallbacks): void {
+    this.markCardClosed();
+    this.persistAll('cashflow_card_declined', {}, callbacks, { quiet: true });
+  }
+
   /** The card of this space has bought its property or asset: it buys once, the Buy button is gone. */
   private markPurchased(): void {
     const game = AppStateService.instance.cashflowGame;
@@ -2158,7 +2179,11 @@ export class CashflowGameService {
   static isPlayedCard(cardId: string): boolean {
     const pending = AppStateService.instance.cashflowGame.turn?.pending;
     if (!pending?.played || pending.offered?.cardId !== cardId) return false;
-    return pending.kind !== 'deal' || CashflowGameService.heldProjectFor(cardId) !== null;
+    return (
+      pending.kind !== 'deal' ||
+      !!pending.closed ||
+      CashflowGameService.heldProjectFor(cardId) !== null
+    );
   }
 
   static heldProjectFor(cardId: string): Grow | null {
@@ -2176,7 +2201,13 @@ export class CashflowGameService {
    */
   static effectiveGame(game: CashflowGameState): CashflowGameState {
     const pending = game.turn?.pending;
-    if (!game.turn || !pending?.played || pending.kind !== 'deal' || !pending.offered?.title) {
+    if (
+      !game.turn ||
+      !pending?.played ||
+      pending.closed ||
+      pending.kind !== 'deal' ||
+      !pending.offered?.title
+    ) {
       return game;
     }
     const exists = AppStateService.instance.allGrowProjects.some(
@@ -2469,6 +2500,7 @@ export class CashflowGameService {
     }
     this.pushUndoSnapshot(effects.step as CashflowStepInfo);
     this.applyGameEffects(effects);
+    this.markCardClosed();
     this.persistAll('cashflow_card_sale', { card: card.id, amount }, callbacks);
   }
 

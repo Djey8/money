@@ -630,6 +630,9 @@ export class AppDataService {
                       ...(raw.turn.pending.played != null
                         ? { played: str(raw.turn.pending.played) === 'true' }
                         : {}),
+                      ...(raw.turn.pending.closed != null
+                        ? { closed: str(raw.turn.pending.closed) === 'true' }
+                        : {}),
                       ...(raw.turn.pending.offered != null
                         ? {
                             offered: {

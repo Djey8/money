@@ -37,6 +37,7 @@ function makeComponent(overrides: Partial<Record<string, jest.Mock>> = {}) {
     drawCard: jest.fn(),
     recordCardPicked: jest.fn(),
     applyDealCard: jest.fn(),
+    declineCard: jest.fn((callbacks: any) => callbacks.onSuccess()),
     resetGame: jest.fn(),
     monthlyCashflow: 0,
     cash: 0,

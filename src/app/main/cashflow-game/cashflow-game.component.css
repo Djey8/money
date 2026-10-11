@@ -1687,6 +1687,15 @@
   gap: 8px;
 }
 
+/* Pass (or Done) is gone: the buttons that are left share the whole row */
+.cf-solo-decision-actions[data-buttons='2'] {
+  grid-template-columns: 1fr 1fr;
+}
+
+.cf-solo-decision-actions[data-buttons='1'] {
+  grid-template-columns: 1fr;
+}
+
 .cf-solo-decision-actions > .btn {
   width: 100%;
   flex: none;
@@ -2095,6 +2104,14 @@
   .cf-solo-decision-actions {
     grid-template-columns: 1.9fr 1fr 1fr;
     gap: 6px;
+  }
+
+  .cf-solo-decision-actions[data-buttons='2'] {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .cf-solo-decision-actions[data-buttons='1'] {
+    grid-template-columns: 1fr;
   }
 
   .cf-solo-decision-actions > .btn {

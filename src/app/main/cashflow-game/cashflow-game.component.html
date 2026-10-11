@@ -894,7 +894,10 @@
                 <p class="cf-solo-decision-hint">
                   {{ 'CashflowGame.solo.decisionHint' | translate }}
                 </p>
-                <div class="cf-actions cf-solo-decision-actions">
+                <div
+                  class="cf-actions cf-solo-decision-actions"
+                  [attr.data-buttons]="decisionButtonCount"
+                >
                   <button
                     class="btn btn--primary"
                     [disabled]="isBusy || walking || appState.isSaving || !!diceFirstRefusal"
