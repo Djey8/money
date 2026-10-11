@@ -2645,5 +2645,6 @@
   "CashflowGame.rules.msg.mlmKept": "This card cannot be sold: a Multi-Level-Marketing card is kept.",
   "CashflowGame.rules.msg.cardBought": "The card of this space has bought already: a card buys once.",
   "CashflowGame.cardPlannedAs": "Planned as {{title}}: you can only read this card now. Delete the project in Grow to plan it again.",
-  "CashflowGame.cardPlayedReadOnly": "This card has been played: you can only read it now."
+  "CashflowGame.cardPlayedReadOnly": "This card has been played: you can only read it now.",
+  "CashflowGame.diceActionBadge": "Card dice"
 }

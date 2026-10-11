@@ -1702,6 +1702,48 @@
   margin: 0;
 }
 
+/* A dice action of a card (MLM, a loan ...) must not be mistaken for the roll of a new round: amber panel, a badge, a golden die. */
+.cf-dice-action {
+  position: relative;
+  border-color: #e6a100;
+  background-image: linear-gradient(rgba(245, 166, 35, 0.14), rgba(245, 166, 35, 0.14));
+  box-shadow: 0 0 0 3px rgba(230, 161, 0, 0.25);
+}
+
+.cf-dice-action-badge {
+  display: inline-block;
+  margin-bottom: 6px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: #e6a100;
+  color: #1b1b1f;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.cf-dice-action .cf-solo-dice .cf-die {
+  width: 62px;
+  height: 62px;
+  padding: 8px;
+  background: #ffd54f;
+  box-shadow:
+    0 0 0 3px rgba(230, 161, 0, 0.6),
+    0 4px 14px rgba(0, 0, 0, 0.28);
+}
+
+.cf-dice-action .cf-solo-dice .cf-pip {
+  width: 11px;
+  height: 11px;
+}
+
+.cf-dice-action .btn--primary {
+  background: #e6a100;
+  border-color: #e6a100;
+  color: #1b1b1f;
+}
+
 .cf-dice-action .cf-actions {
   margin-top: 8px;
 }

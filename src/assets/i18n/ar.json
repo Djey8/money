@@ -2645,5 +2645,6 @@
   "CashflowGame.rules.msg.mlmKept": "لا يمكن بيع هذه البطاقة: بطاقة التسويق متعدد المستويات (MLM) يُحتفظ بها.",
   "CashflowGame.rules.msg.cardBought": "بطاقة هذه الخانة اشترت بالفعل: تشتري البطاقة مرة واحدة فقط.",
   "CashflowGame.cardPlannedAs": "تم التخطيط لها كـ {{title}}: يمكنك الآن قراءة هذه البطاقة فقط. احذف المشروع في Grow لتخطيطها من جديد.",
-  "CashflowGame.cardPlayedReadOnly": "لُعبت هذه البطاقة: يمكنك الآن قراءتها فقط."
+  "CashflowGame.cardPlayedReadOnly": "لُعبت هذه البطاقة: يمكنك الآن قراءتها فقط.",
+  "CashflowGame.diceActionBadge": "نرد البطاقة"
 }

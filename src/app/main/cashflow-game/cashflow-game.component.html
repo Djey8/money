@@ -852,6 +852,9 @@
                 *ngIf="firstDiceDecision as deal"
                 role="group"
               >
+                <span class="cf-dice-action-badge"
+                  >🎲 {{ 'CashflowGame.diceActionBadge' | translate }}</span
+                >
                 <div class="cf-solo-decision-head">
                   <ng-container *ngTemplateOutlet="soloDice"></ng-container>
                   <h3>

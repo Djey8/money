@@ -2645,5 +2645,6 @@
   "CashflowGame.rules.msg.mlmKept": "Esta carta no se puede vender: una carta de Multi-Level-Marketing se conserva.",
   "CashflowGame.rules.msg.cardBought": "La carta de esta casilla ya compró: una carta compra una sola vez.",
   "CashflowGame.cardPlannedAs": "Planificada como {{title}}: ahora solo puedes leer esta carta. Elimina el proyecto en Grow para planificarla de nuevo.",
-  "CashflowGame.cardPlayedReadOnly": "Esta carta ya se jugó: ahora solo puedes leerla."
+  "CashflowGame.cardPlayedReadOnly": "Esta carta ya se jugó: ahora solo puedes leerla.",
+  "CashflowGame.diceActionBadge": "Dados de la carta"
 }
