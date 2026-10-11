@@ -734,6 +734,7 @@ export class CashflowGameComponent implements OnDestroy {
   /** The faces on show: random ones while the dice tumble, otherwise the last roll (also after a reload). */
   get shownDice(): number[] {
     if (this.diceTumbling) return this.tumbleFaces;
+    if (this.decisionOutcome) return this.decisionFaces ?? [];
     if (this.decisionFaces) return this.decisionFaces;
     // The die of a dice action is one die, whatever the last board roll was (two under Charity): never the board's dice here
     if (this.firstDiceDecision)
@@ -1601,6 +1602,28 @@ export class CashflowGameComponent implements OnDestroy {
   decisionFaces: number[] | null = null;
 
   /**
+   * What a dice action rolled, told in the dice panel itself - under the die that stays on its number - until the player
+   * continues (JFK, 2026-10-11: not in a separate box below). Gold, a market dice card, a split and MLM alike.
+   */
+  decisionOutcome: {
+    title: string;
+    roll?: number;
+    won: boolean;
+    headline: string;
+    text: string;
+  } | null = null;
+
+  /** The dice panel is on screen: a dice action waits for its roll, or tells what it rolled. */
+  get diceActionOpen(): boolean {
+    return !!this.firstDiceDecision || !!this.decisionOutcome;
+  }
+
+  dismissDecisionOutcome(): void {
+    this.decisionOutcome = null;
+    this.decisionFaces = null;
+  }
+
+  /**
    * In a solo game an open dice action takes the place of the roll panel (JFK, 2026-10-11): the die tumbles and lands on the
    * roll, rests there for a moment, and then the result shows and the normal panel is back.
    */
@@ -1622,7 +1645,7 @@ export class CashflowGameComponent implements OnDestroy {
     await this.tumbleDice(1);
     await this.pause(DICE_DECISION_REST_MS);
     this.isBusy = false;
-    this.decisionFaces = null;
+    // The die stays on its number until the result has been read (dismissDecisionOutcome).
     // A stock split doubles on 1-3 (and halves on 4-6); every other card wins on a high roll.
     this.settleDecision(deal, deal.split ? roll <= 3 : roll >= (deal.successOn ?? 6), roll);
   }
@@ -1698,10 +1721,19 @@ export class CashflowGameComponent implements OnDestroy {
                 },
               );
           this.toastService.show(`${rolled}${result}`, won ? 'success' : 'update');
+          if (this.isSolo) {
+            this.decisionOutcome = {
+              title: deal.split?.shareTag ?? deal.title,
+              ...(roll ? { roll } : {}),
+              won,
+              headline: result,
+              text: deal.recurring ? '' : ((won ? deal.successText : deal.failureText) ?? ''),
+            };
+          }
           if (deal.recurring) {
             // the Payday bonus of a kept MLM card: an info box beside the Payday box, not the big result card
             this.mlmBanner = { won, text: `${rolled}${result}`.trim() };
-          } else if (roll) {
+          } else if (roll && !this.isSolo) {
             this.rollResult = {
               roll,
               won,
@@ -1712,6 +1744,7 @@ export class CashflowGameComponent implements OnDestroy {
         },
         onError: (message) => {
           this.isBusy = false;
+          this.decisionFaces = null;
           this.toastService.show(message, 'error');
         },
       },

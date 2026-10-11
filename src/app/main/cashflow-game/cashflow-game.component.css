@@ -1748,6 +1748,38 @@
   margin-top: 8px;
 }
 
+/* What the dice action rolled: a small box in the panel, green on a win, neutral on a miss */
+.cf-dice-outcome {
+  margin-top: 6px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border-left: 4px solid #9e9e9e;
+  background: rgba(127, 127, 127, 0.12);
+}
+
+.cf-dice-outcome--won {
+  border-left-color: #2e9d57;
+  background: rgba(46, 157, 87, 0.14);
+}
+
+.cf-dice-outcome p {
+  margin: 0 0 2px;
+}
+
+.cf-dice-outcome-rolled {
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+}
+
+.cf-dice-outcome-headline {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.cf-dice-outcome-text {
+  font-size: 0.85rem;
+}
+
 .cf-solo-decision-actions > .btn {
   width: 100%;
   flex: none;

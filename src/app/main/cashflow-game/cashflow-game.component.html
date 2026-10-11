@@ -895,7 +895,37 @@
                   </button>
                 </div>
               </div>
-              <ng-container *ngIf="soloTurn.phase === 'roll' && !firstDiceDecision">
+              <!-- What the dice action rolled: in the same panel, the die still on its number, until the player continues. -->
+              <div
+                class="cf-solo-decision cf-dice-action"
+                *ngIf="decisionOutcome as outcome"
+                role="group"
+              >
+                <span class="cf-dice-action-badge"
+                  >🎲 {{ 'CashflowGame.diceActionBadge' | translate }}</span
+                >
+                <div class="cf-solo-decision-head">
+                  <ng-container *ngTemplateOutlet="soloDice"></ng-container>
+                  <h3>{{ outcome.title }}</h3>
+                </div>
+                <div
+                  class="cf-dice-outcome"
+                  [class.cf-dice-outcome--won]="outcome.won"
+                  role="status"
+                >
+                  <p class="cf-dice-outcome-rolled" *ngIf="outcome.roll">
+                    {{ 'CashflowGame.diceRolled' | translate: { roll: outcome.roll } }}
+                  </p>
+                  <strong class="cf-dice-outcome-headline">{{ outcome.headline }}</strong>
+                  <p class="cf-dice-outcome-text" *ngIf="outcome.text">{{ outcome.text }}</p>
+                </div>
+                <div class="cf-actions">
+                  <button class="btn btn--primary" (click)="dismissDecisionOutcome()">
+                    {{ 'CashflowGame.diceContinue' | translate }}
+                  </button>
+                </div>
+              </div>
+              <ng-container *ngIf="soloTurn.phase === 'roll' && !diceActionOpen">
                 <fieldset class="cf-dice-choice" *ngIf="canChooseDice">
                   <legend>{{ 'CashflowGame.solo.diceHow' | translate }}</legend>
                   <label class="cf-dice-option">
@@ -931,7 +961,7 @@
 
               <div
                 class="cf-solo-decision"
-                *ngIf="soloTurn.phase === 'decide' && !walking && !firstDiceDecision"
+                *ngIf="soloTurn.phase === 'decide' && !walking && !diceActionOpen"
                 role="group"
               >
                 <div class="cf-solo-decision-head">

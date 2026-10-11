@@ -2181,6 +2181,36 @@ describe('CashflowGameComponent solo mode (JFK, 2026-10-05)', () => {
     expect(companion.component.decisionCards).toHaveLength(1);
   });
 
+  it('a dice action tells what it rolled in its own panel, the die still on its number, until Continue', () => {
+    const { component, cashflowGameService } = soloComponent();
+    setSoloState({ mode: 'solo' } as never);
+    (cashflowGameService as any).paydayRollCount = jest.fn(() => 1);
+    (cashflowGameService as any).resolveGamble = jest.fn(
+      (_title: string, _outcome: unknown, callbacks: any) => callbacks.onSuccess(),
+    );
+    const gold = {
+      title: 'GOLD',
+      coins: 10,
+      costMinor: 1,
+      stage: 'awaitingRoll',
+      successOn: 6,
+    } as never;
+    jest.spyOn(component, 'openDecisions', 'get').mockReturnValue([gold]);
+    component.decisionFaces = [4];
+    (component as any).settleDecision(gold, false, 4);
+
+    expect(component.decisionOutcome).toMatchObject({ roll: 4, won: false, title: 'GOLD' });
+    expect(component.rollResult).toBeNull(); // no separate box below
+    expect(component.diceActionOpen).toBe(true);
+    expect(component.shownDice).toEqual([4]);
+
+    jest.spyOn(component, 'openDecisions', 'get').mockReturnValue([]);
+    expect(component.diceActionOpen).toBe(true); // still open: the result has not been read
+    component.dismissDecisionOutcome();
+    expect(component.diceActionOpen).toBe(false);
+    expect(component.decisionFaces).toBeNull();
+  });
+
   it('measures the way to the next Payday from the token, START included', () => {
     const { component } = soloComponent();
     setSoloState({ boardPosition: null });
