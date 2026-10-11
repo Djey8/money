@@ -344,4 +344,45 @@ describe('the game rules in the app', () => {
     // it cannot be played again
     expect(service.cardRefusal('db-1')).toMatch(/played already/);
   });
+
+  it('a payment that is still open is never only read, also when the game was stored with a wrong played mark', () => {
+    startGame(RULE_PRESETS.strict);
+    AppStateService.instance.cashflowGame.turn = {
+      phase: 'decide',
+      count: 4,
+      pending: {
+        kind: 'doodad',
+        spaceIndex: 4,
+        played: true,
+        offered: { deck: 'doodad', cardId: 'dd-1', title: 'Sound system' },
+      },
+    };
+    expect(CashflowGameService.isPlayedCard('dd-1')).toBe(false);
+    // a cost card that has to be paid is the same
+    AppStateService.instance.cashflowGame.turn = {
+      phase: 'decide',
+      count: 4,
+      pending: {
+        kind: 'market',
+        spaceIndex: 8,
+        played: true,
+        paymentDue: true,
+        offered: { deck: 'market', cardId: 'm-1', title: 'Broken pipe' },
+      },
+    };
+    expect(CashflowGameService.isPlayedCard('m-1')).toBe(false);
+    // where Doodads may be passed a paid one is read afterwards
+    startGame(RULE_PRESETS.guided);
+    AppStateService.instance.cashflowGame.turn = {
+      phase: 'decide',
+      count: 4,
+      pending: {
+        kind: 'doodad',
+        spaceIndex: 4,
+        played: true,
+        offered: { deck: 'doodad', cardId: 'dd-1', title: 'Sound system' },
+      },
+    };
+    expect(CashflowGameService.isPlayedCard('dd-1')).toBe(true);
+  });
 });

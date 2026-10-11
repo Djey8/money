@@ -1708,7 +1708,6 @@ export class CashflowGameService {
     }
     this.pushUndoSnapshot(result.effects.step as CashflowStepInfo);
     this.applyGameEffects(result.effects);
-    this.markCardPlayed();
     const { persist } = result.effects;
     this.persistAll(
       result.kind === 'split' ? 'cashflow_share_split' : 'cashflow_dice',
@@ -2179,6 +2178,14 @@ export class CashflowGameService {
   static isPlayedCard(cardId: string): boolean {
     const pending = AppStateService.instance.cashflowGame.turn?.pending;
     if (!pending?.played || pending.offered?.cardId !== cardId) return false;
+    // A payment that has to be made is never only read: under the pay rule it settles the space when it is booked, so a
+    // payment still open here is not one that was made (a game stored with a wrong 'played' mark must not get stuck).
+    if (
+      rulesOf(AppStateService.instance.cashflowGame).passDoodads === 'forbidden' &&
+      (pending.kind === 'doodad' || pending.paymentDue)
+    ) {
+      return false;
+    }
     return (
       pending.kind !== 'deal' ||
       !!pending.closed ||
