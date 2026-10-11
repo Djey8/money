@@ -846,7 +846,53 @@
 
           <div class="cf-solo-controls">
             <ng-container *ngIf="!gameOver">
-              <ng-container *ngIf="soloTurn.phase === 'roll'">
+              <!-- A dice action of a card (MLM, a sister's loan ...) is open: its die takes the place of the roll panel until it is rolled. -->
+              <div
+                class="cf-solo-decision cf-dice-action"
+                *ngIf="firstDiceDecision as deal"
+                role="group"
+              >
+                <div class="cf-solo-decision-head">
+                  <ng-container *ngTemplateOutlet="soloDice"></ng-container>
+                  <h3>
+                    {{ 'CashflowGame.diceOpenTitle' | translate }}:
+                    {{ deal.split?.shareTag ?? deal.title }}
+                  </h3>
+                </div>
+                <p class="cf-solo-decision-hint">{{ decisionText(deal) }}</p>
+                <div class="cf-actions">
+                  <button
+                    class="btn btn--primary"
+                    [disabled]="isBusy || !!decisionFaces"
+                    (click)="rollDecisionDice(deal)"
+                  >
+                    🎲 {{ 'CashflowGame.diceRollButton' | translate }}
+                  </button>
+                </div>
+                <div class="cf-actions cf-decision-real" *ngIf="!reportRollsForbidden">
+                  <button
+                    class="btn btn--sm cf-btn-outlined"
+                    [disabled]="isBusy || !!decisionFaces"
+                    (click)="reportRoll(deal, true)"
+                  >
+                    {{
+                      (deal.split ? 'CashflowGame.diceSplitDouble' : 'CashflowGame.diceGotIt')
+                        | translate
+                    }}
+                  </button>
+                  <button
+                    class="btn btn--sm cf-btn-outlined"
+                    [disabled]="isBusy || !!decisionFaces"
+                    (click)="reportRoll(deal, false)"
+                  >
+                    {{
+                      (deal.split ? 'CashflowGame.diceSplitHalve' : 'CashflowGame.diceNoLuck')
+                        | translate
+                    }}
+                  </button>
+                </div>
+              </div>
+              <ng-container *ngIf="soloTurn.phase === 'roll' && !firstDiceDecision">
                 <fieldset class="cf-dice-choice" *ngIf="canChooseDice">
                   <legend>{{ 'CashflowGame.solo.diceHow' | translate }}</legend>
                   <label class="cf-dice-option">
@@ -882,7 +928,7 @@
 
               <div
                 class="cf-solo-decision"
-                *ngIf="soloTurn.phase === 'decide' && !walking"
+                *ngIf="soloTurn.phase === 'decide' && !walking && !firstDiceDecision"
                 role="group"
               >
                 <div class="cf-solo-decision-head">
@@ -1035,7 +1081,7 @@
 
         <!-- Open decisions: a paid dice card (gold coins) waits here until the roll is decided, in the -->
         <!-- app or from a real die (JFK, 2026-10-03). -->
-        <div class="cf-card cf-decision" *ngFor="let deal of visibleDecisions">
+        <div class="cf-card cf-decision" *ngFor="let deal of decisionCards">
           <h3>
             {{ 'CashflowGame.diceOpenTitle' | translate }}: {{ deal.split?.shareTag ?? deal.title }}
           </h3>

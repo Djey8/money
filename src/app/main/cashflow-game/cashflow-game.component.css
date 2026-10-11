@@ -1696,6 +1696,16 @@
   grid-template-columns: 1fr;
 }
 
+/* The hint under the buttons (a payment that has to be made ...) uses the whole row, not the cell of a hidden button */
+.cf-solo-decision-actions > .cf-solo-hint {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
+.cf-dice-action .cf-actions {
+  margin-top: 8px;
+}
+
 .cf-solo-decision-actions > .btn {
   width: 100%;
   flex: none;

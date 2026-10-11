@@ -106,6 +106,8 @@ const DICE_FACE_FIRST_MS = 70;
 const DICE_FACE_LAST_MS = 300;
 const DICE_SETTLE_MS = 650;
 const DICE_LAND_POP_MS = 900;
+/** How long the die of a dice action (MLM ...) rests on its number before the result shows. */
+const DICE_DECISION_REST_MS = 900;
 
 @Component({
   selector: 'app-cashflow-game',
@@ -732,6 +734,7 @@ export class CashflowGameComponent implements OnDestroy {
   /** The faces on show: random ones while the dice tumble, otherwise the last roll (also after a reload). */
   get shownDice(): number[] {
     if (this.diceTumbling) return this.tumbleFaces;
+    if (this.decisionFaces) return this.decisionFaces;
     if (this.lastDice.length) return this.lastDice;
     return this.appState.cashflowGame.turn?.lastRoll ?? [];
   }
@@ -1587,6 +1590,36 @@ export class CashflowGameComponent implements OnDestroy {
   /** The app rolls the die. */
   rollDice(deal: CashflowAssetDeal): void {
     const roll = this.cashflowGameService.rollDie();
+    // A stock split doubles on 1-3 (and halves on 4-6); every other card wins on a high roll.
+    this.settleDecision(deal, deal.split ? roll <= 3 : roll >= (deal.successOn ?? 6), roll);
+  }
+
+  /** The die of a dice action (MLM, a sister's loan ...) while it rolls and rests; null when no such die is on show. */
+  decisionFaces: number[] | null = null;
+
+  /**
+   * In a solo game an open dice action takes the place of the roll panel (JFK, 2026-10-11): the die tumbles and lands on the
+   * roll, rests there for a moment, and then the result shows and the normal panel is back.
+   */
+  get firstDiceDecision(): CashflowAssetDeal | null {
+    return this.isSolo ? (this.visibleDecisions[0] ?? null) : null;
+  }
+
+  /** The cards of open dice actions shown as cards of their own (a companion game; a solo game has the dice panel). */
+  get decisionCards(): CashflowAssetDeal[] {
+    return this.isSolo ? [] : this.visibleDecisions;
+  }
+
+  async rollDecisionDice(deal: CashflowAssetDeal): Promise<void> {
+    if (this.isBusy || this.decisionFaces) return;
+    this.isBusy = true;
+    const roll = this.cashflowGameService.rollDie();
+    this.decisionFaces = [roll];
+    this.skipWalking = false;
+    await this.tumbleDice(1);
+    await this.pause(DICE_DECISION_REST_MS);
+    this.isBusy = false;
+    this.decisionFaces = null;
     // A stock split doubles on 1-3 (and halves on 4-6); every other card wins on a high roll.
     this.settleDecision(deal, deal.split ? roll <= 3 : roll >= (deal.successOn ?? 6), roll);
   }

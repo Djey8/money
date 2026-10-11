@@ -2150,6 +2150,34 @@ describe('CashflowGameComponent solo mode (JFK, 2026-10-05)', () => {
     expect(component.reportRollsForbidden).toBe(false);
   });
 
+  it('in a solo game an open dice action takes the place of the roll panel; a companion game keeps its cards', () => {
+    const mlm = {
+      title: 'MLM',
+      coins: 1,
+      costMinor: 1,
+      stage: 'owned',
+      recurring: true,
+      rollDue: true,
+    };
+    const solo = soloComponent();
+    setSoloState({ mode: 'solo' } as never);
+    jest.spyOn(solo.component, 'openDecisions', 'get').mockReturnValue([mlm as never]);
+    expect(solo.component.firstDiceDecision).toMatchObject({ title: 'MLM' });
+    expect(solo.component.decisionCards).toEqual([]);
+    // while it rolls the dice show its die, then the normal panel is back
+    solo.component.decisionFaces = [4];
+    expect(solo.component.shownDice).toEqual([4]);
+    solo.component.decisionFaces = null;
+    jest.spyOn(solo.component, 'openDecisions', 'get').mockReturnValue([]);
+    expect(solo.component.firstDiceDecision).toBeNull();
+
+    const companion = soloComponent();
+    setSoloState({ mode: 'companion' } as never);
+    jest.spyOn(companion.component, 'openDecisions', 'get').mockReturnValue([mlm as never]);
+    expect(companion.component.firstDiceDecision).toBeNull();
+    expect(companion.component.decisionCards).toHaveLength(1);
+  });
+
   it('measures the way to the next Payday from the token, START included', () => {
     const { component } = soloComponent();
     setSoloState({ boardPosition: null });
