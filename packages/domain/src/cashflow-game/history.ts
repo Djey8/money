@@ -14,8 +14,8 @@ import { initialCashflowGameState, type CashflowGameState } from './types';
  * further.
  */
 
-/** How many past actions can be undone in a row - comfortably more than one play session needs. */
-export const UNDO_STACK_LIMIT = 200;
+/** How many past actions can be undone in a row - a long game of 500 steps and more stays whole (JFK, 2026-10-11). */
+export const UNDO_STACK_LIMIT = 2000;
 
 /** A transaction as far as the History reads it. */
 export interface SnapshotTransaction {

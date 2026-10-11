@@ -47,6 +47,19 @@ describe('undo chain codec', () => {
     expect(decodeUndoChain(stored)).toEqual(stack);
   });
 
+  it('stores the growing game log of every step only once', () => {
+    const stack = playedGame(120).map((snapshot, index) => ({
+      ...snapshot,
+      cashflowGame: {
+        round: index + 1,
+        history: Array.from({ length: index }, (_, n) => ({ kind: 'roll', detail: 'Roll ' + n })),
+      },
+    }));
+    const encoded = encodeUndoChain(stack);
+    expect(decodeUndoChain(encoded)).toEqual(stack);
+    expect(JSON.stringify(encoded).length).toBeLessThan(JSON.stringify(stack).length / 10);
+  });
+
   it('handles an empty history and a single step', () => {
     expect(decodeUndoChain(encodeUndoChain([]))).toEqual([]);
     const one = playedGame(1);

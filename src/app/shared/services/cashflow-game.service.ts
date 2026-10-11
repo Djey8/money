@@ -365,6 +365,9 @@ function deepClone<T>(value: T): T {
  * the browser's site data removes it same as everything else — no extra code needed for that part.
  */
 const UNDO_STACK_STORAGE_KEY = 'cashflowUndoStack';
+
+/** The most characters the browser's copy of the undo history may take (localStorage holds about 5 million in all). */
+const LOCAL_UNDO_BUDGET = 1_500_000;
 /** When the browser's copy of the history last changed - compared with the account's copy (see `CashflowHistorySyncService`). */
 const UNDO_STACK_AT_KEY = 'cashflowUndoStackAt';
 
@@ -508,7 +511,15 @@ export class CashflowGameService {
 
   private storeUndoStackLocally(): void {
     try {
-      localStorage.setItem(UNDO_STACK_STORAGE_KEY, JSON.stringify(encodeUndoChain(this.undoStack)));
+      // The browser's copy is a convenience with a budget of its own (the books must always fit beside it): when a very long
+      // game outgrows it, the oldest steps stay out of it - the account and saved games keep the whole chain.
+      let kept = this.undoStack;
+      let json = JSON.stringify(encodeUndoChain(kept));
+      while (json.length > LOCAL_UNDO_BUDGET && kept.length > 1) {
+        kept = kept.slice(Math.ceil(kept.length / 4));
+        json = JSON.stringify(encodeUndoChain(kept));
+      }
+      localStorage.setItem(UNDO_STACK_STORAGE_KEY, json);
       if (this.undoStackAt) localStorage.setItem(UNDO_STACK_AT_KEY, this.undoStackAt);
     } catch {
       // best-effort only
