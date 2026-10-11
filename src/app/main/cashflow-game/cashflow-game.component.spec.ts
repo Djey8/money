@@ -2168,6 +2168,9 @@ describe('CashflowGameComponent solo mode (JFK, 2026-10-05)', () => {
     solo.component.decisionFaces = [4];
     expect(solo.component.shownDice).toEqual([4]);
     solo.component.decisionFaces = null;
+    // a dice action has one die, also after a two-dice roll under Charity (the other die must not show)
+    solo.component.lastDice = [3, 5];
+    expect(solo.component.shownDice).toEqual([3]);
     jest.spyOn(solo.component, 'openDecisions', 'get').mockReturnValue([]);
     expect(solo.component.firstDiceDecision).toBeNull();
 

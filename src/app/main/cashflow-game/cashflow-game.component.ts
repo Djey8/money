@@ -735,6 +735,9 @@ export class CashflowGameComponent implements OnDestroy {
   get shownDice(): number[] {
     if (this.diceTumbling) return this.tumbleFaces;
     if (this.decisionFaces) return this.decisionFaces;
+    // The die of a dice action is one die, whatever the last board roll was (two under Charity): never the board's dice here
+    if (this.firstDiceDecision)
+      return [this.lastDice[0] ?? this.appState.cashflowGame.turn?.lastRoll?.[0] ?? 1];
     if (this.lastDice.length) return this.lastDice;
     return this.appState.cashflowGame.turn?.lastRoll ?? [];
   }
