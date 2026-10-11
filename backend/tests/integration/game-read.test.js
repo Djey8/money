@@ -806,7 +806,13 @@ describe('special-asset cards and selling', () => {
         seen.plain += 1;
       }
       const owned = game.holdings.assets.find((asset) => asset.tag === title);
-      if (owned) {
+      if (owned && card.recurring) {
+        // A Multi-Level-Marketing card is kept: it is never sold.
+        const refused = await session('post', '/api/v1/game/positions/sell', user.token).send({
+          title,
+        });
+        expect([title, refused.status]).toEqual([title, 422]);
+      } else if (owned) {
         const sold = await session('post', '/api/v1/game/positions/sell', user.token).send({
           title,
         });
