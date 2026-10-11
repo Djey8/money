@@ -1731,8 +1731,9 @@ export class CashflowGameComponent implements OnDestroy {
             };
           }
           if (deal.recurring) {
-            // the Payday bonus of a kept MLM card: an info box beside the Payday box, not the big result card
-            this.mlmBanner = { won, text: `${rolled}${result}`.trim() };
+            // the Payday bonus of a kept MLM card: a box beside the Payday box in a companion game; a solo game tells it in the
+            // dice panel (decisionOutcome), where it is read once and gone (JFK, 2026-10-11: no second banner)
+            if (!this.isSolo) this.mlmBanner = { won, text: `${rolled}${result}`.trim() };
           } else if (roll && !this.isSolo) {
             this.rollResult = {
               roll,
