@@ -1,3 +1,38 @@
+## [1.24.0] - 2026-10-11
+
+### Features
+
+- feat(cashflow-game): a dice action tells what it rolled in its own panel
+- feat(cashflow-game): the dice action of a card looks different from the roll of a new round
+- feat(cashflow-game): an open dice action rolls its own die in place of the roll panel; the payment hint uses the whole row
+- feat(cashflow-game): selling to a friend or declining uses the card up; the decision buttons share the whole row
+- feat(cashflow-game): a card that was played is only read afterwards; fix: the Market cost payment was refused while the game waited for it
+- feat(cashflow-game): a card buys once, MLM is never sold, GOLD-II belongs to the GOLD card
+- feat(cashflow-game): cost cards are payments the game waits for, held cards are the only offers, rule refusals in six languages; fix: no payment lock on Deals
+- feat(cashflow-game): stricter turn order and buying - a card is bought with the card in hand, a played card is not passed, open dice come first, only the app's roll counts
+- feat(cashflow-game): a rule for passing Doodads - under Strict a Doodad has to be paid and the game waits for it
+- feat(cashflow-game): choose the game rules at the start; the app hides what they forbid
+- feat(cashflow-game): game rules chosen at the start - card choice, selling, free transactions, loans - enforced by the engine and the API
+- feat(subscriptions): the app edits a subscription's transactions in place too
+- feat(domain,backend): editing a subscription changes its transactions in place instead of replacing them
+- feat(backend): editing a subscription keeps its generated transactions in line
+- feat(domain): one rule for which transactions a subscription generated and which go when it changes
+- feat(backend): every saved Cashflow game is a document of its own, so the account is no longer limited to eight long games
+- feat(cashflow-game): the analyst judges every card that was picked and left, an unplayed boost, and the log says what a boost did
+
+### Bug Fixes
+
+- fix: patch libtiff CVE-2026-4775 in the frontend image
+- fix(cashflow-game): a long game no longer fills the browser storage; the undo history keeps 2000 steps
+- fix(cashflow-game): in a solo game the MLM result shows only in the dice panel; the separate banner is gone
+- fix(cashflow-game): rolling a dice action no longer marks the card of the space as played; a payment still open is never only read
+- fix(cashflow-game): a dice action shows exactly one die, also after a two-dice roll under Charity
+- fix(app): the home counters and the remaining plain amounts use the app's number format
+- fix(cashflow-game): the Buy button follows the project a card became, and a card is played only once
+- fix(cashflow-game): a bought property is recognised after a reload, so its Buy button is gone; Guided buys with the card too
+- fix(app): logging out no longer crashes when the profile panel has not loaded yet; cashflow game: the dice wait for loading and saving and for open dice actions
+- fix(subscriptions): edits keep generated transactions in line, the saved message tells the truth, sums and budget fill respect the frequency
+
 ## [1.23.0] - 2026-10-08
 
 ### Features
