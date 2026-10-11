@@ -2,7 +2,8 @@ const express = require('express');
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { getAuthDb, getUsersDb } = require('../config/db');
+const { getAuthDb, getUsersDb, getGameSavesDb } = require('../config/db');
+const { deleteAllStoredGames } = require('../repositories/game-save-store');
 const logger = require('../config/logger');
 const { logAuthEvent, logUserActivity, logSecurityEvent } = require('../middleware/logging');
 const { authenticateToken } = require('../middleware/auth');
@@ -527,6 +528,13 @@ router.delete('/delete-account', authenticateToken, async (req, res) => {
         logger.logError(err, { context: 'delete_account_users_db', userId });
       }
       // 404 is fine — doc may not exist
+    }
+
+    // Saved Cashflow games are documents of their own
+    try {
+      await deleteAllStoredGames(getGameSavesDb(), userId);
+    } catch (err) {
+      logger.logError(err, { context: 'delete_account_game_saves', userId });
     }
 
     // Delete from auth database (credentials)

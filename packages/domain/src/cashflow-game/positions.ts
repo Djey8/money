@@ -13,6 +13,7 @@ import { setPhaseAfterTrade, type DealDeps } from './deals';
 import { emptyEffects, type BookGrowUpdate, type GameEffects } from './effects';
 import { playBankLoan } from './loan';
 import { marketSaleFor } from './market-cards';
+import { openOfferFor, rulesOf, whyCannotNameSalePrice, whyCannotSell } from './rules';
 import { placeOneOffTransactions } from './rounds';
 import { gameTradeStep } from './trades';
 
@@ -167,6 +168,13 @@ function incomeRecord(title: string, amountMinor: number, comment: string) {
  */
 export function sellPosition(books: GameBooks, input: SellInput, deps: DealDeps): TradeResult {
   const { title } = input;
+  // The game rules decide whether and at what price: under 'with-offer' only a Market card's open offer sells, at its price.
+  const refused = whyCannotSell(books.state, title);
+  if (refused) throw new Error(refused);
+  if (rulesOf(books.state).sell !== 'always') {
+    const named = [input.priceMinor, input.salePriceMinor].some((value) => value !== undefined);
+    if (named) throw new Error(whyCannotNameSalePrice(books.state)!);
+  }
   const project = books.growProjects.find((candidate) => candidate.title === title);
   if (!project) throw new Error(`No Grow project called "${title}".`);
   if (project.isAsset) return sellAsset(books, project.title, input, deps);
@@ -203,7 +211,10 @@ function sellShare(books: GameBooks, input: SellInput, deps: DealDeps): TradeRes
   if (!Number.isFinite(quantity) || !(quantity > 0) || quantity > held.quantity) {
     throw new Error(`You hold ${held.quantity} ${title} shares; ${quantity} cannot be sold.`);
   }
-  const priceMinor = checkedPrice(input.priceMinor, 'priceMinor') ?? held.priceMinor;
+  const offered =
+    rulesOf(books.state).sell === 'always' ? undefined : openOfferFor(books.state, title);
+  const priceMinor =
+    offered?.pricePerShareMinor ?? checkedPrice(input.priceMinor, 'priceMinor') ?? held.priceMinor;
   const result = calculateSellShare(title, quantity, priceMinor, held.quantity);
   const sale = emptyEffects(books.state, gameTradeStep(result.comment, `@${title}`));
   sale.persist = { subscriptions: false, grow: true, balanceSheet: true };

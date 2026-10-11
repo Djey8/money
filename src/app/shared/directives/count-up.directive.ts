@@ -1,4 +1,6 @@
 import { Directive, ElementRef, Input, OnChanges, SimpleChanges } from '@angular/core';
+import { formatNumber } from '@angular/common';
+import { AppStateService } from '../services/app-state.service';
 
 @Directive({ selector: '[appCountUp]', standalone: true })
 export class CountUpDirective implements OnChanges {
@@ -44,8 +46,9 @@ export class CountUpDirective implements OnChanges {
   }
 
   private format(value: number): string {
-    // Match AppNumberPipe: +/− prefix, 2 decimal places
-    const abs = Math.abs(value).toFixed(2);
+    // Match AppNumberPipe: +/− prefix, 2 decimal places, the thousands and decimal separators of the chosen number format
+    const locale = AppStateService.instance.isEuropeanFormat ? 'de-DE' : 'en-US';
+    const abs = formatNumber(Math.abs(value), locale, '1.2-2');
     if (value > 0.005) return '+' + abs;
     if (value < -0.005) return '\u2212' + abs;
     return abs;

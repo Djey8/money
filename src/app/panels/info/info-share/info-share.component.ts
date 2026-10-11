@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import { CashflowGameService } from 'src/app/shared/services/cashflow-game.service';
 import { Router } from '@angular/router';
 import { PersistenceService } from 'src/app/shared/services/persistence.service';
 import { isDuplicateTitle } from 'src/app/shared/validation.utils';
@@ -103,6 +104,11 @@ export class InfoShareComponent extends BaseInfoComponent {
     MenuComponent.isMenu = false;
     InfoComponent.isInfo = false;
   }
+  /** No Sell button without an offer when the game rules ask for one. */
+  get sellBlocked(): boolean {
+    return CashflowGameService.sellRefusalFor(InfoShareComponent.title) !== null;
+  }
+
   sellShare() {
     AddComponent.categoryTextField = `@${InfoShareComponent.title}`;
     AddComponent.selectedOption = 'Income';

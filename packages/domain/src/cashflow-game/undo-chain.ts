@@ -19,6 +19,14 @@ const LIST_KEYS = [
   'allFireEmergencies',
 ] as const;
 
+/**
+ * Lists inside the game state that only ever grow at their end, too: the game's own log repeats in every step, so left
+ * whole the stored chain grew with the square of the step count and filled the browser's storage (JFK, 2026-10-11).
+ */
+const STATE_LIST_KEYS = ['history'] as const;
+const STATE_KEY = 'cashflowGame';
+const STATE_PREFIX = 'cashflowGame.';
+
 type Snapshot = Record<string, unknown>;
 
 interface EncodedList {
@@ -49,6 +57,21 @@ export function encodeUndoChain<T extends object>(snapshotStack: T[]): EncodedUn
     const newer = stack[index + 1];
     const { ...rest } = snapshot;
     const lists: Record<string, EncodedList> = {};
+    const state = snapshot[STATE_KEY] as Snapshot | undefined;
+    const newerState = newer?.[STATE_KEY] as Snapshot | undefined;
+    if (state && typeof state === 'object') {
+      const slim: Snapshot = { ...state };
+      for (const key of STATE_LIST_KEYS) {
+        if (!Array.isArray(state[key])) continue;
+        const items = state[key] as unknown[];
+        const keep = Array.isArray(newerState?.[key])
+          ? sameItems(items, newerState![key] as unknown[])
+          : 0;
+        lists[STATE_PREFIX + key] = { keep, tail: items.slice(keep) };
+        delete slim[key];
+      }
+      rest[STATE_KEY] = slim;
+    }
     for (const key of LIST_KEYS) {
       const items = (snapshot[key] ?? []) as unknown[];
       const keep = newer ? sameItems(items, (newer[key] ?? []) as unknown[]) : 0;
@@ -77,6 +100,20 @@ export function decodeUndoChain<T extends object = Snapshot>(chain: EncodedUndoC
       const shared: unknown[] = newer ? (newer[key] as unknown[]).slice(0, keep) : [];
       // Own copies: the stack entries are mutated independently of each other.
       snapshot[key] = JSON.parse(JSON.stringify([...shared, ...tail]));
+    }
+    const state = snapshot[STATE_KEY] as Snapshot | undefined;
+    if (state && typeof state === 'object') {
+      const restored: Snapshot = { ...state };
+      const newerState = newer?.[STATE_KEY] as Snapshot | undefined;
+      for (const key of STATE_LIST_KEYS) {
+        const encoded = lists[STATE_PREFIX + key];
+        if (!encoded) continue;
+        const shared = Array.isArray(newerState?.[key])
+          ? (newerState![key] as unknown[]).slice(0, encoded.keep)
+          : [];
+        restored[key] = JSON.parse(JSON.stringify([...shared, ...encoded.tail]));
+      }
+      snapshot[STATE_KEY] = restored;
     }
     decoded[index] = snapshot;
   }

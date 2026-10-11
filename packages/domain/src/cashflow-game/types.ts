@@ -1,3 +1,4 @@
+import type { GameRules } from './rules';
 /**
  * Types for the Cashflow (board game) MVP — see todo/cashflow-game.md for the
  * full plan. A "game set" is the pluggable physical edition/house-rules
@@ -174,6 +175,10 @@ export interface CashflowMarketOffer {
   label: string;
   /** Gold buyers: the price for every coin - the total follows the coins still owned. */
   pricePerCoinMinor?: number;
+  /** A stock price card: the price for every share held, which is what a sale under the rules gets. */
+  pricePerShareMinor?: number;
+  /** The player's roll count when the card was played: with `sellOfferRolls` it decides how long the offer stays open. */
+  offeredAtRoll?: number;
 }
 
 export type CashflowDeckKind = 'dealSmall' | 'dealBig' | 'market' | 'doodad';
@@ -255,6 +260,19 @@ export interface CashflowPendingDecision {
   kind: 'deal' | 'market' | 'doodad';
   /** The ring index of the space. A Deals space leaves the pile (Small or Big) to the player. */
   spaceIndex: number;
+  /**
+   * Under the rule `cardChoice: 'offered-once'`: the one card drawn for this space. It is the only card that may be
+   * played here; nothing else can be drawn or named until the space is settled.
+   */
+  offered?: { deck: CashflowDeckKind; cardId: string; title?: string };
+  /** The card of this space has been played (planned, played, paid): it can be looked at or ticked off, but not passed. */
+  played?: boolean;
+  /** The card on this space has to be paid (a Market cost card for a player who owns a property): the Doodad rule applies to it. */
+  paymentDue?: boolean;
+  /** A property or an asset (gold, a dice card) was bought with the card of this space: a card buys once. */
+  purchased?: boolean;
+  /** The card was dealt with without a project: sold to a friend or declined. It is only read afterwards, like a played card. */
+  closed?: boolean;
 }
 
 /**
@@ -271,6 +289,8 @@ export interface CashflowSoloTurn {
   pending?: CashflowPendingDecision;
   /** Set with `phase: 'over'`: out of the rat race, or lost. */
   outcome?: 'escaped' | 'bankrupt';
+  /** The Grow projects a Market card of this turn touched (an offer, a price move, a boost, a cost): to check for an update. */
+  affected?: string[];
 }
 
 export interface CashflowGameState {
@@ -303,6 +323,8 @@ export interface CashflowGameState {
   gameId?: string;
   /** The name it goes by in the games list. */
   gameName?: string;
+  /** The rules the game is played under, fixed at its start (rules.ts); absent: `free`, as before rules existed. */
+  rules?: GameRules;
 }
 
 export function initialCashflowGameState(): CashflowGameState {

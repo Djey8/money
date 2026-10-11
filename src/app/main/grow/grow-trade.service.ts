@@ -78,6 +78,14 @@ export class GrowTradeService {
   }
 
   async buy(project: Grow): Promise<void> {
+    const refused = CashflowGameService.buyRefusalFor(
+      project.title,
+      project.investment ? 'property' : project.isAsset ? 'asset' : 'share',
+    );
+    if (refused) {
+      this.toastService.show('CashflowGame.rules.buyBlocked', 'error');
+      return;
+    }
     await this.ensureBalanceLoaded();
     const { AddComponent, MenuComponent, InfoComponent, InfoGrowComponent, AppComponent } =
       await this.panels();
@@ -104,6 +112,11 @@ export class GrowTradeService {
   }
 
   async sell(project: Grow): Promise<void> {
+    const refused = CashflowGameService.sellRefusalFor(project.title);
+    if (refused) {
+      this.toastService.show('CashflowGame.rules.sellBlocked', 'error');
+      return;
+    }
     await this.ensureBalanceLoaded();
     let comment = buildSellComment(project, this.positions());
     if (comment === null) {

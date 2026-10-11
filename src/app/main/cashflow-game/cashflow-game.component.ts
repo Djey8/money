@@ -25,6 +25,15 @@ import {
   type SavedGameSummary,
   pickOne,
   type TurnResult,
+  FREE_RULES,
+  RULE_PRESETS,
+  normalizeRules,
+  rulesOf,
+  whyCannotDraw,
+  whyCannotReportRoll,
+  whyCannotSkipCard,
+  whyDiceFirst,
+  type GameRules,
 } from '@money/domain';
 import { Grow } from 'src/app/interfaces/grow';
 import { AppStateService } from 'src/app/shared/services/app-state.service';
@@ -97,6 +106,8 @@ const DICE_FACE_FIRST_MS = 70;
 const DICE_FACE_LAST_MS = 300;
 const DICE_SETTLE_MS = 650;
 const DICE_LAND_POP_MS = 900;
+/** How long the die of a dice action (MLM ...) rests on its number before the result shows. */
+const DICE_DECISION_REST_MS = 900;
 
 @Component({
   selector: 'app-cashflow-game',
@@ -565,6 +576,14 @@ export class CashflowGameComponent implements OnDestroy {
     if (!this.selectedGameSetId || !this.selectedProfessionId) return;
     this.isBusy = true;
     const mode = this.playMode;
+    let rules: GameRules;
+    try {
+      rules = this.currentRules();
+    } catch (error) {
+      this.isBusy = false;
+      this.toastService.show(error instanceof Error ? error.message : String(error), 'error');
+      return;
+    }
     this.cashflowGameService.pickProfession(
       this.selectedGameSetId,
       this.selectedProfessionId,
@@ -586,6 +605,7 @@ export class CashflowGameComponent implements OnDestroy {
         },
       },
       mode,
+      rules,
     );
   }
 
@@ -593,6 +613,86 @@ export class CashflowGameComponent implements OnDestroy {
 
   /** Chosen with the language when a game starts; a running game keeps the mode it began with. */
   playMode: 'companion' | 'solo' = 'companion';
+
+  // ── The rules a new game is played under (JFK, 2026-10-10) ─────────────────────────────────────
+
+  /** What the start panel is set to: a preset, or single settings changed from one. */
+  ruleDraft: GameRules = { ...FREE_RULES };
+  /** The two amount limits as typed (empty: no limit), in the game's currency. */
+  maxLoanText = '';
+  maxFreeText = '';
+  showAdvancedRules = false;
+  readonly presetIds = ['free', 'guided', 'strict'] as const;
+
+  choosePreset(id: 'free' | 'guided' | 'strict'): void {
+    this.ruleDraft = { ...RULE_PRESETS[id] };
+    this.maxLoanText =
+      this.ruleDraft.maxLoanMinor === null ? '' : String(this.ruleDraft.maxLoanMinor / 100);
+    this.maxFreeText =
+      this.ruleDraft.maxFreeAmountMinor === null
+        ? ''
+        : String(this.ruleDraft.maxFreeAmountMinor / 100);
+  }
+
+  private limitMinor(text: string): number | null {
+    const value = parseFloat(String(text).replace(',', '.'));
+    return Number.isFinite(value) && text.trim() !== ''
+      ? Math.max(0, Math.round(value * 100))
+      : null;
+  }
+
+  /** The rules as set now, complete and valid (a changed preset becomes 'custom'). */
+  currentRules(): GameRules {
+    return normalizeRules({
+      ...this.ruleDraft,
+      maxLoanMinor: this.limitMinor(this.maxLoanText),
+      maxFreeAmountMinor: this.limitMinor(this.maxFreeText),
+    });
+  }
+
+  get rulePresetNow(): GameRules['preset'] {
+    return this.currentRules().preset;
+  }
+
+  /** The game being played deals one card per space and nothing can be browsed or swapped (solo, 'offered-once'). */
+  get cardsOfferedOnly(): boolean {
+    const game = this.appState.cashflowGame;
+    return game.mode === 'solo' && rulesOf(game).cardChoice === 'offered-once';
+  }
+
+  /** How many buttons the decision panel shows: Open the card, Done, Pass - Pass and Done go when the rules take them away. */
+  get decisionButtonCount(): number {
+    return 1 + (this.mustPayDoodad ? 0 : 1) + (this.cannotPassNow ? 0 : 1);
+  }
+
+  /** The card of this space was played: it is ticked off (Done), not passed. */
+  get cannotPassNow(): boolean {
+    return (
+      whyCannotSkipCard(CashflowGameService.effectiveGame(this.appState.cashflowGame), 'passed') !==
+      null
+    );
+  }
+
+  /** Under the dice-first rule an open dice decision is rolled before the card of the space is picked. */
+  get diceFirstRefusal(): string | null {
+    return whyDiceFirst(this.appState.cashflowGame);
+  }
+
+  /** The rules do not let the player claim a roll made with a real die: only the app's roll counts. */
+  get reportRollsForbidden(): boolean {
+    return whyCannotReportRoll(this.appState.cashflowGame) !== null;
+  }
+
+  /** The rules keep the open space until it is dealt with: a Doodad has to be paid, not passed or ticked off. */
+  get mustPayDoodad(): boolean {
+    // 'done' is only refused for a payment that is due; a played card refuses only the pass (that is no payment)
+    return whyCannotSkipCard(this.appState.cashflowGame, 'done') !== null;
+  }
+
+  /** Why no further card can be drawn on this space, or null. */
+  get drawRefusal(): string | null {
+    return whyCannotDraw(this.appState.cashflowGame);
+  }
 
   readonly board = this.cashflowGameService.board;
 
@@ -634,6 +734,11 @@ export class CashflowGameComponent implements OnDestroy {
   /** The faces on show: random ones while the dice tumble, otherwise the last roll (also after a reload). */
   get shownDice(): number[] {
     if (this.diceTumbling) return this.tumbleFaces;
+    if (this.decisionOutcome) return this.decisionFaces ?? [];
+    if (this.decisionFaces) return this.decisionFaces;
+    // The die of a dice action is one die, whatever the last board roll was (two under Charity): never the board's dice here
+    if (this.firstDiceDecision)
+      return [this.lastDice[0] ?? this.appState.cashflowGame.turn?.lastRoll?.[0] ?? 1];
     if (this.lastDice.length) return this.lastDice;
     return this.appState.cashflowGame.turn?.lastRoll ?? [];
   }
@@ -648,8 +753,24 @@ export class CashflowGameComponent implements OnDestroy {
     return this.walkingAt !== undefined ? this.walkingAt : this.appState.cashflowGame.boardPosition;
   }
 
+  /**
+   * The dice may only be pressed when nothing is still loading or being stored (JFK, 2026-10-10: on a phone the button
+   * worked before the turn had finished loading) and no dice action of a card is open - those come first.
+   */
   get canRoll(): boolean {
-    return !this.isBusy && !this.walking && this.cashflowGameService.cannotRollBecause === null;
+    return (
+      !this.isBusy &&
+      !this.walking &&
+      !this.appState.isLoading &&
+      !this.appState.isSaving &&
+      !this.hasOpenDiceAction &&
+      this.cashflowGameService.cannotRollBecause === null
+    );
+  }
+
+  /** A paid dice card (Multi-Level-Marketing, ...) waits for its roll: it is done before the next turn. */
+  get hasOpenDiceAction(): boolean {
+    return this.visibleDecisions.length > 0;
   }
 
   /** Charity lets the player pick 1 or 2 dice; otherwise it is always one. */
@@ -904,6 +1025,14 @@ export class CashflowGameComponent implements OnDestroy {
   /** Opens the card flow for the space the token is waiting on (Deals asks for the pile first). */
   openSoloDecision(): void {
     const kind = this.soloTurn.pending?.kind;
+    const picked = this.appState.cashflowGame.turn?.pending?.offered;
+    if (picked) {
+      // The card of this space was picked: opening it again goes straight to it, no Small or Big to choose again.
+      this.activeDeckKind = picked.deck;
+      this.changeDeck();
+      this.openCards();
+      return;
+    }
     if (kind === 'deal') this.landOnDeals();
     else if (kind === 'doodad') this.landOnDoodad();
     else if (kind === 'market') this.landOnMarket();
@@ -1128,6 +1257,25 @@ export class CashflowGameComponent implements OnDestroy {
     this.marketNotice = null;
     this.dashboardView = 'cards';
     void this.cardText.ensureLoaded();
+    this.dealOfferedCard();
+  }
+
+  /**
+   * Under 'offered-once' the pile is not browsed: the one card of the space is drawn at once, or - when the page was
+   * reloaded with a card on offer - brought back, so the player cannot swap it by leaving and coming back.
+   */
+  private dealOfferedCard(): void {
+    const offered = this.appState.cashflowGame.turn?.pending?.offered;
+    if (!offered) {
+      if (this.cardsOfferedOnly && !this.drawRefusal && !this.diceFirstRefusal)
+        this.drawActiveCard();
+      return;
+    }
+    this.activeDeckKind = offered.deck;
+    const card = this.cashflowGameService
+      .browseCards(offered.deck, '')
+      .find((candidate: { id: string }) => candidate.id === offered.cardId);
+    if (card) this.activeCard = card as typeof this.activeCard;
   }
 
   /** Red "Schnickschnack" space. */
@@ -1346,6 +1494,18 @@ export class CashflowGameComponent implements OnDestroy {
   }
 
   /** The Grow project of the open stock card's share while the player still holds some, or undefined (then the card is planned). */
+  /** The card open on screen has been planned and its project still exists: it is only read now. */
+  get activeCardProject(): Grow | null {
+    const card = this.activeCard as { id?: string } | null;
+    return card?.id ? CashflowGameService.heldProjectFor(card.id) : null;
+  }
+
+  /** The card open on screen was played on this space: it is read, nothing more can be done with it. */
+  get activeCardReadOnly(): boolean {
+    const card = this.activeCard as { id?: string } | null;
+    return !!card?.id && CashflowGameService.isPlayedCard(card.id);
+  }
+
   get activeShareProject(): Grow | undefined {
     if (!this.isShareCard) return undefined;
     const card = this.activeCard as CashflowDealCard;
@@ -1397,6 +1557,7 @@ export class CashflowGameComponent implements OnDestroy {
   sellActiveCardToFriend(): void {
     // a share card belongs to whoever drew it: only property and asset cards can be sold (JFK, 2026-10-06)
     if (!this.activeCard || this.friendPrice === null || this.isShareCard) return;
+    this.recordOpenCard();
     this.isBusy = true;
     this.cashflowGameService.sellCardToFriend(
       this.activeCard as CashflowDealCard,
@@ -1437,8 +1598,65 @@ export class CashflowGameComponent implements OnDestroy {
     this.settleDecision(deal, deal.split ? roll <= 3 : roll >= (deal.successOn ?? 6), roll);
   }
 
+  /** The die of a dice action (MLM, a sister's loan ...) while it rolls and rests; null when no such die is on show. */
+  decisionFaces: number[] | null = null;
+
+  /**
+   * What a dice action rolled, told in the dice panel itself - under the die that stays on its number - until the player
+   * continues (JFK, 2026-10-11: not in a separate box below). Gold, a market dice card, a split and MLM alike.
+   */
+  decisionOutcome: {
+    title: string;
+    roll?: number;
+    won: boolean;
+    headline: string;
+    text: string;
+  } | null = null;
+
+  /** The dice panel is on screen: a dice action waits for its roll, or tells what it rolled. */
+  get diceActionOpen(): boolean {
+    return !!this.firstDiceDecision || !!this.decisionOutcome;
+  }
+
+  dismissDecisionOutcome(): void {
+    this.decisionOutcome = null;
+    this.decisionFaces = null;
+  }
+
+  /**
+   * In a solo game an open dice action takes the place of the roll panel (JFK, 2026-10-11): the die tumbles and lands on the
+   * roll, rests there for a moment, and then the result shows and the normal panel is back.
+   */
+  get firstDiceDecision(): CashflowAssetDeal | null {
+    return this.isSolo ? (this.visibleDecisions[0] ?? null) : null;
+  }
+
+  /** The cards of open dice actions shown as cards of their own (a companion game; a solo game has the dice panel). */
+  get decisionCards(): CashflowAssetDeal[] {
+    return this.isSolo ? [] : this.visibleDecisions;
+  }
+
+  async rollDecisionDice(deal: CashflowAssetDeal): Promise<void> {
+    if (this.isBusy || this.decisionFaces) return;
+    this.isBusy = true;
+    const roll = this.cashflowGameService.rollDie();
+    this.decisionFaces = [roll];
+    this.skipWalking = false;
+    await this.tumbleDice(1);
+    await this.pause(DICE_DECISION_REST_MS);
+    this.isBusy = false;
+    // The die stays on its number until the result has been read (dismissDecisionOutcome).
+    // A stock split doubles on 1-3 (and halves on 4-6); every other card wins on a high roll.
+    this.settleDecision(deal, deal.split ? roll <= 3 : roll >= (deal.successOn ?? 6), roll);
+  }
+
   /** The player rolled a real die and says how it went. */
   reportRoll(deal: CashflowAssetDeal, won: boolean): void {
+    const refused = whyCannotReportRoll(this.appState.cashflowGame);
+    if (refused) {
+      this.toastService.show(CashflowGameService.ruleText(refused), 'error');
+      return;
+    }
     this.settleDecision(deal, won);
   }
 
@@ -1503,10 +1721,20 @@ export class CashflowGameComponent implements OnDestroy {
                 },
               );
           this.toastService.show(`${rolled}${result}`, won ? 'success' : 'update');
+          if (this.isSolo) {
+            this.decisionOutcome = {
+              title: deal.split?.shareTag ?? deal.title,
+              ...(roll ? { roll } : {}),
+              won,
+              headline: result,
+              text: deal.recurring ? '' : ((won ? deal.successText : deal.failureText) ?? ''),
+            };
+          }
           if (deal.recurring) {
-            // the Payday bonus of a kept MLM card: an info box beside the Payday box, not the big result card
-            this.mlmBanner = { won, text: `${rolled}${result}`.trim() };
-          } else if (roll) {
+            // the Payday bonus of a kept MLM card: a box beside the Payday box in a companion game; a solo game tells it in the
+            // dice panel (decisionOutcome), where it is read once and gone (JFK, 2026-10-11: no second banner)
+            if (!this.isSolo) this.mlmBanner = { won, text: `${rolled}${result}`.trim() };
+          } else if (roll && !this.isSolo) {
             this.rollResult = {
               roll,
               won,
@@ -1517,6 +1745,7 @@ export class CashflowGameComponent implements OnDestroy {
         },
         onError: (message) => {
           this.isBusy = false;
+          this.decisionFaces = null;
           this.toastService.show(message, 'error');
         },
       },
@@ -1905,7 +2134,12 @@ export class CashflowGameComponent implements OnDestroy {
 
   /** Declining a Deal card ends the turn's card business - straight back to the main dashboard (JFK, 2026-09-30). */
   declineActiveCard(): void {
-    this.backToMain();
+    // declining uses the card up: back on the dashboard it can be looked at again, or ticked off with Done
+    this.recordOpenCard();
+    this.cashflowGameService.declineCard({
+      onSuccess: () => this.backToMain(),
+      onError: (message) => this.toastService.show(message, 'error'),
+    });
   }
 
   clearActiveCard(): void {
@@ -1915,16 +2149,20 @@ export class CashflowGameComponent implements OnDestroy {
   /** "In this app we pick randomly a card" (JFK, 2026-09-26) — no physical deck needed. */
   drawActiveCard(): void {
     this.isBusy = true;
-    this.cashflowGameService.drawCard(this.activeDeckKind, {
-      onSuccess: (card) => {
-        this.isBusy = false;
-        this.activeCard = card;
+    this.cashflowGameService.drawCard(
+      this.activeDeckKind,
+      {
+        onSuccess: (card) => {
+          this.isBusy = false;
+          this.activeCard = card;
+        },
+        onError: (message) => {
+          this.isBusy = false;
+          this.toastService.show(message, 'error');
+        },
       },
-      onError: (message) => {
-        this.isBusy = false;
-        this.toastService.show(message, 'error');
-      },
-    });
+      { labelFor: (symbol) => this.cardText.symbolFor(symbol) },
+    );
   }
 
   /** Deal: plans it. Doodad: pays its cost now. Market: nothing to apply — see CASHFLOW_GAME_GUIDE.md §4/§6. */

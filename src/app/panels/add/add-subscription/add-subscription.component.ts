@@ -15,6 +15,7 @@ import { TranslateModule } from '@ngx-translate/core';
 import { TrapFocusDirective } from 'src/app/shared/directives/trap-focus.directive';
 import { migrateSmileArray } from 'src/app/shared/smile-migration.utils';
 import { migrateFireArray } from 'src/app/shared/fire-migration.utils';
+import { SubscriptionProcessingService } from 'src/app/shared/services/subscription-processing.service';
 
 // Deferred imports — resolved after module init to break circular chains
 let ProfileComponent: any;
@@ -357,6 +358,12 @@ export class AddSubscriptionComponent extends BaseAddComponent implements OnInit
         onSuccess: () => {
           AppStateService.instance.isSaving = false;
           this.toastService.show('Subscription added', 'success');
+          // A new subscription that is already due gets its transactions now, not at the next start of the app
+          SubscriptionProcessingService.instance
+            ?.setTransactionsForSubscriptions()
+            .catch((error) =>
+              console.error('Failed to generate the new subscription transactions:', error),
+            );
           AppComponent.gotoTop();
           this.router.navigate([AddSubscriptionComponent.url]);
         },

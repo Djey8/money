@@ -131,7 +131,8 @@
           <td class="assetsTitle">{{ classReference.allShares[i].tag }}:</td>
           <td class="assetsCount">{{ classReference.allShares[i].quantity }}</td>
           <td class="assetsPrice">
-            {{ classReference.allShares[i].price }} {{ settingsReference.currency }}
+            {{ classReference.allShares[i].price | appNumber: '1.2-2' : false }}
+            {{ settingsReference.currency }}
           </td>
           <td class="assetsAmount">
             {{

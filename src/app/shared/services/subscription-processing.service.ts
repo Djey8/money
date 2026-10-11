@@ -10,6 +10,26 @@ import { Transaction } from '../../interfaces/transaction';
 import { Revenue } from '../../interfaces/revenue';
 import { Expense } from '../../interfaces/expense';
 import { Subscription, SubscriptionFrequency } from '../../interfaces/subscription';
+import {
+  constructedSubscriptionComment,
+  isGeneratedComment,
+  reconcileGeneratedTransactions,
+  SyncSubscription,
+} from '@money/domain';
+
+/** A subscription as the domain rules see it: money in minor units, no end date as `null`. */
+export function toSyncSubscription(subscription: Subscription): SyncSubscription {
+  return {
+    title: subscription.title,
+    account: subscription.account,
+    amountMinor: Math.round(Number(subscription.amount) * 100),
+    startDate: subscription.startDate,
+    endDate: subscription.endDate ? subscription.endDate : null,
+    category: subscription.category,
+    comment: subscription.comment || '',
+    frequency: subscription.frequency || 'monthly',
+  };
+}
 
 @Injectable({
   providedIn: 'root',
@@ -34,9 +54,10 @@ export class SubscriptionProcessingService {
    * Matches on date, account, amount, category, and the constructed comment.
    */
   private transactionExistsForDate(subscription: any, date: string): boolean {
-    const commentCompare = subscription.comment
-      ? subscription.title + ' + ' + subscription.comment
-      : subscription.title;
+    const commentCompare = constructedSubscriptionComment(
+      subscription.title,
+      subscription.comment || '',
+    );
 
     for (let i = 0; i < AppStateService.instance.allTransactions.length; i++) {
       const t = AppStateService.instance.allTransactions[i];
@@ -45,12 +66,62 @@ export class SubscriptionProcessingService {
         t.account === subscription.account &&
         t.amount === subscription.amount &&
         t.category === subscription.category &&
-        t.comment === commentCompare
+        // a Smile transaction carries "#bucket:" tags after the comment: still the same occurrence
+        isGeneratedComment(t.comment, commentCompare)
       ) {
         return true;
       }
     }
     return false;
+  }
+
+  /**
+   * Brings the transactions `before` generated in line with `after` (`null` when the subscription goes - everything it
+   * generated is removed): the ones `after` still has an occurrence for are changed in place, keeping their place in the
+   * list, the others are removed. What `after` is due and lacks is left to `setTransactionsForSubscriptions`, which
+   * appends it. The caller recalculates the income statement and funds and stores.
+   * See packages/domain/src/transactions/subscription-sync.ts.
+   */
+  reconcileGeneratedTransactions(
+    before: Subscription,
+    after: Subscription | null,
+    now: Date = new Date(),
+  ): { updated: number; removed: number } {
+    const transactions = AppStateService.instance.allTransactions;
+    const { updates, removals } = reconcileGeneratedTransactions(
+      toSyncSubscription(before),
+      after ? toSyncSubscription(after) : null,
+      transactions.map((transaction) => ({
+        date: transaction.date,
+        account: transaction.account,
+        amountMinor: Math.round(Number(transaction.amount) * 100),
+        category: transaction.category,
+        comment: transaction.comment || '',
+      })),
+      now,
+    );
+    if (updates.length === 0 && removals.length === 0) return { updated: 0, removed: 0 };
+    for (const update of updates) {
+      const transaction = transactions[update.index];
+      transaction.date = update.date;
+      transaction.account = update.account;
+      transaction.amount = update.amountMinor / 100;
+      transaction.category = update.category;
+      transaction.comment = update.comment;
+    }
+    const removed = new Set(removals);
+    AppStateService.instance.allTransactions = transactions.filter(
+      (_, index) => !removed.has(index),
+    );
+    AccountingComponent.allTransactions = AppStateService.instance.allTransactions;
+    AppStateService.instance.transactionsUpdated$.next();
+    this.frontendLogger.logActivity('subscription_reconciled_transactions', 'info', {
+      subscriptionTitle: before.title,
+      transactionsUpdated: updates.length,
+      transactionsRemoved: removals.length,
+      reason: after ? 'subscription_changed' : 'subscription_removed',
+    });
+    return { updated: updates.length, removed: removals.length };
   }
 
   /**

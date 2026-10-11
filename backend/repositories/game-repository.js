@@ -8,6 +8,7 @@ const {
   currentTurn,
   CLASSIC_RAT_RACE_BOARD,
   findCards,
+  rulesOf,
 } = require('@money/domain');
 const { getEncryptionSession } = require('../services/encryption-session');
 const { decryptValue, toApiTransactions } = require('./transaction-repository');
@@ -102,6 +103,7 @@ async function getGame(deps, userId) {
     professionId: state.professionId,
     professionTitle: profession?.title ?? null,
     mode: state.mode,
+    rules: rulesOf(state),
     gameId: state.gameId ?? null,
     gameName: state.gameName ?? null,
     round: state.round,

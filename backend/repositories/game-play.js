@@ -19,6 +19,7 @@ const {
   blankGameData,
   playTurn,
   settleDecision,
+  whyCannotSkipCard,
   CLASSIC_RAT_RACE_BOARD,
   systemRng,
   startGameAction,
@@ -104,6 +105,8 @@ function playAction(action, input, { books, profession, deps, gameSets }) {
       };
     }
     case 'pass_card': {
+      const refused = whyCannotSkipCard(books.state);
+      if (refused) throw new Error(refused);
       const settled = settleDecision(books.state, 'passed', books.subscriptions);
       return { effects: [emptyEffects(settled.state, settled.step)] };
     }

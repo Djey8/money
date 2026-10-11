@@ -14,8 +14,8 @@ import { initialCashflowGameState, type CashflowGameState } from './types';
  * further.
  */
 
-/** How many past actions can be undone in a row - comfortably more than one play session needs. */
-export const UNDO_STACK_LIMIT = 200;
+/** How many past actions can be undone in a row - a long game of 500 steps and more stays whole (JFK, 2026-10-11). */
+export const UNDO_STACK_LIMIT = 2000;
 
 /** A transaction as far as the History reads it. */
 export interface SnapshotTransaction {
@@ -59,6 +59,8 @@ export interface HistoryStep<T = SnapshotTransaction> {
   transactions: T[];
   /** For a passed card: the Deal card that had been drawn before the player left it (absent when none was drawn). */
   cardId?: string;
+  /** For a picked card: the pile it came from. */
+  deck?: string;
 }
 
 /** The text a History line needs: the word "Round" for a Payday, and how an amount reads. */
@@ -259,6 +261,7 @@ export function historySteps<S extends GameSnapshot>(
         at: snapshot.step?.at ?? '',
         transactions: after.allTransactions.slice(snapshot.allTransactions.length),
         ...(cardId ? { cardId } : {}),
+        ...(step.deck ? { deck: step.deck } : {}),
       };
     })
     .reverse() as HistoryStep<S['allTransactions'][number]>[];

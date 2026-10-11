@@ -4779,7 +4779,7 @@ describe('v1 API authentication and PAT management', () => {
       );
     });
 
-    it('does not regenerate an already-generated occurrence, but does regenerate it under a new identity after a PATCH', async () => {
+    it('does not regenerate an already-generated occurrence, and a PATCH edits it in place', async () => {
       const { token } = await refreshToken([
         'subscriptions:r',
         'subscriptions:w',
@@ -4802,9 +4802,8 @@ describe('v1 API authentication and PAT management', () => {
         .set('Authorization', `Bearer ${token}`);
       expect(second.body).toEqual({ transactionsCreated: 0, subscriptionsProcessed: 1 });
 
-      // Changing the amount changes the subscription's identity, so its PATCH cascade
-      // deletes the old-identity transaction — a subsequent refresh should regenerate
-      // exactly one transaction under the new identity, not zero and not two.
+      // Changing the amount edits the generated transaction in place (same id, new amount), so a
+      // subsequent refresh has nothing left to generate - and there is still exactly one.
       await request(app)
         .patch(`/api/v1/subscriptions/${created.body.id}`)
         .set('Authorization', `Bearer ${token}`)
@@ -4813,7 +4812,7 @@ describe('v1 API authentication and PAT management', () => {
       const third = await request(app)
         .post('/api/v1/subscriptions/refresh')
         .set('Authorization', `Bearer ${token}`);
-      expect(third.body).toEqual({ transactionsCreated: 1, subscriptionsProcessed: 1 });
+      expect(third.body).toEqual({ transactionsCreated: 0, subscriptionsProcessed: 1 });
 
       const transactions = await request(app)
         .get('/api/v1/transactions')

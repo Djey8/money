@@ -583,9 +583,9 @@ export class AppComponent {
     // Wipe encryption key + toggles from memory and storage
     this.cryptic.clearConfig();
 
-    ProfileComponent.isUser = true;
-    ProfileComponent.username = 'Username';
-    ProfileComponent.mail = 'example@traiber.com';
+    ProfileComp.isUser = true;
+    ProfileComp.username = 'Username';
+    ProfileComp.mail = 'example@traiber.com';
 
     // Clear all in-memory caches (read cache, ETags, dirty-tracker)
     this.database.clearAllCaches();

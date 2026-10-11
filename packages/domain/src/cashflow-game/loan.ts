@@ -1,4 +1,5 @@
 import { emptyEffects, type GameEffects } from './effects';
+import { whyCannotBorrow } from './rules';
 import { adjustCashflowBankLoan } from './engine';
 import {
   cashOnHandMinor,
@@ -56,11 +57,20 @@ export function playBankLoan(
   books: LoanBooks,
   deltaMinor: number,
   deps: CardDeps,
-  options: { date?: string } = {},
+  options: { date?: string; mandatory?: boolean } = {},
 ): GameEffects {
   if (!books.gameSet) throw new Error('Pick a profession first.');
   const currentPrincipalMinor =
     books.liabilities.find((liability) => liability.tag === BANK_LOAN_TAG)?.amountMinor ?? 0;
+  // The game rules may forbid or cap borrowing - except where a payment the game forces (Payday, a Doodad, Charity) needs it.
+  if (!options.mandatory) {
+    const refused = whyCannotBorrow(
+      books.state,
+      currentPrincipalMinor,
+      currentPrincipalMinor + deltaMinor,
+    );
+    if (refused) throw new Error(refused);
+  }
   const result = adjustCashflowBankLoan(
     books.state,
     books.gameSet,

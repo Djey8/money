@@ -1,4 +1,5 @@
 import { Subject } from 'rxjs';
+import { RULE_PRESETS } from '@money/domain';
 import { CLASSIC_RAT_RACE_BOARD } from '@money/domain';
 import { registerLocaleData } from '@angular/common';
 import localeDe from '@angular/common/locales/de';
@@ -36,6 +37,7 @@ function makeComponent(overrides: Partial<Record<string, jest.Mock>> = {}) {
     drawCard: jest.fn(),
     recordCardPicked: jest.fn(),
     applyDealCard: jest.fn(),
+    declineCard: jest.fn((callbacks: any) => callbacks.onSuccess()),
     resetGame: jest.fn(),
     monthlyCashflow: 0,
     cash: 0,
@@ -105,6 +107,7 @@ registerLocaleData(localeDe); // the app registers it at startup (app.config.ts)
 describe('CashflowGameComponent', () => {
   beforeEach(() => {
     (AppStateService as any)._instance = undefined;
+    AppStateService.instance.isLoading = false; // the app has finished loading
     ProfileComponent.mail = '';
     CashflowGameComponent.isOpen = false;
     CashflowGameComponent.zIndex = 0;
@@ -2035,6 +2038,7 @@ describe('CashflowGameComponent solo mode (JFK, 2026-10-05)', () => {
 
   beforeEach(() => {
     (AppStateService as any)._instance = undefined;
+    AppStateService.instance.isLoading = false; // the app has finished loading
     ProfileComponent.mail = '';
     // no waiting between steps in tests: the token jumps straight to the landing
     (window as any).matchMedia = jest.fn(() => ({ matches: true }));
@@ -2049,10 +2053,162 @@ describe('CashflowGameComponent solo mode (JFK, 2026-10-05)', () => {
       component.selectedProfessionId,
       expect.any(Object),
       'solo',
+      expect.objectContaining({ preset: 'free', cardChoice: 'free', sell: 'always' }),
     );
     const companion = soloComponent();
     companion.component.startGame();
     expect(companion.cashflowGameService.pickProfession.mock.calls[0][3]).toBe('companion');
+  });
+
+  it('starts the game under the rules chosen on the start panel, and a preset fills them in', () => {
+    const { component, cashflowGameService } = soloComponent();
+    component.playMode = 'solo';
+    component.choosePreset('strict');
+    expect(component.rulePresetNow).toBe('strict');
+    component.startGame();
+    expect(cashflowGameService.pickProfession.mock.calls[0][4]).toMatchObject({
+      preset: 'strict',
+      cardChoice: 'offered-once',
+      sell: 'with-offer',
+      manualTransactions: 'forbidden',
+    });
+  });
+
+  it('a changed setting makes the rules custom, and the limits are typed in the currency', () => {
+    const { component, cashflowGameService } = soloComponent();
+    component.choosePreset('guided');
+    component.ruleDraft.sellOfferRolls = 2;
+    component.maxFreeText = '250';
+    component.maxLoanText = '';
+    expect(component.rulePresetNow).toBe('custom');
+    component.startGame();
+    expect(cashflowGameService.pickProfession.mock.calls[0][4]).toMatchObject({
+      preset: 'custom',
+      sellOfferRolls: 2,
+      maxFreeAmountMinor: 25000,
+      maxLoanMinor: null,
+    });
+  });
+
+  it('offered-once: no browsing, and the card already on offer is the only one', () => {
+    const { component } = soloComponent();
+    setSoloState({ mode: 'solo', rules: { ...RULE_PRESETS.guided } } as never);
+    expect(component.cardsOfferedOnly).toBe(true);
+    expect(component.drawRefusal).toMatch(/only deal a card for the space/); // no space is open
+    setSoloState({
+      mode: 'solo',
+      rules: { ...RULE_PRESETS.guided },
+      turn: {
+        phase: 'decide',
+        count: 1,
+        pending: { kind: 'deal', spaceIndex: 3, offered: { deck: 'dealSmall', cardId: 'x' } },
+      },
+    } as never);
+    expect(component.drawRefusal).toMatch(/already offered/);
+    setSoloState({ mode: 'solo', rules: undefined } as never);
+    expect(component.cardsOfferedOnly).toBe(false);
+  });
+
+  it('opening the space again goes straight to the card that was picked: no Small or Big to choose again', () => {
+    const { component, cashflowGameService } = soloComponent();
+    (cashflowGameService as any).browseCards = jest.fn(() => [{ id: 'db-1' }]);
+    setSoloState({
+      mode: 'solo',
+      turn: {
+        phase: 'decide',
+        count: 2,
+        pending: {
+          kind: 'deal',
+          spaceIndex: 2,
+          offered: { deck: 'dealBig', cardId: 'db-1', title: 'EFH' },
+        },
+      },
+    } as never);
+    component.openSoloDecision();
+    expect(component.dashboardView).toBe('cards');
+    expect(component.activeDeckKind).toBe('dealBig');
+    expect(component.activeCard).toMatchObject({ id: 'db-1' });
+  });
+
+  it('a card that was played cannot be passed any more, and an open dice decision blocks opening the space', () => {
+    const { component } = soloComponent();
+    setSoloState({
+      mode: 'solo',
+      turn: { phase: 'decide', count: 2, pending: { kind: 'deal', spaceIndex: 2 } },
+    } as never);
+    expect(component.cannotPassNow).toBe(false);
+    setSoloState({
+      mode: 'solo',
+      turn: { phase: 'decide', count: 2, pending: { kind: 'deal', spaceIndex: 2, played: true } },
+    } as never);
+    expect(component.cannotPassNow).toBe(true);
+    // a played Deal is no payment: Done stays, and no 'pay the Doodad' lock shows on it (JFK, 2026-10-10)
+    expect(component.mustPayDoodad).toBe(false);
+    setSoloState({ mode: 'solo', rules: { ...RULE_PRESETS.strict } } as never);
+    expect(component.reportRollsForbidden).toBe(true);
+    setSoloState({ mode: 'solo', rules: { ...RULE_PRESETS.free } } as never);
+    expect(component.reportRollsForbidden).toBe(false);
+  });
+
+  it('in a solo game an open dice action takes the place of the roll panel; a companion game keeps its cards', () => {
+    const mlm = {
+      title: 'MLM',
+      coins: 1,
+      costMinor: 1,
+      stage: 'owned',
+      recurring: true,
+      rollDue: true,
+    };
+    const solo = soloComponent();
+    setSoloState({ mode: 'solo' } as never);
+    jest.spyOn(solo.component, 'openDecisions', 'get').mockReturnValue([mlm as never]);
+    expect(solo.component.firstDiceDecision).toMatchObject({ title: 'MLM' });
+    expect(solo.component.decisionCards).toEqual([]);
+    // while it rolls the dice show its die, then the normal panel is back
+    solo.component.decisionFaces = [4];
+    expect(solo.component.shownDice).toEqual([4]);
+    solo.component.decisionFaces = null;
+    // a dice action has one die, also after a two-dice roll under Charity (the other die must not show)
+    solo.component.lastDice = [3, 5];
+    expect(solo.component.shownDice).toEqual([3]);
+    jest.spyOn(solo.component, 'openDecisions', 'get').mockReturnValue([]);
+    expect(solo.component.firstDiceDecision).toBeNull();
+
+    const companion = soloComponent();
+    setSoloState({ mode: 'companion' } as never);
+    jest.spyOn(companion.component, 'openDecisions', 'get').mockReturnValue([mlm as never]);
+    expect(companion.component.firstDiceDecision).toBeNull();
+    expect(companion.component.decisionCards).toHaveLength(1);
+  });
+
+  it('a dice action tells what it rolled in its own panel, the die still on its number, until Continue', () => {
+    const { component, cashflowGameService } = soloComponent();
+    setSoloState({ mode: 'solo' } as never);
+    (cashflowGameService as any).paydayRollCount = jest.fn(() => 1);
+    (cashflowGameService as any).resolveGamble = jest.fn(
+      (_title: string, _outcome: unknown, callbacks: any) => callbacks.onSuccess(),
+    );
+    const gold = {
+      title: 'GOLD',
+      coins: 10,
+      costMinor: 1,
+      stage: 'awaitingRoll',
+      successOn: 6,
+    } as never;
+    jest.spyOn(component, 'openDecisions', 'get').mockReturnValue([gold]);
+    component.decisionFaces = [4];
+    (component as any).settleDecision(gold, false, 4);
+
+    expect(component.decisionOutcome).toMatchObject({ roll: 4, won: false, title: 'GOLD' });
+    expect(component.rollResult).toBeNull(); // no separate box below
+    expect(component.diceActionOpen).toBe(true);
+    expect(component.shownDice).toEqual([4]);
+
+    jest.spyOn(component, 'openDecisions', 'get').mockReturnValue([]);
+    expect(component.diceActionOpen).toBe(true); // still open: the result has not been read
+    component.dismissDecisionOutcome();
+    expect(component.diceActionOpen).toBe(false);
+    expect(component.decisionFaces).toBeNull();
   });
 
   it('measures the way to the next Payday from the token, START included', () => {
@@ -2075,6 +2231,31 @@ describe('CashflowGameComponent solo mode (JFK, 2026-10-05)', () => {
     expect(free.component.canRoll).toBe(true);
     free.component.isBusy = true;
     expect(free.component.canRoll).toBe(false);
+  });
+
+  it('cannot roll while the app still loads or stores the last turn (a phone pressed it too early)', () => {
+    const { component } = soloComponent();
+    setSoloState();
+    expect(component.canRoll).toBe(true);
+    AppStateService.instance.isLoading = true;
+    expect(component.canRoll).toBe(false);
+    AppStateService.instance.isLoading = false;
+    AppStateService.instance.isSaving = true;
+    expect(component.canRoll).toBe(false);
+    AppStateService.instance.isSaving = false;
+    expect(component.canRoll).toBe(true);
+  });
+
+  it('cannot roll while a paid dice action (MLM, ...) is open: it comes first', () => {
+    const { component } = soloComponent();
+    setSoloState();
+    const open = jest
+      .spyOn(component, 'openDecisions', 'get')
+      .mockReturnValue([{ title: 'MLM', coins: 1 } as any]);
+    expect(component.hasOpenDiceAction).toBe(true);
+    expect(component.canRoll).toBe(false);
+    open.mockReturnValue([]);
+    expect(component.canRoll).toBe(true);
   });
 
   it('nothing of a roll takes effect before the animation has settled: planned first, applied once the totem is on its tile', async () => {
@@ -2433,6 +2614,7 @@ describe('CashflowGameComponent solo mode (JFK, 2026-10-05)', () => {
 describe('CashflowGameComponent start screen: the games played so far (JFK, 2026-10-06)', () => {
   beforeEach(() => {
     (AppStateService as any)._instance = undefined;
+    AppStateService.instance.isLoading = false; // the app has finished loading
     ProfileComponent.mail = '';
   });
 
@@ -2476,6 +2658,7 @@ describe('CashflowGameComponent start screen: the games played so far (JFK, 2026
 describe('CashflowGameComponent reset game button (JFK, 2026-10-06)', () => {
   beforeEach(() => {
     (AppStateService as any)._instance = undefined;
+    AppStateService.instance.isLoading = false; // the app has finished loading
     ProfileComponent.mail = '';
   });
 
@@ -2537,6 +2720,7 @@ describe('CashflowGameComponent Payday + MLM info boxes (JFK, 2026-10-06)', () =
 
   beforeEach(() => {
     (AppStateService as any)._instance = undefined;
+    AppStateService.instance.isLoading = false; // the app has finished loading
     ProfileComponent.mail = '';
   });
 
@@ -2617,6 +2801,7 @@ describe('CashflowGameComponent Payday + MLM info boxes (JFK, 2026-10-06)', () =
 describe('CashflowGameComponent open decisions wait for the totem (JFK, 2026-10-06)', () => {
   beforeEach(() => {
     (AppStateService as any)._instance = undefined;
+    AppStateService.instance.isLoading = false; // the app has finished loading
     ProfileComponent.mail = '';
   });
 
@@ -2636,6 +2821,7 @@ describe('CashflowGameComponent open decisions wait for the totem (JFK, 2026-10-
 describe('CashflowGameComponent loan steps input (JFK, 2026-10-06)', () => {
   beforeEach(() => {
     (AppStateService as any)._instance = undefined;
+    AppStateService.instance.isLoading = false; // the app has finished loading
     ProfileComponent.mail = '';
   });
 
@@ -2677,6 +2863,7 @@ describe('CashflowGameComponent loan steps input (JFK, 2026-10-06)', () => {
 describe('CashflowGameComponent quick filters as dropdowns (JFK, 2026-10-06)', () => {
   beforeEach(() => {
     (AppStateService as any)._instance = undefined;
+    AppStateService.instance.isLoading = false; // the app has finished loading
     ProfileComponent.mail = '';
   });
 

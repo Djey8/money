@@ -19,6 +19,7 @@
  *   node cli/mm-admin.js migrate-transaction-ids --user <id> [--dry-run]
  *   node cli/mm-admin.js migrate-fund-project-ids --user <id> --collection smile|fire [--dry-run]
  *   node cli/mm-admin.js migrate-balance-entity-ids --user <id> --collection assets|shares|investments|liabilities|grow|subscriptions|budget [--dry-run]
+ *   node cli/mm-admin.js migrate-game-saves --user <id> | --all
  *   node cli/mm-admin.js rotate-encryption-key --user <id> --new-key <key> [--dry-run]
  *   node cli/mm-admin.js rotate-encryption-key --user <id> --rollback <backupFile>
  *
@@ -26,7 +27,13 @@
  * docs/adr/0006-api-scopes-and-access-control.md (user/token).
  */
 
-const { initializeDatabase, getUsersDb, getAuthDb, getAuditDb } = require('../config/db');
+const {
+  initializeDatabase,
+  getUsersDb,
+  getAuthDb,
+  getAuditDb,
+  getGameSavesDb,
+} = require('../config/db');
 const { runMigration } = require('./commands/migrate');
 const { createUser, listUsers } = require('./commands/user');
 const { createToken, listTokens, revokeToken, deleteToken } = require('./commands/token');
@@ -34,6 +41,7 @@ const { backfillTransactionIds } = require('./commands/backfill-transaction-ids'
 const { backfillFundProjectIds } = require('./commands/backfill-fund-project-ids');
 const { backfillBalanceEntityIds } = require('./commands/backfill-balance-entity-ids');
 const { runRotateEncryptionKey } = require('./commands/rotate-encryption-key');
+const { migrateGameSaves } = require('./commands/migrate-game-saves');
 
 function parseArgs(argv) {
   const options = {};
@@ -72,6 +80,7 @@ function printUsage() {
   console.error(
     '  mm-admin migrate-balance-entity-ids --user <id> --collection assets|shares|investments|liabilities|grow|subscriptions|budget [--dry-run]',
   );
+  console.error('  mm-admin migrate-game-saves --user <id> | --all');
   console.error('  mm-admin rotate-encryption-key --user <id> --new-key <key> [--dry-run]');
   console.error('  mm-admin rotate-encryption-key --user <id> --rollback <backupFile>');
 }
@@ -147,7 +156,12 @@ async function main() {
   }
 
   await initializeDatabase();
-  const deps = { usersDb: getUsersDb(), authDb: getAuthDb(), auditDb: getAuditDb() };
+  const deps = {
+    usersDb: getUsersDb(),
+    authDb: getAuthDb(),
+    auditDb: getAuditDb(),
+    savesDb: getGameSavesDb(),
+  };
 
   if (command === 'migrate') {
     await handleMigrate(deps, parseArgs([second, ...rest].filter((a) => a !== undefined)));
@@ -188,6 +202,11 @@ async function main() {
         dryRun: Boolean(args['dry-run']),
       }),
     );
+    return;
+  }
+  if (command === 'migrate-game-saves') {
+    const args = parseArgs([second, ...rest].filter((arg) => arg !== undefined));
+    print(await migrateGameSaves(deps, { userId: args.user, all: Boolean(args.all) }));
     return;
   }
   if (command === 'rotate-encryption-key') {

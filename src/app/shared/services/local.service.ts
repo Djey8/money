@@ -16,7 +16,19 @@ export class LocalService {
    * @param value - The value to be stored.
    */
   public saveData(key: string, value: any) {
-    localStorage.setItem(key, this.cryptic.encrypt(value, 'local'));
+    const encrypted = this.cryptic.encrypt(value, 'local');
+    try {
+      localStorage.setItem(key, encrypted);
+    } catch (error) {
+      // The account's own data outranks the game's undo history, which is only a best-effort copy: make room, then retry once.
+      for (const cache of ['cashflowUndoStack', 'cashflowUndoStackAt'])
+        localStorage.removeItem(cache);
+      try {
+        localStorage.setItem(key, encrypted);
+      } catch {
+        throw error;
+      }
+    }
   }
 
   /**

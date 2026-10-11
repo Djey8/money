@@ -1407,7 +1407,11 @@ paths:
                         at: { type: string }
                         cardId:
                           type: string
-                          description: For a passed card (kind skipCard) - the Deal card the player had drawn before leaving it.
+                          description: For a passed card (kind skipCard) or a picked card (kind cardPicked) - the card's id.
+                        deck:
+                          type: string
+                          enum: [dealSmall, dealBig, market, doodad]
+                          description: For a picked card (kind cardPicked) - the pile it came from, so a Small or a Big Deal needs no guessing from the id.
               example:
                 updatedAt: '2026-10-06T10:00:01.000Z'
                 steps:
@@ -1905,7 +1909,7 @@ paths:
       operationId: listGameSaves
       summary: The saved games and the storage left
       description: >-
-        Game accounts only; requires `game:r`. Every saved game with its summary, `status` (`playing`, `escaped`, `bankrupt`, `ended`) and `sizeBytes`, and `storage`: how much of the account's one database document the saves use, how much room is left (`remainingBytes`) and `keepAtMost` - an agent leaves at most this many saves behind after a session (`overKeepBy` says how many too many).
+        Game accounts only; requires `game:r`. Every saved game with its summary, `status` (`playing`, `escaped`, `bankrupt`, `ended`) and `sizeBytes`, and `storage`: how much of the account's saved-game budget the saves use (`gamesBytes` of `budgetBytes`; every saved game is a document of its own, `limitBytes` is what one document may be), how much room is left (`remainingBytes`) and `keepAtMost` - an agent leaves at most this many saves behind after a session (`overKeepBy` says how many too many).
       security:
         - bearerAuth: []
       responses:
@@ -1943,13 +1947,13 @@ paths:
                 currentGameId: game_lq3x_ab12
                 storage:
                   {
-                    documentBytes: 1204331,
-                    budgetBytes: 6710886,
-                    remainingBytes: 5506555,
+                    documentBytes: 204331,
+                    budgetBytes: 1073741824,
+                    remainingBytes: 1073329824,
                     limitBytes: 8388608,
                     gamesBytes: 412000,
                     gameCount: 2,
-                    keepAtMost: 100,
+                    keepAtMost: 500,
                     overKeepBy: 0,
                   }
         '401':
@@ -2009,13 +2013,13 @@ paths:
                   }
                 storage:
                   {
-                    documentBytes: 1204331,
-                    budgetBytes: 6710886,
-                    remainingBytes: 5506555,
+                    documentBytes: 204331,
+                    budgetBytes: 1073741824,
+                    remainingBytes: 1073329824,
                     limitBytes: 8388608,
                     gamesBytes: 412000,
                     gameCount: 2,
-                    keepAtMost: 100,
+                    keepAtMost: 500,
                     overKeepBy: 0,
                   }
         '401':
@@ -2056,13 +2060,13 @@ paths:
                 deleted: [game_old_1, game_old_2]
                 storage:
                   {
-                    documentBytes: 1204331,
-                    budgetBytes: 6710886,
-                    remainingBytes: 5506555,
+                    documentBytes: 204331,
+                    budgetBytes: 1073741824,
+                    remainingBytes: 1073329824,
                     limitBytes: 8388608,
                     gamesBytes: 412000,
                     gameCount: 2,
-                    keepAtMost: 100,
+                    keepAtMost: 500,
                     overKeepBy: 0,
                   }
         '401':
@@ -2150,13 +2154,13 @@ paths:
                 renamed: { id: game_lq3x_ab12, name: 'My best game' }
                 storage:
                   {
-                    documentBytes: 1204331,
-                    budgetBytes: 6710886,
-                    remainingBytes: 5506555,
+                    documentBytes: 204331,
+                    budgetBytes: 1073741824,
+                    remainingBytes: 1073329824,
                     limitBytes: 8388608,
                     gamesBytes: 412000,
                     gameCount: 2,
-                    keepAtMost: 100,
+                    keepAtMost: 500,
                     overKeepBy: 0,
                   }
         '401':
@@ -2188,13 +2192,13 @@ paths:
                 deleted: [game_lq3x_ab12]
                 storage:
                   {
-                    documentBytes: 1204331,
-                    budgetBytes: 6710886,
-                    remainingBytes: 5506555,
+                    documentBytes: 204331,
+                    budgetBytes: 1073741824,
+                    remainingBytes: 1073329824,
                     limitBytes: 8388608,
                     gamesBytes: 412000,
                     gameCount: 2,
-                    keepAtMost: 100,
+                    keepAtMost: 500,
                     overKeepBy: 0,
                   }
         '401':
@@ -2233,13 +2237,13 @@ paths:
                   }
                 storage:
                   {
-                    documentBytes: 1204331,
-                    budgetBytes: 6710886,
-                    remainingBytes: 5506555,
+                    documentBytes: 204331,
+                    budgetBytes: 1073741824,
+                    remainingBytes: 1073329824,
                     limitBytes: 8388608,
                     gamesBytes: 412000,
                     gameCount: 2,
-                    keepAtMost: 100,
+                    keepAtMost: 500,
                     overKeepBy: 0,
                   }
         '401':
@@ -2299,13 +2303,13 @@ paths:
                   }
                 storage:
                   {
-                    documentBytes: 1204331,
-                    budgetBytes: 6710886,
-                    remainingBytes: 5506555,
+                    documentBytes: 204331,
+                    budgetBytes: 1073741824,
+                    remainingBytes: 1073329824,
                     limitBytes: 8388608,
                     gamesBytes: 412000,
                     gameCount: 2,
-                    keepAtMost: 100,
+                    keepAtMost: 500,
                     overKeepBy: 0,
                   }
         '401':
@@ -5139,12 +5143,15 @@ paths:
       summary: Update a subscription (SUB-2)
       description: >-
         A subscription owned by an active Smile/Fire payment plan is refused (400) — change it through the plan.
-        Accepts a partial body. If any of title/category/amountMinor/account/comment/startDate/frequency actually
-        changes, cascades a cleanup that deletes every existing transaction matching the subscription's OLD identity
-        (account+amountMinor+category+comment) — a tighter 4-field match than the original app's 3-field
-        account+amount+category match, to avoid deleting unrelated manually-entered transactions that happen to
-        coincide on just those three fields. Only deletes; call `POST /subscriptions/refresh` afterward to
-        regenerate under the new identity.
+        Accepts a partial body and keeps the subscription's generated transactions in line with it: what the OLD
+        subscription generated is changed in place where the new one still has an occurrence for it (same id, same place in
+        the list: new date, account, amount, category or comment; one transaction per month, quarter or year, the nearest
+        day for weekly ones), deleted where it has none, and whatever the new one is due and lacks is generated at the
+        end (as `POST /subscriptions/refresh` does). Change the details and its transactions are edited; move `endDate` into the past and the transactions after it
+        are deleted; move it into the future (or clear it) and the missing ones are generated; change nothing that
+        matters and nothing happens. A transaction counts as generated when its account, amount, category and comment
+        (`title` or `title + comment`, possibly followed by `#bucket:` tags) match AND its date was one of the
+        subscription's occurrences - a hand-made transaction on another day, or with another comment, stays.
       security:
         - bearerAuth: []
       requestBody:
@@ -5175,7 +5182,7 @@ paths:
       summary: Delete a subscription (SUB-3)
       description: >-
         A subscription owned by an active Smile/Fire payment plan is refused (400) — deactivate or delete the plan instead.
-        Leaves already-generated transactions untouched by default. Pass `?deleteTransactions=true` to also delete every transaction matching this subscription's identity.
+        Leaves already-generated transactions untouched by default. Pass `?deleteTransactions=true` to also delete the transactions this subscription generated (same recognition as `PATCH`: account, amount, category, comment and an occurrence date).
       security:
         - bearerAuth: []
       parameters:

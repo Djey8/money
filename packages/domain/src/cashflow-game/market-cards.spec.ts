@@ -495,7 +495,7 @@ describe('playBoostCard', () => {
       { ...subscription('EFH Cashflow', 35000), category: '@EFH' },
     ]);
     expect(effects.persist).toEqual({ subscriptions: true, grow: true, balanceSheet: false });
-    expect(effects.step).toEqual({ kind: 'marketCard', detail: 'Boom' });
+    expect(effects.step).toEqual({ kind: 'marketCard', detail: 'Boom: EFH 250 EUR -> 350 EUR' });
   });
 
   it('registers a new Payday subscription on a free day and with the game, for an investment that had none', () => {

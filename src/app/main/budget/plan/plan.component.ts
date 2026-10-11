@@ -33,6 +33,7 @@ import { ToastService } from 'src/app/shared/services/toast.service';
 import { forkJoin, of, Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import { AppStateService } from 'src/app/shared/services/app-state.service';
+import { computeBudgetRowsFromSubscriptions } from '@money/domain';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
@@ -529,90 +530,32 @@ export class PlanComponent implements OnInit, AfterViewInit {
     this.toastService.show('Budget copied', 'update');
   }
 
+  /**
+   * "Fill from subscriptions": each month a subscription is active gets its monthly equivalent in its category - a yearly
+   * subscription a twelfth, a weekly one 52/12 payments (packages/domain budget-from-subscriptions.ts). It used to add the
+   * full nominal amount to every month whatever the frequency.
+   */
   subscriptions() {
-    const now = new Date();
-    const currentYear = now.getFullYear();
-    const currentMonth = now.getMonth() + 1;
-
-    const monthlyCategoryAmounts: Record<string, Record<string, number>> = {};
-
-    for (const sub of AppStateService.instance.allSubscriptions) {
-      if (sub.account === 'Income') continue;
-
-      const [subYearStr, subMonthStr, subDayStr] = sub.startDate.split('-');
-      let subYear = parseInt(subYearStr, 10);
-      let subMonth = parseInt(subMonthStr, 10);
-      const subDay = subDayStr ? parseInt(subDayStr, 10) : 1;
-
-      let endYear = currentYear;
-      let endMonth = currentMonth;
-      let endDay = 1;
-      if (sub.endDate) {
-        const [endYearStr, endMonthStr, endDayStr] = sub.endDate.split('-');
-        endYear = parseInt(endYearStr, 10);
-        endMonth = parseInt(endMonthStr, 10);
-        endDay = endDayStr ? parseInt(endDayStr, 10) : 1;
-      }
-
-      while (subYear < endYear || (subYear === endYear && subMonth <= endMonth)) {
-        const budgetDate = `${subYear}-${String(subMonth).padStart(2, '0')}`;
-        let shouldAdd = true;
-
-        if (subYear === endYear && subMonth === endMonth && sub.endDate && endDay > subDay) {
-          const hasTransaction = AppStateService.instance.allTransactions.some((tx) => {
-            const txDate = new Date(tx.date);
-            return (
-              tx.category === sub.category &&
-              txDate.getFullYear() === endYear &&
-              txDate.getMonth() + 1 === endMonth
-            );
-          });
-          shouldAdd = hasTransaction;
-        } else if (
-          subYear === endYear &&
-          subMonth === endMonth &&
-          sub.endDate &&
-          endDay <= subDay
-        ) {
-          shouldAdd = false;
-        }
-
-        if (shouldAdd) {
-          if (!monthlyCategoryAmounts[budgetDate]) {
-            monthlyCategoryAmounts[budgetDate] = {};
-          }
-          if (!monthlyCategoryAmounts[budgetDate][sub.category]) {
-            monthlyCategoryAmounts[budgetDate][sub.category] = 0;
-          }
-          monthlyCategoryAmounts[budgetDate][sub.category] += Math.abs(sub.amount);
-        }
-
-        subMonth++;
-        if (subMonth > 12) {
-          subMonth = 1;
-          subYear++;
-        }
-        if (subYear > endYear || (subYear === endYear && subMonth > endMonth)) {
-          break;
-        }
-      }
-    }
-
-    for (const date in monthlyCategoryAmounts) {
-      for (const category in monthlyCategoryAmounts[date]) {
-        const totalAmount = monthlyCategoryAmounts[date][category];
-        const existingIndex = AppStateService.instance.allBudgets.findIndex(
-          (b) => b.date === date && b.tag === category,
-        );
-        if (existingIndex === -1) {
-          AppStateService.instance.allBudgets.push({
-            date,
-            tag: category,
-            amount: totalAmount,
-          });
-        } else {
-          AppStateService.instance.allBudgets[existingIndex].amount = totalAmount;
-        }
+    const rows = computeBudgetRowsFromSubscriptions(
+      AppStateService.instance.allSubscriptions.map((sub) => ({
+        account: sub.account,
+        amountMinor: Math.round(Number(sub.amount) * 100),
+        startDate: sub.startDate,
+        endDate: sub.endDate ? sub.endDate : null,
+        category: sub.category,
+        frequency: sub.frequency || 'monthly',
+      })),
+      new Date(),
+    );
+    for (const row of rows) {
+      const amount = row.amountMinor / 100;
+      const existingIndex = AppStateService.instance.allBudgets.findIndex(
+        (b) => b.date === row.date && b.tag === row.tag,
+      );
+      if (existingIndex === -1) {
+        AppStateService.instance.allBudgets.push({ date: row.date, tag: row.tag, amount });
+      } else {
+        AppStateService.instance.allBudgets[existingIndex].amount = amount;
       }
     }
 

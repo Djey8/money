@@ -1,3 +1,4 @@
+import { translateRuleRefusal } from '../rule-refusal';
 import { Injectable } from '@angular/core';
 import { Subject, auditTime, merge } from 'rxjs';
 import { TranslateService } from '@ngx-translate/core';
@@ -33,6 +34,22 @@ import {
   type EncodedUndoChain,
   dealInputFromCard,
   doodadLoanNote as doodadLoanNoteRule,
+  normalizeRules,
+  rulesOf,
+  whyCannotAddFreeAmount,
+  whyCannotBuy,
+  whyCannotDraw,
+  whyCannotReportRoll,
+  whyDiceFirst,
+  whyCardAlreadyBought,
+  whyCardAlreadyPlayed,
+  propertyCardTypes,
+  costCardProperty,
+  whyPaymentPending,
+  whyCannotSkipCard,
+  whyCannotSell,
+  whyCannotUseCard,
+  type GameRules,
   executeDeal as executeDealRule,
   clearCashflowStatus,
   computeMonthlyCashflowMinor,
@@ -348,6 +365,9 @@ function deepClone<T>(value: T): T {
  * the browser's site data removes it same as everything else — no extra code needed for that part.
  */
 const UNDO_STACK_STORAGE_KEY = 'cashflowUndoStack';
+
+/** The most characters the browser's copy of the undo history may take (localStorage holds about 5 million in all). */
+const LOCAL_UNDO_BUDGET = 1_500_000;
 /** When the browser's copy of the history last changed - compared with the account's copy (see `CashflowHistorySyncService`). */
 const UNDO_STACK_AT_KEY = 'cashflowUndoStackAt';
 
@@ -386,11 +406,28 @@ export class CashflowGameService {
     private incomeStatement: IncomeStatementService,
     private translate: TranslateService,
   ) {
+    CashflowGameService.translator = translate;
     // The game ends when the books say so, whichever action changed them.
     const state = AppStateService.instance;
     merge(state.transactionsUpdated$, state.subscriptionsUpdated$)
       .pipe(auditTime(60))
       .subscribe(() => this.endSoloGameIfOver());
+  }
+
+  /** Set when the service is created: the game rules' English refusals are shown in the player's language. */
+  private static translator?: TranslateService;
+
+  /** A game-rules refusal in the player's language (the sentence itself when it is not one or there is no translator). */
+  static ruleText(message: string): string {
+    const translator = CashflowGameService.translator;
+    return translateRuleRefusal(
+      message,
+      translator ? (key, params) => translator.instant(key, params) : undefined,
+    );
+  }
+
+  private static ruleTextOrNull(message: string | null): string | null {
+    return message === null ? null : CashflowGameService.ruleText(message);
   }
 
   static isCashflowGame(): boolean {
@@ -474,7 +511,15 @@ export class CashflowGameService {
 
   private storeUndoStackLocally(): void {
     try {
-      localStorage.setItem(UNDO_STACK_STORAGE_KEY, JSON.stringify(encodeUndoChain(this.undoStack)));
+      // The browser's copy is a convenience with a budget of its own (the books must always fit beside it): when a very long
+      // game outgrows it, the oldest steps stay out of it - the account and saved games keep the whole chain.
+      let kept = this.undoStack;
+      let json = JSON.stringify(encodeUndoChain(kept));
+      while (json.length > LOCAL_UNDO_BUDGET && kept.length > 1) {
+        kept = kept.slice(Math.ceil(kept.length / 4));
+        json = JSON.stringify(encodeUndoChain(kept));
+      }
+      localStorage.setItem(UNDO_STACK_STORAGE_KEY, json);
       if (this.undoStackAt) localStorage.setItem(UNDO_STACK_AT_KEY, this.undoStackAt);
     } catch {
       // best-effort only
@@ -682,7 +727,11 @@ export class CashflowGameService {
         if (project) project.liabilitie = null as any;
       }
     }
-    this.pushUndoSnapshot(gameTradeStep(comment, category)); // step 2 (or the only step): the trade itself
+    const tradeStep = gameTradeStep(comment, category);
+    this.pushUndoSnapshot(tradeStep); // step 2 (or the only step): the trade itself
+    if (tradeStep.kind === 'buyInvestment' || tradeStep.kind === 'buyAsset') this.markPurchased();
+    if (tradeStep.kind === 'doodad' || tradeStep.kind === 'marketCost') this.markCardPlayed();
+    this.settleDoodadByPayment(tradeStep.kind);
     // The loan comes first: it takes `loanDate` (the day the dialog was opened on), and the purchase
     // that follows gets the next free slot after it.
     return {
@@ -690,6 +739,25 @@ export class CashflowGameService {
       converted,
       nextDate: this.nextGameTransactionDate(),
     };
+  }
+
+  /**
+   * Under `passDoodads: 'forbidden'` the game waits for the Doodad: paying it - the Add dialog's #doodad transaction - is
+   * what settles the space, so the next roll opens only then. (The Add dialog stores the game state with the trade.)
+   */
+  private settleDoodadByPayment(stepKind: string): void {
+    const game = AppStateService.instance.cashflowGame;
+    const pending = game.turn?.pending;
+    const paysDoodad = stepKind === 'doodad' && pending?.kind === 'doodad';
+    const paysCost = stepKind === 'marketCost' && !!pending?.paymentDue;
+    if (!paysDoodad && !paysCost) return;
+    if (rulesOf(game).passDoodads !== 'forbidden') return;
+    try {
+      const settled = settleDecisionRule(game, 'done', this.gameBooks().subscriptions);
+      AppStateService.instance.cashflowGame = settled.state;
+    } catch {
+      // nothing open to settle
+    }
   }
 
   /** The toast text for an automatic loan, in the current language. */
@@ -775,6 +843,7 @@ export class CashflowGameService {
     professionId: string,
     callbacks: CashflowGameCallbacks,
     mode: 'companion' | 'solo' = 'companion',
+    rules?: Partial<GameRules>,
   ): void {
     const state = AppStateService.instance;
     let result: ReturnType<typeof pickCashflowProfession>;
@@ -785,6 +854,7 @@ export class CashflowGameService {
         professionId,
         this.clock.todayIso(),
         mode,
+        rules ? normalizeRules(rules) : undefined,
       );
     } catch (err: unknown) {
       callbacks.onError(errorMessage(err, 'Could not start the game.'));
@@ -1214,8 +1284,22 @@ export class CashflowGameService {
     return true;
   }
 
-  settleSoloDecision(how: 'done' | 'passed', callbacks: CashflowGameCallbacks): void {
+  settleSoloDecision(
+    how: 'done' | 'passed',
+    callbacks: CashflowGameCallbacks,
+    options: { paid?: boolean } = {},
+  ): void {
     let settled: ReturnType<typeof settleDecisionRule>;
+    const refusal = options.paid
+      ? null
+      : whyCannotSkipCard(
+          CashflowGameService.effectiveGame(AppStateService.instance.cashflowGame),
+          how,
+        );
+    if (refusal) {
+      callbacks.onError(CashflowGameService.ruleText(refusal));
+      return;
+    }
     try {
       settled = settleDecisionRule(
         AppStateService.instance.cashflowGame,
@@ -1431,7 +1515,11 @@ export class CashflowGameService {
   }
 
   /** `planDeal`'s work, on the domain's own input (also what a drawn card is turned into). */
-  private runPlanDeal(input: DealInput, callbacks: CashflowGameCallbacks): void {
+  private runPlanDeal(
+    input: DealInput,
+    callbacks: CashflowGameCallbacks,
+    options: { fromCard?: boolean } = {},
+  ): void {
     let effects: GameEffects;
     try {
       effects = planDealRule(this.gameBooks(), input, this.dealDeps);
@@ -1441,6 +1529,11 @@ export class CashflowGameService {
     }
     this.pushUndoSnapshot(effects.step as CashflowStepInfo);
     this.applyGameEffects(effects);
+    if (options.fromCard) {
+      this.markCardPlayed();
+      // the card in hand is now the project it became (EFH-II when EFH was taken): that is what Buy is matched on
+      this.holdProject(input.title);
+    }
     this.persistAll('cashflow_deal_plan', { kind: input.kind, title: input.title }, callbacks, {
       includeGrow: true,
     });
@@ -1532,6 +1625,7 @@ export class CashflowGameService {
   beforeAssetBuy(title: string): boolean {
     const hook = beforeAssetBuyRule(AppStateService.instance.cashflowGame, title);
     if (hook.effects) this.applyGameEffects(hook.effects);
+    this.markPurchased();
     return hook.gamble;
   }
 
@@ -1609,6 +1703,13 @@ export class CashflowGameService {
     outcome: { won: boolean; roll?: number },
     callbacks: CashflowGameCallbacks,
   ): void {
+    if (outcome.roll === undefined) {
+      const reported = whyCannotReportRoll(AppStateService.instance.cashflowGame);
+      if (reported) {
+        callbacks.onError(CashflowGameService.ruleText(reported));
+        return;
+      }
+    }
     let result: ReturnType<typeof resolveGambleRule>;
     try {
       result = resolveGambleRule(this.gameBooks(), title, outcome, this.cardDeps);
@@ -1659,6 +1760,11 @@ export class CashflowGameService {
     options: { title?: string; types: { labels: string[]; units?: number }[] },
     callbacks: { onSuccess: (matched: string[]) => void; onError: (message: string) => void },
   ): void {
+    const refusedCard = this.cardRefusal(card.id);
+    if (refusedCard) {
+      callbacks.onError(refusedCard);
+      return;
+    }
     let result: ReturnType<typeof playMarketBuyerCard>;
     try {
       result = playMarketBuyerCard(this.cardBooks(), card, options, this.cardDeps);
@@ -1668,6 +1774,7 @@ export class CashflowGameService {
     }
     this.pushUndoSnapshot(result.effects.step as CashflowStepInfo);
     this.applyGameEffects(result.effects);
+    this.markCardPlayed();
     this.persistAll(
       'cashflow_market_card',
       { card: card.id, matched: result.matched.length },
@@ -1708,6 +1815,11 @@ export class CashflowGameService {
     text: { description?: string },
     callbacks: { onSuccess: (title: string) => void; onError: (message: string) => void },
   ): void {
+    const refusedCard = this.cardRefusal(card.id);
+    if (refusedCard) {
+      callbacks.onError(refusedCard);
+      return;
+    }
     let result: ReturnType<typeof updateSharePrice>;
     try {
       result = updateSharePrice(this.cardBooks(), card, text, this.cardDeps);
@@ -1717,6 +1829,7 @@ export class CashflowGameService {
     }
     this.pushUndoSnapshot(result.effects.step as CashflowStepInfo);
     this.applyGameEffects(result.effects);
+    this.markCardPlayed();
     this.persistAll(
       'cashflow_share_price',
       { symbol: result.title, price: fromMinorUnits(card.priceMinor ?? 0) },
@@ -1736,6 +1849,11 @@ export class CashflowGameService {
     options: { title?: string; labels: string[] },
     callbacks: { onSuccess: (share: string | null) => void; onError: (message: string) => void },
   ): void {
+    const refusedCard = this.cardRefusal(card.id);
+    if (refusedCard) {
+      callbacks.onError(refusedCard);
+      return;
+    }
     let result: ReturnType<typeof playShareSplitCard>;
     try {
       result = playShareSplitCard(this.cardBooks(), card, options, this.cardDeps);
@@ -1749,6 +1867,7 @@ export class CashflowGameService {
       return;
     }
     this.applyGameEffects(result.effects);
+    this.markCardPlayed();
     this.persistAll(
       'cashflow_market_split',
       { share: result.share },
@@ -1778,6 +1897,11 @@ export class CashflowGameService {
       onError: (message: string) => void;
     },
   ): void {
+    const refusedCard = this.cardRefusal(card.id);
+    if (refusedCard) {
+      callbacks.onError(refusedCard);
+      return;
+    }
     let result: ReturnType<typeof playBoostCard>;
     try {
       result = playBoostCard(this.cardBooks(), card, options, this.cardDeps);
@@ -1787,6 +1911,7 @@ export class CashflowGameService {
     }
     this.pushUndoSnapshot(result.effects.step as CashflowStepInfo);
     this.applyGameEffects(result.effects);
+    this.markCardPlayed();
     const changed = result.changed.map((entry) => ({
       title: entry.title,
       from: fromMinorUnits(entry.fromMinor),
@@ -1813,6 +1938,11 @@ export class CashflowGameService {
     options: { title?: string; types: { labels: string[] }[] },
     callbacks: { onSuccess: (property: string | null) => void; onError: (message: string) => void },
   ): void {
+    const refusedCard = this.cardRefusal(card.id);
+    if (refusedCard) {
+      callbacks.onError(refusedCard);
+      return;
+    }
     let result: ReturnType<typeof playMarketCostCard>;
     try {
       result = playMarketCostCard(this.cardBooks(), card, options);
@@ -1984,6 +2114,237 @@ export class CashflowGameService {
     return cards.sort((a, b) => key(a).localeCompare(key(b)) || price(a) - price(b));
   }
 
+  /** The game rules (free for a game without any). */
+  get rules(): GameRules {
+    return rulesOf(AppStateService.instance.cashflowGame);
+  }
+
+  /** Why the rules forbid playing this card now (an open dice decision comes first; under offered-once only the offered card), or null. */
+  cardRefusal(cardId: string): string | null {
+    const game = AppStateService.instance.cashflowGame;
+    return CashflowGameService.ruleTextOrNull(
+      whyDiceFirst(game) ??
+        whyCardAlreadyPlayed(CashflowGameService.effectiveGame(game), cardId) ??
+        whyCannotUseCard(game, cardId),
+    );
+  }
+
+  /** Why the open dice decision must be rolled before a card is picked (rules: dice first), or null. */
+  get diceFirstRefusal(): string | null {
+    return CashflowGameService.ruleTextOrNull(whyDiceFirst(AppStateService.instance.cashflowGame));
+  }
+
+  /** Marks the card of the open space as played: it can be looked at and ticked off, not passed any more. */
+  private markCardPlayed(): void {
+    const game = AppStateService.instance.cashflowGame;
+    const pending = game.turn?.pending;
+    if (!game.turn || !pending || pending.played) return;
+    AppStateService.instance.cashflowGame = {
+      ...game,
+      turn: { ...game.turn, pending: { ...pending, played: true } },
+    };
+  }
+
+  /**
+   * The card in hand was dealt with without becoming a project - sold to a friend or declined: it counts as played, so it can be
+   * read again but not used or passed (JFK, 2026-10-10).
+   */
+  private markCardClosed(): void {
+    this.markCardPlayed();
+    const game = AppStateService.instance.cashflowGame;
+    const pending = game.turn?.pending;
+    if (!game.turn || !pending || pending.closed) return;
+    AppStateService.instance.cashflowGame = {
+      ...game,
+      turn: { ...game.turn, pending: { ...pending, closed: true } },
+    };
+  }
+
+  /** Declining the card in hand uses it up: afterwards it is only read. */
+  declineCard(callbacks: CashflowGameCallbacks): void {
+    this.markCardClosed();
+    this.persistAll('cashflow_card_declined', {}, callbacks, { quiet: true });
+  }
+
+  /** The card of this space has bought its property or asset: it buys once, the Buy button is gone. */
+  private markPurchased(): void {
+    const game = AppStateService.instance.cashflowGame;
+    const pending = game.turn?.pending;
+    if (!game.turn || !pending || pending.purchased) return;
+    AppStateService.instance.cashflowGame = {
+      ...game,
+      turn: { ...game.turn, pending: { ...pending, purchased: true } },
+    };
+  }
+
+  /**
+   * The Grow project the card in hand became on the open space, or null when it was not planned - or when the project has
+   * been deleted since, which gives the card its buttons back. Its title is the key the plan took (EFH-II, APT-IV ...),
+   * remembered when the card was planned.
+   */
+  /**
+   * Whether the card open on screen has been played on this space - and so is only to be read now, every action button gone
+   * (JFK, 2026-10-10). A Deal card counts as played only while its project exists.
+   */
+  static isPlayedCard(cardId: string): boolean {
+    const pending = AppStateService.instance.cashflowGame.turn?.pending;
+    if (!pending?.played || pending.offered?.cardId !== cardId) return false;
+    // A payment that has to be made is never only read: under the pay rule it settles the space when it is booked, so a
+    // payment still open here is not one that was made (a game stored with a wrong 'played' mark must not get stuck).
+    if (
+      rulesOf(AppStateService.instance.cashflowGame).passDoodads === 'forbidden' &&
+      (pending.kind === 'doodad' || pending.paymentDue)
+    ) {
+      return false;
+    }
+    return (
+      pending.kind !== 'deal' ||
+      !!pending.closed ||
+      CashflowGameService.heldProjectFor(cardId) !== null
+    );
+  }
+
+  static heldProjectFor(cardId: string): Grow | null {
+    const pending = AppStateService.instance.cashflowGame.turn?.pending;
+    const title = pending?.offered?.title;
+    if (!pending?.played || pending.offered?.cardId !== cardId || !title) return null;
+    return (
+      AppStateService.instance.allGrowProjects.find((project) => project.title === title) ?? null
+    );
+  }
+
+  /**
+   * The game as the rules should read it: a Deal card counts as played only while the project it became exists - delete the
+   * project and the card can be planned, sold or declined again (JFK, 2026-10-10).
+   */
+  static effectiveGame(game: CashflowGameState): CashflowGameState {
+    const pending = game.turn?.pending;
+    if (
+      !game.turn ||
+      !pending?.played ||
+      pending.closed ||
+      pending.kind !== 'deal' ||
+      !pending.offered?.title
+    ) {
+      return game;
+    }
+    const exists = AppStateService.instance.allGrowProjects.some(
+      (project) => project.title === pending.offered?.title,
+    );
+    return exists
+      ? game
+      : { ...game, turn: { ...game.turn, pending: { ...pending, played: false } } };
+  }
+
+  /** Names the project the card in hand became: the Buy button and the buy rule look for that title. */
+  private holdProject(title: string): void {
+    const game = AppStateService.instance.cashflowGame;
+    const offered = game.turn?.pending?.offered;
+    if (!game.turn?.pending || !offered) return;
+    AppStateService.instance.cashflowGame = {
+      ...game,
+      turn: { ...game.turn, pending: { ...game.turn.pending, offered: { ...offered, title } } },
+    };
+  }
+
+  /** The card picked on the open space, whatever the rules - opening the space again goes straight to it. */
+  get pickedCard(): { deck: CashflowDeckKind; cardId: string } | undefined {
+    return AppStateService.instance.cashflowGame.turn?.pending?.offered;
+  }
+
+  /** Why the rules forbid selling `title` now (a game without rules never does), or null. */
+  sellRefusal(title: string): string | null {
+    return CashflowGameService.sellRefusalFor(title);
+  }
+
+  /** The same without an instance, for the templates that decide whether to show a Sell button. */
+  static sellRefusalFor(title: string): string | null {
+    const game = AppStateService.instance.cashflowGame;
+    return CashflowGameService.isCashflowGame() && game.professionId
+      ? CashflowGameService.ruleTextOrNull(whyCannotSell(game, title))
+      : null;
+  }
+
+  /** Why the rules forbid adding a free-form transaction of this size (minor units), or null. */
+  freeAmountRefusal(amountMinor: number): string | null {
+    const game = AppStateService.instance.cashflowGame;
+    return game.professionId
+      ? CashflowGameService.ruleTextOrNull(whyCannotAddFreeAmount(game, amountMinor))
+      : null;
+  }
+
+  /**
+   * What the game rules say about a transaction made in the Add dialog, or null when it is fine: a trade the game knows
+   * (Buy / Sell Share, Property, Asset, a Doodad, a Market cost, a payback) is judged as that trade - a sale needs an
+   * offer where the rules ask for one - and a plain transaction is a free amount (forbidden, or capped).
+   */
+  addDialogRefusal(comment: string, category: string, amountMinor: number): string | null {
+    const game = AppStateService.instance.cashflowGame;
+    if (!CashflowGameService.isCashflowGame() || !game.professionId) return null;
+    const step = gameTradeStep(comment, category);
+    // While a Doodad has to be paid, only its payment is booked (a Bank loan is not an Add-dialog trade)
+    const waiting = whyPaymentPending(game);
+    if (waiting && step.kind !== 'doodad' && step.kind !== 'marketCost')
+      return CashflowGameService.ruleText(waiting);
+    if (step.kind === 'transaction') return this.freeAmountRefusal(amountMinor);
+    if (['sellShare', 'sellInvestment', 'sellAsset'].includes(step.kind) && step.detail) {
+      return this.sellRefusal(step.detail);
+    }
+    if (['buyShare', 'buyInvestment', 'buyAsset'].includes(step.kind) && step.detail) {
+      return CashflowGameService.buyRefusalFor(
+        step.detail,
+        step.kind === 'buyInvestment' ? 'property' : step.kind === 'buyAsset' ? 'asset' : 'share',
+      );
+    }
+    return null;
+  }
+
+  /** Whether the app may report a roll made with a real die (`reportRolls`). */
+  get reportRollsForbidden(): boolean {
+    return whyCannotReportRoll(AppStateService.instance.cashflowGame) !== null;
+  }
+
+  /**
+   * Why `title` cannot be bought now, or null: a property that is owned is not bought a second time, and where the rules say
+   * so a purchase needs the card in hand (or a price card of the share).
+   */
+  static buyRefusalFor(
+    title: string,
+    kind: 'property' | 'asset' | 'share' = 'share',
+  ): string | null {
+    const isProperty = kind === 'property';
+    const game = AppStateService.instance.cashflowGame;
+    if (!CashflowGameService.isCashflowGame() || !game.professionId) return null;
+    // Owned: in the balance sheet - which is only there once the balance data has been loaded - or, as it is always loaded
+    // with the Grow projects, a project that has been bought (phase execute / monitor) and not sold since.
+    const project = AppStateService.instance.allGrowProjects.find(
+      (candidate) => candidate.title === title,
+    );
+    const owned =
+      AppStateService.instance.allInvestments.some((position) => position.tag === title) ||
+      (!!project && ['execute', 'monitor'].includes(project.phase));
+    if (kind !== 'share') {
+      const bought = whyCardAlreadyBought(game);
+      if (bought) return CashflowGameService.ruleText(bought);
+    }
+    if (isProperty && owned) {
+      return CashflowGameService.ruleText(
+        'You already own this property: a property is bought once.',
+      );
+    }
+    return CashflowGameService.ruleTextOrNull(
+      whyCannotBuy(game, title, game.turn?.pending?.offered?.title),
+    );
+  }
+
+  /** Why the rules forbid a Bank loan, or null. */
+  get loanRefusal(): string | null {
+    const game = AppStateService.instance.cashflowGame;
+    return game.professionId && this.rules.bankLoan === 'forbidden'
+      ? CashflowGameService.ruleText('These game rules do not allow a Bank loan.')
+      : null;
+  }
+
   /**
    * "Draw a card" (todo/cashflow-game.md decision 16): no physical deck in
    * hand — the app picks at random from whatever this deck hasn't already
@@ -1993,8 +2354,14 @@ export class CashflowGameService {
   drawCard<K extends CashflowDeckKind>(
     deckKind: K,
     callbacks: CashflowCardCallbacks<CashflowDeckCardMap[K]>,
+    options: { labelFor?: (symbol: string) => string | undefined } = {},
   ): void {
     const state = AppStateService.instance;
+    const refusedDraw = whyDiceFirst(state.cashflowGame) ?? whyCannotDraw(state.cashflowGame);
+    if (refusedDraw) {
+      callbacks.onError(CashflowGameService.ruleText(refusedDraw));
+      return;
+    }
     const deck = this.currentGameSet()?.decks?.[deckKind];
     if (!deck) {
       callbacks.onError(`This game set has no ${deckKind} cards yet.`);
@@ -2015,8 +2382,36 @@ export class CashflowGameService {
     if (state.cashflowGame.professionId) {
       this.pushUndoSnapshot(cardPickedStep(deckKind, result.card));
     }
+    const turn = state.cashflowGame.turn;
+    // Under 'offered-once' this card is the one offered on the space: nothing else can be played here.
+    // A Market cost card for a player who owns a property is a payment that has to be made (the Doodad rule applies).
+    const dueCard = result.card as unknown as CashflowMarketCard;
+    const paymentDue =
+      deckKind === 'market' &&
+      !!dueCard.pays &&
+      costCardProperty(
+        this.cardBooks(),
+        propertyCardTypes((symbol) => options.labelFor?.(symbol)),
+      ) !== null;
+    const offered = turn?.pending
+      ? {
+          turn: {
+            ...turn,
+            pending: {
+              ...turn.pending,
+              ...(paymentDue ? { paymentDue: true } : {}),
+              offered: {
+                deck: deckKind,
+                cardId: result.card.id,
+                title: (result.card as { symbol?: string }).symbol ?? result.card.title,
+              },
+            },
+          },
+        }
+      : {};
     state.cashflowGame = {
       ...state.cashflowGame,
+      ...offered,
       drawnCardIds: { ...state.cashflowGame.drawnCardIds, [deckKind]: result.drawnIds },
     };
     this.persistence.writeAndSync({
@@ -2036,9 +2431,32 @@ export class CashflowGameService {
    */
   recordCardPicked(deckKind: CashflowDeckKind, card: { id: string; title: string }): void {
     if (!AppStateService.instance.cashflowGame.professionId) return;
-    const last = this.undoStack[this.undoStack.length - 1]?.step;
-    if (last?.kind === 'cardPicked' && last.cardId === card.id) return;
+    // The same card is recorded once per turn: the dialog closing after the card was planned or played would otherwise
+    // log it a second time, after the step it led to.
+    for (let back = this.undoStack.length - 1; back >= 0; back -= 1) {
+      const earlier = this.undoStack[back].step;
+      if (earlier?.kind === 'roll') break;
+      if (earlier?.kind === 'cardPicked' && earlier.cardId === card.id) return;
+    }
     this.pushUndoSnapshot(cardPickedStep(deckKind, card));
+    // the card in hand on this space: opening the space again goes straight to it
+    const game = AppStateService.instance.cashflowGame;
+    if (game.turn?.pending) {
+      AppStateService.instance.cashflowGame = {
+        ...game,
+        turn: {
+          ...game.turn,
+          pending: {
+            ...game.turn.pending,
+            offered: {
+              deck: deckKind,
+              cardId: card.id,
+              title: (card as { symbol?: string }).symbol ?? card.title,
+            },
+          },
+        },
+      };
+    }
   }
 
   /** Plans a drawn/found Deal card exactly as `planDeal` would from the manual form — its numbers, not re-typed. */
@@ -2047,11 +2465,20 @@ export class CashflowGameService {
     callbacks: { onSuccess: (plannedTitle: string) => void; onError: (message: string) => void },
     text: CashflowCardPlanText = {},
   ): void {
+    const refusedCard = this.cardRefusal(card.id);
+    if (refusedCard) {
+      callbacks.onError(refusedCard);
+      return;
+    }
     const input = dealInputFromCard(card, text, takenDealLabels(this.gameBooks()));
-    this.runPlanDeal(input, {
-      onSuccess: () => callbacks.onSuccess(input.title),
-      onError: callbacks.onError,
-    });
+    this.runPlanDeal(
+      input,
+      {
+        onSuccess: () => callbacks.onSuccess(input.title),
+        onError: callbacks.onError,
+      },
+      { fromCard: true },
+    );
   }
 
   /**
@@ -2091,6 +2518,7 @@ export class CashflowGameService {
     }
     this.pushUndoSnapshot(effects.step as CashflowStepInfo);
     this.applyGameEffects(effects);
+    this.markCardClosed();
     this.persistAll('cashflow_card_sale', { card: card.id, amount }, callbacks);
   }
 
@@ -2304,5 +2732,5 @@ export class CashflowGameService {
 }
 
 function errorMessage(err: unknown, fallback: string): string {
-  return err instanceof Error ? err.message : fallback;
+  return err instanceof Error ? CashflowGameService.ruleText(err.message) : fallback;
 }

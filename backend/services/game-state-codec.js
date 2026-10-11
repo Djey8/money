@@ -70,6 +70,8 @@ function decodeGameState(raw, session) {
       cardId: str(o.cardId),
       label: str(o.label),
       ...(o.pricePerCoinMinor != null ? { pricePerCoinMinor: num(o.pricePerCoinMinor) } : {}),
+      ...(o.pricePerShareMinor != null ? { pricePerShareMinor: num(o.pricePerShareMinor) } : {}),
+      ...(o.offeredAtRoll != null ? { offeredAtRoll: num(o.offeredAtRoll) } : {}),
     })),
   };
   if (raw.turn != null) {
@@ -78,14 +80,47 @@ function decodeGameState(raw, session) {
       count: num(raw.turn.count),
       ...(raw.turn.outcome != null ? { outcome: str(raw.turn.outcome) } : {}),
       ...(Array.isArray(raw.turn.lastRoll) ? { lastRoll: raw.turn.lastRoll.map(num) } : {}),
+      ...(Array.isArray(raw.turn.affected) ? { affected: raw.turn.affected.map(str) } : {}),
       ...(raw.turn.pending != null
         ? {
             pending: {
               kind: str(raw.turn.pending.kind),
               spaceIndex: num(raw.turn.pending.spaceIndex),
+              ...(raw.turn.pending.played != null ? { played: flag(raw.turn.pending.played) } : {}),
+              ...(raw.turn.pending.closed != null ? { closed: flag(raw.turn.pending.closed) } : {}),
+              ...(raw.turn.pending.offered != null
+                ? {
+                    offered: {
+                      deck: str(raw.turn.pending.offered.deck),
+                      cardId: str(raw.turn.pending.offered.cardId),
+                      ...(raw.turn.pending.offered.title != null
+                        ? { title: str(raw.turn.pending.offered.title) }
+                        : {}),
+                    },
+                  }
+                : {}),
             },
           }
         : {}),
+    };
+  }
+  if (raw.rules != null) {
+    const r = raw.rules;
+    const cap = (value) => (value == null ? null : num(value));
+    state.rules = {
+      preset: str(r.preset),
+      cardChoice: str(r.cardChoice),
+      sell: str(r.sell),
+      sellOfferRolls: num(r.sellOfferRolls),
+      // a setting the game was stored without is left out: the game's own preset decides it (rulesOf)
+      ...(r.passDoodads != null ? { passDoodads: str(r.passDoodads) } : {}),
+      ...(r.buy != null ? { buy: str(r.buy) } : {}),
+      ...(r.reportRolls != null ? { reportRolls: str(r.reportRolls) } : {}),
+      ...(r.diceFirst != null ? { diceFirst: str(r.diceFirst) } : {}),
+      manualTransactions: str(r.manualTransactions),
+      bankLoan: str(r.bankLoan),
+      maxLoanMinor: cap(r.maxLoanMinor),
+      maxFreeAmountMinor: cap(r.maxFreeAmountMinor),
     };
   }
   if (raw.gameId != null) state.gameId = str(raw.gameId);

@@ -192,40 +192,47 @@ describe('updateSubscription', () => {
     };
   }
 
-  it('updates fields without triggering transaction cleanup when nothing identifying changed', async () => {
+  // Spotify, monthly from 2026-01-01: due Jan 1, Feb 1, Mar 1 and Apr 1 by NOW.
+  const NOW = new Date('2026-04-15');
+  const generatedOn = (date, overrides = {}) => ({
+    id: `transactions_${date}`,
+    account: 'Daily',
+    amount: 10,
+    date,
+    time: '00:00',
+    category: '@Streaming',
+    comment: 'Spotify',
+    ...overrides,
+  });
+  const allGenerated = () =>
+    ['2026-01-01', '2026-02-01', '2026-03-01', '2026-04-01'].map((date) => generatedOn(date));
+  const datesOf = (transactions) => transactions.map((transaction) => transaction.date).sort();
+
+  it('leaves the transactions alone when nothing that matters changed', async () => {
     const document = existingSubscriptionDocument();
-    document.data.transactions = [
-      {
-        account: 'Daily',
-        amount: 10,
-        date: '2026-01-01',
-        time: '09:00',
-        category: '@Streaming',
-        comment: 'Spotify',
-      },
-    ];
+    document.data.transactions = allGenerated();
     const { deps, current } = writableDeps(document);
-    const subscription = await updateSubscription(deps, 'user_1', 'subscriptions_1', {
-      endDate: '2026-12-31',
-    });
-    expect(subscription.endDate).toBe('2026-12-31');
-    expect(current().data.transactions).toHaveLength(1);
+    await updateSubscription(
+      deps,
+      'user_1',
+      'subscriptions_1',
+      { frequency: 'monthly' },
+      { now: NOW },
+    );
+    expect(datesOf(current().data.transactions)).toEqual([
+      '2026-01-01',
+      '2026-02-01',
+      '2026-03-01',
+      '2026-04-01',
+    ]);
   });
 
-  it('deletes matching transactions when amount changes, using the OLD identity', async () => {
+  it('replaces everything the old subscription generated when the amount changes, using the OLD identity', async () => {
     const document = existingSubscriptionDocument();
     document.data.transactions = [
+      ...allGenerated(),
       {
-        id: 'transactions_1',
-        account: 'Daily',
-        amount: 10,
-        date: '2026-01-01',
-        time: '09:00',
-        category: '@Streaming',
-        comment: 'Spotify',
-      },
-      {
-        id: 'transactions_2',
+        id: 'transactions_other',
         account: 'Daily',
         amount: -5,
         date: '2026-02-01',
@@ -235,45 +242,135 @@ describe('updateSubscription', () => {
       },
     ];
     const { deps, current } = writableDeps(document);
-    await updateSubscription(deps, 'user_1', 'subscriptions_1', { amountMinor: -1500 });
-    const remaining = current().data.transactions;
-    expect(remaining).toHaveLength(1);
-    expect(remaining[0].comment).toBe('unrelated');
+    await updateSubscription(
+      deps,
+      'user_1',
+      'subscriptions_1',
+      { amountMinor: -1500 },
+      { now: NOW },
+    );
+    const transactions = current().data.transactions;
+    const streaming = transactions.filter((transaction) => transaction.category === '@Streaming');
+    expect(streaming).toHaveLength(4);
+    expect(streaming.every((transaction) => Number(transaction.amount) === -15)).toBe(true);
+    expect(datesOf(streaming)).toEqual(['2026-01-01', '2026-02-01', '2026-03-01', '2026-04-01']);
+    expect(transactions.some((transaction) => transaction.comment === 'unrelated')).toBe(true);
   });
 
-  it('does not delete a transaction that only coincidentally matches account+amount+category but not the constructed comment', async () => {
+  it('does not remove a hand-made transaction that merely looks like a generated one', async () => {
     const document = existingSubscriptionDocument();
     document.data.transactions = [
-      {
-        id: 'transactions_1',
-        account: 'Daily',
-        amount: 10,
-        date: '2026-01-01',
-        time: '09:00',
-        category: '@Streaming',
-        comment: 'A manually entered note',
-      },
+      generatedOn('2026-01-01', { id: 'transactions_note', comment: 'A manually entered note' }),
+      generatedOn('2026-01-02', { id: 'transactions_other_day' }),
     ];
     const { deps, current } = writableDeps(document);
-    await updateSubscription(deps, 'user_1', 'subscriptions_1', { amountMinor: -1500 });
-    expect(current().data.transactions).toHaveLength(1);
+    await updateSubscription(
+      deps,
+      'user_1',
+      'subscriptions_1',
+      { amountMinor: -1500 },
+      { now: NOW },
+    );
+    const ids = current().data.transactions.map((transaction) => transaction.id);
+    expect(ids).toContain('transactions_note');
+    expect(ids).toContain('transactions_other_day');
   });
 
-  it('does not trigger cleanup when only endDate changes', async () => {
+  it('removes the transactions after an end date moved into the past', async () => {
     const document = existingSubscriptionDocument();
-    document.data.transactions = [
-      {
-        account: 'Daily',
-        amount: 10,
-        date: '2026-01-01',
-        time: '09:00',
-        category: '@Streaming',
-        comment: 'Spotify',
-      },
-    ];
+    document.data.transactions = allGenerated();
     const { deps, current } = writableDeps(document);
-    await updateSubscription(deps, 'user_1', 'subscriptions_1', { endDate: '2026-06-01' });
-    expect(current().data.transactions).toHaveLength(1);
+    const subscription = await updateSubscription(
+      deps,
+      'user_1',
+      'subscriptions_1',
+      { endDate: '2026-02-15' },
+      { now: NOW },
+    );
+    expect(subscription.endDate).toBe('2026-02-15');
+    expect(datesOf(current().data.transactions)).toEqual(['2026-01-01', '2026-02-01']);
+  });
+
+  it('adds the missing transactions when the end date moves into the future again', async () => {
+    const document = existingSubscriptionDocument({ endDate: '2026-02-15' });
+    document.data.transactions = [generatedOn('2026-01-01'), generatedOn('2026-02-01')];
+    const { deps, current } = writableDeps(document);
+    await updateSubscription(
+      deps,
+      'user_1',
+      'subscriptions_1',
+      { endDate: '2026-12-31' },
+      { now: NOW },
+    );
+    expect(datesOf(current().data.transactions)).toEqual([
+      '2026-01-01',
+      '2026-02-01',
+      '2026-03-01',
+      '2026-04-01',
+    ]);
+  });
+
+  it('adds the missing transactions when the end date is removed', async () => {
+    const document = existingSubscriptionDocument({ endDate: '2026-02-15' });
+    document.data.transactions = [generatedOn('2026-01-01'), generatedOn('2026-02-01')];
+    const { deps, current } = writableDeps(document);
+    await updateSubscription(deps, 'user_1', 'subscriptions_1', { endDate: null }, { now: NOW });
+    expect(current().data.transactions).toHaveLength(4);
+  });
+
+  it('keeps the ids and the order when comment, category or amount change', async () => {
+    const document = existingSubscriptionDocument();
+    document.data.transactions = allGenerated();
+    const { deps, current } = writableDeps(document);
+    await updateSubscription(
+      deps,
+      'user_1',
+      'subscriptions_1',
+      { category: '@Music', amountMinor: -1500 },
+      { now: NOW },
+    );
+    const transactions = current().data.transactions;
+    expect(transactions.map((t) => t.id)).toEqual(allGenerated().map((t) => t.id));
+    expect(transactions.every((t) => t.category === '@Music' && Number(t.amount) === -15)).toBe(
+      true,
+    );
+  });
+
+  it('moves the dates, keeps the ids, and drops only the transaction that no longer counts', async () => {
+    const document = existingSubscriptionDocument();
+    document.data.transactions = allGenerated();
+    const { deps, current } = writableDeps(document);
+    await updateSubscription(
+      deps,
+      'user_1',
+      'subscriptions_1',
+      { startDate: '2026-01-20' },
+      { now: NOW },
+    );
+    const transactions = current().data.transactions;
+    expect(transactions.map((t) => [t.id, t.date])).toEqual([
+      ['transactions_2026-01-01', '2026-01-20'],
+      ['transactions_2026-02-01', '2026-02-20'],
+      ['transactions_2026-03-01', '2026-03-20'],
+    ]);
+  });
+
+  it('removes only the first transaction when the start moves a month later', async () => {
+    const document = existingSubscriptionDocument();
+    document.data.transactions = allGenerated();
+    const { deps, current } = writableDeps(document);
+    await updateSubscription(
+      deps,
+      'user_1',
+      'subscriptions_1',
+      { startDate: '2026-02-01' },
+      { now: NOW },
+    );
+    expect(current().data.transactions.map((t) => t.id)).toEqual([
+      'transactions_2026-02-01',
+      'transactions_2026-03-01',
+      'transactions_2026-04-01',
+    ]);
   });
 
   it('returns null for an id that does not exist', async () => {
@@ -310,28 +407,35 @@ describe('deleteSubscription', () => {
     expect(current().data.transactions).toHaveLength(1);
   });
 
-  it('deletes matching transactions when deleteTransactions is true', async () => {
+  it('deletes the transactions the subscription generated when deleteTransactions is true, and only those', async () => {
+    const NOW = new Date('2026-04-15');
+    const base = {
+      account: 'Daily',
+      amount: 10,
+      time: '00:00',
+      category: '@Streaming',
+      comment: 'Spotify',
+    };
     const document = {
       _id: 'user_1',
       _rev: '1-a',
       data: {
         subscriptions: [minimalRawSubscription()],
         transactions: [
-          {
-            id: 'transactions_1',
-            account: 'Daily',
-            amount: 10,
-            date: '2026-01-01',
-            time: '09:00',
-            category: '@Streaming',
-            comment: 'Spotify',
-          },
+          { ...base, id: 'transactions_1', date: '2026-01-01' },
+          { ...base, id: 'transactions_2', date: '2026-02-01' },
+          { ...base, id: 'transactions_other_day', date: '2026-02-02' },
         ],
       },
     };
     const { deps, current } = writableDeps(document);
-    await deleteSubscription(deps, 'user_1', 'subscriptions_1', { deleteTransactions: true });
-    expect(current().data.transactions).toEqual([]);
+    await deleteSubscription(deps, 'user_1', 'subscriptions_1', {
+      deleteTransactions: true,
+      now: NOW,
+    });
+    expect(current().data.transactions.map((transaction) => transaction.id)).toEqual([
+      'transactions_other_day',
+    ]);
   });
 
   it('returns null for an id that does not exist', async () => {

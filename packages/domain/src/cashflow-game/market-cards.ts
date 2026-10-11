@@ -1,3 +1,4 @@
+import { openOfferFor } from './rules';
 import {
   emptyEffects,
   type BookAsset,
@@ -179,6 +180,7 @@ export function playMarketBuyerCard(
         cardId: card.id,
         label: `${deps.money(perCoinMinor)} × ${coins}`,
         pricePerCoinMinor: perCoinMinor,
+        ...(state.turn ? { offeredAtRoll: state.turn.count } : {}),
       });
       const notes = projectNotes(asset.tag);
       if (notes) {
@@ -230,6 +232,7 @@ export function playMarketBuyerCard(
         salePriceMinor,
         cardId: card.id,
         label: offerLabel,
+        ...(state.turn ? { offeredAtRoll: state.turn.count } : {}),
       });
       const notes = projectNotes(investment.tag);
       if (notes) {
@@ -263,7 +266,15 @@ export function playMarketBuyerCard(
   const result = effects({ ...state, marketOffers: [...kept, ...offers] }, step);
   result.growUpdates = [...notesByTitle].map(([title, notes]) => ({ title, notes }));
   result.persist.grow = true;
-  return { effects: result, matched: [...matchedSet] };
+  return { effects: withAffected(result, [...matchedSet]), matched: [...matchedSet] };
+}
+
+/** Notes on the turn which Grow projects a Market card touched, so the screen can point at them (until the next roll). */
+function withAffected<T extends { state: CashflowGameState }>(result: T, titles: string[]): T {
+  const turn = result.state.turn;
+  if (!turn || titles.length === 0) return result;
+  const affected = [...new Set([...(turn.affected ?? []), ...titles])];
+  return { ...result, state: { ...result.state, turn: { ...turn, affected } } };
 }
 
 export interface MarketSale {
@@ -285,7 +296,7 @@ export function marketSaleFor(
   investments: BookInvestment[],
   title: string,
 ): MarketSale | null {
-  const offer = (state.marketOffers ?? []).find((candidate) => candidate.title === title);
+  const offer = openOfferFor(state, title);
   if (offer?.pricePerCoinMinor !== undefined) {
     // Gold: no mortgage, the whole price is cash - for the coins still owned.
     const coins = coinsOwnedOf(state, title);
@@ -364,7 +375,7 @@ export function playShareSplitCard(
     step,
   );
   result.decisionNeeded = true;
-  return { effects: result, share: share.tag };
+  return { effects: withAffected(result, [share.tag]), share: share.tag };
 }
 
 export interface BoostResult {
@@ -444,14 +455,42 @@ export function playBoostCard(
     changed.push({ title: investment.tag, fromMinor: cashflowMinor, toMinor });
   }
 
+  // The log line says what the boost did - which investment went from what to what - so it can be read back later.
+  const name = options.title ?? card.title;
+  const detail =
+    changed.length > 0
+      ? `${name}: ${changed
+          .map(
+            (entry) =>
+              `${entry.title} ${deps.money(entry.fromMinor)} -> ${deps.money(entry.toMinor)}`,
+          )
+          .join(', ')}`
+      : name;
   const result = effects(
     { ...state, gameSubscriptionTitles: titles },
-    { kind: 'marketCard', detail: options.title ?? card.title },
+    { kind: 'marketCard', detail },
   );
   result.growUpdates = growUpdates;
   result.subscriptionUpserts = upserts;
   result.persist = { subscriptions: true, grow: true, balanceSheet: false };
-  return { effects: result, changed };
+  return {
+    effects: withAffected(
+      result,
+      changed.map((entry) => entry.title),
+    ),
+    changed,
+  };
+}
+
+/** The first property a Market cost card applies to (the player owns it), or null - then the card costs nothing. */
+export function costCardProperty(
+  books: Pick<CardBooks, 'investments'>,
+  types: CardType[],
+): string | null {
+  return (
+    books.investments.find((investment) => types.some((type) => matchesType(investment.tag, type)))
+      ?.tag ?? null
+  );
 }
 
 export interface CostResult {
@@ -477,10 +516,16 @@ export function playMarketCostCard(
     options.types.some((type) => matchesType(investment.tag, type)),
   );
   return {
-    effects: {
-      ...effects(state, first ? null : { kind: 'marketCard', detail: options.title ?? card.title }),
-      write: false,
-    },
+    effects: withAffected(
+      {
+        ...effects(
+          state,
+          first ? null : { kind: 'marketCard', detail: options.title ?? card.title },
+        ),
+        write: false,
+      },
+      first ? [first.tag] : [],
+    ),
     property: first?.tag ?? null,
   };
 }
@@ -518,6 +563,22 @@ export function updateSharePrice(
     detail: `${title} · ${deps.money(beforeMinor)} → ${deps.money(priceMinor)}`,
   });
   result.sharePrices = [{ tag: title, priceMinor }];
+  // The new price is also an offer for the shares held: what a sale under the game rules gets, while it is open.
+  const otherOffers = (books.state.marketOffers ?? []).filter((offer) => offer.title !== title);
+  result.state = {
+    ...result.state,
+    marketOffers: [
+      ...otherOffers,
+      {
+        title,
+        salePriceMinor: priceMinor * held.quantity,
+        cardId: card.id,
+        label: deps.money(priceMinor),
+        pricePerShareMinor: priceMinor,
+        ...(books.state.turn ? { offeredAtRoll: books.state.turn.count } : {}),
+      },
+    ],
+  };
   result.growUpdates = [
     {
       title,
@@ -545,5 +606,5 @@ export function updateSharePrice(
     },
   ];
   result.persist = { subscriptions: false, grow: true, balanceSheet: true };
-  return { effects: result, title };
+  return { effects: withAffected(result, [title]), title };
 }

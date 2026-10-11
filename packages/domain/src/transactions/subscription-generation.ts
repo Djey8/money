@@ -1,7 +1,12 @@
 import { ApiTransaction } from './transaction';
 import { FundState, recalculateFundState } from './fund-state';
 import { bucketCapacity, FundBucket, parseBucketAllocations } from './bucket-allocations';
-import { calculateOccurrences, SubscriptionFrequency } from './frequency-strategies';
+import { SubscriptionFrequency } from './frequency-strategies';
+import {
+  constructedSubscriptionComment,
+  isGeneratedComment,
+  subscriptionOccurrenceDates,
+} from './subscription-sync';
 
 /**
  * Ports `SubscriptionProcessingService.setTransactionsForSubscriptions()` for
@@ -76,10 +81,6 @@ interface DedupKey {
   comment: string;
 }
 
-function buildComment(title: string, comment: string): string {
-  return comment ? `${title} + ${comment}` : title;
-}
-
 function transactionExists(transactions: DedupKey[], candidate: DedupKey): boolean {
   return transactions.some(
     (t) =>
@@ -87,7 +88,8 @@ function transactionExists(transactions: DedupKey[], candidate: DedupKey): boole
       t.account === candidate.account &&
       t.amountMinor === candidate.amountMinor &&
       t.category === candidate.category &&
-      t.comment === candidate.comment,
+      // an existing transaction may carry fund tags after the comment (#bucket:...): still the same occurrence
+      isGeneratedComment(t.comment, candidate.comment),
   );
 }
 
@@ -152,15 +154,10 @@ export function generateDueSubscriptionTransactions(
   let subscriptionsProcessed = 0;
 
   for (const subscription of subscriptions) {
-    const startDate = new Date(subscription.startDate);
-    if (startDate >= now) continue;
+    if (new Date(subscription.startDate) >= now) continue;
     subscriptionsProcessed += 1;
 
-    const hasEndDate = Boolean(subscription.endDate);
-    const endDate = hasEndDate ? new Date(subscription.endDate as string) : null;
-    const boundary = endDate && endDate < now ? endDate : now;
-    const frequency = subscription.frequency || 'monthly';
-    const dates = calculateOccurrences(frequency, subscription.startDate, boundary);
+    const dates = subscriptionOccurrenceDates(subscription, now);
 
     for (const date of dates) {
       const candidate: DedupKey = {
@@ -168,7 +165,7 @@ export function generateDueSubscriptionTransactions(
         account: subscription.account,
         amountMinor: subscription.amountMinor,
         category: subscription.category,
-        comment: buildComment(subscription.title, subscription.comment),
+        comment: constructedSubscriptionComment(subscription.title, subscription.comment),
       };
       if (transactionExists(simulatedTransactions, candidate)) continue;
       if (isTargetAlreadyFull(candidate.category, candidate.comment, runningFundState)) continue;

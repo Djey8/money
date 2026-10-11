@@ -410,6 +410,9 @@ export function executeDeal(
   if (kind === 'share' && !(Number.isInteger(shareQuantity) && shareQuantity > 0)) {
     throw new Error('Enter how many shares you want to buy.');
   }
+  if (kind === 'investment' && books.investments.some((owned) => owned.tag === title)) {
+    throw new Error(`You already own ${title}: a property is bought once.`);
+  }
   const share = project.share;
   const investment = project.investment;
   if (kind === 'share' ? !share : !investment) {

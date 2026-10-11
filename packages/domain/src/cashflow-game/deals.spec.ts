@@ -382,18 +382,13 @@ describe('executeDeal', () => {
     expect(buy.state.gameSubscriptionTitles).toContain('EFH Cashflow');
   });
 
-  it('buying a property again adds to the position and its mortgage', () => {
+  it('a property is bought once: buying it again is refused (JFK, 2026-10-10)', () => {
     const b = books(1000000, {
       investments: [{ tag: 'EFH', depositMinor: 300000, amountMinor: 4700000 }],
       liabilities: [{ tag: 'M-EFH', amountMinor: 4700000, investment: true }],
       growProjects: [propertyProject({ amountMinor: 300000 })],
     });
-    const { steps } = executeDeal(b, 'EFH', undefined, deps);
-    expect(steps[0].investmentUpserts[0]).toMatchObject({
-      depositMinor: 600000,
-      amountMinor: 9400000,
-    });
-    expect(steps[0].liabilityUpserts[0].amountMinor).toBe(9400000);
+    expect(() => executeDeal(b, 'EFH', undefined, deps)).toThrow(/already own EFH/);
   });
 
   it('the steps apply cleanly in order, and the loan is in the books before the purchase', () => {

@@ -103,6 +103,7 @@
   <div
     *ngFor="let project of filteredProjects; let i = index"
     class="grow-card"
+    [class.grow-card--affected]="isAffected(project)"
     role="button"
     tabindex="0"
     (click)="clickRow(getOriginalIndex(project))"
@@ -306,12 +307,14 @@
     <div class="card-footer" *ngIf="!project.type || project.type === 'income-growth'">
       <button
         class="card-btn card-btn-buy"
+        *ngIf="!buyBlocked(project)"
         (click)="buyProject(getOriginalIndex(project)); $event.stopPropagation()"
       >
         {{ 'Grow.buy' | translate }}
       </button>
       <button
         class="card-btn card-btn-sell"
+        *ngIf="!sellBlocked(project)"
         (click)="sellProject(getOriginalIndex(project)); $event.stopPropagation()"
       >
         {{ 'Grow.sell' | translate }}

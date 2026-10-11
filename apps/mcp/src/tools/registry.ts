@@ -391,7 +391,7 @@ export const TOOLS: ToolDefinition[] = [
       'A companion game is driven by payday, baby, charity, downsized, clear_status. bank_loan moves the Bank ' +
       'loan by amountMinor (positive borrows, negative repays). undo takes steps back; save, load_save, end_game, ' +
       'rename_save manage saved games - save a game in full (it keeps the undo history the analyst needs) and use compact: true only for a batch of games saved for statistics, check `storage` before a long ' +
-      'run, and when a session is done clean up with prune_saves so at most 100 saves remain. Requires a PAT ' +
+      'run, and when a session is done clean up with prune_saves so at most 500 saves remain. Requires a PAT ' +
       'with game:w. reset, delete_save and prune_saves destroy data and require confirm: true - never without ' +
       "the user's say-so for games you did not create in this session.",
     actions: {

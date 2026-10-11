@@ -1,10 +1,50 @@
 const express = require('express');
-const { getUsersDb, getAuthDb } = require('../config/db');
+const { getUsersDb, getAuthDb, getGameSavesDb } = require('../config/db');
 const logger = require('../config/logger');
 const { logDatabaseOperation, logUserActivity } = require('../middleware/logging');
 const { authenticateToken } = require('../middleware/auth');
 const { backfillMissingIdsForWrite } = require('../services/legacy-write-id-backfill');
+const gameSaveStore = require('../repositories/game-save-store');
 const router = express.Router();
+
+// Saved Cashflow games (cashflowGames/games/<id>) are not fields of the user document but documents of their own
+// (repositories/game-save-store.js); these routes keep the data paths the app already uses. A game written before the
+// move may still sit inside the user document: reads fall back to it, writes and deletes retire it.
+async function embeddedUserDoc(usersDb, userId) {
+  try {
+    return await usersDb.get(userId);
+  } catch (err) {
+    if (err.statusCode === 404) return null;
+    throw err;
+  }
+}
+
+async function readGameByPath(userId, gameId) {
+  const stored = await gameSaveStore.readStoredGame(getGameSavesDb(), userId, gameId);
+  if (stored) return stored;
+  const userDoc = await embeddedUserDoc(getUsersDb(), userId);
+  return userDoc ? gameSaveStore.embeddedGame(userDoc.data, gameId) : null;
+}
+
+/** Drops the embedded copy of a game from the user document (false when there was none). */
+async function retireEmbeddedGame(userId, gameId) {
+  const usersDb = getUsersDb();
+  for (let attempt = 0; attempt < 10; attempt += 1) {
+    const userDoc = await embeddedUserDoc(usersDb, userId);
+    if (!userDoc || gameSaveStore.embeddedGame(userDoc.data, gameId) === null) return false;
+    try {
+      await usersDb.insert({
+        ...userDoc,
+        data: gameSaveStore.withoutEmbedded(userDoc.data, [gameId]),
+        updatedAt: new Date().toISOString(),
+      });
+      return true;
+    } catch (err) {
+      if (err.statusCode !== 409) throw err;
+    }
+  }
+  return false;
+}
 
 // Helper function to get or create user document
 async function getUserDocument(usersDb, userId) {
@@ -113,21 +153,28 @@ router.post('/read/batch', authenticateToken, async (req, res) => {
       // Single CouchDB read — the key performance win
       const userDoc = await usersDb.get(userId);
 
-      // ETag support: use CouchDB _rev to skip response if data unchanged
-      const etag = `"${userDoc._rev}"`;
-      res.set('ETag', etag);
-      const clientEtag = req.headers['if-none-match'];
-      if (clientEtag && clientEtag === etag) {
-        return res.status(304).end();
+      // ETag support: use CouchDB _rev to skip response if data unchanged. A saved game lives outside this document,
+      // so a request that includes one cannot be answered from the document's revision.
+      const readsGames = paths.some((path) => gameSaveStore.gamePathId(path) !== null);
+      if (!readsGames) {
+        const etag = `"${userDoc._rev}"`;
+        res.set('ETag', etag);
+        const clientEtag = req.headers['if-none-match'];
+        if (clientEtag && clientEtag === etag) {
+          return res.status(304).end();
+        }
       }
 
       const result = {};
 
       for (const path of paths) {
         if (typeof path !== 'string') continue;
+        const gameId = gameSaveStore.gamePathId(path);
         // Use the path as the key in the result, extract from nested data
-        const value = getNestedProperty(userDoc.data, path);
-        result[path] = value;
+        result[path] =
+          gameId !== null
+            ? await readGameByPath(userId, gameId)
+            : getNestedProperty(userDoc.data, path);
       }
 
       logDatabaseOperation('batch_read', userId, {
@@ -217,6 +264,15 @@ router.post('/write/batch', authenticateToken, async (req, res) => {
       );
     }
 
+    // Saved games go to their own documents; the rest of the batch is applied to the user document as before.
+    const gameWrites = writes.filter((write) => gameSaveStore.gamePathId(write.path) !== null);
+    for (const write of gameWrites) {
+      const gameId = gameSaveStore.gamePathId(write.path);
+      await gameSaveStore.writeStoredGame(getGameSavesDb(), userId, gameId, write.data);
+      await retireEmbeddedGame(userId, gameId);
+    }
+    const documentWrites = writes.filter((write) => !gameWrites.includes(write));
+
     const MAX_RETRIES = 10;
     const RETRY_DELAY_MS = 50;
     let attempt = 0;
@@ -234,7 +290,7 @@ router.post('/write/batch', authenticateToken, async (req, res) => {
         }
 
         // Apply all writes to the document
-        for (const write of writes) {
+        for (const write of documentWrites) {
           const { path, data } = write;
 
           if (path === '' || path === '/') {
@@ -343,6 +399,29 @@ router.post('/write/*?', authenticateToken, async (req, res) => {
         path: path || '(root)',
         dataType: typeof data,
         requestType: 'data_write',
+      });
+    }
+
+    // A saved game is a document of its own, not a field of the user document.
+    const savedGameId = gameSaveStore.gamePathId(path);
+    if (savedGameId !== null) {
+      if (!data || typeof data !== 'object' || data.payload == null) {
+        return res.status(400).json({ error: 'A saved game needs a payload' });
+      }
+      const bytes = await gameSaveStore.writeStoredGame(
+        getGameSavesDb(),
+        userId,
+        savedGameId,
+        data,
+      );
+      await retireEmbeddedGame(userId, savedGameId);
+      logDatabaseOperation('write', userId, { path, dataSize: bytes, store: 'gamesaves' });
+      logUserActivity(userId, 'data_written', { path, operation: 'write', success: true });
+      const userDoc = await embeddedUserDoc(usersDb, userId);
+      return res.json({
+        success: true,
+        id: `${userId}:${savedGameId}`,
+        updatedAt: userDoc?.updatedAt ?? new Date().toISOString(),
       });
     }
 
@@ -477,6 +556,13 @@ router.get('/read/*?', authenticateToken, async (req, res) => {
     const userId = req.userId;
     const usersDb = getUsersDb();
 
+    const savedGameId = gameSaveStore.gamePathId(path);
+    if (savedGameId !== null) {
+      const stored = await readGameByPath(userId, savedGameId);
+      logUserActivity(userId, 'data_read', { path, operation: 'read', found: stored !== null });
+      return res.json({ data: stored });
+    }
+
     try {
       const userDoc = await usersDb.get(userId);
 
@@ -542,6 +628,21 @@ router.delete('/delete/*?', authenticateToken, async (req, res) => {
     const path = req.params[0] || '';
     const userId = req.userId;
     const usersDb = getUsersDb();
+
+    const savedGameId = gameSaveStore.gamePathId(path);
+    if (savedGameId !== null) {
+      const removedStored = await gameSaveStore.deleteStoredGame(
+        getGameSavesDb(),
+        userId,
+        savedGameId,
+      );
+      const removedEmbedded = await retireEmbeddedGame(userId, savedGameId);
+      if (!removedStored && !removedEmbedded) {
+        return res.status(404).json({ error: 'Path not found' });
+      }
+      logUserActivity(userId, 'data_deleted', { path, operation: 'delete' });
+      return res.json({ success: true });
+    }
 
     try {
       let userDoc = await usersDb.get(userId);

@@ -3,6 +3,7 @@
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const express = require('express');
+const { normalizeRules, rulesOf, whyCannotAddFreeAmount } = require('@money/domain');
 const { getAuditDb } = require('../config/db');
 const { recordAuditEntry, findAuditEntryByIdempotencyKey } = require('../config/audit');
 const { createToken, listTokens, revokeToken, deleteToken } = require('../cli/commands/token');
@@ -50,6 +51,7 @@ const { playGameAction, GameActionError } = require('../repositories/game-play')
 const gameSaves = require('../repositories/game-saves');
 const gameAnalysis = require('../repositories/game-analysis');
 const { isGameAccountEmail } = require('../services/game-account');
+const { loadContext: loadGameContext } = require('../repositories/game-play');
 const {
   settleBucket,
   unsettleBucket,
@@ -163,7 +165,7 @@ const {
   importUserData,
   ImportError,
 } = require('../repositories/data-repository');
-const { getUsersDb, getAuthDb } = require('../config/db');
+const { getUsersDb, getAuthDb, getGameSavesDb } = require('../config/db');
 const { getEncryptionSession } = require('../services/encryption-session');
 const {
   authenticateApiToken,
@@ -1686,6 +1688,52 @@ async function handleIdempotentBulkWrite(
 }
 
 router.use(authenticateApiToken);
+
+// The rules of a running Cashflow game (JFK, 2026-10-10) reach every write of a game account, not just the /game moves:
+// where they forbid free-form transactions nothing but the game's own moves may change the books, and where they cap a
+// free amount no larger one is accepted. The screen hiding a button is a convenience; this is the protection.
+const GAME_RULES_EXEMPT = /^\/(game|account|encryption-config|tokens|auth)(\/|$)/;
+function amountsIn(body) {
+  const found = [];
+  const walk = (value, depth) => {
+    if (depth > 4 || value === null || typeof value !== 'object') return;
+    if (Array.isArray(value)) return value.forEach((item) => walk(item, depth + 1));
+    for (const [key, leaf] of Object.entries(value)) {
+      if (/amountMinor$|priceMinor$|PriceMinor$/i.test(key) && typeof leaf === 'number')
+        found.push(leaf);
+      else walk(leaf, depth + 1);
+    }
+  };
+  walk(body, 0);
+  return found;
+}
+router.use(async (req, res, next) => {
+  if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) return next();
+  if (GAME_RULES_EXEMPT.test(req.path)) return next();
+  try {
+    const email = req.userEmail || (await getAccount({ authDb: getAuthDb() }, req.userId)).email;
+    if (!isGameAccountEmail(email)) return next();
+    const context = await loadGameContext(
+      { usersDb: getUsersDb(), authDb: getAuthDb(), savesDb: getGameSavesDb() },
+      req.userId,
+    );
+    if (!context.state.professionId) return next();
+    const refusals = [];
+    const rules = rulesOf(context.state);
+    if (rules.manualTransactions === 'forbidden') {
+      refusals.push(whyCannotAddFreeAmount(context.state, 0));
+    } else if (rules.maxFreeAmountMinor !== null) {
+      for (const amount of amountsIn(req.body)) {
+        refusals.push(whyCannotAddFreeAmount(context.state, amount));
+      }
+    }
+    const refused = refusals.find(Boolean);
+    if (!refused) return next();
+    return problem(res, 403, 'game_rules_forbid', 'Not allowed by the game rules', refused);
+  } catch (error) {
+    return next(error);
+  }
+});
 
 router.get('/me', (req, res) => {
   res.json({
@@ -3602,14 +3650,22 @@ function gameAction(path, action, readInput) {
 }
 
 gameAction('/game/start', 'start', (body) => {
-  const { gameSetId, professionId, mode } = body;
+  const { gameSetId, professionId, mode, rules } = body;
   if (typeof gameSetId !== 'string' || typeof professionId !== 'string') {
     throw new Error('gameSetId and professionId must be strings.');
   }
   if (mode !== undefined && mode !== 'companion' && mode !== 'solo') {
     throw new Error("mode must be 'companion' or 'solo'.");
   }
-  return { gameSetId, professionId, mode };
+  if (rules !== undefined) {
+    if (rules === null || typeof rules !== 'object' || Array.isArray(rules)) {
+      throw new Error(
+        'rules must be an object: { preset?: free|guided|strict, ...single settings }.',
+      );
+    }
+    normalizeRules(rules); // throws the reason when a value is not allowed
+  }
+  return { gameSetId, professionId, mode, rules };
 });
 gameAction('/game/turn', 'roll', (body) => {
   if (body.dice !== undefined && body.dice !== 1 && body.dice !== 2) {
@@ -3703,7 +3759,11 @@ function savesRoute(method, path, scope, { audit = false, input, run }) {
       return problem(res, 400, 'validation_invalid', 'Invalid saved-game request', error.message);
     }
     try {
-      const result = await run({ usersDb: getUsersDb(), authDb: getAuthDb() }, req.userId, parsed);
+      const result = await run(
+        { usersDb: getUsersDb(), authDb: getAuthDb(), savesDb: getGameSavesDb() },
+        req.userId,
+        parsed,
+      );
       if (audit) {
         await recordAuditEntry(getAuditDb(), {
           userId: req.userId,
@@ -5121,7 +5181,10 @@ router.delete('/account', requireSession, async (req, res, next) => {
     );
   }
   try {
-    const result = await deleteAccount({ usersDb: getUsersDb(), authDb: getAuthDb() }, req.userId);
+    const result = await deleteAccount(
+      { usersDb: getUsersDb(), authDb: getAuthDb(), savesDb: getGameSavesDb() },
+      req.userId,
+    );
     const refreshToken = req.cookies?.refresh_token;
     if (refreshToken) {
       try {

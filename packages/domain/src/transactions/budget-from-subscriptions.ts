@@ -69,9 +69,20 @@ function monthsBetweenInclusive(startMonth: string, endMonth: string): string[] 
   return months;
 }
 
+/**
+ * What a subscription costs (or earns) per month on average: a weekly one is 52/12 payments a month, a yearly one a
+ * twelfth. Keeps the sign; an unknown frequency counts as monthly. The sums on the Subscription page and the budget fill
+ * both use this, so they cannot disagree about a quarterly or yearly subscription.
+ */
+export function monthlyEquivalentMinor(
+  amountMinor: number,
+  frequency: SubscriptionFrequency,
+): number {
+  return Math.round(amountMinor * (MONTHLY_EQUIVALENT_FACTOR[frequency] ?? 1));
+}
+
 function monthlyEquivalentAmountMinor(subscription: SubscriptionForBudget): number {
-  const factor = MONTHLY_EQUIVALENT_FACTOR[subscription.frequency] ?? 1;
-  return Math.round(Math.abs(subscription.amountMinor) * factor);
+  return Math.abs(monthlyEquivalentMinor(subscription.amountMinor, subscription.frequency));
 }
 
 /**

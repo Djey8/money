@@ -70,7 +70,7 @@ describe('saved games', () => {
     const list = await api('get', '/game/saves', user);
     expect(list.body.games).toHaveLength(1);
     expect(list.body.currentGameId).toBe(first.body.game.id);
-    expect(list.body.storage).toMatchObject({ gameCount: 1, keepAtMost: 100, overKeepBy: 0 });
+    expect(list.body.storage).toMatchObject({ gameCount: 1, keepAtMost: 500, overKeepBy: 0 });
 
     const one = await api('get', `/game/saves/${first.body.game.id}`, user);
     expect(one.body.steps.map((step) => step.kind)).toEqual(['start', 'payday', 'payday']);

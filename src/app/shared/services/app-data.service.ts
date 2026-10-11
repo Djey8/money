@@ -35,6 +35,8 @@ import { DemoService } from './demo.service';
 import {
   convertDocumentFromMinorUnits,
   CashflowGameState,
+  CashflowDeckKind,
+  GameRules,
   initialCashflowGameState,
 } from '@money/domain';
 
@@ -575,6 +577,10 @@ export class AppDataService {
           cardId: str(o.cardId),
           label: str(o.label),
           ...(o.pricePerCoinMinor != null ? { pricePerCoinMinor: num(o.pricePerCoinMinor) } : {}),
+          ...(o.pricePerShareMinor != null
+            ? { pricePerShareMinor: num(o.pricePerShareMinor) }
+            : {}),
+          ...(o.offeredAtRoll != null ? { offeredAtRoll: num(o.offeredAtRoll) } : {}),
         }))
       : [];
 
@@ -611,6 +617,9 @@ export class AppDataService {
               ...(Array.isArray(raw.turn.lastRoll)
                 ? { lastRoll: raw.turn.lastRoll.map((die: any) => num(die)) }
                 : {}),
+              ...(Array.isArray(raw.turn.affected)
+                ? { affected: raw.turn.affected.map((title: any) => str(title)) }
+                : {}),
               ...(raw.turn.pending != null
                 ? {
                     pending: {
@@ -618,10 +627,54 @@ export class AppDataService {
                         NonNullable<CashflowGameState['turn']>['pending']
                       >['kind'],
                       spaceIndex: num(raw.turn.pending.spaceIndex),
+                      ...(raw.turn.pending.played != null
+                        ? { played: str(raw.turn.pending.played) === 'true' }
+                        : {}),
+                      ...(raw.turn.pending.closed != null
+                        ? { closed: str(raw.turn.pending.closed) === 'true' }
+                        : {}),
+                      ...(raw.turn.pending.offered != null
+                        ? {
+                            offered: {
+                              deck: str(raw.turn.pending.offered.deck) as CashflowDeckKind,
+                              cardId: str(raw.turn.pending.offered.cardId),
+                              ...(raw.turn.pending.offered.title != null
+                                ? { title: str(raw.turn.pending.offered.title) }
+                                : {}),
+                            },
+                          }
+                        : {}),
                     },
                   }
                 : {}),
             },
+          }
+        : {}),
+      ...(raw.rules != null
+        ? {
+            rules: {
+              preset: str(raw.rules.preset) as GameRules['preset'],
+              cardChoice: str(raw.rules.cardChoice) as GameRules['cardChoice'],
+              sell: str(raw.rules.sell) as GameRules['sell'],
+              sellOfferRolls: num(raw.rules.sellOfferRolls),
+              // a setting the game was stored without is left out: its own preset decides it (rulesOf)
+              ...(raw.rules.buy != null ? { buy: str(raw.rules.buy) as GameRules['buy'] } : {}),
+              ...(raw.rules.reportRolls != null
+                ? { reportRolls: str(raw.rules.reportRolls) as GameRules['reportRolls'] }
+                : {}),
+              ...(raw.rules.diceFirst != null
+                ? { diceFirst: str(raw.rules.diceFirst) as GameRules['diceFirst'] }
+                : {}),
+              ...(raw.rules.passDoodads != null
+                ? { passDoodads: str(raw.rules.passDoodads) as GameRules['passDoodads'] }
+                : {}),
+              manualTransactions: str(
+                raw.rules.manualTransactions,
+              ) as GameRules['manualTransactions'],
+              bankLoan: str(raw.rules.bankLoan) as GameRules['bankLoan'],
+              maxLoanMinor: nullableNum(raw.rules.maxLoanMinor),
+              maxFreeAmountMinor: nullableNum(raw.rules.maxFreeAmountMinor),
+            } as GameRules,
           }
         : {}),
       ...(raw.gameId != null ? { gameId: optionalStr(raw.gameId) } : {}),

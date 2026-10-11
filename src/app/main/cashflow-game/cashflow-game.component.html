@@ -286,6 +286,136 @@
           <span class="cf-mode-hint">{{ 'CashflowGame.solo.modeSoloHint' | translate }}</span>
         </label>
       </fieldset>
+      <fieldset class="cf-mode-choice cf-rules">
+        <legend>{{ 'CashflowGame.rules.title' | translate }}</legend>
+        <label
+          class="cf-mode-option"
+          *ngFor="let id of presetIds"
+          [class.cf-mode-option--active]="rulePresetNow === id"
+        >
+          <input
+            type="radio"
+            name="rulePreset"
+            [checked]="rulePresetNow === id"
+            (change)="choosePreset(id)"
+          />
+          <span class="cf-mode-name">{{
+            'CashflowGame.rules.preset' +
+              (id === 'free' ? 'Free' : id === 'guided' ? 'Guided' : 'Strict') | translate
+          }}</span>
+          <span class="cf-mode-hint">{{
+            'CashflowGame.rules.preset' +
+              (id === 'free' ? 'Free' : id === 'guided' ? 'Guided' : 'Strict') +
+              'Hint' | translate
+          }}</span>
+        </label>
+        <p class="cf-mode-hint" *ngIf="rulePresetNow === 'custom'">
+          {{ 'CashflowGame.rules.presetCustom' | translate }}
+        </p>
+        <button
+          type="button"
+          class="btn btn--sm cf-btn-outlined"
+          (click)="showAdvancedRules = !showAdvancedRules"
+        >
+          {{ 'CashflowGame.rules.advanced' | translate }}
+        </button>
+        <div class="cf-rules-advanced" *ngIf="showAdvancedRules">
+          <label class="cf-field">
+            {{ 'CashflowGame.rules.cardChoice' | translate }}
+            <select [(ngModel)]="ruleDraft.cardChoice" name="ruleCardChoice">
+              <option value="free">{{ 'CashflowGame.rules.cardChoiceFree' | translate }}</option>
+              <option value="offered-once">
+                {{ 'CashflowGame.rules.cardChoiceOffered' | translate }}
+              </option>
+            </select>
+          </label>
+          <label class="cf-field">
+            {{ 'CashflowGame.rules.sell' | translate }}
+            <select [(ngModel)]="ruleDraft.sell" name="ruleSell">
+              <option value="always">{{ 'CashflowGame.rules.sellAlways' | translate }}</option>
+              <option value="with-offer">
+                {{ 'CashflowGame.rules.sellWithOffer' | translate }}
+              </option>
+              <option value="never">{{ 'CashflowGame.rules.sellNever' | translate }}</option>
+            </select>
+          </label>
+          <label class="cf-field" *ngIf="ruleDraft.sell === 'with-offer'">
+            {{ 'CashflowGame.rules.sellOfferRolls' | translate }}
+            <input
+              type="number"
+              min="0"
+              max="12"
+              step="1"
+              [(ngModel)]="ruleDraft.sellOfferRolls"
+              name="ruleOfferRolls"
+            />
+            <small>{{ 'CashflowGame.rules.sellOfferRollsHint' | translate }}</small>
+          </label>
+          <label class="cf-field">
+            {{ 'CashflowGame.rules.buy' | translate }}
+            <select [(ngModel)]="ruleDraft.buy" name="ruleBuy">
+              <option value="always">{{ 'CashflowGame.rules.buyAlways' | translate }}</option>
+              <option value="with-card">{{ 'CashflowGame.rules.buyWithCard' | translate }}</option>
+            </select>
+          </label>
+          <label class="cf-field">
+            {{ 'CashflowGame.rules.reportRolls' | translate }}
+            <select [(ngModel)]="ruleDraft.reportRolls" name="ruleReportRolls">
+              <option value="allowed">
+                {{ 'CashflowGame.rules.reportRollsAllowed' | translate }}
+              </option>
+              <option value="forbidden">
+                {{ 'CashflowGame.rules.reportRollsForbidden' | translate }}
+              </option>
+            </select>
+          </label>
+          <label class="cf-field">
+            {{ 'CashflowGame.rules.diceFirst' | translate }}
+            <select [(ngModel)]="ruleDraft.diceFirst" name="ruleDiceFirst">
+              <option value="off">{{ 'CashflowGame.rules.diceFirstOff' | translate }}</option>
+              <option value="first">{{ 'CashflowGame.rules.diceFirstOn' | translate }}</option>
+            </select>
+          </label>
+          <label class="cf-field">
+            {{ 'CashflowGame.rules.passDoodads' | translate }}
+            <select [(ngModel)]="ruleDraft.passDoodads" name="rulePassDoodads">
+              <option value="allowed">
+                {{ 'CashflowGame.rules.passDoodadsAllowed' | translate }}
+              </option>
+              <option value="forbidden">
+                {{ 'CashflowGame.rules.passDoodadsForbidden' | translate }}
+              </option>
+            </select>
+          </label>
+          <label class="cf-field">
+            {{ 'CashflowGame.rules.manual' | translate }}
+            <select [(ngModel)]="ruleDraft.manualTransactions" name="ruleManual">
+              <option value="allowed">{{ 'CashflowGame.rules.manualAllowed' | translate }}</option>
+              <option value="forbidden">
+                {{ 'CashflowGame.rules.manualForbidden' | translate }}
+              </option>
+            </select>
+          </label>
+          <label class="cf-field" *ngIf="ruleDraft.manualTransactions === 'allowed'">
+            {{ 'CashflowGame.rules.maxFree' | translate }}
+            <input type="number" min="0" step="any" [(ngModel)]="maxFreeText" name="ruleMaxFree" />
+          </label>
+          <label class="cf-field">
+            {{ 'CashflowGame.rules.loan' | translate }}
+            <select [(ngModel)]="ruleDraft.bankLoan" name="ruleLoan">
+              <option value="allowed">{{ 'CashflowGame.rules.loanAllowed' | translate }}</option>
+              <option value="forbidden">
+                {{ 'CashflowGame.rules.loanForbidden' | translate }}
+              </option>
+            </select>
+          </label>
+          <label class="cf-field" *ngIf="ruleDraft.bankLoan === 'allowed'">
+            {{ 'CashflowGame.rules.maxLoan' | translate }}
+            <input type="number" min="0" step="any" [(ngModel)]="maxLoanText" name="ruleMaxLoan" />
+          </label>
+        </div>
+        <p class="cf-mode-hint">{{ 'CashflowGame.rules.frozen' | translate }}</p>
+      </fieldset>
       <button
         class="btn btn--primary cf-sticky-cta"
         [disabled]="isBusy || !selectedProfessionId"
@@ -716,7 +846,86 @@
 
           <div class="cf-solo-controls">
             <ng-container *ngIf="!gameOver">
-              <ng-container *ngIf="soloTurn.phase === 'roll'">
+              <!-- A dice action of a card (MLM, a sister's loan ...) is open: its die takes the place of the roll panel until it is rolled. -->
+              <div
+                class="cf-solo-decision cf-dice-action"
+                *ngIf="firstDiceDecision as deal"
+                role="group"
+              >
+                <span class="cf-dice-action-badge"
+                  >🎲 {{ 'CashflowGame.diceActionBadge' | translate }}</span
+                >
+                <div class="cf-solo-decision-head">
+                  <ng-container *ngTemplateOutlet="soloDice"></ng-container>
+                  <h3>
+                    {{ 'CashflowGame.diceOpenTitle' | translate }}:
+                    {{ deal.split?.shareTag ?? deal.title }}
+                  </h3>
+                </div>
+                <p class="cf-solo-decision-hint">{{ decisionText(deal) }}</p>
+                <div class="cf-actions">
+                  <button
+                    class="btn btn--primary"
+                    [disabled]="isBusy || !!decisionFaces"
+                    (click)="rollDecisionDice(deal)"
+                  >
+                    🎲 {{ 'CashflowGame.diceRollButton' | translate }}
+                  </button>
+                </div>
+                <div class="cf-actions cf-decision-real" *ngIf="!reportRollsForbidden">
+                  <button
+                    class="btn btn--sm cf-btn-outlined"
+                    [disabled]="isBusy || !!decisionFaces"
+                    (click)="reportRoll(deal, true)"
+                  >
+                    {{
+                      (deal.split ? 'CashflowGame.diceSplitDouble' : 'CashflowGame.diceGotIt')
+                        | translate
+                    }}
+                  </button>
+                  <button
+                    class="btn btn--sm cf-btn-outlined"
+                    [disabled]="isBusy || !!decisionFaces"
+                    (click)="reportRoll(deal, false)"
+                  >
+                    {{
+                      (deal.split ? 'CashflowGame.diceSplitHalve' : 'CashflowGame.diceNoLuck')
+                        | translate
+                    }}
+                  </button>
+                </div>
+              </div>
+              <!-- What the dice action rolled: in the same panel, the die still on its number, until the player continues. -->
+              <div
+                class="cf-solo-decision cf-dice-action"
+                *ngIf="decisionOutcome as outcome"
+                role="group"
+              >
+                <span class="cf-dice-action-badge"
+                  >🎲 {{ 'CashflowGame.diceActionBadge' | translate }}</span
+                >
+                <div class="cf-solo-decision-head">
+                  <ng-container *ngTemplateOutlet="soloDice"></ng-container>
+                  <h3>{{ outcome.title }}</h3>
+                </div>
+                <div
+                  class="cf-dice-outcome"
+                  [class.cf-dice-outcome--won]="outcome.won"
+                  role="status"
+                >
+                  <p class="cf-dice-outcome-rolled" *ngIf="outcome.roll">
+                    {{ 'CashflowGame.diceRolled' | translate: { roll: outcome.roll } }}
+                  </p>
+                  <strong class="cf-dice-outcome-headline">{{ outcome.headline }}</strong>
+                  <p class="cf-dice-outcome-text" *ngIf="outcome.text">{{ outcome.text }}</p>
+                </div>
+                <div class="cf-actions">
+                  <button class="btn btn--primary" (click)="dismissDecisionOutcome()">
+                    {{ 'CashflowGame.diceContinue' | translate }}
+                  </button>
+                </div>
+              </div>
+              <ng-container *ngIf="soloTurn.phase === 'roll' && !diceActionOpen">
                 <fieldset class="cf-dice-choice" *ngIf="canChooseDice">
                   <legend>{{ 'CashflowGame.solo.diceHow' | translate }}</legend>
                   <label class="cf-dice-option">
@@ -730,9 +939,17 @@
                 </fieldset>
                 <div class="cf-solo-roll-row">
                   <ng-container *ngTemplateOutlet="soloDice"></ng-container>
-                  <button class="btn btn--primary" [disabled]="!canRoll" (click)="rollSolo()">
+                  <button
+                    class="btn btn--primary"
+                    *ngIf="!hasOpenDiceAction"
+                    [disabled]="!canRoll"
+                    (click)="rollSolo()"
+                  >
                     🎲 {{ 'CashflowGame.solo.roll' | translate }}
                   </button>
+                  <p class="cf-solo-hint" *ngIf="hasOpenDiceAction" role="status">
+                    {{ 'CashflowGame.solo.finishDiceFirst' | translate }}
+                  </p>
                   <button class="btn btn--sm" *ngIf="walking" (click)="skipWalk()">
                     {{ 'CashflowGame.solo.skipAnimation' | translate }}
                   </button>
@@ -744,7 +961,7 @@
 
               <div
                 class="cf-solo-decision"
-                *ngIf="soloTurn.phase === 'decide' && !walking"
+                *ngIf="soloTurn.phase === 'decide' && !walking && !diceActionOpen"
                 role="group"
               >
                 <div class="cf-solo-decision-head">
@@ -756,16 +973,20 @@
                 <p class="cf-solo-decision-hint">
                   {{ 'CashflowGame.solo.decisionHint' | translate }}
                 </p>
-                <div class="cf-actions cf-solo-decision-actions">
+                <div
+                  class="cf-actions cf-solo-decision-actions"
+                  [attr.data-buttons]="decisionButtonCount"
+                >
                   <button
                     class="btn btn--primary"
-                    [disabled]="isBusy || walking"
+                    [disabled]="isBusy || walking || appState.isSaving || !!diceFirstRefusal"
                     (click)="openSoloDecision()"
                   >
                     {{ 'CashflowGame.solo.openCard' | translate }}
                   </button>
                   <button
                     class="btn btn--sm"
+                    *ngIf="!mustPayDoodad"
                     [disabled]="isBusy || walking"
                     (click)="finishSoloDecision('done')"
                   >
@@ -773,11 +994,18 @@
                   </button>
                   <button
                     class="btn btn--sm cf-btn-outlined"
+                    *ngIf="!cannotPassNow"
                     [disabled]="isBusy || walking"
                     (click)="finishSoloDecision('passed')"
                   >
                     {{ 'CashflowGame.solo.pass' | translate }}
                   </button>
+                  <p class="cf-solo-hint" *ngIf="diceFirstRefusal" role="status">
+                    {{ 'CashflowGame.rules.diceFirstHint' | translate }}
+                  </p>
+                  <p class="cf-solo-hint" *ngIf="mustPayDoodad" role="status">
+                    {{ 'CashflowGame.rules.doodadMustPay' | translate }}
+                  </p>
                 </div>
               </div>
               <!-- a roll in progress (the decision waits for the totem): the dice stay in view -->
@@ -886,7 +1114,7 @@
 
         <!-- Open decisions: a paid dice card (gold coins) waits here until the roll is decided, in the -->
         <!-- app or from a real die (JFK, 2026-10-03). -->
-        <div class="cf-card cf-decision" *ngFor="let deal of visibleDecisions">
+        <div class="cf-card cf-decision" *ngFor="let deal of decisionCards">
           <h3>
             {{ 'CashflowGame.diceOpenTitle' | translate }}: {{ deal.split?.shareTag ?? deal.title }}
           </h3>
@@ -898,7 +1126,7 @@
               🎲 {{ 'CashflowGame.diceRollButton' | translate }}
             </button>
           </div>
-          <div class="cf-actions cf-decision-real">
+          <div class="cf-actions cf-decision-real" *ngIf="!reportRollsForbidden">
             <button
               class="btn btn--sm cf-btn-outlined"
               [disabled]="isBusy"
@@ -1276,13 +1504,20 @@
           >
         </h3>
 
-        <div class="cf-actions">
-          <button class="btn btn--primary" [disabled]="isBusy" (click)="drawActiveCard()">
+        <div class="cf-actions" *ngIf="!cardsOfferedOnly">
+          <button
+            class="btn btn--primary"
+            [disabled]="isBusy || !!drawRefusal"
+            (click)="drawActiveCard()"
+          >
             {{ 'CashflowGame.cardDraw' | translate }}
           </button>
         </div>
 
-        <ng-container *ngIf="!activeCard">
+        <p class="cf-solo-hint" *ngIf="cardsOfferedOnly && activeCard" role="status">
+          {{ 'CashflowGame.rules.cardOnOffer' | translate }}
+        </p>
+        <ng-container *ngIf="!activeCard && !cardsOfferedOnly">
           <label class="cf-field cf-card-search">
             {{ 'CashflowGame.cardFind' | translate }}
             <input
@@ -1706,10 +1941,18 @@
             </div>
           </div>
 
-          <div class="cf-actions">
+          <p class="cf-solo-hint" *ngIf="activeCardProject" role="status">
+            {{ 'CashflowGame.cardPlannedAs' | translate: { title: activeCardProject.title } }}
+          </p>
+          <p class="cf-solo-hint" *ngIf="activeCardReadOnly && !activeCardProject" role="status">
+            {{ 'CashflowGame.cardPlayedReadOnly' | translate }}
+          </p>
+          <div class="cf-actions" *ngIf="!activeCardReadOnly">
             <button
               class="btn btn--sm btn--primary"
-              *ngIf="activeDeckKind !== 'market' && activeDeckKind !== 'doodad'"
+              *ngIf="
+                activeDeckKind !== 'market' && activeDeckKind !== 'doodad' && !activeCardProject
+              "
               [disabled]="isBusy"
               (click)="applyActiveCard()"
             >
@@ -1733,7 +1976,7 @@
             </button>
             <button
               class="btn btn--sm cf-btn-outlined"
-              *ngIf="activeMarket?.sells"
+              *ngIf="activeMarket?.sells && !cardsOfferedOnly"
               (click)="clearActiveCard()"
             >
               {{ 'CashflowGame.cardPickAnother' | translate }}
@@ -1757,7 +2000,7 @@
             </button>
             <button
               class="btn btn--sm cf-btn-outlined"
-              *ngIf="activeMarket?.splits || activeMarket?.boost"
+              *ngIf="(activeMarket?.splits || activeMarket?.boost) && !cardsOfferedOnly"
               (click)="clearActiveCard()"
             >
               {{ 'CashflowGame.cardPickAnother' | translate }}
@@ -1773,7 +2016,7 @@
             </button>
             <button
               class="btn btn--sm cf-btn-outlined"
-              *ngIf="activeMarket?.pays"
+              *ngIf="activeMarket?.pays && !cardsOfferedOnly"
               (click)="clearActiveCard()"
             >
               {{ 'CashflowGame.cardPickAnother' | translate }}
@@ -1789,14 +2032,14 @@
             </button>
             <button
               class="btn btn--sm cf-btn-outlined"
-              *ngIf="activeDeckKind === 'doodad'"
+              *ngIf="activeDeckKind === 'doodad' && !cardsOfferedOnly"
               (click)="clearActiveCard()"
             >
               {{ 'CashflowGame.cardPickAnother' | translate }}
             </button>
             <button
               class="btn btn--sm cf-btn-outlined"
-              *ngIf="isDealDeck && !isShareCard"
+              *ngIf="isDealDeck && !isShareCard && !activeCardProject"
               [disabled]="isBusy"
               (click)="showFriendSale = !showFriendSale"
             >
@@ -1806,6 +2049,7 @@
               class="btn btn--sm cf-btn-outlined"
               *ngIf="
                 activeDeckKind !== 'doodad' &&
+                !activeCardProject &&
                 !activeMarket?.sells &&
                 !activeMarket?.pays &&
                 !activeMarket?.splits &&
@@ -1818,7 +2062,10 @@
               }}
             </button>
           </div>
-          <div class="cf-friend-sale" *ngIf="isDealDeck && !isShareCard && showFriendSale">
+          <div
+            class="cf-friend-sale"
+            *ngIf="isDealDeck && !isShareCard && showFriendSale && !activeCardReadOnly"
+          >
             <div class="cf-friend-sale-head">
               <span class="cf-friend-sale-label">{{
                 'CashflowGame.cardFriendPays' | translate

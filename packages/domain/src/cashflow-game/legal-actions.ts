@@ -1,6 +1,7 @@
-import { openDecisions } from './asset-deals';
+import { openDecisions, whyDiceFirst } from './asset-deals';
 import { currentTurn, whyCannotRoll, whyCannotSettle } from './turn';
 import type { CashflowGameState } from './types';
+import { offerIsOpen, rulesOf, whyCannotDraw, whyCannotSkipCard, whyPaymentPending } from './rules';
 
 /**
  * What the player (or an agent) may do right now, as plain ids (todo/cashflow-game-pro.md, slice D1). The rules that
@@ -83,11 +84,18 @@ export function legalActions(
     }
     if (!whyCannotSettle(state)) {
       const pending = currentTurn(state).pending;
-      actions.push(...cardActions(pending?.kind));
-      actions.push({
-        action: 'pass_card',
-        description: `Leave the ${pending?.kind ?? 'card'} on this space without playing it; the next roll is open afterwards.`,
-      });
+      if (!whyDiceFirst(state)) {
+        actions.push(
+          ...cardActions(pending?.kind).filter(
+            (a) => a.action !== 'draw_card' || !whyCannotDraw(state),
+          ),
+        );
+      }
+      if (!whyCannotSkipCard(state))
+        actions.push({
+          action: 'pass_card',
+          description: `Leave the ${pending?.kind ?? 'card'} on this space without playing it; the next roll is open afterwards.`,
+        });
     }
   } else {
     actions.push(
@@ -104,13 +112,19 @@ export function legalActions(
       });
     }
   }
-  if (currentTurn(state).phase !== 'over') {
+  const rules = rulesOf(state);
+  if (currentTurn(state).phase !== 'over' && rules.bankLoan === 'allowed') {
     actions.push({
       action: 'bank_loan',
       description: 'Borrow one more loan step from the bank, or repay some of it.',
     });
   }
-  if (currentTurn(state).phase !== 'over') {
+  if (
+    currentTurn(state).phase !== 'over' &&
+    rules.sell !== 'never' &&
+    (rules.sell === 'always' ||
+      (state.marketOffers ?? []).some((offer) => offerIsOpen(state, offer)))
+  ) {
     actions.push({
       action: 'sell_position',
       description:
@@ -123,6 +137,14 @@ export function legalActions(
       action: 'roll_decision',
       description: `Roll the die for a waiting card (${waiting.map((deal) => deal.title).join(', ')}).`,
     });
+  }
+  // While a Doodad has to be paid nothing else can be played, bought or sold: the payment, a Bank loan and undo remain.
+  if (whyPaymentPending(state)) {
+    const kept = actions.filter(
+      (entry) => !['sell_position', 'buy_deal', 'play_market'].includes(entry.action),
+    );
+    actions.length = 0;
+    actions.push(...kept);
   }
   if (options.canUndo) {
     actions.push({
