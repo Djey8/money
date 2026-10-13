@@ -1,0 +1,42 @@
+#addFire-Container {
+  position: absolute;
+  top: 70px;
+  left: 50%;
+  transform: translate(-50%, 0%);
+  width: min(92vw, 500px);
+  border: 3px solid white;
+  background-color: var(--color-primary);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  border-color: white;
+  border-width: 2%;
+  box-shadow: var(--shadow-lg);
+}
+
+#addFireTitle {
+  text-align: center;
+  font-size: 2em;
+  color: white;
+  margin-top: 10px;
+  margin-bottom: 1%;
+}
+
+.kind-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  /* the same inset as the fields around it, so the icon is not flush with the edge */
+  margin: 0 2% 4px 4%;
+}
+
+.kind-row select {
+  flex: 1;
+}
+
+.kind-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full);
+  object-fit: cover;
+  border: 2px solid var(--kind-color);
+}

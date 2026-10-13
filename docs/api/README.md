@@ -232,6 +232,24 @@ curl -X POST "http://localhost:3000/api/v1/smile/smile_<id>/payment-plan" \
   -d '{"planTitle": "Flight Fund", "startDate": "2026-01-01", "targetDate": "2026-04-01", "frequency": "monthly", "account": "Daily"}'
 ```
 
+## Locations (where the money sits)
+
+Requires a PAT with `locations:r` (list/get) or `locations:w` (create/update/delete). Book money against a location by sending `locationId` on a transaction; its balance moves automatically. See `docs/api/AGENTS.md` for the full rules.
+
+```bash
+# create a location
+curl -X POST "http://localhost:3000/api/v1/locations" \
+  -H "Authorization: Bearer $MONEY_MANAGER_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"name": "N26", "subName": "Main", "kind": "bank", "amountMinor": 123450}'
+
+# book a 30.00 expense against it (the location drops to 120450)
+curl -X POST "http://localhost:3000/api/v1/transactions" \
+  -H "Authorization: Bearer $MONEY_MANAGER_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"account": "Daily", "amountMinor": -3000, "date": "2026-10-01", "time": "10:00", "category": "@food", "comment": "lunch", "locationId": "loc_..."}'
+```
+
 ## List, create, get, update, or delete assets
 
 Requires a PAT with `balance:r` (list/get) or `balance:w` (create/update/delete). `tag` must not collide with an existing Asset, Share, or Investment tag — see `docs/api/AGENTS.md` for the full cross-entity uniqueness rule.

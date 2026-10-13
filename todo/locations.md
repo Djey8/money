@@ -1,4 +1,12 @@
-# Treasury & Transfers — Feature Plan
+# Locations & Transfers — Feature Plan
+
+> **REVISED 2026-10-12 (supersedes the naming and a few decisions below).** The feature is now called **Locations** everywhere, including code: interface `MoneyLocation` (avoids shadowing the DOM `Location` type), field `locationId`, tag `locations`, route `/locations`, state `allLocations`. Wherever this file says "Treasury"/`treasuryId`, read "Location"/`locationId`.
+>
+> - App-wide: transactions, subscriptions, Balance sheet (Cashflow row expandable into a per-location detail view), stats/exports.
+> - Balance stays a freely editable live counter AND moves automatically (manual edit + automation both required).
+> - Transaction/subscription picker: includes a "None" choice; the pre-selected default is the **last location used in a transaction**.
+> - Entry point: hamburger menu, "Financial" section, after Balance Sheet.
+> - Slice 1 (CRUD + list/add/info + persistence, tier 1) built 2026-10-12. Next: slice 2 (transaction link + last-used default), 3 (subscriptions), 4 (transfers), Balance expansion.
 
 **Status:** Planned, not started — saved for later per user request (2026-09-13)
 **Scope:** Firebase AND self-hosted editions, full parity. Not Pro-gated — this is core app functionality, available to every user regardless of edition.
@@ -277,3 +285,137 @@ Purely a suggested order, not a locked commitment — revisit when work actually
 - The freely-editable-counter balance model (§2 decision 1) is a genuine deviation from every other stored balance in this app. Whoever implements this should re-read §5's table carefully and add tests for every row — reconciliation bugs here are silent (a treasury balance quietly drifting wrong) rather than loud, which is exactly the kind of bug this app has already been burned by once this session (the schemaVersion-2 migration display bug, and the CrypticService non-string crash) — both were "worked in the common case, broke silently in an edge case" bugs.
 - Tier placement (treasury likely tier 1, since transaction displays need it) has real performance/load-time implications — check against the existing tier-loading contract's actual behavior before committing to tier 1, don't just assume.
 - The duplicated frontend/domain-package logic (§3, §7) means every reconciliation rule in §5 needs to be implemented and tested **twice** — once for the Angular UI path, once for `packages/domain` (used by the future Pro API path). Don't let the second copy silently drift from the first.
+
+---
+
+## 15. Slice 5 — Pro API + MCP (planned 2026-10-12, not started)
+
+**Do this before slice 2 is deployed to the real account.**
+
+### 15.1 Finding: API writes currently destroy `locationId`
+
+`backend/repositories/transaction-repository.js` `withTransactionsWrite` reads every transaction through `toApiTransactions` → `transactionToApi` (`packages/domain/src/transactions/transaction.ts`), which copies a **fixed field list** (id, account, amountMinor, currency, date, time, category, comment). It then writes the _whole_ list back via `transactionFromApi`. So any API/MCP create, edit or delete of any one transaction rewrites all transactions without `locationId`, while location balances stay → every location link silently lost. Fix first: carry `locationId` through `transactionToApi` / `transactionFromApi` / `LegacyTransaction` / `Transaction`, with a unit test that an untouched transaction keeps its `locationId` across an API write. Also `encryptTransaction` does `String(value)` on every field: never write `null` (would be stored as the string "null"); absent = None.
+
+### 15.2 Balance movement belongs in `packages/domain`, applied in the same write
+
+- Port `reconcileLocationBooking` / `releaseLocationBookings` (frontend: `src/app/shared/location-balance.ts`) to `packages/domain/src/locations/` as the single source of truth (D-9: no third copy). Same rules, same 2-decimal rounding, same specs.
+- `withTransactionsWrite` already does ONE `usersDb.insert` of the whole user doc, so updating `data.locations` in the same insert is atomic — no multi-document problem. Do it inside `applyDerivedState` (or beside it): for create/update/delete diff old vs new transactions by id and reconcile. Locations amounts are stored encrypted/minor-unit like other entities (`convert-document.ts` registries: confirm `amount`/`locations`).
+- Effects: extend `computeWriteEffects` so the API response reports changed location balances like other derived effects.
+- Typed settlement/grow actions that compose transactions (`replaceTransactions`, bucket settlement, Grow buy/sell, subscription generation) go through the same path, so they get it for free; verify each with a test.
+
+### 15.3 New API surface
+
+- Transactions: optional `locationId` (string | null) on create/update/read; reject unknown ids with a clear error; response always includes `locationId` (null when absent) so the API schema is uniform without migrating stored data.
+- `locations` resource: `GET/POST /locations`, `GET/PATCH/DELETE /locations/{id}`, scopes `locations:r` / `locations:w`; delete orphans references (same as UI); PATCH of `amount` is the manual correction.
+- Follow `mm-add-api-endpoint` per endpoint: OpenAPI + examples + errors, `docs/api/AGENTS.md`, `api-doc-auditor`, MCP tool mapping in `apps/mcp`, token-scope UI (`create-token`), integration tests (needs the podman CouchDB, see memory).
+- Whole-account `data-repository.js` import/export: add `locations`.
+- Later slices: transfers (slice 4) and subscriptions (slice 3) get their API surface when they ship, not retrofitted.
+
+### 15.4 Open questions for this slice
+
+- Should an API caller be able to create a transaction at an unknown location (reject — recommended) or without one (allowed, = None)?
+- Default location for API-created transactions: none (agents are explicit) — the "last used" default is a UI convenience only.
+
+## 16. Schema decision: old transactions stay without `locationId`
+
+A missing `locationId` **is** "None". No backfill of existing transactions: it would rewrite every (encrypted) transaction for no information gain, and `null` can't be persisted cleanly (UI encryption skips nulls, the backend stringifies them). Uniformity is provided at the boundaries instead: the TS types, the OpenAPI schema (`locationId: string | null`) and API responses always expose the field. `backend/DATABASE_STRUCTURE.md` documents the optional field and the `locations` path.
+
+## 17. Bucket-to-bucket transactions
+
+No special handling. A transaction between two buckets (Daily → Splurge) is two ordinary transactions; the location picker works exactly as everywhere (default = last used, None allowed). If the user wants a physical move they book the two legs with the normal picker. No warning, no extra logic.
+
+### 15.5 Status (2026-10-12)
+
+**5a DONE (uncommitted):** `locationId` carried through `transactionToApi`/`transactionFromApi` (no more link loss on API writes); `locationBalanceDeltas` in `packages/domain/src/locations/`; backend `services/location-balance.js` + `stored-values.js`; `applyDerivedState(..., previousTransactions)` applies the deltas inside the same document write for transactions, Grow trades and subscription generation/cleanup (whole-account import, renames and rebuilds don't pass it). Tests: domain 904, backend unit 787 (incl. new `transaction-locations.test.js`: plaintext, encrypted, schema v2, deleted location, unrelated write keeps links).
+**5b DONE (2026-10-12, uncommitted):** shipped as listed below. Decisions: responses OMIT `locationId` when empty (not `null`; `null` is accepted on input to clear); copy does not inherit the source's location; names capped at 100 chars; whole-account import validates locations (id, finite amount, kind, no duplicates). Original checklist: validate `locationId` on create/patch/batch/copy (`api.js` `validateTransactionInput`, `EDITABLE_TRANSACTION_FIELDS` — PATCH currently rejects it as unknown, create accepts anything unvalidated), reject unknown location ids, expose `locationId` (null when absent) in responses, `locations` CRUD endpoints + scopes, OpenAPI/AGENTS.md, MCP tools, token-scope UI, data-repository export/import, integration tests.
+
+### 15.6 Added since (2026-10-12)
+
+`MoneyLocation.subName` (optional, e.g. "N26" + "Main"): uniqueness is name + sub name (case-insensitive); label everywhere is "Name - Sub name" (`locationLabel`). The 5b `locations` endpoints must carry `subName` and enforce the same uniqueness.
+
+## 18. Automation A — split an income (or any booking) across locations (planned 2026-10-12)
+
+**Use case:** the salary lands on N26 Main, and a bank rule moves 20 % to N26 Instant Savings. Set this once on the subscription (and, for one-off bookings, on any transaction) and every booking distributes itself over the locations.
+
+**Recommendation: a typed field, not a comment tag.** The app already has one comment DSL (`#bucket:Name:Amount`), and the project is moving _away_ from those (ADR-0003, D-16: explicit typed actions; a comment is free text a user edits by hand and a parser silently misreads). A typed field gives the same capability with validation, exact arithmetic, and a UI that shows it as a normal form. If a readable one-liner is wanted anyway, render it from the field (e.g. in the info panel), never parse it back.
+
+**Data model**
+
+- `Transaction.locationSplits?: { locationId: string; amount: number }[]` — resolved, signed amounts that sum **exactly** to `amount`. Mutually exclusive with the single `locationId` (single stays as is, so nothing existing changes). Stored resolved, not as percentages, so history and edits stay stable.
+- `Subscription.locationRule?: { splits: { locationId: string; percent?: number; fixed?: number }[]; remainderTo: string }` — percent and/or fixed legs, everything left over goes to `remainderTo` (the "main" account), so the legs always add up. Resolution happens when the subscription generates a transaction (cents; the rounding remainder goes to `remainderTo`).
+- `DedupKey` in `subscription-generation.ts` must include the resolved location legs (same trap as `locationId` in slice 3).
+
+**Logic:** generalize the booking from "one location" to a list of legs. `reconcileLocationBooking` (app) and `locationBalanceDeltas` (domain) take legs; a single `locationId` is just one leg. Same spec, plus split cases (edit amount rescales? — no: editing the amount of a split transaction re-resolves from its rule if it came from one, otherwise asks the user to re-enter the legs; decide in the slice).
+
+**UI:** transaction add/info and subscription add/info get a "Split across locations" section (add leg, percent or amount, shows the remainder to the main location live, validates ≤ 100 % / ≤ amount). Locations info list shows the leg amount, not the full amount.
+
+**API/MCP:** `locationSplits` on transactions, `locationRule` on subscriptions; validation (known ids, sum equals amount); `applyDerivedState` already diffs old/new bookings, so it only needs the leg-aware delta function.
+
+**Order:** after slice 3 (subscriptions carry a location), because the rule hangs off the subscription.
+
+## 19. Automation B — recurring moves between locations ("50 € per week into the shared account") (planned 2026-10-12)
+
+Depends on slice 4 (Transfers). A subscription gets a `kind`: `transaction` (today) or `transfer`. A `transfer` subscription has `fromLocationId`, `toLocationId`, amount, frequency, start/end and generates **Transfer** records, never transactions, so it never touches the income statement, cashflow, KPIs or budget (§8 of this plan: by construction, not by filtering). It reuses the existing frequency engine, dedup and change history; the subscription list shows it with a transfer badge.
+
+**To audit when building:** every place that reads `allSubscriptions` amounts as income/expense (budget-from-subscriptions, plan generation, BI dashboard, prompt generator, API `budget/from-subscriptions`, `subscription-sync`) must skip `kind === 'transfer'`. `SubscriptionChange.field` gains the new fields.
+
+**Open question for JFK:** a transfer between two locations never changes the Cashflow total. If the shared account is money that is no longer _yours_ (your partner's share included), moving 50 € there is really an expense, not a transfer. Is the shared account counted as part of your Cashflow (then a transfer is right) or not (then it should be a normal expense booked at that location)?
+
+## 20. Updated slice order
+
+3 subscriptions carry a location → 6 splits (A) → 4 transfers → 7 transfer subscriptions (B) → Balance-sheet Cashflow expansion. Each ships API + MCP support with it (the 5a/5b pattern).
+
+## 21. Decisions confirmed 2026-10-12 (JFK) and slice 3 status
+
+- **A transfer between two locations never changes Cashflow, the income statement, KPIs, budget or any other derived figure.** It only moves money between locations. (Answers the open question in §19: the shared account is just another location of the user's money; if money genuinely leaves the user, that is an expense booked with a normal transaction.)
+- **Slice 3 (subscriptions carry a location) built, uncommitted - future-only (JFK, 2026-10-12):** `Subscription.locationId` is optional. It applies only to transactions generated from now on (each new one is booked there and moves the balance). Changing or clearing it never touches transactions already generated; old subscriptions keep working untouched until the user sets a location. The location is **ignored when recognising a subscription's transactions** (reconcile, stale detection, dedup), so moving a generated transaction by hand never regenerates it. The app, the Pro API (create/patch/batch/import/refresh, known-id validation) and the domain share the rule. The split rules of section 18 follow the same principle: they apply to future generations only.
+- **`DedupKey` deliberately does NOT include the location** (this reverses the note in §3/§13): generation checks "does this occurrence already exist" by date/account/amount/category/comment, and a generated transaction the user moved to another location by hand is still that occurrence, and so is one that has no location. Comparing locations would generate it a second time. Two subscriptions that differ only by location also differ by title (the title is part of the generated comment), so they cannot collide.
+
+## 22. Slice 6 - split across locations (built 2026-10-13, uncommitted)
+
+Decisions (JFK): per other location a **percentage or a fixed amount**; a split transaction edited by hand keeps its manual amounts when the subscription rule changes later; like everything else it is **future-only** (a rule change never touches transactions already generated).
+
+- **Model:** a booking has a MAIN location (`locationId`) and optional `locationSplits: [{locationId, amount}]` = what goes to the OTHER locations. Only the other amounts are stored; the main location always gets the remainder (`amount` minus the splits), so the parts add up by construction and an amount change (edit, a Smile/Fire cap) only moves the main share. A subscription has `locationSplit: [{locationId, percent | amount}]`, resolved to cents for every generated booking.
+- **Shared rules:** `packages/domain/src/locations/location-split.ts` (`bookingLegs`, `resolveLocationSplit`, `validateLocationSplitRule`); `locationBalanceDeltas` is leg-aware, so the API moves every balance in the same write. The app mirrors it (decimal) in `src/app/shared/location-balance.ts` + `location-split.utils.ts`.
+- **UI:** `app-location-split` editor (rows: location, share, % or amount, live preview main-first) in the transaction add/edit and subscription add/edit forms. A location's list shows the share it received. Deleting a location removes it from every split and rule (a subscription whose MAIN location goes loses its rule too).
+- **API/MCP:** `locationSplits` on transactions (create/update/copy/batch/import), `locationSplit` on subscriptions; validation 400 for unknown/repeated/main-as-split locations, wrong sign, over-allocation, percentages over 100; documented in OpenAPI + AGENTS.md; MCP transactions description mentions it.
+- **Storage:** nested array on the transaction/subscription, each value encrypted on its own; `percent` registered as a numeric (non-money) field so the full-account export returns a number.
+
+## 23. Slice 4 - transfers between locations (built 2026-10-13, uncommitted)
+
+Decision (JFK): a transfer **never** changes Cashflow, the income statement, KPIs, budget or any fund - it only moves money between locations.
+
+- **Model:** its own list `data.transfers` (tier 1, loaded with the locations), NOT part of the transaction stream, so it can never reach the income statement by construction. `Transfer { id: xfer_<uuid>, fromLocationId?, toLocationId?, amount > 0, date, time, comment }`; no fees. The source loses the amount, the destination gains it, so the total across locations is unchanged. Deleting a location keeps its transfers (that end is dropped and shows as "(deleted location)").
+- **Rules:** `transferBalanceDeltas` in `packages/domain/src/locations/location-balance.ts`; the backend moves both balances in the same document write (`services/location-balance.js`, `repositories/transfer-repository.js`); the app mirrors it (`reconcileTransfer`).
+- **UI:** a transfer button in the Locations toolbar (shown with 2+ locations) opens the add dialog (source defaults to the location used last); a "Transfers" list below the cards (newest first, 15 rows then scroll) opens the transfer panel (edit / delete); each location's panel lists its transfers in and out.
+- **API/MCP:** `GET/POST /transfers`, `GET/PATCH/DELETE /transfers/{id}` under the `locations:r|w` scopes (400 for unknown or identical locations, non-positive or fractional amounts, bad date, unknown fields), `manage_transfers` MCP tool, OpenAPI + AGENTS.md; whole-account import/export carry transfers.
+- **Next (slice 7):** recurring transfers = a subscription kind that generates Transfer records (never transactions), future-only like the other subscription location features.
+
+## 24. Slice 7 - recurring transfers (built 2026-10-13, uncommitted)
+
+"Move 50 EUR per week into the shared account": a rule that generates TRANSFERS on a schedule.
+
+- **Not a subscription (deliberate change from section 19):** it has its own list `data.recurringTransfers` (tier 1) instead of a `kind` on `Subscription`. About a dozen places read `allSubscriptions` as income or expense (budget plan, AI assistant, filters, exports, the budget-from-subscriptions API ...); mixing the rules in would have put them one missed filter away from changing Cashflow. A separate list makes that impossible by construction. It still reuses the subscription engine (occurrence dates for every frequency, recognising what it generated, editing in place) through `packages/domain/src/locations/recurring-transfers.ts`.
+- **Behaviour:** creating a rule generates every transfer already due from its start date (pick today to start from now: today's occurrence is made, nothing earlier); the app also generates what is newly due on start. Editing a rule moves the transfers it generated in place (same ids and order; a changed amount or location moves both balances), removes the ones that no longer have an occurrence (end date moved into the past) and creates what is newly due. Transfers made by hand are never touched. Deleting keeps the generated transfers unless "also delete the transfers it created" is ticked. Deleting a location deletes the rules that point at it (the transfers they made stay).
+- **UI:** a "Recurring transfers" section on the Locations page (+ to add; rows open the panel to edit or delete); the add dialog defaults the source to the location used last.
+- **API/MCP:** `GET/POST /recurring-transfers`, `GET/PATCH/DELETE /recurring-transfers/{id}` (`?deleteTransfers=true`), `POST /recurring-transfers/refresh`, all under `locations:r|w`; `manage_recurring_transfers` MCP tool; whole-account import/export carry the rules.
+- **Open idea:** show the rules in the Subscriptions page too (read-only list with a link) if you want them visible there as well.
+
+## 25. Balance sheet - Cashflow by location (built 2026-10-13, uncommitted)
+
+The Cashflow row in the Balance sheet is now expandable like the other categories (chevron, remembered per browser). Expanded, it lists every location with its balance, a "Not in any location" line when the locations do not add up to the Cashflow (the same figure the Locations page warns about, `cashflowByLocation` in `src/app/shared/location-balance.ts`), a hint to set up locations when there are none, and links to open the Cashflow page or manage locations. Clicking the row no longer jumps straight to the Cashflow page; the link inside does.
+**All planned slices of this feature are now built.** Open follow-ups: read-only list of recurring transfers on the Subscriptions page, real icons for the location types (placeholder paths in `src/app/shared/location-icons.ts`), real translations for es/fr/cn/ar.
+
+## 26. Separate list pages for transfers and recurring transfers (2026-10-13, uncommitted)
+
+The two lists no longer sit under the location cards (they pushed each other down as they grew). The Locations toolbar now has a transfer button and a repeat button; each opens its own page, built like the Transactions page: search (comma-separated terms, dates as 2026-10-05 or 05.10.2026), sortable columns, paginators above and below (`BaseListPageComponent` in `src/app/shared/base/`), row click opens the info panel, "+" adds, a house button goes back to the Locations. Routes `/transfers` and `/recurring-transfers`. Tables rebuild through `AppStateService.transfersUpdated$`. The location info panel still lists its own transfers and opens a transfer from there.
+
+## 27. Types, icons, navigation, small screens, languages (2026-10-13)
+
+- **Eight location types:** bank, savings, cash, crypto, wallet (PayPal / payment app), broker (cash at a broker), card (prepaid / gift card), other. Still cosmetic only. Frontend `LOCATION_KINDS`, backend `LOCATION_KINDS`, OpenAPI enums, AGENTS.md and the MCP description all list the same eight.
+- **Icons:** `src/assets/icons/{bank,savings,cash,crypto,paypal,broker,cards,wallet}.png`, mapped in `src/app/shared/location-icons.ts` (`wallet` = PayPal, `other` and the Locations page / back buttons use `wallet.png`).
+- **Navigation:** the Transfers page has a button to Recurring transfers and the Recurring page a button to Transfers, next to the back-to-Locations button. Clicking a segment of the distribution bar on the Locations page opens that location's info panel.
+- **HARD RULE - tables never scroll sideways.** Tables fit the screen width (fixed layout, ellipsis). Transfers: the comment column goes at 700px and below, the id at 480px and below. Recurring: id and start date go at 700px and below, the frequency moves under the name at 480px and below. The folded lists in the location info panel follow the same rule. Any new table must do the same.
+- **German:** "Dauerauftrag" / "Daueraufträge" for recurring transfers.
+- **Languages:** all 66 Locations strings exist in en, de, es, fr, cn and ar. es/fr/cn/ar are machine-written and still need a native-speaker review.
+- **Open follow-ups:** read-only list of recurring transfers on the Subscriptions page; native review of es/fr/cn/ar.

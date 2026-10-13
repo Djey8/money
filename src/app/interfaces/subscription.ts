@@ -9,7 +9,7 @@ export type SubscriptionFrequency = 'weekly' | 'biweekly' | 'monthly' | 'quarter
  */
 export interface SubscriptionChange {
   effectiveDate: string; // ISO date when change takes effect
-  field: 'amount' | 'account' | 'category' | 'frequency';
+  field: 'amount' | 'account' | 'category' | 'frequency' | 'locationId' | 'locationSplit';
   oldValue: any;
   newValue: any;
   reason?: string; // Optional: "Annual price increase", "Account restructure"
@@ -29,4 +29,11 @@ export interface Subscription {
   comment: string;
   frequency: SubscriptionFrequency; // NEW: defaults to 'monthly'
   changeHistory?: SubscriptionChange[]; // NEW: Optional time-series of changes
+  /** Where the generated bookings land (a MoneyLocation id). Absent = not tracked. */
+  locationId?: string;
+  /**
+   * How each generated booking is split: a percentage or a fixed amount to OTHER locations, the main one
+   * (`locationId`) keeps the rest. Applies to transactions generated from now on only.
+   */
+  locationSplit?: { locationId: string; percent?: number; amount?: number }[];
 }

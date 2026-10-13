@@ -94,6 +94,30 @@
   transform: scale(0.95);
 }
 
+/* Drawn plus (two bars): centred by geometry, unlike a typed "+" which sits off-centre in most fonts. */
+.section-add-btn {
+  position: relative;
+  font-size: 0;
+}
+.section-add-btn::before,
+.section-add-btn::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: currentColor;
+  border-radius: 1px;
+}
+.section-add-btn::before {
+  width: 10px;
+  height: 2.5px;
+}
+.section-add-btn::after {
+  width: 2.5px;
+  height: 10px;
+}
+
 .income-table {
   border-collapse: collapse;
 }
@@ -280,4 +304,50 @@
     margin-bottom: 10px;
     padding: 10px;
   }
+}
+
+/* Breathing room between the sticky header and the first block */
+.toolbar {
+  margin-bottom: 10px;
+}
+
+/* Expanded Cashflow row: the locations below it */
+.cashflow-chevron {
+  display: inline-block;
+  width: 1em;
+}
+
+.cashflow-location-row .assetsTitle {
+  padding-left: 1.6em;
+  font-weight: normal;
+}
+
+.cashflow-location-row .assetsAmount {
+  font-weight: normal;
+}
+
+.cashflow-unassigned {
+  font-style: italic;
+  opacity: 0.8;
+}
+
+.cashflow-detail-note td {
+  padding: 6px 1.6em;
+  font-size: 13px;
+  opacity: 0.8;
+}
+
+.cashflow-detail-links td {
+  padding: 6px 0 2px 1.6em;
+}
+
+.cashflow-link {
+  background: transparent;
+  border: none;
+  color: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: 13px;
+  margin-right: 14px;
+  padding: 0;
 }

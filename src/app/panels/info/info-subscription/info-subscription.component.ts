@@ -9,6 +9,17 @@ import { BaseInfoComponent } from 'src/app/shared/base/base-info.component';
 import { IncomeStatementService } from 'src/app/shared/services/income-statement.service';
 import { SubscriptionProcessingService } from 'src/app/shared/services/subscription-processing.service';
 import { AppStateService } from 'src/app/shared/services/app-state.service';
+import { LocationSplitComponent } from 'src/app/shared/components/location-split/location-split.component';
+import {
+  resolveStoredSplits,
+  rowsToStoredRule,
+  SplitRow,
+  splitProblem,
+  splitsToRows,
+  storedRuleToRows,
+} from 'src/app/shared/location-split.utils';
+import { locationsByRecentUse } from 'src/app/shared/location-balance';
+import { locationLabel } from 'src/app/shared/location.utils';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
@@ -79,6 +90,7 @@ setTimeout(() => import('src/app/app.component').then((m) => (AppComponent = m.A
     TranslateModule,
     AppDatePipe,
     AppNumberPipe,
+    LocationSplitComponent,
   ],
   templateUrl: './info-subscription.component.html',
   styleUrls: ['../../../shared/styles/info-panel.css', './info-subscription.component.css'],
@@ -142,6 +154,48 @@ export class InfoSubscriptionComponent extends BaseInfoComponent implements OnIn
   categoryTextField = InfoSubscriptionComponent.category;
   commentTextField = InfoSubscriptionComponent.comment;
   frequencyField = InfoSubscriptionComponent.frequency;
+  /** Location picker while editing; null = None. */
+  locationIdField: string | null = null;
+  /** The other locations each generated booking is split to while editing. */
+  splitRows: SplitRow[] = [];
+  readonly currency2 = '€';
+
+  get allLocations() {
+    return AppStateService.instance.allLocations;
+  }
+
+  get editedAmount(): number | null {
+    const n = parseFloat(String(this.amountTextField));
+    return Number.isFinite(n) ? n : null;
+  }
+
+  /** The shown subscription's split rule as text lines, for the info view. */
+  get shownRule(): string[] {
+    const rule =
+      AppStateService.instance.allSubscriptions[InfoSubscriptionComponent.index]?.locationSplit;
+    return (rule ?? []).map((leg) => {
+      const location = AppStateService.instance.allLocations.find((l) => l.id === leg.locationId);
+      const share =
+        leg.percent !== undefined ? `${leg.percent} %` : `${leg.amount} ${this.currency2}`;
+      return `${locationLabel(location)}: ${share}`;
+    });
+  }
+  readonly locationLabel = locationLabel;
+
+  /** Most recently used first, then the rest in their normal order. */
+  get locations() {
+    return locationsByRecentUse(
+      AppStateService.instance.allTransactions,
+      AppStateService.instance.allLocations,
+    );
+  }
+
+  /** The shown subscription's location, or null when it has none or points at a deleted one. */
+  get shownLocation() {
+    const id =
+      AppStateService.instance.allSubscriptions[InfoSubscriptionComponent.index]?.locationId;
+    return AppStateService.instance.allLocations.find((l) => l.id === id) ?? null;
+  }
 
   // Static properties
   static zIndex;
@@ -283,6 +337,12 @@ export class InfoSubscriptionComponent extends BaseInfoComponent implements OnIn
     this.categoryTextField = InfoSubscriptionComponent.category;
     this.commentTextField = InfoSubscriptionComponent.comment;
     this.frequencyField = InfoSubscriptionComponent.frequency;
+    const current = AppStateService.instance.allSubscriptions[InfoSubscriptionComponent.index];
+    this.locationIdField =
+      current?.locationId && this.locations.some((l) => l.id === current.locationId)
+        ? current.locationId
+        : null;
+    this.splitRows = storedRuleToRows(current?.locationSplit);
   }
 
   /**
@@ -310,6 +370,11 @@ export class InfoSubscriptionComponent extends BaseInfoComponent implements OnIn
       this.showError('Please fill out all required fields.');
       return;
     }
+    const splitMessage = splitProblem(this.splitRows, this.locationIdField);
+    if (splitMessage) {
+      this.showError(splitMessage);
+      return;
+    }
 
     const subscriptions = AppStateService.instance.allSubscriptions;
     const subscription = subscriptions[InfoSubscriptionComponent.index];
@@ -324,6 +389,12 @@ export class InfoSubscriptionComponent extends BaseInfoComponent implements OnIn
     subscription.category = this.categoryTextField;
     subscription.comment = this.commentTextField;
     subscription.frequency = this.frequencyField as any;
+    if (this.locationIdField) subscription.locationId = this.locationIdField;
+    else delete subscription.locationId;
+    // The rule for the other locations (needs the main one); applies to what is generated from now on.
+    const rule = this.locationIdField ? rowsToStoredRule(this.splitRows) : [];
+    if (rule.length > 0) subscription.locationSplit = rule;
+    else delete subscription.locationSplit;
 
     const { updated, removed } = this.subscriptionProcessing.reconcileGeneratedTransactions(
       before,
@@ -618,6 +689,9 @@ export class InfoSubscriptionComponent extends BaseInfoComponent implements OnIn
         AppStateService.instance.liabilities,
       );
 
+      // Locations: reconciling generated transactions moves their balances
+      const write15 = this.database.writeObject('locations', AppStateService.instance.allLocations);
+
       if (environment.mode === 'selfhosted') {
         const observables = [];
         if (write1) observables.push(write1);
@@ -634,6 +708,7 @@ export class InfoSubscriptionComponent extends BaseInfoComponent implements OnIn
         if (write12) observables.push(write12);
         if (write13) observables.push(write13);
         if (write14) observables.push(write14);
+        if (write15) observables.push(write15);
 
         if (observables.length > 0) {
           let completed = 0;
@@ -694,6 +769,10 @@ export class InfoSubscriptionComponent extends BaseInfoComponent implements OnIn
               this.localStorage.saveData(
                 'subscriptions',
                 JSON.stringify(AppStateService.instance.allSubscriptions),
+              );
+              this.localStorage.saveData(
+                'locations',
+                JSON.stringify(AppStateService.instance.allLocations),
               );
               this.localStorage.saveData(
                 'liabilities',
@@ -766,6 +845,10 @@ export class InfoSubscriptionComponent extends BaseInfoComponent implements OnIn
         this.localStorage.saveData(
           'subscriptions',
           JSON.stringify(AppStateService.instance.allSubscriptions),
+        );
+        this.localStorage.saveData(
+          'locations',
+          JSON.stringify(AppStateService.instance.allLocations),
         );
         this.localStorage.saveData(
           'liabilities',

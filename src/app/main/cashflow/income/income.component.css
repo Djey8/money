@@ -348,3 +348,8 @@ tr:has(+ .sortable-header-row) {
     font-size: 14px;
   }
 }
+
+/* Breathing room between the sticky header and the first block */
+.toolbar {
+  margin-bottom: 10px;
+}

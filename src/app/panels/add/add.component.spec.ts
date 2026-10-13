@@ -101,4 +101,40 @@ describe('AddComponent', () => {
       expect(component.router.navigate).toHaveBeenCalledWith(['/stats']);
     });
   });
+
+  describe('location picker default', () => {
+    const descriptor = Object.getOwnPropertyDescriptor(AddComponent.prototype, 'locationId')!;
+    const read = () =>
+      descriptor.get!.call({ locations: AppStateService.instance.allLocations }) as string | null;
+
+    beforeEach(() => {
+      AddComponent.locationChoice = undefined;
+      AppStateService.instance.allLocations = [
+        { id: 'a', name: 'Bank 1', amount: 0 },
+        { id: 'b', name: 'Cash', amount: 0 },
+      ];
+    });
+
+    it('pre-selects the location of the last transaction that used one', () => {
+      AppStateService.instance.allTransactions = [
+        { account: 'Daily', amount: -1, category: '@x', date: '2025-01-01', locationId: 'b' },
+        { account: 'Daily', amount: -1, category: '@x', date: '2025-01-02', locationId: 'a' },
+        { account: 'Daily', amount: -1, category: '@x', date: '2025-01-03' },
+      ] as any;
+      expect(read()).toBe('a');
+    });
+
+    it('is None when no transaction ever used a location', () => {
+      AppStateService.instance.allTransactions = [] as any;
+      expect(read()).toBeNull();
+    });
+
+    it('an explicit None beats the last-used default', () => {
+      AppStateService.instance.allTransactions = [
+        { account: 'Daily', amount: -1, category: '@x', date: '2025-01-01', locationId: 'a' },
+      ] as any;
+      descriptor.set!.call({}, null);
+      expect(read()).toBeNull();
+    });
+  });
 });

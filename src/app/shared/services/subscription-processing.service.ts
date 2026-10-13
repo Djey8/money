@@ -10,6 +10,8 @@ import { Transaction } from '../../interfaces/transaction';
 import { Revenue } from '../../interfaces/revenue';
 import { Expense } from '../../interfaces/expense';
 import { Subscription, SubscriptionFrequency } from '../../interfaces/subscription';
+import { reconcileLocationBooking, releaseLocationBookings } from '../location-balance';
+import { resolveLocationSplit } from '@money/domain';
 import {
   constructedSubscriptionComment,
   isGeneratedComment,
@@ -101,14 +103,27 @@ export class SubscriptionProcessingService {
       now,
     );
     if (updates.length === 0 && removals.length === 0) return { updated: 0, removed: 0 };
+    const locations = AppStateService.instance.allLocations;
     for (const update of updates) {
       const transaction = transactions[update.index];
+      const bookedBefore = {
+        locationId: transaction.locationId,
+        amount: transaction.amount,
+        locationSplits: transaction.locationSplits,
+      };
       transaction.date = update.date;
       transaction.account = update.account;
       transaction.amount = update.amountMinor / 100;
       transaction.category = update.category;
       transaction.comment = update.comment;
+      // The transaction keeps its location; only its amount may have changed, so the balance follows.
+      reconcileLocationBooking(locations, bookedBefore, transaction);
     }
+    // What goes gives its amount back to the location it was booked at.
+    releaseLocationBookings(
+      locations,
+      removals.map((index) => transactions[index]),
+    );
     const removed = new Set(removals);
     AppStateService.instance.allTransactions = transactions.filter(
       (_, index) => !removed.has(index),
@@ -200,6 +215,8 @@ export class SubscriptionProcessingService {
               date,
               '',
               subscription.comment,
+              subscription.locationId,
+              subscription.locationSplit,
             );
             transactionsCreated++;
           }
@@ -212,7 +229,17 @@ export class SubscriptionProcessingService {
     }
   }
 
-  async addTransactionSubscription(title, amount, selectedOption, category, date, time, comment) {
+  async addTransactionSubscription(
+    title,
+    amount,
+    selectedOption,
+    category,
+    date,
+    time,
+    comment,
+    locationId?: string,
+    locationSplit?: { locationId: string; percent?: number; amount?: number }[],
+  ) {
     const authResult = await this.authService.checkAuthentication();
     if (!authResult.authenticated) {
       console.error('Authentication failed:', authResult.error);
@@ -310,8 +337,28 @@ export class SubscriptionProcessingService {
       time: time,
       category: category,
       comment: comment ? title + ' + ' + comment : title,
+      ...(locationId ? { locationId } : {}),
     };
+    // The subscription's split rule, resolved for THIS booking's final amount (a fund cap may have lowered it).
+    if (locationId && locationSplit && locationSplit.length > 0) {
+      const extras = resolveLocationSplit(
+        Math.round(newTransaction.amount * 100),
+        locationSplit.map((leg) =>
+          leg.percent !== undefined
+            ? { locationId: leg.locationId, percent: leg.percent }
+            : { locationId: leg.locationId, amountMinor: Math.round((leg.amount ?? 0) * 100) },
+        ),
+      );
+      if (extras.length > 0) {
+        newTransaction.locationSplits = extras.map((leg) => ({
+          locationId: leg.locationId,
+          amount: leg.amountMinor / 100,
+        }));
+      }
+    }
     AppStateService.instance.allTransactions.push(newTransaction);
+    // The generated booking moves its location, exactly like one entered by hand.
+    reconcileLocationBooking(AppStateService.instance.allLocations, null, newTransaction);
     AccountingComponent.allTransactions = AppStateService.instance.allTransactions;
     AccountingComponent.dataSource.data = AppStateService.instance.allTransactions;
     AccountingComponent.dataSource.data = AccountingComponent.dataSource.data.map(

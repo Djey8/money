@@ -33,6 +33,14 @@
       <h4 class="infoLable">{{ classReference.date | appDate }}</h4>
       <h4 class="infoLable">{{ classReference.time }}</h4>
       <h4 class="infoLable">{{ classReference.category }}</h4>
+      <h4 class="infoLable" *ngIf="shownLocationName && !shownLegs.length">
+        {{ 'AddTransaction.Location' | translate }}: {{ shownLocationName }}
+      </h4>
+      <div class="infoLable" *ngIf="shownLegs.length">
+        <div *ngFor="let leg of shownLegs">
+          {{ leg.label }}: {{ leg.amount | appNumber }} {{ currency2 }}
+        </div>
+      </div>
       <pre
         class="commentLable"
         style="
@@ -93,6 +101,20 @@
         [(ngModel)]="amountTextField"
         (ngModelChange)="onAmountChange($event)"
       />
+      <ng-container *ngIf="locations.length > 0">
+        <label for="location">{{ 'AddTransaction.Location' | translate }}</label>
+        <select [(ngModel)]="locationIdField" id="location" name="location">
+          <option [ngValue]="null">{{ 'AddTransaction.LocationNone' | translate }}</option>
+          <option *ngFor="let l of locations" [ngValue]="l.id">{{ locationLabel(l) }}</option>
+        </select>
+        <app-location-split
+          [rows]="splitRows"
+          [mainLocationId]="locationIdField"
+          [amount]="editedAmount"
+          [locations]="allLocations"
+          [currency]="currency2"
+        ></app-location-split>
+      </ng-container>
       <label for="date">{{ 'Common.date' | translate }}</label>
       <input type="date" step="any" id="date" name="date" [(ngModel)]="dateTextField" />
       <label for="time">{{ 'AddTransaction.Time' | translate }}</label>

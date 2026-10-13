@@ -390,6 +390,11 @@ export class MenuComponent {
     MenuComponent.isMenu = false;
   }
 
+  clickedLocations() {
+    this.router.navigate([`/locations`]);
+    MenuComponent.isMenu = false;
+  }
+
   /**
    * Handles the click event on the subscriptions button.
    */

@@ -18,6 +18,7 @@ import { InfoInvestmentComponent } from 'src/app/panels/info/info-investment/inf
 import { SettingsComponent } from 'src/app/panels/settings/settings.component';
 import { IncomeComponent } from '../income/income.component';
 import { AppStateService } from '../../../shared/services/app-state.service';
+import { cashflowByLocation } from '../../../shared/location-balance';
 import { AppDataService } from '../../../shared/services/app-data.service';
 import { CommonModule } from '@angular/common';
 import { TranslateModule } from '@ngx-translate/core';
@@ -72,6 +73,8 @@ export class BalanceComponent {
   isInvestments = true;
 
   isLiabilities = true;
+  /** The Cashflow row is expanded into where the money sits (remembered per browser). */
+  isCashflowOpen = false;
   totalAmount = 0.0;
 
   public classReference = BalanceComponent;
@@ -113,6 +116,7 @@ export class BalanceComponent {
     this.isShares = this.localStorage.getData('isShares') == 'false' ? false : true;
     this.isInvestments = this.localStorage.getData('isInvestments') == 'false' ? false : true;
     this.isLiabilities = this.localStorage.getData('isLiabilities') == 'false' ? false : true;
+    this.isCashflowOpen = this.localStorage.getData('isCashflowOpen') == 'true';
 
     // Tier 3: Load fresh data from server if not yet loaded
     if (AppDataService.instance && !AppStateService.instance.tier3BalanceLoaded) {
@@ -222,6 +226,25 @@ export class BalanceComponent {
 
   goToIncome() {
     this.router.navigate(['/income']);
+    AppComponent.gotoTop();
+  }
+
+  /** Expands or collapses the Cashflow row into the locations below it. */
+  toggleCashflow() {
+    this.isCashflowOpen = !this.isCashflowOpen;
+    this.localStorage.saveData('isCashflowOpen', this.isCashflowOpen.toString());
+  }
+
+  /** Where the Cashflow sits, for the expanded row. */
+  get cashflowLocations() {
+    return cashflowByLocation(
+      IncomeComponent.getTotalAmount(),
+      AppStateService.instance.allLocations,
+    );
+  }
+
+  goToLocations() {
+    this.router.navigate(['/locations']);
     AppComponent.gotoTop();
   }
 

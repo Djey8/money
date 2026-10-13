@@ -26,5 +26,8 @@ const decks = Object.fromEntries(
   domain.REFERENCE_DECKS.map((deck) => [deck, domain.cardReferenceRows(gameSet, deck, deps)]),
 );
 const out = path.join(root, 'docs/domain/CASHFLOW_CARDS.md');
-fs.writeFileSync(out, domain.renderCardReferenceMarkdown(setId, decks));
+const { renderCardReferenceMarkdown } = require(
+  path.join(root, 'packages/domain/dist/cashflow-game/card-reference-markdown.js'),
+);
+fs.writeFileSync(out, renderCardReferenceMarkdown(setId, decks));
 console.log(`Wrote ${path.relative(root, out)}`);

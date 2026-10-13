@@ -1263,6 +1263,26 @@ section {
   margin-top: 10px;
   flex-shrink: 0;
   cursor: default;
+  position: relative;
+  font-size: 0;
+}
+.balance-preview-add-btn::before,
+.balance-preview-add-btn::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: currentColor;
+  border-radius: 1px;
+}
+.balance-preview-add-btn::before {
+  width: 9px;
+  height: 2.5px;
+}
+.balance-preview-add-btn::after {
+  width: 2.5px;
+  height: 9px;
 }
 
 .balance-preview-divider {

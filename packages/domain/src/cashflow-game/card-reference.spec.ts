@@ -4,10 +4,10 @@ import { CASHFLOW_GAME_SETS } from '../cashflow-content';
 import {
   REFERENCE_DECKS,
   cardReferenceRows,
-  renderCardReferenceMarkdown,
   type CardReferenceDeps,
   type ReferenceDeck,
 } from './card-reference';
+import { renderCardReferenceMarkdown } from './card-reference-markdown';
 
 const root = path.join(__dirname, '..', '..', '..', '..');
 const texts = JSON.parse(

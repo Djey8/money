@@ -52,6 +52,8 @@ export const NUMERIC_FIELD_NAMES = new Set([
   ...MONEY_FIELD_NAMES,
   'quantity',
   'riskScore',
+  // A location split's share of a booking (0-100), not an amount of money.
+  'percent',
   'daily',
   'splurge',
   'smile',

@@ -1,0 +1,52 @@
+<div
+  id="addFire-Container"
+  role="dialog"
+  aria-modal="true"
+  appTrapFocus
+  *ngIf="isOpen"
+  (click)="highlight()"
+  [style.z-index]="classReference.zIndex + 1001"
+>
+  <h4 id="addFireTitle">{{ 'Transfer.addTitle' | translate }}</h4>
+  <button id="closebtn" aria-label="Close" (click)="closeWindow()">x</button>
+  <hr class="separator-white" />
+  <p class="transfer-hint">{{ 'Transfer.hint' | translate }}</p>
+  <form id="input-container">
+    <label for="from" class="required">{{ 'Transfer.from' | translate }}</label>
+    <select id="from" name="from" [(ngModel)]="fromLocationId">
+      <option [ngValue]="null">{{ 'Transfer.choose' | translate }}</option>
+      <option *ngFor="let l of locations" [ngValue]="l.id">{{ label(l) }}</option>
+    </select>
+    <label for="to" class="required">{{ 'Transfer.to' | translate }}</label>
+    <select id="to" name="to" [(ngModel)]="toLocationId">
+      <option [ngValue]="null">{{ 'Transfer.choose' | translate }}</option>
+      <option *ngFor="let l of locations" [ngValue]="l.id">{{ label(l) }}</option>
+    </select>
+    <label for="amount" class="required">{{ 'Common.amount' | translate }}</label>
+    <input
+      type="number"
+      step="any"
+      min="0"
+      id="amount"
+      name="amount"
+      [(ngModel)]="amountTextField"
+    />
+    <label for="date">{{ 'Common.date' | translate }}</label>
+    <input type="date" id="date" name="date" [(ngModel)]="dateTextField" />
+    <label for="time">{{ 'AddTransaction.Time' | translate }}</label>
+    <input type="time" id="time" name="time" [(ngModel)]="timeTextField" />
+    <label for="comment">{{ 'AddTransaction.Comment' | translate }}</label>
+    <input
+      type="text"
+      id="comment"
+      name="comment"
+      maxlength="200"
+      [(ngModel)]="commentTextField"
+      class="mb-xs"
+    />
+  </form>
+  <p id="errorLable" *ngIf="classReference.isError">{{ errorTextLable }}</p>
+  <button id="addbtn" class="btn btn--action" (click)="addTransfer()">
+    {{ 'Transfer.add' | translate }}
+  </button>
+</div>

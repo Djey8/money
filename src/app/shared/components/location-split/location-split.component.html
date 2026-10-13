@@ -1,0 +1,63 @@
+<div class="split" *ngIf="locations.length > 1 && mainLocationId">
+  <button type="button" class="split-toggle" *ngIf="!isOpen" (click)="open()">
+    + {{ 'Split.add' | translate }}
+  </button>
+
+  <div class="split-box" *ngIf="isOpen">
+    <div class="split-head">
+      <strong>{{ 'Split.title' | translate }}</strong>
+      <span class="split-hint">{{ 'Split.hint' | translate }}</span>
+    </div>
+
+    <div class="split-row" *ngFor="let row of rows; let i = index; trackBy: trackByIndex">
+      <select
+        class="split-location"
+        [(ngModel)]="row.locationId"
+        [name]="'splitLocation' + i"
+        [attr.aria-label]="'Split.location' | translate"
+      >
+        <option [ngValue]="null">{{ 'Split.chooseLocation' | translate }}</option>
+        <option *ngFor="let l of choicesFor(row)" [ngValue]="l.id">{{ label(l) }}</option>
+      </select>
+      <input
+        type="number"
+        step="any"
+        min="0"
+        class="split-value"
+        [(ngModel)]="row.value"
+        [name]="'splitValue' + i"
+        [attr.aria-label]="'Split.value' | translate"
+      />
+      <select
+        class="split-mode"
+        [(ngModel)]="row.mode"
+        [name]="'splitMode' + i"
+        [attr.aria-label]="'Split.mode' | translate"
+      >
+        <option value="percent">%</option>
+        <option value="amount">{{ currency }}</option>
+      </select>
+      <button
+        type="button"
+        class="split-remove"
+        (click)="remove(i)"
+        [attr.aria-label]="'Split.remove' | translate"
+      >
+        ✕
+      </button>
+    </div>
+
+    <button type="button" class="split-add" (click)="add()">
+      + {{ 'Split.addRow' | translate }}
+    </button>
+
+    <p class="split-problem" role="alert" *ngIf="problem">{{ problem }}</p>
+
+    <ul class="split-preview" *ngIf="!problem && preview.length > 1">
+      <li *ngFor="let line of preview">
+        <span>{{ line.label }}</span>
+        <span>{{ line.amount | appNumber }} {{ currency }}</span>
+      </li>
+    </ul>
+  </div>
+</div>

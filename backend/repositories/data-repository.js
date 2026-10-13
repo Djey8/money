@@ -40,6 +40,9 @@ const {
 } = require('./transaction-repository');
 const { getEncryptionSession } = require('../services/encryption-session');
 const { applyDerivedState, writeValue } = require('../services/transaction-derived-state');
+const { prepareImportedLocations } = require('./location-repository');
+const { prepareImportedTransfers } = require('./transfer-repository');
+const { prepareImportedRecurringTransfers } = require('./recurring-transfer-repository');
 const { decryptAllAssets, encryptAsset } = require('./asset-repository');
 const { decryptAllShares, encryptShare } = require('./share-repository');
 const { decryptAllInvestments, encryptInvestment } = require('./investment-repository');
@@ -377,6 +380,22 @@ async function importUserData(
         null,
         schemaVersion,
       ).map((item) => encryptBudgetRow(item, session, schemaVersion)),
+      // Optional: exports from before the Locations feature carry none.
+      ...(Array.isArray(importedData.locations)
+        ? { locations: prepareImportedLocations(importedData.locations, session, schemaVersion) }
+        : {}),
+      ...(Array.isArray(importedData.transfers)
+        ? { transfers: prepareImportedTransfers(importedData.transfers, session, schemaVersion) }
+        : {}),
+      ...(Array.isArray(importedData.recurringTransfers)
+        ? {
+            recurringTransfers: prepareImportedRecurringTransfers(
+              importedData.recurringTransfers,
+              session,
+              schemaVersion,
+            ),
+          }
+        : {}),
       subscriptions: decryptAllSubscriptions(
         requireArrayField(importedData.subscriptions, 'subscriptions'),
         null,

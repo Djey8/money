@@ -1,0 +1,144 @@
+#infoTransaction-Container {
+  top: 10%;
+  left: 50%;
+  transform: translate(-50%, 0%);
+  width: min(92vw, 500px);
+  border: 3px solid white;
+  background-color: var(--color-primary);
+  border-radius: var(--radius-lg);
+  padding: 2%;
+  border-color: white;
+  border-width: 2%;
+  position: absolute;
+  box-shadow: var(--shadow-lg);
+}
+
+.table-wrapper {
+  width: 100%;
+}
+
+.related-tx-table {
+  width: 100%;
+  font-size: 12px;
+  border-collapse: collapse;
+  color: #ffffff;
+}
+
+.related-tx-table th,
+.related-tx-table td {
+  text-align: center;
+  padding: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.related-tx-table th {
+  font-weight: 600;
+  border-bottom-color: rgba(255, 255, 255, 0.2);
+}
+
+.related-tx-table th.sortable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.related-tx-table .sort-icon {
+  font-size: 10px;
+}
+
+.clickable-row {
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.clickable-row:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.section-label {
+  margin: 12px 0 6px;
+  font-size: 14px;
+  color: #ffffff;
+}
+
+.kind-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 8px;
+  padding-left: 12px;
+}
+
+.kind-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  /* the same inset as the fields around it, so the icon is not flush with the edge */
+  margin: 0 2% 4px 4%;
+}
+
+.kind-row select {
+  flex: 1;
+}
+
+.kind-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-full);
+  object-fit: cover;
+  border: 3px solid var(--kind-color);
+}
+
+.kind-row .kind-icon {
+  width: 40px;
+  height: 40px;
+  border-width: 2px;
+}
+
+.kind-badge {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  background: var(--kind-color);
+  color: #000;
+}
+
+/* The folded lists: the heading is the button */
+.section-toggle {
+  background: transparent;
+  border: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+}
+
+.section-toggle:hover,
+.section-toggle:focus-visible {
+  text-decoration: underline;
+}
+
+.section-chevron {
+  display: inline-block;
+  width: 1em;
+}
+
+/* The same hard rule as the list pages: the folded lists never scroll sideways */
+.tx-scroll {
+  overflow-x: hidden;
+}
+
+.related-tx-table {
+  table-layout: fixed;
+}
+
+.related-tx-table th,
+.related-tx-table td {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

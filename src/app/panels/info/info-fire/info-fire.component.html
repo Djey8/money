@@ -302,47 +302,49 @@
                 getTransactionsForBucket(bucket.id).length
               }})
             </h6>
-            <table class="related-tx-table">
-              <thead>
-                <tr>
-                  <th class="sortable" (click)="toggleSort('id')">
-                    ID <span class="sort-icon">{{ getSortIcon('id') }}</span>
-                  </th>
-                  <th class="sortable" (click)="toggleSort('account')">
-                    {{ 'Common.account' | translate }}
-                    <span class="sort-icon">{{ getSortIcon('account') }}</span>
-                  </th>
-                  <th class="sortable" (click)="toggleSort('amount')">
-                    {{ 'Common.amount' | translate }}
-                    <span class="sort-icon">{{ getSortIcon('amount') }}</span>
-                  </th>
-                  <th class="sortable" (click)="toggleSort('date')">
-                    {{ 'Common.date' | translate }}
-                    <span class="sort-icon">{{ getSortIcon('date') }}</span>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr
-                  *ngFor="let tx of getTransactionsForBucket(bucket.id)"
-                  (click)="openTransactionInfo(tx)"
-                  class="clickable-row"
-                >
-                  <td>{{ getTransactionId(tx) }}</td>
-                  <td>{{ tx.account }}</td>
-                  <td
-                    class="{{
-                      getAllocatedAmountForBucket(tx, bucket.id) >= 0
-                        ? 'amount-positive'
-                        : 'amount-negative'
-                    }}"
+            <div class="tx-scroll">
+              <table class="related-tx-table">
+                <thead>
+                  <tr>
+                    <th class="sortable" (click)="toggleSort('id')">
+                      ID <span class="sort-icon">{{ getSortIcon('id') }}</span>
+                    </th>
+                    <th class="sortable" (click)="toggleSort('account')">
+                      {{ 'Common.account' | translate }}
+                      <span class="sort-icon">{{ getSortIcon('account') }}</span>
+                    </th>
+                    <th class="sortable" (click)="toggleSort('amount')">
+                      {{ 'Common.amount' | translate }}
+                      <span class="sort-icon">{{ getSortIcon('amount') }}</span>
+                    </th>
+                    <th class="sortable" (click)="toggleSort('date')">
+                      {{ 'Common.date' | translate }}
+                      <span class="sort-icon">{{ getSortIcon('date') }}</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr
+                    *ngFor="let tx of getTransactionsForBucket(bucket.id)"
+                    (click)="openTransactionInfo(tx)"
+                    class="clickable-row"
                   >
-                    {{ getAllocatedAmountForBucket(tx, bucket.id) | appNumber }} {{ currency }}
-                  </td>
-                  <td>{{ tx.date | appDate }}</td>
-                </tr>
-              </tbody>
-            </table>
+                    <td>{{ getTransactionId(tx) }}</td>
+                    <td>{{ tx.account }}</td>
+                    <td
+                      class="{{
+                        getAllocatedAmountForBucket(tx, bucket.id) >= 0
+                          ? 'amount-positive'
+                          : 'amount-negative'
+                      }}"
+                    >
+                      {{ getAllocatedAmountForBucket(tx, bucket.id) | appNumber }} {{ currency }}
+                    </td>
+                    <td>{{ tx.date | appDate }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
@@ -355,49 +357,7 @@
           }})
         </h5>
         <p class="section-help">{{ 'Smile.distributedTransactionsHelp' | translate }}</p>
-        <table class="related-tx-table">
-          <thead>
-            <tr>
-              <th class="sortable" (click)="toggleSort('id')">
-                ID <span class="sort-icon">{{ getSortIcon('id') }}</span>
-              </th>
-              <th class="sortable" (click)="toggleSort('account')">
-                {{ 'Common.account' | translate }}
-                <span class="sort-icon">{{ getSortIcon('account') }}</span>
-              </th>
-              <th class="sortable" (click)="toggleSort('amount')">
-                {{ 'Common.amount' | translate }}
-                <span class="sort-icon">{{ getSortIcon('amount') }}</span>
-              </th>
-              <th class="sortable" (click)="toggleSort('date')">
-                {{ 'Common.date' | translate }}
-                <span class="sort-icon">{{ getSortIcon('date') }}</span>
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr
-              *ngFor="let tx of getDistributedTransactions()"
-              (click)="openTransactionInfo(tx)"
-              class="clickable-row"
-            >
-              <td>{{ getTransactionId(tx) }}</td>
-              <td>{{ tx.account }}</td>
-              <td class="{{ tx.amount >= 0 ? 'amount-positive' : 'amount-negative' }}">
-                {{ tx.amount | appNumber }} {{ currency }}
-              </td>
-              <td>{{ tx.date | appDate }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <ng-template #noBuckets>
-        <p class="empty-tab">{{ 'Fire.noBuckets' | translate }}</p>
-        <!-- Show general related transactions when no buckets -->
-        <div class="info-section" *ngIf="relatedTransactions.length">
-          <h5 class="section-label">
-            {{ 'Grow.relatedTransactions' | translate }} ({{ relatedTransactions.length }})
-          </h5>
+        <div class="tx-scroll">
           <table class="related-tx-table">
             <thead>
               <tr>
@@ -420,7 +380,7 @@
             </thead>
             <tbody>
               <tr
-                *ngFor="let tx of relatedTransactions"
+                *ngFor="let tx of getDistributedTransactions()"
                 (click)="openTransactionInfo(tx)"
                 class="clickable-row"
               >
@@ -433,6 +393,52 @@
               </tr>
             </tbody>
           </table>
+        </div>
+      </div>
+      <ng-template #noBuckets>
+        <p class="empty-tab">{{ 'Fire.noBuckets' | translate }}</p>
+        <!-- Show general related transactions when no buckets -->
+        <div class="info-section" *ngIf="relatedTransactions.length">
+          <h5 class="section-label">
+            {{ 'Grow.relatedTransactions' | translate }} ({{ relatedTransactions.length }})
+          </h5>
+          <div class="tx-scroll">
+            <table class="related-tx-table">
+              <thead>
+                <tr>
+                  <th class="sortable" (click)="toggleSort('id')">
+                    ID <span class="sort-icon">{{ getSortIcon('id') }}</span>
+                  </th>
+                  <th class="sortable" (click)="toggleSort('account')">
+                    {{ 'Common.account' | translate }}
+                    <span class="sort-icon">{{ getSortIcon('account') }}</span>
+                  </th>
+                  <th class="sortable" (click)="toggleSort('amount')">
+                    {{ 'Common.amount' | translate }}
+                    <span class="sort-icon">{{ getSortIcon('amount') }}</span>
+                  </th>
+                  <th class="sortable" (click)="toggleSort('date')">
+                    {{ 'Common.date' | translate }}
+                    <span class="sort-icon">{{ getSortIcon('date') }}</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  *ngFor="let tx of relatedTransactions"
+                  (click)="openTransactionInfo(tx)"
+                  class="clickable-row"
+                >
+                  <td>{{ getTransactionId(tx) }}</td>
+                  <td>{{ tx.account }}</td>
+                  <td class="{{ tx.amount >= 0 ? 'amount-positive' : 'amount-negative' }}">
+                    {{ tx.amount | appNumber }} {{ currency }}
+                  </td>
+                  <td>{{ tx.date | appDate }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </ng-template>
     </div>

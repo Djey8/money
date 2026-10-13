@@ -1,4 +1,5 @@
 import { ApiTransaction } from './transaction';
+import { LocationLeg, resolveLocationSplit, SplitRuleLeg } from '../locations/location-split';
 import { FundState, recalculateFundState } from './fund-state';
 import { bucketCapacity, FundBucket, parseBucketAllocations } from './bucket-allocations';
 import { SubscriptionFrequency } from './frequency-strategies';
@@ -56,6 +57,10 @@ export interface SubscriptionForGeneration {
   category: string;
   comment: string;
   frequency: SubscriptionFrequency;
+  /** Where each generated booking lands (the main location id). Absent = none. */
+  locationId?: string | null;
+  /** Amounts for other locations as a rule: the main location gets the rest of each booking. */
+  locationSplit?: SplitRuleLeg[] | null;
 }
 
 export interface GeneratedTransaction {
@@ -65,6 +70,9 @@ export interface GeneratedTransaction {
   time: string;
   category: string;
   comment: string;
+  locationId?: string;
+  /** The other-location amounts resolved for THIS booking. */
+  locationSplits?: LocationLeg[];
 }
 
 export interface SubscriptionGenerationResult {
@@ -81,6 +89,8 @@ interface DedupKey {
   comment: string;
 }
 
+// The location is deliberately NOT part of the match. A generated transaction the user moved to another
+// location by hand is still that occurrence; comparing locations would generate it a second time.
 function transactionExists(transactions: DedupKey[], candidate: DedupKey): boolean {
   return transactions.some(
     (t) =>
@@ -142,6 +152,14 @@ function isTargetAlreadyFull(category: string, comment: string, fundState: FundS
   return false;
 }
 
+function splitFields(
+  amountMinor: number,
+  rule: SplitRuleLeg[],
+): { locationSplits?: LocationLeg[] } {
+  const legs = resolveLocationSplit(amountMinor, rule);
+  return legs.length > 0 ? { locationSplits: legs } : {};
+}
+
 export function generateDueSubscriptionTransactions(
   subscriptions: SubscriptionForGeneration[],
   existingTransactions: ApiTransaction[],
@@ -177,6 +195,10 @@ export function generateDueSubscriptionTransactions(
         time: '00:00',
         category: candidate.category,
         comment: candidate.comment,
+        ...(subscription.locationId ? { locationId: subscription.locationId } : {}),
+        ...(subscription.locationId && subscription.locationSplit?.length
+          ? splitFields(candidate.amountMinor, subscription.locationSplit)
+          : {}),
       };
       generated.push(newTransaction);
       simulatedTransactions.push({ ...newTransaction, id: '', currency: '' });

@@ -12,6 +12,9 @@ import { SubscriptionProcessingService } from './subscription-processing.service
 import { ToastService } from './toast.service';
 import { Transaction } from '../../interfaces/transaction';
 import { Subscription } from '../../interfaces/subscription';
+import { LocationKind, MoneyLocation } from '../../interfaces/location';
+import { Transfer } from '../../interfaces/transfer';
+import { RecurringTransfer } from '../../interfaces/recurring-transfer';
 import { Revenue } from '../../interfaces/revenue';
 import { Property } from '../../interfaces/property';
 import { Interest } from '../../interfaces/interest';
@@ -59,6 +62,9 @@ export class AppDataService {
     'meta',
     'transactions',
     'subscriptions',
+    'locations',
+    'transfers',
+    'recurringTransfers',
     'income/revenue/revenues',
     'income/revenue/interests',
     'income/revenue/properties',
@@ -246,6 +252,12 @@ export class AppDataService {
   }
 
   private saveAllToLocalStorage() {
+    this.localStorage.saveData('locations', JSON.stringify(AppStateService.instance.allLocations));
+    this.localStorage.saveData('transfers', JSON.stringify(AppStateService.instance.allTransfers));
+    this.localStorage.saveData(
+      'recurringTransfers',
+      JSON.stringify(AppStateService.instance.allRecurringTransfers),
+    );
     this.localStorage.saveData('interests', JSON.stringify(AppStateService.instance.allIntrests));
     this.localStorage.saveData(
       'properties',
@@ -311,6 +323,9 @@ export class AppDataService {
           ? [{ tag: 'balance/liabilities', data: AppStateService.instance.liabilities }]
           : []),
         { tag: 'transactions', data: AppStateService.instance.allTransactions },
+        { tag: 'locations', data: AppStateService.instance.allLocations },
+        { tag: 'transfers', data: AppStateService.instance.allTransfers },
+        { tag: 'recurringTransfers', data: AppStateService.instance.allRecurringTransfers },
       ],
       onConflict: () => {
         // Someone else (another device, tab, or an agent via the Pro API)
@@ -340,6 +355,12 @@ export class AppDataService {
           ? [{ key: 'liabilities', data: JSON.stringify(AppStateService.instance.liabilities) }]
           : []),
         { key: 'transactions', data: JSON.stringify(AppStateService.instance.allTransactions) },
+        { key: 'locations', data: JSON.stringify(AppStateService.instance.allLocations) },
+        { key: 'transfers', data: JSON.stringify(AppStateService.instance.allTransfers) },
+        {
+          key: 'recurringTransfers',
+          data: JSON.stringify(AppStateService.instance.allRecurringTransfers),
+        },
       ],
     });
   }
@@ -729,6 +750,20 @@ export class AppDataService {
                 category,
                 comment,
               };
+              if (raw[k].locationId) {
+                newT.locationId = this.cryptic.decrypt(raw[k].locationId, 'database');
+              }
+              if (raw[k].locationSplits) {
+                const splits = [];
+                for (const j in raw[k].locationSplits) {
+                  const leg = raw[k].locationSplits[j];
+                  splits.push({
+                    locationId: this.cryptic.decrypt(leg.locationId, 'database'),
+                    amount: parseFloat(this.cryptic.decrypt(leg.amount, 'database')),
+                  });
+                }
+                if (splits.length > 0) newT.locationSplits = splits;
+              }
               myTransactions.push(newT);
             } catch (error) {
               invalidCount++;
@@ -783,6 +818,12 @@ export class AppDataService {
               changeHistory: raw[k].changeHistory
                 ? this.decryptChangeHistory(raw[k].changeHistory)
                 : undefined,
+              locationId: raw[k].locationId
+                ? this.cryptic.decrypt(raw[k].locationId, 'database')
+                : undefined,
+              locationSplit: raw[k].locationSplit
+                ? this.decryptSplitRule(raw[k].locationSplit)
+                : undefined,
             };
             rawSubscriptions.push(decrypted);
           }
@@ -806,6 +847,72 @@ export class AppDataService {
             });
           this.localStorage.saveData('subscriptions', JSON.stringify(mySubscriptions));
         }
+        break;
+      }
+      case 'locations': {
+        const myLocations: MoneyLocation[] = [];
+        if (raw != null) {
+          for (const k in raw) {
+            const newL: MoneyLocation = {
+              id: this.cryptic.decrypt(raw[k].id, 'database'),
+              name: this.cryptic.decrypt(raw[k].name, 'database'),
+              amount: parseFloat(this.cryptic.decrypt(raw[k].amount, 'database')),
+            };
+            if (raw[k].subName) newL.subName = this.cryptic.decrypt(raw[k].subName, 'database');
+            if (raw[k].kind)
+              newL.kind = this.cryptic.decrypt(raw[k].kind, 'database') as LocationKind;
+            myLocations.push(newL);
+          }
+        }
+        AppStateService.instance.allLocations = myLocations;
+        this.localStorage.saveData('locations', JSON.stringify(myLocations));
+        break;
+      }
+      case 'transfers': {
+        const myTransfers: Transfer[] = [];
+        if (raw != null) {
+          for (const k in raw) {
+            const t: Transfer = {
+              id: this.cryptic.decrypt(raw[k].id, 'database'),
+              amount: parseFloat(this.cryptic.decrypt(raw[k].amount, 'database')),
+              date: this.cryptic.decrypt(raw[k].date, 'database'),
+              time: raw[k].time ? this.cryptic.decrypt(raw[k].time, 'database') : '',
+              comment: raw[k].comment ? this.cryptic.decrypt(raw[k].comment, 'database') : '',
+            };
+            if (raw[k].fromLocationId) {
+              t.fromLocationId = this.cryptic.decrypt(raw[k].fromLocationId, 'database');
+            }
+            if (raw[k].toLocationId) {
+              t.toLocationId = this.cryptic.decrypt(raw[k].toLocationId, 'database');
+            }
+            myTransfers.push(t);
+          }
+        }
+        AppStateService.instance.allTransfers = myTransfers;
+        AppStateService.instance.transfersUpdated$.next();
+        this.localStorage.saveData('transfers', JSON.stringify(myTransfers));
+        break;
+      }
+      case 'recurringTransfers': {
+        const myRules: RecurringTransfer[] = [];
+        if (raw != null) {
+          for (const k in raw) {
+            myRules.push({
+              id: this.cryptic.decrypt(raw[k].id, 'database'),
+              title: raw[k].title ? this.cryptic.decrypt(raw[k].title, 'database') : '',
+              fromLocationId: this.cryptic.decrypt(raw[k].fromLocationId, 'database'),
+              toLocationId: this.cryptic.decrypt(raw[k].toLocationId, 'database'),
+              amount: parseFloat(this.cryptic.decrypt(raw[k].amount, 'database')),
+              startDate: this.cryptic.decrypt(raw[k].startDate, 'database'),
+              endDate: raw[k].endDate ? this.cryptic.decrypt(raw[k].endDate, 'database') : '',
+              frequency: this.cryptic.decrypt(raw[k].frequency, 'database') as any,
+              comment: raw[k].comment ? this.cryptic.decrypt(raw[k].comment, 'database') : '',
+            });
+          }
+        }
+        AppStateService.instance.allRecurringTransfers = myRules;
+        AppStateService.instance.transfersUpdated$.next();
+        this.localStorage.saveData('recurringTransfers', JSON.stringify(myRules));
         break;
       }
       case 'income/revenue/interests': {
@@ -1480,6 +1587,24 @@ export class AppDataService {
         break;
       }
     }
+  }
+
+  /** A subscription's split rule: each value is encrypted on its own. */
+  private decryptSplitRule(rule: any): { locationId: string; percent?: number; amount?: number }[] {
+    const result = [];
+    for (const j in rule) {
+      const leg = rule[j];
+      result.push({
+        locationId: this.cryptic.decrypt(leg.locationId, 'database'),
+        ...(leg.percent !== undefined
+          ? { percent: parseFloat(this.cryptic.decrypt(leg.percent, 'database')) }
+          : {}),
+        ...(leg.amount !== undefined
+          ? { amount: parseFloat(this.cryptic.decrypt(leg.amount, 'database')) }
+          : {}),
+      });
+    }
+    return result;
   }
 
   /**

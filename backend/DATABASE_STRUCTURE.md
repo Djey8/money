@@ -320,11 +320,11 @@ The browser writes it about three seconds after the last step (a burst of steps 
 
 The frontend (`AppDataService`, `src/app/shared/services/app-data.service.ts`) does not load all of the above eagerly. It classifies paths into three tiers — worth knowing when reasoning about "is this data available yet" from an API/agent client, since **the API itself always returns current data regardless of tier** (tiers are a frontend rendering-performance optimization, not a backend concept):
 
-| Tier | Paths                                                                    | Frontend loads it…                                                  |
-| ---- | ------------------------------------------------------------------------ | ------------------------------------------------------------------- |
-| 1    | `transactions`, `subscriptions`, `income/revenue/*`, `income/expenses/*` | Eagerly, blocks initial UI render                                   |
-| 2    | `smile`, `fire`, `mojo`, `budget`                                        | Asynchronously, right after Tier 1 resolves                         |
-| 3    | `grow`, `balance/asset/*`, `balance/liabilities`                         | On-demand, only when the user navigates to the Grow or Balance page |
+| Tier | Paths                                                                                                                    | Frontend loads it…                                                  |
+| ---- | ------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------- |
+| 1    | `transactions`, `subscriptions`, `locations`, `transfers`, `recurringTransfers`, `income/revenue/*`, `income/expenses/*` | Eagerly, blocks initial UI render                                   |
+| 2    | `smile`, `fire`, `mojo`, `budget`                                                                                        | Asynchronously, right after Tier 1 resolves                         |
+| 3    | `grow`, `balance/asset/*`, `balance/liabilities`                                                                         | On-demand, only when the user navigates to the Grow or Balance page |
 
 ## API Endpoints
 
@@ -677,3 +677,17 @@ curl -X GET http://localhost:3000/api/data/read/ \
 - Multiple documents per user → Old/incorrect structure, run migration
 - Data at root level instead of under `data` → Old/incorrect structure
 - No `_id` matching userId → Document created manually, should be created via API
+
+## Locations (`locations`)
+
+Top-level array of `{ id, name, subName?, kind, amount }` (every value encrypted like the rest when database encryption is on; `amount` is a decimal on schema version 1 and integer minor units on version 2, converted by `mm-admin migrate` because `amount` is a registered money field). `kind` is `bank | savings | cash | crypto | wallet | broker | card | other`. It is a tier 1 path: transactions show their location, so it loads with them.
+
+A transaction may carry an optional `locationId` (the `id` of a location). **A missing `locationId` means "no location"; existing transactions are not rewritten** and `null` is never stored (the encrypt step would turn it into the string "null"). The balance in `amount` is moved by the bookings in the same document write (`applyDerivedState` for the API, `src/app/shared/location-balance.ts` for the app) and can also be overwritten by hand.
+
+## Transfers (`transfers`)
+
+Top-level array of `{ id, fromLocationId?, toLocationId?, amount, date, time, comment }` (each value encrypted on its own when database encryption is on; `amount` is a positive decimal on schema version 1 and integer minor units on version 2, converted by `mm-admin migrate`). A transfer moves `amount` from one location to another and is **not** a transaction: it never enters `transactions` and cannot change the income statement, Cashflow or any fund. `fromLocationId`/`toLocationId` are dropped (never `null`) when that location is deleted. Tier 1, loaded with the locations.
+
+## Recurring transfers (`recurringTransfers`)
+
+Top-level array of `{ id, title, fromLocationId, toLocationId, amount, startDate, endDate, frequency, comment }` (each value encrypted on its own; `amount` positive, decimal on schema version 1 and minor units on version 2). A rule generates entries in `transfers` on its schedule (the generated comment is the rule's title) and nothing else: it is **not** a subscription, so it is never part of `subscriptions` and cannot reach `transactions` or any derived figure. Deleting a location deletes the rules that point at it (the transfers they made stay). Tier 1.

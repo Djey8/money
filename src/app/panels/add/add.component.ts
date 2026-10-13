@@ -10,6 +10,12 @@ import {
 import { Router } from '@angular/router';
 import { LocalService } from 'src/app/shared/services/local.service';
 import { Transaction } from '../../interfaces/transaction';
+import { locationLabel } from 'src/app/shared/location.utils';
+import {
+  lastUsedLocationId,
+  locationsByRecentUse,
+  reconcileLocationBooking,
+} from 'src/app/shared/location-balance';
 import { DatabaseService } from 'src/app/shared/services/database.service';
 import { Revenue } from '../../interfaces/revenue';
 import { Expense } from 'src/app/interfaces/expense';
@@ -26,6 +32,15 @@ import { forkJoin, of } from 'rxjs';
 import { AuthService } from 'src/app/shared/services/auth.service';
 import { BaseAddComponent } from 'src/app/shared/base/base-add.component';
 import { AppStateService } from 'src/app/shared/services/app-state.service';
+import { LocationSplitComponent } from 'src/app/shared/components/location-split/location-split.component';
+import {
+  resolveStoredSplits,
+  rowsToStoredRule,
+  SplitRow,
+  splitProblem,
+  splitsToRows,
+  storedRuleToRows,
+} from 'src/app/shared/location-split.utils';
 import { CashflowGameService } from 'src/app/shared/services/cashflow-game.service';
 import { AppDataService } from 'src/app/shared/services/app-data.service';
 import { CommonModule } from '@angular/common';
@@ -93,13 +108,49 @@ setTimeout(() => import('src/app/app.component').then((m) => (AppComponent = m.A
 @Component({
   selector: 'app-add',
   standalone: true,
-  imports: [TrapFocusDirective, CommonModule, FormsModule, TranslateModule],
+  imports: [TrapFocusDirective, CommonModule, FormsModule, TranslateModule, LocationSplitComponent],
   templateUrl: './add.component.html',
   styleUrls: ['../../shared/styles/add-form.css', './add.component.css'],
 })
 export class AddComponent extends BaseAddComponent implements OnInit, AfterViewInit, DoCheck {
   static selectedOption = 'Daily';
   static amountTextField = '';
+  /** undefined = the user has not touched the picker (pre-select the last used location); null = "None". */
+  static locationChoice: string | null | undefined = undefined;
+
+  readonly locationLabel = locationLabel;
+
+  /** The other locations this booking is split to (the main one is the picker above). */
+  splitRows: SplitRow[] = [];
+  readonly currency = '€';
+
+  /** The stable list for the split editor (a fresh array per check would upset change detection). */
+  get allLocations() {
+    return AppStateService.instance.allLocations;
+  }
+
+  /** The typed amount for the split preview, or null while it is not a number. */
+  get splitAmount(): number | null {
+    const n = parseFloat(String(AddComponent.amountTextField));
+    return Number.isFinite(n) ? n : null;
+  }
+
+  /** Most recently used first, then the rest in their normal order. */
+  get locations() {
+    return locationsByRecentUse(
+      AppStateService.instance.allTransactions,
+      AppStateService.instance.allLocations,
+    );
+  }
+
+  get locationId(): string | null {
+    if (AddComponent.locationChoice !== undefined) return AddComponent.locationChoice;
+    return lastUsedLocationId(AppStateService.instance.allTransactions, this.locations);
+  }
+
+  set locationId(value: string | null) {
+    AddComponent.locationChoice = value;
+  }
   d = new Date();
   dateTextField =
     this.d.getFullYear() +
@@ -365,6 +416,8 @@ export class AddComponent extends BaseAddComponent implements OnInit, AfterViewI
     AddComponent.amountTextField = '';
     AddComponent.commentTextField = '';
     AddComponent.categoryTextField = '@';
+    AddComponent.locationChoice = undefined;
+    this.splitRows = [];
     super.closeWindow();
   }
 
@@ -440,6 +493,13 @@ export class AddComponent extends BaseAddComponent implements OnInit, AfterViewI
         },
       ])
     ) {
+      return;
+    }
+
+    // A split across locations must be sound before anything is booked.
+    const splitMessage = splitProblem(this.splitRows, this.locationId);
+    if (splitMessage) {
+      this.showError(splitMessage);
       return;
     }
 
@@ -1654,11 +1714,19 @@ export class AddComponent extends BaseAddComponent implements OnInit, AfterViewI
               ? '\n#cashflow'
               : ''),
         };
+        const bookedLocationId = this.locationId;
+        if (bookedLocationId) {
+          newTransaction.locationId = bookedLocationId;
+          const extras = resolveStoredSplits(newTransaction.amount, this.splitRows);
+          if (extras.length > 0) newTransaction.locationSplits = extras;
+        }
         AppStateService.instance.allTransactions.push(newTransaction);
 
         // After transaction is added, update it with smart bucket allocation tags
         // This must happen AFTER push so we can access and modify the transaction
         this.updateTransactionWithAllocationTags(newTransaction, AddComponent.categoryTextField);
+        // The booked amount moves the chosen location (the amount is final once the tags are applied).
+        reconcileLocationBooking(AppStateService.instance.allLocations, null, newTransaction);
 
         // Log the add transaction activity
         this.frontendLogger.logDataOperation('add', 'transaction', undefined, {
@@ -1718,6 +1786,7 @@ export class AddComponent extends BaseAddComponent implements OnInit, AfterViewI
                 ]
               : []),
             { tag: 'transactions', data: AppStateService.instance.allTransactions },
+            { tag: 'locations', data: AppStateService.instance.allLocations },
             // A Cashflow-game account's Sell Investment can remove a cashflow
             // Subscription above (add.component.ts's own Sell Investment
             // handling) — write it back too. Harmless to include even when
@@ -1832,6 +1901,7 @@ export class AddComponent extends BaseAddComponent implements OnInit, AfterViewI
       'transactions',
       JSON.stringify(AppStateService.instance.allTransactions),
     );
+    this.localStorage.saveData('locations', JSON.stringify(AppStateService.instance.allLocations));
     // Only save balance/grow data to localStorage if it has been loaded (Tier 3 on-demand).
     // Saving before load would overwrite real localStorage data with empty arrays.
     if (AppStateService.instance.tier3BalanceLoaded) {

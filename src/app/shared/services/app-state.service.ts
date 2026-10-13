@@ -2,6 +2,9 @@ import { Injectable } from '@angular/core';
 import { Subject } from 'rxjs';
 import { Transaction } from '../../interfaces/transaction';
 import { Subscription } from '../../interfaces/subscription';
+import { MoneyLocation } from '../../interfaces/location';
+import { Transfer } from '../../interfaces/transfer';
+import { RecurringTransfer } from '../../interfaces/recurring-transfer';
 import { Revenue } from '../../interfaces/revenue';
 import { Interest } from '../../interfaces/interest';
 import { Property } from '../../interfaces/property';
@@ -37,12 +40,20 @@ export class AppStateService {
 
   // Signals
   transactionsUpdated$ = new Subject<void>();
+  /** Fired whenever the transfers or the recurring transfers change, so the list pages rebuild their tables. */
+  transfersUpdated$ = new Subject<void>();
   /** Fired whenever `allSubscriptions` changes from somewhere that doesn't itself hold a reference to the Subscriptions list page (e.g. the Cashflow game panel) — mirrors `transactionsUpdated$`. */
   subscriptionsUpdated$ = new Subject<void>();
 
   // Phase A: Transaction data
   allTransactions: Transaction[] = [];
   allSubscriptions: Subscription[] = [];
+  /** Where the money physically sits (bank, cash, PayPal ...). Tier 1: transactions show their location. */
+  allLocations: MoneyLocation[] = [];
+  /** Moves of money between locations (not transactions). Tier 1, loaded with the locations. */
+  allTransfers: Transfer[] = [];
+  /** Rules that generate transfers on a schedule (not subscriptions). Tier 1. */
+  allRecurringTransfers: RecurringTransfer[] = [];
 
   // Phase B: Income statement data
   allRevenues: Revenue[] = [];

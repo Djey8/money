@@ -414,7 +414,13 @@ async function withGrowActionWrite(
     const allTransactions = replaced
       ? existingTransactions.map((t) => (t.id === replaced.id ? newTransaction : t))
       : [...existingTransactions, newTransaction];
-    const derived = applyDerivedState(data, allTransactions, session, schemaVersion);
+    const derived = applyDerivedState(
+      data,
+      allTransactions,
+      session,
+      schemaVersion,
+      existingTransactions,
+    );
 
     const updatedData = derived.data;
     updatedData.transactions = derived.transactions.map((effective) =>

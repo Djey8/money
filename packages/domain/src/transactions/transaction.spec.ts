@@ -86,4 +86,71 @@ describe('transaction API storage mappings', () => {
       ),
     ).toThrow(/amountMinor/);
   });
+
+  describe('locationId', () => {
+    const base = {
+      id: 'tx_1',
+      account: 'Daily',
+      amount: -12.5,
+      date: '2026-10-01',
+      time: '10:00',
+      category: '@food',
+      comment: '',
+    };
+
+    it('survives a round trip through the API shape (an API write must not drop it)', () => {
+      const api = transactionToApi({ ...base, locationId: 'loc_1' }, 1, 'EUR', () => 'x');
+      expect(api.locationId).toBe('loc_1');
+      expect(transactionFromApi(api, 1).locationId).toBe('loc_1');
+    });
+
+    it('stays absent (never null) for a transaction without a location', () => {
+      const api = transactionToApi(base, 1, 'EUR', () => 'x');
+      expect('locationId' in api).toBe(false);
+      expect('locationId' in transactionFromApi(api, 1)).toBe(false);
+    });
+  });
+
+  describe('locationSplits', () => {
+    const stored = {
+      id: 'tx_1',
+      account: 'Income',
+      amount: 3000,
+      date: '2026-10-01',
+      time: '10:00',
+      category: '@Salary',
+      comment: '',
+      locationId: 'loc_main',
+      locationSplits: [{ locationId: 'loc_sav', amount: 600 }],
+    };
+
+    it('maps the other-location amounts to minor units on a decimal (v1) document and back', () => {
+      const api = transactionToApi(stored, 1, 'EUR', () => 'x');
+      expect(api.locationSplits).toEqual([{ locationId: 'loc_sav', amountMinor: 60000 }]);
+      expect(transactionFromApi(api, 1).locationSplits).toEqual([
+        { locationId: 'loc_sav', amount: 600 },
+      ]);
+    });
+
+    it('keeps the amounts as they are on a minor-unit (v2) document', () => {
+      const v2 = {
+        ...stored,
+        amount: 300000,
+        locationSplits: [{ locationId: 'loc_sav', amount: 60000 }],
+      };
+      const api = transactionToApi(v2, 2, 'EUR', () => 'x');
+      expect(api.locationSplits).toEqual([{ locationId: 'loc_sav', amountMinor: 60000 }]);
+      expect(transactionFromApi(api, 2).locationSplits).toEqual([
+        { locationId: 'loc_sav', amount: 60000 },
+      ]);
+    });
+
+    it('is absent (never an empty array or null) for a transaction that is not split', () => {
+      const plain = { ...stored, locationSplits: undefined };
+      expect('locationSplits' in transactionToApi(plain, 1, 'EUR', () => 'x')).toBe(false);
+      const api = transactionToApi({ ...stored, locationSplits: [] }, 1, 'EUR', () => 'x');
+      expect('locationSplits' in api).toBe(false);
+      expect('locationSplits' in transactionFromApi(api, 1)).toBe(false);
+    });
+  });
 });

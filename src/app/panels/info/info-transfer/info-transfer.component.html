@@ -1,0 +1,78 @@
+<div
+  id="infoTransaction-Container"
+  role="dialog"
+  aria-modal="true"
+  appTrapFocus
+  *ngIf="classReference.isInfo && transfer"
+  (click)="highlight()"
+  [style.z-index]="classReference.zIndex + 1001"
+>
+  <h4 id="infoTransactionTitle">{{ 'Transfer.title' | translate }}</h4>
+  <button id="closebtn" aria-label="Close" (click)="closeWindow()">x</button>
+  <hr class="separator-white" />
+  <div *ngIf="!isEdit">
+    <div id="info-box">
+      <h4 class="infoLableB">
+        {{ nameOf(transfer.fromLocationId) || ('Transfer.deletedLocation' | translate) }}
+        →
+        {{ nameOf(transfer.toLocationId) || ('Transfer.deletedLocation' | translate) }}
+      </h4>
+      <hr class="divider-black" />
+      <h4 class="infoLable mt-xs">
+        {{ 'Common.amount' | translate }}: {{ transfer.amount | appNumber }} {{ currency }}
+      </h4>
+      <h4 class="infoLable">{{ transfer.date | appDate }} {{ transfer.time }}</h4>
+      <pre class="commentLable" *ngIf="transfer.comment">{{ transfer.comment }}</pre>
+      <p class="transfer-note">{{ 'Transfer.note' | translate }}</p>
+    </div>
+    <button id="editbtn" class="btn btn--action" (click)="editTransfer()">
+      {{ 'Info.edit' | translate }}
+    </button>
+  </div>
+  <div *ngIf="isEdit">
+    <form id="input-container">
+      <label for="from">{{ 'Transfer.from' | translate }}</label>
+      <select id="from" name="from" [(ngModel)]="fromLocationId">
+        <option [ngValue]="null">{{ 'Transfer.choose' | translate }}</option>
+        <option *ngFor="let l of locations" [ngValue]="l.id">{{ label(l) }}</option>
+      </select>
+      <label for="to">{{ 'Transfer.to' | translate }}</label>
+      <select id="to" name="to" [(ngModel)]="toLocationId">
+        <option [ngValue]="null">{{ 'Transfer.choose' | translate }}</option>
+        <option *ngFor="let l of locations" [ngValue]="l.id">{{ label(l) }}</option>
+      </select>
+      <label for="amount">{{ 'Common.amount' | translate }}</label>
+      <input
+        type="number"
+        step="any"
+        min="0"
+        id="amount"
+        name="amount"
+        [(ngModel)]="amountTextField"
+      />
+      <label for="date">{{ 'Common.date' | translate }}</label>
+      <input type="date" id="date" name="date" [(ngModel)]="dateTextField" />
+      <label for="time">{{ 'AddTransaction.Time' | translate }}</label>
+      <input type="time" id="time" name="time" [(ngModel)]="timeTextField" />
+      <label for="comment">{{ 'AddTransaction.Comment' | translate }}</label>
+      <input
+        type="text"
+        id="comment"
+        name="comment"
+        maxlength="200"
+        [(ngModel)]="commentTextField"
+        class="mb-xs"
+      />
+    </form>
+    <p id="errorLable" *ngIf="classReference.isError">{{ errorTextLable }}</p>
+    <button id="addbtn" class="btn btn--action" (click)="updateTransfer()">
+      {{ 'Info.update' | translate }}
+    </button>
+    <button id="deletebtn" class="btn btn--danger" (click)="deleteTransfer()">
+      {{ 'Info.delete' | translate }}
+    </button>
+    <button id="canclebtn" class="btn btn--action" (click)="cancel()">
+      {{ 'Info.cancel' | translate }}
+    </button>
+  </div>
+</div>

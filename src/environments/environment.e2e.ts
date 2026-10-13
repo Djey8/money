@@ -5,6 +5,11 @@ export const environment = {
   mode: 'selfhosted',
   edition: 'selfhosted' as const, // build-time-only, gates Pro routes (docs/adr/0004)
   appVersion: packageJson.version,
+  // Pro links shown by shared screens. Defined only in the self-hosted environments so the Firebase
+  // build carries neither the route nor the label (docs/adr/0004).
+  proLinks: {
+    personalAccessTokens: { route: '/settings/tokens', label: 'Personal Access Tokens' },
+  } as { personalAccessTokens?: { route: string; label: string } },
 
   firebase: {
     apiKey: 'AIzaSyABlsfWQyAp9v4IpQYS51LKdoG_3r_vC3I',

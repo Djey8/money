@@ -49,6 +49,20 @@
     <span class="field-error" id="account-error" role="alert" *ngIf="fieldErrors['account']">{{
       fieldErrors['account']
     }}</span>
+    <ng-container *ngIf="locations.length > 0">
+      <label for="location">{{ 'AddTransaction.Location' | translate }}</label>
+      <select [(ngModel)]="locationId" id="location" name="location">
+        <option [ngValue]="null">{{ 'AddTransaction.LocationNone' | translate }}</option>
+        <option *ngFor="let l of locations" [ngValue]="l.id">{{ locationLabel(l) }}</option>
+      </select>
+      <app-location-split
+        [rows]="splitRows"
+        [mainLocationId]="locationId"
+        [amount]="splitAmount"
+        [locations]="allLocations"
+        [currency]="currency"
+      ></app-location-split>
+    </ng-container>
     <label
       for="amount"
       class="required"

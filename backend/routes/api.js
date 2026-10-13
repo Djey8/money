@@ -88,6 +88,29 @@ const {
   deleteAsset,
 } = require('../repositories/asset-repository');
 const {
+  LOCATION_KINDS,
+  listLocations,
+  getLocation,
+  createLocation,
+  updateLocation,
+  deleteLocation,
+} = require('../repositories/location-repository');
+const {
+  listTransfers,
+  getTransfer,
+  createTransfer,
+  updateTransfer,
+  deleteTransfer,
+} = require('../repositories/transfer-repository');
+const {
+  listRecurringTransfers,
+  getRecurringTransfer,
+  createRecurringTransfer,
+  updateRecurringTransfer,
+  deleteRecurringTransfer,
+  refreshRecurringTransfers,
+} = require('../repositories/recurring-transfer-repository');
+const {
   listLiabilities,
   getLiability,
   createLiability,
@@ -186,6 +209,35 @@ function validateTransactionInput(input) {
     }
   }
   if (!/^\d{4}-\d{2}-\d{2}$/.test(input.date)) return 'date must use YYYY-MM-DD format.';
+  return (
+    validateLocationIdField(input.locationId) ?? validateLocationSplitsField(input.locationSplits)
+  );
+}
+
+/** locationId is optional; null is accepted as "no location" (on a PATCH it clears the link). */
+function validateLocationIdField(value) {
+  if (value === undefined || value === null) return null;
+  if (typeof value !== 'string' || value.trim() === '') {
+    return 'locationId must be a non-empty string or null.';
+  }
+  return null;
+}
+
+/** locationSplits: the amounts that go to OTHER locations; null or [] clears them. Consistency is checked on write. */
+function validateLocationSplitsField(value) {
+  if (value === undefined || value === null) return null;
+  if (!Array.isArray(value)) return 'locationSplits must be a list or null.';
+  for (const leg of value) {
+    if (!leg || typeof leg !== 'object' || Array.isArray(leg)) {
+      return 'Each locationSplits entry must be an object.';
+    }
+    const unknown = Object.keys(leg).find((key) => !['locationId', 'amountMinor'].includes(key));
+    if (unknown) return `locationSplits entries do not accept '${unknown}'.`;
+    if (!isNonEmptyString(leg.locationId)) return 'Each split needs a locationId.';
+    if (!Number.isInteger(leg.amountMinor) || leg.amountMinor === 0) {
+      return 'Each split needs a non-zero integer amountMinor.';
+    }
+  }
   return null;
 }
 
@@ -196,6 +248,8 @@ const EDITABLE_TRANSACTION_FIELDS = [
   'time',
   'category',
   'comment',
+  'locationId',
+  'locationSplits',
 ];
 
 function validatePartialTransactionFields(input) {
@@ -217,7 +271,9 @@ function validatePartialTransactionFields(input) {
   if (input.date !== undefined && !/^\d{4}-\d{2}-\d{2}$/.test(input.date)) {
     return 'date must use YYYY-MM-DD format.';
   }
-  return null;
+  return (
+    validateLocationIdField(input.locationId) ?? validateLocationSplitsField(input.locationSplits)
+  );
 }
 
 function validateTransactionPatch(input) {
@@ -773,6 +829,23 @@ function validateSubscriptionInput(input) {
   if (input.frequency !== undefined && !SUBSCRIPTION_FREQUENCIES.includes(input.frequency)) {
     return `frequency must be one of ${SUBSCRIPTION_FREQUENCIES.join(', ')}.`;
   }
+  return validateLocationIdField(input.locationId) ?? validateSplitRuleField(input.locationSplit);
+}
+
+/** locationSplit: the rule for the OTHER locations, a percent OR an amountMinor each; null or [] clears it. */
+function validateSplitRuleField(value) {
+  if (value === undefined || value === null) return null;
+  if (!Array.isArray(value)) return 'locationSplit must be a list or null.';
+  for (const leg of value) {
+    if (!leg || typeof leg !== 'object' || Array.isArray(leg)) {
+      return 'Each locationSplit entry must be an object.';
+    }
+    const unknown = Object.keys(leg).find(
+      (key) => !['locationId', 'percent', 'amountMinor'].includes(key),
+    );
+    if (unknown) return `locationSplit entries do not accept '${unknown}'.`;
+    if (!isNonEmptyString(leg.locationId)) return 'Each split needs a locationId.';
+  }
   return null;
 }
 
@@ -785,6 +858,8 @@ const EDITABLE_SUBSCRIPTION_FIELDS = [
   'category',
   'comment',
   'frequency',
+  'locationId',
+  'locationSplit',
 ];
 
 function validatePatchSubscriptionInput(input) {
@@ -830,7 +905,7 @@ function validatePatchSubscriptionInput(input) {
   if (input.frequency !== undefined && !SUBSCRIPTION_FREQUENCIES.includes(input.frequency)) {
     return `frequency must be one of ${SUBSCRIPTION_FREQUENCIES.join(', ')}.`;
   }
-  return null;
+  return validateLocationIdField(input.locationId) ?? validateSplitRuleField(input.locationSplit);
 }
 
 function validateSubscriptionBatchOperationItem(operation) {
@@ -1081,6 +1156,180 @@ function validatePatchAssetInput(input) {
     return 'amountMinor must be an integer.';
   }
   return null;
+}
+
+const CREATE_LOCATION_FIELDS = ['name', 'subName', 'kind', 'amountMinor'];
+
+const MAX_LOCATION_TEXT_LENGTH = 100;
+
+function validateLocationOptionalFields(input) {
+  if (input.subName !== undefined && typeof input.subName !== 'string') {
+    return 'subName must be a string (empty clears it).';
+  }
+  if (typeof input.subName === 'string' && input.subName.length > MAX_LOCATION_TEXT_LENGTH) {
+    return `subName must be at most ${MAX_LOCATION_TEXT_LENGTH} characters.`;
+  }
+  if (typeof input.name === 'string' && input.name.length > MAX_LOCATION_TEXT_LENGTH) {
+    return `name must be at most ${MAX_LOCATION_TEXT_LENGTH} characters.`;
+  }
+  if (input.kind !== undefined && !LOCATION_KINDS.includes(input.kind)) {
+    return `kind must be one of: ${LOCATION_KINDS.join(', ')}.`;
+  }
+  if (input.amountMinor !== undefined && !Number.isInteger(input.amountMinor)) {
+    return 'amountMinor must be an integer.';
+  }
+  return null;
+}
+
+function validateCreateLocationInput(input) {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) {
+    return 'A location object is required.';
+  }
+  const unknownField = Object.keys(input).find((key) => !CREATE_LOCATION_FIELDS.includes(key));
+  if (unknownField) return `${unknownField} is not a known field.`;
+  if (!isNonEmptyString(input.name)) return 'name must be a non-empty string.';
+  return validateLocationOptionalFields(input);
+}
+
+function validatePatchLocationInput(input) {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) {
+    return 'A location object is required.';
+  }
+  if (Object.keys(input).length === 0) return 'At least one field must be provided.';
+  const unknownField = Object.keys(input).find((key) => !CREATE_LOCATION_FIELDS.includes(key));
+  if (unknownField) return `${unknownField} is not an editable field.`;
+  if (input.name !== undefined && !isNonEmptyString(input.name)) {
+    return 'name must be a non-empty string.';
+  }
+  return validateLocationOptionalFields(input);
+}
+
+const TRANSFER_FIELDS = [
+  'fromLocationId',
+  'toLocationId',
+  'amountMinor',
+  'date',
+  'time',
+  'comment',
+];
+
+function validateTransferFields(input, { partial }) {
+  const unknown = Object.keys(input).find((key) => !TRANSFER_FIELDS.includes(key));
+  if (unknown) return `${unknown} is not a known field.`;
+  for (const field of ['fromLocationId', 'toLocationId']) {
+    if (input[field] === undefined && !partial) return `${field} is required.`;
+    if (input[field] !== undefined && !isNonEmptyString(input[field])) {
+      return `${field} must be a non-empty string.`;
+    }
+  }
+  if (input.amountMinor === undefined && !partial) return 'amountMinor is required.';
+  if (input.amountMinor !== undefined) {
+    if (!Number.isInteger(input.amountMinor) || input.amountMinor <= 0) {
+      return 'amountMinor must be a positive integer (the direction is from -> to).';
+    }
+  }
+  if (input.date === undefined && !partial) return 'date is required.';
+  if (
+    input.date !== undefined &&
+    (!isNonEmptyString(input.date) || !/^\d{4}-\d{2}-\d{2}$/.test(input.date))
+  ) {
+    return 'date must use YYYY-MM-DD format.';
+  }
+  if (input.time !== undefined && typeof input.time !== 'string') return 'time must be a string.';
+  if (input.comment !== undefined && typeof input.comment !== 'string') {
+    return 'comment must be a string.';
+  }
+  return null;
+}
+
+function validateCreateTransferInput(input) {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) {
+    return 'A transfer object is required.';
+  }
+  return validateTransferFields(input, { partial: false });
+}
+
+function validatePatchTransferInput(input) {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) {
+    return 'A transfer object is required.';
+  }
+  if (Object.keys(input).length === 0) return 'At least one field must be provided.';
+  return validateTransferFields(input, { partial: true });
+}
+
+const RECURRING_TRANSFER_FIELDS = [
+  'title',
+  'fromLocationId',
+  'toLocationId',
+  'amountMinor',
+  'startDate',
+  'endDate',
+  'frequency',
+  'comment',
+];
+const RECURRING_FREQUENCIES = ['weekly', 'biweekly', 'monthly', 'quarterly', 'yearly'];
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+function validateRecurringTransferFields(input, { partial }) {
+  const unknown = Object.keys(input).find((key) => !RECURRING_TRANSFER_FIELDS.includes(key));
+  if (unknown) return `${unknown} is not a known field.`;
+  for (const field of ['fromLocationId', 'toLocationId']) {
+    if (input[field] === undefined && !partial) return `${field} is required.`;
+    if (input[field] !== undefined && !isNonEmptyString(input[field])) {
+      return `${field} must be a non-empty string.`;
+    }
+  }
+  if (input.amountMinor === undefined && !partial) return 'amountMinor is required.';
+  if (input.amountMinor !== undefined) {
+    if (!Number.isInteger(input.amountMinor) || input.amountMinor <= 0) {
+      return 'amountMinor must be a positive integer (the direction is from -> to).';
+    }
+  }
+  if (input.startDate === undefined && !partial) return 'startDate is required.';
+  if (
+    input.startDate !== undefined &&
+    !(isNonEmptyString(input.startDate) && ISO_DATE.test(input.startDate))
+  ) {
+    return 'startDate must use YYYY-MM-DD format.';
+  }
+  if (
+    input.endDate !== undefined &&
+    input.endDate !== null &&
+    !(isNonEmptyString(input.endDate) && ISO_DATE.test(input.endDate))
+  ) {
+    return 'endDate must use YYYY-MM-DD format, or be null.';
+  }
+  if (input.frequency !== undefined && !RECURRING_FREQUENCIES.includes(input.frequency)) {
+    return `frequency must be one of ${RECURRING_FREQUENCIES.join(', ')}.`;
+  }
+  if (input.title !== undefined && typeof input.title !== 'string')
+    return 'title must be a string.';
+  if (input.comment !== undefined && typeof input.comment !== 'string') {
+    return 'comment must be a string.';
+  }
+  return null;
+}
+
+function validateCreateRecurringTransferInput(input) {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) {
+    return 'A recurring transfer object is required.';
+  }
+  return validateRecurringTransferFields(input, { partial: false });
+}
+
+function validatePatchRecurringTransferInput(input) {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) {
+    return 'A recurring transfer object is required.';
+  }
+  if (Object.keys(input).length === 0) return 'At least one field must be provided.';
+  return validateRecurringTransferFields(input, { partial: true });
+}
+
+function transferErrorResponse(res, error) {
+  if (error.code === 'TRANSFER_INVALID' || error.code === 'LOCATION_NOT_FOUND') {
+    return problem(res, 400, 'validation_invalid', 'Invalid transfer request', error.message);
+  }
+  return undefined;
 }
 
 function validateCreateLiabilityInput(input) {
@@ -1817,6 +2066,8 @@ const TRANSACTION_GROW_ERROR_CODES = [
   'TRANSACTION_GROW_TRADE',
   'TRANSACTION_GROW_LOCKED',
   'GROW_NOT_REVERSIBLE',
+  'LOCATION_NOT_FOUND',
+  'LOCATION_SPLIT_INVALID',
 ];
 
 function transactionGrowErrorResponse(res, error) {
@@ -2469,6 +2720,391 @@ router.post('/fire/:projectId/payment-plan', requireScope('fire:w'), async (req,
     if (error.code === 'PAYMENT_PLAN_INVALID') {
       return problem(res, 400, 'validation_invalid', 'Invalid payment plan request', error.message);
     }
+    return next(error);
+  }
+});
+
+router.get('/locations', requireScope('locations:r'), async (req, res, next) => {
+  try {
+    const locations = await listLocations(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+    );
+    return res.json({ locations });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.post('/locations', requireScope('locations:w'), async (req, res, next) => {
+  const validationError = validateCreateLocationInput(req.body);
+  if (validationError) {
+    return problem(res, 400, 'validation_invalid', 'Invalid location request', validationError);
+  }
+  try {
+    const location = await createLocation(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+      req.body,
+    );
+    await recordAuditEntry(getAuditDb(), {
+      userId: req.userId,
+      actor: auditActor(req.auth),
+      method: req.method,
+      path: req.baseUrl + req.path,
+      resource: 'locations',
+      resourceId: location.id,
+    });
+    return res.status(201).json(location);
+  } catch (error) {
+    if (error.code === 'LOCATION_DUPLICATE_NAME') {
+      return problem(res, 400, 'validation_invalid', 'Invalid location request', error.message);
+    }
+    return next(error);
+  }
+});
+
+router.get('/locations/:locationId', requireScope('locations:r'), async (req, res, next) => {
+  try {
+    const location = await getLocation(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+      req.params.locationId,
+    );
+    if (!location) {
+      return problem(res, 404, 'not_found', 'Location not found', 'No matching location exists.');
+    }
+    return res.json(location);
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.patch('/locations/:locationId', requireScope('locations:w'), async (req, res, next) => {
+  const validationError = validatePatchLocationInput(req.body);
+  if (validationError) {
+    return problem(res, 400, 'validation_invalid', 'Invalid location request', validationError);
+  }
+  try {
+    const location = await updateLocation(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+      req.params.locationId,
+      req.body,
+    );
+    if (!location) {
+      return problem(res, 404, 'not_found', 'Location not found', 'No matching location exists.');
+    }
+    await recordAuditEntry(getAuditDb(), {
+      userId: req.userId,
+      actor: auditActor(req.auth),
+      method: req.method,
+      path: req.baseUrl + req.path,
+      resource: 'locations',
+      resourceId: location.id,
+    });
+    return res.json(location);
+  } catch (error) {
+    if (error.code === 'LOCATION_DUPLICATE_NAME') {
+      return problem(res, 400, 'validation_invalid', 'Invalid location request', error.message);
+    }
+    return next(error);
+  }
+});
+
+router.delete('/locations/:locationId', requireScope('locations:w'), async (req, res, next) => {
+  try {
+    const deleted = await deleteLocation(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+      req.params.locationId,
+    );
+    if (!deleted) {
+      return problem(res, 404, 'not_found', 'Location not found', 'No matching location exists.');
+    }
+    await recordAuditEntry(getAuditDb(), {
+      userId: req.userId,
+      actor: auditActor(req.auth),
+      method: req.method,
+      path: req.baseUrl + req.path,
+      resource: 'locations',
+      resourceId: req.params.locationId,
+    });
+    return res.json(deleted);
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.get('/recurring-transfers', requireScope('locations:r'), async (req, res, next) => {
+  try {
+    const recurringTransfers = await listRecurringTransfers(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+    );
+    return res.json({ recurringTransfers });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.post('/recurring-transfers', requireScope('locations:w'), async (req, res, next) => {
+  const validationError = validateCreateRecurringTransferInput(req.body);
+  if (validationError) {
+    return problem(
+      res,
+      400,
+      'validation_invalid',
+      'Invalid recurring transfer request',
+      validationError,
+    );
+  }
+  try {
+    const rule = await createRecurringTransfer(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+      req.body,
+    );
+    await recordAuditEntry(getAuditDb(), {
+      userId: req.userId,
+      actor: auditActor(req.auth),
+      method: req.method,
+      path: req.baseUrl + req.path,
+      resource: 'recurring_transfers',
+      resourceId: rule.id,
+    });
+    return res.status(201).json(rule);
+  } catch (error) {
+    return transferErrorResponse(res, error) ?? next(error);
+  }
+});
+
+// Registered before `/recurring-transfers/:ruleId` so `refresh` is never captured as an id.
+router.post('/recurring-transfers/refresh', requireScope('locations:w'), async (req, res, next) => {
+  try {
+    const result = await refreshRecurringTransfers(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+    );
+    await recordAuditEntry(getAuditDb(), {
+      userId: req.userId,
+      actor: auditActor(req.auth),
+      method: req.method,
+      path: req.baseUrl + req.path,
+      resource: 'recurring_transfers_refresh',
+      itemCount: result.transfersCreated,
+    });
+    return res.json(result);
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.get('/recurring-transfers/:ruleId', requireScope('locations:r'), async (req, res, next) => {
+  try {
+    const rule = await getRecurringTransfer(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+      req.params.ruleId,
+    );
+    if (!rule) {
+      return problem(
+        res,
+        404,
+        'not_found',
+        'Recurring transfer not found',
+        'No matching recurring transfer exists.',
+      );
+    }
+    return res.json(rule);
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.patch(
+  '/recurring-transfers/:ruleId',
+  requireScope('locations:w'),
+  async (req, res, next) => {
+    const validationError = validatePatchRecurringTransferInput(req.body);
+    if (validationError) {
+      return problem(
+        res,
+        400,
+        'validation_invalid',
+        'Invalid recurring transfer request',
+        validationError,
+      );
+    }
+    try {
+      const rule = await updateRecurringTransfer(
+        { usersDb: getUsersDb(), authDb: getAuthDb() },
+        req.userId,
+        req.params.ruleId,
+        req.body,
+      );
+      if (!rule) {
+        return problem(
+          res,
+          404,
+          'not_found',
+          'Recurring transfer not found',
+          'No matching recurring transfer exists.',
+        );
+      }
+      await recordAuditEntry(getAuditDb(), {
+        userId: req.userId,
+        actor: auditActor(req.auth),
+        method: req.method,
+        path: req.baseUrl + req.path,
+        resource: 'recurring_transfers',
+        resourceId: rule.id,
+      });
+      return res.json(rule);
+    } catch (error) {
+      return transferErrorResponse(res, error) ?? next(error);
+    }
+  },
+);
+
+router.delete(
+  '/recurring-transfers/:ruleId',
+  requireScope('locations:w'),
+  async (req, res, next) => {
+    try {
+      const result = await deleteRecurringTransfer(
+        { usersDb: getUsersDb(), authDb: getAuthDb() },
+        req.userId,
+        req.params.ruleId,
+        { deleteTransfers: req.query.deleteTransfers === 'true' },
+      );
+      if (!result) {
+        return problem(
+          res,
+          404,
+          'not_found',
+          'Recurring transfer not found',
+          'No matching recurring transfer exists.',
+        );
+      }
+      await recordAuditEntry(getAuditDb(), {
+        userId: req.userId,
+        actor: auditActor(req.auth),
+        method: req.method,
+        path: req.baseUrl + req.path,
+        resource: 'recurring_transfers',
+        resourceId: req.params.ruleId,
+      });
+      return res.json(result);
+    } catch (error) {
+      return next(error);
+    }
+  },
+);
+
+router.get('/transfers', requireScope('locations:r'), async (req, res, next) => {
+  try {
+    const transfers = await listTransfers(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+      { locationId: typeof req.query.locationId === 'string' ? req.query.locationId : undefined },
+    );
+    return res.json({ transfers });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.post('/transfers', requireScope('locations:w'), async (req, res, next) => {
+  const validationError = validateCreateTransferInput(req.body);
+  if (validationError) {
+    return problem(res, 400, 'validation_invalid', 'Invalid transfer request', validationError);
+  }
+  try {
+    const transfer = await createTransfer(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+      req.body,
+    );
+    await recordAuditEntry(getAuditDb(), {
+      userId: req.userId,
+      actor: auditActor(req.auth),
+      method: req.method,
+      path: req.baseUrl + req.path,
+      resource: 'transfers',
+      resourceId: transfer.id,
+    });
+    return res.status(201).json(transfer);
+  } catch (error) {
+    return transferErrorResponse(res, error) ?? next(error);
+  }
+});
+
+router.get('/transfers/:transferId', requireScope('locations:r'), async (req, res, next) => {
+  try {
+    const transfer = await getTransfer(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+      req.params.transferId,
+    );
+    if (!transfer) {
+      return problem(res, 404, 'not_found', 'Transfer not found', 'No matching transfer exists.');
+    }
+    return res.json(transfer);
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.patch('/transfers/:transferId', requireScope('locations:w'), async (req, res, next) => {
+  const validationError = validatePatchTransferInput(req.body);
+  if (validationError) {
+    return problem(res, 400, 'validation_invalid', 'Invalid transfer request', validationError);
+  }
+  try {
+    const transfer = await updateTransfer(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+      req.params.transferId,
+      req.body,
+    );
+    if (!transfer) {
+      return problem(res, 404, 'not_found', 'Transfer not found', 'No matching transfer exists.');
+    }
+    await recordAuditEntry(getAuditDb(), {
+      userId: req.userId,
+      actor: auditActor(req.auth),
+      method: req.method,
+      path: req.baseUrl + req.path,
+      resource: 'transfers',
+      resourceId: transfer.id,
+    });
+    return res.json(transfer);
+  } catch (error) {
+    return transferErrorResponse(res, error) ?? next(error);
+  }
+});
+
+router.delete('/transfers/:transferId', requireScope('locations:w'), async (req, res, next) => {
+  try {
+    const deleted = await deleteTransfer(
+      { usersDb: getUsersDb(), authDb: getAuthDb() },
+      req.userId,
+      req.params.transferId,
+    );
+    if (!deleted) {
+      return problem(res, 404, 'not_found', 'Transfer not found', 'No matching transfer exists.');
+    }
+    await recordAuditEntry(getAuditDb(), {
+      userId: req.userId,
+      actor: auditActor(req.auth),
+      method: req.method,
+      path: req.baseUrl + req.path,
+      resource: 'transfers',
+      resourceId: req.params.transferId,
+    });
+    return res.json(deleted);
+  } catch (error) {
     return next(error);
   }
 });
@@ -4427,6 +5063,9 @@ router.post('/subscriptions', requireScope('subscriptions:w'), async (req, res, 
     });
     return res.status(201).json(subscription);
   } catch (error) {
+    if (error.code === 'LOCATION_NOT_FOUND' || error.code === 'LOCATION_SPLIT_INVALID') {
+      return problem(res, 400, 'validation_invalid', 'Invalid subscription request', error.message);
+    }
     return next(error);
   }
 });
@@ -4526,6 +5165,15 @@ router.patch(
           400,
           'validation_invalid',
           'Subscription belongs to a payment plan',
+          error.message,
+        );
+      }
+      if (error.code === 'LOCATION_NOT_FOUND' || error.code === 'LOCATION_SPLIT_INVALID') {
+        return problem(
+          res,
+          400,
+          'validation_invalid',
+          'Invalid subscription request',
           error.message,
         );
       }

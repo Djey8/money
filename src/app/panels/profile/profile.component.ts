@@ -242,6 +242,9 @@ export class ProfileComponent implements OnInit {
     this.localStorage.removeData('username');
     this.localStorage.removeData('transactions');
     this.localStorage.removeData('subscriptions');
+    this.localStorage.removeData('locations');
+    this.localStorage.removeData('transfers');
+    this.localStorage.removeData('recurringTransfers');
     this.localStorage.removeData('smile');
     this.localStorage.removeData('fire');
     this.localStorage.removeData('mojo');

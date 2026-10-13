@@ -33,6 +33,7 @@ const SCOPE_RESOURCES = [
   'mojo',
   'grow',
   'balance',
+  'locations',
   'income',
   'budget',
   'settings',

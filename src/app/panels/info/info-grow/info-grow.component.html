@@ -419,24 +419,26 @@
         <h5 class="section-label">
           {{ 'Grow.relatedTransactions' | translate }} ({{ relatedTransactions.length }})
         </h5>
-        <table class="related-tx-table">
-          <thead>
-            <tr>
-              <th>{{ 'Common.account' | translate }}</th>
-              <th>{{ 'Common.amount' | translate }}</th>
-              <th>{{ 'Common.date' | translate }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let tx of relatedTransactions" (click)="openTransaction(tx)">
-              <td>{{ tx.account }}</td>
-              <td class="{{ tx.amount >= 0 ? 'amount-positive' : 'amount-negative' }}">
-                {{ tx.amount | appNumber }} {{ currency }}
-              </td>
-              <td>{{ tx.date | appDate }}</td>
-            </tr>
-          </tbody>
-        </table>
+        <div class="tx-scroll">
+          <table class="related-tx-table">
+            <thead>
+              <tr>
+                <th>{{ 'Common.account' | translate }}</th>
+                <th>{{ 'Common.amount' | translate }}</th>
+                <th>{{ 'Common.date' | translate }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let tx of relatedTransactions" (click)="openTransaction(tx)">
+                <td>{{ tx.account }}</td>
+                <td class="{{ tx.amount >= 0 ? 'amount-positive' : 'amount-negative' }}">
+                  {{ tx.amount | appNumber }} {{ currency }}
+                </td>
+                <td>{{ tx.date | appDate }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
 

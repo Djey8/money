@@ -62,6 +62,8 @@ describe('validateScope / validateScopes', () => {
       'transactions:w',
       'transactions:rw',
       'subscriptions:bulk',
+      'locations:r',
+      'locations:rw',
     ]) {
       expect(() => validateScope(scope)).not.toThrow();
     }

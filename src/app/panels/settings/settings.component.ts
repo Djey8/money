@@ -566,6 +566,9 @@ export class SettingsComponent implements DoCheck {
           : []),
         { tag: 'transactions', data: AppStateService.instance.allTransactions },
         { tag: 'subscriptions', data: AppStateService.instance.allSubscriptions },
+        { tag: 'locations', data: AppStateService.instance.allLocations },
+        { tag: 'transfers', data: AppStateService.instance.allTransfers },
+        { tag: 'recurringTransfers', data: AppStateService.instance.allRecurringTransfers },
         ...(AppStateService.instance.tier3BalanceLoaded
           ? [
               { tag: 'balance/liabilities', data: AppStateService.instance.liabilities },
@@ -600,6 +603,12 @@ export class SettingsComponent implements DoCheck {
             : []),
           { key: 'transactions', data: JSON.stringify(AppStateService.instance.allTransactions) },
           { key: 'subscriptions', data: JSON.stringify(AppStateService.instance.allSubscriptions) },
+          { key: 'locations', data: JSON.stringify(AppStateService.instance.allLocations) },
+          { key: 'transfers', data: JSON.stringify(AppStateService.instance.allTransfers) },
+          {
+            key: 'recurringTransfers',
+            data: JSON.stringify(AppStateService.instance.allRecurringTransfers),
+          },
           ...(AppStateService.instance.tier3BalanceLoaded
             ? [
                 { key: 'liabilities', data: JSON.stringify(AppStateService.instance.liabilities) },
@@ -1327,14 +1336,16 @@ export class SettingsComponent implements DoCheck {
     AppComponent.gotoTop();
   }
 
-  /** Pro, self-hosted only — see settings.component.html's guard on this button. */
+  /** Pro link, defined only in the self-hosted environments (null in the Firebase build). */
+  readonly personalAccessTokensLink = environment.proLinks.personalAccessTokens ?? null;
+
   goToPersonalAccessTokens(): void {
     // Personal Access Tokens is a routed page, not another stacked overlay —
     // close both so the user actually sees it instead of it rendering
     // underneath these two.
     ProfileComponent.isProfile = false;
     SettingsComponent.isSettings = false;
-    this.router.navigate(['/settings/tokens']);
+    if (this.personalAccessTokensLink) this.router.navigate([this.personalAccessTokensLink.route]);
   }
 
   changeEncryption() {
@@ -1726,6 +1737,9 @@ export class SettingsComponent implements DoCheck {
       data: {
         transactions: AppStateService.instance.allTransactions || [],
         subscriptions: AppStateService.instance.allSubscriptions || [],
+        locations: AppStateService.instance.allLocations || [],
+        transfers: AppStateService.instance.allTransfers || [],
+        recurringTransfers: AppStateService.instance.allRecurringTransfers || [],
         budget: AppStateService.instance.allBudgets || [],
         smile: AppStateService.instance.allSmileProjects || [],
         fire: AppStateService.instance.allFireEmergencies || [],
@@ -1853,6 +1867,11 @@ export class SettingsComponent implements DoCheck {
     const writes: { tag: string; data: any }[] = [];
     if (data.transactions) writes.push({ tag: 'transactions', data: data.transactions });
     if (data.subscriptions) writes.push({ tag: 'subscriptions', data: data.subscriptions });
+    if (data.locations) writes.push({ tag: 'locations', data: data.locations });
+    if (data.transfers) writes.push({ tag: 'transfers', data: data.transfers });
+    if (data.recurringTransfers) {
+      writes.push({ tag: 'recurringTransfers', data: data.recurringTransfers });
+    }
     if (data.budget) writes.push({ tag: 'budget', data: data.budget });
     if (data.smile) writes.push({ tag: 'smile', data: data.smile });
     if (data.fire) writes.push({ tag: 'fire', data: data.fire });
@@ -1876,6 +1895,9 @@ export class SettingsComponent implements DoCheck {
       next: () => {
         AppStateService.instance.allTransactions = data.transactions || [];
         AppStateService.instance.allSubscriptions = data.subscriptions || [];
+        AppStateService.instance.allLocations = data.locations || [];
+        AppStateService.instance.allTransfers = data.transfers || [];
+        AppStateService.instance.allRecurringTransfers = data.recurringTransfers || [];
         if (AccountingComponent) AccountingComponent.allTransactions = data.transactions || [];
         if (SubscriptionComponent)
           SubscriptionComponent.allSubscriptions = data.subscriptions || [];
@@ -1899,6 +1921,12 @@ export class SettingsComponent implements DoCheck {
 
         this.localStorage.saveData('transactions', JSON.stringify(data.transactions || []));
         this.localStorage.saveData('subscriptions', JSON.stringify(data.subscriptions || []));
+        this.localStorage.saveData('locations', JSON.stringify(data.locations || []));
+        this.localStorage.saveData('transfers', JSON.stringify(data.transfers || []));
+        this.localStorage.saveData(
+          'recurringTransfers',
+          JSON.stringify(data.recurringTransfers || []),
+        );
         this.localStorage.saveData('budget', JSON.stringify(data.budget || []));
         this.localStorage.saveData('smile', JSON.stringify(data.smile || []));
         this.localStorage.saveData('fire', JSON.stringify(data.fire || []));

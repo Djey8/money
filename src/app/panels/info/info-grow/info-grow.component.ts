@@ -16,6 +16,7 @@ import {
 import { isDuplicateTitle } from 'src/app/shared/validation.utils';
 import { BaseInfoComponent } from 'src/app/shared/base/base-info.component';
 import { AppStateService } from 'src/app/shared/services/app-state.service';
+import { releaseLocationBookings } from 'src/app/shared/location-balance';
 import { GrowTradeService } from 'src/app/main/grow/grow-trade.service';
 import { CashflowGameService } from 'src/app/shared/services/cashflow-game.service';
 import { IncomeStatementService } from 'src/app/shared/services/income-statement.service';
@@ -76,6 +77,7 @@ setTimeout(() => import('../info.component').then((m) => (InfoComponent = m.Info
   templateUrl: './info-grow.component.html',
   styleUrls: [
     '../../../shared/styles/info-panel.css',
+    '../../../shared/styles/related-tx.css',
     '../../../shared/styles/add-form.css',
     './info-grow.component.css',
   ],
@@ -623,6 +625,9 @@ export class InfoGrowComponent extends BaseInfoComponent {
         found = false;
         for (let i = 0; i < AppStateService.instance.allTransactions.length; i++) {
           if ('@' + deletedTitle === AppStateService.instance.allTransactions[i].category) {
+            releaseLocationBookings(AppStateService.instance.allLocations, [
+              AppStateService.instance.allTransactions[i],
+            ]);
             AppStateService.instance.allTransactions.splice(i, 1);
             found = true;
           }
@@ -639,6 +644,7 @@ export class InfoGrowComponent extends BaseInfoComponent {
 
         const writes = [
           { tag: 'transactions', data: AppStateService.instance.allTransactions },
+          { tag: 'locations', data: AppStateService.instance.allLocations },
           { tag: 'grow', data: AppStateService.instance.allGrowProjects },
           ...this.incomeStatement.getWrites(),
         ];

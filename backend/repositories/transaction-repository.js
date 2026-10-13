@@ -25,7 +25,15 @@ function decryptValue(value, session) {
 function decryptTransaction(transaction, session) {
   const decrypted = {};
   for (const [key, value] of Object.entries(transaction)) {
-    decrypted[key] = decryptValue(value, session);
+    // The other-location amounts are a list of {locationId, amount}, each value encrypted on its own.
+    if (key === 'locationSplits' && Array.isArray(value)) {
+      decrypted[key] = value.map((leg) => ({
+        locationId: decryptValue(leg.locationId, session),
+        amount: Number(decryptValue(leg.amount, session)),
+      }));
+    } else {
+      decrypted[key] = decryptValue(value, session);
+    }
   }
   if (typeof decrypted.amount === 'string') decrypted.amount = Number(decrypted.amount);
   // Legacy UI-written transactions (notably subscription-generated ones,
@@ -40,7 +48,18 @@ function decryptTransaction(transaction, session) {
 function encryptTransaction(transaction, session) {
   if (!session) return transaction;
   return Object.fromEntries(
-    Object.entries(transaction).map(([key, value]) => [key, session.encrypt(String(value))]),
+    Object.entries(transaction).map(([key, value]) => {
+      if (key === 'locationSplits' && Array.isArray(value)) {
+        return [
+          key,
+          value.map((leg) => ({
+            locationId: session.encrypt(String(leg.locationId)),
+            amount: session.encrypt(String(leg.amount)),
+          })),
+        ];
+      }
+      return [key, session.encrypt(String(value))];
+    }),
   );
 }
 
@@ -52,6 +71,127 @@ function toApiTransactions(transactions, session, schemaVersion, currency) {
       );
     }),
   );
+}
+
+/** Ids of the caller's stored locations (decrypted); transactions may only be newly pointed at one of these. */
+function readLocationIds(data, session) {
+  const stored = data?.locations;
+  if (!Array.isArray(stored)) return new Set();
+  return new Set(stored.map((location) => decryptValue(location.id, session)));
+}
+
+function locationNotFoundError(locationId) {
+  const error = new Error(`locationId '${locationId}' does not match any of your locations.`);
+  error.code = 'LOCATION_NOT_FOUND';
+  return error;
+}
+
+/**
+ * A transaction may be newly pointed at an existing location only. A link that was already there and
+ * has since gone stale (the location was deleted) is tolerated, so editing such a transaction's other
+ * fields keeps working.
+ */
+function assertLocationsKnown(before, after, knownLocationIds) {
+  const previous = new Map(
+    before.map((transaction) => [
+      transaction.id,
+      new Set([
+        transaction.locationId,
+        ...(transaction.locationSplits ?? []).map((leg) => leg.locationId),
+      ]),
+    ]),
+  );
+  for (const transaction of after) {
+    const ids = [
+      transaction.locationId,
+      ...(Array.isArray(transaction.locationSplits) ? transaction.locationSplits : []).map(
+        (leg) => leg.locationId,
+      ),
+    ];
+    for (const id of ids) {
+      if (!id || knownLocationIds.has(id)) continue;
+      if (previous.get(transaction.id)?.has(id)) continue;
+      throw locationNotFoundError(id);
+    }
+    assertSplitConsistent(transaction);
+  }
+}
+
+/** Every location a create/update body names must exist (an unchanged link to a vanished one is tolerated). */
+function assertFieldsLocationsKnown(fields, knownLocationIds, current) {
+  const unchanged = new Set([
+    current?.locationId,
+    ...(current?.locationSplits ?? []).map((leg) => leg.locationId),
+  ]);
+  const ids = [
+    fields.locationId,
+    ...(Array.isArray(fields.locationSplits) ? fields.locationSplits : []).map(
+      (leg) => leg.locationId,
+    ),
+  ];
+  for (const id of ids) {
+    if (!id || knownLocationIds.has(id) || unchanged.has(id)) continue;
+    throw locationNotFoundError(id);
+  }
+}
+
+function locationSplitError(message) {
+  const error = new Error(message);
+  error.code = 'LOCATION_SPLIT_INVALID';
+  return error;
+}
+
+/**
+ * A split sends part of a booking to OTHER locations and the main location keeps the rest, so it needs a main
+ * location, each amount must point the same way as the booking, and together they may not exceed it.
+ */
+function assertSplitConsistent(transaction) {
+  const splits = transaction.locationSplits;
+  if (splits === undefined || splits === null || (Array.isArray(splits) && splits.length === 0)) {
+    return;
+  }
+  if (!Array.isArray(splits)) throw locationSplitError('locationSplits must be a list.');
+  if (!transaction.locationId) {
+    throw locationSplitError('locationSplits needs a main locationId that receives the rest.');
+  }
+  const sign = Math.sign(transaction.amountMinor);
+  const seen = new Set([transaction.locationId]);
+  let total = 0;
+  for (const leg of splits) {
+    if (!leg || typeof leg.locationId !== 'string' || leg.locationId === '') {
+      throw locationSplitError('Every split needs a locationId.');
+    }
+    if (seen.has(leg.locationId)) {
+      throw locationSplitError(
+        'A location can appear only once, and the main location cannot also be a split.',
+      );
+    }
+    seen.add(leg.locationId);
+    if (!Number.isInteger(leg.amountMinor) || leg.amountMinor === 0) {
+      throw locationSplitError('Every split needs a non-zero integer amountMinor.');
+    }
+    if (Math.sign(leg.amountMinor) !== sign) {
+      throw locationSplitError('A split must have the same sign as the transaction amountMinor.');
+    }
+    total += Math.abs(leg.amountMinor);
+  }
+  if (total > Math.abs(transaction.amountMinor)) {
+    throw locationSplitError('The split amounts add up to more than the transaction.');
+  }
+}
+
+/** A cleared link (`locationId: null` from a PATCH) is simply absent everywhere else; keep responses consistent. */
+function withoutEmptyLocation(transaction) {
+  let result = transaction;
+  if (!result.locationId) {
+    const { locationId: _empty, ...rest } = result;
+    result = rest;
+  }
+  if (!Array.isArray(result.locationSplits) || result.locationSplits.length === 0) {
+    const { locationSplits: _none, ...rest } = result;
+    result = rest;
+  }
+  return result;
 }
 
 function transactionError(code, message) {
@@ -244,10 +384,12 @@ async function withTransactionsWrite(
       schemaVersion,
       currency,
     );
-    const mutation = mutate({ existingTransactions, currency });
+    const knownLocationIds = readLocationIds(userDoc.data, session);
+    const mutation = mutate({ existingTransactions, currency, knownLocationIds });
     if (mutation === null) return null;
     if (mutation.skipWrite) return mutation.buildResult(existingTransactions);
     const { allTransactions, buildResult } = mutation;
+    assertLocationsKnown(existingTransactions, allTransactions, knownLocationIds);
     // A deleted Grow trade's effect on the project and balance sheet is
     // undone before the income statement is rebuilt (grow-reversal.js).
     const remainingIds = new Set(allTransactions.map((transaction) => transaction.id));
@@ -257,7 +399,13 @@ async function withTransactionsWrite(
         (current, removed) => reverseGrowTransaction(current, removed, session, schemaVersion),
         userDoc.data || {},
       );
-    const derived = applyDerivedState(baseData, allTransactions, session, schemaVersion);
+    const derived = applyDerivedState(
+      baseData,
+      allTransactions,
+      session,
+      schemaVersion,
+      existingTransactions,
+    );
     const data = derived.data;
     data.transactions = derived.transactions.map((effectiveTransaction) =>
       encryptTransaction(transactionFromApi(effectiveTransaction, schemaVersion), session),
@@ -265,7 +413,7 @@ async function withTransactionsWrite(
     try {
       await usersDb.insert({ ...userDoc, data, updatedAt: new Date().toISOString() });
       const effects = computeWriteEffects(userDoc.data, data, session, schemaVersion);
-      return buildResult(derived.transactions, effects);
+      return buildResult(derived.transactions.map(withoutEmptyLocation), effects);
     } catch (error) {
       if (error.statusCode !== 409) throw error;
       attempt += 1;
@@ -418,7 +566,7 @@ async function batchTransactions({ usersDb, authDb }, userId, items, { atomic = 
   return withTransactionsWrite(
     { usersDb, authDb },
     userId,
-    ({ existingTransactions, currency }) => {
+    ({ existingTransactions, currency, knownLocationIds }) => {
       let workingTransactions = existingTransactions;
       let anyApplied = false;
       const outcomes = items.map((item) => {
@@ -426,6 +574,7 @@ async function batchTransactions({ usersDb, authDb }, userId, items, { atomic = 
         try {
           if (item.op === 'create') {
             assertNoNewGrowTrade(item.fields.comment);
+            assertFieldsLocationsKnown(item.fields, knownLocationIds);
             const transaction = { ...item.fields, id: `tx_${crypto.randomUUID()}`, currency };
             workingTransactions = [...workingTransactions, transaction];
             anyApplied = true;
@@ -438,6 +587,7 @@ async function batchTransactions({ usersDb, authDb }, userId, items, { atomic = 
             if (index === -1) throw new Error('No matching transaction exists.');
             assertTransactionPatchAllowed(workingTransactions[index], item.fields);
             assertBucketPatchIsConsistent(workingTransactions[index], item.fields);
+            assertFieldsLocationsKnown(item.fields, knownLocationIds, workingTransactions[index]);
             workingTransactions = workingTransactions.map((transaction, candidateIndex) =>
               candidateIndex === index ? { ...transaction, ...item.fields } : transaction,
             );
@@ -495,6 +645,10 @@ module.exports = {
   decryptTransaction,
   encryptTransaction,
   decryptValue,
+  readLocationIds,
+  locationNotFoundError,
+  locationSplitError,
+  assertSplitConsistent,
   toApiTransactions,
   decodeCursor,
   filterAndSortTransactions,

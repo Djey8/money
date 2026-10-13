@@ -5,6 +5,9 @@ export const environment = {
   mode: 'firebase', // 'firebase' or 'selfhosted'
   edition: 'firebase' as const, // build-time-only, gates Pro routes (docs/adr/0004)
   appVersion: packageJson.version,
+  // Pro links shown by shared screens. Defined only in the self-hosted environments so the Firebase
+  // build carries neither the route nor the label (docs/adr/0004).
+  proLinks: {} as { personalAccessTokens?: { route: string; label: string } },
 
   // Firebase configuration (for cloud mode)
   firebase: {

@@ -14,6 +14,21 @@ import { Investment } from 'src/app/interfaces/investment';
 import { AuthService } from 'src/app/shared/services/auth.service';
 import { BaseInfoComponent } from 'src/app/shared/base/base-info.component';
 import { AppStateService } from 'src/app/shared/services/app-state.service';
+import { LocationSplitComponent } from 'src/app/shared/components/location-split/location-split.component';
+import {
+  resolveStoredSplits,
+  rowsToStoredRule,
+  SplitRow,
+  splitProblem,
+  splitsToRows,
+  storedRuleToRows,
+} from 'src/app/shared/location-split.utils';
+import { locationLabel } from 'src/app/shared/location.utils';
+import {
+  bookingLegs,
+  locationsByRecentUse,
+  reconcileLocationBooking,
+} from 'src/app/shared/location-balance';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
@@ -47,6 +62,7 @@ setTimeout(() => import('src/app/app.component').then((m) => (AppComponent = m.A
     TranslateModule,
     AppDatePipe,
     AppNumberPipe,
+    LocationSplitComponent,
   ],
   templateUrl: './info.component.html',
   styleUrls: ['../../shared/styles/info-panel.css', './info.component.css'],
@@ -99,6 +115,53 @@ export class InfoComponent extends BaseInfoComponent implements OnInit {
   timeTextField = InfoComponent.time;
   categoryTextField = InfoComponent.category;
   commentTextField = InfoComponent.comment;
+  /** Location picker value while editing; null = None. */
+  locationIdField: string | null = null;
+  /** The other locations the booking is split to while editing. */
+  splitRows: SplitRow[] = [];
+  readonly currency2 = '€';
+
+  get allLocations() {
+    return AppStateService.instance.allLocations;
+  }
+
+  get editedAmount(): number | null {
+    const n = parseFloat(String(this.amountTextField));
+    return Number.isFinite(n) ? n : null;
+  }
+
+  /** What the shown booking sent to each location, for the info view (empty when it is not split). */
+  get shownLegs(): { label: string; amount: number }[] {
+    const tx = AppStateService.instance.allTransactions[InfoComponent.index];
+    if (!tx?.locationSplits?.length) return [];
+    return bookingLegs({
+      locationId: tx.locationId,
+      amount: tx.amount,
+      locationSplits: tx.locationSplits,
+    }).map((leg) => ({
+      label: locationLabel(
+        AppStateService.instance.allLocations.find((l) => l.id === leg.locationId),
+      ),
+      amount: leg.amount,
+    }));
+  }
+
+  readonly locationLabel = locationLabel;
+
+  /** Most recently used first, then the rest in their normal order. */
+  get locations() {
+    return locationsByRecentUse(
+      AppStateService.instance.allTransactions,
+      AppStateService.instance.allLocations,
+    );
+  }
+
+  /** Location of the transaction currently shown (null when none or when it points at a deleted location). */
+  get shownLocationName(): string | null {
+    const tx = AppStateService.instance.allTransactions[InfoComponent.index];
+    const location = AppStateService.instance.allLocations.find((l) => l.id === tx?.locationId);
+    return location ? locationLabel(location) : null;
+  }
 
   // Static properties
   static zIndex;
@@ -211,6 +274,13 @@ export class InfoComponent extends BaseInfoComponent implements OnInit {
     this.timeTextField = InfoComponent.time;
     this.categoryTextField = InfoComponent.category;
     this.commentTextField = InfoComponent.comment;
+    const editedLocation =
+      AppStateService.instance.allTransactions[InfoComponent.index]?.locationId;
+    this.locationIdField =
+      editedLocation && this.locations.some((l) => l.id === editedLocation) ? editedLocation : null;
+    this.splitRows = splitsToRows(
+      AppStateService.instance.allTransactions[InfoComponent.index]?.locationSplits,
+    );
   }
 
   /**
@@ -238,6 +308,8 @@ export class InfoComponent extends BaseInfoComponent implements OnInit {
       this.selectedOption === ''
     ) {
       this.showError('Please fill out all required fields.');
+    } else if (splitProblem(this.splitRows, this.locationIdField)) {
+      this.showError(splitProblem(this.splitRows, this.locationIdField) as string);
     } else {
       let clean_comment = AppStateService.instance.allTransactions[InfoComponent.index].comment;
       if (
@@ -837,6 +909,12 @@ export class InfoComponent extends BaseInfoComponent implements OnInit {
       }
 
       // Update transaction values
+      const editedTransaction = AppStateService.instance.allTransactions[InfoComponent.index];
+      const locationBefore = {
+        locationId: editedTransaction.locationId,
+        amount: editedTransaction.amount,
+        locationSplits: editedTransaction.locationSplits,
+      };
       AppStateService.instance.allTransactions[InfoComponent.index].account = this.selectedOption;
       AppStateService.instance.allTransactions[InfoComponent.index].amount = this.amountTextField;
       AppStateService.instance.allTransactions[InfoComponent.index].date = this.dateTextField;
@@ -853,6 +931,21 @@ export class InfoComponent extends BaseInfoComponent implements OnInit {
       // Sync back any changes made by updateBucketAllocationTags (e.g., capped amounts)
       this.amountTextField = AppStateService.instance.allTransactions[InfoComponent.index].amount;
       this.commentTextField = AppStateService.instance.allTransactions[InfoComponent.index].comment;
+
+      // Move the location balances: reverse the old booking, apply the new (amount is final after capping).
+      if (this.locationIdField) editedTransaction.locationId = this.locationIdField;
+      else delete editedTransaction.locationId;
+      // The other-location amounts: the main location always gets the rest, so a changed total lands there.
+      const extras = this.locationIdField
+        ? resolveStoredSplits(editedTransaction.amount, this.splitRows)
+        : [];
+      if (extras.length > 0) editedTransaction.locationSplits = extras;
+      else delete editedTransaction.locationSplits;
+      reconcileLocationBooking(
+        AppStateService.instance.allLocations,
+        locationBefore,
+        editedTransaction,
+      );
 
       import('../../main/accounting/accounting.component').then((m) => {
         m.AccountingComponent.allTransactions = AppStateService.instance.allTransactions;
@@ -1551,6 +1644,11 @@ export class InfoComponent extends BaseInfoComponent implements OnInit {
         this.removeFromLiabiltities(AppStateService.instance.allTransactions[index].category);
       }
       // Delete now Transaction
+      reconcileLocationBooking(
+        AppStateService.instance.allLocations,
+        AppStateService.instance.allTransactions[index],
+        null,
+      );
       AppStateService.instance.allTransactions.splice(index, 1);
       import('../../main/accounting/accounting.component').then((m) => {
         m.AccountingComponent.allTransactions = AppStateService.instance.allTransactions;
@@ -2033,12 +2131,14 @@ export class InfoComponent extends BaseInfoComponent implements OnInit {
               ]
             : []),
           { tag: 'transactions', data: AppStateService.instance.allTransactions },
+          { tag: 'locations', data: AppStateService.instance.allLocations },
           ...(AppStateService.instance.tier3GrowLoaded
             ? [{ tag: 'grow', data: AppStateService.instance.allGrowProjects }]
             : []),
         ],
         localStorageSaves: [
           { key: 'transactions', data: JSON.stringify(AppStateService.instance.allTransactions) },
+          { key: 'locations', data: JSON.stringify(AppStateService.instance.allLocations) },
           { key: 'interests', data: JSON.stringify(AppStateService.instance.allIntrests) },
           { key: 'properties', data: JSON.stringify(AppStateService.instance.allProperties) },
           { key: 'revenues', data: JSON.stringify(AppStateService.instance.allRevenues) },

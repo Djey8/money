@@ -36,6 +36,7 @@ export const DEFAULT_SCOPES = [
   'mojo:rw',
   'grow:rw',
   'balance:rw',
+  'locations:rw',
   'budget:rw',
   'income:r',
   'reports:r',
