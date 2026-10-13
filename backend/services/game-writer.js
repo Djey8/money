@@ -406,6 +406,8 @@ function applyEffectsToData(data, effects, { session }) {
       currency,
     });
   }
+  // No previousTransactions on purpose: game transactions never carry a locationId, and the existing ones
+  // keep theirs through the domain passthrough, so there is no location balance to move here.
   const derived = applyDerivedState(next, transactions, session, schemaVersion);
   next = derived.data;
   next.transactions = derived.transactions.map((effective) =>

@@ -3125,6 +3125,747 @@ describe('v1 API authentication and PAT management', () => {
     });
   });
 
+  describe('GET/POST /locations, GET/PATCH/DELETE /locations/:id and locationId on transactions', () => {
+    async function locationToken(scopes) {
+      const created = await sessionRequest('post', '/api/v1/auth/tokens').send({
+        name: `location-agent-${Date.now()}-${Math.random()}`,
+        scopes,
+      });
+      return created.body;
+    }
+
+    const bookingBody = (locationId) => ({
+      account: 'Daily',
+      amountMinor: -3000,
+      date: '2026-10-01',
+      time: '10:00',
+      category: '@food',
+      comment: 'lunch',
+      ...(locationId === undefined ? {} : { locationId }),
+    });
+
+    async function createLocationVia(token, body) {
+      const response = await request(app)
+        .post('/api/v1/locations')
+        .set('Authorization', `Bearer ${token}`)
+        .send(body);
+      expect(response.status).toBe(201);
+      return response.body;
+    }
+
+    const balanceOf = async (token, id) =>
+      (await request(app).get(`/api/v1/locations/${id}`).set('Authorization', `Bearer ${token}`))
+        .body.amountMinor;
+
+    it('creates, lists, reads, patches and deletes a location, and audit logs the writes', async () => {
+      const { token, tokenId } = await locationToken(['locations:r', 'locations:w']);
+      const created = await createLocationVia(token, {
+        name: 'N26',
+        subName: 'Main',
+        kind: 'bank',
+        amountMinor: 123450,
+      });
+      expect(created).toMatchObject({
+        name: 'N26',
+        subName: 'Main',
+        kind: 'bank',
+        amountMinor: 123450,
+      });
+      expect(created.id).toMatch(/^loc_/);
+
+      const list = await request(app)
+        .get('/api/v1/locations')
+        .set('Authorization', `Bearer ${token}`);
+      expect(list.status).toBe(200);
+      expect(list.body.locations.map((l) => l.id)).toContain(created.id);
+
+      const patched = await request(app)
+        .patch(`/api/v1/locations/${created.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ amountMinor: 100000, subName: '' });
+      expect(patched.status).toBe(200);
+      expect(patched.body.amountMinor).toBe(100000);
+      expect(patched.body.subName).toBeUndefined();
+
+      const deleted = await request(app)
+        .delete(`/api/v1/locations/${created.id}`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(deleted.status).toBe(200);
+      expect(deleted.body).toEqual({ id: created.id, transactionsUnlinked: 0 });
+      const gone = await request(app)
+        .get(`/api/v1/locations/${created.id}`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(gone.status).toBe(404);
+
+      const auditEntries = await queryAuditEntries(getAuditDb(), firstUser.userId, {
+        resource: 'locations',
+      });
+      const mine = auditEntries.filter(
+        (e) => e.actor?.tokenId === tokenId && e.resourceId === created.id,
+      );
+      expect(mine.map((e) => e.method).sort()).toEqual(['DELETE', 'PATCH', 'POST']);
+    });
+
+    it('rejects a duplicate name + sub name and invalid bodies with 400', async () => {
+      const { token } = await locationToken(['locations:r', 'locations:w']);
+      const name = `Dup-${Date.now()}`;
+      await createLocationVia(token, { name, subName: 'Main' });
+      await createLocationVia(token, { name, subName: 'Instant Savings' });
+      const duplicate = await request(app)
+        .post('/api/v1/locations')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ name: name.toUpperCase(), subName: 'main' });
+      expect(duplicate.status).toBe(400);
+      expect(duplicate.body.code).toBe('validation_invalid');
+
+      for (const body of [
+        {},
+        { name: '' },
+        { name: 'x', kind: 'piggybank' },
+        { name: 'x', amountMinor: 1.5 },
+        { name: 'x', extra: 1 },
+      ]) {
+        const response = await request(app)
+          .post('/api/v1/locations')
+          .set('Authorization', `Bearer ${token}`)
+          .send(body);
+        expect(response.status).toBe(400);
+      }
+      const emptyPatch = await request(app)
+        .patch('/api/v1/locations/loc_anything')
+        .set('Authorization', `Bearer ${token}`)
+        .send({});
+      expect(emptyPatch.status).toBe(400);
+    });
+
+    it('moves the location balance when a transaction is created, moved, edited and deleted', async () => {
+      const { token } = await locationToken([
+        'locations:r',
+        'locations:w',
+        'transactions:r',
+        'transactions:w',
+      ]);
+      const bank = await createLocationVia(token, {
+        name: `Bank-${Date.now()}`,
+        amountMinor: 10000,
+      });
+      const cash = await createLocationVia(token, {
+        name: `Cash-${Date.now()}`,
+        amountMinor: 5000,
+      });
+
+      const created = await request(app)
+        .post('/api/v1/transactions')
+        .set('Authorization', `Bearer ${token}`)
+        .send(bookingBody(bank.id));
+      expect(created.status).toBe(201);
+      expect(created.body.locationId).toBe(bank.id);
+      expect(await balanceOf(token, bank.id)).toBe(7000);
+
+      const moved = await request(app)
+        .patch(`/api/v1/transactions/${created.body.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ locationId: cash.id });
+      expect(moved.status).toBe(200);
+      expect(await balanceOf(token, bank.id)).toBe(10000);
+      expect(await balanceOf(token, cash.id)).toBe(2000);
+
+      const edited = await request(app)
+        .patch(`/api/v1/transactions/${created.body.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ amountMinor: -4500 });
+      expect(edited.status).toBe(200);
+      expect(await balanceOf(token, cash.id)).toBe(500);
+
+      const cleared = await request(app)
+        .patch(`/api/v1/transactions/${created.body.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ locationId: null });
+      expect(cleared.status).toBe(200);
+      expect(cleared.body.locationId).toBeUndefined();
+      expect(await balanceOf(token, cash.id)).toBe(5000);
+
+      await request(app)
+        .patch(`/api/v1/transactions/${created.body.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ locationId: bank.id });
+      expect(await balanceOf(token, bank.id)).toBe(5500);
+      const removed = await request(app)
+        .delete(`/api/v1/transactions/${created.body.id}`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(removed.status).toBe(200);
+      expect(await balanceOf(token, bank.id)).toBe(10000);
+    });
+
+    it('rejects a locationId that is not one of the caller locations', async () => {
+      const { token } = await locationToken(['locations:w', 'transactions:r', 'transactions:w']);
+      for (const call of [
+        request(app)
+          .post('/api/v1/transactions')
+          .set('Authorization', `Bearer ${token}`)
+          .send(bookingBody('loc_unknown')),
+      ]) {
+        const response = await call;
+        expect(response.status).toBe(400);
+        expect(response.body.code).toBe('validation_invalid');
+      }
+      const badType = await request(app)
+        .post('/api/v1/transactions')
+        .set('Authorization', `Bearer ${token}`)
+        .send(bookingBody(42));
+      expect(badType.status).toBe(400);
+    });
+
+    it('keeps every transaction link when an unrelated transaction is written', async () => {
+      const { token } = await locationToken([
+        'locations:r',
+        'locations:w',
+        'transactions:r',
+        'transactions:w',
+      ]);
+      const bank = await createLocationVia(token, {
+        name: `Keep-${Date.now()}`,
+        amountMinor: 10000,
+      });
+      const linked = await request(app)
+        .post('/api/v1/transactions')
+        .set('Authorization', `Bearer ${token}`)
+        .send(bookingBody(bank.id));
+      await request(app)
+        .post('/api/v1/transactions')
+        .set('Authorization', `Bearer ${token}`)
+        .send(bookingBody(undefined));
+      const fetched = await request(app)
+        .get(`/api/v1/transactions/${linked.body.id}`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(fetched.body.locationId).toBe(bank.id);
+      expect(await balanceOf(token, bank.id)).toBe(7000);
+    });
+
+    it('deleting a location keeps its transactions and unlinks them', async () => {
+      const { token } = await locationToken([
+        'locations:r',
+        'locations:w',
+        'transactions:r',
+        'transactions:w',
+      ]);
+      const bank = await createLocationVia(token, {
+        name: `Del-${Date.now()}`,
+        amountMinor: 10000,
+      });
+      const created = await request(app)
+        .post('/api/v1/transactions')
+        .set('Authorization', `Bearer ${token}`)
+        .send(bookingBody(bank.id));
+      const deleted = await request(app)
+        .delete(`/api/v1/locations/${bank.id}`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(deleted.body.transactionsUnlinked).toBe(1);
+      const fetched = await request(app)
+        .get(`/api/v1/transactions/${created.body.id}`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(fetched.status).toBe(200);
+      expect(fetched.body.locationId).toBeUndefined();
+    });
+
+    it('a subscription at a location books what it generates there; a later location change only affects what comes next', async () => {
+      // Its own user: refresh generates for EVERY subscription of the account, so on the shared
+      // test account it would also process what other tests left there.
+      const user = await registerTestUser(`_subscription_location_${Date.now()}_${Math.random()}`);
+      const tokenResponse = await sessionRequest('post', '/api/v1/auth/tokens', user.token).send({
+        name: `subscription-location-agent-${Date.now()}`,
+        scopes: [
+          'locations:r',
+          'locations:w',
+          'subscriptions:r',
+          'subscriptions:w',
+          'transactions:r',
+        ],
+      });
+      const token = tokenResponse.body.token;
+      const bank = await createLocationVia(token, {
+        name: `SubBank-${Date.now()}`,
+        amountMinor: 100000,
+      });
+      const cash = await createLocationVia(token, {
+        name: `SubCash-${Date.now()}`,
+        amountMinor: 50000,
+      });
+      const subscriptionBody = {
+        title: `Rent-${Date.now()}`,
+        account: 'Daily',
+        amountMinor: -1000,
+        startDate: '2026-01-15',
+        endDate: '2026-03-31',
+        category: '@Rent',
+        frequency: 'monthly',
+      };
+
+      const unknown = await request(app)
+        .post('/api/v1/subscriptions')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ ...subscriptionBody, locationId: 'loc_unknown' });
+      expect(unknown.status).toBe(400);
+      expect(unknown.body.code).toBe('validation_invalid');
+
+      const created = await request(app)
+        .post('/api/v1/subscriptions')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ ...subscriptionBody, locationId: bank.id });
+      expect(created.status).toBe(201);
+      expect(created.body.locationId).toBe(bank.id);
+
+      const refreshed = await request(app)
+        .post('/api/v1/subscriptions/refresh')
+        .set('Authorization', `Bearer ${token}`);
+      expect(refreshed.status).toBe(200);
+      expect(await balanceOf(token, bank.id)).toBe(
+        100000 - refreshed.body.transactionsCreated * 1000,
+      );
+
+      const moved = await request(app)
+        .patch(`/api/v1/subscriptions/${created.body.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ locationId: cash.id });
+      expect(moved.status).toBe(200);
+      // history is untouched: the bookings stay at the bank, no balance moves
+      expect(await balanceOf(token, bank.id)).toBe(
+        100000 - refreshed.body.transactionsCreated * 1000,
+      );
+      expect(await balanceOf(token, cash.id)).toBe(50000);
+
+      const cleared = await request(app)
+        .patch(`/api/v1/subscriptions/${created.body.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ locationId: null });
+      expect(cleared.status).toBe(200);
+      expect(cleared.body.locationId).toBeUndefined();
+      expect(await balanceOf(token, cash.id)).toBe(50000);
+    });
+
+    it('splits a booking across locations: the main one keeps the rest, validation answers 400', async () => {
+      const { token } = await locationToken([
+        'locations:r',
+        'locations:w',
+        'transactions:r',
+        'transactions:w',
+      ]);
+      const main = await createLocationVia(token, {
+        name: `SplitMain-${Date.now()}`,
+        amountMinor: 0,
+      });
+      const savings = await createLocationVia(token, {
+        name: `SplitSav-${Date.now()}`,
+        amountMinor: 0,
+      });
+      const salary = {
+        account: 'Income',
+        amountMinor: 300000,
+        date: '2026-10-01',
+        time: '10:00',
+        category: `@SplitSalary${Date.now()}`,
+        comment: 'salary',
+      };
+
+      const created = await request(app)
+        .post('/api/v1/transactions')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          ...salary,
+          locationId: main.id,
+          locationSplits: [{ locationId: savings.id, amountMinor: 60000 }],
+        });
+      expect(created.status).toBe(201);
+      expect(created.body.locationSplits).toEqual([{ locationId: savings.id, amountMinor: 60000 }]);
+      expect(await balanceOf(token, main.id)).toBe(240000);
+      expect(await balanceOf(token, savings.id)).toBe(60000);
+
+      // only the main location absorbs a changed total
+      await request(app)
+        .patch(`/api/v1/transactions/${created.body.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ amountMinor: 320000 });
+      expect(await balanceOf(token, main.id)).toBe(260000);
+      expect(await balanceOf(token, savings.id)).toBe(60000);
+
+      for (const body of [
+        { locationSplits: [{ locationId: savings.id, amountMinor: 100 }] },
+        { locationId: main.id, locationSplits: [{ locationId: savings.id, amountMinor: -100 }] },
+        { locationId: main.id, locationSplits: [{ locationId: main.id, amountMinor: 100 }] },
+        { locationId: main.id, locationSplits: [{ locationId: savings.id, amountMinor: 9999999 }] },
+        { locationId: main.id, locationSplits: [{ locationId: 'loc_unknown', amountMinor: 100 }] },
+        { locationId: main.id, locationSplits: 'nope' },
+      ]) {
+        const response = await request(app)
+          .post('/api/v1/transactions')
+          .set('Authorization', `Bearer ${token}`)
+          .send({ ...salary, ...body });
+        expect(response.status).toBe(400);
+        expect(response.body.code).toBe('validation_invalid');
+      }
+
+      const cleared = await request(app)
+        .patch(`/api/v1/transactions/${created.body.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ locationSplits: null });
+      expect(cleared.status).toBe(200);
+      expect(cleared.body.locationSplits).toBeUndefined();
+      expect(await balanceOf(token, main.id)).toBe(320000);
+      expect(await balanceOf(token, savings.id)).toBe(0);
+    });
+
+    it('a subscription with a split rule generates 80 / 20 bookings', async () => {
+      const user = await registerTestUser(`_subscription_split_${Date.now()}_${Math.random()}`);
+      const tokenResponse = await sessionRequest('post', '/api/v1/auth/tokens', user.token).send({
+        name: `subscription-split-agent-${Date.now()}`,
+        scopes: [
+          'locations:r',
+          'locations:w',
+          'subscriptions:r',
+          'subscriptions:w',
+          'transactions:r',
+        ],
+      });
+      const token = tokenResponse.body.token;
+      const main = await createLocationVia(token, { name: 'N26', subName: 'Main' });
+      const savings = await createLocationVia(token, { name: 'N26', subName: 'Instant Savings' });
+
+      const bad = await request(app)
+        .post('/api/v1/subscriptions')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          title: 'Salary',
+          account: 'Income',
+          amountMinor: 300000,
+          startDate: '2026-01-15',
+          endDate: '2026-03-31',
+          category: '@Salary',
+          locationId: main.id,
+          locationSplit: [{ locationId: savings.id, percent: 140 }],
+        });
+      expect(bad.status).toBe(400);
+      expect(bad.body.code).toBe('validation_invalid');
+
+      const created = await request(app)
+        .post('/api/v1/subscriptions')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          title: 'Salary',
+          account: 'Income',
+          amountMinor: 300000,
+          startDate: '2026-01-15',
+          endDate: '2026-03-31',
+          category: '@Salary',
+          locationId: main.id,
+          locationSplit: [{ locationId: savings.id, percent: 20 }],
+        });
+      expect(created.status).toBe(201);
+      expect(created.body.locationSplit).toEqual([{ locationId: savings.id, percent: 20 }]);
+
+      const refreshed = await request(app)
+        .post('/api/v1/subscriptions/refresh')
+        .set('Authorization', `Bearer ${token}`);
+      expect(refreshed.body.transactionsCreated).toBe(3);
+      expect(await balanceOf(token, main.id)).toBe(3 * 240000);
+      expect(await balanceOf(token, savings.id)).toBe(3 * 60000);
+
+      const cleared = await request(app)
+        .patch(`/api/v1/subscriptions/${created.body.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ locationId: null });
+      expect(cleared.status).toBe(200);
+      expect(cleared.body.locationSplit).toBeUndefined();
+      // history untouched
+      expect(await balanceOf(token, savings.id)).toBe(3 * 60000);
+    });
+
+    it('transfers move money between locations without touching transactions; validation, scopes and isolation hold', async () => {
+      const { token } = await locationToken([
+        'locations:r',
+        'locations:w',
+        'transactions:r',
+        'transactions:w',
+      ]);
+      const bank = await createLocationVia(token, {
+        name: `XferBank-${Date.now()}`,
+        amountMinor: 100000,
+      });
+      const cash = await createLocationVia(token, {
+        name: `XferCash-${Date.now()}`,
+        amountMinor: 0,
+      });
+      const wallet = await createLocationVia(token, {
+        name: `XferWallet-${Date.now()}`,
+        amountMinor: 0,
+      });
+      const transactionCount = async () =>
+        (
+          await request(app)
+            .get('/api/v1/transactions?limit=1')
+            .set('Authorization', `Bearer ${token}`)
+        ).body;
+      const before = JSON.stringify(await transactionCount());
+
+      const created = await request(app)
+        .post('/api/v1/transfers')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          fromLocationId: bank.id,
+          toLocationId: cash.id,
+          amountMinor: 10000,
+          date: '2026-10-05',
+          time: '14:30',
+          comment: 'ATM',
+        });
+      expect(created.status).toBe(201);
+      expect(created.body.id).toMatch(/^xfer_/);
+      expect(await balanceOf(token, bank.id)).toBe(90000);
+      expect(await balanceOf(token, cash.id)).toBe(10000);
+      // not a transaction: the transaction list is exactly as before
+      expect(JSON.stringify(await transactionCount())).toBe(before);
+
+      const edited = await request(app)
+        .patch(`/api/v1/transfers/${created.body.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ amountMinor: 15000, toLocationId: wallet.id });
+      expect(edited.status).toBe(200);
+      expect(await balanceOf(token, bank.id)).toBe(85000);
+      expect(await balanceOf(token, cash.id)).toBe(0);
+      expect(await balanceOf(token, wallet.id)).toBe(15000);
+
+      const forWallet = await request(app)
+        .get(`/api/v1/transfers?locationId=${wallet.id}`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(forWallet.body.transfers.map((t) => t.id)).toEqual([created.body.id]);
+
+      for (const body of [
+        { fromLocationId: bank.id, toLocationId: bank.id, amountMinor: 100, date: '2026-10-05' },
+        {
+          fromLocationId: bank.id,
+          toLocationId: 'loc_unknown',
+          amountMinor: 100,
+          date: '2026-10-05',
+        },
+        { fromLocationId: bank.id, toLocationId: cash.id, amountMinor: -5, date: '2026-10-05' },
+        { fromLocationId: bank.id, toLocationId: cash.id, amountMinor: 0, date: '2026-10-05' },
+        { fromLocationId: bank.id, toLocationId: cash.id, amountMinor: 1.5, date: '2026-10-05' },
+        { fromLocationId: bank.id, toLocationId: cash.id, amountMinor: 100, date: 'yesterday' },
+        { fromLocationId: bank.id, amountMinor: 100, date: '2026-10-05' },
+        {
+          fromLocationId: bank.id,
+          toLocationId: cash.id,
+          amountMinor: 100,
+          date: '2026-10-05',
+          fee: 1,
+        },
+      ]) {
+        const response = await request(app)
+          .post('/api/v1/transfers')
+          .set('Authorization', `Bearer ${token}`)
+          .send(body);
+        expect(response.status).toBe(400);
+        expect(response.body.code).toBe('validation_invalid');
+      }
+      expect(await balanceOf(token, bank.id)).toBe(85000);
+
+      // another user cannot see or touch it
+      const otherCreated = await sessionRequest(
+        'post',
+        '/api/v1/auth/tokens',
+        secondUser.token,
+      ).send({
+        name: `transfer-other-${Date.now()}`,
+        scopes: ['locations:r', 'locations:w'],
+      });
+      const otherToken = otherCreated.body.token;
+      const otherList = await request(app)
+        .get('/api/v1/transfers')
+        .set('Authorization', `Bearer ${otherToken}`);
+      expect(otherList.body.transfers.map((t) => t.id)).not.toContain(created.body.id);
+      for (const call of [
+        request(app).get(`/api/v1/transfers/${created.body.id}`),
+        request(app).patch(`/api/v1/transfers/${created.body.id}`).send({ amountMinor: 1 }),
+        request(app).delete(`/api/v1/transfers/${created.body.id}`),
+      ]) {
+        const response = await call.set('Authorization', `Bearer ${otherToken}`);
+        expect(response.status).toBe(404);
+      }
+
+      // scopes: reading needs locations:r, writing locations:w
+      const { token: readOnly } = await locationToken(['locations:r']);
+      const denied = await request(app)
+        .post('/api/v1/transfers')
+        .set('Authorization', `Bearer ${readOnly}`)
+        .send({
+          fromLocationId: bank.id,
+          toLocationId: cash.id,
+          amountMinor: 1,
+          date: '2026-10-05',
+        });
+      expect(denied.status).toBe(403);
+      const { token: writeOnly } = await locationToken(['locations:w']);
+      const deniedRead = await request(app)
+        .get('/api/v1/transfers')
+        .set('Authorization', `Bearer ${writeOnly}`);
+      expect(deniedRead.status).toBe(403);
+
+      const removed = await request(app)
+        .delete(`/api/v1/transfers/${created.body.id}`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(removed.status).toBe(200);
+      expect(await balanceOf(token, bank.id)).toBe(100000);
+      expect(await balanceOf(token, wallet.id)).toBe(0);
+    });
+
+    it('recurring transfers generate transfers only: balances move, Cashflow-relevant data does not', async () => {
+      // its own user: refresh-style generation works on every rule of the account
+      const user = await registerTestUser(`_recurring_transfer_${Date.now()}_${Math.random()}`);
+      const tokenResponse = await sessionRequest('post', '/api/v1/auth/tokens', user.token).send({
+        name: `recurring-transfer-agent-${Date.now()}`,
+        scopes: ['locations:r', 'locations:w', 'transactions:r', 'subscriptions:r'],
+      });
+      const token = tokenResponse.body.token;
+      const main = await createLocationVia(token, { name: 'Main', amountMinor: 100000 });
+      const shared = await createLocationVia(token, { name: 'Shared', amountMinor: 0 });
+      const other = await createLocationVia(token, { name: 'Other', amountMinor: 0 });
+      const body = {
+        title: 'Shared account',
+        fromLocationId: main.id,
+        toLocationId: shared.id,
+        amountMinor: 5000,
+        startDate: '2026-01-05',
+        endDate: '2026-01-26',
+        frequency: 'weekly',
+      };
+
+      const created = await request(app)
+        .post('/api/v1/recurring-transfers')
+        .set('Authorization', `Bearer ${token}`)
+        .send(body);
+      expect(created.status).toBe(201);
+      expect(created.body.id).toMatch(/^rtransfer_/);
+      expect(created.body.transfersCreated).toBe(4); // 5, 12, 19, 26 January
+      expect(await balanceOf(token, main.id)).toBe(100000 - 4 * 5000);
+      expect(await balanceOf(token, shared.id)).toBe(4 * 5000);
+
+      // not a transaction and not a subscription
+      const transactions = await request(app)
+        .get('/api/v1/transactions')
+        .set('Authorization', `Bearer ${token}`);
+      expect(transactions.body.transactions ?? transactions.body.items ?? []).toHaveLength(0);
+      const subscriptions = await request(app)
+        .get('/api/v1/subscriptions')
+        .set('Authorization', `Bearer ${token}`);
+      expect(subscriptions.body.subscriptions).toEqual([]);
+
+      const transfers = await request(app)
+        .get('/api/v1/transfers')
+        .set('Authorization', `Bearer ${token}`);
+      expect(transfers.body.transfers).toHaveLength(4);
+
+      // repeating does nothing
+      const refreshed = await request(app)
+        .post('/api/v1/recurring-transfers/refresh')
+        .set('Authorization', `Bearer ${token}`);
+      expect(refreshed.body).toEqual({ transfersCreated: 0, rulesProcessed: 1 });
+
+      // edit: generated transfers follow in place
+      const patched = await request(app)
+        .patch(`/api/v1/recurring-transfers/${created.body.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ toLocationId: other.id, amountMinor: 10000 });
+      expect(patched.status).toBe(200);
+      expect(await balanceOf(token, shared.id)).toBe(0);
+      expect(await balanceOf(token, other.id)).toBe(4 * 10000);
+      expect(await balanceOf(token, main.id)).toBe(100000 - 4 * 10000);
+
+      // validation
+      for (const bad of [
+        { ...body, toLocationId: main.id },
+        { ...body, toLocationId: 'loc_unknown' },
+        { ...body, amountMinor: 0 },
+        { ...body, frequency: 'daily' },
+        { ...body, startDate: 'soon' },
+        { ...body, fee: 1 },
+      ]) {
+        const response = await request(app)
+          .post('/api/v1/recurring-transfers')
+          .set('Authorization', `Bearer ${token}`)
+          .send(bad);
+        expect(response.status).toBe(400);
+        expect(response.body.code).toBe('validation_invalid');
+      }
+
+      // deleting keeps the transfers by default, ?deleteTransfers=true gives the money back
+      const kept = await request(app)
+        .delete(`/api/v1/recurring-transfers/${created.body.id}`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(kept.body.transfersDeleted).toBe(0);
+      expect(await balanceOf(token, other.id)).toBe(4 * 10000);
+      const again = await request(app)
+        .post('/api/v1/recurring-transfers')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ ...body, title: 'Second rule' });
+      const removed = await request(app)
+        .delete(`/api/v1/recurring-transfers/${again.body.id}?deleteTransfers=true`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(removed.body.transfersDeleted).toBe(4);
+    });
+
+    it('rejects requests without the locations:r/locations:w scopes', async () => {
+      const { token: writeOnly } = await locationToken(['locations:w']);
+      const getResponse = await request(app)
+        .get('/api/v1/locations')
+        .set('Authorization', `Bearer ${writeOnly}`);
+      expect(getResponse.status).toBe(403);
+      expect(getResponse.body.code).toBe('scope_insufficient');
+
+      const { token: readOnly } = await locationToken(['locations:r']);
+      const postResponse = await request(app)
+        .post('/api/v1/locations')
+        .set('Authorization', `Bearer ${readOnly}`)
+        .send({ name: 'Should Not Save' });
+      expect(postResponse.status).toBe(403);
+      expect(postResponse.body.code).toBe('scope_insufficient');
+
+      const noToken = await request(app).get('/api/v1/locations');
+      expect(noToken.status).toBe(401);
+    });
+
+    it('keeps locations isolated to the authenticated user document', async () => {
+      const { token } = await locationToken(['locations:r', 'locations:w']);
+      const mine = await createLocationVia(token, { name: `Mine-${Date.now()}` });
+      const otherCreated = await sessionRequest(
+        'post',
+        '/api/v1/auth/tokens',
+        secondUser.token,
+      ).send({
+        name: `location-other-${Date.now()}`,
+        scopes: ['locations:r', 'locations:w'],
+      });
+      const otherToken = otherCreated.body.token;
+
+      const list = await request(app)
+        .get('/api/v1/locations')
+        .set('Authorization', `Bearer ${otherToken}`);
+      expect(list.body.locations.map((l) => l.id)).not.toContain(mine.id);
+      const read = await request(app)
+        .get(`/api/v1/locations/${mine.id}`)
+        .set('Authorization', `Bearer ${otherToken}`);
+      expect(read.status).toBe(404);
+      const patch = await request(app)
+        .patch(`/api/v1/locations/${mine.id}`)
+        .set('Authorization', `Bearer ${otherToken}`)
+        .send({ amountMinor: 1 });
+      expect(patch.status).toBe(404);
+      const del = await request(app)
+        .delete(`/api/v1/locations/${mine.id}`)
+        .set('Authorization', `Bearer ${otherToken}`);
+      expect(del.status).toBe(404);
+      expect(await balanceOf(token, mine.id)).toBe(0);
+    });
+  });
+
   describe('GET/POST /balance/assets and GET/PATCH/DELETE /balance/assets/:id', () => {
     async function balanceToken(scopes) {
       const created = await sessionRequest('post', '/api/v1/auth/tokens').send({

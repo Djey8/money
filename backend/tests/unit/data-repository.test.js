@@ -608,6 +608,60 @@ describe('importUserData', () => {
     expect(stored.data.settings.username).toBe('a');
   });
 
+  it('imports locations and keeps each transaction link; an export without locations still imports', async () => {
+    const usersDb = makeDb(null);
+    const authDb = { get: jest.fn(async () => ({})) };
+    const base = {
+      meta: { schemaVersion: 1, currency: 'EUR' },
+      info: { email: 'a@test.local', username: 'a' },
+      settings: { username: 'a' },
+      balance: { asset: { assets: [], shares: [], investments: [] }, liabilities: [] },
+      grow: [],
+      budget: [],
+      subscriptions: [],
+      smile: [],
+      fire: [],
+      mojo: { target: 500 },
+    };
+    const tx = {
+      id: 'tx_1',
+      account: 'Daily',
+      amount: -30,
+      date: '2026-01-01',
+      time: '09:00',
+      category: '@food',
+      comment: '',
+      locationId: 'loc_1',
+    };
+    await importUserData(
+      { usersDb, authDb },
+      'user_1',
+      {
+        confirm: true,
+        data: {
+          ...base,
+          transactions: [tx],
+          locations: [{ id: 'loc_1', name: 'N26', subName: 'Main', kind: 'bank', amount: 70 }],
+        },
+      },
+      { backupDir },
+    );
+    const stored = usersDb._getCurrent();
+    expect(stored.data.locations).toEqual([
+      { id: 'loc_1', name: 'N26', subName: 'Main', kind: 'bank', amount: 70 },
+    ]);
+    expect(stored.data.transactions[0].locationId).toBe('loc_1');
+
+    const legacy = makeDb(null);
+    await importUserData(
+      { usersDb: legacy, authDb },
+      'user_1',
+      { confirm: true, data: { ...base, transactions: [{ ...tx, locationId: undefined }] } },
+      { backupDir },
+    );
+    expect(legacy._getCurrent().data.locations).toBeUndefined();
+  });
+
   it('round-trips a full encrypted document (assets/shares/grow/smile) through import then export', async () => {
     const usersDb = makeDb(null);
     const authDb = {

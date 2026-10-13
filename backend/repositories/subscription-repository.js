@@ -40,10 +40,18 @@ const {
   generateDueSubscriptionTransactions,
   staleGeneratedTransactions,
   reconcileGeneratedTransactions,
+  validateLocationSplitRule,
 } = require('@money/domain');
 const { getEncryptionSession } = require('../services/encryption-session');
 const { assertNotPlanOwned } = require('../services/payment-plan-links');
-const { decryptValue, toApiTransactions, encryptTransaction } = require('./transaction-repository');
+const {
+  decryptValue,
+  toApiTransactions,
+  encryptTransaction,
+  readLocationIds,
+  locationNotFoundError,
+  locationSplitError,
+} = require('./transaction-repository');
 const {
   writeValue,
   toStoredMoney,
@@ -75,7 +83,33 @@ function decryptSubscription(raw, session, schemaVersion) {
     category: decryptValue(raw.category, session),
     comment: raw.comment !== undefined ? decryptValue(raw.comment, session) : '',
     frequency: decryptValue(raw.frequency, session),
+    // Where the generated bookings land. Absent (never null) when the subscription has none.
+    ...(raw.locationId !== undefined ? { locationId: decryptValue(raw.locationId, session) } : {}),
+    ...(Array.isArray(raw.locationSplit) && raw.locationSplit.length > 0
+      ? { locationSplit: decryptSplitRule(raw.locationSplit, session, schemaVersion) }
+      : {}),
   };
+}
+
+/** The other-location rule: stored as {locationId, percent | amount} with each value encrypted on its own. */
+function decryptSplitRule(rule, session, schemaVersion) {
+  return rule.map((leg) => ({
+    locationId: decryptValue(leg.locationId, session),
+    ...(leg.percent !== undefined ? { percent: Number(decryptValue(leg.percent, session)) } : {}),
+    ...(leg.amount !== undefined
+      ? { amountMinor: decryptMoney(leg.amount, session, schemaVersion) }
+      : {}),
+  }));
+}
+
+function encryptSplitRule(rule, session, schemaVersion) {
+  return rule.map((leg) => ({
+    locationId: writeValue(leg.locationId, session),
+    ...(leg.percent !== undefined ? { percent: writeValue(leg.percent, session) } : {}),
+    ...(leg.amountMinor !== undefined
+      ? { amount: writeValue(toStoredMoney(leg.amountMinor, schemaVersion), session) }
+      : {}),
+  }));
 }
 
 function encryptSubscription(subscription, session, schemaVersion) {
@@ -89,7 +123,41 @@ function encryptSubscription(subscription, session, schemaVersion) {
     category: writeValue(subscription.category, session),
     comment: writeValue(subscription.comment || '', session),
     frequency: writeValue(subscription.frequency, session),
+    ...(subscription.locationId
+      ? { locationId: writeValue(subscription.locationId, session) }
+      : {}),
+    ...(Array.isArray(subscription.locationSplit) && subscription.locationSplit.length > 0
+      ? { locationSplit: encryptSplitRule(subscription.locationSplit, session, schemaVersion) }
+      : {}),
   };
+}
+
+/** A subscription may only be pointed at one of the caller's existing locations (an unchanged stale link is tolerated). */
+function assertLocationKnown(data, session, locationId, currentLocationId) {
+  if (!locationId || locationId === currentLocationId) return;
+  if (!readLocationIds(data, session).has(locationId)) throw locationNotFoundError(locationId);
+}
+
+/**
+ * The rule for the OTHER locations (a percentage or a fixed amount each; the main location gets the rest).
+ * Empty means none and is removed from the subscription; a non-empty rule needs a main `locationId`, sound
+ * numbers, and locations that exist (a leg that was already there and has since vanished is tolerated).
+ */
+function normalizeSplitRule(subscription, data, session, previousRule) {
+  const rule = subscription.locationSplit;
+  if (!Array.isArray(rule) || rule.length === 0) {
+    delete subscription.locationSplit;
+    return;
+  }
+  const message = validateLocationSplitRule(rule, subscription.locationId);
+  if (message) throw locationSplitError(message);
+  const known = readLocationIds(data, session);
+  const previous = new Set((previousRule ?? []).map((leg) => leg.locationId));
+  for (const leg of rule) {
+    if (!known.has(leg.locationId) && !previous.has(leg.locationId)) {
+      throw locationNotFoundError(leg.locationId);
+    }
+  }
 }
 
 function assertStableId(rawSubscription) {
@@ -223,6 +291,7 @@ async function createSubscription(deps, userId, input) {
     deps,
     userId,
     ({ data, rawSubscriptions, session, schemaVersion }) => {
+      assertLocationKnown(data, session, input.locationId);
       const newSubscription = {
         id: `subscriptions_${crypto.randomUUID()}`,
         title: input.title || '',
@@ -233,7 +302,10 @@ async function createSubscription(deps, userId, input) {
         category: input.category,
         comment: input.comment || '',
         frequency: input.frequency || 'monthly',
+        ...(input.locationId ? { locationId: input.locationId } : {}),
+        ...(Array.isArray(input.locationSplit) ? { locationSplit: input.locationSplit } : {}),
       };
+      normalizeSplitRule(newSubscription, data, session);
       return {
         updatedData: {
           ...data,
@@ -258,7 +330,17 @@ async function updateSubscription(deps, userId, subscriptionId, patch, { now = n
       if (index === -1) return null;
       assertNotPlanOwned(data, rawSubscriptions[index], session);
       const current = existing[index];
-      const updated = { ...current, ...patch };
+      assertLocationKnown(data, session, patch.locationId, current.locationId);
+      const { locationId: patchedLocation, ...otherPatch } = patch;
+      const updated = { ...current, ...otherPatch };
+      if (patchedLocation !== undefined) {
+        // null clears it; the stored subscription never carries a null.
+        if (patchedLocation) updated.locationId = patchedLocation;
+        else delete updated.locationId;
+      }
+      // Without a main location there is nothing to split from: clearing it clears an old rule too.
+      if (!updated.locationId && patch.locationSplit === undefined) delete updated.locationSplit;
+      normalizeSplitRule(updated, data, session, current.locationSplit);
 
       const updatedRawSubscriptions = rawSubscriptions.map((raw, i) =>
         i === index ? encryptSubscription(updated, session, schemaVersion) : raw,
@@ -304,6 +386,7 @@ async function updateSubscription(deps, userId, subscriptionId, patch, { now = n
         [...remainingTransactions, ...newTransactions],
         session,
         schemaVersion,
+        existingTransactions,
       );
       const updatedRawTransactions = derived.transactions.map((effective) =>
         encryptTransaction(transactionFromApi(effective, schemaVersion), session),
@@ -359,7 +442,13 @@ async function deleteSubscription(
         };
       }
 
-      const derived = applyDerivedState(data, remainingTransactions, session, schemaVersion);
+      const derived = applyDerivedState(
+        data,
+        remainingTransactions,
+        session,
+        schemaVersion,
+        existingTransactions,
+      );
       const updatedRawTransactions = derived.transactions.map((effective) =>
         encryptTransaction(transactionFromApi(effective, schemaVersion), session),
       );
@@ -423,6 +512,7 @@ async function refreshSubscriptions(deps, userId, { now = new Date() } = {}) {
         [...existingTransactions, ...newTransactions],
         session,
         schemaVersion,
+        existingTransactions,
       );
       const updatedRawTransactions = derived.transactions.map((effective) =>
         encryptTransaction(transactionFromApi(effective, schemaVersion), session),
@@ -456,6 +546,7 @@ async function batchSubscriptions(deps, userId, items, { atomic = false } = {}) 
         if (item.error) return { op: item.op, id: item.id, status: 'error', error: item.error };
         try {
           if (item.op === 'create') {
+            assertLocationKnown(data, session, item.fields.locationId);
             const newSubscription = {
               id: `subscriptions_${crypto.randomUUID()}`,
               title: item.fields.title || '',
@@ -466,7 +557,12 @@ async function batchSubscriptions(deps, userId, items, { atomic = false } = {}) 
               category: item.fields.category,
               comment: item.fields.comment || '',
               frequency: item.fields.frequency || 'monthly',
+              ...(item.fields.locationId ? { locationId: item.fields.locationId } : {}),
+              ...(Array.isArray(item.fields.locationSplit)
+                ? { locationSplit: item.fields.locationSplit }
+                : {}),
             };
+            normalizeSplitRule(newSubscription, data, session);
             working = [...working, newSubscription];
             anyApplied = true;
             return { op: 'create', status: 'created', id: newSubscription.id };
@@ -475,9 +571,21 @@ async function batchSubscriptions(deps, userId, items, { atomic = false } = {}) 
             const index = working.findIndex((subscription) => subscription.id === item.id);
             if (index === -1) throw new Error('No matching subscription exists.');
             assertNotPlanOwned(data, working[index], session);
-            working = working.map((subscription, candidateIndex) =>
-              candidateIndex === index ? { ...subscription, ...item.fields } : subscription,
-            );
+            assertLocationKnown(data, session, item.fields.locationId, working[index].locationId);
+            working = working.map((subscription, candidateIndex) => {
+              if (candidateIndex !== index) return subscription;
+              const { locationId: patched, ...rest } = item.fields;
+              const next = { ...subscription, ...rest };
+              if (patched !== undefined) {
+                if (patched) next.locationId = patched;
+                else delete next.locationId;
+              }
+              if (!next.locationId && item.fields.locationSplit === undefined) {
+                delete next.locationSplit;
+              }
+              normalizeSplitRule(next, data, session, subscription.locationSplit);
+              return next;
+            });
             anyApplied = true;
             return { op: 'update', status: 'updated', id: item.id };
           }

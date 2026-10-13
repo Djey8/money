@@ -1,34 +1,9 @@
 'use strict';
 
-const {
-  fromMinorUnits,
-  recalculateTransactionDerivedState,
-  toMinorUnits,
-} = require('@money/domain');
+const { recalculateTransactionDerivedState } = require('@money/domain');
 const { reconcilePaymentPlans } = require('./payment-plan-links');
-
-function readValue(value, session) {
-  return session && typeof value === 'string' ? session.decrypt(value) : value;
-}
-
-function readNumber(value, session) {
-  const number = Number(readValue(value, session));
-  if (!Number.isFinite(number)) throw new Error('Stored financial value is invalid');
-  return number;
-}
-
-function writeValue(value, session) {
-  return session ? session.encrypt(String(value)) : value;
-}
-
-function toStoredMoney(amountMinor, schemaVersion) {
-  return schemaVersion >= 2 ? amountMinor : fromMinorUnits(amountMinor);
-}
-
-function fromStoredMoney(value, session, schemaVersion) {
-  const amount = readNumber(value, session);
-  return schemaVersion >= 2 ? amount : toMinorUnits(amount);
-}
+const { fromStoredMoney, readValue, toStoredMoney, writeValue } = require('./stored-values');
+const { applyLocationDeltas } = require('./location-balance');
 
 function toFundProjects(projects, session, schemaVersion) {
   return (projects || []).map((project) => ({
@@ -100,7 +75,12 @@ function applyFundProjects(storedProjects, projects, session, schemaVersion) {
   });
 }
 
-function applyDerivedState(data, transactions, session, schemaVersion) {
+/**
+ * `previousTransactions` (API-shaped, as read before this write) turns on location bookkeeping: the
+ * difference between it and `transactions` moves the stored location balances in the same document.
+ * Callers that only re-derive (renames, admin rebuilds, whole-account import) omit it.
+ */
+function applyDerivedState(data, transactions, session, schemaVersion, previousTransactions) {
   const derived = recalculateTransactionDerivedState(
     transactions,
     buildDerivedStateContext(data, session, schemaVersion),
@@ -137,9 +117,18 @@ function applyDerivedState(data, transactions, session, schemaVersion) {
     },
   };
   // Payment plans follow their subscriptions and goals (payment-plan-links.js).
+  const withPlans = reconcilePaymentPlans(rebuilt.data, derived.funds, session);
   return {
     ...rebuilt,
-    data: reconcilePaymentPlans(rebuilt.data, derived.funds, session),
+    data: previousTransactions
+      ? applyLocationDeltas(
+          withPlans,
+          previousTransactions,
+          derived.transactions,
+          session,
+          schemaVersion,
+        )
+      : withPlans,
   };
 }
 
