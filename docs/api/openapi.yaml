@@ -3018,6 +3018,528 @@ paths:
           $ref: '#/components/responses/InsufficientScope'
         '404':
           $ref: '#/components/responses/NotFound'
+  /locations:
+    get:
+      operationId: listLocations
+      summary: List locations
+      description: >-
+        Returns every location (bank account, cash, PayPal, crypto exchange ...) with its live balance. A location
+        records where money physically sits; it is independent of the Daily/Splurge/Smile/Fire/Mojo buckets.
+        `amountMinor` is moved automatically by transactions that carry a `locationId`, so it should match the
+        sum of what you booked there plus any manual corrections. Requires scope `locations:r`.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Locations owned by the caller
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [locations]
+                properties:
+                  locations:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Location'
+              example:
+                locations:
+                  - id: loc_0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d
+                    name: N26
+                    subName: Main
+                    kind: bank
+                    amountMinor: 123450
+                  - id: loc_1b2c3d4e-5f6a-4b7c-9d8e-0f1a2b3c4d5e
+                    name: Cash
+                    kind: cash
+                    amountMinor: 4500
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+    post:
+      operationId: createLocation
+      summary: Create a location
+      description: >-
+        A location is identified by `name` plus the optional `subName`, case-insensitively: `N26` / `Main` and
+        `N26` / `Instant Savings` can coexist, two `N26` / `Main` cannot (400). `amountMinor` is the opening
+        balance (defaults to 0). Requires scope `locations:w`.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateLocationRequest'
+            example:
+              name: N26
+              subName: Instant Savings
+              kind: bank
+              amountMinor: 500000
+      responses:
+        '201':
+          description: Created location
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Location'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+  /locations/{locationId}:
+    parameters:
+      - name: locationId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getLocation
+      summary: Get a single location
+      description: Requires scope `locations:r`.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The location
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Location'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      operationId: updateLocation
+      summary: Update a location
+      description: >-
+        Accepts a partial body — only the fields you send are changed. Sending `amountMinor` is a manual
+        correction: it overwrites the balance (it is not a booking, nothing else moves). To record money coming in
+        or going out, book a transaction with this `locationId` instead. Renaming is checked for the same
+        name + subName uniqueness as creating. Send `subName: ""` to remove the sub name. Requires scope
+        `locations:w`.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchLocationRequest'
+            example:
+              amountMinor: 118000
+      responses:
+        '200':
+          description: Updated location
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Location'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      operationId: deleteLocation
+      summary: Delete a location
+      description: >-
+        Removes the location. Transactions that were booked there are kept, but lose their `locationId`
+        (`transactionsUnlinked` says how many); nothing is cascade-deleted. Not reversible through the API.
+        Requires scope `locations:w`.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Location deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [id, transactionsUnlinked]
+                properties:
+                  id:
+                    type: string
+                  transactionsUnlinked:
+                    type: integer
+              example:
+                id: loc_0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d
+                transactionsUnlinked: 12
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /recurring-transfers:
+    get:
+      operationId: listRecurringTransfers
+      summary: List recurring transfers
+      description: >-
+        Returns the rules that move money between two of the caller's own locations on a schedule ("50 EUR into the
+        shared account every week"). A recurring transfer is NOT a subscription and never creates a transaction: it
+        only generates transfers (see `GET /transfers`), so it cannot change income, expenses, Cashflow, the budget or
+        any fund. Requires scope `locations:r`.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Recurring transfers owned by the caller
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [recurringTransfers]
+                properties:
+                  recurringTransfers:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/RecurringTransfer'
+              example:
+                recurringTransfers:
+                  - id: rtransfer_8c1e5f2a-3b7d-4e9a-a1c6-2d4f6a8b0c1e
+                    title: Shared account
+                    fromLocationId: loc_0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d
+                    toLocationId: loc_1b2c3d4e-5f6a-4b7c-9d8e-0f1a2b3c4d5e
+                    amountMinor: 5000
+                    startDate: '2026-03-23'
+                    endDate: null
+                    frequency: weekly
+                    comment: ''
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+    post:
+      operationId: createRecurringTransfer
+      summary: Create a recurring transfer
+      description: >-
+        Stores the rule and immediately generates every transfer that is already due (one per occurrence from
+        `startDate` up to today or `endDate`), moving both balances in the same write; the response says how many in
+        `transfersCreated`. Both locations must exist and differ, `amountMinor` is positive (direction is from -> to),
+        `frequency` is weekly, biweekly, monthly, quarterly or yearly. Use a `startDate` of today to only affect
+        future transfers. Requires scope `locations:w`.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRecurringTransferRequest'
+            example:
+              title: Shared account
+              fromLocationId: loc_0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d
+              toLocationId: loc_1b2c3d4e-5f6a-4b7c-9d8e-0f1a2b3c4d5e
+              amountMinor: 5000
+              startDate: '2026-10-19'
+              frequency: weekly
+      responses:
+        '201':
+          description: Created rule, with the number of transfers generated for it
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecurringTransferResult'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+  /recurring-transfers/refresh:
+    post:
+      operationId: refreshRecurringTransfers
+      summary: Generate the recurring transfers that are due
+      description: >-
+        Creates every transfer that is due and does not exist yet, for all rules, and moves the balances in the same
+        write. Safe to call repeatedly: an occurrence that already exists is skipped. The app does the same when it
+        starts. Requires scope `locations:w`.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: What was generated
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [transfersCreated, rulesProcessed]
+                properties:
+                  transfersCreated:
+                    type: integer
+                  rulesProcessed:
+                    type: integer
+              example:
+                transfersCreated: 1
+                rulesProcessed: 2
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+  /recurring-transfers/{ruleId}:
+    parameters:
+      - name: ruleId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getRecurringTransfer
+      summary: Get a single recurring transfer
+      description: Requires scope `locations:r`.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The rule
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecurringTransfer'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      operationId: updateRecurringTransfer
+      summary: Update a recurring transfer
+      description: >-
+        Accepts a partial body. The transfers this rule already generated follow the change in place (same ids and order;
+        a changed amount or location moves both balances), occurrences that no longer exist are removed (for example after
+        moving `endDate` into the past) and anything newly due is generated. Transfers made by hand are never touched. The
+        response includes `transfersCreated`. Requires scope `locations:w`.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchRecurringTransferRequest'
+            example:
+              amountMinor: 7500
+      responses:
+        '200':
+          description: Updated rule
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecurringTransferResult'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      operationId: deleteRecurringTransfer
+      summary: Delete a recurring transfer
+      description: >-
+        Removes the rule. By default the transfers it already made stay (they are history). Pass
+        `deleteTransfers=true` to also remove the transfers it generated and give that money back to the locations;
+        transfers made by hand are never removed. Requires scope `locations:w`.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: deleteTransfers
+          in: query
+          required: false
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Rule deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [id, transfersDeleted]
+                properties:
+                  id:
+                    type: string
+                  transfersDeleted:
+                    type: integer
+              example:
+                id: rtransfer_8c1e5f2a-3b7d-4e9a-a1c6-2d4f6a8b0c1e
+                transfersDeleted: 0
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /transfers:
+    get:
+      operationId: listTransfers
+      summary: List transfers between locations
+      description: >-
+        Returns the moves of money between the caller's own locations (an ATM withdrawal, crypto to bank, 50 EUR into
+        a shared account). A transfer is not a transaction: it never changes income, expenses, Cashflow or any fund,
+        it only moves a balance from one location to another. Pass `locationId` to list the transfers into or out
+        of one location. Requires scope `locations:r`.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: locationId
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Transfers owned by the caller
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [transfers]
+                properties:
+                  transfers:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Transfer'
+              example:
+                transfers:
+                  - id: xfer_5d2c1a90-7b3e-4c1f-9a6d-1e2f3a4b5c6d
+                    fromLocationId: loc_0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d
+                    toLocationId: loc_1b2c3d4e-5f6a-4b7c-9d8e-0f1a2b3c4d5e
+                    amountMinor: 10000
+                    date: '2026-10-05'
+                    time: '14:30'
+                    comment: ATM withdrawal
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+    post:
+      operationId: createTransfer
+      summary: Move money between two locations
+      description: >-
+        Moves `amountMinor` (always positive) from `fromLocationId` to `toLocationId`: the source loses it, the
+        destination gains it, in the same write. Both locations must exist and differ (400 otherwise). There are no
+        fees: one exact amount moves. Requires scope `locations:w`.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTransferRequest'
+            example:
+              fromLocationId: loc_0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d
+              toLocationId: loc_1b2c3d4e-5f6a-4b7c-9d8e-0f1a2b3c4d5e
+              amountMinor: 10000
+              date: '2026-10-05'
+              time: '14:30'
+              comment: ATM withdrawal
+      responses:
+        '201':
+          description: Created transfer
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transfer'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+  /transfers/{transferId}:
+    parameters:
+      - name: transferId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getTransfer
+      summary: Get a single transfer
+      description: Requires scope `locations:r`.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The transfer
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transfer'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      operationId: updateTransfer
+      summary: Update a transfer
+      description: >-
+        Accepts a partial body. The old transfer's effect on both balances is reversed and the new one applied, so
+        changing the amount, either location, or both leaves every balance exactly as if the final transfer had been
+        booked directly. Requires scope `locations:w`.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchTransferRequest'
+            example:
+              amountMinor: 15000
+      responses:
+        '200':
+          description: Updated transfer
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transfer'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      operationId: deleteTransfer
+      summary: Delete a transfer
+      description: >-
+        Removes the transfer and gives the money back: the source gains the amount again, the destination loses it.
+        Not reversible through the API. Requires scope `locations:w`.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Transfer deleted
+          content:
+            application/json:
+              example:
+                id: xfer_5d2c1a90-7b3e-4c1f-9a6d-1e2f3a4b5c6d
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
   /balance/assets:
     get:
       operationId: listAssets
@@ -6057,6 +6579,19 @@ components:
           type: string
         comment:
           type: string
+        locationId:
+          type: string
+          description: >-
+            Where the money physically moved (a Location `id`). Omitted when the transaction has no location.
+            The booked amount is added to that location's balance (negative = expense), automatically, in the same
+            write.
+        locationSplits:
+          type: array
+          description: >-
+            Money that went to OTHER locations (signed like `amountMinor`); the main `locationId` receives the rest,
+            so the parts always add up. Omitted when the transaction is not split.
+          items:
+            $ref: '#/components/schemas/LocationSplit'
     StatementRow:
       type: object
       required: [current, previous, changePercent]
@@ -7387,6 +7922,247 @@ components:
           type: string
         amountMinor:
           type: integer
+    RecurringTransfer:
+      type: object
+      required:
+        [
+          id,
+          title,
+          fromLocationId,
+          toLocationId,
+          amountMinor,
+          startDate,
+          endDate,
+          frequency,
+          comment,
+        ]
+      properties:
+        id:
+          type: string
+          description: Stable id (`rtransfer_<uuid>`).
+        title:
+          type: string
+          description: Becomes the comment of every transfer the rule generates.
+        fromLocationId:
+          type: string
+        toLocationId:
+          type: string
+        amountMinor:
+          type: integer
+          minimum: 1
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+          nullable: true
+        frequency:
+          type: string
+          enum: [weekly, biweekly, monthly, quarterly, yearly]
+        comment:
+          type: string
+    RecurringTransferResult:
+      allOf:
+        - $ref: '#/components/schemas/RecurringTransfer'
+        - type: object
+          required: [transfersCreated]
+          properties:
+            transfersCreated:
+              type: integer
+              description: How many transfers were generated by this call.
+    CreateRecurringTransferRequest:
+      type: object
+      required: [fromLocationId, toLocationId, amountMinor, startDate]
+      properties:
+        title:
+          type: string
+        fromLocationId:
+          type: string
+        toLocationId:
+          type: string
+        amountMinor:
+          type: integer
+          minimum: 1
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+          nullable: true
+        frequency:
+          type: string
+          enum: [weekly, biweekly, monthly, quarterly, yearly]
+          description: Defaults to `monthly`.
+        comment:
+          type: string
+    PatchRecurringTransferRequest:
+      type: object
+      minProperties: 1
+      description: All fields optional - send only what you want to change. Unrecognized fields are rejected.
+      properties:
+        title:
+          type: string
+        fromLocationId:
+          type: string
+        toLocationId:
+          type: string
+        amountMinor:
+          type: integer
+          minimum: 1
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+          nullable: true
+        frequency:
+          type: string
+          enum: [weekly, biweekly, monthly, quarterly, yearly]
+        comment:
+          type: string
+    Transfer:
+      type: object
+      required: [id, amountMinor, date, time, comment]
+      properties:
+        id:
+          type: string
+          description: Stable id (`xfer_<uuid>`).
+        fromLocationId:
+          type: string
+          description: Where the money came from. Omitted when that location was deleted afterwards.
+        toLocationId:
+          type: string
+          description: Where it went. Omitted when that location was deleted afterwards.
+        amountMinor:
+          type: integer
+          minimum: 1
+          description: Always positive; the direction is from -> to.
+        date:
+          type: string
+          format: date
+        time:
+          type: string
+        comment:
+          type: string
+    CreateTransferRequest:
+      type: object
+      required: [fromLocationId, toLocationId, amountMinor, date]
+      properties:
+        fromLocationId:
+          type: string
+        toLocationId:
+          type: string
+        amountMinor:
+          type: integer
+          minimum: 1
+        date:
+          type: string
+          format: date
+        time:
+          type: string
+          description: Defaults to `00:00`.
+        comment:
+          type: string
+    PatchTransferRequest:
+      type: object
+      minProperties: 1
+      description: All fields optional - send only what you want to change. Unrecognized fields are rejected.
+      properties:
+        fromLocationId:
+          type: string
+        toLocationId:
+          type: string
+        amountMinor:
+          type: integer
+          minimum: 1
+        date:
+          type: string
+          format: date
+        time:
+          type: string
+        comment:
+          type: string
+    LocationSplit:
+      type: object
+      required: [locationId, amountMinor]
+      properties:
+        locationId:
+          type: string
+        amountMinor:
+          type: integer
+          description: Signed like the transaction; never zero.
+    LocationSplitRule:
+      type: object
+      required: [locationId]
+      description: Exactly one of `percent` or `amountMinor`.
+      properties:
+        locationId:
+          type: string
+        percent:
+          type: number
+          exclusiveMinimum: 0
+          maximum: 100
+          description: Share of the booking's absolute amount, rounded to the cent.
+        amountMinor:
+          type: integer
+          minimum: 1
+          description: Fixed amount in minor units, in the direction of the booking.
+    Location:
+      type: object
+      required: [id, name, kind, amountMinor]
+      properties:
+        id:
+          type: string
+          description: Stable id (`loc_<uuid>`); transactions reference it, so renaming never breaks a link.
+        name:
+          type: string
+        subName:
+          type: string
+          description: Optional second line, e.g. `Main` or `Instant Savings` for an N26 sub-account. Omitted when empty.
+        kind:
+          type: string
+          enum: [bank, savings, cash, crypto, wallet, broker, card, other]
+          description: >-
+            Cosmetic grouping only; never changes any calculation. `savings` is a savings or deposit account, `wallet` a payment
+            app / e-money balance (shown as PayPal in the app), `broker` uninvested cash at a broker, `card` a prepaid or gift card
+            or voucher; `bank` is the everyday account, `cash` physical cash, `crypto` an exchange or wallet.
+        amountMinor:
+          type: integer
+          description: Live balance in integer minor units (can be negative).
+    CreateLocationRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        subName:
+          type: string
+        kind:
+          type: string
+          enum: [bank, savings, cash, crypto, wallet, broker, card, other]
+          description: Defaults to `other` when omitted.
+        amountMinor:
+          type: integer
+          description: Opening balance. Defaults to 0 when omitted.
+    PatchLocationRequest:
+      type: object
+      minProperties: 1
+      description: All fields optional — send only what you want to change. Unrecognized fields are rejected.
+      properties:
+        name:
+          type: string
+        subName:
+          type: string
+          description: Empty string removes the sub name.
+        kind:
+          type: string
+          enum: [bank, savings, cash, crypto, wallet, broker, card, other]
+        amountMinor:
+          type: integer
+          description: Manual correction — overwrites the balance.
     Liability:
       type: object
       required: [id, tag, amountMinor, investment, creditMinor]
@@ -8436,6 +9212,25 @@ components:
           type: string
         comment:
           type: string
+        locationId:
+          type: [string, 'null']
+          description: >-
+            A Location `id` (see `GET /locations`); an unknown id is rejected with 400. The booked amount moves that
+            location's balance by the signed `amountMinor` in the same write. Omit or send `null` for no location; on
+            an update `null` clears the link and gives the amount back to the old location, and a different id moves
+            the booking from the old location to the new one.
+        locationSplits:
+          type: [array, 'null']
+          description: >-
+            Send part of the booking to OTHER locations: each entry is a `locationId` (see `GET /locations`) and a
+            signed `amountMinor` with the same sign as the transaction. The main `locationId` (required when you
+            split) receives the rest, so a 3000.00 salary at `N26 - Main` with `{locationId: <Instant Savings>,
+            amountMinor: 60000}` books 2400.00 and 600.00. Unknown or repeated locations, the main location as a
+            split, a wrong sign, or amounts adding up to more than the transaction are rejected with 400. `null`
+            or `[]` removes the split on an update. Changing `amountMinor` later only changes the main location's
+            share.
+          items:
+            $ref: '#/components/schemas/LocationSplit'
     UpdateTransactionRequest:
       type: object
       minProperties: 1
@@ -8457,9 +9252,31 @@ components:
           type: string
         comment:
           type: string
+        locationId:
+          type: [string, 'null']
+          description: >-
+            A Location `id` (see `GET /locations`); an unknown id is rejected with 400. The booked amount moves that
+            location's balance by the signed `amountMinor` in the same write. Omit or send `null` for no location; on
+            an update `null` clears the link and gives the amount back to the old location, and a different id moves
+            the booking from the old location to the new one.
+        locationSplits:
+          type: [array, 'null']
+          description: >-
+            Send part of the booking to OTHER locations: each entry is a `locationId` (see `GET /locations`) and a
+            signed `amountMinor` with the same sign as the transaction. The main `locationId` (required when you
+            split) receives the rest, so a 3000.00 salary at `N26 - Main` with `{locationId: <Instant Savings>,
+            amountMinor: 60000}` books 2400.00 and 600.00. Unknown or repeated locations, the main location as a
+            split, a wrong sign, or amounts adding up to more than the transaction are rejected with 400. `null`
+            or `[]` removes the split on an update. Changing `amountMinor` later only changes the main location's
+            share.
+          items:
+            $ref: '#/components/schemas/LocationSplit'
     CopyTransactionRequest:
       type: object
-      description: All fields are optional overrides applied on top of the source transaction. Unrecognized fields are rejected.
+      description: >-
+        All fields are optional overrides applied on top of the source transaction. Unrecognized fields are rejected.
+        The copy does not inherit the source's `locationId` (it books at no location, so no balance moves); send
+        `locationId` to book the copy at one.
       properties:
         account:
           type: string
@@ -8477,6 +9294,25 @@ components:
           type: string
         comment:
           type: string
+        locationId:
+          type: [string, 'null']
+          description: >-
+            A Location `id` (see `GET /locations`); an unknown id is rejected with 400. The booked amount moves that
+            location's balance by the signed `amountMinor` in the same write. Omit or send `null` for no location; on
+            an update `null` clears the link and gives the amount back to the old location, and a different id moves
+            the booking from the old location to the new one.
+        locationSplits:
+          type: [array, 'null']
+          description: >-
+            Send part of the booking to OTHER locations: each entry is a `locationId` (see `GET /locations`) and a
+            signed `amountMinor` with the same sign as the transaction. The main `locationId` (required when you
+            split) receives the rest, so a 3000.00 salary at `N26 - Main` with `{locationId: <Instant Savings>,
+            amountMinor: 60000}` books 2400.00 and 600.00. Unknown or repeated locations, the main location as a
+            split, a wrong sign, or amounts adding up to more than the transaction are rejected with 400. `null`
+            or `[]` removes the split on an update. Changing `amountMinor` later only changes the main location's
+            share.
+          items:
+            $ref: '#/components/schemas/LocationSplit'
     BatchTransactionOperation:
       type: object
       required: [op]
@@ -8579,6 +9415,19 @@ components:
         frequency:
           type: string
           enum: [weekly, biweekly, monthly, quarterly, yearly]
+        locationId:
+          type: string
+          description: >-
+            Where the transactions this subscription generates are booked (a Location `id`); omitted when it has
+            none. Each generated transaction carries it and moves that location's balance.
+        locationSplit:
+          type: array
+          description: >-
+            How each transaction this subscription generates is split across locations: a share for OTHER
+            locations (a `percent` or an `amountMinor` each); the main `locationId` receives the rest. Applies only to
+            transactions generated from now on. Omitted when there is no split.
+          items:
+            $ref: '#/components/schemas/LocationSplitRule'
     CreateSubscriptionRequest:
       type: object
       required: [account, amountMinor, startDate, category]
@@ -8606,6 +9455,25 @@ components:
           type: string
           enum: [weekly, biweekly, monthly, quarterly, yearly]
           default: monthly
+        locationId:
+          type: [string, 'null']
+          description: >-
+            A Location `id` (see `GET /locations`); an unknown id is rejected with 400. Applies only to the
+            transactions generated from now on: changing or clearing it never touches transactions already
+            generated (they keep their location and the balances stay as they are), and it plays no part in
+            recognising a subscription's transactions, so moving one by hand never regenerates it. Omit or send
+            `null` for no location.
+        locationSplit:
+          type: [array, 'null']
+          description: >-
+            The split rule for generated transactions, e.g. `[{"locationId": "<Instant Savings>", "percent": 20}]`
+            with `locationId` = N26 - Main books 80 % on Main and 20 % on Instant Savings. Each entry has exactly one of
+            `percent` (more than 0, at most 100; all percentages together at most 100) or `amountMinor` (a positive
+            fixed amount). Needs a main `locationId`; unknown or repeated locations and the main location as a split are
+            rejected with 400. Applies only to transactions generated from now on - existing ones are never changed.
+            `null` or `[]` removes the rule; clearing `locationId` removes it too.
+          items:
+            $ref: '#/components/schemas/LocationSplitRule'
     PatchSubscriptionRequest:
       type: object
       description: All fields optional — send only what you want to change.
@@ -8630,6 +9498,25 @@ components:
         frequency:
           type: string
           enum: [weekly, biweekly, monthly, quarterly, yearly]
+        locationId:
+          type: [string, 'null']
+          description: >-
+            A Location `id` (see `GET /locations`); an unknown id is rejected with 400. Applies only to the
+            transactions generated from now on: changing or clearing it never touches transactions already
+            generated (they keep their location and the balances stay as they are), and it plays no part in
+            recognising a subscription's transactions, so moving one by hand never regenerates it. Omit or send
+            `null` for no location.
+        locationSplit:
+          type: [array, 'null']
+          description: >-
+            The split rule for generated transactions, e.g. `[{"locationId": "<Instant Savings>", "percent": 20}]`
+            with `locationId` = N26 - Main books 80 % on Main and 20 % on Instant Savings. Each entry has exactly one of
+            `percent` (more than 0, at most 100; all percentages together at most 100) or `amountMinor` (a positive
+            fixed amount). Needs a main `locationId`; unknown or repeated locations and the main location as a split are
+            rejected with 400. Applies only to transactions generated from now on - existing ones are never changed.
+            `null` or `[]` removes the rule; clearing `locationId` removes it too.
+          items:
+            $ref: '#/components/schemas/LocationSplitRule'
     RefreshSubscriptionsResponse:
       type: object
       required: [transactionsCreated, subscriptionsProcessed]

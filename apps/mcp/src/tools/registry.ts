@@ -80,7 +80,11 @@ export const TOOLS: ToolDefinition[] = [
       'List, read, create, update, delete, copy, batch, export, or import transactions. ' +
       'Requires a PAT with transactions:r (list/get), transactions:w (create/update/delete/copy), ' +
       'or transactions:bulk (batch/export/import). Money is always an integer amountMinor plus an ISO-4217 ' +
-      'currency; negative amounts are expenses. delete/batch/export/import require confirm: true.',
+      'currency; negative amounts are expenses. Optional locationId (an id from manage_locations) records where the ' +
+      "money moved and updates that location's balance automatically in the same write (null clears it on an " +
+      'update). To split a booking across locations (say 20 % of a salary to a savings sub-account) keep locationId as the ' +
+      'MAIN location and add locationSplits: [{locationId, amountMinor}] for the others - the main one gets the rest. ' +
+      'delete/batch/export/import require confirm: true.',
     actions: {
       list: action('listTransactions'),
       get: action('getTransaction'),
@@ -180,6 +184,65 @@ export const TOOLS: ToolDefinition[] = [
       deactivate_payment_plan: action('deactivateFirePaymentPlan'),
       delete_payment_plan: action('deleteFirePaymentPlan', true),
       list_transactions: action('listFireTransactions'),
+    },
+  },
+  {
+    kind: 'simple',
+    name: 'manage_locations',
+    description:
+      'Locations are where the money physically sits: bank accounts (name + optional subName, e.g. N26 / Main and ' +
+      'N26 / Instant Savings), cash, PayPal, a crypto exchange. They are separate from the Daily/Splurge/Smile/Fire/' +
+      'Mojo buckets. List, get, create, update, or delete a location. Each has a live amountMinor balance that moves ' +
+      'automatically whenever a transaction is booked with its locationId (manage_transactions), so to record money ' +
+      'moving in or out book a transaction; updating amountMinor here is only a manual correction that overwrites the ' +
+      'balance. kind is bank, savings, cash, crypto, wallet (PayPal / payment app), broker (cash at a broker), card (prepaid / gift card) or other. Deleting keeps the transactions and just unlinks ' +
+      'them. Requires a PAT with locations:r (list/get) or locations:w (create/update/delete). delete requires ' +
+      'confirm: true.',
+    actions: {
+      list: action('listLocations'),
+      get: action('getLocation'),
+      create: action('createLocation'),
+      update: action('updateLocation'),
+      delete: action('deleteLocation', true),
+    },
+  },
+  {
+    kind: 'simple',
+    name: 'manage_transfers',
+    description:
+      "Move money between two of the user's own locations (an ATM withdrawal: bank -> cash; crypto exchange -> bank; " +
+      '50 EUR into the shared account). List (optionally for one locationId), get, create, update, or delete a transfer: ' +
+      '{fromLocationId, toLocationId, amountMinor (positive), date, time?, comment?}. The source location loses the amount and ' +
+      'the destination gains it in the same write. A transfer is NOT a transaction - it never changes income, expenses, Cashflow ' +
+      'or any fund, so never record the two sides with manage_transactions. Editing or deleting reverses and re-applies the ' +
+      'balances. Requires a PAT with locations:r (list/get) or locations:w (create/update/delete). delete requires confirm: true.',
+    actions: {
+      list: action('listTransfers'),
+      get: action('getTransfer'),
+      create: action('createTransfer'),
+      update: action('updateTransfer'),
+      delete: action('deleteTransfer', true),
+    },
+  },
+  {
+    kind: 'simple',
+    name: 'manage_recurring_transfers',
+    description:
+      "Repeat a transfer between two of the user's own locations on a schedule (50 EUR into the shared account every week). " +
+      'List, get, create, update, delete a rule {title, fromLocationId, toLocationId, amountMinor (positive), startDate, endDate?, ' +
+      'frequency: weekly|biweekly|monthly|quarterly|yearly, comment?}, or refresh to generate what is newly due. It is NOT a ' +
+      'subscription: it never creates a transaction, only transfers, so it cannot change income, expenses, Cashflow or any fund. ' +
+      'Creating a rule generates every transfer already due from startDate (use today as startDate to affect only the future); ' +
+      'editing it moves the transfers it generated in place and never touches ones made by hand; delete keeps them unless ' +
+      'deleteTransfers is true. Requires a PAT with locations:r (list/get) or locations:w (everything else). delete requires ' +
+      'confirm: true.',
+    actions: {
+      list: action('listRecurringTransfers'),
+      get: action('getRecurringTransfer'),
+      create: action('createRecurringTransfer'),
+      update: action('updateRecurringTransfer'),
+      delete: action('deleteRecurringTransfer', true),
+      refresh: action('refreshRecurringTransfers'),
     },
   },
   {
