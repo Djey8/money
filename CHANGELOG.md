@@ -1,3 +1,18 @@
+## [1.25.0] - 2026-10-13
+
+### Features
+
+- feat(ui): locations page, transfers and recurring-transfer lists, location picker and split editor, and the Cashflow breakdown in the balance sheet
+- feat(ui): icons for the eight location types
+- feat(i18n): Locations, transfers and recurring-transfer texts in all six languages
+- feat(api): locations, transfers and recurring-transfers endpoints, scopes and MCP tools, documented in the OpenAPI spec
+- feat(backend): locations, transfers and recurring transfers with atomic balance writes, and location fields on transactions and subscriptions
+- feat(domain): location balance, split and recurring-transfer rules, carried through transactions and subscriptions
+
+### Bug Fixes
+
+- fix(domain): keep the Markdown renderers out of the package barrel so the Firebase bundle stays free of Pro text
+
 ## [1.24.0] - 2026-10-11
 
 ### Features
