@@ -391,13 +391,14 @@
         </button>
         <!-- Pro, self-hosted only — the actual feature lives entirely in a
              separate route (app.routes.selfhosted.ts), so Firebase ships
-             none of its code; this is just a plain guarded nav link. -->
+             none of its code. The link's route and label come from the
+             environment, which only the self-hosted builds define. -->
         <button
-          *ngIf="appMode === 'selfhosted'"
+          *ngIf="personalAccessTokensLink as link"
           class="settings-menu-item"
           (click)="goToPersonalAccessTokens()"
         >
-          <span>Personal Access Tokens</span>
+          <span>{{ link.label }}</span>
           <span class="menu-chevron">›</span>
         </button>
       </div>

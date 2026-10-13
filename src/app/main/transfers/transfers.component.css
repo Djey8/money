@@ -1,0 +1,217 @@
+.page-hint {
+  max-width: 920px;
+  margin: 10px auto 0;
+  padding: 0 16px;
+  font-size: 13px;
+  opacity: 0.8;
+  color: var(--color-text);
+}
+
+/* The back-to-Locations picture, like the other toolbar pictures */
+#locationsbtn {
+  border-radius: var(--radius-full);
+  object-fit: cover;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 40px 16px;
+  color: var(--color-text);
+  opacity: 0.8;
+}
+
+#table-container {
+  max-width: 1000px;
+  margin: 10px auto 40px;
+}
+
+/* The transfer icon is drawn (not a text glyph) so it sits exactly in the middle of the circle */
+.transfer-icon {
+  width: 14px;
+  height: 14px;
+  display: block;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* The recurring-transfers picture, like the other toolbar pictures */
+#recurringbtn {
+  border-radius: var(--radius-full);
+  object-fit: cover;
+}
+
+/*
+ * HARD RULE: a table always fits the screen width - never a sideways scroll. The table is exactly as wide as the
+ * screen (up to the page width), the columns share it by fixed percentages, long text is cut with an ellipsis, and
+ * on a smaller screen the least important columns are dropped (the comment first).
+ */
+#table-container {
+  width: 100%;
+  max-width: 1000px;
+  margin-left: auto;
+  margin-right: auto;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+table.account {
+  width: 100%;
+  max-width: 100%;
+  table-layout: fixed;
+}
+
+table.account th,
+table.account td {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+table.account .text-truncate-cell {
+  max-width: none;
+}
+
+.sub-freq {
+  display: none;
+}
+
+/* Transfers: id, date, from, to, amount, comment */
+.transfers-table .mat-column-id {
+  width: 6%;
+}
+.transfers-table .mat-column-date {
+  width: 16%;
+}
+.transfers-table .mat-column-from {
+  width: 22%;
+}
+.transfers-table .mat-column-to {
+  width: 22%;
+}
+.transfers-table .mat-column-amount {
+  width: 16%;
+}
+.transfers-table .mat-column-comment {
+  width: 18%;
+}
+
+/* Recurring transfers: id, name, from, to, amount, frequency, start */
+.recurring-table .mat-column-id {
+  width: 5%;
+}
+.recurring-table .mat-column-title {
+  width: 18%;
+}
+.recurring-table .mat-column-from {
+  width: 17%;
+}
+.recurring-table .mat-column-to {
+  width: 17%;
+}
+.recurring-table .mat-column-amount {
+  width: 14%;
+}
+.recurring-table .mat-column-frequency {
+  width: 12%;
+}
+.recurring-table .mat-column-startDate {
+  width: 17%;
+}
+
+@media (max-width: 700px) {
+  table.account th[mat-header-cell] {
+    font-size: 0.95em;
+  }
+
+  /* Transfers: the comment goes */
+  .transfers-table .mat-column-comment {
+    display: none;
+  }
+  .transfers-table .mat-column-id {
+    width: 8%;
+  }
+  .transfers-table .mat-column-date {
+    width: 20%;
+  }
+  .transfers-table .mat-column-from {
+    width: 27%;
+  }
+  .transfers-table .mat-column-to {
+    width: 27%;
+  }
+  .transfers-table .mat-column-amount {
+    width: 18%;
+  }
+
+  /* Recurring transfers: the id and the start date go */
+  .recurring-table .mat-column-id,
+  .recurring-table .mat-column-startDate {
+    display: none;
+  }
+  .recurring-table .mat-column-title {
+    width: 26%;
+  }
+  .recurring-table .mat-column-from {
+    width: 22%;
+  }
+  .recurring-table .mat-column-to {
+    width: 22%;
+  }
+  .recurring-table .mat-column-amount {
+    width: 16%;
+  }
+  .recurring-table .mat-column-frequency {
+    width: 14%;
+  }
+}
+
+@media (max-width: 480px) {
+  table.account th[mat-header-cell] {
+    font-size: 0.85em;
+  }
+  table.account td {
+    font-size: 13px;
+  }
+
+  /* Transfers: the id goes too */
+  .transfers-table .mat-column-id {
+    display: none;
+  }
+  .transfers-table .mat-column-date {
+    width: 22%;
+  }
+  .transfers-table .mat-column-from {
+    width: 28%;
+  }
+  .transfers-table .mat-column-to {
+    width: 28%;
+  }
+  .transfers-table .mat-column-amount {
+    width: 22%;
+  }
+
+  /* Recurring transfers: the frequency moves under the name */
+  .recurring-table .mat-column-frequency {
+    display: none;
+  }
+  .sub-freq {
+    display: block;
+    font-size: 11px;
+    opacity: 0.75;
+  }
+  .recurring-table .mat-column-title {
+    width: 30%;
+  }
+  .recurring-table .mat-column-from {
+    width: 24%;
+  }
+  .recurring-table .mat-column-to {
+    width: 24%;
+  }
+  .recurring-table .mat-column-amount {
+    width: 22%;
+  }
+}

@@ -1,6 +1,7 @@
 import { BalanceComponent } from './balance.component';
 import { AppStateService } from '../../../shared/services/app-state.service';
 import { LocalService } from '../../../shared/services/local.service';
+import { cashflowByLocation } from '../../../shared/location-balance';
 
 describe('BalanceComponent', () => {
   beforeEach(() => {
@@ -79,6 +80,38 @@ describe('BalanceComponent', () => {
     it('should write allShares to AppStateService', () => {
       BalanceComponent.allShares = [{ tag: 'Y', quantity: 1, price: 1 }] as any;
       expect(AppStateService.instance.allShares).toEqual([{ tag: 'Y', quantity: 1, price: 1 }]);
+    });
+  });
+
+  describe('Cashflow by location', () => {
+    it('lists every location and what the locations do not account for', () => {
+      AppStateService.instance.allLocations = [
+        { id: 'a', name: 'N26', subName: 'Main', amount: 2400 },
+        { id: 'b', name: 'Cash', amount: 100 },
+      ];
+      const { rows, total, unassigned } = cashflowByLocation(
+        2600,
+        AppStateService.instance.allLocations,
+      );
+      expect(rows.map((l) => l.id)).toEqual(['a', 'b']);
+      expect(total).toBe(2500);
+      expect(unassigned).toBe(100);
+    });
+
+    it('is balanced (nothing unassigned) when the locations add up to the Cashflow', () => {
+      const locations = [
+        { id: 'a', name: 'A', amount: 0.1 },
+        { id: 'b', name: 'B', amount: 0.2 },
+      ];
+      expect(cashflowByLocation(0.3, locations).unassigned).toBe(0);
+    });
+
+    it('a negative difference means the locations hold more than the Cashflow shows', () => {
+      expect(cashflowByLocation(100, [{ id: 'a', name: 'A', amount: 150 }]).unassigned).toBe(-50);
+    });
+
+    it('with no locations everything is unassigned (the row then shows the setup hint instead)', () => {
+      expect(cashflowByLocation(500, [])).toEqual({ rows: [], total: 0, unassigned: 500 });
     });
   });
 });

@@ -6,6 +6,7 @@ import { IncomeStatementService } from 'src/app/shared/services/income-statement
 import { isDuplicateTitle } from 'src/app/shared/validation.utils';
 import { BaseInfoComponent } from 'src/app/shared/base/base-info.component';
 import { AppStateService } from 'src/app/shared/services/app-state.service';
+import { releaseLocationBookings } from 'src/app/shared/location-balance';
 import {
   Smile,
   SmilePhase,
@@ -72,7 +73,11 @@ setTimeout(() =>
     PaymentPlannerDialogComponent,
   ],
   templateUrl: './info-smile.component.html',
-  styleUrls: ['../../../shared/styles/info-panel.css', './info-smile.component.css'],
+  styleUrls: [
+    '../../../shared/styles/info-panel.css',
+    '../../../shared/styles/related-tx.css',
+    './info-smile.component.css',
+  ],
 })
 export class InfoSmileComponent extends BaseInfoComponent {
   static index = 1;
@@ -1271,6 +1276,9 @@ export class InfoSmileComponent extends BaseInfoComponent {
           found = false;
           for (let i = 0; i < AppStateService.instance.allTransactions.length; i++) {
             if ('@' + deletedTitle === AppStateService.instance.allTransactions[i].category) {
+              releaseLocationBookings(AppStateService.instance.allLocations, [
+                AppStateService.instance.allTransactions[i],
+              ]);
               AppStateService.instance.allTransactions.splice(i, 1);
               deletedTransactionsCount++;
               found = true;
@@ -1296,6 +1304,7 @@ export class InfoSmileComponent extends BaseInfoComponent {
         // Note: Don't include 'smile' here as incomeStatement.getWrites() already includes it
         const writes: { tag: string; data: any }[] = [
           { tag: 'transactions', data: AppStateService.instance.allTransactions },
+          { tag: 'locations', data: AppStateService.instance.allLocations },
           ...this.incomeStatement.getWrites(),
         ];
 

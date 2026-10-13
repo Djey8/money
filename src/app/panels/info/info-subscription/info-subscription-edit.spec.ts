@@ -97,6 +97,8 @@ describe('InfoSubscriptionComponent: editing a subscription keeps its transactio
     component.categoryTextField = '@Fitness';
     component.commentTextField = '';
     component.frequencyField = 'monthly';
+    component.locationIdField = null;
+    component.splitRows = [];
   });
 
   afterEach(() => jest.restoreAllMocks());

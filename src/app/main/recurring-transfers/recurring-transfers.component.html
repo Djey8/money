@@ -1,0 +1,179 @@
+<!-- Toolbar -->
+<div class="toolbar" role="banner">
+  <img
+    id="profile-pic"
+    width="40"
+    alt="Profile Logo"
+    src="../assets/profile-blank.jpg"
+    role="button"
+    tabindex="0"
+    aria-label="Open profile"
+    (keydown.enter)="appReference.clickProfile()"
+    (click)="appReference.clickProfile()"
+  />
+  <div
+    id="heading"
+    role="button"
+    tabindex="0"
+    (click)="appReference.openNavBar()"
+    (keydown.enter)="appReference.openNavBar()"
+  >
+    {{ 'Recurring.listTitle' | translate }}
+  </div>
+  <div class="spacer"></div>
+  <img
+    id="locationsbtn"
+    width="40"
+    alt=""
+    [src]="locationsIcon"
+    role="button"
+    tabindex="0"
+    [attr.aria-label]="'Menu.locations' | translate"
+    [title]="'Menu.locations' | translate"
+    (click)="goToLocations()"
+    (keydown.enter)="goToLocations()"
+  />
+  <button
+    id="transferbtn"
+    class="add-circle-btn transfer-btn"
+    [attr.aria-label]="'Transfer.listTitle' | translate"
+    [title]="'Transfer.listTitle' | translate"
+    (click)="goToTransfers()"
+  >
+    <svg class="transfer-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M4 8h14M14 4l4 4-4 4M20 16H6M10 12l-4 4 4 4" />
+    </svg>
+  </button>
+  <button id="addbtn" class="add-circle-btn" aria-label="Add" (click)="addRecurringTransfer()">
+    +
+  </button>
+</div>
+
+<p class="page-hint">{{ 'Recurring.note' | translate }}</p>
+
+<div class="search-bar-container" *ngIf="hasRules">
+  <input
+    type="text"
+    class="search-input"
+    aria-label="Search"
+    [placeholder]="'Search.placeholder' | translate"
+    [(ngModel)]="searchTextField"
+    (input)="search()"
+  />
+  <button type="button" class="clear-button" (click)="clearSearch()" *ngIf="isSearched">
+    {{ 'Cashflow.clear' | translate }}
+  </button>
+</div>
+
+<div id="table-container" [hidden]="!hasRules">
+  <mat-paginator
+    class="paginator paginator-compact"
+    #topPaginator
+    [pageSizeOptions]="pageSizeOptions"
+    [pageSize]="25"
+    [length]="dataSource.data.length"
+    [pageIndex]="0"
+    showFirstLastButtons
+    aria-label="Select page of recurring transfers"
+  >
+  </mat-paginator>
+
+  <table
+    mat-table
+    [dataSource]="dataSource"
+    matSort
+    (matSortChange)="announceSortChange($event)"
+    class="mat-elevation-z8 account recurring-table"
+  >
+    <ng-container matColumnDef="id">
+      <th class="headder" mat-header-cell *matHeaderCellDef mat-sort-header="id">
+        {{ 'Transactions.ID' | translate }}
+      </th>
+      <td mat-cell *matCellDef="let row">{{ row.id + 1 }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="title">
+      <th class="headder" mat-header-cell *matHeaderCellDef mat-sort-header>
+        {{ 'Recurring.name' | translate }}
+      </th>
+      <td mat-cell *matCellDef="let row" class="text-truncate-cell">
+        {{ row.title }}
+        <!-- the frequency column is hidden on a phone: it moves under the name -->
+        <span class="sub-freq">{{ 'Subscription.frequency.' + row.frequency | translate }}</span>
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="from">
+      <th class="headder" mat-header-cell *matHeaderCellDef mat-sort-header>
+        {{ 'Transfer.from' | translate }}
+      </th>
+      <td mat-cell *matCellDef="let row" class="text-truncate-cell">
+        {{ row.from || ('Transfer.deletedLocation' | translate) }}
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="to">
+      <th class="headder" mat-header-cell *matHeaderCellDef mat-sort-header>
+        {{ 'Transfer.to' | translate }}
+      </th>
+      <td mat-cell *matCellDef="let row" class="text-truncate-cell">
+        {{ row.to || ('Transfer.deletedLocation' | translate) }}
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="amount">
+      <th class="headder" mat-header-cell *matHeaderCellDef mat-sort-header>
+        {{ 'Common.amount' | translate }}
+      </th>
+      <td mat-cell *matCellDef="let row">
+        {{ row.amount | appNumber }} {{ settingsReference.currency }}
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="frequency">
+      <th class="headder" mat-header-cell *matHeaderCellDef mat-sort-header>
+        {{ 'Subscription.frequency.label' | translate }}
+      </th>
+      <td mat-cell *matCellDef="let row">
+        {{ 'Subscription.frequency.' + row.frequency | translate }}
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="startDate">
+      <th class="headder" mat-header-cell *matHeaderCellDef mat-sort-header>
+        {{ 'Recurring.startDate' | translate }}
+      </th>
+      <td mat-cell *matCellDef="let row">
+        <span class="d-short">{{ row.startDate | appDate: 'short' }}</span
+        ><span class="d-full">{{ row.startDate | appDate }}</span>
+      </td>
+    </ng-container>
+
+    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+    <tr
+      mat-row
+      *matRowDef="let row; columns: displayedColumns"
+      tabindex="0"
+      (click)="clickRow(row)"
+      (keydown.enter)="clickRow(row)"
+    ></tr>
+  </table>
+
+  <mat-paginator
+    class="paginator paginator-compact"
+    #bottomPaginator
+    [pageSizeOptions]="pageSizeOptions"
+    [pageSize]="25"
+    [length]="dataSource.data.length"
+    [pageIndex]="0"
+    showFirstLastButtons
+    aria-label="Select page of recurring transfers"
+  >
+  </mat-paginator>
+</div>
+
+<div class="empty-state" *ngIf="!hasRules">
+  <p>{{ 'Recurring.empty' | translate }}</p>
+</div>
+
+<app-info-recurring-transfer></app-info-recurring-transfer>

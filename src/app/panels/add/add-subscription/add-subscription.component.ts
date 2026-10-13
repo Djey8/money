@@ -9,6 +9,17 @@ import { FrontendLoggerService } from 'src/app/shared/services/frontend-logger.s
 import { PersistenceService } from 'src/app/shared/services/persistence.service';
 import { BaseAddComponent } from 'src/app/shared/base/base-add.component';
 import { AppStateService } from 'src/app/shared/services/app-state.service';
+import { LocationSplitComponent } from 'src/app/shared/components/location-split/location-split.component';
+import {
+  resolveStoredSplits,
+  rowsToStoredRule,
+  SplitRow,
+  splitProblem,
+  splitsToRows,
+  storedRuleToRows,
+} from 'src/app/shared/location-split.utils';
+import { lastUsedLocationId, locationsByRecentUse } from 'src/app/shared/location-balance';
+import { locationLabel } from 'src/app/shared/location.utils';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
@@ -69,7 +80,7 @@ setTimeout(() => import('src/app/app.component').then((m) => (AppComponent = m.A
 @Component({
   selector: 'app-add-subscription',
   standalone: true,
-  imports: [TrapFocusDirective, CommonModule, FormsModule, TranslateModule],
+  imports: [TrapFocusDirective, CommonModule, FormsModule, TranslateModule, LocationSplitComponent],
   templateUrl: './add-subscription.component.html',
   styleUrls: ['../../../shared/styles/add-form.css', './add-subscription.component.css'],
 })
@@ -88,6 +99,44 @@ export class AddSubscriptionComponent extends BaseAddComponent implements OnInit
   static categoryTextField = '@';
   static commentTextField = '';
   static frequencyField = 'monthly'; // Default frequency for new subscriptions
+  /** undefined = the picker was not touched (pre-select the last used location); null = "None". */
+  static locationChoice: string | null | undefined = undefined;
+
+  readonly locationLabel = locationLabel;
+  /** The other locations each generated booking is split to (the main one is the picker above). */
+  splitRows: SplitRow[] = [];
+  readonly currency = '€';
+
+  get allLocations() {
+    return AppStateService.instance.allLocations;
+  }
+
+  get splitAmount(): number | null {
+    const n = parseFloat(String(AddSubscriptionComponent.amountTextField));
+    return Number.isFinite(n) ? n : null;
+  }
+
+  /** Most recently used first, then the rest in their normal order. */
+  get locations() {
+    return locationsByRecentUse(
+      AppStateService.instance.allTransactions,
+      AppStateService.instance.allLocations,
+    );
+  }
+
+  get locationId(): string | null {
+    if (AddSubscriptionComponent.locationChoice !== undefined) {
+      return AddSubscriptionComponent.locationChoice;
+    }
+    return lastUsedLocationId(
+      AppStateService.instance.allTransactions,
+      AppStateService.instance.allLocations,
+    );
+  }
+
+  set locationId(value: string | null) {
+    AddSubscriptionComponent.locationChoice = value;
+  }
 
   static url = '/subscription';
   static zIndex;
@@ -252,6 +301,8 @@ export class AddSubscriptionComponent extends BaseAddComponent implements OnInit
       ])
     ) {
       // field errors shown inline
+    } else if (splitProblem(this.splitRows, this.locationId)) {
+      this.showError(splitProblem(this.splitRows, this.locationId) as string);
     } else {
       // ready to writek to Database new Transaction
       const newSubscritpion: Subscription = {
@@ -264,6 +315,12 @@ export class AddSubscriptionComponent extends BaseAddComponent implements OnInit
         comment: AddSubscriptionComponent.commentTextField,
         frequency: AddSubscriptionComponent.frequencyField as any,
         changeHistory: [],
+        ...(this.locationId ? { locationId: this.locationId } : {}),
+        ...(this.locationId &&
+        this.splitRows.length > 0 &&
+        rowsToStoredRule(this.splitRows).length > 0
+          ? { locationSplit: rowsToStoredRule(this.splitRows) }
+          : {}),
       };
 
       // Log the add subscription activity
@@ -297,6 +354,8 @@ export class AddSubscriptionComponent extends BaseAddComponent implements OnInit
         this.zeroPadded(this.d.getDate());
       this.endDateTextField = '';
       AddSubscriptionComponent.selectedOption = 'Daily';
+      AddSubscriptionComponent.locationChoice = undefined;
+      this.splitRows = [];
       AddSubscriptionComponent.amountTextField = '';
       AddSubscriptionComponent.commentTextField = '';
       AddSubscriptionComponent.categoryTextField = '@';
@@ -325,6 +384,7 @@ export class AddSubscriptionComponent extends BaseAddComponent implements OnInit
             : []),
           { tag: 'transactions', data: AppStateService.instance.allTransactions },
           { tag: 'subscriptions', data: AppStateService.instance.allSubscriptions },
+          { tag: 'locations', data: AppStateService.instance.allLocations },
         ],
         localStorageSaves: [
           { key: 'interests', data: JSON.stringify(AppStateService.instance.allIntrests) },
@@ -347,6 +407,7 @@ export class AddSubscriptionComponent extends BaseAddComponent implements OnInit
             : []),
           { key: 'transactions', data: JSON.stringify(AppStateService.instance.allTransactions) },
           { key: 'subscriptions', data: JSON.stringify(AppStateService.instance.allSubscriptions) },
+          { key: 'locations', data: JSON.stringify(AppStateService.instance.allLocations) },
         ],
         logEvent: 'add_subscription',
         logMetadata: {

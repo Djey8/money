@@ -18,6 +18,7 @@ import { AppDataService } from './shared/services/app-data.service';
 import { CashflowGameService } from './shared/services/cashflow-game.service';
 import { CashflowHistorySyncService } from './shared/services/cashflow-history-sync.service';
 import { SubscriptionProcessingService } from './shared/services/subscription-processing.service';
+import { RecurringTransferService } from './shared/services/recurring-transfer.service';
 import { ToastService } from './shared/services/toast.service';
 import { migrateGrowArray } from './shared/grow-migration.utils';
 import { migrateSmileArray } from './shared/smile-migration.utils';
@@ -33,6 +34,9 @@ import { AddComponent as AddComp } from './panels/add/add.component';
 import { AddSmileComponent as AddSmileComp } from './panels/add/add-smile/add-smile.component';
 import { AddFireComponent as AddFireComp } from './panels/add/add-fire/add-fire.component';
 import { AddAssetComponent as AddAssetComp } from './panels/add/add-asset/add-asset.component';
+import { AddLocationComponent as AddLocationComp } from './panels/add/add-location/add-location.component';
+import { AddTransferComponent as AddTransferComp } from './panels/add/add-transfer/add-transfer.component';
+import { AddRecurringTransferComponent as AddRecurringTransferComp } from './panels/add/add-recurring-transfer/add-recurring-transfer.component';
 import { AddShareComponent as AddShareComp } from './panels/add/add-share/add-share.component';
 import { AddInvestmentComponent as AddInvestmentComp } from './panels/add/add-investment/add-investment.component';
 import { AddLiabilitieComponent as AddLiabilitieComp } from './panels/add/add-liabilitie/add-liabilitie.component';
@@ -156,6 +160,9 @@ setTimeout(() =>
     AddSmileComp,
     AddFireComp,
     AddAssetComp,
+    AddLocationComp,
+    AddTransferComp,
+    AddRecurringTransferComp,
     AddShareComp,
     AddInvestmentComp,
     AddLiabilitieComp,
@@ -245,6 +252,9 @@ export class AppComponent {
     AppStateService.instance.allSubscriptions = migrateSubscriptionArray(
       safeParse('subscriptions'),
     );
+    AppStateService.instance.allLocations = safeParse('locations');
+    AppStateService.instance.allTransfers = safeParse('transfers');
+    AppStateService.instance.allRecurringTransfers = safeParse('recurringTransfers');
     //Income Statement
     AppStateService.instance.allRevenues = safeParse('revenues');
     AppStateService.instance.allIntrests = safeParse('interests');
@@ -435,6 +445,14 @@ export class AppComponent {
   private async autoGenerateSubscriptionTransactions(): Promise<void> {
     try {
       const result = await SubscriptionProcessingService.instance.setTransactionsForSubscriptions();
+      // Recurring transfers have their own list and only ever make transfers (never transactions).
+      const transfersCreated = RecurringTransferService.instance?.generateAndSave() ?? 0;
+      if (transfersCreated > 0) {
+        this.toastService.show(
+          `${transfersCreated} recurring transfer${transfersCreated === 1 ? '' : 's'} loaded`,
+          'info',
+        );
+      }
 
       if (result.transactionsCreated > 0) {
         this.toastService.show(
@@ -521,6 +539,9 @@ export class AppComponent {
     this.localStorage.removeData('username');
     this.localStorage.removeData('transactions');
     this.localStorage.removeData('subscriptions');
+    this.localStorage.removeData('locations');
+    this.localStorage.removeData('transfers');
+    this.localStorage.removeData('recurringTransfers');
     this.localStorage.removeData('smile');
     this.localStorage.removeData('fire');
     this.localStorage.removeData('mojo');
@@ -558,6 +579,9 @@ export class AppComponent {
     AppStateService.instance.smileExpenses = [];
     AppStateService.instance.fireExpenses = [];
     AppStateService.instance.mojoExpenses = [];
+    AppStateService.instance.allLocations = [];
+    AppStateService.instance.allTransfers = [];
+    AppStateService.instance.allRecurringTransfers = [];
     AppStateService.instance.allAssets = [];
     AppStateService.instance.allShares = [];
     AppStateService.instance.allInvestments = [];

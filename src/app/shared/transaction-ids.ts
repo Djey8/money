@@ -10,7 +10,7 @@
  * generates, so nothing downstream can tell them apart.
  */
 
-function randomUuid(): string {
+export function randomUuid(): string {
   const c: Crypto | undefined = typeof crypto !== 'undefined' ? crypto : undefined;
   // randomUUID only exists in secure contexts; a self-hosted install served
   // over plain http on a LAN address has to take the fallback below.

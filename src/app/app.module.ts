@@ -27,6 +27,9 @@ import { AddComponent } from './panels/add/add.component';
 import { AddSmileComponent } from './panels/add/add-smile/add-smile.component';
 import { AddFireComponent } from './panels/add/add-fire/add-fire.component';
 import { AddAssetComponent } from './panels/add/add-asset/add-asset.component';
+import { AddLocationComponent } from './panels/add/add-location/add-location.component';
+import { AddTransferComponent } from './panels/add/add-transfer/add-transfer.component';
+import { AddRecurringTransferComponent } from './panels/add/add-recurring-transfer/add-recurring-transfer.component';
 import { AddShareComponent } from './panels/add/add-share/add-share.component';
 import { AddInvestmentComponent } from './panels/add/add-investment/add-investment.component';
 import { AddLiabilitieComponent } from './panels/add/add-liabilitie/add-liabilitie.component';
@@ -84,6 +87,9 @@ export function HttpLoaderFactory(http: HttpClient) {
     AddSmileComponent,
     AddFireComponent,
     AddAssetComponent,
+    AddLocationComponent,
+    AddTransferComponent,
+    AddRecurringTransferComponent,
     AddShareComponent,
     AddInvestmentComponent,
     AddLiabilitieComponent,

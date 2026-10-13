@@ -61,6 +61,10 @@ export function migrateSubscription(raw: any): Subscription {
     comment: raw.comment || '',
     frequency: frequency,
     changeHistory: changeHistory,
+    ...(typeof raw.locationId === 'string' && raw.locationId ? { locationId: raw.locationId } : {}),
+    ...(Array.isArray(raw.locationSplit) && raw.locationSplit.length > 0
+      ? { locationSplit: raw.locationSplit }
+      : {}),
   };
 }
 
@@ -107,10 +111,13 @@ export function validateFrequency(frequency: any): SubscriptionFrequency {
  * @param field - Field value to validate
  * @returns Valid field or default 'amount'
  */
-function validateChangeField(field: any): 'amount' | 'account' | 'category' | 'frequency' {
-  const validFields = ['amount', 'account', 'category', 'frequency'];
+function validateChangeField(
+  field: any,
+): 'amount' | 'account' | 'category' | 'frequency' | 'locationId' | 'locationSplit' {
+  const validFields = ['amount', 'account', 'category', 'frequency', 'locationId', 'locationSplit'];
   if (typeof field === 'string' && validFields.includes(field)) {
-    return field as 'amount' | 'account' | 'category' | 'frequency';
+    return field as
+      'amount' | 'account' | 'category' | 'frequency' | 'locationId' | 'locationSplit';
   }
   return 'amount'; // Default fallback
 }

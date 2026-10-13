@@ -12,4 +12,11 @@ export interface Transaction {
   time: string;
   category: string;
   comment: string;
+  /** Where the money physically moved (MoneyLocation.id). Optional; absent = not tracked. */
+  locationId?: string;
+  /**
+   * Money that went to OTHER locations (signed like `amount`); the main one (`locationId`) gets the rest, so the
+   * parts always add up. Absent = not split.
+   */
+  locationSplits?: { locationId: string; amount: number }[];
 }

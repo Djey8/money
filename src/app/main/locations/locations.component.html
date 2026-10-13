@@ -1,0 +1,126 @@
+<!-- Toolbar -->
+<div class="toolbar" role="banner">
+  <img
+    id="profile-pic"
+    width="40"
+    alt="Profile Logo"
+    src="../assets/profile-blank.jpg"
+    role="button"
+    tabindex="0"
+    aria-label="Open profile"
+    (keydown.enter)="appReference.clickProfile()"
+    (click)="appReference.clickProfile()"
+  />
+  <div
+    id="heading"
+    role="button"
+    tabindex="0"
+    (click)="appReference.openNavBar()"
+    (keydown.enter)="appReference.openNavBar()"
+  >
+    {{ 'Menu.locations' | translate }}
+  </div>
+  <div class="spacer"></div>
+  <button
+    id="transferbtn"
+    class="add-circle-btn transfer-btn"
+    [attr.aria-label]="'Transfer.listTitle' | translate"
+    [title]="'Transfer.listTitle' | translate"
+    (click)="goToTransfers()"
+  >
+    <svg class="transfer-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M4 8h14M14 4l4 4-4 4M20 16H6M10 12l-4 4 4 4" />
+    </svg>
+  </button>
+  <img
+    id="recurringbtn"
+    width="40"
+    alt=""
+    [src]="recurringIcon"
+    role="button"
+    tabindex="0"
+    [attr.aria-label]="'Recurring.listTitle' | translate"
+    [title]="'Recurring.listTitle' | translate"
+    (click)="goToRecurringTransfers()"
+    (keydown.enter)="goToRecurringTransfers()"
+  />
+  <button id="addbtn" class="add-circle-btn" aria-label="Add" (click)="addLocation()">+</button>
+</div>
+
+<!-- Total: the same figure as the app's Cashflow -->
+<div class="balanceBox">
+  <h4 class="balanceLable">{{ 'Cashflow.title' | translate }}</h4>
+  <hr class="separator-black" />
+  <h4 class="balanceLable">
+    {{ classReference.getTotalAmount() | appNumber }} {{ settingsReference.currency }}
+  </h4>
+</div>
+
+<div class="mismatch-warning" role="alert" *ngIf="hasMismatch">
+  <strong>{{ 'Locations.mismatchTitle' | translate }}</strong>
+  <span>
+    {{
+      'Locations.mismatch'
+        | translate
+          : {
+              cashflow: (cashflow | appNumber) + ' ' + settingsReference.currency,
+              difference: (difference | appNumber) + ' ' + settingsReference.currency,
+            }
+    }}
+  </span>
+</div>
+
+<!-- Distribution: one segment per location, coloured by type -->
+<div
+  class="distribution"
+  role="group"
+  [attr.aria-label]="'Locations.distribution' | translate"
+  *ngIf="classReference.allLocations.length > 0"
+>
+  <ng-container *ngFor="let row of classReference.allLocations; let i = index">
+    <button
+      type="button"
+      class="distribution-segment"
+      *ngIf="shares[i] > 0"
+      [style.width.%]="shares[i]"
+      [style.background]="color(row.kind)"
+      [title]="label(row) + ': ' + (shares[i] | number: '1.0-0') + ' %'"
+      [attr.aria-label]="label(row) + ': ' + (shares[i] | number: '1.0-0') + ' %'"
+      (click)="clickRowLocation(i)"
+    ></button>
+  </ng-container>
+</div>
+
+<p class="empty-hint" *ngIf="classReference.allLocations.length === 0">
+  {{ 'Locations.empty' | translate }}
+</p>
+
+<!-- One card per location -->
+<div class="location-grid" *ngIf="classReference.allLocations.length > 0">
+  <div
+    *ngFor="let row of classReference.allLocations; let i = index"
+    class="location-card"
+    role="button"
+    tabindex="0"
+    [style.--kind-color]="color(row.kind)"
+    (click)="clickRowLocation(i)"
+    (keydown.enter)="clickRowLocation(i)"
+  >
+    <div class="card-top">
+      <img class="kind-icon" [src]="icon(row.kind)" alt="" aria-hidden="true" />
+      <span class="kind-badge">{{ 'Location.kind.' + (row.kind || 'other') | translate }}</span>
+    </div>
+    <h3 class="card-name">{{ row.name }}</h3>
+    <p class="card-subname" *ngIf="row.subName">{{ row.subName }}</p>
+    <div class="card-amount" [class.negative]="row.amount < 0">
+      {{ row.amount | appNumber }} {{ settingsReference.currency }}
+    </div>
+    <div class="share-track" aria-hidden="true">
+      <div class="share-fill" [style.width.%]="shares[i]"></div>
+    </div>
+    <div class="share-label">{{ shares[i] | number: '1.0-0' }} %</div>
+  </div>
+</div>
+
+<app-info-location></app-info-location>
+<app-info-transfer></app-info-transfer>

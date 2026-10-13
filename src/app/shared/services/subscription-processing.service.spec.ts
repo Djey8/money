@@ -1,6 +1,7 @@
 import { SubscriptionProcessingService } from './subscription-processing.service';
 import { AppStateService } from './app-state.service';
 import { ProfileComponent } from '../../panels/profile/profile.component';
+import { AppDataService } from './app-data.service';
 
 describe('SubscriptionProcessingService', () => {
   let service: SubscriptionProcessingService;
@@ -55,6 +56,71 @@ describe('SubscriptionProcessingService', () => {
       const result = await service.setTransactionsForSubscriptions();
 
       expect(result.subscriptionsProcessed).toBe(1);
+    });
+  });
+
+  describe('generating a subscription with a location', () => {
+    it('books every generated transaction at the location and moves its balance', async () => {
+      ProfileComponent.mail = 'jfk@example.com';
+      (AppDataService as any).instance = { updateDatabase: jest.fn() };
+      AppStateService.instance.allLocations = [{ id: 'loc_bank', name: 'Bank', amount: 1000 }];
+      AppStateService.instance.allSubscriptions = [
+        {
+          title: 'Rent',
+          account: 'Daily',
+          amount: -100,
+          startDate: '2026-01-01',
+          endDate: '2026-03-31',
+          category: '@Rent',
+          comment: '',
+          frequency: 'monthly',
+          locationId: 'loc_bank',
+        },
+      ];
+
+      const result = await service.setTransactionsForSubscriptions();
+
+      expect(result.transactionsCreated).toBe(3);
+      const transactions = AppStateService.instance.allTransactions;
+      expect(transactions.every((t) => t.locationId === 'loc_bank')).toBe(true);
+      expect(AppStateService.instance.allLocations[0].amount).toBe(700);
+      // running it again generates nothing and moves nothing
+      expect((await service.setTransactionsForSubscriptions()).transactionsCreated).toBe(0);
+      expect(AppStateService.instance.allLocations[0].amount).toBe(700);
+    });
+  });
+
+  describe('generating a subscription with a split rule', () => {
+    it('books 80 / 20 on every generated transaction and moves both balances', async () => {
+      ProfileComponent.mail = 'jfk@example.com';
+      (AppDataService as any).instance = { updateDatabase: jest.fn() };
+      AppStateService.instance.allLocations = [
+        { id: 'loc_main', name: 'N26', subName: 'Main', amount: 0 },
+        { id: 'loc_sav', name: 'N26', subName: 'Instant Savings', amount: 0 },
+      ];
+      AppStateService.instance.allSubscriptions = [
+        {
+          title: 'Salary',
+          account: 'Income',
+          amount: 3000,
+          startDate: '2026-01-01',
+          endDate: '2026-03-31',
+          category: '@Salary',
+          comment: '',
+          frequency: 'monthly',
+          locationId: 'loc_main',
+          locationSplit: [{ locationId: 'loc_sav', percent: 20 }],
+        },
+      ];
+
+      const result = await service.setTransactionsForSubscriptions();
+
+      expect(result.transactionsCreated).toBe(3);
+      for (const t of AppStateService.instance.allTransactions) {
+        expect(t.locationId).toBe('loc_main');
+        expect(t.locationSplits).toEqual([{ locationId: 'loc_sav', amount: 600 }]);
+      }
+      expect(AppStateService.instance.allLocations.map((l) => l.amount)).toEqual([7200, 1800]);
     });
   });
 
@@ -128,6 +194,76 @@ describe('SubscriptionProcessingService', () => {
       );
       expect(result).toEqual({ updated: 3, removed: 1 });
       expect(dates()).toEqual(['2026-01-20', '2026-02-20', '2026-03-20', '2026-02-11']);
+    });
+
+    describe('locations', () => {
+      const bank = () => ({ id: 'loc_bank', name: 'Bank', amount: 100 });
+      const cash = () => ({ id: 'loc_cash', name: 'Cash', amount: 50 });
+      const at = (date: string, locationId?: string) => ({
+        ...generated(date),
+        ...(locationId ? { locationId } : {}),
+      });
+      const balances = () => AppStateService.instance.allLocations.map((l) => l.amount);
+
+      beforeEach(() => {
+        AppStateService.instance.allLocations = [bank(), cash()];
+        AppStateService.instance.allTransactions = [
+          at('2026-01-10', 'loc_bank'),
+          at('2026-02-10', 'loc_bank'),
+          at('2026-03-10', 'loc_bank'),
+          at('2026-04-10', 'loc_bank'),
+        ];
+      });
+
+      it('changing the subscription location does not touch the transactions already booked', () => {
+        const result = service.reconcileGeneratedTransactions(
+          { ...gym, locationId: 'loc_bank' },
+          { ...gym, locationId: 'loc_cash' },
+          NOW,
+        );
+        expect(result).toEqual({ updated: 0, removed: 0 });
+        expect(
+          AppStateService.instance.allTransactions.every((t) => t.locationId === 'loc_bank'),
+        ).toBe(true);
+        expect(balances()).toEqual([100, 50]);
+      });
+
+      it('changing the amount keeps each transaction at its location and adjusts that balance', () => {
+        AppStateService.instance.allTransactions[1] = at('2026-02-10', 'loc_cash');
+        service.reconcileGeneratedTransactions(
+          { ...gym, locationId: 'loc_bank' },
+          { ...gym, amount: -25, locationId: 'loc_cash' },
+          NOW,
+        );
+        expect(AppStateService.instance.allTransactions.map((t) => t.locationId)).toEqual([
+          'loc_bank',
+          'loc_cash',
+          'loc_bank',
+          'loc_bank',
+        ]);
+        // bank: 3 bookings now 5 more each, cash: 1 booking 5 more
+        expect(balances()).toEqual([85, 45]);
+      });
+
+      it('removing the generated transactions gives their amounts back to where they were booked', () => {
+        AppStateService.instance.allTransactions[0] = at('2026-01-10', 'loc_cash');
+        const result = service.reconcileGeneratedTransactions(
+          { ...gym, locationId: 'loc_bank' },
+          null,
+          NOW,
+        );
+        expect(result.removed).toBe(4);
+        expect(balances()).toEqual([160, 70]);
+      });
+
+      it('removing only the part after a new end date gives back just that part', () => {
+        service.reconcileGeneratedTransactions(
+          { ...gym, locationId: 'loc_bank' },
+          { ...gym, endDate: '2026-02-20', locationId: 'loc_bank' },
+          NOW,
+        );
+        expect(balances()).toEqual([140, 50]);
+      });
     });
 
     it('does nothing when only the end date moves later', () => {

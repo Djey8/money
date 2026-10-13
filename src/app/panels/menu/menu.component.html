@@ -188,6 +188,15 @@
       </button>
       <button
         class="menu-item menu-item--compact"
+        data-tour-route="/locations"
+        [class.menu-item--active]="router.url === '/locations'"
+        (click)="clickedLocations()"
+      >
+        <span class="menu-icon">⌂</span>
+        <span>{{ 'Menu.locations' | translate }}</span>
+      </button>
+      <button
+        class="menu-item menu-item--compact"
         data-tour-route="/subscription"
         [class.menu-item--active]="router.url === '/subscription'"
         (click)="clickedSubscriptions()"

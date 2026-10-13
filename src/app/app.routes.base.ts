@@ -94,6 +94,23 @@ export const baseRoutes: Routes = [
       import('./main/cashflow/income/income.component').then((m) => m.IncomeComponent),
   },
   {
+    path: 'transfers',
+    loadComponent: () =>
+      import('./main/transfers/transfers.component').then((m) => m.TransfersComponent),
+  },
+  {
+    path: 'recurring-transfers',
+    loadComponent: () =>
+      import('./main/recurring-transfers/recurring-transfers.component').then(
+        (m) => m.RecurringTransfersComponent,
+      ),
+  },
+  {
+    path: 'locations',
+    loadComponent: () =>
+      import('./main/locations/locations.component').then((m) => m.LocationsComponent),
+  },
+  {
     path: 'balance',
     loadComponent: () =>
       import('./main/cashflow/balance/balance.component').then((m) => m.BalanceComponent),

@@ -343,6 +343,9 @@ export class RegistrationComponent implements OnInit, OnDestroy {
           this.localStorage.removeData('liabilities');
           this.localStorage.removeData('grow');
           this.localStorage.removeData('subscriptions');
+          this.localStorage.removeData('locations');
+          this.localStorage.removeData('transfers');
+          this.localStorage.removeData('recurringTransfers');
           this.localStorage.removeData('interests');
           this.localStorage.removeData('properties');
           this.localStorage.removeData('revenues');
@@ -408,6 +411,9 @@ export class RegistrationComponent implements OnInit, OnDestroy {
           this.localStorage.removeData('liabilities');
           this.localStorage.removeData('grow');
           this.localStorage.removeData('subscriptions');
+          this.localStorage.removeData('locations');
+          this.localStorage.removeData('transfers');
+          this.localStorage.removeData('recurringTransfers');
           this.localStorage.removeData('interests');
           this.localStorage.removeData('properties');
           this.localStorage.removeData('revenues');

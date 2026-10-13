@@ -1,0 +1,65 @@
+<div
+  id="addFire-Container"
+  role="dialog"
+  aria-modal="true"
+  appTrapFocus
+  *ngIf="classReference.isAddLocation"
+  (click)="highlight()"
+  [style.z-index]="classReference.zIndex + 1001"
+>
+  <h4 id="addFireTitle">{{ 'AddLocation.title' | translate }}</h4>
+  <button id="closebtn" aria-label="Close" (click)="closeWindow()">x</button>
+  <hr class="separator-white" />
+  <form id="input-container">
+    <label for="title" class="required" [class.form-error-text]="classReference.isError">{{
+      'Common.name' | translate
+    }}</label>
+    <input
+      type="text"
+      maxlength="100"
+      id="title"
+      name="title"
+      aria-required="true"
+      [class.form-error-border]="classReference.isError"
+      [(ngModel)]="nameTextField"
+      [attr.aria-invalid]="classReference.isError ? true : null"
+      [attr.aria-describedby]="classReference.isError ? 'title-error' : null"
+    />
+    <span
+      class="field-error"
+      id="title-error"
+      role="alert"
+      *ngIf="classReference.isError && !nameTextField"
+      >{{ 'Common.name' | translate }}</span
+    >
+    <label for="subName">{{ 'AddLocation.subName' | translate }}</label>
+    <input
+      type="text"
+      maxlength="100"
+      id="subName"
+      name="subName"
+      [placeholder]="'AddLocation.subNamePlaceholder' | translate"
+      [(ngModel)]="subNameTextField"
+    />
+    <label for="kind">{{ 'AddLocation.kind' | translate }}</label>
+    <div class="kind-row" [style.--kind-color]="kindColor(kindField)">
+      <img class="kind-icon" [src]="icon(kindField)" alt="" aria-hidden="true" />
+      <select id="kind" name="kind" [(ngModel)]="kindField">
+        <option *ngFor="let k of kinds" [value]="k">{{ 'Location.kind.' + k | translate }}</option>
+      </select>
+    </div>
+    <label for="amount">{{ 'AddLocation.amount' | translate }}</label>
+    <input
+      type="number"
+      step="any"
+      id="amount"
+      name="amount"
+      [(ngModel)]="amountTextField"
+      class="mb-xs"
+    />
+  </form>
+  <p id="errorLable" *ngIf="classReference.isError">{{ errorTextLable }}</p>
+  <button id="addbtn" class="btn btn--action" (click)="addLocation()">
+    {{ 'AddLocation.add' | translate }}
+  </button>
+</div>

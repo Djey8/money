@@ -475,6 +475,34 @@ body.tour-active *:focus-visible {
   transform: scale(0.95);
 }
 
+/*
+ * The plus is drawn as two bars, not typed: a "+" character sits slightly off-centre in most fonts, the bars are
+ * centred by geometry. The button text stays in the markup (hidden) for anything that reads it. The transfer button
+ * draws its own icon and is left alone.
+ */
+.add-circle-btn:not(.transfer-btn) {
+  position: relative;
+  font-size: 0;
+}
+.add-circle-btn:not(.transfer-btn)::before,
+.add-circle-btn:not(.transfer-btn)::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: currentColor;
+  border-radius: 1px;
+}
+.add-circle-btn:not(.transfer-btn)::before {
+  width: 14px;
+  height: 3.5px;
+}
+.add-circle-btn:not(.transfer-btn)::after {
+  width: 3.5px;
+  height: 14px;
+}
+
 /* Responsive date display */
 .d-full {
   display: none;

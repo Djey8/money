@@ -68,15 +68,61 @@
       <tbody>
         <tr
           tabindex="0"
-          (click)="goToCashflow()"
-          (keydown.enter)="goToCashflow()"
+          role="button"
+          [attr.aria-expanded]="isCashflowOpen"
+          (click)="toggleCashflow()"
+          (keydown.enter)="toggleCashflow()"
           class="income-row"
         >
-          <td class="assetsTitle">{{ 'Cashflow.title' | translate }}</td>
+          <td class="assetsTitle">
+            <span class="cashflow-chevron" aria-hidden="true">{{
+              isCashflowOpen ? '▾' : '▸'
+            }}</span>
+            {{ 'Cashflow.title' | translate }}
+          </td>
           <td class="assetsAmount">
             {{ incomeRefference.getTotalAmount() | appNumber }} {{ settingsReference.currency }}
           </td>
         </tr>
+        <!-- Where the Cashflow actually sits: one line per location -->
+        <ng-container *ngIf="isCashflowOpen">
+          <tr
+            *ngFor="let location of cashflowLocations.rows"
+            class="income-row cashflow-location-row"
+            tabindex="0"
+            (click)="goToLocations()"
+            (keydown.enter)="goToLocations()"
+          >
+            <td class="assetsTitle">
+              {{ location.name }}<span *ngIf="location.subName"> - {{ location.subName }}</span>
+            </td>
+            <td class="assetsAmount">
+              {{ location.amount | appNumber }} {{ settingsReference.currency }}
+            </td>
+          </tr>
+          <tr
+            *ngIf="cashflowLocations.rows.length > 0 && cashflowLocations.unassigned !== 0"
+            class="income-row cashflow-location-row cashflow-unassigned"
+          >
+            <td class="assetsTitle">{{ 'Balance.notInLocation' | translate }}</td>
+            <td class="assetsAmount">
+              {{ cashflowLocations.unassigned | appNumber }} {{ settingsReference.currency }}
+            </td>
+          </tr>
+          <tr *ngIf="cashflowLocations.rows.length === 0" class="cashflow-detail-note">
+            <td colspan="2">{{ 'Balance.noLocations' | translate }}</td>
+          </tr>
+          <tr class="cashflow-detail-links">
+            <td colspan="2">
+              <button type="button" class="cashflow-link" (click)="goToCashflow()">
+                {{ 'Balance.openCashflow' | translate }}
+              </button>
+              <button type="button" class="cashflow-link" (click)="goToLocations()">
+                {{ 'Balance.manageLocations' | translate }}
+              </button>
+            </td>
+          </tr>
+        </ng-container>
       </tbody>
     </table>
     <div class="section-header">

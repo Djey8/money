@@ -497,3 +497,8 @@ input:checked + .slider:before {
     font-size: 13px;
   }
 }
+
+/* Breathing room between the sticky header and the first block */
+.toolbar {
+  margin-bottom: 10px;
+}

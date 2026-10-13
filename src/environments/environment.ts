@@ -9,6 +9,9 @@ export const environment = {
   // route inclusion) can't be conflated even though they share a value.
   edition: 'firebase' as const, // 'firebase' or 'selfhosted'
   appVersion: packageJson.version,
+  // Pro links shown by shared screens. Defined only in the self-hosted environments so the Firebase
+  // build carries neither the route nor the label (docs/adr/0004).
+  proLinks: {} as { personalAccessTokens?: { route: string; label: string } },
 
   // Firebase configuration (for cloud mode)
   firebase: {

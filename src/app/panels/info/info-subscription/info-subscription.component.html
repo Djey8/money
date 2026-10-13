@@ -35,6 +35,12 @@
       <h4 class="infoLable">{{ classReference.startDate | appDate }}</h4>
       <h4 class="infoLable">{{ classReference.endDate | appDate }}</h4>
       <h4 class="infoLable">{{ classReference.category }}</h4>
+      <h4 class="infoLable" *ngIf="shownLocation">
+        {{ 'AddTransaction.Location' | translate }}: {{ locationLabel(shownLocation) }}
+      </h4>
+      <div class="infoLable" *ngIf="shownRule.length">
+        <div *ngFor="let line of shownRule">{{ line }}</div>
+      </div>
       <h4 class="commentLable">{{ classReference.comment }}</h4>
       <div class="button-container">
         <span
@@ -80,6 +86,20 @@
         <option value="Income">{{ 'AddTransaction.Income' | translate }}</option>
         <option value="Mojo">{{ 'Income.Mojo' | translate }}</option>
       </select>
+      <ng-container *ngIf="locations.length > 0">
+        <label for="location">{{ 'AddTransaction.Location' | translate }}</label>
+        <select [(ngModel)]="locationIdField" id="location" name="location">
+          <option [ngValue]="null">{{ 'AddTransaction.LocationNone' | translate }}</option>
+          <option *ngFor="let l of locations" [ngValue]="l.id">{{ locationLabel(l) }}</option>
+        </select>
+        <app-location-split
+          [rows]="splitRows"
+          [mainLocationId]="locationIdField"
+          [amount]="editedAmount"
+          [locations]="allLocations"
+          [currency]="currency2"
+        ></app-location-split>
+      </ng-container>
       <label for="amount" [class.form-error-text]="classReference.isError">{{
         'AddAsset.amount' | translate
       }}</label>

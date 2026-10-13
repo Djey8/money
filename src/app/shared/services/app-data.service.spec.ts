@@ -168,11 +168,14 @@ describe('AppDataService', () => {
 
   // ---- Tier path definitions ----
   describe('Tier path constants', () => {
-    it('TIER1_PATHS should contain 11 critical paths, including meta', () => {
-      expect(AppDataService.TIER1_PATHS).toHaveLength(11);
+    it('TIER1_PATHS should contain 14 critical paths, including meta', () => {
+      expect(AppDataService.TIER1_PATHS).toHaveLength(14);
       expect(AppDataService.TIER1_PATHS).toContain('meta');
       expect(AppDataService.TIER1_PATHS).toContain('transactions');
       expect(AppDataService.TIER1_PATHS).toContain('subscriptions');
+      expect(AppDataService.TIER1_PATHS).toContain('locations');
+      expect(AppDataService.TIER1_PATHS).toContain('transfers');
+      expect(AppDataService.TIER1_PATHS).toContain('recurringTransfers');
       expect(AppDataService.TIER1_PATHS).toContain('income/revenue/revenues');
       expect(AppDataService.TIER1_PATHS).toContain('income/expenses/daily');
     });
@@ -191,15 +194,15 @@ describe('AppDataService', () => {
       expect(AppDataService.TIER3_BALANCE_PATHS).toContain('balance/liabilities');
     });
 
-    it('all tiers together should cover all 20 data paths', () => {
+    it('all tiers together should cover all 23 data paths', () => {
       const allPaths = [
         ...AppDataService.TIER1_PATHS,
         ...AppDataService.TIER2_PATHS,
         ...AppDataService.TIER3_GROW_PATHS,
         ...AppDataService.TIER3_BALANCE_PATHS,
       ];
-      expect(allPaths).toHaveLength(20);
-      expect(new Set(allPaths).size).toBe(20);
+      expect(allPaths).toHaveLength(23);
+      expect(new Set(allPaths).size).toBe(23);
     });
   });
 

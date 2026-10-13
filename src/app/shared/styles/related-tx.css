@@ -1,0 +1,30 @@
+/*
+ * Related-transactions lists in the info panels (Smile, Fire, Grow, Locations).
+ * Shows at most 15 rows (see --tx-rows); a longer list scrolls inside the panel and keeps its header visible.
+ * Rows have a fixed height so "15 rows" really is 15 rows.
+ */
+.tx-scroll {
+  --tx-rows: 15;
+  --tx-row-h: 30px;
+  --tx-head-h: 32px;
+  max-height: calc(var(--tx-head-h) + var(--tx-rows) * var(--tx-row-h));
+  overflow-y: auto;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tx-scroll .related-tx-table td {
+  height: var(--tx-row-h);
+  box-sizing: border-box;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.tx-scroll .related-tx-table th {
+  height: var(--tx-head-h);
+  box-sizing: border-box;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--color-primary);
+}

@@ -6,6 +6,7 @@ import { IncomeStatementService } from 'src/app/shared/services/income-statement
 import { isDuplicateTitle } from 'src/app/shared/validation.utils';
 import { BaseInfoComponent } from 'src/app/shared/base/base-info.component';
 import { AppStateService } from 'src/app/shared/services/app-state.service';
+import { releaseLocationBookings } from 'src/app/shared/location-balance';
 import {
   Fire,
   FirePhase,
@@ -82,7 +83,11 @@ setTimeout(() =>
     PaymentPlannerDialogComponent,
   ],
   templateUrl: './info-fire.component.html',
-  styleUrls: ['../../../shared/styles/info-panel.css', './info-fire.component.css'],
+  styleUrls: [
+    '../../../shared/styles/info-panel.css',
+    '../../../shared/styles/related-tx.css',
+    './info-fire.component.css',
+  ],
 })
 export class InfoFireComponent extends BaseInfoComponent {
   static index = 1;
@@ -1222,6 +1227,12 @@ export class InfoFireComponent extends BaseInfoComponent {
       // Remove all transactions matching this fire or any of its buckets
       if (this.deleteTransactionsChecked) {
         const categoriesToDelete = [`@${fire.title}`, ...fire.buckets.map((b) => `@${b.title}`)];
+        releaseLocationBookings(
+          AppStateService.instance.allLocations,
+          AppStateService.instance.allTransactions.filter((tx) =>
+            categoriesToDelete.includes(tx.category),
+          ),
+        );
         AppStateService.instance.allTransactions = AppStateService.instance.allTransactions.filter(
           (tx) => !categoriesToDelete.includes(tx.category),
         );
@@ -1241,6 +1252,7 @@ export class InfoFireComponent extends BaseInfoComponent {
         ];
         if (this.deleteTransactionsChecked) {
           writes.push({ tag: 'transactions', data: AppStateService.instance.allTransactions });
+          writes.push({ tag: 'locations', data: AppStateService.instance.allLocations });
           writes.push(...this.incomeStatement.getWrites());
         }
 
