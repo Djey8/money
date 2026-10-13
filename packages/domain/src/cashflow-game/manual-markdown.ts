@@ -4,6 +4,9 @@
  * text - in the language it is asked to teach in - through `explain_concept` (topics `cashflow_manual_<lang>`). One
  * function renders it, a spec keeps `docs/domain/CASHFLOW_MANUAL_<LANG>.md` equal to it, and a change to the manual
  * therefore cannot leave the agent teaching an older version.
+ *
+ * Deliberately NOT exported from the package barrel (src/index.ts): everything in the barrel ends up in the Firebase
+ * bundle (docs/adr/0004). Only scripts/manual-markdown.js and the spec import this file, by path.
  */
 
 type Block = { type: string; [key: string]: unknown };

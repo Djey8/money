@@ -8,7 +8,8 @@
 const fs = require('fs');
 const path = require('path');
 const root = path.join(__dirname, '..');
-const domain = require(path.join(root, 'packages/domain/dist/index.js'));
+// Not in the package barrel on purpose (see packages/domain/src/cashflow-game/manual-markdown.ts's header).
+const domain = require(path.join(root, 'packages/domain/dist/cashflow-game/manual-markdown.js'));
 
 for (const language of domain.MANUAL_MARKDOWN_LANGUAGES) {
   const manual = JSON.parse(
