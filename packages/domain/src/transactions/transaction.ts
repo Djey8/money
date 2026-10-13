@@ -1,4 +1,11 @@
 import { fromMinorUnits, toMinorUnits } from '../money/minor-units';
+import { LocationLeg } from '../locations/location-split';
+
+/** A stored split: money that went to a location other than the main one (decimal or minor, like `amount`). */
+export interface StoredLocationSplit {
+  locationId: string;
+  amount: number;
+}
 
 export interface LegacyTransaction {
   id?: string;
@@ -8,15 +15,45 @@ export interface LegacyTransaction {
   time: string;
   category: string;
   comment: string;
+  /** Where the money physically moved (a MoneyLocation id). Absent = not tracked. */
+  locationId?: string;
+  /**
+   * Money that went to OTHER locations; the main one (`locationId`) gets the rest. Absent = not split.
+   * Only the other amounts are stored, so the parts always add up (see locations/location-split.ts).
+   */
+  locationSplits?: StoredLocationSplit[];
 }
 
 export interface Transaction extends Omit<LegacyTransaction, 'id'> {
   id: string;
 }
 
-export interface ApiTransaction extends Omit<Transaction, 'amount'> {
+export interface ApiTransaction extends Omit<Transaction, 'amount' | 'locationSplits'> {
   amountMinor: number;
   currency: string;
+  locationSplits?: LocationLeg[];
+}
+
+function splitsToApi(
+  splits: StoredLocationSplit[] | undefined,
+  schemaVersion: number,
+): LocationLeg[] | undefined {
+  if (!Array.isArray(splits) || splits.length === 0) return undefined;
+  return splits.map((split) => ({
+    locationId: split.locationId,
+    amountMinor: schemaVersion >= 2 ? Number(split.amount) : toMinorUnits(Number(split.amount)),
+  }));
+}
+
+function splitsFromApi(
+  legs: LocationLeg[] | undefined,
+  schemaVersion: number,
+): StoredLocationSplit[] | undefined {
+  if (!Array.isArray(legs) || legs.length === 0) return undefined;
+  return legs.map((leg) => ({
+    locationId: leg.locationId,
+    amount: schemaVersion >= 2 ? leg.amountMinor : fromMinorUnits(leg.amountMinor),
+  }));
 }
 
 function assertNonEmptyString(value: unknown, field: string): asserts value is string {
@@ -74,6 +111,11 @@ export function transactionToApi(
     time: normalized.time,
     category: normalized.category,
     comment: normalized.comment,
+    // Optional and never written as null: the stored document encrypts every value as a string.
+    ...(normalized.locationId ? { locationId: normalized.locationId } : {}),
+    ...(splitsToApi(normalized.locationSplits, schemaVersion)
+      ? { locationSplits: splitsToApi(normalized.locationSplits, schemaVersion) }
+      : {}),
   };
 }
 
@@ -95,6 +137,10 @@ export function transactionFromApi(
       time: transaction.time,
       category: transaction.category,
       comment: transaction.comment,
+      ...(transaction.locationId ? { locationId: transaction.locationId } : {}),
+      ...(splitsFromApi(transaction.locationSplits, schemaVersion)
+        ? { locationSplits: splitsFromApi(transaction.locationSplits, schemaVersion) }
+        : {}),
     },
     () => transaction.id,
   );

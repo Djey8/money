@@ -11,6 +11,11 @@ import { calculateOccurrences, SubscriptionFrequency } from './frequency-strateg
  * subscription had. That last condition keeps a hand-made transaction with the same account, amount and category (on
  * another day, or with another comment) out of harm's way.
  *
+ * A subscription's location plays no part in any of this: it is not used to recognise a generated transaction and
+ * an edit never changes a transaction's location. The location applies only to transactions generated from now on
+ * (`generateDueSubscriptionTransactions`); the ones already booked keep the location they have, and moving one by
+ * hand never makes it look missing.
+ *
  * One rule covers every edit: remove what the OLD subscription generated and the NEW one would not generate. Details
  * changed - nothing of the old one matches the new, so all of it goes; end date earlier - the occurrences after it go;
  * end date later or nothing changed - nothing goes. Adding what is missing is the ordinary generation

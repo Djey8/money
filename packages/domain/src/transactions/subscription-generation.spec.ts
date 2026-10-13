@@ -328,4 +328,112 @@ describe('generateDueSubscriptionTransactions', () => {
     expect(result.subscriptionsProcessed).toBe(2);
     expect(result.transactionsCreated).toBe(2);
   });
+
+  describe('locations', () => {
+    it('stamps every generated transaction with the subscription location', () => {
+      const result = generateDueSubscriptionTransactions(
+        [subscription({ locationId: 'loc_main' })],
+        [],
+        emptyFundState(),
+        NOW,
+      );
+      expect(result.transactions).toHaveLength(4);
+      expect(result.transactions.every((t) => t.locationId === 'loc_main')).toBe(true);
+    });
+
+    it('leaves the field out (never null) for a subscription without a location', () => {
+      const result = generateDueSubscriptionTransactions(
+        [subscription({ locationId: null })],
+        [],
+        emptyFundState(),
+        NOW,
+      );
+      expect(result.transactions.every((t) => !('locationId' in t))).toBe(true);
+    });
+
+    it('does not generate an occurrence again just because the user moved it to another location', () => {
+      const existing = [
+        tx({ date: '2026-01-15', locationId: 'loc_hand' }),
+        tx({ id: 'tx_2', date: '2026-02-15', locationId: 'loc_hand' }),
+        tx({ id: 'tx_3', date: '2026-03-15' }),
+        tx({ id: 'tx_4', date: '2026-04-15', locationId: 'loc_other' }),
+      ];
+      const result = generateDueSubscriptionTransactions(
+        [subscription({ locationId: 'loc_main' })],
+        existing,
+        emptyFundState(),
+        NOW,
+      );
+      expect(result.transactionsCreated).toBe(0);
+    });
+  });
+
+  describe('splitting across locations', () => {
+    const salary = (overrides = {}) =>
+      subscription({
+        title: 'Salary',
+        account: 'Income',
+        amountMinor: 300000,
+        category: '@Salary',
+        locationId: 'loc_main',
+        locationSplit: [{ locationId: 'loc_sav', percent: 20 }],
+        ...overrides,
+      });
+
+    it('resolves the rule for every generated booking: 20 % to savings, the rest stays on main', () => {
+      const result = generateDueSubscriptionTransactions([salary()], [], emptyFundState(), NOW);
+      expect(result.transactionsCreated).toBe(4);
+      for (const t of result.transactions) {
+        expect(t.locationId).toBe('loc_main');
+        expect(t.locationSplits).toEqual([{ locationId: 'loc_sav', amountMinor: 60000 }]);
+      }
+    });
+
+    it('resolves a fixed amount, and a rule on an expense keeps the sign', () => {
+      const fixed = generateDueSubscriptionTransactions(
+        [salary({ locationSplit: [{ locationId: 'loc_cash', amountMinor: 10000 }] })],
+        [],
+        emptyFundState(),
+        NOW,
+      );
+      expect(fixed.transactions[0].locationSplits).toEqual([
+        { locationId: 'loc_cash', amountMinor: 10000 },
+      ]);
+      const expense = generateDueSubscriptionTransactions(
+        [
+          salary({
+            account: 'Daily',
+            amountMinor: -10000,
+            locationSplit: [{ locationId: 'loc_cash', percent: 25 }],
+          }),
+        ],
+        [],
+        emptyFundState(),
+        NOW,
+      );
+      expect(expense.transactions[0].locationSplits).toEqual([
+        { locationId: 'loc_cash', amountMinor: -2500 },
+      ]);
+    });
+
+    it('a split rule without a main location is ignored (nothing to remainder to)', () => {
+      const result = generateDueSubscriptionTransactions(
+        [salary({ locationId: null })],
+        [],
+        emptyFundState(),
+        NOW,
+      );
+      expect(result.transactions.every((t) => !('locationSplits' in t))).toBe(true);
+    });
+
+    it('a subscription without a rule generates exactly as before', () => {
+      const result = generateDueSubscriptionTransactions(
+        [salary({ locationSplit: undefined })],
+        [],
+        emptyFundState(),
+        NOW,
+      );
+      expect(result.transactions.every((t) => !('locationSplits' in t))).toBe(true);
+    });
+  });
 });

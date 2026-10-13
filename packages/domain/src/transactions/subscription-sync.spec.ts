@@ -301,4 +301,44 @@ describe('reconcileGeneratedTransactions', () => {
       1, 2, 3, 4,
     ]);
   });
+
+  describe('locations are ignored', () => {
+    const withLocation = (locationId?: string): SyncSubscription =>
+      ({ ...gym, ...(locationId ? { locationId } : {}) }) as SyncSubscription;
+    // Real transactions carry a locationId the sync rules must neither read nor change.
+    type Booked = SyncTransaction & { locationId?: string };
+    const bookings = (locationId?: string): Booked[] =>
+      generated(gym).map((t) => ({ ...t, ...(locationId ? { locationId } : {}) }));
+
+    it('a changed subscription location changes and removes nothing already booked', () => {
+      const all = bookings('loc_a');
+      const result = reconcileGeneratedTransactions(
+        withLocation('loc_a'),
+        withLocation('loc_b'),
+        all,
+        NOW,
+      );
+      expect(result.updates).toEqual([]);
+      expect(result.removals).toEqual([]);
+    });
+
+    it('still recognises a generated transaction the user moved to another location', () => {
+      const all = bookings('loc_a');
+      all[1] = { ...all[1], locationId: 'loc_hand' };
+      expect(staleGeneratedTransactions(gym, null, all, NOW)).toHaveLength(all.length);
+    });
+
+    it('an edit of another detail leaves every transaction location alone', () => {
+      const all = bookings('loc_a');
+      all[1] = { ...all[1], locationId: 'loc_hand' };
+      const result = reconcileGeneratedTransactions(
+        withLocation('loc_a'),
+        { ...withLocation('loc_b'), amountMinor: -2500 },
+        all,
+        NOW,
+      );
+      expect(result.updates).toHaveLength(all.length);
+      expect(result.updates.every((u) => !('locationId' in u))).toBe(true);
+    });
+  });
 });
