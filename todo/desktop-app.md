@@ -32,6 +32,8 @@ Decision record: `docs/adr/0009-desktop-app-shell.md`. Self-hosted / Pro only. U
 
 ## Phase 2 — bundled build (stage 2, only if needed)
 
+> **Blocker found 2026-10-14:** the backend sets the login cookies `httpOnly` + `SameSite=Strict` (`backend/routes/auth.js` COOKIE_OPTIONS) and the web app relies on them (`withCredentials` in `auth.interceptor.ts`). A bundled app is served from `http://tauri.localhost`, a different site from the server, so the browser engine would neither store nor send those cookies. Fixing it means one of: (a) loosening cookies to `SameSite=None; Secure` (weakens the web edition's CSRF posture, needs HTTPS), (b) routing all API calls through Tauri's native HTTP client with its own cookie jar (new HTTP layer in the Angular app), or (c) a token-based login path for the desktop (new backend auth flow). Each is a security-relevant change. Stage 1 avoids all of it because it runs on the server's own origin. Decide whether Stage 2 is worth it before starting.
+
 - [ ] `desktop` Angular configuration reusing the self-hosted routes and environment, with `apiUrl` taken at runtime from stored server URL
 - [ ] First-run "connect to your server" screen (URL + health check against the backend)
 - [ ] Backend: add `http://tauri.localhost` to `CORS_ORIGINS` in the self-hosted compose/k8s config (or use `tauri-plugin-http`)
@@ -45,6 +47,7 @@ Decision record: `docs/adr/0009-desktop-app-shell.md`. Self-hosted / Pro only. U
 - [x] Gate step: checkout `main`, run only if HEAD is tagged `vX.Y.Z` (a release happened); otherwise exit. Do not build on the skipped `chore(release)` re-run
 - [x] Build the installer at the release version and attach it to the existing GitHub Release `vX.Y.Z` (`softprops/action-gh-release`, `tag_name: vX.Y.Z`)
 - [x] `auto-release.yml` stays untouched (CLAUDE.md "ask before" file); the Firebase deploy and version bump are unchanged
+- [x] Windows build verified on a GitHub runner (develop push, 2026-10-14): installer artifact produced
 - [ ] Note: `workflow_run` and manual runs only work once the workflow file exists on `main`. Until then the workflow also runs on pushes to `develop` that touch `src-tauri/` or the workflow file (artifact only, no release) — verify the Windows build there, then merge, then verify the release attach on the next real release
 - [x] Failure of the desktop job must not affect the Firebase deploy (separate workflow, so it can't)
 - [x] `docs/DESKTOP.md`: how to install, SmartScreen "More info → Run anyway", how to update (install over the old version)
