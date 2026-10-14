@@ -1,6 +1,6 @@
 {
   "name": "money",
-  "version": "1.25.0",
+  "version": "1.26.0",
   "workspaces": [
     "packages/domain",
     "apps/mcp"

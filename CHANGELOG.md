@@ -1,3 +1,10 @@
+## [1.26.0] - 2026-10-14
+
+### Features
+
+- feat(desktop): macOS universal DMG build alongside the Windows installer
+- feat(desktop): Tauri thin-shell spike with per-user NSIS installer
+
 ## [1.25.0] - 2026-10-13
 
 ### Features
