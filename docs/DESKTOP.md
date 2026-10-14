@@ -50,4 +50,4 @@ Needs the Rust toolchain (rustup, MSVC target) and the Visual Studio C++ Build T
 
 The installer version is the `version` in `package.json`.
 
-**Release automation:** `.github/workflows/desktop-release.yml` runs after the _Auto Release_ workflow. When that run produced a new version, it builds the Windows installer and the macOS DMG on their own runners and attaches them, with a SHA-256 file, to the `vX.Y.Z` GitHub Release. It does not touch `auto-release.yml`. Pushes to `develop` that change `src-tauri/` and manual runs build the installer as a workflow artifact only (kept 14 days).
+**Release automation:** `.github/workflows/desktop-release.yml` runs after the _Auto Release_ workflow. When that run produced a new version, it builds the Windows installer and the macOS DMG on their own runners and attaches them, with a SHA-256 file, to the `vX.Y.Z` GitHub Release. It does not touch `auto-release.yml`. Manual runs (Actions tab) build the installers as workflow artifacts only (kept 14 days).

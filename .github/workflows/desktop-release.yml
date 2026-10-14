@@ -7,8 +7,8 @@ name: Desktop Release
 #   vX.Y.Z), build the installers and attach them to that GitHub Release. auto-release.yml is not
 #   modified, and a failure here cannot affect its Firebase deploy or version bump.
 #   (workflow_run is used because tags pushed with GITHUB_TOKEN do not trigger tag workflows.)
-# - On manual runs and on pushes to develop that touch the desktop shell: build only and keep the
-#   installers as workflow artifacts, never as release assets.
+# - On manual runs (once this file is on main): build only and keep the installers as workflow
+#   artifacts, never as release assets.
 
 on:
   workflow_run:
@@ -16,11 +16,6 @@ on:
     types: [completed]
     branches: [main]
   workflow_dispatch:
-  push:
-    branches: [develop]
-    paths:
-      - 'src-tauri/**'
-      - '.github/workflows/desktop-release.yml'
 
 jobs:
   installer:

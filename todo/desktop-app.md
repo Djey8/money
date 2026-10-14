@@ -48,7 +48,7 @@ Decision record: `docs/adr/0009-desktop-app-shell.md`. Self-hosted / Pro only. U
 - [x] Build the installer at the release version and attach it to the existing GitHub Release `vX.Y.Z` (`softprops/action-gh-release`, `tag_name: vX.Y.Z`)
 - [x] `auto-release.yml` stays untouched (CLAUDE.md "ask before" file); the Firebase deploy and version bump are unchanged
 - [x] Windows build verified on a GitHub runner (develop push, 2026-10-14): installer artifact produced
-- [ ] Note: `workflow_run` and manual runs only work once the workflow file exists on `main`. Until then the workflow also runs on pushes to `develop` that touch `src-tauri/` or the workflow file (artifact only, no release) — verify the Windows build there, then merge, then verify the release attach on the next real release
+- [ ] The workflow runs only as part of the merge to `main` (no `develop` trigger, by decision): the first real release is the first test of the macOS build and of the release attach. If a job fails, fix it and re-run it from the Actions tab (manual run works once the file is on `main`)
 - [x] Failure of the desktop job must not affect the Firebase deploy (separate workflow, so it can't)
 - [x] `docs/DESKTOP.md`: how to install, SmartScreen "More info → Run anyway", how to update (install over the old version)
 - [x] CLAUDE.md pointer + repo map entry for `src-tauri/`
