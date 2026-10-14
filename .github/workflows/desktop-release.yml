@@ -1,0 +1,119 @@
+name: Desktop Release
+
+# Builds the desktop installers: Windows (NSIS) and macOS (universal DMG)
+# (docs/adr/0009-desktop-app-shell.md).
+#
+# - After "Auto Release" succeeds on main: if that run produced a release (HEAD of main is tagged
+#   vX.Y.Z), build the installers and attach them to that GitHub Release. auto-release.yml is not
+#   modified, and a failure here cannot affect its Firebase deploy or version bump.
+#   (workflow_run is used because tags pushed with GITHUB_TOKEN do not trigger tag workflows.)
+# - On manual runs (once this file is on main): build only and keep the installers as workflow
+#   artifacts, never as release assets.
+
+on:
+  workflow_run:
+    workflows: ['Auto Release']
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  installer:
+    name: installer (${{ matrix.name }})
+    runs-on: ${{ matrix.os }}
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: windows
+            os: windows-latest
+            build: npm run desktop:build
+            bundle_glob: src-tauri/target/release/bundle/nsis/*-setup.exe
+            rust_targets: ''
+          - name: macos
+            os: macos-latest
+            build: npm run desktop:build:mac
+            bundle_glob: src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg
+            rust_targets: aarch64-apple-darwin,x86_64-apple-darwin
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Release builds only: HEAD of main must be the tagged release commit.
+      - name: Find release tag
+        id: release
+        shell: bash
+        run: |
+          TAG=""
+          if [ "${{ github.event_name }}" = "workflow_run" ]; then
+            git fetch origin main --tags --force
+            TAG=$(git tag --points-at HEAD --list 'v*' | head -n1)
+            if [ -z "$TAG" ]; then
+              echo "HEAD is not a tagged release (no version bump) - nothing to build."
+            fi
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "build=$([ "${{ github.event_name }}" != "workflow_run" ] || [ -n "$TAG" ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-node@v4
+        if: steps.release.outputs.build == 'true'
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+        if: steps.release.outputs.build == 'true'
+        with:
+          targets: ${{ matrix.rust_targets }}
+
+      - uses: Swatinem/rust-cache@v2
+        if: steps.release.outputs.build == 'true'
+        with:
+          workspaces: src-tauri
+
+      # Scripts are skipped: only the Tauri CLI binary is needed, not husky or the postinstall hook.
+      - name: Install dependencies
+        if: steps.release.outputs.build == 'true'
+        run: npm ci --legacy-peer-deps --ignore-scripts
+
+      - name: Build installer
+        if: steps.release.outputs.build == 'true'
+        run: ${{ matrix.build }}
+
+      - name: Collect installer and checksum
+        if: steps.release.outputs.build == 'true'
+        shell: bash
+        run: |
+          mkdir dist-desktop
+          cp ${{ matrix.bundle_glob }} dist-desktop/
+          cd dist-desktop
+          # "<sha256>  <file>" lines, same format as sha256sum, with no platform-specific tool.
+          for f in *; do
+            node -e "const c=require('crypto'),fs=require('fs');const f=process.argv[1];console.log(c.createHash('sha256').update(fs.readFileSync(f)).digest('hex')+'  '+f)" "$f" > "$f.sha256"
+          done
+          ls -l
+          EXPECTED=$(node -p "require('../package.json').version")
+          TAG="${{ steps.release.outputs.tag }}"
+          if [ -n "$TAG" ] && [ "$TAG" != "v$EXPECTED" ]; then
+            echo "Tag $TAG does not match package.json version $EXPECTED" >&2
+            exit 1
+          fi
+
+      - name: Attach to GitHub Release
+        if: steps.release.outputs.tag != ''
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.release.outputs.tag }}
+          files: dist-desktop/*
+
+      - name: Keep as workflow artifact
+        if: steps.release.outputs.build == 'true' && steps.release.outputs.tag == ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: money-manager-${{ matrix.name }}-installer
+          path: dist-desktop/*
+          retention-days: 14

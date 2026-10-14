@@ -68,3 +68,7 @@ scripts/serviceAccountKey.json
 
 # Temporary azurite db blob files
 __azurite_db_blob*.json
+
+# Tauri desktop shell
+/src-tauri/target
+/src-tauri/gen

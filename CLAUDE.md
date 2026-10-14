@@ -14,6 +14,7 @@ Personal finance app built on the Barefoot Investor method (Daily/Splurge/Smile/
 src/app/            Angular frontend (routes: main/, panels/, stats/, community/, registration/, landing/)
 src/app/interfaces/ Entity type definitions (also the de facto persistence schema — no ORM)
 src/app/shared/services/  Business logic: allocation math, encryption, subscriptions, income statement
+src-tauri/           Windows desktop shell (Tauri, self-hosted only; thin shell around the server URL)
 backend/             Express API + CouchDB integration (self-hosted only)
 backend/routes/      auth.js (real logic), community.js (real logic), data.js (generic blob store), logs.js
 k8s/, docker-compose*.yml   Self-hosted deployment
@@ -65,6 +66,7 @@ Install deps first if `node_modules` is missing: `npm ci --legacy-peer-deps` (ro
 - `PLAN.md` — decisions log and phase status, the single source of truth for scope.
 - `docs/adr/` — one ADR per non-trivial architecture decision.
 - `docs/discovery/` — Phase 0 findings: `ARCHITECTURE.md`, `DOMAIN_MODEL.md`, `FEATURE_CATALOG.md`, `RISKS_AND_QUESTIONS.md`.
+- `docs/DESKTOP.md`, `docs/adr/0009-desktop-app-shell.md`, `todo/desktop-app.md` — desktop app: install, build, release automation, plan.
 - `docs/SELFHOSTED.md`, `docs/DEPLOYMENT.md` — self-hosted setup and deploy-script flag reference.
 - `backend/DATABASE_STRUCTURE.md` — CouchDB storage paths and the frontend's tiered-loading contract.
 - Skills: `mm-conventions`, `mm-add-api-endpoint`, `mm-domain-rules`, `mm-release`, `mm-code-review`, `mm-local-selfhosted` (bring up a local full stack to test without deploying) under `.claude/skills/`.
