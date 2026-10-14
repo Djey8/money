@@ -55,7 +55,8 @@ Decision record: `docs/adr/0009-desktop-app-shell.md`. Self-hosted / Pro only. U
 
 ## Phase 4 — macOS
 
-- [ ] Same Tauri project, macOS runner in the workflow, DMG
+- [x] Same Tauri project, macOS runner in the workflow, universal DMG (`npm run desktop:build:mac`), ad-hoc signed, ATS allows plain-http servers, Edit menu for copy/paste
+- [ ] Verify on a real Mac: DMG installs, first-run connect page, login persists, Change server (Cmd+Shift+S)
 - [ ] Unsigned macOS apps are blocked by Gatekeeper (right-click → Open); document it. Needs an Apple Developer account ($99/yr) to avoid that
 
 ## Later — Android / iOS

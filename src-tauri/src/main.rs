@@ -3,8 +3,12 @@
 use tauri::menu::{MenuBuilder, MenuItemBuilder, SubmenuBuilder};
 use tauri::Manager;
 
-// Origin of the bundled shell page on Windows (Tauri 2 default, useHttpsScheme off).
+// Origin of the bundled shell page: Tauri 2 serves it from http://tauri.localhost on Windows
+// (useHttpsScheme off) and from tauri://localhost on macOS/Linux.
+#[cfg(windows)]
 const SHELL_CHANGE_URL: &str = "http://tauri.localhost/?change";
+#[cfg(not(windows))]
+const SHELL_CHANGE_URL: &str = "tauri://localhost/?change";
 
 fn main() {
     tauri::Builder::default()
@@ -21,7 +25,17 @@ fn main() {
                 .separator()
                 .quit()
                 .build()?;
-            let menu = MenuBuilder::new(app).item(&submenu).build()?;
+            // Without an Edit menu, Cmd+C / Cmd+V / Cmd+A do nothing inside the macOS webview.
+            let edit = SubmenuBuilder::new(app, "Edit")
+                .undo()
+                .redo()
+                .separator()
+                .cut()
+                .copy()
+                .paste()
+                .select_all()
+                .build()?;
+            let menu = MenuBuilder::new(app).item(&submenu).item(&edit).build()?;
             app.set_menu(menu)?;
             Ok(())
         })

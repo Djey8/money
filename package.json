@@ -39,7 +39,8 @@
     "typecheck": "tsc --noEmit -p tsconfig.app.json",
     "verify": "npm run build:domain && npm run test:domain && npm run build:mcp && npm run test:mcp && npm run typecheck:mcp && npm run lint && npm run format && npm run typecheck && npm test -- --watchAll=false && npm run --prefix backend verify",
     "desktop:dev": "tauri dev",
-    "desktop:build": "tauri build"
+    "desktop:build": "tauri build --bundles nsis",
+    "desktop:build:mac": "tauri build --bundles dmg --target universal-apple-darwin"
   },
   "private": true,
   "dependencies": {

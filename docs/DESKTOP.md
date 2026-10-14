@@ -1,6 +1,6 @@
-# Desktop app (Windows)
+# Desktop app (Windows and macOS)
 
-A small Windows app that opens your self-hosted Money Manager in its own window. It is for the self-hosted (Pro) edition only; the Firebase edition has no desktop app. Design and plan: `docs/adr/0009-desktop-app-shell.md`, `todo/desktop-app.md`.
+A small Windows and macOS app that opens your self-hosted Money Manager in its own window. It is for the self-hosted (Pro) edition only; the Firebase edition has no desktop app. Design and plan: `docs/adr/0009-desktop-app-shell.md`, `todo/desktop-app.md`.
 
 The app is a thin shell: it loads the web app from your server, so a server update is picked up the next time you open or reload the window. The installer only changes when the shell itself changes.
 
@@ -13,6 +13,15 @@ The app is a thin shell: it loads the web app from your server, so a server upda
 5. On first start enter your server address (for example `https://money.example.com`, or `http://localhost:8080` for the local stack). It is remembered.
 
 Requires Windows 10 (1809 or newer) or Windows 11 with the WebView2 runtime (included in Windows 11 and current Windows 10).
+
+## Install on macOS
+
+1. Download `Money Manager_<version>_universal.dmg` from the same Releases page (it runs on Apple silicon and Intel Macs, macOS 11 or newer).
+2. Open the DMG and drag **Money Manager** into **Applications**.
+3. The app is not notarized by Apple, so macOS blocks the first start ("cannot be opened" or "is damaged"). Either right-click the app in Applications, choose **Open**, and confirm; or run once in Terminal: `xattr -cr "/Applications/Money Manager.app"`.
+4. Enter your server address on first start, as on Windows. Plain `http://` addresses (a NAS or LAN host) are allowed.
+
+On macOS the menu is _Money Manager → Change server…_ / _Reload_, and the same shortcuts apply with `Cmd` instead of `Ctrl`.
 
 ## Use
 
@@ -32,12 +41,13 @@ Windows Settings → Apps → Money Manager → Uninstall.
 
 Needs the Rust toolchain (rustup, MSVC target) and the Visual Studio C++ Build Tools.
 
-| Task                      | Command                                 |
-| ------------------------- | --------------------------------------- |
-| Run the shell in dev mode | `npm run desktop:dev`                   |
-| Build the installer       | `npm run desktop:build`                 |
-| Installer output          | `src-tauri/target/release/bundle/nsis/` |
+| Task                           | Command                                 |
+| ------------------------------ | --------------------------------------- |
+| Run the shell in dev mode      | `npm run desktop:dev`                   |
+| Build the Windows installer    | `npm run desktop:build`                 |
+| Build the macOS DMG (on a Mac) | `npm run desktop:build:mac`             |
+| Installer output               | `src-tauri/target/release/bundle/nsis/` |
 
 The installer version is the `version` in `package.json`.
 
-**Release automation:** `.github/workflows/desktop-release.yml` runs after the _Auto Release_ workflow. When that run produced a new version, it builds the installer on a Windows runner and attaches it, with a SHA-256 file, to the `vX.Y.Z` GitHub Release. It does not touch `auto-release.yml`. Pushes to `develop` that change `src-tauri/` and manual runs build the installer as a workflow artifact only (kept 14 days).
+**Release automation:** `.github/workflows/desktop-release.yml` runs after the _Auto Release_ workflow. When that run produced a new version, it builds the Windows installer and the macOS DMG on their own runners and attaches them, with a SHA-256 file, to the `vX.Y.Z` GitHub Release. It does not touch `auto-release.yml`. Pushes to `develop` that change `src-tauri/` and manual runs build the installer as a workflow artifact only (kept 14 days).
