@@ -4,17 +4,17 @@ Decision record: `docs/adr/0009-desktop-app-shell.md`. Self-hosted / Pro only. U
 
 ## Decisions taken
 
-| # | Decision |
-|---|----------|
-| 1 | Tauri 2 shell around the existing Angular app, not native UIs per OS |
-| 2 | Windows 10 (1809+) and 11, x64 first |
-| 3 | Per-user NSIS installer, no admin rights |
-| 4 | No MSIX / Microsoft Store |
-| 5 | Unsigned until the app is opened to others |
-| 6 | Installers published as GitHub Release assets, not committed into git |
-| 7 | Firebase edition untouched; desktop code never in the Firebase build (ADR-0004) |
-| 8 | Order: Stage 1 (thin shell) first, then Stage 2 (bundled build) |
-| 9 | Desktop installer is built automatically on every merge to `main` that produces a release, as a second workflow chained behind `auto-release.yml` (which is not modified) |
+| #   | Decision                                                                                                                                                                  |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Tauri 2 shell around the existing Angular app, not native UIs per OS                                                                                                      |
+| 2   | Windows 10 (1809+) and 11, x64 first                                                                                                                                      |
+| 3   | Per-user NSIS installer, no admin rights                                                                                                                                  |
+| 4   | No MSIX / Microsoft Store                                                                                                                                                 |
+| 5   | Unsigned until the app is opened to others                                                                                                                                |
+| 6   | Installers published as GitHub Release assets, not committed into git                                                                                                     |
+| 7   | Firebase edition untouched; desktop code never in the Firebase build (ADR-0004)                                                                                           |
+| 8   | Order: Stage 1 (thin shell) first, then Stage 2 (bundled build)                                                                                                           |
+| 9   | Desktop installer is built automatically on every merge to `main` that produces a release, as a second workflow chained behind `auto-release.yml` (which is not modified) |
 
 ## Phase 0 — prerequisites (JFK's machine)
 
@@ -41,14 +41,14 @@ Decision record: `docs/adr/0009-desktop-app-shell.md`. Self-hosted / Pro only. U
 
 ## Phase 3 — release pipeline
 
-- [ ] `.github/workflows/desktop-release.yml`: `on: workflow_run` (workflows: ["Auto Release"], types: completed, only if conclusion is success) plus `workflow_dispatch`; Windows runner
-- [ ] Gate step: checkout `main`, run only if HEAD is tagged `vX.Y.Z` (a release happened); otherwise exit. Do not build on the skipped `chore(release)` re-run
-- [ ] Build the installer at the release version and attach it to the existing GitHub Release `vX.Y.Z` (`softprops/action-gh-release`, `tag_name: vX.Y.Z`)
-- [ ] `auto-release.yml` stays untouched (CLAUDE.md "ask before" file); the Firebase deploy and version bump are unchanged
-- [ ] Note: `workflow_run` only fires once the workflow file exists on `main`, so test first with `workflow_dispatch`, then merge, then verify on the next real release
-- [ ] Failure of the desktop job must not affect the Firebase deploy (separate workflow, so it can't)
-- [ ] `docs/DESKTOP.md`: how to install, SmartScreen "More info → Run anyway", how to update (install over the old version)
-- [ ] CLAUDE.md pointer + repo map entry for `src-tauri/`
+- [x] `.github/workflows/desktop-release.yml`: `on: workflow_run` (workflows: ["Auto Release"], types: completed, only if conclusion is success) plus `workflow_dispatch`; Windows runner
+- [x] Gate step: checkout `main`, run only if HEAD is tagged `vX.Y.Z` (a release happened); otherwise exit. Do not build on the skipped `chore(release)` re-run
+- [x] Build the installer at the release version and attach it to the existing GitHub Release `vX.Y.Z` (`softprops/action-gh-release`, `tag_name: vX.Y.Z`)
+- [x] `auto-release.yml` stays untouched (CLAUDE.md "ask before" file); the Firebase deploy and version bump are unchanged
+- [ ] Note: `workflow_run` and manual runs only work once the workflow file exists on `main`. Until then the workflow also runs on pushes to `develop` that touch `src-tauri/` or the workflow file (artifact only, no release) — verify the Windows build there, then merge, then verify the release attach on the next real release
+- [x] Failure of the desktop job must not affect the Firebase deploy (separate workflow, so it can't)
+- [x] `docs/DESKTOP.md`: how to install, SmartScreen "More info → Run anyway", how to update (install over the old version)
+- [x] CLAUDE.md pointer + repo map entry for `src-tauri/`
 
 ## Phase 4 — macOS
 
