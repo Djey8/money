@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Local shell page only; the remote server page gets no native access.",
+  "windows": ["main"],
+  "permissions": ["core:default"]
+}
