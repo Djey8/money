@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  effect,
   OnDestroy,
   OnInit,
   computed,
@@ -18,7 +19,10 @@ import {
   type BoardToken,
 } from '../main/cashflow-game/rat-race-board.component';
 import { TableCardsComponent } from './table-cards.component';
+import { TableInspectorComponent } from './table-inspector.component';
 import { TableSessionService } from './table-session.service';
+import { bankSeconds, clockReading, formatClock } from './table-clock';
+import { TurnAlert } from './table-turn-alert';
 import { tableRoomTexts, type TableRoomTexts } from './table-room.texts';
 
 /** A player's numbers as the table shows them to everyone. */
@@ -48,7 +52,13 @@ const money = (minor: number | null): string =>
 @Component({
   selector: 'app-table-room',
   standalone: true,
-  imports: [CommonModule, RouterLink, RatRaceBoardComponent, TableCardsComponent],
+  imports: [
+    CommonModule,
+    RouterLink,
+    RatRaceBoardComponent,
+    TableCardsComponent,
+    TableInspectorComponent,
+  ],
   providers: [TableSessionService],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -159,6 +169,22 @@ const money = (minor: number | null): string =>
               >{{ t.timeLeft }}: {{ clockText() }}</span
             >
           </div>
+          <div
+            class="tr-bar"
+            *ngIf="reading().fraction !== null"
+            role="progressbar"
+            [attr.aria-valuenow]="reading().secondsLeft"
+            aria-valuemin="0"
+          >
+            <div
+              class="tr-bar-fill"
+              [class.tr-bar-fill--low]="reading().low"
+              [style.width.%]="reading().fraction! * 100"
+            ></div>
+          </div>
+          <button *ngIf="alert.canAsk" class="btn tr-notify" type="button" (click)="alert.ask()">
+            🔔 {{ t.notifyMe }}
+          </button>
           <p class="tr-banner tr-banner--warn" *ngIf="table.clock.pausedAt !== null">
             {{ t.paused }}
           </p>
@@ -251,6 +277,9 @@ const money = (minor: number | null): string =>
                   <small *ngIf="!row.online">· {{ t.offline }}</small></span
                 >
                 <small *ngIf="row.professionTitle">{{ row.professionTitle }}</small>
+                <small *ngIf="bank(row.player.seat) !== null" class="tr-bank"
+                  >⏱ {{ formatBank(row.player.seat) }}</small
+                >
               </div>
               <dl class="tr-numbers">
                 <div>
@@ -275,6 +304,12 @@ const money = (minor: number | null): string =>
             </li>
           </ul>
         </section>
+        <app-table-inspector
+          *ngIf="table.players.length"
+          [view]="table"
+          [events]="session.events()"
+          [lang]="lang"
+        ></app-table-inspector>
       </ng-container>
     </div>
     <p *ngIf="!view() && session.connection() !== 'closed'" class="tr-hint">{{ t.connecting }}</p>
@@ -398,6 +433,44 @@ const money = (minor: number | null): string =>
         color: var(--color-text-secondary, #666);
         font-size: 0.9em;
       }
+      .tr-bar {
+        height: 8px;
+        border-radius: 4px;
+        background: var(--color-border, #ddd);
+        overflow: hidden;
+        margin: 8px 0;
+      }
+      .tr-bar-fill {
+        height: 100%;
+        background: var(--color-success, #4caf50);
+        transition: width 0.5s linear;
+      }
+      .tr-bar-fill--low {
+        background: var(--color-danger, #c00);
+      }
+      .tr-bank {
+        font-variant-numeric: tabular-nums;
+      }
+      @media (max-width: 600px) {
+        .tr-page {
+          padding: 8px;
+          gap: 8px;
+        }
+        .tr-card {
+          padding: 12px;
+        }
+        .tr-actions .btn,
+        .tr-professions .btn,
+        .tr-notify {
+          flex: 1 1 140px;
+          min-height: 44px;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .tr-bar-fill {
+          transition: none;
+        }
+      }
     `,
   ],
 })
@@ -479,12 +552,28 @@ export class TableRoomComponent implements OnInit, OnDestroy {
       }));
   });
 
-  /** Seconds the player on the move has left, from the server's deadline; null without a clock. */
-  readonly secondsLeft = computed(() => {
+  /** The player on the move's clock, from the server's deadline: seconds, bar fraction, whether it is low. */
+  readonly reading = computed(() => {
     const view = this.view();
-    const deadline = view?.clock.deadlineAt;
-    if (!view || deadline === null || deadline === undefined) return null;
-    return Math.max(0, Math.ceil((deadline - this.now()) / 1000));
+    return view
+      ? clockReading(view, this.now())
+      : { secondsLeft: null, fraction: null, low: false };
+  });
+  /** Seconds the player on the move has left; null without a clock. */
+  readonly secondsLeft = computed(() => this.reading().secondsLeft);
+
+  /** The tab says "your turn" while it is; a notification only if the player asked for them. */
+  readonly alert = new TurnAlert({
+    document,
+    Notification: typeof Notification === 'undefined' ? undefined : (Notification as never),
+  });
+  private readonly alerting = effect(() => {
+    const view = this.view();
+    if (view && view.phase === 'playing' && this.isMyTurn() && view.clock.pausedAt === null) {
+      this.alert.turnStarted(this.t.yourTurn, view.settings.name);
+    } else {
+      this.alert.turnEnded();
+    }
   });
 
   ngOnInit(): void {
@@ -499,6 +588,8 @@ export class TableRoomComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     if (this.timer) clearInterval(this.timer);
+    this.alerting.destroy();
+    this.alert.turnEnded();
     this.session.close();
   }
 
@@ -506,10 +597,18 @@ export class TableRoomComponent implements OnInit, OnDestroy {
 
   clockText(): string {
     const total = this.secondsLeft();
-    if (total === null) return '';
-    const m = Math.floor(total / 60);
-    const s = total % 60;
-    return `${m}:${String(s).padStart(2, '0')}`;
+    return total === null ? '' : formatClock(total);
+  }
+
+  /** A player's time bank in seconds at a bank-clock table, else null. */
+  bank(seat: number): number | null {
+    const view = this.view();
+    return view ? bankSeconds(view, seat, this.now()) : null;
+  }
+
+  formatBank(seat: number): string {
+    const seconds = this.bank(seat);
+    return seconds === null ? '' : formatClock(seconds);
   }
 
   nameOf(seat: number): string {

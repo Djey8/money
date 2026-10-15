@@ -36,7 +36,12 @@ function fakeSession(view: unknown, legal: string[] = []) {
   };
 }
 
-const settings = { name: 'Friday', maxSeats: 6, gameSetId: 'cashflow' };
+const settings = {
+  name: 'Friday',
+  maxSeats: 6,
+  gameSetId: 'cashflow',
+  clock: { mode: 'none' },
+};
 const players = (over: Record<string, unknown>[] = []) =>
   [
     {
@@ -193,5 +198,85 @@ describe('TableRoomComponent', () => {
     expect(fixture.componentInstance.clockText()).toBe('1:05');
     jest.advanceTimersByTime(6000);
     expect(fixture.componentInstance.clockText()).toBe('0:59');
+  });
+
+  describe('time and presence', () => {
+    const playing = (clock: Record<string, unknown>, clockSettings: Record<string, unknown>) => ({
+      id: 'r1',
+      version: 3,
+      phase: 'playing',
+      settings: { ...settings, clock: clockSettings },
+      hostSeat: 0,
+      youSeat: 0,
+      activeSeat: 0,
+      tableRound: 1,
+      clock: { pausedAt: null, banksMs: [], timeouts: [], ...clock },
+      trade: null,
+      result: null,
+      players: players([
+        { books: books(1), professionId: 'p' },
+        { books: books(2), professionId: 'p', away: true },
+      ]),
+    });
+
+    it('draws a bar that empties with the per-move clock, red when low', async () => {
+      jest.useFakeTimers();
+      jest.setSystemTime(new Date('2026-10-15T10:00:00Z'));
+      const session = fakeSession(
+        playing({ deadlineAt: Date.now() + 30_000 }, { mode: 'per-move', secondsPerMove: 60 }),
+      );
+      const fixture = await render(session);
+      const fill = () => fixture.nativeElement.querySelector('.tr-bar-fill') as HTMLElement;
+      expect(fill().style.width).toBe('50%');
+      expect(fill().classList).not.toContain('tr-bar-fill--low');
+      jest.advanceTimersByTime(25_000);
+      fixture.detectChanges();
+      expect(fill().classList).toContain('tr-bar-fill--low');
+    });
+
+    it('shows no bar without a clock, and the banks of a bank clock next to each player', async () => {
+      const none = await render(fakeSession(playing({ deadlineAt: null }, { mode: 'none' })));
+      expect(none.nativeElement.querySelector('.tr-bar')).toBeNull();
+      expect(none.nativeElement.querySelector('.tr-bank')).toBeNull();
+      TestBed.resetTestingModule();
+      const bank = await render(
+        fakeSession(
+          playing(
+            { deadlineAt: Date.now() + 90_000, banksMs: [0, 300_000] },
+            { mode: 'bank', bankSeconds: 600, incrementSeconds: 0 },
+          ),
+        ),
+      );
+      const banks = Array.from(bank.nativeElement.querySelectorAll('.tr-bank')).map((b) =>
+        (b as HTMLElement).textContent!.trim(),
+      );
+      expect(banks).toEqual(['⏱ 1:30', '⏱ 5:00']);
+    });
+
+    it('marks an away player', async () => {
+      const fixture = await render(fakeSession(playing({ deadlineAt: null }, { mode: 'none' })));
+      expect(fixture.nativeElement.textContent).toContain('away');
+    });
+
+    it('says it is my turn in the tab title, and puts the title back when it is not', async () => {
+      const original = document.title;
+      const session = fakeSession(playing({ deadlineAt: null }, { mode: 'none' }));
+      const fixture = await render(session);
+      expect(document.title).toContain('● Your turn');
+      (session.view as ReturnType<typeof signal>).set({
+        ...(session.view() as object),
+        activeSeat: 1,
+      });
+      fixture.detectChanges();
+      expect(document.title).toBe(original);
+    });
+
+    it('puts the title back when the table is left', async () => {
+      const original = document.title;
+      const fixture = await render(fakeSession(playing({ deadlineAt: null }, { mode: 'none' })));
+      expect(document.title).not.toBe(original);
+      fixture.destroy();
+      expect(document.title).toBe(original);
+    });
   });
 });

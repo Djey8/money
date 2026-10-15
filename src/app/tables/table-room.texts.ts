@@ -47,6 +47,7 @@ const en = {
   waitingFor: 'Waiting for',
   space: 'Space',
   atStart: 'at START',
+  notifyMe: 'Notify me when it is my turn',
 };
 export type TableRoomTexts = typeof en;
 
@@ -93,6 +94,7 @@ const de: TableRoomTexts = {
   waitingFor: 'Warte auf',
   space: 'Feld',
   atStart: 'am START',
+  notifyMe: 'Benachrichtige mich, wenn ich dran bin',
 };
 
 const es: TableRoomTexts = {
@@ -138,6 +140,7 @@ const es: TableRoomTexts = {
   waitingFor: 'Esperando a',
   space: 'Casilla',
   atStart: 'en la SALIDA',
+  notifyMe: 'Avisarme cuando sea mi turno',
 };
 
 const fr: TableRoomTexts = {
@@ -183,6 +186,7 @@ const fr: TableRoomTexts = {
   waitingFor: 'En attente de',
   space: 'Case',
   atStart: 'au DÉPART',
+  notifyMe: "Me prévenir quand c'est mon tour",
 };
 
 const cn: TableRoomTexts = {
@@ -228,6 +232,7 @@ const cn: TableRoomTexts = {
   waitingFor: '等待',
   space: '格子',
   atStart: '在起点',
+  notifyMe: '轮到我时通知我',
 };
 
 const ar: TableRoomTexts = {
@@ -273,6 +278,7 @@ const ar: TableRoomTexts = {
   waitingFor: 'بانتظار',
   space: 'الخانة',
   atStart: 'عند البداية',
+  notifyMe: 'نبّهني عندما يحين دوري',
 };
 
 const DICTIONARIES: Record<TablesLang, TableRoomTexts> = { en, de, es, fr, cn, ar };
