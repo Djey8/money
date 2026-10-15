@@ -138,6 +138,24 @@ describe('the catalog and the lobby', () => {
     expect(room.seatsTaken).toBe(2);
   });
 
+  it('a bot can be seated at a skill level, which is part of its strategy id and name', async () => {
+    if (!dbAvailable) return;
+    const roomId = await openTable();
+    const catalog = (await call(host, 'get', '/game/rooms/bots')).body;
+    expect(catalog.levels.map((l) => l.id)).toEqual(['master', 'strong', 'casual', 'beginner']);
+    const added = await call(host, 'post', `/game/rooms/${roomId}/bots`, {
+      policyId: 'champion-v1',
+      level: 'casual',
+    });
+    expect(added.status).toBe(200);
+    const bot = (added.body.table || added.body).players[1];
+    expect(bot.bot).toEqual({ policyId: 'champion-v1--casual' });
+    expect(bot.name).toBe('Champion Cleo (casual)');
+    const refused = (body) => call(host, 'post', `/game/rooms/${roomId}/bots`, body);
+    expect((await refused({ policyId: 'all-rounder', level: 'genius' })).status).toBe(400);
+    expect((await refused({ policyId: 'all-rounder--genius' })).status).toBe(400);
+  });
+
   it('refuses an unknown bot, a guest adding one, a bot in a running game and a taken name', async () => {
     if (!dbAvailable) return;
     const roomId = await openTable();

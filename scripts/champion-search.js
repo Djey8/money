@@ -190,9 +190,11 @@ if (opts.style && !STYLE) {
   console.error(`unknown style '${opts.style}'; known: ${Object.keys(STYLES).join(', ')}`);
   process.exit(1);
 }
-const targets = STYLE
-  ? [{ setId: 'cashflow', id: '*', title: STYLE.name }]
-  : everyProfession.filter((p) => !wanted || wanted.includes(p.id));
+const targets = opts['write-characters']
+  ? [] // only writes what the style searches found
+  : STYLE
+    ? [{ setId: 'cashflow', id: '*', title: STYLE.name }]
+    : everyProfession.filter((p) => !wanted || wanted.includes(p.id));
 const config = {
   candidates: Number(opts.candidates ?? 36),
   generations: Number(opts.generations ?? 8),
@@ -674,7 +676,7 @@ export interface CharacterEntry {
   winRate: number;
   interval: { low: number; high: number };
   tables: number;
-  /** champion-v1's share on the same tables, for comparison. */
+  /** The champion it had to beat (the old champion): its share on the same tables, for comparison. */
   championV1WinRate: number;
   spec: PolicySpec;
 }
@@ -725,13 +727,13 @@ export interface ChampionEntry {
   /** The game set the profession belongs to. */
   setId: string;
   title: string;
-  /** Its own champion (true), or champion-v1 because no candidate beat it. */
+  /** Its own champion (true), or the all-round champion because no candidate beat it. */
   adopted: boolean;
   /** Share of verdict tables won, and its 95% range. */
   winRate: number;
   interval: { low: number; high: number };
   tables: number;
-  /** champion-v1's share on the same tables, for comparison. */
+  /** The champion it had to beat (the old champion): its share on the same tables, for comparison. */
   championV1WinRate: number;
   spec: PolicySpec;
 }

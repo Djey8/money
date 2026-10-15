@@ -1,5 +1,12 @@
 import { PRESET_SPECS } from '../simulation/strategies';
-import { botProfiles, botPolicy, botProfile } from './bot-catalog';
+import {
+  botIdWithLevel,
+  botPolicy,
+  botProfile,
+  botProfiles,
+  splitBotId,
+  type BotLevel,
+} from './bot-catalog';
 import { playMatch } from './tournament';
 
 describe('the bot catalog', () => {
@@ -81,5 +88,60 @@ describe('the champion', () => {
   it('is a champion in the catalog, with its numbers on record', () => {
     expect(botProfile('champion-v1')?.difficulty).toBe('champion');
     expect(botProfile('champion-v1')?.spec.overrides.catchUp).toBeTruthy();
+  });
+});
+
+describe('skill levels', () => {
+  it('splits a leveled id into the bot and the level, and refuses a level that does not exist', () => {
+    expect(splitBotId('all-rounder')).toEqual({ base: 'all-rounder', level: 'master' });
+    expect(splitBotId('champion-v1--casual')).toEqual({ base: 'champion-v1', level: 'casual' });
+    expect(splitBotId('champion-v1--genius')).toBeNull();
+    expect(botIdWithLevel('all-rounder', 'master')).toBe('all-rounder');
+    expect(botIdWithLevel('all-rounder', 'beginner')).toBe('all-rounder--beginner');
+  });
+
+  it('a leveled bot is a profile of its own: a lower tier, its level in the name, a playable id', () => {
+    const casual = botProfile('all-rounder--casual')!;
+    expect(casual.name).toBe('Allie All-Round (casual)');
+    expect(casual.difficulty).toBe('easy'); // hard, two steps down
+    expect(botProfile('champion-v1--strong')!.difficulty).toBe('hard');
+    expect(botProfile('all-rounder--beginner')!.difficulty).toBe('easy');
+    expect(botProfile('nope--casual')).toBeUndefined();
+    expect(botProfile('all-rounder--genius')).toBeUndefined();
+    expect(casual.id).toMatch(/^[a-z0-9][a-z0-9-]{0,63}$/);
+  });
+
+  it('a level that slips plays the same game every time (the slips come from the position, not from chance)', () => {
+    const config = {
+      seed: 5,
+      policies: [botPolicy('champion-v1--casual')!, botPolicy('all-rounder')!],
+      professionIds: ['lehrer', 'lehrer'],
+    };
+    expect(playMatch(config)).toEqual(playMatch(config));
+    expect(playMatch(config).problems).toEqual([]);
+  });
+
+  it('the lower the level, the fewer tables it wins against the same strategy at master', () => {
+    const wins = (level: BotLevel) => {
+      let won = 0;
+      for (let seed = 1; seed <= 90; seed += 1) {
+        const mine = botPolicy(botIdWithLevel('champion-v1', level))!;
+        const master = botPolicy('champion-v1')!;
+        const policies = seed % 2 ? [mine, master] : [master, mine];
+        const match = playMatch({
+          seed: 700 + seed,
+          policies,
+          professionIds: ['lehrer', 'lehrer'],
+        });
+        const ours = seed % 2 ? 0 : 1;
+        if (match.winnerSeat === ours) won += 1;
+      }
+      return won;
+    };
+    const master = wins('master');
+    const beginner = wins('beginner');
+    expect(beginner).toBeLessThan(master);
+    expect(master).toBeGreaterThan(30); // a master against itself wins about half
+    expect(beginner).toBeLessThan(30);
   });
 });

@@ -7,7 +7,13 @@ const { getGameRoomsDb, getUsersDb, getAuthDb, getGameSavesDb } = require('../co
 const logger = require('../config/logger');
 const { requireScope, problem } = require('../middleware/api-auth');
 const { requireGameAccount } = require('../middleware/game-account-guard');
-const { botProfiles, botProfile } = require('@money/domain/dist/cashflow-game/table/bot-catalog');
+const {
+  BOT_LEVELS,
+  botIdWithLevel,
+  botProfile,
+  botProfiles,
+  splitBotId,
+} = require('@money/domain/dist/cashflow-game/table/bot-catalog');
 const { createGameRoomService, problemFor } = require('../services/game-rooms');
 const { fileFinishedGame } = require('../repositories/game-saves');
 const { GameActionError } = require('../repositories/game-play');
@@ -176,6 +182,7 @@ router.get(
         difficulty,
         description,
       })),
+      levels: Object.entries(BOT_LEVELS).map(([id, mistakes]) => ({ id, mistakes })),
     }),
   ),
 );
@@ -307,7 +314,17 @@ lobbyRoute('post', '/:roomId/start', () => ({ type: 'start' }));
 lobbyRoute('post', '/:roomId/bots', (body) => {
   if (typeof body.policyId !== 'string')
     return 'policyId must be the id of a bot (see GET /game/rooms/bots).';
-  const profile = botProfile(body.policyId);
+  if (body.level !== undefined && !Object.prototype.hasOwnProperty.call(BOT_LEVELS, body.level)) {
+    return `level must be one of: ${Object.keys(BOT_LEVELS).join(', ')}.`;
+  }
+  const parts = splitBotId(body.policyId);
+  if (!parts) return `Unknown bot '${body.policyId}': see GET /game/rooms/bots.`;
+  // a level given on its own applies to a plain bot id; a bot id that already carries one keeps it
+  const policyId =
+    body.level !== undefined && parts.level === 'master'
+      ? botIdWithLevel(parts.base, body.level)
+      : body.policyId;
+  const profile = botProfile(policyId);
   if (!profile) return `Unknown bot '${body.policyId}': see GET /game/rooms/bots.`;
   if (body.name !== undefined && typeof body.name !== 'string') return 'name must be a string.';
   if (body.professionId !== undefined && typeof body.professionId !== 'string') {

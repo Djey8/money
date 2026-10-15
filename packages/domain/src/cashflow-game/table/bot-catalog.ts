@@ -114,6 +114,7 @@ function championByProfession(): Policy {
     dice: (view) => forView(view).dice(view),
     pile: (view, random) => forView(view).pile(view, random),
     deal: (view, card) => forView(view).deal(view, card),
+    doodad: (view, card) => forView(view).doodad?.(view, card) ?? 'pay',
     maintain: (view) => forView(view).maintain(view),
   };
 }
@@ -123,9 +124,9 @@ function championByProfession(): Policy {
  * seats, both rule sets, every profession). The field is strong, so even a good strategy wins a minority of those tables.
  */
 export function difficultyOf(winRate: number): BotDifficulty {
-  if (winRate >= 0.5) return 'champion';
-  if (winRate >= 0.3) return 'hard';
-  if (winRate >= 0.15) return 'medium';
+  if (winRate >= 0.6) return 'champion';
+  if (winRate >= 0.4) return 'hard';
+  if (winRate >= 0.2) return 'medium';
   return 'easy';
 }
 
@@ -265,19 +266,100 @@ export function botProfiles(): BotProfile[] {
   return profiles;
 }
 
+// -- Skill levels ------------------------------------------------------------------------------------------------
+
+/**
+ * How well a bot plays its strategy: a master plays it as found, the others slip now and then - they pass a deal their strategy
+ * would take, take one it would leave, pay a Doodad they could pass, forget to sell or to repay. The chance of a slip, per decision.
+ * The slips are decided by the position itself (a fixed hash of the round, the turn and the cash), never by chance, so a game is
+ * still reproducible from its seed. A leveled bot is the base bot's id and the level: `champion-v2--casual`.
+ */
+export type BotLevel = 'master' | 'strong' | 'casual' | 'beginner';
+
+export const BOT_LEVELS: Record<BotLevel, number> = {
+  master: 0,
+  strong: 0.1,
+  casual: 0.25,
+  beginner: 0.45,
+};
+const LEVEL_ORDER: BotLevel[] = ['master', 'strong', 'casual', 'beginner'];
+const LEVEL_SEPARATOR = '--';
+
+/** `champion-v2--casual` -> the base bot and the level; a plain id is a master. Null for a level that does not exist. */
+export function splitBotId(id: string): { base: string; level: BotLevel } | null {
+  const at = id.lastIndexOf(LEVEL_SEPARATOR);
+  if (at < 0) return { base: id, level: 'master' };
+  const level = id.slice(at + LEVEL_SEPARATOR.length) as BotLevel;
+  return LEVEL_ORDER.includes(level) ? { base: id.slice(0, at), level } : null;
+}
+
+export function botIdWithLevel(base: string, level: BotLevel): string {
+  return level === 'master' ? base : `${base}${LEVEL_SEPARATOR}${level}`;
+}
+
+const TIERS: BotDifficulty[] = ['easy', 'medium', 'hard', 'champion'];
+
+/** A fixed pseudo-random number in [0, 1) from the position - no chance involved. */
+function slip(view: PolicyView, salt: number): number {
+  let h = Math.imul(view.round + 1, 2654435761) ^ Math.imul(view.turn + 7, 1597334677);
+  h ^= Math.imul(Math.round(view.cashMinor / 100) + salt * 40503, 2246822507);
+  h = Math.imul(h ^ (h >>> 15), 3266489909);
+  h ^= h >>> 13;
+  return ((h >>> 0) % 100000) / 100000;
+}
+
+function withMistakes(policy: Policy, rate: number, id: string): Policy {
+  return {
+    ...policy,
+    id,
+    deal(view, card) {
+      const choice = policy.deal(view, card);
+      if (choice.buy && slip(view, 1) < rate) return { buy: false };
+      if (
+        !choice.buy &&
+        slip(view, 2) < rate / 3 &&
+        (card.depositMinor ?? card.costMinor ?? Infinity) <= view.cashMinor
+      ) {
+        return { buy: true };
+      }
+      return choice;
+    },
+    doodad: (view, card) => {
+      const choice = policy.doodad?.(view, card) ?? 'pay';
+      return choice === 'pass' && slip(view, 3) < rate ? 'pay' : choice;
+    },
+    maintain: (view) => (slip(view, 4) < rate ? [] : policy.maintain(view)),
+  };
+}
+
 export function botProfile(id: string): BotProfile | undefined {
-  return botProfiles().find((profile) => profile.id === id);
+  const parts = splitBotId(id);
+  if (!parts) return undefined;
+  const base = botProfiles().find((profile) => profile.id === parts.base);
+  if (!base || parts.level === 'master') return base;
+  const step = LEVEL_ORDER.indexOf(parts.level);
+  const tier = Math.max(0, TIERS.indexOf(base.difficulty) - step);
+  return {
+    ...base,
+    id,
+    name: `${base.name} (${parts.level})`,
+    difficulty: parts.level === 'beginner' ? 'easy' : TIERS[tier],
+    description: `${base.description} Plays at the ${parts.level} level: now and then it slips.`,
+  };
 }
 
 const cache = new Map<string, Policy>();
 
 /** The strategy a bot id plays, or null when there is no such bot. */
 export function botPolicy(id: string): Policy | null {
+  const parts = splitBotId(id);
   const profile = botProfile(id);
-  if (!profile) return null;
+  if (!parts || !profile) return null;
   let policy = cache.get(id);
   if (!policy) {
-    policy = profile.build ? profile.build() : policyFromSpec(profile.spec);
+    const base = botProfiles().find((p) => p.id === parts.base)!;
+    const plain = base.build ? base.build() : policyFromSpec(base.spec);
+    policy = parts.level === 'master' ? plain : withMistakes(plain, BOT_LEVELS[parts.level], id);
     cache.set(id, policy);
   }
   return policy;

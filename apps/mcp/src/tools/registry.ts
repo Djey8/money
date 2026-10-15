@@ -472,7 +472,7 @@ export const TOOLS: ToolDefinition[] = [
       'section "Playing at a table"): table_create opens a table (nickname, settings.name, ...) and returns an invite ' +
       'code, table_join takes a seat (roomId or code, nickname), table_ready, table_start (host), table_profession ' +
       "(professionId or random), table_leave; table_kick / table_settings / table_close are the host's, and so is " +
-      'table_add_bot (lobby only: policyId from get_cashflow_game table_bots, optional name and professionId) which ' +
+      'table_add_bot (lobby only: policyId from get_cashflow_game table_bots, optional level master|strong|casual|beginner, name and professionId) which ' +
       'seats a bot the server plays by itself - remove it with table_kick of its seat. Then ' +
       'table_move plays ONE move: `command` is {type: roll | draw_card | buy_deal | pay_doodad | roll_decision | ' +
       'pass_card | bank_loan | sell_position | offer_trade | counter_trade | accept_trade | decline_trade | ' +

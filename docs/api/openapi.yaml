@@ -6710,6 +6710,17 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/GameBot'
+                  levels:
+                    type: array
+                    description: The skill levels a bot can be seated at (`addGameRoomBot` `level`). `mistakes` is the chance, per decision, that it slips - passes a deal its strategy would take, takes one it would leave, pays a Doodad it could pass, forgets to sell; 0 plays the strategy as found.
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          enum: [master, strong, casual, beginner]
+                        mistakes:
+                          type: number
               example:
                 items:
                   - id: all-rounder
@@ -6977,6 +6988,11 @@ paths:
                 policyId:
                   type: string
                   description: A bot id from `listGameBots`.
+                level:
+                  type: string
+                  enum: [master, strong, casual, beginner]
+                  default: master
+                  description: How well it plays its strategy (see `levels` of `listGameBots`). A lower level slips now and then - the same bot, easier to beat.
                 name:
                   type: string
                   maxLength: 24

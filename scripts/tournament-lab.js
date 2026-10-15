@@ -37,6 +37,7 @@ function loadSpecs() {
   // the bots a host can seat: the lab's presets, the solo search's best and the champion (the domain's bot catalog)
   return require('@money/domain/dist/cashflow-game/table/bot-catalog')
     .botProfiles()
+    .filter((profile) => !profile.build) // the profession dispatcher is no strategy of its own
     .map((profile) => profile.spec);
 }
 
@@ -161,6 +162,7 @@ function writeManualData(output) {
   }
   const bots = require('@money/domain/dist/cashflow-game/table/bot-catalog')
     .botProfiles()
+    .filter((b) => !b.build)
     .map((b) => ({ id: b.id, name: b.name, label: b.spec.label, difficulty: b.difficulty }));
   const data = {
     meta: {
