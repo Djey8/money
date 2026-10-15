@@ -1,6 +1,6 @@
 import type { GameBooks } from '../books';
 import type { CashflowFinanceSummary } from '../saved-games';
-import type { CashflowDealCard } from '../types';
+import type { CashflowDealCard, CashflowDoodadCard } from '../types';
 import type { SellInput } from '../positions';
 
 /**
@@ -66,6 +66,11 @@ export interface Policy {
   pile(view: PolicyView, random: () => number): Pile;
   /** Buy the drawn Deal card, or leave it. */
   deal(view: PolicyView, card: CashflowDealCard): DealChoice;
+  /**
+   * Pay a Doodad or pass it. Only asked where the rules let a Doodad be passed (`passDoodads: 'allowed'`, the guided preset); under
+   * the strict rules every Doodad is paid. Absent: always pay.
+   */
+  doodad?(view: PolicyView, card: CashflowDoodadCard): 'pay' | 'pass';
   /** Housekeeping between rolls; called again until it returns nothing. */
   maintain(view: PolicyView): HouseMove[];
 }
@@ -96,6 +101,12 @@ export interface PolicyParams {
   repayLoans: boolean;
   /** Two dice while Charity runs. */
   charityTwoDice: boolean;
+  /**
+   * Where the rules allow passing a Doodad: pass every Doodad that costs more than this (minor units); 0 passes all of them, null
+   * pays all of them. A Doodad is a forced cost in the board game - passing it for free is a freedom of the guided rules, not of the
+   * game, which is why this is a knob a table's host can take away (strict rules).
+   */
+  skipDoodadsAboveMinor: number | null;
   /**
    * Race-aware play at a table: when a rival leads by `behindBy` (in coverage, 0.2 = 20 points), multiply the property return
    * asked, the loan coverage asked and the reserve kept by these factors (below 1 = take more risk to catch up).

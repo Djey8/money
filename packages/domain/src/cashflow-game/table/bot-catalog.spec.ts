@@ -10,7 +10,7 @@ describe('the bot catalog', () => {
       expect(b.description.length).toBeGreaterThan(10);
       expect(['easy', 'medium', 'hard', 'champion']).toContain(b.difficulty);
       expect(b.id).toMatch(/^[a-z0-9][a-z0-9-]{0,63}$/); // what a table accepts as a bot's strategy id
-      expect(b.spec.id).toBe(b.id);
+      expect(b.spec.id === b.id || b.build !== undefined).toBe(true);
     }
   });
 

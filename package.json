@@ -37,6 +37,8 @@
     "format": "prettier --check .",
     "format:fix": "prettier --write .",
     "typecheck": "tsc --noEmit -p tsconfig.app.json",
+    "champions:refresh": "node scripts/champions-refresh.js",
+    "tournament": "node scripts/tournament-lab.js --players 2,4,6 --rules guided,strict --professions all --mode mirror,mix --rounds 60 --write",
     "verify": "npm run build:domain && npm run test:domain && npm run build:mcp && npm run test:mcp && npm run typecheck:mcp && npm run lint && npm run format && npm run typecheck && npm test -- --watchAll=false && npm run --prefix backend verify",
     "desktop:dev": "tauri dev",
     "desktop:build": "tauri build --bundles nsis",

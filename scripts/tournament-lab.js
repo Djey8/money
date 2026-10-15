@@ -35,7 +35,9 @@ const root = path.resolve(__dirname, '..');
 
 function loadSpecs() {
   // the bots a host can seat: the lab's presets, the solo search's best and the champion (the domain's bot catalog)
-  return require('@money/domain/dist/cashflow-game/table/bot-catalog').botProfiles().map((profile) => profile.spec);
+  return require('@money/domain/dist/cashflow-game/table/bot-catalog')
+    .botProfiles()
+    .map((profile) => profile.spec);
 }
 
 // ───────────────────────────── worker ─────────────────────────────
@@ -143,6 +145,65 @@ function matchesFor(cell, index) {
 
 function wilson(wins, n) {
   return domain.wilsonInterval(wins, n);
+}
+
+/**
+ * What the in-app manual reads (src/assets/i18n/cashflow-manual/tournament-lab.json, self-hosted only): the strategies' win
+ * shares per table size, and the bots' names. The champion book part of the file is written by champion-search.js and kept here.
+ */
+function writeManualData(output) {
+  const file = path.join(root, 'src/assets/i18n/cashflow-manual/tournament-lab.json');
+  let existing = {};
+  try {
+    existing = JSON.parse(fs.readFileSync(file, 'utf8'));
+  } catch {
+    existing = {};
+  }
+  const bots = require('@money/domain/dist/cashflow-game/table/bot-catalog')
+    .botProfiles()
+    .map((b) => ({ id: b.id, name: b.name, label: b.spec.label, difficulty: b.difficulty }));
+  const data = {
+    meta: {
+      rulesDigest: output.meta.rulesDigest,
+      generatedAt: output.meta.generatedAt,
+      tables: output.overall.reduce((sum, g) => sum + g.tables, 0),
+    },
+    bots,
+    overall: output.overall.map((group) => {
+      const [seats, rules, mode] = group.key.split(', ');
+      return {
+        seats: Number(seats.split(' ')[0]),
+        rules,
+        mode,
+        tables: group.tables,
+        scores: group.scores.map((s) => ({
+          policyId: s.policyId,
+          appearances: s.appearances,
+          winRate: Number(s.winRate.toFixed(4)),
+          winInterval: {
+            low: Number(s.winInterval.low.toFixed(4)),
+            high: Number(s.winInterval.high.toFixed(4)),
+          },
+          expectedWinRate: Number(s.expectedWinRate.toFixed(4)),
+          meanRank: Number(s.meanRank.toFixed(3)),
+          escapeRate: Number(s.escapeRate.toFixed(4)),
+          bankruptRate: Number(s.bankruptRate.toFixed(4)),
+        })),
+      };
+    }),
+    champions: existing.champions || {},
+  };
+  fs.writeFileSync(file, JSON.stringify(data, null, 1) + '\n');
+}
+
+// `--manual-only` rebuilds the manual's data from the last tournament run without playing anything.
+if (opts['manual-only']) {
+  const last = JSON.parse(
+    fs.readFileSync(path.join(root, 'docs/domain/strategy/data/tournament.json'), 'utf8'),
+  );
+  writeManualData(last);
+  console.log('written: the manual data (from the last tournament run)');
+  process.exit(0);
 }
 
 async function main() {
@@ -260,7 +321,9 @@ async function main() {
     }
   }
 
-  const rulesDigest = domain.strategyRulesDigest(CASHFLOW_GAME_SETS);
+  const rulesDigest = domain.strategyRulesDigest(
+    CASHFLOW_GAME_SETS.filter((set) => set.id === 'cashflow' || set.id === 'custom-jfk'),
+  );
   const output = {
     meta: {
       generatedAt: new Date().toISOString(),
@@ -277,8 +340,9 @@ async function main() {
     const dataFile = path.join(root, 'docs/domain/strategy/data/tournament.json');
     fs.writeFileSync(dataFile, JSON.stringify(output, null, 1) + '\n');
     fs.writeFileSync(path.join(root, 'docs/domain/CASHFLOW_TOURNAMENT.md'), report(output, specs));
+    writeManualData(output);
     console.log(
-      '\nwritten: docs/domain/strategy/data/tournament.json, docs/domain/CASHFLOW_TOURNAMENT.md',
+      '\nwritten: docs/domain/strategy/data/tournament.json, docs/domain/CASHFLOW_TOURNAMENT.md, the manual data',
     );
   }
   const digest = crypto

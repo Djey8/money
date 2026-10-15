@@ -33,7 +33,9 @@ const { CASHFLOW_GAME_SETS } = require('@money/domain/dist/cashflow-content');
 const root = path.resolve(__dirname, '..');
 
 function loadSpecs() {
-  return require('@money/domain/dist/cashflow-game/table/bot-catalog').botProfiles().map((profile) => profile.spec);
+  return require('@money/domain/dist/cashflow-game/table/bot-catalog')
+    .botProfiles()
+    .map((profile) => profile.spec);
 }
 
 // ───────────────────────────── worker ─────────────────────────────

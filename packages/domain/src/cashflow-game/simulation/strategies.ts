@@ -1,4 +1,4 @@
-import type { CashflowDealCard } from '../types';
+import type { CashflowDealCard, CashflowDoodadCard } from '../types';
 import type { DealChoice, HouseMove, Pile, Policy, PolicyParams, PolicyView } from './policy';
 
 /**
@@ -8,7 +8,7 @@ import type { DealChoice, HouseMove, Pile, Policy, PolicyParams, PolicyView } fr
  * points the knowledge base talks about.
  */
 
-const DEFAULTS: PolicyParams = {
+export const POLICY_DEFAULTS: PolicyParams = {
   buyProperties: true,
   minMonthlyReturn: 0,
   reserveMinor: 0,
@@ -21,6 +21,7 @@ const DEFAULTS: PolicyParams = {
   sellWhenProfitMonths: null,
   repayLoans: false,
   charityTwoDice: true,
+  skipDoodadsAboveMinor: null,
   catchUp: null,
   protectLead: null,
 };
@@ -36,7 +37,7 @@ export function paramPolicy(
   description: string,
   overrides: Partial<PolicyParams> = {},
 ): Policy {
-  const params: PolicyParams = { ...DEFAULTS, ...overrides };
+  const params: PolicyParams = { ...POLICY_DEFAULTS, ...overrides };
 
   /** The knobs as they apply right now: loosened when a rival leads, tightened when this player does (a table only). */
   function effective(view: PolicyView): {
@@ -84,6 +85,12 @@ export function paramPolicy(
     return cashflow >= loanCoverage * addedInterest ? { buy: true } : { buy: false };
   }
 
+  function doodad(_view: PolicyView, card: CashflowDoodadCard): 'pay' | 'pass' {
+    return params.skipDoodadsAboveMinor !== null && card.costMinor > params.skipDoodadsAboveMinor
+      ? 'pass'
+      : 'pay';
+  }
+
   function dealShare(view: PolicyView, card: CashflowDealCard): DealChoice {
     if (!params.shares) return { buy: false };
     const price = card.priceMinor ?? 0;
@@ -106,6 +113,7 @@ export function paramPolicy(
     description,
     params: params as unknown as Record<string, unknown>,
     dice: () => (params.charityTwoDice ? 2 : 1),
+    doodad,
     pile(view: PolicyView, random: () => number): Pile {
       if (params.bigDealFromCashMinor === null) return 'dealSmall';
       if (params.bigDealFromCashMinor <= 0) return 'dealBig';

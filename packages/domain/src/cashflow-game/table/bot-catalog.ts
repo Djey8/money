@@ -1,4 +1,6 @@
-import type { Policy } from '../simulation/policy';
+import type { Policy, PolicyView } from '../simulation/policy';
+import { CHAMPION_BOOK } from './champion-book';
+import { CHARACTERS } from './characters';
 import { PRESET_SPECS, policyFromSpec, type PolicySpec } from '../simulation/strategies';
 
 /**
@@ -21,6 +23,11 @@ export interface BotProfile {
   /** One line for the lobby: how it plays. */
   description: string;
   spec: PolicySpec;
+  /**
+   * A strategy that is not one fixed spec (the profession champion picks its spec by the player's profession). When present it is
+   * what the bot plays; `spec` is then the fallback it names.
+   */
+  build?: () => Policy;
 }
 
 const preset = (id: string): PolicySpec => {
@@ -83,8 +90,77 @@ export const CHAMPION_V1: PolicySpec = {
   },
 };
 
+/**
+ * The strategy of the champion book (`champion-book.ts`, found by `scripts/champion-search.js`): whatever profession the bot has, it
+ * plays the champion of that profession - and champion-v1 for a profession the book does not know.
+ */
+function championByProfession(): Policy {
+  const base = policyFromSpec(CHARACTERS['any']?.spec ?? CHAMPION_V1);
+  const cache = new Map<string, Policy>();
+  const forView = (view: PolicyView): Policy => {
+    const entry = CHAMPION_BOOK[view.books.state.professionId ?? ''];
+    if (!entry) return base;
+    let policy = cache.get(entry.spec.id);
+    if (!policy) {
+      policy = policyFromSpec(entry.spec);
+      cache.set(entry.spec.id, policy);
+    }
+    return policy;
+  };
+  return {
+    id: 'champion',
+    label: 'Champion of the profession',
+    description: 'Plays the champion of its own profession from the champion book.',
+    dice: (view) => forView(view).dice(view),
+    pile: (view, random) => forView(view).pile(view, random),
+    deal: (view, card) => forView(view).deal(view, card),
+    maintain: (view) => forView(view).maintain(view),
+  };
+}
+
+/**
+ * How hard a searched strategy is, from the share of fresh tables it won against the field of the best known strategies (2, 4 and 6
+ * seats, both rule sets, every profession). The field is strong, so even a good strategy wins a minority of those tables.
+ */
+export function difficultyOf(winRate: number): BotDifficulty {
+  if (winRate >= 0.5) return 'champion';
+  if (winRate >= 0.3) return 'hard';
+  if (winRate >= 0.15) return 'medium';
+  return 'easy';
+}
+
+/** The characters (the best of each style) and the global champion, as the searches wrote them (`characters.ts`). */
+function searchedProfiles(): BotProfile[] {
+  const out: BotProfile[] = [];
+  const global = CHARACTERS['any'];
+  if (global) {
+    out.push({
+      id: 'champion-v2',
+      name: 'Champion Cleo II',
+      difficulty: 'champion',
+      description: `The global champion of the second search: ${global.spec.description} It won ${Math.round(global.winRate * 100)}% of fresh tables against the field.`,
+      spec: { ...global.spec, id: 'champion-v2' },
+    });
+  }
+  for (const [style, entry] of Object.entries(CHARACTERS)) {
+    if (style === 'any') continue;
+    out.push({
+      id: `character-${style}`,
+      name: entry.name,
+      difficulty: difficultyOf(entry.winRate),
+      description: `${entry.summary} ${entry.spec.description}`,
+      spec: { ...entry.spec, id: `character-${style}` },
+    });
+  }
+  return out;
+}
+
 /** Built on first use (not at load): nothing that only imports the domain package for something else carries the catalog with it. */
 function buildProfiles(): BotProfile[] {
+  return [...baseProfiles(), ...searchedProfiles()];
+}
+
+function baseProfiles(): BotProfile[] {
   return [
     {
       id: 'never-buy',
@@ -154,6 +230,15 @@ function buildProfiles(): BotProfile[] {
       spec: preset('all-rounder'),
     },
     {
+      id: 'champion',
+      name: 'Master Maxine',
+      difficulty: 'champion',
+      description:
+        'Plays the champion of her own profession: the strategy that won the most tables for that profession in the tournament.',
+      spec: CHAMPION_V1,
+      build: championByProfession,
+    },
+    {
       id: 'champion-v1',
       name: 'Champion Cleo',
       difficulty: 'champion',
@@ -192,7 +277,7 @@ export function botPolicy(id: string): Policy | null {
   if (!profile) return null;
   let policy = cache.get(id);
   if (!policy) {
-    policy = policyFromSpec(profile.spec);
+    policy = profile.build ? profile.build() : policyFromSpec(profile.spec);
     cache.set(id, policy);
   }
   return policy;

@@ -132,3 +132,51 @@ describe('race-aware policies', () => {
     expect(match.cutOff).toBe(false);
   });
 });
+
+describe('passing a Doodad where the rules allow it', () => {
+  const doodadCard = { id: 'd', title: 'Boat', costMinor: 40000 } as never;
+  const view = {} as unknown as PolicyView;
+
+  it('a strategy with the knob set passes the Doodads above its limit, and pays the others', () => {
+    const skipper = paramPolicy('s', 's', '', { skipDoodadsAboveMinor: 30000 });
+    expect(skipper.doodad!(view, doodadCard)).toBe('pass');
+    expect(skipper.doodad!(view, { id: 'd2', title: 'Coffee', costMinor: 2000 } as never)).toBe(
+      'pay',
+    );
+    expect(paramPolicy('z', 'z', '', { skipDoodadsAboveMinor: 0 }).doodad!(view, doodadCard)).toBe(
+      'pass',
+    );
+  });
+
+  it('by default a strategy pays every Doodad', () => {
+    expect(paramPolicy('p', 'p', '').doodad!(view, doodadCard)).toBe('pay');
+  });
+
+  it('at a table: passes under the guided rules, always pays under the strict rules', () => {
+    const skipper = paramPolicy('skipper', 'skipper', '', { skipDoodadsAboveMinor: 0 });
+    const never = paramPolicy('never', 'never', '', { skipDoodadsAboveMinor: null });
+    const other = PRESET_POLICIES.find((p) => p.id === 'all-rounder')!;
+    const play = (rulesBase: 'guided' | 'strict', first: typeof skipper, seed: number) => {
+      const match = playMatch({
+        seed,
+        rulesBase,
+        policies: [first, other],
+        professionIds: ['lehrer', 'lehrer'],
+      });
+      expect(match.problems).toEqual([]);
+      return [match.seats[0].rolls, match.seats[0].passiveIncomeMinor, match.commands];
+    };
+    const seeds = [31, 32, 33, 34, 35, 36];
+    // under strict the knob does nothing: every game is the one a strategy that never skips plays
+    for (const seed of seeds) {
+      expect(play('strict', skipper, seed)).toEqual(play('strict', never, seed));
+    }
+    // under guided the same strategy plays other games
+    const differs = seeds.filter(
+      (seed) =>
+        JSON.stringify(play('guided', skipper, seed)) !==
+        JSON.stringify(play('guided', never, seed)),
+    );
+    expect(differs.length).toBeGreaterThan(0);
+  });
+});

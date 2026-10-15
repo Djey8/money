@@ -7,7 +7,8 @@ import { seededRng } from '../rng';
 import type { Policy, PolicyView } from '../simulation/policy';
 import { PRESET_POLICIES } from '../simulation/strategies';
 import { currentTurn } from '../turn';
-import type { CashflowDealCard } from '../types';
+import type { CashflowDealCard, CashflowDoodadCard } from '../types';
+import { rulesOf } from '../rules';
 import { nextDeadline } from './clock';
 import { nextPassiveCommand } from './passive';
 import {
@@ -286,9 +287,14 @@ export function decide(
       : { type: 'pass_card' };
   }
   if (pending.kind === 'doodad') {
-    return pending.offered
-      ? { type: 'pay_doodad', cardId: pending.offered.cardId }
-      : { type: 'draw_card', deck: 'doodad' };
+    if (!pending.offered) return { type: 'draw_card', deck: 'doodad' };
+    // where the rules let a Doodad be passed, the strategy may take that freedom (guided rules); under strict it always pays
+    if (policy.doodad && rulesOf(books.state).passDoodads === 'allowed' && !pending.paymentDue) {
+      const doodad = cardOf(books, 'doodad', pending.offered.cardId) as
+        CashflowDoodadCard | undefined;
+      if (doodad && policy.doodad(view, doodad) === 'pass') return { type: 'pass_card' };
+    }
+    return { type: 'pay_doodad', cardId: pending.offered.cardId };
   }
   return { type: 'pass_card' };
 }
