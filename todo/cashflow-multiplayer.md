@@ -1,7 +1,7 @@
 # Cashflow game — online multiplayer (lobby, tables, turns, chess clock)
 
 **Status:** plan locked 2026-10-14 (JFK answered Q1–Q7, approved S1 `gamerooms` schema and S2 nginx change; Q8–Q15 take the
-recommendation unless JFK objects). **Nothing is built. M0 done 2026-10-14 (ADR-0010 + three spikes, results in §5.0); Phase T (table engine T1-T7) is built and committed; S1 (rooms store + lobby API), S2 (live channel) and S3 (command endpoint) and S4 (clock service) and S5 (finish and archive) and S6 (bot-client harness) and S7 (MCP tools) are built - **Phase S (the server) is complete**; next: Phase U (client).** Supersedes the one-line
+recommendation unless JFK objects). **Nothing is built. M0 done 2026-10-14 (ADR-0010 + three spikes, results in §5.0); Phase T (table engine T1-T7) is built and committed; S1 (rooms store + lobby API), S2 (live channel) and S3 (command endpoint) and S4 (clock service) and S5 (finish and archive) and S6 (bot-client harness) and S7 (MCP tools) are built - **Phase S (the server) is complete**; Phase U (client) is built, awaiting the first real playtest (`todo/cashflow-multiplayer-playtest.md`).** Supersedes the one-line
 "Phase 6 — multiplayer" stub in [`cashflow-game.md`](cashflow-game.md); builds on the solo engine from
 [`cashflow-game-pro.md`](cashflow-game-pro.md) (Phases A–D) and the rules/legal-actions work in `packages/domain`.
 
@@ -472,6 +472,18 @@ integration tests via podman, docs). Game-account guard on all of it.
 | **U4** | **Player inspector**: per-player tabs (profession card, income statement, balance sheet, positions, history), compare/leaderboard, live event feed.                                                                                                                                                                    | L    | U2             |
 | **U5** | **Time & presence UX**: clock bars per player, timeout/away indicators, pause, "it's your turn" (title flash, sound, Notification API), reconnect banner, mobile layout (you play on an iPhone).                                                                                                                       | M    | S4, U3         |
 | **U6** | **Finish & polish**: results screen, "save to my games", replay viewer (stretch), all UI text in en/de/es/fr/cn/ar (es/fr/cn/ar flagged for native review), `CASHFLOW_GAME_GUIDE.md` multiplayer section, playtest checklist, **your friend playtest**.                                                                | M    | S5, U5         |
+
+**As built (2026-10-15), all in `src/app/tables/` (lazy, self-hosted route table only; chunk-local six-language texts; none of it in the Firebase build - checked by building it and searching the output):**
+
+- **U0** - the rat-race board takes an optional `tokens` input (one coloured, lettered token per player, spread where they share a space, START kept while anyone waits there). The solo path is untouched. The wider extraction of the solo template's presentational pieces was **not** done: the solo blocks read the account's live state, so the table has its own components over the projected table instead (M0(b)).
+- **U1** `tables-lobby` - open tables and my tables, nickname (remembered), join by invite code, create form (name, seats, visibility, clock, end condition, professions, spectators). Missing: recent players, colour pick, filters.
+- **U2** `table-session.service` (EventSource with the session cookie, snapshot + updates merged so a player entry without `books` keeps the old books, replays ignored, command ids + `expectedVersion`) and `table-room` (lobby/ready/start, profession pick, turn banner, ring with all tokens, players' numbers, roll/pause/resume/back).
+- **U3** `table-cards` - the card on the table for everyone; draw, buy (share count), pay, dice, pass, bank loan for the player it is offered to; sell buttons for open offers on or off turn; trade offer, take, counter, decline, withdraw, accept-by-seat. Missing: the solo card catalog's printed flavour text, a "what would this do" preview, offering to one chosen player.
+- **U4** `table-inspector` - standings, any player's income statement and balance sheet, the live feed. Missing: per-player profession card and history list.
+- **U5** clock bar and per-player time banks from the server deadline, "your turn" in the tab title and an opt-in browser notification, mobile layout. The countdown uses the browser's clock against the server's deadline (display only).
+- **U6** results screen (reason, ranking with outcomes), "save to my games", a menu entry for game accounts (a route-data hook, `data.gameMenu`, so the shared menu holds no Pro text), this note and `todo/cashflow-multiplayer-playtest.md`. Still open: the replay viewer (stretch) and the playtest itself.
+
+Nothing in the table screens has run against a real server in a browser yet - only unit tests, the bot harness (server side) and the two builds. The playtest checklist is where that starts.
 
 **Exit:** the exit criterion in §1, on your self-hosted stack, with friends.
 
