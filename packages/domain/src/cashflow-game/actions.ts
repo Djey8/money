@@ -267,6 +267,19 @@ export function playMarketAction(
     whyDiceFirst(books.state) ??
     whyCannotUseCard(books.state, input.cardId);
   if (refused) throw new Error(refused);
+  return marketCardPlan(books, card, deps);
+}
+
+/**
+ * What a Market card does to one player's books, whatever the player's own turn is doing: offers for the properties they own,
+ * a split to decide, a boost, a cost to pay - or nothing when it does not apply to them. `playMarketAction` checks the
+ * player's own turn first; a table plays the same card over every player's books without those checks.
+ */
+export function marketCardPlan(
+  books: GameBooks,
+  card: CashflowMarketCard,
+  deps: ActionDeps,
+): ActionPlan {
   const title = marketHeading(card, deps);
   const label = (symbol: string) => deps.cards.symbolFor(symbol);
   const kind = marketCardKind(card);
