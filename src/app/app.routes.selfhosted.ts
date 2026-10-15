@@ -35,4 +35,8 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./tables/tables-lobby.component').then((m) => m.TablesLobbyComponent),
   },
+  {
+    path: 'tables/:id',
+    loadComponent: () => import('./tables/table-room.component').then((m) => m.TableRoomComponent),
+  },
 ];
