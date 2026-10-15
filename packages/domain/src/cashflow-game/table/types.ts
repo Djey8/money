@@ -122,6 +122,26 @@ export interface TableClock {
   timeouts: Record<string, number>;
 }
 
+/**
+ * A Deal card offered to the other players (todo/cashflow-multiplayer.md slice T7): the "sell to a friend" of the solo game, at
+ * a table. The card is the one the seller holds on their space - a property or a special asset; a share card stays with whoever
+ * drew it. Nothing moves until both sides have agreed on a price, and then everything moves at once. It lives exactly as long as
+ * the card is in the seller's hand: when their turn ends, they buy the card themselves, or they withdraw it, it is gone.
+ */
+export interface TradeOffer {
+  sellerId: string;
+  cardId: string;
+  deck: 'dealSmall' | 'dealBig';
+  /** One player, or null for the whole table. */
+  to: string | null;
+  /** The price the seller asks, in minor units. */
+  priceMinor: number;
+  /** What buyers proposed instead (at most one per buyer); the seller may accept one. */
+  counters: { playerId: string; priceMinor: number }[];
+  /** Buyers who said no (the offer is then not for them any more). */
+  declined: string[];
+}
+
 export interface Table {
   id: string;
   /** Counts accepted commands; the server's optimistic-concurrency token. */
@@ -142,6 +162,8 @@ export interface Table {
   /** Set when the game is over. */
   result: TableResult | null;
   clock: TableClock;
+  /** The Deal card on offer to the other players, if any - at most one, since only the player on the move holds a card. */
+  trade: TradeOffer | null;
   /**
    * The table's discard piles: per deck, the card ids drawn since its last reshuffle. There is **one** set for the whole table
    * (todo/cashflow-multiplayer.md T2), so two players never draw the same card until the pile runs out and is reshuffled.
@@ -191,6 +213,12 @@ export type TableCommand =
   | { type: 'roll_decision'; title?: string }
   | { type: 'pass_card' }
   | { type: 'bank_loan'; amountMinor: number }
+  // Trading the card in hand (T7).
+  | { type: 'offer_trade'; priceMinor: number; to?: string }
+  | { type: 'withdraw_trade' }
+  | { type: 'counter_trade'; priceMinor: number }
+  | { type: 'decline_trade' }
+  | { type: 'accept_trade'; from?: string }
   // Any seated player, any time the rules let them (todo/cashflow-multiplayer.md §4.0, decision 5a).
   | { type: 'sell_position'; input: SellInput };
 
@@ -223,6 +251,12 @@ export type TableEventType =
   | 'player_escaped'
   | 'player_bankrupt'
   | 'game_finished'
+  | 'trade_offered'
+  | 'trade_countered'
+  | 'trade_declined'
+  | 'trade_withdrawn'
+  | 'trade_made'
+  | 'trade_expired'
   | 'turn_timeout'
   | 'player_away'
   | 'player_returned'

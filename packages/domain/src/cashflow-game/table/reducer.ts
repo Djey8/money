@@ -27,6 +27,7 @@ import {
   whyClockBlocks,
 } from './clock';
 import { nextPassiveCommand } from './passive';
+import { applyTradeCommand, isTradeCommand } from './trade';
 import { isAlive, settleTable } from './turns';
 import {
   PLAYER_NAME_MAX,
@@ -109,6 +110,7 @@ export function createTable(input: CreateTableInput, ctx: TableContext): Command
     turnRolled: false,
     finishers: [],
     result: null,
+    trade: null,
     clock: { turnStartedAt: null, deadlineAt: null, banksMs: {}, pausedAt: null, timeouts: {} },
     drawnCardIds: { dealSmall: [], dealBig: [], market: [], doodad: [] },
     rngState: input.seed >>> 0,
@@ -131,6 +133,18 @@ export function applyCommand(
   const me = table.players.find((player) => player.id === playerId);
   if (command.type !== 'join' && !me) fail('NOT_A_MEMBER', 'You are not at this table.');
   const version = table.version + 1;
+  if (isTradeCommand(command)) {
+    const traded = applyTradeCommand(
+      table,
+      playerId,
+      command,
+      version,
+      nowOf(ctx),
+      ctx,
+      (type, who, data) => event(ctx, version, type, who, data),
+    );
+    return runAwayTurns(traded, version, ctx);
+  }
   if (isMoveCommand(command)) {
     return runAwayTurns(play(table, playerId, command, version, ctx), version, ctx);
   }

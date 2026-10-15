@@ -172,7 +172,7 @@ function advance(table: Table, emit: EmitEvent, now: number): Table {
  * After any change to the table's books or seats: note who is out, end the game if it is over, pass the turn on if the active
  * player is finished. Pure; events go to `emit`.
  */
-export function settleTable(table: Table, emit: EmitEvent, now: number): Table {
+function settleCore(table: Table, emit: EmitEvent, now: number): Table {
   let next = noteFinishers(table, emit);
   let ended = checkEnd(next, emit);
   if (ended) return ended;
@@ -190,4 +190,30 @@ export function settleTable(table: Table, emit: EmitEvent, now: number): Table {
     if (next.activePlayerId === null) return finish(next, 'everyone-out', null, emit);
   }
   return next;
+}
+
+/** A trade offer that is no longer on: the card left the seller's hand, or their turn is over (T7). */
+export function expireTrade(table: Table, emit: EmitEvent): Table {
+  const offer = table.trade;
+  if (!offer) return table;
+  const seller = table.players.find((p) => p.id === offer.sellerId);
+  const pending = seller?.books?.state.turn?.pending;
+  const open =
+    table.phase === 'playing' &&
+    table.activePlayerId === offer.sellerId &&
+    pending?.offered?.cardId === offer.cardId &&
+    !pending.played &&
+    !pending.closed &&
+    !pending.purchased;
+  if (open) return table;
+  emit('trade_expired', offer.sellerId, { cardId: offer.cardId });
+  return { ...table, trade: null };
+}
+
+/**
+ * After any change to the table's books or seats: note who is out, end the game if it is over, pass the turn on if the active
+ * player is finished, and drop a trade offer whose card has left the seller's hand. Pure; events go to `emit`.
+ */
+export function settleTable(table: Table, emit: EmitEvent, now: number): Table {
+  return expireTrade(settleCore(table, emit, now), emit);
 }

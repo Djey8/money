@@ -57,6 +57,11 @@ export interface TableSimConfig {
   slowSeats?: number[];
   /** Stop after this many commands (a game that has not ended by then is cut off). */
   maxCommands?: number;
+  /**
+   * A player who would pass a property or asset card offers it to the table for a tenth of its deposit; the first other player
+   * whose policy would buy it takes it. Off by default (it changes the game, and the golden game).
+   */
+  trading?: boolean;
   /** Milliseconds each command takes. */
   stepMs?: number;
   /** What a table needs from outside, without the clock (the simulation provides that). */
@@ -362,6 +367,29 @@ export function simulateTable(config: TableSimConfig): TableSimResult {
     }
   };
 
+  /** Offers the card in hand to the others; true when one of them took it (the turn has moved on). */
+  const offerToTable = (current: Table, seller: string): boolean => {
+    const books = current.players.find((p) => p.id === seller)!.books!;
+    const offered = currentTurn(books.state).pending?.offered;
+    if (!offered || (offered.deck !== 'dealSmall' && offered.deck !== 'dealBig')) return false;
+    const card = cardOf(books, offered.deck, offered.cardId) as CashflowDealCard;
+    if (!card || card.assetKind === 'share') return false;
+    const priceMinor = Math.max(
+      100,
+      Math.round((card.depositMinor ?? card.costMinor ?? 10_000) * 0.1),
+    );
+    if (!send(seller, { type: 'offer_trade', priceMinor })) return false;
+    for (const buyer of (table as Table).players) {
+      const other = buyer.books;
+      if (buyer.id === seller || !other || buyer.status !== 'active') continue;
+      if (currentTurn(other.state).phase === 'over') continue;
+      const policy = policies[ids.indexOf(buyer.id) % policies.length];
+      if (policy.deal(viewOf(other), card).buy && send(buyer.id, { type: 'accept_trade' }))
+        return true;
+    }
+    return false;
+  };
+
   while (table.phase === 'playing' && commands < maxCommands) {
     const current = table;
     const who = current.activePlayerId as string;
@@ -398,6 +426,7 @@ export function simulateTable(config: TableSimConfig): TableSimResult {
       break;
     }
     const eventsBefore = events.length;
+    if (config.trading && command.type === 'pass_card' && offerToTable(fresh, who)) continue;
     if (!send(who, command)) {
       // The rules refused (no cash for the card): fall back to the passive move, which always exists.
       const fallback = nextPassiveCommand(fresh, who) ?? ({ type: 'pass_card' } as TableCommand);

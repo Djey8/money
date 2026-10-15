@@ -70,6 +70,7 @@ export interface TableView {
   /** The active player has rolled and is settling their space. */
   turnRolled: boolean;
   clock: ClockView;
+  trade: TradeView | null;
   result: ResultView | null;
   decks: Record<CashflowDeckKind, DeckView>;
   createdAt: string;
@@ -85,6 +86,18 @@ export interface ClockView {
   banksMs: (number | null)[];
   /** Timeouts in a row, by seat. */
   timeouts: number[];
+}
+
+/** The card on offer, by seat. Counters are everybody's to see: a trade at the table is open. */
+export interface TradeView {
+  sellerSeat: number;
+  cardId: string;
+  deck: 'dealSmall' | 'dealBig';
+  /** The one player it is offered to, or null for the whole table. */
+  toSeat: number | null;
+  priceMinor: number;
+  counters: { seat: number; priceMinor: number }[];
+  declinedSeats: number[];
 }
 
 export interface ResultView {
@@ -143,6 +156,20 @@ export function projectFor(table: Table, viewerId: string | null): TableView {
     activeSeat: table.activePlayerId === null ? null : seatOf(table.activePlayerId),
     tableRound: table.tableRound,
     turnRolled: table.turnRolled,
+    trade: table.trade
+      ? {
+          sellerSeat: seatOf(table.trade.sellerId),
+          cardId: table.trade.cardId,
+          deck: table.trade.deck,
+          toSeat: table.trade.to === null ? null : seatOf(table.trade.to),
+          priceMinor: table.trade.priceMinor,
+          counters: table.trade.counters.map((c) => ({
+            seat: seatOf(c.playerId),
+            priceMinor: c.priceMinor,
+          })),
+          declinedSeats: table.trade.declined.map(seatOf),
+        }
+      : null,
     clock: {
       deadlineAt: nextDeadline(table),
       pausedAt: table.clock.pausedAt,

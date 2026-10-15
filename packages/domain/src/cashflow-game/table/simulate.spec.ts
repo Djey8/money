@@ -102,6 +102,25 @@ describe("whole tables, played by the strategy lab's policies", () => {
   });
 });
 
+describe('trading the card in hand', () => {
+  it('whole games with trades keep every invariant, and replay', () => {
+    let trades = 0;
+    for (const [players, seed] of [
+      [3, 1],
+      [4, 2],
+      [6, 3],
+      [8, 4],
+    ]) {
+      const run = simulateTable(base({ players, seed, trading: true }));
+      expect(run.problems).toEqual([]);
+      expect(run.table.phase).toBe('finished');
+      trades += count(run.events, 'trade_made');
+      expect(replayScript(run.script, context).table).toEqual(run.table);
+    }
+    expect(trades).toBeGreaterThan(0);
+  });
+});
+
 describe('players who do not answer', () => {
   it('a slow player is timed out and then marked away; the table still finishes', () => {
     const run = simulateTable(
