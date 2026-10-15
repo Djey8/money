@@ -21,6 +21,7 @@ import {
 import { TableCardsComponent } from './table-cards.component';
 import { TableInspectorComponent } from './table-inspector.component';
 import { TableSessionService } from './table-session.service';
+import { TablesApiService, type BotInfo } from './tables-api.service';
 import { bankSeconds, clockReading, formatClock } from './table-clock';
 import { TurnAlert } from './table-turn-alert';
 import { tableRoomTexts, type TableRoomTexts } from './table-room.texts';
@@ -96,8 +97,18 @@ const money = (minor: number | null): string =>
                 >{{ row.player.name }}
                 <small *ngIf="row.isYou">({{ t.you }})</small>
                 <small *ngIf="row.isHost">· {{ t.host }}</small>
-                <small *ngIf="!row.online">· {{ t.offline }}</small></span
+                <small *ngIf="row.player.bot">· 🤖 {{ t.botTag }}</small>
+                <small *ngIf="!row.online && !row.player.bot">· {{ t.offline }}</small></span
               >
+              <button
+                *ngIf="row.player.bot && isHost() && table.phase === 'lobby'"
+                class="btn"
+                type="button"
+                [disabled]="session.busy()"
+                (click)="session.lobby('kick', { seat: row.player.seat })"
+              >
+                {{ t.removeBot }}
+              </button>
               <span *ngIf="table.phase === 'lobby'">{{
                 row.player.ready ? '✓ ' + t.ready : t.notReady
               }}</span>
@@ -120,6 +131,31 @@ const money = (minor: number | null): string =>
               {{ t.start }}
             </button>
             <button class="btn" type="button" (click)="leave()">{{ t.leave }}</button>
+          </div>
+          <div class="tr-bots" *ngIf="table.phase === 'lobby' && isHost() && botCatalog().length">
+            <h4>🤖 {{ t.addBot }}</h4>
+            <p class="tr-hint">{{ t.botHint }}</p>
+            <div class="tr-actions">
+              <select
+                class="tr-bot-select"
+                [value]="botChoice"
+                (change)="botChoice = $any($event.target).value"
+                [attr.aria-label]="t.addBot"
+              >
+                <option *ngFor="let bot of botCatalog()" [value]="bot.id">
+                  {{ bot.name }} - {{ level(bot) }}
+                </option>
+              </select>
+              <button
+                class="btn"
+                type="button"
+                [disabled]="session.busy() || table.players.length >= table.settings.maxSeats"
+                (click)="addBot()"
+              >
+                {{ t.addBot }}
+              </button>
+            </div>
+            <p class="tr-hint">{{ botDescription() }}</p>
           </div>
           <p class="tr-hint" *ngIf="table.phase === 'lobby' && isHost() && !canStart()">
             {{ t.needPlayers }}
@@ -291,8 +327,9 @@ const money = (minor: number | null): string =>
                 <span class="tr-name"
                   >{{ row.player.name }}
                   <small *ngIf="row.isYou">({{ t.you }})</small>
+                  <small *ngIf="row.player.bot">· 🤖 {{ t.botTag }}</small>
                   <small *ngIf="row.player.away">· {{ t.away }}</small>
-                  <small *ngIf="!row.online">· {{ t.offline }}</small></span
+                  <small *ngIf="!row.online && !row.player.bot">· {{ t.offline }}</small></span
                 >
                 <small *ngIf="row.professionTitle">{{ row.professionTitle }}</small>
                 <small *ngIf="bank(row.player.seat) !== null" class="tr-bank"
@@ -461,6 +498,18 @@ const money = (minor: number | null): string =>
         flex-wrap: wrap;
         gap: 4px 8px;
       }
+      .tr-bots {
+        margin-top: 16px;
+        border-top: 1px solid var(--color-border, #ddd);
+        padding-top: 8px;
+      }
+      .tr-bots h4 {
+        margin: 0 0 4px;
+      }
+      .tr-bot-select {
+        flex: 1 1 180px;
+        min-width: 0;
+      }
       .tr-hint {
         color: var(--color-text-secondary, #666);
         font-size: 0.9em;
@@ -511,6 +560,7 @@ export class TableRoomComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private translate = inject(TranslateService);
+  private tablesApi = inject(TablesApiService);
 
   t: TableRoomTexts = tableRoomTexts('en');
   rtl = false;
@@ -619,6 +669,7 @@ export class TableRoomComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.botFetch.destroy();
     if (this.timer) clearInterval(this.timer);
     this.alerting.destroy();
     this.alert.turnEnded();
@@ -628,6 +679,45 @@ export class TableRoomComponent implements OnInit, OnDestroy {
   fmt = money;
 
   readonly saved = signal(false);
+
+  /** The bots the host can seat, fetched once when the host sits in a lobby. */
+  readonly botCatalog = signal<BotInfo[]>([]);
+  botChoice = '';
+  private botsRequested = false;
+  private readonly botFetch = effect(() => {
+    const view = this.view();
+    if (view && view.phase === 'lobby' && this.isHost() && !this.botsRequested) {
+      this.botsRequested = true;
+      this.tablesApi.bots().subscribe({
+        next: (r) => {
+          this.botCatalog.set(r.items);
+          if (!this.botChoice && r.items.length) this.botChoice = r.items[0].id;
+        },
+        error: () => (this.botsRequested = false),
+      });
+    }
+  });
+
+  level(bot: BotInfo): string {
+    switch (bot.difficulty) {
+      case 'easy':
+        return this.t.levelEasy;
+      case 'medium':
+        return this.t.levelMedium;
+      case 'hard':
+        return this.t.levelHard;
+      default:
+        return this.t.levelChampion;
+    }
+  }
+
+  botDescription(): string {
+    return this.botCatalog().find((bot) => bot.id === this.botChoice)?.description ?? '';
+  }
+
+  addBot(): void {
+    if (this.botChoice) void this.session.lobby('bots', { policyId: this.botChoice });
+  }
 
   async saveGame(): Promise<void> {
     if (await this.session.save()) this.saved.set(true);

@@ -21,6 +21,14 @@ export interface TableSummary {
   joined: boolean;
 }
 
+/** One bot a host can seat (GET /game/rooms/bots). */
+export interface BotInfo {
+  id: string;
+  name: string;
+  difficulty: 'easy' | 'medium' | 'hard' | 'champion';
+  description: string;
+}
+
 export interface CreateTableInput {
   nickname: string;
   settings: {
@@ -56,6 +64,10 @@ export class TablesApiService {
 
   list(scope: 'open' | 'mine' | 'recent' = 'open'): Observable<{ items: TableSummary[] }> {
     return this.http.get<{ items: TableSummary[] }>(`${this.base}?scope=${scope}`);
+  }
+
+  bots(): Observable<{ items: BotInfo[] }> {
+    return this.http.get<{ items: BotInfo[] }>(`${this.base}/bots`);
   }
 
   create(input: CreateTableInput): Observable<{ id: string; inviteCode?: string }> {

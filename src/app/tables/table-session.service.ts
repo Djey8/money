@@ -125,7 +125,7 @@ export class TableSessionService {
 
   /** A lobby action: ready, start, profession, leave, kick, settings. */
   async lobby(
-    path: 'leave' | 'ready' | 'kick' | 'settings' | 'start' | 'profession',
+    path: 'leave' | 'ready' | 'kick' | 'settings' | 'start' | 'profession' | 'bots',
     body: Record<string, unknown> = {},
   ): Promise<boolean> {
     const method =

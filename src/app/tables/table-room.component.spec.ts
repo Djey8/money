@@ -1,5 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ActivatedRoute, provideRouter } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 import { TableRoomComponent } from './table-room.component';
@@ -74,6 +76,8 @@ async function render(session: ReturnType<typeof fakeSession>) {
   await TestBed.configureTestingModule({
     imports: [TableRoomComponent, TranslateModule.forRoot()],
     providers: [
+      provideHttpClient(),
+      provideHttpClientTesting(),
       provideRouter([]),
       { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => 'r1' } } } },
     ],
@@ -347,6 +351,92 @@ describe('TableRoomComponent', () => {
       fixture.detectChanges();
       expect(session.save).toHaveBeenCalledTimes(1);
       expect(fixture.nativeElement.textContent).toContain('Saved in your games.');
+    });
+  });
+
+  describe('bots in the lobby', () => {
+    const lobbyView = (youSeat: number, extra: Record<string, unknown>[] = []) => ({
+      id: 'r1',
+      version: 2,
+      phase: 'lobby',
+      settings,
+      hostSeat: 0,
+      youSeat,
+      activeSeat: null,
+      tableRound: 0,
+      players: [...players(), ...extra],
+      clock: { deadlineAt: null, pausedAt: null },
+    });
+    const bot = {
+      seat: 2,
+      name: 'Allie All-Round',
+      color: '#2ecc71',
+      ready: true,
+      status: 'active',
+      away: false,
+      hasPicked: false,
+      pick: null,
+      professionId: null,
+      books: null,
+      bot: { policyId: 'all-rounder' },
+    };
+    const catalog = {
+      items: [
+        { id: 'never-buy', name: 'Sleepy Sam', difficulty: 'easy', description: 'Never invests.' },
+        {
+          id: 'all-rounder',
+          name: 'Allie All-Round',
+          difficulty: 'hard',
+          description: 'Does it all.',
+        },
+      ],
+    };
+    const button = (fixture: { nativeElement: HTMLElement }, text: string) =>
+      Array.from(fixture.nativeElement.querySelectorAll('button')).find((b) =>
+        (b as HTMLElement).textContent!.includes(text),
+      ) as HTMLButtonElement | undefined;
+
+    it('the host sees the catalog and seats the chosen bot', async () => {
+      const session = fakeSession(lobbyView(0));
+      const fixture = await render(session);
+      TestBed.inject(HttpTestingController)
+        .expectOne((r) => r.url.endsWith('/v1/game/rooms/bots'))
+        .flush(catalog);
+      fixture.detectChanges();
+      expect(fixture.nativeElement.textContent).toContain('Add a bot');
+      expect(fixture.nativeElement.textContent).toContain('Sleepy Sam - easy');
+      expect(fixture.nativeElement.textContent).toContain('Never invests.');
+      const select = fixture.nativeElement.querySelector('.tr-bot-select') as HTMLSelectElement;
+      select.value = 'all-rounder';
+      select.dispatchEvent(new Event('change'));
+      fixture.detectChanges();
+      button(fixture, 'Add a bot')!.click();
+      expect(session.lobby).toHaveBeenCalledWith('bots', { policyId: 'all-rounder' });
+    });
+
+    it('a guest does not see the catalog, and nothing is fetched for them', async () => {
+      const fixture = await render(fakeSession(lobbyView(1)));
+      TestBed.inject(HttpTestingController).expectNone((r) => r.url.endsWith('/bots'));
+      expect(fixture.nativeElement.textContent).not.toContain('Add a bot');
+    });
+
+    it('a bot shows with its marker, and only the host can remove it', async () => {
+      const session = fakeSession(lobbyView(0, [bot]));
+      const fixture = await render(session);
+      TestBed.inject(HttpTestingController)
+        .match(() => true)
+        .forEach((r) => r.flush(catalog));
+      fixture.detectChanges();
+      expect(fixture.nativeElement.textContent).toContain('Allie All-Round');
+      expect(fixture.nativeElement.textContent).toContain('🤖 bot');
+      button(fixture, 'Remove')!.click();
+      expect(session.lobby).toHaveBeenCalledWith('kick', { seat: 2 });
+    });
+
+    it('a guest sees the bot but has no remove button', async () => {
+      const fixture = await render(fakeSession(lobbyView(1, [bot])));
+      expect(fixture.nativeElement.textContent).toContain('🤖 bot');
+      expect(button(fixture, 'Remove')).toBeUndefined();
     });
   });
 });
