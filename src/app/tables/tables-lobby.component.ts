@@ -38,7 +38,10 @@ function rememberNickname(name: string): void {
     <div class="tl-page" [attr.dir]="rtl ? 'rtl' : 'ltr'">
       <header class="tl-head">
         <h2>🎲 {{ t.title }}</h2>
-        <button class="btn" type="button" (click)="reload()">{{ t.refresh }}</button>
+        <span class="tl-head-actions">
+          <a class="btn" routerLink="/docs/cashflow" [title]="t.howItWorks">ⓘ {{ t.howItWorks }}</a>
+          <button class="btn" type="button" (click)="reload()">{{ t.refresh }}</button>
+        </span>
       </header>
 
       <p class="tl-error" *ngIf="error" role="alert">{{ error }}</p>
@@ -191,6 +194,11 @@ function rememberNickname(name: string): void {
         display: flex;
         justify-content: space-between;
         align-items: center;
+        gap: 8px;
+      }
+      .tl-head-actions {
+        display: flex;
+        flex-wrap: wrap;
         gap: 8px;
       }
       .tl-card {

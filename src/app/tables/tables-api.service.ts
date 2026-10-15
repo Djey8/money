@@ -21,6 +21,8 @@ export interface TableSummary {
   joined: boolean;
 }
 
+export type BotLevel = 'master' | 'strong' | 'casual' | 'beginner';
+
 /** One bot a host can seat (GET /game/rooms/bots). */
 export interface BotInfo {
   id: string;
@@ -66,8 +68,10 @@ export class TablesApiService {
     return this.http.get<{ items: TableSummary[] }>(`${this.base}?scope=${scope}`);
   }
 
-  bots(): Observable<{ items: BotInfo[] }> {
-    return this.http.get<{ items: BotInfo[] }>(`${this.base}/bots`);
+  bots(): Observable<{ items: BotInfo[]; levels?: { id: BotLevel; mistakes: number }[] }> {
+    return this.http.get<{ items: BotInfo[]; levels?: { id: BotLevel; mistakes: number }[] }>(
+      `${this.base}/bots`,
+    );
   }
 
   create(input: CreateTableInput): Observable<{ id: string; inviteCode?: string }> {

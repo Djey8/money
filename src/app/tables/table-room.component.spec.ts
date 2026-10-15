@@ -411,7 +411,17 @@ describe('TableRoomComponent', () => {
       select.dispatchEvent(new Event('change'));
       fixture.detectChanges();
       button(fixture, 'Add a bot')!.click();
-      expect(session.lobby).toHaveBeenCalledWith('bots', { policyId: 'all-rounder' });
+      const level = fixture.nativeElement.querySelectorAll(
+        '.tr-bot-select',
+      )[1] as HTMLSelectElement;
+      level.value = 'casual';
+      level.dispatchEvent(new Event('change'));
+      fixture.detectChanges();
+      button(fixture, 'Add a bot')!.click();
+      expect(session.lobby).toHaveBeenCalledWith('bots', {
+        policyId: 'all-rounder',
+        level: 'casual',
+      });
     });
 
     it('a guest does not see the catalog, and nothing is fetched for them', async () => {

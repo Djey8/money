@@ -55,6 +55,7 @@ const en = {
   failed: 'That did not work',
   loading: 'Loading…',
   notGame: 'Tables are for game accounts only.',
+  howItWorks: 'How it works',
 };
 export type TablesTexts = typeof en;
 
@@ -107,6 +108,7 @@ const de: TablesTexts = {
   failed: 'Das hat nicht geklappt',
   loading: 'Lädt…',
   notGame: 'Tische gibt es nur für Spielkonten.',
+  howItWorks: 'So funktioniert es',
 };
 
 const es: TablesTexts = {
@@ -158,6 +160,7 @@ const es: TablesTexts = {
   failed: 'No ha funcionado',
   loading: 'Cargando…',
   notGame: 'Las mesas son solo para cuentas de juego.',
+  howItWorks: 'Cómo funciona',
 };
 
 const fr: TablesTexts = {
@@ -209,6 +212,7 @@ const fr: TablesTexts = {
   failed: "Ça n'a pas marché",
   loading: 'Chargement…',
   notGame: 'Les tables sont réservées aux comptes de jeu.',
+  howItWorks: 'Comment ça marche',
 };
 
 const cn: TablesTexts = {
@@ -260,6 +264,7 @@ const cn: TablesTexts = {
   failed: '操作失败',
   loading: '加载中…',
   notGame: '牌桌仅限游戏账户使用。',
+  howItWorks: '玩法说明',
 };
 
 const ar: TablesTexts = {
@@ -311,6 +316,7 @@ const ar: TablesTexts = {
   failed: 'لم تنجح العملية',
   loading: 'جارٍ التحميل…',
   notGame: 'الطاولات لحسابات اللعبة فقط.',
+  howItWorks: 'كيف تعمل',
 };
 
 const DICTIONARIES: Record<TablesLang, TablesTexts> = { en, de, es, fr, cn, ar };

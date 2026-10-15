@@ -1466,17 +1466,9 @@
         },
         {
           "type": "table",
-          "head": [
-            "What",
-            "Solo",
-            "At a table"
-          ],
+          "head": ["What", "Solo", "At a table"],
           "rows": [
-            [
-              "Who rolls",
-              "You",
-              "The player whose turn it is; the dice are the server's"
-            ],
+            ["Who rolls", "You", "The player whose turn it is; the dice are the server's"],
             [
               "Card piles",
               "Yours",
@@ -1487,21 +1479,13 @@
               "Any pile, any card (free rules)",
               "One random card per space: take it or pass it"
             ],
-            [
-              "Buying",
-              "Any time (free rules)",
-              "Only with the card in hand"
-            ],
+            ["Buying", "Any time (free rules)", "Only with the card in hand"],
             [
               "Rolls and entries",
               "You may report a roll, type a transaction",
               "Never: only the server rolls, nothing is typed in"
             ],
-            [
-              "Selling",
-              "At a price you name (free rules)",
-              "Only into an offer a card made"
-            ],
+            ["Selling", "At a price you name (free rules)", "Only into an offer a card made"],
             [
               "Winning",
               "Escape the rat race",
@@ -1598,11 +1582,7 @@
         },
         {
           "type": "table",
-          "head": [
-            "Level",
-            "Bots",
-            "How they play"
-          ],
+          "head": ["Level", "Bots", "How they play"],
           "rows": [
             [
               "Easy",
@@ -1621,8 +1601,13 @@
             ],
             [
               "Champion",
-              "Champion Cleo, Master Maxine",
-              "Cleo plays the one strategy that won the most tables; Maxine plays the champion of her own profession"
+              "Champion Cleo, Champion Cleo II, Master Maxine",
+              "Cleo plays the one strategy that won the most tables; Cleo II the global champion of the second search; Maxine plays the champion of her own profession"
+            ],
+            [
+              "Characters",
+              "Investor Ines, Stock Sasha, Network Nils, Leverage Leo, Lucky Lena, Prudent Paula, Chaser Chen",
+              "Each plays the best version of one style - only properties / stocks / marketing / borrowing / dice cards and marketing / no loans and safe / more risk when behind - from hard to champion strength"
             ]
           ]
         },
@@ -1630,7 +1615,7 @@
           "type": "callout",
           "kind": "note",
           "title": "Fair play",
-          "text": "Nothing a bot does is hidden: every move is in the log like anyone's. The level says how often a strategy won tables in the tournament - not what will happen in one game: the dice decide a lot."
+          "text": "Nothing a bot does is hidden: every move is in the log like anyone's. The level says how often a strategy won tables in the tournament - not what will happen in one game: the dice decide a lot. Each bot can be seated at a skill level - master, strong, casual or beginner: the lower levels slip now and then (pass a good deal, take a poor one, forget to sell), so you can tune how hard the table is."
         }
       ]
     },

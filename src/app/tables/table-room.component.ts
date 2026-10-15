@@ -21,7 +21,7 @@ import {
 import { TableCardsComponent } from './table-cards.component';
 import { TableInspectorComponent } from './table-inspector.component';
 import { TableSessionService } from './table-session.service';
-import { TablesApiService, type BotInfo } from './tables-api.service';
+import { TablesApiService, type BotInfo, type BotLevel } from './tables-api.service';
 import { bankSeconds, clockReading, formatClock } from './table-clock';
 import { TurnAlert } from './table-turn-alert';
 import { tableRoomTexts, type TableRoomTexts } from './table-room.texts';
@@ -145,6 +145,14 @@ const money = (minor: number | null): string =>
                 <option *ngFor="let bot of botCatalog()" [value]="bot.id">
                   {{ bot.name }} - {{ level(bot) }}
                 </option>
+              </select>
+              <select
+                class="tr-bot-select"
+                [value]="botLevel"
+                (change)="botLevel = $any($event.target).value"
+                [attr.aria-label]="t.skillLabel"
+              >
+                <option *ngFor="let level of botLevels" [value]="level">{{ skill(level) }}</option>
               </select>
               <button
                 class="btn"
@@ -683,6 +691,8 @@ export class TableRoomComponent implements OnInit, OnDestroy {
   /** The bots the host can seat, fetched once when the host sits in a lobby. */
   readonly botCatalog = signal<BotInfo[]>([]);
   botChoice = '';
+  botLevel: BotLevel = 'master';
+  readonly botLevels: BotLevel[] = ['master', 'strong', 'casual', 'beginner'];
   private botsRequested = false;
   private readonly botFetch = effect(() => {
     const view = this.view();
@@ -715,8 +725,23 @@ export class TableRoomComponent implements OnInit, OnDestroy {
     return this.botCatalog().find((bot) => bot.id === this.botChoice)?.description ?? '';
   }
 
+  skill(level: BotLevel): string {
+    switch (level) {
+      case 'master':
+        return this.t.skillMaster;
+      case 'strong':
+        return this.t.skillStrong;
+      case 'casual':
+        return this.t.skillCasual;
+      default:
+        return this.t.skillBeginner;
+    }
+  }
+
   addBot(): void {
-    if (this.botChoice) void this.session.lobby('bots', { policyId: this.botChoice });
+    if (this.botChoice) {
+      void this.session.lobby('bots', { policyId: this.botChoice, level: this.botLevel });
+    }
   }
 
   async saveGame(): Promise<void> {

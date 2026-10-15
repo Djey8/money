@@ -1496,17 +1496,9 @@
         },
         {
           "type": "table",
-          "head": [
-            "Was",
-            "Einzelspiel",
-            "Am Tisch"
-          ],
+          "head": ["Was", "Einzelspiel", "Am Tisch"],
           "rows": [
-            [
-              "Wer würfelt",
-              "Du",
-              "Wer am Zug ist; die Würfel gehören dem Server"
-            ],
+            ["Wer würfelt", "Du", "Wer am Zug ist; die Würfel gehören dem Server"],
             [
               "Kartenstapel",
               "Deine",
@@ -1517,11 +1509,7 @@
               "Jeder Stapel, jede Karte (freie Regeln)",
               "Eine zufällige Karte pro Feld: nehmen oder passen"
             ],
-            [
-              "Kaufen",
-              "Jederzeit (freie Regeln)",
-              "Nur mit der Karte in der Hand"
-            ],
+            ["Kaufen", "Jederzeit (freie Regeln)", "Nur mit der Karte in der Hand"],
             [
               "Würfe und Eingaben",
               "Du darfst einen Wurf melden, Buchungen tippen",
@@ -1628,11 +1616,7 @@
         },
         {
           "type": "table",
-          "head": [
-            "Stufe",
-            "Bots",
-            "Wie sie spielen"
-          ],
+          "head": ["Stufe", "Bots", "Wie sie spielen"],
           "rows": [
             [
               "Leicht",
@@ -1651,8 +1635,13 @@
             ],
             [
               "Champion",
-              "Champion Cleo, Master Maxine",
-              "Cleo spielt die eine Strategie, die die meisten Tische gewann; Maxine spielt den Champion ihres eigenen Berufs"
+              "Champion Cleo, Champion Cleo II, Master Maxine",
+              "Cleo spielt die eine Strategie, die die meisten Tische gewann; Cleo II den globalen Champion der zweiten Suche; Maxine spielt den Champion ihres eigenen Berufs"
+            ],
+            [
+              "Charaktere",
+              "Investor Ines, Stock Sasha, Network Nils, Leverage Leo, Lucky Lena, Prudent Paula, Chaser Chen",
+              "Jeder spielt die beste Version eines Stils - nur Immobilien / Aktien / Marketing / Kredite / Würfelkarten und Marketing / keine Kredite und sicher / mehr Risiko im Rückstand - von schwer bis Champion-Stärke"
             ]
           ]
         },
@@ -1660,7 +1649,7 @@
           "type": "callout",
           "kind": "note",
           "title": "Fair Play",
-          "text": "Nichts, was ein Bot tut, ist verborgen: jeder Zug steht im Protokoll wie bei jedem anderen. Die Stufe sagt, wie oft eine Strategie im Turnier Tische gewann - nicht, was in einem Spiel passiert: die Würfel entscheiden viel."
+          "text": "Nichts, was ein Bot tut, ist verborgen: jeder Zug steht im Protokoll wie bei jedem anderen. Die Stufe sagt, wie oft eine Strategie im Turnier Tische gewann - nicht, was in einem Spiel passiert: die Würfel entscheiden viel. Jeder Bot kann auf einer Stufe sitzen - Meister, stark, locker oder Anfänger: die niedrigeren Stufen patzen ab und zu (eine gute Gelegenheit auslassen, eine schlechte nehmen, das Verkaufen vergessen), so stellst du ein, wie schwer der Tisch ist."
         }
       ]
     },

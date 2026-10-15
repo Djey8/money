@@ -1651,17 +1651,9 @@
         },
         {
           "type": "table",
-          "head": [
-            "Quoi",
-            "En solo",
-            "À une table"
-          ],
+          "head": ["Quoi", "En solo", "À une table"],
           "rows": [
-            [
-              "Qui lance",
-              "Vous",
-              "Le joueur dont c'est le tour ; les dés sont ceux du serveur"
-            ],
+            ["Qui lance", "Vous", "Le joueur dont c'est le tour ; les dés sont ceux du serveur"],
             [
               "Piles de cartes",
               "Les vôtres",
@@ -1672,11 +1664,7 @@
               "N'importe quelle pile, n'importe quelle carte (règles libres)",
               "Une carte au hasard par case : la prendre ou passer"
             ],
-            [
-              "Acheter",
-              "À tout moment (règles libres)",
-              "Seulement avec la carte en main"
-            ],
+            ["Acheter", "À tout moment (règles libres)", "Seulement avec la carte en main"],
             [
               "Jets et écritures",
               "Vous pouvez déclarer un jet, saisir une écriture",
@@ -1783,11 +1771,7 @@
         },
         {
           "type": "table",
-          "head": [
-            "Niveau",
-            "Bots",
-            "Comment ils jouent"
-          ],
+          "head": ["Niveau", "Bots", "Comment ils jouent"],
           "rows": [
             [
               "Facile",
@@ -1806,8 +1790,13 @@
             ],
             [
               "Champion",
-              "Champion Cleo, Master Maxine",
-              "Cleo joue la seule stratégie qui a gagné le plus de tables ; Maxine joue le champion de sa propre profession"
+              "Champion Cleo, Champion Cleo II, Master Maxine",
+              "Cleo joue la seule stratégie qui a gagné le plus de tables ; Cleo II le champion global de la deuxième recherche ; Maxine joue le champion de sa propre profession"
+            ],
+            [
+              "Personnages",
+              "Investor Ines, Stock Sasha, Network Nils, Leverage Leo, Lucky Lena, Prudent Paula, Chaser Chen",
+              "Chacun joue la meilleure version d'un style - seulement des biens / actions / marketing / emprunts / cartes de dés et marketing / sans prêt et prudent / plus de risque quand il est en retard - de la force difficile à celle de champion"
             ]
           ]
         },
@@ -1815,7 +1804,7 @@
           "type": "callout",
           "kind": "note",
           "title": "Fair-play",
-          "text": "Rien de ce que fait un bot n'est caché : chaque coup est dans le journal comme celui de n'importe qui. Le niveau dit à quelle fréquence une stratégie a gagné des tables au tournoi - pas ce qui arrivera dans une partie : les dés décident beaucoup."
+          "text": "Rien de ce que fait un bot n'est caché : chaque coup est dans le journal comme celui de n'importe qui. Le niveau dit à quelle fréquence une stratégie a gagné des tables au tournoi - pas ce qui arrivera dans une partie : les dés décident beaucoup. Chaque bot peut être installé à un niveau de jeu - maître, fort, occasionnel ou débutant : les niveaux inférieurs se trompent de temps en temps (laissent passer une bonne affaire, en prennent une mauvaise, oublient de vendre), ce qui permet de régler la difficulté de la table."
         }
       ]
     },
