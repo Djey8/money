@@ -8,6 +8,18 @@ import {
   type RatRaceSpaceKind,
 } from '@money/domain';
 
+/** One token at a multiplayer table: where it stands, and what tells it apart (colour plus a letter, never colour alone). */
+export interface BoardToken {
+  id: string;
+  /** The ring index the token stands on; null at START. */
+  position: number | null;
+  color: string;
+  /** One or two characters drawn on the token. */
+  label: string;
+  /** The token of the player on the move is drawn larger. */
+  active?: boolean;
+}
+
 /** One drawn cell of the ring. */
 interface Cell {
   index: number;
@@ -82,7 +94,7 @@ function onCircle(degrees: number, radius: number): { x: number; y: number } {
         <text [attr.x]="cell.x" [attr.y]="cell.y" class="rr-glyph">{{ cell.glyph }}</text>
       </g>
       <!-- Before the first roll the totem waits outside the rat race, above the ring, with "START" below it. -->
-      <g class="rr-start" *ngIf="position === null">
+      <g class="rr-start" *ngIf="atStart">
         <text [attr.x]="center" [attr.y]="startLabelY" class="rr-start-text">START</text>
       </g>
     </svg>
@@ -102,12 +114,27 @@ function onCircle(degrees: number, radius: number): { x: number; y: number } {
         rx="8"
       />
       <g
+        *ngIf="!tokens.length"
         class="rr-token"
         [attr.transform]="'translate(' + token.x + ' ' + token.y + ')'"
         [class.rr-token--at-start]="position === null"
       >
         <circle r="13" class="rr-token-body" />
         <circle r="5" class="rr-token-dot" />
+      </g>
+      <!-- A table: one token per player, side by side where they share a space. -->
+      <g
+        *ngFor="let placed of placedTokens; trackBy: trackToken"
+        class="rr-token rr-token--player"
+        [class.rr-token--active]="placed.token.active"
+        [attr.transform]="'translate(' + placed.x + ' ' + placed.y + ')'"
+      >
+        <circle
+          [attr.r]="placed.token.active ? 11 : 9"
+          class="rr-token-body"
+          [attr.fill]="placed.token.color"
+        />
+        <text class="rr-token-label">{{ placed.token.label }}</text>
       </g>
     </svg>
   `,
@@ -214,6 +241,19 @@ function onCircle(degrees: number, radius: number): { x: number; y: number } {
         stroke: var(--color-surface, #fff);
         stroke-width: 3;
       }
+      .rr-token-label {
+        font-size: 10px;
+        font-weight: 700;
+        text-anchor: middle;
+        dominant-baseline: central;
+        fill: #fff;
+        paint-order: stroke;
+        stroke: rgba(0, 0, 0, 0.55);
+        stroke-width: 2px;
+      }
+      .rr-token--active .rr-token-body {
+        stroke: var(--color-warning, #f39c12);
+      }
       .rr-token-dot {
         fill: var(--color-surface, #fff);
       }
@@ -231,6 +271,9 @@ export class RatRaceBoardComponent {
   /** The ring index the token stands on; null at START. */
   @Input() position: number | null = null;
 
+  /** The tokens of a multiplayer table; when given, they replace the single `position` token. */
+  @Input() tokens: BoardToken[] = [];
+
   readonly size = SIZE;
   readonly center = CENTER;
   readonly ring = RING;
@@ -242,14 +285,50 @@ export class RatRaceBoardComponent {
    * that room is empty and the picture closes in on the ring - which then fills the width it has.
    */
   get viewBox(): string {
-    return this.position === null
+    return this.atStart
       ? `0 ${-TOP_MARGIN} ${SIZE} ${SIZE + TOP_MARGIN}`
       : `${RING_VIEW.x} ${RING_VIEW.y} ${RING_VIEW.size} ${RING_VIEW.size}`;
   }
 
+  /** Whether anyone still waits at START, outside the ring. */
+  get atStart(): boolean {
+    return this.tokens.length
+      ? this.tokens.some((t) => t.position === null)
+      : this.position === null;
+  }
+
   /** The space the token stands on, for the highlight that rides on the walker layer. */
   get here(): Cell | null {
+    if (this.tokens.length) return null;
     return this.cells.find((cell) => cell.index === this.position) ?? null;
+  }
+
+  /** Each token's spot: on the inner circle, spread along it where several share a space; at START in a row above. */
+  get placedTokens(): { token: BoardToken; x: number; y: number }[] {
+    const sharing = new Map<number | null, BoardToken[]>();
+    for (const token of this.tokens) {
+      const group = sharing.get(token.position) ?? [];
+      group.push(token);
+      sharing.set(token.position, group);
+    }
+    const placed: { token: BoardToken; x: number; y: number }[] = [];
+    for (const [position, group] of sharing) {
+      group.forEach((token, i) => {
+        const spread = (i - (group.length - 1) / 2) * 20;
+        if (position === null) placed.push({ token, x: CENTER + spread, y: -30 });
+        else {
+          const angle = spaceAngle(this.board, position);
+          // along the circle: a few degrees either side of the space's own angle, so they stay on the inner ring
+          const at = onCircle(angle + (spread / TOKEN_RING) * (180 / Math.PI), TOKEN_RING);
+          placed.push({ token, ...at });
+        }
+      });
+    }
+    return placed;
+  }
+
+  trackToken(_: number, placed: { token: BoardToken }): string {
+    return placed.token.id;
   }
 
   get cells(): Cell[] {
@@ -277,6 +356,7 @@ export class RatRaceBoardComponent {
   }
 
   get ariaLabel(): string {
+    if (this.tokens.length) return `Cashflow rat race: ${this.tokens.length} players`;
     return this.position === null
       ? 'Cashflow rat race: token at start'
       : `Cashflow rat race: token on space ${this.position + 1} of ${this.board.length}`;
