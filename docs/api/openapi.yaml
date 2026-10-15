@@ -7000,6 +7000,61 @@ paths:
           $ref: '#/components/responses/NotFound'
         '409':
           $ref: '#/components/responses/TableRefused'
+  /game/rooms/{roomId}/events:
+    parameters:
+      - name: roomId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: streamGameRoomEvents
+      summary: Follow a table live (server-sent events)
+      description: >-
+        Game accounts only; requires `game:r`. A long-lived `text/event-stream` for a table: seated players always, anyone with a game account at a public table whose host allowed spectators (403 `room_forbidden` otherwise, 404 for a private table you are not at). Messages, in this order: `snapshot` (`id` is the log position; `room` has the id, `inviteCode` for seated players and the language, `view` is the whole table as you may see it), `log` lines for what you missed since `Last-Event-ID` (a reconnect; at most 200, each with its `seat`), then live `update`s - `{version, events, booksChanged, view}`: the events of one change (by seat, with `seq`), and the table view in which a player entry **without** `books` keeps the books you already have (`booksChanged` lists the seats that carry them; a move changes one player's books) - and `presence` (`{seats}`, the seats connected now). A `: heartbeat` comment arrives every 25 seconds so proxies keep the line open. Resume after a drop with the `Last-Event-ID` header (or `?lastEventId=`): you always get a fresh `snapshot` first, so state never depends on replay. You may hold a few streams per account (429 `stream_limit`). Not available as an MCP tool: an agent polls `getGameRoom` and compares `version`.
+      x-mcp-skip: true
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: lastEventId
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+          description: The last log position you saw; the `Last-Event-ID` header does the same.
+      responses:
+        '200':
+          description: The event stream
+          content:
+            text/event-stream:
+              schema:
+                type: string
+              example: |
+                retry: 3000
+
+                id: 4
+                event: snapshot
+                data: {"room":{"id":"7d1c2c0e-2f0b-4a53-9a77-3f2a6c0f9a11","inviteCode":"H2LX8D4L","language":"en"},"view":{"version":4,"phase":"lobby","youSeat":0,"players":[]}}
+
+                event: presence
+                data: {"seats":[0]}
+
+                id: 5
+                event: update
+                data: {"version":5,"events":[{"seq":5,"version":5,"at":"2026-10-15T18:06:02.000Z","type":"ready_changed","seat":1,"data":{"ready":true}}],"booksChanged":[],"view":{"version":5,"phase":"lobby","youSeat":0,"players":[]}}
+
+                : heartbeat
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RoomLimit'
 components:
   securitySchemes:
     bearerAuth:

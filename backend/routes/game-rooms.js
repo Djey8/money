@@ -8,6 +8,7 @@ const logger = require('../config/logger');
 const { requireScope, problem } = require('../middleware/api-auth');
 const { requireGameAccount } = require('../middleware/game-account-guard');
 const { createGameRoomService, problemFor } = require('../services/game-rooms');
+const { createGameRoomHub } = require('../services/game-room-hub');
 
 /**
  * Multiplayer Cashflow tables: the lobby (todo/cashflow-multiplayer.md slice S1, docs/adr/0010). Mounted by routes/api.js at
@@ -34,9 +35,11 @@ const roomsLimiter = rateLimit({
 });
 
 let service = null;
+const hub = createGameRoomHub();
 function rooms() {
   if (!service) {
     service = createGameRoomService({
+      hub,
       db: getGameRoomsDb(),
       log: (message, meta) => logger.warn(message, meta),
     });
@@ -129,6 +132,71 @@ router.get(
   handle(async (req, res) => res.json(await rooms().getRoom(req.userId, req.params.roomId))),
 );
 
+// ── The live channel ───────────────────────────────────────────────────────────────────────────────
+
+const heartbeatMs = () => Number(process.env.GAME_ROOMS_HEARTBEAT_MS) || 25000;
+
+/** One server-sent event: the name, the log position it brings the client to (`id`, so a reconnect can resume), the JSON. */
+function frame(name, id, data) {
+  const head = id === undefined ? '' : `id: ${id}\n`;
+  return `${head}event: ${name}\ndata: ${JSON.stringify(data)}\n\n`;
+}
+
+/**
+ * `GET /game/rooms/{roomId}/events` (text/event-stream). Sends, in this order: `snapshot` (the whole table as this viewer may
+ * see it), `log` lines for events missed since `Last-Event-ID` (a reconnect), then live `update`s (the change's events and the
+ * table, with books only for the players whose books changed) and `presence` (which seats are connected). A comment line
+ * every 25 seconds keeps proxies from closing an idle stream. The channel answers errors as ordinary Problem Details before it
+ * starts; once it has started, an ended connection is simply reconnected by the client.
+ */
+router.get(
+  '/:roomId/events',
+  ...guard('r'),
+  handle(async (req, res) => {
+    const raw = req.headers['last-event-id'] ?? req.query.lastEventId;
+    const lastEventId = raw === undefined || raw === '' ? 0 : Number(raw);
+    if (!Number.isInteger(lastEventId) || lastEventId < 0) {
+      return invalid(res, 'Last-Event-ID must be a whole number of zero or more.');
+    }
+    const stream = await rooms().openStream(req.userId, req.params.roomId, { lastEventId });
+
+    req.socket.setTimeout(0);
+    req.socket.setNoDelay(true);
+    req.socket.setKeepAlive(true);
+    res.status(200).set({
+      'Content-Type': 'text/event-stream; charset=utf-8',
+      'Cache-Control': 'no-cache, no-transform',
+      Connection: 'keep-alive',
+      'X-Accel-Buffering': 'no',
+    });
+    res.flushHeaders();
+    res.write('retry: 3000\n\n');
+    res.write(
+      frame('snapshot', stream.snapshot.id, {
+        room: stream.snapshot.room,
+        view: stream.snapshot.view,
+      }),
+    );
+    for (const line of stream.log) res.write(frame('log', line.seq, line));
+
+    const beat = setInterval(() => res.write(': heartbeat\n\n'), heartbeatMs());
+    const finish = () => {
+      clearInterval(beat);
+      stream.close();
+    };
+    req.on('close', finish);
+    res.on('error', finish);
+    stream.attach({
+      send: (name, id, data) => res.write(frame(name, id, data)),
+      end: () => {
+        finish();
+        res.end();
+      },
+    });
+    return undefined;
+  }),
+);
+
 // ── The lobby, before play ─────────────────────────────────────────────────────────────────────────
 
 /** A route that is one table command by the caller; `build` turns the request into it (or an error text). */
@@ -195,3 +263,4 @@ module.exports = router;
 module.exports.resetServiceForTests = () => {
   service = null;
 };
+module.exports.hub = hub;

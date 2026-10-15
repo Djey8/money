@@ -9,6 +9,8 @@ const {
   TableCommandError,
 } = require('@money/domain');
 const store = require('../repositories/game-room-store');
+const { RoomError } = require('./game-room-errors');
+const { eventSeat, projectLog } = require('./game-room-stream');
 const { createGameText } = require('./game-text');
 const { createCardTextSource } = require('./game-card-text');
 
@@ -44,16 +46,6 @@ function limits() {
     playingIdleMs: number('GAME_ROOMS_PLAYING_IDLE_MS', 7 * DAY_MS),
     retentionMs: number('GAME_ROOMS_RETENTION_MS', 7 * DAY_MS),
   };
-}
-
-/** A refusal that is not a table rule: the room is not there, the account is at its limit, two saves collided. */
-class RoomError extends Error {
-  constructor(code, status, message) {
-    super(message);
-    this.name = 'RoomError';
-    this.code = code;
-    this.status = status;
-  }
 }
 
 const notFound = () => new RoomError('room_not_found', 404, 'No table with that id or code.');
@@ -180,32 +172,42 @@ function desiredMarkers(table) {
 }
 
 /** The service over a database handle (the real one in production, a fake in tests). */
-function createGameRoomService({ db, clock = systemClock, log = () => {} }) {
+function createGameRoomService({ db, clock = systemClock, log = () => {}, hub = null }) {
   let lastSweep = -Infinity;
   const nowIso = () => clock.nowIso();
   const nowMs = () => Date.parse(clock.nowIso());
 
-  /** Saves `table` as the next state of `doc` (or a new room), then its events and the seat markers. */
-  async function persist(doc, table, events) {
-    const eventSeq = (doc.eventSeq || 0) + events.length;
+  /**
+   * Saves `table` as the next state of `doc` (or a new room), then its events and the seat markers, then tells whoever is
+   * connected. `previous` is the table before the change (null for a new room).
+   */
+  async function persist(doc, table, events, previous = null) {
+    const firstSeq = (doc.eventSeq || 0) + 1;
     const saved = await store.saveRoom(db, {
       ...doc,
       ...listingFields(table),
       table,
-      eventSeq,
+      eventSeq: firstSeq - 1 + events.length,
       updatedAt: nowIso(),
     });
     try {
       await store.appendEvents(
         db,
         doc.roomId,
-        (doc.eventSeq || 0) + 1,
-        events.map((event) => ({ ...event })),
+        firstSeq,
+        events.map((event) => ({ ...event, seat: eventSeat(previous, table, event) })),
       );
       await store.syncMarkers(db, doc.roomId, desiredMarkers(table));
     } catch (error) {
       // The table is saved - it is the truth; a missing event or marker is repaired by the next change and the sweep.
       log('game_room_side_write_failed', { roomId: doc.roomId, message: error.message });
+    }
+    if (hub) {
+      hub.publish(doc.roomId, {
+        previous,
+        table,
+        events: events.map((event, index) => ({ seq: firstSeq + index, event })),
+      });
     }
     return saved;
   }
@@ -275,7 +277,7 @@ function createGameRoomService({ db, clock = systemClock, log = () => {} }) {
       createdAt: created,
       eventSeq: 0,
     };
-    const saved = await persist(doc, table, events);
+    const saved = await persist(doc, table, events, null);
     return roomView({ ...saved, roomId, inviteCode, language, createdAt: created }, userId);
   }
 
@@ -310,7 +312,7 @@ function createGameRoomService({ db, clock = systemClock, log = () => {} }) {
       const next = typeof command === 'function' ? command(doc.table) : command;
       const result = applyCommand(doc.table, userId, next, contextFor(doc.language));
       try {
-        const saved = await persist(doc, result.table, result.events);
+        const saved = await persist(doc, result.table, result.events, doc.table);
         return roomView(saved, userId);
       } catch (error) {
         if (!(error instanceof store.RoomConflictError)) throw error;
@@ -368,6 +370,39 @@ function createGameRoomService({ db, clock = systemClock, log = () => {} }) {
       .map((doc) => roomSummary(doc, userId));
   }
 
+  /**
+   * Opens the live channel to a table for `userId`: who may watch (a seated player; anyone with a game account at a public table
+   * that allows spectators), the snapshot of the table as they may see it, and the log lines they missed since `lastEventId`.
+   * The connection is registered before the table is read, so nothing that happens in between is lost. Returns
+   * `{ snapshot, log, attach(sink), close() }`; `sink` is `{ send(name, id, data), end() }`.
+   */
+  async function openStream(userId, roomId, { lastEventId = 0 } = {}) {
+    if (!hub) throw new RoomError('stream_unavailable', 503, 'Live tables are not available.');
+    const first = await loadFor(userId, roomId);
+    const seated = first.table.players.some((p) => p.id === userId);
+    if (!seated && !(first.visibility === 'public' && first.table.settings.spectators)) {
+      throw new RoomError('room_forbidden', 403, 'This table does not allow spectators.');
+    }
+    const subscription = hub.subscribe(roomId, userId, hub.seatOf(first.table, userId));
+    try {
+      const doc = await loadFor(userId, roomId);
+      const after = Number.isInteger(lastEventId) && lastEventId > 0 ? lastEventId : 0;
+      const missed = after > 0 ? await store.readEvents(db, roomId, after, 200) : [];
+      return {
+        snapshot: (() => {
+          const { table, ...room } = roomView(doc, userId);
+          return { id: doc.eventSeq || 0, room, view: table };
+        })(),
+        log: projectLog(missed.filter((event) => event.seq <= (doc.eventSeq || 0))),
+        attach: (sink) => subscription.attach(sink, doc.table.version),
+        close: subscription.close,
+      };
+    } catch (error) {
+      subscription.close();
+      throw error;
+    }
+  }
+
   /** Closes tables nobody has touched for too long and deletes old finished ones. Returns what it did. */
   async function sweep() {
     const cap = limits();
@@ -404,7 +439,7 @@ function createGameRoomService({ db, clock = systemClock, log = () => {} }) {
     return done;
   }
 
-  return { createRoom, getRoom, runCommand, joinRoom, listRooms, sweep };
+  return { createRoom, getRoom, runCommand, joinRoom, listRooms, openStream, sweep };
 }
 
 module.exports = {

@@ -17,6 +17,32 @@ describe('extractOperations against the real openapi.yaml', () => {
     expect(operations).toHaveLength(177);
   });
 
+  it('leaves out a stream: the live channel of a table is x-mcp-skip, not a tool', () => {
+    expect(byId.streamGameRoomEvents).toBeUndefined();
+    expect(byId.getGameRoom).toBeDefined();
+    const withStream = extractOperations({
+      openapi: '3.1.0',
+      paths: {
+        '/watch': {
+          get: {
+            operationId: 'watch',
+            'x-mcp-skip': true,
+            responses: {
+              '200': { content: { 'text/event-stream': { schema: { type: 'string' } } } },
+            },
+          },
+        },
+        '/read': {
+          get: {
+            operationId: 'read',
+            responses: { '200': { content: { 'application/json': { schema: {} } } } },
+          },
+        },
+      },
+    });
+    expect(withStream.map((op) => op.operationId)).toEqual(['read']);
+  });
+
   it('has no duplicate operationIds', () => {
     const ids = operations.map((op) => op.operationId);
     expect(new Set(ids).size).toBe(ids.length);
