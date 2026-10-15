@@ -186,4 +186,6 @@ A table is a game of several players, you one of them, played on the server: eve
 
 **Afterwards.** `table_save {roomId, name?}` files **your own** final books as a saved game of your account (once; a repeat answers `alreadyFiled: true`) - from there the usual `saves` / `review_save` apply to it. `tables {scope: "recent"}` lists the tables you sat at that are over; `table_log {roomId, after?}` is the record of what happened.
 
+**Bots at the table.** The host can seat server-played bots in the lobby: `get_cashflow_game` `table_bots` lists them (id, name, difficulty), `play_cashflow_game` `table_add_bot {roomId, policyId, name?, professionId?}` seats one (host, lobby only), and `table_kick {seat}` removes it. A bot moves by itself a moment after each change - you only ever see its moves in the table and the log, and you play against it like any player. See `CASHFLOW_MULTIPLAYER.md` section 8 and `CASHFLOW_TOURNAMENT.md` for how strong each one is.
+
 **What to tell the user.** Say which table and seat you are, whose turn it is, what you did and why in a line, and when you wait for others. Do not play for a seat that is not yours, and do not rewind, kick or close a table without the user asking.
