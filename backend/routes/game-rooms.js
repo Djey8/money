@@ -9,6 +9,7 @@ const { requireScope, problem } = require('../middleware/api-auth');
 const { requireGameAccount } = require('../middleware/game-account-guard');
 const { createGameRoomService, problemFor } = require('../services/game-rooms');
 const { createGameRoomHub } = require('../services/game-room-hub');
+const { createRoomClocks } = require('../services/game-room-clocks');
 const { parseCommand, parseGuards } = require('../services/game-room-commands');
 
 /**
@@ -37,10 +38,16 @@ const roomsLimiter = rateLimit({
 
 let service = null;
 const hub = createGameRoomHub();
+// One timer per table that is being played with a clock; when it rings the service decides (services/game-room-clocks.js).
+const clocks = createRoomClocks({
+  onDue: (roomId) => rooms().runTimeout(roomId),
+  log: (message, meta) => logger.warn(message, meta),
+});
 function rooms() {
   if (!service) {
     service = createGameRoomService({
       hub,
+      clocks,
       db: getGameRoomsDb(),
       log: (message, meta) => logger.warn(message, meta),
     });
@@ -283,6 +290,33 @@ router.post(
   }),
 );
 
+/**
+ * `POST /game/rooms/{roomId}/rewind?confirm=true` - the host puts the table back to the start of the previous turn (a repair for a
+ * mishap; the dice carry on, everyone sees it in the log). Takes the same `clientCommandId` / `expectedVersion` as a move.
+ */
+router.post(
+  '/:roomId/rewind',
+  ...guard('w'),
+  handle(async (req, res) => {
+    if (req.query.confirm !== 'true') {
+      return invalid(res, 'Rewinding undoes the last turn for everyone: send ?confirm=true.');
+    }
+    const body = isObject(req.body) ? req.body : {};
+    const guards = parseGuards(body);
+    if (guards.error) return invalid(res, guards.error);
+    const done = await rooms().rewind(req.userId, req.params.roomId, {
+      expectedVersion: guards.expectedVersion,
+      clientCommandId: guards.clientCommandId,
+    });
+    return res.json({
+      ...done.view,
+      events: done.events,
+      replayed: done.replayed,
+      appliedVersion: done.appliedVersion,
+    });
+  }),
+);
+
 router.delete(
   '/:roomId',
   ...guard('w'),
@@ -300,3 +334,6 @@ module.exports.resetServiceForTests = () => {
   service = null;
 };
 module.exports.hub = hub;
+module.exports.clocks = clocks;
+/** After a restart: arm the clock of every table being played. */
+module.exports.startClocks = () => rooms().rearmAll();

@@ -3,7 +3,10 @@
 const crypto = require('crypto');
 const {
   applyCommand,
+  applyTimeout,
   createTable,
+  nextDeadline,
+  rewindTable,
   projectFor,
   systemClock,
   tableLegalActions,
@@ -94,22 +97,6 @@ function moneyFormat(language) {
   return (amountMinor) => `${(amountMinor / 100).toLocaleString(european ? 'de-DE' : 'en-US')} €`;
 }
 
-const contexts = new Map();
-/** What the domain needs from outside for a table played in `language`. */
-function contextFor(language) {
-  if (!contexts.has(language)) {
-    const money = moneyFormat(language);
-    contexts.set(language, {
-      clock: systemClock,
-      text: createGameText(language),
-      money,
-      plainMoney: money,
-      cards: createCardTextSource(language),
-    });
-  }
-  return contexts.get(language);
-}
-
 function randomInviteCode() {
   const bytes = crypto.randomBytes(INVITE_LENGTH);
   return Array.from(bytes, (b) => INVITE_ALPHABET[b % INVITE_ALPHABET.length]).join('');
@@ -176,21 +163,50 @@ function desiredMarkers(table) {
 }
 
 /** The service over a database handle (the real one in production, a fake in tests). */
-function createGameRoomService({ db, clock = systemClock, log = () => {}, hub = null }) {
+function createGameRoomService({
+  db,
+  clock = systemClock,
+  log = () => {},
+  hub = null,
+  clocks = null,
+}) {
   let lastSweep = -Infinity;
+
+  const contexts = new Map();
+  /** What the domain needs from outside for a table played in `language` (with this service's clock). */
+  function contextFor(language) {
+    if (!contexts.has(language)) {
+      const money = moneyFormat(language);
+      contexts.set(language, {
+        clock,
+        text: createGameText(language),
+        money,
+        plainMoney: money,
+        cards: createCardTextSource(language),
+      });
+    }
+    return contexts.get(language);
+  }
+
   const nowIso = () => clock.nowIso();
   const nowMs = () => Date.parse(clock.nowIso());
 
   /**
-   * Saves `table` as the next state of `doc` (or a new room), then its events and the seat markers, then tells whoever is
-   * connected. `previous` is the table before the change (null for a new room).
+   * Saves `table` as the next state of `doc` (or a new room), then its events, the seat markers and - when a turn has just
+   * started - the snapshot the host's rewind goes back to; then tells whoever is connected and arms the table's clock.
+   * `previous` is the table before the change (null for a new room). `options.turnSeq` sets the turn counter explicitly (a
+   * rewind goes back one).
    */
-  async function persist(doc, table, events, previous = null) {
+  async function persist(doc, table, events, previous = null, options = {}) {
     const firstSeq = (doc.eventSeq || 0) + 1;
+    const startsTurn = events.some((e) => e.type === 'turn_started' || e.type === 'play_started');
+    const turnSeq =
+      options.turnSeq !== undefined ? options.turnSeq : (doc.turnSeq || 0) + (startsTurn ? 1 : 0);
     const saved = await store.saveRoom(db, {
       ...doc,
       ...listingFields(table),
       table,
+      turnSeq,
       eventSeq: firstSeq - 1 + events.length,
       updatedAt: nowIso(),
     });
@@ -202,8 +218,11 @@ function createGameRoomService({ db, clock = systemClock, log = () => {}, hub = 
         events.map((event) => ({ ...event, seat: eventSeat(previous, table, event) })),
       );
       await store.syncMarkers(db, doc.roomId, desiredMarkers(table));
+      if (startsTurn && options.turnSeq === undefined) {
+        await store.putSnapshot(db, doc.roomId, turnSeq, table);
+      }
     } catch (error) {
-      // The table is saved - it is the truth; a missing event or marker is repaired by the next change and the sweep.
+      // The table is saved - it is the truth; a missing event, marker or snapshot is repaired by the next change.
       log('game_room_side_write_failed', { roomId: doc.roomId, message: error.message });
     }
     if (hub) {
@@ -213,6 +232,7 @@ function createGameRoomService({ db, clock = systemClock, log = () => {}, hub = 
         events: events.map((event, index) => ({ seq: firstSeq + index, event })),
       });
     }
+    if (clocks) clocks.arm(doc.roomId, nextDeadline(table));
     return saved;
   }
 
@@ -300,16 +320,17 @@ function createGameRoomService({ db, clock = systemClock, log = () => {}, hub = 
   }
 
   /**
-   * Applies one command for `userId` to a room and saves it. `command` is a command or a function of the current table that
-   * returns one (a kick names a seat). With `expectedVersion` the table must still be at that version. With
-   * `clientCommandId` the command is applied **at most once**: the id is recorded in the same document write as the change,
-   * so a retry - after a lost response, or two identical requests at once - finds it and gets `replayed: true` instead of
-   * a second move. Returns `{ view, events, replayed, appliedVersion }`.
+   * Runs one change to a room for `userId`: loads it, lets `compute(doc)` produce `{ result, persistOptions? }` (a domain result
+   * with the next table and its events), and saves it against the document's revision - if someone else saved first the whole
+   * thing is applied again to the newer table. With `expectedVersion` the table must still be at that version. With
+   * `clientCommandId` the change is applied **at most once**: the id is recorded in the same document write as the change, so a
+   * retry - after a lost response, or two identical requests at once - finds it and gets `replayed: true` instead of a second
+   * move. Returns `{ view, events, replayed, appliedVersion }`.
    */
-  async function runCommand(
+  async function execute(
     userId,
     roomId,
-    command,
+    compute,
     { expectedVersion, joining = false, clientCommandId } = {},
   ) {
     const key = clientCommandId ? `${userId}:${clientCommandId}` : null;
@@ -331,15 +352,20 @@ function createGameRoomService({ db, clock = systemClock, log = () => {}, hub = 
           `The table is at version ${doc.table.version}, not ${expectedVersion}.`,
         );
       }
-      const next = typeof command === 'function' ? command(doc.table) : command;
-      const result = applyCommand(doc.table, userId, next, contextFor(doc.language));
+      const { result, persistOptions } = await compute(doc);
       const commandLog = key
         ? [...(doc.commandLog || []), { key, version: result.table.version }].slice(
             -COMMAND_LOG_SIZE,
           )
         : doc.commandLog;
       try {
-        const saved = await persist({ ...doc, commandLog }, result.table, result.events, doc.table);
+        const saved = await persist(
+          { ...doc, commandLog },
+          result.table,
+          result.events,
+          doc.table,
+          persistOptions,
+        );
         const firstSeq = saved.eventSeq - result.events.length + 1;
         return {
           view: roomView(saved, userId),
@@ -354,6 +380,83 @@ function createGameRoomService({ db, clock = systemClock, log = () => {}, hub = 
       }
     }
     throw new RoomError('room_conflict', 409, 'The table keeps changing: try again.');
+  }
+
+  /**
+   * One command by `userId`: a command or a function of the current table that returns one (a kick names a seat). The rules
+   * are the domain's `applyCommand`.
+   */
+  function runCommand(userId, roomId, command, options) {
+    return execute(
+      userId,
+      roomId,
+      (doc) => {
+        const next = typeof command === 'function' ? command(doc.table) : command;
+        return { result: applyCommand(doc.table, userId, next, contextFor(doc.language)) };
+      },
+      options,
+    );
+  }
+
+  /**
+   * The host rewinds the last turn: the table goes back to the snapshot taken when the previous turn started (the server keeps
+   * the last two), the dice carry on. One step only - a second rewind finds nothing to go back to until another turn has begun.
+   */
+  function rewind(userId, roomId, options) {
+    return execute(
+      userId,
+      roomId,
+      async (doc) => {
+        const turnSeq = doc.turnSeq || 0;
+        const snapshot = turnSeq >= 2 ? await store.getSnapshot(db, roomId, turnSeq - 1) : null;
+        if (!snapshot) {
+          throw new TableCommandError('ILLEGAL_MOVE', 'There is no earlier turn to go back to.');
+        }
+        return {
+          result: rewindTable(doc.table, snapshot.table, userId, contextFor(doc.language)),
+          persistOptions: { turnSeq: turnSeq - 1 },
+        };
+      },
+      options,
+    );
+  }
+
+  /**
+   * A table's clock rang (services/game-room-clocks.js): if the player on the move really is out of time the most passive turn is
+   * played for them, saved and told to everyone like any other change; if not (they moved, the game is paused, the timer was a
+   * hair early) the table just arms for the deadline it has. Safe to call at any time.
+   */
+  async function runTimeout(roomId) {
+    for (let attempt = 0; attempt < MAX_COMMAND_ATTEMPTS; attempt += 1) {
+      const doc = await store.getRoom(db, roomId);
+      if (!doc || doc.table.phase !== 'playing') {
+        if (clocks) clocks.disarm(roomId);
+        return { fired: false };
+      }
+      let result;
+      try {
+        result = applyTimeout(doc.table, contextFor(doc.language));
+      } catch (error) {
+        if (!(error instanceof TableCommandError)) throw error;
+        if (clocks) clocks.arm(roomId, nextDeadline(doc.table));
+        return { fired: false };
+      }
+      try {
+        await persist(doc, result.table, result.events, doc.table);
+        return { fired: true };
+      } catch (error) {
+        if (!(error instanceof store.RoomConflictError)) throw error;
+      }
+    }
+    throw new RoomError('room_conflict', 409, 'The table keeps changing: try again.');
+  }
+
+  /** After a restart: arms the clock of every table that is being played. Returns how many tables it looked at. */
+  async function rearmAll() {
+    if (!clocks) return 0;
+    const docs = await store.listPlayingRooms(db);
+    for (const doc of docs) clocks.arm(doc.roomId, nextDeadline(doc.table));
+    return docs.length;
   }
 
   /** Takes a seat at a public table by id, or at any table by invite code. */
@@ -468,6 +571,7 @@ function createGameRoomService({ db, clock = systemClock, log = () => {}, hub = 
           if (!(error instanceof store.RoomConflictError)) throw error;
         }
       } else if (age > cap.retentionMs) {
+        if (clocks) clocks.disarm(doc.roomId);
         await store.deleteRoom(db, doc.roomId);
         done.deleted += 1;
       }
@@ -475,7 +579,18 @@ function createGameRoomService({ db, clock = systemClock, log = () => {}, hub = 
     return done;
   }
 
-  return { createRoom, getRoom, runCommand, joinRoom, listRooms, openStream, sweep };
+  return {
+    createRoom,
+    getRoom,
+    runCommand,
+    rewind,
+    runTimeout,
+    rearmAll,
+    joinRoom,
+    listRooms,
+    openStream,
+    sweep,
+  };
 }
 
 module.exports = {

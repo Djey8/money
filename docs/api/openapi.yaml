@@ -7150,6 +7150,85 @@ paths:
           $ref: '#/components/responses/TableRefused'
         '422':
           $ref: '#/components/responses/TableRefused'
+  /game/rooms/{roomId}/rewind:
+    parameters:
+      - name: roomId
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      operationId: rewindGameRoom
+      summary: Rewind the last turn (host only)
+      description: >-
+        Game accounts only; requires `game:w`. For a mishap - a connection that dropped while a move was due, the passive turn the clock played - not for second thoughts. The table goes back to the state at the **start of the previous turn**: whoever moved since, that player's moves included, is undone; everyone sees `rewound` in the log. The dice stream is not put back, so a replayed turn rolls different dice, and who is in the game stays as it is now (a player who left stays gone, an away player stays away). The player whose turn it is again gets a fresh turn's time. One step only: until another turn has begun there is nothing earlier to go back to (422 `table_illegal_move`). Only the host (403 `table_not_host`), only while playing, and only if the table allows it (`allowRewind`, on by default; 422 otherwise). Destructive, so `?confirm=true` is required. Takes the same `clientCommandId` and `expectedVersion` as a move.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: confirm
+          in: query
+          required: true
+          schema:
+            type: boolean
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                clientCommandId:
+                  type: string
+                  pattern: '^[A-Za-z0-9_.:-]{1,64}$'
+                expectedVersion:
+                  type: integer
+                  minimum: 0
+            example:
+              clientCommandId: rewind-3
+              expectedVersion: 57
+      responses:
+        '200':
+          description: The table after the rewind
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/GameRoom'
+                  - type: object
+                    properties:
+                      events:
+                        type: array
+                        items:
+                          type: object
+                      replayed:
+                        type: boolean
+                      appliedVersion:
+                        type: integer
+              example:
+                id: 7d1c2c0e-2f0b-4a53-9a77-3f2a6c0f9a11
+                events:
+                  - {
+                      seq: 58,
+                      version: 58,
+                      at: '2026-10-15T18:21:09.000Z',
+                      type: rewound,
+                      seat: 0,
+                      data: { toSeat: 1, round: 4 },
+                    }
+                replayed: false
+                appliedVersion: 58
+                table: { version: 58, phase: playing, youSeat: 0, activeSeat: 1 }
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/TableRefused'
+        '422':
+          $ref: '#/components/responses/TableRefused'
 components:
   securitySchemes:
     bearerAuth:
@@ -10480,6 +10559,10 @@ components:
         spectators:
           type: boolean
           default: false
+        allowRewind:
+          type: boolean
+          default: true
+          description: Whether the host may rewind the last turn (`rewindGameRoom`). Frozen when play starts.
     GameRoomSummary:
       type: object
       description: One line of the lobby list. No account ids.

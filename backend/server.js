@@ -124,10 +124,19 @@ app.use('/api/data/write', (req, res, next) => {
 
 // Initialize database (only when run directly — tests handle their own init)
 if (require.main === module) {
-  initializeDatabase().catch((err) => {
-    logger.logError(err, { context: 'database_initialization' });
-    process.exit(1);
-  });
+  initializeDatabase()
+    .then(() =>
+      // Tables being played with a clock get their timers back after a restart (todo/cashflow-multiplayer.md, slice S4).
+      // A failure here must not stop the server: the clocks arm again as soon as anyone touches a table.
+      require('./routes/game-rooms')
+        .startClocks()
+        .then((count) => logger.info('Table clocks armed', { tables: count }))
+        .catch((err) => logger.logError(err, { context: 'game_room_clocks' })),
+    )
+    .catch((err) => {
+      logger.logError(err, { context: 'database_initialization' });
+      process.exit(1);
+    });
 }
 
 // Health check

@@ -384,3 +384,106 @@ describe('everyone watching is told', () => {
     expect(JSON.stringify(asAnna.messages)).not.toContain(host.userId);
   });
 });
+
+describe('rewinding through the API', () => {
+  it('lets the host put the last turn back, only with confirmation, and never to nothing', async () => {
+    if (!dbAvailable) return;
+    const id = await startedTable();
+    const rewind = (user, query = '?confirm=true', body = {}) =>
+      call(user, 'post', `/${id}/rewind${query}`).send(body);
+
+    // turn 1 has only just begun
+    const none = await rewind(host);
+    expect(none.status).toBe(422);
+    expect(none.body.code).toBe('table_illegal_move');
+
+    await quickTurn(id); // the host plays, Anna's turn begins
+    const atAnna = await view(host, id);
+    await command(anna, id, { command: { type: 'roll' } });
+    const afterRoll = await view(host, id);
+    const before = afterRoll.table.version;
+    // "the previous turn" depends on the dice: if Anna is still in her turn (a card to deal with) it is the host's, otherwise
+    // her roll settled by itself and the previous turn is hers
+    const backToHost = afterRoll.table.activeSeat === 1;
+
+    expect((await rewind(host, '')).status).toBe(400);
+    const notHost = await rewind(anna);
+    expect(notHost.status).toBe(403);
+    expect(notHost.body.code).toBe('table_not_host');
+    expect((await rewind(normal)).body.code).toBe('not_a_game_account');
+    expect((await rewind(host, '?confirm=true', { expectedVersion: before - 1 })).body.code).toBe(
+      'room_conflict',
+    );
+
+    const done = await rewind(host, '?confirm=true', {
+      clientCommandId: 'rw-api-1',
+      expectedVersion: before,
+    });
+    expect(done.status).toBe(200);
+    expect(done.body.events.map((e) => e.type)).toContain('rewound');
+    expect(done.body.table.version).toBe(before + 1);
+    expect(done.body.table.activeSeat).toBe(backToHost ? 0 : 1);
+    expect(done.body.table.turnRolled).toBe(false);
+    // everyone's books are back where they were at the start of that turn
+    done.body.table.players.forEach((player, seat) => {
+      if (backToHost) expect(player.books.state.boardPosition).toBeNull();
+      else
+        expect(player.books.state.boardPosition).toBe(
+          atAnna.table.players[seat].books.state.boardPosition,
+        );
+    });
+    // the legal actions are the requester's (the host's): the roll is theirs only if the turn put back is theirs
+    expect(done.body.legalActions.map((a) => a.action).includes('roll')).toBe(backToHost);
+    // a retry of the same request is answered, not applied again
+    const again = await rewind(host, '?confirm=true', { clientCommandId: 'rw-api-1' });
+    expect(again.body).toMatchObject({ replayed: true, appliedVersion: before + 1 });
+    // and the table plays on
+    expect(
+      (await command(backToHost ? host : anna, id, { command: { type: 'roll' } })).status,
+    ).toBe(200);
+  });
+
+  it('is refused at a table whose host switched it off', async () => {
+    if (!dbAvailable) return;
+    const id = await startedTable({ allowRewind: false });
+    await quickTurn(id);
+    const refused = await call(host, 'post', `/${id}/rewind?confirm=true`).send({});
+    expect(refused.status).toBe(422);
+    expect(refused.body.detail).toMatch(/does not allow rewinding/);
+  });
+});
+
+describe("the server's own clock", () => {
+  jest.setTimeout(40000);
+
+  it('plays the passive turn when a player runs out of time, and tells the table', async () => {
+    if (!dbAvailable) return;
+    const id = await startedTable({ clock: { mode: 'per-move', secondsPerMove: 10 } });
+    const stream = await openStream(anna, id);
+    await stream.waitFor((m) => m.event === 'snapshot');
+    const snapshot = stream.messages.find((m) => m.event === 'snapshot');
+    expect(snapshot.data.view.clock.deadlineAt).toBeGreaterThan(Date.now());
+
+    // the host does nothing for ten seconds: the server's timer rings and plays the turn
+    const update = await stream.waitFor(
+      (m) => m.event === 'update' && m.data.events.some((e) => e.type === 'turn_timeout'),
+      15000,
+    );
+    expect(update.data.events.map((e) => e.type)).toEqual(
+      expect.arrayContaining(['turn_timeout', 'rolled']),
+    );
+    expect(update.data.events.find((e) => e.type === 'turn_timeout')).toMatchObject({
+      seat: 0,
+      data: { count: 1 },
+    });
+    expect(update.data.view.activeSeat).toBe(1);
+    expect(update.data.view.clock.timeouts[0]).toBe(1);
+    // Anna now has the move and a fresh deadline
+    expect(update.data.legalActions.map((a) => a.action)).toContain('roll');
+    expect(update.data.view.clock.deadlineAt).toBeGreaterThan(Date.now() + 5000);
+    // the host's late move is refused: the turn is gone
+    const late = await command(host, id, { command: { type: 'roll' } });
+    expect(late.status).toBe(409);
+    expect(late.body.code).toBe('table_not_your_turn');
+  });
+});

@@ -8,6 +8,8 @@
  *                              fields the lobby list reads without opening the table (name, phase, seats, host name...).
  *  - `event:<roomId>:<seq>`    one table event, append-only, `seq` zero-padded so ids sort; what a reconnecting client
  *                              replays from (slice S2) and what a replay of the game is built from.
+ *  - `snap:<roomId>:<slot>`    the table as it stood when a turn started, two slots used in turn (slice S4): what the
+ *                              host's rewind puts back. Written after the room, replaced two turns later.
  *  - `seat:<userId>:<roomId>`  a marker that the account holds a seat in a room that is still open: it keeps the
  *                              per-account limits and the "my tables" list cheap (a range read, no index). Markers are
  *                              advisory - the table is the truth - and the sweep removes stale ones.
@@ -16,6 +18,7 @@
 const ROOM_PREFIX = 'room:';
 const EVENT_PREFIX = 'event:';
 const SEAT_PREFIX = 'seat:';
+const SNAPSHOT_PREFIX = 'snap:';
 const HIGH = '￰';
 const MAX_WRITE_RETRIES = 10;
 /** CouchDB refuses documents above 8 MiB (`max_document_size`); a room stays well below that. */
@@ -24,6 +27,7 @@ const MAX_ROOM_BYTES = 6 * 1024 * 1024;
 const roomId = (id) => `${ROOM_PREFIX}${id}`;
 const eventId = (id, seq) => `${EVENT_PREFIX}${id}:${String(seq).padStart(8, '0')}`;
 const seatId = (userId, id) => `${SEAT_PREFIX}${userId}:${id}`;
+const snapshotId = (id, slot) => `${SNAPSHOT_PREFIX}${id}:${slot}`;
 
 class RoomConflictError extends Error {
   constructor() {
@@ -137,6 +141,51 @@ async function readEvents(db, id, afterSeq = 0, limit = 500) {
   return result.rows.map((row) => row.doc);
 }
 
+// ── Turn snapshots ─────────────────────────────────────────────────────────────────────────────────
+
+/** Keeps the table as it stood when turn number `turnSeq` started, in one of two slots (the older one is replaced). */
+async function putSnapshot(db, id, turnSeq, table) {
+  const doc = {
+    _id: snapshotId(id, turnSeq % 2),
+    kind: 'snapshot',
+    roomId: id,
+    turnSeq,
+    version: table.version,
+    table,
+  };
+  for (let attempt = 0; attempt < MAX_WRITE_RETRIES; attempt += 1) {
+    let existing = null;
+    try {
+      existing = await db.get(doc._id);
+    } catch (error) {
+      if (!notFound(error)) throw error;
+    }
+    try {
+      await db.insert({ ...doc, ...(existing ? { _rev: existing._rev } : {}) });
+      return;
+    } catch (error) {
+      if (error.statusCode !== 409) throw error;
+    }
+  }
+}
+
+/** The snapshot of turn `turnSeq`, or null when it is gone (only the last two are kept). */
+async function getSnapshot(db, id, turnSeq) {
+  try {
+    const doc = await db.get(snapshotId(id, turnSeq % 2));
+    return doc.turnSeq === turnSeq ? doc : null;
+  } catch (error) {
+    if (notFound(error)) return null;
+    throw error;
+  }
+}
+
+/** The tables being played (to arm their clocks again after a restart). */
+async function listPlayingRooms(db, limit = 1000) {
+  const found = await db.find({ selector: { kind: 'room', phase: 'playing' }, limit });
+  return found.docs;
+}
+
 // ── Seat markers ───────────────────────────────────────────────────────────────────────────────────
 
 /** Every marker of an account: the rooms it holds a seat in, and whether it hosts them. */
@@ -220,6 +269,11 @@ async function deleteRoom(db, id) {
   for (const marker of await markersOfRoom(db, id)) {
     docs.push({ _id: marker._id, _rev: marker._rev, _deleted: true });
   }
+  const snapshots = await db.list({
+    startkey: `${SNAPSHOT_PREFIX}${id}:`,
+    endkey: `${SNAPSHOT_PREFIX}${id}:${HIGH}`,
+  });
+  for (const row of snapshots.rows) docs.push({ _id: row.id, _rev: row.value.rev, _deleted: true });
   if (docs.length > 0) await db.bulk({ docs });
   return docs.length;
 }
@@ -239,5 +293,8 @@ module.exports = {
   readEvents,
   seatMarkers,
   syncMarkers,
+  putSnapshot,
+  getSnapshot,
+  listPlayingRooms,
   deleteRoom,
 };
