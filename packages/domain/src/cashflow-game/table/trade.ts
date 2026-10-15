@@ -103,6 +103,29 @@ function cardInHand(
   return { card: card as CashflowDealCard, deck };
 }
 
+/** Why the player cannot offer their card for trade right now, or null when they can. */
+export function whyCannotOfferTrade(table: Table, sellerId: string): string | null {
+  if (table.trade) return 'A card is on offer already.';
+  try {
+    cardInHand(table, sellerId);
+    return null;
+  } catch (error) {
+    return (error as Error).message;
+  }
+}
+
+/** Whether the player may answer the open offer (take it, counter it, turn it down). */
+export function canAnswerTrade(table: Table, playerId: string): boolean {
+  const offer = table.trade;
+  if (!offer || playerId === offer.sellerId) return false;
+  const player = playerOf(table, playerId);
+  return (
+    inTheGame(player) &&
+    (offer.to === null || offer.to === playerId) &&
+    !offer.declined.includes(playerId)
+  );
+}
+
 /** Who may answer the offer: not the seller, in the game, named by the offer (or anyone), not someone who said no. */
 function buyerOf(table: Table, offer: TradeOffer, buyerId: string) {
   const buyer = playerOf(table, buyerId);
