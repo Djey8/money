@@ -4,7 +4,10 @@ const crypto = require('crypto');
 const {
   applyCommand,
   applyTimeout,
+  botFallbackCommand,
   createTable,
+  nextBotCommand,
+  seededRng,
   nextDeadline,
   rewindTable,
   projectFor,
@@ -12,6 +15,8 @@ const {
   tableLegalActions,
   TableCommandError,
 } = require('@money/domain');
+// the catalog of bots is data kept out of the domain package's barrel (the browser bundle must not carry it)
+const { botPolicy } = require('@money/domain/dist/cashflow-game/table/bot-catalog');
 const store = require('../repositories/game-room-store');
 const { RoomError } = require('./game-room-errors');
 const { eventSeat, projectLog, publicEvent } = require('./game-room-stream');
@@ -166,7 +171,7 @@ function desiredMarkers(table) {
   const wanted = new Map();
   if (OPEN_PHASES.includes(table.phase)) {
     for (const player of table.players) {
-      if (player.status === 'active') {
+      if (player.status === 'active' && !player.bot) {
         wanted.set(player.id, { host: player.id === table.hostId, closed: false });
       }
     }
@@ -175,7 +180,7 @@ function desiredMarkers(table) {
   // A table that is over keeps a marker for everyone who sat at it, flagged closed: the "recent tables" list reads them, the
   // limits do not count them, and they go with the room when it is deleted.
   for (const player of table.players) {
-    wanted.set(player.id, { host: player.id === table.hostId, closed: true });
+    if (!player.bot) wanted.set(player.id, { host: player.id === table.hostId, closed: true });
   }
   return wanted;
 }
@@ -187,6 +192,7 @@ function createGameRoomService({
   log = () => {},
   hub = null,
   clocks = null,
+  bots = null,
   filer = null,
 }) {
   let lastSweep = -Infinity;
@@ -252,6 +258,7 @@ function createGameRoomService({
       });
     }
     if (clocks) clocks.arm(doc.roomId, nextDeadline(table));
+    if (bots) bots.touch(doc.roomId, table);
     return saved;
   }
 
@@ -470,11 +477,66 @@ function createGameRoomService({
     throw new RoomError('room_conflict', 409, 'The table keeps changing: try again.');
   }
 
-  /** After a restart: arms the clock of every table that is being played. Returns how many tables it looked at. */
+  /**
+   * The bots of a table take their next move (services/game-room-bots.js calls this a moment after every change): the first
+   * bot that has something to do plays ONE command - through the same rules, the same save and the same announcement as a
+   * person's move - and the save wakes the driver again for the next. A move the rules refuse is replaced by the most passive
+   * legal one; if even that is refused the bots wait for the table to change. Returns whether a bot moved.
+   */
+  async function runBots(roomId) {
+    for (let attempt = 0; attempt < MAX_COMMAND_ATTEMPTS; attempt += 1) {
+      const doc = await store.getRoom(db, roomId);
+      if (!doc || doc.table.phase !== 'playing') return { moved: false };
+      const table = doc.table;
+      if (!table.players.some((p) => p.bot)) return { moved: false };
+      const ctx = contextFor(doc.language);
+      // the player on the move first, then the others (selling off turn, answering a trade offer)
+      const order = [
+        ...table.players.filter((p) => p.id === table.activePlayerId),
+        ...table.players.filter((p) => p.id !== table.activePlayerId),
+      ].filter((p) => p.bot && p.status === 'active');
+      let result = null;
+      for (const bot of order) {
+        const policy = botPolicy(bot.bot.policyId);
+        if (!policy) continue;
+        const coin = seededRng((table.version * 2654435761) >>> 0);
+        const command = nextBotCommand(table, bot.id, policy, coin);
+        if (!command) continue;
+        try {
+          result = applyCommand(table, bot.id, command, ctx);
+        } catch (error) {
+          if (!(error instanceof TableCommandError)) throw error;
+          const fallback = botFallbackCommand(table, bot.id);
+          if (!fallback) continue;
+          try {
+            result = applyCommand(table, bot.id, fallback, ctx);
+          } catch (again) {
+            if (!(again instanceof TableCommandError)) throw again;
+            log('game_room_bot_stuck', { roomId, bot: bot.name, message: again.message });
+            continue;
+          }
+        }
+        break;
+      }
+      if (!result) return { moved: false };
+      try {
+        await persist(doc, result.table, result.events, table);
+        return { moved: true };
+      } catch (error) {
+        if (!(error instanceof store.RoomConflictError)) throw error;
+      }
+    }
+    return { moved: false };
+  }
+
+  /** After a restart: arms the clock of every table that is being played, and wakes the bots at tables that have any. */
   async function rearmAll() {
-    if (!clocks) return 0;
+    if (!clocks && !bots) return 0;
     const docs = await store.listPlayingRooms(db);
-    for (const doc of docs) clocks.arm(doc.roomId, nextDeadline(doc.table));
+    for (const doc of docs) {
+      if (clocks) clocks.arm(doc.roomId, nextDeadline(doc.table));
+      if (bots) bots.touch(doc.roomId, doc.table);
+    }
     return docs.length;
   }
 
@@ -703,6 +765,7 @@ function createGameRoomService({
     runCommand,
     rewind,
     runTimeout,
+    runBots,
     rearmAll,
     fileGame,
     readLog,

@@ -7,11 +7,13 @@ const { getGameRoomsDb, getUsersDb, getAuthDb, getGameSavesDb } = require('../co
 const logger = require('../config/logger');
 const { requireScope, problem } = require('../middleware/api-auth');
 const { requireGameAccount } = require('../middleware/game-account-guard');
+const { botProfiles, botProfile } = require('@money/domain/dist/cashflow-game/table/bot-catalog');
 const { createGameRoomService, problemFor } = require('../services/game-rooms');
 const { fileFinishedGame } = require('../repositories/game-saves');
 const { GameActionError } = require('../repositories/game-play');
 const { createGameRoomHub } = require('../services/game-room-hub');
 const { createRoomClocks } = require('../services/game-room-clocks');
+const { createBotDriver } = require('../services/game-room-bots');
 const { parseCommand, parseGuards } = require('../services/game-room-commands');
 
 /**
@@ -45,11 +47,17 @@ const clocks = createRoomClocks({
   onDue: (roomId) => rooms().runTimeout(roomId),
   log: (message, meta) => logger.warn(message, meta),
 });
+// One small timer per table with bots: after a change they take their next move (services/game-room-bots.js).
+const bots = createBotDriver({
+  run: (roomId) => rooms().runBots(roomId),
+  log: (message, meta) => logger.warn(message, meta),
+});
 function rooms() {
   if (!service) {
     service = createGameRoomService({
       hub,
       clocks,
+      bots,
       // A finished game is filed in a player's own saved games through the saved-games store (slice S5).
       filer: (userId, books, name) =>
         fileFinishedGame(
@@ -151,6 +159,25 @@ router.post(
     }
     return res.json(await rooms().joinRoom(req.userId, body));
   }),
+);
+
+/**
+ * `GET /game/rooms/bots` - the bots a host can seat: each with an id (the `policyId` to send), a name, a difficulty and a line on
+ * how it plays. Declared before `/:roomId` so "bots" is not taken for a table id.
+ */
+router.get(
+  '/bots',
+  ...guard('r'),
+  handle(async (req, res) =>
+    res.json({
+      items: botProfiles().map(({ id, name, difficulty, description }) => ({
+        id,
+        name,
+        difficulty,
+        description,
+      })),
+    }),
+  ),
 );
 
 router.get(
@@ -272,6 +299,30 @@ lobbyRoute('put', '/:roomId/settings', (body) =>
 
 lobbyRoute('post', '/:roomId/start', () => ({ type: 'start' }));
 
+/**
+ * `POST /game/rooms/{roomId}/bots {policyId, name?, professionId?, color?}` - the host seats a bot in the lobby (remove it with the
+ * kick of its seat). The bot plays by one of the strategies of `GET /game/rooms/bots`; it is always ready and picks its own
+ * profession. Its moves are made by the server, through the same rules and the same log as anyone's.
+ */
+lobbyRoute('post', '/:roomId/bots', (body) => {
+  if (typeof body.policyId !== 'string')
+    return 'policyId must be the id of a bot (see GET /game/rooms/bots).';
+  const profile = botProfile(body.policyId);
+  if (!profile) return `Unknown bot '${body.policyId}': see GET /game/rooms/bots.`;
+  if (body.name !== undefined && typeof body.name !== 'string') return 'name must be a string.';
+  if (body.professionId !== undefined && typeof body.professionId !== 'string') {
+    return 'professionId must be a profession id or "random".';
+  }
+  if (body.color !== undefined && typeof body.color !== 'string') return 'color must be a string.';
+  return {
+    type: 'add_bot',
+    name: body.name !== undefined ? body.name : profile.name,
+    policyId: profile.id,
+    ...(body.professionId ? { professionId: body.professionId } : {}),
+    ...(body.color ? { color: body.color } : {}),
+  };
+});
+
 lobbyRoute('put', '/:roomId/profession', (body) =>
   typeof body.professionId === 'string' && body.professionId
     ? { type: 'pick_profession', professionId: body.professionId }
@@ -392,5 +443,6 @@ module.exports.resetServiceForTests = () => {
 };
 module.exports.hub = hub;
 module.exports.clocks = clocks;
+module.exports.bots = bots;
 /** After a restart: arm the clock of every table being played. */
 module.exports.startClocks = () => rooms().rearmAll();
