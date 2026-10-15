@@ -33,26 +33,26 @@
 
 One tool per operation group, not one per HTTP endpoint (a `manage_transactions` tool with an `action` argument, rather than five near-identical `transactions_*` tools). Every write/delete/bulk-scoped action requires a PAT with the matching scope — see each tool's own description (returned in `tools/list`) for exactly which. Call `get_identity` first to see what your token is actually allowed to do.
 
-| Tool                    | Covers                                                                                                 |
-| ----------------------- | ------------------------------------------------------------------------------------------------------ |
-| `manage_transactions`   | list/get/create/update/delete/copy/batch/export/import                                                 |
-| `get_reports`           | income statement, cashflow, balance sheet, KPIs, Fire coverage, Grow P&L (all read-only)               |
-| `manage_mojo`           | get/update_target                                                                                      |
-| `manage_smile`          | list/get/create/update/delete/create_payment_plan                                                      |
-| `manage_fire`           | list/get/create/update/delete/create_payment_plan                                                      |
-| `manage_balance_sheet`  | list/get/create/update/delete, for `entityType`: asset, liability, investment, or share                |
-| `list_income_sources`   | list, for `sourceType`: revenue, interest, or property (read-only)                                     |
-| `get_identity`          | the caller's userId, auth type, and exact scope list                                                   |
-| `manage_grow`           | list/get/create/update/delete plus typed actions: buy/sell/dividend/payback/cashflow/deposit           |
-| `get_cashflow_game`     | game accounts: the running game and its `legalActions`, sets/board, cards, history, saved games        |
-| `play_cashflow_game`    | game accounts: start/roll/draw/buy/pay/play/pass, undo, reset, saved games (`confirm` for destructive) |
-| `manage_subscriptions`  | list/get/create/update/delete/batch/export/import/refresh                                              |
-| `manage_budget`         | list/upsert/get_row/update_row/delete_row/delete_month/fill_forward/copy/from_subscriptions            |
-| `manage_settings`       | get/update                                                                                             |
-| `get_encryption_config` | read-only — never returns the raw key                                                                  |
-| `manage_data`           | export/import/recalculate — the highest-blast-radius resource                                          |
-| `get_account`           | read-only — email change/delete/verify-password need a browser session, not a PAT                      |
-| `explain_concept`       | explains a Money Manager domain concept from `docs/domain/`, no API call                               |
+| Tool                    | Covers                                                                                                                                                                                               |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `manage_transactions`   | list/get/create/update/delete/copy/batch/export/import                                                                                                                                               |
+| `get_reports`           | income statement, cashflow, balance sheet, KPIs, Fire coverage, Grow P&L (all read-only)                                                                                                             |
+| `manage_mojo`           | get/update_target                                                                                                                                                                                    |
+| `manage_smile`          | list/get/create/update/delete/create_payment_plan                                                                                                                                                    |
+| `manage_fire`           | list/get/create/update/delete/create_payment_plan                                                                                                                                                    |
+| `manage_balance_sheet`  | list/get/create/update/delete, for `entityType`: asset, liability, investment, or share                                                                                                              |
+| `list_income_sources`   | list, for `sourceType`: revenue, interest, or property (read-only)                                                                                                                                   |
+| `get_identity`          | the caller's userId, auth type, and exact scope list                                                                                                                                                 |
+| `manage_grow`           | list/get/create/update/delete plus typed actions: buy/sell/dividend/payback/cashflow/deposit                                                                                                         |
+| `get_cashflow_game`     | game accounts: the running game and its `legalActions`, sets/board, cards, history, saved games; tables (`tables`, `table`, `table_log`)                                                             |
+| `play_cashflow_game`    | game accounts: start/roll/draw/buy/pay/play/pass, undo, reset, saved games (`confirm` for destructive); multiplayer tables (`table_create`, `table_join`, `table_move`, ... - an agent holds a seat) |
+| `manage_subscriptions`  | list/get/create/update/delete/batch/export/import/refresh                                                                                                                                            |
+| `manage_budget`         | list/upsert/get_row/update_row/delete_row/delete_month/fill_forward/copy/from_subscriptions                                                                                                          |
+| `manage_settings`       | get/update                                                                                                                                                                                           |
+| `get_encryption_config` | read-only — never returns the raw key                                                                                                                                                                |
+| `manage_data`           | export/import/recalculate — the highest-blast-radius resource                                                                                                                                        |
+| `get_account`           | read-only — email change/delete/verify-password need a browser session, not a PAT                                                                                                                    |
+| `explain_concept`       | explains a Money Manager domain concept from `docs/domain/`, no API call                                                                                                                             |
 
 Tool input schemas are generated at build time from `docs/api/openapi.yaml` (`apps/mcp/scripts/generate-operations.ts` → `apps/mcp/src/generated/operations.ts`, rebuilt on every `npm run build`/`npm test`, never hand-edited or committed) — the same spec-first source of truth `docs/adr/0007-documentation-architecture.md` established for the HTTP API, so the two surfaces can't silently drift apart. Tool _descriptions_ (when to use a tool, what it returns, its scope/confirm requirements) are hand-written, not generated, per the ADR — a schema alone can't produce a good LLM-facing explanation of intent.
 
@@ -86,3 +86,7 @@ MM_API_URL=http://localhost:3000/api/v1 MM_API_TOKEN=<your PAT> node apps/mcp/di
 ```
 
 The process should sit quietly on stdio (no stray stdout output) until an MCP client connects. `apps/mcp/tests/integration/smoke.test.ts` automates exactly this against a live backend + CouchDB, spawning the built server as a real child process and round-tripping a tool call — run it with `npm run test:integration --workspace=apps/mcp` (needs `docker-compose.test.yml`'s CouchDB stack running, same as `backend`'s own integration tests).
+
+## Playing at a multiplayer table
+
+An agent holds a seat like any player: `play_cashflow_game` `table_create` / `table_join` / `table_ready` / `table_profession`, then `table_move` for every move, reading `get_cashflow_game` `table` (its `version`, `activeSeat` and **`legalActions`**) before each one. There is no stream for an agent - tool calls are request/response - so it polls `table` and compares `version`. Always send a `clientCommandId` (a retry is then applied at most once) and `expectedVersion`. The server enforces everything (turn, rules, clock): a move that is not allowed is refused with the rule's own words and changes nothing. The same server-side passive-move rule that covers a human who runs out of time covers an agent. See `docs/domain/CASHFLOW_GAME_GUIDE.md` section 10 (`explain_concept` topic `cashflow_game_guide`) and `docs/api/AGENTS.md`.
