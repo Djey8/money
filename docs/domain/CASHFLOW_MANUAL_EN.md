@@ -663,9 +663,10 @@ The host can seat **bots** in the lobby. A bot has no account; it is always read
 | Easy | Sleepy Sam, Careful Carla, Cash Charlie | Never invests / only picky properties / only what cash pays for |
 | Medium | Trader Tina, Banker Ben, Marketing Mia, Steady Stella, Gambler Gus | Stocks for deposits / borrows when it pays / marketing first / small then big deals / leveraged big deals |
 | Hard | Allie All-Round, Quick Quinn | The best all-round strategies of the strategy lab and its search |
-| Champion | Champion Cleo, Master Maxine | Cleo plays the one strategy that won the most tables; Maxine plays the champion of her own profession |
+| Champion | Champion Cleo, Champion Cleo II, Master Maxine | Cleo plays the one strategy that won the most tables; Cleo II the global champion of the second search; Maxine plays the champion of her own profession |
+| Characters | Investor Ines, Stock Sasha, Network Nils, Leverage Leo, Lucky Lena, Prudent Paula, Chaser Chen | Each plays the best version of one style - only properties / stocks / marketing / borrowing / dice cards and marketing / no loans and safe / more risk when behind - from hard to champion strength |
 
-> **Fair play** Nothing a bot does is hidden: every move is in the log like anyone's. The level says how often a strategy won tables in the tournament - not what will happen in one game: the dice decide a lot.
+> **Fair play** Nothing a bot does is hidden: every move is in the log like anyone's. The level says how often a strategy won tables in the tournament - not what will happen in one game: the dice decide a lot. Each bot can be seated at a skill level - master, strong, casual or beginner: the lower levels slip now and then (pass a good deal, take a poor one, forget to sell), so you can tune how hard the table is.
 
 ## 28. How the champions were found
 

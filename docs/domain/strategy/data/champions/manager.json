@@ -1,0 +1,456 @@
+{
+ "profession": {
+  "setId": "cashflow",
+  "id": "manager",
+  "title": "Manager/in"
+ },
+ "meta": {
+  "generatedAt": "2026-10-15T20:02:25.626Z",
+  "rulesDigest": "080250730e9970",
+  "config": {
+   "candidates": 40,
+   "generations": 9,
+   "matches": 12,
+   "verify": 2000,
+   "seedBase": 410000,
+   "field": [
+    "champion-v1",
+    "all-rounder",
+    "best-found",
+    "big-deals-when-rich",
+    "mlm-then-properties",
+    "bridge-loans"
+   ]
+  },
+  "seconds": 509
+ },
+ "history": [
+  {
+   "generation": 0,
+   "tables": 36,
+   "best": [
+    {
+     "id": "cand-manager-1177",
+     "known": false,
+     "winRate": 0.6666666666666666
+    },
+    {
+     "id": "champion-v2",
+     "known": true,
+     "winRate": 0.6388888888888888
+    },
+    {
+     "id": "cand-manager-1173",
+     "known": false,
+     "winRate": 0.6388888888888888
+    }
+   ]
+  },
+  {
+   "generation": 1,
+   "tables": 36,
+   "best": [
+    {
+     "id": "cand-manager-1214",
+     "known": false,
+     "winRate": 0.7777777777777778
+    },
+    {
+     "id": "cand-manager-1218",
+     "known": false,
+     "winRate": 0.7222222222222222
+    },
+    {
+     "id": "cand-manager-1181",
+     "known": false,
+     "winRate": 0.6944444444444444
+    }
+   ]
+  },
+  {
+   "generation": 2,
+   "tables": 72,
+   "best": [
+    {
+     "id": "cand-manager-1253",
+     "known": false,
+     "winRate": 0.7083333333333334
+    },
+    {
+     "id": "cand-manager-1264",
+     "known": false,
+     "winRate": 0.6805555555555556
+    },
+    {
+     "id": "cand-manager-1177",
+     "known": false,
+     "winRate": 0.6666666666666666
+    }
+   ]
+  },
+  {
+   "generation": 3,
+   "tables": 72,
+   "best": [
+    {
+     "id": "cand-manager-1264",
+     "known": false,
+     "winRate": 0.7083333333333334
+    },
+    {
+     "id": "cand-manager-1289",
+     "known": false,
+     "winRate": 0.7083333333333334
+    },
+    {
+     "id": "cand-manager-1297",
+     "known": false,
+     "winRate": 0.7083333333333334
+    }
+   ]
+  },
+  {
+   "generation": 4,
+   "tables": 108,
+   "best": [
+    {
+     "id": "cand-manager-1264",
+     "known": false,
+     "winRate": 0.7222222222222222
+    },
+    {
+     "id": "cand-manager-1297",
+     "known": false,
+     "winRate": 0.7222222222222222
+    },
+    {
+     "id": "cand-manager-1243",
+     "known": false,
+     "winRate": 0.7222222222222222
+    }
+   ]
+  },
+  {
+   "generation": 5,
+   "tables": 108,
+   "best": [
+    {
+     "id": "cand-manager-1340",
+     "known": false,
+     "winRate": 0.7592592592592593
+    },
+    {
+     "id": "cand-manager-1264",
+     "known": false,
+     "winRate": 0.7407407407407407
+    },
+    {
+     "id": "cand-manager-1297",
+     "known": false,
+     "winRate": 0.7407407407407407
+    }
+   ]
+  },
+  {
+   "generation": 6,
+   "tables": 144,
+   "best": [
+    {
+     "id": "cand-manager-1387",
+     "known": false,
+     "winRate": 0.6388888888888888
+    },
+    {
+     "id": "cand-manager-1375",
+     "known": false,
+     "winRate": 0.6319444444444444
+    },
+    {
+     "id": "cand-manager-1384",
+     "known": false,
+     "winRate": 0.6319444444444444
+    }
+   ]
+  },
+  {
+   "generation": 7,
+   "tables": 144,
+   "best": [
+    {
+     "id": "cand-manager-1430",
+     "known": false,
+     "winRate": 0.6458333333333334
+    },
+    {
+     "id": "cand-manager-1433",
+     "known": false,
+     "winRate": 0.6458333333333334
+    },
+    {
+     "id": "cand-manager-1376",
+     "known": false,
+     "winRate": 0.6319444444444444
+    }
+   ]
+  },
+  {
+   "generation": 8,
+   "tables": 180,
+   "best": [
+    {
+     "id": "cand-manager-1461",
+     "known": false,
+     "winRate": 0.7
+    },
+    {
+     "id": "cand-manager-1430",
+     "known": false,
+     "winRate": 0.6833333333333333
+    },
+    {
+     "id": "cand-manager-1436",
+     "known": false,
+     "winRate": 0.6833333333333333
+    }
+   ]
+  }
+ ],
+ "verdict": [
+  {
+   "id": "cand-manager-1430",
+   "known": false,
+   "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1x, Big Deals from 10000 cash, Multi-Level-Marketing, passes Doodads above 100 where allowed, trades stocks, sells at 12 months of profit, takes more risk when 30+ points behind",
+   "overrides": {
+    "buyProperties": true,
+    "minMonthlyReturn": 0.01,
+    "reserveMinor": 0,
+    "loans": "bridge",
+    "loanCoverage": 1,
+    "bigDealFromCashMinor": 1000000,
+    "buyMlm": true,
+    "buyGambles": false,
+    "shares": {
+     "buyBelowMinor": 1000,
+     "sellAboveMinor": 2500,
+     "maxLotShare": 0.4
+    },
+    "sellWhenProfitMonths": 12,
+    "repayLoans": true,
+    "charityTwoDice": true,
+    "skipDoodadsAboveMinor": 10000,
+    "catchUp": {
+     "gap": 0.3,
+     "minMonthlyReturnFactor": 0.5,
+     "loanCoverageFactor": 1,
+     "reserveFactor": 1
+    },
+    "protectLead": null
+   },
+   "wins": 1296,
+   "tables": 2001,
+   "winRate": 0.6476761619190404,
+   "escapeRate": 0.6536731634182908,
+   "bankruptRate": 0.015992003998001,
+   "interval": {
+    "low": 0.6264806993609164,
+    "high": 0.6683056817676475
+   }
+  },
+  {
+   "id": "cand-manager-1436",
+   "known": false,
+   "description": "properties paying at least 2.5% a month, no reserve, borrows when covered 1x, Big Deals from 10000 cash, Multi-Level-Marketing, passes Doodads above 100 where allowed, trades stocks, sells at 12 months of profit, takes more risk when 30+ points behind",
+   "overrides": {
+    "minMonthlyReturn": 0.025,
+    "reserveMinor": 0,
+    "loans": "bridge",
+    "loanCoverage": 1,
+    "bigDealFromCashMinor": 1000000,
+    "buyMlm": true,
+    "buyGambles": false,
+    "shares": {
+     "buyBelowMinor": 1000,
+     "sellAboveMinor": 2500,
+     "maxLotShare": 0.4
+    },
+    "sellWhenProfitMonths": 12,
+    "repayLoans": true,
+    "charityTwoDice": true,
+    "skipDoodadsAboveMinor": 10000,
+    "catchUp": {
+     "gap": 0.3,
+     "minMonthlyReturnFactor": 0.5,
+     "loanCoverageFactor": 1,
+     "reserveFactor": 1
+    },
+    "protectLead": null
+   },
+   "wins": 1296,
+   "tables": 2001,
+   "winRate": 0.6476761619190404,
+   "escapeRate": 0.6536731634182908,
+   "bankruptRate": 0.015992003998001,
+   "interval": {
+    "low": 0.6264806993609164,
+    "high": 0.6683056817676475
+   }
+  },
+  {
+   "id": "cand-manager-1463",
+   "known": false,
+   "description": "properties paying at least 2.5% a month, no reserve, borrows when covered 1x, Big Deals from 10000 cash, Multi-Level-Marketing, passes Doodads above 1000 where allowed, trades stocks, sells at 12 months of profit, takes more risk when 30+ points behind",
+   "overrides": {
+    "minMonthlyReturn": 0.025,
+    "reserveMinor": 0,
+    "loans": "bridge",
+    "loanCoverage": 1,
+    "bigDealFromCashMinor": 1000000,
+    "buyMlm": true,
+    "buyGambles": false,
+    "shares": {
+     "buyBelowMinor": 1000,
+     "sellAboveMinor": 2500,
+     "maxLotShare": 0.4
+    },
+    "sellWhenProfitMonths": 12,
+    "repayLoans": true,
+    "charityTwoDice": true,
+    "skipDoodadsAboveMinor": 100000,
+    "catchUp": {
+     "gap": 0.3,
+     "minMonthlyReturnFactor": 0.5,
+     "loanCoverageFactor": 1,
+     "reserveFactor": 1
+    },
+    "protectLead": null
+   },
+   "wins": 1284,
+   "tables": 2001,
+   "winRate": 0.6416791604197901,
+   "escapeRate": 0.6461769115442278,
+   "bankruptRate": 0.013493253373313344,
+   "interval": {
+    "low": 0.6204159923276993,
+    "high": 0.6623993682474205
+   }
+  },
+  {
+   "id": "champion-v2",
+   "known": true,
+   "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, passes Doodads above 100 where allowed, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
+   "overrides": {
+    "buyProperties": true,
+    "minMonthlyReturn": 0.01,
+    "reserveMinor": 0,
+    "loans": "bridge",
+    "loanCoverage": 1.5,
+    "bigDealFromCashMinor": 1000000,
+    "buyMlm": true,
+    "buyGambles": false,
+    "shares": {
+     "buyBelowMinor": 1000,
+     "sellAboveMinor": 2500,
+     "maxLotShare": 0.4
+    },
+    "sellWhenProfitMonths": 12,
+    "repayLoans": true,
+    "charityTwoDice": true,
+    "skipDoodadsAboveMinor": 10000,
+    "catchUp": {
+     "gap": 0.1,
+     "minMonthlyReturnFactor": 0.8,
+     "loanCoverageFactor": 1,
+     "reserveFactor": 0.3
+    },
+    "protectLead": null
+   },
+   "wins": 1275,
+   "tables": 2001,
+   "winRate": 0.6371814092953523,
+   "escapeRate": 0.6411794102948526,
+   "bankruptRate": 0.004997501249375313,
+   "interval": {
+    "low": 0.6158698018960336,
+    "high": 0.6579672932640029
+   }
+  },
+  {
+   "id": "cand-manager-1461",
+   "known": false,
+   "description": "properties paying at least 2.5% a month, no reserve, borrows when covered 1.25x, Big Deals from 10000 cash, Multi-Level-Marketing, passes Doodads above 100 where allowed, trades stocks, sells at 12 months of profit",
+   "overrides": {
+    "buyProperties": true,
+    "minMonthlyReturn": 0.025,
+    "reserveMinor": 0,
+    "loans": "bridge",
+    "loanCoverage": 1.25,
+    "bigDealFromCashMinor": 1000000,
+    "buyMlm": true,
+    "buyGambles": false,
+    "shares": {
+     "buyBelowMinor": 800,
+     "sellAboveMinor": 3000,
+     "maxLotShare": 0.5
+    },
+    "sellWhenProfitMonths": 12,
+    "repayLoans": true,
+    "charityTwoDice": true,
+    "skipDoodadsAboveMinor": 10000,
+    "catchUp": null,
+    "protectLead": null
+   },
+   "wins": 1245,
+   "tables": 2001,
+   "winRate": 0.6221889055472264,
+   "escapeRate": 0.6301849075462269,
+   "bankruptRate": 0.004997501249375313,
+   "interval": {
+    "low": 0.6007301017571919,
+    "high": 0.6431794420192342
+   }
+  }
+ ],
+ "champion": {
+  "id": "champion-v2",
+  "source": "champion-v2",
+  "spec": {
+   "id": "champion-v2",
+   "label": "Champion",
+   "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, passes Doodads above 100 where allowed, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
+   "overrides": {
+    "buyProperties": true,
+    "minMonthlyReturn": 0.01,
+    "reserveMinor": 0,
+    "loans": "bridge",
+    "loanCoverage": 1.5,
+    "bigDealFromCashMinor": 1000000,
+    "buyMlm": true,
+    "buyGambles": false,
+    "shares": {
+     "buyBelowMinor": 1000,
+     "sellAboveMinor": 2500,
+     "maxLotShare": 0.4
+    },
+    "sellWhenProfitMonths": 12,
+    "repayLoans": true,
+    "charityTwoDice": true,
+    "skipDoodadsAboveMinor": 10000,
+    "catchUp": {
+     "gap": 0.1,
+     "minMonthlyReturnFactor": 0.8,
+     "loanCoverageFactor": 1,
+     "reserveFactor": 0.3
+    },
+    "protectLead": null
+   }
+  },
+  "winRate": 0.6371814092953523,
+  "interval": {
+   "low": 0.6158698018960336,
+   "high": 0.6579672932640029
+  },
+  "tables": 2001,
+  "againstChampionV1": 0.6371814092953523
+ },
+ "adopted": false
+}

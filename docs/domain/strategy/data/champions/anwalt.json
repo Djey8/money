@@ -1,0 +1,462 @@
+{
+ "profession": {
+  "setId": "cashflow",
+  "id": "anwalt",
+  "title": "Anwalt/Anwältin"
+ },
+ "meta": {
+  "generatedAt": "2026-10-15T20:36:02.087Z",
+  "rulesDigest": "080250730e9970",
+  "config": {
+   "candidates": 40,
+   "generations": 9,
+   "matches": 12,
+   "verify": 2000,
+   "seedBase": 410000,
+   "field": [
+    "champion-v1",
+    "all-rounder",
+    "best-found",
+    "big-deals-when-rich",
+    "mlm-then-properties",
+    "bridge-loans"
+   ]
+  },
+  "seconds": 565
+ },
+ "history": [
+  {
+   "generation": 0,
+   "tables": 36,
+   "best": [
+    {
+     "id": "cand-anwalt-2367",
+     "known": false,
+     "winRate": 0.7222222222222222
+    },
+    {
+     "id": "cand-anwalt-2351",
+     "known": false,
+     "winRate": 0.6944444444444444
+    },
+    {
+     "id": "cand-anwalt-2354",
+     "known": false,
+     "winRate": 0.6944444444444444
+    }
+   ]
+  },
+  {
+   "generation": 1,
+   "tables": 36,
+   "best": [
+    {
+     "id": "cand-anwalt-2400",
+     "known": false,
+     "winRate": 0.6666666666666666
+    },
+    {
+     "id": "cand-anwalt-2354",
+     "known": false,
+     "winRate": 0.6388888888888888
+    },
+    {
+     "id": "cand-anwalt-2397",
+     "known": false,
+     "winRate": 0.6111111111111112
+    }
+   ]
+  },
+  {
+   "generation": 2,
+   "tables": 72,
+   "best": [
+    {
+     "id": "cand-anwalt-2433",
+     "known": false,
+     "winRate": 0.6944444444444444
+    },
+    {
+     "id": "cand-anwalt-2445",
+     "known": false,
+     "winRate": 0.6944444444444444
+    },
+    {
+     "id": "cand-anwalt-2397",
+     "known": false,
+     "winRate": 0.6527777777777778
+    }
+   ]
+  },
+  {
+   "generation": 3,
+   "tables": 72,
+   "best": [
+    {
+     "id": "cand-anwalt-2433",
+     "known": false,
+     "winRate": 0.6944444444444444
+    },
+    {
+     "id": "cand-anwalt-2445",
+     "known": false,
+     "winRate": 0.6944444444444444
+    },
+    {
+     "id": "cand-anwalt-2447",
+     "known": false,
+     "winRate": 0.6944444444444444
+    }
+   ]
+  },
+  {
+   "generation": 4,
+   "tables": 108,
+   "best": [
+    {
+     "id": "cand-anwalt-2419",
+     "known": false,
+     "winRate": 0.6018518518518519
+    },
+    {
+     "id": "cand-anwalt-2483",
+     "known": false,
+     "winRate": 0.6018518518518519
+    },
+    {
+     "id": "cand-anwalt-2492",
+     "known": false,
+     "winRate": 0.6018518518518519
+    }
+   ]
+  },
+  {
+   "generation": 5,
+   "tables": 108,
+   "best": [
+    {
+     "id": "cand-anwalt-2529",
+     "known": false,
+     "winRate": 0.5833333333333334
+    },
+    {
+     "id": "cand-anwalt-2539",
+     "known": false,
+     "winRate": 0.5648148148148148
+    },
+    {
+     "id": "cand-anwalt-2499",
+     "known": false,
+     "winRate": 0.5555555555555556
+    }
+   ]
+  },
+  {
+   "generation": 6,
+   "tables": 144,
+   "best": [
+    {
+     "id": "cand-anwalt-2557",
+     "known": false,
+     "winRate": 0.6388888888888888
+    },
+    {
+     "id": "cand-anwalt-2571",
+     "known": false,
+     "winRate": 0.6319444444444444
+    },
+    {
+     "id": "cand-anwalt-2546",
+     "known": false,
+     "winRate": 0.625
+    }
+   ]
+  },
+  {
+   "generation": 7,
+   "tables": 144,
+   "best": [
+    {
+     "id": "cand-anwalt-2584",
+     "known": false,
+     "winRate": 0.6736111111111112
+    },
+    {
+     "id": "cand-anwalt-2546",
+     "known": false,
+     "winRate": 0.6666666666666666
+    },
+    {
+     "id": "cand-anwalt-2576",
+     "known": false,
+     "winRate": 0.6666666666666666
+    }
+   ]
+  },
+  {
+   "generation": 8,
+   "tables": 180,
+   "best": [
+    {
+     "id": "cand-anwalt-2608",
+     "known": false,
+     "winRate": 0.6055555555555555
+    },
+    {
+     "id": "cand-anwalt-2557",
+     "known": false,
+     "winRate": 0.6
+    },
+    {
+     "id": "cand-anwalt-2622",
+     "known": false,
+     "winRate": 0.6
+    }
+   ]
+  }
+ ],
+ "verdict": [
+  {
+   "id": "champion-v2",
+   "known": true,
+   "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, passes Doodads above 100 where allowed, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
+   "overrides": {
+    "buyProperties": true,
+    "minMonthlyReturn": 0.01,
+    "reserveMinor": 0,
+    "loans": "bridge",
+    "loanCoverage": 1.5,
+    "bigDealFromCashMinor": 1000000,
+    "buyMlm": true,
+    "buyGambles": false,
+    "shares": {
+     "buyBelowMinor": 1000,
+     "sellAboveMinor": 2500,
+     "maxLotShare": 0.4
+    },
+    "sellWhenProfitMonths": 12,
+    "repayLoans": true,
+    "charityTwoDice": true,
+    "skipDoodadsAboveMinor": 10000,
+    "catchUp": {
+     "gap": 0.1,
+     "minMonthlyReturnFactor": 0.8,
+     "loanCoverageFactor": 1,
+     "reserveFactor": 0.3
+    },
+    "protectLead": null
+   },
+   "wins": 1226,
+   "tables": 2001,
+   "winRate": 0.6126936531734133,
+   "escapeRate": 0.6196901549225388,
+   "bankruptRate": 0.0009995002498750624,
+   "interval": {
+    "low": 0.5911527992033901,
+    "high": 0.6338026286967492
+   }
+  },
+  {
+   "id": "cand-anwalt-2557",
+   "known": false,
+   "description": "properties paying at least 1.0% a month, 250 kept in reserve, borrows when covered 1.5x, Big Deals from 15000 cash, dice gambles, passes Doodads above 0 where allowed, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
+   "overrides": {
+    "minMonthlyReturn": 0.01,
+    "reserveMinor": 25000,
+    "loans": "bridge",
+    "loanCoverage": 1.5,
+    "bigDealFromCashMinor": 1500000,
+    "buyMlm": false,
+    "buyGambles": true,
+    "shares": {
+     "buyBelowMinor": 800,
+     "sellAboveMinor": 3000,
+     "maxLotShare": 0.5
+    },
+    "sellWhenProfitMonths": 12,
+    "repayLoans": true,
+    "charityTwoDice": true,
+    "skipDoodadsAboveMinor": 0,
+    "catchUp": {
+     "gap": 0.1,
+     "minMonthlyReturnFactor": 0.8,
+     "loanCoverageFactor": 1,
+     "reserveFactor": 0.3
+    },
+    "protectLead": null
+   },
+   "wins": 1178,
+   "tables": 2001,
+   "winRate": 0.5887056471764118,
+   "escapeRate": 0.5947026486756621,
+   "bankruptRate": 0.0009995002498750624,
+   "interval": {
+    "low": 0.5669952098215015,
+    "high": 0.610076135864861
+   }
+  },
+  {
+   "id": "cand-anwalt-2622",
+   "known": false,
+   "description": "properties paying at least 1.0% a month, 250 kept in reserve, borrows when covered 1.5x, Big Deals from 15000 cash, dice gambles, passes Doodads above 0 where allowed, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
+   "overrides": {
+    "buyProperties": true,
+    "minMonthlyReturn": 0.01,
+    "reserveMinor": 25000,
+    "loans": "bridge",
+    "loanCoverage": 1.5,
+    "bigDealFromCashMinor": 1500000,
+    "buyMlm": false,
+    "buyGambles": true,
+    "shares": {
+     "buyBelowMinor": 800,
+     "sellAboveMinor": 3000,
+     "maxLotShare": 0.5
+    },
+    "sellWhenProfitMonths": 12,
+    "repayLoans": true,
+    "charityTwoDice": true,
+    "skipDoodadsAboveMinor": 0,
+    "catchUp": {
+     "gap": 0.1,
+     "minMonthlyReturnFactor": 0.8,
+     "loanCoverageFactor": 1,
+     "reserveFactor": 0.3
+    },
+    "protectLead": null
+   },
+   "wins": 1178,
+   "tables": 2001,
+   "winRate": 0.5887056471764118,
+   "escapeRate": 0.5947026486756621,
+   "bankruptRate": 0.0009995002498750624,
+   "interval": {
+    "low": 0.5669952098215015,
+    "high": 0.610076135864861
+   }
+  },
+  {
+   "id": "cand-anwalt-2608",
+   "known": false,
+   "description": "properties paying at least 1.0% a month, 250 kept in reserve, borrows when covered 1.25x, Big Deals from 15000 cash, dice gambles, passes Doodads above 0 where allowed, trades stocks, sells at 18 months of profit, takes more risk when 10+ points behind",
+   "overrides": {
+    "buyProperties": true,
+    "minMonthlyReturn": 0.01,
+    "reserveMinor": 25000,
+    "loans": "bridge",
+    "loanCoverage": 1.25,
+    "bigDealFromCashMinor": 1500000,
+    "buyMlm": false,
+    "buyGambles": true,
+    "shares": {
+     "buyBelowMinor": 800,
+     "sellAboveMinor": 3000,
+     "maxLotShare": 0.5
+    },
+    "sellWhenProfitMonths": 18,
+    "repayLoans": true,
+    "charityTwoDice": true,
+    "skipDoodadsAboveMinor": 0,
+    "catchUp": {
+     "gap": 0.1,
+     "minMonthlyReturnFactor": 0.8,
+     "loanCoverageFactor": 1,
+     "reserveFactor": 0.3
+    },
+    "protectLead": null
+   },
+   "wins": 1176,
+   "tables": 2001,
+   "winRate": 0.5877061469265368,
+   "escapeRate": 0.592703648175912,
+   "bankruptRate": 0.0004997501249375312,
+   "interval": {
+    "low": 0.5659897986697117,
+    "high": 0.6090863769244103
+   }
+  },
+  {
+   "id": "cand-anwalt-2576",
+   "known": false,
+   "description": "properties paying at least 1.0% a month, 250 kept in reserve, borrows when covered 2x, Big Deals from 15000 cash, dice gambles, passes Doodads above 0 where allowed, trades stocks, sells at 18 months of profit, takes more risk when 10+ points behind",
+   "overrides": {
+    "buyProperties": true,
+    "minMonthlyReturn": 0.01,
+    "reserveMinor": 25000,
+    "loans": "bridge",
+    "loanCoverage": 2,
+    "bigDealFromCashMinor": 1500000,
+    "buyMlm": false,
+    "buyGambles": true,
+    "shares": {
+     "buyBelowMinor": 800,
+     "sellAboveMinor": 3000,
+     "maxLotShare": 0.5
+    },
+    "sellWhenProfitMonths": 18,
+    "repayLoans": true,
+    "charityTwoDice": true,
+    "skipDoodadsAboveMinor": 0,
+    "catchUp": {
+     "gap": 0.1,
+     "minMonthlyReturnFactor": 0.8,
+     "loanCoverageFactor": 1,
+     "reserveFactor": 0.3
+    },
+    "protectLead": null
+   },
+   "wins": 1155,
+   "tables": 2001,
+   "winRate": 0.5772113943028486,
+   "escapeRate": 0.5827086456771614,
+   "bankruptRate": 0.0009995002498750624,
+   "interval": {
+    "low": 0.5554384860432333,
+    "high": 0.5986884035823611
+   }
+  }
+ ],
+ "champion": {
+  "id": "champion-v2",
+  "source": "champion-v2",
+  "spec": {
+   "id": "champion-v2",
+   "label": "Champion",
+   "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, passes Doodads above 100 where allowed, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
+   "overrides": {
+    "buyProperties": true,
+    "minMonthlyReturn": 0.01,
+    "reserveMinor": 0,
+    "loans": "bridge",
+    "loanCoverage": 1.5,
+    "bigDealFromCashMinor": 1000000,
+    "buyMlm": true,
+    "buyGambles": false,
+    "shares": {
+     "buyBelowMinor": 1000,
+     "sellAboveMinor": 2500,
+     "maxLotShare": 0.4
+    },
+    "sellWhenProfitMonths": 12,
+    "repayLoans": true,
+    "charityTwoDice": true,
+    "skipDoodadsAboveMinor": 10000,
+    "catchUp": {
+     "gap": 0.1,
+     "minMonthlyReturnFactor": 0.8,
+     "loanCoverageFactor": 1,
+     "reserveFactor": 0.3
+    },
+    "protectLead": null
+   }
+  },
+  "winRate": 0.6126936531734133,
+  "interval": {
+   "low": 0.5911527992033901,
+   "high": 0.6338026286967492
+  },
+  "tables": 2001,
+  "againstChampionV1": 0.6126936531734133
+ },
+ "adopted": false
+}

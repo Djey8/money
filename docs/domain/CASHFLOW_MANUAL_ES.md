@@ -663,9 +663,10 @@ El anfitrión puede sentar **bots** en la sala. Un bot no tiene cuenta; siempre 
 | Fácil | Sleepy Sam, Careful Carla, Cash Charlie | Nunca invierte / solo propiedades selectivas / solo lo que paga el efectivo |
 | Medio | Trader Tina, Banker Ben, Marketing Mia, Steady Stella, Gambler Gus | Acciones para las entradas / pide prestado cuando compensa / primero marketing / tratos pequeños y luego grandes / tratos grandes a crédito |
 | Difícil | Allie All-Round, Quick Quinn | Las mejores estrategias generales del laboratorio de estrategias y su búsqueda |
-| Campeón | Champion Cleo, Master Maxine | Cleo juega la única estrategia que ganó más mesas; Maxine juega el campeón de su propia profesión |
+| Campeón | Champion Cleo, Champion Cleo II, Master Maxine | Cleo juega la única estrategia que ganó más mesas; Cleo II el campeón global de la segunda búsqueda; Maxine juega el campeón de su propia profesión |
+| Personajes | Investor Ines, Stock Sasha, Network Nils, Leverage Leo, Lucky Lena, Prudent Paula, Chaser Chen | Cada uno juega la mejor versión de un estilo - solo propiedades / acciones / marketing / préstamos / cartas de dados y marketing / sin préstamos y seguro / más riesgo cuando va por detrás - de nivel difícil a campeón |
 
-> **Juego limpio** Nada de lo que hace un bot está oculto: cada jugada está en el registro como la de cualquiera. El nivel dice con qué frecuencia una estrategia ganó mesas en el torneo - no lo que pasará en una partida: los dados deciden mucho.
+> **Juego limpio** Nada de lo que hace un bot está oculto: cada jugada está en el registro como la de cualquiera. El nivel dice con qué frecuencia una estrategia ganó mesas en el torneo - no lo que pasará en una partida: los dados deciden mucho. Cada bot puede sentarse a un nivel de juego - maestro, fuerte, casual o principiante: los niveles bajos fallan de vez en cuando (dejan pasar un buen trato, aceptan uno malo, olvidan vender), así que puedes ajustar lo difícil que es la mesa.
 
 ## 28. Cómo se encontraron los campeones
 

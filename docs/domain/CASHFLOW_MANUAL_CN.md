@@ -663,9 +663,10 @@ _(Table: 破产前的最后一个决定 - the figures are in the topics cashflow
 | 简单 | Sleepy Sam, Careful Carla, Cash Charlie | 从不投资 / 只买挑剔的房产 / 只买现金付得起的 |
 | 中等 | Trader Tina, Banker Ben, Marketing Mia, Steady Stella, Gambler Gus | 用股票凑首付 / 划算时借款 / 先做直销 / 先小后大 / 借钱做大额交易 |
 | 困难 | Allie All-Round, Quick Quinn | 策略实验室及其搜索得出的最佳综合策略 |
-| 冠军 | Champion Cleo, Master Maxine | Cleo 使用赢下最多牌桌的那一套策略；Maxine 使用她自己职业的冠军策略 |
+| 冠军 | Champion Cleo, Champion Cleo II, Master Maxine | Cleo 使用赢下最多牌桌的那一套策略；Cleo II 是第二次搜索得出的全局冠军；Maxine 使用她自己职业的冠军策略 |
+| 角色 | Investor Ines, Stock Sasha, Network Nils, Leverage Leo, Lucky Lena, Prudent Paula, Chaser Chen | 每个角色使用某一风格的最佳版本——只买房产 / 股票 / 直销 / 借贷 / 骰子牌与直销 / 不借款且稳健 / 落后时更冒险——强度从困难到冠军 |
 
-> **公平竞争** 机器人所做的一切都不是隐藏的：每一步都像其他人一样记录在日志里。等级表示某策略在锦标赛中赢下牌桌的频率——不代表单局的结果：骰子的影响很大。
+> **公平竞争** 机器人所做的一切都不是隐藏的：每一步都像其他人一样记录在日志里。等级表示某策略在锦标赛中赢下牌桌的频率——不代表单局的结果：骰子的影响很大。每个机器人都可以按一个水平入座——大师、较强、休闲或新手：较低的水平会偶尔失误（错过好交易、接下差交易、忘记出售），所以你可以调节牌桌的难度。
 
 ## 28. 冠军是如何找到的
 

@@ -663,9 +663,10 @@ L'hôte peut installer des **bots** dans le salon. Un bot n'a pas de compte ; il
 | Facile | Sleepy Sam, Careful Carla, Cash Charlie | N'investit jamais / seulement des biens sélectifs / seulement ce que le comptant paie |
 | Moyen | Trader Tina, Banker Ben, Marketing Mia, Steady Stella, Gambler Gus | Actions pour les apports / emprunte quand ça paie / marketing d'abord / petites puis grosses affaires / grosses affaires à crédit |
 | Difficile | Allie All-Round, Quick Quinn | Les meilleures stratégies générales du laboratoire de stratégies et de sa recherche |
-| Champion | Champion Cleo, Master Maxine | Cleo joue la seule stratégie qui a gagné le plus de tables ; Maxine joue le champion de sa propre profession |
+| Champion | Champion Cleo, Champion Cleo II, Master Maxine | Cleo joue la seule stratégie qui a gagné le plus de tables ; Cleo II le champion global de la deuxième recherche ; Maxine joue le champion de sa propre profession |
+| Personnages | Investor Ines, Stock Sasha, Network Nils, Leverage Leo, Lucky Lena, Prudent Paula, Chaser Chen | Chacun joue la meilleure version d'un style - seulement des biens / actions / marketing / emprunts / cartes de dés et marketing / sans prêt et prudent / plus de risque quand il est en retard - de la force difficile à celle de champion |
 
-> **Fair-play** Rien de ce que fait un bot n'est caché : chaque coup est dans le journal comme celui de n'importe qui. Le niveau dit à quelle fréquence une stratégie a gagné des tables au tournoi - pas ce qui arrivera dans une partie : les dés décident beaucoup.
+> **Fair-play** Rien de ce que fait un bot n'est caché : chaque coup est dans le journal comme celui de n'importe qui. Le niveau dit à quelle fréquence une stratégie a gagné des tables au tournoi - pas ce qui arrivera dans une partie : les dés décident beaucoup. Chaque bot peut être installé à un niveau de jeu - maître, fort, occasionnel ou débutant : les niveaux inférieurs se trompent de temps en temps (laissent passer une bonne affaire, en prennent une mauvaise, oublient de vendre), ce qui permet de régler la difficulté de la table.
 
 ## 28. Comment les champions ont été trouvés
 

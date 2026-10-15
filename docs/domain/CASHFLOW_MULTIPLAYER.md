@@ -101,12 +101,13 @@ dice or the order of the piles.
 The host seats bots in the lobby (`POST /game/rooms/{id}/bots`, MCP `table_add_bot`) and removes one with the kick of its seat. The
 characters (`GET /game/rooms/bots`, MCP `table_bots`) run from easy to hard:
 
-| Level    | Bots                                                               | How they play                                                                                              |
-| -------- | ------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
-| easy     | Sleepy Sam, Careful Carla, Cash Charlie                            | never invests / only picky properties / only what cash pays for                                            |
-| medium   | Trader Tina, Banker Ben, Marketing Mia, Steady Stella, Gambler Gus | stocks for deposits / borrows when it pays / marketing first / small then big deals / leveraged big deals  |
-| hard     | Allie All-Round, Quick Quinn                                       | the best all-round strategies of the lab and the search                                                    |
-| champion | Champion Cleo                                                      | the strategy the tournament search found to win tables most often - and the only one that watches the race |
+| Level      | Bots                                                                                           | How they play                                                                                                                                                                                 |
+| ---------- | ---------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| easy       | Sleepy Sam, Careful Carla, Cash Charlie                                                        | never invests / only picky properties / only what cash pays for                                                                                                                               |
+| medium     | Trader Tina, Banker Ben, Marketing Mia, Steady Stella, Gambler Gus                             | stocks for deposits / borrows when it pays / marketing first / small then big deals / leveraged big deals                                                                                     |
+| hard       | Allie All-Round, Quick Quinn                                                                   | the best all-round strategies of the lab and the search                                                                                                                                       |
+| champion   | Champion Cleo, Champion Cleo II, Master Maxine                                                 | Cleo plays the one strategy that won the most tables; Cleo II the global champion of the second search; Maxine plays the champion of her own profession                                       |
+| characters | Investor Ines, Stock Sasha, Network Nils, Leverage Leo, Lucky Lena, Prudent Paula, Chaser Chen | the best version of one style each - only properties / stocks / marketing / borrowing / dice cards and marketing / no loans and safe / more risk when behind - from hard to champion strength |
 
 **What the tournament found** (18,720 tables: 2, 4 and 6 seats, guided and strict rules, every profession, everyone the same profession or everyone a different one; every strategy in every seat): Champion Cleo won about **70-80%** of the tables she sat at, whatever the table size or rule set - against 17-50% by luck - and the best hand-built strategy, Allie All-Round, about **52-69%**. The solo search's best, Quick Quinn, which escapes fastest _alone_, wins far fewer tables (about 15-55%): a race is not the same as a solo run, and the strategy that wins it takes more risk when a rival pulls ahead. The numbers, with their 95% ranges, are in `CASHFLOW_TOURNAMENT.md`; they are not a promise for any one game - the dice decide a lot, and a human who reads the table well can beat her.
 
@@ -116,6 +117,8 @@ strategy in every seat, again and again. The tournament is how the best strategi
 the strategies' knobs - including ones that read how close each rival is to escaping - and keeps what wins, verified on games the
 search never saw. A bot in the lobby screen is planned (`todo/cashflow-tournament-and-bots.md`); until then the host seats bots
 through the API or an agent.
+
+**Skill levels:** any bot can be seated at a level - `master` (plays its plan as found), `strong`, `casual` or `beginner` (API/MCP `level`, or the lobby's skill menu). The lower levels slip now and then - pass a deal their plan would take, take one it would leave, pay a Doodad they could pass, forget to sell - so the same character is a different opponent. The slips come from the position itself, not from chance, so a game stays reproducible.
 
 **Agents against bots:** seat a few bots, then let an agent sit at the same table (section 7). The agent plays by the rules and
 the same information as a person; the bots play their strategies. Win rates in the tournament say what to expect.
