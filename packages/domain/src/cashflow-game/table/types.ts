@@ -107,6 +107,12 @@ export interface TablePlayer {
   away: boolean;
   /** Set when play starts: this player's own books, never an account's. */
   books: GameBooks | null;
+  /**
+   * A seat played by a strategy of the table's server, not by a person (todo/cashflow-tournament-and-bots.md B1). It has no
+   * account: its `id` is `bot:<n>`, it is always ready, and it picks the profession named here (or one at random). Absent for a
+   * person - which is every player of every table made before bots existed.
+   */
+  bot?: { policyId: string; professionId?: string };
 }
 
 /**
@@ -197,6 +203,8 @@ export interface TableResult {
 export type TableCommand =
   | { type: 'join'; name: string; color?: string }
   | { type: 'leave' }
+  /** The host seats a bot (a strategy) at the table, in the lobby. Remove it with `kick`. */
+  | { type: 'add_bot'; name: string; policyId: string; professionId?: string; color?: string }
   | { type: 'set_ready'; ready: boolean }
   | { type: 'kick'; target: string }
   | { type: 'update_settings'; settings: TableSettingsInput }
@@ -227,6 +235,7 @@ export type TableCommand =
 export type TableEventType =
   | 'table_created'
   | 'player_joined'
+  | 'bot_added'
   | 'player_left'
   | 'player_kicked'
   | 'ready_changed'

@@ -26,6 +26,7 @@ import {
   type TableSettingsInput,
 } from './types';
 import { projectFor } from './view';
+import { tableAwareness } from './awareness';
 
 /**
  * Whole tables played in memory (todo/cashflow-multiplayer.md slice T6): the real table rules, driven by the strategy lab's
@@ -55,6 +56,12 @@ export interface TableSimConfig {
   policies?: Policy[];
   /** Seats that never answer in time: the server plays their turn after the clock runs out. */
   slowSeats?: number[];
+  /**
+   * A profession for each seat (by position; a missing entry or 'random' is drawn by the table). Given, the table is made with
+   * `professions: 'duplicates'` unless `settings` says otherwise, and the seats pick before play - this is how a tournament puts
+   * every policy on every profession.
+   */
+  professionIds?: string[];
   /** Stop after this many commands (a game that has not ended by then is cut off). */
   maxCommands?: number;
   /**
@@ -223,7 +230,7 @@ export function digestTable(table: Table): string {
 
 // ── Policies at a table ────────────────────────────────────────────────────────────────────────────
 
-function viewOf(books: GameBooks): PolicyView {
+export function viewOf(books: GameBooks, table?: Table, playerId?: string): PolicyView {
   const finances = summarizeGameFinances(books.state, books.subscriptions);
   const rule = books.gameSet?.loanRule;
   return {
@@ -237,16 +244,17 @@ function viewOf(books: GameBooks): PolicyView {
     turn: currentTurn(books.state).count,
     children: books.state.children,
     charityRoundsLeft: books.state.charityRoundsLeft,
+    ...(table && playerId ? { table: tableAwareness(table, playerId) } : {}),
   };
 }
 
-const cardOf = (books: GameBooks, deck: string, cardId: string) =>
+export const cardOf = (books: GameBooks, deck: string, cardId: string) =>
   (books.gameSet?.decks?.[deck as 'dealSmall'] as { id: string }[] | undefined)?.find(
     (c) => c.id === cardId,
   );
 
 /** The next command a policy plays for the player on the move, or null when their turn is over. */
-function decide(
+export function decide(
   table: Table,
   playerId: string,
   policy: Policy,
@@ -256,7 +264,7 @@ function decide(
   if (!books || table.activePlayerId !== playerId) return null;
   const turn = currentTurn(books.state);
   if (turn.phase === 'over') return null;
-  const view = viewOf(books);
+  const view = viewOf(books, table, playerId);
 
   if (turn.phase === 'roll') {
     const waiting = openDecisions(books.state);
@@ -321,7 +329,7 @@ export function simulateTable(config: TableSimConfig): TableSimResult {
     hostName: 'Player 0',
     settings: {
       name: 'Simulated table',
-      professions: 'random',
+      professions: config.professionIds ? 'duplicates' : 'random',
       turnOrder: 'random',
       maxSeats: Math.max(2, config.players),
       clock: { mode: 'per-move', secondsPerMove: 120 },
@@ -354,6 +362,11 @@ export function simulateTable(config: TableSimConfig): TableSimResult {
     send(ids[i], { type: 'set_ready', ready: true });
   }
   send(ids[0], { type: 'start' });
+  if (config.professionIds) {
+    for (let i = 0; i < config.players; i += 1) {
+      send(ids[i], { type: 'pick_profession', professionId: config.professionIds[i] ?? 'random' });
+    }
+  }
 
   const sellIntoOffers = () => {
     for (const player of table.players) {
@@ -361,7 +374,7 @@ export function simulateTable(config: TableSimConfig): TableSimResult {
       if (!books || player.status !== 'active' || currentTurn(books.state).phase === 'over')
         continue;
       const policy = policies[ids.indexOf(player.id) % policies.length];
-      for (const move of policy.maintain(viewOf(books))) {
+      for (const move of policy.maintain(viewOf(books, table, player.id))) {
         if (move.kind === 'sell') send(player.id, { type: 'sell_position', input: move.input });
       }
     }
@@ -384,7 +397,10 @@ export function simulateTable(config: TableSimConfig): TableSimResult {
       if (buyer.id === seller || !other || buyer.status !== 'active') continue;
       if (currentTurn(other.state).phase === 'over') continue;
       const policy = policies[ids.indexOf(buyer.id) % policies.length];
-      if (policy.deal(viewOf(other), card).buy && send(buyer.id, { type: 'accept_trade' }))
+      if (
+        policy.deal(viewOf(other, table, buyer.id), card).buy &&
+        send(buyer.id, { type: 'accept_trade' })
+      )
         return true;
     }
     return false;
@@ -413,7 +429,7 @@ export function simulateTable(config: TableSimConfig): TableSimResult {
     // Between rolls: pay the bank back and sell where a buyer is waiting.
     const books = current.players.find((p) => p.id === who)!.books!;
     if (currentTurn(books.state).phase === 'roll') {
-      for (const move of policy.maintain(viewOf(books))) {
+      for (const move of policy.maintain(viewOf(books, current, who))) {
         if (move.kind === 'sell') send(who, { type: 'sell_position', input: move.input });
         else send(who, { type: 'bank_loan', amountMinor: -move.amountMinor });
       }

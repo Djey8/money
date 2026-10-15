@@ -21,6 +21,8 @@ const DEFAULTS: PolicyParams = {
   sellWhenProfitMonths: null,
   repayLoans: false,
   charityTwoDice: true,
+  catchUp: null,
+  protectLead: null,
 };
 
 /** Rounds `value` up to a whole number of `step`s. */
@@ -36,24 +38,50 @@ export function paramPolicy(
 ): Policy {
   const params: PolicyParams = { ...DEFAULTS, ...overrides };
 
+  /** The knobs as they apply right now: loosened when a rival leads, tightened when this player does (a table only). */
+  function effective(view: PolicyView): {
+    minMonthlyReturn: number;
+    loanCoverage: number;
+    reserveMinor: number;
+  } {
+    let { minMonthlyReturn, loanCoverage, reserveMinor } = params;
+    const table = view.table;
+    if (table) {
+      const behind = table.leaderCoverage - table.myCoverage;
+      const adjust =
+        params.catchUp && behind >= params.catchUp.gap
+          ? params.catchUp
+          : params.protectLead && -behind >= params.protectLead.gap
+            ? params.protectLead
+            : null;
+      if (adjust) {
+        minMonthlyReturn *= adjust.minMonthlyReturnFactor;
+        loanCoverage *= adjust.loanCoverageFactor;
+        reserveMinor = Math.round(reserveMinor * adjust.reserveFactor);
+      }
+    }
+    return { minMonthlyReturn, loanCoverage, reserveMinor };
+  }
+
   function dealInvestment(view: PolicyView, card: CashflowDealCard): DealChoice {
     if (!params.buyProperties) return { buy: false };
+    const { minMonthlyReturn, loanCoverage, reserveMinor } = effective(view);
     const deposit = card.depositMinor ?? 0;
     const cashflow = card.cashflowMinor ?? 0;
     if (cashflow <= 0 || deposit <= 0) {
       // a business bought outright (no deposit asked) or a card that pays nothing
       return cashflow > 0 && deposit === 0 ? { buy: true } : { buy: false };
     }
-    if (cashflow / deposit < params.minMonthlyReturn) return { buy: false };
-    if (view.cashMinor - deposit >= params.reserveMinor) return { buy: true };
+    if (cashflow / deposit < minMonthlyReturn) return { buy: false };
+    if (view.cashMinor - deposit >= reserveMinor) return { buy: true };
     if (params.loans === 'never') return { buy: false };
     // borrow the shortfall (rounded up to the loan step): worth it when the card pays well above the interest
-    const shortfall = deposit + params.reserveMinor - view.cashMinor;
+    const shortfall = deposit + reserveMinor - view.cashMinor;
     const loan = ceil(shortfall, view.loanStepMinor);
     const interest = ((view.bankLoanMinor + loan) * view.loanInterestPercent) / 100;
     const interestAlready = (view.bankLoanMinor * view.loanInterestPercent) / 100;
     const addedInterest = interest - interestAlready;
-    return cashflow >= params.loanCoverage * addedInterest ? { buy: true } : { buy: false };
+    return cashflow >= loanCoverage * addedInterest ? { buy: true } : { buy: false };
   }
 
   function dealShare(view: PolicyView, card: CashflowDealCard): DealChoice {

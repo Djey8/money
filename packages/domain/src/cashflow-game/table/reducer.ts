@@ -154,6 +154,8 @@ export function applyCommand(
   switch (command.type) {
     case 'join':
       return join(table, playerId, command, version, emit, me);
+    case 'add_bot':
+      return addBot(table, playerId, command, version, emit, ctx);
     case 'leave':
       return leave(table, playerId, version, emit, ctx);
     case 'set_ready':
@@ -247,6 +249,56 @@ function join(
   return {
     table: { ...table, version, players: [...table.players, player] },
     events: [emit('player_joined', playerId, { name, color: player.color })],
+  };
+}
+
+/** Seats a bot: host only, lobby only. It is ready from the start; the server's driver plays its turns (the domain only seats it). */
+function addBot(
+  table: Table,
+  playerId: string,
+  command: Extract<TableCommand, { type: 'add_bot' }>,
+  version: number,
+  emit: Emit,
+  ctx: TableContext,
+): CommandResult {
+  if (playerId !== table.hostId) fail('NOT_HOST', 'Only the host can add a bot.');
+  if (table.phase !== 'lobby')
+    fail('WRONG_PHASE', 'Bots can only be added before the game starts.');
+  if (table.players.length >= table.settings.maxSeats) fail('TABLE_FULL', 'The table is full.');
+  if (typeof command.policyId !== 'string' || !/^[a-z0-9][a-z0-9-]{0,63}$/.test(command.policyId)) {
+    fail('INVALID_SETTINGS', 'A bot needs a strategy id.');
+  }
+  if (
+    command.professionId &&
+    command.professionId !== 'random' &&
+    !gameSetOf(table, ctx).professions.some((p) => p.id === command.professionId)
+  ) {
+    fail('UNKNOWN_PROFESSION', `Unknown profession '${command.professionId}'.`);
+  }
+  const name = cleanName(command.name);
+  if (table.players.some((p) => p.name.toLowerCase() === name.toLowerCase())) {
+    fail('NAME_TAKEN', 'Another player at this table has that name.');
+  }
+  const player: TablePlayer = {
+    id: `bot:${version}`,
+    name,
+    color: pickColor(table.players, command.color),
+    ready: true,
+    pick: null,
+    professionId: null,
+    status: 'active',
+    away: false,
+    books: null,
+    bot: {
+      policyId: command.policyId,
+      ...(command.professionId ? { professionId: command.professionId } : {}),
+    },
+  };
+  return {
+    table: { ...table, version, players: [...table.players, player] },
+    events: [
+      emit('bot_added', player.id, { name, policyId: command.policyId, color: player.color }),
+    ],
   };
 }
 
@@ -419,7 +471,15 @@ function start(
       ...table,
       version,
       phase: 'picking',
-      players: table.players.map((p) => ({ ...p, pick: null })),
+      // a bot picks at once: the profession it was seated with (a unique table lets the table draw instead)
+      players: table.players.map((p) => ({
+        ...p,
+        pick: p.bot
+          ? table.settings.professions === 'unique'
+            ? 'random'
+            : (p.bot.professionId ?? 'random')
+          : null,
+      })),
     },
     events,
   };

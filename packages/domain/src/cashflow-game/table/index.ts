@@ -12,3 +12,7 @@ export * from './passive';
 export * from './trade';
 export * from './legal';
 export * from './rewind';
+export * from './tournament';
+export * from './awareness';
+export * from './bot';
+// bot-catalog is deliberately NOT exported here: it is data the browser bundle must not carry (import it by path).

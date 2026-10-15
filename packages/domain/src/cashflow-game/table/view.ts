@@ -41,6 +41,8 @@ export interface PlayerView {
   away: boolean;
   /** Whether a profession has been picked (always true once play starts). */
   hasPicked: boolean;
+  /** A bot's strategy id; null for a person. */
+  bot: { policyId: string } | null;
   /** The pick - the viewer's own, anyone's at a unique table, or everyone's once play has started; otherwise null. */
   pick: string | null;
   professionId: string | null;
@@ -148,6 +150,7 @@ export function projectFor(table: Table, viewerId: string | null): TableView {
       status: player.status,
       away: player.away,
       hasPicked: player.pick !== null || player.professionId !== null,
+      bot: player.bot ? { policyId: player.bot.policyId } : null,
       pick: seat === youSeat || uniquePicks || picksAreOpen ? player.pick : null,
       professionId: player.professionId,
       books: player.books ? publicBooks(player.books) : null,
