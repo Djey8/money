@@ -48,6 +48,15 @@ const en = {
   space: 'Space',
   atStart: 'at START',
   notifyMe: 'Notify me when it is my turn',
+  saveGame: 'Save to my games',
+  savedGame: 'Saved in your games.',
+  left: 'left the table',
+  reasonEscaped: 'A player escaped the rat race.',
+  reasonLast: 'Only one player was left.',
+  reasonRounds: 'The round limit was reached.',
+  reasonAll: 'Everyone has finished.',
+  reasonOut: 'Everyone is out of the game.',
+  passiveShort: 'passive',
 };
 export type TableRoomTexts = typeof en;
 
@@ -95,6 +104,15 @@ const de: TableRoomTexts = {
   space: 'Feld',
   atStart: 'am START',
   notifyMe: 'Benachrichtige mich, wenn ich dran bin',
+  saveGame: 'In meinen Spielen speichern',
+  savedGame: 'In deinen Spielen gespeichert.',
+  left: 'hat den Tisch verlassen',
+  reasonEscaped: 'Ein Spieler ist dem Hamsterrad entkommen.',
+  reasonLast: 'Nur ein Spieler war übrig.',
+  reasonRounds: 'Das Rundenlimit wurde erreicht.',
+  reasonAll: 'Alle sind fertig.',
+  reasonOut: 'Alle sind aus dem Spiel.',
+  passiveShort: 'passiv',
 };
 
 const es: TableRoomTexts = {
@@ -141,6 +159,15 @@ const es: TableRoomTexts = {
   space: 'Casilla',
   atStart: 'en la SALIDA',
   notifyMe: 'Avisarme cuando sea mi turno',
+  saveGame: 'Guardar en mis partidas',
+  savedGame: 'Guardada en tus partidas.',
+  left: 'dejó la mesa',
+  reasonEscaped: 'Un jugador escapó de la carrera de la rata.',
+  reasonLast: 'Solo quedaba un jugador.',
+  reasonRounds: 'Se alcanzó el límite de rondas.',
+  reasonAll: 'Todos han terminado.',
+  reasonOut: 'Todos están fuera de la partida.',
+  passiveShort: 'pasivo',
 };
 
 const fr: TableRoomTexts = {
@@ -187,6 +214,15 @@ const fr: TableRoomTexts = {
   space: 'Case',
   atStart: 'au DÉPART',
   notifyMe: "Me prévenir quand c'est mon tour",
+  saveGame: 'Enregistrer dans mes parties',
+  savedGame: 'Enregistrée dans vos parties.',
+  left: 'a quitté la table',
+  reasonEscaped: 'Un joueur est sorti de la course de rats.',
+  reasonLast: 'Il ne restait qu’un joueur.',
+  reasonRounds: 'La limite de tours a été atteinte.',
+  reasonAll: 'Tout le monde a terminé.',
+  reasonOut: 'Tout le monde est éliminé.',
+  passiveShort: 'passif',
 };
 
 const cn: TableRoomTexts = {
@@ -233,6 +269,15 @@ const cn: TableRoomTexts = {
   space: '格子',
   atStart: '在起点',
   notifyMe: '轮到我时通知我',
+  saveGame: '保存到我的游戏',
+  savedGame: '已保存到你的游戏。',
+  left: '已离开牌桌',
+  reasonEscaped: '有玩家逃出了老鼠赛跑。',
+  reasonLast: '只剩下一名玩家。',
+  reasonRounds: '已达到回合上限。',
+  reasonAll: '所有人都已结束。',
+  reasonOut: '所有人都已出局。',
+  passiveShort: '被动',
 };
 
 const ar: TableRoomTexts = {
@@ -279,6 +324,15 @@ const ar: TableRoomTexts = {
   space: 'الخانة',
   atStart: 'عند البداية',
   notifyMe: 'نبّهني عندما يحين دوري',
+  saveGame: 'احفظ في ألعابي',
+  savedGame: 'تم الحفظ في ألعابك.',
+  left: 'غادر الطاولة',
+  reasonEscaped: 'هرب لاعب من سباق الفئران.',
+  reasonLast: 'لم يتبقَّ سوى لاعب واحد.',
+  reasonRounds: 'تم بلوغ حد الجولات.',
+  reasonAll: 'أنهى الجميع.',
+  reasonOut: 'خرج الجميع من اللعبة.',
+  passiveShort: 'سلبي',
 };
 
 const DICTIONARIES: Record<TablesLang, TableRoomTexts> = { en, de, es, fr, cn, ar };

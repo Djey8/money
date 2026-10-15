@@ -279,4 +279,74 @@ describe('TableRoomComponent', () => {
       expect(document.title).toBe(original);
     });
   });
+
+  describe('the result', () => {
+    const finished = () => ({
+      id: 'r1',
+      version: 9,
+      phase: 'finished',
+      settings,
+      hostSeat: 0,
+      youSeat: 1,
+      activeSeat: null,
+      tableRound: 4,
+      clock: { deadlineAt: null, pausedAt: null, banksMs: [], timeouts: [] },
+      trade: null,
+      result: {
+        reason: 'escaped',
+        winnerSeat: 1,
+        ranking: [
+          {
+            seat: 1,
+            rank: 1,
+            outcome: 'escaped',
+            passiveIncomeMinor: 500000,
+            monthlyCashflowMinor: 1,
+          },
+          {
+            seat: 0,
+            rank: 2,
+            outcome: 'bankrupt',
+            passiveIncomeMinor: 100,
+            monthlyCashflowMinor: -1,
+          },
+        ],
+      },
+      players: players([
+        { books: books(1), professionId: 'p' },
+        { books: books(2), professionId: 'p' },
+      ]),
+    });
+
+    it('shows why it ended and the ranking with each outcome', async () => {
+      const fixture = await render(fakeSession(finished()));
+      const text = fixture.nativeElement.textContent as string;
+      expect(text).toContain('The game is over');
+      expect(text).toContain('A player escaped the rat race.');
+      const rows = Array.from(fixture.nativeElement.querySelectorAll('.tr-rank')).map((r) =>
+        (r as HTMLElement).textContent!.replace(/\s+/g, ' ').trim(),
+      );
+      expect(rows[0]).toContain('Bob');
+      expect(rows[0]).toContain('escaped the rat race');
+      expect(rows[1]).toContain('Ann');
+      expect(rows[1]).toContain('bankrupt');
+    });
+
+    it('files my game once, and then says it is saved', async () => {
+      const session = fakeSession(finished()) as ReturnType<typeof fakeSession> & {
+        save: jest.Mock;
+      };
+      session.save = jest.fn(async () => true);
+      const fixture = await render(session);
+      const button = Array.from(fixture.nativeElement.querySelectorAll('button')).find((b) =>
+        (b as HTMLElement).textContent!.includes('Save to my games'),
+      ) as HTMLButtonElement;
+      button.click();
+      await Promise.resolve();
+      await Promise.resolve();
+      fixture.detectChanges();
+      expect(session.save).toHaveBeenCalledTimes(1);
+      expect(fixture.nativeElement.textContent).toContain('Saved in your games.');
+    });
+  });
 });

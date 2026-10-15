@@ -1,10 +1,10 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { MatTableDataSource } from '@angular/material/table';
 import { AppStateService } from 'src/app/shared/services/app-state.service';
 import { CashflowGameService } from 'src/app/shared/services/cashflow-game.service';
 import { CommonModule } from '@angular/common';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { TrapFocusDirective } from 'src/app/shared/directives/trap-focus.directive';
 
 /**
@@ -375,6 +375,29 @@ export class MenuComponent {
   /** Only an account whose email contains "cashflow" ever sees this entry (todo/cashflow-game.md decision 2). */
   isCashflowGame(): boolean {
     return CashflowGameService.isCashflowGame();
+  }
+
+  private translate = inject(TranslateService, { optional: true });
+
+  /**
+   * Extra entries for game accounts that the route table itself brings: a route with `data.gameMenu = { icon, label(lang) }`
+   * (docs/adr/0004 - the self-hosted route table only; the Firebase one has none, so this is empty there and no text of it
+   * is in that build).
+   */
+  gameMenuEntries(): { path: string; icon: string; label: string }[] {
+    if (!this.isCashflowGame()) return [];
+    const lang = this.translate?.currentLang || this.translate?.defaultLang || 'en';
+    return this.router.config
+      .filter((route) => route.data?.['gameMenu'])
+      .map((route) => {
+        const entry = route.data!['gameMenu'] as { icon: string; label: (lang: string) => string };
+        return { path: `/${route.path}`, icon: entry.icon, label: entry.label(lang) };
+      });
+  }
+
+  clickedGameMenuEntry(path: string) {
+    this.router.navigate([path]);
+    MenuComponent.isMenu = false;
   }
 
   clickedCashflowGame() {

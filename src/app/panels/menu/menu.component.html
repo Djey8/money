@@ -230,6 +230,14 @@
         <span class="menu-icon">🎲</span>
         <span>{{ 'Menu.cashflowGame' | translate }}</span>
       </button>
+      <button
+        class="menu-item menu-item--compact menu-item--full-row"
+        *ngFor="let entry of gameMenuEntries()"
+        (click)="clickedGameMenuEntry(entry.path)"
+      >
+        <span class="menu-icon">{{ entry.icon }}</span>
+        <span>{{ entry.label }}</span>
+      </button>
     </div>
   </div>
 </div>

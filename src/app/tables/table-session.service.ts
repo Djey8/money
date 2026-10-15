@@ -118,6 +118,11 @@ export class TableSessionService {
     });
   }
 
+  /** Files my own final books as a saved game of my account (once; a repeat answers `alreadyFiled`). */
+  async save(): Promise<boolean> {
+    return this.send('save', 'post', {});
+  }
+
   /** A lobby action: ready, start, profession, leave, kick, settings. */
   async lobby(
     path: 'leave' | 'ready' | 'kick' | 'settings' | 'start' | 'profession',

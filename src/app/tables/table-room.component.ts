@@ -249,11 +249,29 @@ const money = (minor: number | null): string =>
           *ngIf="table.phase === 'finished' && table.result as result"
         >
           <h3>🏁 {{ t.finished }}</h3>
-          <ol>
-            <li *ngFor="let standing of result.ranking">
-              {{ standing.rank }}. {{ nameOf(standing.seat) }}
+          <p class="tr-hint">{{ reasonText(result.reason) }}</p>
+          <ol class="tr-ranking">
+            <li *ngFor="let standing of result.ranking" class="tr-rank">
+              <strong>{{ standing.rank }}.</strong>
+              <span class="tr-swatch" [style.background]="colorOf(standing.seat)"></span>
+              <span class="tr-name">{{ nameOf(standing.seat) }}</span>
+              <small>{{ standingText(standing.outcome) }}</small>
+              <small class="tr-num"
+                >{{ t.passiveShort }} {{ fmt(standing.passiveIncomeMinor) }}</small
+              >
             </li>
           </ol>
+          <div class="tr-actions" *ngIf="table.youSeat !== null">
+            <button
+              class="btn btn--primary"
+              type="button"
+              [disabled]="session.busy() || saved()"
+              (click)="saveGame()"
+            >
+              {{ saved() ? t.savedGame : t.saveGame }}
+            </button>
+            <a class="btn" routerLink="/tables">‹ {{ t.back }}</a>
+          </div>
         </section>
 
         <section class="tr-card">
@@ -429,6 +447,20 @@ const money = (minor: number | null): string =>
         color: var(--color-danger, #c00);
         font-weight: 700;
       }
+      .tr-ranking {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .tr-rank {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 4px 8px;
+      }
       .tr-hint {
         color: var(--color-text-secondary, #666);
         font-size: 0.9em;
@@ -594,6 +626,44 @@ export class TableRoomComponent implements OnInit, OnDestroy {
   }
 
   fmt = money;
+
+  readonly saved = signal(false);
+
+  async saveGame(): Promise<void> {
+    if (await this.session.save()) this.saved.set(true);
+  }
+
+  colorOf(seat: number): string {
+    return this.view()?.players[seat]?.color ?? '#888';
+  }
+
+  reasonText(reason: string): string {
+    switch (reason) {
+      case 'escaped':
+        return this.t.reasonEscaped;
+      case 'last-standing':
+        return this.t.reasonLast;
+      case 'round-limit':
+        return this.t.reasonRounds;
+      case 'all-done':
+        return this.t.reasonAll;
+      default:
+        return this.t.reasonOut;
+    }
+  }
+
+  standingText(outcome: string): string {
+    switch (outcome) {
+      case 'escaped':
+        return this.t.escaped;
+      case 'bankrupt':
+        return this.t.bankrupt;
+      case 'left':
+        return this.t.left;
+      default:
+        return this.t.playing;
+    }
+  }
 
   clockText(): string {
     const total = this.secondsLeft();

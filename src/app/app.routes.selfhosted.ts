@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { baseRoutes } from './app.routes.base';
+import { tablesTexts } from './tables/tables.texts';
 
 // Selfhosted-edition route table: the shared base routes plus Pro-only
 // routes. Swapped in for app.routes.ts via angular.json's fileReplacements
@@ -32,6 +33,8 @@ export const routes: Routes = [
   {
     // Multiplayer Cashflow tables (game accounts only; the backend refuses any other account).
     path: 'tables',
+    // The menu of a game account lists this (panels/menu gameMenuEntries); the words are the tables' own, not i18n JSON.
+    data: { gameMenu: { icon: '👥', label: (lang: string) => tablesTexts(lang).title } },
     loadComponent: () =>
       import('./tables/tables-lobby.component').then((m) => m.TablesLobbyComponent),
   },
