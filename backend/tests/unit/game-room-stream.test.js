@@ -227,6 +227,27 @@ describe('the connection registry', () => {
     expect(sink.sent.filter((m) => m.name === 'update')).toHaveLength(2);
   });
 
+  it('does not announce a change the snapshot it already sent contains (connecting between the save and the announcement)', () => {
+    const hub = createGameRoomHub();
+    const table = playing();
+    const first = roll(table);
+    const second = roll(first.table);
+    const sink = sinkOf();
+    // the client's snapshot was read after the change was saved ...
+    hub.subscribe('r1', HOST, 0).attach(sink, first.table.version);
+    // ... and only then is the change announced: it is not sent a second time
+    hub.publish('r1', { previous: table, table: first.table, events: withSeq(first.events) });
+    expect(sink.sent.filter((m) => m.name === 'update')).toHaveLength(0);
+    hub.publish('r1', {
+      previous: first.table,
+      table: second.table,
+      events: withSeq(second.events, 50),
+    });
+    expect(sink.sent.filter((m) => m.name === 'update').map((m) => m.data.version)).toEqual([
+      second.table.version,
+    ]);
+  });
+
   it('projects every change for each viewer on their own', () => {
     const hub = createGameRoomHub();
     const picking = applyCommand(lobby('duplicates'), HOST, { type: 'start' }, ctx).table;

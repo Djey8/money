@@ -139,7 +139,8 @@ function createGameRoomHub() {
       }
       const message = projectUpdate(previous, table, events, sub.userId);
       if (sub.sink) {
-        sub.sink.send('update', lastSeq, message);
+        // A client that connected between a change being saved and being announced already has it in its snapshot.
+        if (message.version > sub.snapshotVersion) sub.sink.send('update', lastSeq, message);
       } else if (sub.held.length >= MAX_HELD_UPDATES) {
         // A connection that never attaches (or attaches very late): it is ended when it does, the client reconnects.
         sub.dropped = true;
