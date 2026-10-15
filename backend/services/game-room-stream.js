@@ -1,6 +1,6 @@
 'use strict';
 
-const { projectFor } = require('@money/domain');
+const { projectFor, tableLegalActions } = require('@money/domain');
 
 /**
  * What a viewer of a table is sent over the live channel (todo/cashflow-multiplayer.md slice S2). Pure: the same functions
@@ -71,6 +71,7 @@ function projectUpdate(previous, table, events, userId) {
       (seat) => view.players[seat] && view.players[seat].books !== null,
     ),
     view: { ...view, players },
+    legalActions: tableLegalActions(table, userId),
   };
 }
 

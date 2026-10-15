@@ -7055,6 +7055,101 @@ paths:
           $ref: '#/components/responses/NotFound'
         '429':
           $ref: '#/components/responses/RoomLimit'
+  /game/rooms/{roomId}/commands:
+    parameters:
+      - name: roomId
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      operationId: playGameRoomCommand
+      summary: Make a move at a running table
+      description: >-
+        Game accounts only; requires `game:w`. One move of play by the caller: `{command, clientCommandId?, expectedVersion?}`. Whether it is allowed now - your turn, the card in your hand, the clock, a pause - is the table's rule, not the request's: a move that is not allowed is refused and changes nothing (409 `table_not_your_turn`, `table_paused`, `table_time_up`; 422 `table_illegal_move` with the rule's own words, for example "A card was already offered on this space"). Every response carries your `legalActions`, the commands the table would accept from you right now - **play only from that list**. The moves, by `command.type`: `roll` (`dice` 1 or 2, two only while Charity allows), `draw_card` (`deck`: `dealSmall`, `dealBig`, `market`, `doodad`; a Market card takes effect for every player at once, a Market space draws it for you), `buy_deal` (`cardId`, `quantity?`), `pay_doodad` (`cardId`), `roll_decision` (`title?`), `pass_card`, `bank_loan` (`amountMinor`, negative repays), `sell_position` (`input: {title, quantity?, priceMinor?, salePriceMinor?}` - only into a buyer's offer that is open for you, on or off your turn), `offer_trade` (`priceMinor`, `toSeat?`: the Deal card in your hand, a property or asset card, never a share), `counter_trade` (`priceMinor`), `accept_trade` (a buyer takes the asking price; the seller names `fromSeat` to take that buyer's price), `decline_trade`, `withdraw_trade`, and the host's `pause` / `resume`, and `back` for a player who was marked away. Joining, leaving, readiness and settings have their own routes; the clock's timeout is the server's. Players are named by `seat`, never by account. **`clientCommandId`** (1-64 letters, digits, `_.:-`) makes a retry safe: the move is applied at most once, and a repeat - after a lost response, or two identical requests at once - answers the table with `replayed: true` and `appliedVersion` of the first. **`expectedVersion`** refuses a move on a table that has moved on (409 `room_conflict`).
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [command]
+              properties:
+                command:
+                  $ref: '#/components/schemas/GameRoomCommand'
+                clientCommandId:
+                  type: string
+                  pattern: '^[A-Za-z0-9_.:-]{1,64}$'
+                expectedVersion:
+                  type: integer
+                  minimum: 0
+            example:
+              command: { type: roll }
+              clientCommandId: turn-12-roll
+              expectedVersion: 41
+      responses:
+        '200':
+          description: The table after the move
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/GameRoom'
+                  - type: object
+                    properties:
+                      events:
+                        type: array
+                        description: What the move did, by seat, each with its log position `seq`. Empty on a replay.
+                        items:
+                          type: object
+                      replayed:
+                        type: boolean
+                      appliedVersion:
+                        type: integer
+                        description: The table version this move produced.
+              example:
+                id: 7d1c2c0e-2f0b-4a53-9a77-3f2a6c0f9a11
+                language: en
+                events:
+                  - seq: 42
+                    version: 42
+                    at: '2026-10-15T18:09:31.000Z'
+                    type: rolled
+                    seat: 0
+                    data: { dice: [4], total: 4, from: 3, to: 7, landed: market, paydays: 0 }
+                replayed: false
+                appliedVersion: 42
+                legalActions:
+                  - {
+                      action: roll,
+                      description: 'Roll the dice, move the token and resolve the space it lands on.',
+                    }
+                  - {
+                      action: pause,
+                      description: 'Pause the game: the clock stops and nobody can move.',
+                    }
+                table:
+                  {
+                    id: 7d1c2c0e-2f0b-4a53-9a77-3f2a6c0f9a11,
+                    version: 42,
+                    phase: playing,
+                    youSeat: 0,
+                    activeSeat: 1,
+                  }
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/TableRefused'
+        '422':
+          $ref: '#/components/responses/TableRefused'
 components:
   securitySchemes:
     bearerAuth:
@@ -10267,6 +10362,68 @@ components:
         expectedVersion:
           type: integer
           minimum: 0
+    GameRoomCommand:
+      type: object
+      required: [type]
+      description: >-
+        One move of play. The fields that go with each `type` are listed in `playGameRoomCommand`; any other field is refused. Players are named by seat.
+      properties:
+        type:
+          type: string
+          enum:
+            - roll
+            - draw_card
+            - buy_deal
+            - pay_doodad
+            - roll_decision
+            - pass_card
+            - bank_loan
+            - sell_position
+            - offer_trade
+            - counter_trade
+            - accept_trade
+            - decline_trade
+            - withdraw_trade
+            - pause
+            - resume
+            - back
+        dice:
+          type: integer
+          enum: [1, 2]
+        deck:
+          type: string
+          enum: [dealSmall, dealBig, market, doodad]
+        cardId:
+          type: string
+        quantity:
+          type: number
+          exclusiveMinimum: 0
+        title:
+          type: string
+        amountMinor:
+          type: integer
+          description: Positive borrows from the bank, negative repays.
+        input:
+          type: object
+          description: The position to sell.
+          properties:
+            title:
+              type: string
+            quantity:
+              type: number
+            priceMinor:
+              type: integer
+            salePriceMinor:
+              type: integer
+        priceMinor:
+          type: integer
+          minimum: 1
+        toSeat:
+          type: integer
+          minimum: 0
+        fromSeat:
+          type: integer
+          minimum: 0
     GameRoomSettingsInput:
       type: object
       description: >-
@@ -10383,6 +10540,16 @@ components:
         updatedAt:
           type: string
           format: date-time
+        legalActions:
+          type: array
+          description: What the table would accept from you right now (`action` is a command type for `playGameRoomCommand`). Empty outside play and for someone who only looks. Play only from this list.
+          items:
+            type: object
+            properties:
+              action:
+                type: string
+              description:
+                type: string
         table:
           type: object
           description: >-
@@ -10462,7 +10629,7 @@ components:
             code: game_action_not_allowed
     TableRefused:
       description: >-
-        The request was refused by the table's rules or the settings (the Problem `code` is `table_<rule>`, in lower case). 400: `table_invalid_settings`, `table_invalid_name`, `table_unknown_profession`. 403: `table_not_host`, `table_not_a_member`, `table_cannot_kick_host`. 404: `table_unknown_player`. 409: `table_wrong_phase`, `table_table_full`, `table_already_joined`, `table_name_taken`, `table_color_taken`, `table_not_ready`, `table_not_enough_players`, `table_profession_taken`, `table_not_your_turn`, `table_illegal_move`, `room_conflict` (the table changed under you). A refused request changes nothing.
+        The request was refused by the table's rules or the settings (the Problem `code` is `table_<rule>`, in lower case). 400: `table_invalid_settings`, `table_invalid_name`, `table_unknown_profession`. 403: `table_not_host`, `table_not_a_member`, `table_cannot_kick_host`. 404: `table_unknown_player`. 409: `table_wrong_phase`, `table_table_full`, `table_already_joined`, `table_name_taken`, `table_color_taken`, `table_not_ready`, `table_not_enough_players`, `table_profession_taken`, `table_not_your_turn`, `table_paused`, `table_time_up`, `room_conflict` (the table changed under you). 422: `table_illegal_move` (the game's own rule says no; the detail is the rule's words). A refused request changes nothing.
       content:
         application/problem+json:
           schema:

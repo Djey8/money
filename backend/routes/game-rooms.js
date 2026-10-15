@@ -9,6 +9,7 @@ const { requireScope, problem } = require('../middleware/api-auth');
 const { requireGameAccount } = require('../middleware/game-account-guard');
 const { createGameRoomService, problemFor } = require('../services/game-rooms');
 const { createGameRoomHub } = require('../services/game-room-hub');
+const { parseCommand, parseGuards } = require('../services/game-room-commands');
 
 /**
  * Multiplayer Cashflow tables: the lobby (todo/cashflow-multiplayer.md slice S1, docs/adr/0010). Mounted by routes/api.js at
@@ -175,6 +176,7 @@ router.get(
       frame('snapshot', stream.snapshot.id, {
         room: stream.snapshot.room,
         view: stream.snapshot.view,
+        legalActions: stream.snapshot.legalActions,
       }),
     );
     for (const line of stream.log) res.write(frame('log', line.seq, line));
@@ -208,13 +210,15 @@ function lobbyRoute(method, path, build) {
       const body = isObject(req.body) ? req.body : {};
       const version = expectedVersionOf(body);
       if (version.error) return invalid(res, version.error);
+      const guards = parseGuards(body);
+      if (guards.error) return invalid(res, guards.error);
       const built = build(body, req);
       if (typeof built === 'string') return invalid(res, built);
-      return res.json(
-        await rooms().runCommand(req.userId, req.params.roomId, built, {
-          expectedVersion: version.value,
-        }),
-      );
+      const done = await rooms().runCommand(req.userId, req.params.roomId, built, {
+        expectedVersion: version.value,
+        clientCommandId: guards.clientCommandId,
+      });
+      return res.json(done.view);
     }),
   );
 }
@@ -248,6 +252,37 @@ lobbyRoute('put', '/:roomId/profession', (body) =>
     : 'professionId must be a profession id, or "random".',
 );
 
+// ── Play ───────────────────────────────────────────────────────────────────────────────────────────
+
+/**
+ * `POST /game/rooms/{roomId}/commands` - one move of play: `{ command, clientCommandId?, expectedVersion? }`. The command is one
+ * of the types in `services/game-room-commands.js`; whether it is allowed now (your turn, the card in hand, the clock, a pause)
+ * is the domain's rule. `clientCommandId` makes a retry safe (applied at most once), `expectedVersion` refuses a move on a
+ * table that has moved on. Answers the table as you may see it, the events the move caused and your `legalActions`.
+ */
+router.post(
+  '/:roomId/commands',
+  ...guard('w'),
+  handle(async (req, res) => {
+    const body = req.body;
+    if (!isObject(body)) return invalid(res, 'Send a JSON object.');
+    const parsed = parseCommand(body.command);
+    if (parsed.error) return invalid(res, parsed.error);
+    const guards = parseGuards(body);
+    if (guards.error) return invalid(res, guards.error);
+    const done = await rooms().runCommand(req.userId, req.params.roomId, parsed.build, {
+      expectedVersion: guards.expectedVersion,
+      clientCommandId: guards.clientCommandId,
+    });
+    return res.json({
+      ...done.view,
+      events: done.events,
+      replayed: done.replayed,
+      appliedVersion: done.appliedVersion,
+    });
+  }),
+);
+
 router.delete(
   '/:roomId',
   ...guard('w'),
@@ -255,7 +290,8 @@ router.delete(
     if (req.query.confirm !== 'true') {
       return invalid(res, 'Closing a table ends it for everyone: send ?confirm=true.');
     }
-    return res.json(await rooms().runCommand(req.userId, req.params.roomId, { type: 'close' }));
+    const closed = await rooms().runCommand(req.userId, req.params.roomId, { type: 'close' });
+    return res.json(closed.view);
   }),
 );
 

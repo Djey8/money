@@ -6,11 +6,12 @@ const {
   createTable,
   projectFor,
   systemClock,
+  tableLegalActions,
   TableCommandError,
 } = require('@money/domain');
 const store = require('../repositories/game-room-store');
 const { RoomError } = require('./game-room-errors');
-const { eventSeat, projectLog } = require('./game-room-stream');
+const { eventSeat, projectLog, publicEvent } = require('./game-room-stream');
 const { createGameText } = require('./game-text');
 const { createCardTextSource } = require('./game-card-text');
 
@@ -28,6 +29,7 @@ const OPEN_PHASES = ['lobby', 'picking', 'playing'];
 const INVITE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const INVITE_LENGTH = 8;
 const MAX_COMMAND_ATTEMPTS = 6;
+const COMMAND_LOG_SIZE = 200;
 const SWEEP_EVERY_MS = 5 * 60 * 1000;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -60,6 +62,7 @@ const TABLE_STATUS = {
   INVALID_SETTINGS: 400,
   UNKNOWN_PROFESSION: 400,
   UNKNOWN_COMMAND: 400,
+  ILLEGAL_MOVE: 422,
 };
 
 /** Problem Details fields for any error this service throws, or null when it is not one of ours. */
@@ -135,6 +138,7 @@ function roomView(doc, userId) {
     createdAt: doc.createdAt,
     updatedAt: doc.updatedAt,
     table: projectFor(doc.table, userId),
+    legalActions: tableLegalActions(doc.table, userId),
   };
 }
 
@@ -297,11 +301,29 @@ function createGameRoomService({ db, clock = systemClock, log = () => {}, hub = 
 
   /**
    * Applies one command for `userId` to a room and saves it. `command` is a command or a function of the current table that
-   * returns one (a kick names a seat). With `expectedVersion` the table must still be at that version.
+   * returns one (a kick names a seat). With `expectedVersion` the table must still be at that version. With
+   * `clientCommandId` the command is applied **at most once**: the id is recorded in the same document write as the change,
+   * so a retry - after a lost response, or two identical requests at once - finds it and gets `replayed: true` instead of
+   * a second move. Returns `{ view, events, replayed, appliedVersion }`.
    */
-  async function runCommand(userId, roomId, command, { expectedVersion, joining = false } = {}) {
+  async function runCommand(
+    userId,
+    roomId,
+    command,
+    { expectedVersion, joining = false, clientCommandId } = {},
+  ) {
+    const key = clientCommandId ? `${userId}:${clientCommandId}` : null;
     for (let attempt = 0; attempt < MAX_COMMAND_ATTEMPTS; attempt += 1) {
       const doc = await loadFor(userId, roomId, { joining });
+      const done = key && (doc.commandLog || []).find((entry) => entry.key === key);
+      if (done) {
+        return {
+          view: roomView(doc, userId),
+          events: [],
+          replayed: true,
+          appliedVersion: done.version,
+        };
+      }
       if (expectedVersion !== undefined && doc.table.version !== expectedVersion) {
         throw new RoomError(
           'room_conflict',
@@ -311,9 +333,22 @@ function createGameRoomService({ db, clock = systemClock, log = () => {}, hub = 
       }
       const next = typeof command === 'function' ? command(doc.table) : command;
       const result = applyCommand(doc.table, userId, next, contextFor(doc.language));
+      const commandLog = key
+        ? [...(doc.commandLog || []), { key, version: result.table.version }].slice(
+            -COMMAND_LOG_SIZE,
+          )
+        : doc.commandLog;
       try {
-        const saved = await persist(doc, result.table, result.events, doc.table);
-        return roomView(saved, userId);
+        const saved = await persist({ ...doc, commandLog }, result.table, result.events, doc.table);
+        const firstSeq = saved.eventSeq - result.events.length + 1;
+        return {
+          view: roomView(saved, userId),
+          events: result.events.map((event, index) =>
+            publicEvent(firstSeq + index, eventSeat(doc.table, result.table, event), event),
+          ),
+          replayed: false,
+          appliedVersion: result.table.version,
+        };
       } catch (error) {
         if (!(error instanceof store.RoomConflictError)) throw error;
       }
@@ -342,12 +377,13 @@ function createGameRoomService({ db, clock = systemClock, log = () => {}, hub = 
     }
     if (!doc.table.players.some((p) => p.id === userId))
       await assertCanSit(userId, { hosting: false });
-    return runCommand(
+    const joined = await runCommand(
       userId,
       doc.roomId,
       { type: 'join', name: input.nickname, color: input.color },
       { joining: true },
     );
+    return joined.view;
   }
 
   /** The public tables with a free seat, or the tables `userId` sits at. */
@@ -390,8 +426,8 @@ function createGameRoomService({ db, clock = systemClock, log = () => {}, hub = 
       const missed = after > 0 ? await store.readEvents(db, roomId, after, 200) : [];
       return {
         snapshot: (() => {
-          const { table, ...room } = roomView(doc, userId);
-          return { id: doc.eventSeq || 0, room, view: table };
+          const { table, legalActions, ...room } = roomView(doc, userId);
+          return { id: doc.eventSeq || 0, room, view: table, legalActions };
         })(),
         log: projectLog(missed.filter((event) => event.seq <= (doc.eventSeq || 0))),
         attach: (sink) => subscription.attach(sink, doc.table.version),
