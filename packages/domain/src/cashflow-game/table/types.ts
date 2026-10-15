@@ -79,6 +79,8 @@ export interface TableSettings {
   /** Only with `round-limit`. */
   roundLimit?: number;
   spectators: boolean;
+  /** The host may rewind the last turn to repair a mishap (a dropped connection, a mis-click); everyone sees that it happened. */
+  allowRewind: boolean;
 }
 
 /** What a host may send: everything optional except the name; a few rule settings are the host's to tune. */
@@ -251,6 +253,7 @@ export type TableEventType =
   | 'player_escaped'
   | 'player_bankrupt'
   | 'game_finished'
+  | 'rewound'
   | 'trade_offered'
   | 'trade_countered'
   | 'trade_declined'

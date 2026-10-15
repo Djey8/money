@@ -165,5 +165,6 @@ export function normalizeTableSettings(
     endCondition,
     ...(roundLimit !== undefined ? { roundLimit } : {}),
     spectators: input.spectators ?? false,
+    allowRewind: input.allowRewind ?? true,
   };
 }

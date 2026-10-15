@@ -11,3 +11,4 @@ export * from './clock';
 export * from './passive';
 export * from './trade';
 export * from './legal';
+export * from './rewind';
