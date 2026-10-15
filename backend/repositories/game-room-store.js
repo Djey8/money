@@ -10,8 +10,8 @@
  *                              replays from (slice S2) and what a replay of the game is built from.
  *  - `snap:<roomId>:<slot>`    the table as it stood when a turn started, two slots used in turn (slice S4): what the
  *                              host's rewind puts back. Written after the room, replaced two turns later.
- *  - `seat:<userId>:<roomId>`  a marker that the account holds a seat in a room that is still open: it keeps the
- *                              per-account limits and the "my tables" list cheap (a range read, no index). Markers are
+ *  - `seat:<userId>:<roomId>`  a marker that the account holds - or, once the table is over (`closed`), held - a seat: it
+ *                              keeps the per-account limits and the "my tables" and "recent tables" lists cheap (a range read, no index). Markers are
  *                              advisory - the table is the truth - and the sweep removes stale ones.
  */
 
@@ -204,13 +204,14 @@ async function markersOfRoom(db, id) {
   return found.docs;
 }
 
-async function putMarker(db, userId, id, host) {
+async function putMarker(db, userId, id, host, closed = false) {
   const marker = {
     _id: seatId(userId, id),
     kind: 'seat',
     userId,
     roomId: id,
     host,
+    closed,
     updatedAt: new Date().toISOString(),
   };
   for (let attempt = 0; attempt < MAX_WRITE_RETRIES; attempt += 1) {
@@ -221,7 +222,7 @@ async function putMarker(db, userId, id, host) {
       } catch (error) {
         if (!notFound(error)) throw error;
       }
-      if (existing && existing.host === host) return;
+      if (existing && existing.host === host && Boolean(existing.closed) === closed) return;
       await db.insert({ ...marker, ...(existing ? { _rev: existing._rev } : {}) });
       return;
     } catch (error) {
@@ -250,7 +251,11 @@ async function dropMarker(db, userId, id) {
 async function syncMarkers(db, id, desired) {
   const existing = await markersOfRoom(db, id);
   const have = new Set(existing.map((marker) => marker.userId));
-  for (const [userId, host] of desired) await putMarker(db, userId, id, host);
+  for (const [userId, entry] of desired) {
+    // `true`/`false` (a seat at an open table: hosts or not) or `{ host, closed }`
+    const { host, closed } = typeof entry === 'boolean' ? { host: entry, closed: false } : entry;
+    await putMarker(db, userId, id, host, Boolean(closed));
+  }
   for (const userId of have) if (!desired.has(userId)) await dropMarker(db, userId, id);
 }
 

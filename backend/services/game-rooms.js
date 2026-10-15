@@ -33,6 +33,7 @@ const INVITE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const INVITE_LENGTH = 8;
 const MAX_COMMAND_ATTEMPTS = 6;
 const COMMAND_LOG_SIZE = 200;
+const FILING_STALE_MS = 60 * 1000;
 const SWEEP_EVERY_MS = 5 * 60 * 1000;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -112,6 +113,13 @@ function listingFields(table) {
     maxSeats: table.settings.maxSeats,
     seatsTaken: table.players.filter((p) => p.status === 'active').length,
     hostName: host ? host.name : '',
+    result: table.result
+      ? {
+          reason: table.result.reason,
+          winnerName:
+            (table.players.find((p) => p.id === table.result.winnerId) || {}).name ?? null,
+        }
+      : null,
   };
 }
 
@@ -148,6 +156,7 @@ function roomSummary(doc, userId) {
     language: doc.language,
     createdAt: doc.createdAt,
     updatedAt: doc.updatedAt,
+    result: doc.result ?? null,
     joined: doc.table.players.some((p) => p.id === userId),
   };
 }
@@ -155,9 +164,18 @@ function roomSummary(doc, userId) {
 /** Who holds a seat now, for the markers: an account id -> hosts. Closed rooms hold none. */
 function desiredMarkers(table) {
   const wanted = new Map();
-  if (!OPEN_PHASES.includes(table.phase)) return wanted;
+  if (OPEN_PHASES.includes(table.phase)) {
+    for (const player of table.players) {
+      if (player.status === 'active') {
+        wanted.set(player.id, { host: player.id === table.hostId, closed: false });
+      }
+    }
+    return wanted;
+  }
+  // A table that is over keeps a marker for everyone who sat at it, flagged closed: the "recent tables" list reads them, the
+  // limits do not count them, and they go with the room when it is deleted.
   for (const player of table.players) {
-    if (player.status === 'active') wanted.set(player.id, player.id === table.hostId);
+    wanted.set(player.id, { host: player.id === table.hostId, closed: true });
   }
   return wanted;
 }
@@ -169,6 +187,7 @@ function createGameRoomService({
   log = () => {},
   hub = null,
   clocks = null,
+  filer = null,
 }) {
   let lastSweep = -Infinity;
 
@@ -238,7 +257,7 @@ function createGameRoomService({
 
   async function assertCanSit(userId, { hosting }) {
     const cap = limits();
-    const markers = await store.seatMarkers(db, userId);
+    const markers = (await store.seatMarkers(db, userId)).filter((m) => !m.closed);
     if (hosting && markers.filter((m) => m.host).length >= cap.maxHosted) {
       throw new RoomError(
         'room_limit',
@@ -492,13 +511,17 @@ function createGameRoomService({
   /** The public tables with a free seat, or the tables `userId` sits at. */
   async function listRooms(userId, { scope = 'open', limit = 50 } = {}) {
     await maybeSweep();
-    if (scope === 'mine') {
-      const markers = await store.seatMarkers(db, userId);
+    if (scope === 'mine' || scope === 'recent') {
+      const wantClosed = scope === 'recent';
+      const markers = (await store.seatMarkers(db, userId)).filter(
+        (m) => Boolean(m.closed) === wantClosed,
+      );
       const docs = await store.getRooms(
         db,
         markers.map((m) => m.roomId),
       );
       return docs
+        .filter((doc) => OPEN_PHASES.includes(doc.phase) !== wantClosed)
         .sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)))
         .slice(0, limit)
         .map((doc) => roomSummary(doc, userId));
@@ -507,6 +530,14 @@ function createGameRoomService({
     return docs
       .filter((doc) => doc.seatsTaken < doc.maxSeats)
       .map((doc) => roomSummary(doc, userId));
+  }
+
+  /** Who may follow a table: a seated player, or anyone with a game account at a public table that allows spectators. */
+  function assertCanWatch(doc, userId) {
+    const seated = doc.table.players.some((p) => p.id === userId);
+    if (!seated && !(doc.visibility === 'public' && doc.table.settings.spectators)) {
+      throw new RoomError('room_forbidden', 403, 'This table does not allow spectators.');
+    }
   }
 
   /**
@@ -518,10 +549,7 @@ function createGameRoomService({
   async function openStream(userId, roomId, { lastEventId = 0 } = {}) {
     if (!hub) throw new RoomError('stream_unavailable', 503, 'Live tables are not available.');
     const first = await loadFor(userId, roomId);
-    const seated = first.table.players.some((p) => p.id === userId);
-    if (!seated && !(first.visibility === 'public' && first.table.settings.spectators)) {
-      throw new RoomError('room_forbidden', 403, 'This table does not allow spectators.');
-    }
+    assertCanWatch(first, userId);
     const subscription = hub.subscribe(roomId, userId, hub.seatOf(first.table, userId));
     try {
       const doc = await loadFor(userId, roomId);
@@ -540,6 +568,96 @@ function createGameRoomService({
       subscription.close();
       throw error;
     }
+  }
+
+  /**
+   * A player files the final books of a finished game in their own saved games (slice S5). Only someone who played at the
+   * table (they have books), only once it is over, and only once: the filing is reserved on the room document before it is made,
+   * so two requests at once file one game, and a repeat is answered with the game already filed. `filer(userId, books, name)` is
+   * the saved-games store (routes/game-rooms.js wires it); a table never touches an account itself.
+   */
+  async function fileGame(userId, roomId, { name } = {}) {
+    if (!filer) throw new RoomError('filing_unavailable', 503, 'Filing games is not available.');
+    for (let attempt = 0; attempt < MAX_COMMAND_ATTEMPTS; attempt += 1) {
+      const doc = await loadFor(userId, roomId);
+      const player = doc.table.players.find((p) => p.id === userId);
+      if (!player || !player.books) {
+        throw new RoomError(
+          'room_forbidden',
+          403,
+          'Only a player of this table can file its game.',
+        );
+      }
+      if (doc.table.phase !== 'finished' && doc.table.phase !== 'abandoned') {
+        throw new RoomError(
+          'room_not_over',
+          409,
+          'The game is still being played: file it when it is over.',
+        );
+      }
+      const filed = doc.filed || {};
+      const earlier = filed[userId];
+      if (earlier && earlier.id) return { id: earlier.id, alreadyFiled: true };
+      if (earlier && earlier.pending && nowMs() - Date.parse(earlier.at) < FILING_STALE_MS) {
+        throw new RoomError('filing_in_progress', 409, 'This game is being filed right now.');
+      }
+      try {
+        await store.saveRoom(db, {
+          ...doc,
+          filed: { ...filed, [userId]: { pending: true, at: nowIso() } },
+        });
+      } catch (error) {
+        if (error instanceof store.RoomConflictError) continue;
+        throw error;
+      }
+      const gameSet = player.books.gameSet;
+      const profession = gameSet?.professions?.find((p) => p.id === player.professionId);
+      const label = `${doc.table.settings.name} · ${profession ? profession.title : 'Cashflow'}`;
+      let result;
+      try {
+        result = await filer(
+          userId,
+          player.books,
+          typeof name === 'string' && name.trim() ? name.trim() : label,
+        );
+      } catch (error) {
+        await release(roomId, userId);
+        throw error;
+      }
+      await record(roomId, userId, { id: result.id });
+      return { ...result, alreadyFiled: false };
+    }
+    throw new RoomError('room_conflict', 409, 'The table keeps changing: try again.');
+  }
+
+  /** Writes one account's filing entry on the room document (retried on a concurrent change); `null` removes it. */
+  async function record(roomId, userId, entry) {
+    for (let attempt = 0; attempt < MAX_COMMAND_ATTEMPTS; attempt += 1) {
+      const doc = await store.getRoom(db, roomId);
+      if (!doc) return;
+      const filed = { ...(doc.filed || {}) };
+      if (entry === null) delete filed[userId];
+      else filed[userId] = entry;
+      try {
+        await store.saveRoom(db, { ...doc, filed });
+        return;
+      } catch (error) {
+        if (!(error instanceof store.RoomConflictError)) throw error;
+      }
+    }
+  }
+  const release = (roomId, userId) => record(roomId, userId, null).catch(() => {});
+
+  /**
+   * The log of a table: its events by seat, oldest first, from after `after` (a log position) - the record of the game for a
+   * viewer or an agent. Same access as the live channel.
+   */
+  async function readLog(userId, roomId, { after = 0, limit = 200 } = {}) {
+    const doc = await loadFor(userId, roomId);
+    assertCanWatch(doc, userId);
+    const events = projectLog(await store.readEvents(db, roomId, after, limit));
+    const last = events.length > 0 ? events[events.length - 1].seq : after;
+    return { events, next: last, end: last >= (doc.eventSeq || 0) };
   }
 
   /** Closes tables nobody has touched for too long and deletes old finished ones. Returns what it did. */
@@ -586,6 +704,8 @@ function createGameRoomService({
     rewind,
     runTimeout,
     rearmAll,
+    fileGame,
+    readLog,
     joinRoom,
     listRooms,
     openStream,

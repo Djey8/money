@@ -202,6 +202,48 @@ describe('seat markers', () => {
   });
 });
 
+describe('markers of a table that is over', () => {
+  it('can be kept as closed, change from open to closed, and read back with the flag', async () => {
+    const db = makeDb();
+    await store.syncMarkers(
+      db,
+      'r1',
+      new Map([
+        ['u1', { host: true, closed: false }],
+        ['u2', false],
+      ]),
+    );
+    expect((await store.seatMarkers(db, 'u1'))[0]).toMatchObject({ host: true, closed: false });
+    expect((await store.seatMarkers(db, 'u2'))[0]).toMatchObject({ host: false, closed: false });
+    // the table ends: everyone who sat keeps a closed marker
+    await store.syncMarkers(
+      db,
+      'r1',
+      new Map([
+        ['u1', { host: true, closed: true }],
+        ['u2', { host: false, closed: true }],
+      ]),
+    );
+    expect((await store.seatMarkers(db, 'u1'))[0].closed).toBe(true);
+    expect((await store.seatMarkers(db, 'u2'))[0].closed).toBe(true);
+    // an unchanged marker is not written again
+    const writes = db.insert.mock.calls.length;
+    await store.syncMarkers(
+      db,
+      'r1',
+      new Map([
+        ['u1', { host: true, closed: true }],
+        ['u2', { host: false, closed: true }],
+      ]),
+    );
+    expect(db.insert.mock.calls.length).toBe(writes);
+    // deleting the room takes them with it
+    await store.saveRoom(db, room('r1'));
+    await store.deleteRoom(db, 'r1');
+    expect(await store.seatMarkers(db, 'u1')).toEqual([]);
+  });
+});
+
 describe('deleting a room', () => {
   it('removes the room, its events and its markers - and nothing else', async () => {
     const db = makeDb();

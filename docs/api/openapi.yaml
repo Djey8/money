@@ -6507,7 +6507,7 @@ paths:
       operationId: listGameRooms
       summary: Find multiplayer tables to join, or list your own
       description: >-
-        Game accounts only; requires `game:r`. `scope=open` (default) lists the public tables still in their lobby with a free seat, newest first; `scope=mine` lists the open tables you hold a seat at. Each item is a summary - never an account id; hosts and players are known by the nickname they chose at the table. A private table is never listed: it is joined with its invite code.
+        Game accounts only; requires `game:r`. `scope=open` (default) lists the public tables still in their lobby with a free seat, newest first; `scope=mine` lists the open tables you hold a seat at, and `scope=recent` the tables you sat at that are over (finished or closed) and not yet deleted, with their `result`. Each item is a summary - never an account id; hosts and players are known by the nickname they chose at the table. A private table is never listed: it is joined with its invite code.
       security:
         - bearerAuth: []
       parameters:
@@ -6515,7 +6515,7 @@ paths:
           in: query
           schema:
             type: string
-            enum: [open, mine]
+            enum: [open, mine, recent]
             default: open
         - name: limit
           in: query
@@ -7229,6 +7229,149 @@ paths:
           $ref: '#/components/responses/TableRefused'
         '422':
           $ref: '#/components/responses/TableRefused'
+  /game/rooms/{roomId}/save:
+    parameters:
+      - name: roomId
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      operationId: fileGameRoomGame
+      summary: File a finished game in your saved games
+      description: >-
+        Game accounts only; requires `game:w`. Files **your own final books** of a finished (or closed) game as an ordinary saved game of your account - the same format a solo save is, encrypted with your key, marked as ended, without an undo history (a table has none to give); it then shows in `listGameSaves` and loads like any other. Nothing about the other players or the table goes into it. Only a player of the table (403 `room_forbidden`), only once the game is over (409 `room_not_over`), and only once: a repeat - or a second request at the same moment - answers with the game already filed (`alreadyFiled: true`), so a retry is always safe. The default name is the table's name and your profession; send `name` to choose one. The account's saved-game budget applies (409 `game_storage_full`).
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  maxLength: 120
+            example:
+              name: Friday night, my best
+      responses:
+        '200':
+          description: The saved game
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  alreadyFiled:
+                    type: boolean
+                  summary:
+                    type: object
+                    description: The saved game's list entry (`status` is `ended`), as in `listGameSaves`.
+                  storage:
+                    type: object
+                    description: The account's saved-game storage after the save, as in `listGameSaves`. Absent when the game was already filed.
+              example:
+                id: game_lq5k3a_9f2c
+                alreadyFiled: false
+                summary:
+                  {
+                    id: game_lq5k3a_9f2c,
+                    name: 'Friday table · Nurse',
+                    gameSetId: cashflow,
+                    professionId: krankenpfleger,
+                    round: 14,
+                    cashMinor: 520000,
+                    passiveIncomeMinor: 90000,
+                    expensesMinor: 180000,
+                    escapedRatRace: false,
+                    bankrupt: false,
+                    status: ended,
+                    endedAt: '2026-10-15T19:40:02.000Z',
+                  }
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/TableRefused'
+  /game/rooms/{roomId}/log:
+    parameters:
+      - name: roomId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getGameRoomLog
+      summary: The record of a table
+      description: >-
+        Game accounts only; requires `game:r`. What happened at the table, oldest first: its events by seat, each with its log position `seq` and the table `version` it produced. Page with `after` (the last `seq` you have) and `limit`; `next` is the position to continue from and `end` says there is nothing more yet. The same events the live channel sends, kept after the game is over until the table is deleted (a week after it ends). Same access as the live channel: a seated player, or anyone with a game account at a public table that allows spectators (403 `room_forbidden` otherwise, 404 for a private table you are not at). Never contains an account id.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: after
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 200
+      responses:
+        '200':
+          description: A page of the log
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  events:
+                    type: array
+                    items:
+                      type: object
+                  next:
+                    type: integer
+                  end:
+                    type: boolean
+              example:
+                events:
+                  - {
+                      seq: 1,
+                      version: 1,
+                      at: '2026-10-15T18:02:11.000Z',
+                      type: table_created,
+                      seat: 0,
+                      data: { name: Friday table },
+                    }
+                  - {
+                      seq: 2,
+                      version: 2,
+                      at: '2026-10-15T18:03:40.000Z',
+                      type: player_joined,
+                      seat: 1,
+                      data: { name: Ben, color: '#3cb44b' },
+                    }
+                next: 2
+                end: false
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
 components:
   securitySchemes:
     bearerAuth:
@@ -10606,6 +10749,16 @@ components:
         joined:
           type: boolean
           description: Whether you hold a seat.
+        result:
+          type: object
+          nullable: true
+          description: For a finished table - why it ended (`escaped`, `last-standing`, `round-limit`, `all-done`, `everyone-out`) and the winner's nickname; null otherwise.
+          properties:
+            reason:
+              type: string
+            winnerName:
+              type: string
+              nullable: true
     GameRoom:
       type: object
       description: A table as one account may see it.

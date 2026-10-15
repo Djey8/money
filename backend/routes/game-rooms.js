@@ -3,11 +3,13 @@
 const crypto = require('crypto');
 const express = require('express');
 const rateLimit = require('express-rate-limit');
-const { getGameRoomsDb } = require('../config/db');
+const { getGameRoomsDb, getUsersDb, getAuthDb, getGameSavesDb } = require('../config/db');
 const logger = require('../config/logger');
 const { requireScope, problem } = require('../middleware/api-auth');
 const { requireGameAccount } = require('../middleware/game-account-guard');
 const { createGameRoomService, problemFor } = require('../services/game-rooms');
+const { fileFinishedGame } = require('../repositories/game-saves');
+const { GameActionError } = require('../repositories/game-play');
 const { createGameRoomHub } = require('../services/game-room-hub');
 const { createRoomClocks } = require('../services/game-room-clocks');
 const { parseCommand, parseGuards } = require('../services/game-room-commands');
@@ -48,6 +50,13 @@ function rooms() {
     service = createGameRoomService({
       hub,
       clocks,
+      // A finished game is filed in a player's own saved games through the saved-games store (slice S5).
+      filer: (userId, books, name) =>
+        fileFinishedGame(
+          { usersDb: getUsersDb(), authDb: getAuthDb(), savesDb: getGameSavesDb() },
+          userId,
+          { books, name },
+        ),
       db: getGameRoomsDb(),
       log: (message, meta) => logger.warn(message, meta),
     });
@@ -62,6 +71,15 @@ const handle = (fn) => async (req, res, next) => {
   } catch (error) {
     const refusal = problemFor(error);
     if (refusal) return problem(res, refusal.status, refusal.code, refusal.title, refusal.detail);
+    if (error instanceof GameActionError) {
+      return problem(
+        res,
+        409,
+        error.code.toLowerCase(),
+        'Saved-game request refused',
+        error.message,
+      );
+    }
     return next(error);
   }
 };
@@ -88,8 +106,9 @@ router.get(
   ...guard('r'),
   handle(async (req, res) => {
     const scope = req.query.scope === undefined ? 'open' : req.query.scope;
-    if (scope !== 'open' && scope !== 'mine')
-      return invalid(res, "scope must be 'open' or 'mine'.");
+    if (!['open', 'mine', 'recent'].includes(scope)) {
+      return invalid(res, "scope must be 'open', 'mine' or 'recent'.");
+    }
     const limit = req.query.limit === undefined ? 50 : Number(req.query.limit);
     if (!Number.isInteger(limit) || limit < 1 || limit > 200) {
       return invalid(res, 'limit must be a whole number from 1 to 200.');
@@ -314,6 +333,44 @@ router.post(
       replayed: done.replayed,
       appliedVersion: done.appliedVersion,
     });
+  }),
+);
+
+// ── After the game ─────────────────────────────────────────────────────────────────────────────────
+
+/**
+ * `POST /game/rooms/{roomId}/save {name?}` - a player files the final books of a finished (or closed) game in their own saved
+ * games, once. Only someone who played at the table; the result is an ordinary saved game that ended. A repeat is answered with
+ * the game already filed.
+ */
+router.post(
+  '/:roomId/save',
+  ...guard('w'),
+  handle(async (req, res) => {
+    const body = isObject(req.body) ? req.body : {};
+    if (body.name !== undefined && (typeof body.name !== 'string' || body.name.length > 120)) {
+      return invalid(res, 'name must be a string of at most 120 characters.');
+    }
+    return res.json(await rooms().fileGame(req.userId, req.params.roomId, { name: body.name }));
+  }),
+);
+
+/**
+ * `GET /game/rooms/{roomId}/log?after=&limit=` - the record of a table: its events by seat, oldest first, from a log position.
+ * Same access as the live channel.
+ */
+router.get(
+  '/:roomId/log',
+  ...guard('r'),
+  handle(async (req, res) => {
+    const after = req.query.after === undefined ? 0 : Number(req.query.after);
+    const limit = req.query.limit === undefined ? 200 : Number(req.query.limit);
+    if (!Number.isInteger(after) || after < 0)
+      return invalid(res, 'after must be a whole number of zero or more.');
+    if (!Number.isInteger(limit) || limit < 1 || limit > 1000) {
+      return invalid(res, 'limit must be a whole number from 1 to 1000.');
+    }
+    return res.json(await rooms().readLog(req.userId, req.params.roomId, { after, limit }));
   }),
 );
 

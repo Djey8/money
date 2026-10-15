@@ -424,8 +424,9 @@ describe('limits and tidying up', () => {
     const closed = await call(anna, 'get', `/${id}`);
     expect(closed.body.table.phase).toBe('abandoned');
     expect((await store.getRoom(getGameRoomsDb(), id)).phase).toBe('abandoned');
+    // a closed table keeps a closed marker (the recent-tables list reads it; it counts toward no limit) until it is deleted
     const markers = await store.seatMarkers(getGameRoomsDb(), anna.userId);
-    expect(markers.map((m) => m.roomId)).not.toContain(id);
+    expect(markers.filter((m) => m.roomId === id).map((m) => m.closed)).toEqual([true]);
     const events = await store.readEvents(getGameRoomsDb(), id, 0, 50);
     expect(events[events.length - 1]).toMatchObject({
       type: 'table_closed',
@@ -437,6 +438,9 @@ describe('limits and tidying up', () => {
     const second = await service.sweep();
     expect(second.deleted).toBeGreaterThanOrEqual(1);
     expect(await store.getRoom(getGameRoomsDb(), id)).toBeNull();
+    expect(
+      (await store.seatMarkers(getGameRoomsDb(), anna.userId)).map((m) => m.roomId),
+    ).not.toContain(id);
     expect(await store.readEvents(getGameRoomsDb(), id, 0, 50)).toEqual([]);
     expect((await call(anna, 'get', `/${id}`)).status).toBe(404);
   });
