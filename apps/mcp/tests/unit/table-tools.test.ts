@@ -29,7 +29,7 @@ const props = (tool: typeof play) =>
 describe('what an agent sees in tools/list', () => {
   it('offers the table actions on the two game tools, next to the solo ones', () => {
     expect(props(read).action.enum).toEqual(
-      expect.arrayContaining(['game', 'tables', 'table', 'table_log']),
+      expect.arrayContaining(['game', 'tables', 'table', 'table_log', 'table_bots']),
     );
     expect(props(play).action.enum).toEqual(
       expect.arrayContaining([
@@ -41,6 +41,7 @@ describe('what an agent sees in tools/list', () => {
         'table_ready',
         'table_kick',
         'table_settings',
+        'table_add_bot',
         'table_start',
         'table_profession',
         'table_move',
@@ -99,7 +100,7 @@ describe('what an agent sees in tools/list', () => {
         ).actions,
       ),
     ].filter(([name]) => name.startsWith('table'));
-    expect(actions.length).toBe(15);
+    expect(actions.length).toBe(17);
     for (const [, action] of actions) expect(OPERATIONS[action.operationId]).toBeDefined();
     expect(OPERATIONS.streamGameRoomEvents).toBeUndefined();
     expect(JSON.stringify(TOOLS)).not.toContain('streamGameRoomEvents');

@@ -435,12 +435,14 @@ export const TOOLS: ToolDefinition[] = [
       'the only moves play_cashflow_game action table_move will accept from you right now. There is no stream for an ' +
       'agent: call table, and when `version` has not moved nothing happened (poll no faster than every few seconds); ' +
       'when it is your turn `activeSeat` equals `youSeat`. table_log pages through what happened (`after`). ' +
+      'table_bots lists the bots a host can seat (id, name, difficulty, how it plays). ' +
       'Requires a PAT with game:r.',
     actions: {
       game: action('getGame'),
       tables: action('listGameRooms'),
       table: action('getGameRoom'),
       table_log: action('getGameRoomLog'),
+      table_bots: action('listGameBots'),
       sets: action('listGameSets'),
       set: action('getGameSet'),
       cards: action('listGameCards'),
@@ -469,7 +471,9 @@ export const TOOLS: ToolDefinition[] = [
       'MULTIPLAYER (a table of several players, you as one seat; read explain_concept topic cashflow_game_guide, ' +
       'section "Playing at a table"): table_create opens a table (nickname, settings.name, ...) and returns an invite ' +
       'code, table_join takes a seat (roomId or code, nickname), table_ready, table_start (host), table_profession ' +
-      "(professionId or random), table_leave; table_kick / table_settings / table_close are the host's. Then " +
+      "(professionId or random), table_leave; table_kick / table_settings / table_close are the host's, and so is " +
+      'table_add_bot (lobby only: policyId from get_cashflow_game table_bots, optional name and professionId) which ' +
+      'seats a bot the server plays by itself - remove it with table_kick of its seat. Then ' +
       'table_move plays ONE move: `command` is {type: roll | draw_card | buy_deal | pay_doodad | roll_decision | ' +
       'pass_card | bank_loan | sell_position | offer_trade | counter_trade | accept_trade | decline_trade | ' +
       'withdraw_trade | pause | resume | back, ...its fields}. Call get_cashflow_game action table before EVERY move and ' +
@@ -487,6 +491,7 @@ export const TOOLS: ToolDefinition[] = [
       table_ready: action('setGameRoomReady'),
       table_kick: action('kickFromGameRoom'),
       table_settings: action('updateGameRoomSettings'),
+      table_add_bot: action('addGameRoomBot'),
       table_start: action('startGameRoom'),
       table_profession: action('pickGameRoomProfession'),
       table_move: action('playGameRoomCommand'),

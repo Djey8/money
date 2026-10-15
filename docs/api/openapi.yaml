@@ -6629,6 +6629,7 @@ paths:
                         status: active,
                         away: false,
                         hasPicked: false,
+                        bot: null,
                         pick: null,
                         professionId: null,
                         books: null,
@@ -6688,6 +6689,37 @@ paths:
           $ref: '#/components/responses/TableRefused'
         '429':
           $ref: '#/components/responses/RoomLimit'
+  /game/rooms/bots:
+    get:
+      operationId: listGameBots
+      summary: The bots a host can seat
+      description: >-
+        Game accounts only; requires `game:r`. The characters a host can seat at a table with `addGameRoomBot`, each playing one strategy of the strategy lab and tournament (`CASHFLOW_STRATEGY_LAB.md`, `CASHFLOW_TOURNAMENT.md`). `id` is what `policyId` takes; `difficulty` is how often the strategy won tables in the tournament (easy, medium, hard, champion) - a guide, not a promise: the dice decide a lot.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The bots
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/GameBot'
+              example:
+                items:
+                  - id: all-rounder
+                    name: Allie All-Round
+                    difficulty: hard
+                    description: Properties, loans only when well covered, marketing, stocks and selling to generous buyers.
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
   /game/rooms/{roomId}:
     parameters:
       - name: roomId
@@ -6903,6 +6935,63 @@ paths:
               settings:
                 maxSeats: 8
                 clock: { mode: per-move, secondsPerMove: 45 }
+      responses:
+        '200':
+          description: The table
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameRoom'
+        '400':
+          $ref: '#/components/responses/TableRefused'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/TableRefused'
+  /game/rooms/{roomId}/bots:
+    parameters:
+      - name: roomId
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      operationId: addGameRoomBot
+      summary: Seat a bot (host only, lobby only)
+      description: >-
+        Game accounts only; requires `game:w`. The host seats a bot at the table: a character of `listGameBots` that plays one strategy. The bot has no account, is always ready, takes a seat and picks its own profession (the one named, else random; a unique-professions table draws for it). Its moves are made by the server a moment after each change - through the same rules, the same clock and the same log as a person's - so everyone sees them as they happen, and a bot shows in the table with a `bot` marker. Remove it with the kick of its seat (`kickFromGameRoom`). Only the host, only in the lobby, not past the table's seats, and not under a name another player already has.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [policyId]
+              properties:
+                policyId:
+                  type: string
+                  description: A bot id from `listGameBots`.
+                name:
+                  type: string
+                  maxLength: 24
+                  description: The name at the table; the character's own name by default.
+                professionId:
+                  type: string
+                  description: A profession of the game set, or `random` (the default).
+                color:
+                  type: string
+                expectedVersion:
+                  type: integer
+                  minimum: 0
+            example:
+              policyId: all-rounder
+              professionId: lehrer
       responses:
         '200':
           description: The table
@@ -10576,6 +10665,19 @@ components:
         detail:
           type: string
         code:
+          type: string
+    GameBot:
+      type: object
+      required: [id, name, difficulty, description]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        difficulty:
+          type: string
+          enum: [easy, medium, hard, champion]
+        description:
           type: string
     GameRoomCommandBody:
       type: object
