@@ -69,6 +69,13 @@ export const MANUAL_SECTIONS: ManualSectionRef[] = [
   { id: 'cardlab', number: '21', level: 0 },
   { id: 'faq', number: '22', level: 0 },
   { id: 'glossary', number: '23', level: 0 },
+  // Playing with others: the multiplayer manual (todo/cashflow-tournament-and-bots.md D1)
+  { id: 'tables', number: '24', level: 0 },
+  { id: 'tableplay', number: '25', level: 0 },
+  { id: 'tabletrade', number: '26', level: 0 },
+  { id: 'bots', number: '27', level: 0 },
+  { id: 'tournament', number: '28', level: 0 },
+  { id: 'agents', number: '29', level: 0 },
 ];
 
 /** The languages the manual is written in - all six of the app's (ngx-translate codes: `cn` is Chinese). */

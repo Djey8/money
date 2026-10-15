@@ -593,3 +593,101 @@ Les mots du jeu au même endroit.
 - **Partie en direct**: La partie que ton compte joue en ce moment. Les parties enregistrées sont des copies qui peuvent redevenir la partie en direct.
 - **Prêt bancaire**: De l'argent de la banque par paliers de 1.000 à 10 % du prêt par mois.
 - **Feu / Sourire / Plaisir / Quotidien**: Les quatre comptes de dépenses de Money App. Dans le jeu, les achats passent par Feu, les dépenses imprévues de rêve par Sourire, les petites par Plaisir.
+
+## 24. Jouer avec les autres : les tables
+
+Le même jeu, entre amis, à une table.
+
+Une **table** est le jeu Cashflow joué par plusieurs joueurs en même temps, sur le serveur. Chaque joueur a ses propres livres, les piles de cartes sont communes et tout est ouvert à tous - la profession, le compte de résultat et le bilan de chaque joueur - sauf les dés et l'ordre des piles. Une table ne lit ni n'écrit jamais les livres de votre propre compte. Les tables sont réservées aux comptes de jeu.
+
+### Ouvrir, rejoindre, commencer
+
+1. **Ouvrir ou rejoindre** - Ouvrez une table depuis le salon (menu, "Jouer entre amis") avec un nom, le nombre de places, publique ou privée, l'horloge et la fin de partie - ou rejoignez une table ouverte, ou utilisez un code d'invitation.
+2. **Se préparer** - Tout le monde appuie sur "Prêt". L'hôte lance la partie dès qu'au moins deux joueurs sont prêts.
+3. **Choisir une profession** - Tout le monde choisit en même temps et les choix restent cachés jusqu'au dernier. Les doublons sont permis, sauf si l'hôte a rendu les professions uniques ou aléatoires.
+4. **Jouer** - Chaque joueur reçoit ses propres livres de départ. L'anneau montre un pion par joueur, chacun avec sa couleur et sa lettre.
+
+### Ce qui change par rapport au jeu en solo
+
+| Quoi | En solo | À une table |
+| --- | --- | --- |
+| Qui lance | Vous | Le joueur dont c'est le tour ; les dés sont ceux du serveur |
+| Piles de cartes | Les vôtres | Communes : une carte tirée disparaît pour tous jusqu'au remélange de la pile |
+| Regarder les cartes | N'importe quelle pile, n'importe quelle carte (règles libres) | Une carte au hasard par case : la prendre ou passer |
+| Acheter | À tout moment (règles libres) | Seulement avec la carte en main |
+| Jets et écritures | Vous pouvez déclarer un jet, saisir une écriture | Jamais : seul le serveur lance, rien n'est saisi |
+| Vendre | À un prix que vous annoncez (règles libres) | Seulement dans une offre qu'une carte a faite |
+| Gagner | Sortir de la course de rats | Le premier à sortir, une limite de tours, ou tout le monde a fini - l'hôte choisit |
+
+> **Imposé, pas facultatif** Une table partagée ne peut pas suivre les règles souples du jeu en solo : un jet déclaré, une écriture saisie à la main, une pile regardée ou un prix de vente fixé par soi-même permettraient à un joueur de tricher.
+
+## 25. Un tour à la table
+
+Lancer, régler la case, passer la main.
+
+1. **Lancer** - À votre tour vous lancez et le pion avance. Chaque Payday atteint par le pion est payé.
+2. **Régler la case** - Sur une case Affaires vous piochez Petite ou Grosse et achetez ou passez ; sur une Dépense vous payez ; une carte Marché est piochée pour vous et vaut pour tous à la table.
+3. **Passer le tour** - Quand la case est réglée, c'est au suivant. Un prêt bancaire peut être pris ou remboursé quand les règles le permettent.
+
+### L'horloge, l'absence et les pauses
+
+- **L'horloge** - aucune, un temps par coup, une réserve de temps par joueur (avec incrément facultatif) ou une horloge quotidienne pour les parties lentes. Seul le serveur décide quand le temps est écoulé.
+- **Temps écoulé** - le serveur joue pour le joueur le tour légal le plus passif : lancer, passer la carte, ne rien acheter ni vendre.
+- **Absent** - après plusieurs dépassements de suite (2 par défaut) un joueur est marqué absent et ses tours sont joués aussitôt, jusqu'à ce qu'il dise être de retour.
+- **Pause** - l'hôte peut mettre en pause et reprendre ; une pause rend le temps à tous.
+
+### La fin
+
+La partie se termine comme l'hôte l'a réglé : le **premier à sortir** de la course de rats (par défaut), tout le monde a fini, ou après un nombre de tours. Le classement place d'abord ceux qui sont sortis (le plus tôt en tête), puis par revenu passif, puis les faillis. Chaque joueur peut enregistrer la partie dans ses propres parties, une fois.
+
+## 26. Vendre et échanger à la table
+
+Personne ne vend de sa propre initiative.
+
+Pour vendre il faut une carte. Une **carte Marché** piochée par n'importe qui fait une offre à chaque joueur qui possède ce qu'elle achète (biens immobiliers, or) ; une **carte de cours** déplace le prix de cette action pour tous les détenteurs. Tant qu'une telle offre est ouverte pour vous, vous pouvez y vendre - à votre tour ou non - et elle disparaît quand elle se termine. Pas de carte, pas de vente.
+
+- **Échanger une carte Affaire** - la carte de bien ou d'actif dans votre main (jamais une action) peut être proposée aux autres joueurs à un prix. Ils la prennent à ce prix, répondent par un prix à eux ou refusent ; vous pouvez accepter l'un de leurs prix.
+- **Les deux parties doivent être d'accord** - rien ne bouge avant, et l'offre prend fin avec votre tour.
+- **Les actions ne s'échangent jamais** - seul le joueur qui a pioché une carte d'action peut l'acheter.
+
+> **Pourquoi** Comme seule une carte peut déclencher une vente, personne ne peut créer de l'argent en annonçant son propre prix.
+
+## 27. Les bots et les champions
+
+Une place qui joue toute seule, selon les règles.
+
+L'hôte peut installer des **bots** dans le salon. Un bot n'a pas de compte ; il est toujours prêt, choisit sa profession et joue son tour un instant après chaque changement à la table - avec les mêmes règles, la même horloge et le même journal qu'une personne, si bien que tout le monde le voit jouer coup par coup. Il ne voit que ce que voit un joueur : ses livres et les livres publics de tous, jamais les dés ni l'ordre des piles.
+
+| Niveau | Bots | Comment ils jouent |
+| --- | --- | --- |
+| Facile | Sleepy Sam, Careful Carla, Cash Charlie | N'investit jamais / seulement des biens sélectifs / seulement ce que le comptant paie |
+| Moyen | Trader Tina, Banker Ben, Marketing Mia, Steady Stella, Gambler Gus | Actions pour les apports / emprunte quand ça paie / marketing d'abord / petites puis grosses affaires / grosses affaires à crédit |
+| Difficile | Allie All-Round, Quick Quinn | Les meilleures stratégies générales du laboratoire de stratégies et de sa recherche |
+| Champion | Champion Cleo, Master Maxine | Cleo joue la seule stratégie qui a gagné le plus de tables ; Maxine joue le champion de sa propre profession |
+
+> **Fair-play** Rien de ce que fait un bot n'est caché : chaque coup est dans le journal comme celui de n'importe qui. Le niveau dit à quelle fréquence une stratégie a gagné des tables au tournoi - pas ce qui arrivera dans une partie : les dés décident beaucoup.
+
+## 28. Comment les champions ont été trouvés
+
+Des milliers de tables, jouées par des stratégies.
+
+Le **tournoi** joue des tables entières en mémoire - avec les vraies règles de table - avec une stratégie à chaque place et une profession à chaque place, chaque stratégie à chaque place, encore et encore. Une table est gagnée par le premier à sortir. L'ordre des places est mélangé, donc aucune stratégie ne profite de jouer en premier.
+
+_(Table: À quelle fréquence chaque stratégie a gagné les tables où elle était assise (tous avec la même profession ; règles guidées et strictes ensemble) - the figures are in the topics cashflow_cards, cashflow_card_lab and cashflow_strategy_lab.)_
+
+Une **recherche** fait ensuite varier les réglages de la stratégie - quels biens acheter, quelle réserve garder, quand emprunter, quand viser les Grosses affaires et combien de risque en plus prendre quand un rival prend de l'avance - et garde ce qui gagne, génération après génération. Les finalistes sont rejoués sur des parties que la recherche n'a jamais vues ; alors seulement une stratégie est appelée championne. Une profession n'a un champion à elle que si elle bat le champion général sur ces parties neuves.
+
+_(Table: Le champion de chaque profession - the figures are in the topics cashflow_cards, cashflow_card_lab and cashflow_strategy_lab.)_
+
+> **Pas une promesse** Une part de victoires est une moyenne sur des milliers de tables. Dans une partie donnée les dés décident beaucoup, et un joueur qui lit bien la table peut battre un champion. Les chiffres sont remesurés quand les règles changent.
+
+## 29. Jouer avec un agent
+
+Laissez votre assistant IA prendre une place.
+
+1. **Lui donner sa propre place** - L'agent a besoin de son propre compte de jeu et d'un jeton d'accès personnel avec les portées `game:r` et `game:w`, avec le serveur MCP connecté.
+2. **Ouvrir une table** - Vous ouvrez une table (ou l'agent) et installez quelques bots si vous voulez. Donnez à l'agent le code d'invitation ou l'identifiant de la table.
+3. **Le laisser jouer** - L'agent rejoint, se met prêt, choisit une profession, puis lit la table avant chaque coup et ne joue que les coups que la table donne comme légaux - toujours avec un identifiant de commande, pour qu'un appel répété ne soit appliqué qu'une fois.
+4. **Demander le récit** - Demandez-lui de dire ce qu'il a fait et pourquoi, et quand il attend les autres. Ne le laissez pas revenir en arrière, exclure ou fermer une table sans que vous l'ayez demandé.
+
+> **Le serveur décide** Le serveur impose le tour, les règles et l'horloge, donc un agent ne peut ni tricher ni jouer pour une place qui n'est pas la sienne. Dites-lui que sa tâche est de sortir le premier : il joue dans les règles, avec la même information qu'une personne.

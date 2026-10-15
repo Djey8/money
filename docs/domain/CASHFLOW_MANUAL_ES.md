@@ -593,3 +593,101 @@ Las palabras del juego en un solo lugar.
 - **Partida en vivo**: La partida que tu cuenta está jugando ahora mismo. Las partidas guardadas son copias que pueden volver a estar en vivo.
 - **Préstamo bancario**: Dinero del banco en pasos de 1.000 al 10 % del préstamo al mes.
 - **Fuego / Sonrisa / Capricho / Diario**: Las cuatro cuentas de gasto de Money App. En el juego, las compras pasan por Fuego, los gastos imprevistos de ensueño por Sonrisa, los pequeños por Capricho.
+
+## 24. Jugar con otros: mesas
+
+El mismo juego, con amigos, en una mesa.
+
+Una **mesa** es el juego Cashflow jugado por varios jugadores a la vez, en el servidor. Cada jugador tiene sus propios libros, los mazos son compartidos y todo está abierto para todos - la profesión, el estado de ingresos y el balance de cada jugador - salvo los dados y el orden de los mazos. Una mesa nunca lee ni escribe los libros de tu propia cuenta. Las mesas son solo para cuentas de juego.
+
+### Abrir, unirse, empezar
+
+1. **Abrir o unirse** - Abre una mesa desde la sala (menú, "Jugar con amigos") con un nombre, el número de plazas, pública o privada, el reloj y cómo termina la partida - o únete a una mesa abierta, o usa un código de invitación.
+2. **Prepararse** - Todos pulsan "Listo". El anfitrión empieza la partida cuando al menos dos jugadores están listos.
+3. **Elegir profesión** - Todos eligen a la vez y las elecciones quedan ocultas hasta que entra la última. Se permiten repetidas, salvo que el anfitrión haya hecho las profesiones únicas o aleatorias.
+4. **Jugar** - Cada jugador recibe sus propios libros iniciales. El anillo muestra una ficha por jugador, cada una con su color y su letra.
+
+### Qué es distinto del juego en solitario
+
+| Qué | En solitario | En una mesa |
+| --- | --- | --- |
+| Quién tira | Tú | El jugador al que le toca; los dados son del servidor |
+| Mazos de cartas | Los tuyos | Compartidos: una carta robada desaparece para todos hasta que se baraja el mazo |
+| Mirar cartas | Cualquier mazo, cualquier carta (reglas libres) | Una carta al azar por casilla: tomarla o pasar |
+| Comprar | En cualquier momento (reglas libres) | Solo con la carta en la mano |
+| Tiradas y apuntes | Puedes declarar una tirada, escribir un movimiento | Nunca: solo el servidor tira, no se escribe nada |
+| Vender | A un precio que tú dices (reglas libres) | Solo en una oferta que una carta ha hecho |
+| Ganar | Escapar de la carrera de la rata | El primero en escapar, un límite de rondas, o todos terminan - lo decide el anfitrión |
+
+> **Obligatorio, no opcional** Una mesa compartida no puede jugarse con las reglas sueltas del juego en solitario: una tirada declarada, un apunte escrito a mano, un mazo mirado o un precio de venta puesto por uno mismo permitirían a un jugador engañar a los demás.
+
+## 25. Un turno en una mesa
+
+Tirar, resolver la casilla, pasar el turno.
+
+1. **Tirar** - En tu turno tiras y la ficha avanza. Cada Payday que alcanza la ficha se cobra.
+2. **Resolver la casilla** - En una casilla de Tratos robas Pequeño o Grande y compras o pasas; en un Gasto pagas; una carta de Mercado se roba por ti y vale para todos en la mesa.
+3. **Pasar el turno** - Cuando la casilla está resuelta le toca al siguiente. Se puede pedir o devolver un préstamo bancario cuando las reglas lo permiten.
+
+### El reloj, la ausencia y las pausas
+
+- **El reloj** - ninguno, un tiempo por jugada, un banco de tiempo por jugador (con incremento opcional) o un reloj diario para partidas lentas. Solo el servidor decide cuándo se acaba el tiempo.
+- **Sin tiempo** - el servidor juega por el jugador el turno legal más pasivo: tirar, pasar la carta, no comprar ni vender nada.
+- **Ausente** - tras varios fallos de tiempo seguidos (2 por defecto) un jugador queda ausente y sus turnos se juegan al instante, hasta que diga que ha vuelto.
+- **Pausa** - el anfitrión puede pausar y reanudar; una pausa devuelve el tiempo a todos.
+
+### El final
+
+La partida termina como el anfitrión lo fijó: el **primero en escapar** de la carrera de la rata (por defecto), todos terminados, o tras un número de rondas. La clasificación pone primero a los que escaparon (el más temprano primero), luego por ingreso pasivo, luego los quebrados. Cada jugador puede guardar la partida en sus propias partidas guardadas, una vez.
+
+## 26. Vender y comerciar en una mesa
+
+Nadie vende por iniciativa propia.
+
+Para vender hace falta una carta. Una **carta de Mercado** que robe cualquiera hace una oferta a todos los jugadores que tengan lo que compra (propiedades, oro); una **carta de cotización** mueve el precio de esa acción para todos los titulares. Mientras una oferta así esté abierta para ti, puedes vender en ella - en tu turno o fuera de él - y desaparece cuando acaba. Sin carta, no hay venta.
+
+- **Comerciar una carta de Trato** - la carta de propiedad o activo que tienes en la mano (nunca una acción) puede ofrecerse a los demás a un precio. La toman a ese precio, responden con un precio propio o la rechazan; tú puedes aceptar uno de sus precios.
+- **Las dos partes deben estar de acuerdo** - hasta entonces no se mueve nada, y la oferta termina con tu turno.
+- **Las acciones nunca se comercian** - solo el jugador que robó una carta de acción puede comprarla.
+
+> **Por qué** Como solo una carta puede iniciar una venta, nadie puede sacar dinero de la nada poniendo su propio precio.
+
+## 27. Los bots y los campeones
+
+Una plaza que juega sola, según las reglas.
+
+El anfitrión puede sentar **bots** en la sala. Un bot no tiene cuenta; siempre está listo, elige su profesión y juega su turno un momento después de cada cambio en la mesa - con las mismas reglas, el mismo reloj y el mismo registro que una persona, así que todos lo ven jugar jugada a jugada. Solo ve lo que ve un jugador: sus libros y los libros públicos de todos, nunca los dados ni el orden de los mazos.
+
+| Nivel | Bots | Cómo juegan |
+| --- | --- | --- |
+| Fácil | Sleepy Sam, Careful Carla, Cash Charlie | Nunca invierte / solo propiedades selectivas / solo lo que paga el efectivo |
+| Medio | Trader Tina, Banker Ben, Marketing Mia, Steady Stella, Gambler Gus | Acciones para las entradas / pide prestado cuando compensa / primero marketing / tratos pequeños y luego grandes / tratos grandes a crédito |
+| Difícil | Allie All-Round, Quick Quinn | Las mejores estrategias generales del laboratorio de estrategias y su búsqueda |
+| Campeón | Champion Cleo, Master Maxine | Cleo juega la única estrategia que ganó más mesas; Maxine juega el campeón de su propia profesión |
+
+> **Juego limpio** Nada de lo que hace un bot está oculto: cada jugada está en el registro como la de cualquiera. El nivel dice con qué frecuencia una estrategia ganó mesas en el torneo - no lo que pasará en una partida: los dados deciden mucho.
+
+## 28. Cómo se encontraron los campeones
+
+Miles de mesas, jugadas por estrategias.
+
+El **torneo** juega mesas enteras en memoria - con las reglas reales de mesa - con una estrategia en cada plaza y una profesión en cada plaza, cada estrategia en cada plaza, una y otra vez. Una mesa la gana quien escapa primero. El orden de asiento se baraja, así que ninguna estrategia gana por salir primera.
+
+_(Table: Con qué frecuencia ganó cada estrategia las mesas en las que se sentó (todos con la misma profesión; reglas guiadas y estrictas juntas) - the figures are in the topics cashflow_cards, cashflow_card_lab and cashflow_strategy_lab.)_
+
+Una **búsqueda** varía después los mandos de la estrategia - qué propiedades comprar, cuánta reserva guardar, cuándo pedir prestado, cuándo ir a los Tratos Grandes y cuánto más riesgo asumir cuando un rival se adelanta - y se queda con lo que gana, generación tras generación. Los finalistas se juegan de nuevo en partidas que la búsqueda nunca vio; solo entonces una estrategia es campeona. Una profesión tiene campeón propio solo si supera al campeón general en esas partidas nuevas.
+
+_(Table: El campeón de cada profesión - the figures are in the topics cashflow_cards, cashflow_card_lab and cashflow_strategy_lab.)_
+
+> **No es una promesa** Una cuota de victorias es un promedio sobre miles de mesas. En una partida concreta los dados deciden mucho, y un jugador que lee bien la mesa puede ganar a un campeón. Las cifras se vuelven a medir cuando cambian las reglas.
+
+## 29. Jugar con un agente
+
+Deja que tu asistente de IA ocupe una plaza.
+
+1. **Dale una plaza propia** - El agente necesita su propia cuenta de juego y un token de acceso personal con los permisos `game:r` y `game:w`, con el servidor MCP conectado.
+2. **Abrir una mesa** - Abres una mesa (o el agente) y sientas unos bots si quieres. Dale al agente el código de invitación o el id de la mesa.
+3. **Dejarlo jugar** - El agente se une, se prepara, elige profesión y luego lee la mesa antes de cada jugada y juega solo las jugadas que la mesa lista como legales - siempre con un id de comando, para que una llamada repetida se aplique una sola vez.
+4. **Pedirle el relato** - Pídele que diga qué hizo y por qué, y cuándo espera a otros. No dejes que retroceda, expulse o cierre una mesa salvo que tú lo pidas.
+
+> **Decide el servidor** El servidor impone el turno, las reglas y el reloj, así que un agente no puede hacer trampas ni jugar por una plaza que no es suya. Dile que su tarea es ser el primero en escapar: juega dentro de las reglas, con la misma información que una persona.

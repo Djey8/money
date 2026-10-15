@@ -33,6 +33,8 @@ export interface ManualContext {
   lab?: LabResults | null;
   /** What the card lab measured (assets/i18n/cashflow-manual/card-lab.json); null until it is loaded or when absent. */
   cardLab?: CardLab | null;
+  /** What the tournament measured and the champion book (assets/i18n/cashflow-manual/tournament-lab.json); null until loaded or when absent. */
+  tournament?: TournamentData | null;
   /** A card's name in the manual's language (its title, and its ticker when that tells it apart). */
   cardName?(cardId: string): string;
 }
@@ -165,7 +167,49 @@ export interface LabResults {
   results: Record<string, Record<string, LabStats>>;
 }
 
+// -- The tournament and the champion book (scripts/tournament-lab.js, scripts/champion-search.js) -----
+
+export interface TournamentScore {
+  policyId: string;
+  appearances: number;
+  winRate: number;
+  winInterval: { low: number; high: number };
+  expectedWinRate: number;
+  meanRank: number;
+  escapeRate: number;
+  bankruptRate: number;
+}
+
+export interface TournamentData {
+  meta: { rulesDigest: string; generatedAt: string; tables: number };
+  /** The bots of the catalog, to name the strategies. */
+  bots: { id: string; name: string; label: string; difficulty: string }[];
+  /** One entry per number of seats, rules and mode (everyone the same profession, or a mix). */
+  overall: {
+    seats: number;
+    rules: string;
+    mode: string;
+    tables: number;
+    scores: TournamentScore[];
+  }[];
+  /** A champion per profession (champion-search.js --write-book). */
+  champions: Record<
+    string,
+    {
+      setId: string;
+      title: string;
+      adopted: boolean;
+      winRate: number;
+      interval: { low: number; high: number };
+      tables: number;
+      championV1WinRate: number;
+    }
+  >;
+}
+
 export const MANUAL_DATA_IDS = [
+  'tournamentOverall',
+  'championBook',
   'professions',
   'escape',
   'smallProperties',
@@ -902,8 +946,98 @@ function cardLabRuinTable(ctx: ManualContext): ManualTable {
   };
 }
 
+/** The strategies by how often they won a table, for 2, 4 and 6 seats (both rule sets, everyone the same profession). */
+function tournamentOverallTable(ctx: ManualContext): ManualTable {
+  const l = ctx.labels;
+  const head = [
+    l['colStrategy'],
+    l['colBot'],
+    l['colWins2'],
+    l['colWins4'],
+    l['colWins6'],
+    l['colMeanRank4'],
+  ];
+  const data = ctx.tournament;
+  if (!data)
+    return { head, rows: [[l['tournamentMissing'] ?? '-', ...head.slice(1).map(() => '-')]] };
+  const mirror = (seats: number) =>
+    data.overall.filter((g) => g.seats === seats && g.mode === 'mirror');
+  const pooled = (seats: number, id: string) => {
+    let wins = 0;
+    let appearances = 0;
+    let rank = 0;
+    for (const group of mirror(seats)) {
+      const score = group.scores.find((s) => s.policyId === id);
+      if (!score) continue;
+      wins += score.winRate * score.appearances;
+      rank += score.meanRank * score.appearances;
+      appearances += score.appearances;
+    }
+    return appearances ? { winRate: wins / appearances, rank: rank / appearances } : null;
+  };
+  const rows = data.bots
+    .map((bot) => ({
+      bot,
+      two: pooled(2, bot.id),
+      four: pooled(4, bot.id),
+      six: pooled(6, bot.id),
+    }))
+    .filter((row) => row.two || row.four || row.six)
+    .sort((a, b) => (b.four?.winRate ?? 0) - (a.four?.winRate ?? 0));
+  const show = (value: { winRate: number } | null) => (value ? ctx.percent(value.winRate) : '-');
+  return {
+    head,
+    rows: rows.map((row) => [
+      policyName(ctx, row.bot.id, row.bot.label),
+      row.bot.name,
+      show(row.two),
+      show(row.four),
+      show(row.six),
+      row.four ? row.four.rank.toFixed(2) : '-',
+    ]),
+    note: l['noteTournament'],
+  };
+}
+
+/** The champion of every profession: its win share, the 95% range, and what the all-round champion won on the same tables. */
+function championBookTable(ctx: ManualContext): ManualTable {
+  const l = ctx.labels;
+  const head = [
+    l['colProfession'],
+    l['colChampion'],
+    l['colWins'],
+    l['colRange'],
+    l['colCleo'],
+    l['colTables'],
+  ];
+  const data = ctx.tournament;
+  if (!data || Object.keys(data.champions).length === 0) {
+    return { head, rows: [[l['championsMissing'] ?? '-', ...head.slice(1).map(() => '-')]] };
+  }
+  const professions = playableSets().flatMap((set) => set.professions);
+  return {
+    head,
+    rows: Object.entries(data.champions).map(([id, entry]) => {
+      const profession = professions.find((p) => p.id === id);
+      return [
+        profession ? ctx.professionTitle(profession) : entry.title,
+        entry.adopted ? l['championOwn'] : l['championAll'],
+        ctx.percent(entry.winRate),
+        `${ctx.percent(entry.interval.low)} - ${ctx.percent(entry.interval.high)}`,
+        ctx.percent(entry.championV1WinRate),
+        ctx.number(entry.tables),
+      ];
+    }),
+    note: l['noteChampions'],
+  };
+}
+
 export function buildManualTable(id: ManualDataId, ctx: ManualContext): ManualTable {
   switch (id) {
+    case 'tournamentOverall':
+      return tournamentOverallTable(ctx);
+    case 'championBook':
+      return championBookTable(ctx);
     case 'cardLabSmall':
       return cardLabDealsTable('dealSmall', ctx);
     case 'cardLabBig':

@@ -34,6 +34,7 @@ import {
   buildManualTable,
   type CardLab,
   type LabResults,
+  type TournamentData,
   type ManualContext,
   type ManualTable,
 } from './manual-data';
@@ -86,6 +87,8 @@ export class CashflowDocsComponent implements OnInit, OnDestroy {
   lab: LabResults | null = null;
   /** What the card lab measured (scripts/card-lab.js); null when the file is not there. */
   cardLab: CardLab | null = null;
+  /** What the tournament measured and the champion book (scripts/tournament-lab.js); null when the file is not there. */
+  tournament: TournamentData | null = null;
   loadFailed = false;
   /** The manual is not written in the app's language yet - the English text is shown. */
   usingFallback = false;
@@ -172,6 +175,9 @@ export class CashflowDocsComponent implements OnInit, OnDestroy {
       this.cardLab = await firstValueFrom(
         this.http.get<CardLab>('assets/i18n/cashflow-manual/card-lab.json'),
       ).catch(() => null);
+      this.tournament = await firstValueFrom(
+        this.http.get<TournamentData>('assets/i18n/cashflow-manual/tournament-lab.json'),
+      ).catch(() => null);
       this.tableCache.clear();
     } catch {
       this.loadFailed = true;
@@ -235,6 +241,7 @@ export class CashflowDocsComponent implements OnInit, OnDestroy {
       familyName: (family) => this.cardText.familyName(family),
       lab: this.lab,
       cardLab: this.cardLab,
+      tournament: this.tournament,
       cardName: (id: string) => this.cardNameOf(id),
     };
   }

@@ -154,7 +154,23 @@
     "noteCardLabDice": "Die Chance sind die Würfel: Die Karte gewinnt bei ihrer Zahl oder höher. Die letzten beiden Spalten sind gemessen: was das Bezahlen der Karte mit der Chance auf den Ausstieg und auf die Pleite machte, gemittelt über viele Positionen.",
     "noteCardLabMilestones": "Passives Einkommen als Anteil der Ausgaben (100 % ist der Ausstieg) beim Wurf der Spalte, für die Spiele, die mit der besten gefundenen Strategie ausstiegen. Die erste Zahl ist das mittlere Spiel, in Klammern das schnellste und das langsamste Zehntel. Ein Spiel unter dem langsamen Wert liegt hinter fast jedem Spiel, das ausgestiegen ist.",
     "noteCardLabBands": "Chance auf den Ausstieg / Chance auf die Pleite, von dem Punkt aus, den ein Spiel bei diesem Wurf erreicht hat (eine ausgewogene Strategie, alle Berufe). Je weiter das passive Einkommen Richtung Ausgaben gekommen ist, desto sicherer der Ausstieg.",
-    "noteCardLabRuin": "Unter den Spielen, die pleitegingen: die letzte Entscheidung vor dem Ende und die Karten, die am häufigsten unter den letzten dreien waren."
+    "noteCardLabRuin": "Unter den Spielen, die pleitegingen: die letzte Entscheidung vor dem Ende und die Karten, die am häufigsten unter den letzten dreien waren.",
+    "colBot": "Bot",
+    "colWins": "Siege",
+    "colWins2": "Siege, 2 Plätze",
+    "colWins4": "Siege, 4 Plätze",
+    "colWins6": "Siege, 6 Plätze",
+    "colMeanRank4": "Mittlerer Rang, 4 Plätze",
+    "colRange": "95%-Bereich",
+    "colChampion": "Champion",
+    "colCleo": "Champion Cleo",
+    "colTables": "Tische",
+    "championOwn": "Eigener",
+    "championAll": "Champion Cleo",
+    "tournamentMissing": "Die Turnierergebnisse sind nicht verfügbar.",
+    "championsMissing": "Das Championbuch ist nicht verfügbar.",
+    "noteTournament": "Siege sind Siege pro gespieltem Platz; bei 2 Plätzen ergibt ein Münzwurf 50%, bei 4 Plätzen 25%, bei 6 Plätzen 17%. Mittlerer Rang: 1 ist der Sieger.",
+    "noteChampions": "Siege: der Anteil frischer Tische (2, 4 und 6 Plätze, beide Regelsätze), den der Champion gewann, mit seinem 95%-Bereich. Ein Beruf hat nur dann einen eigenen Champion, wenn er Champion Cleo klar schlug; die letzte Spalte mit Siegen ist Cleos Anteil an denselben Tischen."
   },
   "sections": {
     "start": {
@@ -1437,6 +1453,279 @@
               "text": "Die vier Ausgabenkonten der Money App. Im Spiel laufen Käufe über Fire, träumerischer Schnickschnack über Smile, kleiner über Splurge."
             }
           ]
+        }
+      ]
+    },
+    "tables": {
+      "nav": "Mit anderen spielen",
+      "title": "Mit anderen spielen: Tische",
+      "intro": "Dasselbe Spiel, mit Freunden, an einem Tisch.",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "Ein **Tisch** ist das Cashflow-Spiel mit mehreren Spielern gleichzeitig, auf dem Server. Jeder Spieler hat seine eigenen Bücher, die Kartenstapel sind gemeinsam, und alles ist für alle offen - Beruf, Einkommensrechnung und Bilanz jedes Spielers - außer den Würfeln und der Reihenfolge der Stapel. Ein Tisch liest oder schreibt nie die Bücher deines eigenen Kontos. Tische gibt es nur für Spielkonten."
+        },
+        {
+          "type": "h3",
+          "text": "Eröffnen, beitreten, starten"
+        },
+        {
+          "type": "steps",
+          "items": [
+            {
+              "title": "Eröffnen oder beitreten",
+              "text": "Eröffne einen Tisch in der Lobby (Menü, \"Mit Freunden spielen\") mit Namen, Platzzahl, öffentlich oder privat, Uhr und Spielende - oder tritt einem offenen Tisch bei, oder nutze einen Einladungscode."
+            },
+            {
+              "title": "Bereit machen",
+              "text": "Alle drücken auf \"Bereit\". Der Gastgeber startet das Spiel, sobald mindestens zwei Spieler bereit sind."
+            },
+            {
+              "title": "Beruf wählen",
+              "text": "Alle wählen gleichzeitig, und die Wahl bleibt verborgen, bis die letzte eingeht. Doppelte Berufe sind erlaubt, außer der Gastgeber hat Berufe einmalig oder zufällig gemacht."
+            },
+            {
+              "title": "Spielen",
+              "text": "Jeder bekommt seine eigenen Startbücher. Der Ring zeigt eine Figur pro Spieler, jede mit Farbe und Buchstabe."
+            }
+          ]
+        },
+        {
+          "type": "h3",
+          "text": "Was anders ist als im Einzelspiel"
+        },
+        {
+          "type": "table",
+          "head": [
+            "Was",
+            "Einzelspiel",
+            "Am Tisch"
+          ],
+          "rows": [
+            [
+              "Wer würfelt",
+              "Du",
+              "Wer am Zug ist; die Würfel gehören dem Server"
+            ],
+            [
+              "Kartenstapel",
+              "Deine",
+              "Gemeinsam: eine gezogene Karte ist für alle weg, bis der Stapel neu gemischt wird"
+            ],
+            [
+              "Karten ansehen",
+              "Jeder Stapel, jede Karte (freie Regeln)",
+              "Eine zufällige Karte pro Feld: nehmen oder passen"
+            ],
+            [
+              "Kaufen",
+              "Jederzeit (freie Regeln)",
+              "Nur mit der Karte in der Hand"
+            ],
+            [
+              "Würfe und Eingaben",
+              "Du darfst einen Wurf melden, Buchungen tippen",
+              "Nie: nur der Server würfelt, nichts wird eingetippt"
+            ],
+            [
+              "Verkaufen",
+              "Zu einem Preis, den du nennst (freie Regeln)",
+              "Nur in ein Angebot, das eine Karte gemacht hat"
+            ],
+            [
+              "Gewinnen",
+              "Dem Hamsterrad entkommen",
+              "Wer zuerst entkommt, ein Rundenlimit, oder alle fertig - der Gastgeber wählt"
+            ]
+          ]
+        },
+        {
+          "type": "callout",
+          "kind": "note",
+          "title": "Fest vorgegeben, nicht wählbar",
+          "text": "Ein gemeinsamer Tisch kann nicht nach den lockeren Regeln des Einzelspiels laufen: ein behaupteter Wurf, eine eingetippte Buchung, ein angeschauter Stapel oder ein selbst genannter Verkaufspreis würde einem Spieler erlauben, die anderen zu betrügen."
+        }
+      ]
+    },
+    "tableplay": {
+      "nav": "Ein Zug am Tisch",
+      "title": "Ein Zug am Tisch",
+      "intro": "Würfeln, das Feld abwickeln, weitergeben.",
+      "blocks": [
+        {
+          "type": "steps",
+          "items": [
+            {
+              "title": "Würfeln",
+              "text": "Du würfelst, wenn du dran bist, und die Figur zieht. Jeder Zahltag, den die Figur erreicht, wird gezahlt."
+            },
+            {
+              "title": "Das Feld abwickeln",
+              "text": "Auf einem Deal-Feld ziehst du Klein oder Groß und kaufst oder passt; bei einem Doodad zahlst du; eine Marktkarte wird für dich gezogen und gilt für alle am Tisch."
+            },
+            {
+              "title": "Den Zug weitergeben",
+              "text": "Ist das Feld abgewickelt, ist der nächste dran. Ein Bankkredit kann aufgenommen oder zurückgezahlt werden, wenn die Regeln es zulassen."
+            }
+          ]
+        },
+        {
+          "type": "h3",
+          "text": "Uhr, Abwesenheit und Pausen"
+        },
+        {
+          "type": "list",
+          "items": [
+            "**Die Uhr** - keine, eine Zeit pro Zug, eine Zeitbank pro Spieler (mit optionalem Zuschlag) oder eine Tagesuhr für langsame Spiele. Nur der Server entscheidet, wann die Zeit um ist.",
+            "**Zeit abgelaufen** - der Server spielt den passivsten erlaubten Zug für den Spieler: würfeln, die Karte auslassen, nichts kaufen oder verkaufen.",
+            "**Abwesend** - nach mehreren Zeitüberschreitungen hintereinander (standardmäßig 2) gilt ein Spieler als abwesend, und seine Züge werden sofort gespielt, bis er sich zurückmeldet.",
+            "**Pause** - der Gastgeber kann pausieren und fortsetzen; eine Pause gibt allen die Zeit zurück."
+          ]
+        },
+        {
+          "type": "h3",
+          "text": "Das Ende"
+        },
+        {
+          "type": "p",
+          "text": "Das Spiel endet, wie der Gastgeber es eingestellt hat: der **erste, der dem Hamsterrad entkommt** (Standard), alle fertig, oder nach einer Anzahl Runden. In der Rangliste stehen die Entkommenen zuerst (der früheste vorn), dann nach passivem Einkommen, dann die Pleitegegangenen. Jeder Spieler kann das Spiel einmal in seinen eigenen gespeicherten Spielen sichern."
+        }
+      ]
+    },
+    "tabletrade": {
+      "nav": "Verkaufen und Handeln",
+      "title": "Verkaufen und Handeln am Tisch",
+      "intro": "Niemand verkauft aus eigenem Antrieb.",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "Zum Verkaufen braucht es eine Karte. Eine **Marktkarte**, die irgendwer zieht, macht jedem Spieler ein Angebot, der besitzt, was sie kauft (Immobilien, Gold); eine **Aktienkurskarte** verschiebt den Kurs dieser Aktie für alle Inhaber. Solange ein solches Angebot für dich offen ist, kannst du hineinverkaufen - in deinem Zug oder außerhalb - und es verschwindet, wenn es vorbei ist. Keine Karte, kein Verkauf."
+        },
+        {
+          "type": "list",
+          "items": [
+            "**Eine Deal-Karte handeln** - die Immobilien- oder Vermögenskarte in deiner Hand (nie eine Aktie) kann den anderen Spielern zu einem Preis angeboten werden. Sie nehmen sie zu diesem Preis, antworten mit einem eigenen Preis oder lehnen ab; du kannst einen ihrer Preise annehmen.",
+            "**Beide Seiten müssen zustimmen** - vorher bewegt sich nichts, und das Angebot endet mit deinem Zug.",
+            "**Aktien werden nie gehandelt** - nur wer eine Aktienkarte gezogen hat, kann sie kaufen."
+          ]
+        },
+        {
+          "type": "callout",
+          "kind": "tip",
+          "title": "Warum",
+          "text": "Weil nur eine Karte einen Verkauf auslösen kann, kann niemand aus dem Nichts Geld machen, indem er seinen eigenen Preis nennt."
+        }
+      ]
+    },
+    "bots": {
+      "nav": "Bots und Champions",
+      "title": "Bots und die Champions",
+      "intro": "Ein Platz, der sich selbst spielt, nach den Regeln.",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "Der Gastgeber kann in der Lobby **Bots** setzen. Ein Bot hat kein Konto; er ist immer bereit, wählt seinen Beruf selbst und spielt seinen Zug einen Moment nach jeder Änderung am Tisch - nach denselben Regeln, mit derselben Uhr und demselben Protokoll wie ein Mensch, sodass alle ihm Zug für Zug zusehen. Er sieht nur, was ein Spieler sieht: seine eigenen und die öffentlichen Bücher aller, nie die Würfel oder die Reihenfolge der Stapel."
+        },
+        {
+          "type": "table",
+          "head": [
+            "Stufe",
+            "Bots",
+            "Wie sie spielen"
+          ],
+          "rows": [
+            [
+              "Leicht",
+              "Sleepy Sam, Careful Carla, Cash Charlie",
+              "Investiert nie / nur wählerisch bei Immobilien / nur, was Bargeld bezahlt"
+            ],
+            [
+              "Mittel",
+              "Trader Tina, Banker Ben, Marketing Mia, Steady Stella, Gambler Gus",
+              "Aktien für Anzahlungen / leiht, wenn es sich lohnt / erst Marketing / erst kleine, dann große Deals / große Deals auf Kredit"
+            ],
+            [
+              "Schwer",
+              "Allie All-Round, Quick Quinn",
+              "Die besten Allround-Strategien des Strategie-Labors und seiner Suche"
+            ],
+            [
+              "Champion",
+              "Champion Cleo, Master Maxine",
+              "Cleo spielt die eine Strategie, die die meisten Tische gewann; Maxine spielt den Champion ihres eigenen Berufs"
+            ]
+          ]
+        },
+        {
+          "type": "callout",
+          "kind": "note",
+          "title": "Fair Play",
+          "text": "Nichts, was ein Bot tut, ist verborgen: jeder Zug steht im Protokoll wie bei jedem anderen. Die Stufe sagt, wie oft eine Strategie im Turnier Tische gewann - nicht, was in einem Spiel passiert: die Würfel entscheiden viel."
+        }
+      ]
+    },
+    "tournament": {
+      "nav": "Wie die Champions gefunden wurden",
+      "title": "Wie die Champions gefunden wurden",
+      "intro": "Tausende Tische, von Strategien gespielt.",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "Das **Turnier** spielt ganze Tische im Speicher - mit den echten Tischregeln - mit einer Strategie auf jedem Platz und einem Beruf auf jedem Platz, jede Strategie auf jedem Platz, immer wieder. Einen Tisch gewinnt, wer zuerst entkommt. Die Sitzordnung wird gemischt, sodass keine Strategie davon profitiert, zuerst zu ziehen."
+        },
+        {
+          "type": "data",
+          "id": "tournamentOverall",
+          "caption": "Wie oft jede Strategie die Tische gewann, an denen sie saß (alle mit demselben Beruf; freie und strenge Regeln zusammen)"
+        },
+        {
+          "type": "p",
+          "text": "Eine **Suche** variiert dann die Stellschrauben der Strategie - welche Immobilien kaufen, wie viel Reserve behalten, wann leihen, wann große Deals, und wie viel mehr Risiko eingehen, wenn ein Rivale vorzieht - und behält, was gewinnt, Generation um Generation. Die Finalisten werden auf Spielen wiederholt, die die Suche nie gesehen hat; erst dann heißt eine Strategie Champion. Ein Beruf bekommt nur dann einen eigenen Champion, wenn er auf diesen frischen Spielen den Allround-Champion schlägt."
+        },
+        {
+          "type": "data",
+          "id": "championBook",
+          "caption": "Der Champion jedes Berufs"
+        },
+        {
+          "type": "callout",
+          "kind": "warning",
+          "title": "Kein Versprechen",
+          "text": "Ein Gewinnanteil ist ein Durchschnitt über Tausende Tische. In einem einzelnen Spiel entscheiden die Würfel viel, und wer den Tisch gut liest, kann einen Champion schlagen. Die Zahlen werden neu gemessen, wenn sich die Regeln ändern."
+        }
+      ]
+    },
+    "agents": {
+      "nav": "Mit einem Agenten spielen",
+      "title": "Mit einem Agenten spielen",
+      "intro": "Lass deinen KI-Assistenten Platz nehmen.",
+      "blocks": [
+        {
+          "type": "steps",
+          "items": [
+            {
+              "title": "Gib ihm einen eigenen Platz",
+              "text": "Der Agent braucht ein eigenes Spielkonto und ein persönliches Zugriffstoken mit den Bereichen `game:r` und `game:w`, mit verbundenem MCP-Server."
+            },
+            {
+              "title": "Einen Tisch eröffnen",
+              "text": "Du eröffnest einen Tisch (oder der Agent) und setzt auf Wunsch ein paar Bots. Gib dem Agenten den Einladungscode oder die Tisch-ID."
+            },
+            {
+              "title": "Ihn spielen lassen",
+              "text": "Der Agent tritt bei, macht sich bereit, wählt einen Beruf, liest dann vor jedem Zug den Tisch und spielt nur Züge, die der Tisch als erlaubt nennt - immer mit einer Befehls-ID, damit ein wiederholter Aufruf nur einmal gilt."
+            },
+            {
+              "title": "Nach der Geschichte fragen",
+              "text": "Bitte ihn zu sagen, was er getan hat und warum, und wann er auf andere wartet. Lass ihn keinen Tisch zurückspulen, jemanden entfernen oder schließen, außer du hast darum gebeten."
+            }
+          ]
+        },
+        {
+          "type": "callout",
+          "kind": "tip",
+          "title": "Der Server entscheidet",
+          "text": "Der Server erzwingt Zug, Regeln und Uhr, sodass ein Agent nicht schummeln und nicht für einen fremden Platz spielen kann. Sag ihm, seine Aufgabe sei es, als Erster zu entkommen: er spielt innerhalb der Regeln, mit denselben Informationen wie ein Mensch."
         }
       ]
     }

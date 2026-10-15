@@ -593,3 +593,101 @@ Die Wörter des Spiels an einem Ort.
 - **Aktuelles Spiel**: Das Spiel, das dein Konto gerade spielt. Gespeicherte Spiele sind Kopien, die wieder aktuell werden können.
 - **Bankdarlehen**: Geld von der Bank in Schritten von 1.000 zu 10 % des Darlehens pro Monat.
 - **Fire / Smile / Splurge / Daily**: Die vier Ausgabenkonten der Money App. Im Spiel laufen Käufe über Fire, träumerischer Schnickschnack über Smile, kleiner über Splurge.
+
+## 24. Mit anderen spielen: Tische
+
+Dasselbe Spiel, mit Freunden, an einem Tisch.
+
+Ein **Tisch** ist das Cashflow-Spiel mit mehreren Spielern gleichzeitig, auf dem Server. Jeder Spieler hat seine eigenen Bücher, die Kartenstapel sind gemeinsam, und alles ist für alle offen - Beruf, Einkommensrechnung und Bilanz jedes Spielers - außer den Würfeln und der Reihenfolge der Stapel. Ein Tisch liest oder schreibt nie die Bücher deines eigenen Kontos. Tische gibt es nur für Spielkonten.
+
+### Eröffnen, beitreten, starten
+
+1. **Eröffnen oder beitreten** - Eröffne einen Tisch in der Lobby (Menü, "Mit Freunden spielen") mit Namen, Platzzahl, öffentlich oder privat, Uhr und Spielende - oder tritt einem offenen Tisch bei, oder nutze einen Einladungscode.
+2. **Bereit machen** - Alle drücken auf "Bereit". Der Gastgeber startet das Spiel, sobald mindestens zwei Spieler bereit sind.
+3. **Beruf wählen** - Alle wählen gleichzeitig, und die Wahl bleibt verborgen, bis die letzte eingeht. Doppelte Berufe sind erlaubt, außer der Gastgeber hat Berufe einmalig oder zufällig gemacht.
+4. **Spielen** - Jeder bekommt seine eigenen Startbücher. Der Ring zeigt eine Figur pro Spieler, jede mit Farbe und Buchstabe.
+
+### Was anders ist als im Einzelspiel
+
+| Was | Einzelspiel | Am Tisch |
+| --- | --- | --- |
+| Wer würfelt | Du | Wer am Zug ist; die Würfel gehören dem Server |
+| Kartenstapel | Deine | Gemeinsam: eine gezogene Karte ist für alle weg, bis der Stapel neu gemischt wird |
+| Karten ansehen | Jeder Stapel, jede Karte (freie Regeln) | Eine zufällige Karte pro Feld: nehmen oder passen |
+| Kaufen | Jederzeit (freie Regeln) | Nur mit der Karte in der Hand |
+| Würfe und Eingaben | Du darfst einen Wurf melden, Buchungen tippen | Nie: nur der Server würfelt, nichts wird eingetippt |
+| Verkaufen | Zu einem Preis, den du nennst (freie Regeln) | Nur in ein Angebot, das eine Karte gemacht hat |
+| Gewinnen | Dem Hamsterrad entkommen | Wer zuerst entkommt, ein Rundenlimit, oder alle fertig - der Gastgeber wählt |
+
+> **Fest vorgegeben, nicht wählbar** Ein gemeinsamer Tisch kann nicht nach den lockeren Regeln des Einzelspiels laufen: ein behaupteter Wurf, eine eingetippte Buchung, ein angeschauter Stapel oder ein selbst genannter Verkaufspreis würde einem Spieler erlauben, die anderen zu betrügen.
+
+## 25. Ein Zug am Tisch
+
+Würfeln, das Feld abwickeln, weitergeben.
+
+1. **Würfeln** - Du würfelst, wenn du dran bist, und die Figur zieht. Jeder Zahltag, den die Figur erreicht, wird gezahlt.
+2. **Das Feld abwickeln** - Auf einem Deal-Feld ziehst du Klein oder Groß und kaufst oder passt; bei einem Doodad zahlst du; eine Marktkarte wird für dich gezogen und gilt für alle am Tisch.
+3. **Den Zug weitergeben** - Ist das Feld abgewickelt, ist der nächste dran. Ein Bankkredit kann aufgenommen oder zurückgezahlt werden, wenn die Regeln es zulassen.
+
+### Uhr, Abwesenheit und Pausen
+
+- **Die Uhr** - keine, eine Zeit pro Zug, eine Zeitbank pro Spieler (mit optionalem Zuschlag) oder eine Tagesuhr für langsame Spiele. Nur der Server entscheidet, wann die Zeit um ist.
+- **Zeit abgelaufen** - der Server spielt den passivsten erlaubten Zug für den Spieler: würfeln, die Karte auslassen, nichts kaufen oder verkaufen.
+- **Abwesend** - nach mehreren Zeitüberschreitungen hintereinander (standardmäßig 2) gilt ein Spieler als abwesend, und seine Züge werden sofort gespielt, bis er sich zurückmeldet.
+- **Pause** - der Gastgeber kann pausieren und fortsetzen; eine Pause gibt allen die Zeit zurück.
+
+### Das Ende
+
+Das Spiel endet, wie der Gastgeber es eingestellt hat: der **erste, der dem Hamsterrad entkommt** (Standard), alle fertig, oder nach einer Anzahl Runden. In der Rangliste stehen die Entkommenen zuerst (der früheste vorn), dann nach passivem Einkommen, dann die Pleitegegangenen. Jeder Spieler kann das Spiel einmal in seinen eigenen gespeicherten Spielen sichern.
+
+## 26. Verkaufen und Handeln am Tisch
+
+Niemand verkauft aus eigenem Antrieb.
+
+Zum Verkaufen braucht es eine Karte. Eine **Marktkarte**, die irgendwer zieht, macht jedem Spieler ein Angebot, der besitzt, was sie kauft (Immobilien, Gold); eine **Aktienkurskarte** verschiebt den Kurs dieser Aktie für alle Inhaber. Solange ein solches Angebot für dich offen ist, kannst du hineinverkaufen - in deinem Zug oder außerhalb - und es verschwindet, wenn es vorbei ist. Keine Karte, kein Verkauf.
+
+- **Eine Deal-Karte handeln** - die Immobilien- oder Vermögenskarte in deiner Hand (nie eine Aktie) kann den anderen Spielern zu einem Preis angeboten werden. Sie nehmen sie zu diesem Preis, antworten mit einem eigenen Preis oder lehnen ab; du kannst einen ihrer Preise annehmen.
+- **Beide Seiten müssen zustimmen** - vorher bewegt sich nichts, und das Angebot endet mit deinem Zug.
+- **Aktien werden nie gehandelt** - nur wer eine Aktienkarte gezogen hat, kann sie kaufen.
+
+> **Warum** Weil nur eine Karte einen Verkauf auslösen kann, kann niemand aus dem Nichts Geld machen, indem er seinen eigenen Preis nennt.
+
+## 27. Bots und die Champions
+
+Ein Platz, der sich selbst spielt, nach den Regeln.
+
+Der Gastgeber kann in der Lobby **Bots** setzen. Ein Bot hat kein Konto; er ist immer bereit, wählt seinen Beruf selbst und spielt seinen Zug einen Moment nach jeder Änderung am Tisch - nach denselben Regeln, mit derselben Uhr und demselben Protokoll wie ein Mensch, sodass alle ihm Zug für Zug zusehen. Er sieht nur, was ein Spieler sieht: seine eigenen und die öffentlichen Bücher aller, nie die Würfel oder die Reihenfolge der Stapel.
+
+| Stufe | Bots | Wie sie spielen |
+| --- | --- | --- |
+| Leicht | Sleepy Sam, Careful Carla, Cash Charlie | Investiert nie / nur wählerisch bei Immobilien / nur, was Bargeld bezahlt |
+| Mittel | Trader Tina, Banker Ben, Marketing Mia, Steady Stella, Gambler Gus | Aktien für Anzahlungen / leiht, wenn es sich lohnt / erst Marketing / erst kleine, dann große Deals / große Deals auf Kredit |
+| Schwer | Allie All-Round, Quick Quinn | Die besten Allround-Strategien des Strategie-Labors und seiner Suche |
+| Champion | Champion Cleo, Master Maxine | Cleo spielt die eine Strategie, die die meisten Tische gewann; Maxine spielt den Champion ihres eigenen Berufs |
+
+> **Fair Play** Nichts, was ein Bot tut, ist verborgen: jeder Zug steht im Protokoll wie bei jedem anderen. Die Stufe sagt, wie oft eine Strategie im Turnier Tische gewann - nicht, was in einem Spiel passiert: die Würfel entscheiden viel.
+
+## 28. Wie die Champions gefunden wurden
+
+Tausende Tische, von Strategien gespielt.
+
+Das **Turnier** spielt ganze Tische im Speicher - mit den echten Tischregeln - mit einer Strategie auf jedem Platz und einem Beruf auf jedem Platz, jede Strategie auf jedem Platz, immer wieder. Einen Tisch gewinnt, wer zuerst entkommt. Die Sitzordnung wird gemischt, sodass keine Strategie davon profitiert, zuerst zu ziehen.
+
+_(Table: Wie oft jede Strategie die Tische gewann, an denen sie saß (alle mit demselben Beruf; freie und strenge Regeln zusammen) - the figures are in the topics cashflow_cards, cashflow_card_lab and cashflow_strategy_lab.)_
+
+Eine **Suche** variiert dann die Stellschrauben der Strategie - welche Immobilien kaufen, wie viel Reserve behalten, wann leihen, wann große Deals, und wie viel mehr Risiko eingehen, wenn ein Rivale vorzieht - und behält, was gewinnt, Generation um Generation. Die Finalisten werden auf Spielen wiederholt, die die Suche nie gesehen hat; erst dann heißt eine Strategie Champion. Ein Beruf bekommt nur dann einen eigenen Champion, wenn er auf diesen frischen Spielen den Allround-Champion schlägt.
+
+_(Table: Der Champion jedes Berufs - the figures are in the topics cashflow_cards, cashflow_card_lab and cashflow_strategy_lab.)_
+
+> **Kein Versprechen** Ein Gewinnanteil ist ein Durchschnitt über Tausende Tische. In einem einzelnen Spiel entscheiden die Würfel viel, und wer den Tisch gut liest, kann einen Champion schlagen. Die Zahlen werden neu gemessen, wenn sich die Regeln ändern.
+
+## 29. Mit einem Agenten spielen
+
+Lass deinen KI-Assistenten Platz nehmen.
+
+1. **Gib ihm einen eigenen Platz** - Der Agent braucht ein eigenes Spielkonto und ein persönliches Zugriffstoken mit den Bereichen `game:r` und `game:w`, mit verbundenem MCP-Server.
+2. **Einen Tisch eröffnen** - Du eröffnest einen Tisch (oder der Agent) und setzt auf Wunsch ein paar Bots. Gib dem Agenten den Einladungscode oder die Tisch-ID.
+3. **Ihn spielen lassen** - Der Agent tritt bei, macht sich bereit, wählt einen Beruf, liest dann vor jedem Zug den Tisch und spielt nur Züge, die der Tisch als erlaubt nennt - immer mit einer Befehls-ID, damit ein wiederholter Aufruf nur einmal gilt.
+4. **Nach der Geschichte fragen** - Bitte ihn zu sagen, was er getan hat und warum, und wann er auf andere wartet. Lass ihn keinen Tisch zurückspulen, jemanden entfernen oder schließen, außer du hast darum gebeten.
+
+> **Der Server entscheidet** Der Server erzwingt Zug, Regeln und Uhr, sodass ein Agent nicht schummeln und nicht für einen fremden Platz spielen kann. Sag ihm, seine Aufgabe sei es, als Erster zu entkommen: er spielt innerhalb der Regeln, mit denselben Informationen wie ein Mensch.

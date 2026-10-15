@@ -196,3 +196,97 @@ describe('Cashflow manual - the card lab tables', () => {
     expect(missing.rows[0]).toHaveLength(missing.head.length);
   });
 });
+
+describe('Cashflow manual - the tournament and the champion book', () => {
+  const score = (policyId: string, winRate: number, meanRank = 1.5) => ({
+    policyId,
+    appearances: 100,
+    winRate,
+    winInterval: { low: winRate - 0.05, high: winRate + 0.05 },
+    expectedWinRate: 0.25,
+    meanRank,
+    escapeRate: winRate,
+    bankruptRate: 0.05,
+  });
+  const tournament = {
+    meta: { rulesDigest: 'x', generatedAt: '2026-10-15', tables: 600 },
+    bots: [
+      { id: 'a', name: 'Alpha', label: 'Strategy A', difficulty: 'hard' },
+      { id: 'b', name: 'Beta', label: 'Strategy B', difficulty: 'easy' },
+    ],
+    overall: [
+      {
+        seats: 2,
+        rules: 'guided',
+        mode: 'mirror',
+        tables: 200,
+        scores: [score('a', 0.7), score('b', 0.3)],
+      },
+      {
+        seats: 2,
+        rules: 'strict',
+        mode: 'mirror',
+        tables: 200,
+        scores: [score('a', 0.5), score('b', 0.5)],
+      },
+      {
+        seats: 4,
+        rules: 'guided',
+        mode: 'mirror',
+        tables: 200,
+        scores: [score('a', 0.4, 2), score('b', 0.1, 3)],
+      },
+      { seats: 4, rules: 'guided', mode: 'mix', tables: 50, scores: [score('a', 0.99)] },
+    ],
+    champions: {
+      lehrer: {
+        setId: 'cashflow',
+        title: 'Lehrer/in',
+        adopted: true,
+        winRate: 0.7,
+        interval: { low: 0.65, high: 0.75 },
+        tables: 1000,
+        championV1WinRate: 0.6,
+      },
+      hausmeister: {
+        setId: 'cashflow',
+        title: 'Hausmeister/in',
+        adopted: false,
+        winRate: 0.55,
+        interval: { low: 0.5, high: 0.6 },
+        tables: 1000,
+        championV1WinRate: 0.55,
+      },
+    },
+  };
+  const withData = { ...ctx, tournament };
+
+  it('shows each strategy by name, best at four seats first, pooling both rule sets and ignoring the mixed tables', () => {
+    const { rows } = buildManualTable('tournamentOverall', withData);
+    expect(rows.map((r) => r[1])).toEqual(['Alpha', 'Beta']);
+    expect(rows[0]).toEqual(['policy_a', 'Alpha', '60%', '40%', '-', '2.00']);
+    expect(rows[1][2]).toBe('40%'); // (30% + 50%) / 2
+    expect(rows[1][4]).toBe('-'); // nobody played at six seats in this data
+  });
+
+  it('lists the champion of every profession, its own or the all-round one', () => {
+    const { rows } = buildManualTable('championBook', withData);
+    expect(cell(rows, 'Lehrer/in', 1)).toBe('championOwn');
+    expect(cell(rows, 'Hausmeister/in', 1)).toBe('championAll');
+    expect(cell(rows, 'Lehrer/in', 2)).toBe('70%');
+    expect(cell(rows, 'Lehrer/in', 3)).toBe('65% - 75%');
+    expect(cell(rows, 'Lehrer/in', 4)).toBe('60%');
+  });
+
+  it('says so, in a table of the same shape, when there is no data', () => {
+    for (const id of ['tournamentOverall', 'championBook'] as const) {
+      const missing = buildManualTable(id, { ...ctx, tournament: null });
+      expect(missing.rows[0]).toHaveLength(missing.head.length);
+    }
+    const noChampions = buildManualTable('championBook', {
+      ...ctx,
+      tournament: { ...tournament, champions: {} },
+    });
+    expect(noChampions.rows[0][0]).toBe('championsMissing');
+  });
+});
