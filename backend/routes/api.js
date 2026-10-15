@@ -4182,6 +4182,9 @@ async function requireGameAccount(req, res, next) {
   }
 }
 
+// Multiplayer tables (todo/cashflow-multiplayer.md, docs/adr/0010): their own router, guard and rate-limit bucket.
+router.use('/game/rooms', require('./game-rooms'));
+
 router.get('/game', requireScope('game:r'), requireGameAccount, async (req, res, next) => {
   try {
     return res.json(await getGame({ usersDb: getUsersDb(), authDb: getAuthDb() }, req.userId));

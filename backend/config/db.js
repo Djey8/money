@@ -25,6 +25,7 @@ let authDb;
 let communityDb;
 let auditDb;
 let gameSavesDb;
+let gameRoomsDb;
 
 async function createDbIfNotExists(name) {
   try {
@@ -53,12 +54,16 @@ async function initializeDatabase() {
     // One document per saved Cashflow game (repositories/game-save-store.js), so saved games no longer share the
     // user's single document and its CouchDB size limit.
     await createDbIfNotExists('gamesaves');
+    // Multiplayer Cashflow tables (docs/adr/0010): one room document per table, its event log and the seat markers that
+    // keep the per-account limits (backend/repositories/game-room-store.js). Game accounts only.
+    await createDbIfNotExists('gamerooms');
 
     usersDb = connection.db.use('users');
     authDb = connection.db.use('auth');
     communityDb = connection.db.use('community');
     auditDb = connection.db.use('audit');
     gameSavesDb = connection.db.use('gamesaves');
+    gameRoomsDb = connection.db.use('gamerooms');
 
     // Create indexes
     await createIndexes();
@@ -156,6 +161,25 @@ async function createIndexes() {
         fields: ['userId'],
       },
       name: 'gamesaves-user-index',
+    });
+
+    // Serve the lobby list (public rooms by phase), the invite-code lookup and the idle-room sweep of
+    // repositories/game-room-store.js.
+    await gameRoomsDb.createIndex({
+      index: { fields: ['kind', 'phase', 'visibility'] },
+      name: 'gamerooms-lobby-index',
+    });
+    await gameRoomsDb.createIndex({
+      index: { fields: ['inviteCode'] },
+      name: 'gamerooms-invite-index',
+    });
+    await gameRoomsDb.createIndex({
+      index: { fields: ['kind', 'updatedAt'] },
+      name: 'gamerooms-updated-index',
+    });
+    await gameRoomsDb.createIndex({
+      index: { fields: ['roomId', 'seq'] },
+      name: 'gamerooms-events-index',
     });
 
     console.log('Indexes created successfully');
@@ -264,6 +288,7 @@ async function setupDatabaseSecurity() {
 
     // Saved games: encrypted payloads, service account only.
     const gameSavesSecurity = auditSecurity;
+    const gameRoomsSecurity = auditSecurity;
 
     // Apply security settings
     try {
@@ -325,6 +350,18 @@ async function setupDatabaseSecurity() {
     } catch (err) {
       console.error('Error setting game saves database security:', err.message);
     }
+
+    try {
+      await connection.request({
+        db: 'gamerooms',
+        path: '_security',
+        method: 'PUT',
+        body: gameRoomsSecurity,
+      });
+      console.log('Game rooms database security configured');
+    } catch (err) {
+      console.error('Error setting game rooms database security:', err.message);
+    }
   } catch (error) {
     console.error('Error setting up database security:', error);
     // Don't fail initialization if security setup fails
@@ -351,6 +388,10 @@ function getGameSavesDb() {
   return gameSavesDb;
 }
 
+function getGameRoomsDb() {
+  return gameRoomsDb;
+}
+
 module.exports = {
   initializeDatabase,
   getUsersDb,
@@ -358,4 +399,5 @@ module.exports = {
   getCommunityDb,
   getAuditDb,
   getGameSavesDb,
+  getGameRoomsDb,
 };

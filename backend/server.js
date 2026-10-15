@@ -53,7 +53,8 @@ const apiLimiter = rateLimit({
     const credential = req.headers.authorization || req.cookies?.access_token || req.ip;
     return crypto.createHash('sha256').update(credential).digest('hex');
   },
-  skip: () => process.env.SKIP_RATE_LIMIT === 'true',
+  // Multiplayer tables have a bucket of their own (routes/game-rooms.js), so they neither use up nor are starved by this one.
+  skip: (req) => process.env.SKIP_RATE_LIMIT === 'true' || req.path.startsWith('/game/rooms'),
 });
 
 // Bulk endpoints (larger blast radius per call) get a stricter limit on top

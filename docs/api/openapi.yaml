@@ -6502,6 +6502,504 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
+  /game/rooms:
+    get:
+      operationId: listGameRooms
+      summary: Find multiplayer tables to join, or list your own
+      description: >-
+        Game accounts only; requires `game:r`. `scope=open` (default) lists the public tables still in their lobby with a free seat, newest first; `scope=mine` lists the open tables you hold a seat at. Each item is a summary - never an account id; hosts and players are known by the nickname they chose at the table. A private table is never listed: it is joined with its invite code.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: scope
+          in: query
+          schema:
+            type: string
+            enum: [open, mine]
+            default: open
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 50
+      responses:
+        '200':
+          description: The tables
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/GameRoomSummary'
+              example:
+                items:
+                  - id: 7d1c2c0e-2f0b-4a53-9a77-3f2a6c0f9a11
+                    name: Friday table
+                    hostName: Anna
+                    phase: lobby
+                    visibility: public
+                    seatsTaken: 2
+                    maxSeats: 6
+                    gameSetId: cashflow
+                    rulesBase: guided
+                    professions: duplicates
+                    turnOrder: random
+                    clock: { mode: per-move, secondsPerMove: 60 }
+                    endCondition: first-escape
+                    language: en
+                    createdAt: '2026-10-15T18:02:11.000Z'
+                    updatedAt: '2026-10-15T18:05:40.000Z'
+                    joined: false
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+    post:
+      operationId: createGameRoom
+      summary: Open a multiplayer table
+      description: >-
+        Game accounts only; requires `game:w`. Creates a table in its lobby with you as host (ready, seated first) and returns it with its `inviteCode` - give the code to friends, who join with `joinGameRoom`. The table owns all of its game state; nothing is read from or written to anyone's own books. Settings are checked and then frozen when play starts. A shared table always plays with the cheat-relevant rules forced (offered-once cards, buying only the card in hand, no claimed dice rolls, no hand-made transactions); asking for the opposite, or for `sell: always`, is refused with 400 `table_invalid_settings`. `rulesBase` is `guided` or `strict`; `rules` overrides single settings of it. You may host a limited number of open tables (429 `room_limit`).
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [nickname, settings]
+              properties:
+                nickname:
+                  type: string
+                  description: The name you go by at this table (1 to 24 characters). Never your email.
+                color:
+                  type: string
+                  description: One of the table colours; the first free one when absent.
+                language:
+                  type: string
+                  enum: [en, de, es, fr, cn, ar]
+                  default: en
+                  description: The language the table's text (titles, notes) is written in, fixed for the whole game.
+                settings:
+                  $ref: '#/components/schemas/GameRoomSettingsInput'
+            example:
+              nickname: Anna
+              language: en
+              settings:
+                name: Friday table
+                visibility: public
+                maxSeats: 6
+                rulesBase: guided
+                professions: duplicates
+                turnOrder: random
+                clock: { mode: bank, bankSeconds: 600, incrementSeconds: 5 }
+                endCondition: first-escape
+      responses:
+        '201':
+          description: The table
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameRoom'
+              example:
+                id: 7d1c2c0e-2f0b-4a53-9a77-3f2a6c0f9a11
+                inviteCode: H2LX8D4L
+                language: en
+                createdAt: '2026-10-15T18:02:11.000Z'
+                updatedAt: '2026-10-15T18:02:11.000Z'
+                table:
+                  id: 7d1c2c0e-2f0b-4a53-9a77-3f2a6c0f9a11
+                  version: 1
+                  phase: lobby
+                  youSeat: 0
+                  hostSeat: 0
+                  players:
+                    - {
+                        seat: 0,
+                        name: Anna,
+                        color: '#e6194b',
+                        ready: true,
+                        status: active,
+                        away: false,
+                        hasPicked: false,
+                        pick: null,
+                        professionId: null,
+                        books: null,
+                      }
+        '400':
+          $ref: '#/components/responses/TableRefused'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '429':
+          $ref: '#/components/responses/RoomLimit'
+  /game/rooms/join:
+    post:
+      operationId: joinGameRoom
+      summary: Take a seat at a table
+      description: >-
+        Game accounts only; requires `game:w`. Join a public table by `roomId`, or any table - private ones too - by its `inviteCode` (case does not matter). Only while the table is in its lobby. The nickname must be free at that table (409 `table_name_taken`); the colour is the first free one unless you name one. You may sit at a limited number of open tables (429 `room_limit`).
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [nickname]
+              properties:
+                nickname:
+                  type: string
+                roomId:
+                  type: string
+                code:
+                  type: string
+                  description: The invite code. One of `roomId` or `code` is required.
+                color:
+                  type: string
+            example:
+              code: H2LX8D4L
+              nickname: Ben
+      responses:
+        '200':
+          description: The table, with you seated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameRoom'
+        '400':
+          $ref: '#/components/responses/TableRefused'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/TableRefused'
+        '429':
+          $ref: '#/components/responses/RoomLimit'
+  /game/rooms/{roomId}:
+    parameters:
+      - name: roomId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getGameRoom
+      summary: Look at a table
+      description: >-
+        Game accounts only; requires `game:r`. The table as you may see it: everything is open to everyone at the table - every player's profession, books and cards - except the dice and the order of the card piles, other players' profession picks while a duplicates table is still picking in secret, and account ids (players are `seat`, name and colour). `youSeat` is your seat, or null if you only look. A public table can be looked at by any game account; a private table does not exist for anyone who is not seated at it (404). `inviteCode` is shown to seated players only.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The table
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameRoom'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      operationId: closeGameRoom
+      summary: Close a table (host only)
+      description: >-
+        Game accounts only; requires `game:w`. Ends the table for everyone - destructive, so `confirm=true` is required. Only the host. A closed table stays readable for a while and is then deleted.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: confirm
+          in: query
+          required: true
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: The closed table
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameRoom'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/TableRefused'
+  /game/rooms/{roomId}/leave:
+    parameters:
+      - name: roomId
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      operationId: leaveGameRoom
+      summary: Leave a table
+      description: >-
+        Game accounts only; requires `game:w`. In the lobby or while professions are picked your seat is given up (the host passes to the next player; the last one out closes the table). During play your seat stays and your books remain part of the game, but you are out; if it was your turn it moves on.
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GameRoomCommandBody'
+      responses:
+        '200':
+          description: The table
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameRoom'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/TableRefused'
+  /game/rooms/{roomId}/ready:
+    parameters:
+      - name: roomId
+        in: path
+        required: true
+        schema:
+          type: string
+    put:
+      operationId: setGameRoomReady
+      summary: Say you are ready (or not)
+      description: >-
+        Game accounts only; requires `game:w`. In the lobby only. The host cannot start until everyone is ready; a change of settings makes everyone but the host not ready again.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ready]
+              properties:
+                ready:
+                  type: boolean
+                expectedVersion:
+                  type: integer
+                  minimum: 0
+            example:
+              ready: true
+      responses:
+        '200':
+          description: The table
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameRoom'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/TableRefused'
+  /game/rooms/{roomId}/kick:
+    parameters:
+      - name: roomId
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      operationId: kickFromGameRoom
+      summary: Remove a player (host only)
+      description: >-
+        Game accounts only; requires `game:w`. The host removes the player at `seat` before the game starts (lobby or profession picking). The host cannot be removed (403 `table_cannot_kick_host`).
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [seat]
+              properties:
+                seat:
+                  type: integer
+                  minimum: 0
+                expectedVersion:
+                  type: integer
+                  minimum: 0
+            example:
+              seat: 2
+      responses:
+        '200':
+          description: The table
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameRoom'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/TableRefused'
+  /game/rooms/{roomId}/settings:
+    parameters:
+      - name: roomId
+        in: path
+        required: true
+        schema:
+          type: string
+    put:
+      operationId: updateGameRoomSettings
+      summary: Change the table's settings (host only)
+      description: >-
+        Game accounts only; requires `game:w`. Only the host, only in the lobby: the settings are frozen when play starts. Send only what changes; it is merged over the current settings and checked as a whole. Everyone but the host has to be ready again afterwards.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [settings]
+              properties:
+                settings:
+                  $ref: '#/components/schemas/GameRoomSettingsInput'
+                expectedVersion:
+                  type: integer
+                  minimum: 0
+            example:
+              settings:
+                maxSeats: 8
+                clock: { mode: per-move, secondsPerMove: 45 }
+      responses:
+        '200':
+          description: The table
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameRoom'
+        '400':
+          $ref: '#/components/responses/TableRefused'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/TableRefused'
+  /game/rooms/{roomId}/start:
+    parameters:
+      - name: roomId
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      operationId: startGameRoom
+      summary: Start the game (host only)
+      description: >-
+        Game accounts only; requires `game:w`. Needs at least two players, all ready. A table whose professions are `random` goes straight into play; otherwise every player now picks a profession with `pickGameRoomProfession`, and play begins when the last pick is in. At the start each player gets their own starting books from the profession; the turn order is fixed (random, or by seat).
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GameRoomCommandBody'
+      responses:
+        '200':
+          description: The table
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameRoom'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/TableRefused'
+  /game/rooms/{roomId}/profession:
+    parameters:
+      - name: roomId
+        in: path
+        required: true
+        schema:
+          type: string
+    put:
+      operationId: pickGameRoomProfession
+      summary: Pick your profession
+      description: >-
+        Game accounts only; requires `game:w`. While the table is picking. `professionId` is a profession of the game set, or `random`. On a duplicates table picks are secret until everyone has picked (you may change yours until then); on a unique table a profession taken by someone else is refused (409 `table_profession_taken`). When the last pick is in, the professions are revealed and play begins.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [professionId]
+              properties:
+                professionId:
+                  type: string
+                expectedVersion:
+                  type: integer
+                  minimum: 0
+            example:
+              professionId: pilot
+      responses:
+        '200':
+          description: The table
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameRoom'
+        '400':
+          $ref: '#/components/responses/TableRefused'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/TableRefused'
 components:
   securitySchemes:
     bearerAuth:
@@ -9707,6 +10205,133 @@ components:
           type: string
         code:
           type: string
+    GameRoomCommandBody:
+      type: object
+      description: Every table change takes an optional `expectedVersion`, the table version the caller last saw; if the table has moved on the change is refused with 409 `room_conflict` and nothing happens.
+      properties:
+        expectedVersion:
+          type: integer
+          minimum: 0
+    GameRoomSettingsInput:
+      type: object
+      description: >-
+        How a table is played, chosen by the host and frozen when play starts. Only `name` is required on creation. Clock modes: `none`; `per-move` (`secondsPerMove` 10-3600); `bank` (`bankSeconds` 60-14400 each, plus `incrementSeconds` 0-300 per finished turn, a chess clock); `daily` (`hoursPerMove` 1-168). On a timeout the most passive legal move is played for the player (roll, pass the card, buy and sell nothing); after `awayAfterTimeouts` in a row they are marked away and their turns are played at once.
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 60
+        visibility:
+          type: string
+          enum: [public, private]
+          default: public
+        maxSeats:
+          type: integer
+          minimum: 2
+          maximum: 24
+          default: 6
+        gameSetId:
+          type: string
+          default: cashflow
+        rulesBase:
+          type: string
+          enum: [guided, strict]
+          default: guided
+        rules:
+          type: object
+          description: Single rule settings to change on top of `rulesBase` (for example `passDoodads`, `sellOfferRolls`, `maxLoanMinor`). The settings a shared table forces cannot be changed.
+        professions:
+          type: string
+          enum: [duplicates, unique, random]
+          default: duplicates
+        turnOrder:
+          type: string
+          enum: [random, seat]
+          default: random
+        clock:
+          type: object
+          description: The clock mode and its numbers (see above).
+        awayAfterTimeouts:
+          type: integer
+          minimum: 1
+          maximum: 20
+          default: 2
+        endCondition:
+          type: string
+          enum: [first-escape, all-done, round-limit]
+          default: first-escape
+        roundLimit:
+          type: integer
+          minimum: 1
+          maximum: 1000
+          description: Required with `round-limit`, refused otherwise.
+        spectators:
+          type: boolean
+          default: false
+    GameRoomSummary:
+      type: object
+      description: One line of the lobby list. No account ids.
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        hostName:
+          type: string
+        phase:
+          type: string
+          enum: [lobby, picking, playing, finished, abandoned]
+        visibility:
+          type: string
+          enum: [public, private]
+        seatsTaken:
+          type: integer
+        maxSeats:
+          type: integer
+        gameSetId:
+          type: string
+        rulesBase:
+          type: string
+        professions:
+          type: string
+        turnOrder:
+          type: string
+        clock:
+          type: object
+        endCondition:
+          type: string
+        language:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        joined:
+          type: boolean
+          description: Whether you hold a seat.
+    GameRoom:
+      type: object
+      description: A table as one account may see it.
+      properties:
+        id:
+          type: string
+        inviteCode:
+          type: string
+          description: Shown to seated players only.
+        language:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        table:
+          type: object
+          description: >-
+            The table view. `version` counts accepted changes; `phase` is lobby, picking, playing, finished or abandoned; `settings` as chosen; `players` by `seat` with name, colour, ready, status, away, whether they picked, their profession and - once play has started - their `books` (subscriptions, transactions, liabilities, shares, investments, assets, Grow projects and the game state, all in integer minor units); `order` and `activeSeat` (seats); `tableRound`; `decks` (`left` and `discard` per pile); `clock` (server-time `deadlineAt`, `pausedAt`, `banksMs` and `timeouts` by seat); `trade` (a Deal card on offer); `result` when finished; `youSeat` and `hostSeat`.
   responses:
     AuthenticationRequired:
       description: Authentication required
@@ -9780,6 +10405,31 @@ components:
             status: 409
             detail: "'payday' is not allowed now. Allowed: roll, bank_loan, reset."
             code: game_action_not_allowed
+    TableRefused:
+      description: >-
+        The request was refused by the table's rules or the settings (the Problem `code` is `table_<rule>`, in lower case). 400: `table_invalid_settings`, `table_invalid_name`, `table_unknown_profession`. 403: `table_not_host`, `table_not_a_member`, `table_cannot_kick_host`. 404: `table_unknown_player`. 409: `table_wrong_phase`, `table_table_full`, `table_already_joined`, `table_name_taken`, `table_color_taken`, `table_not_ready`, `table_not_enough_players`, `table_profession_taken`, `table_not_your_turn`, `table_illegal_move`, `room_conflict` (the table changed under you). A refused request changes nothing.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://money-manager.dev/problems/table_name_taken
+            title: Table request refused
+            status: 409
+            detail: Another player at this table has that name.
+            code: table_name_taken
+    RoomLimit:
+      description: You already host or sit at as many open tables as one account may, or the server has no room for another (`room_limit`)
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://money-manager.dev/problems/room_limit
+            title: Table request refused
+            status: 429
+            detail: 'You already host 3 open tables: finish or close one first.'
+            code: room_limit
     NotFound:
       description: Requested resource was not found
       content:
