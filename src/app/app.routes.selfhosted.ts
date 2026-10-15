@@ -29,4 +29,10 @@ export const routes: Routes = [
         (m) => m.PersonalAccessTokensComponent,
       ),
   },
+  {
+    // Multiplayer Cashflow tables (game accounts only; the backend refuses any other account).
+    path: 'tables',
+    loadComponent: () =>
+      import('./tables/tables-lobby.component').then((m) => m.TablesLobbyComponent),
+  },
 ];
