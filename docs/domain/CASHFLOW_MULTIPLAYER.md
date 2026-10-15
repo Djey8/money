@@ -120,6 +120,12 @@ through the API or an agent.
 **Agents against bots:** seat a few bots, then let an agent sit at the same table (section 7). The agent plays by the rules and
 the same information as a person; the bots play their strategies. Win rates in the tournament say what to expect.
 
+### Keeping the champions current
+
+The champions are not frozen forever: they are what a search found on **these** rules. `npm run champions:refresh` runs the whole loop again - the tournament, a global search, a search per profession and a search per style - and ships a new champion only when it beats the one we have on games the search never saw. A test (`champions-fresh.spec.ts`) fails whenever a card, a profession, the loan rule, the board or the simulator changes, until a refresh has been run, so a bot can never be sold as a champion on rules it was not measured on. Nothing learns from live games or from people: it is offline search on simulated tables, reproducible from its seeds. See `CASHFLOW_CHAMPIONS.md` for the champion of every profession and the characters, and `CASHFLOW_TOURNAMENT.md` for the tournament.
+
+**A rule worth knowing:** under the **guided** rules a Doodad may be passed without paying (a freedom of the guided preset; the strict rules forbid it). A strategy that takes it wins noticeably more tables - the champions do. If you want a table where nobody can skip a Doodad, play with the strict rules.
+
 ## 9. Good to know
 
 - The table and its record live on the server. You can close the browser and come back: "My tables" lists the tables you are in.
