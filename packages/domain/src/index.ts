@@ -75,3 +75,4 @@ export * from './cashflow-game/analysis/review';
 export * from './cashflow-game/analysis/render';
 export * from './cashflow-game/analysis/benchmark';
 export * from './cashflow-game/analysis/progress';
+export * from './cashflow-game/table';
