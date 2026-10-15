@@ -429,9 +429,18 @@ export const TOOLS: ToolDefinition[] = [
       'the saved games, the account storage left (`storage`) and one saved game with its step log. review / review_save: ' +
       'the game analyst - judges the decisions of the running game or a saved game (best ... blunder, the turning ' +
       'point, a comparison with the strategy lab); read explain_concept topic cashflow_strategy_lab (the strategies), cashflow_card_lab (what each card is worth: which Deals help, which Doodads ruin you, what the dice cards cost) and cashflow_cards (every card by id - the history names picked cards by id) to turn it into ' +
-      'advice. Requires a PAT with game:r.',
+      'advice. MULTIPLAYER TABLES: tables lists the public tables you can join (scope open, default), the tables you sit ' +
+      'at (scope mine) or the ones that are over (scope recent); table reads ONE table as you may see it - every ' +
+      "player's books and cards are open, with `version`, `youSeat`, `activeSeat`, the `clock` and YOUR `legalActions`, " +
+      'the only moves play_cashflow_game action table_move will accept from you right now. There is no stream for an ' +
+      'agent: call table, and when `version` has not moved nothing happened (poll no faster than every few seconds); ' +
+      'when it is your turn `activeSeat` equals `youSeat`. table_log pages through what happened (`after`). ' +
+      'Requires a PAT with game:r.',
     actions: {
       game: action('getGame'),
+      tables: action('listGameRooms'),
+      table: action('getGameRoom'),
+      table_log: action('getGameRoomLog'),
       sets: action('listGameSets'),
       set: action('getGameSet'),
       cards: action('listGameCards'),
@@ -456,8 +465,34 @@ export const TOOLS: ToolDefinition[] = [
       'rename_save manage saved games - save a game in full (it keeps the undo history the analyst needs) and use compact: true only for a batch of games saved for statistics, check `storage` before a long ' +
       'run, and when a session is done clean up with prune_saves so at most 500 saves remain. Requires a PAT ' +
       'with game:w. reset, delete_save and prune_saves destroy data and require confirm: true - never without ' +
-      "the user's say-so for games you did not create in this session.",
+      "the user's say-so for games you did not create in this session. " +
+      'MULTIPLAYER (a table of several players, you as one seat; read explain_concept topic cashflow_game_guide, ' +
+      'section "Playing at a table"): table_create opens a table (nickname, settings.name, ...) and returns an invite ' +
+      'code, table_join takes a seat (roomId or code, nickname), table_ready, table_start (host), table_profession ' +
+      "(professionId or random), table_leave; table_kick / table_settings / table_close are the host's. Then " +
+      'table_move plays ONE move: `command` is {type: roll | draw_card | buy_deal | pay_doodad | roll_decision | ' +
+      'pass_card | bank_loan | sell_position | offer_trade | counter_trade | accept_trade | decline_trade | ' +
+      'withdraw_trade | pause | resume | back, ...its fields}. Call get_cashflow_game action table before EVERY move and ' +
+      'send only a command type its `legalActions` lists; ALWAYS send a unique `clientCommandId` (a retry of the same ' +
+      'call is then applied at most once) and `expectedVersion` (the table `version` you read). On your turn: roll, then ' +
+      'what the space asks (draw_card then buy_deal or pass_card; pay_doodad; a Market card is drawn for you and hits ' +
+      'every player). You can sell only into an offer a drawn card made for you (sell_position, on or off your turn); ' +
+      'trades are for the Deal card in your hand, never a share. If the clock runs out the server plays the most ' +
+      'passive turn for you. table_save files your own finished game in your saved games; table_rewind (host, confirm) ' +
+      'undoes the last turn. Requires a PAT with game:w.',
     actions: {
+      table_create: action('createGameRoom'),
+      table_join: action('joinGameRoom'),
+      table_leave: action('leaveGameRoom'),
+      table_ready: action('setGameRoomReady'),
+      table_kick: action('kickFromGameRoom'),
+      table_settings: action('updateGameRoomSettings'),
+      table_start: action('startGameRoom'),
+      table_profession: action('pickGameRoomProfession'),
+      table_move: action('playGameRoomCommand'),
+      table_close: action('closeGameRoom', true),
+      table_rewind: action('rewindGameRoom', true),
+      table_save: action('fileGameRoomGame'),
       start: action('gameStart'),
       roll: action('gameTurn'),
       draw_card: action('gameDrawCard'),
