@@ -13,7 +13,7 @@
  *   1. build the domain package;
  *   2. the tournament: every strategy of the bot catalog at every seat, all professions, 2/4/6 seats, both rule sets
  *      (docs/domain/CASHFLOW_TOURNAMENT.md, the manual's data);
- *   3. the global search: one champion over every profession - replaces champion-v2 only if it wins on fresh games;
+ *   3. the global search: one champion over every profession - replaces the latest global champion only if it wins on fresh games;
  *   4. the professions: a champion per profession, each starting from the one it has and replacing it only if it beats it on fresh
  *      games (champion-book.json, table/champion-book.ts, the manual's data, CASHFLOW_CHAMPIONS.md);
  *   5. the characters: the best strategy of each style (table/characters.ts);
@@ -100,11 +100,11 @@ if (step('global')) {
     'champion-search.js',
     `--style any --again ${budgets.global} ${scratch.join(' ')}`,
   );
-  run('the global search (champion-v2)', c, a);
+  run('the global search (champion-latest)', c, a);
   if (keepFiles) {
     const [c2, a2] = node('champion-search.js', '--style any --write-characters');
     run('write the global champion and the characters found so far', c2, a2);
-    run('build the domain package (the catalog now has champion-v2)', 'npm', [
+    run('build the domain package (the catalog now has the latest champion)', 'npm', [
       'run',
       'build',
       '--workspace=packages/domain',
@@ -114,7 +114,7 @@ if (step('global')) {
 if (step('professions')) {
   const [c, a] = node(
     'champion-search.js',
-    `--profession all --again --base ${value('base', keepFiles ? 'champion-v2' : 'champion-v1')} ${budgets.pro} ${keepFiles ? '--write-book' : ''} ${scratch.join(' ')}`,
+    `--profession all --again --base ${value('base', keepFiles ? 'champion-latest' : 'champion-v1')} ${budgets.pro} ${keepFiles ? '--write-book' : ''} ${scratch.join(' ')}`,
   );
   run('a champion per profession', c, a);
 }

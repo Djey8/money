@@ -11,17 +11,18 @@ API is in `docs/api/openapi.yaml` (`/game/rooms`), the agent tools in `docs/api/
 
 ## 1. What is the same, and what is not
 
-|                                           | Solo                             | At a table                                                                  |
-| ----------------------------------------- | -------------------------------- | --------------------------------------------------------------------------- |
-| The board, the cards, the money rules     | the same                         | the same                                                                    |
-| Who rolls                                 | you                              | the player whose turn it is; the dice are the server's                      |
-| Card piles                                | yours                            | **shared**: a card drawn is gone for everyone until the pile is reshuffled  |
-| Looking at a card                         | any pile, any card (free rules)  | one random card per space, take it or pass it (always)                      |
-| Buying                                    | any time (free rules)            | only with the card in hand                                                  |
-| Reporting a roll you made with a real die | allowed                          | never - only the server rolls                                               |
-| Typing your own transactions              | allowed                          | never                                                                       |
-| Selling                                   | at a price you name (free rules) | only into an offer a card made (see 4)                                      |
-| Winning                                   | escape the rat race              | the first to escape, a round limit, or everyone finished - the host chooses |
+|                                           | Solo                                          | At a table                                                                  |
+| ----------------------------------------- | --------------------------------------------- | --------------------------------------------------------------------------- |
+| The board, the cards, the money rules     | the same                                      | the same                                                                    |
+| Who rolls                                 | you                                           | the player whose turn it is; the dice are the server's                      |
+| Card piles                                | yours                                         | **shared**: a card drawn is gone for everyone until the pile is reshuffled  |
+| Looking at a card                         | any pile, any card (free rules)               | one random card per space, take it or pass it (always)                      |
+| Buying                                    | any time (free rules)                         | only with the card in hand                                                  |
+| Reporting a roll you made with a real die | allowed                                       | never - only the server rolls                                               |
+| Typing your own transactions              | allowed                                       | never                                                                       |
+| Doodads                                   | may be ticked off without paying (free rules) | always paid: nobody can pass one                                            |
+| Selling                                   | at a price you name (free rules)              | only into an offer a card made (see 4)                                      |
+| Winning                                   | escape the rat race                           | the first to escape, a round limit, or everyone finished - the host chooses |
 
 These are forced, not options: a shared table cannot run under the solo game's loose rules, because a claimed roll, a typed-in
 transaction, a peeked-at pile or a self-named sale price would let one player cheat the others.
@@ -106,10 +107,10 @@ characters (`GET /game/rooms/bots`, MCP `table_bots`) run from easy to hard:
 | easy       | Sleepy Sam, Careful Carla, Cash Charlie                                                        | never invests / only picky properties / only what cash pays for                                                                                                                               |
 | medium     | Trader Tina, Banker Ben, Marketing Mia, Steady Stella, Gambler Gus                             | stocks for deposits / borrows when it pays / marketing first / small then big deals / leveraged big deals                                                                                     |
 | hard       | Allie All-Round, Quick Quinn                                                                   | the best all-round strategies of the lab and the search                                                                                                                                       |
-| champion   | Champion Cleo, Champion Cleo II, Master Maxine                                                 | Cleo plays the one strategy that won the most tables; Cleo II the global champion of the second search; Maxine plays the champion of her own profession                                       |
+| champion   | Champion Cleo, Champion Cleo II, Master Maxine                                                 | Cleo plays the first all-round champion strategy, Cleo II the latest one; Maxine plays the champion of her own profession (a few professions have a specialist)                               |
 | characters | Investor Ines, Stock Sasha, Network Nils, Leverage Leo, Lucky Lena, Prudent Paula, Chaser Chen | the best version of one style each - only properties / stocks / marketing / borrowing / dice cards and marketing / no loans and safe / more risk when behind - from hard to champion strength |
 
-**What the tournament found** (18,720 tables: 2, 4 and 6 seats, guided and strict rules, every profession, everyone the same profession or everyone a different one; every strategy in every seat): Champion Cleo won about **70-80%** of the tables she sat at, whatever the table size or rule set - against 17-50% by luck - and the best hand-built strategy, Allie All-Round, about **52-69%**. The solo search's best, Quick Quinn, which escapes fastest _alone_, wins far fewer tables (about 15-55%): a race is not the same as a solo run, and the strategy that wins it takes more risk when a rival pulls ahead. The numbers, with their 95% ranges, are in `CASHFLOW_TOURNAMENT.md`; they are not a promise for any one game - the dice decide a lot, and a human who reads the table well can beat her.
+**What the tournament found** (18,720 tables: 2, 4 and 6 seats, guided and strict rules, every profession, everyone the same profession or everyone a different one; every strategy in every seat; run again after the Doodad rule became forced at tables): the best strategies are now **close together** - at a 4-seat table the champions and seven of the characters each win about 43-49% of the tables they sit at (25% by luck), Prudent Paula (the cautious one) 32%, the old all-rounder 27%, and the other strategies of the lab and the solo search's best 0-9%; a bot that never invests wins none. The first round of searches had found a clear champion (about 65% against 60% for its predecessor) but most of that edge was passing Doodads, which a table no longer allows - without it the strategies are nearly tied, which is the honest picture. The numbers, with their 95% ranges, are in `CASHFLOW_TOURNAMENT.md`; they are not a promise for any one game - the dice decide a lot, and a human who reads the table well can beat any of them.
 
 The difficulty is how often a strategy won tables in the **tournament** (`CASHFLOW_TOURNAMENT.md`, generated by
 `scripts/tournament-lab.js`): whole tables played in memory with a strategy at every seat and a profession at every seat, every
@@ -127,7 +128,7 @@ the same information as a person; the bots play their strategies. Win rates in t
 
 The champions are not frozen forever: they are what a search found on **these** rules. `npm run champions:refresh` runs the whole loop again - the tournament, a global search, a search per profession and a search per style - and ships a new champion only when it beats the one we have on games the search never saw. A test (`champions-fresh.spec.ts`) fails whenever a card, a profession, the loan rule, the board or the simulator changes, until a refresh has been run, so a bot can never be sold as a champion on rules it was not measured on. Nothing learns from live games or from people: it is offline search on simulated tables, reproducible from its seeds. See `CASHFLOW_CHAMPIONS.md` for the champion of every profession and the characters, and `CASHFLOW_TOURNAMENT.md` for the tournament.
 
-**A rule worth knowing:** under the **guided** rules a Doodad may be passed without paying (a freedom of the guided preset; the strict rules forbid it). A strategy that takes it wins noticeably more tables - the champions do. If you want a table where nobody can skip a Doodad, play with the strict rules.
+**A Doodad cannot be skipped at a table.** In the solo game a Doodad may be ticked off without paying (it is your physical board, your honour); at a shared table it is a forced cost like in the board game, under every rule set. (A first round of searches found that skipping Doodads was the strongest freedom of the guided rules - worth about 10 points of win share - which is why it is not available at a table.)
 
 ## 9. Good to know
 

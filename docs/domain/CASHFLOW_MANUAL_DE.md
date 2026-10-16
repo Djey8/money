@@ -617,6 +617,7 @@ Ein **Tisch** ist das Cashflow-Spiel mit mehreren Spielern gleichzeitig, auf dem
 | Kaufen | Jederzeit (freie Regeln) | Nur mit der Karte in der Hand |
 | Würfe und Eingaben | Du darfst einen Wurf melden, Buchungen tippen | Nie: nur der Server würfelt, nichts wird eingetippt |
 | Verkaufen | Zu einem Preis, den du nennst (freie Regeln) | Nur in ein Angebot, das eine Karte gemacht hat |
+| Doodads | Dürfen ohne Zahlung abgehakt werden (freie Regeln) | Immer bezahlt: niemand kann eins auslassen |
 | Gewinnen | Dem Hamsterrad entkommen | Wer zuerst entkommt, ein Rundenlimit, oder alle fertig - der Gastgeber wählt |
 
 > **Fest vorgegeben, nicht wählbar** Ein gemeinsamer Tisch kann nicht nach den lockeren Regeln des Einzelspiels laufen: ein behaupteter Wurf, eine eingetippte Buchung, ein angeschauter Stapel oder ein selbst genannter Verkaufspreis würde einem Spieler erlauben, die anderen zu betrügen.
@@ -663,7 +664,7 @@ Der Gastgeber kann in der Lobby **Bots** setzen. Ein Bot hat kein Konto; er ist 
 | Leicht | Sleepy Sam, Careful Carla, Cash Charlie | Investiert nie / nur wählerisch bei Immobilien / nur, was Bargeld bezahlt |
 | Mittel | Trader Tina, Banker Ben, Marketing Mia, Steady Stella, Gambler Gus | Aktien für Anzahlungen / leiht, wenn es sich lohnt / erst Marketing / erst kleine, dann große Deals / große Deals auf Kredit |
 | Schwer | Allie All-Round, Quick Quinn | Die besten Allround-Strategien des Strategie-Labors und seiner Suche |
-| Champion | Champion Cleo, Champion Cleo II, Master Maxine | Cleo spielt die eine Strategie, die die meisten Tische gewann; Cleo II den globalen Champion der zweiten Suche; Maxine spielt den Champion ihres eigenen Berufs |
+| Champion | Champion Cleo, Champion Cleo II, Master Maxine | Cleo spielt die erste Allround-Champion-Strategie, Cleo II die neueste; Maxine spielt den Champion ihres eigenen Berufs (einige Berufe haben einen Spezialisten) |
 | Charaktere | Investor Ines, Stock Sasha, Network Nils, Leverage Leo, Lucky Lena, Prudent Paula, Chaser Chen | Jeder spielt die beste Version eines Stils - nur Immobilien / Aktien / Marketing / Kredite / Würfelkarten und Marketing / keine Kredite und sicher / mehr Risiko im Rückstand - von schwer bis Champion-Stärke |
 
 > **Fair Play** Nichts, was ein Bot tut, ist verborgen: jeder Zug steht im Protokoll wie bei jedem anderen. Die Stufe sagt, wie oft eine Strategie im Turnier Tische gewann - nicht, was in einem Spiel passiert: die Würfel entscheiden viel. Jeder Bot kann auf einer Stufe sitzen - Meister, stark, locker oder Anfänger: die niedrigeren Stufen patzen ab und zu (eine gute Gelegenheit auslassen, eine schlechte nehmen, das Verkaufen vergessen), so stellst du ein, wie schwer der Tisch ist.

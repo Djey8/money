@@ -617,6 +617,7 @@ Una **mesa** es el juego Cashflow jugado por varios jugadores a la vez, en el se
 | Comprar | En cualquier momento (reglas libres) | Solo con la carta en la mano |
 | Tiradas y apuntes | Puedes declarar una tirada, escribir un movimiento | Nunca: solo el servidor tira, no se escribe nada |
 | Vender | A un precio que tú dices (reglas libres) | Solo en una oferta que una carta ha hecho |
+| Gastos | Se pueden tachar sin pagar (reglas libres) | Siempre se pagan: nadie puede pasar uno |
 | Ganar | Escapar de la carrera de la rata | El primero en escapar, un límite de rondas, o todos terminan - lo decide el anfitrión |
 
 > **Obligatorio, no opcional** Una mesa compartida no puede jugarse con las reglas sueltas del juego en solitario: una tirada declarada, un apunte escrito a mano, un mazo mirado o un precio de venta puesto por uno mismo permitirían a un jugador engañar a los demás.
@@ -663,7 +664,7 @@ El anfitrión puede sentar **bots** en la sala. Un bot no tiene cuenta; siempre 
 | Fácil | Sleepy Sam, Careful Carla, Cash Charlie | Nunca invierte / solo propiedades selectivas / solo lo que paga el efectivo |
 | Medio | Trader Tina, Banker Ben, Marketing Mia, Steady Stella, Gambler Gus | Acciones para las entradas / pide prestado cuando compensa / primero marketing / tratos pequeños y luego grandes / tratos grandes a crédito |
 | Difícil | Allie All-Round, Quick Quinn | Las mejores estrategias generales del laboratorio de estrategias y su búsqueda |
-| Campeón | Champion Cleo, Champion Cleo II, Master Maxine | Cleo juega la única estrategia que ganó más mesas; Cleo II el campeón global de la segunda búsqueda; Maxine juega el campeón de su propia profesión |
+| Campeón | Champion Cleo, Champion Cleo II, Master Maxine | Cleo juega la primera estrategia campeona general, Cleo II la más reciente; Maxine juega el campeón de su propia profesión (algunas profesiones tienen un especialista) |
 | Personajes | Investor Ines, Stock Sasha, Network Nils, Leverage Leo, Lucky Lena, Prudent Paula, Chaser Chen | Cada uno juega la mejor versión de un estilo - solo propiedades / acciones / marketing / préstamos / cartas de dados y marketing / sin préstamos y seguro / más riesgo cuando va por detrás - de nivel difícil a campeón |
 
 > **Juego limpio** Nada de lo que hace un bot está oculto: cada jugada está en el registro como la de cualquiera. El nivel dice con qué frecuencia una estrategia ganó mesas en el torneo - no lo que pasará en una partida: los dados deciden mucho. Cada bot puede sentarse a un nivel de juego - maestro, fuerte, casual o principiante: los niveles bajos fallan de vez en cuando (dejan pasar un buen trato, aceptan uno malo, olvidan vender), así que puedes ajustar lo difícil que es la mesa.

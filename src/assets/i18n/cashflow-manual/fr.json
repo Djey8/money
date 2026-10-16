@@ -1676,6 +1676,11 @@
               "Seulement dans une offre qu'une carte a faite"
             ],
             [
+              "Dépenses",
+              "Peuvent être cochées sans payer (règles libres)",
+              "Toujours payées : personne ne peut en passer une"
+            ],
+            [
               "Gagner",
               "Sortir de la course de rats",
               "Le premier à sortir, une limite de tours, ou tout le monde a fini - l'hôte choisit"
@@ -1791,7 +1796,7 @@
             [
               "Champion",
               "Champion Cleo, Champion Cleo II, Master Maxine",
-              "Cleo joue la seule stratégie qui a gagné le plus de tables ; Cleo II le champion global de la deuxième recherche ; Maxine joue le champion de sa propre profession"
+              "Cleo joue la première stratégie championne générale, Cleo II la plus récente ; Maxine joue le champion de sa propre profession (quelques professions ont un spécialiste)"
             ],
             [
               "Personnages",

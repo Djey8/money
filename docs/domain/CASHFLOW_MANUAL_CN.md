@@ -617,6 +617,7 @@ _(Table: 破产前的最后一个决定 - the figures are in the topics cashflow
 | 购买 | 随时（自由规则） | 只能用手中的牌 |
 | 掷骰与录入 | 可以自报点数、手动录入交易 | 绝不允许：只有服务器掷骰，不能手动录入 |
 | 出售 | 按你自己报的价格（自由规则） | 只能卖给由卡牌带来的报价 |
+| 意外开销 | 可以不付钱直接划掉（自由规则） | 必须支付：没有人可以跳过 |
 | 获胜 | 逃出老鼠赛跑 | 第一个逃出者、回合上限，或所有人完成——由房主决定 |
 
 > **强制，不可选** 共享牌桌不能使用单人游戏的宽松规则：自报的点数、手动录入的交易、偷看的牌堆或自己定的售价，都会让一名玩家欺骗其他人。
@@ -663,7 +664,7 @@ _(Table: 破产前的最后一个决定 - the figures are in the topics cashflow
 | 简单 | Sleepy Sam, Careful Carla, Cash Charlie | 从不投资 / 只买挑剔的房产 / 只买现金付得起的 |
 | 中等 | Trader Tina, Banker Ben, Marketing Mia, Steady Stella, Gambler Gus | 用股票凑首付 / 划算时借款 / 先做直销 / 先小后大 / 借钱做大额交易 |
 | 困难 | Allie All-Round, Quick Quinn | 策略实验室及其搜索得出的最佳综合策略 |
-| 冠军 | Champion Cleo, Champion Cleo II, Master Maxine | Cleo 使用赢下最多牌桌的那一套策略；Cleo II 是第二次搜索得出的全局冠军；Maxine 使用她自己职业的冠军策略 |
+| 冠军 | Champion Cleo, Champion Cleo II, Master Maxine | Cleo 使用第一套综合冠军策略，Cleo II 使用最新的一套；Maxine 使用她自己职业的冠军策略（少数职业有专属冠军） |
 | 角色 | Investor Ines, Stock Sasha, Network Nils, Leverage Leo, Lucky Lena, Prudent Paula, Chaser Chen | 每个角色使用某一风格的最佳版本——只买房产 / 股票 / 直销 / 借贷 / 骰子牌与直销 / 不借款且稳健 / 落后时更冒险——强度从困难到冠军 |
 
 > **公平竞争** 机器人所做的一切都不是隐藏的：每一步都像其他人一样记录在日志里。等级表示某策略在锦标赛中赢下牌桌的频率——不代表单局的结果：骰子的影响很大。每个机器人都可以按一个水平入座——大师、较强、休闲或新手：较低的水平会偶尔失误（错过好交易、接下差交易、忘记出售），所以你可以调节牌桌的难度。

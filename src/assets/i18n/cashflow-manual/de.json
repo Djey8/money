@@ -1521,6 +1521,11 @@
               "Nur in ein Angebot, das eine Karte gemacht hat"
             ],
             [
+              "Doodads",
+              "Dürfen ohne Zahlung abgehakt werden (freie Regeln)",
+              "Immer bezahlt: niemand kann eins auslassen"
+            ],
+            [
               "Gewinnen",
               "Dem Hamsterrad entkommen",
               "Wer zuerst entkommt, ein Rundenlimit, oder alle fertig - der Gastgeber wählt"
@@ -1636,7 +1641,7 @@
             [
               "Champion",
               "Champion Cleo, Champion Cleo II, Master Maxine",
-              "Cleo spielt die eine Strategie, die die meisten Tische gewann; Cleo II den globalen Champion der zweiten Suche; Maxine spielt den Champion ihres eigenen Berufs"
+              "Cleo spielt die erste Allround-Champion-Strategie, Cleo II die neueste; Maxine spielt den Champion ihres eigenen Berufs (einige Berufe haben einen Spezialisten)"
             ],
             [
               "Charaktere",

@@ -264,7 +264,20 @@ const FIELDS = {
   sellWhenProfitMonths: () => pick(SELL),
   repayLoans: () => rng() < 0.6,
   charityTwoDice: () => rng() < 0.7,
-  skipDoodadsAboveMinor: () => pick([null, null, 0, 10000, 30000, 60000, 100000]),
+  skipDoodadsAboveMinor: () => null, // inert at a table: a Doodad cannot be passed
+  countShares: () =>
+    rng() < 0.5
+      ? null
+      : {
+          minGain: pick([2, 3, 5]),
+          maxWaitDraws: pick([6, 12, 24]),
+          maxLotShare: pick([0.2, 0.4, 0.6]),
+          sellAboveMinor: pick([1500, 2500, 3500]),
+        },
+  pileByCount: () => rng() < 0.5,
+  countReturnFactor: () => pick([0, 0, 0.5, 1, 2]),
+  speculate: () =>
+    rng() < 0.5 ? null : { maxWaitDraws: pick([4, 8, 16]), minEvRatio: pick([0.3, 0.5, 1]) },
   catchUp: () => (rng() < 0.6 ? catchUp() : null),
   protectLead: () => (rng() < 0.4 ? protect() : null),
 };
@@ -296,9 +309,14 @@ const describe = (o) =>
       : `Big Deals from ${o.bigDealFromCashMinor / 100} cash`,
     o.buyMlm ? 'Multi-Level-Marketing' : null,
     o.buyGambles ? 'dice gambles' : null,
-    o.skipDoodadsAboveMinor !== null
-      ? `passes Doodads above ${o.skipDoodadsAboveMinor / 100} where allowed`
+    o.countShares
+      ? `buys shares only when a ${o.countShares.minGain}x card is still in the pile`
       : null,
+    o.pileByCount ? 'draws from the pile with the better cards left' : null,
+    o.countReturnFactor
+      ? `scales its bar by what is left in the pile (${o.countReturnFactor})`
+      : null,
+    o.speculate ? 'buys a flat property when buyers are still in the Market pile' : null,
     o.shares ? 'trades stocks' : null,
     o.sellWhenProfitMonths ? `sells at ${o.sellWhenProfitMonths} months of profit` : null,
     o.catchUp ? `takes more risk when ${Math.round(o.catchUp.gap * 100)}+ points behind` : null,
@@ -320,7 +338,10 @@ const spec = (overrides, profession) => {
 
 /** The id of the strategy a search hands out: a character's own, or a champion of the profession (versioned when it replaces one). */
 function newId(target) {
-  if (opts.style === 'any') return 'champion-v2';
+  if (opts.style === 'any') {
+    const version = Number((String(CHAMPION.id).match(/-v(\d+)$/) || [0, 1])[1]) + 1;
+    return `champion-v${version}`;
+  }
   if (STYLE) return `character-${opts.style}`;
   const current = previousBook()[target.id];
   const version =
@@ -523,15 +544,17 @@ async function main() {
     verdict.sort((a, b) => b.winRate - a.winRate);
     const champion = verdict.find((v) => v.id === barSpec.id);
     const best = verdict.find((v) => !v.known);
-    const adopted = STYLE
-      ? true
-      : Boolean(best && champion && best.interval.low > champion.winRate);
+    // a character is always the best of its style; the global champion must beat the one we have
+    const adopted =
+      STYLE && opts.style !== 'any'
+        ? true
+        : Boolean(best && champion && best.interval.low > champion.winRate);
     const result = {
       ...(STYLE ? { style: opts.style, character: STYLE.name, summary: STYLE.summary } : {}),
       profession: target,
       meta: {
         generatedAt: new Date().toISOString(),
-        rulesDigest: domain.strategyRulesDigest(playable),
+        rulesDigest: domain.championRulesDigest(playable),
         config,
         seconds: Math.round((Date.now() - started) / 1000),
       },
@@ -708,7 +731,7 @@ function writeBook() {
   const book = {
     meta: {
       generatedAt: new Date().toISOString(),
-      rulesDigest: domain.strategyRulesDigest(playable),
+      rulesDigest: domain.championRulesDigest(playable),
       note: 'A champion per profession. winRate: the share of fresh verdict tables (2, 4 and 6 seats, guided and strict rules, rivals from the field with random professions) the champion won; championV1WinRate: the same for champion-v1. A profession has its own champion only when its lower 95% bound beat champion-v1.',
       field: config.field,
     },

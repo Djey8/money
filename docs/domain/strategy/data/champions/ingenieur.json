@@ -5,13 +5,13 @@
   "title": "Ingenieur/in"
  },
  "meta": {
-  "generatedAt": "2026-10-15T20:52:46.302Z",
-  "rulesDigest": "080250730e9970",
+  "generatedAt": "2026-10-16T08:28:23.386Z",
+  "rulesDigest": "02d612c9ec287f",
   "config": {
-   "candidates": 40,
-   "generations": 9,
-   "matches": 12,
-   "verify": 2000,
+   "candidates": 32,
+   "generations": 7,
+   "matches": 10,
+   "verify": 1500,
    "seedBase": 410000,
    "field": [
     "champion-v1",
@@ -22,244 +22,162 @@
     "bridge-loans"
    ]
   },
-  "seconds": 508
+  "seconds": 273
  },
  "history": [
   {
    "generation": 0,
-   "tables": 36,
+   "tables": 30,
    "best": [
     {
      "id": "champion-v2",
      "known": true,
-     "winRate": 0.6944444444444444
+     "winRate": 0.7
     },
     {
-     "id": "cand-ingenieur-2932",
+     "id": "cand-ingenieur-1852",
      "known": false,
-     "winRate": 0.6944444444444444
+     "winRate": 0.7
     },
     {
-     "id": "cand-ingenieur-2933",
+     "id": "cand-ingenieur-1853",
      "known": false,
-     "winRate": 0.6944444444444444
+     "winRate": 0.7
     }
    ]
   },
   {
    "generation": 1,
-   "tables": 36,
+   "tables": 30,
    "best": [
     {
-     "id": "champion-v2",
-     "known": true,
-     "winRate": 0.5555555555555556
+     "id": "cand-ingenieur-1892",
+     "known": false,
+     "winRate": 0.6333333333333333
     },
     {
-     "id": "cand-ingenieur-2933",
+     "id": "cand-ingenieur-1897",
      "known": false,
-     "winRate": 0.5555555555555556
+     "winRate": 0.6
     },
     {
-     "id": "cand-ingenieur-2935",
+     "id": "cand-ingenieur-1900",
      "known": false,
-     "winRate": 0.5555555555555556
+     "winRate": 0.6
     }
    ]
   },
   {
    "generation": 2,
-   "tables": 72,
+   "tables": 60,
    "best": [
     {
-     "id": "cand-ingenieur-2939",
+     "id": "cand-ingenieur-1911",
      "known": false,
-     "winRate": 0.6944444444444444
+     "winRate": 0.5833333333333334
     },
     {
-     "id": "cand-ingenieur-2971",
+     "id": "cand-ingenieur-1913",
      "known": false,
-     "winRate": 0.6944444444444444
+     "winRate": 0.5833333333333334
     },
     {
-     "id": "cand-ingenieur-3003",
+     "id": "cand-ingenieur-1892",
      "known": false,
-     "winRate": 0.6944444444444444
+     "winRate": 0.5666666666666667
     }
    ]
   },
   {
    "generation": 3,
-   "tables": 72,
+   "tables": 60,
    "best": [
     {
-     "id": "cand-ingenieur-2939",
+     "id": "cand-ingenieur-1911",
      "known": false,
-     "winRate": 0.7777777777777778
+     "winRate": 0.7333333333333333
     },
     {
-     "id": "cand-ingenieur-2971",
+     "id": "cand-ingenieur-1933",
      "known": false,
-     "winRate": 0.7777777777777778
+     "winRate": 0.7333333333333333
     },
     {
-     "id": "cand-ingenieur-3003",
+     "id": "cand-ingenieur-1937",
      "known": false,
-     "winRate": 0.7777777777777778
+     "winRate": 0.7333333333333333
     }
    ]
   },
   {
    "generation": 4,
-   "tables": 108,
+   "tables": 90,
    "best": [
     {
-     "id": "champion-v2",
-     "known": true,
-     "winRate": 0.6574074074074074
+     "id": "cand-ingenieur-1962",
+     "known": false,
+     "winRate": 0.6
     },
     {
-     "id": "cand-ingenieur-3079",
+     "id": "cand-ingenieur-1966",
      "known": false,
-     "winRate": 0.6574074074074074
+     "winRate": 0.6
     },
     {
-     "id": "cand-ingenieur-3086",
+     "id": "cand-ingenieur-1947",
      "known": false,
-     "winRate": 0.6574074074074074
+     "winRate": 0.5888888888888889
     }
    ]
   },
   {
    "generation": 5,
-   "tables": 108,
+   "tables": 90,
    "best": [
     {
-     "id": "cand-ingenieur-3123",
+     "id": "cand-ingenieur-2006",
      "known": false,
-     "winRate": 0.7407407407407407
+     "winRate": 0.7666666666666667
     },
     {
-     "id": "champion-v2",
-     "known": true,
-     "winRate": 0.7314814814814815
+     "id": "cand-ingenieur-1949",
+     "known": false,
+     "winRate": 0.7444444444444445
     },
     {
-     "id": "cand-ingenieur-3079",
+     "id": "cand-ingenieur-1985",
      "known": false,
-     "winRate": 0.7314814814814815
+     "winRate": 0.7444444444444445
     }
    ]
   },
   {
    "generation": 6,
-   "tables": 144,
+   "tables": 120,
    "best": [
     {
-     "id": "cand-ingenieur-3146",
+     "id": "cand-ingenieur-1949",
      "known": false,
-     "winRate": 0.7083333333333334
+     "winRate": 0.65
     },
     {
-     "id": "cand-ingenieur-3159",
+     "id": "cand-ingenieur-2014",
      "known": false,
-     "winRate": 0.7083333333333334
+     "winRate": 0.65
     },
     {
-     "id": "cand-ingenieur-3123",
+     "id": "cand-ingenieur-2027",
      "known": false,
-     "winRate": 0.7013888888888888
-    }
-   ]
-  },
-  {
-   "generation": 7,
-   "tables": 144,
-   "best": [
-    {
-     "id": "cand-ingenieur-3164",
-     "known": false,
-     "winRate": 0.6736111111111112
-    },
-    {
-     "id": "champion-v2",
-     "known": true,
-     "winRate": 0.6597222222222222
-    },
-    {
-     "id": "cand-ingenieur-3079",
-     "known": false,
-     "winRate": 0.6597222222222222
-    }
-   ]
-  },
-  {
-   "generation": 8,
-   "tables": 180,
-   "best": [
-    {
-     "id": "cand-ingenieur-3164",
-     "known": false,
-     "winRate": 0.6388888888888888
-    },
-    {
-     "id": "champion-v2",
-     "known": true,
-     "winRate": 0.6388888888888888
-    },
-    {
-     "id": "cand-ingenieur-3079",
-     "known": false,
-     "winRate": 0.6388888888888888
+     "winRate": 0.65
     }
    ]
   }
  ],
  "verdict": [
   {
-   "id": "cand-ingenieur-3164",
+   "id": "cand-ingenieur-1949",
    "known": false,
-   "description": "properties paying at least 1.0% a month, 250 kept in reserve, borrows when covered 1x, Big Deals from 10000 cash, Multi-Level-Marketing, passes Doodads above 100 where allowed, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
-   "overrides": {
-    "buyProperties": true,
-    "minMonthlyReturn": 0.01,
-    "reserveMinor": 25000,
-    "loans": "bridge",
-    "loanCoverage": 1,
-    "bigDealFromCashMinor": 1000000,
-    "buyMlm": true,
-    "buyGambles": false,
-    "shares": {
-     "buyBelowMinor": 1000,
-     "sellAboveMinor": 2500,
-     "maxLotShare": 0.4
-    },
-    "sellWhenProfitMonths": 12,
-    "repayLoans": true,
-    "charityTwoDice": true,
-    "skipDoodadsAboveMinor": 10000,
-    "catchUp": {
-     "gap": 0.1,
-     "minMonthlyReturnFactor": 0.8,
-     "loanCoverageFactor": 1,
-     "reserveFactor": 0.3
-    },
-    "protectLead": null
-   },
-   "wins": 1339,
-   "tables": 2001,
-   "winRate": 0.6691654172913544,
-   "escapeRate": 0.6736631684157921,
-   "bankruptRate": 0.009495252373813094,
-   "interval": {
-    "low": 0.6482424647287849,
-    "high": 0.6894400733829543
-   }
-  },
-  {
-   "id": "cand-ingenieur-3079",
-   "known": false,
-   "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, passes Doodads above 100 where allowed, trades stocks, sells at 12 months of profit",
+   "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, trades stocks, sells at 6 months of profit, takes more risk when 10+ points behind",
    "overrides": {
     "buyProperties": true,
     "minMonthlyReturn": 0.01,
@@ -274,27 +192,36 @@
      "sellAboveMinor": 2500,
      "maxLotShare": 0.4
     },
-    "sellWhenProfitMonths": 12,
+    "sellWhenProfitMonths": 6,
     "repayLoans": true,
     "charityTwoDice": true,
-    "skipDoodadsAboveMinor": 10000,
-    "catchUp": null,
-    "protectLead": null
+    "skipDoodadsAboveMinor": null,
+    "catchUp": {
+     "gap": 0.1,
+     "minMonthlyReturnFactor": 0.8,
+     "loanCoverageFactor": 1,
+     "reserveFactor": 0.3
+    },
+    "protectLead": null,
+    "countShares": null,
+    "pileByCount": false,
+    "countReturnFactor": 0,
+    "speculate": null
    },
-   "wins": 1321,
-   "tables": 2001,
-   "winRate": 0.6601699150424788,
-   "escapeRate": 0.665167416291854,
-   "bankruptRate": 0.0004997501249375312,
+   "wins": 970,
+   "tables": 1500,
+   "winRate": 0.6466666666666666,
+   "escapeRate": 0.6526666666666666,
+   "bankruptRate": 0.002,
    "interval": {
-    "low": 0.6391271274687785,
-    "high": 0.6805988798127943
+    "low": 0.622129618995307,
+    "high": 0.6704543871925787
    }
   },
   {
-   "id": "cand-ingenieur-3086",
+   "id": "cand-ingenieur-2014",
    "known": false,
-   "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, passes Doodads above 100 where allowed, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
+   "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, trades stocks, sells at 6 months of profit, takes more risk when 10+ points behind",
    "overrides": {
     "buyProperties": true,
     "minMonthlyReturn": 0.01,
@@ -309,35 +236,38 @@
      "sellAboveMinor": 2500,
      "maxLotShare": 0.4
     },
-    "sellWhenProfitMonths": 12,
+    "sellWhenProfitMonths": 6,
     "repayLoans": true,
     "charityTwoDice": true,
-    "skipDoodadsAboveMinor": 10000,
+    "skipDoodadsAboveMinor": null,
     "catchUp": {
      "gap": 0.1,
      "minMonthlyReturnFactor": 0.8,
      "loanCoverageFactor": 1,
      "reserveFactor": 0.3
     },
-    "protectLead": null
+    "protectLead": null,
+    "countShares": null,
+    "pileByCount": false,
+    "countReturnFactor": 0,
+    "speculate": null
    },
-   "wins": 1321,
-   "tables": 2001,
-   "winRate": 0.6601699150424788,
-   "escapeRate": 0.665167416291854,
-   "bankruptRate": 0.0004997501249375312,
+   "wins": 970,
+   "tables": 1500,
+   "winRate": 0.6466666666666666,
+   "escapeRate": 0.6526666666666666,
+   "bankruptRate": 0.002,
    "interval": {
-    "low": 0.6391271274687785,
-    "high": 0.6805988798127943
+    "low": 0.622129618995307,
+    "high": 0.6704543871925787
    }
   },
   {
-   "id": "cand-ingenieur-3087",
+   "id": "cand-ingenieur-2027",
    "known": false,
-   "description": "properties paying at least 1.5% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, passes Doodads above 100 where allowed, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
+   "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, trades stocks, sells at 6 months of profit, takes more risk when 10+ points behind",
    "overrides": {
-    "buyProperties": true,
-    "minMonthlyReturn": 0.015,
+    "minMonthlyReturn": 0.01,
     "reserveMinor": 0,
     "loans": "bridge",
     "loanCoverage": 1.5,
@@ -349,10 +279,14 @@
      "sellAboveMinor": 2500,
      "maxLotShare": 0.4
     },
-    "sellWhenProfitMonths": 12,
+    "sellWhenProfitMonths": 6,
     "repayLoans": true,
     "charityTwoDice": true,
-    "skipDoodadsAboveMinor": 10000,
+    "skipDoodadsAboveMinor": null,
+    "countShares": null,
+    "pileByCount": false,
+    "countReturnFactor": 0,
+    "speculate": null,
     "catchUp": {
      "gap": 0.1,
      "minMonthlyReturnFactor": 0.8,
@@ -361,20 +295,20 @@
     },
     "protectLead": null
    },
-   "wins": 1321,
-   "tables": 2001,
-   "winRate": 0.6601699150424788,
-   "escapeRate": 0.665167416291854,
-   "bankruptRate": 0.0004997501249375312,
+   "wins": 970,
+   "tables": 1500,
+   "winRate": 0.6466666666666666,
+   "escapeRate": 0.6526666666666666,
+   "bankruptRate": 0.002,
    "interval": {
-    "low": 0.6391271274687785,
-    "high": 0.6805988798127943
+    "low": 0.622129618995307,
+    "high": 0.6704543871925787
    }
   },
   {
    "id": "champion-v2",
    "known": true,
-   "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, passes Doodads above 100 where allowed, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
+   "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
    "overrides": {
     "buyProperties": true,
     "minMonthlyReturn": 0.01,
@@ -392,7 +326,7 @@
     "sellWhenProfitMonths": 12,
     "repayLoans": true,
     "charityTwoDice": true,
-    "skipDoodadsAboveMinor": 10000,
+    "skipDoodadsAboveMinor": null,
     "catchUp": {
      "gap": 0.1,
      "minMonthlyReturnFactor": 0.8,
@@ -401,14 +335,58 @@
     },
     "protectLead": null
    },
-   "wins": 1321,
-   "tables": 2001,
-   "winRate": 0.6601699150424788,
-   "escapeRate": 0.665167416291854,
-   "bankruptRate": 0.0004997501249375312,
+   "wins": 970,
+   "tables": 1500,
+   "winRate": 0.6466666666666666,
+   "escapeRate": 0.6526666666666666,
+   "bankruptRate": 0.002,
    "interval": {
-    "low": 0.6391271274687785,
-    "high": 0.6805988798127943
+    "low": 0.622129618995307,
+    "high": 0.6704543871925787
+   }
+  },
+  {
+   "id": "cand-ingenieur-2017",
+   "known": false,
+   "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, draws from the pile with the better cards left, trades stocks, sells at 6 months of profit, takes more risk when 20+ points behind",
+   "overrides": {
+    "buyProperties": true,
+    "minMonthlyReturn": 0.01,
+    "reserveMinor": 0,
+    "loans": "bridge",
+    "loanCoverage": 1.5,
+    "bigDealFromCashMinor": 1000000,
+    "buyMlm": true,
+    "buyGambles": false,
+    "shares": {
+     "buyBelowMinor": 1000,
+     "sellAboveMinor": 2500,
+     "maxLotShare": 0.4
+    },
+    "sellWhenProfitMonths": 6,
+    "repayLoans": true,
+    "charityTwoDice": true,
+    "skipDoodadsAboveMinor": null,
+    "catchUp": {
+     "gap": 0.2,
+     "minMonthlyReturnFactor": 0.5,
+     "loanCoverageFactor": 0.5,
+     "reserveFactor": 0
+    },
+    "protectLead": null,
+    "countShares": null,
+    "pileByCount": true,
+    "countReturnFactor": 0,
+    "speculate": null
+   },
+   "wins": 951,
+   "tables": 1500,
+   "winRate": 0.634,
+   "escapeRate": 0.6393333333333333,
+   "bankruptRate": 0.014666666666666666,
+   "interval": {
+    "low": 0.609308582375253,
+    "high": 0.6580068050964063
    }
   }
  ],
@@ -418,7 +396,7 @@
   "spec": {
    "id": "champion-v2",
    "label": "Champion",
-   "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, passes Doodads above 100 where allowed, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
+   "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
    "overrides": {
     "buyProperties": true,
     "minMonthlyReturn": 0.01,
@@ -436,7 +414,7 @@
     "sellWhenProfitMonths": 12,
     "repayLoans": true,
     "charityTwoDice": true,
-    "skipDoodadsAboveMinor": 10000,
+    "skipDoodadsAboveMinor": null,
     "catchUp": {
      "gap": 0.1,
      "minMonthlyReturnFactor": 0.8,
@@ -446,13 +424,13 @@
     "protectLead": null
    }
   },
-  "winRate": 0.6601699150424788,
+  "winRate": 0.6466666666666666,
   "interval": {
-   "low": 0.6391271274687785,
-   "high": 0.6805988798127943
+   "low": 0.622129618995307,
+   "high": 0.6704543871925787
   },
-  "tables": 2001,
-  "againstChampionV1": 0.6601699150424788
+  "tables": 1500,
+  "againstChampionV1": 0.6466666666666666
  },
  "adopted": false
 }

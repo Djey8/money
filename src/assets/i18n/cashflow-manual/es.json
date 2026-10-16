@@ -1685,6 +1685,11 @@
               "Solo en una oferta que una carta ha hecho"
             ],
             [
+              "Gastos",
+              "Se pueden tachar sin pagar (reglas libres)",
+              "Siempre se pagan: nadie puede pasar uno"
+            ],
+            [
               "Ganar",
               "Escapar de la carrera de la rata",
               "El primero en escapar, un límite de rondas, o todos terminan - lo decide el anfitrión"
@@ -1800,7 +1805,7 @@
             [
               "Campeón",
               "Champion Cleo, Champion Cleo II, Master Maxine",
-              "Cleo juega la única estrategia que ganó más mesas; Cleo II el campeón global de la segunda búsqueda; Maxine juega el campeón de su propia profesión"
+              "Cleo juega la primera estrategia campeona general, Cleo II la más reciente; Maxine juega el campeón de su propia profesión (algunas profesiones tienen un especialista)"
             ],
             [
               "Personajes",

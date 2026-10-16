@@ -323,7 +323,7 @@ async function main() {
     }
   }
 
-  const rulesDigest = domain.strategyRulesDigest(
+  const rulesDigest = domain.championRulesDigest(
     CASHFLOW_GAME_SETS.filter((set) => set.id === 'cashflow' || set.id === 'custom-jfk'),
   );
   const output = {

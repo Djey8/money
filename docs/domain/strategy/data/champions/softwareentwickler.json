@@ -5,13 +5,13 @@
   "title": "Softwareentwickler/in"
  },
  "meta": {
-  "generatedAt": "2026-10-15T21:12:04.863Z",
-  "rulesDigest": "080250730e9970",
+  "generatedAt": "2026-10-16T08:38:45.653Z",
+  "rulesDigest": "02d612c9ec287f",
   "config": {
-   "candidates": 40,
-   "generations": 9,
-   "matches": 12,
-   "verify": 2000,
+   "candidates": 32,
+   "generations": 7,
+   "matches": 10,
+   "verify": 1500,
    "seedBase": 410000,
    "field": [
     "champion-v1",
@@ -22,109 +22,109 @@
     "bridge-loans"
    ]
   },
-  "seconds": 603
+  "seconds": 320
  },
  "history": [
   {
    "generation": 0,
-   "tables": 36,
+   "tables": 30,
    "best": [
-    {
-     "id": "cand-softwareentwickler-3539",
-     "known": false,
-     "winRate": 0.7222222222222222
-    },
     {
      "id": "champion-v2",
      "known": true,
-     "winRate": 0.6944444444444444
+     "winRate": 0.7666666666666667
     },
     {
-     "id": "cand-softwareentwickler-3518",
+     "id": "cand-softwareentwickler-2221",
      "known": false,
-     "winRate": 0.6944444444444444
+     "winRate": 0.7666666666666667
+    },
+    {
+     "id": "cand-softwareentwickler-2222",
+     "known": false,
+     "winRate": 0.7666666666666667
     }
    ]
   },
   {
    "generation": 1,
-   "tables": 36,
+   "tables": 30,
    "best": [
     {
-     "id": "cand-softwareentwickler-3556",
+     "id": "cand-softwareentwickler-2268",
      "known": false,
-     "winRate": 0.75
+     "winRate": 0.7333333333333333
     },
     {
-     "id": "cand-softwareentwickler-3579",
-     "known": false,
-     "winRate": 0.75
+     "id": "champion-v2",
+     "known": true,
+     "winRate": 0.6666666666666666
     },
     {
-     "id": "cand-softwareentwickler-3582",
+     "id": "cand-softwareentwickler-2221",
      "known": false,
-     "winRate": 0.6944444444444444
+     "winRate": 0.6666666666666666
     }
    ]
   },
   {
    "generation": 2,
-   "tables": 72,
+   "tables": 60,
    "best": [
     {
-     "id": "cand-softwareentwickler-3596",
+     "id": "cand-softwareentwickler-2298",
      "known": false,
-     "winRate": 0.6944444444444444
+     "winRate": 0.65
     },
     {
-     "id": "cand-softwareentwickler-3600",
+     "id": "cand-softwareentwickler-2268",
      "known": false,
-     "winRate": 0.6805555555555556
+     "winRate": 0.6166666666666667
     },
     {
-     "id": "cand-softwareentwickler-3612",
+     "id": "cand-softwareentwickler-2276",
      "known": false,
-     "winRate": 0.6805555555555556
+     "winRate": 0.6166666666666667
     }
    ]
   },
   {
    "generation": 3,
-   "tables": 72,
+   "tables": 60,
    "best": [
     {
-     "id": "cand-softwareentwickler-3596",
+     "id": "cand-softwareentwickler-2298",
      "known": false,
-     "winRate": 0.6805555555555556
+     "winRate": 0.6166666666666667
     },
     {
-     "id": "cand-softwareentwickler-3628",
+     "id": "cand-softwareentwickler-2306",
      "known": false,
-     "winRate": 0.6805555555555556
+     "winRate": 0.6166666666666667
     },
     {
-     "id": "cand-softwareentwickler-3645",
+     "id": "cand-softwareentwickler-2311",
      "known": false,
-     "winRate": 0.6805555555555556
+     "winRate": 0.6166666666666667
     }
    ]
   },
   {
    "generation": 4,
-   "tables": 108,
+   "tables": 90,
    "best": [
     {
-     "id": "cand-softwareentwickler-3654",
+     "id": "cand-softwareentwickler-2315",
      "known": false,
-     "winRate": 0.75
+     "winRate": 0.7222222222222222
     },
     {
-     "id": "cand-softwareentwickler-3672",
+     "id": "cand-softwareentwickler-2317",
      "known": false,
-     "winRate": 0.7407407407407407
+     "winRate": 0.7222222222222222
     },
     {
-     "id": "cand-softwareentwickler-3661",
+     "id": "cand-softwareentwickler-2335",
      "known": false,
      "winRate": 0.7222222222222222
     }
@@ -132,97 +132,55 @@
   },
   {
    "generation": 5,
-   "tables": 108,
+   "tables": 90,
    "best": [
     {
-     "id": "cand-softwareentwickler-3661",
+     "id": "cand-softwareentwickler-2367",
      "known": false,
-     "winRate": 0.7314814814814815
+     "winRate": 0.6888888888888889
     },
     {
-     "id": "cand-softwareentwickler-3596",
+     "id": "cand-softwareentwickler-2371",
      "known": false,
-     "winRate": 0.7314814814814815
+     "winRate": 0.6666666666666666
     },
     {
-     "id": "cand-softwareentwickler-3628",
+     "id": "cand-softwareentwickler-2315",
      "known": false,
-     "winRate": 0.7314814814814815
+     "winRate": 0.6555555555555556
     }
    ]
   },
   {
    "generation": 6,
-   "tables": 144,
+   "tables": 120,
    "best": [
     {
-     "id": "cand-softwareentwickler-3729",
+     "id": "cand-softwareentwickler-2403",
      "known": false,
-     "winRate": 0.6597222222222222
+     "winRate": 0.6416666666666667
     },
     {
-     "id": "cand-softwareentwickler-3738",
+     "id": "cand-softwareentwickler-2388",
      "known": false,
-     "winRate": 0.6527777777777778
+     "winRate": 0.6333333333333333
     },
     {
-     "id": "cand-softwareentwickler-3661",
+     "id": "cand-softwareentwickler-2401",
      "known": false,
-     "winRate": 0.6458333333333334
-    }
-   ]
-  },
-  {
-   "generation": 7,
-   "tables": 144,
-   "best": [
-    {
-     "id": "cand-softwareentwickler-3760",
-     "known": false,
-     "winRate": 0.6875
-    },
-    {
-     "id": "cand-softwareentwickler-3766",
-     "known": false,
-     "winRate": 0.6805555555555556
-    },
-    {
-     "id": "cand-softwareentwickler-3661",
-     "known": false,
-     "winRate": 0.6666666666666666
-    }
-   ]
-  },
-  {
-   "generation": 8,
-   "tables": 180,
-   "best": [
-    {
-     "id": "cand-softwareentwickler-3766",
-     "known": false,
-     "winRate": 0.7111111111111111
-    },
-    {
-     "id": "cand-softwareentwickler-3789",
-     "known": false,
-     "winRate": 0.7111111111111111
-    },
-    {
-     "id": "cand-softwareentwickler-3661",
-     "known": false,
-     "winRate": 0.6944444444444444
+     "winRate": 0.6083333333333333
     }
    ]
   }
  ],
  "verdict": [
   {
-   "id": "cand-softwareentwickler-3661",
+   "id": "cand-softwareentwickler-2401",
    "known": false,
-   "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, passes Doodads above 300 where allowed, trades stocks, sells at 24 months of profit, takes more risk when 10+ points behind",
+   "description": "properties paying at least 3.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, buys a flat property when buyers are still in the Market pile, trades stocks, sells at 12 months of profit",
    "overrides": {
     "buyProperties": true,
-    "minMonthlyReturn": 0.01,
+    "minMonthlyReturn": 0.03,
     "reserveMinor": 0,
     "loans": "bridge",
     "loanCoverage": 1.5,
@@ -234,151 +192,34 @@
      "sellAboveMinor": 2500,
      "maxLotShare": 0.4
     },
-    "sellWhenProfitMonths": 24,
+    "sellWhenProfitMonths": 12,
     "repayLoans": true,
     "charityTwoDice": true,
-    "skipDoodadsAboveMinor": 30000,
-    "catchUp": {
-     "gap": 0.1,
-     "minMonthlyReturnFactor": 0.8,
-     "loanCoverageFactor": 1,
-     "reserveFactor": 0.3
-    },
-    "protectLead": null
+    "skipDoodadsAboveMinor": null,
+    "catchUp": null,
+    "protectLead": null,
+    "countShares": null,
+    "pileByCount": false,
+    "countReturnFactor": 0,
+    "speculate": {
+     "maxWaitDraws": 4,
+     "minEvRatio": 0.3
+    }
    },
-   "wins": 1362,
-   "tables": 2001,
-   "winRate": 0.6806596701649176,
-   "escapeRate": 0.6831584207896052,
-   "bankruptRate": 0.008995502248875561,
+   "wins": 980,
+   "tables": 1500,
+   "winRate": 0.6533333333333333,
+   "escapeRate": 0.6546666666666666,
+   "bankruptRate": 0.015333333333333332,
    "interval": {
-    "low": 0.6599022095047221,
-    "high": 0.7007247846677852
-   }
-  },
-  {
-   "id": "cand-softwareentwickler-3766",
-   "known": false,
-   "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, dice gambles, passes Doodads above 100 where allowed, trades stocks, sells at 24 months of profit, takes more risk when 10+ points behind",
-   "overrides": {
-    "buyProperties": true,
-    "minMonthlyReturn": 0.01,
-    "reserveMinor": 0,
-    "loans": "bridge",
-    "loanCoverage": 1.5,
-    "bigDealFromCashMinor": 1000000,
-    "buyMlm": true,
-    "buyGambles": true,
-    "shares": {
-     "buyBelowMinor": 1000,
-     "sellAboveMinor": 2500,
-     "maxLotShare": 0.4
-    },
-    "sellWhenProfitMonths": 24,
-    "repayLoans": true,
-    "charityTwoDice": true,
-    "skipDoodadsAboveMinor": 10000,
-    "catchUp": {
-     "gap": 0.1,
-     "minMonthlyReturnFactor": 0.8,
-     "loanCoverageFactor": 1,
-     "reserveFactor": 0.3
-    },
-    "protectLead": null
-   },
-   "wins": 1358,
-   "tables": 2001,
-   "winRate": 0.6786606696651675,
-   "escapeRate": 0.6826586706646677,
-   "bankruptRate": 0.009495252373813094,
-   "interval": {
-    "low": 0.6578734164594067,
-    "high": 0.6987632375286192
-   }
-  },
-  {
-   "id": "cand-softwareentwickler-3789",
-   "known": false,
-   "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, dice gambles, passes Doodads above 100 where allowed, trades stocks, sells at 24 months of profit, takes more risk when 10+ points behind",
-   "overrides": {
-    "minMonthlyReturn": 0.01,
-    "reserveMinor": 0,
-    "loans": "bridge",
-    "loanCoverage": 1.5,
-    "bigDealFromCashMinor": 1000000,
-    "buyMlm": true,
-    "buyGambles": true,
-    "shares": {
-     "buyBelowMinor": 1000,
-     "sellAboveMinor": 2500,
-     "maxLotShare": 0.4
-    },
-    "sellWhenProfitMonths": 24,
-    "repayLoans": true,
-    "charityTwoDice": true,
-    "skipDoodadsAboveMinor": 10000,
-    "catchUp": {
-     "gap": 0.1,
-     "minMonthlyReturnFactor": 0.8,
-     "loanCoverageFactor": 1,
-     "reserveFactor": 0.3
-    },
-    "protectLead": null
-   },
-   "wins": 1358,
-   "tables": 2001,
-   "winRate": 0.6786606696651675,
-   "escapeRate": 0.6826586706646677,
-   "bankruptRate": 0.009495252373813094,
-   "interval": {
-    "low": 0.6578734164594067,
-    "high": 0.6987632375286192
-   }
-  },
-  {
-   "id": "cand-softwareentwickler-3596",
-   "known": false,
-   "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, passes Doodads above 100 where allowed, trades stocks, sells at 24 months of profit, takes more risk when 10+ points behind",
-   "overrides": {
-    "buyProperties": true,
-    "minMonthlyReturn": 0.01,
-    "reserveMinor": 0,
-    "loans": "bridge",
-    "loanCoverage": 1.5,
-    "bigDealFromCashMinor": 1000000,
-    "buyMlm": true,
-    "buyGambles": false,
-    "shares": {
-     "buyBelowMinor": 1000,
-     "sellAboveMinor": 2500,
-     "maxLotShare": 0.4
-    },
-    "sellWhenProfitMonths": 24,
-    "repayLoans": true,
-    "charityTwoDice": true,
-    "skipDoodadsAboveMinor": 10000,
-    "catchUp": {
-     "gap": 0.1,
-     "minMonthlyReturnFactor": 0.8,
-     "loanCoverageFactor": 1,
-     "reserveFactor": 0.3
-    },
-    "protectLead": null
-   },
-   "wins": 1358,
-   "tables": 2001,
-   "winRate": 0.6786606696651675,
-   "escapeRate": 0.6811594202898551,
-   "bankruptRate": 0.008995502248875561,
-   "interval": {
-    "low": 0.6578734164594067,
-    "high": 0.6987632375286192
+    "low": 0.6288849397455638,
+    "high": 0.6769983394508622
    }
   },
   {
    "id": "champion-v2",
    "known": true,
-   "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, passes Doodads above 100 where allowed, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
+   "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
    "overrides": {
     "buyProperties": true,
     "minMonthlyReturn": 0.01,
@@ -396,7 +237,7 @@
     "sellWhenProfitMonths": 12,
     "repayLoans": true,
     "charityTwoDice": true,
-    "skipDoodadsAboveMinor": 10000,
+    "skipDoodadsAboveMinor": null,
     "catchUp": {
      "gap": 0.1,
      "minMonthlyReturnFactor": 0.8,
@@ -405,14 +246,140 @@
     },
     "protectLead": null
    },
-   "wins": 1346,
-   "tables": 2001,
-   "winRate": 0.672663668165917,
-   "escapeRate": 0.6746626686656672,
-   "bankruptRate": 0.010994502748625687,
+   "wins": 968,
+   "tables": 1500,
+   "winRate": 0.6453333333333333,
+   "escapeRate": 0.6466666666666666,
+   "bankruptRate": 0.014666666666666666,
    "interval": {
-    "low": 0.6517895994159469,
-    "high": 0.6928760340186346
+    "low": 0.620779172200211,
+    "high": 0.6691449793859667
+   }
+  },
+  {
+   "id": "cand-softwareentwickler-2403",
+   "known": false,
+   "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 2.5x, Big Deals from 10000 cash, Multi-Level-Marketing, dice gambles, trades stocks, sells at 12 months of profit",
+   "overrides": {
+    "buyProperties": true,
+    "minMonthlyReturn": 0.01,
+    "reserveMinor": 0,
+    "loans": "bridge",
+    "loanCoverage": 2.5,
+    "bigDealFromCashMinor": 1000000,
+    "buyMlm": true,
+    "buyGambles": true,
+    "shares": {
+     "buyBelowMinor": 1000,
+     "sellAboveMinor": 2500,
+     "maxLotShare": 0.4
+    },
+    "sellWhenProfitMonths": 12,
+    "repayLoans": true,
+    "charityTwoDice": true,
+    "skipDoodadsAboveMinor": null,
+    "catchUp": null,
+    "protectLead": null,
+    "countShares": null,
+    "pileByCount": false,
+    "countReturnFactor": 0,
+    "speculate": null
+   },
+   "wins": 956,
+   "tables": 1500,
+   "winRate": 0.6373333333333333,
+   "escapeRate": 0.6426666666666667,
+   "bankruptRate": 0.012666666666666666,
+   "interval": {
+    "low": 0.6126807692372378,
+    "high": 0.6612842547386916
+   }
+  },
+  {
+   "id": "cand-softwareentwickler-2388",
+   "known": false,
+   "description": "properties paying at least 2.0% a month, 250 kept in reserve, borrows when covered 2.5x, Big Deals from 10000 cash, Multi-Level-Marketing, dice gambles, draws from the pile with the better cards left, scales its bar by what is left in the pile (0.5), trades stocks, sells at 24 months of profit, takes more risk when 10+ points behind, plays safe when 20+ points ahead",
+   "overrides": {
+    "minMonthlyReturn": 0.02,
+    "reserveMinor": 25000,
+    "loans": "bridge",
+    "loanCoverage": 2.5,
+    "bigDealFromCashMinor": 1000000,
+    "buyMlm": true,
+    "buyGambles": true,
+    "shares": {
+     "buyBelowMinor": 1500,
+     "sellAboveMinor": 2000,
+     "maxLotShare": 0.3
+    },
+    "sellWhenProfitMonths": 24,
+    "repayLoans": true,
+    "charityTwoDice": true,
+    "skipDoodadsAboveMinor": null,
+    "countShares": null,
+    "pileByCount": true,
+    "countReturnFactor": 0.5,
+    "speculate": null,
+    "catchUp": {
+     "gap": 0.1,
+     "minMonthlyReturnFactor": 0.8,
+     "loanCoverageFactor": 0.75,
+     "reserveFactor": 0
+    },
+    "protectLead": {
+     "gap": 0.2,
+     "minMonthlyReturnFactor": 1.5,
+     "loanCoverageFactor": 2,
+     "reserveFactor": 1
+    }
+   },
+   "wins": 897,
+   "tables": 1500,
+   "winRate": 0.598,
+   "escapeRate": 0.6026666666666667,
+   "bankruptRate": 0.012666666666666666,
+   "interval": {
+    "low": 0.5729674026851479,
+    "high": 0.6225319105403938
+   }
+  },
+  {
+   "id": "cand-softwareentwickler-2371",
+   "known": false,
+   "description": "properties paying at least 1.5% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, trades stocks, sells at 12 months of profit",
+   "overrides": {
+    "buyProperties": true,
+    "minMonthlyReturn": 0.015,
+    "reserveMinor": 0,
+    "loans": "bridge",
+    "loanCoverage": 1.5,
+    "bigDealFromCashMinor": 1000000,
+    "buyMlm": true,
+    "buyGambles": false,
+    "shares": {
+     "buyBelowMinor": 1000,
+     "sellAboveMinor": 2500,
+     "maxLotShare": 0.4
+    },
+    "sellWhenProfitMonths": 12,
+    "repayLoans": false,
+    "charityTwoDice": true,
+    "skipDoodadsAboveMinor": null,
+    "catchUp": null,
+    "protectLead": null,
+    "countShares": null,
+    "pileByCount": false,
+    "countReturnFactor": 0,
+    "speculate": null
+   },
+   "wins": 896,
+   "tables": 1500,
+   "winRate": 0.5973333333333334,
+   "escapeRate": 0.6013333333333334,
+   "bankruptRate": 0.03666666666666667,
+   "interval": {
+    "low": 0.5722957455100105,
+    "high": 0.6218736404146774
    }
   }
  ],
@@ -422,7 +389,7 @@
   "spec": {
    "id": "champion-v2",
    "label": "Champion",
-   "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, passes Doodads above 100 where allowed, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
+   "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
    "overrides": {
     "buyProperties": true,
     "minMonthlyReturn": 0.01,
@@ -440,7 +407,7 @@
     "sellWhenProfitMonths": 12,
     "repayLoans": true,
     "charityTwoDice": true,
-    "skipDoodadsAboveMinor": 10000,
+    "skipDoodadsAboveMinor": null,
     "catchUp": {
      "gap": 0.1,
      "minMonthlyReturnFactor": 0.8,
@@ -450,13 +417,13 @@
     "protectLead": null
    }
   },
-  "winRate": 0.672663668165917,
+  "winRate": 0.6453333333333333,
   "interval": {
-   "low": 0.6517895994159469,
-   "high": 0.6928760340186346
+   "low": 0.620779172200211,
+   "high": 0.6691449793859667
   },
-  "tables": 2001,
-  "againstChampionV1": 0.672663668165917
+  "tables": 1500,
+  "againstChampionV1": 0.6453333333333333
  },
  "adopted": false
 }

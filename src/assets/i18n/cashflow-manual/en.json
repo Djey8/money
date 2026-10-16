@@ -1487,6 +1487,11 @@
             ],
             ["Selling", "At a price you name (free rules)", "Only into an offer a card made"],
             [
+              "Doodads",
+              "May be ticked off without paying (free rules)",
+              "Always paid: nobody can pass one"
+            ],
+            [
               "Winning",
               "Escape the rat race",
               "The first to escape, a round limit, or everyone finished - the host chooses"
@@ -1602,7 +1607,7 @@
             [
               "Champion",
               "Champion Cleo, Champion Cleo II, Master Maxine",
-              "Cleo plays the one strategy that won the most tables; Cleo II the global champion of the second search; Maxine plays the champion of her own profession"
+              "Cleo plays the first all-round champion strategy, Cleo II the latest one; Maxine plays the champion of her own profession (a few professions have a specialist)"
             ],
             [
               "Characters",
