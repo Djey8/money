@@ -163,7 +163,9 @@ describe('players who do not answer', () => {
     expect(run.table.result!.reason).toBe('round-limit');
     expect(run.table.tableRound).toBeLessThanOrEqual(6);
     // nobody bought or sold anything: only the passive turn was ever played
-    expect(count(run.events, 'card_played')).toBe(0);
+    // (a Doodad is the one thing paid for them: nobody can pass it at a table)
+    const played = run.events.filter((e) => e.type === 'card_played');
+    expect(played.every((e) => e.data?.action === 'pay_doodad')).toBe(true);
     expect(count(run.events, 'position_sold')).toBe(0);
     expect(count(run.events, 'loan_changed')).toBe(0);
   });
@@ -240,7 +242,7 @@ describe('the golden game', () => {
   });
   const fixture = path.join(__dirname, 'fixtures', 'golden-4p.json');
   // The digest of the table this script ends in. When the rules change on purpose, regenerate with UPDATE_GOLDEN=1.
-  const GOLDEN_DIGEST = 'd807e938';
+  const GOLDEN_DIGEST = '43169c57';
 
   it('replays from the committed script to the pinned table', () => {
     const run = simulateTable(config);

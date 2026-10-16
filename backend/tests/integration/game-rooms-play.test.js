@@ -7,6 +7,7 @@ const request = require('supertest');
 const { app, checkDb, registerTestUser } = require('./setup');
 const { getGameRoomsDb } = require('../../config/db');
 const store = require('../../repositories/game-room-store');
+const { quickMove } = require('../helpers/quick-move');
 
 const GAME_PASSWORD = 'integration-test-only';
 const originalHash = process.env.CASHFLOW_GAME_PASSWORD_SHA256;
@@ -70,12 +71,7 @@ async function quickTurn(id) {
   for (let step = 0; step < 8; step += 1) {
     current = await view(who, id);
     if (current.table.activeSeat !== startSeat || current.table.phase !== 'playing') return current;
-    const legal = current.legalActions.map((a) => a.action);
-    const body = legal.includes('pass_card')
-      ? { type: 'pass_card' }
-      : legal.includes('roll_decision')
-        ? { type: 'roll_decision' }
-        : { type: 'roll' };
+    const body = quickMove(current);
     const done = await command(who, id, { command: body });
     expect([body.type, done.status]).toEqual([body.type, 200]);
   }

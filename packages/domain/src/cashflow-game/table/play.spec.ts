@@ -88,7 +88,7 @@ function rollWhere(
  * A whole turn the quickest way: roll (never onto Downsized, which changes the turn order), and if the space asks for a card,
  * pass it. Returns the table and every event of the turn.
  */
-function autoRoll(table: Table, avoid: string[] = ['downsized']): CommandResult {
+function autoRoll(table: Table, avoid: string[] = ['downsized', 'doodad']): CommandResult {
   const who = table.activePlayerId!;
   const rolled = rollWhere(table, (landed) => !avoid.includes(landed));
   const pending = booksOf(rolled.table, who).state.turn?.pending;
@@ -438,9 +438,12 @@ describe('purity and replay', () => {
       for (let i = 0; i < 12 && table.phase === 'playing'; i += 1) {
         const who = table.activePlayerId!;
         const pending = booksOf(table, who).state.turn?.pending;
+        // a Doodad cannot be passed at a table: it is paid
         const command: TableCommand = pending
           ? pending.offered
-            ? { type: 'pass_card' }
+            ? pending.kind === 'doodad'
+              ? { type: 'pay_doodad', cardId: pending.offered.cardId }
+              : { type: 'pass_card' }
             : { type: 'draw_card', deck: pending.kind === 'deal' ? 'dealSmall' : pending.kind }
           : { type: 'roll' };
         table = applyCommand(table, who, command, ctx).table;

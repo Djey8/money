@@ -211,7 +211,7 @@ describe('a person and two bots play a whole table', () => {
     );
 
     const stats = await playTable([human], { maxMoves: 400, maxIdleMs: 30000 });
-    expect(stats.moves).toBeGreaterThan(3);
+    expect(stats.moves).toBeGreaterThanOrEqual(3); // the person plays a round-limited game: about one move per round
     await human.waitFor((b) => b.view.phase === 'finished', 30000);
 
     const served = (await human.get()).body;

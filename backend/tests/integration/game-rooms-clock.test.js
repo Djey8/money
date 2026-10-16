@@ -8,6 +8,7 @@ const store = require('../../repositories/game-room-store');
 const { createGameRoomService } = require('../../services/game-rooms');
 const { createGameRoomHub } = require('../../services/game-room-hub');
 const { createRoomClocks } = require('../../services/game-room-clocks');
+const { quickMove } = require('../helpers/quick-move');
 
 const T0 = Date.parse('2026-10-15T09:00:00.000Z');
 const SEC = 1000;
@@ -94,13 +95,7 @@ async function quickTurn(service, id) {
   for (let step = 0; step < 8; step += 1) {
     const room = await service.getRoom(who, id);
     if (room.table.activeSeat !== startSeat || room.table.phase !== 'playing') return room;
-    const legal = room.legalActions.map((a) => a.action);
-    const type = legal.includes('pass_card')
-      ? 'pass_card'
-      : legal.includes('roll_decision')
-        ? 'roll_decision'
-        : 'roll';
-    await service.runCommand(who, id, { type });
+    await service.runCommand(who, id, quickMove(room));
   }
   return service.getRoom(who, id);
 }

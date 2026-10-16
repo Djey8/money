@@ -26,6 +26,8 @@ export const FORCED_TABLE_RULES = {
   reportRolls: 'forbidden',
   manualTransactions: 'forbidden',
   maxFreeAmountMinor: 0,
+  // a Doodad is a forced cost of the board game: in the solo game a player may tick one off, at a shared table nobody can
+  passDoodads: 'forbidden',
 } as const satisfies Partial<GameRules>;
 
 function invalid(message: string): never {

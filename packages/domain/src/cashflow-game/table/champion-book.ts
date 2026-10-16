@@ -18,24 +18,24 @@ export interface ChampionEntry {
   spec: PolicySpec;
 }
 
-export const CHAMPION_BOOK_DIGEST = "080250730e9970";
+export const CHAMPION_BOOK_DIGEST = "02d612c9ec287f";
 
 export const CHAMPION_BOOK: Record<string, ChampionEntry> = {
   "hausmeister": {
     "setId": "cashflow",
     "title": "Hausmeister/in",
     "adopted": false,
-    "winRate": 0.6666666666666666,
+    "winRate": 0.562,
     "interval": {
-      "low": 0.645709583074089,
-      "high": 0.6869850298070482
+      "low": 0.5367650052322352,
+      "high": 0.5869182337471893
     },
-    "tables": 2001,
-    "championV1WinRate": 0.6666666666666666,
+    "tables": 1500,
+    "championV1WinRate": 0.562,
     "spec": {
       "id": "champion-v2",
       "label": "Champion",
-      "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, passes Doodads above 100 where allowed, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
+      "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
       "overrides": {
         "buyProperties": true,
         "minMonthlyReturn": 0.01,
@@ -53,7 +53,7 @@ export const CHAMPION_BOOK: Record<string, ChampionEntry> = {
         "sellWhenProfitMonths": 12,
         "repayLoans": true,
         "charityTwoDice": true,
-        "skipDoodadsAboveMinor": 10000,
+        "skipDoodadsAboveMinor": null,
         "catchUp": {
           "gap": 0.1,
           "minMonthlyReturnFactor": 0.8,
@@ -68,17 +68,17 @@ export const CHAMPION_BOOK: Record<string, ChampionEntry> = {
     "setId": "cashflow",
     "title": "Lehrer/in",
     "adopted": false,
-    "winRate": 0.6701649175412294,
+    "winRate": 0.614,
     "interval": {
-      "low": 0.6492558004349073,
-      "high": 0.6904219077690725
+      "low": 0.5891015231417234,
+      "high": 0.6383160453043151
     },
-    "tables": 2001,
-    "championV1WinRate": 0.6701649175412294,
+    "tables": 1500,
+    "championV1WinRate": 0.614,
     "spec": {
       "id": "champion-v2",
       "label": "Champion",
-      "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, passes Doodads above 100 where allowed, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
+      "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
       "overrides": {
         "buyProperties": true,
         "minMonthlyReturn": 0.01,
@@ -96,7 +96,7 @@ export const CHAMPION_BOOK: Record<string, ChampionEntry> = {
         "sellWhenProfitMonths": 12,
         "repayLoans": true,
         "charityTwoDice": true,
-        "skipDoodadsAboveMinor": 10000,
+        "skipDoodadsAboveMinor": null,
         "catchUp": {
           "gap": 0.1,
           "minMonthlyReturnFactor": 0.8,
@@ -111,17 +111,17 @@ export const CHAMPION_BOOK: Record<string, ChampionEntry> = {
     "setId": "cashflow",
     "title": "Pilot/in",
     "adopted": false,
-    "winRate": 0.6991504247876063,
+    "winRate": 0.686,
     "interval": {
-      "low": 0.6786892464152288,
-      "high": 0.7188483944637315
+      "low": 0.6620625370877415,
+      "high": 0.7089871798505318
     },
-    "tables": 2001,
-    "championV1WinRate": 0.6991504247876063,
+    "tables": 1500,
+    "championV1WinRate": 0.686,
     "spec": {
       "id": "champion-v2",
       "label": "Champion",
-      "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, passes Doodads above 100 where allowed, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
+      "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
       "overrides": {
         "buyProperties": true,
         "minMonthlyReturn": 0.01,
@@ -139,7 +139,7 @@ export const CHAMPION_BOOK: Record<string, ChampionEntry> = {
         "sellWhenProfitMonths": 12,
         "repayLoans": true,
         "charityTwoDice": true,
-        "skipDoodadsAboveMinor": 10000,
+        "skipDoodadsAboveMinor": null,
         "catchUp": {
           "gap": 0.1,
           "minMonthlyReturnFactor": 0.8,
@@ -154,17 +154,17 @@ export const CHAMPION_BOOK: Record<string, ChampionEntry> = {
     "setId": "cashflow",
     "title": "Sekretär/in",
     "adopted": false,
-    "winRate": 0.6371814092953523,
+    "winRate": 0.5513333333333333,
     "interval": {
-      "low": 0.6158698018960336,
-      "high": 0.6579672932640029
+      "low": 0.5260642451195575,
+      "high": 0.5763401570462026
     },
-    "tables": 2001,
-    "championV1WinRate": 0.6371814092953523,
+    "tables": 1500,
+    "championV1WinRate": 0.5513333333333333,
     "spec": {
       "id": "champion-v2",
       "label": "Champion",
-      "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, passes Doodads above 100 where allowed, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
+      "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
       "overrides": {
         "buyProperties": true,
         "minMonthlyReturn": 0.01,
@@ -182,7 +182,7 @@ export const CHAMPION_BOOK: Record<string, ChampionEntry> = {
         "sellWhenProfitMonths": 12,
         "repayLoans": true,
         "charityTwoDice": true,
-        "skipDoodadsAboveMinor": 10000,
+        "skipDoodadsAboveMinor": null,
         "catchUp": {
           "gap": 0.1,
           "minMonthlyReturnFactor": 0.8,
@@ -196,26 +196,25 @@ export const CHAMPION_BOOK: Record<string, ChampionEntry> = {
   "manager": {
     "setId": "cashflow",
     "title": "Manager/in",
-    "adopted": false,
-    "winRate": 0.6371814092953523,
+    "adopted": true,
+    "winRate": 0.6246666666666667,
     "interval": {
-      "low": 0.6158698018960336,
-      "high": 0.6579672932640029
+      "low": 0.5998730997845133,
+      "high": 0.6488233054751896
     },
-    "tables": 2001,
-    "championV1WinRate": 0.6371814092953523,
+    "tables": 1500,
+    "championV1WinRate": 0.598,
     "spec": {
-      "id": "champion-v2",
-      "label": "Champion",
-      "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, passes Doodads above 100 where allowed, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
+      "id": "champion-manager-v3",
+      "label": "Champion (Manager/in)",
+      "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.25x, Big Deals from 10000 cash, buys shares only when a 2x card is still in the pile, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
       "overrides": {
-        "buyProperties": true,
         "minMonthlyReturn": 0.01,
         "reserveMinor": 0,
         "loans": "bridge",
-        "loanCoverage": 1.5,
+        "loanCoverage": 1.25,
         "bigDealFromCashMinor": 1000000,
-        "buyMlm": true,
+        "buyMlm": false,
         "buyGambles": false,
         "shares": {
           "buyBelowMinor": 1000,
@@ -225,7 +224,16 @@ export const CHAMPION_BOOK: Record<string, ChampionEntry> = {
         "sellWhenProfitMonths": 12,
         "repayLoans": true,
         "charityTwoDice": true,
-        "skipDoodadsAboveMinor": 10000,
+        "skipDoodadsAboveMinor": null,
+        "countShares": {
+          "minGain": 2,
+          "maxWaitDraws": 12,
+          "maxLotShare": 0.6,
+          "sellAboveMinor": 1500
+        },
+        "pileByCount": false,
+        "countReturnFactor": 0,
+        "speculate": null,
         "catchUp": {
           "gap": 0.1,
           "minMonthlyReturnFactor": 0.8,
@@ -239,18 +247,18 @@ export const CHAMPION_BOOK: Record<string, ChampionEntry> = {
   "lkwFahrer": {
     "setId": "cashflow",
     "title": "LKW-Fahrer/in",
-    "adopted": false,
-    "winRate": 0.5977011494252874,
+    "adopted": true,
+    "winRate": 0.52,
     "interval": {
-      "low": 0.5760480434256547,
-      "high": 0.6189798330908741
+      "low": 0.4946979315047373,
+      "high": 0.5451998875208836
     },
-    "tables": 2001,
-    "championV1WinRate": 0.5977011494252874,
+    "tables": 1500,
+    "championV1WinRate": 0.49333333333333335,
     "spec": {
-      "id": "champion-v2",
-      "label": "Champion",
-      "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, passes Doodads above 100 where allowed, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
+      "id": "champion-lkwFahrer-v3",
+      "label": "Champion (LKW-Fahrer/in)",
+      "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, dice gambles, buys a flat property when buyers are still in the Market pile, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
       "overrides": {
         "buyProperties": true,
         "minMonthlyReturn": 0.01,
@@ -259,7 +267,7 @@ export const CHAMPION_BOOK: Record<string, ChampionEntry> = {
         "loanCoverage": 1.5,
         "bigDealFromCashMinor": 1000000,
         "buyMlm": true,
-        "buyGambles": false,
+        "buyGambles": true,
         "shares": {
           "buyBelowMinor": 1000,
           "sellAboveMinor": 2500,
@@ -268,14 +276,21 @@ export const CHAMPION_BOOK: Record<string, ChampionEntry> = {
         "sellWhenProfitMonths": 12,
         "repayLoans": true,
         "charityTwoDice": true,
-        "skipDoodadsAboveMinor": 10000,
+        "skipDoodadsAboveMinor": null,
         "catchUp": {
           "gap": 0.1,
           "minMonthlyReturnFactor": 0.8,
           "loanCoverageFactor": 1,
           "reserveFactor": 0.3
         },
-        "protectLead": null
+        "protectLead": null,
+        "countShares": null,
+        "pileByCount": false,
+        "countReturnFactor": 0,
+        "speculate": {
+          "maxWaitDraws": 4,
+          "minEvRatio": 0.5
+        }
       }
     }
   },
@@ -283,17 +298,17 @@ export const CHAMPION_BOOK: Record<string, ChampionEntry> = {
     "setId": "cashflow",
     "title": "Polizist/in",
     "adopted": false,
-    "winRate": 0.6736631684157921,
+    "winRate": 0.6233333333333333,
     "interval": {
-      "low": 0.6528033035370097,
-      "high": 0.6938574999898126
+      "low": 0.5985259663821443,
+      "high": 0.6475105842758505
     },
-    "tables": 2001,
-    "championV1WinRate": 0.6736631684157921,
+    "tables": 1500,
+    "championV1WinRate": 0.6233333333333333,
     "spec": {
       "id": "champion-v2",
       "label": "Champion",
-      "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, passes Doodads above 100 where allowed, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
+      "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
       "overrides": {
         "buyProperties": true,
         "minMonthlyReturn": 0.01,
@@ -311,7 +326,7 @@ export const CHAMPION_BOOK: Record<string, ChampionEntry> = {
         "sellWhenProfitMonths": 12,
         "repayLoans": true,
         "charityTwoDice": true,
-        "skipDoodadsAboveMinor": 10000,
+        "skipDoodadsAboveMinor": null,
         "catchUp": {
           "gap": 0.1,
           "minMonthlyReturnFactor": 0.8,
@@ -326,17 +341,17 @@ export const CHAMPION_BOOK: Record<string, ChampionEntry> = {
     "setId": "cashflow",
     "title": "Mechaniker/in",
     "adopted": false,
-    "winRate": 0.6736631684157921,
+    "winRate": 0.5653333333333334,
     "interval": {
-      "low": 0.6528033035370097,
-      "high": 0.6938574999898126
+      "low": 0.5401113963589611,
+      "high": 0.5902214791247334
     },
-    "tables": 2001,
-    "championV1WinRate": 0.6736631684157921,
+    "tables": 1500,
+    "championV1WinRate": 0.5653333333333334,
     "spec": {
       "id": "champion-v2",
       "label": "Champion",
-      "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, passes Doodads above 100 where allowed, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
+      "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
       "overrides": {
         "buyProperties": true,
         "minMonthlyReturn": 0.01,
@@ -354,7 +369,7 @@ export const CHAMPION_BOOK: Record<string, ChampionEntry> = {
         "sellWhenProfitMonths": 12,
         "repayLoans": true,
         "charityTwoDice": true,
-        "skipDoodadsAboveMinor": 10000,
+        "skipDoodadsAboveMinor": null,
         "catchUp": {
           "gap": 0.1,
           "minMonthlyReturnFactor": 0.8,
@@ -369,17 +384,17 @@ export const CHAMPION_BOOK: Record<string, ChampionEntry> = {
     "setId": "cashflow",
     "title": "Anwalt/Anwältin",
     "adopted": false,
-    "winRate": 0.6126936531734133,
+    "winRate": 0.5986666666666667,
     "interval": {
-      "low": 0.5911527992033901,
-      "high": 0.6338026286967492
+      "low": 0.5736391073768009,
+      "high": 0.6231901331495949
     },
-    "tables": 2001,
-    "championV1WinRate": 0.6126936531734133,
+    "tables": 1500,
+    "championV1WinRate": 0.5986666666666667,
     "spec": {
       "id": "champion-v2",
       "label": "Champion",
-      "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, passes Doodads above 100 where allowed, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
+      "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
       "overrides": {
         "buyProperties": true,
         "minMonthlyReturn": 0.01,
@@ -397,7 +412,7 @@ export const CHAMPION_BOOK: Record<string, ChampionEntry> = {
         "sellWhenProfitMonths": 12,
         "repayLoans": true,
         "charityTwoDice": true,
-        "skipDoodadsAboveMinor": 10000,
+        "skipDoodadsAboveMinor": null,
         "catchUp": {
           "gap": 0.1,
           "minMonthlyReturnFactor": 0.8,
@@ -412,17 +427,17 @@ export const CHAMPION_BOOK: Record<string, ChampionEntry> = {
     "setId": "cashflow",
     "title": "Krankenpfleger/in",
     "adopted": false,
-    "winRate": 0.663168415792104,
+    "winRate": 0.61,
     "interval": {
-      "low": 0.6421646412630648,
-      "high": 0.68354687629523
+      "low": 0.5850653959956961,
+      "high": 0.6343726086452182
     },
-    "tables": 2001,
-    "championV1WinRate": 0.663168415792104,
+    "tables": 1500,
+    "championV1WinRate": 0.61,
     "spec": {
       "id": "champion-v2",
       "label": "Champion",
-      "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, passes Doodads above 100 where allowed, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
+      "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
       "overrides": {
         "buyProperties": true,
         "minMonthlyReturn": 0.01,
@@ -440,7 +455,7 @@ export const CHAMPION_BOOK: Record<string, ChampionEntry> = {
         "sellWhenProfitMonths": 12,
         "repayLoans": true,
         "charityTwoDice": true,
-        "skipDoodadsAboveMinor": 10000,
+        "skipDoodadsAboveMinor": null,
         "catchUp": {
           "gap": 0.1,
           "minMonthlyReturnFactor": 0.8,
@@ -455,17 +470,17 @@ export const CHAMPION_BOOK: Record<string, ChampionEntry> = {
     "setId": "cashflow",
     "title": "Ingenieur/in",
     "adopted": false,
-    "winRate": 0.6601699150424788,
+    "winRate": 0.6466666666666666,
     "interval": {
-      "low": 0.6391271274687785,
-      "high": 0.6805988798127943
+      "low": 0.622129618995307,
+      "high": 0.6704543871925787
     },
-    "tables": 2001,
-    "championV1WinRate": 0.6601699150424788,
+    "tables": 1500,
+    "championV1WinRate": 0.6466666666666666,
     "spec": {
       "id": "champion-v2",
       "label": "Champion",
-      "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, passes Doodads above 100 where allowed, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
+      "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
       "overrides": {
         "buyProperties": true,
         "minMonthlyReturn": 0.01,
@@ -483,7 +498,7 @@ export const CHAMPION_BOOK: Record<string, ChampionEntry> = {
         "sellWhenProfitMonths": 12,
         "repayLoans": true,
         "charityTwoDice": true,
-        "skipDoodadsAboveMinor": 10000,
+        "skipDoodadsAboveMinor": null,
         "catchUp": {
           "gap": 0.1,
           "minMonthlyReturnFactor": 0.8,
@@ -498,17 +513,17 @@ export const CHAMPION_BOOK: Record<string, ChampionEntry> = {
     "setId": "cashflow",
     "title": "Arzt/Ärztin",
     "adopted": false,
-    "winRate": 0.631184407796102,
+    "winRate": 0.6253333333333333,
     "interval": {
-      "low": 0.6098113035431262,
-      "high": 0.6520547710634662
+      "low": 0.6005467404516233,
+      "high": 0.6494795921089336
     },
-    "tables": 2001,
-    "championV1WinRate": 0.631184407796102,
+    "tables": 1500,
+    "championV1WinRate": 0.6253333333333333,
     "spec": {
       "id": "champion-v2",
       "label": "Champion",
-      "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, passes Doodads above 100 where allowed, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
+      "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
       "overrides": {
         "buyProperties": true,
         "minMonthlyReturn": 0.01,
@@ -526,7 +541,7 @@ export const CHAMPION_BOOK: Record<string, ChampionEntry> = {
         "sellWhenProfitMonths": 12,
         "repayLoans": true,
         "charityTwoDice": true,
-        "skipDoodadsAboveMinor": 10000,
+        "skipDoodadsAboveMinor": null,
         "catchUp": {
           "gap": 0.1,
           "minMonthlyReturnFactor": 0.8,
@@ -541,17 +556,17 @@ export const CHAMPION_BOOK: Record<string, ChampionEntry> = {
     "setId": "custom-jfk",
     "title": "Softwareentwickler/in",
     "adopted": false,
-    "winRate": 0.672663668165917,
+    "winRate": 0.6453333333333333,
     "interval": {
-      "low": 0.6517895994159469,
-      "high": 0.6928760340186346
+      "low": 0.620779172200211,
+      "high": 0.6691449793859667
     },
-    "tables": 2001,
-    "championV1WinRate": 0.672663668165917,
+    "tables": 1500,
+    "championV1WinRate": 0.6453333333333333,
     "spec": {
       "id": "champion-v2",
       "label": "Champion",
-      "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, passes Doodads above 100 where allowed, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
+      "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
       "overrides": {
         "buyProperties": true,
         "minMonthlyReturn": 0.01,
@@ -569,7 +584,7 @@ export const CHAMPION_BOOK: Record<string, ChampionEntry> = {
         "sellWhenProfitMonths": 12,
         "repayLoans": true,
         "charityTwoDice": true,
-        "skipDoodadsAboveMinor": 10000,
+        "skipDoodadsAboveMinor": null,
         "catchUp": {
           "gap": 0.1,
           "minMonthlyReturnFactor": 0.8,
@@ -584,17 +599,17 @@ export const CHAMPION_BOOK: Record<string, ChampionEntry> = {
     "setId": "custom-jfk",
     "title": "Freiberufler/in",
     "adopted": false,
-    "winRate": 0.6661669165417291,
+    "winRate": 0.5826666666666667,
     "interval": {
-      "low": 0.6452030849538719,
-      "high": 0.6864939428811451
+      "low": 0.557531234739552,
+      "high": 0.6073797505663472
     },
-    "tables": 2001,
-    "championV1WinRate": 0.6661669165417291,
+    "tables": 1500,
+    "championV1WinRate": 0.5826666666666667,
     "spec": {
       "id": "champion-v2",
       "label": "Champion",
-      "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, passes Doodads above 100 where allowed, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
+      "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
       "overrides": {
         "buyProperties": true,
         "minMonthlyReturn": 0.01,
@@ -612,7 +627,7 @@ export const CHAMPION_BOOK: Record<string, ChampionEntry> = {
         "sellWhenProfitMonths": 12,
         "repayLoans": true,
         "charityTwoDice": true,
-        "skipDoodadsAboveMinor": 10000,
+        "skipDoodadsAboveMinor": null,
         "catchUp": {
           "gap": 0.1,
           "minMonthlyReturnFactor": 0.8,
@@ -627,17 +642,17 @@ export const CHAMPION_BOOK: Record<string, ChampionEntry> = {
     "setId": "custom-jfk",
     "title": "Unternehmer/in",
     "adopted": false,
-    "winRate": 0.6271864067966016,
+    "winRate": 0.6106666666666667,
     "interval": {
-      "low": 0.6057742494824205,
-      "high": 0.6481111447552089
+      "low": 0.5857379629300887,
+      "high": 0.6350299690116796
     },
-    "tables": 2001,
-    "championV1WinRate": 0.6271864067966016,
+    "tables": 1500,
+    "championV1WinRate": 0.6106666666666667,
     "spec": {
       "id": "champion-v2",
       "label": "Champion",
-      "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, passes Doodads above 100 where allowed, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
+      "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
       "overrides": {
         "buyProperties": true,
         "minMonthlyReturn": 0.01,
@@ -655,7 +670,7 @@ export const CHAMPION_BOOK: Record<string, ChampionEntry> = {
         "sellWhenProfitMonths": 12,
         "repayLoans": true,
         "charityTwoDice": true,
-        "skipDoodadsAboveMinor": 10000,
+        "skipDoodadsAboveMinor": null,
         "catchUp": {
           "gap": 0.1,
           "minMonthlyReturnFactor": 0.8,

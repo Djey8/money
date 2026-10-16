@@ -16,3 +16,4 @@ export * from './tournament';
 export * from './awareness';
 export * from './bot';
 // bot-catalog is deliberately NOT exported here: it is data the browser bundle must not carry (import it by path).
+export * from './champion-digest';

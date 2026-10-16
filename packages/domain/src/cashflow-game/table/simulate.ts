@@ -4,7 +4,7 @@ import { cashOnHandMinor } from '../cash';
 import { fixedClock } from '../clock';
 import { summarizeGameFinances } from '../saved-games';
 import { seededRng } from '../rng';
-import type { Policy, PolicyView } from '../simulation/policy';
+import type { DeckKnowledge, Policy, PolicyView } from '../simulation/policy';
 import { PRESET_POLICIES } from '../simulation/strategies';
 import { currentTurn } from '../turn';
 import type { CashflowDealCard, CashflowDoodadCard } from '../types';
@@ -231,6 +231,25 @@ export function digestTable(table: Table): string {
 
 // ── Policies at a table ────────────────────────────────────────────────────────────────────────────
 
+/** What is left in each pile at this table: the set's cards that have not been drawn since the pile's last reshuffle. */
+export function deckKnowledge(books: GameBooks, table: Table): DeckKnowledge {
+  const decks = (books.gameSet?.decks ?? {}) as Record<string, { id: string }[] | undefined>;
+  const left = (kind: 'dealSmall' | 'dealBig' | 'market' | 'doodad') => {
+    const drawn = new Set(table.drawnCardIds?.[kind] ?? []);
+    return (decks[kind] ?? []).filter((card) => !drawn.has(card.id));
+  };
+  const offered = currentTurn(books.state).pending?.offered?.deck;
+  return {
+    remaining: {
+      dealSmall: left('dealSmall') as DeckKnowledge['remaining']['dealSmall'],
+      dealBig: left('dealBig') as DeckKnowledge['remaining']['dealBig'],
+      market: left('market') as DeckKnowledge['remaining']['market'],
+      doodad: left('doodad') as DeckKnowledge['remaining']['doodad'],
+    },
+    ...(offered ? { offeredDeck: offered } : {}),
+  };
+}
+
 export function viewOf(books: GameBooks, table?: Table, playerId?: string): PolicyView {
   const finances = summarizeGameFinances(books.state, books.subscriptions);
   const rule = books.gameSet?.loanRule;
@@ -246,6 +265,7 @@ export function viewOf(books: GameBooks, table?: Table, playerId?: string): Poli
     children: books.state.children,
     charityRoundsLeft: books.state.charityRoundsLeft,
     ...(table && playerId ? { table: tableAwareness(table, playerId) } : {}),
+    ...(table ? { deck: deckKnowledge(books, table) } : {}),
   };
 }
 

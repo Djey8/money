@@ -1,6 +1,11 @@
 import type { GameBooks } from '../books';
 import type { CashflowFinanceSummary } from '../saved-games';
-import type { CashflowDealCard, CashflowDoodadCard } from '../types';
+import type {
+  CashflowDealCard,
+  CashflowDeckKind,
+  CashflowDoodadCard,
+  CashflowMarketCard,
+} from '../types';
 import type { SellInput } from '../positions';
 
 /**
@@ -31,6 +36,22 @@ export interface TableAwareness {
   seats: number;
 }
 
+/**
+ * What is left in the piles (todo/cashflow-tournament-and-bots.md: counting cards). A card comes only once between two reshuffles of
+ * its pile, and every card drawn is on the table for everyone to see, so what remains is public: the cards of the set that have not
+ * been drawn since the pile's last reshuffle. The order is not known - only what is still to come, and how much of it.
+ */
+export interface DeckKnowledge {
+  remaining: {
+    dealSmall: CashflowDealCard[];
+    dealBig: CashflowDealCard[];
+    market: CashflowMarketCard[];
+    doodad: CashflowDoodadCard[];
+  };
+  /** The pile the card in hand was drawn from. */
+  offeredDeck?: CashflowDeckKind;
+}
+
 /** What a strategy may look at: the books, and the figures the dashboard shows. Read-only. */
 export interface PolicyView {
   readonly books: GameBooks;
@@ -46,6 +67,8 @@ export interface PolicyView {
   readonly charityRoundsLeft: number;
   /** At a table: the race. Absent in a solo game. */
   readonly table?: TableAwareness;
+  /** At a table: what is left in each pile. Absent in a solo game. */
+  readonly deck?: DeckKnowledge;
 }
 
 export type DealChoice = { buy: false } | { buy: true; quantity?: number };
@@ -112,6 +135,30 @@ export interface PolicyParams {
    * asked, the loan coverage asked and the reserve kept by these factors (below 1 = take more risk to catch up).
    */
   catchUp: RaceAdjust | null;
+  /**
+   * Counting cards: buy shares only when a card of the same ticker at `minGain` times the price or more is still in the pile - then
+   * the sale is as good as certain, only its wait is in question: the draws until it comes are about (cards left) / (such cards + 1),
+   * and a wait above `maxWaitDraws` is passed. `sellAboveMinor` is the price the shares are sold at. null: the blind `shares` rule.
+   */
+  countShares: {
+    minGain: number;
+    maxWaitDraws: number;
+    maxLotShare: number;
+    sellAboveMinor: number;
+  } | null;
+  /** Counting cards: draw from the pile whose remaining cards the strategy would buy most often. */
+  pileByCount: boolean;
+  /**
+   * Counting cards: the return a property must pay is scaled by (how rich the cards left in the pile are, against the whole pile)
+   * to this power - pickier while the good ones are still to come, easier once they are gone. 0: off.
+   */
+  countReturnFactor: number;
+  /**
+   * Counting cards: buy a property that pays little or nothing when the buyers still in the Market pile make it worth the wait:
+   * the average gain of the buyers left is at least `minEvRatio` of the deposit, and the expected wait (market draws) is at most
+   * `maxWaitDraws`. null: off.
+   */
+  speculate: { maxWaitDraws: number; minEvRatio: number } | null;
   /** The mirror: when this player leads by `aheadBy`, factors above 1 = protect the lead. */
   protectLead: RaceAdjust | null;
 }

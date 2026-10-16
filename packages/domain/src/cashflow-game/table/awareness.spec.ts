@@ -152,7 +152,7 @@ describe('passing a Doodad where the rules allow it', () => {
     expect(paramPolicy('p', 'p', '').doodad!(view, doodadCard)).toBe('pay');
   });
 
-  it('at a table: passes under the guided rules, always pays under the strict rules', () => {
+  it('at a table the knob is inert: a Doodad cannot be passed under any rules', () => {
     const skipper = paramPolicy('skipper', 'skipper', '', { skipDoodadsAboveMinor: 0 });
     const never = paramPolicy('never', 'never', '', { skipDoodadsAboveMinor: null });
     const other = PRESET_POLICIES.find((p) => p.id === 'all-rounder')!;
@@ -167,16 +167,11 @@ describe('passing a Doodad where the rules allow it', () => {
       return [match.seats[0].rolls, match.seats[0].passiveIncomeMinor, match.commands];
     };
     const seeds = [31, 32, 33, 34, 35, 36];
-    // under strict the knob does nothing: every game is the one a strategy that never skips plays
-    for (const seed of seeds) {
-      expect(play('strict', skipper, seed)).toEqual(play('strict', never, seed));
+    // under both rule sets every game is the one a strategy that never skips plays
+    for (const rulesBase of ['guided', 'strict'] as const) {
+      for (const seed of seeds) {
+        expect(play(rulesBase, skipper, seed)).toEqual(play(rulesBase, never, seed));
+      }
     }
-    // under guided the same strategy plays other games
-    const differs = seeds.filter(
-      (seed) =>
-        JSON.stringify(play('guided', skipper, seed)) !==
-        JSON.stringify(play('guided', never, seed)),
-    );
-    expect(differs.length).toBeGreaterThan(0);
   });
 });

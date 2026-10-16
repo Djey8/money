@@ -104,7 +104,7 @@ function quickTurn(table: Table, offsetMs: number): CommandResult {
   for (let seed = 1; seed <= 4000; seed += 1) {
     const result = applyCommand({ ...table, rngState: seed }, who, { type: 'roll' }, at(offsetMs));
     const landed = rolled(result.events)!.landed;
-    if (landed === 'downsized') continue;
+    if (landed === 'downsized' || landed === 'doodad') continue; // a Doodad cannot be passed at a table
     const pending = booksOf(result.table, who).state.turn?.pending;
     if (!pending || result.table.activePlayerId !== who) return result;
     const passed = applyCommand(result.table, who, { type: 'pass_card' }, at(offsetMs));
@@ -186,20 +186,17 @@ describe('a timeout plays the most passive turn', () => {
     expect(result.table.clock.deadlineAt).toBe(T0 + 31 * SEC + 30 * SEC);
   });
 
-  it('pays a Doodad only when the rules forbid passing it', () => {
-    const lenient = playingTable();
-    const passed = timeoutWhere(lenient, 31 * SEC, (landed) => landed === 'doodad');
-    expect(types(passed.events)).toContain('card_passed');
-    expect(types(passed.events)).not.toContain('card_played');
-
-    const strict = playingTable({ rulesBase: 'strict' });
-    expect(strict.settings.rules.passDoodads).toBe('forbidden');
-    const paid = timeoutWhere(strict, 31 * SEC, (landed) => landed === 'doodad');
-    expect(types(paid.events)).toEqual(
-      expect.arrayContaining(['rolled', 'card_drawn', 'card_played', 'turn_started']),
-    );
-    expect(types(paid.events)).not.toContain('card_passed');
-    expect(paid.table.activePlayerId).toBe('p1');
+  it('pays a Doodad when time runs out under any rules: nobody can pass one at a table', () => {
+    for (const rulesBase of ['guided', 'strict'] as const) {
+      const table = playingTable({ rulesBase });
+      expect(table.settings.rules.passDoodads).toBe('forbidden');
+      const paid = timeoutWhere(table, 31 * SEC, (landed) => landed === 'doodad');
+      expect(types(paid.events)).toEqual(
+        expect.arrayContaining(['rolled', 'card_drawn', 'card_played', 'turn_started']),
+      );
+      expect(types(paid.events)).not.toContain('card_passed');
+      expect(paid.table.activePlayerId).toBe('p1');
+    }
   });
 
   it('a Market space is drawn for the table by the roll itself - nobody can pass it', () => {

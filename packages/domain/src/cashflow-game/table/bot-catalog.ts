@@ -136,11 +136,11 @@ function searchedProfiles(): BotProfile[] {
   const global = CHARACTERS['any'];
   if (global) {
     out.push({
-      id: 'champion-v2',
+      id: 'champion-latest',
       name: 'Champion Cleo II',
       difficulty: 'champion',
-      description: `The global champion of the second search: ${global.spec.description} It won ${Math.round(global.winRate * 100)}% of fresh tables against the field.`,
-      spec: { ...global.spec, id: 'champion-v2' },
+      description: `The latest global champion (${global.spec.id}): ${global.spec.description} It won ${Math.round(global.winRate * 100)}% of fresh tables against the field.`,
+      spec: global.spec,
     });
   }
   for (const [style, entry] of Object.entries(CHARACTERS)) {

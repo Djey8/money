@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { CASHFLOW_GAME_SETS } from '../../cashflow-content';
-import { strategyRulesDigest } from '../simulation/digest';
+import { championRulesDigest } from './champion-digest';
 import { policyFromSpec } from '../simulation/strategies';
 import { CHAMPION_BOOK, CHAMPION_BOOK_DIGEST } from './champion-book';
 import { CHARACTERS } from './characters';
@@ -17,7 +17,7 @@ const playable = () =>
  * Nothing here loosens by itself: a refresh only replaces a champion when a new strategy beats it on games the search never saw.
  */
 describe('the tournament, the champion book and the characters', () => {
-  const digest = () => strategyRulesDigest(playable());
+  const digest = () => championRulesDigest(playable());
 
   it('the tournament was played on the rules as they are now (npm run champions:refresh)', () => {
     const tournament = JSON.parse(fs.readFileSync(path.join(DATA, 'tournament.json'), 'utf8'));
